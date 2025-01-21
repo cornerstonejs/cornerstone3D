@@ -29,7 +29,7 @@ const orientations = [
 
 const description = [
   'Displays a 4D DICOM series in a Volume viewport.',
-  'DataSet: PET 255 x 255 images / 40 time points / 235 images per time point / 9,400 images total',
+  'DataSet: PET 255 x 255 images / 40 dimension groups / 235 images each / 9,400 images total',
 ].join('\n');
 
 // ======== Set up page ======== //
@@ -63,14 +63,14 @@ addDropdownToToolbar({
   },
 });
 
-function addFrameSlider(volume) {
+function addDimensionGroupSlider(volume) {
   addSliderToToolbar({
-    title: 'Frame Number',
-    range: [1, volume.numFrames],
+    title: 'Dimension Group Number',
+    range: [1, volume.numDimensionGroups],
     defaultValue: 1,
     onSelectedValueChange: (value) => {
-      const frameNumber = Number(value);
-      volume.frameNumber = frameNumber;
+      const dimensionGroupNumber = Number(value);
+      volume.dimensionGroupNumber = dimensionGroupNumber;
     },
   });
 }
@@ -122,7 +122,7 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  addFrameSlider(volume);
+  addDimensionGroupSlider(volume);
 
   // Set the volume on the viewport
   viewport.setVolumes([{ volumeId }]);

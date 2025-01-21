@@ -217,7 +217,7 @@ export function createAndCacheDerivedVolume(
   const referencedImageIds = referencedVolume.isDynamicVolume()
     ? (
         referencedVolume as StreamingDynamicImageVolume
-      ).getCurrentFrameImageIds()
+      ).getCurrentDimensionGroupImageIds()
     : referencedVolume.imageIds ?? [];
 
   // Todo: fix later

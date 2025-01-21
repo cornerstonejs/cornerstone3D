@@ -2,14 +2,15 @@ import type { Types } from '@cornerstonejs/core';
 import { Enums } from '@cornerstonejs/core';
 
 /**
- * Helper function to sum scalar data over specified frames.
+ * Helper function to sum scalar data over specified dimension groups.
  */
-function sumOverFrames(voxelManager, frames) {
+function sumOverDimensionGroups(voxelManager, dimensionGroups) {
   const arrayLength = voxelManager.getScalarDataLength();
   const resultArray = new Float32Array(arrayLength);
 
-  for (const frameNumber of frames) {
-    const scalarData = voxelManager.getFrameScalarData(frameNumber);
+  for (const dimensionGroupNumber of dimensionGroups) {
+    const scalarData =
+      voxelManager.getDimensionGroupScalarData(dimensionGroupNumber);
     for (let i = 0; i < arrayLength; i++) {
       resultArray[i] += scalarData[i];
     }
@@ -19,42 +20,59 @@ function sumOverFrames(voxelManager, frames) {
 }
 
 /**
- * Helper function to average scalar data over specified frames.
+ * Helper function to average scalar data over specified dimension groups.
  */
-function averageOverFrames(voxelManager, frames) {
-  const sumArray = sumOverFrames(voxelManager, frames);
-  const numFrames = frames.length;
+function averageOverDimensionGroups(voxelManager, dimensionGroups) {
+  const sumArray = sumOverDimensionGroups(voxelManager, dimensionGroups);
+  const numDimensionGroups = dimensionGroups.length;
 
   for (let i = 0; i < sumArray.length; i++) {
-    sumArray[i] /= numFrames;
+    sumArray[i] /= numDimensionGroups;
   }
 
   return sumArray;
 }
 
 const operationFunctions = {
-  [Enums.GenerateImageType.SUM]: (voxelManager, frames, callback) => {
-    const resultArray = sumOverFrames(voxelManager, frames);
+  [Enums.GenerateImageType.SUM]: (voxelManager, dimensionGroups, callback) => {
+    const resultArray = sumOverDimensionGroups(voxelManager, dimensionGroups);
     for (let i = 0; i < resultArray.length; i++) {
       callback(i, resultArray[i]);
     }
   },
 
-  [Enums.GenerateImageType.AVERAGE]: (voxelManager, frames, callback) => {
-    const resultArray = averageOverFrames(voxelManager, frames);
+  [Enums.GenerateImageType.AVERAGE]: (
+    voxelManager,
+    dimensionGroups,
+    callback
+  ) => {
+    const resultArray = averageOverDimensionGroups(
+      voxelManager,
+      dimensionGroups
+    );
     for (let i = 0; i < resultArray.length; i++) {
       callback(i, resultArray[i]);
     }
   },
 
-  [Enums.GenerateImageType.SUBTRACT]: (voxelManager, frames, callback) => {
-    if (frames.length !== 2) {
-      throw new Error('Please provide only 2 frames for subtraction.');
+  [Enums.GenerateImageType.SUBTRACT]: (
+    voxelManager,
+    dimensionGroups,
+    callback
+  ) => {
+    if (dimensionGroups.length !== 2) {
+      throw new Error(
+        'Please provide only 2 dimension groups for subtraction.'
+      );
     }
 
     const arrayLength = voxelManager.getScalarDataLength();
-    const scalarData1 = voxelManager.getFrameScalarData(frames[0]);
-    const scalarData2 = voxelManager.getFrameScalarData(frames[1]);
+    const scalarData1 = voxelManager.getDimensionGroupScalarData(
+      dimensionGroups[0]
+    );
+    const scalarData2 = voxelManager.getDimensionGroupScalarData(
+      dimensionGroups[1]
+    );
 
     for (let i = 0; i < arrayLength; i++) {
       const difference = scalarData1[i] - scalarData2[i];
@@ -64,34 +82,43 @@ const operationFunctions = {
 };
 
 /**
- * Generates an array of scalar data for a series of frames from a 4D volume,
+ * Generates an array of scalar data for a series of dimension groups from a 4D volume,
  * performing AVERAGE, SUM or SUBTRACT operations.
  *
- * @param dynamicVolume - volume to compute frame data from
- * @param operation - operation to perform on frame data, operations include
- * SUM, AVERAGE, and SUBTRACT (can only be used with 2 frames provided)
+ * @param dynamicVolume - volume to compute dimension group data from
+ * @param operation - operation to perform on dimension group data, operations include
+ * SUM, AVERAGE, and SUBTRACT (can only be used with 2 dimension groups provided)
  * @param options - additional options for the operation
- * @param options.frameNumbers - an array of frame numbers to perform the operation on (1-based),
- * if left empty, all frames will be used
+ * @param options.dimensionGroupNumbers - an array of dimension group numbers to perform the operation on (1-based),
+ * if left empty, all dimension groups will be used
+ * @param options.frameNumbers - @deprecated Use dimensionGroupNumbers instead
  * @returns {Float32Array} The resulting array after performing the operation
- * @throws {Error} If the operation is not supported or if invalid frame numbers are provided
+ * @throws {Error} If the operation is not supported or if invalid dimension group numbers are provided
  */
 function generateImageFromTimeData(
   dynamicVolume: Types.IDynamicImageVolume,
   operation: Enums.GenerateImageType,
   options: {
+    dimensionGroupNumbers?: number[];
     frameNumbers?: number[];
   }
 ): Float32Array {
-  const { frameNumbers } = options;
+  const { dimensionGroupNumbers, frameNumbers } = options;
 
-  // Create array of frame numbers (1-based) if not provided
-  const frames =
+  if (frameNumbers) {
+    console.warn(
+      'Warning: frameNumbers parameter is deprecated. Please use dimensionGroupNumbers instead.'
+    );
+  }
+
+  // Create array of dimension group numbers (1-based) if not provided
+  const dimensionGroups =
+    dimensionGroupNumbers ||
     frameNumbers ||
-    Array.from({ length: dynamicVolume.numFrames }, (_, i) => i + 1);
+    Array.from({ length: dynamicVolume.numDimensionGroups }, (_, i) => i + 1);
 
-  if (frames.length <= 1) {
-    throw new Error('Please provide two or more frames');
+  if (dimensionGroups.length <= 1) {
+    throw new Error('Please provide two or more dimension groups');
   }
 
   const voxelManager = dynamicVolume.voxelManager;
@@ -104,7 +131,7 @@ function generateImageFromTimeData(
   }
 
   const resultArray = new Float32Array(arrayLength);
-  operationFunction(voxelManager, frames, (index, value) => {
+  operationFunction(voxelManager, dimensionGroups, (index, value) => {
     resultArray[index] = value;
   });
 
@@ -112,15 +139,16 @@ function generateImageFromTimeData(
 }
 
 /**
- * Updates the scalar data for a target volume based on a series of frames
+ * Updates the scalar data for a target volume based on a series of dimension groups
  * from a 4D volume, performing AVERAGE, SUM or SUBTRACT operations.
  *
- * @param dynamicVolume - volume to compute frame data from
- * @param operation - operation to perform on frame data, operations include
- * SUM, AVERAGE, and SUBTRACT (can only be used with 2 frames provided)
+ * @param dynamicVolume - volume to compute dimension group data from
+ * @param operation - operation to perform on dimension group data, operations include
+ * SUM, AVERAGE, and SUBTRACT (can only be used with 2 dimension groups provided)
  * @param options - additional options for the operation
- * @param options.frameNumbers - an array of frame numbers to perform the operation on (1-based),
- * if left empty, all frames will be used
+ * @param options.dimensionGroupNumbers - an array of dimension group numbers to perform the operation on (1-based),
+ * if left empty, all dimension groups will be used
+ * @param options.frameNumbers - @deprecated Use dimensionGroupNumbers instead
  * @param options.targetVolume - the volume to update with the result of the operation
  * @throws {Error} If no target volume is provided or if the operation is not supported
  */
@@ -128,23 +156,31 @@ function updateVolumeFromTimeData(
   dynamicVolume: Types.IDynamicImageVolume,
   operation: Enums.GenerateImageType,
   options: {
+    dimensionGroupNumbers?: number[];
     frameNumbers?: number[];
     targetVolume: Types.IImageVolume;
   }
 ): void {
-  const { frameNumbers, targetVolume } = options;
+  const { dimensionGroupNumbers, frameNumbers, targetVolume } = options;
 
   if (!targetVolume) {
     throw new Error('A target volume must be provided');
   }
 
-  // Create array of frame numbers (1-based) if not provided
-  const frames =
-    frameNumbers ||
-    Array.from({ length: dynamicVolume.numFrames }, (_, i) => i + 1);
+  if (frameNumbers) {
+    console.warn(
+      'Warning: frameNumbers parameter is deprecated. Please use dimensionGroupNumbers instead.'
+    );
+  }
 
-  if (frames.length <= 1) {
-    throw new Error('Please provide two or more frames');
+  // Create array of dimension group numbers (1-based) if not provided
+  const dimensionGroups =
+    dimensionGroupNumbers ||
+    frameNumbers ||
+    Array.from({ length: dynamicVolume.numDimensionGroups }, (_, i) => i + 1);
+
+  if (dimensionGroups.length <= 1) {
+    throw new Error('Please provide two or more dimension groups');
   }
 
   const voxelManager = dynamicVolume.voxelManager;
@@ -156,7 +192,7 @@ function updateVolumeFromTimeData(
     throw new Error(`Unsupported operation: ${operation}`);
   }
 
-  operationFunction(voxelManager, frames, (index, value) => {
+  operationFunction(voxelManager, dimensionGroups, (index, value) => {
     targetVoxelManager.setAtIndex(index, value);
   });
 

@@ -34,7 +34,7 @@ const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId1 = 'CT_SAGITTAL_STACK';
 const viewportId2 = 'COMPUTED_STACK';
-let timeFrames;
+let dimensionGroups;
 
 const orientations = [
   Enums.OrientationAxis.AXIAL,
@@ -46,7 +46,7 @@ let dataOperation = operations[0];
 // ======== Set up page ======== //
 setTitleAndDescription(
   '3D Volume Generation From 4D Data',
-  'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators for a 4D time series.\nEnter the time frames to use separated by commas (ex: 0,1,3,4) then press "Set Time Frames". \nNote: the index for the time frames starts at 0'
+  'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators for a 4D time series.\nEnter the dimension group numbers to use separated by commas (ex: 0,1,3,4) then press "Set Dimension Groups". \nNote: the index for the dimension groups starts at 0'
 );
 
 const size = '500px';
@@ -80,7 +80,7 @@ addButtonToToolbar({
       volumeForButton,
       <Enums.GenerateImageType>dataOperation,
       {
-        frameNumbers: timeFrames,
+        dimensionGroupNumbers: dimensionGroups,
       }
     );
     createVolumeFromTimeData(dataInTime);
@@ -105,6 +105,9 @@ addDropdownToToolbar({
   onSelectedValueChange: (selectedValue) => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
+    if (!renderingEngine) {
+      return;
+    }
     // Get the volume viewport
     const viewport = <Types.IVolumeViewport>(
       renderingEngine.getViewport(viewportId1)
@@ -115,17 +118,18 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Set Frame Numbers',
+  title: 'Set Dimension Groups',
   onClick: () => {
-    const x = document.getElementById('myText')?.value.split(',') || [];
-    const frameNumbers = x.map((val) => Number(val));
-    timeFrames = frameNumbers;
+    const input = document.getElementById('myText') as HTMLInputElement;
+    const x = input?.value.split(',') || [];
+    const dimensionGroupNumbers = x.map((val) => Number(val));
+    dimensionGroups = dimensionGroupNumbers;
   },
 });
 
 function addTextInputBox() {
   const id = 'myText';
-  const title = 'Enter frame numbers';
+  const title = 'Enter dimension group numbers';
   const textbox = document.createElement('input');
   const value = '';
   textbox.id = id;
@@ -133,17 +137,19 @@ function addTextInputBox() {
   textbox.value = value;
 
   const container = document.getElementById('demo-toolbar');
-  container.append(textbox);
+  if (container) {
+    container.append(textbox);
+  }
 }
 
-function addFrameSlider(volume) {
+function addDimensionGroupSlider(volume) {
   addSliderToToolbar({
-    title: 'Frame Number',
-    range: [1, volume.numFrames],
+    title: 'Dimension Group Number',
+    range: [1, volume.numDimensionGroups],
     defaultValue: 1,
     onSelectedValueChange: (value) => {
-      const frameNumber = Number(value);
-      volume.frameNumber = frameNumber;
+      const dimensionGroupNumber = Number(value);
+      volume.dimensionGroupNumber = dimensionGroupNumber;
     },
   });
 }
@@ -229,12 +235,13 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const MAX_NUM_FRAMES = 40;
-  const firstFrame = 10;
-  const lastFrame = 14;
-  const NUM_IMAGES_PER_FRAME = 235;
-  const firstInstanceNumber = (firstFrame - 1) * NUM_IMAGES_PER_FRAME + 1;
-  const lastInstanceNumber = lastFrame * NUM_IMAGES_PER_FRAME;
+  const firstDimensionGroup = 10;
+  const lastDimensionGroup = 14;
+  const NUM_IMAGES_PER_DIMENSION_GROUP = 235;
+  const firstInstanceNumber =
+    (firstDimensionGroup - 1) * NUM_IMAGES_PER_DIMENSION_GROUP + 1;
+  const lastInstanceNumber =
+    lastDimensionGroup * NUM_IMAGES_PER_DIMENSION_GROUP;
 
   imageIds = imageIds.filter((imageId) => {
     const instanceMetaData = metaDataManager.get(imageId);
@@ -293,7 +300,7 @@ async function run() {
 
   volumeForButton = volume;
   addTextInputBox();
-  addFrameSlider(volume);
+  addDimensionGroupSlider(volume);
 
   // Set the volume on the viewport
   viewport.setVolumes([{ volumeId }]);

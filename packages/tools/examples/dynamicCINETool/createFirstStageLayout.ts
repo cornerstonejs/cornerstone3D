@@ -4,19 +4,19 @@ import {
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 
-const MAX_NUM_FRAMES = 40;
+const MAX_NUM_DIMENSION_GROUPS = 40;
 
 function createFirstStageLayout({
-  onLoadTimePoints,
+  onLoadDimensionGroups,
 }: {
-  onLoadTimePoints(numFrames: number): void;
+  onLoadDimensionGroups(numDimensionGroups: number): void;
 }) {
   const container = document.createElement('div');
   const titleEl = createChildEl(container, 'div');
   const toolBarEl = createChildEl(container, 'div');
   const dropdownLabel = createChildEl(toolBarEl, 'span');
   const dropDownOptions: number[] = [];
-  let numFrames = 5;
+  let numDimensionGroups = 5;
 
   container.id = 'firstStageContainer';
   container.style.transition = 'opacity 0.3s';
@@ -24,34 +24,34 @@ function createFirstStageLayout({
   titleEl.innerHTML = 'Stage 1: Load';
   titleEl.style.fontWeight = 'bold';
 
-  dropdownLabel.innerHTML = 'Frames to load: ';
+  dropdownLabel.innerHTML = 'Dimension groups to load: ';
 
-  for (let i = 1; i <= MAX_NUM_FRAMES; i++) {
+  for (let i = 1; i <= MAX_NUM_DIMENSION_GROUPS; i++) {
     dropDownOptions.push(i);
   }
 
   addDropdownToToolbar({
-    id: 'numTimePointsDropdown',
+    id: 'numDimensionGroupsDropdown',
     options: {
       values: dropDownOptions,
-      defaultValue: numFrames,
+      defaultValue: numDimensionGroups,
     },
     container: toolBarEl,
     onSelectedValueChange: (value) => {
-      numFrames = value as number;
+      numDimensionGroups = value as number;
     },
   });
 
   addButtonToToolbar({
-    id: 'btnLoadTimePoints',
+    id: 'btnLoadDimensionGroups',
     title: 'Load',
     container: toolBarEl,
     onClick: () => {
       const dropdown = document.getElementById(
-        'numTimePointsDropdown'
+        'numDimensionGroupsDropdown'
       ) as HTMLSelectElement;
-      const btnLoadTimePoints = document.getElementById(
-        'btnLoadTimePoints'
+      const btnLoadDimensionGroups = document.getElementById(
+        'btnLoadDimensionGroups'
       ) as HTMLButtonElement;
       const secondStageContainer = document.getElementById(
         'secondStageContainer'
@@ -59,12 +59,12 @@ function createFirstStageLayout({
 
       container.style.opacity = '0.4';
       dropdown.disabled = true;
-      btnLoadTimePoints.disabled = true;
+      btnLoadDimensionGroups.disabled = true;
       secondStageContainer.style.opacity = '1';
 
       secondStageContainer.addEventListener(
         'transitionend',
-        () => onLoadTimePoints(numFrames),
+        () => onLoadDimensionGroups(numDimensionGroups),
         { once: true }
       );
     },

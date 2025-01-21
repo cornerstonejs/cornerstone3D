@@ -16,13 +16,13 @@ export default class StreamingDynamicImageVolume
   extends BaseStreamingImageVolume
   implements IDynamicImageVolume
 {
-  private _frameNumber = 1;
+  private _dimensionGroupNumber = 1;
   private _splittingTag: string;
   private _imageIdGroups: string[][];
-  private _loadedFrames: Set<number> = new Set();
+  private _loadedDimensionGroups: Set<number> = new Set();
 
-  public numFrames: number;
-  /** @deprecated Use numFrames instead */
+  public numDimensionGroups: number;
+  /** @deprecated Use numDimensionGroups instead */
   public override numTimePoints: number;
 
   constructor(
@@ -36,13 +36,13 @@ export default class StreamingDynamicImageVolume
     const { imageIdGroups, splittingTag } = imageVolumeProperties;
     this._splittingTag = splittingTag;
     this._imageIdGroups = imageIdGroups;
-    this.numFrames = this._imageIdGroups.length;
-    this.numTimePoints = this.numFrames; // Keep in sync for backward compatibility
+    this.numDimensionGroups = this._imageIdGroups.length;
+    this.numTimePoints = this.numDimensionGroups; // Keep in sync for backward compatibility
   }
 
   private _getImageIdsToLoad(): string[] {
     const imageIdGroups = this._imageIdGroups;
-    const initialImageIdGroupIndex = this._frameNumber - 1;
+    const initialImageIdGroupIndex = this._dimensionGroupNumber - 1;
     const imageIds = [...imageIdGroups[initialImageIdGroupIndex]];
 
     let leftIndex = initialImageIdGroupIndex - 1;
@@ -70,56 +70,72 @@ export default class StreamingDynamicImageVolume
   }
 
   /**
-   * Returns the active frame number (1-based)
-   * @returns active frame number
+   * Returns the active dimension group number (1-based)
+   * @returns active dimension group number
    */
-  public get frameNumber(): number {
-    return this._frameNumber;
+  public get dimensionGroupNumber(): number {
+    return this._dimensionGroupNumber;
   }
 
   /**
-   * Set the active frame number which also updates the active scalar data
-   * Frame numbers are 1-based.
+   * Set the active dimension group number which also updates the active scalar data
+   * Dimension group numbers are 1-based.
    *
-   * @param frameNumber - The frame number to set as active (1-based)
+   * @param dimensionGroupNumber - The dimension group number to set as active (1-based)
    */
-  public set frameNumber(frameNumber: number) {
-    if (this._frameNumber === frameNumber) {
+  public set dimensionGroupNumber(dimensionGroupNumber: number) {
+    if (this._dimensionGroupNumber === dimensionGroupNumber) {
       return;
     }
 
-    this._frameNumber = frameNumber;
-    // @ts-expect-error since we need to override the type for now
-    this.voxelManager.setFrameNumber(frameNumber);
+    this._dimensionGroupNumber = dimensionGroupNumber;
+    // @ts-expect-error
+    this.voxelManager.setDimensionGroupNumber(dimensionGroupNumber);
 
     this.invalidateVolume(true);
 
-    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_FRAME_NUMBER_CHANGED, {
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED, {
       volumeId: this.volumeId,
-      frameNumber: frameNumber,
-      numFrames: this.numFrames,
+      frameNumber: dimensionGroupNumber,
+      numFrames: this.numDimensionGroups,
       splittingTag: this.splittingTag,
     });
   }
 
-  /**
-   * @deprecated Use frameNumber instead. timePointIndex is zero-based while frameNumber starts at 1.
-   */
-  public get timePointIndex(): number {
+  /** @deprecated Use dimensionGroupNumber instead */
+  public get frameNumber(): number {
     console.warn(
-      'Warning: timePointIndex is deprecated. Please use frameNumber instead. Note that timePointIndex is zero-based while frameNumber starts at 1.'
+      'Warning: frameNumber is deprecated. Please use dimensionGroupNumber instead.'
     );
-    return this._frameNumber - 1;
+    return this._dimensionGroupNumber;
+  }
+
+  /** @deprecated Use dimensionGroupNumber instead */
+  public set frameNumber(frameNumber: number) {
+    console.warn(
+      'Warning: frameNumber is deprecated. Please use dimensionGroupNumber instead.'
+    );
+    this.dimensionGroupNumber = frameNumber;
   }
 
   /**
-   * @deprecated Use frameNumber instead. timePointIndex is zero-based while frameNumber starts at 1.
+   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
+   */
+  public get timePointIndex(): number {
+    console.warn(
+      'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
+    );
+    return this._dimensionGroupNumber - 1;
+  }
+
+  /**
+   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
    */
   public set timePointIndex(index: number) {
     console.warn(
-      'Warning: timePointIndex is deprecated. Please use frameNumber instead. Note that timePointIndex is zero-based while frameNumber starts at 1.'
+      'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
     );
-    this.frameNumber = index + 1;
+    this.dimensionGroupNumber = index + 1;
   }
 
   /**
@@ -127,43 +143,61 @@ export default class StreamingDynamicImageVolume
    * @param delta - The amount to scroll
    */
   public scroll(delta: number): void {
-    const newFrameNumber = this._frameNumber + delta;
+    const newDimensionGroupNumber = this._dimensionGroupNumber + delta;
 
-    if (newFrameNumber < 1) {
-      this.frameNumber = this.numFrames;
-    } else if (newFrameNumber > this.numFrames) {
-      this.frameNumber = 1;
+    if (newDimensionGroupNumber < 1) {
+      this.dimensionGroupNumber = this.numDimensionGroups;
+    } else if (newDimensionGroupNumber > this.numDimensionGroups) {
+      this.dimensionGroupNumber = 1;
     } else {
-      this.frameNumber = newFrameNumber;
+      this.dimensionGroupNumber = newDimensionGroupNumber;
     }
   }
 
+  public getCurrentDimensionGroupImageIds(): string[] {
+    return this._imageIdGroups[this._dimensionGroupNumber - 1];
+  }
+
+  /** @deprecated Use getCurrentDimensionGroupImageIds instead */
   public getCurrentFrameImageIds(): string[] {
-    return this._imageIdGroups[this._frameNumber - 1];
+    console.warn(
+      'Warning: getCurrentFrameImageIds is deprecated. Please use getCurrentDimensionGroupImageIds instead.'
+    );
+    return this.getCurrentDimensionGroupImageIds();
   }
 
   /**
-   * @deprecated Use getCurrentFrameImageIds instead
+   * @deprecated Use getCurrentDimensionGroupImageIds instead
    */
   public getCurrentTimePointImageIds(): string[] {
     console.warn(
-      'Warning: getCurrentTimePointImageIds is deprecated. Please use getCurrentFrameImageIds instead.'
+      'Warning: getCurrentTimePointImageIds is deprecated. Please use getCurrentDimensionGroupImageIds instead.'
     );
-    return this.getCurrentFrameImageIds();
+    return this.getCurrentDimensionGroupImageIds();
   }
 
-  public flatImageIdIndexToFrameNumber(flatImageIdIndex: number): number {
+  public flatImageIdIndexToDimensionGroupNumber(
+    flatImageIdIndex: number
+  ): number {
     return Math.floor(flatImageIdIndex / this._imageIdGroups[0].length) + 1;
   }
 
+  /** @deprecated Use flatImageIdIndexToDimensionGroupNumber instead */
+  public flatImageIdIndexToFrameNumber(flatImageIdIndex: number): number {
+    console.warn(
+      'Warning: flatImageIdIndexToFrameNumber is deprecated. Please use flatImageIdIndexToDimensionGroupNumber instead.'
+    );
+    return this.flatImageIdIndexToDimensionGroupNumber(flatImageIdIndex);
+  }
+
   /**
-   * @deprecated Use flatImageIdIndexToFrameNumber instead
+   * @deprecated Use flatImageIdIndexToDimensionGroupNumber instead
    */
   public flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number {
     console.warn(
-      'Warning: flatImageIdIndexToTimePointIndex is deprecated. Please use flatImageIdIndexToFrameNumber instead.'
+      'Warning: flatImageIdIndexToTimePointIndex is deprecated. Please use flatImageIdIndexToDimensionGroupNumber instead.'
     );
-    return this.flatImageIdIndexToFrameNumber(flatImageIdIndex) - 1;
+    return this.flatImageIdIndexToDimensionGroupNumber(flatImageIdIndex) - 1;
   }
 
   public flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number {
@@ -171,7 +205,7 @@ export default class StreamingDynamicImageVolume
   }
 
   /**
-   * Returns the splitting tag used to split the imageIds in 4D volume
+   * Returns the splitting tag used to split the imageIds in the volume
    */
   public get splittingTag(): string {
     return this._splittingTag;
@@ -195,65 +229,83 @@ export default class StreamingDynamicImageVolume
   };
 
   /**
-   * Checks if a specific frame is fully loaded
-   * @param frameNumber - The frame number to check (1-based)
-   * @returns boolean indicating if the frame is fully loaded
+   * Checks if a specific dimension group is fully loaded
+   * @param dimensionGroupNumber - The dimension group number to check (1-based)
+   * @returns boolean indicating if the dimension group is fully loaded
    */
+  public isDimensionGroupLoaded(dimensionGroupNumber: number): boolean {
+    return this._loadedDimensionGroups.has(dimensionGroupNumber);
+  }
+
+  /** @deprecated Use isDimensionGroupLoaded instead */
   public isFrameLoaded(frameNumber: number): boolean {
-    return this._loadedFrames.has(frameNumber);
+    console.warn(
+      'Warning: isFrameLoaded is deprecated. Please use isDimensionGroupLoaded instead.'
+    );
+    return this.isDimensionGroupLoaded(frameNumber);
   }
 
   /**
-   * @deprecated Use isFrameLoaded instead
+   * @deprecated Use isDimensionGroupLoaded instead
    */
   public isTimePointLoaded(timePointIndex: number): boolean {
     console.warn(
-      'Warning: isTimePointLoaded is deprecated. Please use isFrameLoaded instead. Note that timePointIndex is zero-based while frameNumber starts at 1.'
+      'Warning: isTimePointLoaded is deprecated. Please use isDimensionGroupLoaded instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
     );
-    return this.isFrameLoaded(timePointIndex + 1);
+    return this.isDimensionGroupLoaded(timePointIndex + 1);
   }
 
   /**
-   * Marks a frame as fully loaded
-   * @param frameNumber - The frame number to mark as loaded (1-based)
+   * Marks a dimension group as fully loaded
+   * @param dimensionGroupNumber - The dimension group number to mark as loaded (1-based)
    */
-  private markFrameAsLoaded(frameNumber: number): void {
-    this._loadedFrames.add(frameNumber);
+  private markDimensionGroupAsLoaded(dimensionGroupNumber: number): void {
+    this._loadedDimensionGroups.add(dimensionGroupNumber);
 
-    // Trigger new frame-based event
-    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_FRAME_NUMBER_LOADED, {
+    // Trigger new dimension group-based event
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED, {
       volumeId: this.volumeId,
-      frameNumber,
+      frameNumber: dimensionGroupNumber,
     });
 
     // Trigger deprecated time point event for backward compatibility
     triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_LOADED, {
       volumeId: this.volumeId,
-      timePointIndex: frameNumber - 1,
+      timePointIndex: dimensionGroupNumber - 1,
     });
   }
 
-  protected checkFrameCompletion(imageIdIndex: number): void {
-    const frameNumber = this.flatImageIdIndexToFrameNumber(imageIdIndex);
-    const imageIdsInFrame = this._imageIdGroups[frameNumber - 1];
+  protected checkDimensionGroupCompletion(imageIdIndex: number): void {
+    const dimensionGroupNumber =
+      this.flatImageIdIndexToDimensionGroupNumber(imageIdIndex);
+    const imageIdsInDimensionGroup =
+      this._imageIdGroups[dimensionGroupNumber - 1];
 
-    const allLoaded = imageIdsInFrame.every((imageId) => {
+    const allLoaded = imageIdsInDimensionGroup.every((imageId) => {
       const index = this.getImageIdIndex(imageId);
       return this.cachedFrames[index] === ImageQualityStatus.FULL_RESOLUTION;
     });
 
-    if (allLoaded && !this.isFrameLoaded(frameNumber)) {
-      this.markFrameAsLoaded(frameNumber);
+    if (allLoaded && !this.isDimensionGroupLoaded(dimensionGroupNumber)) {
+      this.markDimensionGroupAsLoaded(dimensionGroupNumber);
     }
   }
 
+  /** @deprecated Use checkDimensionGroupCompletion instead */
+  protected checkFrameCompletion(imageIdIndex: number): void {
+    console.warn(
+      'Warning: checkFrameCompletion is deprecated. Please use checkDimensionGroupCompletion instead.'
+    );
+    this.checkDimensionGroupCompletion(imageIdIndex);
+  }
+
   /**
-   * @deprecated Use checkFrameCompletion instead
+   * @deprecated Use checkDimensionGroupCompletion instead
    */
   protected checkTimePointCompletion(imageIdIndex: number): void {
     console.warn(
-      'Warning: checkTimePointCompletion is deprecated. Please use checkFrameCompletion instead.'
+      'Warning: checkTimePointCompletion is deprecated. Please use checkDimensionGroupCompletion instead.'
     );
-    this.checkFrameCompletion(imageIdIndex);
+    this.checkDimensionGroupCompletion(imageIdIndex);
   }
 }

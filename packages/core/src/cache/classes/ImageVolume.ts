@@ -83,8 +83,9 @@ export class ImageVolume {
   voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
+  // @deprecated
   numTimePoints? = null as number;
-  numFrames? = null as number;
+  numFrames = null as number;
 
   constructor(props: ImageVolumeProps) {
     const {

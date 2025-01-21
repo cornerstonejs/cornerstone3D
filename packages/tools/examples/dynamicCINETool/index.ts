@@ -32,7 +32,7 @@ const {
   utilities: csToolsUtilities,
 } = cornerstoneTools;
 
-const MAX_NUM_FRAMES = 40;
+const MAX_NUM_DIMENSION_GROUPS = 40;
 
 // If needed a checkbox may be added to the UI instead
 const dynamicCineEnabled = true;
@@ -70,14 +70,14 @@ let activeElement = null;
 // ======== Set up page ======== //
 setTitleAndDescription(
   'CINE Tool - 4D Volumes',
-  'Show the usage of the CINE Tool and 4D volumes.'
+  'Show the usage of the CINE Tool and 4D volumes with dimension groups.'
 );
 
 function initLayout() {
   const content = document.getElementById('content');
   const stagesContainer = document.createElement('div');
   const firstStageContainer = createFirstStageLayout({
-    onLoadTimePoints: loadFrames,
+    onLoadDimensionGroups: loadDimensionGroups,
   });
 
   const secondStageContainer = createSecondStageLayout({
@@ -228,11 +228,11 @@ function initViewports(volume, elements) {
   return viewportIds;
 }
 
-async function createVolume(numFrames: number): Promise<any> {
+async function createVolume(numDimensionGroups: number): Promise<any> {
   const { metaDataManager } = cornerstoneDICOMImageLoader.wadors;
 
-  if (numFrames < 1 || numFrames > MAX_NUM_FRAMES) {
-    throw new Error('Number of frames is out of range');
+  if (numDimensionGroups < 1 || numDimensionGroups > MAX_NUM_DIMENSION_GROUPS) {
+    throw new Error('Number of dimension groups is out of range');
   }
 
   let imageIds = await createImageIdsAndCacheMetaData({
@@ -243,11 +243,12 @@ async function createVolume(numFrames: number): Promise<any> {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const NUM_IMAGES_PER_FRAME = 235;
-  const TOTAL_NUM_IMAGES = MAX_NUM_FRAMES * NUM_IMAGES_PER_FRAME;
-  const numImagesToLoad = numFrames * NUM_IMAGES_PER_FRAME;
+  const NUM_IMAGES_PER_DIMENSION_GROUP = 235;
+  const TOTAL_NUM_IMAGES =
+    MAX_NUM_DIMENSION_GROUPS * NUM_IMAGES_PER_DIMENSION_GROUP;
+  const numImagesToLoad = numDimensionGroups * NUM_IMAGES_PER_DIMENSION_GROUP;
 
-  // Load the last N time points because they have a better image quality
+  // Load the last N dimension groups because they have a better image quality
   // and first ones are white or contains only a few black pixels
   const firstInstanceNumber = TOTAL_NUM_IMAGES - numImagesToLoad + 1;
 
@@ -346,7 +347,7 @@ function createToolGroups() {
 
   // Set the tool group on the viewport. Add only the first three viewports
   // because crosshairs can work with up to three viewports
-  viewportIds.slice(0, 3).forEach((viewportId, i) => {
+  viewportIds.slice(0, 3).forEach((viewportId) => {
     mprToolGroup.addViewport(viewportId, renderingEngineId);
   });
 
@@ -358,7 +359,7 @@ function createToolGroups() {
 /**
  * Runs the demo
  */
-async function loadFrames(numFrames) {
+async function loadDimensionGroups(numDimensionGroups: number): Promise<void> {
   // Init Cornerstone and related libraries
   await initDemo();
 
@@ -369,7 +370,7 @@ async function loadFrames(numFrames) {
   const elements = initViewportLayout();
 
   // Create and load PT volume
-  const volume = await createVolume(numFrames);
+  const volume = await createVolume(numDimensionGroups);
 
   // Initialize cornerstone viewports
   initViewports(volume, elements);
@@ -385,14 +386,18 @@ async function loadFrames(numFrames) {
 }
 
 function startCine() {
-  csToolsUtilities.cine.playClip(activeElement, {
-    framesPerSecond,
-    dynamicCineEnabled,
-  });
+  if (activeElement) {
+    csToolsUtilities.cine.playClip(activeElement, {
+      framesPerSecond,
+      dynamicCineEnabled,
+    });
+  }
 }
 
 function stopCine() {
-  csToolsUtilities.cine.stopClip(activeElement);
+  if (activeElement) {
+    csToolsUtilities.cine.stopClip(activeElement);
+  }
 }
 
 function onFramesPerSecondUpdated(value) {
@@ -404,7 +409,7 @@ function onFramesPerSecondUpdated(value) {
  * Updated active element's style and stores it
  * @param element - Cornerstone element
  */
-function setActiveElement(element) {
+function setActiveElement(element: HTMLDivElement) {
   if (activeElement) {
     activeElement.style.border = inactiveViewportBorder;
   }
@@ -415,15 +420,19 @@ function setActiveElement(element) {
   const { framesPerSecond: fps = defaultFramesPerSecond } =
     csToolsUtilities.cine.getToolState(activeElement) ?? {};
 
-  const fpsSliderElem = <HTMLInputElement>document.querySelector('#fpsSlider');
-  const fpsSliderLabelElem = <HTMLElement>(
-    document.querySelector('#fpsSlider-label')
-  );
+  const fpsSliderElem = document.querySelector(
+    '#fpsSlider'
+  ) as HTMLInputElement;
+  const fpsSliderLabelElem = document.querySelector(
+    '#fpsSlider-label'
+  ) as HTMLElement;
 
   // Update all FPS related inputs/vars
   framesPerSecond = fps;
-  fpsSliderElem.value = fps.toString();
-  fpsSliderLabelElem.innerText = ` Frames per second: ${fps}`;
+  if (fpsSliderElem && fpsSliderLabelElem) {
+    fpsSliderElem.value = fps.toString();
+    fpsSliderLabelElem.innerText = ` Frames per second: ${fps}`;
+  }
 }
 
 initLayout();
