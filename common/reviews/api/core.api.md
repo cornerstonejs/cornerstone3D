@@ -3599,8 +3599,6 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
     // (undocumented)
     protected checkDimensionGroupCompletion(imageIdIndex: number): void;
     // (undocumented)
-    protected checkFrameCompletion(imageIdIndex: number): void;
-    // (undocumented)
     protected checkTimePointCompletion(imageIdIndex: number): void;
     // (undocumented)
     get dimensionGroupNumber(): number;
@@ -3614,12 +3612,7 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
     // (undocumented)
     flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number;
     // (undocumented)
-    get frameNumber(): number;
-    set frameNumber(frameNumber: number);
-    // (undocumented)
     getCurrentDimensionGroupImageIds(): string[];
-    // (undocumented)
-    getCurrentFrameImageIds(): string[];
     // (undocumented)
     getCurrentTimePointImageIds(): string[];
     // (undocumented)
@@ -3658,8 +3651,6 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
     // (undocumented)
     isDimensionGroupLoaded(dimensionGroupNumber: number): boolean;
     // (undocumented)
-    isFrameLoaded(frameNumber: number): boolean;
-    // (undocumented)
     isTimePointLoaded(timePointIndex: number): boolean;
     // (undocumented)
     numDimensionGroups: number;
@@ -3669,9 +3660,9 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
     scroll(delta: number): void;
     // (undocumented)
     get splittingTag(): string;
+    set timePointIndex(index: number);
     // (undocumented)
     get timePointIndex(): number;
-    set timePointIndex(index: number);
 }
 
 // @public (undocumented)
