@@ -1058,6 +1058,15 @@ export default class VoxelManager<T> {
     };
 
     // @ts-ignore
+    voxelManager.setTimePoint = (newTimePoint: number) => {
+      console.warn(
+        'Warning: setTimePoint is deprecated. Please use setDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
+      );
+      // @ts-ignore
+      voxelManager.setDimensionGroupNumber(newTimePoint + 1);
+    };
+
+    // @ts-ignore
     voxelManager.setDimensionGroupNumber = (
       newDimensionGroupNumber: number
     ) => {
@@ -1071,23 +1080,6 @@ export default class VoxelManager<T> {
     };
 
     // @ts-ignore
-    voxelManager.setTimePoint = (newTimePoint: number) => {
-      console.warn(
-        'Warning: setTimePoint is deprecated. Please use setDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
-      );
-      // @ts-ignore
-      voxelManager.setDimensionGroupNumber(newTimePoint + 1);
-    };
-
-    // @ts-ignore
-    voxelManager.getAtIndexAndDimensionGroup = (
-      index: number,
-      dimensionGroupNumber: number
-    ) => {
-      return voxelGroups[dimensionGroupNumber - 1]._get(index);
-    };
-
-    // @ts-ignore
     voxelManager.getAtIndexAndTimePoint = (index: number, tp: number) => {
       console.warn(
         'Warning: getAtIndexAndTimePoint is deprecated. Please use getAtIndexAndDimensionGroup instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
@@ -1097,10 +1089,11 @@ export default class VoxelManager<T> {
     };
 
     // @ts-ignore
-    voxelManager.getDimensionGroupScalarData = (
+    voxelManager.getAtIndexAndDimensionGroup = (
+      index: number,
       dimensionGroupNumber: number
     ) => {
-      return voxelGroups[dimensionGroupNumber - 1].getCompleteScalarDataArray();
+      return voxelGroups[dimensionGroupNumber - 1]._get(index);
     };
 
     // @ts-ignore
@@ -1113,8 +1106,10 @@ export default class VoxelManager<T> {
     };
 
     // @ts-ignore
-    voxelManager.getCurrentDimensionGroupScalarData = () => {
-      return voxelGroups[activeDimensionGroup].getCompleteScalarDataArray();
+    voxelManager.getDimensionGroupScalarData = (
+      dimensionGroupNumber: number
+    ) => {
+      return voxelGroups[dimensionGroupNumber - 1].getCompleteScalarDataArray();
     };
 
     // @ts-ignore
@@ -1127,8 +1122,8 @@ export default class VoxelManager<T> {
     };
 
     // @ts-ignore
-    voxelManager.getCurrentDimensionGroupNumber = () => {
-      return activeDimensionGroup + 1;
+    voxelManager.getCurrentDimensionGroupScalarData = () => {
+      return voxelGroups[activeDimensionGroup].getCompleteScalarDataArray();
     };
 
     // @ts-ignore
@@ -1137,6 +1132,11 @@ export default class VoxelManager<T> {
         'Warning: getCurrentTimePoint is deprecated. Please use getCurrentDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       return activeDimensionGroup;
+    };
+
+    // @ts-ignore
+    voxelManager.getCurrentDimensionGroupNumber = () => {
+      return activeDimensionGroup + 1;
     };
 
     return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;
