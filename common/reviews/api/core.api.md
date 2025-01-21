@@ -3606,8 +3606,6 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
     // (undocumented)
     flatImageIdIndexToDimensionGroupNumber(flatImageIdIndex: number): number;
     // (undocumented)
-    flatImageIdIndexToFrameNumber(flatImageIdIndex: number): number;
-    // (undocumented)
     flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number;
     // (undocumented)
     flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number;
