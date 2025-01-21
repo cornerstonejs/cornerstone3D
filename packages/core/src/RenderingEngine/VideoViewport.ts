@@ -35,6 +35,7 @@ import { getOrCreateCanvas } from './helpers';
 import CanvasActor from './CanvasActor';
 import cache from '../cache/cache';
 import uuidv4 from '../utilities/uuidv4';
+import FrameRange from '../utilities/FrameRange';
 import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 
 /**
@@ -474,6 +475,19 @@ class VideoViewport extends Viewport {
     this.frameRange = [frameRange[0], frameRange[1]];
   }
 
+  public getSliceIndexForImage(reference: string | ViewReference) {
+    if (!reference) {
+      return;
+    }
+    if (typeof reference === 'string') {
+      return FrameRange.imageIdToFrameStart(reference);
+    }
+    if (reference.referencedImageId) {
+      return FrameRange.imageIdToFrameStart(reference.referencedImageId);
+    }
+    return;
+  }
+
   public getFrameRange(): [number, number] {
     return this.frameRange;
   }
@@ -771,13 +785,8 @@ class VideoViewport extends Viewport {
    *
    * @returns an imageID for video
    */
-  public getCurrentImageId() {
-    const current = this.imageId.replace(
-      '/frames/1',
-      this.isPlaying
-        ? `/frames/${this.frameRange[0]}-${this.frameRange[1]}`
-        : `/frames/${this.getFrameNumber()}`
-    );
+  public getCurrentImageId(index = this.getCurrentImageIdIndex()) {
+    const current = this.imageId.replace('/frames/1', `/frames/${index + 1}`);
     return current;
   }
 
@@ -810,7 +819,7 @@ class VideoViewport extends Viewport {
     options: ReferenceCompatibleOptions = {}
   ): boolean {
     let { imageURI } = options;
-    const { referencedImageId, sliceIndex: sliceIndex } = viewRef;
+    const { referencedImageId, sliceIndex, multiSliceReference } = viewRef;
     if (!super.isReferenceViewable(viewRef)) {
       return false;
     }
@@ -827,8 +836,11 @@ class VideoViewport extends Viewport {
       return true;
     }
     const currentIndex = this.getSliceIndex();
-    if (Array.isArray(sliceIndex)) {
-      return currentIndex >= sliceIndex[0] && currentIndex <= sliceIndex[1];
+    if (multiSliceReference) {
+      const rangeEndSliceIndex = FrameRange.imageIdToFrameEnd(
+        multiSliceReference.referencedImageId
+      );
+      return currentIndex >= sliceIndex && currentIndex <= rangeEndSliceIndex;
     }
     if (sliceIndex !== undefined) {
       return currentIndex === sliceIndex;
@@ -866,16 +878,25 @@ class VideoViewport extends Viewport {
   public getViewReference(
     viewRefSpecifier?: ViewReferenceSpecifier
   ): ViewReference {
-    let sliceIndex = viewRefSpecifier?.sliceIndex;
-    if (!sliceIndex) {
-      sliceIndex = this.isPlaying
-        ? [this.frameRange[0] - 1, this.frameRange[1] - 1]
-        : this.getCurrentImageIdIndex();
-    }
+    const sliceIndex =
+      viewRefSpecifier?.sliceIndex ??
+      (this.isPlaying ? this.frameRange[0] : this.getCurrentImageIdIndex());
+    const rangeEndSliceIndex =
+      viewRefSpecifier?.rangeEndSliceIndex ??
+      (this.isPlaying ? this.frameRange[1] - 1 : undefined);
+    const multiSliceReference =
+      rangeEndSliceIndex > sliceIndex
+        ? {
+            sliceIndex: rangeEndSliceIndex,
+            referencedImageId: this.getCurrentImageId(rangeEndSliceIndex),
+          }
+        : undefined;
+
     return {
       ...super.getViewReference(viewRefSpecifier),
       referencedImageId: this.getViewReferenceId(viewRefSpecifier),
-      sliceIndex: sliceIndex,
+      sliceIndex,
+      multiSliceReference,
     };
   }
 

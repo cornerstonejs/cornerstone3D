@@ -1188,6 +1188,22 @@ interface FlipDirection {
 }
 
 // @public (undocumented)
+class FrameRange {
+    // (undocumented)
+    protected static frameRangeExtractor: RegExp;
+    // (undocumented)
+    protected static framesToImageId(imageId: string, range: FramesRange | string): string;
+    // (undocumented)
+    static framesToString(range: any): string;
+    // (undocumented)
+    static imageIdToFrameEnd(imageId: string): number;
+    // (undocumented)
+    protected static imageIdToFrames(imageId: string): FramesRange;
+    // (undocumented)
+    static imageIdToFrameStart(imageId: string): number;
+}
+
+// @public (undocumented)
 interface GeneralSeriesModuleMetadata {
     // (undocumented)
     modality: string;
@@ -3415,7 +3431,7 @@ export class StackViewport extends Viewport {
     // (undocumented)
     getCornerstoneImage: () => IImage;
     // (undocumented)
-    getCurrentImageId: () => string;
+    getCurrentImageId: (index?: number) => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
@@ -3453,6 +3469,8 @@ export class StackViewport extends Viewport {
     getRotation: () => number;
     // (undocumented)
     getSliceIndex: () => number;
+    // (undocumented)
+    getSliceIndexForImage(reference: string | ViewReference): number;
     // (undocumented)
     getSliceInfo(): {
         sliceIndex: number;
@@ -3914,6 +3932,7 @@ function updateVTKImageDataWithCornerstoneImage(sourceImageData: vtkImageData, i
 
 declare namespace utilities {
     export {
+        FrameRange,
         eventListener,
         invertRgbTransferFunction,
         createSigmoidRGBTransferFunction,
@@ -4042,7 +4061,7 @@ export class VideoViewport extends Viewport {
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
-    getCurrentImageId(): string;
+    getCurrentImageId(index?: number): string;
     // (undocumented)
     getCurrentImageIdIndex(): number;
     // (undocumented)
@@ -4085,6 +4104,8 @@ export class VideoViewport extends Viewport {
     protected getScalarData(): CanvasScalarData;
     // (undocumented)
     getSliceIndex(): number;
+    // (undocumented)
+    getSliceIndexForImage(reference: string | ViewReference): number;
     // (undocumented)
     getSliceViewInfo(): {
         width: number;
@@ -4329,7 +4350,7 @@ export class Viewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
-    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean | unknown;
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -4566,36 +4587,28 @@ interface ViewPresentationSelector {
 }
 
 // @public (undocumented)
-interface ViewReference {
-    // (undocumented)
-    bounds?: BoundsLPS;
-    // (undocumented)
-    cameraFocalPoint?: Point3;
-    // (undocumented)
+type ViewReference = {
     FrameOfReferenceUID?: string;
-    // (undocumented)
     referencedImageId?: string;
-    // (undocumented)
-    sliceIndex?: number | [number, number];
-    // (undocumented)
+    referencedImageURI?: string;
+    multiSliceReference?: ReferencedImageRange;
+    cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
-    // (undocumented)
     viewUp?: Point3;
-    // (undocumented)
+    sliceIndex?: number;
     volumeId?: string;
-}
+    bounds?: BoundsLPS;
+};
 
 // @public (undocumented)
-interface ViewReferenceSpecifier {
-    // (undocumented)
+type ViewReferenceSpecifier = {
+    sliceIndex?: number;
+    rangeEndSliceIndex?: number;
+    frameNumber?: number;
     forFrameOfReference?: boolean;
-    // (undocumented)
     points?: Point3[];
-    // (undocumented)
-    sliceIndex?: number | [number, number];
-    // (undocumented)
     volumeId?: string;
-}
+};
 
 // @public (undocumented)
 interface VOI {

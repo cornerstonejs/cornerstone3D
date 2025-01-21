@@ -1,7 +1,3 @@
-import { triggerEvent, eventTarget } from '@cornerstonejs/core';
-import Events from '../enums/Events';
-import type { Annotation } from '../types';
-
 export type FramesRange = [number, number] | number;
 
 /**
@@ -9,10 +5,14 @@ export type FramesRange = [number, number] | number;
  * Mostly used for the Video viewport, it allows references to
  * a range of frame values.
  */
-export default class AnnotationFrameRange {
+export default class FrameRange {
   protected static frameRangeExtractor =
     /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
+  /**
+   * This method will extract a single frame number or range of frame numbers
+   * from a multiframe image id containing a frame range.
+   */
   protected static imageIdToFrames(imageId: string): FramesRange {
     const match = imageId.match(this.frameRangeExtractor);
     if (!match || !match[2]) {
@@ -25,6 +25,20 @@ export default class AnnotationFrameRange {
     return range as FramesRange;
   }
 
+  public static imageIdToFrameEnd(imageId: string): number {
+    const range = this.imageIdToFrames(imageId);
+    return Array.isArray(range) ? range[1] : range;
+  }
+
+  public static imageIdToFrameStart(imageId: string): number {
+    const range = this.imageIdToFrames(imageId);
+    return Array.isArray(range) ? range[0] : range;
+  }
+
+  /**
+   * @returns A string range or single value representation of a range array
+   *    or single instance image.
+   */
   public static framesToString(range) {
     if (Array.isArray(range)) {
       return `${range[0]}-${range[1]}`;
@@ -32,6 +46,7 @@ export default class AnnotationFrameRange {
     return String(range);
   }
 
+  /** Applies the range string to the given image id as a frame range. */
   protected static framesToImageId(
     imageId: string,
     range: FramesRange | string
@@ -45,34 +60,5 @@ export default class AnnotationFrameRange {
       this.frameRangeExtractor,
       `${match[1]}${newRangeString}`
     );
-  }
-
-  /**
-   * Sets the range of frames to associate with the given annotation.
-   * The range can be a single frame number (1 based according to DICOM),
-   * or a range of values in the format `min-max` where min, max are inclusive
-   * Modifies the referencedImageID to specify the updated URL.
-   */
-  public static setFrameRange(
-    annotation: Annotation,
-    range: FramesRange | string,
-    eventBase?: { viewportId; renderingEngineId }
-  ) {
-    const { referencedImageId } = annotation.metadata;
-    annotation.metadata.referencedImageId = this.framesToImageId(
-      referencedImageId,
-      range
-    );
-    const eventDetail = {
-      ...eventBase,
-      annotation,
-    };
-    triggerEvent(eventTarget, Events.ANNOTATION_MODIFIED, eventDetail);
-  }
-
-  public static getFrameRange(
-    annotation: Annotation
-  ): number | [number, number] {
-    return this.imageIdToFrames(annotation.metadata.referencedImageId);
   }
 }

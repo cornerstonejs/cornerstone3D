@@ -1729,7 +1729,7 @@ class Viewport {
    *      a different slice index in the same set of images.
    */
   public getViewReference(
-    viewRefSpecifier: ViewReferenceSpecifier = {}
+    viewRefSpecifier?: ViewReferenceSpecifier
   ): ViewReference {
     const {
       focalPoint: cameraFocalPoint,
@@ -1741,7 +1741,7 @@ class Viewport {
       cameraFocalPoint,
       viewPlaneNormal,
       viewUp,
-      sliceIndex: viewRefSpecifier.sliceIndex ?? this.getSliceIndex(),
+      sliceIndex: viewRefSpecifier?.sliceIndex ?? this.getSliceIndex(),
     };
     return target;
   }
@@ -1756,7 +1756,7 @@ class Viewport {
   public isReferenceViewable(
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
-  ): boolean | unknown {
+  ): boolean {
     if (
       viewRef.FrameOfReferenceUID &&
       viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
