@@ -2623,6 +2623,7 @@ function generateContourSetsFromLabelmap({ segmentations }: {
 
 // @public (undocumented)
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: Enums_2.GenerateImageType, options: {
+    dimensionGroupNumbers?: number[];
     frameNumbers?: number[];
 }): Float32Array;
 
@@ -2738,9 +2739,10 @@ function getCurrentLabelmapImageIdForViewport(viewportId: string, segmentationId
 
 // @public (undocumented)
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
-    frameNumbers?: any;
-    maskVolumeId?: any;
-    worldCoordinate?: any;
+    dimensionGroupNumbers?: number[];
+    frameNumbers?: number[];
+    maskVolumeId?: string;
+    worldCoordinate?: Types_2.Point3;
 }): number[] | number[][];
 
 // @public (undocumented)
@@ -6697,6 +6699,7 @@ function updateSegmentations(segmentationUpdateArray: {
 
 // @public (undocumented)
 function updateVolumeFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: Enums_2.GenerateImageType, options: {
+    dimensionGroupNumbers?: number[];
     frameNumbers?: number[];
     targetVolume: Types_2.IImageVolume;
 }): void;

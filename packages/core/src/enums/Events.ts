@@ -255,12 +255,28 @@ enum Events {
   COLORMAP_MODIFIED = 'CORNERSTONE_COLORMAP_MODIFIED',
 
   /**
+   * Dynamic image volume dimension group number changed
+   * The first dimension group number is 1
+   */
+  DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED = 'DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED',
+
+  /**
    * Dynamic image volume time point index changed
+   * The first timepoint index is 0
+   * @deprecated use DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED instead
    */
   DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = 'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED',
 
   /**
+   * Dynamic image volume dimension group loaded
+   * The first dimension group number is 1
+   */
+  DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED = 'DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED',
+
+  /**
    * Dynamic image volume time point loaded
+   * The first timepoint starts at 0
+   * @deprecated use DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED instead
    */
   DYNAMIC_VOLUME_TIME_POINT_LOADED = 'DYNAMIC_VOLUME_TIME_POINT_LOADED',
 
