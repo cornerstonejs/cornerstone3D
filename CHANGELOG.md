@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.5...v2.16.0) (2025-01-21)
+
+### Features
+
+- Add range support for key image tool ([#1743](https://github.com/cornerstonejs/cornerstone3D/issues/1743)) ([6dff931](https://github.com/cornerstonejs/cornerstone3D/commit/6dff9313f7e78bea6f45d610cc20e781b73103f4))
+
 ## [2.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.4...v2.15.5) (2025-01-20)
 
 ### Bug Fixes
