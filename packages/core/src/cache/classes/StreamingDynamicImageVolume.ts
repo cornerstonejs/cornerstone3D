@@ -78,6 +78,18 @@ export default class StreamingDynamicImageVolume
   }
 
   /**
+   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
+   */
+  public set timePointIndex(index: number) {
+    console.warn(
+      'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
+    );
+
+    // Convert zero-based timePointIndex to one-based dimensionGroupNumber
+    this.dimensionGroupNumber = index + 1;
+  }
+
+  /**
    * Set the active dimension group number which also updates the active scalar data
    * Dimension group numbers are 1-based.
    *
@@ -96,26 +108,17 @@ export default class StreamingDynamicImageVolume
 
     triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED, {
       volumeId: this.volumeId,
-      frameNumber: dimensionGroupNumber,
-      numFrames: this.numDimensionGroups,
+      dimensionGroupNumber: dimensionGroupNumber,
+      numDimensionGroups: this.numDimensionGroups,
       splittingTag: this.splittingTag,
     });
-  }
 
-  /** @deprecated Use dimensionGroupNumber instead */
-  public get frameNumber(): number {
-    console.warn(
-      'Warning: frameNumber is deprecated. Please use dimensionGroupNumber instead.'
-    );
-    return this._dimensionGroupNumber;
-  }
-
-  /** @deprecated Use dimensionGroupNumber instead */
-  public set frameNumber(frameNumber: number) {
-    console.warn(
-      'Warning: frameNumber is deprecated. Please use dimensionGroupNumber instead.'
-    );
-    this.dimensionGroupNumber = frameNumber;
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED, {
+      volumeId: this.volumeId,
+      timePointIndex: dimensionGroupNumber - 1,
+      numTimePoints: this.numDimensionGroups,
+      splittingTag: this.splittingTag,
+    });
   }
 
   /**
@@ -126,16 +129,6 @@ export default class StreamingDynamicImageVolume
       'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
     );
     return this._dimensionGroupNumber - 1;
-  }
-
-  /**
-   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
-   */
-  public set timePointIndex(index: number) {
-    console.warn(
-      'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
-    );
-    this.dimensionGroupNumber = index + 1;
   }
 
   /**
@@ -156,14 +149,6 @@ export default class StreamingDynamicImageVolume
 
   public getCurrentDimensionGroupImageIds(): string[] {
     return this._imageIdGroups[this._dimensionGroupNumber - 1];
-  }
-
-  /** @deprecated Use getCurrentDimensionGroupImageIds instead */
-  public getCurrentFrameImageIds(): string[] {
-    console.warn(
-      'Warning: getCurrentFrameImageIds is deprecated. Please use getCurrentDimensionGroupImageIds instead.'
-    );
-    return this.getCurrentDimensionGroupImageIds();
   }
 
   /**
@@ -237,14 +222,6 @@ export default class StreamingDynamicImageVolume
     return this._loadedDimensionGroups.has(dimensionGroupNumber);
   }
 
-  /** @deprecated Use isDimensionGroupLoaded instead */
-  public isFrameLoaded(frameNumber: number): boolean {
-    console.warn(
-      'Warning: isFrameLoaded is deprecated. Please use isDimensionGroupLoaded instead.'
-    );
-    return this.isDimensionGroupLoaded(frameNumber);
-  }
-
   /**
    * @deprecated Use isDimensionGroupLoaded instead
    */
@@ -275,6 +252,16 @@ export default class StreamingDynamicImageVolume
     });
   }
 
+  /**
+   * @deprecated Use checkDimensionGroupCompletion instead
+   */
+  protected checkTimePointCompletion(imageIdIndex: number): void {
+    console.warn(
+      'Warning: checkTimePointCompletion is deprecated. Please use checkDimensionGroupCompletion instead.'
+    );
+    this.checkDimensionGroupCompletion(imageIdIndex);
+  }
+
   protected checkDimensionGroupCompletion(imageIdIndex: number): void {
     const dimensionGroupNumber =
       this.flatImageIdIndexToDimensionGroupNumber(imageIdIndex);
@@ -289,23 +276,5 @@ export default class StreamingDynamicImageVolume
     if (allLoaded && !this.isDimensionGroupLoaded(dimensionGroupNumber)) {
       this.markDimensionGroupAsLoaded(dimensionGroupNumber);
     }
-  }
-
-  /** @deprecated Use checkDimensionGroupCompletion instead */
-  protected checkFrameCompletion(imageIdIndex: number): void {
-    console.warn(
-      'Warning: checkFrameCompletion is deprecated. Please use checkDimensionGroupCompletion instead.'
-    );
-    this.checkDimensionGroupCompletion(imageIdIndex);
-  }
-
-  /**
-   * @deprecated Use checkDimensionGroupCompletion instead
-   */
-  protected checkTimePointCompletion(imageIdIndex: number): void {
-    console.warn(
-      'Warning: checkTimePointCompletion is deprecated. Please use checkDimensionGroupCompletion instead.'
-    );
-    this.checkDimensionGroupCompletion(imageIdIndex);
   }
 }

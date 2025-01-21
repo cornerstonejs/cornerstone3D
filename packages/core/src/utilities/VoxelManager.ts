@@ -1104,15 +1104,6 @@ export default class VoxelManager<T> {
     };
 
     // @ts-ignore
-    voxelManager.getFrameScalarData = (frameNumber: number) => {
-      console.warn(
-        'Warning: getFrameScalarData is deprecated. Please use getDimensionGroupScalarData instead.'
-      );
-      // @ts-ignore
-      return voxelManager.getDimensionGroupScalarData(frameNumber);
-    };
-
-    // @ts-ignore
     voxelManager.getTimePointScalarData = (tp: number) => {
       console.warn(
         'Warning: getTimePointScalarData is deprecated. Please use getDimensionGroupScalarData instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
@@ -1138,15 +1129,6 @@ export default class VoxelManager<T> {
     // @ts-ignore
     voxelManager.getCurrentDimensionGroupNumber = () => {
       return activeDimensionGroup + 1;
-    };
-
-    // @ts-ignore
-    voxelManager.getCurrentFrameNumber = () => {
-      console.warn(
-        'Warning: getCurrentFrameNumber is deprecated. Please use getCurrentDimensionGroupNumber instead.'
-      );
-      // @ts-ignore
-      return voxelManager.getCurrentDimensionGroupNumber();
     };
 
     // @ts-ignore

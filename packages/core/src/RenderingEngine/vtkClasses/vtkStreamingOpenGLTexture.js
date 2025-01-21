@@ -183,7 +183,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const volume = cache.getVolume(model.volumeId);
 
     // loop over imageIds of the current time point and update the texture
-    const imageIds = volume.getCurrentFrameImageIds();
+    const imageIds = volume.getCurrentDimensionGroupImageIds();
 
     if (!imageIds.length) {
       return false;
