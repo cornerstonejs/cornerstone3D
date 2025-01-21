@@ -4596,7 +4596,6 @@ type ViewReference = {
     viewPlaneNormal?: Point3;
     viewUp?: Point3;
     sliceIndex?: number;
-    endRangeImageURI?: string;
     volumeId?: string;
     bounds?: BoundsLPS;
 };

@@ -198,12 +198,6 @@ export type ViewReference = {
   sliceIndex?: number;
 
   /**
-   * The end range image URI is the URI of the final included image in this
-   * measurement.  This allows specifying a range of values of interest.
-   */
-  endRangeImageURI?: string;
-
-  /**
    * VolumeId that the referencedImageId was chosen from
    */
   volumeId?: string;
