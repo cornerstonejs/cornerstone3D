@@ -279,6 +279,7 @@ export default class VoxelManager<T> {
         ],
         pointInShapeFn: isInObject,
         callback,
+        returnPoints,
       });
       return pointsInShape;
     }
