@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.16.0...v2.16.1) (2025-01-21)
+
+### Bug Fixes
+
+- take into account storePointData setting ([#1733](https://github.com/cornerstonejs/cornerstone3D/issues/1733)) ([916a788](https://github.com/cornerstonejs/cornerstone3D/commit/916a788dab481187eab6d4601230dcb176fb9037))
+
 # [2.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.5...v2.16.0) (2025-01-21)
 
 ### Features
