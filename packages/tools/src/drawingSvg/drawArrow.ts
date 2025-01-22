@@ -106,7 +106,7 @@ function legacyDrawArrow(
   }
 ): void {
   const { color = 'rgb(0, 255, 0)', width = 2, lineWidth, lineDash } = options;
-  debugger;
+
   // Drawing the head arrow with two lines
   // Variables to be used when creating the arrow
   const headLength = 10;
