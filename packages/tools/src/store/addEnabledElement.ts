@@ -108,25 +108,10 @@ function _createSvgAnnotationLayer(viewportId: string): SVGElement {
   feBlend.setAttribute('in2', 'matrixOut');
   feBlend.setAttribute('mode', 'normal');
 
-  // arrow marker
-  const arrowMarker = document.createElementNS(svgns, 'marker');
-  arrowMarker.setAttribute('id', `arrow-${svgLayerId}`);
-  arrowMarker.setAttribute('viewBox', '0 0 10 10');
-  arrowMarker.setAttribute('refX', '8');
-  arrowMarker.setAttribute('refY', '5');
-  arrowMarker.setAttribute('markerWidth', '5');
-  arrowMarker.setAttribute('markerHeight', '5');
-  arrowMarker.setAttribute('orient', 'auto');
-  arrowMarker.setAttribute('stroke', 'none');
-  const arrowPath = document.createElementNS(svgns, 'path');
-  arrowPath.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-  arrowMarker.appendChild(arrowPath);
-
   filter.appendChild(feOffset);
   filter.appendChild(feColorMatrix);
   filter.appendChild(feBlend);
   defs.appendChild(filter);
-  defs.appendChild(arrowMarker);
   svgLayer.appendChild(defs);
 
   return svgLayer;

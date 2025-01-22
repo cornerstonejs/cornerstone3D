@@ -11,15 +11,7 @@ export default function drawLine(
   lineUID: string,
   start: Types.Point2,
   end: Types.Point2,
-  options: {
-    color?: string;
-    width?: number;
-    lineWidth?: number;
-    lineDash?: string;
-    markerStartId?: string;
-    markerEndId?: string;
-    shadow?: boolean;
-  },
+  options = {},
   dataId = ''
 ): void {
   // if length is NaN return
@@ -35,7 +27,15 @@ export default function drawLine(
     markerStartId = null,
     markerEndId = null,
     shadow = false,
-  } = options;
+  } = options as {
+    color?: string;
+    width?: string;
+    lineWidth?: string;
+    lineDash?: string;
+    markerStartId?: string;
+    markerEndId?: string;
+    shadow?: boolean;
+  };
 
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
@@ -45,16 +45,6 @@ export default function drawLine(
   const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
   const layerId = svgDrawingHelper.svgLayerElement.id;
   const dropShadowStyle = shadow ? `filter:url(#shadow-${layerId});` : '';
-  const arrow = svgDrawingHelper.svgLayerElement.querySelector(
-    `#${markerEndId}-${layerId}`
-  );
-
-  if (arrow) {
-    arrow.setAttribute('fill', color);
-    const newstrokeWidth = strokeWidth >= 4 ? 3 : 6;
-    arrow.setAttribute('markerWidth', `${newstrokeWidth}`);
-    arrow.setAttribute('markerHeight', `${newstrokeWidth}`);
-  }
 
   const attributes = {
     x1: `${start[0]}`,
@@ -65,8 +55,8 @@ export default function drawLine(
     style: dropShadowStyle,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
-    'marker-start': markerStartId ? `url(#${markerStartId}-${layerId})` : '',
-    'marker-end': markerEndId ? `url(#${markerEndId}-${layerId})` : '',
+    'marker-start': markerStartId ? `url(#${markerStartId})` : '',
+    'marker-end': markerEndId ? `url(#${markerEndId})` : '',
   };
 
   if (existingLine) {

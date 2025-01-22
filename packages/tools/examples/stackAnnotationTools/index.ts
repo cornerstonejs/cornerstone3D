@@ -240,7 +240,9 @@ async function run() {
   toolGroup.addTool(BidirectionalTool.toolName);
   toolGroup.addTool(AngleTool.toolName);
   toolGroup.addTool(CobbAngleTool.toolName);
-  toolGroup.addTool(ArrowAnnotateTool.toolName);
+  toolGroup.addTool(ArrowAnnotateTool.toolName, {
+    arrowHeadStyle: 'standard',
+  });
   toolGroup.addTool(PlanarFreehandROITool.toolName);
   toolGroup.addTool(EraserTool.toolName);
   toolGroup.addTool(KeyImageTool.toolName);
