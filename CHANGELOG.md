@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.17.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.2...v2.17.3) (2025-01-22)
+
+### Bug Fixes
+
+- **ArrowAnnotate:** use svg marker to draw the arrow ([#1732](https://github.com/cornerstonejs/cornerstone3D/issues/1732)) ([42e8038](https://github.com/cornerstonejs/cornerstone3D/commit/42e80388ac567871542cae7e62d77d88da88f558))
+
 ## [2.17.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.1...v2.17.2) (2025-01-22)
 
 ### Bug Fixes
