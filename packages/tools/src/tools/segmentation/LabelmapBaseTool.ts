@@ -10,7 +10,10 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import type {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
@@ -117,7 +120,7 @@ export default class LabelmapBaseTool extends BaseTool {
     return this.memo as LabelmapMemo.LabelmapMemo;
   }
 
-  createEditData(element) {
+  protected createEditData(element) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -141,6 +144,23 @@ export default class LabelmapBaseTool extends BaseTool {
 
     const { representationData } = getSegmentation(segmentationId);
 
+    const editData = this.getEditData({
+      viewport,
+      representationData,
+      segmentsLocked,
+      segmentationId,
+    });
+
+    return editData;
+  }
+
+  protected getEditData({
+    viewport,
+    representationData,
+    segmentsLocked,
+    segmentationId,
+    volumeOperation = false,
+  }) {
     if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
         SegmentationRepresentations.Labelmap
@@ -194,7 +214,10 @@ export default class LabelmapBaseTool extends BaseTool {
       }
 
       // I hate this, but what can you do sometimes
-      if (this.configuration.activeStrategy.includes('SPHERE')) {
+      if (
+        this.configuration.activeStrategy.includes('SPHERE') ||
+        volumeOperation
+      ) {
         const referencedImageIds = viewport.getImageIds();
         const isValidVolumeForSphere =
           csUtils.isValidVolume(referencedImageIds);
@@ -217,10 +240,11 @@ export default class LabelmapBaseTool extends BaseTool {
             },
           };
         } else {
-          const labelmapImageIds = getStackSegmentationImageIdsForViewport(
-            viewport.id,
-            segmentationId
-          );
+          // We don't need to call `getStackSegmentationImageIdsForViewport` here
+          // because we've already ensured the stack constructs a volume,
+          // making the scenario for multi-image non-consistent metadata is not likely.
+          const { imageIds: labelmapImageIds } =
+            representationData.Labelmap as LabelmapSegmentationDataStack;
 
           if (!labelmapImageIds || labelmapImageIds.length === 1) {
             return {
