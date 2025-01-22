@@ -34,6 +34,7 @@ import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
+import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -59,6 +60,35 @@ export type PreviewData = {
    * by the user dragging to view more area.
    */
   isDrag: boolean;
+};
+
+type EditDataReturnType =
+  | {
+      volumeId: string;
+      referencedVolumeId: string;
+      segmentsLocked: number[];
+    }
+  | {
+      imageId: string;
+      segmentsLocked: number[];
+      override?: {
+        voxelManager:
+          | Types.IVoxelManager<number>
+          | Types.IVoxelManager<Types.RGB>;
+        imageData: vtkImageData;
+      };
+    }
+  | null;
+
+type ModifiedLabelmapToolOperationData = Omit<
+  LabelmapToolOperationData,
+  'voxelManager' | 'override'
+> & {
+  voxelManager?: Types.IVoxelManager<number> | Types.IVoxelManager<Types.RGB>;
+  override?: {
+    voxelManager: Types.IVoxelManager<number> | Types.IVoxelManager<Types.RGB>;
+    imageData: vtkImageData;
+  };
 };
 
 /**
@@ -120,7 +150,7 @@ export default class LabelmapBaseTool extends BaseTool {
     return this.memo as LabelmapMemo.LabelmapMemo;
   }
 
-  protected createEditData(element) {
+  protected createEditData(element): EditDataReturnType {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -160,7 +190,7 @@ export default class LabelmapBaseTool extends BaseTool {
     segmentsLocked,
     segmentationId,
     volumeOperation = false,
-  }) {
+  }): EditDataReturnType {
     if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
         SegmentationRepresentations.Labelmap
@@ -341,7 +371,7 @@ export default class LabelmapBaseTool extends BaseTool {
     };
   }
 
-  protected getOperationData(element?) {
+  protected getOperationData(element?): ModifiedLabelmapToolOperationData {
     const editData = this._editData || this.createEditData(element);
     const { segmentIndex, segmentationId, brushCursor } =
       this._hoverData || this.createHoverData(element);

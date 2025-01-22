@@ -3448,28 +3448,7 @@ export class LabelmapBaseTool extends BaseTool {
         acceptReject: boolean;
     }): unknown;
     // (undocumented)
-    createEditData(element: any): {
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageId?: undefined;
-        override?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    };
+    protected createEditData(element: any): EditDataReturnType;
     // (undocumented)
     protected createHoverData(element: any, centerCanvas?: any): {
         brushCursor: {
@@ -3511,78 +3490,15 @@ export class LabelmapBaseTool extends BaseTool {
         segmentColor: Types_2.Color;
     };
     // (undocumented)
-    protected getOperationData(element?: any): {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
-        override: {
-            voxelManager: Types_2.IVoxelManager<number>;
-            imageData: vtkImageData;
-        };
-        segmentsLocked: number[];
-        imageId?: string;
-        imageIds?: string[];
-        volumeId?: string;
-        referencedVolumeId?: string;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageId?: undefined;
-        override?: undefined;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
-        imageId: string;
-        segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
-        imageId: string;
-        segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    };
+    protected getEditData({ viewport, representationData, segmentsLocked, segmentationId, volumeOperation, }: {
+        viewport: any;
+        representationData: any;
+        segmentsLocked: any;
+        segmentationId: any;
+        volumeOperation?: boolean;
+    }): EditDataReturnType;
+    // (undocumented)
+    protected getOperationData(element?: any): ModifiedLabelmapToolOperationData;
     // (undocumented)
     protected _hoverData?: {
         brushCursor: any;
