@@ -863,26 +863,28 @@ class StackViewport extends Viewport {
 
     this.setInterpolationType(InterpolationType.LINEAR);
 
-    const transferFunction = this.getTransferFunction();
-    setTransferFunctionNodes(
-      transferFunction,
-      this.initialTransferFunctionNodes
-    );
+    if (!this.useCPURendering) {
+      const transferFunction = this.getTransferFunction();
+      setTransferFunctionNodes(
+        transferFunction,
+        this.initialTransferFunctionNodes
+      );
 
-    const nodes = getTransferFunctionNodes(transferFunction);
+      const nodes = getTransferFunctionNodes(transferFunction);
 
-    const RGBPoints = nodes.reduce((acc, node) => {
-      acc.push(node[0], node[1], node[2], node[3]);
-      return acc;
-    }, []);
+      const RGBPoints = nodes.reduce((acc, node) => {
+        acc.push(node[0], node[1], node[2], node[3]);
+        return acc;
+      }, []);
 
-    const defaultActor = this.getDefaultActor();
-    const matchedColormap = colormapUtils.findMatchingColormap(
-      RGBPoints,
-      defaultActor.actor
-    );
+      const defaultActor = this.getDefaultActor();
+      const matchedColormap = colormapUtils.findMatchingColormap(
+        RGBPoints,
+        defaultActor.actor
+      );
 
-    this.setColormap(matchedColormap);
+      this.setColormap(matchedColormap);
+    }
   }
 
   public resetToDefaultProperties(): void {
