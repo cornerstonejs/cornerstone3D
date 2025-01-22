@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.17.2](https://github.com/dcmjs-org/dcmjs/compare/v2.17.1...v2.17.2) (2025-01-22)
+
+### Bug Fixes
+
+-   **seg:** Refactor LabelmapBaseTool and SphereScissorsTool to fix sphere bug in stack ([#1772](https://github.com/dcmjs-org/dcmjs/issues/1772)) ([5eeda06](https://github.com/dcmjs-org/dcmjs/commit/5eeda0626a2722397aba910ae4bd4a5e650d32c6))
+
 ## [2.17.1](https://github.com/dcmjs-org/dcmjs/compare/v2.17.0...v2.17.1) (2025-01-22)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
