@@ -42,6 +42,9 @@ export default function hardcodedMetaDataProvider(type, imageId, imageIds) {
       rows: 1216,
       rowCosines: [1, 0, 0],
       columnCosines: [0, 1, 0],
+      // setting useDefaultValues to true signals the calibration values above cannot be trusted
+      // and units should be displayed in pixels
+      usingDefaultValues: true,
     };
 
     return imagePlaneModule;
