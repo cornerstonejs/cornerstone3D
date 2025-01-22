@@ -2121,6 +2121,8 @@ function drawPolyline(svgDrawingHelper: SVGDrawingHelper, annotationUID: string,
     lineWidth?: number;
     lineDash?: string;
     closePath?: boolean;
+    markerStartId?: string;
+    markerEndId?: string;
 }): void;
 
 // @public (undocumented)

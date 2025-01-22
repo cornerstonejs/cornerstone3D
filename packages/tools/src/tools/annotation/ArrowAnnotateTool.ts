@@ -71,6 +71,10 @@ class ArrowAnnotateTool extends AnnotationTool {
         changeTextCallback,
         preventHandleOutsideImage: false,
         arrowFirst: true,
+        // there are two styles for the arrow head, legacy and standard,
+        // where legacy uses two separate lines and standard uses a single line
+        // with a marker at the end.
+        arrowHeadStyle: 'legacy',
       },
     }
   ) {
@@ -723,10 +727,11 @@ class ArrowAnnotateTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const { color, lineWidth, lineDash } = this.getAnnotationStyle({
-        annotation,
-        styleSpecifier,
-      });
+      const { color, lineWidth, lineDash, markerSize } =
+        this.getAnnotationStyle({
+          annotation,
+          styleSpecifier,
+        });
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -778,6 +783,8 @@ class ArrowAnnotateTool extends AnnotationTool {
             color,
             width: lineWidth,
             lineDash: lineDash,
+            viaMarker: this.configuration.arrowHeadStyle !== 'legacy',
+            markerSize,
           }
         );
       } else {
@@ -791,6 +798,8 @@ class ArrowAnnotateTool extends AnnotationTool {
             color,
             width: lineWidth,
             lineDash: lineDash,
+            viaMarker: this.configuration.arrowHeadStyle !== 'legacy',
+            markerSize,
           }
         );
       }

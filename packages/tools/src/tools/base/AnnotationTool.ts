@@ -418,9 +418,10 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const visibility = isAnnotationVisible(annotationUID);
     const locked = isAnnotationLocked(annotationUID);
 
-    const lineWidth = getStyle('lineWidth') as number;
+    const lineWidth = getStyle('lineWidth') as string;
     const lineDash = getStyle('lineDash') as string;
     const color = getStyle('color') as string;
+    const markerSize = getStyle('markerSize') as string;
     const shadow = getStyle('shadow') as boolean;
     const textboxStyle = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
 
@@ -435,6 +436,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       fillOpacity: 0,
       shadow,
       textbox: textboxStyle,
+      markerSize,
     } as AnnotationStyle;
   }
 

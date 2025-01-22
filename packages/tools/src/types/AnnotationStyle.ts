@@ -18,7 +18,8 @@ type Properties =
   | 'fillOpacity'
   | 'textbox'
   | 'shadow'
-  | 'visibility';
+  | 'visibility'
+  | 'markerSize';
 
 export type AnnotationStyle = {
   [key in `${Properties}${States}${Modes}`]?:
