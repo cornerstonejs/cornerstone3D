@@ -1240,6 +1240,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
     options?: {
       annotationUID?: string;
       splineType?: SplineTypesEnum;
+      referencedImageId?: string;
+      viewplaneNormal?: Types.Point3;
+      viewUp?: Types.Point3;
     }
   ): SplineROIAnnotation => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
@@ -1254,32 +1257,56 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     const { viewport } = enabledElement;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+
+    let { viewPlaneNormal, viewUp } = viewport.getCamera();
+    if (options?.viewplaneNormal && options?.viewUp) {
+      viewPlaneNormal = options.viewplaneNormal;
+      viewUp = options.viewUp;
+    }
 
     // This is a workaround to access the protected method getReferencedImageId
     // we should make those static too
     const instance = new this();
 
-    const referencedImageId = instance.getReferencedImageId(
+    let referencedImageId = instance.getReferencedImageId(
       viewport,
       points[0],
       viewPlaneNormal,
       viewUp
     );
 
+    if (options?.referencedImageId) {
+      // If the provided referencedImageId is not the same as the one calculated
+      // by the camera positions, only set the referencedImageId. The scenario
+      // here is that only a referencedImageId is given in the options, which
+      // does not match the current camera position, so the user is wanting to
+      // apply the annotation to a specific image.
+      if (referencedImageId !== options.referencedImageId) {
+        viewPlaneNormal = undefined;
+        viewUp = undefined;
+      }
+      referencedImageId = options.referencedImageId;
+    }
+
     // Create appropriate spline instance based on type or default
     const splineType = options?.splineType || SplineTypesEnum.CatmullRom;
     const splineConfig = instance._getSplineConfig(splineType);
     const SplineClass = splineConfig.Class;
     const splineInstance = new SplineClass();
-    // Convert world points to canvas for the spline
-    const canvasPoints = points.map((point) => viewport.worldToCanvas(point));
-    splineInstance.setControlPoints(canvasPoints);
 
-    const splinePolylineCanvas = splineInstance.getPolylinePoints();
-    const splinePolylineWorld = splinePolylineCanvas.map((point) =>
-      viewport.canvasToWorld(point)
-    );
+    /**
+     * The following appears to be done when rendering the spline, so don't need
+     * to do it here. This is helpful anyways because if we are adding an
+     * annotation to an image/plane that is not currently displayed we can't get
+     * the canvas coordinates for the points.
+     */
+    // Convert world points to canvas for the spline
+    // const canvasPoints = points.map((point) => viewport.worldToCanvas(point));
+    // splineInstance.setControlPoints(canvasPoints);
+    // const splinePolylineCanvas = splineInstance.getPolylinePoints();
+    // const splinePolylineWorld = splinePolylineCanvas.map((point) =>
+    //   viewport.canvasToWorld(point)
+    // );
 
     const annotation = {
       annotationUID: options?.annotationUID || utilities.uuidv4(),
@@ -1295,7 +1322,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         },
         contour: {
           closed: true,
-          polyline: splinePolylineWorld,
+          // polyline: splinePolylineWorld,
         },
       },
       highlighted: false,
