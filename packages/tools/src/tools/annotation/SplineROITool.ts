@@ -1240,6 +1240,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     options?: {
       annotationUID?: string;
       splineType?: SplineTypesEnum;
+      instance?: SplineROITool;
       referencedImageId?: string;
       viewplaneNormal?: Types.Point3;
       viewUp?: Types.Point3;
@@ -1265,8 +1266,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
 
     // This is a workaround to access the protected method getReferencedImageId
-    // we should make those static too
-    const instance = new this();
+    // we should make those static too Use the provided instance if available so
+    // that correct configuration is used.
+    const instance = options.instance || new this();
 
     let referencedImageId = instance.getReferencedImageId(
       viewport,

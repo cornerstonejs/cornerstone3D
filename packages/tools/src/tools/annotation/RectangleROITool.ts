@@ -973,6 +973,7 @@ class RectangleROITool extends AnnotationTool {
     points: Types.Point3[],
     options?: {
       annotationUID?: string;
+      instance?: RectangleROITool;
       referencedImageId?: string;
       viewplaneNormal?: Types.Point3;
       viewUp?: Types.Point3;
@@ -993,7 +994,7 @@ class RectangleROITool extends AnnotationTool {
 
     // This is a workaround to access the protected method getReferencedImageId
     // we should make those static too
-    const instance = new this();
+    const instance = options.instance || new this();
 
     let referencedImageId = instance.getReferencedImageId(
       viewport,
