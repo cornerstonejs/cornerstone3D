@@ -76,7 +76,11 @@ class KeyImageTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const annotation = KeyImageTool.createAnnotationForViewport(viewport);
+    // Using `this.constructor` uses the correct class instance context if
+    // this tool is extended.
+    const annotation = (
+      this.constructor as typeof AnnotationTool
+    ).createAnnotationForViewport(viewport);
 
     addAnnotation(annotation, element);
 

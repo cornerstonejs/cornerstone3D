@@ -216,14 +216,15 @@ class ProbeTool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const annotation = ProbeTool.createAnnotationForViewport<ProbeAnnotation>(
-      viewport,
-      {
-        data: {
-          handles: { points: [<Types.Point3>[...worldPos]] },
-        },
-      }
-    );
+    // Using `this.constructor` uses the correct class instance context if
+    // this tool is extended.
+    const annotation = (
+      this.constructor as typeof AnnotationTool
+    ).createAnnotationForViewport<ProbeAnnotation>(viewport, {
+      data: {
+        handles: { points: [<Types.Point3>[...worldPos]] },
+      },
+    });
 
     addAnnotation(annotation, element);
 

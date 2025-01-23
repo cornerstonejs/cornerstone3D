@@ -67,6 +67,8 @@ class ArrowAnnotateTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
+        // Whether to ask for and render text box (label) on the annotation
+        renderTextBox: true,
         getTextCallback,
         changeTextCallback,
         preventHandleOutsideImage: false,
@@ -164,7 +166,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     const { arrowFirst } = this.configuration;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const annotation = {
+    const annotation: ArrowAnnotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
@@ -181,20 +183,21 @@ class ArrowAnnotateTool extends AnnotationTool {
           points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
           activeHandleIndex: null,
           arrowFirst,
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
         },
-        label: '',
       },
     };
+    if (!this.configuration.renderTextBox) {
+      annotation.data.handles.textBox = {
+        hasMoved: false,
+        worldPosition: <Types.Point3>[0, 0, 0],
+        worldBoundingBox: {
+          topLeft: <Types.Point3>[0, 0, 0],
+          topRight: <Types.Point3>[0, 0, 0],
+          bottomLeft: <Types.Point3>[0, 0, 0],
+          bottomRight: <Types.Point3>[0, 0, 0],
+        },
+      };
+    }
 
     addAnnotation(annotation, element);
 
@@ -372,22 +375,30 @@ class ArrowAnnotateTool extends AnnotationTool {
     }
 
     if (newAnnotation) {
-      this.configuration.getTextCallback((text) => {
-        if (!text) {
-          removeAnnotation(annotation.annotationUID);
-          triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-          this.editData = null;
-          this.isDrawing = false;
-          return;
-        }
-        annotation.data.text = text;
+      if (this.configuration.renderTextBox) {
+        this.configuration.getTextCallback((text) => {
+          if (!text) {
+            removeAnnotation(annotation.annotationUID);
+            triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+            this.editData = null;
+            this.isDrawing = false;
+            return;
+          }
+          annotation.data.text = text;
 
+          triggerAnnotationCompleted(annotation);
+          // This is only new if it wasn't already memoed
+          this.createMemo(element, annotation, { newAnnotation: !!this.memo });
+
+          triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+        });
+      } else {
         triggerAnnotationCompleted(annotation);
         // This is only new if it wasn't already memoed
         this.createMemo(element, annotation, { newAnnotation: !!this.memo });
 
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-      });
+      }
     } else {
       triggerAnnotationModified(annotation, element);
     }
@@ -801,54 +812,56 @@ class ArrowAnnotateTool extends AnnotationTool {
         continue;
       }
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
+      if (this.configuration.renderTextBox) {
+        const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+        if (!options.visibility) {
+          data.handles.textBox = {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          };
+          continue;
+        }
+
+        // Need to update to sync w/ annotation while unlinked/not moved
+        if (!data.handles.textBox.hasMoved) {
+          // linked to the point that doesn't have the arrowhead by default
+          const canvasTextBoxCoords = canvasCoordinates[1];
+
+          data.handles.textBox.worldPosition =
+            viewport.canvasToWorld(canvasTextBoxCoords);
+        }
+
+        const textBoxPosition = viewport.worldToCanvas(
+          data.handles.textBox.worldPosition
+        );
+
+        const textBoxUID = '1';
+        const boundingBox = drawLinkedTextBoxSvg(
+          svgDrawingHelper,
+          annotationUID,
+          textBoxUID,
+          [text],
+          textBoxPosition,
+          canvasCoordinates,
+          {},
+          options
+        );
+
+        const { x: left, y: top, width, height } = boundingBox;
+
+        data.handles.textBox.worldBoundingBox = {
+          topLeft: viewport.canvasToWorld([left, top]),
+          topRight: viewport.canvasToWorld([left + width, top]),
+          bottomLeft: viewport.canvasToWorld([left, top + height]),
+          bottomRight: viewport.canvasToWorld([left + width, top + height]),
         };
-        continue;
       }
-
-      // Need to update to sync w/ annotation while unlinked/not moved
-      if (!data.handles.textBox.hasMoved) {
-        // linked to the point that doesn't have the arrowhead by default
-        const canvasTextBoxCoords = canvasCoordinates[1];
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
-      }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        [text],
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;

@@ -133,6 +133,8 @@ class CircleROITool extends AnnotationTool {
         preventHandleOutsideImage: false,
         // Whether to store point data in the annotation
         storePointData: false,
+        // Whether to calculate and render text box (stats) on the annotation
+        renderTextBox: true,
         // Radius of the circle to draw  at the center point of the circle.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
@@ -182,7 +184,7 @@ class CircleROITool extends AnnotationTool {
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const annotation = {
+    const annotation: CircleROIAnnotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
@@ -196,25 +198,27 @@ class CircleROITool extends AnnotationTool {
       data: {
         label: '',
         handles: {
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
           points: [[...worldPos], [...worldPos]] as [
             Types.Point3, // center
             Types.Point3 // end
           ],
           activeHandleIndex: null,
         },
-        cachedStats: {},
       },
     };
+    if (this.configuration.renderTextBox) {
+      annotation.data.handles.textBox = {
+        hasMoved: false,
+        worldPosition: <Types.Point3>[0, 0, 0],
+        worldBoundingBox: {
+          topLeft: <Types.Point3>[0, 0, 0],
+          topRight: <Types.Point3>[0, 0, 0],
+          bottomLeft: <Types.Point3>[0, 0, 0],
+          bottomRight: <Types.Point3>[0, 0, 0],
+        },
+      };
+      annotation.data.cachedStats = {};
+    }
 
     addAnnotation(annotation, element);
 
@@ -659,66 +663,68 @@ class CircleROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
-      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
-      // force to recalculate the stats from the points
-      if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
-      ) {
-        data.cachedStats[targetId] = {
-          Modality: null,
-          area: null,
-          max: null,
-          mean: null,
-          stdDev: null,
-          areaUnit: null,
-          radius: null,
-          radiusUnit: null,
-          perimeter: null,
-        };
+      if (this.configuration.renderTextBox) {
+        // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
+        // force to recalculate the stats from the points
+        if (
+          !data.cachedStats[targetId] ||
+          data.cachedStats[targetId].areaUnit == null
+        ) {
+          data.cachedStats[targetId] = {
+            Modality: null,
+            area: null,
+            max: null,
+            mean: null,
+            stdDev: null,
+            areaUnit: null,
+            radius: null,
+            radiusUnit: null,
+            perimeter: null,
+          };
 
-        this._calculateCachedStats(
-          annotation,
-          viewport,
-          renderingEngine,
-          enabledElement
-        );
-      } else if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(
-          annotation,
-          viewport,
-          renderingEngine,
-          enabledElement
-        );
-        // If the invalidated data is as a result of volumeViewport manipulation
-        // of the tools, we need to invalidate the related viewports data, so that
-        // when scrolling to the related slice in which the tool were manipulated
-        // we re-render the correct tool position. This is due to stackViewport
-        // which doesn't have the full volume at each time, and we are only working
-        // on one slice at a time.
-        if (viewport instanceof VolumeViewport) {
-          const { referencedImageId } = annotation.metadata;
+          this._calculateCachedStats(
+            annotation,
+            viewport,
+            renderingEngine,
+            enabledElement
+          );
+        } else if (annotation.invalidated) {
+          this._throttledCalculateCachedStats(
+            annotation,
+            viewport,
+            renderingEngine,
+            enabledElement
+          );
+          // If the invalidated data is as a result of volumeViewport manipulation
+          // of the tools, we need to invalidate the related viewports data, so that
+          // when scrolling to the related slice in which the tool were manipulated
+          // we re-render the correct tool position. This is due to stackViewport
+          // which doesn't have the full volume at each time, and we are only working
+          // on one slice at a time.
+          if (viewport instanceof VolumeViewport) {
+            const { referencedImageId } = annotation.metadata;
 
-          // invalidate all the relevant stackViewports if they are not
-          // at the referencedImageId
-          for (const targetId in data.cachedStats) {
-            if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+            // invalidate all the relevant stackViewports if they are not
+            // at the referencedImageId
+            for (const targetId in data.cachedStats) {
+              if (targetId.startsWith('imageId')) {
+                const viewports = renderingEngine.getStackViewports();
 
-              const invalidatedStack = viewports.find((vp) => {
-                // The stack viewport that contains the imageId but is not
-                // showing it currently
-                const referencedImageURI =
-                  csUtils.imageIdToURI(referencedImageId);
-                const hasImageURI = vp.hasImageURI(referencedImageURI);
-                const currentImageURI = csUtils.imageIdToURI(
-                  vp.getCurrentImageId()
-                );
-                return hasImageURI && currentImageURI !== referencedImageURI;
-              });
+                const invalidatedStack = viewports.find((vp) => {
+                  // The stack viewport that contains the imageId but is not
+                  // showing it currently
+                  const referencedImageURI =
+                    csUtils.imageIdToURI(referencedImageId);
+                  const hasImageURI = vp.hasImageURI(referencedImageURI);
+                  const currentImageURI = csUtils.imageIdToURI(
+                    vp.getCurrentImageId()
+                  );
+                  return hasImageURI && currentImageURI !== referencedImageURI;
+                });
 
-              if (invalidatedStack) {
-                delete data.cachedStats[targetId];
+                if (invalidatedStack) {
+                  delete data.cachedStats[targetId];
+                }
               }
             }
           }
@@ -795,60 +801,62 @@ class CircleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
+      if (this.configuration.renderTextBox) {
+        const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+        if (!options.visibility) {
+          data.handles.textBox = {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          };
+          continue;
+        }
+
+        const textLines = this.configuration.getTextLines(data, targetId);
+        if (!textLines || textLines.length === 0) {
+          continue;
+        }
+
+        // Poor man's cached?
+        let canvasTextBoxCoords;
+
+        if (!data.handles.textBox.hasMoved) {
+          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
+
+          data.handles.textBox.worldPosition =
+            viewport.canvasToWorld(canvasTextBoxCoords);
+        }
+
+        const textBoxPosition = viewport.worldToCanvas(
+          data.handles.textBox.worldPosition
+        );
+
+        const textBoxUID = '1';
+        const boundingBox = drawLinkedTextBoxSvg(
+          svgDrawingHelper,
+          annotationUID,
+          textBoxUID,
+          textLines,
+          textBoxPosition,
+          canvasCoordinates,
+          {},
+          options
+        );
+
+        const { x: left, y: top, width, height } = boundingBox;
+
+        data.handles.textBox.worldBoundingBox = {
+          topLeft: viewport.canvasToWorld([left, top]),
+          topRight: viewport.canvasToWorld([left + width, top]),
+          bottomLeft: viewport.canvasToWorld([left, top + height]),
+          bottomRight: viewport.canvasToWorld([left + width, top + height]),
         };
-        continue;
       }
-
-      const textLines = this.configuration.getTextLines(data, targetId);
-      if (!textLines || textLines.length === 0) {
-        continue;
-      }
-
-      // Poor man's cached?
-      let canvasTextBoxCoords;
-
-      if (!data.handles.textBox.hasMoved) {
-        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
-      }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;

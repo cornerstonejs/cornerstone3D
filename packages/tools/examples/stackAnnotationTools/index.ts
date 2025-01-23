@@ -35,6 +35,16 @@ const {
   KeyImageTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
+/**
+ * Example of extending a tool to create a separate verison with different
+ * configuration.
+ */
+class SimpleRectangleROITool extends RectangleROITool {}
+SimpleRectangleROITool.toolName = 'SimpleRectangleROI';
+class SimpleCircleROITool extends CircleROITool {}
+SimpleCircleROITool.toolName = 'SimpleCircleROI';
+class SimpleArrowAnnotateTool extends ArrowAnnotateTool {}
+SimpleArrowAnnotateTool.toolName = 'SimpleArrowAnnotate';
 
 const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
@@ -116,6 +126,9 @@ const toolsNames = [
   ProbeTool.toolName,
   RectangleROITool.toolName,
   EllipticalROITool.toolName,
+  SimpleRectangleROITool.toolName,
+  SimpleCircleROITool.toolName,
+  SimpleArrowAnnotateTool.toolName,
   CircleROITool.toolName,
   BidirectionalTool.toolName,
   AngleTool.toolName,
@@ -217,6 +230,9 @@ async function run() {
   cornerstoneTools.addTool(ProbeTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(EllipticalROITool);
+  cornerstoneTools.addTool(SimpleRectangleROITool);
+  cornerstoneTools.addTool(SimpleCircleROITool);
+  cornerstoneTools.addTool(SimpleArrowAnnotateTool);
   cornerstoneTools.addTool(CircleROITool);
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(AngleTool);
@@ -236,6 +252,9 @@ async function run() {
   toolGroup.addTool(ProbeTool.toolName);
   toolGroup.addTool(RectangleROITool.toolName);
   toolGroup.addTool(EllipticalROITool.toolName);
+  toolGroup.addTool(SimpleRectangleROITool.toolName, { renderTextBox: false });
+  toolGroup.addTool(SimpleCircleROITool.toolName, { renderTextBox: false });
+  toolGroup.addTool(SimpleArrowAnnotateTool.toolName, { renderTextBox: false });
   toolGroup.addTool(CircleROITool.toolName);
   toolGroup.addTool(BidirectionalTool.toolName);
   toolGroup.addTool(AngleTool.toolName);
@@ -259,6 +278,9 @@ async function run() {
   toolGroup.setToolPassive(ProbeTool.toolName);
   toolGroup.setToolPassive(RectangleROITool.toolName);
   toolGroup.setToolPassive(EllipticalROITool.toolName);
+  toolGroup.setToolPassive(SimpleRectangleROITool.toolName);
+  toolGroup.setToolPassive(SimpleCircleROITool.toolName);
+  toolGroup.setToolPassive(SimpleArrowAnnotateTool.toolName);
   toolGroup.setToolPassive(CircleROITool.toolName);
   toolGroup.setToolPassive(BidirectionalTool.toolName);
   toolGroup.setToolPassive(AngleTool.toolName);

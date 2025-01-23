@@ -71,22 +71,23 @@ class VideoRedactionTool extends AnnotationTool {
     const { viewport } = enabledElement;
 
     this.isDrawing = true;
-    const annotation =
-      VideoRedactionTool.createAnnotationForViewport<VideoRedactionAnnotation>(
-        viewport,
-        {
-          data: {
-            handles: {
-              points: [
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-              ],
-            },
-          },
-        }
-      );
+
+    // Using `this.constructor` uses the correct class instance context if
+    // this tool is extended.
+    const annotation = (
+      this.constructor as typeof AnnotationTool
+    ).createAnnotationForViewport<VideoRedactionAnnotation>(viewport, {
+      data: {
+        handles: {
+          points: [
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+          ],
+        },
+      },
+    });
 
     addAnnotation(annotation, element);
 
