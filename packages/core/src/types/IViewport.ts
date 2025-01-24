@@ -250,6 +250,16 @@ export interface ViewPresentation {
    * in zoom relative units.
    */
   pan?: Point2;
+
+  /**
+   * The flip horizontal value is true if the view is flipped horizontally.
+   */
+  flipHorizontal?: boolean;
+
+  /**
+   * The flip vertical value is true if the view is flipped vertically.
+   */
+  flipVertical?: boolean;
 }
 
 /**
@@ -279,6 +289,8 @@ export interface ViewPresentationSelector {
   displayArea?: boolean;
   zoom?: boolean;
   pan?: boolean;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
   // Transfer function relative parameters
   windowLevel?: boolean;
   paletteLut?: boolean;

@@ -4581,6 +4581,10 @@ interface ViewPresentation {
     // (undocumented)
     displayArea?: DisplayArea;
     // (undocumented)
+    flipHorizontal?: boolean;
+    // (undocumented)
+    flipVertical?: boolean;
+    // (undocumented)
     pan?: Point2;
     // (undocumented)
     rotation?: number;
@@ -4594,6 +4598,10 @@ interface ViewPresentation {
 interface ViewPresentationSelector {
     // (undocumented)
     displayArea?: boolean;
+    // (undocumented)
+    flipHorizontal?: boolean;
+    // (undocumented)
+    flipVertical?: boolean;
     // (undocumented)
     paletteLut?: boolean;
     // (undocumented)
