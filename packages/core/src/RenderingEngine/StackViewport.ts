@@ -2861,8 +2861,8 @@ class StackViewport extends Viewport {
     const jVector = direction.slice(3, 6) as Point3;
 
     // Calculate the world coordinate of the pixel
-    vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
-    vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
+    vec3.scaleAndAdd(worldPos, origin, iVector, py * spacing[0]);
+    vec3.scaleAndAdd(worldPos, worldPos, jVector, px * spacing[1]);
 
     return worldPos;
   };
