@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.17.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.3...v2.17.4) (2025-01-24)
+
+### Bug Fixes
+
+- **removeEnabledElement:** return if enabledElement ([#1778](https://github.com/cornerstonejs/cornerstone3D/issues/1778)) ([d056b23](https://github.com/cornerstonejs/cornerstone3D/commit/d056b23783a32e6accfc23b952339ce25d11d702))
+
 ## [2.17.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.2...v2.17.3) (2025-01-22)
 
 ### Bug Fixes
