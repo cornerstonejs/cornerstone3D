@@ -1863,8 +1863,8 @@ class Viewport {
       zoom = this.getZoom(),
       pan,
       rotation,
-      flipHorizontal,
-      flipVertical,
+      flipHorizontal = this.flipHorizontal,
+      flipVertical = this.flipVertical,
     } = viewPres;
     if (displayArea !== this.getDisplayArea()) {
       this.setDisplayArea(displayArea);
@@ -1876,12 +1876,8 @@ class Viewport {
     if (rotation >= 0) {
       this.setRotation(rotation);
     }
-    if (flipHorizontal !== undefined) {
-      this.flip({ flipHorizontal });
-    }
-    if (flipVertical !== undefined) {
-      this.flip({ flipVertical });
-    }
+
+    this.flip({ flipHorizontal, flipVertical });
   }
 
   _getCorners(bounds: number[]): number[][] {
