@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.4...v2.17.5) (2025-01-27)
+
+### Bug Fixes
+
+- **flip:** return flip as part of view presentation ([#1781](https://github.com/cornerstonejs/cornerstone3D/issues/1781)) ([b7ccf58](https://github.com/cornerstonejs/cornerstone3D/commit/b7ccf582f790e9f7ea2e435e80b1c144e8822269))
+
 ## [2.17.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.3...v2.17.4) (2025-01-24)
 
 ### Bug Fixes
