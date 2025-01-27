@@ -1809,11 +1809,14 @@ class Viewport {
       displayArea: true,
       zoom: true,
       pan: true,
+      flipHorizontal: true,
+      flipVertical: true,
     }
   ): ViewPresentation {
     const target: ViewPresentation = {};
 
-    const { rotation, displayArea, zoom, pan } = viewPresSel;
+    const { rotation, displayArea, zoom, pan, flipHorizontal, flipVertical } =
+      viewPresSel;
     if (rotation) {
       target.rotation = this.getRotation();
     }
@@ -1828,6 +1831,14 @@ class Viewport {
     if (pan) {
       target.pan = this.getPan();
       vec2.scale(target.pan, target.pan, 1 / initZoom);
+    }
+
+    if (flipHorizontal) {
+      target.flipHorizontal = this.flipHorizontal;
+    }
+
+    if (flipVertical) {
+      target.flipVertical = this.flipVertical;
     }
     return target;
   }
@@ -1847,7 +1858,14 @@ class Viewport {
     if (!viewPres) {
       return;
     }
-    const { displayArea, zoom = this.getZoom(), pan, rotation } = viewPres;
+    const {
+      displayArea,
+      zoom = this.getZoom(),
+      pan,
+      rotation,
+      flipHorizontal = this.flipHorizontal,
+      flipVertical = this.flipVertical,
+    } = viewPres;
     if (displayArea !== this.getDisplayArea()) {
       this.setDisplayArea(displayArea);
     }
@@ -1858,6 +1876,8 @@ class Viewport {
     if (rotation >= 0) {
       this.setRotation(rotation);
     }
+
+    this.flip({ flipHorizontal, flipVertical });
   }
 
   _getCorners(bounds: number[]): number[][] {
