@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.17.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.5...v2.17.6) (2025-01-29)
+
+### Bug Fixes
+
+- **imageLoader:** Resolve TypeError when canceling image load requests ([601f178](https://github.com/cornerstonejs/cornerstone3D/commit/601f1785613f9fdb27c08f7710b3c707b23d7882))
+
 ## [2.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.4...v2.17.5) (2025-01-27)
 
 ### Bug Fixes
