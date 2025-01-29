@@ -87,7 +87,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     text?: string,
     options?: {
       annotationUID?: string;
-      instance?: ArrowAnnotateTool;
+      toolInstance?: ArrowAnnotateTool;
       referencedImageId?: string;
       viewplaneNormal?: Types.Point3;
       viewUp?: Types.Point3;
@@ -101,14 +101,12 @@ class ArrowAnnotateTool extends AnnotationTool {
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
     let { viewPlaneNormal, viewUp } = viewport.getCamera();
-    if (options?.viewplaneNormal && options?.viewUp) {
-      viewPlaneNormal = options.viewplaneNormal;
-      viewUp = options.viewUp;
-    }
+    viewPlaneNormal = options?.viewplaneNormal ?? viewPlaneNormal;
+    viewUp = options?.viewUp ?? viewUp;
 
     // This is a workaround to access the protected method getReferencedImageId
     // we should make those static too
-    const instance = options.instance || new this();
+    const instance = options?.toolInstance ?? new this();
 
     let referencedImageId = instance.getReferencedImageId(
       viewport,
