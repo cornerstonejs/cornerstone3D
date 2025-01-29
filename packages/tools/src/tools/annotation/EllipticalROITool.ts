@@ -263,23 +263,21 @@ class EllipticalROITool extends AnnotationTool {
             [...worldPos],
           ] as [Types.Point3, Types.Point3, Types.Point3, Types.Point3],
           activeHandleIndex: null,
+          textBox: {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          },
         },
         initialRotation: viewport.getRotation(),
+        cachedStats: {},
       },
     };
-    if (this.configuration.renderTextBox) {
-      annotation.data.handles.textBox = {
-        hasMoved: false,
-        worldPosition: <Types.Point3>[0, 0, 0],
-        worldBoundingBox: {
-          topLeft: <Types.Point3>[0, 0, 0],
-          topRight: <Types.Point3>[0, 0, 0],
-          bottomLeft: <Types.Point3>[0, 0, 0],
-          bottomRight: <Types.Point3>[0, 0, 0],
-        },
-      };
-      annotation.data.cachedStats = {};
-    }
 
     addAnnotation(annotation, element);
 
@@ -963,62 +961,63 @@ class EllipticalROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      if (this.configuration.renderTextBox) {
-        const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-        if (!options.visibility) {
-          data.handles.textBox = {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          };
-          continue;
-        }
-
-        const textLines = this.configuration.getTextLines(data, targetId);
-        if (!textLines || textLines.length === 0) {
-          continue;
-        }
-
-        // Poor man's cached?
-        let canvasTextBoxCoords;
-
-        if (!data.handles.textBox.hasMoved) {
-          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
-
-          data.handles.textBox.worldPosition =
-            viewport.canvasToWorld(canvasTextBoxCoords);
-        }
-
-        const textBoxPosition = viewport.worldToCanvas(
-          data.handles.textBox.worldPosition
-        );
-
-        const textBoxUID = '1';
-        const boundingBox = drawLinkedTextBoxSvg(
-          svgDrawingHelper,
-          annotationUID,
-          textBoxUID,
-          textLines,
-          textBoxPosition,
-          canvasCoordinates,
-          {},
-          options
-        );
-
-        const { x: left, y: top, width, height } = boundingBox;
-
-        data.handles.textBox.worldBoundingBox = {
-          topLeft: viewport.canvasToWorld([left, top]),
-          topRight: viewport.canvasToWorld([left + width, top]),
-          bottomLeft: viewport.canvasToWorld([left, top + height]),
-          bottomRight: viewport.canvasToWorld([left + width, top + height]),
-        };
+      if (!this.configuration.renderTextBox) {
+        return renderStatus;
       }
+      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+      if (!options.visibility) {
+        data.handles.textBox = {
+          hasMoved: false,
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        };
+        continue;
+      }
+
+      const textLines = this.configuration.getTextLines(data, targetId);
+      if (!textLines || textLines.length === 0) {
+        continue;
+      }
+
+      // Poor man's cached?
+      let canvasTextBoxCoords;
+
+      if (!data.handles.textBox.hasMoved) {
+        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
+
+        data.handles.textBox.worldPosition =
+          viewport.canvasToWorld(canvasTextBoxCoords);
+      }
+
+      const textBoxPosition = viewport.worldToCanvas(
+        data.handles.textBox.worldPosition
+      );
+
+      const textBoxUID = '1';
+      const boundingBox = drawLinkedTextBoxSvg(
+        svgDrawingHelper,
+        annotationUID,
+        textBoxUID,
+        textLines,
+        textBoxPosition,
+        canvasCoordinates,
+        {},
+        options
+      );
+
+      const { x: left, y: top, width, height } = boundingBox;
+
+      data.handles.textBox.worldBoundingBox = {
+        topLeft: viewport.canvasToWorld([left, top]),
+        topRight: viewport.canvasToWorld([left + width, top]),
+        bottomLeft: viewport.canvasToWorld([left, top + height]),
+        bottomRight: viewport.canvasToWorld([left + width, top + height]),
+      };
     }
 
     return renderStatus;

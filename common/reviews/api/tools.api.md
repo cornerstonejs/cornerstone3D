@@ -675,7 +675,7 @@ interface ArrowAnnotation extends Annotation {
             points: Types_2.Point3[];
             arrowFirst: boolean;
             activeHandleIndex: number | null;
-            textBox?: {
+            textBox: {
                 hasMoved: boolean;
                 worldPosition: Types_2.Point3;
                 worldBoundingBox: {
