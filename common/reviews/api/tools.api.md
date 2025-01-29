@@ -231,7 +231,7 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
         annotationUID?: string;
-        instance?: AngleTool;
+        toolInstance?: AngleTool;
         referencedImageId?: string;
         viewplaneNormal?: Types_2.Point3;
         viewUp?: Types_2.Point3;
@@ -649,7 +649,7 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     static hydrate: (viewportId: string, points: Types_2.Point3[], text?: string, options?: {
         annotationUID?: string;
-        instance?: ArrowAnnotateTool;
+        toolInstance?: ArrowAnnotateTool;
         referencedImageId?: string;
         viewplaneNormal?: Types_2.Point3;
         viewUp?: Types_2.Point3;
@@ -1252,7 +1252,7 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
         annotationUID?: string;
-        instance?: CircleROITool;
+        toolInstance?: CircleROITool;
         referencedImageId?: string;
         viewplaneNormal?: Types_2.Point3;
         viewUp?: Types_2.Point3;
@@ -2243,7 +2243,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
         annotationUID?: string;
-        instance?: EllipticalROITool;
+        toolInstance?: EllipticalROITool;
         referencedImageId?: string;
         viewplaneNormal?: Types_2.Point3;
         viewUp?: Types_2.Point3;
@@ -3655,7 +3655,7 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
         annotationUID?: string;
-        instance?: LengthTool;
+        toolInstance?: LengthTool;
         referencedImageId?: string;
         viewplaneNormal?: Types_2.Point3;
         viewUp?: Types_2.Point3;
@@ -4426,7 +4426,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
         annotationUID?: string;
-        instance?: ProbeTool;
+        toolInstance?: ProbeTool;
         referencedImageId?: string;
         viewplaneNormal?: Types_2.Point3;
         viewUp?: Types_2.Point3;
@@ -4761,7 +4761,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
         annotationUID?: string;
-        instance?: RectangleROITool;
+        toolInstance?: RectangleROITool;
         referencedImageId?: string;
         viewplaneNormal?: Types_2.Point3;
         viewUp?: Types_2.Point3;
@@ -5704,7 +5704,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
         annotationUID?: string;
         splineType?: SplineTypesEnum;
-        instance?: SplineROITool;
+        toolInstance?: SplineROITool;
         referencedImageId?: string;
         viewplaneNormal?: Types_2.Point3;
         viewUp?: Types_2.Point3;
