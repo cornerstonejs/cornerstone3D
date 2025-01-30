@@ -414,6 +414,10 @@
       "labelmapEditWithContour": {
         "name": "Labelmap Editing with Contour",
         "description": "Use contour tools to edit the labelmap"
+      },
+      "labelmapInterpolation": {
+        "name": "Labelmap Interpolation",
+        "description": "Interpolate between slices using labelmap"
       }
     },
     "advanced-gpu-segmentation": {
