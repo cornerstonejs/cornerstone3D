@@ -37,6 +37,7 @@ Huge model (vit_h) - 2.38 GB compressed
 
 For the examples we are using the model url and fetch it from the web. If you see in example code we have:
 
+
 #### URL to the model files
 
 ```js

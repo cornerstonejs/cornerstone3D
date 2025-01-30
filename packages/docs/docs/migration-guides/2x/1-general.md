@@ -39,6 +39,7 @@ We have streamlined the process of loading volumes without sacrificing speed by 
 You can remove `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` from your custom headers if you don't need them in other
 aspects of your app.
 
+
 ## Typescript Version
 
 We have upgraded the typescript version from 4.6 to 5.5 in the 2.0 version of the cornerstone3D.
@@ -77,6 +78,7 @@ Both Node.js and modern browsers now support ECMAScript Modules (ESM) by default
 :::note Tip
 If you must use CJS, for example, if you are using `dicom-image-loader` and `dicom-parser`, you need to use `vite-plugin-commonjs` to convert CommonJS to ESM. For more information, please refer to the [Frameworks](../../getting-started/vue-angular-react-etc.md) page.
 :::
+
 
 ## Package Exports
 
