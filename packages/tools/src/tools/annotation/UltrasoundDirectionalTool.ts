@@ -54,7 +54,7 @@ const { transformWorldToIndex } = csUtils;
  * It automatically calculates the distance based on the relevant unit of measurement.
  */
 class UltrasoundDirectionalTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'UltrasoundDirectionalTool';
 
   startedDrawing: boolean;
   _throttledCalculateCachedStats: Function;
@@ -882,5 +882,4 @@ function defaultGetTextLines(data, targetId, configuration): string[] {
   }
 }
 
-UltrasoundDirectionalTool.toolName = 'UltrasoundDirectionalTool';
 export default UltrasoundDirectionalTool;

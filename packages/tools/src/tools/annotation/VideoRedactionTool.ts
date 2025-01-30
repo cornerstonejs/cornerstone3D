@@ -36,6 +36,8 @@ import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorld
 import type { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 class VideoRedactionTool extends AnnotationTool {
+  static toolName = 'VideoRedaction';
+
   _throttledCalculateCachedStats: Function;
   editData: {
     annotation: Annotation;
@@ -743,5 +745,4 @@ class VideoRedactionTool extends AnnotationTool {
   };
 }
 
-VideoRedactionTool.toolName = 'VideoRedaction';
 export default VideoRedactionTool;

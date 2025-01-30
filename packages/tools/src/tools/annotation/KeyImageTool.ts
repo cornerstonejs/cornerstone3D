@@ -33,7 +33,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 type Point2 = Types.Point2;
 
 class KeyImageTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'KeyImage';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -376,7 +376,5 @@ function getTextCallback(doneChangingTextCallback) {
 function changeTextCallback(data, eventData, doneChangingTextCallback) {
   return doneChangingTextCallback(prompt('Enter your annotation:'));
 }
-
-KeyImageTool.toolName = 'KeyImage';
 
 export default KeyImageTool;

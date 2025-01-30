@@ -15,7 +15,6 @@ import type {
   SVGDrawingHelper,
   ToolProps,
 } from '../../types';
-import { ChangeTypes, Events } from '../../enums';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import ProbeTool from './ProbeTool';
@@ -23,7 +22,7 @@ import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class DragProbeTool extends ProbeTool {
-  static toolName;
+  static toolName = 'DragProbe';
 
   editData: {
     annotation: Annotation;
@@ -231,5 +230,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-DragProbeTool.toolName = 'DragProbe';
 export default DragProbeTool;

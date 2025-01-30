@@ -84,7 +84,7 @@ enum SplineToolActions {
 }
 
 class SplineROITool extends ContourSegmentationBaseTool {
-  static toolName;
+  static toolName = 'SplineROI';
   static SplineTypes = SplineTypesEnum;
   static Actions = SplineToolActions;
 
@@ -1334,5 +1334,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-SplineROITool.toolName = 'SplineROI';
 export default SplineROITool;

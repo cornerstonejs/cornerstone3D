@@ -95,7 +95,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class RectangleROITool extends AnnotationTool {
-  static toolName;
+  static toolName = 'RectangleROI';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -1048,5 +1048,4 @@ function defaultGetTextLines(data, targetId: string): string[] {
   return textLines;
 }
 
-RectangleROITool.toolName = 'RectangleROI';
 export default RectangleROITool;

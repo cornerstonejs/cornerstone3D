@@ -88,7 +88,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class LengthTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Length';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -915,5 +915,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-LengthTool.toolName = 'Length';
 export default LengthTool;

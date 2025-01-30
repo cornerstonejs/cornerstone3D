@@ -243,7 +243,7 @@ export class AngleTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AngleAnnotation) => void;
 }
@@ -659,7 +659,7 @@ export class ArrowAnnotateTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: ArrowAnnotation) => void;
     // (undocumented)
@@ -866,7 +866,7 @@ export class BidirectionalTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: BidirectionalAnnotation) => void;
 }
@@ -1258,7 +1258,7 @@ export class CircleROITool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: CircleROIAnnotation) => void;
 }
@@ -1445,7 +1445,7 @@ export class CobbAngleTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.MouseDownEventType, annotation: CobbAngleAnnotation, interactionType: InteractionTypes, canvasCoords: Types_2.Point2, proximity?: number) => void;
 }
@@ -2038,7 +2038,7 @@ export class DragProbeTool extends ProbeTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
 }
 
 // @public (undocumented)
@@ -2247,7 +2247,7 @@ export class EllipticalROITool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: EllipticalROIAnnotation) => void;
 }
@@ -2330,7 +2330,7 @@ export class ETDRSGridTool extends AnnotationTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: ETDRSGridAnnotation) => void;
     // (undocumented)
@@ -3063,7 +3063,7 @@ export class HeightTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation) => void;
 }
@@ -3432,7 +3432,7 @@ export class KeyImageTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: Annotation) => void;
 }
@@ -3653,7 +3653,7 @@ export class LengthTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LengthAnnotation) => void;
 }
@@ -3686,7 +3686,7 @@ export class LivewireContourSegmentationTool extends LivewireContourTool {
     // (undocumented)
     protected renderAnnotationInstance(renderContext: any): boolean;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     updateInterpolatedAnnotation(annotation: ContourSegmentationAnnotation, enabledElement: Types_2.IEnabledElement): void;
 }
@@ -4159,7 +4159,7 @@ export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool
     // (undocumented)
     protected renderAnnotationInstance(renderContext: AnnotationRenderContext): boolean;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
 }
 
 // @public (undocumented)
@@ -4206,7 +4206,7 @@ export class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: PlanarFreehandROIAnnotation) => void;
     // (undocumented)
@@ -4751,7 +4751,7 @@ export class RectangleROITool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: RectangleROIAnnotation) => void;
 }
@@ -4912,7 +4912,7 @@ export class RegionSegmentPlusTool extends GrowCutBaseTool {
     // (undocumented)
     preMouseDownCallback(evt: EventTypes_2.MouseDownActivateEventType): Promise<boolean>;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
 }
 
 // @public (undocumented)
@@ -4927,7 +4927,7 @@ export class RegionSegmentTool extends GrowCutBaseTool {
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
 }
 
 // @public (undocumented)
@@ -5580,7 +5580,7 @@ export class SplineContourSegmentationTool extends SplineROITool {
     // (undocumented)
     protected isContourSegmentationTool(): boolean;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
 }
 
 // @public (undocumented)
@@ -5694,7 +5694,7 @@ export class SplineROITool extends ContourSegmentationBaseTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: SplineROIAnnotation) => void;
     // (undocumented)
@@ -6582,7 +6582,7 @@ export class UltrasoundDirectionalTool extends AnnotationTool {
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, interactionType: InteractionTypes, canvasCoords?: Types_2.Point2): void;
 }
@@ -6763,6 +6763,8 @@ export class VideoRedactionTool extends AnnotationTool {
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
     _throttledCalculateCachedStats: Function;
+    // (undocumented)
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback: (evt: any, annotation: any, interactionType?: string) => void;
 }
