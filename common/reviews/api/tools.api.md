@@ -4426,7 +4426,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
     // (undocumented)
-    static toolName: any;
+    static toolName: string;
     // (undocumented)
     toolSelectedCallback(): void;
 }
