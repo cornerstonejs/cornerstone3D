@@ -3,6 +3,130 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.17.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.5...v2.17.6) (2025-01-29)
+
+### Bug Fixes
+
+- **imageLoader:** Resolve TypeError when canceling image load requests ([601f178](https://github.com/cornerstonejs/cornerstone3D/commit/601f1785613f9fdb27c08f7710b3c707b23d7882))
+
+## [2.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.4...v2.17.5) (2025-01-27)
+
+### Bug Fixes
+
+- **flip:** return flip as part of view presentation ([#1781](https://github.com/cornerstonejs/cornerstone3D/issues/1781)) ([b7ccf58](https://github.com/cornerstonejs/cornerstone3D/commit/b7ccf582f790e9f7ea2e435e80b1c144e8822269))
+
+## [2.17.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.3...v2.17.4) (2025-01-24)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.17.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.2...v2.17.3) (2025-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.17.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.1...v2.17.2) (2025-01-22)
+
+### Bug Fixes
+
+- **seg:** Refactor LabelmapBaseTool and SphereScissorsTool to fix sphere bug in stack ([#1772](https://github.com/cornerstonejs/cornerstone3D/issues/1772)) ([5eeda06](https://github.com/cornerstonejs/cornerstone3D/commit/5eeda0626a2722397aba910ae4bd4a5e650d32c6))
+
+## [2.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.0...v2.17.1) (2025-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [2.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.16.1...v2.17.0) (2025-01-21)
+
+### Features
+
+- **4d:** replace timepoint with dimensionGroupNumber for 4D handling with backward compatibility ([#1764](https://github.com/cornerstonejs/cornerstone3D/issues/1764)) ([d0c0338](https://github.com/cornerstonejs/cornerstone3D/commit/d0c0338175ac2f4e91bcb681d6a93eede19c1b81))
+
+## [2.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.16.0...v2.16.1) (2025-01-21)
+
+### Bug Fixes
+
+- take into account storePointData setting ([#1733](https://github.com/cornerstonejs/cornerstone3D/issues/1733)) ([916a788](https://github.com/cornerstonejs/cornerstone3D/commit/916a788dab481187eab6d4601230dcb176fb9037))
+
+# [2.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.5...v2.16.0) (2025-01-21)
+
+### Features
+
+- Add range support for key image tool ([#1743](https://github.com/cornerstonejs/cornerstone3D/issues/1743)) ([6dff931](https://github.com/cornerstonejs/cornerstone3D/commit/6dff9313f7e78bea6f45d610cc20e781b73103f4))
+
+## [2.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.4...v2.15.5) (2025-01-20)
+
+### Bug Fixes
+
+- **wadouri:** Check cache when prefetching wadouri images for volume ([#1765](https://github.com/cornerstonejs/cornerstone3D/issues/1765)) ([4f05843](https://github.com/cornerstonejs/cornerstone3D/commit/4f058434a97b2b66a205571b1edf30c68344b8f2))
+
+## [2.15.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.3...v2.15.4) (2025-01-15)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.15.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.2...v2.15.3) (2025-01-15)
+
+### Bug Fixes
+
+- **sortImageIdsAndGetSpacing:** sliceThickness and spacingBetweenSlices in case of nonstrict spacing ([#1752](https://github.com/cornerstonejs/cornerstone3D/issues/1752)) ([aede384](https://github.com/cornerstonejs/cornerstone3D/commit/aede384bd4d8433a50a66160d0fc3cbe6e241976))
+
+## [2.15.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.1...v2.15.2) (2025-01-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.0...v2.15.1) (2025-01-14)
+
+### Bug Fixes
+
+- **examples:** and freehand perimiter unit ([#1751](https://github.com/cornerstonejs/cornerstone3D/issues/1751)) ([b4f29ba](https://github.com/cornerstonejs/cornerstone3D/commit/b4f29ba8fd54b27f775a69324522c65acf0d3e69))
+
+# [2.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.12...v2.15.0) (2025-01-14)
+
+### Features
+
+- **vtk:** upgrade version ([#1749](https://github.com/cornerstonejs/cornerstone3D/issues/1749)) ([6853e59](https://github.com/cornerstonejs/cornerstone3D/commit/6853e59a8279ddab95763e5b8ee1f870871a6646))
+
+## [2.14.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.11...v2.14.12) (2025-01-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.14.11](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.10...v2.14.11) (2025-01-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.14.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.9...v2.14.10) (2025-01-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.14.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.8...v2.14.9) (2025-01-07)
+
+### Bug Fixes
+
+- **video:** Slice range was broken for key image setting on video ([#1737](https://github.com/cornerstonejs/cornerstone3D/issues/1737)) ([9c48c74](https://github.com/cornerstonejs/cornerstone3D/commit/9c48c7450803ab455d65a6c6f02d683027b1ba38))
+
+## [2.14.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.7...v2.14.8) (2025-01-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.14.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.6...v2.14.7) (2025-01-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.14.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.5...v2.14.6) (2025-01-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.14.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.4...v2.14.5) (2025-01-06)
+
+### Bug Fixes
+
+- **setDisplayArea:** fix the zoom and pan when setting the displayArea ([#1701](https://github.com/cornerstonejs/cornerstone3D/issues/1701)) ([8931a81](https://github.com/cornerstonejs/cornerstone3D/commit/8931a81b8c782a7e2ae26a4f89f7f01b1ef24418)), closes [#1707](https://github.com/cornerstonejs/cornerstone3D/issues/1707)
+
+## [2.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.3...v2.14.4) (2025-01-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.2...v2.14.3) (2025-01-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [2.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.1...v2.14.2) (2024-12-20)
 
 ### Bug Fixes

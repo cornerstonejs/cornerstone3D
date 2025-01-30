@@ -23,6 +23,8 @@ export default function drawPolyline(
     lineWidth?: number;
     lineDash?: string;
     closePath?: boolean;
+    markerStartId?: string;
+    markerEndId?: string;
   }
 ): void {
   if (points.length < 2) {
@@ -37,6 +39,8 @@ export default function drawPolyline(
     lineWidth,
     lineDash,
     closePath = false,
+    markerStartId = null,
+    markerEndId = null,
   } = options;
 
   // for supporting both lineWidth and width options
@@ -65,6 +69,8 @@ export default function drawPolyline(
     'fill-opacity': fillOpacity,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
+    'marker-start': markerStartId ? `url(#${markerStartId})` : '',
+    'marker-end': markerEndId ? `url(#${markerEndId})` : '',
   };
 
   if (existingPolyLine) {

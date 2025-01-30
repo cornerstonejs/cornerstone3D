@@ -44,6 +44,7 @@ import type {
 } from '../../types';
 import type { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class ArrowAnnotateTool extends AnnotationTool {
   static toolName;
@@ -70,6 +71,10 @@ class ArrowAnnotateTool extends AnnotationTool {
         changeTextCallback,
         preventHandleOutsideImage: false,
         arrowFirst: true,
+        // there are two styles for the arrow head, legacy and standard,
+        // where legacy uses two separate lines and standard uses a single line
+        // with a marker at the end.
+        arrowHeadStyle: 'legacy',
       },
     }
   ) {
@@ -722,10 +727,11 @@ class ArrowAnnotateTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const { color, lineWidth, lineDash } = this.getAnnotationStyle({
-        annotation,
-        styleSpecifier,
-      });
+      const { color, lineWidth, lineDash, markerSize } =
+        this.getAnnotationStyle({
+          annotation,
+          styleSpecifier,
+        });
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -738,6 +744,16 @@ class ArrowAnnotateTool extends AnnotationTool {
       ) {
         // Not locked or creating and hovering over handle, so render handle.
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+      }
+
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed');
+        return renderStatus;
+      }
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
       }
 
       if (activeHandleCanvasCoords) {
@@ -767,6 +783,8 @@ class ArrowAnnotateTool extends AnnotationTool {
             color,
             width: lineWidth,
             lineDash: lineDash,
+            viaMarker: this.configuration.arrowHeadStyle !== 'legacy',
+            markerSize,
           }
         );
       } else {
@@ -780,17 +798,13 @@ class ArrowAnnotateTool extends AnnotationTool {
             color,
             width: lineWidth,
             lineDash: lineDash,
+            viaMarker: this.configuration.arrowHeadStyle !== 'legacy',
+            markerSize,
           }
         );
       }
 
       renderStatus = true;
-
-      // If rendering engine has been destroyed while rendering
-      if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
-        return renderStatus;
-      }
 
       if (!text) {
         continue;

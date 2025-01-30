@@ -28,6 +28,10 @@ const getSubPixelSpacingAndXYDirections = (
     // Check XY directions
     const imageData = viewport.getImageData();
 
+    if (!imageData) {
+      return;
+    }
+
     xDir = imageData.direction.slice(0, 3);
     yDir = imageData.direction.slice(3, 6);
 

@@ -1044,6 +1044,10 @@ export enum EVENTS {
     // (undocumented)
     DISPLAY_AREA_MODIFIED = "CORNERSTONE_DISPLAY_AREA_MODIFIED",
     // (undocumented)
+    DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED = "DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED",
+    // (undocumented)
+    DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED = "DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED",
+    // (undocumented)
     DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = "DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED",
     // (undocumented)
     DYNAMIC_VOLUME_TIME_POINT_LOADED = "DYNAMIC_VOLUME_TIME_POINT_LOADED",
@@ -1185,6 +1189,22 @@ interface FlipDirection {
     flipHorizontal?: boolean;
     // (undocumented)
     flipVertical?: boolean;
+}
+
+// @public (undocumented)
+class FrameRange {
+    // (undocumented)
+    protected static frameRangeExtractor: RegExp;
+    // (undocumented)
+    protected static framesToImageId(imageId: string, range: FramesRange | string): string;
+    // (undocumented)
+    static framesToString(range: any): string;
+    // (undocumented)
+    static imageIdToFrameEnd(imageId: string): number;
+    // (undocumented)
+    protected static imageIdToFrames(imageId: string): FramesRange;
+    // (undocumented)
+    static imageIdToFrameStart(imageId: string): number;
 }
 
 // @public (undocumented)
@@ -1567,12 +1587,17 @@ type IContourSet = ContourSet;
 // @public (undocumented)
 interface IDynamicImageVolume extends IImageVolume {
     // (undocumented)
+    get dimensionGroupNumber(): number;
+    set dimensionGroupNumber(dimensionGroupNumber: number);
+    // (undocumented)
+    get numDimensionGroups(): number;
+    // (undocumented)
     get numTimePoints(): number;
     // (undocumented)
     scroll(delta: number): void;
     // (undocumented)
     get timePointIndex(): number;
-    set timePointIndex(newTimePointIndex: number);
+    set timePointIndex(timePointIndex: number);
 }
 
 // @public (undocumented)
@@ -2272,7 +2297,7 @@ export class ImageVolume {
     // (undocumented)
     modified(): void;
     // (undocumented)
-    protected numFrames: number;
+    numFrames: number;
     // (undocumented)
     numTimePoints?: number;
     // (undocumented)
@@ -3415,7 +3440,7 @@ export class StackViewport extends Viewport {
     // (undocumented)
     getCornerstoneImage: () => IImage;
     // (undocumented)
-    getCurrentImageId: () => string;
+    getCurrentImageId: (index?: number) => string;
     // (undocumented)
     getCurrentImageIdIndex: () => number;
     // (undocumented)
@@ -3453,6 +3478,8 @@ export class StackViewport extends Viewport {
     getRotation: () => number;
     // (undocumented)
     getSliceIndex: () => number;
+    // (undocumented)
+    getSliceIndexForImage(reference: string | ViewReference): number;
     // (undocumented)
     getSliceInfo(): {
         sliceIndex: number;
@@ -3588,11 +3615,20 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
         imageIdGroups: string[][];
     }, streamingProperties: IStreamingVolumeProperties);
     // (undocumented)
+    protected checkDimensionGroupCompletion(imageIdIndex: number): void;
+    // (undocumented)
     protected checkTimePointCompletion(imageIdIndex: number): void;
+    // (undocumented)
+    get dimensionGroupNumber(): number;
+    set dimensionGroupNumber(dimensionGroupNumber: number);
+    // (undocumented)
+    flatImageIdIndexToDimensionGroupNumber(flatImageIdIndex: number): number;
     // (undocumented)
     flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number;
     // (undocumented)
     flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number;
+    // (undocumented)
+    getCurrentDimensionGroupImageIds(): string[];
     // (undocumented)
     getCurrentTimePointImageIds(): string[];
     // (undocumented)
@@ -3629,16 +3665,20 @@ export class StreamingDynamicImageVolume extends BaseStreamingImageVolume implem
         };
     }[];
     // (undocumented)
+    isDimensionGroupLoaded(dimensionGroupNumber: number): boolean;
+    // (undocumented)
     isTimePointLoaded(timePointIndex: number): boolean;
+    // (undocumented)
+    numDimensionGroups: number;
     // (undocumented)
     numTimePoints: number;
     // (undocumented)
     scroll(delta: number): void;
     // (undocumented)
     get splittingTag(): string;
+    set timePointIndex(index: number);
     // (undocumented)
     get timePointIndex(): number;
-    set timePointIndex(index: number);
 }
 
 // @public (undocumented)
@@ -3914,6 +3954,7 @@ function updateVTKImageDataWithCornerstoneImage(sourceImageData: vtkImageData, i
 
 declare namespace utilities {
     export {
+        FrameRange,
         eventListener,
         invertRgbTransferFunction,
         createSigmoidRGBTransferFunction,
@@ -4042,7 +4083,7 @@ export class VideoViewport extends Viewport {
     // (undocumented)
     getCamera(): ICamera;
     // (undocumented)
-    getCurrentImageId(): string;
+    getCurrentImageId(index?: number): string;
     // (undocumented)
     getCurrentImageIdIndex(): number;
     // (undocumented)
@@ -4085,6 +4126,8 @@ export class VideoViewport extends Viewport {
     protected getScalarData(): CanvasScalarData;
     // (undocumented)
     getSliceIndex(): number;
+    // (undocumented)
+    getSliceIndexForImage(reference: string | ViewReference): number;
     // (undocumented)
     getSliceViewInfo(): {
         width: number;
@@ -4329,7 +4372,7 @@ export class Viewport {
     // (undocumented)
     _isInBounds(point: Point3, bounds: number[]): boolean;
     // (undocumented)
-    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean | unknown;
+    isReferenceViewable(viewRef: ViewReference, options?: ReferenceCompatibleOptions): boolean;
     // (undocumented)
     options: ViewportInputOptions;
     // (undocumented)
@@ -4538,6 +4581,10 @@ interface ViewPresentation {
     // (undocumented)
     displayArea?: DisplayArea;
     // (undocumented)
+    flipHorizontal?: boolean;
+    // (undocumented)
+    flipVertical?: boolean;
+    // (undocumented)
     pan?: Point2;
     // (undocumented)
     rotation?: number;
@@ -4551,6 +4598,10 @@ interface ViewPresentation {
 interface ViewPresentationSelector {
     // (undocumented)
     displayArea?: boolean;
+    // (undocumented)
+    flipHorizontal?: boolean;
+    // (undocumented)
+    flipVertical?: boolean;
     // (undocumented)
     paletteLut?: boolean;
     // (undocumented)
@@ -4566,36 +4617,28 @@ interface ViewPresentationSelector {
 }
 
 // @public (undocumented)
-interface ViewReference {
-    // (undocumented)
-    bounds?: BoundsLPS;
-    // (undocumented)
-    cameraFocalPoint?: Point3;
-    // (undocumented)
+type ViewReference = {
     FrameOfReferenceUID?: string;
-    // (undocumented)
     referencedImageId?: string;
-    // (undocumented)
-    sliceIndex?: number | [number, number];
-    // (undocumented)
+    referencedImageURI?: string;
+    multiSliceReference?: ReferencedImageRange;
+    cameraFocalPoint?: Point3;
     viewPlaneNormal?: Point3;
-    // (undocumented)
     viewUp?: Point3;
-    // (undocumented)
+    sliceIndex?: number;
     volumeId?: string;
-}
+    bounds?: BoundsLPS;
+};
 
 // @public (undocumented)
-interface ViewReferenceSpecifier {
-    // (undocumented)
+type ViewReferenceSpecifier = {
+    sliceIndex?: number;
+    rangeEndSliceIndex?: number;
+    frameNumber?: number;
     forFrameOfReference?: boolean;
-    // (undocumented)
     points?: Point3[];
-    // (undocumented)
-    sliceIndex?: number | [number, number];
-    // (undocumented)
     volumeId?: string;
-}
+};
 
 // @public (undocumented)
 interface VOI {
@@ -4951,10 +4994,11 @@ class VoxelManager<T> {
         dimensions: Point3;
     }): VoxelManager<T>;
     // (undocumented)
-    static createScalarDynamicVolumeVoxelManager({ imageIdGroups, dimensions, timePoint, numberOfComponents, }: {
+    static createScalarDynamicVolumeVoxelManager({ imageIdGroups, dimensions, dimensionGroupNumber, timePoint, numberOfComponents, }: {
         imageIdGroups: string[][];
         dimensions: Point3;
-        timePoint: number;
+        dimensionGroupNumber?: number;
+        timePoint?: number;
         numberOfComponents?: number;
     }): IVoxelManager<number> | IVoxelManager<RGB>;
     // (undocumented)

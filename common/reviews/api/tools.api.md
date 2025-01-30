@@ -64,6 +64,9 @@ function addContourRepresentationToViewportMap(viewportInputMap: {
 function addContourSegmentationAnnotation(annotation: ContourSegmentationAnnotation): void;
 
 // @public (undocumented)
+function addEnabledElement(evt: Types_2.EventTypes.ElementEnabledEvent): void;
+
+// @public (undocumented)
 function addLabelmapRepresentationToViewport(viewportId: string, labelmapInputArray: RepresentationPublicInput[]): void;
 
 // @public (undocumented)
@@ -155,6 +158,12 @@ export class AdvancedMagnifyTool extends AnnotationTool {
     toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: AdvancedMagnifyAnnotation) => void;
 }
 
+declare namespace angle {
+    export {
+        angleBetweenLines
+    }
+}
+
 // @public (undocumented)
 interface AngleAnnotation extends Annotation {
     // (undocumented)
@@ -181,6 +190,9 @@ interface AngleAnnotation extends Annotation {
         };
     };
 }
+
+// @public (undocumented)
+function angleBetweenLines(line1: Line, line2: Line): number;
 
 // @public (undocumented)
 export class AngleTool extends AnnotationTool {
@@ -325,25 +337,6 @@ export abstract class AnnotationDisplayTool extends BaseTool {
 }
 
 // @public (undocumented)
-class AnnotationFrameRange {
-    // (undocumented)
-    protected static frameRangeExtractor: RegExp;
-    // (undocumented)
-    protected static framesToImageId(imageId: string, range: FramesRange | string): string;
-    // (undocumented)
-    static framesToString(range: any): string;
-    // (undocumented)
-    static getFrameRange(annotation: Annotation): number | [number, number];
-    // (undocumented)
-    protected static imageIdToFrames(imageId: string): FramesRange;
-    // (undocumented)
-    static setFrameRange(annotation: Annotation, range: FramesRange | string, eventBase?: {
-        viewportId: any;
-        renderingEngineId: any;
-    }): void;
-}
-
-// @public (undocumented)
 class AnnotationGroup {
     constructor();
     // (undocumented)
@@ -420,6 +413,24 @@ type AnnotationModifiedEventDetail = {
 
 // @public (undocumented)
 type AnnotationModifiedEventType = Types_2.CustomEventType<AnnotationModifiedEventDetail>;
+
+// @public (undocumented)
+class AnnotationMultiSlice {
+    // (undocumented)
+    static getFrameRange(annotation: Annotation): number | [number, number];
+    // (undocumented)
+    static getFrameRangeStr(annotation: Annotation): string;
+    // (undocumented)
+    static setEndRange(viewport: any, annotation: any, endRange?: any): void;
+    // (undocumented)
+    static setRange(viewport: any, annotation: any, startRange?: number, endRange?: number): void;
+    // (undocumented)
+    static setSingle(viewport: any, annotation: any, current?: any): void;
+    // (undocumented)
+    static setStartRange(viewport: any, annotation: any, startRange?: any): void;
+    // (undocumented)
+    static setViewportFrameRange(viewport: any, specifier: any): void;
+}
 
 // @public (undocumented)
 type AnnotationRemovedEventDetail = {
@@ -507,7 +518,7 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     static createAnnotation(...annotationBaseData: any[]): Annotation;
     // (undocumented)
-    static createAnnotationForViewport(viewport: any, ...annotationBaseData: any[]): Annotation;
+    static createAnnotationForViewport<T extends Annotation>(viewport: any, ...annotationBaseData: any[]): T;
     // (undocumented)
     static createAnnotationMemo(element: any, annotation: Annotation, options?: {
         newAnnotation?: boolean;
@@ -979,6 +990,8 @@ enum ChangeTypes {
     Interaction = "Interaction",
     // (undocumented)
     InterpolationUpdated = "InterpolationUpdated",
+    // (undocumented)
+    MetadataReferenceModified = "MetadataReferenceModified",
     // (undocumented)
     StatsUpdated = "StatsUpdated"
 }
@@ -1928,6 +1941,7 @@ function decimate_2(polyline: Types_2.Point2[], epsilon?: number): Types_2.Point
 const _default: {
     filterAnnotationsWithinSlice: typeof filterAnnotationsWithinSlice;
     getWorldWidthAndHeightFromCorners: typeof getWorldWidthAndHeightFromCorners;
+    getWorldWidthAndHeightFromTwoPoints: typeof getWorldWidthAndHeightFromTwoPoints;
     filterAnnotationsForDisplay: typeof filterAnnotationsForDisplay;
     getPointInLineOfSightWithCriteria: typeof getPointInLineOfSightWithCriteria;
     isPlaneIntersectingAABB: (origin: any, normal: any, minX: any, minY: any, minZ: any, maxX: any, maxY: any, maxZ: any) => boolean;
@@ -2107,6 +2121,8 @@ function drawPolyline(svgDrawingHelper: SVGDrawingHelper, annotationUID: string,
     lineWidth?: number;
     lineDash?: string;
     closePath?: boolean;
+    markerStartId?: string;
+    markerEndId?: string;
 }): void;
 
 // @public (undocumented)
@@ -2609,6 +2625,7 @@ function generateContourSetsFromLabelmap({ segmentations }: {
 
 // @public (undocumented)
 function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: Enums_2.GenerateImageType, options: {
+    dimensionGroupNumbers?: number[];
     frameNumbers?: number[];
 }): Float32Array;
 
@@ -2724,9 +2741,10 @@ function getCurrentLabelmapImageIdForViewport(viewportId: string, segmentationId
 
 // @public (undocumented)
 function getDataInTime(dynamicVolume: Types_2.IDynamicImageVolume, options: {
-    frameNumbers?: any;
-    maskVolumeId?: any;
-    worldCoordinate?: any;
+    dimensionGroupNumbers?: number[];
+    frameNumbers?: number[];
+    maskVolumeId?: string;
+    worldCoordinate?: Types_2.Point3;
 }): number[] | number[][];
 
 // @public (undocumented)
@@ -2797,6 +2815,9 @@ function getNormal3(polyline: Types_2.Point3[]): Types_2.Point3;
 
 // @public (undocumented)
 function getOrientationStringLPS(vector: Types_2.Point3): string;
+
+// @public (undocumented)
+function getPixelValueUnits(modality: string, imageId: string, options: pixelUnitsOptions): string;
 
 // @public (undocumented)
 function getPoint(points: any, idx: any): Types_2.Point3;
@@ -2932,6 +2953,12 @@ function getWorldWidthAndHeightFromCorners(viewPlaneNormal: Types_2.Point3, view
 };
 
 // @public (undocumented)
+function getWorldWidthAndHeightFromTwoPoints(viewPlaneNormal: Types_2.Point3, viewUp: Types_2.Point3, worldPos1: Types_2.Point3, worldPos2: Types_2.Point3): {
+    worldWidth: number;
+    worldHeight: number;
+};
+
+// @public (undocumented)
 type GroupSpecificAnnotations = {
     [toolName: string]: Annotations;
 };
@@ -2983,6 +3010,9 @@ function hasCustomStyle(specifier: {
     type?: SegmentationRepresentations;
     segmentIndex?: number;
 }): boolean;
+
+// @public (undocumented)
+function hasTool(ToolClass: any): boolean;
 
 // @public (undocumented)
 export class HeightTool extends AnnotationTool {
@@ -3423,28 +3453,7 @@ export class LabelmapBaseTool extends BaseTool {
         acceptReject: boolean;
     }): unknown;
     // (undocumented)
-    createEditData(element: any): {
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageId?: undefined;
-        override?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    } | {
-        imageId: string;
-        segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    };
+    protected createEditData(element: any): EditDataReturnType;
     // (undocumented)
     protected createHoverData(element: any, centerCanvas?: any): {
         brushCursor: {
@@ -3486,78 +3495,15 @@ export class LabelmapBaseTool extends BaseTool {
         segmentColor: Types_2.Color;
     };
     // (undocumented)
-    protected getOperationData(element?: any): {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
-        override: {
-            voxelManager: Types_2.IVoxelManager<number>;
-            imageData: vtkImageData;
-        };
-        segmentsLocked: number[];
-        imageId?: string;
-        imageIds?: string[];
-        volumeId?: string;
-        referencedVolumeId?: string;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
-        volumeId: string;
-        referencedVolumeId: any;
-        segmentsLocked: number[] | [];
-        imageId?: undefined;
-        override?: undefined;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
-        imageId: string;
-        segmentsLocked: number[] | [];
-        override: {
-            voxelManager: Types_2.IVoxelManager<number> | Types_2.IVoxelManager<Types_2.RGB>;
-            imageData: vtkImageData;
-        };
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-    } | {
-        points: any;
-        segmentIndex: number;
-        previewColors: any;
-        viewPlaneNormal: any;
-        toolGroupId: string;
-        segmentationId: string;
-        viewUp: any;
-        strategySpecificConfiguration: any;
-        preview: unknown;
-        createMemo: (segmentId: string, segmentationVoxelManager: any, preview: any) => LabelmapMemo.LabelmapMemo;
-        imageId: string;
-        segmentsLocked: number[] | [];
-        volumeId?: undefined;
-        referencedVolumeId?: undefined;
-        override?: undefined;
-    };
+    protected getEditData({ viewport, representationData, segmentsLocked, segmentationId, volumeOperation, }: {
+        viewport: any;
+        representationData: any;
+        segmentsLocked: any;
+        segmentationId: any;
+        volumeOperation?: boolean;
+    }): EditDataReturnType;
+    // (undocumented)
+    protected getOperationData(element?: any): ModifiedLabelmapToolOperationData;
     // (undocumented)
     protected _hoverData?: {
         brushCursor: any;
@@ -3872,7 +3818,8 @@ declare namespace math {
         point,
         polyline,
         rectangle,
-        vec2
+        vec2,
+        angle
     }
 }
 
@@ -4184,6 +4131,7 @@ declare namespace planar_2 {
         _default as default,
         filterAnnotationsWithinSlice,
         getWorldWidthAndHeightFromCorners,
+        getWorldWidthAndHeightFromTwoPoints,
         filterAnnotationsForDisplay,
         getPointInLineOfSightWithCriteria,
         isPlaneIntersectingAABB,
@@ -4472,6 +4420,7 @@ export class ProbeTool extends AnnotationTool {
             shadow: boolean;
             preventHandleOutsideImage: boolean;
             getTextLines: typeof defaultGetTextLines;
+            handleRadius: string;
         };
     };
     // (undocumented)
@@ -5001,6 +4950,9 @@ function removeContourRepresentation(viewportId: string, segmentationId: string,
 
 // @public (undocumented)
 function removeContourSegmentationAnnotation(annotation: ContourSegmentationAnnotation): void;
+
+// @public (undocumented)
+function removeEnabledElement(elementDisabledEvt: Types_2.EventTypes.ElementDisabledEvent): void;
 
 // @public (undocumented)
 function removeLabelmapRepresentation(viewportId: string, segmentationId: string, immediate?: boolean): void;
@@ -5812,6 +5764,12 @@ export let state: ICornerstoneTools3dState;
 // @public (undocumented)
 const state_2: {
     resetAnnotationManager: typeof resetAnnotationManager;
+    triggerAnnotationAddedForElement: typeof annotationStateHelpers.triggerAnnotationAddedForElement;
+    triggerAnnotationAddedForFOR: typeof annotationStateHelpers.triggerAnnotationAddedForFOR;
+    triggerAnnotationRemoved: typeof annotationStateHelpers.triggerAnnotationRemoved;
+    triggerAnnotationModified: typeof annotationStateHelpers.triggerAnnotationModified;
+    triggerAnnotationCompleted: typeof annotationStateHelpers.triggerAnnotationCompleted;
+    triggerContourAnnotationCompleted: typeof annotationStateHelpers.triggerContourAnnotationCompleted;
     getAllAnnotations: typeof annotationState.getAllAnnotations;
     getAnnotations: typeof annotationState.getAnnotations;
     getParentAnnotation: typeof annotationState.getParentAnnotation;
@@ -5867,6 +5825,23 @@ type Statistics = {
 
 // @public (undocumented)
 function stopClip(element: HTMLDivElement, options?: StopClipOptions): void;
+
+declare namespace store {
+    export {
+        addTool,
+        hasTool,
+        removeTool,
+        addEnabledElement,
+        removeEnabledElement,
+        cancelActiveManipulations,
+        svgNodeCache,
+        ToolGroupManager,
+        SynchronizerManager,
+        Synchronizer,
+        state
+    }
+}
+export { store }
 
 declare namespace strategies {
     export {
@@ -5978,6 +5953,9 @@ class SVGMouseCursor extends ImageMouseCursor {
     // (undocumented)
     static getDefinedCursor(name: string, pointer?: boolean, color?: string): MouseCursor;
 }
+
+// @public (undocumented)
+let svgNodeCache: {};
 
 // @public (undocumented)
 type SVGPoint_2 = {
@@ -6639,6 +6617,7 @@ function updateSegmentations(segmentationUpdateArray: {
 
 // @public (undocumented)
 function updateVolumeFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, operation: Enums_2.GenerateImageType, options: {
+    dimensionGroupNumbers?: number[];
     frameNumbers?: number[];
     targetVolume: Types_2.IImageVolume;
 }): void;
@@ -6660,6 +6639,7 @@ declare namespace utilities {
         getCalibratedLengthUnitsAndScale,
         getCalibratedProbeUnitsAndValue,
         getCalibratedAspect,
+        getPixelValueUnits,
         segmentation_2 as segmentation,
         contours,
         triggerAnnotationRenderForViewportIds,
@@ -6680,7 +6660,7 @@ declare namespace utilities {
         pointToString,
         polyDataUtils,
         voi,
-        AnnotationFrameRange as annotationFrameRange,
+        AnnotationMultiSlice,
         contourSegmentation,
         annotationHydration,
         getClosestImageIdForStackViewport,
@@ -6796,6 +6776,8 @@ declare namespace viewport {
 // @public (undocumented)
 class ViewportColorbar extends Colorbar {
     constructor(props: ViewportColorbarProps);
+    // (undocumented)
+    destroy(): void;
     // (undocumented)
     get element(): HTMLDivElement;
     // (undocumented)

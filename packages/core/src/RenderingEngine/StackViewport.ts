@@ -130,11 +130,19 @@ interface SetVOIOptions {
  * the documentation section of this website.
  */
 class StackViewport extends Viewport {
-  private imageIds: string[];
+  private imageIds: string[] = [];
+  /**
+   * The imageKeyToIndexMap maps the imageId values to the position in the imageIds
+   * array.  It also contains the imageURI equivalent of each imageId to map
+   * to the position in the imageIds array.  This allows checking for whether
+   * the imageId or URI is present without having to scan the imageIds array.
+   */
+  private imageKeyToIndexMap = new Map<string, number>();
+
   // current imageIdIndex that is rendered in the viewport
-  private currentImageIdIndex: number;
+  private currentImageIdIndex = 0;
   // the imageIdIndex that is targeted to be loaded with scrolling but has not initiated loading yet
-  private targetImageIdIndex: number;
+  private targetImageIdIndex = 0;
   // setTimeout if the image is debounced to be loaded
   private debouncedTimeout: number;
   /**
@@ -199,7 +207,6 @@ class StackViewport extends Viewport {
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
-    this.imageIds = [];
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
     this.resetCamera();
@@ -856,26 +863,28 @@ class StackViewport extends Viewport {
 
     this.setInterpolationType(InterpolationType.LINEAR);
 
-    const transferFunction = this.getTransferFunction();
-    setTransferFunctionNodes(
-      transferFunction,
-      this.initialTransferFunctionNodes
-    );
+    if (!this.useCPURendering) {
+      const transferFunction = this.getTransferFunction();
+      setTransferFunctionNodes(
+        transferFunction,
+        this.initialTransferFunctionNodes
+      );
 
-    const nodes = getTransferFunctionNodes(transferFunction);
+      const nodes = getTransferFunctionNodes(transferFunction);
 
-    const RGBPoints = nodes.reduce((acc, node) => {
-      acc.push(node[0], node[1], node[2], node[3]);
-      return acc;
-    }, []);
+      const RGBPoints = nodes.reduce((acc, node) => {
+        acc.push(node[0], node[1], node[2], node[3]);
+        return acc;
+      }, []);
 
-    const defaultActor = this.getDefaultActor();
-    const matchedColormap = colormapUtils.findMatchingColormap(
-      RGBPoints,
-      defaultActor.actor
-    );
+      const defaultActor = this.getDefaultActor();
+      const matchedColormap = colormapUtils.findMatchingColormap(
+        RGBPoints,
+        defaultActor.actor
+      );
 
-    this.setColormap(matchedColormap);
+      this.setColormap(matchedColormap);
+    }
   }
 
   public resetToDefaultProperties(): void {
@@ -1826,6 +1835,11 @@ class StackViewport extends Viewport {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
+    this.imageKeyToIndexMap.clear();
+    imageIds.forEach((imageId, index) => {
+      this.imageKeyToIndexMap.set(imageId, index);
+      this.imageKeyToIndexMap.set(imageIdToURI(imageId), index);
+    });
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
     const imageRetrieveConfiguration = metaData.get(
@@ -3035,48 +3049,48 @@ class StackViewport extends Viewport {
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
+    const testIndex = this.getCurrentImageIdIndex();
+    const currentImageId = this.imageIds[testIndex];
+    if (!currentImageId || !viewRef) {
+      return false;
+    }
+    const { referencedImageId, multiSliceReference } = viewRef;
+
+    // Optimize the return for the exact match cases
+    if (referencedImageId) {
+      if (referencedImageId === currentImageId) {
+        return true;
+      }
+      viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
+      const { referencedImageURI: referencedImageURI } = viewRef;
+      const foundSliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
+      if (options.asOverlay) {
+        const matchedImageId = this.matchImagesForOverlay(
+          currentImageId,
+          referencedImageId
+        );
+        if (matchedImageId) {
+          return true;
+        }
+      }
+      if (foundSliceIndex === undefined) {
+        return false;
+      }
+      if (options.withNavigation) {
+        return true;
+      }
+      const rangeEndSliceIndex =
+        multiSliceReference &&
+        this.imageKeyToIndexMap.get(multiSliceReference.referencedImageId);
+      return testIndex <= rangeEndSliceIndex && testIndex >= foundSliceIndex;
+    }
+
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
 
-    const { referencedImageId, sliceIndex } = viewRef;
-
-    if (viewRef.volumeId && !referencedImageId) {
+    if (viewRef.volumeId) {
       return options.asVolume;
-    }
-
-    let testIndex = this.getCurrentImageIdIndex();
-    let currentImageId = this.imageIds[testIndex];
-
-    if (options.withNavigation && typeof sliceIndex === 'number') {
-      testIndex = sliceIndex;
-      currentImageId = this.imageIds[testIndex];
-    }
-
-    if (!currentImageId) {
-      return false;
-    }
-
-    if (options.asOverlay && referencedImageId) {
-      const matchedImageId = this.matchImagesForOverlay(
-        currentImageId,
-        referencedImageId
-      );
-      if (matchedImageId) {
-        return true;
-      }
-    }
-
-    let { imageURI } = options;
-
-    if (!imageURI) {
-      // Remove the dataLoader scheme since that can change
-      imageURI = imageIdToURI(currentImageId);
-    }
-    const referencedImageURI = imageIdToURI(referencedImageId);
-    const matches = referencedImageURI === imageURI;
-    if (matches) {
-      return matches;
     }
 
     // if camera focal point is provided, we can use that as a point
@@ -3122,7 +3136,7 @@ class StackViewport extends Viewport {
   ): ViewReference {
     const { sliceIndex = this.getCurrentImageIdIndex() } = viewRefSpecifier;
     const reference = super.getViewReference(viewRefSpecifier);
-    const referencedImageId = this.imageIds[sliceIndex as number];
+    const referencedImageId = this.getCurrentImageId(sliceIndex);
     if (!referencedImageId) {
       return;
     }
@@ -3145,24 +3159,22 @@ class StackViewport extends Viewport {
    * Assumes that the slice index is correct for this viewport
    */
   public setViewReference(viewRef: ViewReference): void {
-    if (!viewRef) {
+    if (!viewRef?.referencedImageId) {
+      if (viewRef?.sliceIndex !== undefined) {
+        this.scroll(viewRef.sliceIndex - this.targetImageIdIndex);
+      }
       return;
     }
-    const { referencedImageId, sliceIndex } = viewRef;
-    if (
-      typeof sliceIndex === 'number' &&
-      referencedImageId &&
-      referencedImageId === this.imageIds[sliceIndex]
-    ) {
-      this.scroll(sliceIndex - this.targetImageIdIndex);
-    } else {
-      const foundIndex = this.imageIds.indexOf(referencedImageId);
-      if (foundIndex !== -1) {
-        this.scroll(foundIndex - this.targetImageIdIndex);
-      } else {
-        throw new Error('Unsupported - referenced image id not found');
-      }
+    const { referencedImageId } = viewRef;
+    viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
+    const { referencedImageURI: referencedImageURI } = viewRef;
+    const sliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
+    if (sliceIndex === undefined) {
+      console.error(`No image URI found for ${referencedImageURI}`);
+      return;
     }
+
+    this.scroll(sliceIndex - this.targetImageIdIndex);
   }
 
   /**
@@ -3170,10 +3182,7 @@ class StackViewport extends Viewport {
    * `imageId:<imageId>` URN format.
    */
   public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
-    const { sliceIndex: sliceIndex = this.currentImageIdIndex } = specifier;
-    if (Array.isArray(sliceIndex)) {
-      throw new Error('Use of slice ranges for stacks not supported');
-    }
+    const { sliceIndex = this.currentImageIdIndex } = specifier;
     return `imageId:${this.imageIds[sliceIndex]}`;
   }
 
@@ -3187,6 +3196,19 @@ class StackViewport extends Viewport {
     return this.targetImageIdIndex;
   };
 
+  public getSliceIndexForImage(reference: string | ViewReference) {
+    if (!reference) {
+      return;
+    }
+    if (typeof reference === 'string') {
+      return this.imageKeyToIndexMap.get(reference);
+    }
+    if (reference.referencedImageId) {
+      return this.imageKeyToIndexMap.get(reference.referencedImageId);
+    }
+    return;
+  }
+
   /**
    * Returns the list of image Ids for the current viewport
    * @returns list of strings for image Ids
@@ -3199,8 +3221,10 @@ class StackViewport extends Viewport {
    * Returns the currently rendered imageId
    * @returns string for imageId
    */
-  public getCurrentImageId = (): string => {
-    return this.imageIds[this.currentImageIdIndex];
+  public getCurrentImageId = (
+    index = this.getCurrentImageIdIndex()
+  ): string => {
+    return this.imageIds[index];
   };
 
   /**
@@ -3209,7 +3233,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageId is in viewport
    */
   public hasImageId = (imageId: string): boolean => {
-    return this.imageIds.includes(imageId);
+    return this.imageKeyToIndexMap.has(imageId);
   };
 
   /**
@@ -3218,14 +3242,7 @@ class StackViewport extends Viewport {
    * @returns boolean if imageURI is in viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
-    const imageIds = this.imageIds;
-    for (let i = 0; i < imageIds.length; i++) {
-      if (imageIdToURI(imageIds[i]) === imageURI) {
-        return true;
-      }
-    }
-
-    return false;
+    return this.imageKeyToIndexMap.has(imageURI);
   };
 
   private getCPUFallbackError(method: string): Error {

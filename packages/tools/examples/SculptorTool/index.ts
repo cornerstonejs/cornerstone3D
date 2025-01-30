@@ -24,7 +24,7 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { MouseBindings, Events } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix

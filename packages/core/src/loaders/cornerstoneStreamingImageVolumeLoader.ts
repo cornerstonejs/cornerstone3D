@@ -1,3 +1,4 @@
+import cache from '../cache/cache';
 import StreamingImageVolume from '../cache/classes/StreamingImageVolume';
 import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
@@ -52,6 +53,10 @@ function cornerstoneStreamingImageVolumeLoader(
       const indexesToPrefetch = [0, middleImageIndex, lastImageIndex];
       await Promise.all(
         indexesToPrefetch.map((index) => {
+          // check if image is cached
+          if (cache.isLoaded(options.imageIds[index])) {
+            return Promise.resolve(true);
+          }
           return new Promise((resolve, reject) => {
             const imageId = options.imageIds[index];
             imageLoadPoolManager.addRequest(

@@ -2,14 +2,12 @@ import type { Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
-  addToggleButtonToToolbar,
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
   addManipulationBindings,
-  addVideoTime,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -21,6 +19,9 @@ console.warn(
 const {
   KeyImageTool,
   VideoRedactionTool,
+  LengthTool,
+  ProbeTool,
+  RectangleROITool,
 
   ToolGroupManager,
   Enums: csToolsEnums,
@@ -31,12 +32,12 @@ const { AnnotationMultiSlice } = cornerstoneTools.utilities;
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
 
-const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
+const toolGroupId = 'STACK_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Video Range and Key Images Examples',
-  'Show a video viewport with controls to allow it to specify ranges and key images'
+  'Stack Range and Key Images Examples',
+  'Show a stack viewport with controls to allow it to specify ranges and key images'
 );
 
 const content = document.getElementById('content');
@@ -60,8 +61,7 @@ element.style.height = '500px';
 content.appendChild(element);
 
 const instructions = document.createElement('p');
-instructions.innerText = `Play/Pause button will toggle the playing of video
-Clear Frame Range clears and selected from range on playback
+instructions.innerText = `Clear Frame Range clears and selected from range on playback
 Click the viewer to apply a key image (range if playing, frame if still).
 Annotation navigation will choose next/previous annotation in the group
 Select start/remove range/end range to set the start of the range and the end range, as well as to remove the range (make the key image apply to the current frame only)
@@ -71,20 +71,9 @@ content.append(instructions);
 // ============================= //
 
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'videoViewportId';
-const baseEventDetail = {
-  viewportId,
-  renderingEngineId,
-};
+const viewportId = 'viewportId';
 
 let viewport;
-
-addToggleButtonToToolbar({
-  id: 'play',
-  title: 'Play',
-  onClick: togglePlay,
-  defaultToggle: false,
-});
 
 addButtonToToolbar({
   id: 'CreateKey',
@@ -96,16 +85,13 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
-  id: 'Clear',
-  title: 'Clear Frame Range',
-  onClick() {
-    viewport.setFrameRange(null);
-    viewport.play();
-  },
-});
-
-const toolsNames = [KeyImageTool.toolName, VideoRedactionTool.toolName];
+const toolsNames = [
+  KeyImageTool.toolName,
+  VideoRedactionTool.toolName,
+  LengthTool.toolName,
+  ProbeTool.toolName,
+  RectangleROITool.toolName,
+];
 let selectedToolName = toolsNames[0];
 
 addDropdownToToolbar({
@@ -145,16 +131,6 @@ addButtonToToolbar({
     selectNextAnnotation(1);
   },
 });
-
-function togglePlay(toggle = undefined) {
-  if (toggle === undefined) {
-    toggle = viewport.togglePlayPause();
-  } else if (toggle) {
-    viewport.play();
-  } else {
-    viewport.pause();
-  }
-}
 
 addButtonToToolbar({
   id: 'Set Range [',
@@ -228,17 +204,12 @@ function updateAnnotationDiv(uid) {
   selectedAnnotation.annotationUID = uid;
   const { metadata, data } = annotation;
   const { toolName } = metadata;
-  const range = AnnotationMultiSlice.getFrameRange(annotation);
-  const rangeArr = Array.isArray(range) ? range : [range];
-  console.log('rangeArr=', range, rangeArr);
-  const { fps } = viewport;
+  const range = AnnotationMultiSlice.getFrameRangeStr(annotation);
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
     data.label || data.text
   } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
-    <b>Range:</b> Frames: ${rangeArr.join('-')} Times ${rangeArr
-    .map((it) => Math.round((it * 10) / fps) / 10)
-    .join('-')}<br />
+    <b>Range:</b> Frames: ${range}<br />
   `;
 }
 
@@ -280,16 +251,7 @@ function selectNextAnnotation(direction) {
   if (!annotation) {
     return;
   }
-  const range = AnnotationMultiSlice.getFrameRange(annotation);
-  if (Array.isArray(range)) {
-    viewport.setFrameRange(range);
-    togglePlay(true);
-    viewport.setFrameNumber(range[0]);
-  } else {
-    viewport.setFrameRange(null);
-    togglePlay(false);
-    viewport.setFrameNumber(range);
-  }
+  viewport.setViewReference(annotation.metadata);
 }
 
 /**
@@ -301,21 +263,21 @@ async function run() {
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
-    SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
-
-  // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
-  );
 
   addAnnotationListeners();
   // Add annotation tools to Cornerstone3D
   cornerstoneTools.addTool(KeyImageTool);
   cornerstoneTools.addTool(VideoRedactionTool);
+  cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(ProbeTool);
+  cornerstoneTools.addTool(RectangleROITool);
 
   // Add tools to Cornerstone3D
 
@@ -327,6 +289,9 @@ async function run() {
   // Add tools to the tool group
   toolGroup.addTool(KeyImageTool.toolName);
   toolGroup.addTool(VideoRedactionTool.toolName);
+  toolGroup.addTool(ProbeTool.toolName);
+  toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(RectangleROITool.toolName);
 
   toolGroup.setToolActive(VideoRedactionTool.toolName, {
     bindings: [
@@ -353,7 +318,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.VIDEO,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -363,15 +328,14 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IVideoViewport>renderingEngine.getViewport(viewportId);
+  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(videoId, 1);
-  addVideoTime(element, viewport);
+  viewport.setStack(imageIds, 1);
 }
 
 run();

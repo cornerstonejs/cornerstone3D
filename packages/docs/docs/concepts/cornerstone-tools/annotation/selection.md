@@ -31,5 +31,5 @@ annotation.selection.getAnnotationsSelectedByToolName(toolName);
 ## Read more
 
 :::note TIP
-Read more about the selection API [**here**](/api/tools/namespace/annotation#selection)
+Read more about the selection API [**here**](/docs/api/tools/namespaces/annotation/namespaces/selection/)
 :::

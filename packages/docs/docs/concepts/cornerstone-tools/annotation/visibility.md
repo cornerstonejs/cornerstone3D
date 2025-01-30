@@ -32,5 +32,5 @@ annotation.visibility.isAnnotationVisible(annotationUID);
 ## Read more
 
 :::note TIP
-Read more about the visibility API [here](/api/tools/namespace/annotation#visibility)
+Read more about the visibility API [here](/docs/api/tools/namespaces/annotation/namespaces/visibility)
 :::

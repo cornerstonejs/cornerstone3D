@@ -42,7 +42,7 @@ module.exports = {
           label: 'Examples',
         },
         {
-          href: 'https://ohif.org/community/',
+          href: 'https://ohif.org/collaborate',
           position: 'left',
           label: 'Community',
         },

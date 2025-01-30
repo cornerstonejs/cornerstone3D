@@ -29,7 +29,6 @@ export class ImageVolume {
   private _imageIdsIndexMap = new Map();
   private _imageURIsIndexMap = new Map();
   /** volume scalar data 3D or 4D */
-  protected numFrames: number;
   protected totalNumFrames: number;
   protected cornerstoneImageMetaData = null;
 
@@ -84,7 +83,9 @@ export class ImageVolume {
   voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
+  // @deprecated
   numTimePoints? = null as number;
+  numFrames = null as number;
 
   constructor(props: ImageVolumeProps) {
     const {

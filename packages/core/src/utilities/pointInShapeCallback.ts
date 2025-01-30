@@ -168,6 +168,7 @@ export function iterateOverPointsInShapeVoxelManager({
   imageData,
   pointInShapeFn,
   callback,
+  returnPoints,
 }) {
   const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = bounds;
   const indexToWorld = createPositionCallback(imageData);
@@ -188,12 +189,14 @@ export function iterateOverPointsInShapeVoxelManager({
           const index = voxelManager.toIndex(pointIJK);
           const value = voxelManager.getAtIndex(index);
 
-          pointsInShape.push({
-            value,
-            index,
-            pointIJK: [...pointIJK],
-            pointLPS: pointLPS.slice(),
-          });
+          if (returnPoints) {
+            pointsInShape.push({
+              value,
+              index,
+              pointIJK: [...pointIJK],
+              pointLPS: pointLPS.slice(),
+            });
+          }
 
           callback?.({ value, index, pointIJK, pointLPS });
         }

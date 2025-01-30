@@ -221,7 +221,7 @@ export default class BaseStreamingImageVolume
 
     // Check if this completes a timepoint (for dynamic volumes)
     if (this.isDynamicVolume()) {
-      this.checkTimePointCompletion(imageIdIndex);
+      this.checkDimensionGroupCompletion(imageIdIndex);
     }
   }
 
@@ -589,5 +589,5 @@ export default class BaseStreamingImageVolume
     this.scaling = { PT: petScaling };
   }
 
-  protected checkTimePointCompletion(imageIdIndex: number): void {}
+  protected checkDimensionGroupCompletion(imageIdIndex: number): void {}
 }

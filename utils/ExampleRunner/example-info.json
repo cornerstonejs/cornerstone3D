@@ -235,10 +235,6 @@
         "name": "Double Click With Stack Annotation Tools",
         "description": "Demonstrates double click detection before/during/after using various annotation tools on a stack viewport."
       },
-      "dynamicPetCt": {
-        "name": "Load a petCT data where PT series is 4D",
-        "description": "Demonstrates how to render a 4D data into multiple viewports and fuse them"
-      },
       "colorBar": {
         "name": "ColorBar",
         "description": "Demonstrates how to add an interactive color bar to stack viewport"
@@ -262,6 +258,10 @@
       "livewireContour": {
         "name": "Livewire",
         "description": "Demonstrates how to use the livewire tool to create ROIs"
+      },
+      "stackRange": {
+        "name": "Stack Range",
+        "description": "Demonstrates use of a selection range for key image and other tools"
       }
     },
     "viewports": {
@@ -557,10 +557,6 @@
       }
     },
     "adapters": {
-      "segmentationExport": {
-        "name": "DICOM SEG export",
-        "description": "Demonstrates how to export a segmentation to DICOM SEG"
-      },
       "segmentationStack": {
         "name": "DICOM SEG Stack",
         "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D stack"

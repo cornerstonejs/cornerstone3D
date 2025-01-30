@@ -9,10 +9,20 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 import {
   LengthTool,
+  BidirectionalTool,
+  ArrowAnnotateTool,
+  EllipticalROITool,
   RectangleROITool,
+  CircleROITool,
+  PlanarFreehandROITool,
+  SplineROITool,
+  LivewireContourTool,
+  AngleTool,
+  CobbAngleTool,
   ToolGroupManager,
   Enums as csToolsEnums,
   annotation,
@@ -87,6 +97,62 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Hide All Annotations',
+  onClick: () => {
+    const annotationsUIDs = annotation.state
+      .getAllAnnotations()
+      .map((a) => a.annotationUID);
+
+    annotationsUIDs.forEach((annotationUID) => {
+      visibility.setAnnotationVisibility(annotationUID, false);
+    });
+
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.renderViewports([viewportId]);
+  },
+});
+
+const tools = [
+  LengthTool,
+  BidirectionalTool,
+  ArrowAnnotateTool,
+  EllipticalROITool,
+  RectangleROITool,
+  CircleROITool,
+  PlanarFreehandROITool,
+  SplineROITool,
+  LivewireContourTool,
+  AngleTool,
+  CobbAngleTool,
+];
+
+const toolNames = tools.map((tool) => tool.toolName);
+let selectedToolName = toolNames[0];
+
+addDropdownToToolbar({
+  options: { values: toolNames, defaultValue: selectedToolName },
+  onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
+    const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    if (!toolGroup) {
+      console.error('Tool group not found');
+      return;
+    }
+    toolGroup.setToolActive(newSelectedToolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary, // Left Click
+        },
+      ],
+    });
+
+    toolGroup.setToolPassive(selectedToolName);
+
+    selectedToolName = newSelectedToolName;
+  },
+});
+
 /**
  * Runs the demo
  */
@@ -95,18 +161,15 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  addTool(LengthTool);
-  addTool(RectangleROITool);
+  tools.forEach((tool) => addTool(tool));
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
+  toolNames.forEach((toolName) => toolGroup.addTool(toolName));
 
-  // Set both tools passive to we can edit annotations
   toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
@@ -114,7 +177,6 @@ async function run() {
       },
     ],
   });
-  toolGroup.setToolPassive(RectangleROITool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({

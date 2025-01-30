@@ -102,7 +102,7 @@ Other methods for managing ToolGroups are available via `ToolGroupManager`.
 
 ### `getToolGroupForViewport`
 
-returns the ToolGroup for a given viewport, read more [here](/api/tools/namespace/ToolGroupManager#getToolGroupForViewport)
+returns the ToolGroup for a given viewport, read more [here](/docs/api/tools/namespaces/toolgroupmanager/functions/gettoolgroupforviewport)
 
 ### `getToolGroup`
 

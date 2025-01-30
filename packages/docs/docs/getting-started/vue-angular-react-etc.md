@@ -30,7 +30,49 @@ export default defineConfig({
 });
 ```
 
-## Webpack
+## Troubleshooting
+
+### 1. @icr/polyseg-wasm Build Issues
+
+If you're using 3D segmentation features and encounter issues with `@icr/polyseg-wasm`, add the following to your Vite configuration:
+
+```javascript
+build: {
+  rollupOptions: {
+    external: ["@icr/polyseg-wasm"],
+  }
+},
+```
+
+### 2. Path Resolution Issues with @cornerstonejs/core
+
+If you encounter the error "No known conditions for "./types" specifier in "@cornerstonejs/core" package" during build (while development works fine), add the following alias to your Vite configuration:
+
+```javascript
+resolve: {
+  alias: {
+    '@': fileURLToPath(new URL('./src', import.meta.url)),
+    '@root': fileURLToPath(new URL('./', import.meta.url)),
+    "@cornerstonejs/core": fileURLToPath(new URL('node_modules/@cornerstonejs/core/dist/esm', import.meta.url)),
+  },
+},
+```
+
+### 3. Tool Name Minification Issues
+
+If you experience issues with tool names being minified (e.g., LengthTool being registered as "FE"), you can prevent minification by adding:
+
+```javascript
+build: {
+  minify: false,
+}
+```
+
+:::note
+These solutions have been tested primarily on macOS but may also apply to other operating systems. If you're using Vuetify or other Vue frameworks, these configurations might need to be adjusted based on your specific setup.
+:::
+
+### 4. Webpack
 
 For webpack, simply install the cornerstone3D library and import it into your project.
 

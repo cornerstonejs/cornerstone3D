@@ -279,6 +279,7 @@ export default class VoxelManager<T> {
         ],
         pointInShapeFn: isInObject,
         callback,
+        returnPoints,
       });
       return pointsInShape;
     }
@@ -981,14 +982,28 @@ export default class VoxelManager<T> {
   public static createScalarDynamicVolumeVoxelManager({
     imageIdGroups,
     dimensions,
+    dimensionGroupNumber = 1,
     timePoint = 0,
     numberOfComponents = 1,
   }: {
     imageIdGroups: string[][];
     dimensions: Point3;
-    timePoint: number;
+    dimensionGroupNumber?: number;
+    timePoint?: number;
     numberOfComponents?: number;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
+    // Convert to zero-based index for internal use
+    let activeDimensionGroup = 0;
+
+    if (dimensionGroupNumber !== undefined) {
+      activeDimensionGroup = dimensionGroupNumber - 1;
+    } else if (timePoint !== undefined) {
+      console.warn(
+        'Warning: timePoint parameter is deprecated. Please use dimensionGroupNumber instead. timePoint is zero-based while dimensionGroupNumber starts at 1.'
+      );
+      activeDimensionGroup = timePoint;
+    }
+
     if (!numberOfComponents) {
       const firstImage = cache.getImage(imageIdGroups[0][0]);
       if (!firstImage) {
@@ -1019,57 +1034,109 @@ export default class VoxelManager<T> {
 
     // Create a VoxelManager that will manage the active voxel group
     const voxelManager = new VoxelManager<number | RGB>(dimensions, {
-      _get: (index) => voxelGroups[timePoint]._get(index),
+      _get: (index) => voxelGroups[activeDimensionGroup]._get(index),
       // @ts-ignore
-      _set: (index, v) => voxelGroups[timePoint]._set(index, v),
+      _set: (index, v) => voxelGroups[activeDimensionGroup]._set(index, v),
       numberOfComponents,
       _id: 'createScalarDynamicVolumeVoxelManager',
     }) as IVoxelManager<number> | IVoxelManager<RGB>;
 
     voxelManager.getScalarDataLength = () => {
-      return voxelGroups[timePoint].getScalarDataLength();
+      return voxelGroups[activeDimensionGroup].getScalarDataLength();
     };
 
     voxelManager.getConstructor = () => {
-      return voxelGroups[timePoint].getConstructor();
+      return voxelGroups[activeDimensionGroup].getConstructor();
     };
 
     voxelManager.getRange = () => {
-      return voxelGroups[timePoint].getRange();
+      return voxelGroups[activeDimensionGroup].getRange();
     };
 
     voxelManager.getMiddleSliceData = () => {
-      return voxelGroups[timePoint].getMiddleSliceData();
+      return voxelGroups[activeDimensionGroup].getMiddleSliceData();
     };
 
     // @ts-ignore
     voxelManager.setTimePoint = (newTimePoint: number) => {
-      timePoint = newTimePoint;
+      console.warn(
+        'Warning: setTimePoint is deprecated. Please use setDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
+      );
       // @ts-ignore
-      voxelManager._get = (index) => voxelGroups[timePoint]._get(index);
+      voxelManager.setDimensionGroupNumber(newTimePoint + 1);
+    };
+
+    // @ts-ignore
+    voxelManager.setDimensionGroupNumber = (
+      newDimensionGroupNumber: number
+    ) => {
+      activeDimensionGroup = newDimensionGroupNumber - 1;
       // @ts-ignore
-      voxelManager._set = (index, v) => voxelGroups[timePoint]._set(index, v);
+      voxelManager._get = (index) =>
+        voxelGroups[activeDimensionGroup]._get(index);
+      // @ts-ignore
+      voxelManager._set = (index, v) =>
+        voxelGroups[activeDimensionGroup]._set(index, v);
     };
 
     // @ts-ignore
     voxelManager.getAtIndexAndTimePoint = (index: number, tp: number) => {
-      return voxelGroups[tp]._get(index);
+      console.warn(
+        'Warning: getAtIndexAndTimePoint is deprecated. Please use getAtIndexAndDimensionGroup instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
+      );
+      // @ts-ignore
+      return voxelManager.getAtIndexAndDimensionGroup(index, tp + 1);
+    };
+
+    // @ts-ignore
+    voxelManager.getAtIndexAndDimensionGroup = (
+      index: number,
+      dimensionGroupNumber: number
+    ) => {
+      return voxelGroups[dimensionGroupNumber - 1]._get(index);
     };
 
     // @ts-ignore
     voxelManager.getTimePointScalarData = (tp: number) => {
-      return voxelGroups[tp].getCompleteScalarDataArray();
+      console.warn(
+        'Warning: getTimePointScalarData is deprecated. Please use getDimensionGroupScalarData instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
+      );
+      // @ts-ignore
+      return voxelManager.getDimensionGroupScalarData(tp + 1);
     };
 
     // @ts-ignore
-    // get the given time point complete scalar data array
-    voxelManager.getTimePointScalarData = (tp: number) => {
-      return voxelGroups[tp].getCompleteScalarDataArray();
+    voxelManager.getDimensionGroupScalarData = (
+      dimensionGroupNumber: number
+    ) => {
+      return voxelGroups[dimensionGroupNumber - 1].getCompleteScalarDataArray();
     };
 
     // @ts-ignore
     voxelManager.getCurrentTimePointScalarData = () => {
-      return voxelGroups[timePoint].getCompleteScalarDataArray();
+      console.warn(
+        'Warning: getCurrentTimePointScalarData is deprecated. Please use getCurrentDimensionGroupScalarData instead.'
+      );
+      // @ts-ignore
+      return voxelManager.getCurrentDimensionGroupScalarData();
+    };
+
+    // @ts-ignore
+    voxelManager.getCurrentDimensionGroupScalarData = () => {
+      return voxelGroups[activeDimensionGroup].getCompleteScalarDataArray();
+    };
+
+    // @ts-ignore
+    voxelManager.getCurrentTimePoint = () => {
+      console.warn(
+        'Warning: getCurrentTimePoint is deprecated. Please use getCurrentDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
+      );
+      return activeDimensionGroup;
+    };
+
+    // @ts-ignore
+    voxelManager.getCurrentDimensionGroupNumber = () => {
+      return activeDimensionGroup + 1;
     };
 
     return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;

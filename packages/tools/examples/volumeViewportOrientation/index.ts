@@ -106,7 +106,6 @@ async function run() {
       },
     ],
   });
-  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -123,6 +122,7 @@ async function run() {
   };
 
   renderingEngine.enableElement(viewportInput);
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
   const viewport = <Types.IVolumeViewport>(
