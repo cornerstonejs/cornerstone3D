@@ -51,6 +51,10 @@ export async function peerImport(moduleId) {
   if (moduleId === '@icr/polyseg-wasm') {
     return import('@icr/polyseg-wasm');
   }
+
+  if (moduleId === '@itk-wasm/morphological-contour-interpolation') {
+    return import('@itk-wasm/morphological-contour-interpolation');
+  }
 }
 
 async function importGlobal(path, globalName) {
