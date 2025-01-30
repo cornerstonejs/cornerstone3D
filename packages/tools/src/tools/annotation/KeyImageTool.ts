@@ -76,7 +76,9 @@ class KeyImageTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const annotation = KeyImageTool.createAnnotationForViewport(viewport);
+    const annotation = (<typeof KeyImageTool>(
+      this.constructor
+    )).createAnnotationForViewport(viewport);
 
     addAnnotation(annotation, element);
 

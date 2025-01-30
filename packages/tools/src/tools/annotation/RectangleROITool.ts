@@ -152,32 +152,30 @@ class RectangleROITool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const annotation =
-      RectangleROITool.createAnnotationForViewport<RectangleROIAnnotation>(
-        viewport,
-        {
-          data: {
-            handles: {
-              points: [
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-              ],
-              textBox: {
-                hasMoved: false,
-                worldPosition: <Types.Point3>[0, 0, 0],
-                worldBoundingBox: {
-                  topLeft: <Types.Point3>[0, 0, 0],
-                  topRight: <Types.Point3>[0, 0, 0],
-                  bottomLeft: <Types.Point3>[0, 0, 0],
-                  bottomRight: <Types.Point3>[0, 0, 0],
-                },
-              },
+    const annotation = (<typeof AnnotationTool>(
+      this.constructor
+    )).createAnnotationForViewport<RectangleROIAnnotation>(viewport, {
+      data: {
+        handles: {
+          points: [
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+          ],
+          textBox: {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
-        }
-      );
+        },
+      },
+    });
 
     addAnnotation(annotation, element);
 

@@ -71,22 +71,20 @@ class VideoRedactionTool extends AnnotationTool {
     const { viewport } = enabledElement;
 
     this.isDrawing = true;
-    const annotation =
-      VideoRedactionTool.createAnnotationForViewport<VideoRedactionAnnotation>(
-        viewport,
-        {
-          data: {
-            handles: {
-              points: [
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-              ],
-            },
-          },
-        }
-      );
+    const annotation = (<typeof AnnotationTool>(
+      this.constructor
+    )).createAnnotationForViewport<VideoRedactionAnnotation>(viewport, {
+      data: {
+        handles: {
+          points: [
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+          ],
+        },
+      },
+    });
 
     addAnnotation(annotation, element);
 
