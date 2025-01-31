@@ -92,7 +92,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class ProbeTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Probe';
 
   editData: {
     annotation: Annotation;
@@ -216,14 +216,13 @@ class ProbeTool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const annotation = ProbeTool.createAnnotationForViewport<ProbeAnnotation>(
-      viewport,
-      {
-        data: {
-          handles: { points: [<Types.Point3>[...worldPos]] },
-        },
-      }
-    );
+    const annotation = (<typeof AnnotationTool>(
+      this.constructor
+    )).createAnnotationForViewport<ProbeAnnotation>(viewport, {
+      data: {
+        handles: { points: [<Types.Point3>[...worldPos]] },
+      },
+    });
 
     addAnnotation(annotation, element);
 
@@ -704,5 +703,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-ProbeTool.toolName = 'Probe';
 export default ProbeTool;

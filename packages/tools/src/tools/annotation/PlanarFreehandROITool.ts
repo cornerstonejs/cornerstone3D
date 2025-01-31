@@ -116,7 +116,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  */
 
 class PlanarFreehandROITool extends ContourSegmentationBaseTool {
-  static toolName;
+  static toolName = 'PlanarFreehandROI';
 
   _throttledCalculateCachedStats: Function;
   private commonData?: PlanarFreehandROICommonData;
@@ -1107,5 +1107,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-PlanarFreehandROITool.toolName = 'PlanarFreehandROI';
 export default PlanarFreehandROITool;
