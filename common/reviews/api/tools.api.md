@@ -9,6 +9,7 @@ import { Corners } from '@kitware/vtk.js/Interaction/Widgets/OrientationMarkerWi
 import type { IColorMapPreset } from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import type { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
+import { MorphologicalContourInterpolationOptions } from '@itk-wasm/morphological-contour-interpolation';
 import type { Range as Range_2 } from '@kitware/vtk.js/types';
 import { vec3 } from 'gl-matrix';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -887,7 +888,11 @@ type BoundsIJK_2 = Types_2.BoundsIJK;
 export class BrushTool extends LabelmapBaseTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
+    acceptPreview(element?: HTMLDivElement): void;
+    // (undocumented)
     getStatistics(element: any, segmentIndices?: any): any;
+    // (undocumented)
+    interpolate(element: any, config: any): void;
     // (undocumented)
     invalidateBrushCursor(): void;
     // (undocumented)
@@ -902,6 +907,8 @@ export class BrushTool extends LabelmapBaseTool {
     preMouseDownCallback: (evt: EventTypes_2.MouseDownActivateEventType) => boolean;
     // (undocumented)
     previewCallback: () => void;
+    // (undocumented)
+    rejectPreview(element?: HTMLDivElement): void;
     // (undocumented)
     renderAnnotation(enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper): void;
     // (undocumented)
@@ -5870,6 +5877,8 @@ enum StrategyCallbacks {
     Initialize = "initialize",
     // (undocumented)
     INTERNAL_setValue = "setValue",
+    // (undocumented)
+    Interpolate = "interpolate",
     // (undocumented)
     OnInteractionEnd = "onInteractionEnd",
     // (undocumented)

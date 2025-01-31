@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.0...v2.18.1) (2025-01-31)
+
+**Note:** Version bump only for package root
+
+# [2.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.6...v2.18.0) (2025-01-30)
+
+### Features
+
+- **seg:** labelmap interpolation in space ([#1648](https://github.com/cornerstonejs/cornerstone3D/issues/1648)) ([ff06e5b](https://github.com/cornerstonejs/cornerstone3D/commit/ff06e5b8b7f0dced62715dbe36c02767965af002))
+
 ## [2.17.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.5...v2.17.6) (2025-01-29)
 
 ### Bug Fixes

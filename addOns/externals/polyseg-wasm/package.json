@@ -9,6 +9,7 @@
     "yarn": ">=1.19.1"
   },
   "dependencies": {
-    "@icr/polyseg-wasm": "^0.4.0"
+    "@icr/polyseg-wasm": "^0.4.0",
+    "@itk-wasm/morphological-contour-interpolation": "1.0.1"
   }
 }
