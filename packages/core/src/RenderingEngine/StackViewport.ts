@@ -1940,8 +1940,6 @@ class StackViewport extends Viewport {
       imagePlaneModule.columnCosines,
       columnCosines as Point3
     );
-    const isDataTypeMatching =
-      dataType === image.voxelManager.getScalarData().constructor.name;
 
     const result =
       isXSpacingValid &&
@@ -1949,8 +1947,7 @@ class StackViewport extends Viewport {
       isXVoxelsMatching &&
       isYVoxelsMatching &&
       isRowCosinesMatching &&
-      isColumnCosinesMatching &&
-      isDataTypeMatching;
+      isColumnCosinesMatching;
 
     return result;
   }
@@ -2423,6 +2420,7 @@ class StackViewport extends Viewport {
 
     // const activeCamera = this.getRenderer().getActiveCamera();
     const viewPresentation = this.getViewPresentation();
+    console.debug(viewPresentation);
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
