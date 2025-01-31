@@ -4335,6 +4335,8 @@ export class Viewport {
     // (undocumented)
     getRotation: () => number;
     // (undocumented)
+    getScale(): number;
+    // (undocumented)
     getSliceIndex(): number;
     // (undocumented)
     getSliceViewInfo(): {
