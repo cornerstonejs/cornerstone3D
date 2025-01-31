@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.2...v2.18.3) (2025-01-31)
+
+### Bug Fixes
+
+- **window-level:** prevent window level from being reset after modified by user ([#1793](https://github.com/cornerstonejs/cornerstone3D/issues/1793)) ([f7a1c42](https://github.com/cornerstonejs/cornerstone3D/commit/f7a1c422addcb1879f046ffba2ea2fa8f84e44ea))
+
 ## [2.18.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.1...v2.18.2) (2025-01-31)
 
 **Note:** Version bump only for package @cornerstonejs/core
