@@ -2420,7 +2420,6 @@ class StackViewport extends Viewport {
 
     // const activeCamera = this.getRenderer().getActiveCamera();
     const viewPresentation = this.getViewPresentation();
-    console.debug(viewPresentation);
 
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
