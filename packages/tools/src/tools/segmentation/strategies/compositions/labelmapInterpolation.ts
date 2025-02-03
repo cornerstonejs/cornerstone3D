@@ -1,13 +1,17 @@
-import type { MorphologicalContourInterpolationOptions } from '@itk-wasm/morphological-contour-interpolation';
-import { morphologicalContourInterpolation } from '@itk-wasm/morphological-contour-interpolation';
-import { utilities } from '@cornerstonejs/core';
+import { utilities, peerImport } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import getItkImage from '../utils/getItkImage';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import PreviewMethods from './preview';
 
-const { VoxelManager } = utilities;
+type MorphologicalContourInterpolationOptions = {
+  label?: number;
+  axis?: number;
+  noHeuristicAlignment?: boolean;
+  noUseDistanceTransform?: boolean;
+  useCustomSlicePositions?: boolean;
+};
 
 /**
  * Adds an isWithinThreshold to the operation data that checks that the
@@ -15,7 +19,7 @@ const { VoxelManager } = utilities;
  * No-op if threshold not defined.
  */
 export default {
-  [StrategyCallbacks.Interpolate]: (
+  [StrategyCallbacks.Interpolate]: async (
     operationData: InitializedOperationData,
     configuration: MorphologicalContourInterpolationOptions
   ) => {
@@ -36,11 +40,31 @@ export default {
       previewVoxelManager.forEach(callback);
     }
     const inputImage = getItkImage(segmentationImageData, 'interpolation');
-    const outputPromise = morphologicalContourInterpolation(inputImage, {
-      ...configuration,
-      label: segmentIndex,
-      webWorker: false,
-    });
+
+    let itkModule;
+    try {
+      // Use peerImport instead of dynamic import
+      itkModule = await peerImport(
+        '@itk-wasm/morphological-contour-interpolation'
+      );
+      if (!itkModule) {
+        throw new Error('Module not found');
+      }
+    } catch (error) {
+      console.debug(
+        "Warning: '@itk-wasm/morphological-contour-interpolation' module not found. Please install it separately."
+      );
+      return operationData;
+    }
+
+    const outputPromise = itkModule.morphologicalContourInterpolation(
+      inputImage,
+      {
+        ...configuration,
+        label: segmentIndex,
+        webWorker: false,
+      }
+    );
     outputPromise.then((value) => {
       const { outputImage } = value;
 

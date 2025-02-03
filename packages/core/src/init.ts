@@ -238,7 +238,7 @@ function getWebWorkerManager() {
   return webWorkerManager;
 }
 
-function peerImport(moduleId: string) {
+async function peerImport(moduleId: string) {
   return config.peerImport(moduleId);
 }
 
