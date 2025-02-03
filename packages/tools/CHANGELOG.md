@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.5...v2.18.6) (2025-02-03)
+
+### Bug Fixes
+
+- the rest of packaging issue and move from timePointIndex to dimensionGroup ([#1798](https://github.com/cornerstonejs/cornerstone3D/issues/1798)) ([e2d95ef](https://github.com/cornerstonejs/cornerstone3D/commit/e2d95ef0864fca2fd8403a29e5963df40a47924b))
+
 ## [2.18.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.4...v2.18.5) (2025-02-03)
 
 ### Bug Fixes
