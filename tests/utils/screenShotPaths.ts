@@ -61,7 +61,7 @@ const screenShotPaths = {
     splinesOnSegmentTwo: 'splinesOnSegmentTwo.png',
   },
   surfaceRendering: {
-    viewport: 'viewport.png',
+    viewport: 'surfaceRendering.png',
   },
   labelmapSegmentationTools: {
     circularBrush: 'circularBrush.png',
