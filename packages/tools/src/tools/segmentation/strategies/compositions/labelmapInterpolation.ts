@@ -39,10 +39,6 @@ export default {
       };
       previewVoxelManager.forEach(callback);
     }
-    const inputImage = await getItkImage(
-      segmentationImageData,
-      'interpolation'
-    );
 
     let itkModule;
     try {
@@ -54,9 +50,20 @@ export default {
         throw new Error('Module not found');
       }
     } catch (error) {
-      console.debug(
+      console.warn(
         "Warning: '@itk-wasm/morphological-contour-interpolation' module not found. Please install it separately."
       );
+      return operationData;
+    }
+
+    let inputImage;
+    try {
+      inputImage = await getItkImage(segmentationImageData, 'interpolation');
+      if (!inputImage) {
+        throw new Error('Failed to get ITK image');
+      }
+    } catch (error) {
+      console.warn('Warning: Failed to get ITK image for interpolation');
       return operationData;
     }
 
