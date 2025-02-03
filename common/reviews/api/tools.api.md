@@ -1311,7 +1311,7 @@ export class CircleScissorsTool extends LabelmapBaseTool {
 }
 
 // @public (undocumented)
-function clip_2(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
+function clip_2(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
 
 // @public (undocumented)
 type ClosestControlPoint = ClosestPoint & {

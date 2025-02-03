@@ -14,6 +14,7 @@ import {
   projectTo2D,
 } from '../utilities/math/polyline';
 import { isPlaneIntersectingAABB } from '../utilities/planar';
+import { checkStandardBasis, rotatePoints } from '../geometricSurfaceUtils';
 
 /**
  * Object containing methods for converting between different representations of
@@ -118,6 +119,15 @@ const polySegConverters = {
       args.origin,
       [args.segmentIndex]
     );
+    const rotationInfo = checkStandardBasis(args.direction);
+    if (!rotationInfo.isStandard) {
+      const rotatedPoints = rotatePoints(
+        rotationInfo.rotationMatrix,
+        args.origin,
+        results.points
+      );
+      results.points = [...rotatedPoints];
+    }
     return results;
   },
   /**
