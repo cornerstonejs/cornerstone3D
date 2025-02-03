@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.0...v2.19.1) (2025-02-03)
+
+### Bug Fixes
+
+- **test:** add surface test ([#1803](https://github.com/cornerstonejs/cornerstone3D/issues/1803)) ([7a55442](https://github.com/cornerstonejs/cornerstone3D/commit/7a554424a764d195b76dc30616826be0b897a957))
+
 # [2.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.9...v2.19.0) (2025-02-03)
 
 ### Features
