@@ -7,6 +7,7 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
+import { getCanUseNorm16Texture } from '../../init';
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -261,7 +262,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
       if (shouldReset) {
         const norm16Ext = model.context.getExtension('EXT_texture_norm16');
-        model.scalarTexture.setOglNorm16Ext(norm16Ext);
+        model.scalarTexture.setOglNorm16Ext(
+          getCanUseNorm16Texture() ? norm16Ext : null
+        );
         model.scalarTexture.resetFormatAndType();
 
         model.scalarTexture.setTextureParameters({

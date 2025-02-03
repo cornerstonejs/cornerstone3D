@@ -3,6 +3,7 @@ let csRenderInitialized = false;
 import deepMerge from './utilities/deepMerge';
 import type { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
+import { getSupportedTextureFormats } from './utilities/textureSupport';
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -28,6 +29,7 @@ let config: Cornerstone3DConfig = {
 };
 
 let webWorkerManager = null;
+let canUseNorm16Texture = false;
 
 function _getGLContext(): RenderingContext {
   // Create canvas element. The canvas is not added to the
@@ -54,19 +56,8 @@ function _hasActiveWebGLContext() {
 }
 
 function _hasNorm16TextureSupport() {
-  const gl = _getGLContext();
-
-  if (gl) {
-    const ext = (gl as WebGL2RenderingContext).getExtension(
-      'EXT_texture_norm16'
-    );
-
-    if (ext) {
-      return true;
-    }
-  }
-
-  return false;
+  const supportedTextureFormats = getSupportedTextureFormats();
+  return supportedTextureFormats.norm16 && supportedTextureFormats.norm16Linear;
 }
 
 function isIOS() {
@@ -101,6 +92,8 @@ function init(configuration = config): boolean {
     return csRenderInitialized;
   }
 
+  canUseNorm16Texture = _hasNorm16TextureSupport();
+
   // merge configs
   config = deepMerge(defaultConfig, configuration);
 
@@ -129,6 +122,10 @@ function init(configuration = config): boolean {
   }
 
   return csRenderInitialized;
+}
+
+function getCanUseNorm16Texture(): boolean {
+  return canUseNorm16Texture;
 }
 
 /**
@@ -255,4 +252,5 @@ export {
   canRenderFloatTextures,
   peerImport,
   resetInitialization,
+  getCanUseNorm16Texture,
 };
