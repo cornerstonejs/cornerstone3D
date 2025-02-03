@@ -4,8 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  ProgressiveRetrieveImages,
-  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -14,7 +12,6 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
-  getLocalUrl,
   addButtonToToolbar,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
@@ -85,17 +82,17 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Use the labelmap tools in the normal way.  Note preview is turned off for those
+  Use the labelmap tools in the normal way. Note preview is turned off for those
   tools to simplify initial segment creation.
   <br>Segments are interpolated BETWEEN slices, so you need to create two or more
   segments of the same segment index on slices in a viewport separated by at least
   one empty segment.</b>
-  Press e for extended interpolation.  This will interpolate segments which don't
+  Use "Extended Interpolation" button to interpolate segments which don't
   overlap (assuming the segments were drawn on the same slice).
-  Press i for interpolation of overlapping segments - that is, the segment must
-  overlap if drawn on the same slice to interpolate between them.  This is a good choice
+  Use "Overlapping Interpolation" button to interpolate overlapping segments - that is, the segment must
+  overlap if drawn on the same slice to interpolate between them. This is a good choice
   for multiple segments.
-  Accept the interpolation by hitting enter, or reject with escape.
+  Accept the interpolation by hitting enter, or use the "Reject Preview/Interpolation" button.
   `;
 
 content.append(instructions);
@@ -163,12 +160,22 @@ addDropdownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Reject Preview/Interpolation',
+  title: 'Run Extended Interpolation',
   onClick: () => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
     const activeName = toolGroup.getActivePrimaryMouseButtonTool();
     const brush = toolGroup.getToolInstance(activeName);
-    brush.rejectPreview?.(element1);
+    brush.interpolate?.(element1, { extendedConfig: true });
+  },
+});
+
+addButtonToToolbar({
+  title: 'Run Overlapping Interpolation',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+    brush.interpolate?.(element1, { extendedConfig: false });
   },
 });
 

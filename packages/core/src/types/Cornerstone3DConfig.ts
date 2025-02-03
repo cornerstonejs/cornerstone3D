@@ -38,7 +38,7 @@ interface Cornerstone3DConfig {
    * that perform lazy imports.
    */
   // eslint-disable-next-line
-  peerImport?: (moduleId: string) => any;
+  peerImport?: (moduleId: string) => Promise<any>;
 }
 
 export type { Cornerstone3DConfig as default };
