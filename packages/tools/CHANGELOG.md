@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.1...v2.19.2) (2025-02-03)
+
+### Bug Fixes
+
+- **cine:** Adjust dimension group index calculation for volume playback ([#1804](https://github.com/cornerstonejs/cornerstone3D/issues/1804)) ([71fa6a0](https://github.com/cornerstonejs/cornerstone3D/commit/71fa6a05a7b725dd611105a669a11fb9c8f8616c))
+
 ## [2.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.0...v2.19.1) (2025-02-03)
 
 ### Bug Fixes
