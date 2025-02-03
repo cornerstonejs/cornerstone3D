@@ -39,7 +39,10 @@ export default {
       };
       previewVoxelManager.forEach(callback);
     }
-    const inputImage = getItkImage(segmentationImageData, 'interpolation');
+    const inputImage = await getItkImage(
+      segmentationImageData,
+      'interpolation'
+    );
 
     let itkModule;
     try {

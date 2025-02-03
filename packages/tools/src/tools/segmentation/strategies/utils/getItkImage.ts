@@ -1,19 +1,3 @@
-import type { Metadata } from 'itk-wasm';
-import { Image, ImageType, IntTypes, FloatTypes, PixelTypes } from 'itk-wasm';
-
-const dataTypesMap = {
-  Int8: IntTypes.Int8,
-  UInt8: IntTypes.UInt8,
-  Int16: IntTypes.Int16,
-  UInt16: IntTypes.UInt16,
-  Int32: IntTypes.Int32,
-  UInt32: IntTypes.UInt32,
-  Int64: IntTypes.Int64,
-  UInt64: IntTypes.UInt64,
-  Float32: FloatTypes.Float32,
-  Float64: FloatTypes.Float64,
-};
-
 /**
  * Get the ITK Image from the image data
  *
@@ -21,7 +5,27 @@ const dataTypesMap = {
  * @param imageName - Any random name that shall be set in the image
  * @returns An ITK Image that can be used as fixed or moving image
  */
-export default function getItkImage(imageData, imageName?: string): Image {
+export default async function getItkImage(
+  imageData,
+  imageName?: string
+): Promise<unknown> {
+  const { Image, ImageType, IntTypes, FloatTypes, PixelTypes } = await import(
+    'itk-wasm'
+  );
+
+  const dataTypesMap = {
+    Int8: IntTypes.Int8,
+    UInt8: IntTypes.UInt8,
+    Int16: IntTypes.Int16,
+    UInt16: IntTypes.UInt16,
+    Int32: IntTypes.Int32,
+    UInt32: IntTypes.UInt32,
+    Int64: IntTypes.Int64,
+    UInt64: IntTypes.UInt64,
+    Float32: FloatTypes.Float32,
+    Float64: FloatTypes.Float64,
+  };
+
   const { voxelManager } = imageData.get('voxelManager');
   const { numberOfComponents } = imageData.get('numberOfComponents');
   const scalarData = voxelManager.getCompleteScalarDataArray();
@@ -34,8 +38,8 @@ export default function getItkImage(imageData, imageName?: string): Image {
   const dataType = scalarData.constructor.name
     .replace(/^Ui/, 'UI')
     .replace(/Array$/, '');
-  const metadata: Metadata = undefined;
-  const imageType: ImageType = new ImageType(
+  const metadata = undefined;
+  const imageType = new ImageType(
     dimensions.length,
     dataTypesMap[dataType],
     PixelTypes.Scalar,
