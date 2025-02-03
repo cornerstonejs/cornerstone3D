@@ -28,7 +28,7 @@ jobs:
       - name: Run Playwright tests
         run: |
           export NODE_OPTIONS="--max_old_space_size=8192"
-          bun x playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --workers=2
+          bun x playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --workers=4
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
