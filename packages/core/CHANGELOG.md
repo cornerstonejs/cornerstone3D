@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.8...v2.18.9) (2025-02-03)
+
+### Bug Fixes
+
+- **rendering:** test norm16 linear to decide on using it ([#1801](https://github.com/cornerstonejs/cornerstone3D/issues/1801)) ([a08dbbd](https://github.com/cornerstonejs/cornerstone3D/commit/a08dbbd6033baeaa631f65d891b4d4653d6386ba))
+
 ## [2.18.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.7...v2.18.8) (2025-02-03)
 
 **Note:** Version bump only for package @cornerstonejs/core
