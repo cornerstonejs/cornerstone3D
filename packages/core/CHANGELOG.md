@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.2...v2.18.3) (2025-01-31)
+
+### Bug Fixes
+
+- **window-level:** prevent window level from being reset after modified by user ([#1793](https://github.com/cornerstonejs/cornerstone3D/issues/1793)) ([f7a1c42](https://github.com/cornerstonejs/cornerstone3D/commit/f7a1c422addcb1879f046ffba2ea2fa8f84e44ea))
+
+## [2.18.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.1...v2.18.2) (2025-01-31)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.18.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.0...v2.18.1) (2025-01-31)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [2.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.6...v2.18.0) (2025-01-30)
+
+### Features
+
+- **seg:** labelmap interpolation in space ([#1648](https://github.com/cornerstonejs/cornerstone3D/issues/1648)) ([ff06e5b](https://github.com/cornerstonejs/cornerstone3D/commit/ff06e5b8b7f0dced62715dbe36c02767965af002))
+
+## [2.17.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.5...v2.17.6) (2025-01-29)
+
+### Bug Fixes
+
+- **imageLoader:** Resolve TypeError when canceling image load requests ([601f178](https://github.com/cornerstonejs/cornerstone3D/commit/601f1785613f9fdb27c08f7710b3c707b23d7882))
+
 ## [2.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.4...v2.17.5) (2025-01-27)
 
 ### Bug Fixes

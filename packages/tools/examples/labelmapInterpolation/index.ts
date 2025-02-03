@@ -4,7 +4,6 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -13,7 +12,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
-  getLocalUrl,
+  addButtonToToolbar,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -35,9 +34,9 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, Events } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-const { segmentation: segmentationUtils, roundNumber } = cstUtils;
+const { segmentation: segmentationUtils } = cstUtils;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -45,41 +44,15 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const viewports = [];
-
-const DEFAULT_BRUSH_SIZE = 10;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Segmentation Statistics',
-  'Here we demonstrate calculating labelmap statistics'
+  'Labelmap Interpolation',
+  'Here we demonstrate interpolation between slices for labelmaps'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
-
-const statsGrid = document.createElement('div');
-statsGrid.style.display = 'flex';
-statsGrid.style.display = 'flex';
-statsGrid.style.flexDirection = 'row';
-statsGrid.style.fontSize = 'smaller';
-
-const statsIds = ['segment1', 'segment2', 'segmentCombined'];
-const statsStyle = {
-  width: '20em',
-  height: '10em',
-};
-
-for (const statsId of statsIds) {
-  const statsDiv = document.createElement('div');
-  statsDiv.id = statsId;
-  statsDiv.innerText = statsId;
-  Object.assign(statsDiv.style, statsStyle);
-  statsGrid.appendChild(statsDiv);
-}
-
-content.appendChild(statsGrid);
-
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
@@ -109,105 +82,30 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Hover - show preview of segmentation tool
-  Left drag to extend preview
-  Left Click (or enter) to accept preview
-  Reject preview by button (or esc)
-  Hover outside of region to reset to hovered over segment index
-  Shift Left - zoom, Ctrl Left - Pan, Alt Left - Stack Scroll
+  Use the labelmap tools in the normal way. Note preview is turned off for those
+  tools to simplify initial segment creation.
+  <br>Segments are interpolated BETWEEN slices, so you need to create two or more
+  segments of the same segment index on slices in a viewport separated by at least
+  one empty segment.</b>
+  Use "Extended Interpolation" button to interpolate segments which don't
+  overlap (assuming the segments were drawn on the same slice).
+  Use "Overlapping Interpolation" button to interpolate overlapping segments - that is, the segment must
+  overlap if drawn on the same slice to interpolate between them. This is a good choice
+  for multiple segments.
+  Accept the interpolation by hitting enter, or use the "Reject Preview/Interpolation" button.
   `;
 
 content.append(instructions);
 
 const interpolationTools = new Map<string, any>();
-const previewColors = {
-  0: [255, 255, 255, 128],
-  1: [0, 255, 255, 192],
-  2: [255, 0, 255, 255],
-};
-const configuration = {
-  preview: {
-    enabled: true,
-    previewColors,
-  },
-};
-const thresholdOptions = new Map<string, any>();
-thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
-thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
-thresholdOptions.set('Dynamic Radius 3', { isDynamic: true, dynamicRadius: 3 });
-thresholdOptions.set('Dynamic Radius 5', { isDynamic: true, dynamicRadius: 5 });
-thresholdOptions.set('Use Existing Threshold', {
-  isDynamic: false,
-  dynamicRadius: 5,
-});
-thresholdOptions.set('CT Fat: (-150, -70)', {
-  threshold: [-150, -70],
-  isDynamic: false,
-});
-thresholdOptions.set('CT Bone: (200, 1000)', {
-  threshold: [200, 1000],
-  isDynamic: false,
-});
-const defaultThresholdOption = [...thresholdOptions.keys()][2];
-const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
+
+const configuration = {};
 
 interpolationTools.set('CircularBrush', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
     activeStrategy: 'FILL_INSIDE_CIRCLE',
-  },
-});
-
-interpolationTools.set('ThresholdCircle', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
-    strategySpecificConfiguration: {
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
-interpolationTools.set('ThresholdSphere', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
-    strategySpecificConfiguration: {
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
-interpolationTools.set('CircularEraser', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE_CIRCLE',
-  },
-});
-
-interpolationTools.set('SphereBrush', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'FILL_INSIDE_SPHERE',
-  },
-});
-interpolationTools.set('SphereEraser', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE_SPHERE',
-  },
-});
-interpolationTools.set('ScissorsEraser', {
-  baseTool: SphereScissorsTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE',
   },
 });
 
@@ -220,10 +118,6 @@ const optionsValues = [
 ];
 
 // ============================= //
-
-// Create a reference to the threshold dropdown element
-const thresholdDropdownElement = null;
-
 addDropdownToToolbar({
   options: { values: optionsValues, defaultValue: BrushTool.toolName },
   onSelectedValueChange: (nameAsStringOrNumber) => {
@@ -240,50 +134,13 @@ addDropdownToToolbar({
     toolGroup.setToolActive(name, {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
-
-    // Show/hide threshold dropdown based on selected tool
-    if (thresholdDropdownElement) {
-      thresholdDropdownElement.style.display = name
-        .toLowerCase()
-        .includes('threshold')
-        ? 'inline-block'
-        : 'none';
-    }
   },
 });
-
-// Store reference to threshold dropdown element
-thresholdDropdownElement = addDropdownToToolbar({
-  options: {
-    values: Array.from(thresholdOptions.keys()),
-    defaultValue: defaultThresholdOption,
-  },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-    const thresholdArgs = thresholdOptions.get(name);
-
-    segmentationUtils.setBrushThresholdForToolGroup(
-      toolGroupId,
-      thresholdArgs.threshold,
-      thresholdArgs
-    );
-  },
-});
-
-// Initially hide threshold dropdown if first tool doesn't include 'threshold'
-if (thresholdDropdownElement) {
-  const initialTool = optionsValues[0];
-  thresholdDropdownElement.style.display = initialTool
-    .toLowerCase()
-    .includes('threshold')
-    ? 'inline-block'
-    : 'none';
-}
 
 addSliderToToolbar({
   title: 'Brush Size',
   range: [5, 100],
-  defaultValue: DEFAULT_BRUSH_SIZE,
+  defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
@@ -292,7 +149,7 @@ addSliderToToolbar({
 
 // ============================= //
 addDropdownToToolbar({
-  options: { values: ['1', '2'], defaultValue: '1' },
+  options: { values: ['1', '2', '3'], defaultValue: '1' },
   labelText: 'Segment',
   onSelectedValueChange: (segmentIndex) => {
     segmentation.segmentIndex.setActiveSegmentIndex(
@@ -302,68 +159,31 @@ addDropdownToToolbar({
   },
 });
 
-function displayStat(stat) {
-  if (!stat) {
-    return;
-  }
-  return `${stat.label || stat.name}: ${roundNumber(stat.value)} ${
-    stat.unit ? stat.unit : ''
-  }`;
-}
+addButtonToToolbar({
+  title: 'Run Extended Interpolation',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+    brush.interpolate?.(element1, { extendedConfig: true });
+  },
+});
 
-function calculateStatistics(id, indices) {
-  const [viewport] = viewports;
-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-  const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-  const brush = toolGroup.getToolInstance(activeName);
-  const stats = brush.getStatistics(viewport.element, { indices });
-  const items = [`Statistics on ${indices.join(', ')}`];
-  stats.count.label = 'Voxels';
-  const lesionGlycolysis = {
-    name: 'Lesion Glycolysis',
-    value: stats.volume.value * stats.stdDev.value,
-    unit: 'HU \xB7 mm \xb3',
-  };
-  items.push(
-    displayStat(stats.volume),
-    displayStat(stats.count),
-    displayStat(lesionGlycolysis),
-    displayStat(stats.mean),
-    displayStat(stats.max),
-    displayStat(stats.min)
-  );
-  const statsDiv = document.getElementById(id);
-  statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
-}
-
-let timeoutId;
-
-function segmentationModifiedCallback(evt) {
-  const { detail } = evt;
-  if (!detail || !detail.segmentIndex || detail.segmentIndex === 255) {
-    return;
-  }
-
-  if (timeoutId) {
-    window.clearTimeout(timeoutId);
-    timeoutId = null;
-  }
-
-  const statsId = detail.segmentIndex === 1 ? statsIds[0] : statsIds[1];
-
-  window.setTimeout(() => {
-    timeoutId = null;
-    calculateStatistics(statsId, [detail.segmentIndex]);
-    // Also update combined stats
-    calculateStatistics(statsIds[2], [1, 2]);
-  }, 100);
-}
+addButtonToToolbar({
+  title: 'Run Overlapping Interpolation',
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+    const brush = toolGroup.getToolInstance(activeName);
+    brush.interpolate?.(element1, { extendedConfig: false });
+  },
+});
 
 // ============================= //
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
     volumeId: segmentationId,
   });
 
@@ -382,11 +202,6 @@ async function addSegmentationsToState() {
       },
     },
   ]);
-
-  eventTarget.addEventListener(
-    Events.SEGMENTATION_DATA_MODIFIED,
-    segmentationModifiedCallback
-  );
 }
 
 /**
@@ -442,8 +257,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot:
-      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -499,8 +313,6 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
-  viewports.push(...renderingEngine.getViewports());
-
   // Set the volume to load
   volume.load();
 
@@ -511,19 +323,13 @@ async function run() {
     [viewportId1, viewportId2, viewportId3]
   );
 
-  const segmentationRepresentation = [
-    {
-      segmentationId,
-    },
-  ];
   // Add the segmentation representation to the toolgroup
-  await segmentation.addLabelmapRepresentationToViewportMap({
-    [viewportId1]: segmentationRepresentation,
-    [viewportId2]: segmentationRepresentation,
-    [viewportId3]: segmentationRepresentation,
-  });
-
-  segmentationUtils.setBrushSizeForToolGroup(toolGroupId, DEFAULT_BRUSH_SIZE);
+  const segMap = {
+    [viewportId1]: [{ segmentationId }],
+    [viewportId2]: [{ segmentationId }],
+    [viewportId3]: [{ segmentationId }],
+  };
+  await segmentation.addLabelmapRepresentationToViewportMap(segMap);
 
   // Render the image
   renderingEngine.render();

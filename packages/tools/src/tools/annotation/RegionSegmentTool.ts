@@ -21,7 +21,6 @@ import type {
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { growCut } from '../../utilities/segmentation';
-import type { GrowCutSphereOptions } from '../../utilities/segmentation/growCut';
 import type { GrowCutToolData } from '../base/GrowCutBaseTool';
 import GrowCutBaseTool from '../base/GrowCutBaseTool';
 
@@ -31,7 +30,8 @@ type RegionSegmentToolData = GrowCutToolData & {
 };
 
 class RegionSegmentTool extends GrowCutBaseTool {
-  static toolName;
+  static toolName = 'RegionSegment';
+
   protected growCutData: RegionSegmentToolData | null;
 
   constructor(
@@ -207,7 +207,5 @@ class RegionSegmentTool extends GrowCutBaseTool {
     );
   }
 }
-
-RegionSegmentTool.toolName = 'RegionSegment';
 
 export default RegionSegmentTool;

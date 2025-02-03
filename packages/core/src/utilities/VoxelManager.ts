@@ -759,8 +759,8 @@ export default class VoxelManager<T> {
     }
 
     const _getConstructor = () => {
-      const { voxelManager: imageVoxelManager } = getPixelInfo(0);
-      if (!imageVoxelManager) {
+      const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(0);
+      if (!imageVoxelManager || pixelIndex === null) {
         return null;
       }
       return imageVoxelManager.getConstructor();
@@ -821,8 +821,8 @@ export default class VoxelManager<T> {
     };
 
     voxelManager._getScalarDataLength = () => {
-      const { voxelManager: imageVoxelManager } = getPixelInfo(0);
-      if (!imageVoxelManager) {
+      const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(0);
+      if (!imageVoxelManager || pixelIndex === null) {
         return 0;
       }
       return imageVoxelManager.getScalarDataLength() * dimensions[2];
@@ -844,17 +844,16 @@ export default class VoxelManager<T> {
       }
 
       const dataLength = voxelManager.getScalarDataLength();
-      // @ts-ignore
       const scalarData = new ScalarDataConstructor(dataLength);
 
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { voxelManager: imageVoxelManager } = getPixelInfo(
+        const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(
           (sliceIndex * sliceSize) / numberOfComponents
         );
 
-        if (imageVoxelManager) {
+        if (imageVoxelManager && pixelIndex !== null) {
           const sliceStart = sliceIndex * sliceSize;
           const pixelData = imageVoxelManager.getScalarData();
 

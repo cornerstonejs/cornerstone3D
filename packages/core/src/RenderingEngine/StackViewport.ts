@@ -1940,8 +1940,6 @@ class StackViewport extends Viewport {
       imagePlaneModule.columnCosines,
       columnCosines as Point3
     );
-    const isDataTypeMatching =
-      dataType === image.voxelManager.getScalarData().constructor.name;
 
     const result =
       isXSpacingValid &&
@@ -1949,8 +1947,7 @@ class StackViewport extends Viewport {
       isXVoxelsMatching &&
       isYVoxelsMatching &&
       isRowCosinesMatching &&
-      isColumnCosinesMatching &&
-      isDataTypeMatching;
+      isColumnCosinesMatching;
 
     return result;
   }

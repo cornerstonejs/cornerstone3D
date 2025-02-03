@@ -47,7 +47,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class ArrowAnnotateTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'ArrowAnnotate';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -879,5 +879,4 @@ function changeTextCallback(data, eventData, doneChangingTextCallback) {
   return doneChangingTextCallback(prompt('Enter your annotation:'));
 }
 
-ArrowAnnotateTool.toolName = 'ArrowAnnotate';
 export default ArrowAnnotateTool;

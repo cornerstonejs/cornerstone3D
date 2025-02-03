@@ -5,7 +5,7 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 import PlanarFreehandROITool from './PlanarFreehandROITool';
 
 class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
-  static toolName;
+  static toolName = 'PlanarFreehandContourSegmentationTool';
 
   constructor(toolProps: PublicToolProps) {
     const initialProps = utilities.deepMerge(
@@ -53,8 +53,5 @@ class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
     return renderResult;
   }
 }
-
-PlanarFreehandContourSegmentationTool.toolName =
-  'PlanarFreehandContourSegmentationTool';
 
 export default PlanarFreehandContourSegmentationTool;

@@ -483,7 +483,7 @@ interface Cornerstone3DConfig {
     // (undocumented)
     isMobile: boolean;
     // (undocumented)
-    peerImport?: (moduleId: string) => any;
+    peerImport?: (moduleId: string) => Promise<any>;
     // (undocumented)
     rendering: {
         preferSizeOverAccuracy: boolean;
@@ -2775,7 +2775,7 @@ interface PatientStudyModuleMetadata {
 }
 
 // @public (undocumented)
-export function peerImport(moduleId: string): any;
+export function peerImport(moduleId: string): Promise<any>;
 
 // @public (undocumented)
 type PixelDataTypedArray = Float32Array | Int16Array | Uint16Array | Uint8Array | Int8Array | Uint8ClampedArray;

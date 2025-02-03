@@ -110,7 +110,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class CircleROITool extends AnnotationTool {
-  static toolName;
+  static toolName = 'CircleROI';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -1135,5 +1135,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-CircleROITool.toolName = 'CircleROI';
 export default CircleROITool;

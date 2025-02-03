@@ -50,7 +50,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class CobbAngleTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'CobbAngle';
 
   angleStartedNotYetCompleted: boolean;
   _throttledCalculateCachedStats: Function;
@@ -1214,5 +1214,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-CobbAngleTool.toolName = 'CobbAngle';
 export default CobbAngleTool;
