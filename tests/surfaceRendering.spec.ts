@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 // this is too much for the CI.
-test.only('should render the segmentation correctly', async ({ page }) => {
+test('should render the segmentation correctly', async ({ page }) => {
   const locator = page.locator('.cornerstone-canvas');
   await checkForScreenshot(
     page,
