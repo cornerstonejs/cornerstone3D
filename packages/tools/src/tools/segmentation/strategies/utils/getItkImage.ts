@@ -9,9 +9,20 @@ export default async function getItkImage(
   imageData,
   imageName?: string
 ): Promise<unknown> {
-  const { Image, ImageType, IntTypes, FloatTypes, PixelTypes } = await import(
-    'itk-wasm'
-  );
+  let Image, ImageType, IntTypes, FloatTypes, PixelTypes;
+
+  try {
+    const itkModule = await import('itk-wasm');
+    if (!itkModule) {
+      throw new Error('Module not found');
+    }
+    ({ Image, ImageType, IntTypes, FloatTypes, PixelTypes } = itkModule);
+  } catch (error) {
+    console.debug(
+      "Warning: 'itk-wasm' module not found. Please install it separately."
+    );
+    return null;
+  }
 
   const dataTypesMap = {
     Int8: IntTypes.Int8,
