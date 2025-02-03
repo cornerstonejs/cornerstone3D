@@ -510,10 +510,10 @@ function _createDynamicVolumeViewportCinePlayContext(
 ): CINETypes.CinePlayContext {
   return {
     get numScrollSteps(): number {
-      return volume.numTimePoints;
+      return volume.numDimensionGroups;
     },
     get currentStepIndex(): number {
-      return volume.timePointIndex;
+      return volume.dimensionGroupNumber;
     },
     get frameTimeVectorEnabled(): boolean {
       // Looping though time does not uses frameTimeVector
