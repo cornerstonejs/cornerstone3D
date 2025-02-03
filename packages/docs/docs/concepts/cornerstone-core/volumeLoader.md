@@ -15,11 +15,11 @@ of the 2D images (`imageIds`) into a 3D volume and it is the default volume load
 
 ## Register Volume Loaders
 
-You can use [`registerVolumeLoader`](/api/core/namespace/volumeLoader#registerVolumeLoader) to define a volume loader which should be called on a particular `scheme`.
+You can use [`registerVolumeLoader`](/docs/api/core/namespaces/volumeloader/functions/registervolumeloader) to define a volume loader which should be called on a particular `scheme`.
 Below you can see a simplified code for our `cornerstoneStreamingImageVolumeLoader` in which:
 
 1. Based on a set of imageIds, we compute volume metadata such as: spacing, origin, direction, etc.
-2. Instantiate a new [`StreamingImageVolume`](/api/streaming-image-volume-loader/class/StreamingImageVolume)
+2. Instantiate a new [`StreamingImageVolume`](/docs/api/core/classes/streamingimagevolume/)
 
    - `StreamingImageVolume` implements methods for loading (`.load`)
    - It implements load via using `imageLoadPoolManager`
@@ -92,7 +92,6 @@ const volume = await volumeLoader.createAndCacheVolume(volumeId, {
 
 By default if no `volumeLoader` is found for the scheme, the `unknownVolumeLoader` is used. `cornerstoneStreamingImageVolumeLoader`
 is the default unknown volume loader.
-
 
 :::info
 Even if you don't provide the scheme, the `cornerstoneStreamingImageVolumeLoader` will be used by default.

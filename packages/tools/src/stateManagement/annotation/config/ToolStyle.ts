@@ -46,6 +46,7 @@ class ToolStyle {
       textBoxLinkLineWidth: '1',
       textBoxLinkLineDash: '2,3',
       textBoxShadow: true,
+      markerSize: '10',
     };
 
     this._initializeConfig(defaultConfig);

@@ -3,6 +3,203 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.7...v2.18.8) (2025-02-03)
+
+### Bug Fixes
+
+- bundling issue with vite 2 ([#1800](https://github.com/cornerstonejs/cornerstone3D/issues/1800)) ([a8fb6a1](https://github.com/cornerstonejs/cornerstone3D/commit/a8fb6a116bca8afae2c46d6a4c86211c67e4b7a4))
+
+## [2.18.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.6...v2.18.7) (2025-02-03)
+
+### Bug Fixes
+
+- bundling issue with vite ([#1799](https://github.com/cornerstonejs/cornerstone3D/issues/1799)) ([3669e59](https://github.com/cornerstonejs/cornerstone3D/commit/3669e59104a5afa10902f42752f31c4db035a340))
+
+## [2.18.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.5...v2.18.6) (2025-02-03)
+
+### Bug Fixes
+
+- the rest of packaging issue and move from timePointIndex to dimensionGroup ([#1798](https://github.com/cornerstonejs/cornerstone3D/issues/1798)) ([e2d95ef](https://github.com/cornerstonejs/cornerstone3D/commit/e2d95ef0864fca2fd8403a29e5963df40a47924b))
+
+## [2.18.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.4...v2.18.5) (2025-02-03)
+
+### Bug Fixes
+
+- **polyseg:** Add rotation points feature if series is rotated ([#1788](https://github.com/cornerstonejs/cornerstone3D/issues/1788)) ([2d22068](https://github.com/cornerstonejs/cornerstone3D/commit/2d22068f0a66a4a5f30aa5396ae3fdbd577559fa))
+
+## [2.18.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.3...v2.18.4) (2025-02-03)
+
+### Bug Fixes
+
+- **package:** use itk morphology filter and polyseg dynamically ([#1797](https://github.com/cornerstonejs/cornerstone3D/issues/1797)) ([78ed2ec](https://github.com/cornerstonejs/cornerstone3D/commit/78ed2ec015525bbafb391218da4024f24f519a0e))
+
+## [2.18.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.2...v2.18.3) (2025-01-31)
+
+### Bug Fixes
+
+- **window-level:** prevent window level from being reset after modified by user ([#1793](https://github.com/cornerstonejs/cornerstone3D/issues/1793)) ([f7a1c42](https://github.com/cornerstonejs/cornerstone3D/commit/f7a1c422addcb1879f046ffba2ea2fa8f84e44ea))
+
+## [2.18.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.1...v2.18.2) (2025-01-31)
+
+### Bug Fixes
+
+- inheritted configuration for tool ([#1789](https://github.com/cornerstonejs/cornerstone3D/issues/1789)) ([586fe3e](https://github.com/cornerstonejs/cornerstone3D/commit/586fe3e4912e4b36442df22fe057a928b107afa9))
+
+## [2.18.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.0...v2.18.1) (2025-01-31)
+
+**Note:** Version bump only for package root
+
+# [2.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.6...v2.18.0) (2025-01-30)
+
+### Features
+
+- **seg:** labelmap interpolation in space ([#1648](https://github.com/cornerstonejs/cornerstone3D/issues/1648)) ([ff06e5b](https://github.com/cornerstonejs/cornerstone3D/commit/ff06e5b8b7f0dced62715dbe36c02767965af002))
+
+## [2.17.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.5...v2.17.6) (2025-01-29)
+
+### Bug Fixes
+
+- **imageLoader:** Resolve TypeError when canceling image load requests ([601f178](https://github.com/cornerstonejs/cornerstone3D/commit/601f1785613f9fdb27c08f7710b3c707b23d7882))
+
+## [2.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.4...v2.17.5) (2025-01-27)
+
+### Bug Fixes
+
+- **flip:** return flip as part of view presentation ([#1781](https://github.com/cornerstonejs/cornerstone3D/issues/1781)) ([b7ccf58](https://github.com/cornerstonejs/cornerstone3D/commit/b7ccf582f790e9f7ea2e435e80b1c144e8822269))
+
+## [2.17.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.3...v2.17.4) (2025-01-24)
+
+### Bug Fixes
+
+- **removeEnabledElement:** return if enabledElement ([#1778](https://github.com/cornerstonejs/cornerstone3D/issues/1778)) ([d056b23](https://github.com/cornerstonejs/cornerstone3D/commit/d056b23783a32e6accfc23b952339ce25d11d702))
+
+## [2.17.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.2...v2.17.3) (2025-01-22)
+
+### Bug Fixes
+
+- **ArrowAnnotate:** use svg marker to draw the arrow ([#1732](https://github.com/cornerstonejs/cornerstone3D/issues/1732)) ([42e8038](https://github.com/cornerstonejs/cornerstone3D/commit/42e80388ac567871542cae7e62d77d88da88f558))
+
+## [2.17.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.1...v2.17.2) (2025-01-22)
+
+### Bug Fixes
+
+- **seg:** Refactor LabelmapBaseTool and SphereScissorsTool to fix sphere bug in stack ([#1772](https://github.com/cornerstonejs/cornerstone3D/issues/1772)) ([5eeda06](https://github.com/cornerstonejs/cornerstone3D/commit/5eeda0626a2722397aba910ae4bd4a5e650d32c6))
+
+## [2.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.17.0...v2.17.1) (2025-01-22)
+
+**Note:** Version bump only for package root
+
+# [2.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.16.1...v2.17.0) (2025-01-21)
+
+### Features
+
+- **4d:** replace timepoint with dimensionGroupNumber for 4D handling with backward compatibility ([#1764](https://github.com/cornerstonejs/cornerstone3D/issues/1764)) ([d0c0338](https://github.com/cornerstonejs/cornerstone3D/commit/d0c0338175ac2f4e91bcb681d6a93eede19c1b81))
+
+## [2.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.16.0...v2.16.1) (2025-01-21)
+
+### Bug Fixes
+
+- take into account storePointData setting ([#1733](https://github.com/cornerstonejs/cornerstone3D/issues/1733)) ([916a788](https://github.com/cornerstonejs/cornerstone3D/commit/916a788dab481187eab6d4601230dcb176fb9037))
+
+# [2.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.5...v2.16.0) (2025-01-21)
+
+### Features
+
+- Add range support for key image tool ([#1743](https://github.com/cornerstonejs/cornerstone3D/issues/1743)) ([6dff931](https://github.com/cornerstonejs/cornerstone3D/commit/6dff9313f7e78bea6f45d610cc20e781b73103f4))
+
+## [2.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.4...v2.15.5) (2025-01-20)
+
+### Bug Fixes
+
+- **wadouri:** Check cache when prefetching wadouri images for volume ([#1765](https://github.com/cornerstonejs/cornerstone3D/issues/1765)) ([4f05843](https://github.com/cornerstonejs/cornerstone3D/commit/4f058434a97b2b66a205571b1edf30c68344b8f2))
+
+## [2.15.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.3...v2.15.4) (2025-01-15)
+
+**Note:** Version bump only for package root
+
+## [2.15.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.2...v2.15.3) (2025-01-15)
+
+### Bug Fixes
+
+- **sortImageIdsAndGetSpacing:** sliceThickness and spacingBetweenSlices in case of nonstrict spacing ([#1752](https://github.com/cornerstonejs/cornerstone3D/issues/1752)) ([aede384](https://github.com/cornerstonejs/cornerstone3D/commit/aede384bd4d8433a50a66160d0fc3cbe6e241976))
+
+## [2.15.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.1...v2.15.2) (2025-01-14)
+
+### Bug Fixes
+
+- **probe:** Allow for the handle size for the probe tool to be specified in the configuration ([#1750](https://github.com/cornerstonejs/cornerstone3D/issues/1750)) ([3483d1c](https://github.com/cornerstonejs/cornerstone3D/commit/3483d1caf7207abe49842e3489a72e3b4d97b28b))
+
+## [2.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v2.15.0...v2.15.1) (2025-01-14)
+
+### Bug Fixes
+
+- **examples:** and freehand perimiter unit ([#1751](https://github.com/cornerstonejs/cornerstone3D/issues/1751)) ([b4f29ba](https://github.com/cornerstonejs/cornerstone3D/commit/b4f29ba8fd54b27f775a69324522c65acf0d3e69))
+
+# [2.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.12...v2.15.0) (2025-01-14)
+
+### Features
+
+- **vtk:** upgrade version ([#1749](https://github.com/cornerstonejs/cornerstone3D/issues/1749)) ([6853e59](https://github.com/cornerstonejs/cornerstone3D/commit/6853e59a8279ddab95763e5b8ee1f870871a6646))
+
+## [2.14.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.11...v2.14.12) (2025-01-14)
+
+### Bug Fixes
+
+- **ColorbarCanvas:** Fix colorbar rendering issue on small window widths ([#1649](https://github.com/cornerstonejs/cornerstone3D/issues/1649)) ([a2d6518](https://github.com/cornerstonejs/cornerstone3D/commit/a2d651869fd34dac589e2c20f287011203cd22cb))
+
+## [2.14.11](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.10...v2.14.11) (2025-01-10)
+
+### Bug Fixes
+
+- **annotation:** Angle Cobb Arrow visibilty fixes ([#1744](https://github.com/cornerstonejs/cornerstone3D/issues/1744)) ([1c5ff23](https://github.com/cornerstonejs/cornerstone3D/commit/1c5ff23c7fe27d46ac29b51a573de9c10ce6c6a1))
+
+## [2.14.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.9...v2.14.10) (2025-01-09)
+
+### Bug Fixes
+
+- **tools:** safely access handle points ([#1739](https://github.com/cornerstonejs/cornerstone3D/issues/1739)) ([9fe63af](https://github.com/cornerstonejs/cornerstone3D/commit/9fe63af35b0de623b6df2ae23883f62d871c34b6))
+
+## [2.14.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.8...v2.14.9) (2025-01-07)
+
+### Bug Fixes
+
+- **video:** Slice range was broken for key image setting on video ([#1737](https://github.com/cornerstonejs/cornerstone3D/issues/1737)) ([9c48c74](https://github.com/cornerstonejs/cornerstone3D/commit/9c48c7450803ab455d65a6c6f02d683027b1ba38))
+
+## [2.14.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.7...v2.14.8) (2025-01-07)
+
+### Bug Fixes
+
+- **tools:** Add support for additional region data types and length variants ([#1736](https://github.com/cornerstonejs/cornerstone3D/issues/1736)) ([397dea0](https://github.com/cornerstonejs/cornerstone3D/commit/397dea08b7be18368d9264843b7cc8891b14806e))
+
+## [2.14.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.6...v2.14.7) (2025-01-06)
+
+### Bug Fixes
+
+- a bug to ensure all segmentations are removed ([#1734](https://github.com/cornerstonejs/cornerstone3D/issues/1734)) ([d3c8001](https://github.com/cornerstonejs/cornerstone3D/commit/d3c80015f8f48ac4c0d8ae53128ff071da3ea8f7))
+
+## [2.14.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.5...v2.14.6) (2025-01-06)
+
+### Bug Fixes
+
+- **ViewportColorbar:** Add destroy method ([#1731](https://github.com/cornerstonejs/cornerstone3D/issues/1731)) ([38c506c](https://github.com/cornerstonejs/cornerstone3D/commit/38c506c31eef668e91974617185c6e45c24d0bec))
+
+## [2.14.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.4...v2.14.5) (2025-01-06)
+
+### Bug Fixes
+
+- **setDisplayArea:** fix the zoom and pan when setting the displayArea ([#1701](https://github.com/cornerstonejs/cornerstone3D/issues/1701)) ([8931a81](https://github.com/cornerstonejs/cornerstone3D/commit/8931a81b8c782a7e2ae26a4f89f7f01b1ef24418)), closes [#1707](https://github.com/cornerstonejs/cornerstone3D/issues/1707)
+
+## [2.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.3...v2.14.4) (2025-01-06)
+
+### Bug Fixes
+
+- emit event on image load progress ([#1735](https://github.com/cornerstonejs/cornerstone3D/issues/1735)) ([db8314b](https://github.com/cornerstonejs/cornerstone3D/commit/db8314b811c6469e4e21ef07cb8e6201bc02d0c0))
+- **xhr:** onreadystatechange hook bug with promise never resolving. ([#1720](https://github.com/cornerstonejs/cornerstone3D/issues/1720)) ([afbab70](https://github.com/cornerstonejs/cornerstone3D/commit/afbab70375783d03455dc5f6da11ef82aee0777d))
+
+## [2.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.2...v2.14.3) (2025-01-06)
+
+**Note:** Version bump only for package root
+
 ## [2.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.14.1...v2.14.2) (2024-12-20)
 
 ### Bug Fixes

@@ -100,12 +100,11 @@ Our documentation can be broken down into the following sections:
 - [**How-to-Guides**](/docs/category/how-to-guides): provides guides for more advanced tasks such as custom loaders, custom metadata providers
 - [**Concepts**](/docs/category/concepts): explains an in-depth look at various technical concepts that are used in the library
 - [**Contributing**](/docs/category/contributing/): explains how to contribute to the project and how to report bugs
-- [**Migration Guides**](/docs/migrationGuides): includes instructions for upgrading from legacy to new versions of the library, and also upgrading from 1.x to 2.x
+- [**Migration Guides**](/docs/migration-guides/2x/general): includes instructions for upgrading from legacy to new versions of the library, and also upgrading from 1.x to 2.x
 - [**FAQ**](/docs/faq): provides answers to frequently asked questions
 - [**Help**](/docs/help): provides information of how to get help with the library
-- [**Test Coverage Report**](/test-coverage/): provides a detailed report of the test coverage of the library
 - [**Examples**](/docs/examples): Displays the live examples of the library
-- [**API Reference**](/api): provides a detailed description of the API and how to use each function
+- [**API Reference**](/docs/api/core): provides a detailed description of the API and how to use each function
 
 If a page is no longer up-to-date, you can author a PR to update it by modifying
 the files in `/packages/docs/docs/*.md`. Read more on how to contribute [here](../contribute/pull-request.md).

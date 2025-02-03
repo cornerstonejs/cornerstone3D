@@ -216,42 +216,42 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const t2_tse_sag = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.158323547117540061132729905711',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.860473186348887719777907797922',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.250911858840767891342974687368',
-    wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.273373775382048821331022842977',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const t2_tse_tra = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.158323547117540061132729905711',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.860473186348887719777907797922',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.160028252338004527274326500702',
-    wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.181235565127625868343692734421',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const t2_tse_cor = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.158323547117540061132729905711',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.860473186348887719777907797922',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.604184452348902957788528403471',
-    wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.541287716256540872350916735453',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const adc = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.158323547117540061132729905711',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.860473186348887719777907797922',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.339319789559896104041345048780',
-    wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.578717574224767028424309620369',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   const t2_tse_tra_vol = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.158323547117540061132729905711',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.860473186348887719777907797922',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7311.5101.160028252338004527274326500702',
-    wadoRsRoot: 'https://domvja9iplmyu.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7310.5101.318150454185225367122580810394',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine

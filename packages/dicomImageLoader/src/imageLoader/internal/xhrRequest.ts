@@ -97,7 +97,9 @@ function xhrRequest(
         if (options.onreadystatechange) {
           options.onreadystatechange(event, params);
 
-          return;
+          // This should not return, because if a hook is defined, that function
+          // will be called but the image load promise will never resolve.
+          // return;
         }
 
         // Default action
@@ -135,6 +137,16 @@ function xhrRequest(
           total = oProgress.total; // evt.total the total bytes seted by the header
           percentComplete = Math.round((loaded / total) * 100);
         }
+
+        const eventData = {
+          url,
+          imageId,
+          loaded,
+          total,
+          percentComplete,
+        };
+
+        triggerEvent(eventTarget, 'cornerstoneimageloadprogress', eventData);
 
         // Action
         if (options.onprogress) {

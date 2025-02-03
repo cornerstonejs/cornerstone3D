@@ -212,6 +212,7 @@ module.exports = {
                 'concepts/cornerstone-tools/annotation/state',
                 'concepts/cornerstone-tools/annotation/annotationManager',
                 'concepts/cornerstone-tools/annotation/selection',
+                'concepts/cornerstone-tools/annotation/visibility',
                 'concepts/cornerstone-tools/annotation/locking',
                 'concepts/cornerstone-tools/annotation/config',
                 'concepts/cornerstone-tools/annotation/annotationGroups',
@@ -283,11 +284,6 @@ module.exports = {
     },
     'faq',
     'help',
-    {
-      type: 'link',
-      label: 'Test Coverage Report',
-      href: 'pathname:///test-coverage',
-    },
     'examples',
   ],
 };

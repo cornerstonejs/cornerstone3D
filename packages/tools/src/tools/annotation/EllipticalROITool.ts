@@ -107,7 +107,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class EllipticalROITool extends AnnotationTool {
-  static toolName;
+  static toolName = 'EllipticalROI';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -1249,5 +1249,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-EllipticalROITool.toolName = 'EllipticalROI';
 export default EllipticalROITool;

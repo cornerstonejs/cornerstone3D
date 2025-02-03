@@ -38,7 +38,6 @@ import type {
   EventTypes,
   ToolHandle,
   PublicToolProps,
-  ToolProps,
   SVGDrawingHelper,
   Annotation,
 } from '../../types';
@@ -93,7 +92,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class ProbeTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Probe';
 
   editData: {
     annotation: Annotation;
@@ -113,6 +112,7 @@ class ProbeTool extends AnnotationTool {
       shadow: true,
       preventHandleOutsideImage: false,
       getTextLines: defaultGetTextLines,
+      handleRadius: '6',
     },
   };
 
@@ -215,33 +215,14 @@ class ProbeTool extends AnnotationTool {
     const { viewport } = enabledElement;
 
     this.isDrawing = true;
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
 
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal
-    );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation = {
-      invalidated: true,
-      highlighted: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-      },
+    const annotation = (<typeof AnnotationTool>(
+      this.constructor
+    )).createAnnotationForViewport<ProbeAnnotation>(viewport, {
       data: {
-        label: '',
         handles: { points: [<Types.Point3>[...worldPos]] },
-        cachedStats: {},
       },
-    };
+    });
 
     addAnnotation(annotation, element);
 
@@ -558,7 +539,7 @@ class ProbeTool extends AnnotationTool {
         annotationUID,
         handleGroupUID,
         [canvasCoordinates],
-        { color, lineWidth }
+        { color, lineWidth, handleRadius: this.configuration.handleRadius }
       );
 
       renderStatus = true;
@@ -722,5 +703,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-ProbeTool.toolName = 'Probe';
 export default ProbeTool;

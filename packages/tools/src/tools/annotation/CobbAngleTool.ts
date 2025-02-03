@@ -47,9 +47,10 @@ import type {
 } from '../../types';
 import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class CobbAngleTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'CobbAngle';
 
   angleStartedNotYetCompleted: boolean;
   _throttledCalculateCachedStats: Function;
@@ -722,6 +723,10 @@ class CobbAngleTool extends AnnotationTool {
         return renderStatus;
       }
 
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
+
       if (activeHandleCanvasCoords) {
         const handleGroupUID = '0';
 
@@ -1209,5 +1214,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-CobbAngleTool.toolName = 'CobbAngle';
 export default CobbAngleTool;

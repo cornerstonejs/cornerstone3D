@@ -82,7 +82,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class BidirectionalTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Bidirectional';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -1357,5 +1357,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-BidirectionalTool.toolName = 'Bidirectional';
 export default BidirectionalTool;

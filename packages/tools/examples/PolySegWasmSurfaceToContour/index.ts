@@ -1,11 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
-  geometryLoader,
   eventTarget,
 } from '@cornerstonejs/core';
 import {
@@ -14,7 +12,6 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
-  downloadSurfacesData,
   addManipulationBindings,
   addLabelToToolbar,
 } from '../../../../utils/demo/helpers';

@@ -21,7 +21,7 @@ import triggerAnnotationRender from './triggerAnnotationRender';
 
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import { pointToString } from './pointToString';
-import annotationFrameRange from './annotationFrameRange';
+import AnnotationMultiSlice from './AnnotationMultiSlice';
 import getViewportForAnnotation from './getViewportForAnnotation';
 import {
   annotationHydration,
@@ -50,6 +50,7 @@ import { pointInSurroundingSphereCallback } from './pointInSurroundingSphereCall
 const roundNumber = utilities.roundNumber;
 import normalizeViewportPlane from './normalizeViewportPlane';
 import IslandRemoval from './segmentation/islandRemoval';
+import { getPixelValueUnits } from './getPixelValueUnits';
 
 export {
   math,
@@ -67,6 +68,7 @@ export {
   getCalibratedLengthUnitsAndScale,
   getCalibratedProbeUnitsAndValue,
   getCalibratedAspect,
+  getPixelValueUnits,
   segmentation,
   contours,
   triggerAnnotationRenderForViewportIds,
@@ -87,7 +89,7 @@ export {
   pointToString,
   polyDataUtils,
   voi,
-  annotationFrameRange,
+  AnnotationMultiSlice,
   contourSegmentation,
   annotationHydration,
   getClosestImageIdForStackViewport,

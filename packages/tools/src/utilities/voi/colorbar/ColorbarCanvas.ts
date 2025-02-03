@@ -218,11 +218,6 @@ class ColorbarCanvas {
     const { _voiRange: voiRange } = this;
     const range = this._showFullImageRange ? this._imageRange : { ...voiRange };
 
-    const { windowWidth } = utilities.windowLevel.toWindowLevel(
-      voiRange.lower,
-      voiRange.upper
-    );
-
     let previousColorPoint = undefined;
     let currentColorPoint = getColorPoint(0);
 
@@ -231,7 +226,9 @@ class ColorbarCanvas {
     let rawPixelValue = range.lower;
 
     for (let i = 0; i < maxValue; i++) {
-      const tVoiRange = (rawPixelValue - voiRange.lower) / windowWidth;
+      const tVoiRange =
+        (rawPixelValue - voiRange.lower) /
+        Math.abs(voiRange.upper - voiRange.lower);
 
       // Find the color in a linear way (O(n) complexity).
       // currentColorPoint shall move to the next color until tVoiRange is smaller

@@ -10,8 +10,7 @@ an [`Image Object`](./images.md). Since loading images usually requires a call t
 
 ## Image Loader Workflow
 
-
-1. `ImageLoaders` register themselves using [`registerImageLoader`](/api/core/namespace/imageLoader#registerImageLoader) API with cornerstone to load specific ImageId URL schemes
+1. `ImageLoaders` register themselves using [`registerImageLoader`](/docs/api/core/namespaces/imageloader/functions/registerimageloader) API with cornerstone to load specific ImageId URL schemes
 2. The application requests to load an image using the `loadImage` API for stack or `createAndCacheVolume` API for volume.
 3. Cornerstone delegates the request to load the image to the `ImageLoader` registered with the URL scheme of the imageId.
 4. The ImageLoader will return an `Image Load Object` containing a Promise which it will resolve with the corresponding Image Object once it has obtained the pixel data. Obtaining the pixel data may require a call to a remote server using `XMLHttpRequest`, decompression of the pixel data (e.g. from JPEG 2000), and conversion of the pixel data into the format that Cornerstone understands (e.g. RGB vs YBR color).
@@ -19,15 +18,15 @@ an [`Image Object`](./images.md). Since loading images usually requires a call t
 
 ## Register Image Loader
 
-You can use [`registerImageLoader`](/api/core/namespace/imageLoader#registerImageLoader) to make an external image loader available to the
+You can use [`registerImageLoader`](/docs/api/core/namespaces/imageloader/functions/registerimageloader) to make an external image loader available to the
 cornerstone library. This function accept a `scheme` which the image loader function (second argument) should act on.
 
 ## Available Image Loaders
 
-| Image Loader                                                                                      | Used for                                                                                                                                      |
-| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Cornerstone DICOM Image Loader](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/dicomImageLoader)      | DICOM Part 10 images; Supports WADO-URI and WADO-RS; Supports multi-frame DICOM instances; Supports reading DICOM files from the File objects |
-| [Cornerstone Web Image Loader](https://github.com/cornerstonejs/cornerstoneWebImageLoader)        | PNG and JPEG                                                                                                                                  |
+| Image Loader                                                                                                            | Used for                                                                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Cornerstone DICOM Image Loader](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/dicomImageLoader)    | DICOM Part 10 images; Supports WADO-URI and WADO-RS; Supports multi-frame DICOM instances; Supports reading DICOM files from the File objects |
+| [Cornerstone Web Image Loader](https://github.com/cornerstonejs/cornerstoneWebImageLoader)                              | PNG and JPEG                                                                                                                                  |
 | [Cornerstone-nifti-image-loader](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/nifti-volume-loader) | NIFTI                                                                                                                                         |
 
 ### CornerstoneDICOMImageLoader
@@ -40,7 +39,6 @@ import { init } from '@cornerstonejs/dicom-image-loader';
 init({
   maxWebWorkers: navigator.hardwareConcurrency || 1,
 });
-
 ```
 
 After initialization of the `CornerstoneDICOMImageLoader`, any imageId using the `wado-uri` scheme will be loaded using the `CornerstoneDICOMImageLoader`

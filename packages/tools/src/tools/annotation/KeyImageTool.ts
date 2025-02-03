@@ -33,7 +33,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 type Point2 = Types.Point2;
 
 class KeyImageTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'KeyImage';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -72,24 +72,13 @@ class KeyImageTool extends AnnotationTool {
    */
   addNewAnnotation = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
-    const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
+    const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const annotation = KeyImageTool.createAnnotation({
-      metadata: { ...viewport.getViewReference(), referencedImageId },
-    });
+    const annotation = (<typeof KeyImageTool>(
+      this.constructor
+    )).createAnnotationForViewport(viewport);
 
     addAnnotation(annotation, element);
 
@@ -387,7 +376,5 @@ function getTextCallback(doneChangingTextCallback) {
 function changeTextCallback(data, eventData, doneChangingTextCallback) {
   return doneChangingTextCallback(prompt('Enter your annotation:'));
 }
-
-KeyImageTool.toolName = 'KeyImage';
 
 export default KeyImageTool;

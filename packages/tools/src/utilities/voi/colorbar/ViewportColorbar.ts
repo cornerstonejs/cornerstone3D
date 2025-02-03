@@ -217,6 +217,31 @@ class ViewportColorbar extends Colorbar {
       this._viewportColormapModifiedCallback as EventListener
     );
   }
+
+  public destroy(): void {
+    super.destroy();
+    const { _element: element } = this;
+
+    eventTarget.removeEventListener(
+      Events.IMAGE_VOLUME_MODIFIED,
+      this._imageVolumeModifiedCallback
+    );
+
+    element.removeEventListener(
+      Events.STACK_NEW_IMAGE,
+      this._stackNewImageCallback
+    );
+
+    element.removeEventListener(
+      Events.VOI_MODIFIED,
+      this._viewportVOIModifiedCallback as EventListener
+    );
+
+    element.removeEventListener(
+      Events.COLORMAP_MODIFIED,
+      this._viewportColormapModifiedCallback as EventListener
+    );
+  }
 }
 
 export { ViewportColorbar as default, ViewportColorbar };

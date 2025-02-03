@@ -83,7 +83,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class HeightTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Height';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -868,5 +868,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-HeightTool.toolName = 'Height';
 export default HeightTool;

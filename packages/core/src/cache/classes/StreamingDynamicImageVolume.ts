@@ -16,12 +16,14 @@ export default class StreamingDynamicImageVolume
   extends BaseStreamingImageVolume
   implements IDynamicImageVolume
 {
-  private _timePointIndex = 0;
+  private _dimensionGroupNumber = 1;
   private _splittingTag: string;
   private _imageIdGroups: string[][];
-  private _loadedTimePoints: Set<number> = new Set();
+  private _loadedDimensionGroups: Set<number> = new Set();
 
-  public numTimePoints: number;
+  public numDimensionGroups: number;
+  /** @deprecated Use numDimensionGroups instead */
+  public override numTimePoints: number;
 
   constructor(
     imageVolumeProperties: ImageVolumeProps & {
@@ -34,12 +36,13 @@ export default class StreamingDynamicImageVolume
     const { imageIdGroups, splittingTag } = imageVolumeProperties;
     this._splittingTag = splittingTag;
     this._imageIdGroups = imageIdGroups;
-    this.numTimePoints = this._imageIdGroups.length;
+    this.numDimensionGroups = this._imageIdGroups.length;
+    this.numTimePoints = this.numDimensionGroups; // Keep in sync for backward compatibility
   }
 
   private _getImageIdsToLoad(): string[] {
     const imageIdGroups = this._imageIdGroups;
-    const initialImageIdGroupIndex = this._timePointIndex;
+    const initialImageIdGroupIndex = this._dimensionGroupNumber - 1;
     const imageIds = [...imageIdGroups[initialImageIdGroupIndex]];
 
     let leftIndex = initialImageIdGroupIndex - 1;
@@ -67,39 +70,69 @@ export default class StreamingDynamicImageVolume
   }
 
   /**
-   * Returns the active imageIdGroup index
-   * @returns active imageIdGroup index
+   * Returns the active dimension group number (1-based)
+   * @returns active dimension group number
    */
-  public get timePointIndex(): number {
-    return this._timePointIndex;
+  public get dimensionGroupNumber(): number {
+    return this._dimensionGroupNumber;
   }
 
   /**
-   * Set the active imageIdGroup index which also updates the active scalar data
-   *
-   * @param index - The index of the imageIdGroup to set as active
-   * @returns current imageIdGroup index
+   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
    */
   public set timePointIndex(index: number) {
-    // Nothing to do when imageIdGroup index does not change
-    if (this._timePointIndex === index) {
+    console.warn(
+      'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
+    );
+
+    // Convert zero-based timePointIndex to one-based dimensionGroupNumber
+    this.dimensionGroupNumber = index + 1;
+  }
+
+  /**
+   * Set the active dimension group number which also updates the active scalar data
+   * Dimension group numbers are 1-based.
+   *
+   * @param dimensionGroupNumber - The dimension group number to set as active (1-based)
+   */
+  public set dimensionGroupNumber(dimensionGroupNumber: number) {
+    if (this._dimensionGroupNumber === dimensionGroupNumber) {
       return;
     }
 
-    this._timePointIndex = index;
-    // @ts-expect-error since we need to override the type for now
-    this.voxelManager.setTimePoint(index);
+    this._dimensionGroupNumber = dimensionGroupNumber;
+    // @ts-expect-error
+    this.voxelManager.setDimensionGroupNumber(dimensionGroupNumber);
 
     this.invalidateVolume(true);
 
-    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED, {
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED, {
       volumeId: this.volumeId,
-      timePointIndex: index,
-      numTimePoints: this.numTimePoints,
-      imageIdGroupIndex: index,
-      numImageIdGroups: this.numTimePoints,
+      dimensionGroupNumber: dimensionGroupNumber,
+      numDimensionGroups: this.numDimensionGroups,
+      imageIdGroupIndex: dimensionGroupNumber - 1,
+      numImageIdGroups: this.numDimensionGroups,
       splittingTag: this.splittingTag,
     });
+
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED, {
+      volumeId: this.volumeId,
+      timePointIndex: dimensionGroupNumber - 1,
+      numTimePoints: this.numDimensionGroups,
+      imageIdGroupIndex: dimensionGroupNumber - 1,
+      numImageIdGroups: this.numDimensionGroups,
+      splittingTag: this.splittingTag,
+    });
+  }
+
+  /**
+   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
+   */
+  public get timePointIndex(): number {
+    console.warn(
+      'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
+    );
+    return this._dimensionGroupNumber - 1;
   }
 
   /**
@@ -107,23 +140,45 @@ export default class StreamingDynamicImageVolume
    * @param delta - The amount to scroll
    */
   public scroll(delta: number): void {
-    const newIndex = this._timePointIndex + delta;
+    const newDimensionGroupNumber = this._dimensionGroupNumber + delta;
 
-    if (newIndex < 0) {
-      this.timePointIndex = this.numTimePoints - 1;
-    } else if (newIndex >= this.numTimePoints) {
-      this.timePointIndex = 0;
+    if (newDimensionGroupNumber < 1) {
+      this.dimensionGroupNumber = this.numDimensionGroups;
+    } else if (newDimensionGroupNumber > this.numDimensionGroups) {
+      this.dimensionGroupNumber = 1;
     } else {
-      this.timePointIndex = newIndex;
+      this.dimensionGroupNumber = newDimensionGroupNumber;
     }
   }
 
-  public getCurrentTimePointImageIds(): string[] {
-    return this._imageIdGroups[this._timePointIndex];
+  public getCurrentDimensionGroupImageIds(): string[] {
+    return this._imageIdGroups[this._dimensionGroupNumber - 1];
   }
 
+  /**
+   * @deprecated Use getCurrentDimensionGroupImageIds instead
+   */
+  public getCurrentTimePointImageIds(): string[] {
+    console.warn(
+      'Warning: getCurrentTimePointImageIds is deprecated. Please use getCurrentDimensionGroupImageIds instead.'
+    );
+    return this.getCurrentDimensionGroupImageIds();
+  }
+
+  /**
+   * @deprecated Use flatImageIdIndexToDimensionGroupNumber instead
+   */
   public flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number {
-    return Math.floor(flatImageIdIndex / this._imageIdGroups[0].length);
+    console.warn(
+      'Warning: flatImageIdIndexToTimePointIndex is deprecated. Please use flatImageIdIndexToDimensionGroupNumber instead.'
+    );
+    return this.flatImageIdIndexToDimensionGroupNumber(flatImageIdIndex) - 1;
+  }
+
+  public flatImageIdIndexToDimensionGroupNumber(
+    flatImageIdIndex: number
+  ): number {
+    return Math.floor(flatImageIdIndex / this._imageIdGroups[0].length) + 1;
   }
 
   public flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number {
@@ -131,7 +186,7 @@ export default class StreamingDynamicImageVolume
   }
 
   /**
-   * Returns the splitting tag used to split the imageIds in 4D volume
+   * Returns the splitting tag used to split the imageIds in the volume
    */
   public get splittingTag(): string {
     return this._splittingTag;
@@ -155,39 +210,67 @@ export default class StreamingDynamicImageVolume
   };
 
   /**
-   * Checks if a specific timepoint is fully loaded
-   * @param timePointIndex - The index of the timepoint to check
-   * @returns boolean indicating if the timepoint is fully loaded
+   * @deprecated Use isDimensionGroupLoaded instead
    */
   public isTimePointLoaded(timePointIndex: number): boolean {
-    return this._loadedTimePoints.has(timePointIndex);
+    console.warn(
+      'Warning: isTimePointLoaded is deprecated. Please use isDimensionGroupLoaded instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
+    );
+    return this.isDimensionGroupLoaded(timePointIndex + 1);
   }
 
   /**
-   * Marks a timepoint as fully loaded
-   * @param timePointIndex - The index of the timepoint to mark as loaded
+   * Checks if a specific dimension group is fully loaded
+   * @param dimensionGroupNumber - The dimension group number to check (1-based)
+   * @returns boolean indicating if the dimension group is fully loaded
    */
-  private markTimePointAsLoaded(timePointIndex: number): void {
-    this._loadedTimePoints.add(timePointIndex);
+  public isDimensionGroupLoaded(dimensionGroupNumber: number): boolean {
+    return this._loadedDimensionGroups.has(dimensionGroupNumber);
+  }
 
-    // Trigger an event to notify that a timepoint has been fully loaded
+  /**
+   * Marks a dimension group as fully loaded
+   * @param dimensionGroupNumber - The dimension group number to mark as loaded (1-based)
+   */
+  private markDimensionGroupAsLoaded(dimensionGroupNumber: number): void {
+    this._loadedDimensionGroups.add(dimensionGroupNumber);
+
+    // Trigger new dimension group-based event
+    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED, {
+      volumeId: this.volumeId,
+      dimensionGroupNumber: dimensionGroupNumber,
+    });
+
+    // Trigger deprecated time point event for backward compatibility
     triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_LOADED, {
       volumeId: this.volumeId,
-      timePointIndex,
+      timePointIndex: dimensionGroupNumber - 1,
     });
   }
 
+  /**
+   * @deprecated Use checkDimensionGroupCompletion instead
+   */
   protected checkTimePointCompletion(imageIdIndex: number): void {
-    const timePointIndex = this.flatImageIdIndexToTimePointIndex(imageIdIndex);
-    const imageIdsInTimePoint = this._imageIdGroups[timePointIndex];
+    console.warn(
+      'Warning: checkTimePointCompletion is deprecated. Please use checkDimensionGroupCompletion instead.'
+    );
+    this.checkDimensionGroupCompletion(imageIdIndex);
+  }
 
-    const allLoaded = imageIdsInTimePoint.every((imageId) => {
+  protected checkDimensionGroupCompletion(imageIdIndex: number): void {
+    const dimensionGroupNumber =
+      this.flatImageIdIndexToDimensionGroupNumber(imageIdIndex);
+    const imageIdsInDimensionGroup =
+      this._imageIdGroups[dimensionGroupNumber - 1];
+
+    const allLoaded = imageIdsInDimensionGroup.every((imageId) => {
       const index = this.getImageIdIndex(imageId);
       return this.cachedFrames[index] === ImageQualityStatus.FULL_RESOLUTION;
     });
 
-    if (allLoaded && !this.isTimePointLoaded(timePointIndex)) {
-      this.markTimePointAsLoaded(timePointIndex);
+    if (allLoaded && !this.isDimensionGroupLoaded(dimensionGroupNumber)) {
+      this.markDimensionGroupAsLoaded(dimensionGroupNumber);
     }
   }
 }

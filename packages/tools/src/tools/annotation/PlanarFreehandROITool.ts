@@ -116,7 +116,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  */
 
 class PlanarFreehandROITool extends ContourSegmentationBaseTool {
-  static toolName;
+  static toolName = 'PlanarFreehandROI';
 
   _throttledCalculateCachedStats: Function;
   private commonData?: PlanarFreehandROICommonData;
@@ -835,7 +835,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     canvasCoordinates,
     calibratedScale,
   }) {
-    const { scale, areaUnit, units } = calibratedScale;
+    const { scale, areaUnit, unit } = calibratedScale;
 
     // Using an arbitrary start point (canvasPoint), calculate the
     // mm spacing for the canvas in the X and Y directions.
@@ -975,7 +975,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
        */
       areaUnit,
       modalityUnit,
-      unit: units,
+      unit,
     };
   }
 
@@ -1107,5 +1107,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-PlanarFreehandROITool.toolName = 'PlanarFreehandROI';
 export default PlanarFreehandROITool;

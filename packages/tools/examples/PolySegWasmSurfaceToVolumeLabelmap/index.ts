@@ -18,6 +18,7 @@ import {
   downloadSurfacesData,
   addManipulationBindings,
   addLabelToToolbar,
+  createAndCacheGeometriesFromSurfaces,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -191,33 +192,7 @@ async function run() {
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
     [viewportId2]
   );
-
-  // // set the anatomy at first invisible
-  // const volumeActor = renderingEngine.getViewport(viewportId3).getDefaultActor()
-  //   .actor as Types.VolumeActor;
-  // utilities.applyPreset(
-  //   volumeActor,
-  //   CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
-  // );
-  // volumeActor.setVisibility(false);
-
-  const surfaces = await downloadSurfacesData();
-
-  const geometriesInfo = surfaces.reduce(
-    (acc: Map<number, string>, surface, index) => {
-      const geometryId = surface.closedSurface.id;
-      geometryLoader.createAndCacheGeometry(geometryId, {
-        type: Enums.GeometryType.SURFACE,
-        geometryData: surface.closedSurface as Types.PublicSurfaceData,
-      });
-
-      const segmentIndex = index + 1;
-      acc.set(segmentIndex, geometryId);
-
-      return acc;
-    },
-    new Map()
-  );
+  const geometryIds = await createAndCacheGeometriesFromSurfaces();
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -229,7 +204,7 @@ async function run() {
         // The actual segmentation data, in the case of contour geometry
         // this is a reference to the geometry data
         data: {
-          geometryIds: geometriesInfo,
+          geometryIds,
         },
       },
     },

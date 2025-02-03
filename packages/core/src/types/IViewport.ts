@@ -11,14 +11,30 @@ import type Viewport from '../RenderingEngine/Viewport';
  * not currently in view, such as for a different slice, or containing a given
  * set of points.
  */
-export interface ViewReferenceSpecifier {
+export type ViewReferenceSpecifier = {
   /**
    * The slice index within the current viewport camera to get a reference for.
-   * Note that slice indexes are dependent on the particular view being shown
-   * and cannot be shared across different view types such as stacks and
-   * volumes, or two viewports showing different orientations or slab thicknesses.
+   * Note that slice indexes are dependent on the data in a viewport, and will
+   * be used to generate a view reference or referenced image, but are not the
+   * reference itself.
    */
-  sliceIndex?: number | [number, number];
+  sliceIndex?: number;
+  /**
+   * The end index - this requires sliceIndex to be specified.
+   * This will result in a view reference containing a range, specified
+   * by the starting and ending images or by a thickness for a volume.
+   *
+   * Note that in the view reference, this gets created as a multiSliceReference
+   * containing a ReferencedImageRange object referencing the final image in the range.
+   * The specifier is done this way because it is a logical way for users of the specifier
+   * to choose an end range, while the use of the range internally is handled as a multi slice
+   * specifier.
+   */
+  rangeEndSliceIndex?: number;
+
+  /** The frame number for a multiframe */
+  frameNumber?: number;
+
   /**
    * Specifies to get a view reference that refers to the generic frame of
    * reference rather than to a specific volume or stack.  Thus, the view
@@ -30,7 +46,7 @@ export interface ViewReferenceSpecifier {
   points?: Point3[];
   /** The volumeId to reference */
   volumeId?: string;
-}
+};
 
 /**
  * It is often important to decide if a given view can display a specific
@@ -45,26 +61,32 @@ export interface ReferenceCompatibleOptions {
    * Test whether the view could be shown if the viewport were navigated.
    * That is, test is just changing the slice position and zoom/pan would
    * allow showing the view.
+   * This will not return a match if the normal of the measurement and the viewport
+   * aren't the same (or opposite), but only if the slice index/focal point were changed.
    */
   withNavigation?: boolean;
+
   /**
    * For a stack viewport, return true if this viewport could show the given
    * view if it were converted into a volume viewport.  Has no affect on volume
    * viewports.
    */
   asVolume?: boolean;
+
   /**
    * For volume viewports, return true if this viewport could show the given view
-   * if the orientation was changed.
+   * if the camera was changed to a different viewNormal orientation.
    */
   withOrientation?: boolean;
-  // Todo: im not sure what is this
+
   /**
    * Use this imageURI for testing - may or may not be the current one.
    * Should be a straight contains URI for the set of imageIds in any of
    * the volumes or set of image ids.
    * This is an optimization setting only that makes the test faster, and does
    * not need to be provided.
+   *
+   * @deprecated Going away in the next release as this is no longer required
    */
   imageURI?: string;
   /**
@@ -73,10 +95,20 @@ export interface ReferenceCompatibleOptions {
   asNearbyProjection?: boolean;
 
   /**
-   * To see if the reference could be overlayed (labelmap, fusion) on the viewport, set this to true.
+   * To see if the reference could be overlaid (labelmap, fusion) on the viewport, set this to true.
    */
   asOverlay?: boolean;
 }
+
+/**
+ * A referenced image range is used for specifying that an annotation applies
+ * to a range of images.  The content value references the last image included,
+ * while the top level view reference specifies the first image included.
+ * It is itself a view reference, allowing it to be used for setViewReference.
+ */
+export type ReferencedImageRange = ViewReference & {
+  referencedImageId: string;
+};
 
 /**
  * A view reference references the image/location of an image.  Typical use
@@ -84,7 +116,7 @@ export interface ReferenceCompatibleOptions {
  * to it later, as well as determining whether specific views should show annotations
  * or other overlay information.
  */
-export interface ViewReference {
+export type ViewReference = {
   /**
    * The FrameOfReferenceUID
    */
@@ -97,8 +129,26 @@ export interface ViewReference {
    *
    * The naming of this particular attribute matches the DICOM SR naming for the
    * referenced image, as well as historical naming in CS3D.
+   *
+   * For range/selection, this must be the starting range referenced image id
    */
   referencedImageId?: string;
+
+  /**
+   * This is an internal copy of referencedImageId without the volume loader
+   * specification included.  It is used for equality and fast lookup checks
+   * to find whether and how this view reference can be displayed on a viewport.
+   */
+  referencedImageURI?: string;
+
+  /**
+   * The multi-slice selection is some sort of specifier for additional
+   * view references which extend this selection to additional slices.
+   * The only allowed current value is the referenced image range, to select
+   * a range of slices, but the intent is to allow other types of references
+   * to be included in the future.
+   */
+  multiSliceReference?: ReferencedImageRange;
 
   /**
    * The focal point of the camera in world space.
@@ -111,31 +161,41 @@ export interface ViewReference {
    * in any orientation.
    */
   cameraFocalPoint?: Point3;
+
   /**
    * The normal for the current view.  This defines the plane used to show the
    * 2d annotation.  This should be omitted if the annotation is a point to
    * allows for single-point annotations.
    */
   viewPlaneNormal?: Point3;
+
   /**
    * The view up - this is only used for resetting orientation
    */
   viewUp?: Point3;
+
   /**
-   * The slice index or range for this view.
-   * <b>NOTE</b> The slice index is relative to the volume or stack of images.
-   * You cannot apply a slice index from one volume to another as they do NOT
+   * This value is primarily an informational slice index as it isn't a reliable
+   * way to navigate to a specified slice.  HOwever, if it is the only value
+   * provided, then it can be used to navigate to a specific slice index.  As
+   * well, it can be used as informational display information.
+   *
+   * The slice index for the image of interest
+   * <b>NOTE</b> The slice index is relative to the volume or video image.
+   * You cannot apply a slice index from one volume or stack to another as they do NOT
    * apply.   The referencedImageId should belong to the volume you are trying
    * to apply to, the viewPlane normal should be identical, and then you can
    * apply the sliceIndex.
    *
-   * For stack viewports, the referencedImageId should occur at the given slice index.
    *
-   * <b>Note 2</b>slice indices don't necessarily indicate anything positionally
-   * within the stack of images - subsequent slice indexes can be at opposite
-   * ends or can be co-incident but separate types of images.
+   * <b>Warning</b>The slice index is not deterministic between different sets
+   * of images containing the same image id.  It is intended more as information
+   * useful for display about a given view reference with a given context.
+   * The intent is to move this to the statistics data to specify the stats for
+   * a given slice object.
+   *
    */
-  sliceIndex?: number | [number, number];
+  sliceIndex?: number;
 
   /**
    * VolumeId that the referencedImageId was chosen from
@@ -146,7 +206,7 @@ export interface ViewReference {
    * particular bounds or not.  This will be in world coordinates.
    */
   bounds?: BoundsLPS;
-}
+};
 
 /**
  * A view presentation stores information about how the view is presented to the
@@ -190,6 +250,16 @@ export interface ViewPresentation {
    * in zoom relative units.
    */
   pan?: Point2;
+
+  /**
+   * The flip horizontal value is true if the view is flipped horizontally.
+   */
+  flipHorizontal?: boolean;
+
+  /**
+   * The flip vertical value is true if the view is flipped vertically.
+   */
+  flipVertical?: boolean;
 }
 
 /**
@@ -219,6 +289,8 @@ export interface ViewPresentationSelector {
   displayArea?: boolean;
   zoom?: boolean;
   pan?: boolean;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
   // Transfer function relative parameters
   windowLevel?: boolean;
   paletteLut?: boolean;

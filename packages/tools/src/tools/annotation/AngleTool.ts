@@ -45,9 +45,10 @@ import type {
 } from '../../types';
 import type { AngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class AngleTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Angle';
 
   angleStartedNotYetCompleted: boolean;
   _throttledCalculateCachedStats: Function;
@@ -723,6 +724,10 @@ class AngleTool extends AnnotationTool {
         return renderStatus;
       }
 
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
+      }
+
       if (activeHandleCanvasCoords) {
         const handleGroupUID = '0';
 
@@ -895,5 +900,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-AngleTool.toolName = 'Angle';
 export default AngleTool;

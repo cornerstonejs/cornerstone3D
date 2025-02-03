@@ -3,7 +3,7 @@ import type { PublicToolProps } from '../../types';
 import SplineROITool from './SplineROITool';
 
 class SplineContourSegmentationTool extends SplineROITool {
-  static toolName;
+  static toolName = 'SplineContourSegmentationTool';
 
   constructor(toolProps: PublicToolProps) {
     const initialProps = utilities.deepMerge(
@@ -24,5 +24,4 @@ class SplineContourSegmentationTool extends SplineROITool {
   }
 }
 
-SplineContourSegmentationTool.toolName = 'SplineContourSegmentationTool';
 export default SplineContourSegmentationTool;

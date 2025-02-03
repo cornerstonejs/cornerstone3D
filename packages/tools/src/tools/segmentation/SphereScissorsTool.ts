@@ -1,11 +1,6 @@
-import {
-  BaseVolumeViewport,
-  cache,
-  getEnabledElement,
-} from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { BaseTool } from '../base';
 import type {
   PublicToolProps,
   ToolProps,
@@ -32,7 +27,6 @@ import {
 } from '../../stateManagement/segmentation';
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import LabelmapBaseTool from './LabelmapBaseTool';
 
 /**
@@ -184,23 +178,19 @@ class SphereScissorsTool extends LabelmapBaseTool {
     };
 
     const { representationData } = getSegmentation(segmentationId);
-    const labelmapData =
-      representationData[SegmentationRepresentations.Labelmap];
 
-    if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-      const segmentation = cache.getVolume(volumeId);
+    const editData = this.getEditData({
+      viewport,
+      representationData,
+      segmentsLocked,
+      segmentationId,
+      volumeOperation: true,
+    });
 
-      this.editData = {
-        ...this.editData,
-        volumeId,
-        referencedVolumeId: segmentation.referencedVolumeId,
-      };
-    } else {
-      this.editData = {
-        ...this.editData,
-      };
-    }
+    this.editData = {
+      ...this.editData,
+      ...editData,
+    };
 
     this._activateDraw(element);
 

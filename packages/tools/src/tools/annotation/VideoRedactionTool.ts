@@ -36,6 +36,8 @@ import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorld
 import type { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
 class VideoRedactionTool extends AnnotationTool {
+  static toolName = 'VideoRedaction';
+
   _throttledCalculateCachedStats: Function;
   editData: {
     annotation: Annotation;
@@ -68,31 +70,13 @@ class VideoRedactionTool extends AnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
-
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const annotation = {
-      metadata: {
-        // We probably just want a different type of data here, hacking this
-        // together for now.
-        viewPlaneNormal: <Types.Point3>[0, 0, 1],
-        viewUp: <Types.Point3>[0, 1, 0],
-        FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-        referencedImageId,
-        toolName: this.getToolName(),
-      },
+    const annotation = (<typeof AnnotationTool>(
+      this.constructor
+    )).createAnnotationForViewport<VideoRedactionAnnotation>(viewport, {
       data: {
-        invalidated: true,
         handles: {
           points: [
             <Types.Point3>[...worldPos],
@@ -100,12 +84,9 @@ class VideoRedactionTool extends AnnotationTool {
             <Types.Point3>[...worldPos],
             <Types.Point3>[...worldPos],
           ],
-          activeHandleIndex: null,
         },
-        cachedStats: {},
-        active: true,
       },
-    };
+    });
 
     addAnnotation(annotation, element);
 
@@ -764,5 +745,4 @@ class VideoRedactionTool extends AnnotationTool {
   };
 }
 
-VideoRedactionTool.toolName = 'VideoRedaction';
 export default VideoRedactionTool;

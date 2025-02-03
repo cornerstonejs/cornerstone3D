@@ -57,6 +57,7 @@ export default function drawHeight(
       color,
       width,
       lineWidth,
+      lineDash,
     }
   );
 
@@ -71,6 +72,7 @@ export default function drawHeight(
       color,
       width,
       lineWidth,
+      lineDash,
     }
   );
 
@@ -85,6 +87,7 @@ export default function drawHeight(
       color,
       width,
       lineWidth,
+      lineDash,
     }
   );
 }

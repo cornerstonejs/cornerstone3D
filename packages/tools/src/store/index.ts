@@ -2,6 +2,7 @@ import { addTool, hasTool, removeTool } from './addTool';
 import addEnabledElement from './addEnabledElement';
 import removeEnabledElement from './removeEnabledElement';
 import cancelActiveManipulations from './cancelActiveManipulations';
+import state from './state';
 //
 
 import Synchronizer from './SynchronizerManager/Synchronizer';
@@ -25,4 +26,5 @@ export {
   SynchronizerManager,
   // Classes
   Synchronizer,
+  state,
 };

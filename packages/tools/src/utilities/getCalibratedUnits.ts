@@ -3,18 +3,31 @@ import { Enums, utilities } from '@cornerstonejs/core';
 const { CalibrationTypes } = Enums;
 const PIXEL_UNITS = 'px';
 
+/**
+ * DICOM Region Data Types as defined in the DICOM standard
+ * https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.5.5.html#sect_C.8.5.5.1.2
+ */
 const SUPPORTED_REGION_DATA_TYPES = [
   1, // Tissue
+  2, // Color Flow
+  3, // PW Spectral Doppler
+  4, // CW Spectral Doppler
 ];
 
 const SUPPORTED_LENGTH_VARIANT = [
-  '3,3', // x: cm  &  y:cm
+  '3,3', // x: cm & y:cm
+  '4,7', // x: seconds & y : cm/sec
 ];
 
 const SUPPORTED_PROBE_VARIANT = [
-  '4,3', // x: seconds  &  y : cm
+  '4,3', // x: seconds & y : cm
+  '4,7', // x: seconds & y : cm/sec
 ];
 
+/**
+ * DICOM Pixel Physical Units as defined in the DICOM standard
+ * https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.5.5.html#sect_C.8.5.5.1.6
+ */
 const UNIT_MAPPING = {
   0: 'px',
   1: 'percent',

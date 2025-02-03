@@ -4,25 +4,21 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  imageLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
+  createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import {
-  fakeImageLoader,
-  fakeVolumeLoader,
-} from '../../../../utils/test/testUtils';
 
+// This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
 const {
-  EllipticalROITool,
+  LengthTool,
   ToolGroupManager,
   StackScrollTool,
   ZoomTool,
@@ -84,27 +80,26 @@ content.append(instructions);
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-  volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
-  imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
 
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(EllipticalROITool);
+  cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(EllipticalROITool.toolName, { volumeId });
+  toolGroup.addTool(LengthTool.toolName, { volumeId });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(EllipticalROITool.toolName, {
+  toolGroup.setToolActive(LengthTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
@@ -120,28 +115,23 @@ async function run() {
     ],
   });
 
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollTool.toolName);
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel, // Mouse Wheel
+      },
+    ],
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  // const ptImageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  // });
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
 
-  // const ctImageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  // });
-
-  // const imageIds = ptImageIds;
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -199,12 +189,14 @@ async function run() {
   );
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId);
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
 
   // Set the volume to load
-  await volume.load();
+  volume.load();
 
-  await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

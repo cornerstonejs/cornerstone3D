@@ -29,7 +29,7 @@ const orientations = [
 
 const description = [
   'Displays a 4D DICOM series in a Volume viewport.',
-  'DataSet: PET 255 x 255 images / 40 time points / 235 images per time point / 9,400 images total',
+  'DataSet: PET 255 x 255 images / 40 dimension groups / 235 images each / 9,400 images total',
 ].join('\n');
 
 // ======== Set up page ======== //
@@ -63,14 +63,14 @@ addDropdownToToolbar({
   },
 });
 
-function addTimePointSlider(volume) {
+function addDimensionGroupSlider(volume) {
   addSliderToToolbar({
-    title: 'Time Point',
-    range: [0, volume.numTimePoints - 1],
-    defaultValue: 0,
+    title: 'Dimension Group Number',
+    range: [1, volume.numDimensionGroups],
+    defaultValue: 1,
     onSelectedValueChange: (value) => {
-      const timePointIndex = Number(value);
-      volume.timePointIndex = timePointIndex;
+      const dimensionGroupNumber = Number(value);
+      volume.dimensionGroupNumber = dimensionGroupNumber;
     },
   });
 }
@@ -81,7 +81,6 @@ function addTimePointSlider(volume) {
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
-
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.79767489559005369769092179787138169587',
@@ -123,7 +122,7 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  addTimePointSlider(volume);
+  addDimensionGroupSlider(volume);
 
   // Set the volume on the viewport
   viewport.setVolumes([{ volumeId }]);
