@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.3...v2.18.4) (2025-02-03)
+
+### Bug Fixes
+
+- **package:** use itk morphology filter and polyseg dynamically ([#1797](https://github.com/cornerstonejs/cornerstone3D/issues/1797)) ([78ed2ec](https://github.com/cornerstonejs/cornerstone3D/commit/78ed2ec015525bbafb391218da4024f24f519a0e))
+
 ## [2.18.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.2...v2.18.3) (2025-01-31)
 
 **Note:** Version bump only for package @cornerstonejs/tools
