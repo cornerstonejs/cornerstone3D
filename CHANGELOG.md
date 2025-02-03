@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.9...v2.19.0) (2025-02-03)
+
+### Features
+
+- **LabelTool:** add label tool ([#1725](https://github.com/cornerstonejs/cornerstone3D/issues/1725)) ([1c379fe](https://github.com/cornerstonejs/cornerstone3D/commit/1c379fe6252a99538dba2f5e97f079fe51e5ceed))
+
 ## [2.18.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.8...v2.18.9) (2025-02-03)
 
 ### Bug Fixes

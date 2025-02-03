@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/ai",
-  "version": "2.18.9",
+  "version": "2.19.0",
   "description": "AI and ML Interfaces for Cornerstone3D",
   "files": [
     "dist"
