@@ -32,7 +32,15 @@ export default defineConfig({
 
 ## Troubleshooting
 
-### 1. @icr/polyseg-wasm Build Issues
+### 1. Polyseg & Labelmap interpolation
+
+By default, we don't include the `@icr/polyseg-wasm`, `itk-wasm`, and `@itk-wasm/morphological-contour-interpolation` libraries in our bundle to keep the size pretty small. If you need these features, you'll need to install them separately and import them into your project. You can do this by running
+
+```bash
+yarn install @icr/polyseg-wasm itk-wasm @itk-wasm/morphological-contour-interpolation
+```
+
+### 1. Build Issues
 
 If you're using 3D segmentation features and encounter issues with `@icr/polyseg-wasm`, add the following to your Vite configuration:
 
@@ -43,6 +51,10 @@ build: {
   }
 },
 ```
+
+:::note
+You might need to add `external: ["itk-wasm", "@itk-wasm/morphological-contour-interpolation"],` to the rollupOptions as well
+:::
 
 ### 2. Path Resolution Issues with @cornerstonejs/core
 
