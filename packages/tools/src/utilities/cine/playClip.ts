@@ -513,14 +513,14 @@ function _createDynamicVolumeViewportCinePlayContext(
       return volume.numDimensionGroups;
     },
     get currentStepIndex(): number {
-      return volume.dimensionGroupNumber;
+      // Convert 1-based dimensionGroupNumber to 0-based index for consistency
+      return volume.dimensionGroupNumber - 1;
     },
     get frameTimeVectorEnabled(): boolean {
       // Looping though time does not uses frameTimeVector
       return false;
     },
     scroll(delta: number): void {
-      // Updating this property (setter) makes it move to the desired time point
       volume.scroll(delta);
     },
   };
