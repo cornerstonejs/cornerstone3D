@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.4...v2.18.5) (2025-02-03)
+
+### Bug Fixes
+
+- **polyseg:** Add rotation points feature if series is rotated ([#1788](https://github.com/cornerstonejs/cornerstone3D/issues/1788)) ([2d22068](https://github.com/cornerstonejs/cornerstone3D/commit/2d22068f0a66a4a5f30aa5396ae3fdbd577559fa))
+
 ## [2.18.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.3...v2.18.4) (2025-02-03)
 
 ### Bug Fixes
