@@ -1,3 +1,4 @@
+import { vec2 } from 'gl-matrix';
 import { Events } from '../../enums';
 import {
   getEnabledElement,
@@ -33,10 +34,11 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
+  InteractionTypes,
+  ToolHandle,
 } from '../../types';
 import type { LabelAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import { vec2 } from 'gl-matrix';
 
 class LabelTool extends AnnotationTool {
   static toolName;
@@ -46,6 +48,7 @@ class LabelTool extends AnnotationTool {
     viewportIdsToRender: string[];
     newAnnotation?: boolean;
     hasMoved?: boolean;
+    offset: Types.Point3;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -267,12 +270,19 @@ class LabelTool extends AnnotationTool {
     return annotation;
   };
 
+  handleSelectedCallback(
+    evt: EventTypes.InteractionEventType,
+    annotation: Annotation,
+    handle: ToolHandle,
+    interactionType: InteractionTypes
+  ): void {}
+
   toolSelectedCallback = (
     evt: EventTypes.InteractionEventType,
     annotation: LabelAnnotation
   ): void => {
     const eventDetail = evt.detail;
-    const { element } = eventDetail;
+    const { element, currentPoints } = eventDetail;
 
     annotation.highlighted = true;
 
@@ -281,9 +291,22 @@ class LabelTool extends AnnotationTool {
       this.getToolName()
     );
 
+    // Capture the offset between the annotation's anchor and the pointer position
+    let offset: Types.Point3 = [0, 0, 0];
+    if (currentPoints && currentPoints.world) {
+      const initialWorldPos = currentPoints.world;
+      const anchorWorldPos = annotation.data.handles.points[0];
+      offset = [
+        anchorWorldPos[0] - initialWorldPos[0],
+        anchorWorldPos[1] - initialWorldPos[1],
+        anchorWorldPos[2] - initialWorldPos[2],
+      ];
+    }
+
     this.editData = {
       annotation,
       viewportIdsToRender,
+      offset,
     };
 
     this._activateModify(element);
@@ -294,33 +317,6 @@ class LabelTool extends AnnotationTool {
 
     evt.preventDefault();
   };
-
-  handleSelectedCallback(
-    evt: EventTypes.InteractionEventType,
-    annotation: LabelAnnotation
-  ): void {
-    const eventDetail = evt.detail;
-    const { element } = eventDetail;
-
-    annotation.highlighted = true;
-
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName()
-    );
-
-    this.editData = {
-      annotation,
-      viewportIdsToRender,
-    };
-    this._activateModify(element);
-
-    hideElementCursor(element);
-
-    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-
-    evt.preventDefault();
-  }
 
   _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
@@ -356,14 +352,21 @@ class LabelTool extends AnnotationTool {
 
   _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
-    const { currentPoints, element } = eventDetail;
+    const { currentPoints } = eventDetail;
     const worldPos = currentPoints.world;
 
-    const { annotation, viewportIdsToRender } = this.editData;
-    const { data } = annotation;
+    const { annotation, viewportIdsToRender, offset } = this.editData;
 
-    // Update the annotation point position
-    data.handles.points[0] = [...worldPos] as Types.Point3;
+    if (offset) {
+      // without offset the move/drag will have a sudden weird jump
+      annotation.data.handles.points[0] = [
+        worldPos[0] + offset[0],
+        worldPos[1] + offset[1],
+        worldPos[2] + offset[2],
+      ];
+    } else {
+      annotation.data.handles.points[0] = [...worldPos];
+    }
     annotation.invalidated = true;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
