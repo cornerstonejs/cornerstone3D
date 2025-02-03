@@ -2186,6 +2186,17 @@
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.6.0.tgz#ec6cd237440700bc23ca23087f513c75508958b0"
   integrity sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==
 
+"@cornerstonejs/adapters@^2.18.9":
+  version "2.18.9"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/adapters/-/adapters-2.18.9.tgz#1ff08a84bbca8bc5f70949ae710bb5f389a45c37"
+  integrity sha512-+Kq3hLbFrtC40AyttDBH5ZBm8OrlciBo/8H+COfBpURZMxfnYpf7NEMGT4LGxlCmMqeIfYYbH+VbJJCsKpX8Bw==
+  dependencies:
+    "@babel/runtime-corejs2" "^7.17.8"
+    buffer "^6.0.3"
+    dcmjs "^0.29.8"
+    gl-matrix "^3.4.3"
+    ndarray "^1.0.19"
+
 "@cornerstonejs/calculate-suv@1.0.3":
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/@cornerstonejs/calculate-suv/-/calculate-suv-1.0.3.tgz#6d99a72032c0f90cebf44dc6f0b12a5f1102e884"
@@ -2210,6 +2221,45 @@
   version "2.4.5"
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.5.tgz#8690b61a86fa53ef38a70eee9d665a79229517c0"
   integrity sha512-MZCUy8VG0VG5Nl1l58+g+kH3LujAzLYTfJqkwpWI2gjSrGXnP6lgwyy4GmPRZWVoS40/B1LDNALK905cNWm+sg==
+
+"@cornerstonejs/core@^2.18.9":
+  version "2.18.9"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/core/-/core-2.18.9.tgz#b8b5534dda4e06d03d348db9f08be7ea40d73b5f"
+  integrity sha512-V1q5yKHLEP1qhzhan19hrvwl5JJwrwWJ4D2iIG++2ZzXT0OCZVaSawbPlV4sndoizKTxKk32BG/djtdkFoTd7A==
+  dependencies:
+    "@kitware/vtk.js" "32.9.0"
+    comlink "^4.4.1"
+    gl-matrix "^3.4.3"
+
+"@cornerstonejs/dicom-image-loader@^2.18.9":
+  version "2.18.9"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/dicom-image-loader/-/dicom-image-loader-2.18.9.tgz#dc02e6671b22908c1a41543ddd9166c566363edc"
+  integrity sha512-TuanLzx38tn1DkyhF8mkxfIywy8ISEY2qFr4j2NnGN7Z7NsxASKNI1qW7s+AbqbGXy5xRUJy3hLWr3J4dgn8Qw==
+  dependencies:
+    "@cornerstonejs/codec-charls" "^1.2.3"
+    "@cornerstonejs/codec-libjpeg-turbo-8bit" "^1.2.2"
+    "@cornerstonejs/codec-openjpeg" "^1.2.2"
+    "@cornerstonejs/codec-openjph" "^2.4.5"
+    comlink "^4.4.1"
+    jpeg-lossless-decoder-js "^2.1.0"
+    pako "^2.0.4"
+    uuid "^9.0.0"
+
+"@cornerstonejs/nifti-volume-loader@^2.18.9":
+  version "2.18.9"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/nifti-volume-loader/-/nifti-volume-loader-2.18.9.tgz#4c992d4a535c8f6a37bd9479c7def4637823dfdf"
+  integrity sha512-4x3HnQOlc8mVH+KqtC2Jlv/Ibcs0wUkShRcP0TMGHVx+O1hY0zJQDsL6AmZp8QU9wictlabb3VOleiwVdqEBbA==
+  dependencies:
+    nifti-reader-js "^0.6.8"
+
+"@cornerstonejs/tools@^2.18.9":
+  version "2.18.9"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/tools/-/tools-2.18.9.tgz#fbf50740fc3ca7f44a08cdfb17cb884da1aa92f3"
+  integrity sha512-/kU86IQva1bZoBLFEXNnuPMtDALfdgBC2OtrB3x0ByT3oeF21QEs3hOk02QPZM8y8/bktBUjetOlgPS/sNq3QQ==
+  dependencies:
+    "@types/offscreencanvas" "2019.7.3"
+    comlink "^4.4.1"
+    lodash.get "^4.4.2"
 
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"

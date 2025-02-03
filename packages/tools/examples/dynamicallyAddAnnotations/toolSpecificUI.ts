@@ -6,6 +6,7 @@ import { createProbeToolUI } from './probeToolUI';
 import { createRectangleROIToolUI } from './rectangleROIToolUI';
 import { createCircleROIToolUI } from './circleROIToolUI';
 import { createSplineROIToolUI } from './splineROIToolUI';
+import { createLabelToolUI } from './labelToolUI';
 
 interface ToolUIConfig {
   toolName: string;
@@ -30,6 +31,9 @@ function createToolUI(toolName: string, config: ToolUIConfig): ToolUI | null {
       break;
     case 'EllipticalROI':
       forms = [createEllipseROIToolUI()];
+      break;
+    case 'Label':
+      forms = [createLabelToolUI()];
       break;
     case 'Length':
       forms = [createLengthToolUI()];

@@ -3450,6 +3450,17 @@ type KeyUpEventDetail = KeyDownEventDetail;
 type KeyUpEventType = Types_2.CustomEventType<KeyUpEventDetail>;
 
 // @public (undocumented)
+interface LabelAnnotation extends Annotation {
+    // (undocumented)
+    data: {
+        text: string;
+        handles: {
+            points: Types_2.Point3[];
+        };
+    };
+}
+
+// @public (undocumented)
 export class LabelmapBaseTool extends BaseTool {
     constructor(toolProps: any, defaultToolProps: any);
     // (undocumented)
@@ -3579,6 +3590,57 @@ type LabelmapToolOperationDataStack = LabelmapToolOperationData & LabelmapSegmen
 
 // @public (undocumented)
 type LabelmapToolOperationDataVolume = LabelmapToolOperationData & LabelmapSegmentationDataVolume;
+
+// @public (undocumented)
+export class LabelTool extends AnnotationTool {
+    constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
+    // (undocumented)
+    _activateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _activateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => LabelAnnotation;
+    // (undocumented)
+    cancel: (element: HTMLDivElement) => string;
+    // (undocumented)
+    _deactivateDraw: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _deactivateModify: (element: HTMLDivElement) => void;
+    // (undocumented)
+    _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
+    // (undocumented)
+    _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    editData: {
+        annotation: Annotation;
+        viewportIdsToRender: string[];
+        newAnnotation?: boolean;
+        hasMoved?: boolean;
+        offset: Types_2.Point3;
+    } | null;
+    // (undocumented)
+    _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
+    // (undocumented)
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
+    // (undocumented)
+    static hydrate: (viewportId: string, position: Types_2.Point3, text: string, options?: {
+        annotationUID?: string;
+    }) => LabelAnnotation;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
+    // (undocumented)
+    _isInsideVolume(index1: any, index2: any, dimensions: any): boolean;
+    // (undocumented)
+    isPointNearTool: (element: HTMLDivElement, annotation: LabelAnnotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
+    // (undocumented)
+    renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    static toolName: any;
+    // (undocumented)
+    toolSelectedCallback: (evt: EventTypes_2.InteractionEventType, annotation: LabelAnnotation) => void;
+}
 
 // @public (undocumented)
 interface LengthAnnotation extends Annotation {
@@ -6261,6 +6323,7 @@ declare namespace ToolSpecificAnnotationTypes {
         PlanarFreehandContourSegmentationAnnotation,
         InterpolationROIAnnotation,
         ArrowAnnotation,
+        LabelAnnotation,
         AngleAnnotation,
         UltrasoundDirectionalAnnotation,
         CobbAngleAnnotation,
