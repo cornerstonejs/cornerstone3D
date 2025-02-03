@@ -104,11 +104,16 @@ function _drawTextGroup(
     setAttributesIfNecessary(textAttributes, textElement);
     setAttributesIfNecessary(textGroupAttributes, existingTextGroup);
 
+    // Add data attribute for annotation UID
+    existingTextGroup.setAttribute('data-annotation-uid', annotationUID);
+
     textGroupBoundingBox = _drawTextBackground(existingTextGroup, background);
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
     const textGroup = document.createElementNS(svgns, 'g');
+    // Add data attribute for annotation UID
+    textGroup.setAttribute('data-annotation-uid', annotationUID);
 
     textGroup.setAttribute('transform', `translate(${x} ${y})`);
 
@@ -150,13 +155,13 @@ function _createTextElement(
   const dropShadowStyle = `filter:url(#shadow-${svgDrawingHelper.svgLayerElement.id});`;
   const combinedStyle = `${noSelectStyle}${dropShadowStyle}`;
 
-  // font-size="100"
   textElement.setAttribute('x', '0');
   textElement.setAttribute('y', '0');
   textElement.setAttribute('fill', color);
   textElement.setAttribute('font-family', fontFamily);
   textElement.setAttribute('font-size', fontSize);
   textElement.setAttribute('style', combinedStyle);
+  textElement.setAttribute('pointer-events', 'visible');
 
   return textElement;
 }

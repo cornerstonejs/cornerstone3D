@@ -36,6 +36,7 @@ import type {
 } from '../../types';
 import type { LabelAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { vec2 } from 'gl-matrix';
 
 class LabelTool extends AnnotationTool {
   static toolName;
@@ -64,11 +65,69 @@ class LabelTool extends AnnotationTool {
     super(toolProps, defaultToolProps);
   }
 
-  // Not necessary for this tool but needs to be defined since it's an abstract
-  // method from the parent class.
-  isPointNearTool(): boolean {
-    return false;
-  }
+  isPointNearTool = (
+    element: HTMLDivElement,
+    annotation: LabelAnnotation,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): boolean => {
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const { annotationUID } = annotation;
+    const point = annotation.data.handles.points[0];
+    const annotationCanvasCoordinate = viewport.worldToCanvas(point);
+
+    // Check if point is near the label point
+    const dist = vec2.distance(canvasCoords, annotationCanvasCoordinate);
+    if (dist < proximity) {
+      return true;
+    }
+
+    // Check if point is over the text box
+    const svgLayer = element.querySelector('svg');
+    if (!svgLayer) {
+      return false;
+    }
+
+    // Find text group with matching annotation UID
+    const textGroup = svgLayer.querySelector(
+      `g[data-annotation-uid="${annotationUID}"]`
+    );
+    if (!textGroup) {
+      return false;
+    }
+
+    // Get bounding box of text group
+    const textGroupElement = textGroup as SVGGraphicsElement;
+    const bbox = textGroupElement.getBBox();
+    const transform = textGroupElement.getAttribute('transform');
+
+    // Parse the transform string to get translation values
+    let translateX = 0;
+    let translateY = 0;
+
+    if (transform) {
+      const matches = transform.match(/translate\(([-\d.]+)\s+([-\d.]+)\)/);
+      if (matches) {
+        translateX = parseFloat(matches[1]);
+        translateY = parseFloat(matches[2]);
+      }
+    }
+
+    // Adjust bbox with transform
+    const x = bbox.x + translateX;
+    const y = bbox.y + translateY;
+
+    // Check if point is inside text box bounds
+    const isNear =
+      canvasCoords[0] >= x &&
+      canvasCoords[0] <= x + bbox.width &&
+      canvasCoords[1] >= y &&
+      canvasCoords[1] <= y + bbox.height;
+
+    return isNear;
+  };
 
   static hydrate = (
     viewportId: string,
@@ -188,7 +247,6 @@ class LabelTool extends AnnotationTool {
     evt.preventDefault();
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-    console.log('Annotation added:', annotation);
     this.configuration.getTextCallback((text) => {
       if (!text) {
         removeAnnotation(annotation.annotationUID);
@@ -196,6 +254,7 @@ class LabelTool extends AnnotationTool {
         this.isDrawing = false;
         return;
       }
+      resetElementCursor(element);
       annotation.data.text = text;
 
       triggerAnnotationCompleted(annotation);
@@ -208,7 +267,33 @@ class LabelTool extends AnnotationTool {
     return annotation;
   };
 
-  toolSelectedCallback() {}
+  toolSelectedCallback = (
+    evt: EventTypes.InteractionEventType,
+    annotation: LabelAnnotation
+  ): void => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    annotation.highlighted = true;
+
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
+    this.editData = {
+      annotation,
+      viewportIdsToRender,
+    };
+
+    this._activateModify(element);
+
+    hideElementCursor(element);
+
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    evt.preventDefault();
+  };
 
   handleSelectedCallback(
     evt: EventTypes.InteractionEventType,
@@ -224,10 +309,7 @@ class LabelTool extends AnnotationTool {
       this.getToolName()
     );
 
-    // Find viewports to render on drag.
-
     this.editData = {
-      //handle, // This would be useful for other tools with more than one handle
       annotation,
       viewportIdsToRender,
     };
@@ -245,9 +327,7 @@ class LabelTool extends AnnotationTool {
     const { element } = eventDetail;
 
     const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
-
-    const { viewportId, renderingEngine } = getEnabledElement(element);
-
+    this._deactivateDraw(element);
     this._deactivateModify(element);
 
     resetElementCursor(element);
@@ -274,13 +354,23 @@ class LabelTool extends AnnotationTool {
     }
   };
 
-  _dragCallback = (evt: EventTypes.InteractionEventType): void => {};
+  _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
+
+    const { annotation, viewportIdsToRender } = this.editData;
+    const { data } = annotation;
+
+    // Update the annotation point position
+    data.handles.points[0] = [...worldPos] as Types.Point3;
+    annotation.invalidated = true;
+
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+  };
 
   _doneChangingTextCallback(element, annotation, updatedText): void {
     annotation.data.text = updatedText;
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -293,7 +383,6 @@ class LabelTool extends AnnotationTool {
   }
 
   cancel = (element: HTMLDivElement) => {
-    // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false;
       this._deactivateModify(element);
