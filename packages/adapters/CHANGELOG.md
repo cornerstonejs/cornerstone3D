@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.8](https://github.com/dcmjs-org/dcmjs/compare/v2.18.7...v2.18.8) (2025-02-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [2.18.7](https://github.com/dcmjs-org/dcmjs/compare/v2.18.6...v2.18.7) (2025-02-03)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

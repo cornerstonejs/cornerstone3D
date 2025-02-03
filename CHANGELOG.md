@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.18.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.7...v2.18.8) (2025-02-03)
+
+### Bug Fixes
+
+- bundling issue with vite 2 ([#1800](https://github.com/cornerstonejs/cornerstone3D/issues/1800)) ([a8fb6a1](https://github.com/cornerstonejs/cornerstone3D/commit/a8fb6a116bca8afae2c46d6a4c86211c67e4b7a4))
+
 ## [2.18.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.18.6...v2.18.7) (2025-02-03)
 
 ### Bug Fixes
