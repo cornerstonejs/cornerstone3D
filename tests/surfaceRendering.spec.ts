@@ -10,13 +10,18 @@ test.beforeEach(async ({ page }) => {
 });
 
 // this is too much for the CI.
-test('should render the segmentation correctly', async ({ page }) => {
-  const locator = page.locator('.cornerstone-canvas');
-  await checkForScreenshot(
-    page,
-    locator,
-    screenShotPaths.surfaceRendering.viewport,
-    100,
-    5000
-  );
-});
+test(
+  'should render the segmentation correctly',
+  {
+    testTimeout: 2000,
+    tag: '@slow',
+  },
+  async ({ page }) => {
+    const locator = page.locator('.cornerstone-canvas');
+    await checkForScreenshot(
+      page,
+      locator,
+      screenShotPaths.surfaceRendering.viewport
+    );
+  }
+);
