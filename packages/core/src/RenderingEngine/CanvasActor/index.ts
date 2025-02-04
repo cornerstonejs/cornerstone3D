@@ -121,7 +121,7 @@ export default class CanvasActor {
     }
     const { voxelManager } = image;
     if (voxelManager) {
-      if (voxelManager.map.getRun) {
+      if (voxelManager.map?.getRun) {
         this.renderRLE(viewport, context, voxelManager);
         return;
       }
