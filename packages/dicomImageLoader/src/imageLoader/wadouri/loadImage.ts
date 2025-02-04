@@ -1,5 +1,6 @@
 import type { DataSet } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 import createImage from '../createImage';
 import { xhrRequest } from '../internal/index';
 import dataSetCacheManager from './dataSetCacheManager';
@@ -11,6 +12,8 @@ import type {
 import getPixelData from './getPixelData';
 import loadFileRequest from './loadFileRequest';
 import parseImageId from './parseImageId';
+
+const { ImageQualityStatus } = Enums;
 
 // add a decache callback function to clear out our dataSetCacheManager
 function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
@@ -77,6 +80,7 @@ function loadImageFromPromise(
 
             image.loadTimeInMS = loadEnd - start;
             image.totalTimeInMS = end - start;
+            image.imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION;
             if (
               callbacks !== undefined &&
               callbacks.imageDoneCallback !== undefined
@@ -145,6 +149,7 @@ function loadImageFromDataSet(
 
         image.loadTimeInMS = loadEnd - start;
         image.totalTimeInMS = end - start;
+        image.imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION;
         resolve(image);
       }, reject);
     }
