@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.4...v2.19.5) (2025-02-04)
+
+### Bug Fixes
+
+- **labelmap:** only show labelmap as independent component on mip if same size ([#1810](https://github.com/cornerstonejs/cornerstone3D/issues/1810)) ([d2e291e](https://github.com/cornerstonejs/cornerstone3D/commit/d2e291efb880c076ef5d67ffc06f8d58ff3c0fd8))
+
 ## [2.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.3...v2.19.4) (2025-02-04)
 
 **Note:** Version bump only for package @cornerstonejs/tools
