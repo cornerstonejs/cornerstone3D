@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.3...v2.19.4) (2025-02-04)
+
+### Bug Fixes
+
+- **examples:** fix labelmap interpolation example ([#1808](https://github.com/cornerstonejs/cornerstone3D/issues/1808)) ([e64d428](https://github.com/cornerstonejs/cornerstone3D/commit/e64d428a5a55144d8d9d1f97388808cb799b7314))
+
 ## [2.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.2...v2.19.3) (2025-02-04)
 
 ### Bug Fixes
