@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.2...v2.19.3) (2025-02-04)
+
+### Bug Fixes
+
+- set full resolution fllag for wado uri image ([#1807](https://github.com/cornerstonejs/cornerstone3D/issues/1807)) ([31e7f93](https://github.com/cornerstonejs/cornerstone3D/commit/31e7f93400ba1bb4e86b8c8dceaf75b6da99e4cf))
+
 ## [2.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.1...v2.19.2) (2025-02-03)
 
 ### Bug Fixes
