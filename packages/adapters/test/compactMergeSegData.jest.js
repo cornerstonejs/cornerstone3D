@@ -1,8 +1,8 @@
 import { describe, it, expect } from "@jest/globals";
 import { compactMergeSegmentDataWithoutInformationLoss } from "../src/adapters/Cornerstone3D/Segmentation/compactMergeSegData";
 
-describe("mergeSegmentDataWithoutInformationLoss", () => {
-    it("should have defined mergeSegmentDataWithoutInformationLoss", () => {
+describe("compactMergeSegmentDataWithoutInformationLoss", () => {
+    it("should have defined compactMergeSegmentDataWithoutInformationLoss", () => {
         expect(compactMergeSegmentDataWithoutInformationLoss).toBeDefined();
     });
 
