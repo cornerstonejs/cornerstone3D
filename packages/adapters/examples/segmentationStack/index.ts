@@ -104,7 +104,7 @@ const state = {
     toolGroup: null,
     toolGroupId: "MY_TOOL_GROUP_ID",
     viewportIds: ["CT_AXIAL"],
-    segmentationId: "LOAD_SEG_ID:" + cornerstone.utilities.uuidv4(),
+    segmentationIds: [],
     referenceImageIds: [],
     segImageIds: [],
     skipOverlapping: false,
@@ -135,10 +135,12 @@ function loadDicom() {
 }
 
 function createSegmentationRepresentation() {
-    csToolsSegmentation.addLabelmapRepresentationToViewport(
-        state.viewportIds[0],
-        [{ segmentationId: state.segmentationId }]
-    );
+    for (const segmentationId of state.segmentationIds) {
+        csToolsSegmentation.addLabelmapRepresentationToViewport(
+            state.viewportIds[0],
+            [{ segmentationId }]
+        );
+    }
 }
 
 // ============================= //
