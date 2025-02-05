@@ -140,9 +140,7 @@ async function createLabelmapsFromBufferInternal(
     switch (orientation) {
         case "Planar":
             if (overlapping) {
-                throw new Error(
-                    "Overlapping segmentations are not yet supported."
-                );
+                insertFunction = insertOverlappingPixelDataPlanar;
             } else {
                 insertFunction = insertPixelDataPlanar;
             }
@@ -188,7 +186,7 @@ async function createLabelmapsFromBufferInternal(
     // segment in the labelmapBuffer
     const segmentsPixelIndices = new Map();
 
-    const overlappingSegments = await insertFunction(
+    const overlappingSegments = await insertFunction({
         segmentsOnFrame,
         labelMapImages,
         pixelDataChunks,
@@ -199,8 +197,10 @@ async function createLabelmapsFromBufferInternal(
         tolerance,
         segmentsPixelIndices,
         sopUIDImageIdIndexMap,
-        imageIdMaps
-    );
+        imageIdMaps,
+        TypedArrayConstructor,
+        segmentsOnFrameArray
+    });
 
     // calculate the centroid of each segment
     const centroidXYZ = new Map();
@@ -227,19 +227,19 @@ async function createLabelmapsFromBufferInternal(
     };
 }
 
-export function insertPixelDataPlanar(
+export function insertPixelDataPlanar({
     segmentsOnFrame,
     labelMapImages,
-    pixelData,
+    pixelDataChunks,
     multiframe,
-    imageIds,
+    referencedImageIds,
     validOrientations,
     metadataProvider,
     tolerance,
     segmentsPixelIndices,
     sopUIDImageIdIndexMap,
     imageIdMaps
-) {
+}) {
     const {
         SharedFunctionalGroupsSequence,
         PerFrameFunctionalGroupsSequence,
@@ -271,7 +271,7 @@ export function insertPixelDataPlanar(
                     .ImageOrientationPatient;
 
             const view = readFromUnpackedChunks(
-                pixelData,
+                pixelDataChunks,
                 i * sliceLength,
                 sliceLength
             );
@@ -307,7 +307,7 @@ export function insertPixelDataPlanar(
             const imageId = findReferenceSourceImageId(
                 multiframe,
                 i,
-                imageIds,
+                referencedImageIds,
                 metadataProvider,
                 tolerance,
                 sopUIDImageIdIndexMap
@@ -369,6 +369,215 @@ export function insertPixelDataPlanar(
         }
         resolve(overlapping);
     });
+}
+
+export function insertOverlappingPixelDataPlanar({
+    segmentsOnFrame,
+    labelMapImages,
+    pixelDataChunks,
+    multiframe,
+    referencedImageIds,
+    validOrientations,
+    metadataProvider,
+    tolerance,
+    segmentsPixelIndices,
+    sopUIDImageIdIndexMap,
+    imageIdMaps,
+    TypedArrayConstructor,
+    segmentsOnFrameArray
+}) {
+    const {
+        SharedFunctionalGroupsSequence,
+        PerFrameFunctionalGroupsSequence,
+        Rows,
+        Columns
+    } = multiframe;
+
+    const sharedImageOrientationPatient =
+        SharedFunctionalGroupsSequence.PlaneOrientationSequence
+            ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
+                  .ImageOrientationPatient
+            : undefined;
+    const sliceLength = Columns * Rows;
+    const arrayBufferLength =
+        sliceLength *
+        referencedImageIds.length *
+        TypedArrayConstructor.BYTES_PER_ELEMENT;
+
+    let numberOfLabelMaps = 1;
+    let currentLabelMap = 0;
+
+    // temp array for checking overlaps
+    let tempBuffer = labelMapImages[currentLabelMap].slice(0);
+
+    // temp list for checking overlaps
+    let tempSegmentsOnFrame = structuredClone(
+        segmentsOnFrameArray[currentLabelMap]
+    );
+
+    /** split overlapping SEGs algorithm for each segment:
+     *  A) copy the labelmapBuffer in the array with index 0
+     *  B) add the segment pixel per pixel on the copied buffer from (A)
+     *  C) if no overlap, copy the results back on the orignal array from (A)
+     *  D) if overlap, repeat increasing the index m up to M (if out of memory, add new buffer in the array and M++);
+     */
+
+    const numberOfSegs = multiframe.SegmentSequence.length;
+    for (
+        let segmentIndexToProcess = 1;
+        segmentIndexToProcess <= numberOfSegs;
+        ++segmentIndexToProcess
+    ) {
+        for (
+            let i = 0, groupsLen = PerFrameFunctionalGroupsSequence.length;
+            i < groupsLen;
+            ++i
+        ) {
+            const PerFrameFunctionalGroups =
+                PerFrameFunctionalGroupsSequence[i];
+
+            const segmentIndex = getSegmentIndex(multiframe, i);
+            if (segmentIndex === undefined) {
+                throw new Error(
+                    "Could not retrieve the segment index. Aborting segmentation loading."
+                );
+            }
+
+            if (segmentIndex !== segmentIndexToProcess) {
+                continue;
+            }
+
+            const ImageOrientationPatientI =
+                sharedImageOrientationPatient ||
+                PerFrameFunctionalGroups.PlaneOrientationSequence
+                    .ImageOrientationPatient;
+
+            // Since we moved to the chunks approach, we need to read the data
+            // and handle scenarios where the portion of data is in one chunk
+            // and the other portion is in another chunk
+            const view = readFromUnpackedChunks(
+                pixelDataChunks,
+                i * sliceLength,
+                sliceLength
+            );
+
+            const pixelDataI2D = ndarray(view, [Rows, Columns]);
+
+            const alignedPixelDataI = alignPixelDataWithSourceData(
+                pixelDataI2D,
+                ImageOrientationPatientI,
+                validOrientations,
+                tolerance
+            );
+
+            if (!alignedPixelDataI) {
+                throw new Error(
+                    "Individual SEG frames are out of plane with respect to the first SEG frame. " +
+                        "This is not yet supported. Aborting segmentation loading."
+                );
+            }
+
+            const imageId = findReferenceSourceImageId(
+                multiframe,
+                i,
+                referencedImageIds,
+                metadataProvider,
+                tolerance,
+                sopUIDImageIdIndexMap
+            );
+
+            if (!imageId) {
+                console.warn(
+                    "Image not present in stack, can't import frame : " +
+                        i +
+                        "."
+                );
+                continue;
+            }
+
+            const sourceImageMetadata = metadataProvider.get(
+                "instance",
+                imageId
+            );
+            if (
+                Rows !== sourceImageMetadata.Rows ||
+                Columns !== sourceImageMetadata.Columns
+            ) {
+                throw new Error(
+                    "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
+                        "respect to the source image reference frame. This is not yet supported. " +
+                        "Aborting segmentation loading. "
+                );
+            }
+
+            const imageIdIndex = referencedImageIds.findIndex(
+                element => element === imageId
+            );
+            const byteOffset =
+                sliceLength *
+                imageIdIndex *
+                TypedArrayConstructor.BYTES_PER_ELEMENT;
+
+            const labelmap2DView = new TypedArrayConstructor(
+                tempBuffer,
+                byteOffset,
+                sliceLength
+            );
+
+            const data = alignedPixelDataI.data;
+
+            let segmentOnFrame = false;
+            for (let j = 0, len = alignedPixelDataI.data.length; j < len; ++j) {
+                if (data[j]) {
+                    if (labelmap2DView[j] !== 0) {
+                        currentLabelMap++;
+                        if (currentLabelMap >= numberOfLabelMaps) {
+                            labelMapImages[currentLabelMap] = new ArrayBuffer(
+                                arrayBufferLength
+                            );
+                            segmentsOnFrameArray[currentLabelMap] = [];
+                            numberOfLabelMaps++;
+                        }
+                        tempBuffer = labelMapImages[currentLabelMap].slice(0);
+                        tempSegmentsOnFrame = structuredClone(
+                            segmentsOnFrameArray[currentLabelMap]
+                        );
+
+                        i = 0;
+                        break;
+                    } else {
+                        labelmap2DView[j] = segmentIndex;
+                        segmentOnFrame = true;
+                    }
+                }
+            }
+
+            if (segmentOnFrame) {
+                if (!tempSegmentsOnFrame[imageIdIndex]) {
+                    tempSegmentsOnFrame[imageIdIndex] = [];
+                }
+
+                tempSegmentsOnFrame[imageIdIndex].push(segmentIndex);
+
+                if (!segmentsOnFrame[imageIdIndex]) {
+                    segmentsOnFrame[imageIdIndex] = [];
+                }
+
+                segmentsOnFrame[imageIdIndex].push(segmentIndex);
+            }
+        }
+
+        labelMapImages[currentLabelMap] = tempBuffer.slice(0);
+        segmentsOnFrameArray[currentLabelMap] =
+            structuredClone(tempSegmentsOnFrame);
+
+        // reset temp variables/buffers for new segment
+        currentLabelMap = 0;
+        tempBuffer = labelMapImages[currentLabelMap].slice(0);
+        tempSegmentsOnFrame = structuredClone(
+            segmentsOnFrameArray[currentLabelMap]
+        );
+    }
 }
 
 export { createLabelmapsFromBufferInternal };
