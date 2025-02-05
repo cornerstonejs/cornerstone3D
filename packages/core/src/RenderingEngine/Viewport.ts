@@ -1877,7 +1877,13 @@ class Viewport {
       this.setRotation(rotation);
     }
 
-    this.flip({ flipHorizontal, flipVertical });
+    // flip operation requires another re-render to take effect, so unfortunately
+    // right now if the view presentation requires a flip, it will flicker. The
+    // correct way to handle this is to wait for camera and flip together and then
+    // do one render
+    if (flipHorizontal || flipVertical) {
+      this.flip({ flipHorizontal, flipVertical });
+    }
   }
 
   _getCorners(bounds: number[]): number[][] {
