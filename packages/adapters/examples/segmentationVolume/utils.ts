@@ -65,7 +65,7 @@ export async function readSegmentation(file: File, state) {
 }
 
 export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
-    const { referenceImageIds, skipOverlapping, segmentationId } = state;
+    const { referenceImageIds, skipOverlapping, segmentationIds } = state;
 
     const generateToolState =
         await Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
@@ -77,23 +77,28 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
             }
         );
 
-    await createSegmentation(state);
+    for (let i = 0; i < generateToolState.labelMapImages.length; i++) {
+        const segmentationId = "LOAD_SEG_ID:" + cornerstone.utilities.uuidv4();
+        segmentationIds.push(segmentationId);
+        await createSegmentation({ ...state, segmentationId });
 
-    const segmentation =
-        csToolsSegmentation.state.getSegmentation(segmentationId);
+        const segmentation =
+            csToolsSegmentation.state.getSegmentation(segmentationId);
 
-    const { imageIds } = segmentation.representationData.Labelmap;
-    const derivedSegmentationImages = imageIds.map(imageId =>
-        cache.getImage(imageId)
-    );
+        const { imageIds } = segmentation.representationData.Labelmap;
+        const derivedSegmentationImages = imageIds.map(imageId =>
+            cache.getImage(imageId)
+        );
 
-    const labelmapImagesNonOverlapping = generateToolState.labelMapImages[0];
+        const labelmapImagesNonOverlapping =
+            generateToolState.labelMapImages[i];
 
-    for (let i = 0; i < derivedSegmentationImages.length; i++) {
-        const voxelManager = derivedSegmentationImages[i].voxelManager;
-        const scalarData = voxelManager.getScalarData();
-        scalarData.set(labelmapImagesNonOverlapping[i].getPixelData());
-        voxelManager.setScalarData(scalarData);
+        for (let j = 0; j < derivedSegmentationImages.length; j++) {
+            const voxelManager = derivedSegmentationImages[j].voxelManager;
+            const scalarData = voxelManager.getScalarData();
+            scalarData.set(labelmapImagesNonOverlapping[j].getPixelData());
+            voxelManager.setScalarData(scalarData);
+        }
     }
 }
 

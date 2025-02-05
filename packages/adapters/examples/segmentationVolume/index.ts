@@ -116,7 +116,7 @@ const state = {
     toolGroupId: "MY_TOOL_GROUP_ID",
     viewportIds: ["CT_AXIAL", "CT_SAGITTAL", "CT_CORONAL"],
     volumeId: "",
-    segmentationId: "LOAD_SEG_ID:" + cornerstone.utilities.uuidv4(),
+    segmentationIds: [],
     referenceImageIds: [],
     skipOverlapping: false,
     segImageIds: [],
@@ -161,13 +161,15 @@ async function loadDicom() {
 }
 
 function createSegmentationRepresentation() {
-    const segMap = {
-        [state.viewportIds[0]]: [{ segmentationId: state.segmentationId }],
-        [state.viewportIds[1]]: [{ segmentationId: state.segmentationId }],
-        [state.viewportIds[2]]: [{ segmentationId: state.segmentationId }]
-    };
+    for (const segmentationId of state.segmentationIds) {
+        const segMap = {
+            [state.viewportIds[0]]: [{ segmentationId }],
+            [state.viewportIds[1]]: [{ segmentationId }],
+            [state.viewportIds[2]]: [{ segmentationId }]
+        };
 
-    csToolsSegmentation.addLabelmapRepresentationToViewportMap(segMap);
+        csToolsSegmentation.addLabelmapRepresentationToViewportMap(segMap);
+    }
 }
 // ============================= //
 addButtonToToolbar({
