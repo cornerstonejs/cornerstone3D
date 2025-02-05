@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.6](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.5...v2.19.6) (2025-02-05)
+
+### Bug Fixes
+
+- **viewport:** Prevent flickering during viewport flip operations ([#1813](https://github.com/cornerstonejs/cornerstone3D/issues/1813)) ([4170a06](https://github.com/cornerstonejs/cornerstone3D/commit/4170a063cfc2a6e39139b9cc905acd68698a3652))
+
 ## [2.19.5](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.4...v2.19.5) (2025-02-04)
 
 **Note:** Version bump only for package @cornerstonejs/core
