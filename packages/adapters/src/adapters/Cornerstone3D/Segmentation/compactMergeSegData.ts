@@ -16,32 +16,32 @@ const checkHasOverlapping = ({ largerArray, currentTestedArray, newArray }) =>
         );
     });
 
-export const mergeNewArrayWithoutInformationLoss = ({
-    arrayOfLabelMapImages,
-    newLabelMapImages
+export const compactMergeSegmentDataWithoutInformationLoss = ({
+    arrayOfSegmentData,
+    newSegmentData
 }) => {
-    if (arrayOfLabelMapImages.length === 0) {
-        arrayOfLabelMapImages.push(newLabelMapImages);
+    if (arrayOfSegmentData.length === 0) {
+        arrayOfSegmentData.push(newSegmentData);
         return;
     }
 
     for (
         let currentTestedIndex = 0;
-        currentTestedIndex < arrayOfLabelMapImages.length;
+        currentTestedIndex < arrayOfSegmentData.length;
         currentTestedIndex++
     ) {
-        const currentTestedArray = arrayOfLabelMapImages[currentTestedIndex];
+        const currentTestedArray = arrayOfSegmentData[currentTestedIndex];
 
         const originalArrayIsLarger =
-            currentTestedArray.length > newLabelMapImages.length;
+            currentTestedArray.length > newSegmentData.length;
         const largerArray = originalArrayIsLarger
             ? currentTestedArray
-            : newLabelMapImages;
+            : newSegmentData;
 
         const hasOverlapping = checkHasOverlapping({
             currentTestedArray,
             largerArray,
-            newArray: newLabelMapImages
+            newArray: newSegmentData
         });
 
         if (hasOverlapping) {
@@ -51,7 +51,7 @@ export const mergeNewArrayWithoutInformationLoss = ({
         largerArray.forEach((_, currentImageIndex) => {
             const originalImagePixelData =
                 currentTestedArray[currentImageIndex];
-            const newImagePixelData = newLabelMapImages[currentImageIndex];
+            const newImagePixelData = newSegmentData[currentImageIndex];
 
             if (
                 (!originalImagePixelData && !newImagePixelData) ||
@@ -77,5 +77,5 @@ export const mergeNewArrayWithoutInformationLoss = ({
         return;
     }
 
-    arrayOfLabelMapImages.push(newLabelMapImages);
+    arrayOfSegmentData.push(newSegmentData);
 };
