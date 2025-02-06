@@ -42,6 +42,11 @@ function createFormElement(): HTMLFormElement {
       <br>
       <button style="margin-left: 52px;" type="button" id="${coordType}-stack">Add Stack</button>
       <button type="button" id="${coordType}-volume">Add Volume</button>
+      ${
+        coordType === 'image'
+          ? `<button type="button" id="${coordType}-volume-imageId">Add to specific image in volume (first imageId/inferior-most image in volume)</button> `
+          : ''
+      }
       <br><br>
     `;
   });
@@ -53,20 +58,25 @@ function addButtonListeners(form: HTMLFormElement): void {
   const buttons = form.querySelectorAll('button');
   buttons.forEach((button) => {
     button.addEventListener('click', () => {
-      const [type, viewportType] = button.id.split('-') as [
+      const [type, viewportType, useImageId] = button.id.split('-') as [
         'canvas' | 'image',
-        keyof typeof typeToIdMap
+        keyof typeof typeToIdMap,
+        'imageId'?
       ];
       const enabledElement = getEnabledElementByViewportId(
         typeToIdMap[viewportType]
       );
       const viewport = enabledElement.viewport;
+      const imageId = useImageId && viewport.getImageIds()[0];
       const coords = getCoordinates(form, type);
       const currentImageId = viewport.getCurrentImageId() as string;
 
       const worldStart =
         type === 'image'
-          ? utilities.imageToWorldCoords(currentImageId, coords.topLeft)
+          ? utilities.imageToWorldCoords(
+              imageId || currentImageId,
+              coords.topLeft
+            )
           : viewport.canvasToWorld(coords.topLeft);
 
       ProbeTool.hydrate(viewport.id, [worldStart]);
