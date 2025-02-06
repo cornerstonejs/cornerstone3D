@@ -38,6 +38,7 @@ export default {
     } = getStrategyData({
       operationData,
       viewport,
+      strategy: this,
     });
 
     const spacing = segmentationImageData.getSpacing();
