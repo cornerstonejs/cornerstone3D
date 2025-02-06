@@ -35,13 +35,9 @@ export function setBrushThresholdForToolGroup(
     return;
   }
 
-  const { renderingEngineId } = viewportsInfo[0];
-
   // Use helper to get array of viewportIds, or we just end up doing this mapping
   // ourselves here.
   const viewportIds = toolGroup.getViewportIds();
-
-  const renderingEngine = getRenderingEngine(renderingEngineId);
 
   triggerAnnotationRenderForViewportIds(viewportIds);
 }

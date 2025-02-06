@@ -33,6 +33,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
+  activeStrategy: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   configuration?: Record<string, any>;
   memo?: LabelmapMemo;
@@ -66,13 +67,13 @@ export type Composition = CompositionFunction | CompositionInstance;
  *
  * These combine to form an actual brush:
  *
- * Circle - convexFill, defaultSetValue, inEllipse/boundingbox ellipse, empty threshold
- * Rectangle - - convexFill, defaultSetValue, inRectangle/boundingbox rectangle, empty threshold
+ * Circle - convexFill, defaultSetValue, inEllipse/bounding box ellipse, empty threshold
+ * Rectangle - - convexFill, defaultSetValue, inRectangle/bounding box rectangle, empty threshold
  * might also get parameter values from input,  init for setup of convexFill
  *
  * The pieces are combined to generate a strategyFunction, which performs
  * the actual strategy operation, as well as various callbacks for the strategy
- * to allow more control over behaviour in the specific strategy (such as displaying
+ * to allow more control over behavior in the specific strategy (such as displaying
  * preview)
  */
 
@@ -119,6 +120,13 @@ export default class BrushStrategy {
     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
       StrategyCallbacks.ComputeInnerCircleRadius
     ),
+    [StrategyCallbacks.HandleStackSegmentationFor3DManipulation]: addListMethod(
+      StrategyCallbacks.HandleStackSegmentationFor3DManipulation
+    ),
+    [StrategyCallbacks.HandleStackImageReferenceFor3DManipulation]:
+      addListMethod(
+        StrategyCallbacks.HandleStackImageReferenceFor3DManipulation
+      ),
     [StrategyCallbacks.AddPreview]: addListMethod(StrategyCallbacks.AddPreview),
     [StrategyCallbacks.GetStatistics]: addSingletonMethod(
       StrategyCallbacks.GetStatistics
@@ -227,7 +235,9 @@ export default class BrushStrategy {
     operationName?: string
   ): InitializedOperationData {
     const { viewport } = enabledElement;
-    const data = getStrategyData({ operationData, viewport });
+
+    // pass in the strategy to getStrategyData
+    const data = getStrategyData({ operationData, viewport, strategy: this });
 
     if (!data) {
       console.warn('No data found for BrushStrategy');
@@ -240,14 +250,10 @@ export default class BrushStrategy {
       segmentationImageData,
     } = data;
 
-    const segmentationVoxelManagerToUse =
-      operationData.override?.voxelManager || segmentationVoxelManager;
-    const segmentationImageDataToUse =
-      operationData.override?.imageData || segmentationImageData;
-
     const previewVoxelManager =
       operationData.preview?.previewVoxelManager ||
       VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
+
     const previewEnabled = !!operationData.previewColors;
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
@@ -257,8 +263,8 @@ export default class BrushStrategy {
       ...operationData,
       enabledElement,
       imageVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManagerToUse,
-      segmentationImageData: segmentationImageDataToUse,
+      segmentationVoxelManager,
+      segmentationImageData,
       previewVoxelManager,
       viewport,
       centerWorld: null,

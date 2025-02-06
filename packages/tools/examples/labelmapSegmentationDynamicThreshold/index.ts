@@ -120,7 +120,7 @@ interpolationTools.set('ThresholdSphereIsland', {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
     strategySpecificConfiguration: {
-      THRESHOLD: { ...thresholdArgs },
+      THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL: { ...thresholdArgs },
     },
   },
 });
@@ -131,7 +131,7 @@ interpolationTools.set('ThresholdCircle', {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
     strategySpecificConfiguration: {
-      THRESHOLD: { ...thresholdArgs },
+      THRESHOLD_INSIDE_CIRCLE: { ...thresholdArgs },
     },
   },
 });
@@ -142,7 +142,7 @@ interpolationTools.set('ThresholdSphere', {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
     strategySpecificConfiguration: {
-      THRESHOLD: { ...thresholdArgs },
+      THRESHOLD_INSIDE_SPHERE: { ...thresholdArgs },
     },
   },
 });

@@ -72,11 +72,7 @@ class BrushTool extends LabelmapBaseTool {
             thresholdInsideSphereIsland,
         },
 
-        strategySpecificConfiguration: {
-          THRESHOLD: {
-            threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
-          },
-        },
+        strategySpecificConfiguration: {},
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
         thresholdVolumeId: null,

@@ -166,8 +166,11 @@ function setupTools(toolGroupId) {
         enabled: true,
       },
       strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
+        [brushStrategies.DynamicThreshold]: {
+          useCenterSegmentIndex: true,
+          isDynamic: true,
+          dynamicRadius: 3,
+        },
       },
     }
   );

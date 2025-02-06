@@ -297,20 +297,6 @@ function setupTools(toolGroupId) {
       activeStrategy: brushStrategies.ThresholdBrush,
     }
   );
-  toolGroup.addToolInstance(
-    brushInstanceNames.DynamicThreshold,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.DynamicThreshold,
-      preview: {
-        enabled: true,
-      },
-      strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
-      },
-    }
-  );
 
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],

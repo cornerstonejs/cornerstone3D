@@ -10,10 +10,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
@@ -21,7 +18,6 @@ import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segm
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { getClosestImageIdForStackViewport } from '../../utilities/annotationHydration';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
-import { getStackSegmentationImageIdsForViewport } from '../../stateManagement/segmentation/getStackSegmentationImageIdsForViewport';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { StrategyCallbacks } from '../../enums';
@@ -189,7 +185,6 @@ export default class LabelmapBaseTool extends BaseTool {
     representationData,
     segmentsLocked,
     segmentationId,
-    volumeOperation = false,
   }): EditDataReturnType {
     if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
@@ -243,67 +238,10 @@ export default class LabelmapBaseTool extends BaseTool {
         return;
       }
 
-      // I hate this, but what can you do sometimes
-      if (
-        this.configuration.activeStrategy.includes('SPHERE') ||
-        volumeOperation
-      ) {
-        const referencedImageIds = viewport.getImageIds();
-        const isValidVolumeForSphere =
-          csUtils.isValidVolume(referencedImageIds);
-
-        if (!isValidVolumeForSphere) {
-          throw new Error(
-            'Volume is not reconstructable for sphere manipulation'
-          );
-        }
-
-        const volumeId = `${segmentationId}_${viewport.id}`;
-        const volume = cache.getVolume(volumeId);
-        if (volume) {
-          return {
-            imageId: segmentationImageId,
-            segmentsLocked,
-            override: {
-              voxelManager: volume.voxelManager,
-              imageData: volume.imageData,
-            },
-          };
-        } else {
-          // We don't need to call `getStackSegmentationImageIdsForViewport` here
-          // because we've already ensured the stack constructs a volume,
-          // making the scenario for multi-image non-consistent metadata is not likely.
-          const { imageIds: labelmapImageIds } =
-            representationData.Labelmap as LabelmapSegmentationDataStack;
-
-          if (!labelmapImageIds || labelmapImageIds.length === 1) {
-            return {
-              imageId: segmentationImageId,
-              segmentsLocked,
-            };
-          }
-
-          // it will return the cached volume if it already exists
-          const volume = volumeLoader.createAndCacheVolumeFromImagesSync(
-            volumeId,
-            labelmapImageIds
-          );
-
-          return {
-            imageId: segmentationImageId,
-            segmentsLocked,
-            override: {
-              voxelManager: volume.voxelManager,
-              imageData: volume.imageData,
-            },
-          };
-        }
-      } else {
-        return {
-          imageId: segmentationImageId,
-          segmentsLocked,
-        };
-      }
+      return {
+        imageId: segmentationImageId,
+        segmentsLocked,
+      };
     }
   }
 
@@ -389,6 +327,7 @@ export default class LabelmapBaseTool extends BaseTool {
       toolGroupId: this.toolGroupId,
       segmentationId,
       viewUp,
+      activeStrategy: this.configuration.activeStrategy,
       strategySpecificConfiguration:
         this.configuration.strategySpecificConfiguration,
       // Provide the preview information so that data can be used directly
