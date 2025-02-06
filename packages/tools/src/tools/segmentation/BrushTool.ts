@@ -80,7 +80,9 @@ class BrushTool extends LabelmapBaseTool {
         preview: {
           // Have to enable the preview to use this
           enabled: false,
-          previewColors: {},
+          previewColors: {
+            0: [255, 255, 255, 128],
+          },
           // The time before showing a preview
           previewTimeMs: 250,
           // The distance to move to show a preview before preview time expired

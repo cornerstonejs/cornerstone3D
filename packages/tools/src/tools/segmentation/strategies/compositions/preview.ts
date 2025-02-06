@@ -6,6 +6,7 @@ import {
   getSegmentIndexColor,
   setSegmentIndexColor,
 } from '../../../../stateManagement/segmentation/config/segmentationColor';
+import { getViewportIdsWithSegmentation } from '../../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
 
 function lightenColor(r, g, b, a, factor = 0.4) {
   return [
@@ -75,14 +76,6 @@ export default {
       operationData.previewVoxelManager = preview.previewVoxelManager;
     }
 
-    // if (
-    //   segmentIndex === undefined ||
-    //   segmentIndex === null ||
-    //   !previewSegmentIndex
-    // ) {
-    //   // Null means to reset the value, so we don't change the preview colour
-    //   return;
-    // }
     if (segmentIndex === null) {
       // Null means to reset the value, so we don't change the preview colour,
       return;
@@ -94,17 +87,29 @@ export default {
       operationData.segmentationId,
       segmentIndex
     );
+
     if (!configColor && !segmentColor) {
       return;
     }
+
     const previewColor = configColor || lightenColor(...segmentColor);
 
-    setSegmentIndexColor(
-      operationData.viewport.id,
-      operationData.segmentationId,
-      previewSegmentIndex,
-      previewColor as Types.Color
+    // check if there are other viewports that are displaying the segmentationId
+    // which means we should add the preview color to all of them, otherwise
+    // the preview color for other viewports will be different than the viewport
+    // currently we are brushing
+    const viewportIds = getViewportIdsWithSegmentation(
+      operationData.segmentationId
     );
+
+    viewportIds?.forEach((viewportId) => {
+      setSegmentIndexColor(
+        viewportId,
+        operationData.segmentationId,
+        previewSegmentIndex,
+        previewColor as Types.Color
+      );
+    });
   },
 
   [StrategyCallbacks.AcceptPreview]: (
