@@ -120,13 +120,13 @@ export default class BrushStrategy {
     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
       StrategyCallbacks.ComputeInnerCircleRadius
     ),
-    [StrategyCallbacks.HandleStackSegmentationFor3DManipulation]: addListMethod(
-      StrategyCallbacks.HandleStackSegmentationFor3DManipulation
-    ),
-    [StrategyCallbacks.HandleStackImageReferenceFor3DManipulation]:
+    [StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation]:
       addListMethod(
-        StrategyCallbacks.HandleStackImageReferenceFor3DManipulation
+        StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation
       ),
+    [StrategyCallbacks.EnsureImageVolumeFor3DManipulation]: addListMethod(
+      StrategyCallbacks.EnsureImageVolumeFor3DManipulation
+    ),
     [StrategyCallbacks.AddPreview]: addListMethod(StrategyCallbacks.AddPreview),
     [StrategyCallbacks.GetStatistics]: addSingletonMethod(
       StrategyCallbacks.GetStatistics

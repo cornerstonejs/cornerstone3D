@@ -8,8 +8,8 @@ import setValue from './setValue';
 import threshold from './threshold';
 import labelmapStatistics from './labelmapStatistics';
 import labelmapInterpolation from './labelmapInterpolation';
-import stackSegFor3DHandling from './stackSegFor3DHandling';
-import stackImageFor3DReferenceHandling from './stackImageFor3DReferenceHandling';
+import ensureSegmentationVolumeFor3DManipulation from './ensureSegmentationVolume';
+import ensureImageVolumeFor3DManipulation from './ensureImageVolume';
 
 export default {
   determineSegmentIndex,
@@ -22,6 +22,6 @@ export default {
   threshold,
   labelmapStatistics,
   labelmapInterpolation,
-  stackSegFor3DHandling,
-  stackImageFor3DReferenceHandling,
+  ensureSegmentationVolumeFor3DManipulation,
+  ensureImageVolumeFor3DManipulation,
 };

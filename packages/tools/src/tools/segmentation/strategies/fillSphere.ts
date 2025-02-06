@@ -59,7 +59,7 @@ const SPHERE_STRATEGY = new BrushStrategy(
   compositions.determineSegmentIndex,
   compositions.preview,
   compositions.labelmapStatistics,
-  compositions.stackSegFor3DHandling
+  compositions.ensureSegmentationVolumeFor3DManipulation
 );
 
 /**
@@ -75,8 +75,8 @@ const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
   ...SPHERE_STRATEGY.compositions,
   compositions.dynamicThreshold,
   compositions.threshold,
-  compositions.stackSegFor3DHandling,
-  compositions.stackImageFor3DReferenceHandling
+  compositions.ensureSegmentationVolumeFor3DManipulation,
+  compositions.ensureImageVolumeFor3DManipulation
 );
 
 const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
@@ -85,8 +85,8 @@ const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
   compositions.dynamicThreshold,
   compositions.threshold,
   compositions.islandRemoval,
-  compositions.stackSegFor3DHandling,
-  compositions.stackImageFor3DReferenceHandling
+  compositions.ensureSegmentationVolumeFor3DManipulation,
+  compositions.ensureImageVolumeFor3DManipulation
 );
 
 /**

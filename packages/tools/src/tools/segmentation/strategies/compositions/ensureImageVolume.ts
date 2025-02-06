@@ -1,12 +1,9 @@
 import { cache, utilities as csUtils, volumeLoader } from '@cornerstonejs/core';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import type { InitializedOperationData } from '../BrushStrategy';
 
 export default {
-  [StrategyCallbacks.HandleStackImageReferenceFor3DManipulation]: (
-    operationData: InitializedOperationData
-  ) => {
-    const { viewport, overrides } = operationData;
+  [StrategyCallbacks.EnsureImageVolumeFor3DManipulation]: (data) => {
+    const { operationData, viewport } = data;
 
     const referencedImageIds = viewport.getImageIds();
     const isValidVolumeForSphere = csUtils.isValidVolume(referencedImageIds);
@@ -17,8 +14,8 @@ export default {
     const volumeId = csUtils.uuidv4();
     let imageVolume = cache.getVolume(volumeId);
     if (imageVolume) {
-      overrides.imageVoxelManager = imageVolume.voxelManager;
-      overrides.imageData = imageVolume.imageData;
+      operationData.imageVoxelManager = imageVolume.voxelManager;
+      operationData.imageData = imageVolume.imageData;
       return;
     }
 
@@ -28,7 +25,7 @@ export default {
       referencedImageIds
     );
 
-    overrides.imageVoxelManager = imageVolume.voxelManager;
-    overrides.imageData = imageVolume.imageData;
+    operationData.imageVoxelManager = imageVolume.voxelManager;
+    operationData.imageData = imageVolume.imageData;
   },
 };

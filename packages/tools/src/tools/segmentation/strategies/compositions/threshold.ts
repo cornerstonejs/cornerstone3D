@@ -23,18 +23,12 @@ export default {
       return;
     }
 
-    let displayedThreshold = null;
     return (index) => {
       const voxelValue = imageVoxelManager.getAtIndex(index);
       const gray = Array.isArray(voxelValue)
         ? vec3.length(voxelValue as Types.Point3)
         : voxelValue;
       const { threshold } = strategySpecificConfiguration[activeStrategy] || {};
-
-      if (displayedThreshold === null) {
-        displayedThreshold = threshold;
-        console.debug('🚀 ~ THRESHOLD:', threshold);
-      }
 
       if (!threshold?.length) {
         return true;

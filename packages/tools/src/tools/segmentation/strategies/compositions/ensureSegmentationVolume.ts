@@ -1,21 +1,12 @@
 import { cache, utilities as csUtils, volumeLoader } from '@cornerstonejs/core';
 import type { LabelmapSegmentationDataStack } from '../../../../types/LabelmapTypes';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import type { InitializedOperationData } from '../BrushStrategy';
 import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
-import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type { Types } from '@cornerstonejs/core';
 
 export default {
-  [StrategyCallbacks.HandleStackSegmentationFor3DManipulation]: (
-    operationData: InitializedOperationData & {
-      representationData: LabelmapSegmentationDataStack;
-      imageId: string;
-      voxelManager?: Types.IVoxelManager<number>;
-      imageData?: vtkImageData;
-    }
-  ) => {
-    const { viewport, segmentationId, overrides } = operationData;
+  [StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation]: (data) => {
+    const { operationData, viewport } = data;
+    const { segmentationId } = operationData;
 
     const referencedImageIds = viewport.getImageIds();
     const isValidVolumeForSphere = csUtils.isValidVolume(referencedImageIds);
@@ -26,9 +17,8 @@ export default {
     const volumeId = `${segmentationId}_${viewport.id}`;
     let segVolume = cache.getVolume(volumeId);
     if (segVolume) {
-      overrides.segmentationVoxelManager = segVolume.voxelManager;
-      overrides.segmentationImageData = segVolume.imageData;
-      overrides.abbasGholi = 'abbas';
+      operationData.segmentationVoxelManager = segVolume.voxelManager;
+      operationData.segmentationImageData = segVolume.imageData;
       return;
     }
 
@@ -50,9 +40,8 @@ export default {
       labelmapImageIds
     );
 
-    overrides.segmentationVoxelManager = segVolume.voxelManager;
-    overrides.segmentationImageData = segVolume.imageData;
-    overrides.abbasGholi = 'abbas';
+    operationData.segmentationVoxelManager = segVolume.voxelManager;
+    operationData.segmentationImageData = segVolume.imageData;
     return;
   },
 };

@@ -93,16 +93,16 @@ function getStrategyDataForStackViewport({
   let imageScalarData;
   let imageVoxelManager;
 
-  if (strategy.handleStackSegmentationFor3DManipulation) {
-    const overrides = {};
-    strategy.handleStackSegmentationFor3DManipulation({
-      ...operationData,
+  if (strategy.ensureSegmentationVolumeFor3DManipulation) {
+    // Todo: I don't know how to handle this, seems like strategies cannot return anything
+    // and just manipulate the operationData?
+    strategy.ensureSegmentationVolumeFor3DManipulation({
+      operationData,
       viewport,
-      overrides,
     });
 
-    segmentationVoxelManager = overrides.segmentationVoxelManager;
-    segmentationImageData = overrides.segmentationImageData;
+    segmentationVoxelManager = operationData.segmentationVoxelManager;
+    segmentationImageData = operationData.segmentationImageData;
     segmentationScalarData = null;
   } else {
     const currentSegImage = cache.getImage(labelmapImageId);
@@ -118,16 +118,14 @@ function getStrategyDataForStackViewport({
     segmentationScalarData = segmentationImage.getPixelData?.();
   }
 
-  if (strategy.handleStackImageReferenceFor3DManipulation) {
-    const overrides = {};
-    strategy.handleStackImageReferenceFor3DManipulation({
-      ...operationData,
+  if (strategy.ensureImageVolumeFor3DManipulation) {
+    strategy.ensureImageVolumeFor3DManipulation({
+      operationData,
       viewport,
-      overrides,
     });
 
-    imageVoxelManager = overrides.imageVoxelManager;
-    imageScalarData = overrides.imageScalarData;
+    imageVoxelManager = operationData.imageVoxelManager;
+    imageScalarData = operationData.imageScalarData;
   } else {
     const image = cache.getImage(currentImageId);
     const imageData = image ? null : viewport.getImageData();
