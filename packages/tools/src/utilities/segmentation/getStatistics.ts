@@ -1,37 +1,81 @@
-import { utilities } from '@cornerstonejs/core';
+import {
+  getEnabledElementByViewportId,
+  utilities,
+  getWebWorkerManager,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import VolumetricCalculator from './VolumetricCalculator';
-import { getPixelValueUnits } from '../getPixelValueUnits';
+import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
+import {
+  getPixelValueUnits,
+  getPixelValueUnitsImageId,
+} from '../getPixelValueUnits';
 import { AnnotationTool } from '../../tools/base';
 import { isViewportPreScaled } from '../viewport/isViewportPreScaled';
-
+import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
+import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import { registerComputeWorker } from '../registerComputeWorker';
+import type {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
+} from '../../types/LabelmapTypes';
 // Radius for a volume of 10, eg 1 cm^3 = 1000 mm^3
 const radiusForVol1 = Math.pow((3 * 1000) / (4 * Math.PI), 1 / 3);
+
+const workerManager = getWebWorkerManager();
 
 async function getStatistics({
   segmentationId,
   segmentIndices,
+  viewportId,
 }: {
   segmentationId: string;
   segmentIndices: number[] | number;
+  viewportId: string;
 }) {
-  const segVolume = getOrCreateSegmentationVolume(segmentationId);
+  registerComputeWorker();
+
+  const enabledElement = getEnabledElementByViewportId(viewportId);
+  const viewport = enabledElement.viewport;
+
+  const segmentation = getSegmentation(segmentationId);
+  const { representationData } = segmentation;
+
+  const { Labelmap } = representationData;
+
+  if (!Labelmap) {
+    console.debug('No labelmap found for segmentation', segmentationId);
+    return;
+  }
+
+  const { volumeId, imageIds } = Labelmap;
 
   const {
-    voxelManager: segmentationVoxelManager,
-    imageData: segmentationImageData,
-  } = segVolume;
+    segmentationVoxelManager,
+    imageVoxelManager,
+    segmentationImageData,
+    imageData,
+  } = getStrategyData({
+    operationData: { segmentationId, viewport, volumeId, imageIds },
+    viewport,
+    strategy: {
+      ensureSegmentationVolumeFor3DManipulation:
+        ensureSegmentationVolume.ensureSegmentationVolumeFor3DManipulation,
+      ensureImageVolumeFor3DManipulation:
+        ensureImageVolume.ensureImageVolumeFor3DManipulation,
+    },
+  });
 
   let indices = segmentIndices;
+
   if (!indices) {
     indices = [getActiveSegmentIndex(segmentationId)];
   } else if (!Array.isArray(indices)) {
     // Include the preview index
     indices = [indices, 255];
   }
-  const indicesArr = indices as number[];
 
   const spacing = segmentationImageData.getSpacing();
 
@@ -40,14 +84,37 @@ async function getStatistics({
     return VolumetricCalculator.getStatistics({ spacing });
   }
 
-  segmentationVoxelManager.forEach((voxel) => {
-    const { value, pointIJK } = voxel;
-    if (indicesArr.indexOf(value) === -1) {
-      return;
+  const segmentationScalarData =
+    segmentationVoxelManager.getCompleteScalarDataArray();
+
+  const imageScalarData = imageVoxelManager.getCompleteScalarDataArray();
+
+  const segmentationInfo = {
+    scalarData: segmentationScalarData,
+    dimensions: segmentationImageData.getDimensions(),
+    spacing: segmentationImageData.getSpacing(),
+    origin: segmentationImageData.getOrigin(),
+  };
+
+  const imageInfo = {
+    scalarData: imageScalarData,
+    dimensions: imageData.getDimensions(),
+    spacing: imageData.getSpacing(),
+    origin: imageData.getOrigin(),
+  };
+
+  const indicesArr = indices as number[];
+
+  const stats = await workerManager.executeTask(
+    'compute',
+    'calculateSegmentsStatistics',
+    {
+      segmentationInfo,
+      imageInfo,
+      indices: indicesArr,
     }
-    const imageValue = imageVoxelManager.getAtIJKPoint(pointIJK);
-    VolumetricCalculator.statsCallback({ value: imageValue, pointIJK });
-  });
+  );
+
   const targetId = viewport.getViewReferenceId();
   const modalityUnitOptions = {
     isPreScaled: isViewportPreScaled(viewport, targetId),
@@ -58,20 +125,12 @@ async function getStatistics({
     ),
   };
 
-  const imageData = (viewport as Types.IVolumeViewport).getImageData();
-  const unit = getPixelValueUnits(
-    imageData.metadata.Modality,
+  const unit = getPixelValueUnitsImageId(
     viewport.getCurrentImageId(),
     modalityUnitOptions
   );
 
-  const stats = VolumetricCalculator.getStatistics({ spacing, unit });
-  const { maxIJKs } = stats;
-  if (!maxIJKs?.length) {
-    return stats;
-  }
-
-  // The calculation isn't very good at setting units
+  // Update units
   stats.mean.unit = unit;
   stats.max.unit = unit;
   stats.min.unit = unit;
@@ -86,7 +145,7 @@ async function getStatistics({
   const radiusIJK = spacing.map((s) =>
     Math.max(1, Math.round((1.1 * radiusForVol1) / s))
   );
-  for (const testMax of maxIJKs) {
+  for (const testMax of stats.maxIJKs) {
     const testStats = getSphereStats(
       testMax,
       radiusIJK,
@@ -98,9 +157,7 @@ async function getStatistics({
       continue;
     }
     const { mean } = testStats;
-    // @ts-expect-error - TODO: fix this
     if (!stats.peakValue || stats.peakValue.value <= mean.value) {
-      // @ts-expect-error - TODO: fix this
       stats.peakValue = {
         name: 'peakValue',
         label: 'Peak Value',
@@ -138,7 +195,6 @@ function getSphereStats(testMax, radiusIJK, segData, imageVoxels, spacing) {
     VolumetricCalculator.statsCallback({ value, pointLPS, pointIJK });
   };
   VolumetricCalculator.statsInit({ storePointData: false });
-  // pointInShapeCallback(segData, testFunction, statsFunction, boundsIJK);
 
   utilities.pointInShapeCallback(segData, {
     pointInShapeFn: testFunction,

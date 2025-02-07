@@ -14,7 +14,7 @@ import { getLabelmapActorEntry } from '../../../../stateManagement/segmentation/
  * @returns The strategy data for volume viewport or null if error
  */
 function getStrategyDataForVolumeViewport({ operationData }) {
-  const { volumeId, referencedVolumeId } = operationData;
+  const { volumeId } = operationData;
 
   if (!volumeId) {
     const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
@@ -34,24 +34,29 @@ function getStrategyDataForVolumeViewport({ operationData }) {
     return null;
   }
 
+  const referencedVolumeId = segmentationVolume.referencedVolumeId;
+
   const segmentationVoxelManager = segmentationVolume.voxelManager;
   let imageVoxelManager;
+  let imageData;
 
   // we only need the referenceVolumeId if we do thresholding
   // but for other operations we don't need it so make it optional
   if (referencedVolumeId) {
     const imageVolume = cache.getVolume(referencedVolumeId);
     imageVoxelManager = imageVolume.voxelManager;
+    imageData = imageVolume.imageData;
   }
 
   const { imageData: segmentationImageData } = segmentationVolume;
 
   return {
     segmentationImageData,
+    segmentationVoxelManager,
     segmentationScalarData: null,
     imageScalarData: null,
-    segmentationVoxelManager,
     imageVoxelManager,
+    imageData,
   };
 }
 
@@ -92,7 +97,7 @@ function getStrategyDataForStackViewport({
   let segmentationScalarData;
   let imageScalarData;
   let imageVoxelManager;
-
+  let imageData;
   if (strategy.ensureSegmentationVolumeFor3DManipulation) {
     // Todo: I don't know how to handle this, seems like strategies cannot return anything
     // and just manipulate the operationData?
@@ -126,9 +131,10 @@ function getStrategyDataForStackViewport({
 
     imageVoxelManager = operationData.imageVoxelManager;
     imageScalarData = operationData.imageScalarData;
+    imageData = operationData.imageData;
   } else {
     const image = cache.getImage(currentImageId);
-    const imageData = image ? null : viewport.getImageData();
+    imageData = image ? null : viewport.getImageData();
 
     // VERY IMPORTANT
     // This is the pixel data of the image that is being segmented in the cache
@@ -143,6 +149,7 @@ function getStrategyDataForStackViewport({
     imageScalarData,
     segmentationVoxelManager,
     imageVoxelManager,
+    imageData,
   };
 }
 

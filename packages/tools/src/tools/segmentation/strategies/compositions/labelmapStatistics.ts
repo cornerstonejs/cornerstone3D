@@ -12,7 +12,11 @@ export default {
     options?: { indices?: number | number[] }
   ) {
     const { indices } = options;
-    const { segmentationId } = operationData;
-    getStatistics({ segmentationId, segmentIndices: indices });
+    const { segmentationId, viewport } = operationData;
+    getStatistics({
+      segmentationId,
+      segmentIndices: indices,
+      viewportId: viewport.id,
+    });
   },
 };

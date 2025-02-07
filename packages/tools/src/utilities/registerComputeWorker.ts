@@ -2,7 +2,7 @@ import { getWebWorkerManager } from '@cornerstonejs/core';
 
 let registered = false;
 
-export function registerPolySegWorker() {
+export function registerComputeWorker() {
   if (registered) {
     return;
   }
@@ -13,9 +13,9 @@ export function registerPolySegWorker() {
     // @ts-ignore
     return new Worker(
       // @ts-ignore
-      new URL('../../../workers/polySegConverters', import.meta.url),
+      new URL('../workers/computeWorker.ts', import.meta.url),
       {
-        name: 'polySeg',
+        name: 'compute',
         type: 'module',
       }
     );
@@ -31,5 +31,5 @@ export function registerPolySegWorker() {
     },
   };
 
-  workerManager.registerWorker('polySeg', workerFn, options);
+  workerManager.registerWorker('compute', workerFn, options);
 }

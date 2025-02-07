@@ -281,12 +281,16 @@ function displayStat(stat) {
   }`;
 }
 
-function calculateStatistics(id, indices) {
+async function calculateStatistics(id, indices) {
   const [viewport] = viewports;
-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-  const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-  const brush = toolGroup.getToolInstance(activeName);
-  const stats = brush.getStatistics(viewport.element, { indices });
+  // const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+  // const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+  // const brush = toolGroup.getToolInstance(activeName);
+  const stats = await segmentationUtils.getStatistics({
+    segmentationId,
+    segmentIndices: indices,
+    viewportId: viewport.id,
+  });
 
   if (!stats) {
     return;

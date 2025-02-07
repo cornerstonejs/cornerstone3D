@@ -31,6 +31,7 @@ import * as LabelmapMemo from './createLabelmapMemo';
 import IslandRemoval from './islandRemoval';
 import interpolateLabelmap from './interpolateLabelmap';
 import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
+import getStatistics from './getStatistics';
 
 export {
   thresholdVolumeByRange,
@@ -60,4 +61,5 @@ export {
   IslandRemoval,
   interpolateLabelmap,
   getOrCreateSegmentationVolume,
+  getStatistics,
 };
