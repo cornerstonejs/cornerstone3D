@@ -22,8 +22,14 @@ export function setBrushThresholdForToolGroup(
   };
 
   brushBasedToolInstances.forEach((tool) => {
-    tool.configuration.strategySpecificConfiguration.THRESHOLD = {
-      ...tool.configuration.strategySpecificConfiguration.THRESHOLD,
+    const activeStrategy = tool.configuration.activeStrategy;
+
+    if (!activeStrategy.toLowerCase().includes('threshold')) {
+      return;
+    }
+
+    tool.configuration.strategySpecificConfiguration[activeStrategy] = {
+      ...tool.configuration.strategySpecificConfiguration[activeStrategy],
       ...configuration,
     };
   });
@@ -44,6 +50,7 @@ export function setBrushThresholdForToolGroup(
 
 export function getBrushThresholdForToolGroup(toolGroupId: string) {
   const toolGroup = getToolGroup(toolGroupId);
+  debugger;
 
   if (toolGroup === undefined) {
     return;

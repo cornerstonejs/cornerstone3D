@@ -1,5 +1,4 @@
 import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
-import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
@@ -9,7 +8,6 @@ import {
   addButtonToToolbar,
   addBrushSizeSlider,
 } from '../../../../utils/demo/helpers';
-import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -85,21 +83,30 @@ content.append(instructions);
 const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
   CircularEraser: 'CircularEraser',
-  ThresholdBrush: 'ThresholdBrush',
+  ThresholdBrushCircle: 'ThresholdBrushCircle',
+  ThresholdBrushSphere: 'ThresholdBrushSphere',
   DynamicThreshold: 'DynamicThreshold',
 };
 
 const brushStrategies = {
   [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-  [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.ThresholdBrushCircle]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.ThresholdBrushSphere]: 'THRESHOLD_INSIDE_SPHERE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
 };
 
 const brushValues = [
   brushInstanceNames.CircularBrush,
   brushInstanceNames.CircularEraser,
-  brushInstanceNames.ThresholdBrush,
+  brushInstanceNames.ThresholdBrushCircle,
+  brushInstanceNames.ThresholdBrushSphere,
+  brushInstanceNames.DynamicThreshold,
+];
+
+const thresholdBrushValues = [
+  brushInstanceNames.ThresholdBrushCircle,
+  brushInstanceNames.ThresholdBrushSphere,
   brushInstanceNames.DynamicThreshold,
 ];
 
@@ -154,9 +161,16 @@ addDropdownToToolbar({
 
     // Set the currently active tool disabled
     const toolName = toolGroup.getActivePrimaryMouseButtonTool();
-
     if (toolName) {
       toolGroup.setToolDisabled(toolName);
+    }
+
+    // Show/hide threshold dropdown based on selected tool
+    const thresholdDropdown = document.getElementById('thresholdDropdown');
+    if (thresholdDropdown) {
+      thresholdDropdown.style.display = thresholdBrushValues.includes(name)
+        ? 'block'
+        : 'none';
     }
 
     if (brushValues.includes(name)) {
@@ -164,9 +178,7 @@ addDropdownToToolbar({
         bindings: [{ mouseButton: MouseBindings.Primary }],
       });
     } else {
-      const toolName = name;
-
-      toolGroup.setToolActive(toolName, {
+      toolGroup.setToolActive(name, {
         bindings: [{ mouseButton: MouseBindings.Primary }],
       });
     }
@@ -193,7 +205,7 @@ addDropdownToToolbar({
 
     segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, threshold);
   },
-});
+}).style.display = 'none';
 
 addButtonToToolbar({
   title: 'Create New Segmentation on Current Image',
@@ -243,7 +255,6 @@ addDropdownToToolbar({
   options: { values: segmentationIds, defaultValue: '' },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
-    const index = segmentationIds.indexOf(name);
     segmentation.activeSegmentation.setActiveSegmentation(viewportId, name);
 
     // Update the dropdown
@@ -283,6 +294,7 @@ function setupTools(toolGroupId) {
       activeStrategy: brushStrategies.CircularBrush,
     }
   );
+
   toolGroup.addToolInstance(
     brushInstanceNames.CircularEraser,
     BrushTool.toolName,
@@ -290,11 +302,20 @@ function setupTools(toolGroupId) {
       activeStrategy: brushStrategies.CircularEraser,
     }
   );
+
   toolGroup.addToolInstance(
-    brushInstanceNames.ThresholdBrush,
+    brushInstanceNames.ThresholdBrushCircle,
     BrushTool.toolName,
     {
-      activeStrategy: brushStrategies.ThresholdBrush,
+      activeStrategy: brushStrategies.ThresholdBrushCircle,
+    }
+  );
+
+  toolGroup.addToolInstance(
+    brushInstanceNames.ThresholdBrushSphere,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.ThresholdBrushSphere,
     }
   );
 
@@ -327,8 +348,7 @@ function setupTools(toolGroupId) {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Alt,
+        mouseButton: MouseBindings.Wheel,
       },
     ],
   });
@@ -382,7 +402,7 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
   viewport = renderingEngine.getViewport(viewportId);
 
-  const imageIdsArray = [imageIds[0], imageIds[1], mgImageIds[0]];
+  const imageIdsArray = [imageIds[0], imageIds[1]];
 
   const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
     imageIdsArray
@@ -390,15 +410,9 @@ async function run() {
 
   const viewport2 = renderingEngine.getViewport(viewportId2);
   await viewport.setStack(imageIdsArray, 0);
-  await viewport2.setStack([imageIdsArray[2]], 0);
+  await viewport2.setStack([mgImageIds[0]], 0);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
-
-  // fillStackSegmentationWithMockData({
-  //   imageIds: [imageIds[0]],
-  //   segmentationImageIds: segImages.map((it) => it.imageId),
-  //   cornerstone,
-  // });
 
   renderingEngine.renderViewports([viewportId]);
 
