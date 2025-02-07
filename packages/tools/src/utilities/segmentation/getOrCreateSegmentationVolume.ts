@@ -1,22 +1,32 @@
 import { cache, volumeLoader, utilities } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
-import type { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
+import type {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 
 function getOrCreateSegmentationVolume(segmentationId) {
-  const volumeId = `${segmentationId}_volume`;
-  let segVolume = cache.getVolume(volumeId);
+  const { representationData } = getSegmentation(segmentationId);
+  let { volumeId } =
+    representationData.Labelmap as LabelmapSegmentationDataVolume;
 
-  if (segVolume) {
-    return segVolume;
+  let segVolume;
+  if (volumeId) {
+    segVolume = cache.getVolume(volumeId);
+
+    if (segVolume) {
+      return segVolume;
+    }
   }
 
-  const { representationData } = getSegmentation(segmentationId);
+  const { imageIds: labelmapImageIds } =
+    representationData.Labelmap as LabelmapSegmentationDataStack;
+
+  volumeId = cache.generateVolumeId(labelmapImageIds);
 
   // We don't need to call `getStackSegmentationImageIdsForViewport` here
   // because we've already ensured the stack constructs a volume,
   // making the scenario for multi-image non-consistent metadata is not likely.
-  const { imageIds: labelmapImageIds } =
-    representationData.Labelmap as LabelmapSegmentationDataStack;
 
   if (!labelmapImageIds || labelmapImageIds.length === 1) {
     return;
