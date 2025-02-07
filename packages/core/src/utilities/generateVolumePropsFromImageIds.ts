@@ -11,6 +11,7 @@ import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { canRenderFloatTextures } from '../init';
 import cache from '../cache/cache';
+import uuidv4 from './uuidv4';
 
 // Map constructor names to PixelDataTypedArrayString
 const constructorToTypedArray: Record<string, PixelDataTypedArrayString> = {
@@ -28,7 +29,7 @@ const constructorToTypedArray: Record<string, PixelDataTypedArrayString> = {
  */
 function generateVolumePropsFromImageIds(
   imageIds: string[],
-  volumeId: string
+  volumeId: string = uuidv4()
 ): ImageVolumeProps {
   const volumeMetadata = makeVolumeMetadata(imageIds);
 
