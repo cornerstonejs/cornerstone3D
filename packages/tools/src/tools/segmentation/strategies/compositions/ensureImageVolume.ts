@@ -11,7 +11,8 @@ export default {
       throw new Error('Volume is not reconstructable for sphere manipulation');
     }
 
-    const volumeId = csUtils.uuidv4();
+    const volumeId = cache.generateVolumeId(referencedImageIds);
+
     let imageVolume = cache.getVolume(volumeId);
     if (imageVolume) {
       operationData.imageVoxelManager = imageVolume.voxelManager;
