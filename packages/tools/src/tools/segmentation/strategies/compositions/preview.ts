@@ -122,9 +122,11 @@ export default {
       segmentationId,
       preview,
     } = operationData || {};
+
     if (previewSegmentIndex === undefined) {
       return;
     }
+
     const segmentIndex = preview?.segmentIndex ?? operationData.segmentIndex;
     if (!previewVoxelManager || previewVoxelManager.modifiedSlices.size === 0) {
       return;

@@ -5,7 +5,6 @@ import {
   Enums,
   eventTarget,
   BaseVolumeViewport,
-  volumeLoader,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 

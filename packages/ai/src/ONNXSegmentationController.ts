@@ -332,7 +332,7 @@ export default class ONNXSegmentationController {
     this.currentImage = null;
     this.viewport = viewport;
 
-    const brushInstance = new LabelmapBaseTool(
+    this.tool = new LabelmapBaseTool(
       {},
       {
         configuration: {
@@ -351,8 +351,6 @@ export default class ONNXSegmentationController {
         },
       }
     );
-
-    this.tool = brushInstance;
 
     desiredImage.imageId =
       viewport.getCurrentImageId?.() || viewport.getViewReferenceId();

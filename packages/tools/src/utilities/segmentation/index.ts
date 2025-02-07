@@ -29,6 +29,8 @@ import { getBrushToolInstances } from './getBrushToolInstances';
 import * as growCut from './growCut';
 import * as LabelmapMemo from './createLabelmapMemo';
 import IslandRemoval from './islandRemoval';
+import interpolateLabelmap from './interpolateLabelmap';
+import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
 
 export {
   thresholdVolumeByRange,
@@ -56,4 +58,6 @@ export {
   growCut,
   LabelmapMemo,
   IslandRemoval,
+  interpolateLabelmap,
+  getOrCreateSegmentationVolume,
 };
