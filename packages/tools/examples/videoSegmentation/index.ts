@@ -241,7 +241,7 @@ async function run() {
 
   renderingEngine.renderViewports([viewportId]);
 
-  window.segMap = {
+  (window as any).segMap = {
     referencedImageIds: allImageIds,
     segmentationImageIds,
   };

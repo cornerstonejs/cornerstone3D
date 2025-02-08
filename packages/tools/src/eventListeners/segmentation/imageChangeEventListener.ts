@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { Types } from '@cornerstonejs/core';
@@ -131,11 +132,12 @@ function _imageChangeEventListener(evt) {
     const segmentationActor = actor.actor;
     const segmentationImageData = segmentationActor.getMapper().getInputData();
     const currentImageId = viewport.getCurrentImageId();
-    const currentImageIdIdx = window.segMap.referencedImageIds.findIndex(
-      (x) => x === currentImageId
-    );
-    const derivedImageId =
-      window.segMap.segmentationImageIds[currentImageIdIdx];
+    const currentImageIdIdx = (
+      window as any
+    ).segMap.referencedImageIds.findIndex((x) => x === currentImageId);
+    const derivedImageId = (window as any).segMap.segmentationImageIds[
+      currentImageIdIdx
+    ];
     const derivedImage = cache.getImage(derivedImageId);
 
     segmentationImageData.setDerivedImage(derivedImage);
