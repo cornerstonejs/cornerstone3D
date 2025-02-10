@@ -1,8 +1,7 @@
-import { peerImport } from '@cornerstonejs/core';
-import getItkImage from '../../tools/segmentation/strategies/utils/getItkImage';
+import { getWebWorkerManager } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-// import PreviewMethods from '../../tools/segmentation/strategies/preview';
 import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
+import { registerComputeWorker } from '../registerComputeWorker';
 
 type MorphologicalContourInterpolationOptions = {
   label?: number;
@@ -11,6 +10,8 @@ type MorphologicalContourInterpolationOptions = {
   noUseDistanceTransform?: boolean;
   useCustomSlicePositions?: boolean;
 };
+
+const workerManager = getWebWorkerManager();
 
 async function interpolateLabelmap({
   segmentationId,
@@ -23,14 +24,7 @@ async function interpolateLabelmap({
     preview: boolean;
   };
 }) {
-  const { preview } = configuration;
-
-  // if (preview) {
-  //   const callback = ({ index }) => {
-  //     segmentationVoxelManager.setAtIndex(index, segmentIndex);
-  //   };
-  //   previewVoxelManager.forEach(callback);
-  // }
+  registerComputeWorker();
 
   const segVolume = getOrCreateSegmentationVolume(segmentationId);
 
@@ -39,75 +33,41 @@ async function interpolateLabelmap({
     imageData: segmentationImageData,
   } = segVolume;
 
-  let itkModule;
+  const segmentationInfo = {
+    scalarData: segmentationVoxelManager.getCompleteScalarDataArray(),
+    dimensions: segmentationImageData.getDimensions(),
+    spacing: segmentationImageData.getSpacing(),
+    origin: segmentationImageData.getOrigin(),
+    direction: segmentationImageData.getDirection(),
+  };
+
   try {
-    // Use peerImport instead of dynamic import
-    itkModule = await peerImport(
-      '@itk-wasm/morphological-contour-interpolation'
-    );
-    if (!itkModule) {
-      throw new Error('Module not found');
-    }
-  } catch (error) {
-    console.warn(
-      "Warning: '@itk-wasm/morphological-contour-interpolation' module not found. Please install it separately."
-    );
-    return;
-  }
-
-  const { voxelManager } = segmentationImageData.get('voxelManager');
-  const scalarData = voxelManager.getCompleteScalarDataArray();
-
-  let inputImage;
-  try {
-    inputImage = await getItkImage(segmentationImageData, {
-      imageName: 'interpolation',
-      scalarData,
-    });
-    if (!inputImage) {
-      throw new Error('Failed to get ITK image');
-    }
-  } catch (error) {
-    console.warn('Warning: Failed to get ITK image for interpolation');
-    return;
-  }
-
-  const outputPromise = itkModule.morphologicalContourInterpolation(
-    inputImage,
-    {
-      label: segmentIndex,
-      webWorker: false,
-    }
-  );
-  outputPromise.then((value) => {
-    const { outputImage } = value;
-
-    // const previewColors = operationData.configuration?.preview?.previewColors;
-    // const assignIndex =
-    //   previewSegmentIndex ?? (previewColors ? 255 : segmentIndex);
-    // // Reset the colors - needs operation data set to do this
-    // operationData.previewColors ||= previewColors;
-    // operationData.previewSegmentIndex ||= previewColors ? 255 : undefined;
-    // PreviewMethods[StrategyCallbacks.Initialize](operationData);
-
-    const outputScalarData = outputImage.data;
-
-    for (let i = 0; i < outputScalarData.length; i++) {
-      const newValue = outputScalarData[i];
-      const originalValue = scalarData[i];
-
-      if (newValue === originalValue) {
-        continue;
+    const { data: outputScalarData } = await workerManager.executeTask(
+      'compute',
+      'interpolateLabelmap',
+      {
+        segmentationInfo,
+        configuration: {
+          ...configuration,
+          label: segmentIndex,
+        },
       }
-      segmentationVoxelManager.setAtIndex(i, newValue);
-    }
+    );
+
+    // Update the segmentation with the modified data
+    segmentationVoxelManager.setCompleteScalarDataArray(outputScalarData);
 
     triggerSegmentationDataModified(
       segmentationId,
       segmentationVoxelManager.getArrayOfModifiedSlices(),
       segmentIndex
     );
-  });
+  } catch (error) {
+    console.warn(
+      'Warning: Failed to perform morphological contour interpolation',
+      error
+    );
+  }
 }
 
 export default interpolateLabelmap;

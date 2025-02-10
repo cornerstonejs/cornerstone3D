@@ -17,10 +17,6 @@ import ensureSegmentationVolume from '../../tools/segmentation/strategies/compos
 import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { registerComputeWorker } from '../registerComputeWorker';
-import type {
-  LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
-} from '../../types/LabelmapTypes';
 // Radius for a volume of 10, eg 1 cm^3 = 1000 mm^3
 const radiusForVol1 = Math.pow((3 * 1000) / (4 * Math.PI), 1 / 3);
 

@@ -1,5 +1,3 @@
-import { peerImport } from '@cornerstonejs/core';
-
 /**
  * Get the ITK Image from the image data
  *
@@ -16,7 +14,7 @@ export default async function getItkImage(
   let Image, ImageType, IntTypes, FloatTypes, PixelTypes;
 
   try {
-    const itkModule = await peerImport('itk-wasm');
+    const itkModule = await import('itk-wasm');
     if (!itkModule) {
       throw new Error('Module not found');
     }
@@ -52,6 +50,7 @@ export default async function getItkImage(
     .replace(/^Ui/, 'UI')
     .replace(/Array$/, '');
   const metadata = undefined;
+
   const imageType = new ImageType(
     dimensions.length,
     dataTypesMap[dataType],
