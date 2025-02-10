@@ -1005,6 +1005,10 @@ enum ChangeTypes {
 // @public (undocumented)
 enum ChangeTypes_2 {
     // (undocumented)
+    COMPUTE_STATISTICS = "Computing Statistics",
+    // (undocumented)
+    INTERPOLATE_LABELMAP = "Interpolating Labelmap",
+    // (undocumented)
     POLYSEG_CONTOUR_TO_LABELMAP = "Converting Contour to Labelmap",
     // (undocumented)
     POLYSEG_CONTOUR_TO_SURFACE = "Converting Contour to Surface",
@@ -2820,10 +2824,16 @@ function getNormal2(polyline: Types_2.Point2[]): Types_2.Point3;
 function getNormal3(polyline: Types_2.Point3[]): Types_2.Point3;
 
 // @public (undocumented)
+function getOrCreateSegmentationVolume(segmentationId: any): any;
+
+// @public (undocumented)
 function getOrientationStringLPS(vector: Types_2.Point3): string;
 
 // @public (undocumented)
 function getPixelValueUnits(modality: string, imageId: string, options: pixelUnitsOptions): string;
+
+// @public (undocumented)
+function getPixelValueUnitsImageId(imageId: string, options: pixelUnitsOptions): string;
 
 // @public (undocumented)
 function getPoint(points: any, idx: any): Types_2.Point3;
@@ -2902,6 +2912,13 @@ function getStackSegmentationImageIdsForViewport(viewportId: string, segmentatio
 
 // @public (undocumented)
 function getState(annotation?: Annotation): AnnotationStyleStates;
+
+// @public (undocumented)
+function getStatistics({ segmentationId, segmentIndices, viewportId, }: {
+    segmentationId: string;
+    segmentIndices: number[] | number;
+    viewportId: string;
+}): Promise<any>;
 
 // @public (undocumented)
 function getStyle<T extends SegmentationRepresentations>(specifier: SpecifierWithType<T>): StyleForType<T>;
@@ -3153,6 +3170,15 @@ type InteractionTypes = 'Mouse' | 'Touch';
 
 // @public (undocumented)
 function internalAddRepresentationData({ segmentationId, type, data, }: AddRepresentationData): void;
+
+// @public (undocumented)
+function interpolateLabelmap({ segmentationId, segmentIndex, configuration, }: {
+    segmentationId: string;
+    segmentIndex: number;
+    configuration: MorphologicalContourInterpolationOptions & {
+        preview: boolean;
+    };
+}): Promise<void>;
 
 // @public (undocumented)
 type InterpolationROIAnnotation = ContourAnnotation & ContourSegmentationAnnotationData & {
@@ -3512,12 +3538,11 @@ export class LabelmapBaseTool extends BaseTool {
         segmentColor: Types_2.Color;
     };
     // (undocumented)
-    protected getEditData({ viewport, representationData, segmentsLocked, segmentationId, volumeOperation, }: {
+    protected getEditData({ viewport, representationData, segmentsLocked, segmentationId, }: {
         viewport: any;
         representationData: any;
         segmentsLocked: any;
         segmentationId: any;
-        volumeOperation?: boolean;
     }): EditDataReturnType;
     // (undocumented)
     protected getOperationData(element?: any): ModifiedLabelmapToolOperationData;
@@ -3574,6 +3599,7 @@ type LabelmapToolOperationData = {
     viewPlaneNormal: number[];
     viewUp: number[];
     strategySpecificConfiguration: any;
+    activeStrategy: string;
     points: Types_2.Point3[];
     voxelManager: any;
     override: {
@@ -5281,7 +5307,10 @@ declare namespace segmentation_2 {
         getBrushToolInstances,
         growCut,
         LabelmapMemo,
-        IslandRemoval
+        IslandRemoval,
+        interpolateLabelmap,
+        getOrCreateSegmentationVolume,
+        getStatistics
     }
 }
 
@@ -5930,6 +5959,10 @@ enum StrategyCallbacks {
     ComputeInnerCircleRadius = "computeInnerCircleRadius",
     // (undocumented)
     CreateIsInThreshold = "createIsInThreshold",
+    // (undocumented)
+    EnsureImageVolumeFor3DManipulation = "ensureImageVolumeFor3DManipulation",
+    // (undocumented)
+    EnsureSegmentationVolumeFor3DManipulation = "ensureSegmentationVolumeFor3DManipulation",
     // (undocumented)
     Fill = "fill",
     // (undocumented)
@@ -6711,6 +6744,7 @@ declare namespace utilities {
         getCalibratedProbeUnitsAndValue,
         getCalibratedAspect,
         getPixelValueUnits,
+        getPixelValueUnitsImageId,
         segmentation_2 as segmentation,
         contours,
         triggerAnnotationRenderForViewportIds,

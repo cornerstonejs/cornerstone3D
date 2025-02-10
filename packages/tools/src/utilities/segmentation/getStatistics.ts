@@ -17,6 +17,10 @@ import ensureImageVolume from '../../tools/segmentation/strategies/compositions/
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { registerComputeWorker } from '../registerComputeWorker';
 import { WorkerTypes } from '../../enums';
+import type {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 // Radius for a volume of 10, eg 1 cm^3 = 1000 mm^3
 const radiusForVol1 = Math.pow((3 * 1000) / (4 * Math.PI), 1 / 3);
 
@@ -55,7 +59,8 @@ async function getStatistics({
     return;
   }
 
-  const { volumeId, imageIds } = Labelmap;
+  const { volumeId } = Labelmap as LabelmapSegmentationDataVolume;
+  const { imageIds } = Labelmap as LabelmapSegmentationDataStack;
 
   const {
     segmentationVoxelManager,
