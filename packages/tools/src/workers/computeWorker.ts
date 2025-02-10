@@ -1,5 +1,6 @@
 import { expose } from 'comlink';
 import VolumetricCalculator from '../utilities/segmentation/VolumetricCalculator';
+import { peerImport } from '@cornerstonejs/core';
 import getItkImage from '../tools/segmentation/strategies/utils/getItkImage';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
