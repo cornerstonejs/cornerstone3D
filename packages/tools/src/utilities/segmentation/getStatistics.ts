@@ -157,28 +157,24 @@ async function getStatistics({
   const radiusIJK = spacing.map((s) =>
     Math.max(1, Math.round((1.1 * radiusForVol1) / s))
   );
-  for (const testMax of stats.maxIJKs) {
-    const testStats = getSphereStats(
-      testMax,
-      radiusIJK,
-      segmentationImageData,
-      imageVoxelManager,
-      spacing
-    );
-    if (!testStats) {
-      continue;
-    }
-    const { mean } = testStats;
-    if (!stats.peakValue || stats.peakValue.value <= mean.value) {
-      stats.peakValue = {
-        name: 'peakValue',
-        label: 'Peak Value',
-        value: mean.value,
-        unit,
-      };
-    }
-  }
 
+  const testStats = getSphereStats(
+    stats.max,
+    radiusIJK,
+    segmentationImageData,
+    imageVoxelManager,
+    spacing
+  );
+  const { mean } = testStats;
+
+  if (!stats.peakValue || stats.peakValue.value <= mean.value) {
+    stats.peakValue = {
+      name: 'peakValue',
+      label: 'Peak Value',
+      value: mean.value,
+      unit,
+    };
+  }
   return stats;
 }
 
@@ -188,6 +184,11 @@ async function getStatistics({
  */
 function getSphereStats(testMax, radiusIJK, segData, imageVoxels, spacing) {
   const { pointIJK: centerIJK } = testMax;
+
+  if (!centerIJK) {
+    return;
+  }
+
   const boundsIJK = centerIJK.map((ijk, idx) => [
     ijk - radiusIJK[idx],
     ijk + radiusIJK[idx],
