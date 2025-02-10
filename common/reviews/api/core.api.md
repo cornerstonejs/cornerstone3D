@@ -1237,7 +1237,7 @@ enum GenerateImageType {
 }
 
 // @public (undocumented)
-function generateVolumePropsFromImageIds(imageIds: string[], volumeId?: string): ImageVolumeProps;
+function generateVolumePropsFromImageIds(imageIds: string[], volumeId: string): ImageVolumeProps;
 
 declare namespace geometryLoader {
     export {

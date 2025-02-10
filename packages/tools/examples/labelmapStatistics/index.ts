@@ -282,9 +282,6 @@ function displayStat(stat) {
 
 async function calculateStatistics(id, indices) {
   const [viewport] = viewports;
-  // const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-  // const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-  // const brush = toolGroup.getToolInstance(activeName);
   const stats = await segmentationUtils.getStatistics({
     segmentationId,
     segmentIndices: indices,
@@ -307,7 +304,8 @@ async function calculateStatistics(id, indices) {
     // displayStat(lesionGlycolysis),
     displayStat(stats.mean),
     displayStat(stats.max),
-    displayStat(stats.min)
+    displayStat(stats.min),
+    displayStat(stats.peakValue)
   );
   const statsDiv = document.getElementById(id);
   statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
@@ -499,7 +497,7 @@ async function run() {
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [{ volumeId }],
     [viewportId1, viewportId2, viewportId3]
   );
 

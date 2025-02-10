@@ -757,9 +757,10 @@ class BasicStatsCalculator_2 extends Calculator {
         unit: string;
     }) => NamedStatistics;
     // (undocumented)
-    static statsCallback: ({ value: newValue, pointLPS }: {
+    static statsCallback: ({ value: newValue, pointLPS, pointIJK, }: {
         value: any;
         pointLPS?: any;
+        pointIJK?: any;
     }) => void;
     // (undocumented)
     static statsInit(options: {
@@ -3175,7 +3176,7 @@ function internalAddRepresentationData({ segmentationId, type, data, }: AddRepre
 function interpolateLabelmap({ segmentationId, segmentIndex, configuration, }: {
     segmentationId: string;
     segmentIndex: number;
-    configuration: MorphologicalContourInterpolationOptions & {
+    configuration?: MorphologicalContourInterpolationOptions & {
         preview: boolean;
     };
 }): Promise<void>;
@@ -5918,6 +5919,8 @@ type Statistics = {
     label?: string;
     value: number | number[];
     unit: null | string;
+    pointIJK?: Types_2.Point3;
+    pointLPS?: Types_2.Point3;
 };
 
 // @public (undocumented)
