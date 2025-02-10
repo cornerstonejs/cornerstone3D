@@ -33,7 +33,7 @@ async function interpolateLabelmap({
 }: {
   segmentationId: string;
   segmentIndex: number;
-  configuration: MorphologicalContourInterpolationOptions & {
+  configuration?: MorphologicalContourInterpolationOptions & {
     preview: boolean;
   };
 }) {
