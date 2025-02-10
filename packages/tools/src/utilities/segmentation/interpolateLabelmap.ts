@@ -1,7 +1,13 @@
-import { getWebWorkerManager } from '@cornerstonejs/core';
+import {
+  getWebWorkerManager,
+  eventTarget,
+  Enums,
+  triggerEvent,
+} from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
 import { registerComputeWorker } from '../registerComputeWorker';
+import { WorkerTypes } from '../../enums';
 
 type MorphologicalContourInterpolationOptions = {
   label?: number;
@@ -12,6 +18,13 @@ type MorphologicalContourInterpolationOptions = {
 };
 
 const workerManager = getWebWorkerManager();
+
+const triggerWorkerProgress = (eventTarget, progress) => {
+  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
+    progress,
+    type: WorkerTypes.INTERPOLATE_LABELMAP,
+  });
+};
 
 async function interpolateLabelmap({
   segmentationId,
@@ -25,6 +38,8 @@ async function interpolateLabelmap({
   };
 }) {
   registerComputeWorker();
+
+  triggerWorkerProgress(eventTarget, 0);
 
   const segVolume = getOrCreateSegmentationVolume(segmentationId);
 
@@ -62,11 +77,14 @@ async function interpolateLabelmap({
       segmentationVoxelManager.getArrayOfModifiedSlices(),
       segmentIndex
     );
+
+    triggerWorkerProgress(eventTarget, 100);
   } catch (error) {
     console.warn(
       'Warning: Failed to perform morphological contour interpolation',
       error
     );
+    triggerWorkerProgress(eventTarget, 100);
   }
 }
 

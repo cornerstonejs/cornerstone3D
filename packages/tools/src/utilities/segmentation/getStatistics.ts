@@ -2,25 +2,32 @@ import {
   getEnabledElementByViewportId,
   utilities,
   getWebWorkerManager,
+  eventTarget,
+  Enums,
+  triggerEvent,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import VolumetricCalculator from './VolumetricCalculator';
 import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
-import {
-  getPixelValueUnits,
-  getPixelValueUnitsImageId,
-} from '../getPixelValueUnits';
+import { getPixelValueUnitsImageId } from '../getPixelValueUnits';
 import { AnnotationTool } from '../../tools/base';
 import { isViewportPreScaled } from '../viewport/isViewportPreScaled';
 import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
 import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { registerComputeWorker } from '../registerComputeWorker';
+import { WorkerTypes } from '../../enums';
 // Radius for a volume of 10, eg 1 cm^3 = 1000 mm^3
 const radiusForVol1 = Math.pow((3 * 1000) / (4 * Math.PI), 1 / 3);
 
 const workerManager = getWebWorkerManager();
+
+const triggerWorkerProgress = (eventTarget, progress) => {
+  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
+    progress,
+    type: WorkerTypes.COMPUTE_STATISTICS,
+  });
+};
 
 async function getStatistics({
   segmentationId,
@@ -32,6 +39,8 @@ async function getStatistics({
   viewportId: string;
 }) {
   registerComputeWorker();
+
+  triggerWorkerProgress(eventTarget, 0);
 
   const enabledElement = getEnabledElementByViewportId(viewportId);
   const viewport = enabledElement.viewport;
@@ -110,6 +119,8 @@ async function getStatistics({
       indices: indicesArr,
     }
   );
+
+  triggerWorkerProgress(eventTarget, 100);
 
   const targetId = viewport.getViewReferenceId();
   const modalityUnitOptions = {

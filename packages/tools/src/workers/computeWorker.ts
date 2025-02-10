@@ -12,14 +12,9 @@ const computeWorker = {
       scalarData: segmentationScalarData,
       dimensions: segmentationDimensions,
       spacing: segmentationSpacing,
-      origin: segmentationOrigin,
     } = segmentationInfo;
-    const {
-      scalarData: imageScalarData,
-      dimensions: imageDimensions,
-      spacing: imageSpacing,
-      origin: imageOrigin,
-    } = imageInfo;
+    const { scalarData: imageScalarData, dimensions: imageDimensions } =
+      imageInfo;
 
     // if dimensions are not the same, for now just throw an error
     if (
