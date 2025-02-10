@@ -1,0 +1,2795 @@
+diff --git a/common/reviews/api/core.api.md b/common/reviews/api/core.api.md
+index 7a579bc5b..a441f7f62 100644
+--- a/common/reviews/api/core.api.md
++++ b/common/reviews/api/core.api.md
+@@ -275,6 +275,9 @@ type BoundsLPS = [Point3, Point3, Point3];
+ // @public (undocumented)
+ export const cache: Cache_2;
+ 
++// @public (undocumented)
++function calculateSpacingBetweenImageIds(imageIds: string[]): number;
++
+ // @public (undocumented)
+ function calculateViewportsSpatialRegistration(viewport1: StackViewport | IVolumeViewport, viewport2: StackViewport | IVolumeViewport): void;
+ 
+@@ -1234,7 +1237,7 @@ enum GenerateImageType {
+ }
+ 
+ // @public (undocumented)
+-function generateVolumePropsFromImageIds(imageIds: string[], volumeId: string): ImageVolumeProps;
++function generateVolumePropsFromImageIds(imageIds: string[], volumeId?: string): ImageVolumeProps;
+ 
+ declare namespace geometryLoader {
+     export {
+@@ -4047,7 +4050,8 @@ declare namespace utilities {
+         clip,
+         transformWorldToIndexContinuous,
+         createSubVolume,
+-        getVolumeDirectionVectors
++        getVolumeDirectionVectors,
++        calculateSpacingBetweenImageIds
+     }
+ }
+ export { utilities }
+diff --git a/common/reviews/api/tools.api.md b/common/reviews/api/tools.api.md
+index 39ab0f21a..06978a9f5 100644
+--- a/common/reviews/api/tools.api.md
++++ b/common/reviews/api/tools.api.md
+@@ -1004,6 +1004,10 @@ enum ChangeTypes {
+ 
+ // @public (undocumented)
+ enum ChangeTypes_2 {
++    // (undocumented)
++    COMPUTE_STATISTICS = "Computing Statistics",
++    // (undocumented)
++    INTERPOLATE_LABELMAP = "Interpolating Labelmap",
+     // (undocumented)
+     POLYSEG_CONTOUR_TO_LABELMAP = "Converting Contour to Labelmap",
+     // (undocumented)
+@@ -2819,12 +2823,18 @@ function getNormal2(polyline: Types_2.Point2[]): Types_2.Point3;
+ // @public (undocumented)
+ function getNormal3(polyline: Types_2.Point3[]): Types_2.Point3;
+ 
++// @public (undocumented)
++function getOrCreateSegmentationVolume(segmentationId: any): any;
++
+ // @public (undocumented)
+ function getOrientationStringLPS(vector: Types_2.Point3): string;
+ 
+ // @public (undocumented)
+ function getPixelValueUnits(modality: string, imageId: string, options: pixelUnitsOptions): string;
+ 
++// @public (undocumented)
++function getPixelValueUnitsImageId(imageId: string, options: pixelUnitsOptions): string;
++
+ // @public (undocumented)
+ function getPoint(points: any, idx: any): Types_2.Point3;
+ 
+@@ -2903,6 +2913,13 @@ function getStackSegmentationImageIdsForViewport(viewportId: string, segmentatio
+ // @public (undocumented)
+ function getState(annotation?: Annotation): AnnotationStyleStates;
+ 
++// @public (undocumented)
++function getStatistics({ segmentationId, segmentIndices, viewportId, }: {
++    segmentationId: string;
++    segmentIndices: number[] | number;
++    viewportId: string;
++}): Promise<any>;
++
+ // @public (undocumented)
+ function getStyle<T extends SegmentationRepresentations>(specifier: SpecifierWithType<T>): StyleForType<T>;
+ 
+@@ -3154,6 +3171,15 @@ type InteractionTypes = 'Mouse' | 'Touch';
+ // @public (undocumented)
+ function internalAddRepresentationData({ segmentationId, type, data, }: AddRepresentationData): void;
+ 
++// @public (undocumented)
++function interpolateLabelmap({ segmentationId, segmentIndex, configuration, }: {
++    segmentationId: string;
++    segmentIndex: number;
++    configuration: MorphologicalContourInterpolationOptions & {
++        preview: boolean;
++    };
++}): Promise<void>;
++
+ // @public (undocumented)
+ type InterpolationROIAnnotation = ContourAnnotation & ContourSegmentationAnnotationData & {
+     metadata: {
+@@ -3512,12 +3538,11 @@ export class LabelmapBaseTool extends BaseTool {
+         segmentColor: Types_2.Color;
+     };
+     // (undocumented)
+-    protected getEditData({ viewport, representationData, segmentsLocked, segmentationId, volumeOperation, }: {
++    protected getEditData({ viewport, representationData, segmentsLocked, segmentationId, }: {
+         viewport: any;
+         representationData: any;
+         segmentsLocked: any;
+         segmentationId: any;
+-        volumeOperation?: boolean;
+     }): EditDataReturnType;
+     // (undocumented)
+     protected getOperationData(element?: any): ModifiedLabelmapToolOperationData;
+@@ -3574,6 +3599,7 @@ type LabelmapToolOperationData = {
+     viewPlaneNormal: number[];
+     viewUp: number[];
+     strategySpecificConfiguration: any;
++    activeStrategy: string;
+     points: Types_2.Point3[];
+     voxelManager: any;
+     override: {
+@@ -5281,7 +5307,10 @@ declare namespace segmentation_2 {
+         getBrushToolInstances,
+         growCut,
+         LabelmapMemo,
+-        IslandRemoval
++        IslandRemoval,
++        interpolateLabelmap,
++        getOrCreateSegmentationVolume,
++        getStatistics
+     }
+ }
+ 
+@@ -5931,6 +5960,10 @@ enum StrategyCallbacks {
+     // (undocumented)
+     CreateIsInThreshold = "createIsInThreshold",
+     // (undocumented)
++    EnsureImageVolumeFor3DManipulation = "ensureImageVolumeFor3DManipulation",
++    // (undocumented)
++    EnsureSegmentationVolumeFor3DManipulation = "ensureSegmentationVolumeFor3DManipulation",
++    // (undocumented)
+     Fill = "fill",
+     // (undocumented)
+     GetStatistics = "getStatistics",
+@@ -6711,6 +6744,7 @@ declare namespace utilities {
+         getCalibratedProbeUnitsAndValue,
+         getCalibratedAspect,
+         getPixelValueUnits,
++        getPixelValueUnitsImageId,
+         segmentation_2 as segmentation,
+         contours,
+         triggerAnnotationRenderForViewportIds,
+diff --git a/packages/ai/src/ONNXSegmentationController.ts b/packages/ai/src/ONNXSegmentationController.ts
+index 3f45d324c..8865993b2 100644
+--- a/packages/ai/src/ONNXSegmentationController.ts
++++ b/packages/ai/src/ONNXSegmentationController.ts
+@@ -332,7 +332,7 @@ export default class ONNXSegmentationController {
+     this.currentImage = null;
+     this.viewport = viewport;
+ 
+-    const brushInstance = new LabelmapBaseTool(
++    this.tool = new LabelmapBaseTool(
+       {},
+       {
+         configuration: {
+@@ -352,8 +352,6 @@ export default class ONNXSegmentationController {
+       }
+     );
+ 
+-    this.tool = brushInstance;
+-
+     desiredImage.imageId =
+       viewport.getCurrentImageId?.() || viewport.getViewReferenceId();
+     if (desiredImage.imageId.startsWith('volumeId:')) {
+diff --git a/packages/core/src/cache/cache.ts b/packages/core/src/cache/cache.ts
+index 5c2db60a5..16ed30922 100644
+--- a/packages/core/src/cache/cache.ts
++++ b/packages/core/src/cache/cache.ts
+@@ -33,6 +33,8 @@ class Cache {
+   private readonly _imageCache = new Map<string, ICachedImage>();
+   // used to store volume data (3d)
+   private readonly _volumeCache = new Map<string, ICachedVolume>();
++  // used to store the reverse lookup from imageIds to volumeId
++  private readonly _imageIdsToVolumeIdCache = new Map<string, string>();
+   // Todo: contour for now, but will be used for surface, etc.
+   private readonly _geometryCache = new Map<string, ICachedGeometry>();
+ 
+@@ -40,6 +42,36 @@ class Cache {
+   private _maxCacheSize = 3 * ONE_GB;
+   private _geometryCacheSize = 0;
+ 
++  /**
++   * Generates a deterministic volume ID from a list of image IDs
++   * @param imageIds - Array of image IDs
++   * @returns A deterministic volume ID
++   */
++  public generateVolumeId(imageIds: string[]): string {
++    const imageURIs = imageIds.map(imageIdToURI);
++
++    let combinedHash = 0x811c9dc5; // Initial FNV offset basis
++    for (const id of imageURIs) {
++      const idHash = this._fnv1aHash(id);
++      for (let i = 0; i < idHash.length; i++) {
++        combinedHash ^= idHash.charCodeAt(i);
++        combinedHash +=
++          (combinedHash << 1) +
++          (combinedHash << 4) +
++          (combinedHash << 7) +
++          (combinedHash << 8) +
++          (combinedHash << 24);
++      }
++    }
++    return `volume-${(combinedHash >>> 0).toString(36)}`;
++  }
++
++  public getImageIdsForVolumeId(volumeId: string): string[] {
++    return Array.from(this._imageIdsToVolumeIdCache.entries())
++      .filter(([_, id]) => id === volumeId)
++      .map(([key]) => key);
++  }
++
+   /**
+    * Set the maximum cache Size
+    *
+@@ -1279,6 +1311,21 @@ class Cache {
+ 
+     return cachedGeometry.geometryLoadObject;
+   };
++
++  /**
++   * Helper function to generate a hash for a string using FNV-1a algorithm
++   * @param str - string to hash
++   * @returns the hashed string
++   */
++  private _fnv1aHash(str: string): string {
++    let hash = 0x811c9dc5;
++    for (let i = 0; i < str.length; i++) {
++      hash ^= str.charCodeAt(i);
++      hash +=
++        (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
++    }
++    return (hash >>> 0).toString(36);
++  }
+ }
+ 
+ /**
+diff --git a/packages/core/src/utilities/calculateSpacingBetweenImageIds.ts b/packages/core/src/utilities/calculateSpacingBetweenImageIds.ts
+new file mode 100644
+index 000000000..de154ea96
+--- /dev/null
++++ b/packages/core/src/utilities/calculateSpacingBetweenImageIds.ts
+@@ -0,0 +1,150 @@
++import { vec3 } from 'gl-matrix';
++import * as metaData from '../metaData';
++import { getConfiguration } from '../init';
++
++/**
++ * Calculates the spacing between images in a series based on their positions
++ *
++ * @param imageIds - array of imageIds
++ * @returns The calculated spacing value between images
++ */
++export default function calculateSpacingBetweenImageIds(
++  imageIds: string[]
++): number {
++  const {
++    imagePositionPatient: referenceImagePositionPatient,
++    imageOrientationPatient,
++  } = metaData.get('imagePlaneModule', imageIds[0]);
++
++  // Calculate scan axis normal from image orientation
++  const rowCosineVec = vec3.fromValues(
++    imageOrientationPatient[0],
++    imageOrientationPatient[1],
++    imageOrientationPatient[2]
++  );
++  const colCosineVec = vec3.fromValues(
++    imageOrientationPatient[3],
++    imageOrientationPatient[4],
++    imageOrientationPatient[5]
++  );
++
++  const scanAxisNormal = vec3.create();
++  vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
++
++  // Convert referenceImagePositionPatient to vec3
++  const refIppVec = vec3.fromValues(
++    referenceImagePositionPatient[0],
++    referenceImagePositionPatient[1],
++    referenceImagePositionPatient[2]
++  );
++
++  // Check if we are using wadouri scheme
++  const usingWadoUri = imageIds[0].split(':')[0] === 'wadouri';
++  let spacing: number;
++
++  function getDistance(imageId: string) {
++    const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId);
++    const positionVector = vec3.create();
++
++    // Convert imagePositionPatient to vec3
++    const ippVec = vec3.fromValues(
++      imagePositionPatient[0],
++      imagePositionPatient[1],
++      imagePositionPatient[2]
++    );
++
++    vec3.sub(positionVector, refIppVec, ippVec);
++    return vec3.dot(positionVector, scanAxisNormal);
++  }
++
++  if (!usingWadoUri) {
++    const distanceImagePairs = imageIds.map((imageId) => {
++      const distance = getDistance(imageId);
++      return {
++        distance,
++        imageId,
++      };
++    });
++
++    distanceImagePairs.sort((a, b) => b.distance - a.distance);
++    const numImages = distanceImagePairs.length;
++
++    // Calculated average spacing.
++    // We would need to resample if these are not similar.
++    // It should be up to the host app to do this if it needed to.
++    spacing =
++      Math.abs(
++        distanceImagePairs[numImages - 1].distance -
++          distanceImagePairs[0].distance
++      ) /
++      (numImages - 1);
++  } else {
++    // Using wadouri, so we have only prefetched the first, middle, and last
++    // images for metadata. Assume initial imageId array order is pre-sorted,
++    // but check orientation.
++    const prefetchedImageIds = [
++      imageIds[0],
++      imageIds[Math.floor(imageIds.length / 2)],
++    ];
++
++    const firstImageDistance = getDistance(prefetchedImageIds[0]);
++    const middleImageDistance = getDistance(prefetchedImageIds[1]);
++
++    const metadataForMiddleImage = metaData.get(
++      'imagePlaneModule',
++      prefetchedImageIds[1]
++    );
++
++    if (!metadataForMiddleImage) {
++      throw new Error('Incomplete metadata required for volume construction.');
++    }
++
++    const positionVector = vec3.create();
++
++    // Convert metadataForMiddleImage.imagePositionPatient to vec3
++    const middleIppVec = vec3.fromValues(
++      metadataForMiddleImage.imagePositionPatient[0],
++      metadataForMiddleImage.imagePositionPatient[1],
++      metadataForMiddleImage.imagePositionPatient[2]
++    );
++
++    vec3.sub(positionVector, refIppVec, middleIppVec);
++    const distanceBetweenFirstAndMiddleImages = vec3.dot(
++      positionVector,
++      scanAxisNormal
++    );
++    spacing =
++      Math.abs(distanceBetweenFirstAndMiddleImages) /
++      Math.floor(imageIds.length / 2);
++  }
++
++  const { sliceThickness, spacingBetweenSlices } = metaData.get(
++    'imagePlaneModule',
++    imageIds[0]
++  );
++
++  const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
++
++  // We implemented these lines for multiframe dicom files that does not have
++  // position for each frame, leading to incorrect calculation of spacing = 0
++  // If possible, we use the sliceThickness, but we warn about this dicom file
++  // weirdness. If sliceThickness is not available, we set to 1 just to render
++  if (spacing === 0 && !strictZSpacingForVolumeViewport) {
++    if (spacingBetweenSlices) {
++      console.debug('Could not calculate spacing. Using spacingBetweenSlices');
++      spacing = spacingBetweenSlices;
++    } else if (sliceThickness) {
++      console.debug(
++        'Could not calculate spacing and no spacingBetweenSlices. Using sliceThickness'
++      );
++      spacing = sliceThickness;
++    } else {
++      console.debug(
++        'Could not calculate spacing. The VolumeViewport visualization is compromised. Setting spacing to 1 to render'
++      );
++      spacing = 1;
++    }
++  }
++
++  return spacing;
++}
+diff --git a/packages/core/src/utilities/index.ts b/packages/core/src/utilities/index.ts
+index ca345f532..54304dffe 100644
+--- a/packages/core/src/utilities/index.ts
++++ b/packages/core/src/utilities/index.ts
+@@ -94,7 +94,7 @@ import scroll from './scroll';
+ import clip from './clip';
+ import createSubVolume from './createSubVolume';
+ import getVolumeDirectionVectors from './getVolumeDirectionVectors';
+-
++import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
+ const getViewportModality = (viewport: IViewport, volumeId?: string) =>
+   _getViewportModality(viewport, volumeId, cache.getVolume);
+ 
+@@ -193,4 +193,5 @@ export {
+   transformWorldToIndexContinuous,
+   createSubVolume,
+   getVolumeDirectionVectors,
++  calculateSpacingBetweenImageIds,
+ };
+diff --git a/packages/core/src/utilities/pointInShapeCallback.ts b/packages/core/src/utilities/pointInShapeCallback.ts
+index 3ef5200d6..7851b2bda 100644
+--- a/packages/core/src/utilities/pointInShapeCallback.ts
++++ b/packages/core/src/utilities/pointInShapeCallback.ts
+@@ -73,10 +73,17 @@ export function pointInShapeCallback(
+   if ((imageData as CPUImageData).getScalarData) {
+     scalarData = (imageData as CPUImageData).getScalarData();
+   } else {
+-    scalarData = (imageData as vtkImageData)
+-      .getPointData()
+-      .getScalars()
+-      .getData();
++    const scalars = (imageData as vtkImageData).getPointData().getScalars();
++
++    if (scalars) {
++      scalarData = scalars.getData();
++    } else {
++      // @ts-ignore
++      const { voxelManager } = imageData.get('voxelManager') || {};
++      if (voxelManager) {
++        scalarData = voxelManager.getCompleteScalarDataArray();
++      }
++    }
+   }
+ 
+   const dimensions = imageData.getDimensions();
+diff --git a/packages/core/src/utilities/sortImageIdsAndGetSpacing.ts b/packages/core/src/utilities/sortImageIdsAndGetSpacing.ts
+index ef5fba217..216ac1c78 100644
+--- a/packages/core/src/utilities/sortImageIdsAndGetSpacing.ts
++++ b/packages/core/src/utilities/sortImageIdsAndGetSpacing.ts
+@@ -1,6 +1,6 @@
+ import { vec3 } from 'gl-matrix';
+ import * as metaData from '../metaData';
+-import { getConfiguration } from '../init';
++import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
+ import type { Point3 } from '../types';
+ 
+ interface SortedImageIdsItem {
+@@ -15,7 +15,7 @@ interface SortedImageIdsItem {
+  * @param imageIds - array of imageIds
+  * @param scanAxisNormal - [x, y, z] array or gl-matrix vec3
+  *
+- * @returns The sortedImageIds, zSpacing, and origin of the first image in the series.
++ * @returns The sortedImageIds, spacing, and origin of the first image in the series.
+  */
+ export default function sortImageIdsAndGetSpacing(
+   imageIds: string[],
+@@ -42,20 +42,12 @@ export default function sortImageIdsAndGetSpacing(
+     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
+   }
+ 
+-  const refIppVec = vec3.create();
+-
+   // Check if we are using wadouri scheme
+   const usingWadoUri = imageIds[0].split(':')[0] === 'wadouri';
+ 
+-  vec3.set(
+-    refIppVec,
+-    referenceImagePositionPatient[0],
+-    referenceImagePositionPatient[1],
+-    referenceImagePositionPatient[2]
+-  );
++  const zSpacing = calculateSpacingBetweenImageIds(imageIds);
+ 
+   let sortedImageIds: string[];
+-  let zSpacing: number;
+ 
+   function getDistance(imageId: string) {
+     const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId);
+@@ -89,19 +81,7 @@ export default function sortImageIdsAndGetSpacing(
+     });
+ 
+     distanceImagePairs.sort((a, b) => b.distance - a.distance);
+-
+     sortedImageIds = distanceImagePairs.map((a) => a.imageId);
+-    const numImages = distanceImagePairs.length;
+-
+-    // Calculated average spacing.
+-    // We would need to resample if these are not similar.
+-    // It should be up to the host app to do this if it needed to.
+-    zSpacing =
+-      Math.abs(
+-        distanceImagePairs[numImages - 1].distance -
+-          distanceImagePairs[0].distance
+-      ) /
+-      (numImages - 1);
+   } else {
+     // Using wadouri, so we have only prefetched the first, middle, and last
+     // images for metadata. Assume initial imageId array order is pre-sorted,
+@@ -116,62 +96,13 @@ export default function sortImageIdsAndGetSpacing(
+     if (firstImageDistance - middleImageDistance < 0) {
+       sortedImageIds.reverse();
+     }
+-
+-    // Calculate average spacing between the first and middle prefetched images,
+-    // otherwise fall back to DICOM `spacingBetweenSlices`
+-    const metadataForMiddleImage = metaData.get(
+-      'imagePlaneModule',
+-      prefetchedImageIds[1]
+-    );
+-
+-    if (!metadataForMiddleImage) {
+-      throw new Error('Incomplete metadata required for volume construction.');
+-    }
+-
+-    const positionVector = vec3.create();
+-
+-    vec3.sub(
+-      positionVector,
+-      referenceImagePositionPatient,
+-      metadataForMiddleImage.imagePositionPatient
+-    );
+-    const distanceBetweenFirstAndMiddleImages = vec3.dot(
+-      positionVector,
+-      scanAxisNormal
+-    );
+-    zSpacing =
+-      Math.abs(distanceBetweenFirstAndMiddleImages) /
+-      Math.floor(imageIds.length / 2);
+   }
+ 
+-  const {
+-    imagePositionPatient: origin,
+-    sliceThickness,
+-    spacingBetweenSlices,
+-  } = metaData.get('imagePlaneModule', sortedImageIds[0]);
+-
+-  const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
+-
+-  // We implemented these lines for multiframe dicom files that does not have
+-  // position for each frame, leading to incorrect calculation of zSpacing = 0
+-  // If possible, we use the sliceThickness, but we warn about this dicom file
+-  // weirdness. If sliceThickness is not available, we set to 1 just to render
+-  if (zSpacing === 0 && !strictZSpacingForVolumeViewport) {
+-    if (spacingBetweenSlices) {
+-      console.log('Could not calculate zSpacing. Using spacingBetweenSlices');
+-      zSpacing = spacingBetweenSlices;
+-    } else if (sliceThickness) {
+-      console.log(
+-        'Could not calculate zSpacing and no spacingBetweenSlices. Using sliceThickness'
+-      );
+-      zSpacing = sliceThickness;
+-    } else {
+-      console.log(
+-        'Could not calculate zSpacing. The VolumeViewport visualization is compromised. Setting zSpacing to 1 to render'
+-      );
+-      zSpacing = 1;
+-    }
+-  }
++  const { imagePositionPatient: origin } = metaData.get(
++    'imagePlaneModule',
++    sortedImageIds[0]
++  );
++
+   const result: SortedImageIdsItem = {
+     zSpacing,
+     origin,
+diff --git a/packages/tools/examples/labelmapInterpolation/index.ts b/packages/tools/examples/labelmapInterpolation/index.ts
+index 1a477f080..5589f6dac 100644
+--- a/packages/tools/examples/labelmapInterpolation/index.ts
++++ b/packages/tools/examples/labelmapInterpolation/index.ts
+@@ -162,20 +162,10 @@ addDropdownToToolbar({
+ addButtonToToolbar({
+   title: 'Run Extended Interpolation',
+   onClick: () => {
+-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+-    const brush = toolGroup.getToolInstance(activeName);
+-    brush.interpolate?.(element1, { extendedConfig: true });
+-  },
+-});
+-
+-addButtonToToolbar({
+-  title: 'Run Overlapping Interpolation',
+-  onClick: () => {
+-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+-    const brush = toolGroup.getToolInstance(activeName);
+-    brush.interpolate?.(element1, { extendedConfig: false });
++    segmentationUtils.interpolateLabelmap({
++      segmentationId,
++      segmentIndex: 1,
++    });
+   },
+ });
+ 
+diff --git a/packages/tools/examples/labelmapSegmentationDynamicThreshold/index.ts b/packages/tools/examples/labelmapSegmentationDynamicThreshold/index.ts
+index b96a75170..749728e00 100644
+--- a/packages/tools/examples/labelmapSegmentationDynamicThreshold/index.ts
++++ b/packages/tools/examples/labelmapSegmentationDynamicThreshold/index.ts
+@@ -120,7 +120,7 @@ interpolationTools.set('ThresholdSphereIsland', {
+     ...configuration,
+     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
+     strategySpecificConfiguration: {
+-      THRESHOLD: { ...thresholdArgs },
++      THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL: { ...thresholdArgs },
+     },
+   },
+ });
+@@ -131,7 +131,7 @@ interpolationTools.set('ThresholdCircle', {
+     ...configuration,
+     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
+     strategySpecificConfiguration: {
+-      THRESHOLD: { ...thresholdArgs },
++      THRESHOLD_INSIDE_CIRCLE: { ...thresholdArgs },
+     },
+   },
+ });
+@@ -142,7 +142,7 @@ interpolationTools.set('ThresholdSphere', {
+     ...configuration,
+     activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
+     strategySpecificConfiguration: {
+-      THRESHOLD: { ...thresholdArgs },
++      THRESHOLD_INSIDE_SPHERE: { ...thresholdArgs },
+     },
+   },
+ });
+diff --git a/packages/tools/examples/labelmapStatistics/index.ts b/packages/tools/examples/labelmapStatistics/index.ts
+index 082fc530d..28ef64b50 100644
+--- a/packages/tools/examples/labelmapStatistics/index.ts
++++ b/packages/tools/examples/labelmapStatistics/index.ts
+@@ -13,7 +13,6 @@ import {
+   addDropdownToToolbar,
+   addSliderToToolbar,
+   setCtTransferFunctionForVolumeActor,
+-  getLocalUrl,
+   addManipulationBindings,
+ } from '../../../../utils/demo/helpers';
+ import * as cornerstoneTools from '@cornerstonejs/tools';
+@@ -146,14 +145,32 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
+ const defaultThresholdOption = [...thresholdOptions.keys()][2];
+ const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
+ 
++interpolationTools.set('CircularBrush', {
++  baseTool: BrushTool.toolName,
++  configuration: {
++    ...configuration,
++    activeStrategy: 'FILL_INSIDE_CIRCLE',
++  },
++});
++
++interpolationTools.set('ThresholdCircle', {
++  baseTool: BrushTool.toolName,
++  configuration: {
++    ...configuration,
++    activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
++    strategySpecificConfiguration: {
++      THRESHOLD_INSIDE_CIRCLE: { ...thresholdArgs },
++    },
++  },
++});
++
+ interpolationTools.set('ThresholdSphere', {
+   baseTool: BrushTool.toolName,
+   configuration: {
+     ...configuration,
+     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
+     strategySpecificConfiguration: {
+-      useCenterSegmentIndex: true,
+-      THRESHOLD: { ...thresholdArgs },
++      THRESHOLD_INSIDE_SPHERE: { ...thresholdArgs },
+     },
+   },
+ });
+@@ -263,12 +280,16 @@ function displayStat(stat) {
+   }`;
+ }
+ 
+-function calculateStatistics(id, indices) {
++async function calculateStatistics(id, indices) {
+   const [viewport] = viewports;
+-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+-  const activeName = toolGroup.getActivePrimaryMouseButtonTool();
+-  const brush = toolGroup.getToolInstance(activeName);
+-  const stats = brush.getStatistics(viewport.element, { indices });
++  // const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
++  // const activeName = toolGroup.getActivePrimaryMouseButtonTool();
++  // const brush = toolGroup.getToolInstance(activeName);
++  const stats = await segmentationUtils.getStatistics({
++    segmentationId,
++    segmentIndices: indices,
++    viewportId: viewport.id,
++  });
+ 
+   if (!stats) {
+     return;
+@@ -393,13 +414,28 @@ async function run() {
+   });
+ 
+   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
++  // const imageIds = await createImageIdsAndCacheMetaData({
++  //   StudyInstanceUID:
++  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
++  //   SeriesInstanceUID:
++  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
++  //   wadoRsRoot:
++  //     getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
++  // });
+   const imageIds = await createImageIdsAndCacheMetaData({
++    StudyInstanceUID:
++      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
++    SeriesInstanceUID:
++      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
++    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
++  });
++
++  const ctImageIds = await createImageIdsAndCacheMetaData({
+     StudyInstanceUID:
+       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+     SeriesInstanceUID:
+       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+-    wadoRsRoot:
+-      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
++    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+   });
+ 
+   // Define a volume in memory
+diff --git a/packages/tools/examples/stackLabelmapSegmentation/index.ts b/packages/tools/examples/stackLabelmapSegmentation/index.ts
+index be326f195..039c21280 100644
+--- a/packages/tools/examples/stackLabelmapSegmentation/index.ts
++++ b/packages/tools/examples/stackLabelmapSegmentation/index.ts
+@@ -1,5 +1,4 @@
+ import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+-import * as cornerstone from '@cornerstonejs/core';
+ import * as cornerstoneTools from '@cornerstonejs/tools';
+ import {
+   createImageIdsAndCacheMetaData,
+@@ -9,7 +8,6 @@ import {
+   addButtonToToolbar,
+   addBrushSizeSlider,
+ } from '../../../../utils/demo/helpers';
+-import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
+ 
+ // This is for debugging purposes
+ console.warn(
+@@ -85,21 +83,30 @@ content.append(instructions);
+ const brushInstanceNames = {
+   CircularBrush: 'CircularBrush',
+   CircularEraser: 'CircularEraser',
+-  ThresholdBrush: 'ThresholdBrush',
++  ThresholdBrushCircle: 'ThresholdBrushCircle',
++  ThresholdBrushSphere: 'ThresholdBrushSphere',
+   DynamicThreshold: 'DynamicThreshold',
+ };
+ 
+ const brushStrategies = {
+   [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
+   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
+-  [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
++  [brushInstanceNames.ThresholdBrushCircle]: 'THRESHOLD_INSIDE_CIRCLE',
++  [brushInstanceNames.ThresholdBrushSphere]: 'THRESHOLD_INSIDE_SPHERE',
+   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
+ };
+ 
+ const brushValues = [
+   brushInstanceNames.CircularBrush,
+   brushInstanceNames.CircularEraser,
+-  brushInstanceNames.ThresholdBrush,
++  brushInstanceNames.ThresholdBrushCircle,
++  brushInstanceNames.ThresholdBrushSphere,
++  brushInstanceNames.DynamicThreshold,
++];
++
++const thresholdBrushValues = [
++  brushInstanceNames.ThresholdBrushCircle,
++  brushInstanceNames.ThresholdBrushSphere,
+   brushInstanceNames.DynamicThreshold,
+ ];
+ 
+@@ -154,19 +161,24 @@ addDropdownToToolbar({
+ 
+     // Set the currently active tool disabled
+     const toolName = toolGroup.getActivePrimaryMouseButtonTool();
+-
+     if (toolName) {
+       toolGroup.setToolDisabled(toolName);
+     }
+ 
++    // Show/hide threshold dropdown based on selected tool
++    const thresholdDropdown = document.getElementById('thresholdDropdown');
++    if (thresholdDropdown) {
++      thresholdDropdown.style.display = thresholdBrushValues.includes(name)
++        ? 'block'
++        : 'none';
++    }
++
+     if (brushValues.includes(name)) {
+       toolGroup.setToolActive(name, {
+         bindings: [{ mouseButton: MouseBindings.Primary }],
+       });
+     } else {
+-      const toolName = name;
+-
+-      toolGroup.setToolActive(toolName, {
++      toolGroup.setToolActive(name, {
+         bindings: [{ mouseButton: MouseBindings.Primary }],
+       });
+     }
+@@ -193,7 +205,7 @@ addDropdownToToolbar({
+ 
+     segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, threshold);
+   },
+-});
++}).style.display = 'none';
+ 
+ addButtonToToolbar({
+   title: 'Create New Segmentation on Current Image',
+@@ -243,7 +255,6 @@ addDropdownToToolbar({
+   options: { values: segmentationIds, defaultValue: '' },
+   onSelectedValueChange: (nameAsStringOrNumber) => {
+     const name = String(nameAsStringOrNumber);
+-    const index = segmentationIds.indexOf(name);
+     segmentation.activeSegmentation.setActiveSegmentation(viewportId, name);
+ 
+     // Update the dropdown
+@@ -283,6 +294,7 @@ function setupTools(toolGroupId) {
+       activeStrategy: brushStrategies.CircularBrush,
+     }
+   );
++
+   toolGroup.addToolInstance(
+     brushInstanceNames.CircularEraser,
+     BrushTool.toolName,
+@@ -290,25 +302,20 @@ function setupTools(toolGroupId) {
+       activeStrategy: brushStrategies.CircularEraser,
+     }
+   );
++
+   toolGroup.addToolInstance(
+-    brushInstanceNames.ThresholdBrush,
++    brushInstanceNames.ThresholdBrushCircle,
+     BrushTool.toolName,
+     {
+-      activeStrategy: brushStrategies.ThresholdBrush,
++      activeStrategy: brushStrategies.ThresholdBrushCircle,
+     }
+   );
++
+   toolGroup.addToolInstance(
+-    brushInstanceNames.DynamicThreshold,
++    brushInstanceNames.ThresholdBrushSphere,
+     BrushTool.toolName,
+     {
+-      activeStrategy: brushStrategies.DynamicThreshold,
+-      preview: {
+-        enabled: true,
+-      },
+-      strategySpecificConfiguration: {
+-        useCenterSegmentIndex: true,
+-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
+-      },
++      activeStrategy: brushStrategies.ThresholdBrushSphere,
+     }
+   );
+ 
+@@ -341,8 +348,7 @@ function setupTools(toolGroupId) {
+   toolGroup.setToolActive(StackScrollTool.toolName, {
+     bindings: [
+       {
+-        mouseButton: MouseBindings.Primary,
+-        modifierKey: KeyboardBindings.Alt,
++        mouseButton: MouseBindings.Wheel,
+       },
+     ],
+   });
+@@ -396,7 +402,7 @@ async function run() {
+   toolGroup.addViewport(viewportId, renderingEngineId);
+   viewport = renderingEngine.getViewport(viewportId);
+ 
+-  const imageIdsArray = [imageIds[0], imageIds[1], mgImageIds[0]];
++  const imageIdsArray = [imageIds[0], imageIds[1]];
+ 
+   const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
+     imageIdsArray
+@@ -404,16 +410,10 @@ async function run() {
+ 
+   const viewport2 = renderingEngine.getViewport(viewportId2);
+   await viewport.setStack(imageIdsArray, 0);
+-  await viewport2.setStack([imageIdsArray[2]], 0);
++  await viewport2.setStack([mgImageIds[0]], 0);
+   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
+   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
+ 
+-  // fillStackSegmentationWithMockData({
+-  //   imageIds: [imageIds[0]],
+-  //   segmentationImageIds: segImages.map((it) => it.imageId),
+-  //   cornerstone,
+-  // });
+-
+   renderingEngine.renderViewports([viewportId]);
+ 
+   segmentation.addSegmentations([
+diff --git a/packages/tools/examples/videoSegmentation/index.ts b/packages/tools/examples/videoSegmentation/index.ts
+index 08839726f..d1dc1d760 100644
+--- a/packages/tools/examples/videoSegmentation/index.ts
++++ b/packages/tools/examples/videoSegmentation/index.ts
+@@ -166,8 +166,11 @@ function setupTools(toolGroupId) {
+         enabled: true,
+       },
+       strategySpecificConfiguration: {
+-        useCenterSegmentIndex: true,
+-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
++        [brushStrategies.DynamicThreshold]: {
++          useCenterSegmentIndex: true,
++          isDynamic: true,
++          dynamicRadius: 3,
++        },
+       },
+     }
+   );
+diff --git a/packages/tools/src/enums/StrategyCallbacks.ts b/packages/tools/src/enums/StrategyCallbacks.ts
+index 36ad22d14..dc43217ec 100644
+--- a/packages/tools/src/enums/StrategyCallbacks.ts
++++ b/packages/tools/src/enums/StrategyCallbacks.ts
+@@ -63,6 +63,12 @@ enum StrategyCallbacks {
+ 
+   /** Compute statistics on this instance */
+   GetStatistics = 'getStatistics',
++
++  /** Handle stack viewport sphere brush overrides */
++  EnsureImageVolumeFor3DManipulation = 'ensureImageVolumeFor3DManipulation',
++
++  /** Handle stack image reference for 3D manipulation */
++  EnsureSegmentationVolumeFor3DManipulation = 'ensureSegmentationVolumeFor3DManipulation',
+ }
+ 
+ export default StrategyCallbacks;
+diff --git a/packages/tools/src/enums/WorkerTypes.ts b/packages/tools/src/enums/WorkerTypes.ts
+index bf1660f92..9afc93ac0 100644
+--- a/packages/tools/src/enums/WorkerTypes.ts
++++ b/packages/tools/src/enums/WorkerTypes.ts
+@@ -11,6 +11,10 @@ enum ChangeTypes {
+   POLYSEG_LABELMAP_TO_SURFACE = 'Converting Labelmap to Surface',
+ 
+   SURFACE_CLIPPING = 'Clipping Surfaces',
++
++  COMPUTE_STATISTICS = 'Computing Statistics',
++
++  INTERPOLATE_LABELMAP = 'Interpolating Labelmap',
+ }
+ 
+ export default ChangeTypes;
+diff --git a/packages/tools/src/stateManagement/segmentation/polySeg/registerPolySegWorker.ts b/packages/tools/src/stateManagement/segmentation/polySeg/registerPolySegWorker.ts
+index 400f6c954..531871e44 100644
+--- a/packages/tools/src/stateManagement/segmentation/polySeg/registerPolySegWorker.ts
++++ b/packages/tools/src/stateManagement/segmentation/polySeg/registerPolySegWorker.ts
+@@ -24,7 +24,7 @@ export function registerPolySegWorker() {
+   const workerManager = getWebWorkerManager();
+ 
+   const options = {
+-    maxWorkerInstances: 1, // Todo, make this configurable
++    maxWorkerInstances: 1,
+     autoTerminateOnIdle: {
+       enabled: true,
+       idleTimeThreshold: 2000,
+diff --git a/packages/tools/src/tools/segmentation/BrushTool.ts b/packages/tools/src/tools/segmentation/BrushTool.ts
+index 2482a991b..a04ec64e2 100644
+--- a/packages/tools/src/tools/segmentation/BrushTool.ts
++++ b/packages/tools/src/tools/segmentation/BrushTool.ts
+@@ -72,11 +72,7 @@ class BrushTool extends LabelmapBaseTool {
+             thresholdInsideSphereIsland,
+         },
+ 
+-        strategySpecificConfiguration: {
+-          THRESHOLD: {
+-            threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
+-          },
+-        },
++        strategySpecificConfiguration: {},
+         defaultStrategy: 'FILL_INSIDE_CIRCLE',
+         activeStrategy: 'FILL_INSIDE_CIRCLE',
+         thresholdVolumeId: null,
+diff --git a/packages/tools/src/tools/segmentation/LabelmapBaseTool.ts b/packages/tools/src/tools/segmentation/LabelmapBaseTool.ts
+index 32542b19d..fda3160cd 100644
+--- a/packages/tools/src/tools/segmentation/LabelmapBaseTool.ts
++++ b/packages/tools/src/tools/segmentation/LabelmapBaseTool.ts
+@@ -5,15 +5,11 @@ import {
+   Enums,
+   eventTarget,
+   BaseVolumeViewport,
+-  volumeLoader,
+ } from '@cornerstonejs/core';
+ import type { Types } from '@cornerstonejs/core';
+ 
+ import { BaseTool } from '../base';
+-import type {
+-  LabelmapSegmentationDataStack,
+-  LabelmapSegmentationDataVolume,
+-} from '../../types/LabelmapTypes';
++import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+ import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+ import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
+@@ -21,7 +17,6 @@ import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segm
+ import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+ import { getClosestImageIdForStackViewport } from '../../utilities/annotationHydration';
+ import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+-import { getStackSegmentationImageIdsForViewport } from '../../stateManagement/segmentation/getStackSegmentationImageIdsForViewport';
+ import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
+ import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
+ import { StrategyCallbacks } from '../../enums';
+@@ -189,7 +184,6 @@ export default class LabelmapBaseTool extends BaseTool {
+     representationData,
+     segmentsLocked,
+     segmentationId,
+-    volumeOperation = false,
+   }): EditDataReturnType {
+     if (viewport instanceof BaseVolumeViewport) {
+       const { volumeId } = representationData[
+@@ -243,67 +237,10 @@ export default class LabelmapBaseTool extends BaseTool {
+         return;
+       }
+ 
+-      // I hate this, but what can you do sometimes
+-      if (
+-        this.configuration.activeStrategy.includes('SPHERE') ||
+-        volumeOperation
+-      ) {
+-        const referencedImageIds = viewport.getImageIds();
+-        const isValidVolumeForSphere =
+-          csUtils.isValidVolume(referencedImageIds);
+-
+-        if (!isValidVolumeForSphere) {
+-          throw new Error(
+-            'Volume is not reconstructable for sphere manipulation'
+-          );
+-        }
+-
+-        const volumeId = `${segmentationId}_${viewport.id}`;
+-        const volume = cache.getVolume(volumeId);
+-        if (volume) {
+-          return {
+-            imageId: segmentationImageId,
+-            segmentsLocked,
+-            override: {
+-              voxelManager: volume.voxelManager,
+-              imageData: volume.imageData,
+-            },
+-          };
+-        } else {
+-          // We don't need to call `getStackSegmentationImageIdsForViewport` here
+-          // because we've already ensured the stack constructs a volume,
+-          // making the scenario for multi-image non-consistent metadata is not likely.
+-          const { imageIds: labelmapImageIds } =
+-            representationData.Labelmap as LabelmapSegmentationDataStack;
+-
+-          if (!labelmapImageIds || labelmapImageIds.length === 1) {
+-            return {
+-              imageId: segmentationImageId,
+-              segmentsLocked,
+-            };
+-          }
+-
+-          // it will return the cached volume if it already exists
+-          const volume = volumeLoader.createAndCacheVolumeFromImagesSync(
+-            volumeId,
+-            labelmapImageIds
+-          );
+-
+-          return {
+-            imageId: segmentationImageId,
+-            segmentsLocked,
+-            override: {
+-              voxelManager: volume.voxelManager,
+-              imageData: volume.imageData,
+-            },
+-          };
+-        }
+-      } else {
+-        return {
+-          imageId: segmentationImageId,
+-          segmentsLocked,
+-        };
+-      }
++      return {
++        imageId: segmentationImageId,
++        segmentsLocked,
++      };
+     }
+   }
+ 
+@@ -389,6 +326,7 @@ export default class LabelmapBaseTool extends BaseTool {
+       toolGroupId: this.toolGroupId,
+       segmentationId,
+       viewUp,
++      activeStrategy: this.configuration.activeStrategy,
+       strategySpecificConfiguration:
+         this.configuration.strategySpecificConfiguration,
+       // Provide the preview information so that data can be used directly
+diff --git a/packages/tools/src/tools/segmentation/SphereScissorsTool.ts b/packages/tools/src/tools/segmentation/SphereScissorsTool.ts
+index 6bf7a82cf..d004d4eb6 100644
+--- a/packages/tools/src/tools/segmentation/SphereScissorsTool.ts
++++ b/packages/tools/src/tools/segmentation/SphereScissorsTool.ts
+@@ -184,7 +184,6 @@ class SphereScissorsTool extends LabelmapBaseTool {
+       representationData,
+       segmentsLocked,
+       segmentationId,
+-      volumeOperation: true,
+     });
+ 
+     this.editData = {
+diff --git a/packages/tools/src/tools/segmentation/strategies/BrushStrategy.ts b/packages/tools/src/tools/segmentation/strategies/BrushStrategy.ts
+index 663dee7a0..8a3037306 100644
+--- a/packages/tools/src/tools/segmentation/strategies/BrushStrategy.ts
++++ b/packages/tools/src/tools/segmentation/strategies/BrushStrategy.ts
+@@ -33,6 +33,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
+   previewSegmentIndex?: number;
+ 
+   brushStrategy: BrushStrategy;
++  activeStrategy: string;
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   configuration?: Record<string, any>;
+   memo?: LabelmapMemo;
+@@ -66,13 +67,13 @@ export type Composition = CompositionFunction | CompositionInstance;
+  *
+  * These combine to form an actual brush:
+  *
+- * Circle - convexFill, defaultSetValue, inEllipse/boundingbox ellipse, empty threshold
+- * Rectangle - - convexFill, defaultSetValue, inRectangle/boundingbox rectangle, empty threshold
++ * Circle - convexFill, defaultSetValue, inEllipse/bounding box ellipse, empty threshold
++ * Rectangle - - convexFill, defaultSetValue, inRectangle/bounding box rectangle, empty threshold
+  * might also get parameter values from input,  init for setup of convexFill
+  *
+  * The pieces are combined to generate a strategyFunction, which performs
+  * the actual strategy operation, as well as various callbacks for the strategy
+- * to allow more control over behaviour in the specific strategy (such as displaying
++ * to allow more control over behavior in the specific strategy (such as displaying
+  * preview)
+  */
+ 
+@@ -119,6 +120,13 @@ export default class BrushStrategy {
+     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
+       StrategyCallbacks.ComputeInnerCircleRadius
+     ),
++    [StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation]:
++      addListMethod(
++        StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation
++      ),
++    [StrategyCallbacks.EnsureImageVolumeFor3DManipulation]: addListMethod(
++      StrategyCallbacks.EnsureImageVolumeFor3DManipulation
++    ),
+     [StrategyCallbacks.AddPreview]: addListMethod(StrategyCallbacks.AddPreview),
+     [StrategyCallbacks.GetStatistics]: addSingletonMethod(
+       StrategyCallbacks.GetStatistics
+@@ -227,7 +235,9 @@ export default class BrushStrategy {
+     operationName?: string
+   ): InitializedOperationData {
+     const { viewport } = enabledElement;
+-    const data = getStrategyData({ operationData, viewport });
++
++    // pass in the strategy to getStrategyData
++    const data = getStrategyData({ operationData, viewport, strategy: this });
+ 
+     if (!data) {
+       console.warn('No data found for BrushStrategy');
+@@ -240,14 +250,10 @@ export default class BrushStrategy {
+       segmentationImageData,
+     } = data;
+ 
+-    const segmentationVoxelManagerToUse =
+-      operationData.override?.voxelManager || segmentationVoxelManager;
+-    const segmentationImageDataToUse =
+-      operationData.override?.imageData || segmentationImageData;
+-
+     const previewVoxelManager =
+       operationData.preview?.previewVoxelManager ||
+       VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
++
+     const previewEnabled = !!operationData.previewColors;
+     const previewSegmentIndex = previewEnabled ? 255 : undefined;
+ 
+@@ -257,8 +263,8 @@ export default class BrushStrategy {
+       ...operationData,
+       enabledElement,
+       imageVoxelManager,
+-      segmentationVoxelManager: segmentationVoxelManagerToUse,
+-      segmentationImageData: segmentationImageDataToUse,
++      segmentationVoxelManager,
++      segmentationImageData,
+       previewVoxelManager,
+       viewport,
+       centerWorld: null,
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/dynamicThreshold.ts b/packages/tools/src/tools/segmentation/strategies/compositions/dynamicThreshold.ts
+index 1a801a9f7..4caa90a74 100644
+--- a/packages/tools/src/tools/segmentation/strategies/compositions/dynamicThreshold.ts
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/dynamicThreshold.ts
+@@ -20,12 +20,13 @@ export default {
+       strategySpecificConfiguration,
+       segmentationVoxelManager,
+       imageVoxelManager,
++      activeStrategy,
+       segmentIndex,
+       viewport,
+     } = operationData;
+-    const { THRESHOLD } = strategySpecificConfiguration;
++    const config = strategySpecificConfiguration[activeStrategy] || {};
+ 
+-    if (!THRESHOLD?.isDynamic || !centerIJK || !segmentIndex) {
++    if (!config?.isDynamic || !centerIJK || !segmentIndex) {
+       return;
+     }
+     if (
+@@ -36,7 +37,7 @@ export default {
+     }
+ 
+     const boundsIJK = segmentationVoxelManager.getBoundsIJK();
+-    const { threshold: oldThreshold, dynamicRadius = 0 } = THRESHOLD;
++    const { threshold: oldThreshold, dynamicRadius = 0 } = config;
+     const useDelta = oldThreshold ? 0 : dynamicRadius;
+     const { viewPlaneNormal } = viewport.getCamera();
+ 
+@@ -73,17 +74,21 @@ export default {
+     };
+     imageVoxelManager.forEach(callback, { boundsIJK: nestedBounds });
+ 
+-    operationData.strategySpecificConfiguration.THRESHOLD.threshold = threshold;
++    config.threshold = threshold;
+   },
+   // Setup a clear threshold value on mouse/touch down
+   [StrategyCallbacks.OnInteractionStart]: (
+     operationData: InitializedOperationData
+   ) => {
+-    const { strategySpecificConfiguration, preview } = operationData;
+-    if (!strategySpecificConfiguration?.THRESHOLD?.isDynamic && !preview) {
++    const { strategySpecificConfiguration, preview, activeStrategy } =
++      operationData;
++
++    const config = strategySpecificConfiguration[activeStrategy] || {};
++    if (!config?.isDynamic && !preview) {
+       return;
+     }
+-    strategySpecificConfiguration.THRESHOLD.threshold = null;
++
++    config.threshold = null;
+   },
+   /**
+    * It computes the inner circle radius in canvas coordinates and stores it
+@@ -94,8 +99,9 @@ export default {
+     operationData: InitializedOperationData
+   ) => {
+     const { configuration, viewport } = operationData;
+-    const { THRESHOLD: { dynamicRadius = 0 } = {} } =
+-      configuration.strategySpecificConfiguration || {};
++    const { strategySpecificConfiguration, activeStrategy } = configuration;
++    const { dynamicRadius = 0 } =
++      strategySpecificConfiguration[activeStrategy] || {};
+ 
+     if (dynamicRadius === 0) {
+       return;
+@@ -125,11 +131,6 @@ export default {
+       centerCanvas[0] - offSetCenterCanvas[0]
+     );
+ 
+-    // this is a bit of a hack, since we have switched to using THRESHOLD
+-    // as strategy but really strategy names are CIRCLE_THRESHOLD and SPHERE_THRESHOLD
+-    // and we can't really change the name of the strategy in the configuration
+-    const { strategySpecificConfiguration, activeStrategy } = configuration;
+-
+     if (!strategySpecificConfiguration[activeStrategy]) {
+       strategySpecificConfiguration[activeStrategy] = {};
+     }
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/ensureImageVolume.ts b/packages/tools/src/tools/segmentation/strategies/compositions/ensureImageVolume.ts
+new file mode 100644
+index 000000000..6883daaee
+--- /dev/null
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/ensureImageVolume.ts
+@@ -0,0 +1,32 @@
++import { cache, utilities as csUtils, volumeLoader } from '@cornerstonejs/core';
++import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
++
++export default {
++  [StrategyCallbacks.EnsureImageVolumeFor3DManipulation]: (data) => {
++    const { operationData, viewport } = data;
++
++    const referencedImageIds = viewport.getImageIds();
++    const isValidVolumeForSphere = csUtils.isValidVolume(referencedImageIds);
++    if (!isValidVolumeForSphere) {
++      throw new Error('Volume is not reconstructable for sphere manipulation');
++    }
++
++    const volumeId = cache.generateVolumeId(referencedImageIds);
++
++    let imageVolume = cache.getVolume(volumeId);
++    if (imageVolume) {
++      operationData.imageVoxelManager = imageVolume.voxelManager;
++      operationData.imageData = imageVolume.imageData;
++      return;
++    }
++
++    // it will return the cached volume if it already exists
++    imageVolume = volumeLoader.createAndCacheVolumeFromImagesSync(
++      volumeId,
++      referencedImageIds
++    );
++
++    operationData.imageVoxelManager = imageVolume.voxelManager;
++    operationData.imageData = imageVolume.imageData;
++  },
++};
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/ensureSegmentationVolume.ts b/packages/tools/src/tools/segmentation/strategies/compositions/ensureSegmentationVolume.ts
+new file mode 100644
+index 000000000..039f36168
+--- /dev/null
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/ensureSegmentationVolume.ts
+@@ -0,0 +1,22 @@
++import { utilities } from '@cornerstonejs/core';
++import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
++import getOrCreateSegmentationVolume from '../../../../utilities/segmentation/getOrCreateSegmentationVolume';
++
++export default {
++  [StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation]: (data) => {
++    const { operationData, viewport } = data;
++    const { segmentationId } = operationData;
++
++    const referencedImageIds = viewport.getImageIds();
++    const isValidVolumeForSphere = utilities.isValidVolume(referencedImageIds);
++    if (!isValidVolumeForSphere) {
++      throw new Error('Volume is not reconstructable for sphere manipulation');
++    }
++
++    const segVolume = getOrCreateSegmentationVolume(segmentationId);
++
++    operationData.segmentationVoxelManager = segVolume.voxelManager;
++    operationData.segmentationImageData = segVolume.imageData;
++    return;
++  },
++};
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/index.ts b/packages/tools/src/tools/segmentation/strategies/compositions/index.ts
+index d809b2c8f..d22ee1ab8 100644
+--- a/packages/tools/src/tools/segmentation/strategies/compositions/index.ts
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/index.ts
+@@ -8,6 +8,8 @@ import setValue from './setValue';
+ import threshold from './threshold';
+ import labelmapStatistics from './labelmapStatistics';
+ import labelmapInterpolation from './labelmapInterpolation';
++import ensureSegmentationVolumeFor3DManipulation from './ensureSegmentationVolume';
++import ensureImageVolumeFor3DManipulation from './ensureImageVolume';
+ 
+ export default {
+   determineSegmentIndex,
+@@ -20,4 +22,6 @@ export default {
+   threshold,
+   labelmapStatistics,
+   labelmapInterpolation,
++  ensureSegmentationVolumeFor3DManipulation,
++  ensureImageVolumeFor3DManipulation,
+ };
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/islandRemovalComposition.ts b/packages/tools/src/tools/segmentation/strategies/compositions/islandRemovalComposition.ts
+index a3a7cf90a..8c6821122 100644
+--- a/packages/tools/src/tools/segmentation/strategies/compositions/islandRemovalComposition.ts
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/islandRemovalComposition.ts
+@@ -15,15 +15,18 @@ export default {
+     operationData: InitializedOperationData
+   ) => {
+     const {
+-      strategySpecificConfiguration,
+       previewSegmentIndex,
+       segmentIndex,
+       viewport,
+       previewVoxelManager,
+       segmentationVoxelManager,
++      activeStrategy,
+     } = operationData;
+ 
+-    if (!strategySpecificConfiguration.THRESHOLD || segmentIndex === null) {
++    if (
++      activeStrategy !== 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL' ||
++      segmentIndex === null
++    ) {
+       return;
+     }
+ 
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/labelmapInterpolation.ts b/packages/tools/src/tools/segmentation/strategies/compositions/labelmapInterpolation.ts
+index 6fc650fce..8a30886a5 100644
+--- a/packages/tools/src/tools/segmentation/strategies/compositions/labelmapInterpolation.ts
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/labelmapInterpolation.ts
+@@ -58,7 +58,10 @@ export default {
+ 
+     let inputImage;
+     try {
+-      inputImage = await getItkImage(segmentationImageData, 'interpolation');
++      inputImage = await getItkImage(segmentationImageData, {
++        imageName: 'interpolation',
++        scalarData: segmentationVoxelManager.getCompleteScalarDataArray(),
++      });
+       if (!inputImage) {
+         throw new Error('Failed to get ITK image');
+       }
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/labelmapStatistics.ts b/packages/tools/src/tools/segmentation/strategies/compositions/labelmapStatistics.ts
+index 49ee1514c..ff04e80cf 100644
+--- a/packages/tools/src/tools/segmentation/strategies/compositions/labelmapStatistics.ts
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/labelmapStatistics.ts
+@@ -1,15 +1,6 @@
+ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+ import type { InitializedOperationData } from '../BrushStrategy';
+-import VolumetricCalculator from '../../../../utilities/segmentation/VolumetricCalculator';
+-import { getActiveSegmentIndex } from '../../../../stateManagement/segmentation/getActiveSegmentIndex';
+-import { getStrategyData } from '../utils/getStrategyData';
+-import { utilities, type Types } from '@cornerstonejs/core';
+-import { getPixelValueUnits } from '../../../../utilities/getPixelValueUnits';
+-import { AnnotationTool } from '../../../base';
+-import { isViewportPreScaled } from '../../../../utilities/viewport/isViewportPreScaled';
+-
+-// Radius for a volume of 10, eg 1 cm^3 = 1000 mm^3
+-const radiusForVol1 = Math.pow((3 * 1000) / (4 * Math.PI), 1 / 3);
++import getStatistics from '../../../../utilities/segmentation/getStatistics';
+ 
+ /**
+  * Compute basic labelmap segmentation statistics.
+@@ -20,139 +11,12 @@ export default {
+     operationData: InitializedOperationData,
+     options?: { indices?: number | number[] }
+   ) {
+-    const { viewport } = enabledElement;
+-    let { indices } = options;
+-    const { segmentationId } = operationData;
+-    if (!indices) {
+-      indices = [getActiveSegmentIndex(segmentationId)];
+-    } else if (!Array.isArray(indices)) {
+-      // Include the preview index
+-      indices = [indices, 255];
+-    }
+-    const indicesArr = indices as number[];
+-
+-    const {
+-      segmentationVoxelManager,
+-      imageVoxelManager,
+-      segmentationImageData,
+-    } = getStrategyData({
+-      operationData,
+-      viewport,
++    const { indices } = options;
++    const { segmentationId, viewport } = operationData;
++    getStatistics({
++      segmentationId,
++      segmentIndices: indices,
++      viewportId: viewport.id,
+     });
+-
+-    const spacing = segmentationImageData.getSpacing();
+-
+-    const { boundsIJK: boundsOrig } = segmentationVoxelManager;
+-    if (!boundsOrig) {
+-      return VolumetricCalculator.getStatistics({ spacing });
+-    }
+-
+-    segmentationVoxelManager.forEach((voxel) => {
+-      const { value, pointIJK } = voxel;
+-      if (indicesArr.indexOf(value) === -1) {
+-        return;
+-      }
+-      const imageValue = imageVoxelManager.getAtIJKPoint(pointIJK);
+-      VolumetricCalculator.statsCallback({ value: imageValue, pointIJK });
+-    });
+-    const targetId = viewport.getViewReferenceId();
+-    const modalityUnitOptions = {
+-      isPreScaled: isViewportPreScaled(viewport, targetId),
+-      isSuvScaled: AnnotationTool.isSuvScaled(
+-        viewport,
+-        targetId,
+-        viewport.getCurrentImageId()
+-      ),
+-    };
+-
+-    const imageData = (viewport as Types.IVolumeViewport).getImageData();
+-    const unit = getPixelValueUnits(
+-      imageData.metadata.Modality,
+-      viewport.getCurrentImageId(),
+-      modalityUnitOptions
+-    );
+-
+-    const stats = VolumetricCalculator.getStatistics({ spacing, unit });
+-    const { maxIJKs } = stats;
+-    if (!maxIJKs?.length) {
+-      return stats;
+-    }
+-
+-    // The calculation isn't very good at setting units
+-    stats.mean.unit = unit;
+-    stats.max.unit = unit;
+-    stats.min.unit = unit;
+-
+-    if (unit !== 'SUV') {
+-      return stats;
+-    }
+-
+-    // Get the IJK rounded radius, not using less than 1, and using the
+-    // radius for the spacing given the desired mm spacing of 10
+-    // Add 10% to the radius to account for whole pixel in/out issues
+-    const radiusIJK = spacing.map((s) =>
+-      Math.max(1, Math.round((1.1 * radiusForVol1) / s))
+-    );
+-    for (const testMax of maxIJKs) {
+-      const testStats = getSphereStats(
+-        testMax,
+-        radiusIJK,
+-        segmentationImageData,
+-        imageVoxelManager,
+-        spacing
+-      );
+-      if (!testStats) {
+-        continue;
+-      }
+-      const { mean } = testStats;
+-      // @ts-expect-error - TODO: fix this
+-      if (!stats.peakValue || stats.peakValue.value <= mean.value) {
+-        // @ts-expect-error - TODO: fix this
+-        stats.peakValue = {
+-          name: 'peakValue',
+-          label: 'Peak Value',
+-          value: mean.value,
+-          unit,
+-        };
+-      }
+-    }
+-
+-    return stats;
+   },
+ };
+-
+-/**
+- * Gets the statistics for a 1 cm^3 sphere centered on radiusIJK.
+- * Assumes the segmentation and pixel data are co-incident.
+- */
+-function getSphereStats(testMax, radiusIJK, segData, imageVoxels, spacing) {
+-  const { pointIJK: centerIJK } = testMax;
+-  const boundsIJK = centerIJK.map((ijk, idx) => [
+-    ijk - radiusIJK[idx],
+-    ijk + radiusIJK[idx],
+-  ]);
+-  const testFunction = (_pointLPS, pointIJK) => {
+-    const i = (pointIJK[0] - centerIJK[0]) / radiusIJK[0];
+-    const j = (pointIJK[1] - centerIJK[1]) / radiusIJK[1];
+-    const k = (pointIJK[2] - centerIJK[2]) / radiusIJK[2];
+-    const radius = i * i + j * j + k * k;
+-    return radius <= 1;
+-  };
+-  const statsFunction = ({ pointIJK, pointLPS }) => {
+-    const value = imageVoxels.getAtIJKPoint(pointIJK);
+-    if (value === undefined) {
+-      return;
+-    }
+-    VolumetricCalculator.statsCallback({ value, pointLPS, pointIJK });
+-  };
+-  VolumetricCalculator.statsInit({ storePointData: false });
+-  // pointInShapeCallback(segData, testFunction, statsFunction, boundsIJK);
+-
+-  utilities.pointInShapeCallback(segData, {
+-    pointInShapeFn: testFunction,
+-    callback: statsFunction,
+-    boundsIJK,
+-  });
+-
+-  return VolumetricCalculator.getStatistics({ spacing });
+-}
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/preview.ts b/packages/tools/src/tools/segmentation/strategies/compositions/preview.ts
+index 8c36fd84e..97acf7c06 100644
+--- a/packages/tools/src/tools/segmentation/strategies/compositions/preview.ts
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/preview.ts
+@@ -122,9 +122,11 @@ export default {
+       segmentationId,
+       preview,
+     } = operationData || {};
++
+     if (previewSegmentIndex === undefined) {
+       return;
+     }
++
+     const segmentIndex = preview?.segmentIndex ?? operationData.segmentIndex;
+     if (!previewVoxelManager || previewVoxelManager.modifiedSlices.size === 0) {
+       return;
+diff --git a/packages/tools/src/tools/segmentation/strategies/compositions/threshold.ts b/packages/tools/src/tools/segmentation/strategies/compositions/threshold.ts
+index f4fb26c09..146618903 100644
+--- a/packages/tools/src/tools/segmentation/strategies/compositions/threshold.ts
++++ b/packages/tools/src/tools/segmentation/strategies/compositions/threshold.ts
+@@ -12,22 +12,24 @@ export default {
+   [StrategyCallbacks.CreateIsInThreshold]: (
+     operationData: InitializedOperationData
+   ) => {
+-    const { imageVoxelManager, strategySpecificConfiguration, segmentIndex } =
+-      operationData;
++    const {
++      imageVoxelManager,
++      strategySpecificConfiguration,
++      segmentIndex,
++      activeStrategy,
++    } = operationData;
++
+     if (!strategySpecificConfiguration || !segmentIndex) {
+       return;
+     }
+-    return (index) => {
+-      const { THRESHOLD, THRESHOLD_INSIDE_CIRCLE } =
+-        strategySpecificConfiguration;
+ 
++    return (index) => {
+       const voxelValue = imageVoxelManager.getAtIndex(index);
+       const gray = Array.isArray(voxelValue)
+         ? vec3.length(voxelValue as Types.Point3)
+         : voxelValue;
+-      // Prefer the generic version of the THRESHOLD configuration, but fallback
+-      // to the older THRESHOLD_INSIDE_CIRCLE version.
+-      const { threshold } = THRESHOLD || THRESHOLD_INSIDE_CIRCLE || {};
++      const { threshold } = strategySpecificConfiguration[activeStrategy] || {};
++
+       if (!threshold?.length) {
+         return true;
+       }
+diff --git a/packages/tools/src/tools/segmentation/strategies/fillSphere.ts b/packages/tools/src/tools/segmentation/strategies/fillSphere.ts
+index 34886098a..31b3327c8 100644
+--- a/packages/tools/src/tools/segmentation/strategies/fillSphere.ts
++++ b/packages/tools/src/tools/segmentation/strategies/fillSphere.ts
+@@ -58,7 +58,8 @@ const SPHERE_STRATEGY = new BrushStrategy(
+   sphereComposition,
+   compositions.determineSegmentIndex,
+   compositions.preview,
+-  compositions.labelmapStatistics
++  compositions.labelmapStatistics,
++  compositions.ensureSegmentationVolumeFor3DManipulation
+ );
+ 
+ /**
+@@ -73,7 +74,9 @@ const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
+   'SphereThreshold',
+   ...SPHERE_STRATEGY.compositions,
+   compositions.dynamicThreshold,
+-  compositions.threshold
++  compositions.threshold,
++  compositions.ensureSegmentationVolumeFor3DManipulation,
++  compositions.ensureImageVolumeFor3DManipulation
+ );
+ 
+ const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
+@@ -81,7 +84,9 @@ const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
+   ...SPHERE_STRATEGY.compositions,
+   compositions.dynamicThreshold,
+   compositions.threshold,
+-  compositions.islandRemoval
++  compositions.islandRemoval,
++  compositions.ensureSegmentationVolumeFor3DManipulation,
++  compositions.ensureImageVolumeFor3DManipulation
+ );
+ 
+ /**
+diff --git a/packages/tools/src/tools/segmentation/strategies/utils/getItkImage.ts b/packages/tools/src/tools/segmentation/strategies/utils/getItkImage.ts
+index 5c2d4cda6..1d2f38253 100644
+--- a/packages/tools/src/tools/segmentation/strategies/utils/getItkImage.ts
++++ b/packages/tools/src/tools/segmentation/strategies/utils/getItkImage.ts
+@@ -1,5 +1,3 @@
+-import { peerImport } from '@cornerstonejs/core';
+-
+ /**
+  * Get the ITK Image from the image data
+  *
+@@ -9,12 +7,14 @@ import { peerImport } from '@cornerstonejs/core';
+  */
+ export default async function getItkImage(
+   imageData,
+-  imageName?: string
++  options = { imageName: 'itkImage', scalarData: null }
+ ): Promise<unknown> {
++  const { imageName, scalarData } = options;
++
+   let Image, ImageType, IntTypes, FloatTypes, PixelTypes;
+ 
+   try {
+-    const itkModule = await peerImport('itk-wasm');
++    const itkModule = await import('itk-wasm');
+     if (!itkModule) {
+       throw new Error('Module not found');
+     }
+@@ -39,9 +39,7 @@ export default async function getItkImage(
+     Float64: FloatTypes.Float64,
+   };
+ 
+-  const { voxelManager } = imageData.get('voxelManager');
+   const { numberOfComponents } = imageData.get('numberOfComponents');
+-  const scalarData = voxelManager.getCompleteScalarDataArray();
+ 
+   const dimensions = imageData.getDimensions();
+   const origin = imageData.getOrigin();
+@@ -52,6 +50,7 @@ export default async function getItkImage(
+     .replace(/^Ui/, 'UI')
+     .replace(/Array$/, '');
+   const metadata = undefined;
++
+   const imageType = new ImageType(
+     dimensions.length,
+     dataTypesMap[dataType],
+@@ -68,8 +67,5 @@ export default async function getItkImage(
+   image.metadata = metadata;
+   image.data = scalarData;
+ 
+-  // image.data = new scalarData.constructor(scalarData.length);
+-  // image.data.set(scalarData, 0);
+-
+   return image;
+ }
+diff --git a/packages/tools/src/tools/segmentation/strategies/utils/getStrategyData.ts b/packages/tools/src/tools/segmentation/strategies/utils/getStrategyData.ts
+index 31ffb3c39..ecb47a2f4 100644
+--- a/packages/tools/src/tools/segmentation/strategies/utils/getStrategyData.ts
++++ b/packages/tools/src/tools/segmentation/strategies/utils/getStrategyData.ts
+@@ -8,77 +8,133 @@ import type { LabelmapToolOperationDataStack } from '../../../../types';
+ import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
+ import { getLabelmapActorEntry } from '../../../../stateManagement/segmentation/helpers';
+ 
+-function getStrategyData({ operationData, viewport }) {
+-  let segmentationImageData, segmentationScalarData, imageScalarData;
+-  let imageVoxelManager;
+-  let segmentationVoxelManager;
++/**
++ * Get strategy data for volume viewport
++ * @param operationData - The operation data containing volumeId and referencedVolumeId
++ * @returns The strategy data for volume viewport or null if error
++ */
++function getStrategyDataForVolumeViewport({ operationData }) {
++  const { volumeId } = operationData;
++
++  if (!volumeId) {
++    const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
++      detail: {
++        type: 'Segmentation',
++        message: 'No volume id found for the segmentation',
++      },
++      cancelable: true,
++    });
++    eventTarget.dispatchEvent(event);
++    return null;
++  }
+ 
+-  if (viewport instanceof BaseVolumeViewport) {
+-    const { volumeId, referencedVolumeId } = operationData;
+-
+-    if (!volumeId) {
+-      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+-        detail: {
+-          type: 'Segmentation',
+-          message: 'No volume id found for the segmentation',
+-        },
+-        cancelable: true,
+-      });
+-      eventTarget.dispatchEvent(event);
+-      return null;
+-    }
++  const segmentationVolume = cache.getVolume(volumeId);
+ 
+-    const segmentationVolume = cache.getVolume(volumeId);
++  if (!segmentationVolume) {
++    return null;
++  }
+ 
+-    if (!segmentationVolume) {
+-      return;
+-    }
+-    segmentationVoxelManager = segmentationVolume.voxelManager;
++  const referencedVolumeId = segmentationVolume.referencedVolumeId;
+ 
+-    // we only need the referenceVolumeId if we do thresholding
+-    // but for other operations we don't need it so make it optional
+-    if (referencedVolumeId) {
+-      const imageVolume = cache.getVolume(referencedVolumeId);
+-      imageVoxelManager = imageVolume.voxelManager;
+-    }
++  const segmentationVoxelManager = segmentationVolume.voxelManager;
++  let imageVoxelManager;
++  let imageData;
++
++  // we only need the referenceVolumeId if we do thresholding
++  // but for other operations we don't need it so make it optional
++  if (referencedVolumeId) {
++    const imageVolume = cache.getVolume(referencedVolumeId);
++    imageVoxelManager = imageVolume.voxelManager;
++    imageData = imageVolume.imageData;
++  }
+ 
+-    ({ imageData: segmentationImageData } = segmentationVolume);
+-    // segmentationDimensions = segmentationVolume.dimensions;
+-  } else {
+-    const { segmentationId } = operationData as LabelmapToolOperationDataStack;
+-
+-    const labelmapImageId = getCurrentLabelmapImageIdForViewport(
+-      viewport.id,
+-      segmentationId
+-    );
+-    if (!labelmapImageId) {
+-      return;
+-    }
++  const { imageData: segmentationImageData } = segmentationVolume;
+ 
+-    const currentImageId = viewport.getCurrentImageId();
+-    if (!currentImageId) {
+-      return;
+-    }
++  return {
++    segmentationImageData,
++    segmentationVoxelManager,
++    segmentationScalarData: null,
++    imageScalarData: null,
++    imageVoxelManager,
++    imageData,
++  };
++}
+ 
+-    const actorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
++/**
++ * Get strategy data for stack viewport
++ * @param operationData - The operation data containing segmentationId and imageId
++ * @param viewport - The viewport instance
++ * @returns The strategy data for stack viewport or null if error
++ */
++function getStrategyDataForStackViewport({
++  operationData,
++  viewport,
++  strategy,
++}) {
++  const { segmentationId } = operationData as LabelmapToolOperationDataStack;
++
++  const labelmapImageId = getCurrentLabelmapImageIdForViewport(
++    viewport.id,
++    segmentationId
++  );
++  if (!labelmapImageId) {
++    return null;
++  }
+ 
+-    if (!actorEntry) {
+-      return;
+-    }
++  const currentImageId = viewport.getCurrentImageId();
++  if (!currentImageId) {
++    return null;
++  }
++
++  const actorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
++
++  if (!actorEntry) {
++    return null;
++  }
+ 
++  let segmentationImageData;
++  let segmentationVoxelManager;
++  let segmentationScalarData;
++  let imageScalarData;
++  let imageVoxelManager;
++  let imageData;
++  if (strategy.ensureSegmentationVolumeFor3DManipulation) {
++    // Todo: I don't know how to handle this, seems like strategies cannot return anything
++    // and just manipulate the operationData?
++    strategy.ensureSegmentationVolumeFor3DManipulation({
++      operationData,
++      viewport,
++    });
++
++    segmentationVoxelManager = operationData.segmentationVoxelManager;
++    segmentationImageData = operationData.segmentationImageData;
++    segmentationScalarData = null;
++  } else {
+     const currentSegImage = cache.getImage(labelmapImageId);
+     segmentationImageData = actorEntry.actor.getMapper().getInputData();
+     segmentationVoxelManager = currentSegImage.voxelManager;
++
+     const currentSegmentationImageId = operationData.imageId;
+ 
+     const segmentationImage = cache.getImage(currentSegmentationImageId);
+     if (!segmentationImage) {
+-      return;
++      return null;
+     }
+     segmentationScalarData = segmentationImage.getPixelData?.();
++  }
++
++  if (strategy.ensureImageVolumeFor3DManipulation) {
++    strategy.ensureImageVolumeFor3DManipulation({
++      operationData,
++      viewport,
++    });
+ 
++    imageVoxelManager = operationData.imageVoxelManager;
++    imageScalarData = operationData.imageScalarData;
++    imageData = operationData.imageData;
++  } else {
+     const image = cache.getImage(currentImageId);
+-    const imageData = image ? null : viewport.getImageData();
++    imageData = image ? null : viewport.getImageData();
+ 
+     // VERY IMPORTANT
+     // This is the pixel data of the image that is being segmented in the cache
+@@ -88,15 +144,26 @@ function getStrategyData({ operationData, viewport }) {
+   }
+ 
+   return {
+-    // image data
+     segmentationImageData,
+-    // scalar data
+     segmentationScalarData,
+     imageScalarData,
+-    // voxel managers
+     segmentationVoxelManager,
+     imageVoxelManager,
++    imageData,
+   };
+ }
+ 
++/**
++ * Get strategy data based on viewport type
++ * @param params - Object containing operationData and viewport
++ * @returns The strategy data or null if error
++ */
++function getStrategyData({ operationData, viewport, strategy }) {
++  if (viewport instanceof BaseVolumeViewport) {
++    return getStrategyDataForVolumeViewport({ operationData });
++  }
++
++  return getStrategyDataForStackViewport({ operationData, viewport, strategy });
++}
++
+ export { getStrategyData };
+diff --git a/packages/tools/src/types/CalculatorTypes.ts b/packages/tools/src/types/CalculatorTypes.ts
+index e78be7057..b68dfc566 100644
+--- a/packages/tools/src/types/CalculatorTypes.ts
++++ b/packages/tools/src/types/CalculatorTypes.ts
+@@ -5,6 +5,8 @@ type Statistics = {
+   label?: string;
+   value: number | number[];
+   unit: null | string;
++  pointIJK?: Types.Point3;
++  pointLPS?: Types.Point3;
+ };
+ 
+ type NamedStatistics = {
+diff --git a/packages/tools/src/types/LabelmapToolOperationData.ts b/packages/tools/src/types/LabelmapToolOperationData.ts
+index 52e7c9acd..66dc30e6f 100644
+--- a/packages/tools/src/types/LabelmapToolOperationData.ts
++++ b/packages/tools/src/types/LabelmapToolOperationData.ts
+@@ -19,7 +19,7 @@ type LabelmapToolOperationData = {
+   viewUp: number[];
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   strategySpecificConfiguration: any;
+-  // constraintFn: (pointIJK: number) => boolean;
++  activeStrategy: string;
+   points: Types.Point3[];
+   voxelManager;
+   override: {
+diff --git a/packages/tools/src/utilities/getPixelValueUnits.ts b/packages/tools/src/utilities/getPixelValueUnits.ts
+index 31563602b..a56457ccf 100644
+--- a/packages/tools/src/utilities/getPixelValueUnits.ts
++++ b/packages/tools/src/utilities/getPixelValueUnits.ts
+@@ -5,6 +5,14 @@ type pixelUnitsOptions = {
+   isSuvScaled: boolean;
+ };
+ 
++function getPixelValueUnitsImageId(
++  imageId: string,
++  options: pixelUnitsOptions
++): string {
++  const generalSeriesModule = metaData.get('generalSeriesModule', imageId);
++  return getPixelValueUnits(generalSeriesModule.modality, imageId, options);
++}
++
+ /**
+  * Determines the appropriate pixel value units based on the image modality and options.
+  * @param modality - The modality of the image (e.g., 'CT', 'PT').
+@@ -57,4 +65,4 @@ function _handlePTModality(
+ }
+ 
+ export type { pixelUnitsOptions };
+-export { getPixelValueUnits };
++export { getPixelValueUnits, getPixelValueUnitsImageId };
+diff --git a/packages/tools/src/utilities/index.ts b/packages/tools/src/utilities/index.ts
+index fca1df2d2..cd4f16ae5 100644
+--- a/packages/tools/src/utilities/index.ts
++++ b/packages/tools/src/utilities/index.ts
+@@ -50,7 +50,10 @@ import { pointInSurroundingSphereCallback } from './pointInSurroundingSphereCall
+ const roundNumber = utilities.roundNumber;
+ import normalizeViewportPlane from './normalizeViewportPlane';
+ import IslandRemoval from './segmentation/islandRemoval';
+-import { getPixelValueUnits } from './getPixelValueUnits';
++import {
++  getPixelValueUnits,
++  getPixelValueUnitsImageId,
++} from './getPixelValueUnits';
+ 
+ export {
+   math,
+@@ -69,6 +72,7 @@ export {
+   getCalibratedProbeUnitsAndValue,
+   getCalibratedAspect,
+   getPixelValueUnits,
++  getPixelValueUnitsImageId,
+   segmentation,
+   contours,
+   triggerAnnotationRenderForViewportIds,
+diff --git a/packages/tools/src/utilities/math/basic/BasicStatsCalculator.ts b/packages/tools/src/utilities/math/basic/BasicStatsCalculator.ts
+index ab8255df0..460d405c3 100644
+--- a/packages/tools/src/utilities/math/basic/BasicStatsCalculator.ts
++++ b/packages/tools/src/utilities/math/basic/BasicStatsCalculator.ts
+@@ -9,6 +9,10 @@ export default class BasicStatsCalculator extends Calculator {
+   private static min = [Infinity];
+   private static sum = [0];
+   private static count = 0;
++  private static maxIJK = null;
++  private static maxLPS = null;
++  private static minIJK = null;
++  private static minLPS = null;
+ 
+   // Values for Welford's algorithm
+   private static runMean = [0];
+@@ -27,7 +31,11 @@ export default class BasicStatsCalculator extends Calculator {
+    * This callback is used when we verify if the point is in the annotation drawn
+    * so we can get every point in the shape to calculate the statistics
+    */
+-  static statsCallback = ({ value: newValue, pointLPS = null }): void => {
++  static statsCallback = ({
++    value: newValue,
++    pointLPS = null,
++    pointIJK = null,
++  }): void => {
+     if (
+       Array.isArray(newValue) &&
+       newValue.length > 1 &&
+@@ -56,7 +64,21 @@ export default class BasicStatsCalculator extends Calculator {
+       this.m2[idx] += delta * delta2;
+ 
+       this.min[idx] = Math.min(this.min[idx], value);
+-      this.max[idx] = Math.max(it, value);
++      if (value < this.min[idx]) {
++        this.min[idx] = value;
++        if (idx === 0) {
++          this.minIJK = pointIJK;
++          this.minLPS = pointLPS;
++        }
++      }
++
++      if (value > this.max[idx]) {
++        this.max[idx] = value;
++        if (idx === 0) {
++          this.maxIJK = pointIJK;
++          this.maxLPS = pointLPS;
++        }
++      }
+     });
+   };
+ 
+@@ -83,12 +105,16 @@ export default class BasicStatsCalculator extends Calculator {
+         label: 'Max Pixel',
+         value: singleArrayAsNumber(this.max),
+         unit,
++        pointIJK: this.maxIJK,
++        pointLPS: this.maxLPS,
+       },
+       min: {
+         name: 'min',
+         label: 'Min Pixel',
+         value: singleArrayAsNumber(this.min),
+         unit,
++        pointIJK: this.minIJK,
++        pointLPS: this.minLPS,
+       },
+       mean: {
+         name: 'mean',
+@@ -124,10 +150,13 @@ export default class BasicStatsCalculator extends Calculator {
+     this.max = [-Infinity];
+     this.min = [Infinity];
+     this.sum = [0];
+-    // this.sumSquares = [0];
+     this.m2 = [0];
+     this.runMean = [0];
+     this.count = 0;
++    this.maxIJK = null;
++    this.maxLPS = null;
++    this.minIJK = null;
++    this.minLPS = null;
+     this.pointsInShape = PointsManager.create3(1024);
+ 
+     return named;
+diff --git a/packages/tools/src/utilities/registerComputeWorker.ts b/packages/tools/src/utilities/registerComputeWorker.ts
+new file mode 100644
+index 000000000..fa2cbe8a6
+--- /dev/null
++++ b/packages/tools/src/utilities/registerComputeWorker.ts
+@@ -0,0 +1,35 @@
++import { getWebWorkerManager } from '@cornerstonejs/core';
++
++let registered = false;
++
++export function registerComputeWorker() {
++  if (registered) {
++    return;
++  }
++
++  registered = true;
++
++  const workerFn = () => {
++    // @ts-ignore
++    return new Worker(
++      // @ts-ignore
++      new URL('../workers/computeWorker.ts', import.meta.url),
++      {
++        name: 'compute',
++        type: 'module',
++      }
++    );
++  };
++
++  const workerManager = getWebWorkerManager();
++
++  const options = {
++    maxWorkerInstances: 1,
++    autoTerminateOnIdle: {
++      enabled: true,
++      idleTimeThreshold: 2000,
++    },
++  };
++
++  workerManager.registerWorker('compute', workerFn, options);
++}
+diff --git a/packages/tools/src/utilities/segmentation/VolumetricCalculator.ts b/packages/tools/src/utilities/segmentation/VolumetricCalculator.ts
+index e0573ab0a..fdc547c31 100644
+--- a/packages/tools/src/utilities/segmentation/VolumetricCalculator.ts
++++ b/packages/tools/src/utilities/segmentation/VolumetricCalculator.ts
+@@ -2,18 +2,11 @@ import type { Types } from '@cornerstonejs/core';
+ import type { NamedStatistics } from '../../types';
+ import { BasicStatsCalculator } from '../math/basic';
+ 
+-const TEST_MAX_LOCATIONS = 10;
+-
+ /**
+  * A basic stats calculator for volumetric data, generally for use with
+  * segmentations.
+  */
+ export default class VolumetricCalculator extends BasicStatsCalculator {
+-  /**
+-   * maxIJKs is a list of possible peak value locations based
+-   * on the statsCallback calls with the largest TEST_MAX_LOCATIONS values.
+-   */
+-  private static maxIJKs = [];
+   public static getStatistics(options: {
+     spacing?: number;
+     unit?: string;
+@@ -35,11 +28,8 @@ export default class VolumetricCalculator extends BasicStatsCalculator {
+       unit: volumeUnit,
+       name: 'volume',
+     };
+-    stats.maxIJKs = this.maxIJKs;
+ 
+     stats.array.push(stats.volume);
+-    // Reset all the calculated values to agree with the BasicStatsCalculator API
+-    this.maxIJKs = [];
+ 
+     return stats;
+   }
+@@ -53,27 +43,5 @@ export default class VolumetricCalculator extends BasicStatsCalculator {
+     pointIJK?: Types.Point3;
+   }) {
+     BasicStatsCalculator.statsCallback(data);
+-    const { value } = data;
+-    const { maxIJKs } = this;
+-    const { length } = maxIJKs;
+-    if (
+-      typeof value !== 'number' ||
+-      (length >= TEST_MAX_LOCATIONS && value < maxIJKs[0].value)
+-    ) {
+-      return;
+-    }
+-    if (!length || value >= maxIJKs[length - 1].value) {
+-      maxIJKs.push(data);
+-    } else {
+-      for (let i = 0; i < length; i++) {
+-        if (value <= maxIJKs[i].value) {
+-          maxIJKs.splice(i, 0, data);
+-          break;
+-        }
+-      }
+-    }
+-    if (length >= TEST_MAX_LOCATIONS) {
+-      maxIJKs.splice(0, 1);
+-    }
+   }
+ }
+diff --git a/packages/tools/src/utilities/segmentation/brushThresholdForToolGroup.ts b/packages/tools/src/utilities/segmentation/brushThresholdForToolGroup.ts
+index 53cb5df29..2a2580924 100644
+--- a/packages/tools/src/utilities/segmentation/brushThresholdForToolGroup.ts
++++ b/packages/tools/src/utilities/segmentation/brushThresholdForToolGroup.ts
+@@ -22,8 +22,14 @@ export function setBrushThresholdForToolGroup(
+   };
+ 
+   brushBasedToolInstances.forEach((tool) => {
+-    tool.configuration.strategySpecificConfiguration.THRESHOLD = {
+-      ...tool.configuration.strategySpecificConfiguration.THRESHOLD,
++    const activeStrategy = tool.configuration.activeStrategy;
++
++    if (!activeStrategy.toLowerCase().includes('threshold')) {
++      return;
++    }
++
++    tool.configuration.strategySpecificConfiguration[activeStrategy] = {
++      ...tool.configuration.strategySpecificConfiguration[activeStrategy],
+       ...configuration,
+     };
+   });
+@@ -35,19 +41,16 @@ export function setBrushThresholdForToolGroup(
+     return;
+   }
+ 
+-  const { renderingEngineId } = viewportsInfo[0];
+-
+   // Use helper to get array of viewportIds, or we just end up doing this mapping
+   // ourselves here.
+   const viewportIds = toolGroup.getViewportIds();
+ 
+-  const renderingEngine = getRenderingEngine(renderingEngineId);
+-
+   triggerAnnotationRenderForViewportIds(viewportIds);
+ }
+ 
+ export function getBrushThresholdForToolGroup(toolGroupId: string) {
+   const toolGroup = getToolGroup(toolGroupId);
++  debugger;
+ 
+   if (toolGroup === undefined) {
+     return;
+diff --git a/packages/tools/src/utilities/segmentation/getOrCreateSegmentationVolume.ts b/packages/tools/src/utilities/segmentation/getOrCreateSegmentationVolume.ts
+new file mode 100644
+index 000000000..ba7b4ef6e
+--- /dev/null
++++ b/packages/tools/src/utilities/segmentation/getOrCreateSegmentationVolume.ts
+@@ -0,0 +1,44 @@
++import { cache, volumeLoader, utilities } from '@cornerstonejs/core';
++import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
++import type {
++  LabelmapSegmentationDataStack,
++  LabelmapSegmentationDataVolume,
++} from '../../types/LabelmapTypes';
++
++function getOrCreateSegmentationVolume(segmentationId) {
++  const { representationData } = getSegmentation(segmentationId);
++  let { volumeId } =
++    representationData.Labelmap as LabelmapSegmentationDataVolume;
++
++  let segVolume;
++  if (volumeId) {
++    segVolume = cache.getVolume(volumeId);
++
++    if (segVolume) {
++      return segVolume;
++    }
++  }
++
++  const { imageIds: labelmapImageIds } =
++    representationData.Labelmap as LabelmapSegmentationDataStack;
++
++  volumeId = cache.generateVolumeId(labelmapImageIds);
++
++  // We don't need to call `getStackSegmentationImageIdsForViewport` here
++  // because we've already ensured the stack constructs a volume,
++  // making the scenario for multi-image non-consistent metadata is not likely.
++
++  if (!labelmapImageIds || labelmapImageIds.length === 1) {
++    return;
++  }
++
++  // it will return the cached volume if it already exists
++  segVolume = volumeLoader.createAndCacheVolumeFromImagesSync(
++    volumeId,
++    labelmapImageIds
++  );
++
++  return segVolume;
++}
++
++export default getOrCreateSegmentationVolume;
+diff --git a/packages/tools/src/utilities/segmentation/getStatistics.ts b/packages/tools/src/utilities/segmentation/getStatistics.ts
+new file mode 100644
+index 000000000..15abe46dd
+--- /dev/null
++++ b/packages/tools/src/utilities/segmentation/getStatistics.ts
+@@ -0,0 +1,221 @@
++import {
++  getEnabledElementByViewportId,
++  utilities,
++  getWebWorkerManager,
++  eventTarget,
++  Enums,
++  triggerEvent,
++} from '@cornerstonejs/core';
++import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
++import VolumetricCalculator from './VolumetricCalculator';
++import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
++import { getPixelValueUnitsImageId } from '../getPixelValueUnits';
++import { AnnotationTool } from '../../tools/base';
++import { isViewportPreScaled } from '../viewport/isViewportPreScaled';
++import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
++import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
++import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
++import { registerComputeWorker } from '../registerComputeWorker';
++import { WorkerTypes } from '../../enums';
++import type {
++  LabelmapSegmentationDataStack,
++  LabelmapSegmentationDataVolume,
++} from '../../types/LabelmapTypes';
++// Radius for a volume of 10, eg 1 cm^3 = 1000 mm^3
++const radiusForVol1 = Math.pow((3 * 1000) / (4 * Math.PI), 1 / 3);
++
++const workerManager = getWebWorkerManager();
++
++const triggerWorkerProgress = (eventTarget, progress) => {
++  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
++    progress,
++    type: WorkerTypes.COMPUTE_STATISTICS,
++  });
++};
++
++async function getStatistics({
++  segmentationId,
++  segmentIndices,
++  viewportId,
++}: {
++  segmentationId: string;
++  segmentIndices: number[] | number;
++  viewportId: string;
++}) {
++  registerComputeWorker();
++
++  triggerWorkerProgress(eventTarget, 0);
++
++  const enabledElement = getEnabledElementByViewportId(viewportId);
++  const viewport = enabledElement.viewport;
++
++  const segmentation = getSegmentation(segmentationId);
++  const { representationData } = segmentation;
++
++  const { Labelmap } = representationData;
++
++  if (!Labelmap) {
++    console.debug('No labelmap found for segmentation', segmentationId);
++    return;
++  }
++
++  const { volumeId } = Labelmap as LabelmapSegmentationDataVolume;
++  const { imageIds } = Labelmap as LabelmapSegmentationDataStack;
++
++  const {
++    segmentationVoxelManager,
++    imageVoxelManager,
++    segmentationImageData,
++    imageData,
++  } = getStrategyData({
++    operationData: { segmentationId, viewport, volumeId, imageIds },
++    viewport,
++    strategy: {
++      ensureSegmentationVolumeFor3DManipulation:
++        ensureSegmentationVolume.ensureSegmentationVolumeFor3DManipulation,
++      ensureImageVolumeFor3DManipulation:
++        ensureImageVolume.ensureImageVolumeFor3DManipulation,
++    },
++  });
++
++  let indices = segmentIndices;
++
++  if (!indices) {
++    indices = [getActiveSegmentIndex(segmentationId)];
++  } else if (!Array.isArray(indices)) {
++    // Include the preview index
++    indices = [indices, 255];
++  }
++
++  const spacing = segmentationImageData.getSpacing();
++
++  const { boundsIJK: boundsOrig } = segmentationVoxelManager;
++  if (!boundsOrig) {
++    return VolumetricCalculator.getStatistics({ spacing });
++  }
++
++  const segmentationScalarData =
++    segmentationVoxelManager.getCompleteScalarDataArray();
++
++  const imageScalarData = imageVoxelManager.getCompleteScalarDataArray();
++
++  const segmentationInfo = {
++    scalarData: segmentationScalarData,
++    dimensions: segmentationImageData.getDimensions(),
++    spacing: segmentationImageData.getSpacing(),
++    origin: segmentationImageData.getOrigin(),
++  };
++
++  const imageInfo = {
++    scalarData: imageScalarData,
++    dimensions: imageData.getDimensions(),
++    spacing: imageData.getSpacing(),
++    origin: imageData.getOrigin(),
++  };
++
++  const indicesArr = indices as number[];
++
++  const stats = await workerManager.executeTask(
++    'compute',
++    'calculateSegmentsStatistics',
++    {
++      segmentationInfo,
++      imageInfo,
++      indices: indicesArr,
++    }
++  );
++
++  triggerWorkerProgress(eventTarget, 100);
++
++  const targetId = viewport.getViewReferenceId();
++  const modalityUnitOptions = {
++    isPreScaled: isViewportPreScaled(viewport, targetId),
++    isSuvScaled: AnnotationTool.isSuvScaled(
++      viewport,
++      targetId,
++      viewport.getCurrentImageId()
++    ),
++  };
++
++  const unit = getPixelValueUnitsImageId(
++    viewport.getCurrentImageId(),
++    modalityUnitOptions
++  );
++
++  // Update units
++  stats.mean.unit = unit;
++  stats.max.unit = unit;
++  stats.min.unit = unit;
++
++  if (unit !== 'SUV') {
++    return stats;
++  }
++
++  // Get the IJK rounded radius, not using less than 1, and using the
++  // radius for the spacing given the desired mm spacing of 10
++  // Add 10% to the radius to account for whole pixel in/out issues
++  const radiusIJK = spacing.map((s) =>
++    Math.max(1, Math.round((1.1 * radiusForVol1) / s))
++  );
++
++  const testStats = getSphereStats(
++    stats.max,
++    radiusIJK,
++    segmentationImageData,
++    imageVoxelManager,
++    spacing
++  );
++  const { mean } = testStats;
++
++  if (!stats.peakValue || stats.peakValue.value <= mean.value) {
++    stats.peakValue = {
++      name: 'peakValue',
++      label: 'Peak Value',
++      value: mean.value,
++      unit,
++    };
++  }
++  return stats;
++}
++
++/**
++ * Gets the statistics for a 1 cm^3 sphere centered on radiusIJK.
++ * Assumes the segmentation and pixel data are co-incident.
++ */
++function getSphereStats(testMax, radiusIJK, segData, imageVoxels, spacing) {
++  const { pointIJK: centerIJK } = testMax;
++
++  if (!centerIJK) {
++    return;
++  }
++
++  const boundsIJK = centerIJK.map((ijk, idx) => [
++    ijk - radiusIJK[idx],
++    ijk + radiusIJK[idx],
++  ]);
++  const testFunction = (_pointLPS, pointIJK) => {
++    const i = (pointIJK[0] - centerIJK[0]) / radiusIJK[0];
++    const j = (pointIJK[1] - centerIJK[1]) / radiusIJK[1];
++    const k = (pointIJK[2] - centerIJK[2]) / radiusIJK[2];
++    const radius = i * i + j * j + k * k;
++    return radius <= 1;
++  };
++  const statsFunction = ({ pointIJK, pointLPS }) => {
++    const value = imageVoxels.getAtIJKPoint(pointIJK);
++    if (value === undefined) {
++      return;
++    }
++    VolumetricCalculator.statsCallback({ value, pointLPS, pointIJK });
++  };
++  VolumetricCalculator.statsInit({ storePointData: false });
++
++  utilities.pointInShapeCallback(segData, {
++    pointInShapeFn: testFunction,
++    callback: statsFunction,
++    boundsIJK,
++  });
++
++  return VolumetricCalculator.getStatistics({ spacing });
++}
++
++export default getStatistics;
+diff --git a/packages/tools/src/utilities/segmentation/index.ts b/packages/tools/src/utilities/segmentation/index.ts
+index 1352a952a..3923a3979 100644
+--- a/packages/tools/src/utilities/segmentation/index.ts
++++ b/packages/tools/src/utilities/segmentation/index.ts
+@@ -29,6 +29,9 @@ import { getBrushToolInstances } from './getBrushToolInstances';
+ import * as growCut from './growCut';
+ import * as LabelmapMemo from './createLabelmapMemo';
+ import IslandRemoval from './islandRemoval';
++import interpolateLabelmap from './interpolateLabelmap';
++import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
++import getStatistics from './getStatistics';
+ 
+ export {
+   thresholdVolumeByRange,
+@@ -56,4 +59,7 @@ export {
+   growCut,
+   LabelmapMemo,
+   IslandRemoval,
++  interpolateLabelmap,
++  getOrCreateSegmentationVolume,
++  getStatistics,
+ };
+diff --git a/packages/tools/src/utilities/segmentation/interpolateLabelmap.ts b/packages/tools/src/utilities/segmentation/interpolateLabelmap.ts
+new file mode 100644
+index 000000000..df8701a29
+--- /dev/null
++++ b/packages/tools/src/utilities/segmentation/interpolateLabelmap.ts
+@@ -0,0 +1,91 @@
++import {
++  getWebWorkerManager,
++  eventTarget,
++  Enums,
++  triggerEvent,
++} from '@cornerstonejs/core';
++import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
++import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
++import { registerComputeWorker } from '../registerComputeWorker';
++import { WorkerTypes } from '../../enums';
++
++type MorphologicalContourInterpolationOptions = {
++  label?: number;
++  axis?: number;
++  noHeuristicAlignment?: boolean;
++  noUseDistanceTransform?: boolean;
++  useCustomSlicePositions?: boolean;
++};
++
++const workerManager = getWebWorkerManager();
++
++const triggerWorkerProgress = (eventTarget, progress) => {
++  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
++    progress,
++    type: WorkerTypes.INTERPOLATE_LABELMAP,
++  });
++};
++
++async function interpolateLabelmap({
++  segmentationId,
++  segmentIndex,
++  configuration = { preview: false },
++}: {
++  segmentationId: string;
++  segmentIndex: number;
++  configuration?: MorphologicalContourInterpolationOptions & {
++    preview: boolean;
++  };
++}) {
++  registerComputeWorker();
++
++  triggerWorkerProgress(eventTarget, 0);
++
++  const segVolume = getOrCreateSegmentationVolume(segmentationId);
++
++  const {
++    voxelManager: segmentationVoxelManager,
++    imageData: segmentationImageData,
++  } = segVolume;
++
++  const segmentationInfo = {
++    scalarData: segmentationVoxelManager.getCompleteScalarDataArray(),
++    dimensions: segmentationImageData.getDimensions(),
++    spacing: segmentationImageData.getSpacing(),
++    origin: segmentationImageData.getOrigin(),
++    direction: segmentationImageData.getDirection(),
++  };
++
++  try {
++    const { data: outputScalarData } = await workerManager.executeTask(
++      'compute',
++      'interpolateLabelmap',
++      {
++        segmentationInfo,
++        configuration: {
++          ...configuration,
++          label: segmentIndex,
++        },
++      }
++    );
++
++    // Update the segmentation with the modified data
++    segmentationVoxelManager.setCompleteScalarDataArray(outputScalarData);
++
++    triggerSegmentationDataModified(
++      segmentationId,
++      segmentationVoxelManager.getArrayOfModifiedSlices(),
++      segmentIndex
++    );
++
++    triggerWorkerProgress(eventTarget, 100);
++  } catch (error) {
++    console.warn(
++      'Warning: Failed to perform morphological contour interpolation',
++      error
++    );
++    triggerWorkerProgress(eventTarget, 100);
++  }
++}
++
++export default interpolateLabelmap;
+diff --git a/packages/tools/src/workers/computeWorker.ts b/packages/tools/src/workers/computeWorker.ts
+new file mode 100644
+index 000000000..43de6fd20
+--- /dev/null
++++ b/packages/tools/src/workers/computeWorker.ts
+@@ -0,0 +1,131 @@
++import { expose } from 'comlink';
++import VolumetricCalculator from '../utilities/segmentation/VolumetricCalculator';
++import getItkImage from '../tools/segmentation/strategies/utils/getItkImage';
++import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
++import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
++
++const computeWorker = {
++  calculateSegmentsStatistics: (args) => {
++    const { segmentationInfo, imageInfo, indices } = args;
++
++    const {
++      scalarData: segmentationScalarData,
++      dimensions: segmentationDimensions,
++      spacing: segmentationSpacing,
++    } = segmentationInfo;
++    const { scalarData: imageScalarData, dimensions: imageDimensions } =
++      imageInfo;
++
++    // if dimensions are not the same, for now just throw an error
++    if (
++      segmentationDimensions[0] !== imageDimensions[0] ||
++      segmentationDimensions[1] !== imageDimensions[1] ||
++      segmentationDimensions[2] !== imageDimensions[2]
++    ) {
++      throw new Error('Dimensions do not match');
++    }
++
++    for (let i = 0; i < segmentationScalarData.length; i++) {
++      const segmentationValue = segmentationScalarData[i];
++
++      if (indices.indexOf(segmentationValue) === -1) {
++        continue;
++      }
++      const imageValue = imageScalarData[i];
++
++      VolumetricCalculator.statsCallback({
++        value: imageValue,
++        pointIJK: [
++          i % segmentationDimensions[0],
++          Math.floor(i / segmentationDimensions[0]) % segmentationDimensions[1],
++          Math.floor(i / segmentationDimensions[0] / segmentationDimensions[1]),
++        ],
++      });
++    }
++
++    const stats = VolumetricCalculator.getStatistics({
++      spacing: segmentationSpacing,
++      unit: 'mm',
++    });
++
++    return stats;
++  },
++
++  interpolateLabelmap: async (args) => {
++    const { segmentationInfo, configuration } = args;
++    const { scalarData, dimensions, spacing, origin, direction } =
++      segmentationInfo;
++
++    let itkModule;
++    try {
++      itkModule = await import('@itk-wasm/morphological-contour-interpolation');
++      if (!itkModule) {
++        throw new Error('Module not found');
++      }
++    } catch (error) {
++      console.warn(
++        "Warning: '@itk-wasm/morphological-contour-interpolation' module not found. Please install it separately."
++      );
++      return { data: scalarData };
++    }
++
++    const imageData = vtkImageData.newInstance();
++    imageData.setDimensions(dimensions);
++    imageData.setOrigin(origin);
++    imageData.setDirection(direction || [1, 0, 0, 0, 1, 0, 0, 0, 1]);
++    imageData.setSpacing(spacing);
++
++    const scalarArray = vtkDataArray.newInstance({
++      name: 'Pixels',
++      numberOfComponents: 1,
++      values: scalarData,
++    });
++
++    imageData.getPointData().setScalars(scalarArray);
++    imageData.modified();
++
++    try {
++      const inputImage = await getItkImage(imageData, {
++        imageName: 'interpolation',
++        scalarData: scalarData,
++      });
++
++      if (!inputImage) {
++        throw new Error('Failed to get ITK image');
++      }
++
++      const { outputImage } = await itkModule.morphologicalContourInterpolation(
++        inputImage,
++        {
++          ...configuration,
++        }
++      );
++
++      const outputScalarData = outputImage.data;
++      const modifiedScalarData = new Uint16Array(scalarData.length);
++
++      // Copy the original data first
++      modifiedScalarData.set(scalarData);
++
++      // Only update values that are different
++      for (let i = 0; i < outputScalarData.length; i++) {
++        const newValue = outputScalarData[i];
++        const originalValue = scalarData[i];
++
++        if (newValue !== originalValue) {
++          modifiedScalarData[i] = newValue;
++        }
++      }
++
++      return { data: modifiedScalarData };
++    } catch (error) {
++      console.error(error);
++      console.warn(
++        'Warning: Failed to perform morphological contour interpolation'
++      );
++      return { data: scalarData };
++    }
++  },
++};
++
++expose(computeWorker);
+diff --git a/utils/demo/helpers/labelmapTools.ts b/utils/demo/helpers/labelmapTools.ts
+index 287bd431f..384a22196 100644
+--- a/utils/demo/helpers/labelmapTools.ts
++++ b/utils/demo/helpers/labelmapTools.ts
+@@ -61,7 +61,7 @@ toolMap.set('ThresholdCircle', {
+     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
+     strategySpecificConfiguration: {
+       ...configuration.strategySpecificConfiguration,
+-      THRESHOLD: { ...thresholdArgs },
++      THRESHOLD_INSIDE_CIRCLE: { ...thresholdArgs },
+     },
+   },
+ });
+@@ -73,7 +73,7 @@ toolMap.set('ThresholdSphere', {
+     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
+     strategySpecificConfiguration: {
+       ...configuration.strategySpecificConfiguration,
+-      THRESHOLD: { ...thresholdArgs },
++      THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL: { ...thresholdArgs },
+     },
+   },
+ });

@@ -1,7 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
-import { getRenderingEngine } from '@cornerstonejs/core';
 import { getBrushToolInstances } from './getBrushToolInstances';
 
 export function setBrushThresholdForToolGroup(
@@ -50,7 +49,6 @@ export function setBrushThresholdForToolGroup(
 
 export function getBrushThresholdForToolGroup(toolGroupId: string) {
   const toolGroup = getToolGroup(toolGroupId);
-  debugger;
 
   if (toolGroup === undefined) {
     return;
