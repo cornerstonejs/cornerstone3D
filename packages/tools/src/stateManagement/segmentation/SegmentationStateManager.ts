@@ -58,6 +58,12 @@ export default class SegmentationStateManager {
   >();
 
   /**
+   * A map of segmentationId-imageId to the labelmapImageIds that supports segment overlapping
+   * meaning that it supports a list of labelmapImageIds for each segmentationId-imageId pair
+   */
+  private _labelmapImageIdReferenceMap = new Map<string, string[]>();
+
+  /**
    * Creates an instance of SegmentationStateManager.
    * @param {string} [uid] - Optional unique identifier for the manager.
    */
@@ -67,6 +73,32 @@ export default class SegmentationStateManager {
       csUtils.deepClone(initialDefaultState) as SegmentationState
     );
     this.uid = uid;
+  }
+
+  /**
+   * Generates a key for the _labelmapImageIdReferenceMap
+   * @param param0.segmentationId
+   * @param param0.imageId
+   */
+  generateMapKey({ segmentationId, imageId }) {
+    return `${segmentationId}-${imageId}`;
+  }
+
+  _updateLabelmapImageIdReferenceMap({
+    segmentationId,
+    imageId,
+    labelmapImageId,
+  }) {
+    const key = this.generateMapKey({ segmentationId, imageId });
+
+    if (!this._labelmapImageIdReferenceMap.has(key)) {
+      this._labelmapImageIdReferenceMap.set(key, [labelmapImageId]);
+      return;
+    }
+
+    const currentValues = this._labelmapImageIdReferenceMap.get(key);
+    const newValues = Array.from(new Set([...currentValues, labelmapImageId]));
+    this._labelmapImageIdReferenceMap.set(key, newValues);
   }
 
   /**
@@ -464,6 +496,11 @@ export default class SegmentationStateManager {
         this._stackLabelmapImageIdReferenceMap
           .get(segmentationId)
           .set(currentImageId, labelmapImageId);
+        this._updateLabelmapImageIdReferenceMap({
+          segmentationId,
+          imageId: currentImageId,
+          labelmapImageId,
+        });
       }
     }
 
@@ -553,6 +590,11 @@ export default class SegmentationStateManager {
               this._stackLabelmapImageIdReferenceMap
                 .get(segmentationId)
                 .set(imageId, labelmapImageId);
+              this._updateLabelmapImageIdReferenceMap({
+                segmentationId,
+                imageId,
+                labelmapImageId,
+              });
             }
           }
         });
@@ -587,6 +629,34 @@ export default class SegmentationStateManager {
       labelmapImageIds = volume.imageIds;
     }
     return labelmapImageIds;
+  }
+
+  /**
+   * Retrieves the stack labelmap imageId associated with the current imageId
+   * that is rendered on the viewport.
+   * @param viewportId - The ID of the viewport.
+   * @param segmentationId - The UID of the segmentation representation.
+   * @returns A Map object containing the image ID reference map, or undefined if the enabled element is not found.
+   */
+  getCurrentLabelmapImageIdForViewportOverlapping(
+    viewportId: string,
+    segmentationId: string
+  ): string[] | undefined {
+    const enabledElement = getEnabledElementByViewportId(viewportId);
+
+    if (!enabledElement) {
+      return;
+    }
+
+    const stackViewport = enabledElement.viewport as Types.IStackViewport;
+    const currentImageId = stackViewport.getCurrentImageId();
+
+    const key = this.generateMapKey({
+      segmentationId,
+      imageId: currentImageId,
+    });
+
+    return this._labelmapImageIdReferenceMap.get(key);
   }
 
   /**
