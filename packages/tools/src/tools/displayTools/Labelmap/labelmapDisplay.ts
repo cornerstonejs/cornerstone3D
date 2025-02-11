@@ -18,7 +18,10 @@ import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { getActiveSegmentation } from '../../../stateManagement/segmentation/activeSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
-import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import {
+  getCurrentLabelmapImageIdForViewport,
+  getCurrentLabelmapImageIdForViewportOverlapping,
+} from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
@@ -98,7 +101,10 @@ async function render(
   let labelmapData =
     segmentation.representationData[SegmentationRepresentations.Labelmap];
 
-  let labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+  const labelmapActorEntries = getLabelmapActorEntry(
+    viewport.id,
+    segmentationId
+  );
 
   if (
     !labelmapData &&
@@ -146,14 +152,18 @@ async function render(
     labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
   } else {
     // stack segmentation
-    const labelmapImageId = getCurrentLabelmapImageIdForViewport(
+
+    // this one should support matching multiple imageIds (if overleaping)
+    // instead of looping over them here, just add them once through addLabelmapToViewport
+    // change addLabelmapToViewport to support multiple imageIds (overlapping)
+    const labelmapImageIds = getCurrentLabelmapImageIdForViewportOverlapping(
       viewport.id,
       segmentationId
     );
 
     // if the stack labelmap is not built for the current imageId that is
     // rendered at the viewport then return
-    if (!labelmapImageId) {
+    if (!labelmapImageIds.length) {
       return;
     }
 

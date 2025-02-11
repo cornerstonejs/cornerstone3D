@@ -57,7 +57,6 @@ export function getLabelmapActorEntry(
   segmentationId: string
 ) {
   return getActorEntry(viewportId, segmentationId, (actor) =>
-    // @ts-expect-error
     actor.representationUID?.startsWith(
       `${segmentationId}-${SegmentationRepresentations.Labelmap}`
     )

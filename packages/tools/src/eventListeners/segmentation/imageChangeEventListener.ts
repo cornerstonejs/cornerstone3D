@@ -80,6 +80,9 @@ function _imageChangeEventListener(evt) {
     renderingEngineId
   ) as { viewport: Types.IStackViewport };
 
+  // after we fix first render, for scroll we need to fix this one
+  return;
+
   const representations = getSegmentationRepresentations(viewportId);
 
   if (!representations?.length) {
