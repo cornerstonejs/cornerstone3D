@@ -1,3 +1,5 @@
+import peerImport from '../../../../utilities/peerImport';
+
 /**
  * Get the ITK Image from the image data
  *
@@ -14,7 +16,7 @@ export default async function getItkImage(
   let Image, ImageType, IntTypes, FloatTypes, PixelTypes;
 
   try {
-    const itkModule = await import('itk-wasm');
+    const itkModule = await peerImport('itk-wasm');
     if (!itkModule) {
       throw new Error('Module not found');
     }

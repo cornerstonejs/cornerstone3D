@@ -1,9 +1,18 @@
 import { expose } from 'comlink';
 import VolumetricCalculator from '../utilities/segmentation/VolumetricCalculator';
-import { peerImport } from '@cornerstonejs/core';
 import getItkImage from '../tools/segmentation/strategies/utils/getItkImage';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+
+export async function peerImport(moduleId) {
+  if (moduleId === 'itk-wasm') {
+    return import('itk-wasm');
+  }
+
+  if (moduleId === '@itk-wasm/morphological-contour-interpolation') {
+    return import('@itk-wasm/morphological-contour-interpolation');
+  }
+}
 
 const computeWorker = {
   calculateSegmentsStatistics: (args) => {
@@ -59,7 +68,9 @@ const computeWorker = {
 
     let itkModule;
     try {
-      itkModule = await import('@itk-wasm/morphological-contour-interpolation');
+      itkModule = await peerImport(
+        '@itk-wasm/morphological-contour-interpolation'
+      );
       if (!itkModule) {
         throw new Error('Module not found');
       }
