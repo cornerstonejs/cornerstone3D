@@ -71,7 +71,7 @@ export function getLabelmapActorUID(
   viewportId: string,
   segmentationId: string
 ): string | undefined {
-  const actorEntry = getLabelmapActorEntries(viewportId, segmentationId);
+  const actorEntry = getLabelmapActorEntry(viewportId, segmentationId);
   return actorEntry?.uid;
 }
 
