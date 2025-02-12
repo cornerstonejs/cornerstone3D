@@ -485,9 +485,14 @@ const getArrayOfLabelMapImagesWithSegmentData = ({
         const labelMapImages = referencedImageIds
             .map((referencedImageId, i) => {
                 const hasEmptySegmentData = !arr[i];
-                if (hasEmptySegmentData && !largestArrayIndex) {
-                    return;
-                }
+
+                // @TODO: right now cornerstone loses reference of the images when you don't have the complete set of images for each
+                // grouping of segments, but in order to save memory we would ideally only duplicate images where the there is overlapping
+                // so when this losing of reference is fixed, we can implement some filter like the one below in order to get rid of empty
+                // segment images that only take up memory space
+                // if (hasEmptySegmentData && i !== largestArrayIndex) {
+                //     return;
+                // }
 
                 const labelMapImage =
                     imageLoader.createAndCacheDerivedLabelmapImage(
