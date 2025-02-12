@@ -48,7 +48,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class AngleTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Angle';
 
   angleStartedNotYetCompleted: boolean;
   _throttledCalculateCachedStats: Function;
@@ -900,5 +900,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-AngleTool.toolName = 'Angle';
 export default AngleTool;

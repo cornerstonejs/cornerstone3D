@@ -1729,7 +1729,7 @@ class Viewport {
    *      a different slice index in the same set of images.
    */
   public getViewReference(
-    viewRefSpecifier: ViewReferenceSpecifier = {}
+    viewRefSpecifier?: ViewReferenceSpecifier
   ): ViewReference {
     const {
       focalPoint: cameraFocalPoint,
@@ -1741,7 +1741,7 @@ class Viewport {
       cameraFocalPoint,
       viewPlaneNormal,
       viewUp,
-      sliceIndex: viewRefSpecifier.sliceIndex ?? this.getSliceIndex(),
+      sliceIndex: viewRefSpecifier?.sliceIndex ?? this.getSliceIndex(),
     };
     return target;
   }
@@ -1756,7 +1756,7 @@ class Viewport {
   public isReferenceViewable(
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
-  ): boolean | unknown {
+  ): boolean {
     if (
       viewRef.FrameOfReferenceUID &&
       viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
@@ -1809,11 +1809,14 @@ class Viewport {
       displayArea: true,
       zoom: true,
       pan: true,
+      flipHorizontal: true,
+      flipVertical: true,
     }
   ): ViewPresentation {
     const target: ViewPresentation = {};
 
-    const { rotation, displayArea, zoom, pan } = viewPresSel;
+    const { rotation, displayArea, zoom, pan, flipHorizontal, flipVertical } =
+      viewPresSel;
     if (rotation) {
       target.rotation = this.getRotation();
     }
@@ -1828,6 +1831,14 @@ class Viewport {
     if (pan) {
       target.pan = this.getPan();
       vec2.scale(target.pan, target.pan, 1 / initZoom);
+    }
+
+    if (flipHorizontal) {
+      target.flipHorizontal = this.flipHorizontal;
+    }
+
+    if (flipVertical) {
+      target.flipVertical = this.flipVertical;
     }
     return target;
   }
@@ -1847,7 +1858,14 @@ class Viewport {
     if (!viewPres) {
       return;
     }
-    const { displayArea, zoom = this.getZoom(), pan, rotation } = viewPres;
+    const {
+      displayArea,
+      zoom = this.getZoom(),
+      pan,
+      rotation,
+      flipHorizontal = this.flipHorizontal,
+      flipVertical = this.flipVertical,
+    } = viewPres;
     if (displayArea !== this.getDisplayArea()) {
       this.setDisplayArea(displayArea);
     }
@@ -1857,6 +1875,14 @@ class Viewport {
     }
     if (rotation >= 0) {
       this.setRotation(rotation);
+    }
+
+    // flip operation requires another re-render to take effect, so unfortunately
+    // right now if the view presentation requires a flip, it will flicker. The
+    // correct way to handle this is to wait for camera and flip together and then
+    // do one render
+    if (flipHorizontal || flipVertical) {
+      this.flip({ flipHorizontal, flipVertical });
     }
   }
 

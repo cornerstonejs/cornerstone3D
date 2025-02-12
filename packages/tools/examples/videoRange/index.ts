@@ -1,10 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  RenderingEngine,
-  Enums,
-  eventTarget,
-  triggerEvent,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addToggleButtonToToolbar,
@@ -31,7 +26,7 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { annotationFrameRange } = cornerstoneTools.utilities;
+const { AnnotationMultiSlice } = cornerstoneTools.utilities;
 
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
@@ -167,19 +162,7 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
-      const frame = viewport.getFrameNumber();
-      const range = Array.isArray(rangeSelection)
-        ? rangeSelection
-        : [rangeSelection, viewport.numberOfFrames];
-      range[0] = frame;
-      range[1] = Math.max(frame, range[1]);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        range as [number, number],
-        baseEventDetail
-      );
-      viewport.setFrameRange(range);
+      AnnotationMultiSlice.setStartRange(viewport, annotation);
       viewport.render();
     }
   },
@@ -191,36 +174,31 @@ addButtonToToolbar({
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      const rangeSelection = annotationFrameRange.getFrameRange(annotation);
-      const frame = viewport.getFrameNumber();
-      const range = Array.isArray(rangeSelection)
-        ? rangeSelection
-        : [rangeSelection, viewport.getNumberOfSlices()];
-      range[1] = frame;
-      range[0] = Math.min(frame, range[0]);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        range as [number, number],
-        baseEventDetail
-      );
-      viewport.setFrameRange(range);
+      AnnotationMultiSlice.setEndRange(viewport, annotation);
       viewport.render();
     }
   },
 });
 
 addButtonToToolbar({
-  id: 'Remove Range',
-  title: 'Remove Range',
+  id: 'Select Series',
+  title: 'Select Series',
   onClick() {
     const annotation = getActiveAnnotation();
     if (annotation) {
-      togglePlay(false);
-      annotationFrameRange.setFrameRange(
-        annotation,
-        viewport.getFrameNumber(),
-        baseEventDetail
-      );
+      AnnotationMultiSlice.setRange(viewport, annotation);
+      viewport.render();
+    }
+  },
+});
+
+addButtonToToolbar({
+  id: 'Select Current',
+  title: 'Select Current',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      AnnotationMultiSlice.setSingle(viewport, annotation);
       viewport.render();
     }
   },
@@ -250,8 +228,9 @@ function updateAnnotationDiv(uid) {
   selectedAnnotation.annotationUID = uid;
   const { metadata, data } = annotation;
   const { toolName } = metadata;
-  const range = annotationFrameRange.getFrameRange(annotation);
+  const range = AnnotationMultiSlice.getFrameRange(annotation);
   const rangeArr = Array.isArray(range) ? range : [range];
+  console.log('rangeArr=', range, rangeArr);
   const { fps } = viewport;
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
@@ -301,7 +280,7 @@ function selectNextAnnotation(direction) {
   if (!annotation) {
     return;
   }
-  const range = annotationFrameRange.getFrameRange(annotation);
+  const range = AnnotationMultiSlice.getFrameRange(annotation);
   if (Array.isArray(range)) {
     viewport.setFrameRange(range);
     togglePlay(true);

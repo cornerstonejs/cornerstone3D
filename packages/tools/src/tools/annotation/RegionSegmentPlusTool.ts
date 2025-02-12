@@ -14,7 +14,7 @@ type RegionSegmentPlusToolData = GrowCutToolData & {
 };
 
 class RegionSegmentPlusTool extends GrowCutBaseTool {
-  static toolName;
+  static toolName = 'RegionSegmentPlus';
   protected growCutData: RegionSegmentPlusToolData | null;
 
   constructor(
@@ -98,7 +98,5 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     );
   }
 }
-
-RegionSegmentPlusTool.toolName = 'RegionSegmentPlus';
 
 export default RegionSegmentPlusTool;

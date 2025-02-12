@@ -10,7 +10,10 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import type {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
@@ -31,6 +34,7 @@ import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
+import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -56,6 +60,35 @@ export type PreviewData = {
    * by the user dragging to view more area.
    */
   isDrag: boolean;
+};
+
+type EditDataReturnType =
+  | {
+      volumeId: string;
+      referencedVolumeId: string;
+      segmentsLocked: number[];
+    }
+  | {
+      imageId: string;
+      segmentsLocked: number[];
+      override?: {
+        voxelManager:
+          | Types.IVoxelManager<number>
+          | Types.IVoxelManager<Types.RGB>;
+        imageData: vtkImageData;
+      };
+    }
+  | null;
+
+type ModifiedLabelmapToolOperationData = Omit<
+  LabelmapToolOperationData,
+  'voxelManager' | 'override'
+> & {
+  voxelManager?: Types.IVoxelManager<number> | Types.IVoxelManager<Types.RGB>;
+  override?: {
+    voxelManager: Types.IVoxelManager<number> | Types.IVoxelManager<Types.RGB>;
+    imageData: vtkImageData;
+  };
 };
 
 /**
@@ -117,7 +150,7 @@ export default class LabelmapBaseTool extends BaseTool {
     return this.memo as LabelmapMemo.LabelmapMemo;
   }
 
-  createEditData(element) {
+  protected createEditData(element): EditDataReturnType {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -141,6 +174,23 @@ export default class LabelmapBaseTool extends BaseTool {
 
     const { representationData } = getSegmentation(segmentationId);
 
+    const editData = this.getEditData({
+      viewport,
+      representationData,
+      segmentsLocked,
+      segmentationId,
+    });
+
+    return editData;
+  }
+
+  protected getEditData({
+    viewport,
+    representationData,
+    segmentsLocked,
+    segmentationId,
+    volumeOperation = false,
+  }): EditDataReturnType {
     if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
         SegmentationRepresentations.Labelmap
@@ -194,7 +244,10 @@ export default class LabelmapBaseTool extends BaseTool {
       }
 
       // I hate this, but what can you do sometimes
-      if (this.configuration.activeStrategy.includes('SPHERE')) {
+      if (
+        this.configuration.activeStrategy.includes('SPHERE') ||
+        volumeOperation
+      ) {
         const referencedImageIds = viewport.getImageIds();
         const isValidVolumeForSphere =
           csUtils.isValidVolume(referencedImageIds);
@@ -217,10 +270,11 @@ export default class LabelmapBaseTool extends BaseTool {
             },
           };
         } else {
-          const labelmapImageIds = getStackSegmentationImageIdsForViewport(
-            viewport.id,
-            segmentationId
-          );
+          // We don't need to call `getStackSegmentationImageIdsForViewport` here
+          // because we've already ensured the stack constructs a volume,
+          // making the scenario for multi-image non-consistent metadata is not likely.
+          const { imageIds: labelmapImageIds } =
+            representationData.Labelmap as LabelmapSegmentationDataStack;
 
           if (!labelmapImageIds || labelmapImageIds.length === 1) {
             return {
@@ -317,7 +371,7 @@ export default class LabelmapBaseTool extends BaseTool {
     };
   }
 
-  protected getOperationData(element?) {
+  protected getOperationData(element?): ModifiedLabelmapToolOperationData {
     const editData = this._editData || this.createEditData(element);
     const { segmentIndex, segmentationId, brushCursor } =
       this._hoverData || this.createHoverData(element);

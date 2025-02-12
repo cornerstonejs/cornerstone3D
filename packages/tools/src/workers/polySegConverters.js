@@ -2,7 +2,6 @@ import { expose } from 'comlink';
 import { utilities } from '@cornerstonejs/core';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import ICRPolySeg from '@icr/polyseg-wasm';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
@@ -15,6 +14,7 @@ import {
   projectTo2D,
 } from '../utilities/math/polyline';
 import { isPlaneIntersectingAABB } from '../utilities/planar';
+import { checkStandardBasis, rotatePoints } from '../geometricSurfaceUtils';
 
 /**
  * Object containing methods for converting between different representations of
@@ -41,6 +41,17 @@ const polySegConverters = {
    * This method initializes the polySeg instance and sets it to this.polySeg
    */
   async initializePolySeg(progressCallback) {
+    let ICRPolySeg;
+    try {
+      ICRPolySeg = (await import('@icr/polyseg-wasm')).default;
+    } catch (error) {
+      console.error(error);
+      console.debug(
+        "Warning: '@icr/polyseg-wasm' module not found. Please install it separately."
+      );
+      return;
+    }
+
     if (this.polySegInitializing) {
       await this.polySegInitializingPromise;
       return;
@@ -108,6 +119,15 @@ const polySegConverters = {
       args.origin,
       [args.segmentIndex]
     );
+    const rotationInfo = checkStandardBasis(args.direction);
+    if (!rotationInfo.isStandard) {
+      const rotatedPoints = rotatePoints(
+        rotationInfo.rotationMatrix,
+        args.origin,
+        results.points
+      );
+      results.points = [...rotatedPoints];
+    }
     return results;
   },
   /**
@@ -126,10 +146,7 @@ const polySegConverters = {
    */
   async convertContourToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    const polySeg = await new ICRPolySeg();
-    await polySeg.initialize({
-      updateProgress: progressCallback,
-    });
+    await this.initializePolySeg(progressCallback);
 
     const {
       segmentIndices,
@@ -238,10 +255,7 @@ const polySegConverters = {
    */
   async convertContourToStackLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    const polySeg = await new ICRPolySeg();
-    await polySeg.initialize({
-      updateProgress: progressCallback,
-    });
+    await this.initializePolySeg(progressCallback);
 
     const { segmentationsInfo, annotationUIDsInSegmentMap, segmentIndices } =
       args;

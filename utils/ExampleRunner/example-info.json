@@ -258,6 +258,10 @@
       "livewireContour": {
         "name": "Livewire",
         "description": "Demonstrates how to use the livewire tool to create ROIs"
+      },
+      "stackRange": {
+        "name": "Stack Range",
+        "description": "Demonstrates use of a selection range for key image and other tools"
       }
     },
     "viewports": {
@@ -410,6 +414,10 @@
       "labelmapEditWithContour": {
         "name": "Labelmap Editing with Contour",
         "description": "Use contour tools to edit the labelmap"
+      },
+      "labelmapInterpolation": {
+        "name": "Labelmap Interpolation",
+        "description": "Interpolate between slices using labelmap"
       }
     },
     "advanced-gpu-segmentation": {
@@ -553,10 +561,6 @@
       }
     },
     "adapters": {
-      "segmentationExport": {
-        "name": "DICOM SEG export",
-        "description": "Demonstrates how to export a segmentation to DICOM SEG"
-      },
       "segmentationStack": {
         "name": "DICOM SEG Stack",
         "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D stack"

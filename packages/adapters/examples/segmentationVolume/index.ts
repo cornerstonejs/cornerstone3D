@@ -35,6 +35,7 @@ import {
     restart,
     createEmptySegmentation
 } from "../segmentationVolume/utils";
+import addDropDownToToolbar from "../../../../utils/demo/helpers/addDropdownToToolbar";
 
 setTitleAndDescription(
     "DICOM SEG VOLUME",
@@ -119,6 +120,7 @@ const state = {
     segmentationId: "LOAD_SEG_ID:" + cornerstone.utilities.uuidv4(),
     referenceImageIds: [],
     skipOverlapping: false,
+    segmentationIds: [],
     segImageIds: [],
     devConfig: { ...dicomMap.values().next().value }
 };
@@ -169,6 +171,7 @@ function createSegmentationRepresentation() {
 
     csToolsSegmentation.addLabelmapRepresentationToViewportMap(segMap);
 }
+
 // ============================= //
 addButtonToToolbar({
     id: "LOAD_DICOM",
@@ -203,6 +206,7 @@ addButtonToToolbar({
 
         await loadSegmentation(arrayBuffer, state);
         createSegmentationRepresentation();
+        updateSegmentationDropdown();
     },
     container: group1
 });
@@ -221,8 +225,11 @@ addButtonToToolbar({
     id: "CREATE_SEGMENTATION",
     title: "Create Empty SEG",
     onClick: async () => {
+        const segmentationId = cornerstone.utilities.uuidv4();
+        state.segmentationId = segmentationId;
         await createEmptySegmentation(state);
         createSegmentationRepresentation();
+        updateSegmentationDropdown();
     },
     container: group2
 });
@@ -240,9 +247,54 @@ addUploadToToolbar({
         }
 
         createSegmentationRepresentation();
+        updateSegmentationDropdown();
     },
     container: group2
 });
+
+function updateSegmentationDropdown() {
+    // remove the previous dropdown
+    const previousDropdown = document.getElementById("segmentation-dropdown");
+    if (previousDropdown) {
+        previousDropdown.remove();
+    }
+
+    state.segmentationIds = csToolsSegmentation.state
+        .getSegmentations()
+        .map(seg => seg.segmentationId);
+
+    state.segmentationId =
+        csToolsSegmentation.activeSegmentation.getActiveSegmentation(
+            state.viewportIds[0]
+        ).segmentationId;
+
+    // Create a map with objects that can have properties set on them
+    const optionsMap = new Map(
+        state.segmentationIds.map(id => [
+            id,
+            { id, label: id, selected: id === state.segmentationId }
+        ])
+    );
+
+    addDropDownToToolbar({
+        container: group2,
+        id: "segmentation-dropdown",
+        options: {
+            defaultIndex: state.segmentationIds.indexOf(state.segmentationId),
+            map: optionsMap
+        },
+        onSelectedValueChange: (key: string | number) => {
+            state.viewportIds.forEach(viewportId => {
+                csToolsSegmentation.activeSegmentation.setActiveSegmentation(
+                    viewportId,
+                    key.toString()
+                );
+            });
+
+            updateSegmentationDropdown();
+        }
+    });
+}
 
 addButtonToToolbar({
     id: "EXPORT_SEGMENTATION",

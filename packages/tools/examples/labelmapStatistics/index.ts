@@ -47,7 +47,7 @@ const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const viewports = [];
 
-const DEFAULT_BRUSH_SIZE = 10;
+const DEFAULT_BRUSH_SIZE = 20;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -120,17 +120,12 @@ instructions.innerText = `
 content.append(instructions);
 
 const interpolationTools = new Map<string, any>();
-const previewColors = {
-  0: [255, 255, 255, 128],
-  1: [0, 255, 255, 192],
-  2: [255, 0, 255, 255],
-};
 const configuration = {
   preview: {
     enabled: true,
-    previewColors,
   },
 };
+
 const thresholdOptions = new Map<string, any>();
 thresholdOptions.set('Dynamic Radius 0', { isDynamic: true, dynamicRadius: 0 });
 thresholdOptions.set('Dynamic Radius 1', { isDynamic: true, dynamicRadius: 1 });
@@ -151,41 +146,15 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
-interpolationTools.set('CircularBrush', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'FILL_INSIDE_CIRCLE',
-  },
-});
-
-interpolationTools.set('ThresholdCircle', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
-    strategySpecificConfiguration: {
-      THRESHOLD: { ...thresholdArgs },
-    },
-  },
-});
-
 interpolationTools.set('ThresholdSphere', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
-    activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
+    activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
     strategySpecificConfiguration: {
+      useCenterSegmentIndex: true,
       THRESHOLD: { ...thresholdArgs },
     },
-  },
-});
-
-interpolationTools.set('CircularEraser', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE_CIRCLE',
   },
 });
 
@@ -194,30 +163,13 @@ interpolationTools.set('SphereBrush', {
   configuration: {
     ...configuration,
     activeStrategy: 'FILL_INSIDE_SPHERE',
-  },
-});
-interpolationTools.set('SphereEraser', {
-  baseTool: BrushTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE_SPHERE',
-  },
-});
-interpolationTools.set('ScissorsEraser', {
-  baseTool: SphereScissorsTool.toolName,
-  configuration: {
-    ...configuration,
-    activeStrategy: 'ERASE_INSIDE',
+    strategySpecificConfiguration: {
+      useCenterSegmentIndex: true,
+    },
   },
 });
 
-const optionsValues = [
-  ...interpolationTools.keys(),
-  RectangleScissorsTool.toolName,
-  CircleScissorsTool.toolName,
-  SphereScissorsTool.toolName,
-  PaintFillTool.toolName,
-];
+const optionsValues = [...interpolationTools.keys()];
 
 // ============================= //
 
@@ -317,17 +269,21 @@ function calculateStatistics(id, indices) {
   const activeName = toolGroup.getActivePrimaryMouseButtonTool();
   const brush = toolGroup.getToolInstance(activeName);
   const stats = brush.getStatistics(viewport.element, { indices });
+
+  if (!stats) {
+    return;
+  }
   const items = [`Statistics on ${indices.join(', ')}`];
   stats.count.label = 'Voxels';
-  const lesionGlycolysis = {
-    name: 'Lesion Glycolysis',
-    value: stats.volume.value * stats.stdDev.value,
-    unit: 'HU \xB7 mm \xb3',
-  };
+  // const lesionGlycolysis = {
+  //   name: 'Lesion Glycolysis',
+  //   value: stats.volume.value * stats.stdDev.value,
+  //   unit: 'HU \xB7 mm \xb3',
+  // };
   items.push(
     displayStat(stats.volume),
     displayStat(stats.count),
-    displayStat(lesionGlycolysis),
+    // displayStat(lesionGlycolysis),
     displayStat(stats.mean),
     displayStat(stats.max),
     displayStat(stats.min)
@@ -344,19 +300,19 @@ function segmentationModifiedCallback(evt) {
     return;
   }
 
-  if (timeoutId) {
-    window.clearTimeout(timeoutId);
-    timeoutId = null;
-  }
-
   const statsId = detail.segmentIndex === 1 ? statsIds[0] : statsIds[1];
 
-  window.setTimeout(() => {
-    timeoutId = null;
+  const debounced = () => {
     calculateStatistics(statsId, [detail.segmentIndex]);
     // Also update combined stats
     calculateStatistics(statsIds[2], [1, 2]);
-  }, 100);
+  };
+
+  if (timeoutId) {
+    window.clearTimeout(timeoutId);
+  }
+
+  timeoutId = window.setTimeout(debounced, 1000);
 }
 
 // ============================= //
@@ -443,7 +399,7 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory

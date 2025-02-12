@@ -95,7 +95,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class RectangleROITool extends AnnotationTool {
-  static toolName;
+  static toolName = 'RectangleROI';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -148,35 +148,14 @@ class RectangleROITool extends AnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation = {
-      invalidated: true,
-      highlighted: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
+    const annotation = (<typeof AnnotationTool>(
+      this.constructor
+    )).createAnnotationForViewport<RectangleROIAnnotation>(viewport, {
       data: {
-        label: '',
         handles: {
           points: [
             <Types.Point3>[...worldPos],
@@ -194,11 +173,9 @@ class RectangleROITool extends AnnotationTool {
               bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
-          activeHandleIndex: null,
         },
-        cachedStats: {},
       },
-    };
+    });
 
     addAnnotation(annotation, element);
 
@@ -1071,5 +1048,4 @@ function defaultGetTextLines(data, targetId: string): string[] {
   return textLines;
 }
 
-RectangleROITool.toolName = 'RectangleROI';
 export default RectangleROITool;

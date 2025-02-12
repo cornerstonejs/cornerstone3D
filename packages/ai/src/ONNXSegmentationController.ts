@@ -27,6 +27,14 @@ const { IslandRemoval } = cornerstoneTools.utilities;
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
 
+export type ModelType = {
+  name: string;
+  key: string;
+  url: string;
+  size: number;
+  opt?: Record<string, unknown>;
+};
+
 /**
  * clone tensor
  */
@@ -1157,7 +1165,7 @@ export default class ONNXSegmentationController {
     const urls = [];
     // Get the list of urls to download
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const model of Object.values(models) as any[]) {
+    for (const model of Object.values(models) as ModelType[]) {
       const cachedResponse = await cache.match(model.url);
       if (cachedResponse === undefined) {
         missing += model.size;
@@ -1173,7 +1181,7 @@ export default class ONNXSegmentationController {
       this.log(Loggers.Log, 'loading...');
     }
     const start = performance.now();
-    for (const model of Object.values(models) as any[]) {
+    for (const model of Object.values(models) as ModelType[]) {
       const opt = {
         executionProviders: [this.config.provider],
         enableMemPattern: false,

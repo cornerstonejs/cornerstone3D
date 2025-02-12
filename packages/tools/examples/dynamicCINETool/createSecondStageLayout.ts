@@ -32,7 +32,7 @@ function createSecondStageLayout({
 
   addSliderToToolbar({
     id: 'fpsSlider',
-    title: ` Time points per second: ${initialFramesPerSecond}`,
+    title: ` Frames per second: ${initialFramesPerSecond}`,
     range: [1, 100],
     defaultValue: initialFramesPerSecond,
     container: firstRowEl,
@@ -40,7 +40,7 @@ function createSecondStageLayout({
       onFramesPerSecondUpdated(value);
     },
     updateLabelOnChange: (value, label) => {
-      label.innerText = ` Time points per second: ${value}`;
+      label.innerText = `Frames per second: ${value}`;
     },
   });
 

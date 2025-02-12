@@ -84,7 +84,9 @@ class BrushTool extends LabelmapBaseTool {
         preview: {
           // Have to enable the preview to use this
           enabled: false,
-          previewColors: {},
+          previewColors: {
+            0: [255, 255, 255, 128],
+          },
           // The time before showing a preview
           previewTimeMs: 250,
           // The distance to move to show a preview before preview time expired
@@ -102,6 +104,56 @@ class BrushTool extends LabelmapBaseTool {
                 key: 'Enter',
               },
             ],
+          },
+          [StrategyCallbacks.RejectPreview]: {
+            method: StrategyCallbacks.RejectPreview,
+            bindings: [
+              {
+                key: 'Escape',
+              },
+            ],
+          },
+          /**
+           * Pressing the i key will interpolate between labelmap slices,
+           * without distance or extent extrapolation.  This has to be used
+           * on overlapping segments.  That is, for two slices (axial, sagittal or coronal),
+           * with intervening slices, where the segments occupy the same area
+           * of the image, an interpolation between the two segments will
+           * created on intervening slices.
+           */
+          [StrategyCallbacks.Interpolate]: {
+            method: StrategyCallbacks.Interpolate,
+            bindings: [
+              {
+                key: 'i',
+              },
+            ],
+            configuration: {
+              useBallStructuringElement: true,
+              // noHeuristicAlignment: true,
+              noUseDistanceTransform: true,
+              noUseExtrapolation: true,
+            },
+          },
+          /**
+           * Pressing the e key will interpolate with the full set of defaults,
+           * that includes some distance/extent extrapolation, so can interpolate
+           * between SLIGHTLY non-overlapping labelmaps.  That is, if you have
+           * segments on two slices, and the slices occupy almost the same
+           * are on the two different slices, then the slices in between will
+           * be interpolated.  If the position is quite different, it may create
+           * an interpolation, but it won't be a very useful one as it will be
+           * two separate interpolations going to an empty space.
+           */
+          interpolateExtrapolation: {
+            method: StrategyCallbacks.Interpolate,
+            bindings: [
+              {
+                key: 'e',
+              },
+            ],
+            // Morphological interpolation config
+            configuration: {},
           },
         },
       },
@@ -414,6 +466,59 @@ class BrushTool extends LabelmapBaseTool {
     );
 
     return stats;
+  }
+
+  /**
+   * Cancels any preview view being shown, resetting any segments being shown.
+   */
+  public rejectPreview(element = this._previewData.element) {
+    if (!element || !this._previewData.preview) {
+      return;
+    }
+    const enabledElement = getEnabledElement(element);
+    this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.RejectPreview
+    );
+    this._previewData.preview = null;
+    this._previewData.isDrag = false;
+  }
+
+  /**
+   * Performs interpolation on the active segment index
+   */
+  public interpolate(element, config) {
+    if (!element) {
+      return;
+    }
+    const enabledElement = getEnabledElement(element);
+
+    this._previewData.preview = this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.Interpolate,
+      config.configuration
+    );
+    this._previewData.isDrag = true;
+  }
+
+  /**
+   * Accepts a preview, marking it as the active segment.
+   */
+  public acceptPreview(element = this._previewData.element) {
+    if (!element) {
+      return;
+    }
+    const enabledElement = getEnabledElement(element);
+
+    this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.AcceptPreview
+    );
+    this._previewData.isDrag = false;
+    this._previewData.preview = null;
   }
 
   /**

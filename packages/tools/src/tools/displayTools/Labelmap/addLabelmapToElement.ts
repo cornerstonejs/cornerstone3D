@@ -59,19 +59,38 @@ async function addLabelmapToElement(
       segmentationId
     );
 
-    // Todo: Right now we use MIP blend mode for the labelmap, since the
-    // composite blend mode has a non linear behavior regarding fill and line
-    // opacity. This should be changed to a custom labelmap blendMode which does
-    // what composite does, but with a linear behavior.
     if (!cache.getVolume(volumeId)) {
       await _handleMissingVolume(labelMapData);
     }
 
-    const blendMode =
+    let blendMode =
       config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
 
-    const useIndependentComponents =
+    let useIndependentComponents =
       blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND;
+
+    // Add dimension check before deciding to use independent components
+    if (useIndependentComponents) {
+      const referenceVolumeId = viewport.getVolumeId();
+      const baseVolume = cache.getVolume(referenceVolumeId);
+      const segVolume = cache.getVolume(volumeId);
+
+      const segDims = segVolume.dimensions;
+      const refDims = baseVolume.dimensions;
+
+      if (
+        segDims[0] !== refDims[0] ||
+        segDims[1] !== refDims[1] ||
+        segDims[2] !== refDims[2]
+      ) {
+        // If dimensions don't match, fallback to regular volume addition
+        useIndependentComponents = false;
+        blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+        console.debug(
+          'Dimensions mismatch - falling back to regular volume addition'
+        );
+      }
+    }
 
     const volumeInputs: Types.IVolumeInput[] = [
       {

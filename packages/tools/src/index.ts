@@ -33,6 +33,7 @@ import {
   StackScrollTool,
   PlanarRotateTool,
   MIPJumpToClickTool,
+  LabelTool,
   LengthTool,
   HeightTool,
   ProbeTool,
@@ -107,6 +108,7 @@ export {
   PlanarRotateTool,
   MIPJumpToClickTool,
   // Annotation Tools
+  LabelTool,
   LengthTool,
   HeightTool,
   CrosshairsTool,

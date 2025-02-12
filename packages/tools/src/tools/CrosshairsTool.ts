@@ -189,6 +189,9 @@ class CrosshairsTool extends AnnotationTool {
       viewportId,
       renderingEngineId
     );
+    if (!enabledElement) {
+      return;
+    }
     const { FrameOfReferenceUID, viewport } = enabledElement;
     const { element } = viewport;
     const { position, focalPoint, viewPlaneNormal } = viewport.getCamera();

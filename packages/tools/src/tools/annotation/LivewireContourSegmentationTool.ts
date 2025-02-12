@@ -9,7 +9,7 @@ import type { ContourSegmentationAnnotation } from '../../types';
 import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
 
 class LivewireContourSegmentationTool extends LivewireContourTool {
-  static toolName;
+  static toolName = 'LivewireContourSegmentationTool';
 
   /**
    * Updates the interpolated annotations with the currently displayed image data,
@@ -160,5 +160,4 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
   }
 }
 
-LivewireContourSegmentationTool.toolName = 'LivewireContourSegmentationTool';
 export default LivewireContourSegmentationTool;

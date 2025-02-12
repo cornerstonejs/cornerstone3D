@@ -25,3 +25,11 @@ export default function downloadSurfaces() {
     lung17Promise,
   ]);
 }
+
+export function downloadOneSurface() {
+  const surfacePromise = fetch(assetsURL.SurfaceLung16).then((res) =>
+    res.json()
+  );
+
+  return surfacePromise;
+}

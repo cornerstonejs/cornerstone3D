@@ -1,5 +1,5 @@
 import { geometryLoader, Enums } from '@cornerstonejs/core';
-import downloadSurfaces from './downloadSurfacesData';
+import downloadSurfaces, { downloadOneSurface } from './downloadSurfacesData';
 import type { SurfaceData } from '@cornerstonejs/core/types';
 
 /**
@@ -15,27 +15,43 @@ import type { SurfaceData } from '@cornerstonejs/core/types';
  * - segmentIndex
  * - frameOfReferenceUID
  */
+function createAndCacheGeometry(surface: any, index: number): [number, string] {
+  const geometryId = surface.closedSurface.id;
+  geometryLoader.createAndCacheGeometry(geometryId, {
+    type: Enums.GeometryType.SURFACE,
+    geometryData: {
+      points: surface.closedSurface.data.points,
+      polys: surface.closedSurface.data.polys,
+      id: surface.closedSurface.id,
+      segmentIndex: index + 1,
+      frameOfReferenceUID: surface.closedSurface.frameOfReferenceUID,
+    } as SurfaceData,
+  });
+
+  const segmentIndex = index + 1;
+  return [segmentIndex, geometryId];
+}
+
+async function processGeometries(
+  surfaces: any[]
+): Promise<Map<number, string>> {
+  return surfaces.reduce((acc: Map<number, string>, surface, index) => {
+    const [segmentIndex, geometryId] = createAndCacheGeometry(surface, index);
+    acc.set(segmentIndex, geometryId);
+    return acc;
+  }, new Map());
+}
+
 export async function createAndCacheGeometriesFromSurfaces(): Promise<
   Map<number, string>
 > {
   const surfaces = await downloadSurfaces();
+  return processGeometries(surfaces);
+}
 
-  return surfaces.reduce((acc: Map<number, string>, surface, index) => {
-    const geometryId = surface.closedSurface.id;
-    geometryLoader.createAndCacheGeometry(geometryId, {
-      type: Enums.GeometryType.SURFACE,
-      geometryData: {
-        points: surface.closedSurface.data.points,
-        polys: surface.closedSurface.data.polys,
-        id: surface.closedSurface.id,
-        segmentIndex: index + 1,
-        frameOfReferenceUID: surface.closedSurface.frameOfReferenceUID,
-      } as SurfaceData,
-    });
-
-    const segmentIndex = index + 1;
-    acc.set(segmentIndex, geometryId);
-
-    return acc;
-  }, new Map());
+export async function createAndCacheGeometriesFromOneSurface(): Promise<
+  Map<number, string>
+> {
+  const surfaces = await downloadOneSurface();
+  return processGeometries([surfaces]);
 }

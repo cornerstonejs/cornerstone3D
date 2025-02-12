@@ -21,7 +21,7 @@ import triggerAnnotationRender from './triggerAnnotationRender';
 
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
 import { pointToString } from './pointToString';
-import annotationFrameRange from './annotationFrameRange';
+import AnnotationMultiSlice from './AnnotationMultiSlice';
 import getViewportForAnnotation from './getViewportForAnnotation';
 import {
   annotationHydration,
@@ -89,7 +89,7 @@ export {
   pointToString,
   polyDataUtils,
   voi,
-  annotationFrameRange,
+  AnnotationMultiSlice,
   contourSegmentation,
   annotationHydration,
   getClosestImageIdForStackViewport,

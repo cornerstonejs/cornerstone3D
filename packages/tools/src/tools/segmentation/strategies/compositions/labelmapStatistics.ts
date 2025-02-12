@@ -55,7 +55,7 @@ export default {
       const imageValue = imageVoxelManager.getAtIJKPoint(pointIJK);
       VolumetricCalculator.statsCallback({ value: imageValue, pointIJK });
     });
-    const targetId = viewport.getReferenceId();
+    const targetId = viewport.getViewReferenceId();
     const modalityUnitOptions = {
       isPreScaled: isViewportPreScaled(viewport, targetId),
       isSuvScaled: AnnotationTool.isSuvScaled(
@@ -84,7 +84,7 @@ export default {
     stats.min.unit = unit;
 
     if (unit !== 'SUV') {
-      return;
+      return stats;
     }
 
     // Get the IJK rounded radius, not using less than 1, and using the
