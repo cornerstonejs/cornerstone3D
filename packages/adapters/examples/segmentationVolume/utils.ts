@@ -97,26 +97,6 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
         );
 
     await createSegmentation({ state, labelMapImages });
-    // for (let i = 0; i < labelMapImages.length; i++) {
-    //     const segmentation =
-    //         csToolsSegmentation.state.getSegmentation(segmentationId);
-
-    //     const { imageIds } = segmentation.representationData.Labelmap;
-    //     console.log("🚀 ~ loadSegmentation ~ imageIds:", imageIds);
-    //     const derivedSegmentationImages = imageIds.map(imageId =>
-    //         cache.getImage(imageId)
-    //     );
-
-    //     const labelmapImagesNonOverlapping = labelMapImages[i];
-
-    //     for (let j = 0; j < derivedSegmentationImages.length; j++) {
-    //         const voxelManager = derivedSegmentationImages[j].voxelManager;
-    //         const scalarData = voxelManager.getScalarData();
-    //         const derivedImage = labelmapImagesNonOverlapping[j];
-    //         scalarData.set(labelmapImagesNonOverlapping[j].getPixelData());
-    //         voxelManager.setScalarData(scalarData);
-    //     }
-    // }
 }
 
 export async function exportSegmentation(state) {
