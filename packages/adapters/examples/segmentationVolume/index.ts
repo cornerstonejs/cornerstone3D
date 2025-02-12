@@ -33,7 +33,7 @@ import {
     handleFileSelect,
     handleDragOver,
     restart,
-    createSegmentation
+    createEmptySegmentation
 } from "../segmentationVolume/utils";
 
 setTitleAndDescription(
@@ -116,7 +116,7 @@ const state = {
     toolGroupId: "MY_TOOL_GROUP_ID",
     viewportIds: ["CT_AXIAL", "CT_SAGITTAL", "CT_CORONAL"],
     volumeId: "",
-    segmentationIds: [],
+    segmentationId: "LOAD_SEG_ID:" + cornerstone.utilities.uuidv4(),
     referenceImageIds: [],
     skipOverlapping: false,
     segImageIds: [],
@@ -161,15 +161,13 @@ async function loadDicom() {
 }
 
 function createSegmentationRepresentation() {
-    for (const segmentationId of state.segmentationIds) {
-        const segMap = {
-            [state.viewportIds[0]]: [{ segmentationId }],
-            [state.viewportIds[1]]: [{ segmentationId }],
-            [state.viewportIds[2]]: [{ segmentationId }]
-        };
+    const segMap = {
+        [state.viewportIds[0]]: [{ segmentationId: state.segmentationId }],
+        [state.viewportIds[1]]: [{ segmentationId: state.segmentationId }],
+        [state.viewportIds[2]]: [{ segmentationId: state.segmentationId }]
+    };
 
-        csToolsSegmentation.addLabelmapRepresentationToViewportMap(segMap);
-    }
+    csToolsSegmentation.addLabelmapRepresentationToViewportMap(segMap);
 }
 // ============================= //
 addButtonToToolbar({
@@ -223,7 +221,7 @@ addButtonToToolbar({
     id: "CREATE_SEGMENTATION",
     title: "Create Empty SEG",
     onClick: async () => {
-        await createSegmentation(state);
+        await createEmptySegmentation(state);
         createSegmentationRepresentation();
     },
     container: group2

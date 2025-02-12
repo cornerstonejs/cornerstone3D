@@ -18,7 +18,7 @@ export async function readDicom(files: FileList, state) {
     }
 }
 
-export async function createSegmentation(state) {
+export async function createEmptySegmentation(state) {
     const { referenceImageIds, segmentationId } = state;
 
     const derivedSegmentationImages =
@@ -38,6 +38,25 @@ export async function createSegmentation(state) {
                     .Labelmap,
                 data: {
                     imageIds: derivedSegmentationImageIds
+                }
+            }
+        }
+    ]);
+}
+
+export async function createSegmentation({ state, labelMapImages }) {
+    const { segmentationId } = state;
+
+    const imageIds = labelMapImages?.flat().map(image => image.imageId);
+
+    csToolsSegmentation.addSegmentations([
+        {
+            segmentationId,
+            representation: {
+                type: cornerstoneTools.Enums.SegmentationRepresentations
+                    .Labelmap,
+                data: {
+                    imageIds
                 }
             }
         }
@@ -65,9 +84,9 @@ export async function readSegmentation(file: File, state) {
 }
 
 export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
-    const { referenceImageIds, skipOverlapping, segmentationIds } = state;
+    const { referenceImageIds, skipOverlapping, segmentationId } = state;
 
-    const generateToolState =
+    const { labelMapImages } =
         await Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
             referenceImageIds,
             arrayBuffer,
@@ -77,29 +96,27 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
             }
         );
 
-    for (let i = 0; i < generateToolState.labelMapImages.length; i++) {
-        const segmentationId = "LOAD_SEG_ID:" + cornerstone.utilities.uuidv4();
-        segmentationIds.push(segmentationId);
-        await createSegmentation({ ...state, segmentationId });
+    await createSegmentation({ state, labelMapImages });
+    // for (let i = 0; i < labelMapImages.length; i++) {
+    //     const segmentation =
+    //         csToolsSegmentation.state.getSegmentation(segmentationId);
 
-        const segmentation =
-            csToolsSegmentation.state.getSegmentation(segmentationId);
+    //     const { imageIds } = segmentation.representationData.Labelmap;
+    //     console.log("🚀 ~ loadSegmentation ~ imageIds:", imageIds);
+    //     const derivedSegmentationImages = imageIds.map(imageId =>
+    //         cache.getImage(imageId)
+    //     );
 
-        const { imageIds } = segmentation.representationData.Labelmap;
-        const derivedSegmentationImages = imageIds.map(imageId =>
-            cache.getImage(imageId)
-        );
+    //     const labelmapImagesNonOverlapping = labelMapImages[i];
 
-        const labelmapImagesNonOverlapping =
-            generateToolState.labelMapImages[i];
-
-        for (let j = 0; j < derivedSegmentationImages.length; j++) {
-            const voxelManager = derivedSegmentationImages[j].voxelManager;
-            const scalarData = voxelManager.getScalarData();
-            scalarData.set(labelmapImagesNonOverlapping[j].getPixelData());
-            voxelManager.setScalarData(scalarData);
-        }
-    }
+    //     for (let j = 0; j < derivedSegmentationImages.length; j++) {
+    //         const voxelManager = derivedSegmentationImages[j].voxelManager;
+    //         const scalarData = voxelManager.getScalarData();
+    //         const derivedImage = labelmapImagesNonOverlapping[j];
+    //         scalarData.set(labelmapImagesNonOverlapping[j].getPixelData());
+    //         voxelManager.setScalarData(scalarData);
+    //     }
+    // }
 }
 
 export async function exportSegmentation(state) {

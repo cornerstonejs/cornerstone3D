@@ -14,7 +14,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
-import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getCurrentLabelmapImageIdForViewportOverlapping } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import {
   triggerSegmentationDataModified,
@@ -52,7 +52,6 @@ async function addLabelmapToElement(
   const visibility = true;
   const immediateRender = false;
   const suppressEvents = true;
-
   if (viewport instanceof BaseVolumeViewport) {
     const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
     const volumeId = _ensureVolumeHasVolumeId(
@@ -118,17 +117,18 @@ async function addLabelmapToElement(
   } else {
     // We can use the current imageId in the viewport to get the segmentation imageId
     // which later is used to create the actor and mapper.
-    const segmentationImageId = getCurrentLabelmapImageIdForViewport(
-      viewport.id,
-      segmentationId
-    );
+    const segmentationImageIds =
+      getCurrentLabelmapImageIdForViewportOverlapping(
+        viewport.id,
+        segmentationId
+      );
 
-    const stackInputs: Types.IStackInput[] = [
-      {
-        imageId: segmentationImageId,
-        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
-      },
-    ];
+    const stackInputs: Types.IStackInput[] = segmentationImageIds.map(
+      (imageId) => ({
+        imageId,
+        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${imageId}`,
+      })
+    );
 
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
     addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
