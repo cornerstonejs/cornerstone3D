@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { Events, ChangeTypes } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -703,7 +703,12 @@ class LengthTool extends AnnotationTool {
           unit: null,
         };
 
-        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
+        this._calculateCachedStats(
+          annotation,
+          renderingEngine,
+          enabledElement,
+          ChangeTypes.StatsUpdated
+        );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
@@ -836,7 +841,12 @@ class LengthTool extends AnnotationTool {
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
-  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
+  _calculateCachedStats(
+    annotation,
+    renderingEngine,
+    enabledElement,
+    changeType
+  ) {
     const data = annotation.data;
     const { element } = enabledElement.viewport;
 
@@ -888,7 +898,7 @@ class LengthTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(annotation, element, changeType);
 
     return cachedStats;
   }
