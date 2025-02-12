@@ -481,6 +481,14 @@ class LengthTool extends AnnotationTool {
     this.editData.hasMoved = true;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -703,12 +711,7 @@ class LengthTool extends AnnotationTool {
           unit: null,
         };
 
-        this._calculateCachedStats(
-          annotation,
-          renderingEngine,
-          enabledElement,
-          ChangeTypes.StatsUpdated
-        );
+        this._calculateCachedStats(annotation, renderingEngine, enabledElement);
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
@@ -841,12 +844,7 @@ class LengthTool extends AnnotationTool {
     return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
 
-  _calculateCachedStats(
-    annotation,
-    renderingEngine,
-    enabledElement,
-    changeType
-  ) {
+  _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
     const { element } = enabledElement.viewport;
 
@@ -898,7 +896,7 @@ class LengthTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element, changeType);
+    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
 
     return cachedStats;
   }
