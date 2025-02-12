@@ -17,3 +17,14 @@ export function getCurrentLabelmapImageIdForViewport(
     segmentationId
   );
 }
+
+export function getCurrentLabelmapImageIdForViewportOverlapping(
+  viewportId: string,
+  segmentationId: string
+) {
+  const segmentationStateManager = defaultSegmentationStateManager;
+  return segmentationStateManager.getCurrentLabelmapImageIdForViewportOverlapping(
+    viewportId,
+    segmentationId
+  );
+}
