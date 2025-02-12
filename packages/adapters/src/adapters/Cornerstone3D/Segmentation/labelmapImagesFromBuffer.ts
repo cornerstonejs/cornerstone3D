@@ -470,9 +470,25 @@ const getArrayOfLabelMapImagesWithSegmentData = ({
     arrayOfSegmentData,
     referencedImageIds
 }) => {
+    let largestArray = [];
+    let largestArrayIndex;
+
+    for (let i = 0; i < arrayOfSegmentData.length; i++) {
+        const segmentData = arrayOfSegmentData[i];
+        if (segmentData.length > largestArray.length) {
+            largestArray = segmentData;
+            largestArrayIndex = i;
+        }
+    }
+
     return arrayOfSegmentData.map(arr => {
-        const labelMapImages = referencedImageIds.map(
-            (referencedImageId, i) => {
+        const labelMapImages = referencedImageIds
+            .map((referencedImageId, i) => {
+                const hasEmptySegmentData = !arr[i];
+                if (hasEmptySegmentData && !largestArrayIndex) {
+                    return;
+                }
+
                 const labelMapImage =
                     imageLoader.createAndCacheDerivedLabelmapImage(
                         referencedImageId
@@ -480,15 +496,15 @@ const getArrayOfLabelMapImagesWithSegmentData = ({
 
                 const pixelData = labelMapImage.getPixelData();
 
-                if (arr[i]) {
+                if (!hasEmptySegmentData) {
                     for (let j = 0; j < pixelData.length; j++) {
                         pixelData[j] = arr[i][j];
                     }
                 }
 
                 return labelMapImage;
-            }
-        );
+            })
+            .filter(Boolean);
         return labelMapImages;
     });
 };

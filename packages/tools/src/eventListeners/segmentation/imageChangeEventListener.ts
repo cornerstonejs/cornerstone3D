@@ -119,7 +119,7 @@ function _imageChangeEventListener(evt) {
         representation.segmentationId
       );
 
-      return derivedImageIds.includes(actor.referencedId);
+      return derivedImageIds?.includes(actor.referencedId);
     });
 
     if (!validActor) {

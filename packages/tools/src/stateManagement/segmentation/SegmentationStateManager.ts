@@ -97,15 +97,6 @@ export default class SegmentationStateManager {
   }) {
     const key = this.generateMapKey({ segmentationId, imageId });
 
-    console.log(
-      '🚀 ~ SegmentationStateManager ~ segmentationId, imageId:',
-      segmentationId,
-      imageId
-    );
-    console.log(
-      '🚀 ~ SegmentationStateManager ~ labelmapImageId:',
-      labelmapImageId
-    );
     if (!this._labelmapImageIdReferenceMap.has(key)) {
       this._labelmapImageIdReferenceMap.set(key, [labelmapImageId]);
       return;
