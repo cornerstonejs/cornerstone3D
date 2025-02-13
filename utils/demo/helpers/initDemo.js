@@ -49,15 +49,19 @@ export async function peerImport(moduleId) {
   }
 
   if (moduleId === '@icr/polyseg-wasm') {
-    return import('@icr/polyseg-wasm');
+    return import(
+      /* webpackChunkName: "icr-polyseg-wasm" */ '@icr/polyseg-wasm'
+    );
   }
 
   if (moduleId === 'itk-wasm') {
-    return import('itk-wasm');
+    return import(/* webpackChunkName: "itk-wasm" */ 'itk-wasm');
   }
 
   if (moduleId === '@itk-wasm/morphological-contour-interpolation') {
-    return import('@itk-wasm/morphological-contour-interpolation');
+    return import(
+      /* webpackChunkName: "itk-wasm-morphological-contour-interpolation" */ '@itk-wasm/morphological-contour-interpolation'
+    );
   }
 }
 

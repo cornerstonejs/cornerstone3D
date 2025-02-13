@@ -18,7 +18,9 @@ import { checkStandardBasis, rotatePoints } from '../geometricSurfaceUtils';
 
 export async function peerImport(moduleId) {
   if (moduleId === '@icr/polyseg-wasm') {
-    return import('@icr/polyseg-wasm');
+    return import(
+      /* webpackChunkName: "icr-polyseg-wasm" */ '@icr/polyseg-wasm'
+    );
   }
 }
 

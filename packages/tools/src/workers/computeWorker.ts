@@ -6,11 +6,13 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 
 export async function peerImport(moduleId) {
   if (moduleId === 'itk-wasm') {
-    return import('itk-wasm');
+    return import(/* webpackChunkName: "itk-wasm" */ 'itk-wasm');
   }
 
   if (moduleId === '@itk-wasm/morphological-contour-interpolation') {
-    return import('@itk-wasm/morphological-contour-interpolation');
+    return import(
+      /* webpackChunkName: "itk-wasm-morphological-contour-interpolation" */ '@itk-wasm/morphological-contour-interpolation'
+    );
   }
 }
 
