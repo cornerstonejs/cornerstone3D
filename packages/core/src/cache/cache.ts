@@ -33,12 +33,44 @@ class Cache {
   private readonly _imageCache = new Map<string, ICachedImage>();
   // used to store volume data (3d)
   private readonly _volumeCache = new Map<string, ICachedVolume>();
+  // used to store the reverse lookup from imageIds to volumeId
+  private readonly _imageIdsToVolumeIdCache = new Map<string, string>();
   // Todo: contour for now, but will be used for surface, etc.
   private readonly _geometryCache = new Map<string, ICachedGeometry>();
 
   private _imageCacheSize = 0;
   private _maxCacheSize = 3 * ONE_GB;
   private _geometryCacheSize = 0;
+
+  /**
+   * Generates a deterministic volume ID from a list of image IDs
+   * @param imageIds - Array of image IDs
+   * @returns A deterministic volume ID
+   */
+  public generateVolumeId(imageIds: string[]): string {
+    const imageURIs = imageIds.map(imageIdToURI);
+
+    let combinedHash = 0x811c9dc5; // Initial FNV offset basis
+    for (const id of imageURIs) {
+      const idHash = this._fnv1aHash(id);
+      for (let i = 0; i < idHash.length; i++) {
+        combinedHash ^= idHash.charCodeAt(i);
+        combinedHash +=
+          (combinedHash << 1) +
+          (combinedHash << 4) +
+          (combinedHash << 7) +
+          (combinedHash << 8) +
+          (combinedHash << 24);
+      }
+    }
+    return `volume-${(combinedHash >>> 0).toString(36)}`;
+  }
+
+  public getImageIdsForVolumeId(volumeId: string): string[] {
+    return Array.from(this._imageIdsToVolumeIdCache.entries())
+      .filter(([_, id]) => id === volumeId)
+      .map(([key]) => key);
+  }
 
   /**
    * Set the maximum cache Size
@@ -1279,6 +1311,21 @@ class Cache {
 
     return cachedGeometry.geometryLoadObject;
   };
+
+  /**
+   * Helper function to generate a hash for a string using FNV-1a algorithm
+   * @param str - string to hash
+   * @returns the hashed string
+   */
+  private _fnv1aHash(str: string): string {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      hash ^= str.charCodeAt(i);
+      hash +=
+        (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    }
+    return (hash >>> 0).toString(36);
+  }
 }
 
 /**

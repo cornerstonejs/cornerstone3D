@@ -50,7 +50,10 @@ import { pointInSurroundingSphereCallback } from './pointInSurroundingSphereCall
 const roundNumber = utilities.roundNumber;
 import normalizeViewportPlane from './normalizeViewportPlane';
 import IslandRemoval from './segmentation/islandRemoval';
-import { getPixelValueUnits } from './getPixelValueUnits';
+import {
+  getPixelValueUnits,
+  getPixelValueUnitsImageId,
+} from './getPixelValueUnits';
 
 export {
   math,
@@ -69,6 +72,7 @@ export {
   getCalibratedProbeUnitsAndValue,
   getCalibratedAspect,
   getPixelValueUnits,
+  getPixelValueUnitsImageId,
   segmentation,
   contours,
   triggerAnnotationRenderForViewportIds,

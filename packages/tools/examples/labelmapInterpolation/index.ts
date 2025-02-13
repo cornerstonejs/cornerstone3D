@@ -162,20 +162,10 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Run Extended Interpolation',
   onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.interpolate?.(element1, { extendedConfig: true });
-  },
-});
-
-addButtonToToolbar({
-  title: 'Run Overlapping Interpolation',
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.interpolate?.(element1, { extendedConfig: false });
+    segmentationUtils.interpolateLabelmap({
+      segmentationId,
+      segmentIndex: 1,
+    });
   },
 });
 

@@ -58,7 +58,10 @@ export default {
 
     let inputImage;
     try {
-      inputImage = await getItkImage(segmentationImageData, 'interpolation');
+      inputImage = await getItkImage(segmentationImageData, {
+        imageName: 'interpolation',
+        scalarData: segmentationVoxelManager.getCompleteScalarDataArray(),
+      });
       if (!inputImage) {
         throw new Error('Failed to get ITK image');
       }

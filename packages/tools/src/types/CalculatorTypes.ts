@@ -5,6 +5,8 @@ type Statistics = {
   label?: string;
   value: number | number[];
   unit: null | string;
+  pointIJK?: Types.Point3;
+  pointLPS?: Types.Point3;
 };
 
 type NamedStatistics = {

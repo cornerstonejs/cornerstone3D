@@ -5,6 +5,14 @@ type pixelUnitsOptions = {
   isSuvScaled: boolean;
 };
 
+function getPixelValueUnitsImageId(
+  imageId: string,
+  options: pixelUnitsOptions
+): string {
+  const generalSeriesModule = metaData.get('generalSeriesModule', imageId);
+  return getPixelValueUnits(generalSeriesModule.modality, imageId, options);
+}
+
 /**
  * Determines the appropriate pixel value units based on the image modality and options.
  * @param modality - The modality of the image (e.g., 'CT', 'PT').
@@ -57,4 +65,4 @@ function _handlePTModality(
 }
 
 export type { pixelUnitsOptions };
-export { getPixelValueUnits };
+export { getPixelValueUnits, getPixelValueUnitsImageId };

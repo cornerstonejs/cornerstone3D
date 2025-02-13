@@ -1,4 +1,4 @@
-import { peerImport } from '@cornerstonejs/core';
+import peerImport from '../../../../utilities/peerImport';
 
 /**
  * Get the ITK Image from the image data
@@ -9,8 +9,10 @@ import { peerImport } from '@cornerstonejs/core';
  */
 export default async function getItkImage(
   imageData,
-  imageName?: string
+  options = { imageName: 'itkImage', scalarData: null }
 ): Promise<unknown> {
+  const { imageName, scalarData } = options;
+
   let Image, ImageType, IntTypes, FloatTypes, PixelTypes;
 
   try {
@@ -39,9 +41,7 @@ export default async function getItkImage(
     Float64: FloatTypes.Float64,
   };
 
-  const { voxelManager } = imageData.get('voxelManager');
   const { numberOfComponents } = imageData.get('numberOfComponents');
-  const scalarData = voxelManager.getCompleteScalarDataArray();
 
   const dimensions = imageData.getDimensions();
   const origin = imageData.getOrigin();
@@ -52,6 +52,7 @@ export default async function getItkImage(
     .replace(/^Ui/, 'UI')
     .replace(/Array$/, '');
   const metadata = undefined;
+
   const imageType = new ImageType(
     dimensions.length,
     dataTypesMap[dataType],
@@ -67,9 +68,6 @@ export default async function getItkImage(
   image.size = dimensions;
   image.metadata = metadata;
   image.data = scalarData;
-
-  // image.data = new scalarData.constructor(scalarData.length);
-  // image.data.set(scalarData, 0);
 
   return image;
 }

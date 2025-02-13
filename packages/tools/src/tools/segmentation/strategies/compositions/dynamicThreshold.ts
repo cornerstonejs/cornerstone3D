@@ -20,12 +20,13 @@ export default {
       strategySpecificConfiguration,
       segmentationVoxelManager,
       imageVoxelManager,
+      activeStrategy,
       segmentIndex,
       viewport,
     } = operationData;
-    const { THRESHOLD } = strategySpecificConfiguration;
+    const config = strategySpecificConfiguration[activeStrategy] || {};
 
-    if (!THRESHOLD?.isDynamic || !centerIJK || !segmentIndex) {
+    if (!config?.isDynamic || !centerIJK || !segmentIndex) {
       return;
     }
     if (
@@ -36,7 +37,7 @@ export default {
     }
 
     const boundsIJK = segmentationVoxelManager.getBoundsIJK();
-    const { threshold: oldThreshold, dynamicRadius = 0 } = THRESHOLD;
+    const { threshold: oldThreshold, dynamicRadius = 0 } = config;
     const useDelta = oldThreshold ? 0 : dynamicRadius;
     const { viewPlaneNormal } = viewport.getCamera();
 
@@ -73,17 +74,21 @@ export default {
     };
     imageVoxelManager.forEach(callback, { boundsIJK: nestedBounds });
 
-    operationData.strategySpecificConfiguration.THRESHOLD.threshold = threshold;
+    config.threshold = threshold;
   },
   // Setup a clear threshold value on mouse/touch down
   [StrategyCallbacks.OnInteractionStart]: (
     operationData: InitializedOperationData
   ) => {
-    const { strategySpecificConfiguration, preview } = operationData;
-    if (!strategySpecificConfiguration?.THRESHOLD?.isDynamic && !preview) {
+    const { strategySpecificConfiguration, preview, activeStrategy } =
+      operationData;
+
+    const config = strategySpecificConfiguration[activeStrategy] || {};
+    if (!config?.isDynamic && !preview) {
       return;
     }
-    strategySpecificConfiguration.THRESHOLD.threshold = null;
+
+    config.threshold = null;
   },
   /**
    * It computes the inner circle radius in canvas coordinates and stores it
@@ -94,8 +99,9 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const { configuration, viewport } = operationData;
-    const { THRESHOLD: { dynamicRadius = 0 } = {} } =
-      configuration.strategySpecificConfiguration || {};
+    const { strategySpecificConfiguration, activeStrategy } = configuration;
+    const { dynamicRadius = 0 } =
+      strategySpecificConfiguration[activeStrategy] || {};
 
     if (dynamicRadius === 0) {
       return;
@@ -124,11 +130,6 @@ export default {
     const dynamicRadiusInCanvas = Math.abs(
       centerCanvas[0] - offSetCenterCanvas[0]
     );
-
-    // this is a bit of a hack, since we have switched to using THRESHOLD
-    // as strategy but really strategy names are CIRCLE_THRESHOLD and SPHERE_THRESHOLD
-    // and we can't really change the name of the strategy in the configuration
-    const { strategySpecificConfiguration, activeStrategy } = configuration;
 
     if (!strategySpecificConfiguration[activeStrategy]) {
       strategySpecificConfiguration[activeStrategy] = {};

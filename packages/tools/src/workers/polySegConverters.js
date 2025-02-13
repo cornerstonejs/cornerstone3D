@@ -16,6 +16,14 @@ import {
 import { isPlaneIntersectingAABB } from '../utilities/planar';
 import { checkStandardBasis, rotatePoints } from '../geometricSurfaceUtils';
 
+export async function peerImport(moduleId) {
+  if (moduleId === '@icr/polyseg-wasm') {
+    return import(
+      /* webpackChunkName: "icr-polyseg-wasm" */ '@icr/polyseg-wasm'
+    );
+  }
+}
+
 /**
  * Object containing methods for converting between different representations of
  * segmentations (e.g., contour, labelmap, surface, etc.) These logics
@@ -43,7 +51,7 @@ const polySegConverters = {
   async initializePolySeg(progressCallback) {
     let ICRPolySeg;
     try {
-      ICRPolySeg = (await import('@icr/polyseg-wasm')).default;
+      ICRPolySeg = (await peerImport('@icr/polyseg-wasm')).default;
     } catch (error) {
       console.error(error);
       console.debug(

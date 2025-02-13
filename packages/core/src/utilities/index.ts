@@ -94,7 +94,7 @@ import scroll from './scroll';
 import clip from './clip';
 import createSubVolume from './createSubVolume';
 import getVolumeDirectionVectors from './getVolumeDirectionVectors';
-
+import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 
@@ -193,4 +193,5 @@ export {
   transformWorldToIndexContinuous,
   createSubVolume,
   getVolumeDirectionVectors,
+  calculateSpacingBetweenImageIds,
 };

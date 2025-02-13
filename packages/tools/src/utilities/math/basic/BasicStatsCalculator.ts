@@ -9,6 +9,10 @@ export default class BasicStatsCalculator extends Calculator {
   private static min = [Infinity];
   private static sum = [0];
   private static count = 0;
+  private static maxIJK = null;
+  private static maxLPS = null;
+  private static minIJK = null;
+  private static minLPS = null;
 
   // Values for Welford's algorithm
   private static runMean = [0];
@@ -27,7 +31,11 @@ export default class BasicStatsCalculator extends Calculator {
    * This callback is used when we verify if the point is in the annotation drawn
    * so we can get every point in the shape to calculate the statistics
    */
-  static statsCallback = ({ value: newValue, pointLPS = null }): void => {
+  static statsCallback = ({
+    value: newValue,
+    pointLPS = null,
+    pointIJK = null,
+  }): void => {
     if (
       Array.isArray(newValue) &&
       newValue.length > 1 &&
@@ -56,7 +64,21 @@ export default class BasicStatsCalculator extends Calculator {
       this.m2[idx] += delta * delta2;
 
       this.min[idx] = Math.min(this.min[idx], value);
-      this.max[idx] = Math.max(it, value);
+      if (value < this.min[idx]) {
+        this.min[idx] = value;
+        if (idx === 0) {
+          this.minIJK = pointIJK;
+          this.minLPS = pointLPS;
+        }
+      }
+
+      if (value > this.max[idx]) {
+        this.max[idx] = value;
+        if (idx === 0) {
+          this.maxIJK = pointIJK;
+          this.maxLPS = pointLPS;
+        }
+      }
     });
   };
 
@@ -83,12 +105,16 @@ export default class BasicStatsCalculator extends Calculator {
         label: 'Max Pixel',
         value: singleArrayAsNumber(this.max),
         unit,
+        pointIJK: this.maxIJK,
+        pointLPS: this.maxLPS,
       },
       min: {
         name: 'min',
         label: 'Min Pixel',
         value: singleArrayAsNumber(this.min),
         unit,
+        pointIJK: this.minIJK,
+        pointLPS: this.minLPS,
       },
       mean: {
         name: 'mean',
@@ -124,10 +150,13 @@ export default class BasicStatsCalculator extends Calculator {
     this.max = [-Infinity];
     this.min = [Infinity];
     this.sum = [0];
-    // this.sumSquares = [0];
     this.m2 = [0];
     this.runMean = [0];
     this.count = 0;
+    this.maxIJK = null;
+    this.maxLPS = null;
+    this.minIJK = null;
+    this.minLPS = null;
     this.pointsInShape = PointsManager.create3(1024);
 
     return named;
