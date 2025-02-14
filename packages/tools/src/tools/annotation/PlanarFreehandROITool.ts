@@ -685,7 +685,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       const { data } = annotation;
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        data.cachedStats[targetId].areaUnit === null
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
