@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -352,8 +352,13 @@ class ArrowAnnotateTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      newAnnotation,
+      hasMoved,
+      movingTextBox,
+    } = this.editData;
     const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
@@ -392,8 +397,12 @@ class ArrowAnnotateTool extends AnnotationTool {
 
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
       });
-    } else {
-      triggerAnnotationModified(annotation, element);
+    } else if (!movingTextBox) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
     }
 
     this.doneEditMemo();

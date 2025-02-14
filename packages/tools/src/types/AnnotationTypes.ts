@@ -81,6 +81,8 @@ type Annotation = {
     [key: string]: unknown;
     /** Cached Annotation statistics which is specific to the tool */
     cachedStats?: Record<string, unknown>;
+    /** Label of an annotation */
+    label?: string;
   };
 };
 
