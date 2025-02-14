@@ -223,8 +223,8 @@ async function run() {
   // We need the map on all image ids
   const allImageIds = viewport.getImageIds();
   const firstImage = allImageIds[0];
-  const segImages = await imageLoader.createAndCacheDerivedImages(
-    [firstImage],
+  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
+    allImageIds,
     {
       skipCreateBuffer: true,
       onCacheAdd: csUtils.VoxelManager.addInstanceToImage,

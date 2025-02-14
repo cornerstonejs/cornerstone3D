@@ -451,21 +451,30 @@ export default class SegmentationStateManager {
     updateCallback
   ): string | undefined {
     const currentImageId = viewport.getCurrentImageId();
+    const allImages = viewport.getImageIds();
 
-    let viewableLabelmapImageIdFound = false;
-    for (const labelmapImageId of labelmapImageIds) {
-      const viewableImageId = viewport.isReferenceViewable(
-        { referencedImageId: labelmapImageId },
-        { asOverlay: true }
-      );
+    const idx = allImages.findIndex((s) => s === currentImageId);
+    const labelmapImageId = labelmapImageIds[idx];
 
-      if (viewableImageId) {
-        viewableLabelmapImageIdFound = true;
-        this._stackLabelmapImageIdReferenceMap
-          .get(segmentationId)
-          .set(currentImageId, labelmapImageId);
-      }
-    }
+    const viewableLabelmapImageIdFound = true;
+    this._stackLabelmapImageIdReferenceMap
+      .get(segmentationId)
+      .set(currentImageId, labelmapImageId);
+
+    // let viewableLabelmapImageIdFound = false;
+    // for (const labelmapImageId of labelmapImageIds) {
+    //   const viewableImageId = viewport.isReferenceViewable(
+    //     { referencedImageId: labelmapImageId },
+    //     { asOverlay: true }
+    //   );
+
+    //   if (viewableImageId) {
+    //     viewableLabelmapImageIdFound = true;
+    //     this._stackLabelmapImageIdReferenceMap
+    //       .get(segmentationId)
+    //       .set(currentImageId, labelmapImageId);
+    //   }
+    // }
 
     if (updateCallback) {
       updateCallback(viewport, segmentationId, labelmapImageIds);
