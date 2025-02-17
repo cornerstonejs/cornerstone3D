@@ -683,9 +683,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     if (!this.commonData?.movingTextBox) {
       const { data } = annotation;
+      const { closed } = data.contour;
       if (
         !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit === null
+        (closed && !data.cachedStats[targetId]?.areaUnit)
       ) {
         data.cachedStats[targetId] = {
           Modality: null,
