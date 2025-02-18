@@ -11,7 +11,7 @@ import {
 } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { updateLabelmapSegmentationImageReferences } from '../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
-import { getCurrentLabelmapImageIdForViewportOverlapping } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getCurrentLabelmapImageIdsForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { SegmentationRepresentations } from '../../enums';
 import { getLabelmapActorEntries } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
@@ -114,7 +114,7 @@ function _imageChangeEventListener(evt) {
     // if cannot find a representation for this actor means it has stuck around
     // form previous renderings and should be removed
     const validActor = labelmapRepresentations.find((representation) => {
-      const derivedImageIds = getCurrentLabelmapImageIdForViewportOverlapping(
+      const derivedImageIds = getCurrentLabelmapImageIdsForViewport(
         viewportId,
         representation.segmentationId
       );
@@ -130,7 +130,7 @@ function _imageChangeEventListener(evt) {
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
     const currentImageId = viewport.getCurrentImageId();
-    const derivedImageIds = getCurrentLabelmapImageIdForViewportOverlapping(
+    const derivedImageIds = getCurrentLabelmapImageIdsForViewport(
       viewportId,
       segmentationId
     );
@@ -139,7 +139,7 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
-    derivedImageIds.forEach((derivedImageId) => {
+    const updateSegmentationActor = (derivedImageId) => {
       const derivedImage = cache.getImage(derivedImageId);
 
       if (!derivedImage) {
@@ -231,7 +231,9 @@ function _imageChangeEventListener(evt) {
           );
         }
       }
-    });
+    };
+
+    derivedImageIds.forEach(updateSegmentationActor);
 
     viewport.render();
 

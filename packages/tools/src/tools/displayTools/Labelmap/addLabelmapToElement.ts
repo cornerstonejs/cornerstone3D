@@ -14,7 +14,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
-import { getCurrentLabelmapImageIdForViewportOverlapping } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import {
   triggerSegmentationDataModified,
@@ -136,11 +136,10 @@ async function addLabelmapToElement(
   } else {
     // We can use the current imageId in the viewport to get the segmentation imageId
     // which later is used to create the actor and mapper.
-    const segmentationImageIds =
-      getCurrentLabelmapImageIdForViewportOverlapping(
-        viewport.id,
-        segmentationId
-      );
+    const segmentationImageIds = getCurrentLabelmapImageIdsForViewport(
+      viewport.id,
+      segmentationId
+    );
 
     const stackInputs: Types.IStackInput[] = segmentationImageIds.map(
       (imageId) => ({

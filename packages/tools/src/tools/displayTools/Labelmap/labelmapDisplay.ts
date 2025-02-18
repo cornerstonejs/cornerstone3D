@@ -18,7 +18,7 @@ import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { getActiveSegmentation } from '../../../stateManagement/segmentation/activeSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
-import { getCurrentLabelmapImageIdForViewportOverlapping } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
@@ -136,7 +136,7 @@ async function render(
   }
 
   if (viewport instanceof VolumeViewport) {
-    if (!labelmapActorEntries) {
+    if (!labelmapActorEntries?.length) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(
         viewport,
@@ -149,7 +149,7 @@ async function render(
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   } else {
     // stack segmentation
-    const labelmapImageIds = getCurrentLabelmapImageIdForViewportOverlapping(
+    const labelmapImageIds = getCurrentLabelmapImageIdsForViewport(
       viewport.id,
       segmentationId
     );
@@ -173,7 +173,7 @@ async function render(
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   }
 
-  if (!labelmapActorEntries) {
+  if (!labelmapActorEntries?.length) {
     return;
   }
 
