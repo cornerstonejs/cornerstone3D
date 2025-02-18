@@ -183,6 +183,17 @@ function decodeImageFrame(
         decodeConfig
       );
 
+    case '1.2.840.10008.1.2.4.110':
+    case '1.2.840.10008.1.2.4.111':
+    case '1.2.840.10008.1.2.4.112':
+      // JPEGXL
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
     case '3.2.840.10008.1.2.4.96':
     case '1.2.840.10008.1.2.4.201':
     case '1.2.840.10008.1.2.4.202':

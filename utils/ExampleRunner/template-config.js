@@ -80,6 +80,7 @@ module.exports = {
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
+      "child_process": false,
       fs: false,
       path: require.resolve('path-browserify'),
       events: false

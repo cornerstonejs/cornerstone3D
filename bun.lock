@@ -1,5 +1,5 @@
 {
-  "lockfileVersion": 0,
+  "lockfileVersion": 1,
   "workspaces": {
     "": {
       "name": "root",
@@ -138,7 +138,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "2.19.6",
+      "version": "2.19.7",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -147,13 +147,13 @@
         "ndarray": "^1.0.19",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "packages/core",
-        "@cornerstonejs/tools": "packages/tools",
+        "@cornerstonejs/core": "^2.19.7",
+        "@cornerstonejs/tools": "^2.19.7",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "2.19.6",
+      "version": "2.19.7",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -165,13 +165,13 @@
         "onnxruntime-web": "1.17.1",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "packages/core",
-        "@cornerstonejs/tools": "packages/tools",
+        "@cornerstonejs/core": "^2.19.7",
+        "@cornerstonejs/tools": "^2.19.7",
       },
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "2.19.6",
+      "version": "2.19.7",
       "dependencies": {
         "@kitware/vtk.js": "32.9.0",
         "comlink": "^4.4.1",
@@ -180,10 +180,11 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "2.19.6",
+      "version": "2.19.7",
       "dependencies": {
         "@cornerstonejs/codec-charls": "^1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
+        "@cornerstonejs/codec-libjxl": "file:../../cornerstonejs-codec-libjxl-0.0.1.tgz",
         "@cornerstonejs/codec-openjpeg": "^1.2.2",
         "@cornerstonejs/codec-openjph": "^2.4.5",
         "comlink": "^4.4.1",
@@ -192,7 +193,7 @@
         "uuid": "^9.0.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "packages/core",
+        "@cornerstonejs/core": "^2.19.7",
         "dicom-parser": "^1.8.9",
       },
     },
@@ -200,11 +201,11 @@
       "name": "docs",
       "version": "2.1.10",
       "dependencies": {
-        "@cornerstonejs/adapters": "packages/adapters",
-        "@cornerstonejs/core": "packages/core",
-        "@cornerstonejs/dicom-image-loader": "packages/dicomImageLoader",
-        "@cornerstonejs/nifti-volume-loader": "packages/nifti-volume-loader",
-        "@cornerstonejs/tools": "packages/tools",
+        "@cornerstonejs/adapters": "^2.19.7",
+        "@cornerstonejs/core": "^2.19.7",
+        "@cornerstonejs/dicom-image-loader": "^2.19.7",
+        "@cornerstonejs/nifti-volume-loader": "^2.19.7",
+        "@cornerstonejs/tools": "^2.19.7",
         "@docusaurus/core": "3.6.3",
         "@docusaurus/faster": "3.6.3",
         "@docusaurus/module-type-aliases": "3.6.3",
@@ -242,17 +243,17 @@
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "2.19.6",
+      "version": "2.19.7",
       "dependencies": {
         "nifti-reader-js": "^0.6.8",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "packages/core",
+        "@cornerstonejs/core": "^2.19.7",
       },
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "2.19.6",
+      "version": "2.19.7",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "^4.4.1",
@@ -262,7 +263,7 @@
         "canvas": "^2.11.2",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "packages/core",
+        "@cornerstonejs/core": "^2.19.7",
         "@kitware/vtk.js": "32.9.0",
         "@types/d3-array": "^3.0.4",
         "@types/d3-interpolate": "^3.0.1",
@@ -583,9 +584,9 @@
 
     "@colors/colors": ["@colors/colors@1.5.0", "", {}, "sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ=="],
 
-    "@cornerstonejs/adapters": ["@cornerstonejs/adapters@workspace:packages/adapters", { "dependencies": { "@babel/runtime-corejs2": "^7.17.8", "buffer": "^6.0.3", "dcmjs": "^0.29.8", "gl-matrix": "^3.4.3", "ndarray": "^1.0.19" }, "peerDependencies": { "@cornerstonejs/core": "packages/core", "@cornerstonejs/tools": "packages/tools" } }],
+    "@cornerstonejs/adapters": ["@cornerstonejs/adapters@workspace:packages/adapters"],
 
-    "@cornerstonejs/ai": ["@cornerstonejs/ai@workspace:packages/ai", { "dependencies": { "@babel/runtime-corejs2": "^7.17.8", "buffer": "^6.0.3", "dcmjs": "^0.29.8", "gl-matrix": "^3.4.3", "lodash.clonedeep": "^4.5.0", "ndarray": "^1.0.19", "onnxruntime-common": "1.17.1", "onnxruntime-web": "1.17.1" }, "peerDependencies": { "@cornerstonejs/core": "packages/core", "@cornerstonejs/tools": "packages/tools" } }],
+    "@cornerstonejs/ai": ["@cornerstonejs/ai@workspace:packages/ai"],
 
     "@cornerstonejs/calculate-suv": ["@cornerstonejs/calculate-suv@1.0.3", "", {}, "sha512-2SwVJKzC1DzyxdxJtCht9dhTND2GFjLwhhkDyyC7vJq5tIgbhxgPk1CSwovO1pxmoybAXzjOxnaubllxLgoT+w=="],
 
@@ -593,17 +594,19 @@
 
     "@cornerstonejs/codec-libjpeg-turbo-8bit": ["@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.2", "", {}, "sha512-aAUMK2958YNpOb/7G6e2/aG7hExTiFTASlMt/v90XA0pRHdWiNg5ny4S5SAju0FbIw4zcMnR0qfY+yW3VG2ivg=="],
 
+    "@cornerstonejs/codec-libjxl": ["@cornerstonejs/codec-libjxl@../../cornerstonejs-codec-libjxl-0.0.1.tgz", {}],
+
     "@cornerstonejs/codec-openjpeg": ["@cornerstonejs/codec-openjpeg@1.2.4", "", {}, "sha512-UT2su6xZZnCPSuWf2ldzKa/2+guQ7BGgfBSKqxanggwJHh48gZqIAzekmsLyJHMMK5YDK+ti+fzvVJhBS3Xi/g=="],
 
     "@cornerstonejs/codec-openjph": ["@cornerstonejs/codec-openjph@2.4.7", "", {}, "sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w=="],
 
-    "@cornerstonejs/core": ["@cornerstonejs/core@workspace:packages/core", { "dependencies": { "@kitware/vtk.js": "32.9.0", "comlink": "^4.4.1", "gl-matrix": "^3.4.3" } }],
+    "@cornerstonejs/core": ["@cornerstonejs/core@workspace:packages/core"],
 
-    "@cornerstonejs/dicom-image-loader": ["@cornerstonejs/dicom-image-loader@workspace:packages/dicomImageLoader", { "dependencies": { "@cornerstonejs/codec-charls": "^1.2.3", "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2", "@cornerstonejs/codec-openjpeg": "^1.2.2", "@cornerstonejs/codec-openjph": "^2.4.5", "comlink": "^4.4.1", "jpeg-lossless-decoder-js": "^2.1.0", "pako": "^2.0.4", "uuid": "^9.0.0" }, "peerDependencies": { "@cornerstonejs/core": "packages/core", "dicom-parser": "^1.8.9" } }],
+    "@cornerstonejs/dicom-image-loader": ["@cornerstonejs/dicom-image-loader@workspace:packages/dicomImageLoader"],
 
-    "@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@workspace:packages/nifti-volume-loader", { "dependencies": { "nifti-reader-js": "^0.6.8" }, "peerDependencies": { "@cornerstonejs/core": "packages/core" } }],
+    "@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@workspace:packages/nifti-volume-loader"],
 
-    "@cornerstonejs/tools": ["@cornerstonejs/tools@workspace:packages/tools", { "dependencies": { "@types/offscreencanvas": "2019.7.3", "comlink": "^4.4.1", "lodash.get": "^4.4.2" }, "devDependencies": { "canvas": "^2.11.2" }, "peerDependencies": { "@cornerstonejs/core": "packages/core", "@kitware/vtk.js": "32.9.0", "@types/d3-array": "^3.0.4", "@types/d3-interpolate": "^3.0.1", "d3-array": "^3.2.3", "d3-interpolate": "^3.0.1", "gl-matrix": "^3.4.3" } }],
+    "@cornerstonejs/tools": ["@cornerstonejs/tools@workspace:packages/tools"],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
@@ -811,9 +814,9 @@
 
     "@eslint/js": ["@eslint/js@8.57.1", "", {}, "sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q=="],
 
-    "@externals/dicom-microscopy-viewer": ["@externals/dicom-microscopy-viewer@workspace:addOns/externals/dicom-microscopy-viewer", { "dependencies": { "dicom-microscopy-viewer": "^0.46.1" } }],
+    "@externals/dicom-microscopy-viewer": ["@externals/dicom-microscopy-viewer@workspace:addOns/externals/dicom-microscopy-viewer"],
 
-    "@externals/polyseg-wasm": ["@externals/polyseg-wasm@workspace:addOns/externals/polyseg-wasm", { "dependencies": { "@icr/polyseg-wasm": "^0.4.0", "@itk-wasm/morphological-contour-interpolation": "1.0.1" } }],
+    "@externals/polyseg-wasm": ["@externals/polyseg-wasm@workspace:addOns/externals/polyseg-wasm"],
 
     "@fastify/accept-negotiator": ["@fastify/accept-negotiator@1.1.0", "", {}, "sha512-OIHZrb2ImZ7XG85HXOONLcJWGosv7sIvM2ifAPQVhg9Lv7qdmMBNVaai4QTdyuaqbKM5eO6sLSQOYI7wEQeCJQ=="],
 
@@ -2397,7 +2400,7 @@
 
     "docdash": ["docdash@1.2.0", "", {}, "sha512-IYZbgYthPTspgqYeciRJNPhSwL51yer7HAwDXhF5p+H7mTDbPvY3PCk/QDjNxdPCpWkaJVFC4t7iCNB/t9E5Kw=="],
 
-    "docs": ["docs@workspace:packages/docs", { "dependencies": { "@cornerstonejs/adapters": "packages/adapters", "@cornerstonejs/core": "packages/core", "@cornerstonejs/dicom-image-loader": "packages/dicomImageLoader", "@cornerstonejs/nifti-volume-loader": "packages/nifti-volume-loader", "@cornerstonejs/tools": "packages/tools", "@docusaurus/core": "3.6.3", "@docusaurus/faster": "3.6.3", "@docusaurus/module-type-aliases": "3.6.3", "@docusaurus/plugin-google-gtag": "3.6.3", "@docusaurus/preset-classic": "3.6.3", "@kitware/vtk.js": "32.9.0", "@mdx-js/react": "^3.0.1", "@svgr/webpack": "^8.1.0", "clsx": "^1.1.1", "dcmjs": "^0.33.0", "dicom-parser": "^1.8.21", "dicomweb-client": "0.10.4", "docusaurus-plugin-copy": "0.1.1", "docusaurus-plugin-typedoc": "1.0.5", "file-loader": "^6.2.0", "gl-matrix": "^3.4.3", "hammerjs": "^2.0.8", "prism-react-renderer": "2.4.0", "react": "18.3.1", "react-dom": "18.3.1", "react-resize-detector": "11.0.1", "react-router-dom": "6.23.1", "typedoc-plugin-markdown": "4.2.9", "url-loader": "^4.1.1" }, "devDependencies": { "copyfiles": "2.4.1", "esbuild-loader": "^2.18.0", "karma-chrome-launcher": "^3.1.0", "netlify-plugin-cache": "^1.0.3", "puppeteer": "^13.1.3", "shader-loader": "^1.3.1", "typedoc": "0.26.10" } }],
+    "docs": ["docs@workspace:packages/docs"],
 
     "doctrine": ["doctrine@3.0.0", "", { "dependencies": { "esutils": "^2.0.2" } }, "sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w=="],
 
