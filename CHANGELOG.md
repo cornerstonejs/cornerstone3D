@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.8...v2.19.9) (2025-02-18)
+
+### Bug Fixes
+
+- incorrect check for validating pixel data array type ([#1830](https://github.com/cornerstonejs/cornerstone3D/issues/1830)) ([f9d5b79](https://github.com/cornerstonejs/cornerstone3D/commit/f9d5b79c75a4125bbf4e646752ad2071ddc76c41))
+
 ## [2.19.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.7...v2.19.8) (2025-02-18)
 
 ### Bug Fixes
