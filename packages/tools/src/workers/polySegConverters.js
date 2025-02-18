@@ -18,8 +18,14 @@ import { checkStandardBasis, rotatePoints } from '../geometricSurfaceUtils';
 
 export async function peerImport(moduleId) {
   if (moduleId === '@icr/polyseg-wasm') {
+    // NOTE: Assigning to a variable is necessary here to prevent bundlers
+    // from chasing the import and statically including it. This avoids many hacks
+    // related to declaring the import as external in Vite, etc.
+    const moduleName = '@icr/polyseg-wasm';
     return import(
-      /* webpackChunkName: "icr-polyseg-wasm" */ '@icr/polyseg-wasm'
+      /* webpackChunkName: "icr-polyseg-wasm" */
+      /* @vite-ignore */
+      moduleName
     );
   }
 }

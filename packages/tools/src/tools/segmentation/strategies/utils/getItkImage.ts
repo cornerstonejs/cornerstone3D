@@ -1,6 +1,13 @@
 const peerImport = (moduleId) => {
   if (moduleId === 'itk-wasm') {
-    return import(/* webpackChunkName: "itk-wasm" */ 'itk-wasm');
+    // NOTE: Assigning to a variable is necessary here to prevent bundlers
+    // from chasing the import and statically including it. This avoids many hacks
+    // related to declaring the import as external in Vite, etc.
+    const moduleName = 'itk-wasm';
+    return import(
+      /* webpackChunkName: "itk-wasm" */
+      moduleName
+    );
   }
 };
 
