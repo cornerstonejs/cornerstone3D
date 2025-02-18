@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.9...v2.19.10) (2025-02-18)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.19.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.8...v2.19.9) (2025-02-18)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [2.19.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.7...v2.19.8) (2025-02-18)
+
+### Bug Fixes
+
+- **rendering:** fix image overflow issues by restoring data type check ([#1829](https://github.com/cornerstonejs/cornerstone3D/issues/1829)) ([f5ff886](https://github.com/cornerstonejs/cornerstone3D/commit/f5ff886cbc7fce190f943880c180533f3af97065))
+
 ## [2.19.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.6...v2.19.7) (2025-02-06)
 
 **Note:** Version bump only for package @cornerstonejs/core
