@@ -162,9 +162,11 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Run Extended Interpolation',
   onClick: () => {
+    const activeSegmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
     segmentationUtils.interpolateLabelmap({
       segmentationId,
-      segmentIndex: 1,
+      segmentIndex: activeSegmentIndex,
     });
   },
 });

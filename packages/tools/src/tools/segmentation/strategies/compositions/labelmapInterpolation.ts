@@ -1,4 +1,4 @@
-import { utilities, peerImport } from '@cornerstonejs/core';
+import { peerImport } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import getItkImage from '../utils/getItkImage';
@@ -14,15 +14,18 @@ type MorphologicalContourInterpolationOptions = {
 };
 
 /**
- * Adds an isWithinThreshold to the operation data that checks that the
- * image value is within threshold[0]...threshold[1]
- * No-op if threshold not defined.
+ * @deprecated
+ * Use the interpolateLabelmap utility function to interpolate the labelmap
+ * instead of this strategy.
  */
 export default {
   [StrategyCallbacks.Interpolate]: async (
     operationData: InitializedOperationData,
     configuration: MorphologicalContourInterpolationOptions
   ) => {
+    console.warn(
+      'Warning: The labelmap interpolation strategy is deprecated. Use the interpolateLabelmap utility function instead.'
+    );
     const {
       segmentationImageData,
       segmentIndex,

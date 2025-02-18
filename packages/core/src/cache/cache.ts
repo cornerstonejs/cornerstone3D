@@ -48,9 +48,9 @@ class Cache {
    * @returns A deterministic volume ID
    */
   public generateVolumeId(imageIds: string[]): string {
-    const imageURIs = imageIds.map(imageIdToURI);
+    const imageURIs = imageIds.map(imageIdToURI).sort();
 
-    let combinedHash = 0x811c9dc5; // Initial FNV offset basis
+    let combinedHash = 0x811c9dc5;
     for (const id of imageURIs) {
       const idHash = this._fnv1aHash(id);
       for (let i = 0; i < idHash.length; i++) {
