@@ -7,7 +7,6 @@ import regionFill from './regionFill';
 import setValue from './setValue';
 import threshold from './threshold';
 import labelmapStatistics from './labelmapStatistics';
-import labelmapInterpolation from './labelmapInterpolation';
 import ensureSegmentationVolumeFor3DManipulation from './ensureSegmentationVolume';
 import ensureImageVolumeFor3DManipulation from './ensureImageVolume';
 
@@ -21,7 +20,6 @@ export default {
   setValue,
   threshold,
   labelmapStatistics,
-  labelmapInterpolation,
   ensureSegmentationVolumeFor3DManipulation,
   ensureImageVolumeFor3DManipulation,
 };
