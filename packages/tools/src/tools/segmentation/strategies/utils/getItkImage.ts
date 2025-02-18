@@ -1,4 +1,8 @@
-import peerImport from '../../../../utilities/peerImport';
+const peerImport = (moduleId) => {
+  if (moduleId === 'itk-wasm') {
+    return import(/* webpackChunkName: "itk-wasm" */ 'itk-wasm');
+  }
+};
 
 /**
  * Get the ITK Image from the image data
