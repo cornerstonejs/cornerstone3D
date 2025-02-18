@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.9...v2.19.10) (2025-02-18)
+
+### Bug Fixes
+
+- Prevent overwriting existing inactive styles ([#1831](https://github.com/cornerstonejs/cornerstone3D/issues/1831)) ([8e8c29e](https://github.com/cornerstonejs/cornerstone3D/commit/8e8c29e6d6276936b1be5e4fb116a4ec2585dfd8))
+
 ## [2.19.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.8...v2.19.9) (2025-02-18)
 
 ### Bug Fixes
