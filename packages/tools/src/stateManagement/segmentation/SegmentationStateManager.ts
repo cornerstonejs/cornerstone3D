@@ -451,49 +451,40 @@ export default class SegmentationStateManager {
     updateCallback
   ): string | undefined {
     const currentImageId = viewport.getCurrentImageId();
-    const segmentation = this.getSegmentation(segmentationId);
-    if(!segmentation) {
-        return;
-    }
-    const { representationData } = segmentation;
+    const allImages = viewport.getImageIds();
 
-    // Check if the representation includes a mapping between imageIds and
-    // labelmap IDs
-    let referencedImageIds;
-    if ('referencedImageIds' in representationData?.Labelmap) {
-      referencedImageIds = representationData?.Labelmap?.referencedImageIds;
-    }
-    let viewableLabelmapImageIdFound = false;
-    if(referencedImageIds) {
-        // An explicit mapping has been provided, so use that. Otherwise, fall through to
-        // viewport based matching.
-        const referencedIndex = referencedImageIds.indexOf(currentImageId);
-        if(referencedIndex >= 0) {
-            const currentLabelmapId = labelmapImageIds[referencedIndex];
-            viewableLabelmapImageIdFound = true;
-            this._stackLabelmapImageIdReferenceMap
-                .get(segmentationId)
-                .set(currentImageId, currentLabelmapId)
-        }
-    } else {
-        for (const labelmapImageId of labelmapImageIds) {
-            const viewableImageId = viewport.isReferenceViewable({ referencedImageId: labelmapImageId }, { asOverlay: true });
-            if (viewableImageId) {
-                viewableLabelmapImageIdFound = true;
-                this._stackLabelmapImageIdReferenceMap
-                    .get(segmentationId)
-                    .set(currentImageId, labelmapImageId);
-            }
-        }
-    }
+    const idx = allImages.findIndex((s) => s === currentImageId);
+    const labelmapImageId = labelmapImageIds[idx];
+
+    const viewableLabelmapImageIdFound = true;
+    this._stackLabelmapImageIdReferenceMap
+      .get(segmentationId)
+      .set(currentImageId, labelmapImageId);
+
+    // let viewableLabelmapImageIdFound = false;
+    // for (const labelmapImageId of labelmapImageIds) {
+    //   const viewableImageId = viewport.isReferenceViewable(
+    //     { referencedImageId: labelmapImageId },
+    //     { asOverlay: true }
+    //   );
+
+    //   if (viewableImageId) {
+    //     viewableLabelmapImageIdFound = true;
+    //     this._stackLabelmapImageIdReferenceMap
+    //       .get(segmentationId)
+    //       .set(currentImageId, labelmapImageId);
+    //   }
+    // }
+
     if (updateCallback) {
-        updateCallback(viewport, segmentationId, labelmapImageIds);
+      updateCallback(viewport, segmentationId, labelmapImageIds);
     }
+
     return viewableLabelmapImageIdFound
-        ? this._stackLabelmapImageIdReferenceMap
-            .get(segmentationId)
-            .get(currentImageId)
-        : undefined;
+      ? this._stackLabelmapImageIdReferenceMap
+          .get(segmentationId)
+          .get(currentImageId)
+      : undefined;
   }
 
   /**

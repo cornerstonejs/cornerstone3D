@@ -241,17 +241,12 @@ async function run() {
 
   renderingEngine.renderViewports([viewportId]);
 
-  (window as any).segMap = {
-    referencedImageIds: allImageIds,
-    segmentationImageIds,
-  };
   segmentation.addSegmentations([
     {
       segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          referencedImageIds: allImageIds,
           imageIds: segmentationImageIds,
         },
       },
