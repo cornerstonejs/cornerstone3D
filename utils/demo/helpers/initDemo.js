@@ -27,7 +27,10 @@ export default async function initDemo(config) {
     peerImport,
     ...(config?.core ? config.core : {}),
   });
-  await csToolsInit();
+  await csToolsInit({
+    enablePolySeg: true,
+    enableLabelmapInterpolation: true,
+  });
 
   // for testings, you don't need any of these
   volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);
@@ -45,22 +48,6 @@ export async function peerImport(moduleId) {
     return importGlobal(
       '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
       'dicomMicroscopyViewer'
-    );
-  }
-
-  if (moduleId === '@icr/polyseg-wasm') {
-    return import(
-      /* webpackChunkName: "icr-polyseg-wasm" */ '@icr/polyseg-wasm'
-    );
-  }
-
-  if (moduleId === 'itk-wasm') {
-    return import(/* webpackChunkName: "itk-wasm" */ 'itk-wasm');
-  }
-
-  if (moduleId === '@itk-wasm/morphological-contour-interpolation') {
-    return import(
-      /* webpackChunkName: "itk-wasm-morphological-contour-interpolation" */ '@itk-wasm/morphological-contour-interpolation'
     );
   }
 }

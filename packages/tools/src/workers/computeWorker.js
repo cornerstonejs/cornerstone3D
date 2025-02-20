@@ -1,15 +1,22 @@
 import { expose } from 'comlink';
 import VolumetricCalculator from '../utilities/segmentation/VolumetricCalculator';
-import getItkImage from '../tools/segmentation/strategies/utils/getItkImage';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 
-export async function peerImport(moduleId) {
+export async function peerImport(moduleId, enableLabelmapInterpolation) {
+  if (moduleId === 'itk-wasm') {
+    if (enableLabelmapInterpolation) {
+      return import('itk-wasm');
+    } else {
+      const moduleName = 'itk-wasm';
+      return import(
+        /* webpackChunkName: "itk-wasm-morphological-contour-interpolation" */
+        `${moduleName}`
+      );
+    }
+  }
   if (moduleId === '@itk-wasm/morphological-contour-interpolation') {
-    // NOTE: Assigning to a variable is necessary here to prevent bundlers
-    // from chasing the import and statically including it. This avoids many hacks
-    // related to declaring the import as external in Vite, etc.
-    if (typeof __EXAMPLE_RUNNER__ !== 'undefined' && __EXAMPLE_RUNNER__) {
+    if (enableLabelmapInterpolation) {
       return import('@itk-wasm/morphological-contour-interpolation');
     } else {
       const moduleName = '@itk-wasm/morphological-contour-interpolation';
@@ -68,15 +75,83 @@ const computeWorker = {
     return stats;
   },
 
+  getITKImage: async (args) => {
+    const { imageData, options, enableLabelmapInterpolation } = args;
+
+    const { imageName, scalarData } = options;
+
+    let Image, ImageType, IntTypes, FloatTypes, PixelTypes;
+
+    try {
+      const itkModule = await peerImport(
+        'itk-wasm',
+        enableLabelmapInterpolation
+      );
+      if (!itkModule) {
+        throw new Error('Module not found');
+      }
+      ({ Image, ImageType, IntTypes, FloatTypes, PixelTypes } = itkModule);
+    } catch (error) {
+      console.warn(
+        "Warning: 'itk-wasm' module not found. Please install it separately."
+      );
+      return null;
+    }
+
+    const dataTypesMap = {
+      Int8: IntTypes.Int8,
+      UInt8: IntTypes.UInt8,
+      Int16: IntTypes.Int16,
+      UInt16: IntTypes.UInt16,
+      Int32: IntTypes.Int32,
+      UInt32: IntTypes.UInt32,
+      Int64: IntTypes.Int64,
+      UInt64: IntTypes.UInt64,
+      Float32: FloatTypes.Float32,
+      Float64: FloatTypes.Float64,
+    };
+
+    const { numberOfComponents } = imageData.get('numberOfComponents');
+
+    const dimensions = imageData.getDimensions();
+    const origin = imageData.getOrigin();
+    const spacing = imageData.getSpacing();
+    const directionArray = imageData.getDirection();
+    const direction = new Float64Array(directionArray);
+    const dataType = scalarData.constructor.name
+      .replace(/^Ui/, 'UI')
+      .replace(/Array$/, '');
+    const metadata = undefined;
+
+    const imageType = new ImageType(
+      dimensions.length,
+      dataTypesMap[dataType],
+      PixelTypes.Scalar,
+      numberOfComponents
+    );
+
+    const image = new Image(imageType);
+    image.name = imageName;
+    image.origin = origin;
+    image.spacing = spacing;
+    image.direction = direction;
+    image.size = dimensions;
+    image.metadata = metadata;
+    image.data = scalarData;
+
+    return image;
+  },
   interpolateLabelmap: async (args) => {
-    const { segmentationInfo, configuration } = args;
+    const { segmentationInfo, configuration, enableLabelmapInterpolation } =
+      args;
     const { scalarData, dimensions, spacing, origin, direction } =
       segmentationInfo;
 
     let itkModule;
     try {
       itkModule = await peerImport(
-        '@itk-wasm/morphological-contour-interpolation'
+        '@itk-wasm/morphological-contour-interpolation',
+        enableLabelmapInterpolation
       );
       if (!itkModule) {
         throw new Error('Module not found');
@@ -104,9 +179,13 @@ const computeWorker = {
     imageData.modified();
 
     try {
-      const inputImage = await getItkImage(imageData, {
-        imageName: 'interpolation',
-        scalarData: scalarData,
+      const inputImage = await computeWorker.getITKImage({
+        imageData,
+        options: {
+          imageName: 'interpolation',
+          scalarData: scalarData,
+        },
+        enableLabelmapInterpolation,
       });
 
       if (!inputImage) {

@@ -1,9 +1,8 @@
+import { getConfig } from '../../../../config';
+
 const peerImport = (moduleId) => {
   if (moduleId === 'itk-wasm') {
-    // NOTE: Assigning to a variable is necessary here to prevent bundlers
-    // from chasing the import and statically including it. This avoids many hacks
-    // related to declaring the import as external in Vite, etc.
-    if (typeof __EXAMPLE_RUNNER__ !== 'undefined' && __EXAMPLE_RUNNER__) {
+    if (getConfig().enableLabelmapInterpolation) {
       return import('itk-wasm');
     } else {
       const moduleName = 'itk-wasm';

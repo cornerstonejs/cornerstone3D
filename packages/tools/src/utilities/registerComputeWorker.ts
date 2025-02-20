@@ -1,5 +1,5 @@
 import { getWebWorkerManager } from '@cornerstonejs/core';
-
+import { getConfig } from '../config';
 let registered = false;
 
 export function registerComputeWorker() {
@@ -29,6 +29,7 @@ export function registerComputeWorker() {
       enabled: true,
       idleTimeThreshold: 2000,
     },
+    enableLabelmapInterpolation: getConfig().enableLabelmapInterpolation,
   };
 
   workerManager.registerWorker('compute', workerFn, options);

@@ -28,7 +28,6 @@ module.exports = {
     }),
     new rspack.DefinePlugin({
       __BASE_PATH__: "''",
-      __EXAMPLE_RUNNER__: true,
     }),
     new rspack.CopyRspackPlugin({
       patterns: [
