@@ -22,11 +22,7 @@ export async function peerImport(moduleId) {
     // from chasing the import and statically including it. This avoids many hacks
     // related to declaring the import as external in Vite, etc.
     const moduleName = '@icr/polyseg-wasm';
-    return import(
-      /* webpackChunkName: "icr-polyseg-wasm" */
-      /* @vite-ignore */
-      moduleName
-    );
+    return import(`${moduleName}`);
   }
 }
 

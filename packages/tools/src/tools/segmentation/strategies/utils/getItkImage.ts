@@ -6,7 +6,8 @@ const peerImport = (moduleId) => {
     const moduleName = 'itk-wasm';
     return import(
       /* webpackChunkName: "itk-wasm" */
-      moduleName
+      /* @vite-ignore */
+      `${moduleName}`
     );
   }
 };

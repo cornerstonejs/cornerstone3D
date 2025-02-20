@@ -12,7 +12,8 @@ export async function peerImport(moduleId) {
     const moduleName = 'itk-wasm';
     return import(
       /* webpackChunkName: "itk-wasm" */
-      moduleName
+      /* @vite-ignore */
+      `${moduleName}`
     );
   }
 
@@ -23,7 +24,7 @@ export async function peerImport(moduleId) {
     const moduleName = '@itk-wasm/morphological-contour-interpolation';
     return import(
       /* webpackChunkName: "itk-wasm-morphological-contour-interpolation" */
-      moduleName
+      `${moduleName}`
     );
   }
 }
