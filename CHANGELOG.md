@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.19.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.11...v2.19.12) (2025-02-20)
+
+### Bug Fixes
+
+- planar freehand roi undefined unit ([#1839](https://github.com/cornerstonejs/cornerstone3D/issues/1839)) ([ace8933](https://github.com/cornerstonejs/cornerstone3D/commit/ace893349ed4d066adf035ca776511ac9c394a86))
+
 ## [2.19.11](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.10...v2.19.11) (2025-02-18)
 
 ### Bug Fixes
