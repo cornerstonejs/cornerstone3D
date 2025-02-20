@@ -21,8 +21,15 @@ export async function peerImport(moduleId) {
     // NOTE: Assigning to a variable is necessary here to prevent bundlers
     // from chasing the import and statically including it. This avoids many hacks
     // related to declaring the import as external in Vite, etc.
-    const moduleName = '@icr/polyseg-wasm';
-    return import(`${moduleName}`);
+    if (typeof __EXAMPLE_RUNNER__ !== 'undefined' && __EXAMPLE_RUNNER__) {
+      return import('@icr/polyseg-wasm');
+    } else {
+      const moduleName = '@icr/polyseg-wasm';
+      return import(
+        /* webpackChunkName: "icr-polyseg-wasm" */
+        `${moduleName}`
+      );
+    }
   }
 }
 

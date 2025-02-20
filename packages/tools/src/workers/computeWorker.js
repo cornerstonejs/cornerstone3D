@@ -5,27 +5,19 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 
 export async function peerImport(moduleId) {
-  if (moduleId === 'itk-wasm') {
-    // NOTE: Assigning to a variable is necessary here to prevent bundlers
-    // from chasing the import and statically including it. This avoids many hacks
-    // related to declaring the import as external in Vite, etc.
-    const moduleName = 'itk-wasm';
-    return import(
-      /* webpackChunkName: "itk-wasm" */
-      /* @vite-ignore */
-      `${moduleName}`
-    );
-  }
-
   if (moduleId === '@itk-wasm/morphological-contour-interpolation') {
     // NOTE: Assigning to a variable is necessary here to prevent bundlers
     // from chasing the import and statically including it. This avoids many hacks
     // related to declaring the import as external in Vite, etc.
-    const moduleName = '@itk-wasm/morphological-contour-interpolation';
-    return import(
-      /* webpackChunkName: "itk-wasm-morphological-contour-interpolation" */
-      `${moduleName}`
-    );
+    if (typeof __EXAMPLE_RUNNER__ !== 'undefined' && __EXAMPLE_RUNNER__) {
+      return import('@itk-wasm/morphological-contour-interpolation');
+    } else {
+      const moduleName = '@itk-wasm/morphological-contour-interpolation';
+      return import(
+        /* webpackChunkName: "itk-wasm-morphological-contour-interpolation" */
+        `${moduleName}`
+      );
+    }
   }
 }
 
