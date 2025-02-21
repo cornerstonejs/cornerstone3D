@@ -83,7 +83,11 @@ let polysegInitialized = false;
  * @returns The PolySeg add-on instance or null if not configured
  */
 export function getPolySeg() {
-  if (!config.addOns.polySeg) {
+  if (!config.addOns?.polySeg) {
+    console.warn(
+      'PolySeg add-on not configured. You can use @cornerstonejs/polymorphic-segmentation as an add-on for cornerstoneTools, but you need to include it in `.init({ addOns: { polySeg})`.'
+    );
+
     return null;
   }
 

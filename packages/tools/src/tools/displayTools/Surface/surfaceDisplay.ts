@@ -11,7 +11,7 @@ import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
-import { getAddOns, getPolySeg } from '../../../config';
+import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 
 /**
@@ -85,9 +85,16 @@ async function render(
 
     if (!SurfaceData) {
       throw new Error(
-        `No Surface data found for segmentationId ${segmentationId}.`
+        `No Surface data found for segmentationId ${segmentationId} even we tried to compute it`
       );
     }
+  }
+
+  if (!SurfaceData) {
+    console.warn(
+      `No Surface data found for segmentationId ${segmentationId}. Skipping render.`
+    );
+    return;
   }
 
   const { geometryIds } = SurfaceData;
