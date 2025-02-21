@@ -3885,6 +3885,13 @@
   dependencies:
     itk-wasm "1.0.0-b.165"
 
+"@itk-wasm/morphological-contour-interpolation@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@itk-wasm/morphological-contour-interpolation/-/morphological-contour-interpolation-1.1.0.tgz#a2982dc27cdcc27026b61e12f76e7687c88cad7e"
+  integrity sha512-n6JIyDcSCCjlpfCW8mnTTzwPTE8U1QT87hNmyAknxdpGR4dfAzIutuKNrwgvr9UiKEBcit0X3HNx9dkzDwcIcw==
+  dependencies:
+    itk-wasm "1.0.0-b.173"
+
 "@jest/console@^29.7.0":
   version "29.7.0"
   resolved "https://registry.yarnpkg.com/@jest/console/-/console-29.7.0.tgz#cd4822dbdb84529265c5a2bdb529a3c9cc950ffc"
@@ -14909,6 +14916,24 @@ itk-wasm@1.0.0-b.165:
     "@thewtex/zstddec" "^0.2.0"
     "@types/emscripten" "^1.39.10"
     axios "^1.6.2"
+    comlink "^4.4.1"
+    commander "^11.1.0"
+    fs-extra "^11.2.0"
+    glob "^8.1.0"
+    markdown-table "^3.0.3"
+    mime-types "^2.1.35"
+    wasm-feature-detect "^1.6.1"
+
+itk-wasm@1.0.0-b.173:
+  version "1.0.0-b.173"
+  resolved "https://registry.yarnpkg.com/itk-wasm/-/itk-wasm-1.0.0-b.173.tgz#e484e1765f4205a5704f8fac205d2ecf74e726a2"
+  integrity sha512-SV2lfZ1mClWuSK/noaZgGj9jhroY4MZu19ci9pIucuyhoGdXrVSmWlPH/JYMDi9RP3BogmQwe9wfFc3X1dcEPg==
+  dependencies:
+    "@itk-wasm/dam" "^1.1.1"
+    "@thewtex/zstddec" "^0.2.0"
+    "@types/emscripten" "^1.39.10"
+    axios "^1.6.2"
+    chalk "^5.3.0"
     comlink "^4.4.1"
     commander "^11.1.0"
     fs-extra "^11.2.0"

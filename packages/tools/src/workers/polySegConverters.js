@@ -16,16 +16,26 @@ import {
 import { isPlaneIntersectingAABB } from '../utilities/planar';
 import { checkStandardBasis, rotatePoints } from '../geometricSurfaceUtils';
 
-export async function peerImport(moduleId, enablePolySeg = false) {
+async function peerImport(moduleId, enablePolySeg = false) {
   if (moduleId === '@icr/polyseg-wasm') {
-    if (enablePolySeg) {
-      return import('@icr/polyseg-wasm');
-    } else {
-      const moduleName = '@icr/polyseg-wasm';
-      return import(
-        /* webpackChunkName: "icr-polyseg-wasm" */
-        `${moduleName}`
-      );
+    try {
+      if (enablePolySeg) {
+        if (typeof __EXAMPLE_RUNNING__ !== 'undefined' && __EXAMPLE_RUNNING__) {
+          return import('@icr/polyseg-wasm');
+        } else {
+          return import(/* webpackIgnore: true */ '@icr/polyseg-wasm');
+        }
+      } else {
+        const moduleName = '@icr/polyseg-wasm';
+        return import(
+          /* webpackChunkName: "icr-polyseg-wasm" */
+          /* webpackIgnore: true */
+          `${moduleName}`
+        );
+      }
+    } catch (error) {
+      console.warn('Error importing @icr/polyseg-wasm:', error);
+      return null;
     }
   }
 }

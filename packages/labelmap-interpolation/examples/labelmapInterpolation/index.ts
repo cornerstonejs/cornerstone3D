@@ -16,6 +16,7 @@ import {
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import * as labelmapInterpolation from '@cornerstonejs/labelmap-interpolation';
 
 // This is for debugging purposes
 console.warn(
@@ -164,7 +165,7 @@ addButtonToToolbar({
   onClick: () => {
     const activeSegmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
-    segmentationUtils.interpolateLabelmap({
+    labelmapInterpolation.interpolate({
       segmentationId,
       segmentIndex: activeSegmentIndex,
     });

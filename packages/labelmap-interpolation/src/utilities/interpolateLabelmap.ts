@@ -4,10 +4,12 @@ import {
   Enums,
   triggerEvent,
 } from '@cornerstonejs/core';
-import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
-import { registerComputeWorker } from '../registerComputeWorker';
-import { WorkerTypes } from '../../enums';
+import {
+  segmentation,
+  Enums as csToolsEnums,
+  utilities,
+} from '@cornerstonejs/tools';
+import { registerInterpolationWorker } from '../registerWorker';
 
 type MorphologicalContourInterpolationOptions = {
   label?: number;
@@ -16,6 +18,12 @@ type MorphologicalContourInterpolationOptions = {
   noUseDistanceTransform?: boolean;
   useCustomSlicePositions?: boolean;
 };
+
+const { triggerSegmentationEvents } = segmentation;
+const { getOrCreateSegmentationVolume } = utilities.segmentation;
+
+const { triggerSegmentationDataModified } = triggerSegmentationEvents;
+const { WorkerTypes } = csToolsEnums;
 
 const workerManager = getWebWorkerManager();
 
@@ -37,7 +45,7 @@ async function interpolateLabelmap({
     preview: boolean;
   };
 }) {
-  registerComputeWorker();
+  registerInterpolationWorker();
 
   triggerWorkerProgress(eventTarget, 0);
 
@@ -58,7 +66,7 @@ async function interpolateLabelmap({
 
   try {
     const { data: outputScalarData } = await workerManager.executeTask(
-      'compute',
+      'interpolation',
       'interpolateLabelmap',
       {
         segmentationInfo,
