@@ -6,6 +6,9 @@ const csAiBasePath = path.resolve('packages/ai/src/index');
 const csLabelmapInterpolationBasePath = path.resolve(
   'packages/labelmap-interpolation/src/index'
 );
+const csPolymorphicSegmentationBasePath = path.resolve(
+  'packages/polymorphic-segmentation/src/index'
+);
 const csAdapters = path.resolve('packages/adapters/src/index');
 const csDICOMImageLoaderDistPath = path.resolve(
   'packages/dicomImageLoader/src/index'
@@ -70,6 +73,10 @@ module.exports = {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/ai': '${csAiBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/polymorphic-segmentation': '${csPolymorphicSegmentationBasePath.replace(
+        /\\/g,
+        '/'
+      )}',
       '@cornerstonejs/labelmap-interpolation': '${csLabelmapInterpolationBasePath.replace(
         /\\/g,
         '/'

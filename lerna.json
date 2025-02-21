@@ -7,7 +7,8 @@
     "packages/nifti-volume-loader",
     "packages/dicomImageLoader",
     "packages/ai",
-    "packages/labelmap-interpolation"
+    "packages/labelmap-interpolation",
+    "packages/polymorphic-segmentation"
   ],
   "npmClient": "yarn"
 }

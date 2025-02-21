@@ -1,10 +1,10 @@
 import { cache } from '@cornerstonejs/core';
-import type { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
+import type { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
 import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
-} from '../../../types/LabelmapTypes';
+} from '../../types/LabelmapTypes';
 
 function validateRepresentationData(
   segmentationRepresentationData: LabelmapSegmentationData

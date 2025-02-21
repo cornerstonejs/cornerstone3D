@@ -54,6 +54,7 @@ import {
   getPixelValueUnits,
   getPixelValueUnitsImageId,
 } from './getPixelValueUnits';
+import * as geometricSurfaceUtils from './geometricSurfaceUtils';
 
 export {
   math,
@@ -100,4 +101,5 @@ export {
   pointInSurroundingSphereCallback,
   normalizeViewportPlane,
   IslandRemoval,
+  geometricSurfaceUtils,
 };

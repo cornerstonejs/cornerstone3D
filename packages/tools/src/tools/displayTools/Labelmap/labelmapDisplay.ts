@@ -20,8 +20,6 @@ import { getActiveSegmentation } from '../../../stateManagement/segmentation/act
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
-import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
-import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
 import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
@@ -30,6 +28,8 @@ import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmen
 import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { getLabelmapActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getAddOns, getPolySeg } from '../../../config';
+import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -102,7 +102,7 @@ async function render(
 
   if (
     !labelmapData &&
-    canComputeRequestedRepresentation(
+    getPolySeg()?.canComputeRequestedRepresentation(
       segmentationId,
       SegmentationRepresentations.Labelmap
     ) &&
@@ -115,9 +115,14 @@ async function render(
     // underlying representations to Surface
     polySegConversionInProgress = true;
 
-    labelmapData = await computeAndAddLabelmapRepresentation(segmentationId, {
-      viewport,
-    });
+    const polySeg = getPolySeg();
+
+    labelmapData = await computeAndAddRepresentation(
+      segmentationId,
+      SegmentationRepresentations.Labelmap,
+      () => polySeg.computeLabelmapData(segmentationId, { viewport }),
+      () => undefined
+    );
 
     if (!labelmapData) {
       throw new Error(

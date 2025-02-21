@@ -11,10 +11,9 @@ import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
-import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
-import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg/Surface/computeAndAddSurfaceRepresentation';
+import { getAddOns, getPolySeg } from '../../../config';
+import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 
-const { ViewportType } = Enums;
 /**
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
@@ -68,13 +67,21 @@ async function render(
 
   if (
     !SurfaceData &&
-    canComputeRequestedRepresentation(segmentationId, Representations.Surface)
+    getPolySeg()?.canComputeRequestedRepresentation(
+      segmentationId,
+      Representations.Surface
+    )
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    SurfaceData = await computeAndAddSurfaceRepresentation(segmentationId, {
-      viewport,
-    });
+    const polySeg = getPolySeg();
+
+    SurfaceData = await computeAndAddRepresentation(
+      segmentationId,
+      Representations.Surface,
+      () => polySeg.computeSurfaceData(segmentationId, { viewport }),
+      () => undefined
+    );
 
     if (!SurfaceData) {
       throw new Error(

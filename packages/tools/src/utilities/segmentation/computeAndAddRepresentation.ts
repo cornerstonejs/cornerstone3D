@@ -1,10 +1,9 @@
 import { eventTarget } from '@cornerstonejs/core';
-import type { SegmentationRepresentations } from '../../../enums';
-import { Events } from '../../../enums';
-import addRepresentationData from '../internalAddRepresentationData';
-import { triggerSegmentationModified } from '../triggerSegmentationEvents';
-import debounce from '../../../utilities/debounce';
-import { registerPolySegWorker } from './registerPolySegWorker';
+import type { SegmentationRepresentations } from '../../enums';
+import { Events } from '../../enums';
+import addRepresentationData from '../../stateManagement/segmentation/internalAddRepresentationData';
+import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import debounce from '../debounce';
 
 const computedRepresentations = new Map<
   string,
@@ -28,9 +27,6 @@ async function computeAndAddRepresentation<T>(
   updateFunction?: () => void,
   onComputationComplete?: () => void
 ): Promise<T> {
-  // register the worker if it hasn't been registered yet
-  registerPolySegWorker();
-
   // Compute the specific representation data
   const data = await computeFunction();
   // Add the computed data to the system

@@ -3777,7 +3777,7 @@
   resolved "https://registry.yarnpkg.com/@iarna/toml/-/toml-2.2.5.tgz#b32366c89b43c6f8cefbdefac778b9c828e3ba8c"
   integrity sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==
 
-"@icr/polyseg-wasm@^0.4.0":
+"@icr/polyseg-wasm@0.4.0":
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/@icr/polyseg-wasm/-/polyseg-wasm-0.4.0.tgz#755e23d07c3d8d8fca1113278c803c1ef0185da0"
   integrity sha512-3sZmiwG8I0NaqPle0L7+V/ZexiR7IjIUFkUsaOoFI9rNuBGyyMMmxAxnCmqcDFtBDk9h+JEYJf6e3NnqlHi/HQ==
@@ -3877,13 +3877,6 @@
     files-from-path "^1.0.0"
     ipfs-car "^1.0.0"
     tar "^6.1.13"
-
-"@itk-wasm/morphological-contour-interpolation@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@itk-wasm/morphological-contour-interpolation/-/morphological-contour-interpolation-1.0.1.tgz#c2fcfdc593df85001276918e8ef684ba0b73a3c9"
-  integrity sha512-wxLB4nX6CiWpNQyTWC7oeFXogiZbtmSuLhyAtY66sM0SEnMoOcAuSX2+osPcOo13rfYnHLA02uQiICp8hvUGwA==
-  dependencies:
-    itk-wasm "1.0.0-b.165"
 
 "@itk-wasm/morphological-contour-interpolation@1.1.0":
   version "1.1.0"
