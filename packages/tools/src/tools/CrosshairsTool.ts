@@ -1273,6 +1273,13 @@ class CrosshairsTool extends AnnotationTool {
           slabThicknessHandleWorldFour
         );
 
+        let handleRadius = 3 * window.devicePixelRatio;
+        let opacity = 1;
+        if (this.configuration.mobile.enabled) {
+          handleRadius = this.configuration.mobile.handleRadius;
+          opacity = this.configuration.mobile.opacity;
+        }
+
         if (
           (lineActive || this.configuration.mobile?.enabled) &&
           !rotHandlesActive &&
@@ -1289,12 +1296,8 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'circle',
             }
           );
@@ -1306,12 +1309,8 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'rect',
             }
           );
@@ -1330,12 +1329,8 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'circle',
             }
           );
@@ -1354,17 +1349,14 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'rect',
             }
           );
         } else if (rotHandlesActive && viewportDraggableRotatable) {
           const handleUID = `${lineIndex}`;
+          const handleRadius = 2 * window.devicePixelRatio;
           // draw all rotation handles as active
           drawHandlesSvg(
             svgDrawingHelper,
@@ -1373,7 +1365,7 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: 2,
+              handleRadius,
               fill: color,
               type: 'circle',
             }
@@ -1383,6 +1375,7 @@ class CrosshairsTool extends AnnotationTool {
           selectedViewportId &&
           viewportSlabThicknessControlsOn
         ) {
+          const handleRadius = 2 * window.devicePixelRatio;
           // draw only the slab thickness handles for the active viewport as active
           drawHandlesSvg(
             svgDrawingHelper,
@@ -1391,7 +1384,7 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: 2,
+              handleRadius,
               fill: color,
               type: 'rect',
             }
