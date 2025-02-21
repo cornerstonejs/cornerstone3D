@@ -1,11 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 import { Enums, geometryLoader } from '@cornerstonejs/core';
-import { getSegmentIndexColor } from '@cornerstonejs/tools/segmentation/config/segmentationColor';
 import type { RawSurfacesData } from './surfaceComputationStrategies';
 import type { PolySegConversionOptions } from '../types';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const { getSegmentation } = cornerstoneTools.segmentation.state;
+const { getSegmentIndexColor } = cornerstoneTools.segmentation.config.color;
 
 /**
  * Creates and caches surfaces from raw surface data.

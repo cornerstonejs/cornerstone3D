@@ -178,7 +178,7 @@ async function run() {
 
   const surfaces = await downloadSurfacesData();
 
-  const geometriesInfo = createAndCacheGeometriesFromSurfaces(surfaces);
+  const geometriesInfo = await createAndCacheGeometriesFromSurfaces(surfaces);
 
   // Add the segmentations to state
   segmentation.addSegmentations([

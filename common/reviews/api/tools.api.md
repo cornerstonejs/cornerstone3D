@@ -690,6 +690,16 @@ interface ArrowAnnotation extends Annotation {
 }
 
 // @public (undocumented)
+type BaseLabelmapStyle = {
+    renderOutline?: boolean;
+    outlineWidth?: number;
+    activeSegmentOutlineWidthDelta?: number;
+    renderFill?: boolean;
+    fillAlpha?: number;
+    outlineOpacity?: number;
+};
+
+// @public (undocumented)
 export abstract class BaseTool {
     constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps);
     // (undocumented)
@@ -950,9 +960,6 @@ function calibrateImageSpacing(imageId: string, renderingEngine: Types_2.IRender
 export function cancelActiveManipulations(element: HTMLDivElement): string | undefined;
 
 // @public (undocumented)
-function canComputeRequestedRepresentation(segmentationId: string, type: SegmentationRepresentations): boolean;
-
-// @public (undocumented)
 type CanvasCoordinates = [
 Types_2.Point2,
 Types_2.Point2,
@@ -1026,6 +1033,9 @@ function checkAndSetAnnotationLocked(annotationUID: string): boolean;
 
 // @public (undocumented)
 function checkAndSetAnnotationVisibility(annotationUID: string): boolean;
+
+// @public (undocumented)
+function checkStandardBasis(directions: number[]): RotationMatrixInformation;
 
 declare namespace cine {
     export {
@@ -1316,7 +1326,7 @@ export class CircleScissorsTool extends LabelmapBaseTool {
 }
 
 // @public (undocumented)
-function clip_2(a: any, b: any, box: any, da?: any, db?: any): 0 | 1;
+function clip_2(a: any, b: any, box: any, da?: any, db?: any): 1 | 0;
 
 // @public (undocumented)
 type ClosestControlPoint = ClosestPoint & {
@@ -1575,16 +1585,15 @@ type ColorbarTicksStyle = {
 type ColorbarVOIRange = ColorbarImageRange;
 
 // @public (undocumented)
-function computeAndAddContourRepresentation(segmentationId: string, options?: PolySegConversionOptions): Promise<{
-    annotationUIDsMap: Map<number, Set<string>>;
+function computeStackLabelmapFromVolume({ volumeId, }: {
+    volumeId: string;
+}): Promise<{
+    imageIds: string[];
 }>;
 
 // @public (undocumented)
-function computeAndAddLabelmapRepresentation(segmentationId: string, options?: PolySegConversionOptions): Promise<RawLabelmapData>;
-
-// @public (undocumented)
-function computeAndAddSurfaceRepresentation(segmentationId: string, options?: PolySegConversionOptions): Promise<{
-    geometryIds: Map<number, string>;
+function computeVolumeLabelmapFromStack(args: any): Promise<{
+    volumeId: string;
 }>;
 
 declare namespace config {
@@ -1975,6 +1984,9 @@ const _default_3: {
 const _default_4: {
     smoothAnnotation: typeof smoothAnnotation;
 };
+
+// @public (undocumented)
+const defaultSegmentationStateManager: SegmentationStateManager;
 
 // @public (undocumented)
 function deselectAnnotation(annotationUID?: string): void;
@@ -2640,6 +2652,14 @@ function generateImageFromTimeData(dynamicVolume: Types_2.IDynamicImageVolume, o
     frameNumbers?: number[];
 }): Float32Array;
 
+declare namespace geometricSurfaceUtils {
+    export {
+        inverse3x3Matrix,
+        checkStandardBasis,
+        rotatePoints
+    }
+}
+
 // @public (undocumented)
 function getAABB(polyline: Types_2.Point2[] | Types_2.Point3[] | number[], options?: {
     numDimensions: number;
@@ -3152,7 +3172,16 @@ class ImageMouseCursor extends MouseCursor {
 }
 
 // @public (undocumented)
-export function init(defaultConfiguration?: {}): void;
+type InactiveLabelmapStyle = {
+    renderOutlineInactive?: boolean;
+    outlineWidthInactive?: number;
+    renderFillInactive?: boolean;
+    fillAlphaInactive?: number;
+    outlineOpacityInactive?: number;
+};
+
+// @public (undocumented)
+export function init(defaultConfiguration?: Config): void;
 
 // @public (undocumented)
 function initElementCursor(element: HTMLDivElement, cursor: MouseCursor | null): void;
@@ -3202,6 +3231,9 @@ function intersectPolyline(sourcePolyline: Types_2.Point2[], targetPolyline: Typ
 
 // @public (undocumented)
 function invalidateBrushCursor(toolGroupId: string): void;
+
+// @public (undocumented)
+function inverse3x3Matrix(matrix: number[]): number[];
 
 // @public (undocumented)
 function invertOrientationStringLPS(orientationString: string): string;
@@ -3577,6 +3609,25 @@ type LabelmapMemo_2 = Types_2.Memo & {
     redoVoxelManager?: Types_2.IVoxelManager<number>;
     undoVoxelManager?: Types_2.IVoxelManager<number>;
     memo?: LabelmapMemo_2;
+};
+
+// @public (undocumented)
+type LabelmapSegmentationData = LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack | {
+    volumeId?: string;
+    referencedVolumeId?: string;
+    referencedImageIds?: string[];
+    imageIds?: string[];
+};
+
+// @public (undocumented)
+type LabelmapSegmentationDataStack = {
+    imageIds: string[];
+};
+
+// @public (undocumented)
+type LabelmapSegmentationDataVolume = {
+    volumeId: string;
+    referencedVolumeId?: string;
 };
 
 // @public (undocumented)
@@ -4421,22 +4472,6 @@ declare namespace polyline {
 }
 
 // @public (undocumented)
-type PolySegConversionOptions = {
-    segmentIndices?: number[];
-    segmentationId?: string;
-    viewport?: Types_2.IStackViewport | Types_2.IVolumeViewport;
-};
-
-declare namespace polySegManager {
-    export {
-        canComputeRequestedRepresentation,
-        computeAndAddSurfaceRepresentation,
-        computeAndAddLabelmapRepresentation,
-        computeAndAddContourRepresentation
-    }
-}
-
-// @public (undocumented)
 const precalculatePointInEllipse: (ellipse: any, inverts?: Inverts) => Inverts;
 
 // @public (undocumented)
@@ -5111,6 +5146,9 @@ interface ROICachedStats {
 }
 
 // @public (undocumented)
+function rotatePoints(rotationMatrix: number[], origin: number[], points: number[]): number[];
+
+// @public (undocumented)
 const roundNumber_2: typeof utilities_2.roundNumber;
 
 // @public (undocumented)
@@ -5264,11 +5302,12 @@ declare namespace segmentation {
         segmentIndex,
         triggerSegmentationEvents,
         helpers,
-        polySegManager as polySeg,
         removeSegment,
         getLabelmapImageIds,
         internalAddRepresentationData as addRepresentationData,
-        strategies
+        strategies,
+        segmentationStyle,
+        defaultSegmentationStateManager
     }
 }
 export { segmentation }
@@ -5301,7 +5340,10 @@ declare namespace segmentation_2 {
         LabelmapMemo,
         IslandRemoval,
         getOrCreateSegmentationVolume,
-        getStatistics
+        getStatistics,
+        validateLabelmap,
+        computeStackLabelmapFromVolume,
+        computeVolumeLabelmapFromStack
     }
 }
 
@@ -5423,6 +5465,9 @@ type SegmentationState = {
         [viewportId: string]: Array<SegmentationRepresentation>;
     };
 };
+
+// @public (undocumented)
+const segmentationStyle: SegmentationStyle;
 
 // @public (undocumented)
 function segmentContourAction(element: HTMLDivElement, configuration: any): any;
@@ -6015,6 +6060,14 @@ type StyleSpecifier = {
 function subtractPolylines(targetPolyline: Types_2.Point2[], sourcePolyline: Types_2.Point2[]): Types_2.Point2[][];
 
 // @public (undocumented)
+type SurfaceSegmentationData = {
+    geometryIds: Map<number, string>;
+};
+
+// @public (undocumented)
+type SurfaceStateStyles = {};
+
+// @public (undocumented)
 type SurfaceStyle = {};
 
 // @public (undocumented)
@@ -6578,14 +6631,20 @@ declare namespace Types {
         SplineCurveSegment,
         SplineLineSegment,
         SplineProps,
-        PolySegConversionOptions,
         IBaseTool,
         RepresentationStyle,
         Segment,
         SegmentationPublicInput,
         LabelmapStyle,
         ContourStyle,
-        SurfaceStyle
+        SurfaceStyle,
+        SurfaceSegmentationData,
+        SurfaceStateStyles,
+        LabelmapSegmentationData,
+        LabelmapSegmentationDataStack,
+        LabelmapSegmentationDataVolume,
+        BaseLabelmapStyle,
+        InactiveLabelmapStyle
     }
 }
 export { Types }
@@ -6764,10 +6823,24 @@ declare namespace utilities {
         getClosestImageIdForStackViewport,
         pointInSurroundingSphereCallback,
         normalizeViewportPlane,
-        IslandRemoval
+        IslandRemoval,
+        geometricSurfaceUtils
     }
 }
 export { utilities }
+
+// @public (undocumented)
+function validate(segmentationRepresentationData: LabelmapSegmentationData): void;
+
+declare namespace validateLabelmap {
+    export {
+        validatePublic,
+        validate
+    }
+}
+
+// @public (undocumented)
+function validatePublic(segmentationInput: SegmentationPublicInput): void;
 
 declare namespace vec2 {
     export {

@@ -1,17 +1,15 @@
-import { SegmentationRepresentations } from '@cornerstonejs/tools/enums';
-import type { RepresentationsData } from '@cornerstonejs/tools/types';
-import { state } from '@cornerstonejs/tools/segmentation';
-import { segmentation as segUtils } from '@cornerstonejs/tools/utilities';
+import type { Types as ToolsTypes } from '@cornerstonejs/tools';
+import { Enums, segmentation, utilities } from '@cornerstonejs/tools';
 
-const { getSegmentation } = state;
-const { validateLabelmap } = segUtils;
+type RepresentationsData = ToolsTypes.RepresentationsData;
+
+const { SegmentationRepresentations } = Enums;
+const { getSegmentation } = segmentation.state;
+const { validateLabelmap } = utilities.segmentation;
 
 // Map of conversion paths between source and target representations
 // You should read it as "source" -> "targets"
-const conversionPaths = new Map<
-  SegmentationRepresentations,
-  Set<SegmentationRepresentations>
->([
+const conversionPaths = new Map([
   [
     SegmentationRepresentations.Labelmap,
     new Set([
@@ -46,7 +44,7 @@ const conversionPaths = new Map<
  */
 function canComputeRequestedRepresentation(
   segmentationId: string,
-  type: SegmentationRepresentations
+  type: typeof SegmentationRepresentations
 ): boolean {
   const { representationData } = getSegmentation(segmentationId);
 

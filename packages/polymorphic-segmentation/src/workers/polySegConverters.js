@@ -8,14 +8,14 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
 import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 
-const { containsPoint, getAABB, projectTo2D } = ToolsUtilities.math.polyline;
-
-const { checkStandardBasis, rotatePoints } =
-  ToolsUtilities.geometricSurfaceUtils;
-
-const { getBoundingBoxAroundShapeWorld } = ToolsUtilities.boundingBox;
-
-const { isPlaneIntersectingAABB } = ToolsUtilities.planar;
+const {
+  math: {
+    polyline: { containsPoint, getAABB, projectTo2D },
+  },
+  geometricSurfaceUtils: { checkStandardBasis, rotatePoints },
+  boundingBox: { getBoundingBoxAroundShapeWorld },
+  planar: { isPlaneIntersectingAABB },
+} = ToolsUtilities;
 
 async function peerImport(moduleId) {
   try {

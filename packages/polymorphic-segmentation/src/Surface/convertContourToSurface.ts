@@ -5,10 +5,7 @@ import {
   triggerEvent,
   getWebWorkerManager,
 } from '@cornerstonejs/core';
-import type {
-  ContourSegmentationAnnotation,
-  ContourSegmentationData,
-} from '@cornerstonejs/tools/types';
+import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const { WorkerTypes } = cornerstoneTools.Enums;
@@ -32,7 +29,7 @@ const triggerWorkerProgress = (eventTarget, progress, id) => {
  * @returns A promise that resolves to the surface data.
  */
 export async function convertContourToSurface(
-  contourRepresentationData: ContourSegmentationData,
+  contourRepresentationData: ToolsTypes.ContourSegmentationData,
   segmentIndex: number
 ): Promise<Types.SurfaceData> {
   const { annotationUIDsMap } = contourRepresentationData;
@@ -44,8 +41,9 @@ export async function convertContourToSurface(
 
   for (const annotationUID of annotationUIDs) {
     const annotation = getAnnotation(annotationUID);
-    const { polyline } = (annotation as ContourSegmentationAnnotation).data
-      .contour;
+    const { polyline } = (
+      annotation as ToolsTypes.ContourSegmentationAnnotation
+    ).data.contour;
     numPointsArray.push(polyline.length);
     polyline.forEach((polyline) => polylines.push(...polyline));
   }

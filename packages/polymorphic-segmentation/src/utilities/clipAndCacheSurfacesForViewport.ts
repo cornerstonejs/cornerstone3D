@@ -8,8 +8,8 @@ import {
 
 import { Enums as ToolsEnums, utilities } from '@cornerstonejs/tools';
 import { registerPolySegWorker } from '../registerPolySegWorker';
-const workerManager = getWebWorkerManager();
 
+const workerManager = getWebWorkerManager();
 
 const { WorkerTypes } = ToolsEnums;
 const { pointToString } = utilities;

@@ -30,6 +30,8 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { getLabelmapActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { getAddOns, getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -121,7 +123,18 @@ async function render(
       segmentationId,
       SegmentationRepresentations.Labelmap,
       () => polySeg.computeLabelmapData(segmentationId, { viewport }),
-      () => undefined
+      () => null,
+      () => {
+        defaultSegmentationStateManager.processLabelmapRepresentationAddition(
+          viewport.id,
+          segmentationId
+        );
+
+        /// need to figure out how to trigger the labelmap update properly
+        setTimeout(() => {
+          triggerSegmentationDataModified(segmentationId);
+        }, 0);
+      }
     );
 
     if (!labelmapData) {

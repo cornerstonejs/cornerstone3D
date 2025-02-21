@@ -32,6 +32,8 @@ import IslandRemoval from './islandRemoval';
 import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
 import getStatistics from './getStatistics';
 import * as validateLabelmap from './validateLabelmap';
+import { computeStackLabelmapFromVolume } from '../../stateManagement/segmentation/helpers/computeStackLabelmapFromVolume';
+import { computeVolumeLabelmapFromStack } from '../../stateManagement/segmentation/helpers/computeVolumeLabelmapFromStack';
 
 export {
   thresholdVolumeByRange,
@@ -62,4 +64,6 @@ export {
   getOrCreateSegmentationVolume,
   getStatistics,
   validateLabelmap,
+  computeStackLabelmapFromVolume,
+  computeVolumeLabelmapFromStack,
 };

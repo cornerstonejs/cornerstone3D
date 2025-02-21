@@ -6,15 +6,13 @@ import {
   triggerEvent,
   Enums,
 } from '@cornerstonejs/core';
-import type {
-  LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '@cornerstonejs/tools/types/LabelmapTypes';
-import { computeVolumeLabelmapFromStack } from '@cornerstonejs/tools/segmentation/helpers/computeVolumeLabelmapFromStack';
+
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 
 const { WorkerTypes } = cornerstoneTools.Enums;
+const { computeVolumeLabelmapFromStack } =
+  cornerstoneTools.utilities.segmentation;
 
 const workerManager = getWebWorkerManager();
 
@@ -35,17 +33,21 @@ const triggerWorkerProgress = (eventTarget, progress, id) => {
  * @returns A promise that resolves to the surface data.
  */
 export async function convertLabelmapToSurface(
-  labelmapRepresentationData: LabelmapSegmentationData,
+  labelmapRepresentationData: ToolsTypes.LabelmapSegmentationData,
   segmentIndex: number
 ): Promise<Types.SurfaceData> {
   let volumeId;
 
-  if ((labelmapRepresentationData as LabelmapSegmentationDataVolume).volumeId) {
-    volumeId = (labelmapRepresentationData as LabelmapSegmentationDataVolume)
-      .volumeId;
+  if (
+    (labelmapRepresentationData as ToolsTypes.LabelmapSegmentationDataVolume)
+      .volumeId
+  ) {
+    volumeId = (
+      labelmapRepresentationData as ToolsTypes.LabelmapSegmentationDataVolume
+    ).volumeId;
   } else {
     const { imageIds } =
-      labelmapRepresentationData as LabelmapSegmentationDataStack;
+      labelmapRepresentationData as ToolsTypes.LabelmapSegmentationDataStack;
 
     ({ volumeId } = await computeVolumeLabelmapFromStack({
       imageIds,

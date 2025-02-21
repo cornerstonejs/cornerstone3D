@@ -6,8 +6,8 @@ import {
   getWebWorkerManager,
   triggerEvent,
 } from '@cornerstonejs/core';
-import type { SurfaceSegmentationData } from '@cornerstonejs/tools/types/SurfaceTypes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 
 const { WorkerTypes } = cornerstoneTools.Enums;
 
@@ -21,7 +21,7 @@ const triggerWorkerProgress = (eventTarget, progress) => {
 };
 
 export async function convertSurfaceToVolumeLabelmap(
-  surfaceRepresentationData: SurfaceSegmentationData,
+  surfaceRepresentationData: ToolsTypes.SurfaceSegmentationData,
   segmentationVolume: Types.IImageVolume
 ) {
   const { geometryIds } = surfaceRepresentationData;

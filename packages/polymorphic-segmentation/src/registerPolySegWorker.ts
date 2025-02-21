@@ -13,7 +13,7 @@ export function registerPolySegWorker() {
     // @ts-ignore
     return new Worker(
       // @ts-ignore
-      new URL('../../../workers/polySegConverters', import.meta.url),
+      new URL('./workers/polySegConverters.js', import.meta.url),
       {
         name: 'polySeg',
         type: 'module',

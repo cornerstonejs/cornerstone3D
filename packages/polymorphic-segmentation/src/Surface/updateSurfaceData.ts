@@ -5,13 +5,20 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
 
-const { getUniqueSegmentIndices } = cornerstoneTools.utilities.segmentation;
-const { getViewportIdsWithSegmentation } = cornerstoneTools.segmentation.state;
-const { getSegmentation } = cornerstoneTools.segmentation.state;
-const { triggerSegmentationModified } = cornerstoneTools.segmentation.triggerSegmentationEvents;
-const { getSegmentationRepresentation } = cornerstoneTools.segmentation.state;
-const { SegmentationRepresentations } = cornerstoneTools.Enums;
-
+const {
+  utilities: {
+    segmentation: { getUniqueSegmentIndices },
+  },
+  segmentation: {
+    state: {
+      getViewportIdsWithSegmentation,
+      getSegmentation,
+      getSegmentationRepresentation,
+    },
+    triggerSegmentationEvents: { triggerSegmentationModified },
+  },
+  Enums: { SegmentationRepresentations },
+} = cornerstoneTools;
 
 export async function updateSurfaceData(segmentationId) {
   const surfacesObj = await computeSurfaceFromLabelmapSegmentation(

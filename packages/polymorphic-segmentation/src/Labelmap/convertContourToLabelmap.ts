@@ -11,11 +11,7 @@ import {
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
-import type {
-  Annotation,
-  ContourAnnotation,
-  ContourSegmentationData,
-} from '@cornerstonejs/tools/types';
+import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { PolySegConversionOptions } from '../types';
 
@@ -32,7 +28,7 @@ const triggerWorkerProgress = (eventTarget, progress) => {
 };
 
 export async function convertContourToVolumeLabelmap(
-  contourRepresentationData: ContourSegmentationData,
+  contourRepresentationData: ToolsTypes.ContourSegmentationData,
   options: PolySegConversionOptions = {}
 ) {
   const viewport = options.viewport as Types.IVolumeViewport;
@@ -96,7 +92,7 @@ export async function convertContourToVolumeLabelmap(
 }
 
 export async function convertContourToStackLabelmap(
-  contourRepresentationData: ContourSegmentationData,
+  contourRepresentationData: ToolsTypes.ContourSegmentationData,
   options: PolySegConversionOptions = {}
 ) {
   if (!options.viewport) {
@@ -238,7 +234,7 @@ export async function convertContourToStackLabelmap(
 }
 
 function _getAnnotationMapFromSegmentation(
-  contourRepresentationData: ContourSegmentationData,
+  contourRepresentationData: ToolsTypes.ContourSegmentationData,
   options: PolySegConversionOptions = {}
 ) {
   const annotationMap = contourRepresentationData.annotationUIDsMap;
@@ -258,11 +254,12 @@ function _getAnnotationMapFromSegmentation(
     let uids = Array.from(annotationUIDsInSegment);
 
     uids = uids.filter(
-      (uid) => !(getAnnotation(uid) as Annotation).parentAnnotationUID
+      (uid) =>
+        !(getAnnotation(uid) as ToolsTypes.Annotation).parentAnnotationUID
     );
 
     const annotations = uids.map((uid) => {
-      const annotation = getAnnotation(uid) as ContourAnnotation;
+      const annotation = getAnnotation(uid) as ToolsTypes.ContourAnnotation;
       const hasChildAnnotations = annotation.childAnnotationUIDs?.length;
 
       return {
@@ -273,7 +270,7 @@ function _getAnnotationMapFromSegmentation(
           annotation.childAnnotationUIDs.map((childUID) => {
             const childAnnotation = getAnnotation(
               childUID
-            ) as ContourAnnotation;
+            ) as ToolsTypes.ContourAnnotation;
             return childAnnotation.data.contour.polyline;
           }),
       };

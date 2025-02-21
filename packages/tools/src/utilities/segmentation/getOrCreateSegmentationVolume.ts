@@ -1,4 +1,4 @@
-import { cache, volumeLoader, utilities } from '@cornerstonejs/core';
+import { cache, volumeLoader } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type {
   LabelmapSegmentationDataStack,

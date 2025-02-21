@@ -15,7 +15,7 @@ import {
   fakeMetaDataProvider,
 } from '../../test/testUtilsImageLoader';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
-import * as polyseg from '@cornerstonejs/polymorphic-segmentation';
+import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
@@ -29,7 +29,9 @@ export default async function initDemo(config) {
     ...(config?.core ? config.core : {}),
   });
   await csToolsInit({
-    polyseg,
+    addOns: {
+      polySeg,
+    },
   });
 
   // for testings, you don't need any of these

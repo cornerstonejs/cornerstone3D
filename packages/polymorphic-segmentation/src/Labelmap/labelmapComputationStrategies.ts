@@ -1,26 +1,22 @@
-import { VolumeViewport, volumeLoader, imageLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { volumeLoader, imageLoader, VolumeViewport } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-
-import type {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '@cornerstonejs/tools/types/LabelmapTypes';
+import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 import {
   convertContourToStackLabelmap,
   convertContourToVolumeLabelmap,
 } from './convertContourToLabelmap';
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
 import type { PolySegConversionOptions } from '../types';
-import { computeStackLabelmapFromVolume } from '@cornerstonejs/tools/segmentation/helpers/computeStackLabelmapFromVolume';
 
-
-const { getUniqueSegmentIndices } = cornerstoneTools.utilities.segmentation;
+const { computeStackLabelmapFromVolume, getUniqueSegmentIndices } =
+  utilities.segmentation;
 const { getSegmentation } = cornerstoneTools.segmentation.state;
 
 export type RawLabelmapData =
-  | LabelmapSegmentationDataVolume
-  | LabelmapSegmentationDataStack;
+  | ToolsTypes.LabelmapSegmentationDataVolume
+  | ToolsTypes.LabelmapSegmentationDataStack;
 
 export async function computeLabelmapData(
   segmentationId: string,
@@ -69,7 +65,10 @@ export async function computeLabelmapData(
 async function computeLabelmapFromContourSegmentation(
   segmentationId,
   options: PolySegConversionOptions = {}
-): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
+): Promise<
+  | ToolsTypes.LabelmapSegmentationDataVolume
+  | ToolsTypes.LabelmapSegmentationDataStack
+> {
   const isVolume = options.viewport
     ? options.viewport instanceof VolumeViewport
     : true;
@@ -107,7 +106,10 @@ async function computeLabelmapFromContourSegmentation(
 async function computeLabelmapFromSurfaceSegmentation(
   segmentationId,
   options: PolySegConversionOptions = {}
-): Promise<LabelmapSegmentationDataVolume | LabelmapSegmentationDataStack> {
+): Promise<
+  | ToolsTypes.LabelmapSegmentationDataVolume
+  | ToolsTypes.LabelmapSegmentationDataStack
+> {
   const { viewport } = options;
   const isVolume = viewport ? viewport instanceof VolumeViewport : true;
 
@@ -165,7 +167,7 @@ async function computeLabelmapFromSurfaceSegmentation(
   // we need to convert the volume labelmap to a stack labelmap
   const stackData = (await computeStackLabelmapFromVolume({
     volumeId: segmentationVolume.volumeId,
-  })) as LabelmapSegmentationDataStack;
+  })) as ToolsTypes.LabelmapSegmentationDataStack;
 
   return stackData;
 }

@@ -1,20 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
-import type {
-  PolySegConversionOptions,
-} from '../types';
+import type { PolySegConversionOptions } from '../types';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-
 
 import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
-import type {
-  LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '@cornerstonejs/tools/types/LabelmapTypes';
 import { convertLabelmapToSurface } from './convertLabelmapToSurface';
-import type { ContourSegmentationData } from '@cornerstonejs/tools/types';
-
+import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 
 const { getUniqueSegmentIndices } = cornerstoneTools.utilities.segmentation;
 const { getSegmentation } = cornerstoneTools.segmentation.state;
@@ -52,7 +43,9 @@ export async function computeSurfaceData(
           ...options,
         }
       );
-    } else if (representationData.Labelmap as LabelmapSegmentationData) {
+    } else if (
+      representationData.Labelmap as ToolsTypes.LabelmapSegmentationData
+    ) {
       // convert volume labelmap to surface
       rawSurfacesData = await computeSurfaceFromLabelmapSegmentation(
         segmentation.segmentationId,
@@ -102,8 +95,8 @@ async function computeSurfaceFromLabelmapSegmentation(
   const promises = segmentIndices.map((index) => {
     const surface = convertLabelmapToSurface(
       labelmapRepresentationData as
-        | LabelmapSegmentationDataVolume
-        | LabelmapSegmentationDataStack,
+        | ToolsTypes.LabelmapSegmentationDataVolume
+        | ToolsTypes.LabelmapSegmentationDataStack,
       index
     );
 
@@ -148,7 +141,7 @@ async function computeSurfaceFromContourSegmentation(
 
   const promises = segmentIndices.map(async (index) => {
     const surface = await convertContourToSurface(
-      contourRepresentationData as ContourSegmentationData,
+      contourRepresentationData as ToolsTypes.ContourSegmentationData,
       index
     );
 
