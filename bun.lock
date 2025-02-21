@@ -138,7 +138,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "2.19.11",
+      "version": "2.19.12",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -147,13 +147,13 @@
         "ndarray": "^1.0.19",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.11",
-        "@cornerstonejs/tools": "^2.19.11",
+        "@cornerstonejs/core": "^2.19.12",
+        "@cornerstonejs/tools": "^2.19.12",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "2.19.11",
+      "version": "2.19.12",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -171,7 +171,7 @@
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "2.19.11",
+      "version": "2.19.12",
       "dependencies": {
         "@kitware/vtk.js": "32.9.0",
         "comlink": "^4.4.1",
@@ -180,7 +180,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "2.19.11",
+      "version": "2.19.12",
       "dependencies": {
         "@cornerstonejs/codec-charls": "^1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
@@ -192,7 +192,7 @@
         "uuid": "^9.0.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.11",
+        "@cornerstonejs/core": "^2.19.12",
         "dicom-parser": "^1.8.9",
       },
     },
@@ -200,11 +200,11 @@
       "name": "docs",
       "version": "2.1.10",
       "dependencies": {
-        "@cornerstonejs/adapters": "^2.19.11",
-        "@cornerstonejs/core": "^2.19.11",
-        "@cornerstonejs/dicom-image-loader": "^2.19.11",
-        "@cornerstonejs/nifti-volume-loader": "^2.19.11",
-        "@cornerstonejs/tools": "^2.19.11",
+        "@cornerstonejs/adapters": "^2.19.12",
+        "@cornerstonejs/core": "^2.19.12",
+        "@cornerstonejs/dicom-image-loader": "^2.19.12",
+        "@cornerstonejs/nifti-volume-loader": "^2.19.12",
+        "@cornerstonejs/tools": "^2.19.12",
         "@docusaurus/core": "3.6.3",
         "@docusaurus/faster": "3.6.3",
         "@docusaurus/module-type-aliases": "3.6.3",
@@ -242,17 +242,17 @@
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "2.19.11",
+      "version": "2.19.12",
       "dependencies": {
         "nifti-reader-js": "^0.6.8",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.11",
+        "@cornerstonejs/core": "^2.19.12",
       },
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "2.19.11",
+      "version": "2.19.12",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "^4.4.1",
@@ -262,7 +262,7 @@
         "canvas": "^2.11.2",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.11",
+        "@cornerstonejs/core": "^2.19.12",
         "@kitware/vtk.js": "32.9.0",
         "@types/d3-array": "^3.0.4",
         "@types/d3-interpolate": "^3.0.1",
