@@ -16,7 +16,7 @@ import { annotationInterpolationEventDispatcher } from './eventDispatchers';
 import * as ToolGroupManager from './store/ToolGroupManager';
 import { defaultSegmentationStateManager } from './stateManagement/segmentation/SegmentationStateManager';
 import segmentationRepresentationModifiedListener from './eventListeners/segmentation/segmentationRepresentationModifiedListener';
-import { setConfig } from './config';
+
 let csToolsInitialized = false;
 
 /**
@@ -25,12 +25,10 @@ let csToolsInitialized = false;
  * @param defaultConfiguration - A configuration object that will be used to
  * initialize the tool.
  */
-export function init(defaultConfiguration): void {
+export function init(defaultConfiguration = {}): void {
   if (csToolsInitialized) {
     return;
   }
-
-  setConfig(defaultConfiguration);
 
   _addCornerstoneEventListeners();
   _addCornerstoneToolsEventListeners();

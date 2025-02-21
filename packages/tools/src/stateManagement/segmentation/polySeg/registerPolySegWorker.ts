@@ -1,5 +1,4 @@
 import { getWebWorkerManager } from '@cornerstonejs/core';
-import { getConfig } from '../../../config';
 
 let registered = false;
 
@@ -30,7 +29,6 @@ export function registerPolySegWorker() {
       enabled: true,
       idleTimeThreshold: 2000,
     },
-    enablePolySeg: getConfig().enablePolySeg,
   };
 
   workerManager.registerWorker('polySeg', workerFn, options);

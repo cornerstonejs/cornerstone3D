@@ -80,6 +80,7 @@ import * as color from './color';
 import { deepEqual } from './deepEqual';
 import type { IViewport } from '../types/IViewport';
 import FrameRange from './FrameRange';
+import fnv1aHash from './fnv1aHash';
 
 // solving the circular dependency issue
 import { _getViewportModality } from './getViewportModality';
@@ -108,6 +109,7 @@ export {
   scaleRgbTransferFunction,
   triggerEvent,
   imageIdToURI,
+  fnv1aHash,
   calibratedPixelSpacingMetadataProvider,
   clamp,
   uuidv4,

@@ -16,27 +16,19 @@ import {
 import { isPlaneIntersectingAABB } from '../utilities/planar';
 import { checkStandardBasis, rotatePoints } from '../geometricSurfaceUtils';
 
-async function peerImport(moduleId, enablePolySeg = false) {
-  if (moduleId === '@icr/polyseg-wasm') {
-    try {
-      if (enablePolySeg) {
-        if (typeof __EXAMPLE_RUNNING__ !== 'undefined' && __EXAMPLE_RUNNING__) {
-          return import('@icr/polyseg-wasm');
-        } else {
-          return import(/* webpackIgnore: true */ '@icr/polyseg-wasm');
-        }
-      } else {
-        const moduleName = '@icr/polyseg-wasm';
-        return import(
-          /* webpackChunkName: "icr-polyseg-wasm" */
-          /* webpackIgnore: true */
-          `${moduleName}`
-        );
+async function peerImport(moduleId) {
+  try {
+    if (moduleId === '@icr/polyseg-wasm') {
+      try {
+        return import('@icr/polyseg-wasm');
+      } catch (error) {
+        console.warn('Error importing @icr/polyseg-wasm:', error);
+        return null;
       }
-    } catch (error) {
-      console.warn('Error importing @icr/polyseg-wasm:', error);
-      return null;
     }
+  } catch (error) {
+    console.warn('Error in peerImport:', error);
+    return null;
   }
 }
 
@@ -64,11 +56,10 @@ const polySegConverters = {
   /**
    * This method initializes the polySeg instance and sets it to this.polySeg
    */
-  async initializePolySeg(progressCallback, enablePolySeg = false) {
+  async initializePolySeg(progressCallback) {
     let ICRPolySeg;
     try {
-      ICRPolySeg = (await peerImport('@icr/polyseg-wasm', enablePolySeg))
-        .default;
+      ICRPolySeg = (await peerImport('@icr/polyseg-wasm')).default;
     } catch (error) {
       console.error(error);
       console.debug(
@@ -110,9 +101,9 @@ const polySegConverters = {
    * @returns {Promise} - A promise that resolves to the converted surface.
    */
   async convertContourToSurface(args, ...callbacks) {
-    const { polylines, numPointsArray, enablePolySeg } = args;
+    const { polylines, numPointsArray } = args;
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback, enablePolySeg);
+    await this.initializePolySeg(progressCallback);
     const results = await this.polySeg.instance.convertContourRoiToSurface(
       polylines,
       numPointsArray
@@ -134,7 +125,7 @@ const polySegConverters = {
    */
   async convertLabelmapToSurface(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback, args.enablePolySeg);
+    await this.initializePolySeg(progressCallback);
 
     const results = this.polySeg.instance.convertLabelmapToSurface(
       args.scalarData,
@@ -171,7 +162,7 @@ const polySegConverters = {
    */
   async convertContourToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback, args.enablePolySeg);
+    await this.initializePolySeg(progressCallback);
 
     const {
       segmentIndices,
@@ -280,7 +271,7 @@ const polySegConverters = {
    */
   async convertContourToStackLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback, args.enablePolySeg);
+    await this.initializePolySeg(progressCallback);
 
     const { segmentationsInfo, annotationUIDsInSegmentMap, segmentIndices } =
       args;
@@ -405,7 +396,7 @@ const polySegConverters = {
    */
   async convertSurfaceToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback, args.enablePolySeg);
+    await this.initializePolySeg(progressCallback);
 
     const results = this.polySeg.instance.convertSurfaceToLabelmap(
       args.points,
@@ -427,7 +418,7 @@ const polySegConverters = {
    */
   async convertSurfacesToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback, args.enablePolySeg);
+    await this.initializePolySeg(progressCallback);
 
     const { segmentsInfo } = args;
 

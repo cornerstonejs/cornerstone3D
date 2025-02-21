@@ -16,6 +16,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 import { ImageQualityStatus } from '../enums';
+import fnv1aHash from '../utilities/fnv1aHash';
 
 const ONE_GB = 1073741824;
 
@@ -52,7 +53,7 @@ class Cache {
 
     let combinedHash = 0x811c9dc5;
     for (const id of imageURIs) {
-      const idHash = this._fnv1aHash(id);
+      const idHash = fnv1aHash(id);
       for (let i = 0; i < idHash.length; i++) {
         combinedHash ^= idHash.charCodeAt(i);
         combinedHash +=
@@ -1311,21 +1312,6 @@ class Cache {
 
     return cachedGeometry.geometryLoadObject;
   };
-
-  /**
-   * Helper function to generate a hash for a string using FNV-1a algorithm
-   * @param str - string to hash
-   * @returns the hashed string
-   */
-  private _fnv1aHash(str: string): string {
-    let hash = 0x811c9dc5;
-    for (let i = 0; i < str.length; i++) {
-      hash ^= str.charCodeAt(i);
-      hash +=
-        (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-    }
-    return (hash >>> 0).toString(36);
-  }
 }
 
 /**

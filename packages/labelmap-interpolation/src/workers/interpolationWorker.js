@@ -5,33 +5,34 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 /**
  * Dynamically imports ITK WASM modules needed for labelmap interpolation
  * @param moduleId - The module ID to import ('itk-wasm' or '@itk-wasm/morphological-contour-interpolation')
- * @param enableLabelmapInterpolation - Flag indicating if labelmap interpolation is enabled
  * @returns Promise that resolves to the imported module
  */
 async function peerImport(moduleId) {
-  switch (moduleId) {
-    case 'itk-wasm':
-      return import('itk-wasm');
-    case '@itk-wasm/morphological-contour-interpolation':
-      return import('@itk-wasm/morphological-contour-interpolation');
-    default:
-      throw new Error(`Unknown module ID: ${moduleId}`);
+  try {
+    switch (moduleId) {
+      case 'itk-wasm':
+        return import('itk-wasm');
+      case '@itk-wasm/morphological-contour-interpolation':
+        return import('@itk-wasm/morphological-contour-interpolation');
+      default:
+        throw new Error(`Unknown module ID: ${moduleId}`);
+    }
+  } catch (error) {
+    console.warn(`Error importing ${moduleId}:`, error);
+    return null;
   }
 }
 
 const computeWorker = {
   getITKImage: async (args) => {
-    const { imageData, options, enableLabelmapInterpolation } = args;
+    const { imageData, options } = args;
 
     const { imageName, scalarData } = options;
 
     let Image, ImageType, IntTypes, FloatTypes, PixelTypes;
 
     try {
-      const itkModule = await peerImport(
-        'itk-wasm',
-        enableLabelmapInterpolation
-      );
+      const itkModule = await peerImport('itk-wasm');
       if (!itkModule) {
         throw new Error('Module not found');
       }
@@ -87,16 +88,14 @@ const computeWorker = {
     return image;
   },
   interpolateLabelmap: async (args) => {
-    const { segmentationInfo, configuration, enableLabelmapInterpolation } =
-      args;
+    const { segmentationInfo, configuration } = args;
     const { scalarData, dimensions, spacing, origin, direction } =
       segmentationInfo;
 
     let itkModule;
     try {
       itkModule = await peerImport(
-        '@itk-wasm/morphological-contour-interpolation',
-        enableLabelmapInterpolation
+        '@itk-wasm/morphological-contour-interpolation'
       );
       if (!itkModule) {
         throw new Error('Module not found');
@@ -130,7 +129,6 @@ const computeWorker = {
           imageName: 'interpolation',
           scalarData: scalarData,
         },
-        enableLabelmapInterpolation,
       });
 
       if (!inputImage) {

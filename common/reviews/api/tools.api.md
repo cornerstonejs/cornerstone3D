@@ -3173,15 +3173,6 @@ type InteractionTypes = 'Mouse' | 'Touch';
 function internalAddRepresentationData({ segmentationId, type, data, }: AddRepresentationData): void;
 
 // @public (undocumented)
-function interpolateLabelmap({ segmentationId, segmentIndex, configuration, }: {
-    segmentationId: string;
-    segmentIndex: number;
-    configuration?: MorphologicalContourInterpolationOptions & {
-        preview: boolean;
-    };
-}): Promise<void>;
-
-// @public (undocumented)
 type InterpolationROIAnnotation = ContourAnnotation & ContourSegmentationAnnotationData & {
     metadata: {
         annotationUID?: string;
@@ -5309,7 +5300,6 @@ declare namespace segmentation_2 {
         growCut,
         LabelmapMemo,
         IslandRemoval,
-        interpolateLabelmap,
         getOrCreateSegmentationVolume,
         getStatistics
     }

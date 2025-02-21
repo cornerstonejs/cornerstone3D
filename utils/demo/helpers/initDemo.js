@@ -27,10 +27,7 @@ export default async function initDemo(config) {
     peerImport,
     ...(config?.core ? config.core : {}),
   });
-  await csToolsInit({
-    enablePolySeg: true,
-    enableLabelmapInterpolation: true,
-  });
+  await csToolsInit();
 
   // for testings, you don't need any of these
   volumeLoader.registerVolumeLoader('fakeVolumeLoader', fakeVolumeLoader);

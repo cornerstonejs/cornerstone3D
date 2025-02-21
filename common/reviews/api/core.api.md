@@ -1195,6 +1195,9 @@ interface FlipDirection {
 }
 
 // @public (undocumented)
+function fnv1aHash(str: string): string;
+
+// @public (undocumented)
 class FrameRange {
     // (undocumented)
     protected static frameRangeExtractor: RegExp;
@@ -3966,6 +3969,7 @@ declare namespace utilities {
         scaleRGBTransferFunction as scaleRgbTransferFunction,
         triggerEvent,
         imageIdToURI,
+        fnv1aHash,
         metadataProvider as calibratedPixelSpacingMetadataProvider,
         clamp,
         uuidv4,
