@@ -37,6 +37,9 @@ type PolySegAddOn = {
   computeContourData: ComputeRepresentationFn<ContourSegmentationData>;
   computeLabelmapData: ComputeRepresentationFn<LabelmapSegmentationData>;
   computeSurfaceData: ComputeRepresentationFn<SurfaceSegmentationData>;
+
+  /** Updates different segmentation representation data */
+  updateSurfaceData: ComputeRepresentationFn<SurfaceSegmentationData>;
 };
 
 /**

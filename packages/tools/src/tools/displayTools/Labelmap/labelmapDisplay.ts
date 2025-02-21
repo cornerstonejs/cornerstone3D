@@ -28,7 +28,7 @@ import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmen
 import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { getLabelmapActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
-import { getAddOns, getPolySeg } from '../../../config';
+import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';

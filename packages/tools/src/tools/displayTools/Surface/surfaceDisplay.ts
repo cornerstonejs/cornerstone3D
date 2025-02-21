@@ -80,7 +80,7 @@ async function render(
       segmentationId,
       Representations.Surface,
       () => polySeg.computeSurfaceData(segmentationId, { viewport }),
-      () => undefined
+      () => polySeg.updateSurfaceData(segmentationId, { viewport })
     );
 
     if (!SurfaceData) {
