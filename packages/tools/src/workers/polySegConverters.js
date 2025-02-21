@@ -16,6 +16,30 @@ import {
 import { isPlaneIntersectingAABB } from '../utilities/planar';
 import { checkStandardBasis, rotatePoints } from '../geometricSurfaceUtils';
 
+async function peerImport(moduleId, enablePolySeg = false) {
+  if (moduleId === '@icr/polyseg-wasm') {
+    try {
+      if (enablePolySeg) {
+        if (typeof __EXAMPLE_RUNNING__ !== 'undefined' && __EXAMPLE_RUNNING__) {
+          return import('@icr/polyseg-wasm');
+        } else {
+          return import(/* webpackIgnore: true */ '@icr/polyseg-wasm');
+        }
+      } else {
+        const moduleName = '@icr/polyseg-wasm';
+        return import(
+          /* webpackChunkName: "icr-polyseg-wasm" */
+          /* webpackIgnore: true */
+          `${moduleName}`
+        );
+      }
+    } catch (error) {
+      console.warn('Error importing @icr/polyseg-wasm:', error);
+      return null;
+    }
+  }
+}
+
 /**
  * Object containing methods for converting between different representations of
  * segmentations (e.g., contour, labelmap, surface, etc.) These logics
@@ -40,10 +64,11 @@ const polySegConverters = {
   /**
    * This method initializes the polySeg instance and sets it to this.polySeg
    */
-  async initializePolySeg(progressCallback) {
+  async initializePolySeg(progressCallback, enablePolySeg = false) {
     let ICRPolySeg;
     try {
-      ICRPolySeg = (await import('@icr/polyseg-wasm')).default;
+      ICRPolySeg = (await peerImport('@icr/polyseg-wasm', enablePolySeg))
+        .default;
     } catch (error) {
       console.error(error);
       console.debug(
@@ -85,9 +110,9 @@ const polySegConverters = {
    * @returns {Promise} - A promise that resolves to the converted surface.
    */
   async convertContourToSurface(args, ...callbacks) {
-    const { polylines, numPointsArray } = args;
+    const { polylines, numPointsArray, enablePolySeg } = args;
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback);
+    await this.initializePolySeg(progressCallback, enablePolySeg);
     const results = await this.polySeg.instance.convertContourRoiToSurface(
       polylines,
       numPointsArray
@@ -109,7 +134,7 @@ const polySegConverters = {
    */
   async convertLabelmapToSurface(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback);
+    await this.initializePolySeg(progressCallback, args.enablePolySeg);
 
     const results = this.polySeg.instance.convertLabelmapToSurface(
       args.scalarData,
@@ -146,7 +171,7 @@ const polySegConverters = {
    */
   async convertContourToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback);
+    await this.initializePolySeg(progressCallback, args.enablePolySeg);
 
     const {
       segmentIndices,
@@ -255,7 +280,7 @@ const polySegConverters = {
    */
   async convertContourToStackLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback);
+    await this.initializePolySeg(progressCallback, args.enablePolySeg);
 
     const { segmentationsInfo, annotationUIDsInSegmentMap, segmentIndices } =
       args;
@@ -380,7 +405,7 @@ const polySegConverters = {
    */
   async convertSurfaceToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback);
+    await this.initializePolySeg(progressCallback, args.enablePolySeg);
 
     const results = this.polySeg.instance.convertSurfaceToLabelmap(
       args.points,
@@ -402,7 +427,7 @@ const polySegConverters = {
    */
   async convertSurfacesToVolumeLabelmap(args, ...callbacks) {
     const [progressCallback] = callbacks;
-    await this.initializePolySeg(progressCallback);
+    await this.initializePolySeg(progressCallback, args.enablePolySeg);
 
     const { segmentsInfo } = args;
 

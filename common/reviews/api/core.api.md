@@ -276,6 +276,9 @@ type BoundsLPS = [Point3, Point3, Point3];
 export const cache: Cache_2;
 
 // @public (undocumented)
+function calculateSpacingBetweenImageIds(imageIds: string[]): number;
+
+// @public (undocumented)
 function calculateViewportsSpatialRegistration(viewport1: StackViewport | IVolumeViewport, viewport2: StackViewport | IVolumeViewport): void;
 
 // @public (undocumented)
@@ -4047,7 +4050,8 @@ declare namespace utilities {
         clip,
         transformWorldToIndexContinuous,
         createSubVolume,
-        getVolumeDirectionVectors
+        getVolumeDirectionVectors,
+        calculateSpacingBetweenImageIds
     }
 }
 export { utilities }

@@ -3,6 +3,9 @@ const path = require('path');
 const csRenderBasePath = path.resolve('packages/core/src/index');
 const csToolsBasePath = path.resolve('packages/tools/src/index');
 const csAiBasePath = path.resolve('packages/ai/src/index');
+const csLabelmapInterpolationBasePath = path.resolve(
+  'packages/labelmap-interpolation/src/index'
+);
 const csAdapters = path.resolve('packages/adapters/src/index');
 const csDICOMImageLoaderDistPath = path.resolve(
   'packages/dicomImageLoader/src/index'
@@ -28,6 +31,7 @@ module.exports = {
     }),
     new rspack.DefinePlugin({
       __BASE_PATH__: "''",
+      __EXAMPLE_RUNNING__: true,
     }),
     new rspack.CopyRspackPlugin({
       patterns: [
@@ -67,6 +71,10 @@ module.exports = {
       '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/ai': '${csAiBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/labelmap-interpolation': '${csLabelmapInterpolationBasePath.replace(
+        /\\/g,
+        '/'
+      )}',
       '@cornerstonejs/nifti-volume-loader': '${csNiftiPath.replace(
         /\\/g,
         '/'

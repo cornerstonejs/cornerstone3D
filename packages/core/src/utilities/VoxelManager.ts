@@ -893,7 +893,20 @@ export default class VoxelManager<T> {
           const sliceData = new SliceDataConstructor(sliceSize);
           // @ts-ignore
           sliceData.set(scalarData.subarray(sliceStart, sliceEnd));
-          imageVoxelManager.scalarData = sliceData;
+
+          // Instead of directly assigning scalarData, use TypedArray's set method
+          // previously here we were using imageVoxelManager.scalarData = sliceData
+          // which had some weird side effects
+          if (imageVoxelManager.scalarData) {
+            imageVoxelManager.scalarData.set(sliceData);
+            // Ensure the voxel manager knows about the changes
+            imageVoxelManager.modifiedSlices.add(sliceIndex);
+          } else {
+            // Fallback to individual updates if scalarData is not directly accessible
+            for (let i = 0; i < sliceSize; i++) {
+              imageVoxelManager.setAtIndex(i, sliceData[i]);
+            }
+          }
 
           // Update min/max values for this slice
           for (let i = 0; i < sliceData.length; i++) {

@@ -145,7 +145,6 @@ const RECTANGLE_STRATEGY = new BrushStrategy(
   compositions.determineSegmentIndex,
   compositions.preview,
   compositions.labelmapStatistics
-  // compositions.labelmapInterpolation
 );
 
 const RECTANGLE_THRESHOLD_STRATEGY = new BrushStrategy(
@@ -159,7 +158,6 @@ const RECTANGLE_THRESHOLD_STRATEGY = new BrushStrategy(
   compositions.preview,
   compositions.islandRemoval,
   compositions.labelmapStatistics
-  // compositions.labelmapInterpolation
 );
 
 /**

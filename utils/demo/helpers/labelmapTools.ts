@@ -61,7 +61,7 @@ toolMap.set('ThresholdCircle', {
     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
     strategySpecificConfiguration: {
       ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
+      THRESHOLD_INSIDE_CIRCLE: { ...thresholdArgs },
     },
   },
 });
@@ -73,7 +73,7 @@ toolMap.set('ThresholdSphere', {
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
     strategySpecificConfiguration: {
       ...configuration.strategySpecificConfiguration,
-      THRESHOLD: { ...thresholdArgs },
+      THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL: { ...thresholdArgs },
     },
   },
 });

@@ -52,6 +52,7 @@ class CentralizedWorkerManager {
       autoTerminateOnIdle: autoTerminateOnIdle.enabled,
       idleCheckIntervalId: null,
       idleTimeThreshold: autoTerminateOnIdle.idleTimeThreshold,
+      options: options,
     };
 
     workerProperties.loadCounters = Array(maxWorkerInstances).fill(0);
@@ -156,6 +157,8 @@ class CentralizedWorkerManager {
 
           workerProperties.processing = true;
 
+          // augment args with options
+          args = { ...args, ...workerProperties.options };
           const results = await api[methodName](args, ...finalCallbacks);
 
           workerProperties.processing = false;

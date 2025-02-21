@@ -13,7 +13,6 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
-  getLocalUrl,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -146,14 +145,32 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 const defaultThresholdOption = [...thresholdOptions.keys()][2];
 const thresholdArgs = thresholdOptions.get(defaultThresholdOption);
 
+interpolationTools.set('CircularBrush', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
+  },
+});
+
+interpolationTools.set('ThresholdCircle', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
+    strategySpecificConfiguration: {
+      THRESHOLD_INSIDE_CIRCLE: { ...thresholdArgs },
+    },
+  },
+});
+
 interpolationTools.set('ThresholdSphere', {
   baseTool: BrushTool.toolName,
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
     strategySpecificConfiguration: {
-      useCenterSegmentIndex: true,
-      THRESHOLD: { ...thresholdArgs },
+      THRESHOLD_INSIDE_SPHERE: { ...thresholdArgs },
     },
   },
 });
@@ -263,12 +280,13 @@ function displayStat(stat) {
   }`;
 }
 
-function calculateStatistics(id, indices) {
+async function calculateStatistics(id, indices) {
   const [viewport] = viewports;
-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-  const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-  const brush = toolGroup.getToolInstance(activeName);
-  const stats = brush.getStatistics(viewport.element, { indices });
+  const stats = await segmentationUtils.getStatistics({
+    segmentationId,
+    segmentIndices: indices,
+    viewportId: viewport.id,
+  });
 
   if (!stats) {
     return;
@@ -286,7 +304,8 @@ function calculateStatistics(id, indices) {
     // displayStat(lesionGlycolysis),
     displayStat(stats.mean),
     displayStat(stats.max),
-    displayStat(stats.min)
+    displayStat(stats.min),
+    displayStat(stats.peakValue)
   );
   const statsDiv = document.getElementById(id);
   statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
@@ -393,13 +412,28 @@ async function run() {
   });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+  //   wadoRsRoot:
+  //     getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  // });
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  });
+
+  const ctImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot:
-      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   });
 
   // Define a volume in memory
@@ -463,7 +497,7 @@ async function run() {
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [{ volumeId }],
     [viewportId1, viewportId2, viewportId3]
   );
 

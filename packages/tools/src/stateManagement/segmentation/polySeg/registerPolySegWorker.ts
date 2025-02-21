@@ -1,4 +1,5 @@
 import { getWebWorkerManager } from '@cornerstonejs/core';
+import { getConfig } from '../../../config';
 
 let registered = false;
 
@@ -24,11 +25,12 @@ export function registerPolySegWorker() {
   const workerManager = getWebWorkerManager();
 
   const options = {
-    maxWorkerInstances: 1, // Todo, make this configurable
+    maxWorkerInstances: 1,
     autoTerminateOnIdle: {
       enabled: true,
       idleTimeThreshold: 2000,
     },
+    enablePolySeg: getConfig().enablePolySeg,
   };
 
   workerManager.registerWorker('polySeg', workerFn, options);

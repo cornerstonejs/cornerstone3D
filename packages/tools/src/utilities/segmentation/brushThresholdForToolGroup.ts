@@ -1,7 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
-import { getRenderingEngine } from '@cornerstonejs/core';
 import { getBrushToolInstances } from './getBrushToolInstances';
 
 export function setBrushThresholdForToolGroup(
@@ -22,8 +21,14 @@ export function setBrushThresholdForToolGroup(
   };
 
   brushBasedToolInstances.forEach((tool) => {
-    tool.configuration.strategySpecificConfiguration.THRESHOLD = {
-      ...tool.configuration.strategySpecificConfiguration.THRESHOLD,
+    const activeStrategy = tool.configuration.activeStrategy;
+
+    if (!activeStrategy.toLowerCase().includes('threshold')) {
+      return;
+    }
+
+    tool.configuration.strategySpecificConfiguration[activeStrategy] = {
+      ...tool.configuration.strategySpecificConfiguration[activeStrategy],
       ...configuration,
     };
   });
@@ -35,13 +40,9 @@ export function setBrushThresholdForToolGroup(
     return;
   }
 
-  const { renderingEngineId } = viewportsInfo[0];
-
   // Use helper to get array of viewportIds, or we just end up doing this mapping
   // ourselves here.
   const viewportIds = toolGroup.getViewportIds();
-
-  const renderingEngine = getRenderingEngine(renderingEngineId);
 
   triggerAnnotationRenderForViewportIds(viewportIds);
 }

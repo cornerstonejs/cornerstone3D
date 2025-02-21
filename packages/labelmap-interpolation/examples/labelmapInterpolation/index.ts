@@ -16,6 +16,7 @@ import {
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import * as labelmapInterpolation from '@cornerstonejs/labelmap-interpolation';
 
 // This is for debugging purposes
 console.warn(
@@ -162,20 +163,12 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Run Extended Interpolation',
   onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.interpolate?.(element1, { extendedConfig: true });
-  },
-});
-
-addButtonToToolbar({
-  title: 'Run Overlapping Interpolation',
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const activeName = toolGroup.getActivePrimaryMouseButtonTool();
-    const brush = toolGroup.getToolInstance(activeName);
-    brush.interpolate?.(element1, { extendedConfig: false });
+    const activeSegmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    labelmapInterpolation.interpolate({
+      segmentationId,
+      segmentIndex: activeSegmentIndex,
+    });
   },
 });
 
