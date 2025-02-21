@@ -2,6 +2,28 @@
 const dicomMap = new Map();
 
 dicomMap.set(
+    "1.3.6.1.4.1.14519.5.2.1.3671.4754.298665348758363466150039312520",
+    {
+        fetchDicom: {
+            StudyInstanceUID:
+                "1.3.6.1.4.1.14519.5.2.1.3671.4754.298665348758363466150039312520",
+            SeriesInstanceUID:
+                "1.3.6.1.4.1.14519.5.2.1.3671.4754.235188122843915982710753948536",
+            wadoRsRoot: "https://d14fa38qiwhyfd.cloudfront.net/dicomweb"
+        },
+        fetchSegmentation: {
+            StudyInstanceUID:
+                "1.3.6.1.4.1.14519.5.2.1.3671.4754.298665348758363466150039312520",
+            SeriesInstanceUID:
+                "1.2.276.0.7230010.3.1.3.1426846371.15380.1513205183.303",
+            SOPInstanceUID:
+                "1.2.276.0.7230010.3.1.4.1426846371.15380.1513205183.304",
+            wadoRsRoot: "https://d14fa38qiwhyfd.cloudfront.net/dicomweb"
+        }
+    }
+);
+
+dicomMap.set(
     "1.3.6.1.4.1.14519.5.2.1.256467663913010332776401703474716742458",
     {
         fetchDicom: {
@@ -22,6 +44,7 @@ dicomMap.set(
         }
     }
 );
+
 dicomMap.set("1.3.12.2.1107.5.2.32.35162.30000015050317233592200000046", {
     fetchDicom: {
         StudyInstanceUID:
