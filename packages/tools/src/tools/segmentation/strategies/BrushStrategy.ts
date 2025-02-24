@@ -35,7 +35,18 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   brushStrategy: BrushStrategy;
   activeStrategy: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  configuration?: Record<string, any>;
+  configuration?: {
+    [key: string]: unknown;
+    centerSegmentIndex?: {
+      segmentIndex: number;
+    };
+    threshold?: {
+      range?: number[];
+      isDynamic: boolean;
+      dynamicRadius: number;
+      dynamicRadiusInCanvas?: number;
+    };
+  };
   memo?: LabelmapMemo;
 };
 
@@ -190,13 +201,13 @@ export default class BrushStrategy {
       return;
     }
 
-    const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
+    const { configuration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
     // TODO - move this to the BrushTool
-    if (csUtils.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
+    if (csUtils.isEqual(centerIJK, configuration.centerIJK)) {
       return operationData.preview;
     } else {
-      strategySpecificConfiguration.centerIJK = centerIJK;
+      configuration.centerIJK = centerIJK;
     }
 
     this._fill.forEach((func) => func(initializedData));
@@ -274,7 +285,6 @@ export default class BrushStrategy {
     };
 
     this._initialize.forEach((func) => func(initializedData));
-
     return initializedData;
   }
 

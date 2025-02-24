@@ -109,7 +109,7 @@ const viewportId1 = viewportIds[0];
 const viewportId2 = viewportIds[1];
 const viewportId3 = viewportIds[2];
 
-const defaultThresholdOption = [...labelmapTools.thresholdOptions.keys()][2];
+const defaultThresholdOption = [...labelmapTools.thresholdOptions.keys()][5];
 const thresholdArgs = labelmapTools.thresholdOptions.get(
   defaultThresholdOption
 );
@@ -119,9 +119,7 @@ interpolationTools.set('ThresholdSphereIsland', {
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
-    strategySpecificConfiguration: {
-      THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL: { ...thresholdArgs },
-    },
+    threshold: thresholdArgs,
   },
 });
 
@@ -130,9 +128,7 @@ interpolationTools.set('ThresholdCircle', {
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
-    strategySpecificConfiguration: {
-      THRESHOLD_INSIDE_CIRCLE: { ...thresholdArgs },
-    },
+    threshold: thresholdArgs,
   },
 });
 
@@ -141,9 +137,7 @@ interpolationTools.set('ThresholdSphere', {
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE',
-    strategySpecificConfiguration: {
-      THRESHOLD_INSIDE_SPHERE: { ...thresholdArgs },
-    },
+    threshold: thresholdArgs,
   },
 });
 
@@ -174,11 +168,7 @@ addDropdownToToolbar({
     map: labelmapTools.thresholdOptions,
   },
   onSelectedValueChange: (name, thresholdArgs) => {
-    segmentationUtils.setBrushThresholdForToolGroup(
-      toolGroupId,
-      thresholdArgs.threshold,
-      thresholdArgs
-    );
+    segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, thresholdArgs);
   },
 });
 

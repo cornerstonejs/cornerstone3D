@@ -12,14 +12,9 @@ export default {
   [StrategyCallbacks.CreateIsInThreshold]: (
     operationData: InitializedOperationData
   ) => {
-    const {
-      imageVoxelManager,
-      strategySpecificConfiguration,
-      segmentIndex,
-      activeStrategy,
-    } = operationData;
+    const { imageVoxelManager, segmentIndex, configuration } = operationData;
 
-    if (!strategySpecificConfiguration || !segmentIndex) {
+    if (!configuration || !segmentIndex) {
       return;
     }
 
@@ -28,12 +23,13 @@ export default {
       const gray = Array.isArray(voxelValue)
         ? vec3.length(voxelValue as Types.Point3)
         : voxelValue;
-      const { threshold } = strategySpecificConfiguration[activeStrategy] || {};
 
-      if (!threshold?.length) {
+      const { threshold } = configuration || {};
+
+      if (!threshold?.range?.length) {
         return true;
       }
-      return threshold[0] <= gray && gray <= threshold[1];
+      return threshold.range[0] <= gray && gray <= threshold.range[1];
     };
   },
 };

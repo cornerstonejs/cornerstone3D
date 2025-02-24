@@ -222,7 +222,8 @@ export default class LabelmapBaseTool extends BaseTool {
       return {
         volumeId,
         referencedVolumeId:
-          this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
+          this.configuration.threshold.volumeId ??
+          referencedVolumeIdToThreshold,
         segmentsLocked,
       };
     } else {
@@ -327,8 +328,7 @@ export default class LabelmapBaseTool extends BaseTool {
       segmentationId,
       viewUp,
       activeStrategy: this.configuration.activeStrategy,
-      strategySpecificConfiguration:
-        this.configuration.strategySpecificConfiguration,
+      configuration: this.configuration,
       // Provide the preview information so that data can be used directly
       preview: this._previewData?.preview,
       createMemo: this.createMemo.bind(this),

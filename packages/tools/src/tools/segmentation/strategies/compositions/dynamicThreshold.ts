@@ -17,16 +17,14 @@ export default {
     const {
       operationName,
       centerIJK,
-      strategySpecificConfiguration,
       segmentationVoxelManager,
       imageVoxelManager,
-      activeStrategy,
+      configuration,
       segmentIndex,
       viewport,
     } = operationData;
-    const config = strategySpecificConfiguration[activeStrategy] || {};
 
-    if (!config?.isDynamic || !centerIJK || !segmentIndex) {
+    if (!configuration?.threshold?.isDynamic || !centerIJK || !segmentIndex) {
       return;
     }
     if (
@@ -37,7 +35,7 @@ export default {
     }
 
     const boundsIJK = segmentationVoxelManager.getBoundsIJK();
-    const { threshold: oldThreshold, dynamicRadius = 0 } = config;
+    const { range: oldThreshold, dynamicRadius = 0 } = configuration.threshold;
     const useDelta = oldThreshold ? 0 : dynamicRadius;
     const { viewPlaneNormal } = viewport.getCamera();
 
@@ -74,40 +72,39 @@ export default {
     };
     imageVoxelManager.forEach(callback, { boundsIJK: nestedBounds });
 
-    config.threshold = threshold;
+    configuration.threshold.range = threshold;
   },
   // Setup a clear threshold value on mouse/touch down
   [StrategyCallbacks.OnInteractionStart]: (
     operationData: InitializedOperationData
   ) => {
-    const { strategySpecificConfiguration, preview, activeStrategy } =
-      operationData;
+    const { configuration } = operationData;
 
-    const config = strategySpecificConfiguration[activeStrategy] || {};
-    if (!config?.isDynamic && !preview) {
+    if (!configuration?.threshold?.isDynamic) {
       return;
     }
 
-    config.threshold = null;
+    configuration.threshold.range = null;
   },
   /**
    * It computes the inner circle radius in canvas coordinates and stores it
-   * in the strategySpecificConfiguration. This is used to show the user
-   * the area that is used to compute the threshold.
+   * This is used to show the user the area that is used to compute the threshold.
    */
   [StrategyCallbacks.ComputeInnerCircleRadius]: (
     operationData: InitializedOperationData
   ) => {
     const { configuration, viewport } = operationData;
-    const { strategySpecificConfiguration, activeStrategy } = configuration;
-    const { dynamicRadius = 0 } =
-      strategySpecificConfiguration[activeStrategy] || {};
+    const { dynamicRadius = 0, isDynamic } = configuration.threshold;
+
+    if (!isDynamic) {
+      configuration.threshold.dynamicRadiusInCanvas = 0;
+      return;
+    }
 
     if (dynamicRadius === 0) {
       return;
     }
 
-    // @ts-ignore
     const imageData = viewport.getImageData();
 
     if (!imageData) {
@@ -131,13 +128,12 @@ export default {
       centerCanvas[0] - offSetCenterCanvas[0]
     );
 
-    if (!strategySpecificConfiguration[activeStrategy]) {
-      strategySpecificConfiguration[activeStrategy] = {};
+    if (!configuration.threshold.dynamicRadiusInCanvas) {
+      configuration.threshold.dynamicRadiusInCanvas = 0;
     }
 
     // Add a couple of pixels to the radius to make it more obvious what is
     // included.
-    strategySpecificConfiguration[activeStrategy].dynamicRadiusInCanvas =
-      3 + dynamicRadiusInCanvas;
+    configuration.threshold.dynamicRadiusInCanvas = 3 + dynamicRadiusInCanvas;
   },
 };

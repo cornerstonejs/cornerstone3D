@@ -165,12 +165,10 @@ function setupTools(toolGroupId) {
       preview: {
         enabled: true,
       },
-      strategySpecificConfiguration: {
-        [brushStrategies.DynamicThreshold]: {
-          useCenterSegmentIndex: true,
-          isDynamic: true,
-          dynamicRadius: 3,
-        },
+      useCenterSegmentIndex: true,
+      threshold: {
+        isDynamic: true,
+        dynamicRadius: 3,
       },
     }
   );

@@ -5,8 +5,11 @@ import { getBrushToolInstances } from './getBrushToolInstances';
 
 export function setBrushThresholdForToolGroup(
   toolGroupId: string,
-  threshold: Types.Point2,
-  otherArgs: Record<string, unknown> = { isDynamic: false }
+  threshold: {
+    range: Types.Point2;
+    isDynamic: boolean;
+    dynamicRadius: number;
+  }
 ) {
   const toolGroup = getToolGroup(toolGroupId);
 
@@ -15,10 +18,6 @@ export function setBrushThresholdForToolGroup(
   }
 
   const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
-  const configuration = {
-    ...otherArgs,
-    ...(threshold !== undefined && { threshold }),
-  };
 
   brushBasedToolInstances.forEach((tool) => {
     const activeStrategy = tool.configuration.activeStrategy;
@@ -27,9 +26,12 @@ export function setBrushThresholdForToolGroup(
       return;
     }
 
-    tool.configuration.strategySpecificConfiguration[activeStrategy] = {
-      ...tool.configuration.strategySpecificConfiguration[activeStrategy],
-      ...configuration,
+    tool.configuration = {
+      ...tool.configuration,
+      threshold: {
+        ...tool.configuration.threshold,
+        ...threshold,
+      },
     };
   });
 
@@ -67,7 +69,5 @@ export function getBrushThresholdForToolGroup(toolGroupId: string) {
     return;
   }
 
-  // TODO -> Assumes the
-  return brushToolInstance.configuration.strategySpecificConfiguration.THRESHOLD
-    .threshold;
+  return brushToolInstance.configuration.threshold.range;
 }

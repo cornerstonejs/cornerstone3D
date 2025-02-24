@@ -20,11 +20,7 @@ import type { Types } from '@cornerstonejs/core';
  */
 export default {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const { strategySpecificConfiguration } = operationData;
-    if (!strategySpecificConfiguration) {
-      return;
-    }
-    const { centerSegmentIndex } = strategySpecificConfiguration;
+    const { centerSegmentIndex } = operationData.configuration;
     if (centerSegmentIndex) {
       operationData.segmentIndex = centerSegmentIndex.segmentIndex;
     }
@@ -38,16 +34,17 @@ export default {
       previewSegmentIndex,
       segmentationVoxelManager,
       centerIJK,
-      strategySpecificConfiguration,
       viewPlaneNormal,
       segmentationImageData,
       preview,
+      configuration,
     } = operationData;
-    if (!strategySpecificConfiguration?.useCenterSegmentIndex) {
+
+    if (!configuration?.useCenterSegmentIndex) {
       return;
     }
     // Get rid of the previous data
-    delete strategySpecificConfiguration.centerSegmentIndex;
+    delete configuration.centerSegmentIndex;
 
     let hasSegmentIndex = false;
     let hasPreviewIndex = false;
@@ -91,7 +88,7 @@ export default {
       existingValue = null;
     }
     operationData.segmentIndex = existingValue;
-    strategySpecificConfiguration.centerSegmentIndex = {
+    configuration.centerSegmentIndex = {
       segmentIndex: existingValue,
     };
   },

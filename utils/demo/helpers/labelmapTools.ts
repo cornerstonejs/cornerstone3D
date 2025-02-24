@@ -19,16 +19,12 @@ const preview = {
 
 const configuration = {
   preview,
-  strategySpecificConfiguration: {
-    useCenterSegmentIndex: false,
-  },
+  useCenterSegmentIndex: false,
 };
 
 const configurationNoPreview = {
   preview: { enabled: false, previewColors },
-  strategySpecificConfiguration: {
-    useCenterSegmentIndex: false,
-  },
+  useCenterSegmentIndex: false,
 };
 
 const thresholdOptions = new Map();
@@ -41,11 +37,11 @@ thresholdOptions.set('Use Existing Threshold', {
   dynamicRadius: 5,
 });
 thresholdOptions.set('CT Fat: (-150, -70)', {
-  threshold: [-150, -70],
+  range: [-150, -70],
   isDynamic: false,
 });
 thresholdOptions.set('CT Bone: (200, 1000)', {
-  threshold: [200, 1000],
+  range: [200, 1000],
   isDynamic: false,
 });
 
@@ -59,10 +55,7 @@ toolMap.set('ThresholdCircle', {
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD_INSIDE_CIRCLE: { ...thresholdArgs },
-    },
+    threshold: thresholdArgs,
   },
 });
 
@@ -71,10 +64,7 @@ toolMap.set('ThresholdSphere', {
   configuration: {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
-    strategySpecificConfiguration: {
-      ...configuration.strategySpecificConfiguration,
-      THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL: { ...thresholdArgs },
-    },
+    threshold: thresholdArgs,
   },
 });
 
