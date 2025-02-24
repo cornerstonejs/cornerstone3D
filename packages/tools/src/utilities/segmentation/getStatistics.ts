@@ -1,10 +1,11 @@
 import {
-  getEnabledElementByViewportId,
+  cache,
   utilities,
   getWebWorkerManager,
   eventTarget,
   Enums,
   triggerEvent,
+  metaData,
 } from '@cornerstonejs/core';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import VolumetricCalculator from './VolumetricCalculator';
@@ -36,18 +37,13 @@ const triggerWorkerProgress = (eventTarget, progress) => {
 async function getStatistics({
   segmentationId,
   segmentIndices,
-  viewportId,
 }: {
   segmentationId: string;
   segmentIndices: number[] | number;
-  viewportId: string;
 }) {
   registerComputeWorker();
 
   triggerWorkerProgress(eventTarget, 0);
-
-  const enabledElement = getEnabledElementByViewportId(viewportId);
-  const viewport = enabledElement.viewport;
 
   const segmentation = getSegmentation(segmentationId);
   const { representationData } = segmentation;
@@ -59,17 +55,22 @@ async function getStatistics({
     return;
   }
 
-  const { volumeId } = Labelmap as LabelmapSegmentationDataVolume;
-  const { imageIds } = Labelmap as LabelmapSegmentationDataStack;
+  const segVolumeId = (Labelmap as LabelmapSegmentationDataVolume).volumeId;
+  const segImageIds = (Labelmap as LabelmapSegmentationDataStack).imageIds;
 
-  const {
-    segmentationVoxelManager,
-    imageVoxelManager,
-    segmentationImageData,
-    imageData,
-  } = getStrategyData({
-    operationData: { segmentationId, viewport, volumeId, imageIds },
-    viewport,
+  // Create a minimal operationData object
+  const operationData = {
+    segmentationId,
+    volumeId: segVolumeId,
+    imageIds: segImageIds,
+  };
+
+  // Get the strategy data
+  const strategyData = getStrategyData({
+    operationData,
+    viewport: {
+      id: 'dummy-viewport',
+    },
     strategy: {
       ensureSegmentationVolumeFor3DManipulation:
         ensureSegmentationVolume.ensureSegmentationVolumeFor3DManipulation,
@@ -77,6 +78,13 @@ async function getStatistics({
         ensureImageVolume.ensureImageVolumeFor3DManipulation,
     },
   });
+
+  const {
+    segmentationVoxelManager,
+    imageVoxelManager,
+    segmentationImageData,
+    imageData,
+  } = strategyData;
 
   let indices = segmentIndices;
 
@@ -127,20 +135,13 @@ async function getStatistics({
 
   triggerWorkerProgress(eventTarget, 100);
 
-  const targetId = viewport.getViewReferenceId();
-  const modalityUnitOptions = {
-    isPreScaled: isViewportPreScaled(viewport, targetId),
-    isSuvScaled: AnnotationTool.isSuvScaled(
-      viewport,
-      targetId,
-      viewport.getCurrentImageId()
-    ),
-  };
-
-  const unit = getPixelValueUnitsImageId(
-    viewport.getCurrentImageId(),
-    modalityUnitOptions
+  // Get reference image ID and modality unit options
+  const { refImageId, modalityUnitOptions } = getImageReferenceInfo(
+    segVolumeId,
+    segImageIds
   );
+
+  const unit = getPixelValueUnitsImageId(refImageId, modalityUnitOptions);
 
   // Update units
   stats.mean.unit = unit;
@@ -220,6 +221,44 @@ function getSphereStats(testMax, radiusIJK, segData, imageVoxels, spacing) {
   });
 
   return VolumetricCalculator.getStatistics({ spacing });
+}
+
+/**
+ * Gets the reference image ID and modality unit options based on segmentation data
+ * @param segVolumeId - The segmentation volume ID
+ * @param segImageIds - The segmentation image IDs
+ * @returns Object containing reference image ID and modality unit options
+ */
+function getImageReferenceInfo(segVolumeId, segImageIds) {
+  let refImageId;
+  let modalityUnitOptions;
+
+  if (segVolumeId) {
+    const segmentationVolume = cache.getVolume(segVolumeId);
+    const referencedVolumeId = segmentationVolume.referencedVolumeId;
+    const volume = cache.getVolume(referencedVolumeId);
+
+    if (volume?.imageIds?.length > 0) {
+      refImageId = volume.imageIds[0];
+    }
+
+    modalityUnitOptions = {
+      isPreScaled: Object.keys(volume.scaling || {}).length > 0,
+      isSuvScaled: Boolean(volume.scaling?.PT),
+    };
+  } else if (segImageIds?.length) {
+    const segImage = cache.getImage(segImageIds[0]);
+    refImageId = segImage.referencedImageId;
+    const refImage = cache.getImage(refImageId);
+    const scalingModule = metaData.get('scalingModule', refImageId);
+
+    modalityUnitOptions = {
+      isPreScaled: Boolean(refImage.preScale?.scaled),
+      isSuvScaled: typeof scalingModule?.preScale?.scaled === 'number',
+    };
+  }
+
+  return { refImageId, modalityUnitOptions };
 }
 
 export default getStatistics;

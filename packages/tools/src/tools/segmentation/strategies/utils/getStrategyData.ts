@@ -159,7 +159,7 @@ function getStrategyDataForStackViewport({
  * @returns The strategy data or null if error
  */
 function getStrategyData({ operationData, viewport, strategy }) {
-  if (viewport instanceof BaseVolumeViewport) {
+  if (operationData.volumeId || operationData.referencedVolumeId) {
     return getStrategyDataForVolumeViewport({ operationData });
   }
 
