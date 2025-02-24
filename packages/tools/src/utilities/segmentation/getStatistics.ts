@@ -11,8 +11,6 @@ import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getAct
 import VolumetricCalculator from './VolumetricCalculator';
 import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
 import { getPixelValueUnitsImageId } from '../getPixelValueUnits';
-import { AnnotationTool } from '../../tools/base';
-import { isViewportPreScaled } from '../viewport/isViewportPreScaled';
 import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
 import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
@@ -91,158 +89,164 @@ async function getStatistics({
 
   const unit = getPixelValueUnitsImageId(refImageId, modalityUnitOptions);
 
-  let stats;
-  if (reconstructableVolume) {
-    // Get the strategy data
-    const strategyData = getStrategyData({
-      // @ts-expect-error
-      operationData,
-      strategy: reconstructableVolume
-        ? {
-            ensureSegmentationVolumeFor3DManipulation:
-              ensureSegmentationVolume.ensureSegmentationVolumeFor3DManipulation,
-            ensureImageVolumeFor3DManipulation:
-              ensureImageVolume.ensureImageVolumeFor3DManipulation,
-          }
-        : undefined,
-    });
+  const stats = reconstructableVolume
+    ? await calculateVolumeStatistics(operationData, indices, unit)
+    : await calculateStackStatistics(segImageIds, indices, unit);
 
-    const {
-      segmentationVoxelManager,
-      imageVoxelManager,
-      segmentationImageData,
-      imageData,
-    } = strategyData;
+  return stats;
+}
 
-    const spacing = segmentationImageData.getSpacing();
+/**
+ * Calculate statistics for a reconstructable volume
+ */
+async function calculateVolumeStatistics(operationData, indices, unit) {
+  // Get the strategy data
+  const strategyData = getStrategyData({
+    operationData,
+    strategy: {
+      ensureSegmentationVolumeFor3DManipulation:
+        ensureSegmentationVolume.ensureSegmentationVolumeFor3DManipulation,
+      ensureImageVolumeFor3DManipulation:
+        ensureImageVolume.ensureImageVolumeFor3DManipulation,
+    },
+  });
 
-    const { boundsIJK: boundsOrig } = segmentationVoxelManager;
-    if (!boundsOrig) {
-      return VolumetricCalculator.getStatistics({ spacing });
+  const {
+    segmentationVoxelManager,
+    imageVoxelManager,
+    segmentationImageData,
+    imageData,
+  } = strategyData;
+
+  const spacing = segmentationImageData.getSpacing();
+
+  const { boundsIJK: boundsOrig } = segmentationVoxelManager;
+  if (!boundsOrig) {
+    return VolumetricCalculator.getStatistics({ spacing });
+  }
+
+  const segmentationScalarData =
+    segmentationVoxelManager.getCompleteScalarDataArray();
+
+  const imageScalarData = imageVoxelManager.getCompleteScalarDataArray();
+
+  const segmentationInfo = {
+    scalarData: segmentationScalarData,
+    dimensions: segmentationImageData.getDimensions(),
+    spacing: segmentationImageData.getSpacing(),
+    origin: segmentationImageData.getOrigin(),
+  };
+
+  const imageInfo = {
+    scalarData: imageScalarData,
+    dimensions: imageData.getDimensions(),
+    spacing: imageData.getSpacing(),
+    origin: imageData.getOrigin(),
+  };
+
+  const stats = await workerManager.executeTask(
+    'compute',
+    'calculateSegmentsStatisticsVolume',
+    {
+      segmentationInfo,
+      imageInfo,
+      indices,
     }
+  );
 
-    const segmentationScalarData =
-      segmentationVoxelManager.getCompleteScalarDataArray();
+  triggerWorkerProgress(eventTarget, 100);
 
-    const imageScalarData = imageVoxelManager.getCompleteScalarDataArray();
+  // Update units
+  stats.mean.unit = unit;
+  stats.max.unit = unit;
+  stats.min.unit = unit;
 
-    const segmentationInfo = {
-      scalarData: segmentationScalarData,
-      dimensions: segmentationImageData.getDimensions(),
-      spacing: segmentationImageData.getSpacing(),
-      origin: segmentationImageData.getOrigin(),
-    };
-
-    const imageInfo = {
-      scalarData: imageScalarData,
-      dimensions: imageData.getDimensions(),
-      spacing: imageData.getSpacing(),
-      origin: imageData.getOrigin(),
-    };
-
-    stats = await workerManager.executeTask(
-      'compute',
-      'calculateSegmentsStatisticsVolume',
-      {
-        segmentationInfo,
-        imageInfo,
-        indices,
-      }
-    );
-
-    triggerWorkerProgress(eventTarget, 100);
-
-    // Update units
-    stats.mean.unit = unit;
-    stats.max.unit = unit;
-    stats.min.unit = unit;
-
-    if (unit !== 'SUV') {
-      return stats;
-    }
-
-    // Get the IJK rounded radius, not using less than 1, and using the
-    // radius for the spacing given the desired mm spacing of 10
-    // Add 10% to the radius to account for whole pixel in/out issues
-    const radiusIJK = spacing.map((s) =>
-      Math.max(1, Math.round((1.1 * radiusForVol1) / s))
-    );
-
-    for (const testMax of stats.maxIJKs) {
-      const testStats = getSphereStats(
-        testMax,
-        radiusIJK,
-        segmentationImageData,
-        imageVoxelManager,
-        spacing
-      );
-      if (!testStats) {
-        continue;
-      }
-      const { mean } = testStats;
-      if (!stats.peakValue || stats.peakValue.value <= mean.value) {
-        stats.peakValue = {
-          name: 'peakValue',
-          label: 'Peak Value',
-          value: mean.value,
-          unit,
-        };
-      }
-    }
-  } else {
-    triggerWorkerProgress(eventTarget, 0);
-    // we need to loop over each seg image separately and calculate the stats
-    const segmentationInfo = [];
-    const imageInfo = [];
-    for (const segImageId of segImageIds) {
-      const segImage = cache.getImage(segImageId);
-      const segPixelData = segImage.getPixelData();
-      const segVoxelManager = segImage.voxelManager;
-      const segSpacing = [
-        segImage.rowPixelSpacing,
-        segImage.columnPixelSpacing,
-      ];
-
-      const refImageId = segImage.referencedImageId;
-      const refImage = cache.getImage(refImageId);
-      const refPixelData = refImage.getPixelData();
-      const refVoxelManager = refImage.voxelManager;
-      const refSpacing = [
-        refImage.rowPixelSpacing,
-        refImage.columnPixelSpacing,
-      ];
-
-      segmentationInfo.push({
-        scalarData: segPixelData,
-        dimensions: segVoxelManager.dimensions,
-        spacing: segSpacing,
-      });
-
-      imageInfo.push({
-        scalarData: refPixelData,
-        dimensions: refVoxelManager.dimensions,
-        spacing: refSpacing,
-      });
-    }
-
-    stats = await workerManager.executeTask(
-      'compute',
-      'calculateSegmentsStatisticsStack',
-      {
-        segmentationInfo,
-        imageInfo,
-        indices,
-      }
-    );
-
-    triggerWorkerProgress(eventTarget, 100);
-
-    stats.mean.unit = unit;
-    stats.max.unit = unit;
-    stats.min.unit = unit;
-
+  if (unit !== 'SUV') {
     return stats;
   }
+
+  // Get the IJK rounded radius, not using less than 1, and using the
+  // radius for the spacing given the desired mm spacing of 10
+  // Add 10% to the radius to account for whole pixel in/out issues
+  const radiusIJK = spacing.map((s) =>
+    Math.max(1, Math.round((1.1 * radiusForVol1) / s))
+  );
+
+  for (const testMax of stats.maxIJKs) {
+    const testStats = getSphereStats(
+      testMax,
+      radiusIJK,
+      segmentationImageData,
+      imageVoxelManager,
+      spacing
+    );
+    if (!testStats) {
+      continue;
+    }
+    const { mean } = testStats;
+    if (!stats.peakValue || stats.peakValue.value <= mean.value) {
+      stats.peakValue = {
+        name: 'peakValue',
+        label: 'Peak Value',
+        value: mean.value,
+        unit,
+      };
+    }
+  }
+
+  return stats;
+}
+
+/**
+ * Calculate statistics for a stack of images
+ */
+async function calculateStackStatistics(segImageIds, indices, unit) {
+  triggerWorkerProgress(eventTarget, 0);
+  // we need to loop over each seg image separately and calculate the stats
+  const segmentationInfo = [];
+  const imageInfo = [];
+  for (const segImageId of segImageIds) {
+    const segImage = cache.getImage(segImageId);
+    const segPixelData = segImage.getPixelData();
+    const segVoxelManager = segImage.voxelManager;
+    const segSpacing = [segImage.rowPixelSpacing, segImage.columnPixelSpacing];
+
+    const refImageId = segImage.referencedImageId;
+    const refImage = cache.getImage(refImageId);
+    const refPixelData = refImage.getPixelData();
+    const refVoxelManager = refImage.voxelManager;
+    const refSpacing = [refImage.rowPixelSpacing, refImage.columnPixelSpacing];
+
+    segmentationInfo.push({
+      scalarData: segPixelData,
+      dimensions: segVoxelManager.dimensions,
+      spacing: segSpacing,
+    });
+
+    imageInfo.push({
+      scalarData: refPixelData,
+      dimensions: refVoxelManager.dimensions,
+      spacing: refSpacing,
+    });
+  }
+
+  const stats = await workerManager.executeTask(
+    'compute',
+    'calculateSegmentsStatisticsStack',
+    {
+      segmentationInfo,
+      imageInfo,
+      indices,
+    }
+  );
+
+  triggerWorkerProgress(eventTarget, 100);
+
+  stats.mean.unit = unit;
+  stats.max.unit = unit;
+  stats.min.unit = unit;
+
+  return stats;
 }
 
 /**
