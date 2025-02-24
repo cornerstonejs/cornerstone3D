@@ -88,6 +88,10 @@ async function render(
         `No Surface data found for segmentationId ${segmentationId} even we tried to compute it`
       );
     }
+  } else if (!SurfaceData && !getPolySeg()) {
+    console.debug(
+      `No surface data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to surface. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
+    );
   }
 
   if (!SurfaceData) {

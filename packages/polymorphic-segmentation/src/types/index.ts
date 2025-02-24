@@ -1,3 +1,3 @@
-import type { PolySegConversionOptions } from './PolySeg';
+import type { PolySegConversionOptions } from './PolySegConversionOptions';
 
 export type { PolySegConversionOptions };

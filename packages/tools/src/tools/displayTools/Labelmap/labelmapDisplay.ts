@@ -144,6 +144,10 @@ async function render(
     }
 
     polySegConversionInProgress = false;
+  } else if (!labelmapData && !getPolySeg()) {
+    console.debug(
+      `No labelmap data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to labelmap. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
+    );
   }
 
   if (!labelmapData) {

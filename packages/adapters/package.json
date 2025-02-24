@@ -68,9 +68,9 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/dcmjs-org/dcmjs.git"
+        "url": "git+https://github.com/cornerstonejs/cornerstone3D.git"
     },
-    "author": "@cornerstonejs (formerly Steve Pieper from dcmjs)",
+    "author": "@cornerstonejs adapters package",
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/cornerstonejs/cornerstone3D/issues"

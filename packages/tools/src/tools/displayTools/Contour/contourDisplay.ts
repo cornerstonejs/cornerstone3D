@@ -6,7 +6,7 @@ import { handleContourSegmentation } from './contourHandler/handleContourSegment
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 import removeContourFromElement from './removeContourFromElement';
-import { getAddOns, getPolySeg } from '../../../config';
+import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 
 let polySegConversionInProgress = false;
@@ -89,6 +89,10 @@ async function render(
     );
 
     polySegConversionInProgress = false;
+  } else if (!contourData && !getPolySeg()) {
+    console.debug(
+      `No contour data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to contour. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
+    );
   }
 
   if (!contourData) {

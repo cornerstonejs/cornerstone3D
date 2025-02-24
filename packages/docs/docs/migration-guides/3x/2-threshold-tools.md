@@ -6,22 +6,94 @@ title: 'Labelmap Thresholding Tools'
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# No Predefined Defaults
+## Key Changes:
 
-We no longer have any default thresholds.
+* The nested `strategySpecificConfiguration` object has been removed completely
+* Configuration properties have been moved to the root level of the configuration object
+* Threshold configuration has been restructured:
+  * `threshold` array is now a `range` property inside a `threshold` object
+  * Additional threshold properties (`isDynamic`, `dynamicRadius`) are part of the same object
+* `setBrushThresholdForToolGroup()` function signature has changed to accept a structured threshold object
+* Strategy-specific properties like `useCenterSegmentIndex` have been moved to the root configuration level
+* `activeStrategy` is now a standalone property in tool operations data, no longer inside a nested configuration
 
-```json
-strategySpecificConfiguration: {
-  THRESHOLD: {
-    threshold: [-150, -70], // E.g. CT Fat; only used during threshold strategies.
-  },
-},
+## Migration Steps:
+
+### 1. Replace strategySpecificConfiguration with direct properties
+
+**Before:**
+```diff
+- configuration: {
+-   activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
+-   strategySpecificConfiguration: {
+-     THRESHOLD: {
+-       threshold: [-150, -70],
+-       // other threshold properties
+-     },
+-     useCenterSegmentIndex: true,
+-   },
+- }
 ```
 
-Now, it's simply:
-
-```json
-strategySpecificConfiguration: {}
+**After:**
+```diff
++ configuration: {
++   activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
++   threshold: {
++     range: [-150, -70],
++     isDynamic: false,
++     // other threshold properties directly here
++   },
++   useCenterSegmentIndex: true,
++ }
 ```
 
-It is up to you to configure the thresholding tools as you see fit.
+### 2. Update threshold configuration structure
+
+**Before:**
+```diff
+- strategySpecificConfiguration: {
+-   THRESHOLD: {
+-     threshold: [-150, -70], // Previous threshold array format
+-     isDynamic: false,
+-     dynamicRadius: 5
+-   }
+- }
+```
+
+**After:**
+```diff
++ threshold: {
++   range: [-150, -70], // New 'range' property replaces 'threshold'
++   isDynamic: false,
++   dynamicRadius: 5
++ }
+```
+
+### 3. Update setBrushThresholdForToolGroup calls
+
+**Before:**
+```diff
+- segmentationUtils.setBrushThresholdForToolGroup(
+-   toolGroupId,
+-   thresholdArgs.threshold,
+-   thresholdArgs
+- );
+```
+
+**After:**
+```diff
++ segmentationUtils.setBrushThresholdForToolGroup(
++   toolGroupId,
++   fullThresholdArgs
++ );
+```
+
+Note that `thresholdArgs` should now be an object with the structure:
+```javascript
+{
+  range: [min, max], // Previously 'threshold'
+  isDynamic: boolean,
+  dynamicRadius: number
+}
+```

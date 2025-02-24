@@ -29,7 +29,7 @@ export default async function initDemo(config) {
     ...(config?.core ? config.core : {}),
   });
   await csToolsInit({
-    addOns: {
+    addons: {
       polySeg,
     },
   });

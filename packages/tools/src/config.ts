@@ -53,7 +53,7 @@ type AddOns = {
  * Configuration type containing add-ons
  */
 export type Config = {
-  addOns: AddOns;
+  addons: AddOns;
 };
 
 let config = {} as Config;
@@ -76,7 +76,7 @@ export function setConfig(newConfig: Config): void {
  * Gets configured add-ons
  */
 export function getAddOns(): AddOns {
-  return config.addOns;
+  return config.addons;
 }
 
 let polysegInitialized = false;
@@ -86,15 +86,15 @@ let polysegInitialized = false;
  * @returns The PolySeg add-on instance or null if not configured
  */
 export function getPolySeg() {
-  if (!config.addOns?.polySeg) {
+  if (!config.addons?.polySeg) {
     console.warn(
-      'PolySeg add-on not configured. You can use @cornerstonejs/polymorphic-segmentation as an add-on for cornerstoneTools, but you need to include it in `.init({ addOns: { polySeg})`.'
+      'PolySeg add-on not configured. This will prevent automatic conversion between segmentation representations (labelmap, contour, surface). To enable these features, install @cornerstonejs/polymorphic-segmentation and register it during initialization: cornerstoneTools.init({ addons: { polySeg } }).'
     );
 
     return null;
   }
 
-  const polyseg = config.addOns.polySeg;
+  const polyseg = config.addons.polySeg;
   if (!polysegInitialized) {
     polyseg.init();
     polysegInitialized = true;

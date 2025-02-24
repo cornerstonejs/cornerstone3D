@@ -222,7 +222,7 @@ export default class LabelmapBaseTool extends BaseTool {
       return {
         volumeId,
         referencedVolumeId:
-          this.configuration.threshold.volumeId ??
+          this.configuration.threshold?.volumeId ??
           referencedVolumeIdToThreshold,
         segmentsLocked,
       };

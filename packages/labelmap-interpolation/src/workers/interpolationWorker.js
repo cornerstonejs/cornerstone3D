@@ -139,6 +139,8 @@ const computeWorker = {
         inputImage,
         {
           ...configuration,
+          // since we already have a web worker, we don't need to create another one
+          webWorker: false,
         }
       );
 
