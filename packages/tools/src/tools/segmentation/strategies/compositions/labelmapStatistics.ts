@@ -16,7 +16,6 @@ export default {
     getStatistics({
       segmentationId,
       segmentIndices: indices,
-      viewportId: viewport.id,
     });
   },
 };

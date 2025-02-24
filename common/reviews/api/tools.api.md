@@ -2935,10 +2935,9 @@ function getStackSegmentationImageIdsForViewport(viewportId: string, segmentatio
 function getState(annotation?: Annotation): AnnotationStyleStates;
 
 // @public (undocumented)
-function getStatistics({ segmentationId, segmentIndices, viewportId, }: {
+function getStatistics({ segmentationId, segmentIndices, }: {
     segmentationId: string;
     segmentIndices: number[] | number;
-    viewportId: string;
 }): Promise<any>;
 
 // @public (undocumented)

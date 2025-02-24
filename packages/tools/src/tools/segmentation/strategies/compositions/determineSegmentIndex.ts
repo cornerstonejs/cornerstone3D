@@ -20,10 +20,13 @@ import type { Types } from '@cornerstonejs/core';
  */
 export default {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const { centerSegmentIndex } = operationData.configuration;
-    if (centerSegmentIndex) {
-      operationData.segmentIndex = centerSegmentIndex.segmentIndex;
+    const { centerSegmentIndex } = operationData.configuration || {};
+
+    if (!centerSegmentIndex) {
+      return;
     }
+
+    operationData.segmentIndex = centerSegmentIndex.segmentIndex;
   },
 
   [StrategyCallbacks.OnInteractionStart]: (
