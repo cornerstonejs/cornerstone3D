@@ -151,7 +151,7 @@ abstract class BaseVolumeViewport extends Viewport {
     this.initialViewUp = viewUp;
 
     if (resetCamera) {
-      this.resetCamera();
+      this.resetCamera({ resetOrientation: false, resetRotation: false });
     }
   }
 
