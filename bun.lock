@@ -138,7 +138,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "2.19.13",
+      "version": "3.0.0-beta.1",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -147,13 +147,13 @@
         "ndarray": "^1.0.19",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.13",
-        "@cornerstonejs/tools": "^2.19.13",
+        "@cornerstonejs/core": "^2.19.14",
+        "@cornerstonejs/tools": "^2.19.14",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "2.19.13",
+      "version": "3.0.0-beta.1",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -165,13 +165,13 @@
         "onnxruntime-web": "1.17.1",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.7",
-        "@cornerstonejs/tools": "^2.19.7",
+        "@cornerstonejs/core": "^2.19.14",
+        "@cornerstonejs/tools": "^2.19.14",
       },
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "2.19.13",
+      "version": "3.0.0-beta.1",
       "dependencies": {
         "@kitware/vtk.js": "32.9.0",
         "comlink": "^4.4.1",
@@ -180,7 +180,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "2.19.13",
+      "version": "3.0.0-beta.1",
       "dependencies": {
         "@cornerstonejs/codec-charls": "^1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
@@ -192,7 +192,7 @@
         "uuid": "^9.0.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.13",
+        "@cornerstonejs/core": "^2.19.14",
         "dicom-parser": "^1.8.9",
       },
     },
@@ -200,11 +200,11 @@
       "name": "docs",
       "version": "2.1.10",
       "dependencies": {
-        "@cornerstonejs/adapters": "^2.19.13",
-        "@cornerstonejs/core": "^2.19.13",
-        "@cornerstonejs/dicom-image-loader": "^2.19.13",
-        "@cornerstonejs/nifti-volume-loader": "^2.19.13",
-        "@cornerstonejs/tools": "^2.19.13",
+        "@cornerstonejs/adapters": "^2.19.14",
+        "@cornerstonejs/core": "^2.19.14",
+        "@cornerstonejs/dicom-image-loader": "^2.19.14",
+        "@cornerstonejs/nifti-volume-loader": "^2.19.14",
+        "@cornerstonejs/tools": "^2.19.14",
         "@docusaurus/core": "3.6.3",
         "@docusaurus/faster": "3.6.3",
         "@docusaurus/module-type-aliases": "3.6.3",
@@ -242,17 +242,17 @@
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "2.19.13",
+      "version": "3.0.0-beta.1",
       "dependencies": {
         "nifti-reader-js": "^0.6.8",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.13",
+        "@cornerstonejs/core": "^2.19.14",
       },
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "2.19.13",
+      "version": "3.0.0-beta.1",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "^4.4.1",
@@ -262,7 +262,7 @@
         "canvas": "^2.11.2",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.13",
+        "@cornerstonejs/core": "^2.19.14",
         "@kitware/vtk.js": "32.9.0",
         "@types/d3-array": "^3.0.4",
         "@types/d3-interpolate": "^3.0.1",
@@ -6047,6 +6047,16 @@
 
     "dir-glob/path-type": ["path-type@4.0.0", "", {}, "sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw=="],
 
+    "docs/@cornerstonejs/adapters": ["@cornerstonejs/adapters@2.19.14", "", { "dependencies": { "@babel/runtime-corejs2": "^7.17.8", "buffer": "^6.0.3", "dcmjs": "^0.29.8", "gl-matrix": "^3.4.3", "ndarray": "^1.0.19" }, "peerDependencies": { "@cornerstonejs/core": "^2.19.14", "@cornerstonejs/tools": "^2.19.14" } }, "sha512-tHk8y4c1GGS4kpkJMNEcLVnFL6GfA4JzAUviPnjdTRYHd6GgqoSUt3m3JLAaahYSLPh5lRV9HLU/OYYfkUOuyg=="],
+
+    "docs/@cornerstonejs/core": ["@cornerstonejs/core@2.19.14", "", { "dependencies": { "@kitware/vtk.js": "32.9.0", "comlink": "^4.4.1", "gl-matrix": "^3.4.3" } }, "sha512-nVL/rAXFJRfvTC7cHgiSGZiJjRL8vfwhNMnSc+zqx356Bq2FsAPRC9clFlLw1KqvbBGNL/uC+24TD1VtIm1V5w=="],
+
+    "docs/@cornerstonejs/dicom-image-loader": ["@cornerstonejs/dicom-image-loader@2.19.14", "", { "dependencies": { "@cornerstonejs/codec-charls": "^1.2.3", "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2", "@cornerstonejs/codec-openjpeg": "^1.2.2", "@cornerstonejs/codec-openjph": "^2.4.5", "comlink": "^4.4.1", "jpeg-lossless-decoder-js": "^2.1.0", "pako": "^2.0.4", "uuid": "^9.0.0" }, "peerDependencies": { "@cornerstonejs/core": "^2.19.14", "dicom-parser": "^1.8.9" } }, "sha512-5X5Acw2S5D5gH5D30nNGjIeeEFpZkMIZovs043nP72HCTeprNekjalVe/s7n/rOBXb0MfrUvODqJDnYMSBgx6g=="],
+
+    "docs/@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@2.19.14", "", { "dependencies": { "nifti-reader-js": "^0.6.8" }, "peerDependencies": { "@cornerstonejs/core": "^2.19.14" } }, "sha512-D/tY29BfwR0s9+louioGycizA7o+POOXJ9HKN6/nhMSINgFIKtoRiUSe1gilUVdTCp4tJz7U88A48Doez7Julw=="],
+
+    "docs/@cornerstonejs/tools": ["@cornerstonejs/tools@2.19.14", "", { "dependencies": { "@types/offscreencanvas": "2019.7.3", "comlink": "^4.4.1", "lodash.get": "^4.4.2" }, "peerDependencies": { "@cornerstonejs/core": "^2.19.14", "@kitware/vtk.js": "32.9.0", "@types/d3-array": "^3.0.4", "@types/d3-interpolate": "^3.0.1", "d3-array": "^3.2.3", "d3-interpolate": "^3.0.1", "gl-matrix": "^3.4.3" } }, "sha512-uZDhs5TXo9IvMqh+P2na4KiWb5NWCyKreaXN9HWPzv6P1QML9U7tvrfsXdYH3YnCCquddvZeLNwNraV/hWT5jw=="],
+
     "docs/dcmjs": ["dcmjs@0.33.1", "", { "dependencies": { "@babel/runtime-corejs3": "^7.22.5", "adm-zip": "^0.5.10", "gl-matrix": "^3.1.0", "lodash.clonedeep": "^4.5.0", "loglevelnext": "^3.0.1", "ndarray": "^1.0.19", "pako": "^2.0.4" } }, "sha512-/vwOPAX5fOQSwqf8t7bV7sy1h2h+gTWw5t/be8OIY7IwUpuKuKRChZvxINAjNZ9DDWHMB/uSOS7NJceu1YChfQ=="],
 
     "docs/typedoc": ["typedoc@0.26.10", "", { "dependencies": { "lunr": "^2.3.9", "markdown-it": "^14.1.0", "minimatch": "^9.0.5", "shiki": "^1.16.2", "yaml": "^2.5.1" }, "peerDependencies": { "typescript": "4.6.x || 4.7.x || 4.8.x || 4.9.x || 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x" }, "bin": { "typedoc": "bin/typedoc" } }, "sha512-xLmVKJ8S21t+JeuQLNueebEuTVphx6IrP06CdV7+0WVflUSW3SPmR+h1fnWVdAR/FQePEgsSWCUHXqKKjzuUAw=="],
@@ -7616,6 +7626,8 @@
     "detective-typescript/@typescript-eslint/typescript-estree/@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@5.62.0", "", { "dependencies": { "@typescript-eslint/types": "5.62.0", "eslint-visitor-keys": "^3.3.0" } }, "sha512-07ny+LHRzQXepkGg6w0mFY41fVUNBrL2Roj/++7V1txKugfjm/Ci/qSND03r2RhlJhJYMcTn9AhhSSqQp0Ysyw=="],
 
     "detective-typescript/@typescript-eslint/typescript-estree/globby": ["globby@11.1.0", "", { "dependencies": { "array-union": "^2.1.0", "dir-glob": "^3.0.1", "fast-glob": "^3.2.9", "ignore": "^5.2.0", "merge2": "^1.4.1", "slash": "^3.0.0" } }, "sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g=="],
+
+    "docs/@cornerstonejs/adapters/dcmjs": ["dcmjs@0.29.13", "", { "dependencies": { "@babel/runtime-corejs3": "^7.22.5", "adm-zip": "^0.5.10", "gl-matrix": "^3.1.0", "lodash.clonedeep": "^4.5.0", "loglevelnext": "^3.0.1", "ndarray": "^1.0.19", "pako": "^2.0.4" } }, "sha512-Bf9tKzJNWqk4kbV210N5TLEHDqaZvO3S+MH9vezFAU8WKcG4cR6z4/II3TQVqhLI185eNUL+lhfPCVH1Uu2yTA=="],
 
     "docs/typedoc/markdown-it": ["markdown-it@14.1.0", "", { "dependencies": { "argparse": "^2.0.1", "entities": "^4.4.0", "linkify-it": "^5.0.0", "mdurl": "^2.0.0", "punycode.js": "^2.3.1", "uc.micro": "^2.1.0" }, "bin": { "markdown-it": "bin/markdown-it.mjs" } }, "sha512-a54IwgWPaeBCAAsv13YgmALOF1elABB08FxO9i+r4VFk5Vl4pKokRPeX8u5TCgSsPi6ec1otfLjdOpVcgbpshg=="],
 
