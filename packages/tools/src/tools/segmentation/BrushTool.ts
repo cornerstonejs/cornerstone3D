@@ -71,15 +71,8 @@ class BrushTool extends LabelmapBaseTool {
           THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL:
             thresholdInsideSphereIsland,
         },
-
-        strategySpecificConfiguration: {
-          THRESHOLD: {
-            threshold: [-150, -70], // E.g. CT Fat // Only used during threshold strategies.
-          },
-        },
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
-        thresholdVolumeId: null,
         brushSize: 25,
         preview: {
           // Have to enable the preview to use this
@@ -640,9 +633,7 @@ class BrushTool extends LabelmapBaseTool {
       }
     );
 
-    const activeStrategy = this.configuration.activeStrategy;
-    const { dynamicRadiusInCanvas } = this.configuration
-      .strategySpecificConfiguration[activeStrategy] || {
+    const { dynamicRadiusInCanvas } = this.configuration?.threshold || {
       dynamicRadiusInCanvas: 0,
     };
 

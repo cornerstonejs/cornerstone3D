@@ -1,0 +1,54 @@
+{
+  "name": "@cornerstonejs/labelmap-interpolation",
+  "version": "3.0.0-beta.2",
+  "description": "Labelmap Interpolation utility for Cornerstone3D",
+  "files": [
+    "dist"
+  ],
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "directories": {
+    "build": "dist"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "jest --testTimeout 60000",
+    "clean": "rimraf dist",
+    "build": "yarn run build:esm",
+    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch",
+    "build:all": "yarn run build:esm",
+    "build:update-api": "yarn run build:esm && api-extractor run --local",
+    "start": "tsc --project ./tsconfig.json --watch",
+    "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
+    "lint": "eslint --fix ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cornerstonejs/cornerstone3D.git"
+  },
+  "author": "@cornerstonejs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
+  },
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/labelmap-interpolation/README.md",
+  "dependencies": {
+    "itk-wasm": "1.0.0-b.165",
+    "@itk-wasm/morphological-contour-interpolation": "1.1.0"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/tools": "^2.19.11",
+    "@cornerstonejs/core": "^2.19.11",
+    "@kitware/vtk.js": "^32.9.0"
+  }
+}

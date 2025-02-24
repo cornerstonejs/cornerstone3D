@@ -82,11 +82,21 @@ import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
-import type { PolySegConversionOptions } from './PolySeg';
 import type { IBaseTool } from './IBaseTool';
 import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
-import type { LabelmapStyle } from './LabelmapTypes';
-import type { SurfaceStyle } from './SurfaceTypes';
+import type {
+  LabelmapStyle,
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+  BaseLabelmapStyle,
+  InactiveLabelmapStyle,
+} from './LabelmapTypes';
+import type {
+  SurfaceStyle,
+  SurfaceSegmentationData,
+  SurfaceStateStyles,
+} from './SurfaceTypes';
 
 export type {
   // AnnotationState
@@ -171,7 +181,6 @@ export type {
   SplineLineSegment,
   SplineProps,
   // polySeg
-  PolySegConversionOptions,
   IBaseTool,
   RepresentationStyle,
   Segment,
@@ -179,4 +188,11 @@ export type {
   LabelmapStyle,
   ContourStyle,
   SurfaceStyle,
+  SurfaceSegmentationData,
+  SurfaceStateStyles,
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+  BaseLabelmapStyle,
+  InactiveLabelmapStyle,
 };

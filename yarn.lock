@@ -3777,7 +3777,7 @@
   resolved "https://registry.yarnpkg.com/@iarna/toml/-/toml-2.2.5.tgz#b32366c89b43c6f8cefbdefac778b9c828e3ba8c"
   integrity sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==
 
-"@icr/polyseg-wasm@^0.4.0":
+"@icr/polyseg-wasm@0.4.0":
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/@icr/polyseg-wasm/-/polyseg-wasm-0.4.0.tgz#755e23d07c3d8d8fca1113278c803c1ef0185da0"
   integrity sha512-3sZmiwG8I0NaqPle0L7+V/ZexiR7IjIUFkUsaOoFI9rNuBGyyMMmxAxnCmqcDFtBDk9h+JEYJf6e3NnqlHi/HQ==
@@ -3878,12 +3878,12 @@
     ipfs-car "^1.0.0"
     tar "^6.1.13"
 
-"@itk-wasm/morphological-contour-interpolation@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@itk-wasm/morphological-contour-interpolation/-/morphological-contour-interpolation-1.0.1.tgz#c2fcfdc593df85001276918e8ef684ba0b73a3c9"
-  integrity sha512-wxLB4nX6CiWpNQyTWC7oeFXogiZbtmSuLhyAtY66sM0SEnMoOcAuSX2+osPcOo13rfYnHLA02uQiICp8hvUGwA==
+"@itk-wasm/morphological-contour-interpolation@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@itk-wasm/morphological-contour-interpolation/-/morphological-contour-interpolation-1.1.0.tgz#a2982dc27cdcc27026b61e12f76e7687c88cad7e"
+  integrity sha512-n6JIyDcSCCjlpfCW8mnTTzwPTE8U1QT87hNmyAknxdpGR4dfAzIutuKNrwgvr9UiKEBcit0X3HNx9dkzDwcIcw==
   dependencies:
-    itk-wasm "1.0.0-b.165"
+    itk-wasm "1.0.0-b.173"
 
 "@jest/console@^29.7.0":
   version "29.7.0"
@@ -8737,15 +8737,10 @@ caniuse-api@^3.0.0:
     lodash.memoize "^4.1.2"
     lodash.uniq "^4.5.0"
 
-caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001646:
-  version "1.0.30001651"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001651.tgz#52de59529e8b02b1aedcaaf5c05d9e23c0c28138"
-  integrity sha512-9Cf+Xv1jJNe1xPZLGuUXLNkE1BoDkqRqYyFJ9TDYSqhduqA4hu4oR9HluGoWYQC/aj8WHjsGVV+bwkh0+tegRg==
-
-caniuse-lite@^1.0.30001616, caniuse-lite@^1.0.30001669:
-  version "1.0.30001673"
-  resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001673.tgz#5aa291557af1c71340e809987367410aab7a5a9e"
-  integrity sha512-WTrjUCSMp3LYX0nE12ECkV0a+e6LC85E0Auz75555/qr78Oc8YWhEPNfDd6SHdtlCMSzqtuXY0uyEMNRcsKpKw==
+caniuse-lite@^1.0.0, caniuse-lite@^1.0.30001616, caniuse-lite@^1.0.30001646, caniuse-lite@^1.0.30001669:
+  version "1.0.30001699"
+  resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001699.tgz"
+  integrity sha512-b+uH5BakXZ9Do9iK+CkDmctUSEqZl+SP056vc5usa0PL+ev5OHw003rZXcnjNDv3L8P5j6rwT6C0BPKSikW08w==
 
 canvas@2.11.2, canvas@^2.11.2:
   version "2.11.2"
@@ -14914,6 +14909,24 @@ itk-wasm@1.0.0-b.165:
     "@thewtex/zstddec" "^0.2.0"
     "@types/emscripten" "^1.39.10"
     axios "^1.6.2"
+    comlink "^4.4.1"
+    commander "^11.1.0"
+    fs-extra "^11.2.0"
+    glob "^8.1.0"
+    markdown-table "^3.0.3"
+    mime-types "^2.1.35"
+    wasm-feature-detect "^1.6.1"
+
+itk-wasm@1.0.0-b.173:
+  version "1.0.0-b.173"
+  resolved "https://registry.yarnpkg.com/itk-wasm/-/itk-wasm-1.0.0-b.173.tgz#e484e1765f4205a5704f8fac205d2ecf74e726a2"
+  integrity sha512-SV2lfZ1mClWuSK/noaZgGj9jhroY4MZu19ci9pIucuyhoGdXrVSmWlPH/JYMDi9RP3BogmQwe9wfFc3X1dcEPg==
+  dependencies:
+    "@itk-wasm/dam" "^1.1.1"
+    "@thewtex/zstddec" "^0.2.0"
+    "@types/emscripten" "^1.39.10"
+    axios "^1.6.2"
+    chalk "^5.3.0"
     comlink "^4.4.1"
     commander "^11.1.0"
     fs-extra "^11.2.0"
