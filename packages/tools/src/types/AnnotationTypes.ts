@@ -53,31 +53,7 @@ type Annotation = {
    */
   data: {
     /** Annotation handles that are grabbable for manipulation */
-    handles?: {
-      /** world location of the handles in the space */
-      points?: Types.Point3[];
-      /** index of the active handle being manipulated */
-      activeHandleIndex?: number | null;
-      /** annotation text box information */
-      textBox?: {
-        /** whether the text box has moved */
-        hasMoved?: boolean;
-        /** the world location of the text box */
-        worldPosition?: Types.Point3;
-        /** text box bounding box information */
-        worldBoundingBox?: {
-          /** Top left location of the text box in the world space */
-          topLeft: Types.Point3;
-          /** Top right location of the text box in the world space */
-          topRight: Types.Point3;
-          /** Bottom left location of the text box in the world space */
-          bottomLeft: Types.Point3;
-          /** Bottom right location of the text box in the world space */
-          bottomRight: Types.Point3;
-        };
-      };
-      [key: string]: unknown;
-    };
+    handles?: handles;
     [key: string]: unknown;
     /** Cached Annotation statistics which is specific to the tool */
     cachedStats?: Record<string, unknown>;
@@ -106,6 +82,32 @@ type AnnotationState = {
    * that works for a different use case and use a different key.
    */
   [key: string]: GroupSpecificAnnotations;
+};
+
+type handles = {
+  /** world location of the handles in the space */
+  points?: Types.Point3[];
+  /** index of the active handle being manipulated */
+  activeHandleIndex?: number | null;
+  /** annotation text box information */
+  textBox?: {
+    /** whether the text box has moved */
+    hasMoved?: boolean;
+    /** the world location of the text box */
+    worldPosition?: Types.Point3;
+    /** text box bounding box information */
+    worldBoundingBox?: {
+      /** Top left location of the text box in the world space */
+      topLeft: Types.Point3;
+      /** Top right location of the text box in the world space */
+      topRight: Types.Point3;
+      /** Bottom left location of the text box in the world space */
+      bottomLeft: Types.Point3;
+      /** Bottom right location of the text box in the world space */
+      bottomRight: Types.Point3;
+    };
+  };
+  [key: string]: unknown;
 };
 
 export type {
