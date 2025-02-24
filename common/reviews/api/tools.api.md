@@ -3641,7 +3641,6 @@ type LabelmapToolOperationData = {
     segmentsLocked: number[];
     viewPlaneNormal: number[];
     viewUp: number[];
-    strategySpecificConfiguration: any;
     activeStrategy: string;
     points: Types_2.Point3[];
     voxelManager: any;
@@ -5544,7 +5543,11 @@ function setAttributesIfNecessary(attributes: any, svgNode: any): void;
 function setBrushSizeForToolGroup(toolGroupId: string, brushSize: number, toolName?: string): void;
 
 // @public (undocumented)
-function setBrushThresholdForToolGroup(toolGroupId: string, threshold: Types_2.Point2, otherArgs?: Record<string, unknown>): void;
+function setBrushThresholdForToolGroup(toolGroupId: string, threshold: {
+    range: Types_2.Point2;
+    isDynamic: boolean;
+    dynamicRadius: number;
+}): void;
 
 // @public (undocumented)
 function setColorLUT(viewportId: string, segmentationId: string, colorLUTsIndex: number): void;
