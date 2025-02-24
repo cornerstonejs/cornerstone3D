@@ -3,8 +3,12 @@ import {
   cache,
   Enums,
   eventTarget,
+  type Types,
 } from '@cornerstonejs/core';
-import type { LabelmapToolOperationDataStack } from '../../../../types';
+import type {
+  LabelmapToolOperationDataStack,
+  LabelmapToolOperationDataVolume,
+} from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 import { getLabelmapActorEntry } from '../../../../stateManagement/segmentation/helpers';
 
@@ -73,25 +77,6 @@ function getStrategyDataForStackViewport({
 }) {
   const { segmentationId } = operationData as LabelmapToolOperationDataStack;
 
-  const labelmapImageId = getCurrentLabelmapImageIdForViewport(
-    viewport.id,
-    segmentationId
-  );
-  if (!labelmapImageId) {
-    return null;
-  }
-
-  const currentImageId = viewport.getCurrentImageId();
-  if (!currentImageId) {
-    return null;
-  }
-
-  const actorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
-
-  if (!actorEntry) {
-    return null;
-  }
-
   let segmentationImageData;
   let segmentationVoxelManager;
   let segmentationScalarData;
@@ -110,6 +95,18 @@ function getStrategyDataForStackViewport({
     segmentationImageData = operationData.segmentationImageData;
     segmentationScalarData = null;
   } else {
+    const labelmapImageId = getCurrentLabelmapImageIdForViewport(
+      viewport.id,
+      segmentationId
+    );
+    if (!labelmapImageId) {
+      return null;
+    }
+    const actorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+
+    if (!actorEntry) {
+      return null;
+    }
     const currentSegImage = cache.getImage(labelmapImageId);
     segmentationImageData = actorEntry.actor.getMapper().getInputData();
     segmentationVoxelManager = currentSegImage.voxelManager;
@@ -133,6 +130,11 @@ function getStrategyDataForStackViewport({
     imageScalarData = operationData.imageScalarData;
     imageData = operationData.imageData;
   } else {
+    const currentImageId = viewport.getCurrentImageId();
+    if (!currentImageId) {
+      return null;
+    }
+
     const image = cache.getImage(currentImageId);
     imageData = image ? null : viewport.getImageData();
 
@@ -158,8 +160,22 @@ function getStrategyDataForStackViewport({
  * @param params - Object containing operationData and viewport
  * @returns The strategy data or null if error
  */
-function getStrategyData({ operationData, viewport, strategy }) {
-  if (operationData.volumeId || operationData.referencedVolumeId) {
+function getStrategyData({
+  operationData,
+  viewport,
+  strategy,
+}: {
+  operationData:
+    | LabelmapToolOperationDataStack
+    | LabelmapToolOperationDataVolume;
+  viewport?: Types.IStackViewport | Types.IVolumeViewport;
+  strategy: unknown;
+}) {
+  if (
+    ('volumeId' in operationData && operationData.volumeId !== undefined) ||
+    ('referencedVolumeId' in operationData &&
+      operationData.referencedVolumeId !== undefined)
+  ) {
     return getStrategyDataForVolumeViewport({ operationData });
   }
 
