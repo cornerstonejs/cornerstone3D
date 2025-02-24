@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import cache from '../cache/cache';
 import type {
   BoundsIJK,
@@ -952,7 +951,7 @@ export default class VoxelManager<T> {
   public static createScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numberOfComponents = 1,
+    numberOfComponents,
   }: {
     dimensions: Point3;
     scalarData;

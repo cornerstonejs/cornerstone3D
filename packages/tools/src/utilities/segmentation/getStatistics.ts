@@ -89,8 +89,6 @@ async function getStatistics({
     segImageIds
   );
 
-  debugger;
-
   const unit = getPixelValueUnitsImageId(refImageId, modalityUnitOptions);
 
   let stats;
