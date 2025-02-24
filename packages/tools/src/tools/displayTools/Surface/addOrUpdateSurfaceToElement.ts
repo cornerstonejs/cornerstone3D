@@ -25,6 +25,16 @@ function addOrUpdateSurfaceToElement(
 
   const surfaceActor = surfaceActorEntry?.actor as Types.Actor;
 
+  const isVisible = surface.visible;
+
+  if (!isVisible) {
+    if (surfaceActor) {
+      viewport.removeActors([surfaceActorEntry.uid]);
+      viewport.render();
+    }
+    return;
+  }
+
   if (surfaceActor) {
     // we already have an actor for this surface, we just need to update it
 

@@ -3723,6 +3723,9 @@ export class Surface {
     readonly sizeInBytes: number;
     // (undocumented)
     get totalNumberOfPoints(): number;
+    // (undocumented)
+    get visible(): boolean;
+    set visible(visible: boolean);
 }
 
 // @public (undocumented)

@@ -15,6 +15,7 @@ export class Surface {
   private _polys: number[];
   private _segmentIndex: number;
   private _centroid: Point3;
+  private _visible: boolean;
 
   /**
    * Creates an instance of Surface.
@@ -29,6 +30,7 @@ export class Surface {
     this._segmentIndex = props.segmentIndex;
     this.sizeInBytes = this._getSizeInBytes();
     this._updateCentroid();
+    this._visible = true;
   }
 
   /**
@@ -118,6 +120,21 @@ export class Surface {
    */
   get segmentIndex(): number {
     return this._segmentIndex;
+  }
+
+  /**
+   * Gets the visibility of the surface.
+   */
+  get visible(): boolean {
+    return this._visible;
+  }
+
+  /**
+   * Sets the visibility of the surface.
+   * @param {boolean} visible - The new visibility for the surface.
+   */
+  set visible(visible: boolean) {
+    this._visible = visible;
   }
 
   /**
