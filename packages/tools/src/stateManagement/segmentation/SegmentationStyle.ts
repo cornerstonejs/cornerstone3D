@@ -208,20 +208,20 @@ class SegmentationStyle {
     if (type === Enums.SegmentationRepresentations.Labelmap) {
       const labelmapStyles = processedStyles as LabelmapStyle;
 
-      labelmapStyles.renderOutlineInactive = labelmapStyles.renderOutline;
-      labelmapStyles.outlineWidthInactive = labelmapStyles.outlineWidth;
-      labelmapStyles.renderFillInactive = labelmapStyles.renderFill;
-      labelmapStyles.fillAlphaInactive = labelmapStyles.fillAlpha;
-      labelmapStyles.outlineOpacityInactive = labelmapStyles.outlineOpacity;
+      labelmapStyles.renderOutlineInactive ??= labelmapStyles.renderOutline;
+      labelmapStyles.outlineWidthInactive ??= labelmapStyles.outlineWidth;
+      labelmapStyles.renderFillInactive ??= labelmapStyles.renderFill;
+      labelmapStyles.fillAlphaInactive ??= labelmapStyles.fillAlpha;
+      labelmapStyles.outlineOpacityInactive ??= labelmapStyles.outlineOpacity;
     } else if (type === Enums.SegmentationRepresentations.Contour) {
       const contourStyles = processedStyles as ContourStyle;
 
-      contourStyles.outlineWidthInactive = contourStyles.outlineWidth;
-      contourStyles.outlineOpacityInactive = contourStyles.outlineOpacity;
-      contourStyles.outlineDashInactive = contourStyles.outlineDash;
-      contourStyles.renderOutlineInactive = contourStyles.renderOutline;
-      contourStyles.renderFillInactive = contourStyles.renderFill;
-      contourStyles.fillAlphaInactive = contourStyles.fillAlpha;
+      contourStyles.outlineWidthInactive ??= contourStyles.outlineWidth;
+      contourStyles.outlineOpacityInactive ??= contourStyles.outlineOpacity;
+      contourStyles.outlineDashInactive ??= contourStyles.outlineDash;
+      contourStyles.renderOutlineInactive ??= contourStyles.renderOutline;
+      contourStyles.renderFillInactive ??= contourStyles.renderFill;
+      contourStyles.fillAlphaInactive ??= contourStyles.fillAlpha;
     }
 
     return processedStyles;

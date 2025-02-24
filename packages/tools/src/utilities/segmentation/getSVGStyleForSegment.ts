@@ -63,7 +63,11 @@ export function getSVGStyleForSegment({
   );
 
   const activeSegmentation = getActiveSegmentation(viewportId);
-  const isActive = activeSegmentation?.segmentationId === segmentationId;
+  const isSegmentAtIndexActive =
+    activeSegmentation.segments[segmentIndex].active;
+  const isActive =
+    activeSegmentation?.segmentationId === segmentationId &&
+    isSegmentAtIndexActive;
 
   // Merge the configurations from different levels based on its precedence
   const style = segmentationStyle.getStyle({
