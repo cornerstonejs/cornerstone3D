@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/labelmap-interpolation",
-  "version": "3.0.0-beta.2",
+  "version": "3.0.0-beta.3",
   "description": "Labelmap Interpolation utility for Cornerstone3D",
   "files": [
     "dist"
@@ -43,12 +43,12 @@
   },
   "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/labelmap-interpolation/README.md",
   "dependencies": {
-    "itk-wasm": "1.0.0-b.165",
-    "@itk-wasm/morphological-contour-interpolation": "1.1.0"
+    "@itk-wasm/morphological-contour-interpolation": "1.1.0",
+    "itk-wasm": "1.0.0-b.165"
   },
   "peerDependencies": {
-    "@cornerstonejs/tools": "^3.0.0-beta.3",
     "@cornerstonejs/core": "^3.0.0-beta.3",
+    "@cornerstonejs/tools": "^3.0.0-beta.3",
     "@kitware/vtk.js": "^32.9.0"
   }
 }
