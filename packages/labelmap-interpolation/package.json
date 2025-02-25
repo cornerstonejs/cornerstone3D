@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/labelmap-interpolation",
-  "version": "3.0.0-beta.3",
+  "version": "3.0.0-beta.5",
   "description": "Labelmap Interpolation utility for Cornerstone3D",
   "files": [
     "dist"
@@ -22,15 +22,19 @@
   "scripts": {
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "build": "yarn run build:esm",
     "build:esm": "tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "dev": "tsc --project ./tsconfig.json --watch",
     "build:all": "yarn run build:esm",
-    "build:update-api": "yarn run build:esm && api-extractor run --local",
     "start": "tsc --project ./tsconfig.json --watch",
     "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-    "lint": "eslint --fix ."
+    "lint": "eslint --fix .",
+    "format-check": "npx eslint ./src --quiet",
+    "api-check": "api-extractor --debug run ",
+    "build:update-api": "yarn run build:esm && api-extractor run --local",
+    "prepublishOnly": "yarn clean && yarn build"
   },
   "repository": {
     "type": "git",
@@ -47,8 +51,8 @@
     "itk-wasm": "1.0.0-b.165"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.0.0-beta.3",
-    "@cornerstonejs/tools": "^3.0.0-beta.3",
+    "@cornerstonejs/core": "^3.0.0-beta.5",
+    "@cornerstonejs/tools": "^3.0.0-beta.5",
     "@kitware/vtk.js": "^32.9.0"
   }
 }
