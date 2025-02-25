@@ -46,7 +46,9 @@ export default defineConfig({
 This configuration is for basic usage of cornerstone3D tools, no polySeg and no labelmap interpolation
 :::
 
-### Advanced Setup (PolySeg & Labelmap Interpolation)
+### Advanced Setup
+
+#### PolySeg
 
 If you need to use polyseg to convert between segmentation representations, you can add the following as a dependency and initialize the cornerstoneTools with the following configuration:
 
@@ -64,6 +66,77 @@ initialize({
   },
 });
 ```
+
+Next, you'll need to edit the Vite configuration to include the following. Keep in mind that we're including the WASM files in the build and excluding them from dependency optimization. There is an ongoing issue in vite with `import.meta.url` ([check their GitHub issue](https://github.com/vitejs/vite/issues/8427)), which force us to exclude the wasm files from optimization of dependencies.
+
+
+```js
+export default defineConfig({
+  assetsInclude: ["**/*.wasm"],
+  plugins: [
+    react(),
+    // for dicom-parser
+    viteCommonjs(),
+  ],
+  // seems like only required in dev mode
+  optimizeDeps: {
+    exclude: [
+      "@cornerstonejs/dicom-image-loader",
+      "@cornerstonejs/polymorphic-segmentation",
+    ],
+    include: ["dicom-parser"],
+  },
+  worker: {
+    format: "es",
+  },
+})
+
+```
+
+#### Labelmap Interpolation
+
+you need to add the following to your vite config:
+
+```bash
+yarn add @cornerstonejs/labelmap-interpolation
+```
+
+and then you need to edit the vite config to include the following:
+
+```js
+import { defineConfig } from "vite"
+import react from "@vitejs/plugin-react"
+import { viteCommonjs } from "@originjs/vite-plugin-commonjs"
+
+export default defineConfig({
+  assetsInclude: ["**/*.wasm"],
+  plugins: [
+    react(),
+    // for dicom-parser
+    viteCommonjs(),
+  ],
+  // seems like only required in dev mode
+  optimizeDeps: {
+    exclude: [
+      "@cornerstonejs/dicom-image-loader",
+      "@cornerstonejs/polymorphic-segmentation",
+      "@cornerstonejs/labelmap-interpolation",
+    ],
+    include: ["dicom-parser"],
+  },
+  worker: {
+    format: "es",
+  },
+})
+```
+
+
+
+
+
+
+
+
 
 ## Webpack
 
@@ -89,33 +162,32 @@ export default nextConfig;
 
 ### Advanced Setup (PolySeg & Labelmap Interpolation)
 
-<!--
+You might need to add
+
+```js
+
+
+```
+
+
+
 
 ## Troubleshooting
 
-### 1. Polyseg & Labelmap interpolation
+### 1. Rollup Options
 
-By default, we don't include the `@icr/polyseg-wasm`, `itk-wasm`, and `@itk-wasm/morphological-contour-interpolation` libraries in our bundle to keep the size pretty small. If you need these features, you'll need to install them separately and import them into your project. You can do this by running
+By default, we don't include the `@icr/polyseg-wasm`, `itk-wasm`, and `@itk-wasm/morphological-contour-interpolation` libraries in our bundle to keep the size pretty small.
+Rollup **might** complain about these libraries, so you can add the following to the rollupOptions:
 
-```bash
-yarn install @icr/polyseg-wasm itk-wasm @itk-wasm/morphological-contour-interpolation
+```js
+worker: {
+    format: "es",
+    rollupOptions: {
+      external: ["@icr/polyseg-wasm"],
+    },
+  },
 ```
 
-### 1. Build Issues
-
-If you're using 3D segmentation features and encounter issues with `@icr/polyseg-wasm`, add the following to your Vite configuration:
-
-```javascript
-build: {
-  rollupOptions: {
-    external: ["@icr/polyseg-wasm"],
-  }
-},
-```
-
-:::note
-You might need to add `external: ["itk-wasm", "@itk-wasm/morphological-contour-interpolation"],` to the rollupOptions as well
-:::
 
 ### 2. Path Resolution Issues with @cornerstonejs/core
 
@@ -164,7 +236,8 @@ Also since we are using wasm, you will need to add the following to your webpack
 },
 ```
 
-## Svelte + Vite
+
+### 5. Svelte + Vite
 
 Similar to the configuration above, use the CommonJS plugin converting commonjs to esm. Otherwise, it will be pending at `await viewport.setStack(stack);`, the image will not be rendered.
 
@@ -185,4 +258,3 @@ export default defineConfig({
 :::note Tip
 If you are using `sveltekit`, and config like `plugins: [ sveltekit(), viteCommonjs() ]`, `viteCommonjs()` may not work.
 Try replace `sveltekit` with `vite-plugin-svelte` and it will work.
-::: -->

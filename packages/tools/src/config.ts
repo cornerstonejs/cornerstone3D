@@ -2,6 +2,7 @@ import type { ContourSegmentationData } from './types';
 import type { Types } from '@cornerstonejs/core';
 import type { LabelmapSegmentationData } from './types/LabelmapTypes';
 import type { SurfaceSegmentationData } from './types/SurfaceTypes';
+import type SegmentationRepresentations from './enums/SegmentationRepresentations';
 
 /**
  * Options for converting between segmentation representations using PolySeg
@@ -27,7 +28,7 @@ type PolySegAddOn = {
   /** Checks if a representation type can be computed for a segmentation */
   canComputeRequestedRepresentation: (
     segmentationId: string,
-    representationType: string
+    representationType: typeof SegmentationRepresentations
   ) => boolean;
 
   /** Initializes the PolySeg add-on */
