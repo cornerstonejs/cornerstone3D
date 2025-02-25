@@ -3,32 +3,93 @@ id: vue-angular-react-etc
 title: 'React, Vue, Angular, etc.'
 ---
 
-Here are some examples of how to use cornerstone3D with React, Vue, Angular, etc.
+Here are some examples of how to use cornerstone3D with React, Vue, Angular, vite-based frameworks, etc.
 We have made it easy to use cornerstone3D with your favorite framework.
 
 Follow the links below to see how to use cornerstone3D with your favorite framework.
 
-- [Cornerstone3D with React](https://github.com/cornerstonejs/vite-react-cornerstone3d)
-- [Cornerstone3D with Vue](https://github.com/cornerstonejs/vue-cornerstone3d)
+- [Cornerstone3D with vite-based React](https://github.com/cornerstonejs/vite-react-cornerstone3d)
+- [Cornerstone3D with vite-based Vue](https://github.com/cornerstonejs/vite-vue-cornerstone3d)
 - [Cornerstone3D with Angular](https://github.com/cornerstonejs/angular-cornerstone3d)
   - [Community maintained project](https://github.com/yanqzsu/ng-cornerstone)
 - [Cornerstone3D with Next.js](https://github.com/cornerstonejs/nextjs-cornerstone3d)
 
 ## Vite
 
-To update your Vite configuration, use the CommonJS plugin, exclude `dicom-image-loader` from optimization, and include `dicom-parser`. We plan to convert `dicom-image-loader` to an ES module, eliminating the need for exclusion in the future.
+### Basic Setup
+
+The following is an example of a Vite configuration for a vite-based project that works with cornerstone3D.
 
 ```javascript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import { viteCommonjs } from '@originjs/vite-plugin-commonjs';
 
 export default defineConfig({
-  plugins: [viteCommonjs()],
+  plugins: [
+    react(),
+    // for dicom-parser
+    viteCommonjs(),
+  ],
+  // seems like only required in dev mode
   optimizeDeps: {
     exclude: ['@cornerstonejs/dicom-image-loader'],
     include: ['dicom-parser'],
   },
+  worker: {
+    format: 'es',
+  },
 });
 ```
+
+:::note
+This configuration is for basic usage of cornerstone3D tools, no polySeg and no labelmap interpolation
+:::
+
+### Advanced Setup (PolySeg & Labelmap Interpolation)
+
+If you need to use polyseg to convert between segmentation representations, you can add the following as a dependency and initialize the cornerstoneTools with the following configuration:
+
+```bash
+yarn add @cornerstonejs/polymorphic-segmentation
+```
+
+```js
+import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
+import { init } from '@cornerstonejs/tools';
+
+initialize({
+  addons: {
+    polySeg,
+  },
+});
+```
+
+## Webpack
+
+### Basic Setup
+
+It should work out of the box with no configuration, so the following `nextjs.config.js` is the only thing you need to add.
+
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  webpack: (config) => {
+    // resolve fs for one of the dependencies
+    config.resolve.fallback = {
+      fs: false,
+    };
+
+    return config;
+  },
+};
+
+export default nextConfig;
+```
+
+### Advanced Setup (PolySeg & Labelmap Interpolation)
+
+<!--
 
 ## Troubleshooting
 
@@ -124,4 +185,4 @@ export default defineConfig({
 :::note Tip
 If you are using `sveltekit`, and config like `plugins: [ sveltekit(), viteCommonjs() ]`, `viteCommonjs()` may not work.
 Try replace `sveltekit` with `vite-plugin-svelte` and it will work.
-:::
+::: -->
