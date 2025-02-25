@@ -28,7 +28,7 @@ type PolySegAddOn = {
   /** Checks if a representation type can be computed for a segmentation */
   canComputeRequestedRepresentation: (
     segmentationId: string,
-    representationType: typeof SegmentationRepresentations
+    representationType: SegmentationRepresentations
   ) => boolean;
 
   /** Initializes the PolySeg add-on */
