@@ -128,17 +128,9 @@
         "dicom-microscopy-viewer": "^0.46.1",
       },
     },
-    "addOns/externals/polyseg-wasm": {
-      "name": "@externals/polyseg-wasm",
-      "version": "2.1.10",
-      "dependencies": {
-        "@icr/polyseg-wasm": "^0.4.0",
-        "@itk-wasm/morphological-contour-interpolation": "1.0.1",
-      },
-    },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "3.0.0-beta.1",
+      "version": "3.0.0-beta.2",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -147,13 +139,13 @@
         "ndarray": "^1.0.19",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.14",
-        "@cornerstonejs/tools": "^2.19.14",
+        "@cornerstonejs/core": "^3.0.0-beta.2",
+        "@cornerstonejs/tools": "^3.0.0-beta.2",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "3.0.0-beta.1",
+      "version": "3.0.0-beta.2",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -171,7 +163,7 @@
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "3.0.0-beta.1",
+      "version": "3.0.0-beta.2",
       "dependencies": {
         "@kitware/vtk.js": "32.9.0",
         "comlink": "^4.4.1",
@@ -180,7 +172,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "3.0.0-beta.1",
+      "version": "3.0.0-beta.2",
       "dependencies": {
         "@cornerstonejs/codec-charls": "^1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
@@ -192,7 +184,7 @@
         "uuid": "^9.0.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.14",
+        "@cornerstonejs/core": "^3.0.0-beta.2",
         "dicom-parser": "^1.8.9",
       },
     },
@@ -200,11 +192,11 @@
       "name": "docs",
       "version": "2.1.10",
       "dependencies": {
-        "@cornerstonejs/adapters": "^2.19.14",
-        "@cornerstonejs/core": "^2.19.14",
-        "@cornerstonejs/dicom-image-loader": "^2.19.14",
-        "@cornerstonejs/nifti-volume-loader": "^2.19.14",
-        "@cornerstonejs/tools": "^2.19.14",
+        "@cornerstonejs/adapters": "^3.0.0-beta.2",
+        "@cornerstonejs/core": "^3.0.0-beta.2",
+        "@cornerstonejs/dicom-image-loader": "^3.0.0-beta.2",
+        "@cornerstonejs/nifti-volume-loader": "^3.0.0-beta.2",
+        "@cornerstonejs/tools": "^3.0.0-beta.2",
         "@docusaurus/core": "3.6.3",
         "@docusaurus/faster": "3.6.3",
         "@docusaurus/module-type-aliases": "3.6.3",
@@ -242,7 +234,7 @@
     },
     "packages/labelmap-interpolation": {
       "name": "@cornerstonejs/labelmap-interpolation",
-      "version": "2.19.11",
+      "version": "3.0.0-beta.2",
       "dependencies": {
         "@itk-wasm/morphological-contour-interpolation": "1.1.0",
         "itk-wasm": "1.0.0-b.165",
@@ -255,17 +247,29 @@
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "3.0.0-beta.1",
+      "version": "3.0.0-beta.2",
       "dependencies": {
         "nifti-reader-js": "^0.6.8",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.14",
+        "@cornerstonejs/core": "^3.0.0-beta.2",
+      },
+    },
+    "packages/polymorphic-segmentation": {
+      "name": "@cornerstonejs/polymorphic-segmentation",
+      "version": "3.0.0-beta.2",
+      "dependencies": {
+        "@icr/polyseg-wasm": "0.4.0",
+      },
+      "peerDependencies": {
+        "@cornerstonejs/core": "^2.19.11",
+        "@cornerstonejs/tools": "^2.19.11",
+        "@kitware/vtk.js": "^32.9.0",
       },
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "3.0.0-beta.1",
+      "version": "3.0.0-beta.2",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "^4.4.1",
@@ -275,7 +279,7 @@
         "canvas": "^2.11.2",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.14",
+        "@cornerstonejs/core": "^3.0.0-beta.2",
         "@kitware/vtk.js": "32.9.0",
         "@types/d3-array": "^3.0.4",
         "@types/d3-interpolate": "^3.0.1",
@@ -618,6 +622,8 @@
 
     "@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@workspace:packages/nifti-volume-loader"],
 
+    "@cornerstonejs/polymorphic-segmentation": ["@cornerstonejs/polymorphic-segmentation@workspace:packages/polymorphic-segmentation"],
+
     "@cornerstonejs/tools": ["@cornerstonejs/tools@workspace:packages/tools"],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
@@ -827,8 +833,6 @@
     "@eslint/js": ["@eslint/js@8.57.1", "", {}, "sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q=="],
 
     "@externals/dicom-microscopy-viewer": ["@externals/dicom-microscopy-viewer@workspace:addOns/externals/dicom-microscopy-viewer"],
-
-    "@externals/polyseg-wasm": ["@externals/polyseg-wasm@workspace:addOns/externals/polyseg-wasm"],
 
     "@fastify/accept-negotiator": ["@fastify/accept-negotiator@1.1.0", "", {}, "sha512-OIHZrb2ImZ7XG85HXOONLcJWGosv7sIvM2ifAPQVhg9Lv7qdmMBNVaai4QTdyuaqbKM5eO6sLSQOYI7wEQeCJQ=="],
 
@@ -5538,8 +5542,6 @@
 
     "@eslint/eslintrc/minimatch": ["minimatch@3.1.2", "", { "dependencies": { "brace-expansion": "^1.1.7" } }, "sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw=="],
 
-    "@externals/polyseg-wasm/@itk-wasm/morphological-contour-interpolation": ["@itk-wasm/morphological-contour-interpolation@1.0.1", "", { "dependencies": { "itk-wasm": "1.0.0-b.165" } }, "sha512-wxLB4nX6CiWpNQyTWC7oeFXogiZbtmSuLhyAtY66sM0SEnMoOcAuSX2+osPcOo13rfYnHLA02uQiICp8hvUGwA=="],
-
     "@fastify/ajv-compiler/ajv-formats": ["ajv-formats@2.1.1", "", { "dependencies": { "ajv": "^8.0.0" } }, "sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA=="],
 
     "@fastify/ajv-compiler/fast-uri": ["fast-uri@2.4.0", "", {}, "sha512-ypuAmmMKInk5q7XcepxlnUWDLWv4GFtaJqAzWKqn62IpQ3pejtr5dTVbt3vwqVaMKmkNR55sTT+CqUKIaT21BA=="],
@@ -6065,16 +6067,6 @@
     "dicom-microscopy-viewer/dicomweb-client": ["dicomweb-client@0.8.4", "", {}, "sha512-/6oY3/Fg9JyAlbTWuJOYbVqici3+nlZt43+Z/Y47RNiqLc028JcxNlY28u4VQqksxfB59f1hhNbsqsHyDT4vhw=="],
 
     "dir-glob/path-type": ["path-type@4.0.0", "", {}, "sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw=="],
-
-    "docs/@cornerstonejs/adapters": ["@cornerstonejs/adapters@2.19.14", "", { "dependencies": { "@babel/runtime-corejs2": "^7.17.8", "buffer": "^6.0.3", "dcmjs": "^0.29.8", "gl-matrix": "^3.4.3", "ndarray": "^1.0.19" }, "peerDependencies": { "@cornerstonejs/core": "^2.19.14", "@cornerstonejs/tools": "^2.19.14" } }, "sha512-tHk8y4c1GGS4kpkJMNEcLVnFL6GfA4JzAUviPnjdTRYHd6GgqoSUt3m3JLAaahYSLPh5lRV9HLU/OYYfkUOuyg=="],
-
-    "docs/@cornerstonejs/core": ["@cornerstonejs/core@2.19.14", "", { "dependencies": { "@kitware/vtk.js": "32.9.0", "comlink": "^4.4.1", "gl-matrix": "^3.4.3" } }, "sha512-nVL/rAXFJRfvTC7cHgiSGZiJjRL8vfwhNMnSc+zqx356Bq2FsAPRC9clFlLw1KqvbBGNL/uC+24TD1VtIm1V5w=="],
-
-    "docs/@cornerstonejs/dicom-image-loader": ["@cornerstonejs/dicom-image-loader@2.19.14", "", { "dependencies": { "@cornerstonejs/codec-charls": "^1.2.3", "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2", "@cornerstonejs/codec-openjpeg": "^1.2.2", "@cornerstonejs/codec-openjph": "^2.4.5", "comlink": "^4.4.1", "jpeg-lossless-decoder-js": "^2.1.0", "pako": "^2.0.4", "uuid": "^9.0.0" }, "peerDependencies": { "@cornerstonejs/core": "^2.19.14", "dicom-parser": "^1.8.9" } }, "sha512-5X5Acw2S5D5gH5D30nNGjIeeEFpZkMIZovs043nP72HCTeprNekjalVe/s7n/rOBXb0MfrUvODqJDnYMSBgx6g=="],
-
-    "docs/@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@2.19.14", "", { "dependencies": { "nifti-reader-js": "^0.6.8" }, "peerDependencies": { "@cornerstonejs/core": "^2.19.14" } }, "sha512-D/tY29BfwR0s9+louioGycizA7o+POOXJ9HKN6/nhMSINgFIKtoRiUSe1gilUVdTCp4tJz7U88A48Doez7Julw=="],
-
-    "docs/@cornerstonejs/tools": ["@cornerstonejs/tools@2.19.14", "", { "dependencies": { "@types/offscreencanvas": "2019.7.3", "comlink": "^4.4.1", "lodash.get": "^4.4.2" }, "peerDependencies": { "@cornerstonejs/core": "^2.19.14", "@kitware/vtk.js": "32.9.0", "@types/d3-array": "^3.0.4", "@types/d3-interpolate": "^3.0.1", "d3-array": "^3.2.3", "d3-interpolate": "^3.0.1", "gl-matrix": "^3.4.3" } }, "sha512-uZDhs5TXo9IvMqh+P2na4KiWb5NWCyKreaXN9HWPzv6P1QML9U7tvrfsXdYH3YnCCquddvZeLNwNraV/hWT5jw=="],
 
     "docs/dcmjs": ["dcmjs@0.33.1", "", { "dependencies": { "@babel/runtime-corejs3": "^7.22.5", "adm-zip": "^0.5.10", "gl-matrix": "^3.1.0", "lodash.clonedeep": "^4.5.0", "loglevelnext": "^3.0.1", "ndarray": "^1.0.19", "pako": "^2.0.4" } }, "sha512-/vwOPAX5fOQSwqf8t7bV7sy1h2h+gTWw5t/be8OIY7IwUpuKuKRChZvxINAjNZ9DDWHMB/uSOS7NJceu1YChfQ=="],
 
@@ -7653,8 +7645,6 @@
     "detective-typescript/@typescript-eslint/typescript-estree/@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@5.62.0", "", { "dependencies": { "@typescript-eslint/types": "5.62.0", "eslint-visitor-keys": "^3.3.0" } }, "sha512-07ny+LHRzQXepkGg6w0mFY41fVUNBrL2Roj/++7V1txKugfjm/Ci/qSND03r2RhlJhJYMcTn9AhhSSqQp0Ysyw=="],
 
     "detective-typescript/@typescript-eslint/typescript-estree/globby": ["globby@11.1.0", "", { "dependencies": { "array-union": "^2.1.0", "dir-glob": "^3.0.1", "fast-glob": "^3.2.9", "ignore": "^5.2.0", "merge2": "^1.4.1", "slash": "^3.0.0" } }, "sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g=="],
-
-    "docs/@cornerstonejs/adapters/dcmjs": ["dcmjs@0.29.13", "", { "dependencies": { "@babel/runtime-corejs3": "^7.22.5", "adm-zip": "^0.5.10", "gl-matrix": "^3.1.0", "lodash.clonedeep": "^4.5.0", "loglevelnext": "^3.0.1", "ndarray": "^1.0.19", "pako": "^2.0.4" } }, "sha512-Bf9tKzJNWqk4kbV210N5TLEHDqaZvO3S+MH9vezFAU8WKcG4cR6z4/II3TQVqhLI185eNUL+lhfPCVH1Uu2yTA=="],
 
     "docs/typedoc/markdown-it": ["markdown-it@14.1.0", "", { "dependencies": { "argparse": "^2.0.1", "entities": "^4.4.0", "linkify-it": "^5.0.0", "mdurl": "^2.0.0", "punycode.js": "^2.3.1", "uc.micro": "^2.1.0" }, "bin": { "markdown-it": "bin/markdown-it.mjs" } }, "sha512-a54IwgWPaeBCAAsv13YgmALOF1elABB08FxO9i+r4VFk5Vl4pKokRPeX8u5TCgSsPi6ec1otfLjdOpVcgbpshg=="],
 
