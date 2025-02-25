@@ -28,7 +28,7 @@ Watch this video guide for a [visual walkthrough](https://www.youtube.com/embed/
 
 We have worked hard to enhance the developer experience when using Cornerstone3D with various frameworks like React, Vue, Angular, Vite, and Webpack.
 
-For more information, please refer to the [frameworks](../../getting-started/vue-angular-react-etc.md) page.
+For more information, please refer to the [frameworks](../../getting-started/vue-angular-react-vite.md) page.
 
 You need to modify your Vite and Webpack configurations to correctly import the Cornerstone3D library. Check each framework's repository for more details.
 
@@ -38,7 +38,6 @@ We have streamlined the process of loading volumes without sacrificing speed by 
 
 You can remove `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` from your custom headers if you don't need them in other
 aspects of your app.
-
 
 ## Typescript Version
 
@@ -76,9 +75,8 @@ Both Node.js and modern browsers now support ECMAScript Modules (ESM) by default
 </details>
 
 :::note Tip
-If you must use CJS, for example, if you are using `dicom-image-loader` and `dicom-parser`, you need to use `vite-plugin-commonjs` to convert CommonJS to ESM. For more information, please refer to the [Frameworks](../../getting-started/vue-angular-react-etc.md) page.
+If you must use CJS, for example, if you are using `dicom-image-loader` and `dicom-parser`, you need to use `vite-plugin-commonjs` to convert CommonJS to ESM. For more information, please refer to the [Frameworks](../../getting-started/vue-angular-react-vite.md) page.
 :::
-
 
 ## Package Exports
 
