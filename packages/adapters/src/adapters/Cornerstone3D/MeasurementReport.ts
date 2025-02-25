@@ -18,77 +18,76 @@ const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
 const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
 const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
 
-const codeValueMatch = (group, code, oldCode?) => {
-    const { ConceptNameCodeSequence } = group;
-    if (!ConceptNameCodeSequence) {
-        return;
-    }
-    const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
-    return (
-        (CodingSchemeDesignator == code.CodingSchemeDesignator &&
-            CodeValue == code.CodeValue) ||
-        (oldCode &&
-            CodingSchemeDesignator == oldCode.CodingSchemeDesignator &&
-            CodeValue == oldCode.CodeValue)
-    );
-};
-
-function getTID300ContentItem(
-    tool,
-    toolType,
-    ReferencedSOPSequence,
-    toolClass,
-    worldToImageCoords
-) {
-    const args = toolClass.getTID300RepresentationArguments(
-        tool,
-        worldToImageCoords
-    );
-    args.ReferencedSOPSequence = ReferencedSOPSequence;
-
-    const TID300Measurement = new toolClass.TID300Representation(args);
-
-    return TID300Measurement;
-}
-
-function getMeasurementGroup(
-    toolType,
-    toolData,
-    ReferencedSOPSequence,
-    worldToImageCoords
-) {
-    const toolTypeData = toolData[toolType];
-    const toolClass =
-        MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE[toolType];
-    if (
-        !toolTypeData ||
-        !toolTypeData.data ||
-        !toolTypeData.data.length ||
-        !toolClass
-    ) {
-        return;
-    }
-
-    // Loop through the array of tool instances
-    // for this tool
-    const Measurements = toolTypeData.data.map(tool => {
-        return getTID300ContentItem(
-            tool,
-            toolType,
-            ReferencedSOPSequence,
-            toolClass,
-            worldToImageCoords
-        );
-    });
-
-    return new TID1501MeasurementGroup(Measurements);
-}
-
 export default class MeasurementReport {
     public static CORNERSTONE_3D_TAG = CORNERSTONE_3D_TAG;
-    public static MEASUREMENT_BY_TOOLTYPE = {};
-    public static CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE = {};
-    public static CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE = {};
+    /** Maps tool type to the adapter name used to serialize this item to SR */
+    public static measurementAdapterByToolType = new Map();
+
+    /** Maps tracking identifier to tool class to deserialize from SR into a tool instance */
+    public static measurementAdapterByTrackingIdentifier = new Map();
+
+    public static getTID300ContentItem(
+        tool,
+        ReferencedSOPSequence,
+        toolClass,
+        worldToImageCoords
+    ) {
+        const args = toolClass.getTID300RepresentationArguments(
+            tool,
+            worldToImageCoords
+        );
+        args.ReferencedSOPSequence = ReferencedSOPSequence;
+
+        const TID300Measurement = new toolClass.TID300Representation(args);
+
+        return TID300Measurement;
+    }
+
+    public static codeValueMatch = (group, code, oldCode?) => {
+        const { ConceptNameCodeSequence } = group;
+        if (!ConceptNameCodeSequence) {
+            return;
+        }
+        const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
+        return (
+            (CodingSchemeDesignator == code.CodingSchemeDesignator &&
+                CodeValue == code.CodeValue) ||
+            (oldCode &&
+                CodingSchemeDesignator == oldCode.CodingSchemeDesignator &&
+                CodeValue == oldCode.CodeValue)
+        );
+    };
+
+    public static getMeasurementGroup(
+        toolType,
+        toolData,
+        ReferencedSOPSequence,
+        worldToImageCoords
+    ) {
+        const toolTypeData = toolData[toolType];
+        const toolClass = this.measurementAdapterByToolType[toolType];
+        if (
+            !toolTypeData ||
+            !toolTypeData.data ||
+            !toolTypeData.data.length ||
+            !toolClass
+        ) {
+            return;
+        }
+
+        // Loop through the array of tool instances
+        // for this tool
+        const Measurements = toolTypeData.data.map(tool => {
+            return this.getTID300ContentItem(
+                tool,
+                ReferencedSOPSequence,
+                toolClass,
+                worldToImageCoords
+            );
+        });
+
+        return new TID1501MeasurementGroup(Measurements);
+    }
 
     static getCornerstoneLabelFromDefaultState(defaultState) {
         const { findingSites = [], finding } = defaultState;
@@ -166,11 +165,11 @@ export default class MeasurementReport {
 
         const contentSequenceArr = toArray(ContentSequence);
         const findingGroup = contentSequenceArr.find(group =>
-            codeValueMatch(group, FINDING)
+            this.codeValueMatch(group, FINDING)
         );
         const findingSiteGroups =
             contentSequenceArr.filter(group =>
-                codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
+                this.codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
             ) || [];
         const NUMGroup = contentSequenceArr.find(
             group => group.ValueType === "NUM"
@@ -300,7 +299,7 @@ export default class MeasurementReport {
             const measurementGroups = [];
 
             toolTypes.forEach(toolType => {
-                const group = getMeasurementGroup(
+                const group = this.getMeasurementGroup(
                     toolType,
                     toolData,
                     ReferencedSOPSequence,
@@ -371,7 +370,7 @@ export default class MeasurementReport {
         const measurementData = {};
 
         const cornerstoneToolClasses =
-            MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE;
+            MeasurementReport.measurementAdapterByToolType;
 
         const registeredToolClasses = [];
 
@@ -453,13 +452,22 @@ export default class MeasurementReport {
      * @param toolClass to perform I/O to DICOM for this tool
      */
     public static registerTool(toolClass) {
-        MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE[
-            toolClass.utilityToolType
-        ] = toolClass;
-        MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE[
-            toolClass.toolType
-        ] = toolClass;
-        MeasurementReport.MEASUREMENT_BY_TOOLTYPE[toolClass.toolType] =
-            toolClass.utilityToolType;
+        this.measurementAdapterByToolType.set(toolClass.toolType, toolClass);
+        this.measurementAdapterByTrackingIdentifier.set(
+            toolClass.trackingIdentifierTextValue,
+            toolClass
+        );
+    }
+
+    public static registerTrackingIdentifier(
+        toolClass,
+        ...trackingIdentifiers: string[]
+    ) {
+        for (const identifier of trackingIdentifiers) {
+            this.measurementAdapterByTrackingIdentifier.set(
+                identifier,
+                toolClass
+            );
+        }
     }
 }

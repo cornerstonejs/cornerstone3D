@@ -13,6 +13,7 @@ import Length from "./Length";
 import PlanarFreehandROI from "./PlanarFreehandROI";
 import Probe from "./Probe";
 import UltrasoundDirectional from "./UltrasoundDirectional";
+import { KeyImage } from "./KeyImage";
 
 import * as Segmentation from "./Segmentation";
 import * as ParametricMap from "./ParametricMap";
@@ -31,6 +32,7 @@ const Cornerstone3DSR = {
     PlanarFreehandROI,
     UltrasoundDirectional,
     MeasurementReport,
+    KeyImage,
     CodeScheme,
     CORNERSTONE_3D_TAG
 };
