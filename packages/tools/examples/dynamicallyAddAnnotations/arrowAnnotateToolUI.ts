@@ -53,6 +53,11 @@ function createFormElement(): HTMLFormElement {
       <br>
       <button style="margin-left: 52px;" type="button" id="${coordType}-stack">Add Stack</button>
       <button type="button" id="${coordType}-volume">Add Volume</button>
+      ${
+        coordType === 'image'
+          ? `<button type="button" id="${coordType}-volume-imageId">Add to specific image in volume (first imageId/inferior-most image in volume)</button> `
+          : ''
+      }
       <br><br>
     `;
   });
@@ -64,14 +69,16 @@ function addButtonListeners(form: HTMLFormElement): void {
   const buttons = form.querySelectorAll('button');
   buttons.forEach((button) => {
     button.addEventListener('click', () => {
-      const [type, viewportType] = button.id.split('-') as [
+      const [type, viewportType, useImageId] = button.id.split('-') as [
         'canvas' | 'image',
-        keyof typeof typeToIdMap
+        keyof typeof typeToIdMap,
+        'imageId'?
       ];
       const enabledElement = getEnabledElementByViewportId(
         typeToIdMap[viewportType]
       );
       const viewport = enabledElement.viewport;
+      const imageId = useImageId && viewport.getImageIds()[0];
       const coords = getCoordinates(form, type);
       const textInput = form.querySelector(`#${type}-text`) as HTMLInputElement;
       const text = textInput ? textInput.value : '';
@@ -80,12 +87,18 @@ function addButtonListeners(form: HTMLFormElement): void {
 
       const point1 =
         type === 'image'
-          ? utilities.imageToWorldCoords(currentImageId, coords.point1)
+          ? utilities.imageToWorldCoords(
+              imageId || currentImageId,
+              coords.point1
+            )
           : viewport.canvasToWorld(coords.point1);
 
       const point2 =
         type === 'image'
-          ? utilities.imageToWorldCoords(currentImageId, coords.point2)
+          ? utilities.imageToWorldCoords(
+              imageId || currentImageId,
+              coords.point2
+            )
           : viewport.canvasToWorld(coords.point2);
 
       ArrowAnnotateTool.hydrate(viewport.id, [point1, point2], text);
