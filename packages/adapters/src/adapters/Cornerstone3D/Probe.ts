@@ -14,13 +14,15 @@ class Probe extends BaseAdapter3D {
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
-        metadata
+        metadata,
+        trackingIdentifier
     ) {
         const state = super.getMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             imageToWorldCoords,
-            metadata
+            metadata,
+            trackingIdentifier
         );
 
         const { defaultState, SCOORDGroup } =
