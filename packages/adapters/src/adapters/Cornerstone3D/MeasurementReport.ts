@@ -40,7 +40,7 @@ export type AdapterOptions = {
  */
 export interface MeasurementAdapter {
     toolType: string;
-    TID300Representation: unknown;
+    TID300Representation;
     trackingIdentifierTextValue: string;
     trackingIdentifiers: Set<string>;
 
@@ -62,8 +62,7 @@ export interface MeasurementAdapter {
         metadata
     );
 
-    isValidCornerstoneTrackingIdentifier?(trackingIdentifier: string): boolean;
-    _isValidCornerstoneTrackingIdentifier?(trackingIdentifier: string): boolean;
+    isValidCornerstoneTrackingIdentifier(trackingIdentifier: string): boolean;
 
     getTID300RepresentationArguments(
         tool,
@@ -73,6 +72,7 @@ export interface MeasurementAdapter {
 
 export default class MeasurementReport {
     public static CORNERSTONE_3D_TAG = CORNERSTONE_3D_TAG;
+
     /** Maps tool type to the adapter name used to serialize this item to SR */
     public static measurementAdapterByToolType = new Map<
         string,
@@ -124,7 +124,7 @@ export default class MeasurementReport {
         worldToImageCoords
     ) {
         const toolTypeData = toolData[toolType];
-        const toolClass = this.measurementAdapterByToolType[toolType];
+        const toolClass = this.measurementAdapterByToolType.get(toolType);
         if (
             !toolTypeData ||
             !toolTypeData.data ||
@@ -428,16 +428,6 @@ export default class MeasurementReport {
         // For each of the supported measurement types, compute the measurement data
         const measurementData = {};
 
-        const cornerstoneToolClasses =
-            MeasurementReport.measurementAdapterByToolType;
-
-        const registeredToolClasses = [];
-
-        Object.keys(cornerstoneToolClasses).forEach(key => {
-            registeredToolClasses.push(cornerstoneToolClasses[key]);
-            measurementData[key] = [];
-        });
-
         measurementGroups.forEach(measurementGroup => {
             try {
                 const measurementGroupContentSequence = toArray(
@@ -464,20 +454,18 @@ export default class MeasurementReport {
                 const TrackingUniqueIdentifierValue =
                     TrackingUniqueIdentifierGroup?.UID;
 
-                const toolClass =
+                const toolAdapter =
                     hooks?.getToolClass?.(
                         measurementGroup,
                         dataset,
-                        registeredToolClasses
+                        this.measurementAdapterByToolType
                     ) ||
-                    registeredToolClasses.find(tc =>
-                        tc.isValidCornerstoneTrackingIdentifier(
-                            TrackingIdentifierValue
-                        )
+                    this.getAdapterForTrackingIdentifier(
+                        TrackingIdentifierValue
                     );
 
-                if (toolClass) {
-                    const measurement = toolClass.getMeasurementData(
+                if (toolAdapter) {
+                    const measurement = toolAdapter.getMeasurementData(
                         measurementGroup,
                         sopInstanceUIDToImageIdMap,
                         imageToWorldCoords,
@@ -487,10 +475,10 @@ export default class MeasurementReport {
                     measurement.TrackingUniqueIdentifier =
                         TrackingUniqueIdentifierValue;
 
-                    console.log(`=== ${toolClass.toolType} ===`);
+                    console.log(`=== ${toolAdapter.toolType} ===`);
                     console.log(measurement);
-
-                    measurementData[toolClass.toolType].push(measurement);
+                    measurementData[toolAdapter.toolType] ||= [];
+                    measurementData[toolAdapter.toolType].push(measurement);
                 }
             } catch (e) {
                 console.warn(
@@ -526,13 +514,10 @@ export default class MeasurementReport {
                 replace(this.measurementAdapterByToolType.get(registerName));
             }
         }
-        if (toolAdapter._isValidCornerstoneTrackingIdentifier) {
-            // Work around for using the function unbound
-            toolAdapter.isValidCornerstoneTrackingIdentifier =
-                toolAdapter._isValidCornerstoneTrackingIdentifier.bind(
-                    toolAdapter
-                );
-        }
+        this.measurementAdapterByToolType.set(
+            toolAdapter.toolType,
+            toolAdapter
+        );
         this.measurementAdapterByTrackingIdentifier.set(
             toolAdapter.trackingIdentifierTextValue,
             toolAdapter
@@ -548,6 +533,29 @@ export default class MeasurementReport {
                 identifier,
                 toolClass
             );
+        }
+    }
+
+    public static getAdapterForTrackingIdentifier(trackingIdentifier: string) {
+        const adapter =
+            this.measurementAdapterByTrackingIdentifier.get(trackingIdentifier);
+        if (adapter) {
+            return adapter;
+        }
+        for (const adapterTest of [
+            ...this.measurementAdapterByToolType.values()
+        ]) {
+            if (
+                adapterTest.isValidCornerstoneTrackingIdentifier(
+                    trackingIdentifier
+                )
+            ) {
+                this.measurementAdapterByTrackingIdentifier.set(
+                    trackingIdentifier,
+                    adapterTest
+                );
+                return adapterTest;
+            }
         }
     }
 }

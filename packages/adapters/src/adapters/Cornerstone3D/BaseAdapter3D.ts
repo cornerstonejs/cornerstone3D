@@ -77,7 +77,7 @@ export default class BaseAdapter3D {
     /**
      * @returns true if the tool is of the given tool type based on the tracking identifier
      */
-    public static _isValidCornerstoneTrackingIdentifier(
+    public static isValidCornerstoneTrackingIdentifier(
         trackingIdentifier: string
     ) {
         if (this.trackingIdentifiers.has(trackingIdentifier)) {
