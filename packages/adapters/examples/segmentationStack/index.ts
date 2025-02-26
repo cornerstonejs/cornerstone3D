@@ -23,7 +23,6 @@ console.warn(
     "Click on index.ts to open source code for this example --------->"
 );
 
-const { Enums: csEnums, RenderingEngine, utilities: csUtilities } = cornerstone;
 const { segmentation: csToolsSegmentation } = cornerstoneTools;
 import {
     readDicom,
@@ -32,14 +31,11 @@ import {
     loadSegmentation,
     exportSegmentation,
     restart,
-    getSegmentationIds,
     handleFileSelect,
     handleDragOver,
-    createSegmentation
+    createEmptySegmentation
 } from "../segmentationVolume/utils";
 
-const referenceImageIds: string[] = [];
-const segImageIds: string[] = [];
 // ======== Set up page ======== //
 
 setTitleAndDescription(
@@ -194,7 +190,7 @@ addButtonToToolbar({
     id: "CREATE_SEGMENTATION",
     title: "Create Empty SEG",
     onClick: async () => {
-        await createSegmentation(state);
+        await createEmptySegmentation(state);
         createSegmentationRepresentation();
     },
     container: group2
