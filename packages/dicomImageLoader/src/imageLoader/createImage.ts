@@ -1,6 +1,5 @@
 import type { ByteArray } from 'dicom-parser';
 import getMinMax from '../shared/getMinMax';
-import getPixelDataTypeFromMinMax from '../shared/getPixelDataTypeFromMinMax';
 import type { DICOMLoaderImageOptions, DICOMLoaderIImage } from '../types';
 import type { Types } from '@cornerstonejs/core';
 import {
@@ -16,67 +15,10 @@ import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
-
+import removeAFromRGBA from './removeAFromRGBA';
+import isModalityLUTForDisplay from './isModalityLutForDisplay';
+import setPixelDataType from './setPixelDataType';
 let lastImageIdDrawn = '';
-
-function isModalityLUTForDisplay(sopClassUid: string): boolean {
-  // special case for XA and XRF
-  // https://groups.google.com/forum/#!searchin/comp.protocols.dicom/Modality$20LUT$20XA/comp.protocols.dicom/UBxhOZ2anJ0/D0R_QP8V2wIJ
-  return (
-    sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.1' && // XA
-    sopClassUid !== '1.2.840.10008.5.1.4.1.1.12.2.1'
-  ); // XRF
-}
-
-/**
- * Helper function to set the right typed array.
- * This is needed because web workers can transfer array buffers but not typed arrays
- *
- * Here we are setting the pixel data to the right typed array based on the final
- * min and max values
- */
-function setPixelDataType(imageFrame) {
-  const minValue = imageFrame.smallestPixelValue;
-  const maxValue = imageFrame.largestPixelValue;
-
-  const TypedArray = getPixelDataTypeFromMinMax(minValue, maxValue);
-
-  if (TypedArray) {
-    // @ts-ignore
-    const typedArray = new TypedArray(imageFrame.pixelData);
-    imageFrame.pixelData = typedArray;
-  } else {
-    throw new Error('Could not apply a typed array to the pixel data');
-  }
-}
-
-/**
- * Removes the A from RGBA to return RGB buffer, this is used when the
- * decoding happens with browser API which results in RGBA, but if useRGBA flag
- * is set to false, we want to return RGB
- *
- * @param pixelData - decoded image in RGBA
- * @param targetBuffer - target buffer to write to
- */
-function removeAFromRGBA(
-  pixelData: Types.PixelDataTypedArray,
-  targetBuffer: Uint8ClampedArray | Uint8Array
-) {
-  const numPixels = pixelData.length / 4;
-
-  let rgbIndex = 0;
-
-  let bufferIndex = 0;
-
-  for (let i = 0; i < numPixels; i++) {
-    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // red
-    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // green
-    targetBuffer[bufferIndex++] = pixelData[rgbIndex++]; // blue
-    rgbIndex++; // skip alpha
-  }
-
-  return targetBuffer;
-}
 
 function createImage(
   imageId: string,
