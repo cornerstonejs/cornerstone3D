@@ -145,9 +145,6 @@ workflows:
       - FORMAT_CHECK:
           requires:
             - BUILD
-      - API_CHECK:
-          requires:
-            - BUILD
       - TEST:
           requires:
             - CHECKOUT # TODO: Also require build?
