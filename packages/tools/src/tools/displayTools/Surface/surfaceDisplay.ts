@@ -13,6 +13,7 @@ import { getSegmentation } from '../../../stateManagement/segmentation/getSegmen
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
 import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg/Surface/computeAndAddSurfaceRepresentation';
+import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 
 const { ViewportType } = Enums;
 /**
@@ -56,7 +57,7 @@ async function render(
   viewport: Types.IVolumeViewport | Types.IStackViewport,
   representation: SegmentationRepresentation
 ): Promise<void> {
-  const { segmentationId } = representation;
+  const { segmentationId, type } = representation;
 
   const segmentation = getSegmentation(segmentationId);
 
@@ -106,10 +107,17 @@ async function render(
     }
     const segmentIndex = geometry.data.segmentIndex;
 
+    const hiddenSegments = internalGetHiddenSegmentIndices(viewport.id, {
+      segmentationId,
+      type,
+    });
+    const isHidden = hiddenSegments.has(segmentIndex);
+
     const surface = geometry.data as Types.ISurface;
 
     const color = colorLUT[segmentIndex];
     surface.color = color.slice(0, 3) as Types.Point3;
+    surface.visible = !isHidden;
 
     surfaces.push(surface);
     addOrUpdateSurfaceToElement(
