@@ -4,6 +4,23 @@ import MeasurementReport, {
     type MeasurementAdapter
 } from "./MeasurementReport";
 
+export type Point = {
+    x: number;
+    y: number;
+    z?: number;
+};
+
+export type TID300Arguments = {
+    points?: Point[];
+    point1?: Point;
+    point2?: Point;
+    trackingIdentifierTextValue: string;
+    findingSites: [];
+    finding;
+
+    [key: string]: unknown;
+};
+
 /**
  * This is a basic definition of adapters to be inherited for other adapters.
  */
@@ -49,6 +66,11 @@ export default class BaseAdapter3D {
         MeasurementReport.registerTool(this);
     }
 
+    /**
+     * registerLegacy registers the given tool adapter using the legacy/old
+     * cornerstone 1.x adapter names so that the adapter class will be used to load
+     * those older adapters.
+     */
     public static registerLegacy() {
         this.trackingIdentifiers.add(
             `cornerstoneTools@^4.0.0:${this.toolType}`
@@ -98,7 +120,8 @@ export default class BaseAdapter3D {
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         _imageToWorldCoords,
-        metadata
+        metadata,
+        trackingIdentifier?: string
     ) {
         const { defaultState: state, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
@@ -110,7 +133,8 @@ export default class BaseAdapter3D {
 
         state.annotation.data = {
             cachedStats: {},
-            frameNumber: ReferencedFrameNumber
+            frameNumber: ReferencedFrameNumber,
+            seriesLevel: trackingIdentifier?.indexOf(":Series") > 0
         };
 
         return state;
@@ -119,7 +143,7 @@ export default class BaseAdapter3D {
     public static getTID300RepresentationArguments(
         tool,
         worldToImageCoords
-    ): Record<string, unknown> {
+    ): TID300Arguments {
         const { data, metadata } = tool;
         const { finding, findingSites } = tool;
         const { referencedImageId } = metadata;
@@ -130,7 +154,9 @@ export default class BaseAdapter3D {
             );
         }
 
-        const { points } = data.handles;
+        const {
+            handles: { points = [] }
+        } = data;
 
         const pointsImage = points.map(point => {
             const pointImage = worldToImageCoords(referencedImageId, point);
@@ -140,13 +166,13 @@ export default class BaseAdapter3D {
             };
         });
 
-        const TID300RepresentationArguments = {
+        const tidArguments = {
             points: pointsImage,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
             finding
         };
 
-        return TID300RepresentationArguments;
+        return tidArguments;
     }
 }

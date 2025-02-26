@@ -56,10 +56,11 @@ export interface MeasurementAdapter {
     init(toolType: string, representation, options?: AdapterOptions);
 
     getMeasurementData(
-        MeasurementGroup,
+        measurementGroup,
         sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
-        metadata
+        metadata,
+        trackingIdentifier: string
     );
 
     isValidCornerstoneTrackingIdentifier(trackingIdentifier: string): boolean;
@@ -214,7 +215,7 @@ export default class MeasurementReport {
         return derivationSourceDataset;
     };
 
-    static getSetupMeasurementData(
+    public static getSetupMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         metadata,
@@ -434,25 +435,25 @@ export default class MeasurementReport {
                     measurementGroup.ContentSequence
                 );
 
-                const TrackingIdentifierGroup =
+                const trackingIdentifierGroup =
                     measurementGroupContentSequence.find(
                         contentItem =>
                             contentItem.ConceptNameCodeSequence.CodeMeaning ===
                             TRACKING_IDENTIFIER
                     );
 
-                const TrackingIdentifierValue =
-                    TrackingIdentifierGroup.TextValue;
+                const { TextValue: trackingIdentifierValue } =
+                    trackingIdentifierGroup;
 
-                const TrackingUniqueIdentifierGroup =
+                const trackingUniqueIdentifierGroup =
                     measurementGroupContentSequence.find(
                         contentItem =>
                             contentItem.ConceptNameCodeSequence.CodeMeaning ===
                             TRACKING_UNIQUE_IDENTIFIER
                     );
 
-                const TrackingUniqueIdentifierValue =
-                    TrackingUniqueIdentifierGroup?.UID;
+                const trackingUniqueIdentifierValue =
+                    trackingUniqueIdentifierGroup?.UID;
 
                 const toolAdapter =
                     hooks?.getToolClass?.(
@@ -461,7 +462,7 @@ export default class MeasurementReport {
                         this.measurementAdapterByToolType
                     ) ||
                     this.getAdapterForTrackingIdentifier(
-                        TrackingIdentifierValue
+                        trackingIdentifierValue
                     );
 
                 if (toolAdapter) {
@@ -469,11 +470,12 @@ export default class MeasurementReport {
                         measurementGroup,
                         sopInstanceUIDToImageIdMap,
                         imageToWorldCoords,
-                        metadata
+                        metadata,
+                        trackingIdentifierValue
                     );
 
                     measurement.TrackingUniqueIdentifier =
-                        TrackingUniqueIdentifierValue;
+                        trackingUniqueIdentifierValue;
 
                     console.log(`=== ${toolAdapter.toolType} ===`);
                     console.log(measurement);

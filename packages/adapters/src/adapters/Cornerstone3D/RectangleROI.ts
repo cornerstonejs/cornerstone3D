@@ -1,15 +1,15 @@
 import { utilities } from "dcmjs";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
 class RectangleROI extends BaseAdapter3D {
-    public static toolType = "RectangleROI";
-    public static TID300Representation = TID300Polyline;
-    public static trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${this.toolType}`;
-
+    static {
+        this.init("RectangleROI", TID300Polyline);
+        // Register using the Cornerstone 1.x name so this tool is used to load it
+        this.registerLegacy();
+    }
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -99,7 +99,5 @@ class RectangleROI extends BaseAdapter3D {
         };
     }
 }
-
-MeasurementReport.registerTool(RectangleROI);
 
 export default RectangleROI;

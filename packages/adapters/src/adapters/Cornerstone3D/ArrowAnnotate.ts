@@ -16,7 +16,8 @@ class ArrowAnnotate extends BaseAdapter3D {
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
-        metadata
+        metadata,
+        _trackingIdentifier
     ) {
         const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
