@@ -12,7 +12,7 @@ export function registerComputeWorker() {
     // @ts-ignore
     return new Worker(
       // @ts-ignore
-      new URL('../workers/computeWorker.js', import.meta.url),
+      new URL('../workers/computeWorker.js'), // , import.meta.url),
       {
         name: 'compute',
         type: 'module',

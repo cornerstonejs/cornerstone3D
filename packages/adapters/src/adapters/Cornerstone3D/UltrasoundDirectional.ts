@@ -1,29 +1,14 @@
 import { utilities } from "dcmjs";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Length: TID300Length } = utilities.TID300;
 
-const ULTRASOUND_DIRECTIONAL = "UltrasoundDirectionalTool";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ULTRASOUND_DIRECTIONAL}`;
-
-class UltrasoundDirectional {
-    public static toolType = ULTRASOUND_DIRECTIONAL;
-    public static utilityToolType = ULTRASOUND_DIRECTIONAL;
+class UltrasoundDirectional extends BaseAdapter3D {
+    public static toolType = "UltrasoundDirectionalTool";
     public static TID300Representation = TID300Length;
-    public static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-        if (!TrackingIdentifier.includes(":")) {
-            return false;
-        }
-
-        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-            return false;
-        }
-
-        return toolType === ULTRASOUND_DIRECTIONAL;
-    };
+    public static trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${this.toolType}`;
 
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(
@@ -91,7 +76,7 @@ class UltrasoundDirectional {
         return {
             point1,
             point2,
-            trackingIdentifierTextValue,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []
         };

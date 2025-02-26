@@ -2,31 +2,17 @@ import { utilities } from "dcmjs";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
 import { toArray } from "../helpers";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Bidirectional: TID300Bidirectional } = utilities.TID300;
 
-const BIDIRECTIONAL = "Bidirectional";
 const LONG_AXIS = "Long Axis";
 const SHORT_AXIS = "Short Axis";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${BIDIRECTIONAL}`;
 
-class Bidirectional {
-    public static toolType = BIDIRECTIONAL;
-    public static utilityToolType = BIDIRECTIONAL;
+class Bidirectional extends BaseAdapter3D {
+    public static toolType = "Bidirectional";
     public static TID300Representation = TID300Bidirectional;
-    public static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-        if (!TrackingIdentifier.includes(":")) {
-            return false;
-        }
-
-        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-            return false;
-        }
-
-        return toolType === BIDIRECTIONAL;
-    };
+    public static trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${this.toolType}`;
 
     public static getMeasurementData(
         MeasurementGroup,
@@ -184,7 +170,7 @@ class Bidirectional {
             },
             longAxisLength: length,
             shortAxisLength: width,
-            trackingIdentifierTextValue,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding: finding,
             findingSites: findingSites || []
         };

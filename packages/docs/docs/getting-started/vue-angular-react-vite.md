@@ -69,10 +69,9 @@ initialize({
 
 Next, you'll need to edit the Vite configuration to include the following. Keep in mind that we're including the WASM files in the build and excluding them from dependency optimization. There is an ongoing issue in vite with `import.meta.url` ([check their GitHub issue](https://github.com/vitejs/vite/issues/8427)), which force us to exclude the wasm files from optimization of dependencies.
 
-
 ```js
 export default defineConfig({
-  assetsInclude: ["**/*.wasm"],
+  assetsInclude: ['**/*.wasm'],
   plugins: [
     react(),
     // for dicom-parser
@@ -81,16 +80,15 @@ export default defineConfig({
   // seems like only required in dev mode
   optimizeDeps: {
     exclude: [
-      "@cornerstonejs/dicom-image-loader",
-      "@cornerstonejs/polymorphic-segmentation",
+      '@cornerstonejs/dicom-image-loader',
+      '@cornerstonejs/polymorphic-segmentation',
     ],
-    include: ["dicom-parser"],
+    include: ['dicom-parser'],
   },
   worker: {
-    format: "es",
+    format: 'es',
   },
-})
-
+});
 ```
 
 #### Labelmap Interpolation
@@ -104,12 +102,12 @@ yarn add @cornerstonejs/labelmap-interpolation
 and then you need to edit the vite config to include the following:
 
 ```js
-import { defineConfig } from "vite"
-import react from "@vitejs/plugin-react"
-import { viteCommonjs } from "@originjs/vite-plugin-commonjs"
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { viteCommonjs } from '@originjs/vite-plugin-commonjs';
 
 export default defineConfig({
-  assetsInclude: ["**/*.wasm"],
+  assetsInclude: ['**/*.wasm'],
   plugins: [
     react(),
     // for dicom-parser
@@ -118,25 +116,17 @@ export default defineConfig({
   // seems like only required in dev mode
   optimizeDeps: {
     exclude: [
-      "@cornerstonejs/dicom-image-loader",
-      "@cornerstonejs/polymorphic-segmentation",
-      "@cornerstonejs/labelmap-interpolation",
+      '@cornerstonejs/dicom-image-loader',
+      '@cornerstonejs/polymorphic-segmentation',
+      '@cornerstonejs/labelmap-interpolation',
     ],
-    include: ["dicom-parser"],
+    include: ['dicom-parser'],
   },
   worker: {
-    format: "es",
+    format: 'es',
   },
-})
+});
 ```
-
-
-
-
-
-
-
-
 
 ## Webpack
 
@@ -166,11 +156,7 @@ You might need to add
 
 ```js
 
-
 ```
-
-
-
 
 ## Troubleshooting
 
@@ -187,7 +173,6 @@ worker: {
     },
   },
 ```
-
 
 ### 2. Path Resolution Issues with @cornerstonejs/core
 
@@ -235,7 +220,6 @@ Also since we are using wasm, you will need to add the following to your webpack
   type: 'asset/resource',
 },
 ```
-
 
 ### 5. Svelte + Vite
 

@@ -17,6 +17,7 @@ import UltrasoundDirectional from "./UltrasoundDirectional";
 import * as Segmentation from "./Segmentation";
 import * as ParametricMap from "./ParametricMap";
 import * as RTSS from "./RTStruct";
+import KeyImage from "./KeyImage";
 
 const Cornerstone3DSR = {
     Bidirectional,
@@ -30,6 +31,7 @@ const Cornerstone3DSR = {
     Probe,
     PlanarFreehandROI,
     UltrasoundDirectional,
+    KeyImage,
     MeasurementReport,
     CodeScheme,
     CORNERSTONE_3D_TAG
