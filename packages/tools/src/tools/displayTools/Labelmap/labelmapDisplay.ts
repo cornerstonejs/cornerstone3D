@@ -238,10 +238,15 @@ function _setLabelmapColorAndOpacity(
 
     const segmentSpecificLabelmapConfig = perSegmentStyle;
 
+    const isActive =
+      activeSegmentation.segmentationId === segmentationId &&
+      segmentIndex in activeSegmentation.segments &&
+      activeSegmentation.segments[segmentIndex].active;
+
     const { fillAlpha, outlineWidth, renderFill, renderOutline } =
       _getLabelmapConfig(
         labelmapStyle as LabelmapStyle,
-        isActiveLabelmap,
+        isActive,
         segmentSpecificLabelmapConfig
       );
 
