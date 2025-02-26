@@ -263,10 +263,6 @@
         "name": "Livewire",
         "description": "Demonstrates how to use the livewire tool to create ROIs"
       },
-      "stackRange": {
-        "name": "Stack Range",
-        "description": "Demonstrates use of a selection range for key image and other tools"
-      }
     },
     "viewports": {
       "video": {
