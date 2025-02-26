@@ -43,309 +43,313 @@ const leftArmBoneContour = [
   [391, 157],
 ];
 
+// Common setup for all tests
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'stacklabelmapsegmentation');
 });
 
-test.skip('Stack Segmentation', async () => {
-  test.beforeEach(async ({ page }) => {
-    await page.getByRole('slider').fill('5');
+// Test for circular brush tool
+test('Stack Segmentation - Circular Brush Tool', async ({ page }) => {
+  await page.getByRole('combobox').first().selectOption('CircularBrush');
+
+  const canvas = await page.locator('canvas').first();
+
+  await simulateDrawPath(page, canvas, rightArmBoneContour, {
+    interpolateSteps: true,
+    closePath: true,
   });
 
-  test.describe('when circular brush tool is selected', async () => {
-    test.beforeEach(async ({ page }) => {
-      await page.getByRole('combobox').first().selectOption('CircularBrush');
-    });
-
-    test('should draw a new segment', async ({ page }) => {
-      const canvas = await page.locator('canvas').first();
-
-      await simulateDrawPath(page, canvas, rightArmBoneContour, {
-        interpolateSteps: true,
-        closePath: true,
-      });
-
-      await checkForScreenshot(
-        page,
-        canvas,
-        screenShotPaths.stackSegmentation.circularBrushSegment1
-      );
-    });
-  });
-
-  test.describe('when circular eraser tool is selected', async () => {
-    test.beforeEach(async ({ page }) => {
-      await page.getByRole('combobox').first().selectOption('CircularEraser');
-    });
-
-    test.describe('and segmentation 1 that has segments is active', async () => {
-      test('should erase the pixels from both circular segments', async ({
-        page,
-      }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await eraseVerticalLine(page, canvas);
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.circularEraserSegmentation1
-        );
-      });
-    });
-
-    test.describe('and it is on a segmentation 2 that has no segments', async () => {
-      test('should not erase the pixels from segmentation 1', async ({
-        page,
-      }) => {
-        await page
-          .getByRole('button', { name: 'Create New Segmentation on' })
-          .click();
-
-        const canvas = await page.locator('canvas').first();
-
-        await eraseVerticalLine(page, canvas);
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.circularEraserSegmentation2
-        );
-      });
-    });
-  });
-
-  test.describe('when threshold brush tool is selected', async () => {
-    test.beforeEach(async ({ page }) => {
-      await page.getByRole('combobox').first().selectOption('ThresholdBrush');
-      await page.getByRole('slider').fill('25');
-    });
-
-    test.describe('and "CT Fat" threshold is selected', async () => {
-      test('should paint the fat tissue only', async ({ page }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await page
-          .locator('#thresholdDropdown')
-          .selectOption('CT Fat: (-150, -70)');
-
-        await simulateDrawPath(page, canvas, leftArmContour, {
-          interpolateSteps: true,
-          closePath: true,
-        });
-
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.thresholdBrushFatSegment1
-        );
-      });
-    });
-
-    test.describe('and "CT Bone" threshold is selected', async () => {
-      test('should paint the bone only', async ({ page }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await page
-          .locator('#thresholdDropdown')
-          .selectOption('CT Bone: (200, 1000)');
-
-        await simulateDrawPath(page, canvas, leftArmBoneContour, {
-          interpolateSteps: true,
-          closePath: true,
-        });
-
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.thresholdBrushBoneSegment1
-        );
-      });
-    });
-  });
-
-  test.describe('when dynamic threshold tool is selected', async () => {
-    test.beforeEach(async ({ page }) => {
-      await page.getByRole('combobox').first().selectOption('DynamicThreshold');
-      await page.getByRole('slider').fill('25');
-    });
-
-    test.describe('and the mouse stays at the same location for a few ms', async () => {
-      test('should highlight some pixels based on the pixel values at the mouse cursor', async ({
-        page,
-      }) => {
-        const canvas = await page.locator('canvas').first();
-        const canvasPoint = leftArmContour[0];
-        const pagePoint = await locatorToPageCoord(canvas, canvasPoint);
-
-        await page.mouse.move(pagePoint[0], pagePoint[1]);
-        await pause(1000);
-
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation
-            .dynamicThresholdInitialHighlightedPixels
-        );
-      });
-    });
-
-    test.describe('and the mouse is moved around with left button held down', async () => {
-      test.beforeEach(async ({ page }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await simulateDrawPath(page, canvas, leftArmContour, {
-          interpolateSteps: true,
-        });
-      });
-
-      test('should highlight all pixels that are within the threshold', async ({
-        page,
-      }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.dynamicThresholdHighlightedContour
-        );
-      });
-
-      test.describe('and the <ENTER> key is pressed', async () => {
-        test('should accept the pixels selected', async ({ page }) => {
-          const canvas = await page.locator('canvas').first();
-
-          page.keyboard.press('Enter');
-
-          await checkForScreenshot(
-            page,
-            canvas,
-            screenShotPaths.stackSegmentation.dynamicThresholdConfirmedContour
-          );
-        });
-      });
-    });
-  });
-
-  test.describe('when rectangle scissor tool is selected', async () => {
-    test.beforeEach(async ({ page }) => {
-      await page.getByRole('combobox').first().selectOption('RectangleScissor');
-    });
-
-    test.describe('and segmentation 1 that has segments is active', async () => {
-      test('should fill the pixels within the rectangular region selected on segmentation 1', async ({
-        page,
-      }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await drawRectangleScissor(page, canvas);
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.rectangleScissorSegmentation1
-        );
-      });
-    });
-
-    test.describe('and it is on a segmentation 2 that has no segments', async () => {
-      test('should fill the pixels within the rectangular region selected on segmentation 2 preserving the segments on segmentation 1', async ({
-        page,
-      }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await page
-          .getByRole('button', { name: 'Create New Segmentation on' })
-          .click();
-
-        await drawRectangleScissor(page, canvas);
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.rectangleScissorSegmentation1
-        );
-      });
-    });
-  });
-
-  test.describe('when circular scissor tool is selected', async () => {
-    test.beforeEach(async ({ page }) => {
-      await page.getByRole('combobox').first().selectOption('CircleScissor');
-    });
-
-    test.describe('and segmentation 1 that has segments is active', async () => {
-      test('should fill the pixels within the circular region selected on segmentation 1', async ({
-        page,
-      }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await drawCircleScissor(page, canvas);
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.circularScissorSegmentation1
-        );
-      });
-    });
-
-    test.describe('and it is on a segmentation 2 that has no segments', async () => {
-      test('should fill the pixels within the circular region selected on segmentation 2 preserving the segments on segmentation 1', async ({
-        page,
-      }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await page
-          .getByRole('button', { name: 'Create New Segmentation on' })
-          .click();
-
-        await drawCircleScissor(page, canvas);
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.circularScissorSegmentation2
-        );
-      });
-    });
-  });
-
-  test.describe('when paint fill tool is selected', async () => {
-    test.beforeEach(async ({ page }) => {
-      await page.getByRole('combobox').first().selectOption('PaintFill');
-    });
-
-    test.describe('and user clicks on the outer circle', async () => {
-      test('should fill the outer circle', async ({ page }) => {
-        const canvas = await page.locator('canvas').first();
-
-        await runPaintFill(page, canvas, SEG1_OUTERCIRCLE_POINT);
-        await checkForScreenshot(
-          page,
-          canvas,
-          screenShotPaths.stackSegmentation.paintFillSeg1OuterCircle
-        );
-      });
-    });
-
-    test.describe('and a new segmentation is created', async () => {
-      test.describe('and user clicks on the outer circle', async () => {
-        test('should paint the entire image over the previous segmetantion', async ({
-          page,
-        }) => {
-          const canvas = await page.locator('canvas').first();
-
-          await page
-            .getByRole('button', { name: 'Create New Segmentation on' })
-            .click();
-
-          await runPaintFill(page, canvas, SEG1_OUTERCIRCLE_POINT);
-          await checkForScreenshot(
-            page,
-            canvas,
-            screenShotPaths.stackSegmentation.paintFillSegmentation2
-          );
-        });
-      });
-    });
-  });
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.circularBrushSegment1
+  );
 });
 
+// Test for circular eraser tool with segmentation 1
+test('Stack Segmentation - Circular Eraser Tool with segmentation 1', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('CircularBrush');
+
+  const canvas = await page.locator('canvas').first();
+
+  await simulateDrawPath(page, canvas, rightArmBoneContour, {
+    interpolateSteps: true,
+    closePath: true,
+  });
+
+  await page.getByRole('combobox').first().selectOption('CircularEraser');
+
+  await simulateDrawPath(
+    page,
+    canvas,
+    [
+      [100, 197],
+      [98, 221],
+      [115, 233],
+    ],
+    {
+      interpolateSteps: true,
+      closePath: true,
+    }
+  );
+
+  // await eraseVerticalLine(page, canvas);
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.circularEraserSegmentation1
+  );
+});
+
+// Test for circular eraser tool with segmentation 2
+test('Stack Segmentation - Circular Eraser Tool with segmentation 2', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('CircularBrush');
+
+  const canvas = await page.locator('canvas').first();
+
+  await simulateDrawPath(page, canvas, [...rightArmBoneContour, [120, 150]], {
+    interpolateSteps: true,
+    closePath: true,
+  });
+
+  await page
+    .getByRole('button', { name: 'Create New Segmentation on' })
+    .click();
+
+  await simulateDrawPath(page, canvas, rightArmBoneContour, {
+    interpolateSteps: true,
+    closePath: true,
+  });
+  await page.getByRole('combobox').first().selectOption('CircularEraser');
+
+  await simulateDrawPath(
+    page,
+    canvas,
+    [
+      [100, 197],
+      [98, 221],
+      [115, 233],
+    ],
+    {
+      interpolateSteps: true,
+      closePath: true,
+    }
+  );
+
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.circularEraserSegmentation2
+  );
+});
+
+// Test for threshold brush tool with CT Fat
+test('Stack Segmentation - Threshold Brush Tool with CT Fat', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('ThresholdBrush');
+  await page.getByRole('slider').fill('25');
+
+  const canvas = await page.locator('canvas').first();
+
+  await page.locator('#thresholdDropdown').selectOption('CT Fat: (-150, -70)');
+
+  await simulateDrawPath(page, canvas, leftArmContour, {
+    interpolateSteps: true,
+    closePath: true,
+  });
+
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.thresholdBrushFatSegment1
+  );
+});
+
+// Test for threshold brush tool with CT Bone
+test('Stack Segmentation - Threshold Brush Tool with CT Bone', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('ThresholdBrush');
+  await page.getByRole('slider').fill('25');
+
+  const canvas = await page.locator('canvas').first();
+
+  await page.locator('#thresholdDropdown').selectOption('CT Bone: (200, 1000)');
+
+  await simulateDrawPath(page, canvas, leftArmBoneContour, {
+    interpolateSteps: true,
+    closePath: true,
+  });
+
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.thresholdBrushBoneSegment1
+  );
+});
+
+// Test for dynamic threshold tool - initial highlight
+test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('DynamicThreshold');
+  await page.getByRole('slider').fill('25');
+
+  const canvas = await page.locator('canvas').first();
+  const canvasPoint = leftArmContour[0];
+  const pagePoint = await locatorToPageCoord(canvas, canvasPoint);
+
+  await page.mouse.move(pagePoint[0], pagePoint[1]);
+  await pause(1000);
+
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.dynamicThresholdInitialHighlightedPixels
+  );
+});
+
+// Test for dynamic threshold tool - highlight contour
+test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('DynamicThreshold');
+  await page.getByRole('slider').fill('25');
+
+  const canvas = await page.locator('canvas').first();
+
+  await simulateDrawPath(page, canvas, leftArmContour, {
+    interpolateSteps: true,
+  });
+
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.dynamicThresholdHighlightedContour
+  );
+});
+
+// Test for dynamic threshold tool - confirm contour
+test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('DynamicThreshold');
+  await page.getByRole('slider').fill('25');
+
+  const canvas = await page.locator('canvas').first();
+
+  await simulateDrawPath(page, canvas, leftArmContour, {
+    interpolateSteps: true,
+  });
+
+  page.keyboard.press('Enter');
+
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.dynamicThresholdConfirmedContour
+  );
+});
+
+// Test for rectangle scissor tool with segmentation 1
+test('Stack Segmentation - Sphere Brush Tool', async ({ page }) => {
+  await page.getByRole('combobox').first().selectOption('SphereBrush');
+
+  const canvas = await page.locator('canvas').first();
+
+  await simulateDrawPath(page, canvas, rightArmBoneContour, {
+    interpolateSteps: true,
+    closePath: true,
+  });
+
+  const secondViewport = await page.locator('canvas').nth(1);
+
+  await page.evaluate(() => {
+    // Access cornerstone directly from the window object
+    const cornerstone = window.cornerstone;
+    if (!cornerstone) {
+      return;
+    }
+
+    const enabledElements = cornerstone.getEnabledElements();
+    if (enabledElements.length === 0) {
+      return;
+    }
+
+    const viewport = enabledElements[1].viewport;
+    if (viewport) {
+      viewport.setImageIdIndex(1);
+      viewport.render();
+    }
+  });
+
+  await page.waitForTimeout(1000);
+
+  await checkForScreenshot(
+    page,
+    secondViewport,
+    screenShotPaths.stackSegmentation.sphereBrushSecondViewport
+  );
+});
+
+// Test for rectangle scissor tool with segmentation 2
+test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('RectangleScissor');
+
+  const canvas = await page.locator('canvas').first();
+
+  await page
+    .getByRole('button', { name: 'Create New Segmentation on' })
+    .click();
+
+  await drawRectangleScissor(page, canvas);
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.rectangleScissorSegmentation1
+  );
+});
+
+// Test for circular scissor tool with segmentation 1
+test('Stack Segmentation - Circular Scissor Tool with segmentation 1', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('CircleScissor');
+
+  const canvas = await page.locator('canvas').first();
+
+  await drawCircleScissor(page, canvas);
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.circularScissorSegmentation1
+  );
+});
+
+// Test for paint fill tool with outer circle
+test('Stack Segmentation - Paint Fill Tool with outer circle', async ({
+  page,
+}) => {
+  await page.getByRole('combobox').first().selectOption('PaintFill');
+
+  const canvas = await page.locator('canvas').first();
+
+  await runPaintFill(page, canvas, SEG1_OUTERCIRCLE_POINT);
+  await checkForScreenshot(
+    page,
+    canvas,
+    screenShotPaths.stackSegmentation.paintFillSeg1OuterCircle
+  );
+});
+
+// Helper functions
 async function runPaintFill(page, canvas, clickPoint: number[]) {
   const pageCoord = await locatorToPageCoord(canvas, clickPoint);
   const toolsDropdown = await page.getByRole('combobox').first();
