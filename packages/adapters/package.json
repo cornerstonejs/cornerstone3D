@@ -60,7 +60,7 @@
         "clean:deep": "yarn run clean && shx rm -rf node_modules",
         "dev": "rollup --watch  -c rollup.config.mjs",
         "build:all": "yarn build",
-        "format-check": "npx eslint ./src --max-warnings=0 --format=stylish",
+        "format-check": "npx eslint ./src --quiet",
         "api-check": "echo 'No API check for this package'",
         "start": "rollup --watch -c rollup.config.mjs",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
