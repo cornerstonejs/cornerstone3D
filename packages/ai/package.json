@@ -47,7 +47,7 @@
   },
   "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/ai/README.md",
   "dependencies": {
-    "@babel/runtime-corejs2": "^7.26.9",
+    "@babel/runtime-corejs2": "^7.17.8",
     "buffer": "^6.0.3",
     "dcmjs": "^0.29.8",
     "gl-matrix": "^3.4.3",

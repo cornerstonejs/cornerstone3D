@@ -55,7 +55,15 @@
     "tsconfigRootDir": "./",
     "warnOnUnsupportedTypeScriptVersion": false
   },
-  "ignorePatterns": ["packages/docs", "dist", "**/*_test.js", "**/*_jest.js", "**/*babel*", "**/*.d.ts", "**/*_types.ts","packages/adapters/test", "**/jest.config.js"],
+  "ignorePatterns": [
+    "packages/docs",
+    "dist",
+    "**/*_test.js",
+    "**/*_jest.js",
+    "**/*babel*",
+    "**/*.d.ts",
+    "**/*_types.ts"
+  ],
   "rules": {
     "import/no-cycle": ["error", { "maxDepth": 15 }],
     // Enforce consistent brace style for all control statements for readability

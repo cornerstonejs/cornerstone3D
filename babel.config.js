@@ -6,13 +6,7 @@ module.exports = (api) => {
   return {
     presets: [
       '@babel/preset-react',
-      [
-        '@babel/preset-env',
-        {
-          useBuiltIns: 'entry',
-          corejs: '3.40.0',
-        },
-      ],
+      '@babel/preset-env',
       '@babel/preset-typescript',
     ],
     plugins: [

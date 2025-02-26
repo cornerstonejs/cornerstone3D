@@ -49,7 +49,7 @@ export default [
             }),
             babel({
                 exclude: "node_modules/**",
-                babelHelpers: "runtime",
+                babelHelpers: "bundled",
                 extensions: [".js", ".ts"]
             }),
             json()
