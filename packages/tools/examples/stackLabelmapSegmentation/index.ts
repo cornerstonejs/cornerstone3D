@@ -1,5 +1,4 @@
 import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
-import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
@@ -9,7 +8,6 @@ import {
   addButtonToToolbar,
   addBrushSizeSlider,
 } from '../../../../utils/demo/helpers';
-import { fillStackSegmentationWithMockData } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
 console.warn(
@@ -84,6 +82,7 @@ content.append(instructions);
 
 const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
+  SphereBrush: 'SphereBrush',
   CircularEraser: 'CircularEraser',
   ThresholdBrush: 'ThresholdBrush',
   DynamicThreshold: 'DynamicThreshold',
@@ -91,6 +90,7 @@ const brushInstanceNames = {
 
 const brushStrategies = {
   [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
+  [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
   [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
@@ -98,6 +98,7 @@ const brushStrategies = {
 
 const brushValues = [
   brushInstanceNames.CircularBrush,
+  brushInstanceNames.SphereBrush,
   brushInstanceNames.CircularEraser,
   brushInstanceNames.ThresholdBrush,
   brushInstanceNames.DynamicThreshold,
@@ -113,7 +114,7 @@ const optionsValues = [
 let viewport;
 const viewportId2 = 'STACK_VIEWPORT_2';
 
-const segmentationIds = ['STACK_SEGMENTATION'];
+const segmentationIds = ['STACK_SEGMENTATION', 'STACK_SEGMENTATION_2'];
 const dropDownId = 'SEGMENTATION_DROPDOWN';
 
 function updateSegmentationDropdownOptions(
@@ -284,6 +285,13 @@ function setupTools(toolGroupId) {
     }
   );
   toolGroup.addToolInstance(
+    brushInstanceNames.SphereBrush,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.SphereBrush,
+    }
+  );
+  toolGroup.addToolInstance(
     brushInstanceNames.CircularEraser,
     BrushTool.toolName,
     {
@@ -341,8 +349,7 @@ function setupTools(toolGroupId) {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Alt,
+        mouseButton: MouseBindings.Wheel,
       },
     ],
   });
@@ -394,25 +401,23 @@ async function run() {
   ];
   renderingEngine.setViewports(viewportInputArray);
   toolGroup.addViewport(viewportId, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
   viewport = renderingEngine.getViewport(viewportId);
 
-  const imageIdsArray = [imageIds[0], imageIds[1], mgImageIds[0]];
+  const ctImageIds = imageIds.slice(0, 3);
+  const ctSegImages = await imageLoader.createAndCacheDerivedLabelmapImages(
+    ctImageIds
+  );
 
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIdsArray
+  const mgSegImages = await imageLoader.createAndCacheDerivedLabelmapImages(
+    mgImageIds
   );
 
   const viewport2 = renderingEngine.getViewport(viewportId2);
-  await viewport.setStack(imageIdsArray, 0);
-  await viewport2.setStack([imageIdsArray[2]], 0);
+  await viewport.setStack(ctImageIds, 0);
+  await viewport2.setStack([...mgImageIds, ctImageIds[2]], 0);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
-
-  // fillStackSegmentationWithMockData({
-  //   imageIds: [imageIds[0]],
-  //   segmentationImageIds: segImages.map((it) => it.imageId),
-  //   cornerstone,
-  // });
 
   renderingEngine.renderViewports([viewportId]);
 
@@ -422,11 +427,27 @@ async function run() {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
-          imageIds: segImages.map((it) => it.imageId),
+          imageIds: ctSegImages.map((it) => it.imageId),
         },
       },
     },
   ]);
+
+  segmentation.addSegmentations([
+    {
+      segmentationId: segmentationIds[1],
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        data: {
+          imageIds: [
+            ...mgSegImages.map((it) => it.imageId),
+            ctSegImages[2].imageId,
+          ],
+        },
+      },
+    },
+  ]);
+
   // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(viewportId, [
     {
@@ -437,7 +458,7 @@ async function run() {
 
   await segmentation.addSegmentationRepresentations(viewportId2, [
     {
-      segmentationId: segmentationIds[0],
+      segmentationId: segmentationIds[1],
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
