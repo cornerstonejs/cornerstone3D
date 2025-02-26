@@ -110,22 +110,22 @@ function _imageChangeEventListener(evt) {
   // is there any extra actor that needs to be removed
   // or any actor that needs to be added (which it is added later down), but remove
   // it here if it is not needed
-  labelmapActors.forEach((actor) => {
-    // if cannot find a representation for this actor means it has stuck around
-    // form previous renderings and should be removed
-    const validActor = labelmapRepresentations.find((representation) => {
-      const derivedImageId = getCurrentLabelmapImageIdForViewport(
-        viewportId,
-        representation.segmentationId
-      );
+  // labelmapActors.forEach((actor) => {
+  //   // if cannot find a representation for this actor means it has stuck around
+  //   // form previous renderings and should be removed
+  //   const validActor = labelmapRepresentations.find((representation) => {
+  //     const derivedImageId = getCurrentLabelmapImageIdForViewport(
+  //       viewportId,
+  //       representation.segmentationId
+  //     );
 
-      return derivedImageId === actor.referencedId;
-    });
+  //     return derivedImageId === actor.referencedId;
+  //   });
 
-    if (!validActor) {
-      viewport.removeActors([actor.uid]);
-    }
-  });
+  //   if (!validActor) {
+  //     viewport.removeActors([actor.uid]);
+  //   }
+  // });
 
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
@@ -149,85 +149,86 @@ function _imageChangeEventListener(evt) {
     }
 
     // re-use the old labelmap actor for the new image labelmap for speed and memory
-    const segmentationActorInput = actors.find(
-      (actor) => actor.referencedId === derivedImageId
-    );
+    // there is only one actor in this case. and its referenceId does not match with derivedImageId
+    // in 1.0 we did not have this logic of filtering actors by their reference ids
+    const segmentationActorInput = actors.find((actor) => actor);
 
-    if (!segmentationActorInput) {
-      // i guess we need to create here
-      const { dimensions, spacing, direction } =
-        viewport.getImageDataMetadata(derivedImage);
+    // if (!segmentationActorInput) {
+    //   // i guess we need to create here
+    //   const { dimensions, spacing, direction } =
+    //     viewport.getImageDataMetadata(derivedImage);
 
-      const currentImage =
-        cache.getImage(currentImageId) ||
-        ({
-          imageId: currentImageId,
-        } as Types.IImage);
+    //   const currentImage =
+    //     cache.getImage(currentImageId) ||
+    //     ({
+    //       imageId: currentImageId,
+    //     } as Types.IImage);
 
-      const { origin: currentOrigin } =
-        viewport.getImageDataMetadata(currentImage);
+    //   const { origin: currentOrigin } =
+    //     viewport.getImageDataMetadata(currentImage);
 
-      // IMPORTANT: We need to make sure that the origin of the segmentation
-      // is the same as the current image origin. This is because due to some
-      // floating point precision issues, when coming from volume to stack
-      // the origin of the segmentation can be slightly different from the
-      // current image origin. This can cause the segmentation to be rendered
-      // in the wrong location.
-      // Todo: This will not work for segmentations that are not in the same frame
-      // of reference or derived from the same image. This can happen when we have
-      // a segmentation that happens to exist in the same space as the image but is
-      // not derived from it. We need to find a way to handle this case, but don't think
-      // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
-      const originToUse = currentOrigin;
-      const constructor = derivedImage.voxelManager.getConstructor();
-      const newPixelData = derivedImage.voxelManager.getScalarData();
+    //   // IMPORTANT: We need to make sure that the origin of the segmentation
+    //   // is the same as the current image origin. This is because due to some
+    //   // floating point precision issues, when coming from volume to stack
+    //   // the origin of the segmentation can be slightly different from the
+    //   // current image origin. This can cause the segmentation to be rendered
+    //   // in the wrong location.
+    //   // Todo: This will not work for segmentations that are not in the same frame
+    //   // of reference or derived from the same image. This can happen when we have
+    //   // a segmentation that happens to exist in the same space as the image but is
+    //   // not derived from it. We need to find a way to handle this case, but don't think
+    //   // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
+    //   const originToUse = currentOrigin;
+    //   const constructor = derivedImage.voxelManager.getConstructor();
+    //   const newPixelData = derivedImage.voxelManager.getScalarData();
 
-      const scalarArray = vtkDataArray.newInstance({
-        name: 'Pixels',
-        numberOfComponents: 1,
-        // @ts-expect-error
-        values: new constructor(newPixelData),
-      });
+    //   const scalarArray = vtkDataArray.newInstance({
+    //     name: 'Pixels',
+    //     numberOfComponents: 1,
+    //     // @ts-expect-error
+    //     values: new constructor(newPixelData),
+    //   });
 
-      const imageData = vtkImageData.newInstance();
+    //   const imageData = vtkImageData.newInstance();
 
-      imageData.setDimensions(dimensions[0], dimensions[1], 1);
-      imageData.setSpacing(spacing);
-      imageData.setDirection(direction);
-      imageData.setOrigin(originToUse);
-      imageData.getPointData().setScalars(scalarArray);
-      imageData.modified();
+    //   imageData.setDimensions(dimensions[0], dimensions[1], 1);
+    //   imageData.setSpacing(spacing);
+    //   imageData.setDirection(direction);
+    //   imageData.setOrigin(originToUse);
+    //   imageData.getPointData().setScalars(scalarArray);
+    //   imageData.modified();
 
-      viewport.addImages([
-        {
-          imageId: derivedImageId,
-          representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
-          callback: ({ imageActor }) => {
-            imageActor.getMapper().setInputData(imageData);
-          },
-        },
-      ]);
+    //   viewport.addImages([
+    //     {
+    //       imageId: derivedImageId,
+    //       representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
+    //       callback: ({ imageActor }) => {
+    //         imageActor.getMapper().setInputData(imageData);
+    //       },
+    //     },
+    //   ]);
 
-      triggerSegmentationRender(viewportId);
-      return;
+    //   triggerSegmentationRender(viewportId);
+    //   return;
+    // } else {
+    //   // if actor found
+    //   // update the image data
+
+    // }
+
+    const segmentationImageData = segmentationActorInput.actor
+      .getMapper()
+      .getInputData();
+
+    if (segmentationImageData.setDerivedImage) {
+      // Update the derived image data, whether vtk or other as appropriate
+      // to the actor(s) displaying the data.
+      segmentationImageData.setDerivedImage(derivedImage);
     } else {
-      // if actor found
-      // update the image data
-
-      const segmentationImageData = segmentationActorInput.actor
-        .getMapper()
-        .getInputData();
-
-      if (segmentationImageData.setDerivedImage) {
-        // Update the derived image data, whether vtk or other as appropriate
-        // to the actor(s) displaying the data.
-        segmentationImageData.setDerivedImage(derivedImage);
-      } else {
-        utilities.updateVTKImageDataWithCornerstoneImage(
-          segmentationImageData,
-          derivedImage
-        );
-      }
+      utilities.updateVTKImageDataWithCornerstoneImage(
+        segmentationImageData,
+        derivedImage
+      );
     }
 
     viewport.render();
