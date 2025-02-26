@@ -10,7 +10,12 @@ import type {
   ContourAnnotation,
 } from '../types';
 import { point } from '../utilities/math';
-import { Events, ToolModes, AnnotationStyleStates } from '../enums';
+import {
+  Events,
+  ToolModes,
+  AnnotationStyleStates,
+  ChangeTypes,
+} from '../enums';
 import { triggerAnnotationRenderForViewportIds } from '../utilities/triggerAnnotationRenderForViewportIds';
 import {
   hideElementCursor,
@@ -428,7 +433,11 @@ class SculptorTool extends BaseTool {
       activeAnnotation.invalidated = true;
     }
 
-    triggerAnnotationModified(activeAnnotation, element);
+    triggerAnnotationModified(
+      activeAnnotation,
+      element,
+      ChangeTypes.HandlesUpdated
+    );
   };
 
   /**
