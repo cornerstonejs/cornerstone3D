@@ -66,6 +66,11 @@ export default class BaseAdapter3D {
         MeasurementReport.registerTool(this);
     }
 
+    /**
+     * registerLegacy registers the given tool adapter using the legacy/old
+     * cornerstone 1.x adapter names so that the adapter class will be used to load
+     * those older adapters.
+     */
     public static registerLegacy() {
         this.trackingIdentifiers.add(
             `cornerstoneTools@^4.0.0:${this.toolType}`

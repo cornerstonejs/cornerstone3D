@@ -10,9 +10,10 @@ const LONG_AXIS = "Long Axis";
 const SHORT_AXIS = "Short Axis";
 
 class Bidirectional extends BaseAdapter3D {
-    public static toolType = "Bidirectional";
-    public static TID300Representation = TID300Bidirectional;
-    public static trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${this.toolType}`;
+    static {
+        this.init("Bidirectional", TID300Bidirectional);
+        this.registerLegacy();
+    }
 
     public static getMeasurementData(
         MeasurementGroup,
@@ -176,7 +177,5 @@ class Bidirectional extends BaseAdapter3D {
         };
     }
 }
-
-MeasurementReport.registerTool(Bidirectional);
 
 export default Bidirectional;
