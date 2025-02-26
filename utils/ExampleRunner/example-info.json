@@ -262,7 +262,7 @@
       "livewireContour": {
         "name": "Livewire",
         "description": "Demonstrates how to use the livewire tool to create ROIs"
-      },
+      }
     },
     "viewports": {
       "video": {
