@@ -45,6 +45,7 @@ import type {
 import type { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { setAnnotationLabel } from '../../utilities';
 
 class ArrowAnnotateTool extends AnnotationTool {
   static toolName = 'ArrowAnnotate';
@@ -394,6 +395,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         triggerAnnotationCompleted(annotation);
         // This is only new if it wasn't already memoed
         this.createMemo(element, annotation, { newAnnotation: !!this.memo });
+        setAnnotationLabel(annotation, element, text);
 
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
       });
