@@ -1,65 +1,93 @@
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
-import MeasurementReport from "./MeasurementReport";
-
-export type AdapterOptions = {
-    trackingIdentifierTextValue?: string;
-    alternateTrackingIdentifiers?: string[];
-    measurementReport?: typeof MeasurementReport;
-};
-
-export type AdapterOptionsCopy = AdapterOptions & {
-    trackingIdentifierTextValue: string;
-};
+import MeasurementReport, {
+    type AdapterOptions,
+    type MeasurementAdapter
+} from "./MeasurementReport";
 
 /**
  * This is a basic definition of adapters to be inherited for other adapters.
  */
 export default class BaseAdapter3D {
     public static toolType: string;
-    public static utilityToolType: string;
     public static TID300Representation;
     public static trackingIdentifierTextValue: string;
     public static trackingIdentifiers: Set<string>;
 
     /**
-     * Initialize this adapter and register it with the measurement report
+     * The parent type is another type which could be used to parse this instance,
+     * but for which this sub-class has a better representation.  For example,
+     * key images are parseable as Probe instances, but are represented as a different tool
+     * Thus, the name for the key image is `Cornerstone3DTag:Probe:KeyImage` so that
+     * a prefix query testing just the Probe could parse this object and display it,
+     * but a better/full path key could also be done.
      */
-    public static init(toolType, options?: AdapterOptions) {
+    public static parentType: string;
+
+    public static init(
+        toolType: string,
+        representation,
+        options?: AdapterOptions
+    ) {
         this.toolType = toolType;
-        this.trackingIdentifierTextValue =
-            options?.trackingIdentifierTextValue ||
-            `${CORNERSTONE_3D_TAG}:${toolType}`;
-        this.trackingIdentifiers = new Set();
-        this.trackingIdentifiers.add(this.trackingIdentifierTextValue);
-        const useMeasurementReport =
-            options?.measurementReport || MeasurementReport;
-        useMeasurementReport.registerTool(this);
-        if (options?.alternateTrackingIdentifiers) {
-            useMeasurementReport.registerTrackingIdentifier(
-                this,
-                ...options.alternateTrackingIdentifiers
+        if (BaseAdapter3D.toolType) {
+            throw new Error(
+                `Base adapter tool type set to ${this.toolType} while setting ${toolType}`
             );
         }
+        this.parentType = options?.parentType;
+        this.trackingIdentifiers = new Set<string>();
+
+        this.TID300Representation = representation;
+        if (this.parentType) {
+            this.trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${this.parentType}:${this.toolType}`;
+            const alternateTrackingIdentifier = `${CORNERSTONE_3D_TAG}:${this.toolType}`;
+            this.trackingIdentifiers.add(alternateTrackingIdentifier);
+        } else {
+            this.trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${toolType}`;
+        }
+        this.trackingIdentifiers.add(this.trackingIdentifierTextValue);
+        MeasurementReport.registerTool(this);
     }
 
-    /**
-     * Create a copy of the tool that work the same way except deserializing to the
-     * new tool instance.
+    public static registerLegacy() {
+        this.trackingIdentifiers.add(
+            `cornerstoneTools@^4.0.0:${this.toolType}`
+        );
+    }
+
+    /** Registers a new copy of the given type that has the prefix path the
+     * same as that of adapter, but adds the toolType to this path to create
+     * a new tool instance of the given type.  This preserves compatibility
+     * with parsing in other versions, without need to replace the original parent
+     * type.
      */
-    public static initCopy(toolType: string, options: AdapterOptionsCopy) {
-        class CopyAdapter extends this {
-            static {
-                this.init(toolType, options);
-            }
-        }
-        return CopyAdapter;
+    public static registerSubType(
+        adapter: MeasurementAdapter,
+        toolType: string,
+        replace?
+    ) {
+        const subAdapter = Object.create(adapter);
+        subAdapter.init(toolType, adapter.TID300Representation, {
+            parentType: adapter.parentType || adapter.toolType,
+            replace
+        });
+        return subAdapter;
     }
 
     /**
      * @returns true if the tool is of the given tool type based on the tracking identifier
      */
-    public static isValidCornerstoneTrackingIdentifier(trackingIdentifier) {
-        return this.trackingIdentifiers.has(trackingIdentifier);
+    public static _isValidCornerstoneTrackingIdentifier(
+        trackingIdentifier: string
+    ) {
+        if (this.trackingIdentifiers.has(trackingIdentifier)) {
+            return true;
+        }
+        if (!trackingIdentifier.includes(":")) {
+            return false;
+        }
+
+        return trackingIdentifier.startsWith(this.trackingIdentifierTextValue);
     }
 
     /**
@@ -67,14 +95,14 @@ export default class BaseAdapter3D {
      * DICOM SR annotation data.
      */
     public static getMeasurementData(
-        measurementGroup,
+        MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         _imageToWorldCoords,
         metadata
     ) {
         const { defaultState: state, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
-                measurementGroup,
+                MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
                 metadata,
                 this.toolType

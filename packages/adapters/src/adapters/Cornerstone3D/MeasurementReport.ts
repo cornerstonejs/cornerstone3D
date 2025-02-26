@@ -18,13 +18,72 @@ const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
 const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
 const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
 
+export type AdapterOptions = {
+    /**
+     * The parent type is another type which could be used to parse this instance,
+     * but for which this sub-class has a better representation.  For example,
+     * key images are parseable as Probe instances, but are represented as a different tool
+     * Thus, the name for the key image is `Cornerstone3DTag:Probe:KeyImage` so that
+     * a prefix query testing just the Probe could parse this object and display it,
+     * but a better/full path key could also be done.
+     */
+    parentType?: string;
+
+    /**
+     * If set, then replace this
+     */
+    replace?: boolean | ((original: MeasurementAdapter) => void);
+};
+
+/**
+ * A measurement adapter parses/creates data for DICOM SR measurements
+ */
+export interface MeasurementAdapter {
+    toolType: string;
+    TID300Representation: unknown;
+    trackingIdentifierTextValue: string;
+    trackingIdentifiers: Set<string>;
+
+    /**
+     * The parent type is the base type of the adapter that is used for the
+     * identifier, being compatible with older versions to read that subtype.
+     */
+    parentType: string;
+
+    /**
+     * Applies the options and registers this tool
+     */
+    init(toolType: string, representation, options?: AdapterOptions);
+
+    getMeasurementData(
+        MeasurementGroup,
+        sopInstanceUIDToImageIdMap,
+        imageToWorldCoords,
+        metadata
+    );
+
+    isValidCornerstoneTrackingIdentifier?(trackingIdentifier: string): boolean;
+    _isValidCornerstoneTrackingIdentifier?(trackingIdentifier: string): boolean;
+
+    getTID300RepresentationArguments(
+        tool,
+        worldToImageCoords
+    ): Record<string, unknown>;
+}
+
 export default class MeasurementReport {
     public static CORNERSTONE_3D_TAG = CORNERSTONE_3D_TAG;
     /** Maps tool type to the adapter name used to serialize this item to SR */
-    public static measurementAdapterByToolType = new Map();
+    public static measurementAdapterByToolType = new Map<
+        string,
+        MeasurementAdapter
+    >();
 
     /** Maps tracking identifier to tool class to deserialize from SR into a tool instance */
-    public static measurementAdapterByTrackingIdentifier = new Map();
+    public static measurementAdapterByTrackingIdentifier = new Map<
+        string,
+        MeasurementAdapter
+    >();
 
     public static getTID300ContentItem(
         tool,
@@ -449,13 +508,34 @@ export default class MeasurementReport {
 
     /**
      * Register a new tool type.
-     * @param toolClass to perform I/O to DICOM for this tool
+     * @param toolAdapter to perform I/O to DICOM for this tool
      */
-    public static registerTool(toolClass) {
-        this.measurementAdapterByToolType.set(toolClass.toolType, toolClass);
+    public static registerTool(
+        toolAdapter: MeasurementAdapter,
+        replace: boolean | ((original) => void) = false
+    ) {
+        const registerName = toolAdapter.toolType;
+        if (this.measurementAdapterByToolType.has(registerName)) {
+            if (!replace) {
+                throw new Error(
+                    `The registered tool name ${registerName} already exists in adapters, use a different toolType or use replace`
+                );
+            }
+            if (typeof replace === "function") {
+                // Call the function so it can call parent output
+                replace(this.measurementAdapterByToolType.get(registerName));
+            }
+        }
+        if (toolAdapter._isValidCornerstoneTrackingIdentifier) {
+            // Work around for using the function unbound
+            toolAdapter.isValidCornerstoneTrackingIdentifier =
+                toolAdapter._isValidCornerstoneTrackingIdentifier.bind(
+                    toolAdapter
+                );
+        }
         this.measurementAdapterByTrackingIdentifier.set(
-            toolClass.trackingIdentifierTextValue,
-            toolClass
+            toolAdapter.trackingIdentifierTextValue,
+            toolAdapter
         );
     }
 

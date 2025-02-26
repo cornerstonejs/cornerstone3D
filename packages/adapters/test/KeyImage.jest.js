@@ -16,7 +16,7 @@ describe("KeyImage", () => {
 
     it("Must define tracking identifiers", () => {
         expect(KeyImage.trackingIdentifierTextValue).toBe(
-            "Cornerstone3DTools@^0.1.0:KeyImage"
+            "Cornerstone3DTools@^0.1.0:Probe:KeyImage"
         );
         // Even after registering a sub-type of Probe, the Probe tracking identifier should be unchanged
         expect(Probe.trackingIdentifierTextValue).toBe(

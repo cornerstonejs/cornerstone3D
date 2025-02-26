@@ -61,7 +61,8 @@ class ArrowAnnotate {
     static getTID300RepresentationArguments(tool) {
         const points = [tool.handles.start, tool.handles.end];
 
-        let { finding, findingSites } = tool;
+        const { findingSites } = tool;
+        let { finding } = tool;
 
         const TID300RepresentationArguments = {
             points,

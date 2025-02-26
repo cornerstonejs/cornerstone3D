@@ -4,13 +4,10 @@ import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Point: TID300Point } = utilities.TID300;
 
-const PROBE = "Probe";
-
 class Probe extends BaseAdapter3D {
-    public static TID300Representation = TID300Point;
-
     static {
-        this.init(PROBE);
+        this.init("Probe", TID300Point);
+        this.registerLegacy();
     }
 
     static getMeasurementData(
@@ -31,7 +28,7 @@ class Probe extends BaseAdapter3D {
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
                 metadata,
-                this.toolType
+                Probe.toolType
             );
 
         const referencedImageId =
