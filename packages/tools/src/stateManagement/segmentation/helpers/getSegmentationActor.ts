@@ -33,6 +33,35 @@ function getActorEntry(
 }
 
 /**
+ * Retrieves the actor entry based on the given criteria.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @param filterFn - A function to filter the actors.
+ * @returns The actor entry if found, undefined otherwise.
+ */
+function getActorEntries(
+  viewportId: string,
+  filterFn: (actor: Types.ActorEntry) => boolean
+): Types.ActorEntry[] | undefined {
+  const enabledElement = getEnabledElementByViewportId(viewportId);
+
+  if (!enabledElement) {
+    return;
+  }
+
+  const { renderingEngine, viewport } = enabledElement;
+
+  if (!renderingEngine || !viewport) {
+    return;
+  }
+
+  const actors = viewport.getActors();
+  const filteredActors = actors.filter(filterFn);
+
+  return filteredActors.length > 0 ? filteredActors : undefined;
+}
+
+/**
  * Retrieves the UID of the labelmap actor for the given viewport and segmentation.
  * @param viewportId - The ID of the viewport.
  * @param segmentationId - The ID of the segmentation.
@@ -47,6 +76,23 @@ export function getLabelmapActorUID(
 }
 
 /**
+ * Retrieves the labelmap actor entries for the given viewport and segmentation.
+ * @param viewportId - The ID of the viewport.
+ * @param segmentationId - The ID of the segmentation.
+ * @returns The labelmap actor entry if found, undefined otherwise.
+ */
+export function getLabelmapActorEntries(
+  viewportId: string,
+  segmentationId: string
+) {
+  return getActorEntries(viewportId, (actor) =>
+    (actor.representationUID as string)?.startsWith(
+      `${segmentationId}-${SegmentationRepresentations.Labelmap}`
+    )
+  );
+}
+
+/**
  * Retrieves the labelmap actor entry for the given viewport and segmentation.
  * @param viewportId - The ID of the viewport.
  * @param segmentationId - The ID of the segmentation.
@@ -57,8 +103,7 @@ export function getLabelmapActorEntry(
   segmentationId: string
 ) {
   return getActorEntry(viewportId, segmentationId, (actor) =>
-    // @ts-expect-error
-    actor.representationUID?.startsWith(
+    (actor.representationUID as string)?.startsWith(
       `${segmentationId}-${SegmentationRepresentations.Labelmap}`
     )
   );

@@ -33,7 +33,7 @@ import {
     handleFileSelect,
     handleDragOver,
     restart,
-    createSegmentation
+    createEmptySegmentation
 } from "../segmentationVolume/utils";
 import addDropDownToToolbar from "../../../../utils/demo/helpers/addDropdownToToolbar";
 
@@ -227,7 +227,7 @@ addButtonToToolbar({
     onClick: async () => {
         const segmentationId = cornerstone.utilities.uuidv4();
         state.segmentationId = segmentationId;
-        await createSegmentation(state);
+        await createEmptySegmentation(state);
         createSegmentationRepresentation();
         updateSegmentationDropdown();
     },
