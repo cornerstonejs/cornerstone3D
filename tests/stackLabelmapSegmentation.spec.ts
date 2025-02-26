@@ -293,7 +293,7 @@ test('Stack Segmentation - Sphere Brush Tool', async ({ page }) => {
   await checkForScreenshot(
     page,
     secondViewport,
-    screenShotPaths.stackSegmentation.sphereBrushSecondViewport
+    screenShotPaths.stackSegmentation.sphereBrush
   );
 });
 
