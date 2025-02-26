@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Build dependencies
+        run: bun run build:esm
+
       - name: Run format check
         run: bun run format-check
         env:

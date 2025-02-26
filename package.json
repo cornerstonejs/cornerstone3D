@@ -15,7 +15,7 @@
   },
   "scripts": {
     "api-check": "npx lerna run api-check",
-    "format-check": "cross-env NODE_OPTIONS=--max_old_space_size=32896 npx lerna run format-check --no-stream --concurrency 1",
+    "format-check": "cross-env NODE_OPTIONS=--max_old_space_size=32896 npx lerna run format-check",
     "build": "npx lerna run build --stream && npx lerna run build:loader",
     "build:esm": "npx lerna run build:esm --stream",
     "watch": "npx lerna watch -- lerna run build --scope=$LERNA_PACKAGE_NAME --include-dependents",
