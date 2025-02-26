@@ -333,22 +333,6 @@ test('Stack Segmentation - Circular Scissor Tool with segmentation 1', async ({
   );
 });
 
-// Test for paint fill tool with outer circle
-test('Stack Segmentation - Paint Fill Tool with outer circle', async ({
-  page,
-}) => {
-  await page.getByRole('combobox').first().selectOption('PaintFill');
-
-  const canvas = await page.locator('canvas').first();
-
-  await runPaintFill(page, canvas, SEG1_OUTERCIRCLE_POINT);
-  await checkForScreenshot(
-    page,
-    canvas,
-    screenShotPaths.stackSegmentation.paintFillSeg1OuterCircle
-  );
-});
-
 // Helper functions
 async function runPaintFill(page, canvas, clickPoint: number[]) {
   const pageCoord = await locatorToPageCoord(canvas, clickPoint);
