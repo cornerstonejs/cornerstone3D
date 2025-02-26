@@ -22,15 +22,17 @@
   "scripts": {
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "build": "yarn run build:esm",
     "build:esm": "tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "dev": "tsc --project ./tsconfig.json --watch",
     "build:all": "yarn run build:esm",
-    "build:update-api": "yarn run build:esm && api-extractor run --local",
     "start": "tsc --project ./tsconfig.json --watch",
     "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-    "lint": "eslint --fix ."
+    "lint": "eslint --fix .",
+    "format-check": "npx eslint ./src --quiet",
+    "prepublishOnly": "yarn clean && yarn build"
   },
   "repository": {
     "type": "git",
