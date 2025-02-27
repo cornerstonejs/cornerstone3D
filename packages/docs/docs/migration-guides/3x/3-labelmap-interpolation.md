@@ -1,6 +1,6 @@
 ---
-id: general
-title: 'General'
+id: labelmap-interpolation
+title: 'Labelmap Interpolation'
 ---
 
 import Tabs from '@theme/Tabs';
