@@ -1,16 +1,16 @@
 import MeasurementReport from "./MeasurementReport";
 import { utilities } from "dcmjs";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { vec3 } from "gl-matrix";
 import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
 class PlanarFreehandROI extends BaseAdapter3D {
-    public static toolType = "PlanarFreehandROI";
-    public static TID300Representation = TID300Polyline;
-    public static trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${this.toolType}`;
     public static closedContourThreshold = 1e-5;
+
+    static {
+        this.init("PlanarFreehandROI", TID300Polyline);
+    }
 
     static getMeasurementData(
         MeasurementGroup,
@@ -131,7 +131,5 @@ class PlanarFreehandROI extends BaseAdapter3D {
         };
     }
 }
-
-MeasurementReport.registerTool(PlanarFreehandROI);
 
 export default PlanarFreehandROI;

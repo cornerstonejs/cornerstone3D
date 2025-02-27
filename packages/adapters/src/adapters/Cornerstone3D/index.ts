@@ -13,6 +13,7 @@ import Length from "./Length";
 import PlanarFreehandROI from "./PlanarFreehandROI";
 import Probe from "./Probe";
 import UltrasoundDirectional from "./UltrasoundDirectional";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 import * as Segmentation from "./Segmentation";
 import * as ParametricMap from "./ParametricMap";
@@ -20,6 +21,7 @@ import * as RTSS from "./RTStruct";
 import KeyImage from "./KeyImage";
 
 const Cornerstone3DSR = {
+    BaseAdapter3D,
     Bidirectional,
     CobbAngle,
     Angle,
