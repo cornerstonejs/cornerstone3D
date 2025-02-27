@@ -105,7 +105,8 @@ describe('stackViewport_node_render', function () {
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = viewport.getCanvas();
         const image = canvas.toDataURL('image/png');
-        console.error('Rendered image', image);
+        // console.error('Rendered image', image);
+        expect(image).toBeTruthy();
         resolve(image);
       });
     });
