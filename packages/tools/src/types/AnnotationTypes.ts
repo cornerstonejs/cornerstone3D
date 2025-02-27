@@ -53,7 +53,7 @@ type Annotation = {
    */
   data: {
     /** Annotation handles that are grabbable for manipulation */
-    handles?: handles;
+    handles?: Handles;
     [key: string]: unknown;
     /** Cached Annotation statistics which is specific to the tool */
     cachedStats?: Record<string, unknown>;
@@ -84,7 +84,7 @@ type AnnotationState = {
   [key: string]: GroupSpecificAnnotations;
 };
 
-type handles = {
+type Handles = {
   /** world location of the handles in the space */
   points?: Types.Point3[];
   /** index of the active handle being manipulated */
@@ -115,4 +115,5 @@ export type {
   Annotations,
   GroupSpecificAnnotations,
   AnnotationState,
+  Handles,
 };
