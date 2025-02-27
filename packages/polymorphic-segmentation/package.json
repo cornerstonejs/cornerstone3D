@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/polymorphic-segmentation",
-  "version": "3.0.0-beta.6",
+  "version": "3.0.0",
   "description": "Polymorphic Segmentation utility for Cornerstone3D",
   "files": [
     "dist"
@@ -49,8 +49,8 @@
     "@icr/polyseg-wasm": "0.4.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.0.0-beta.6",
-    "@cornerstonejs/tools": "^3.0.0-beta.6",
+    "@cornerstonejs/core": "^3.0.0",
+    "@cornerstonejs/tools": "^3.0.0",
     "@kitware/vtk.js": "^32.9.0"
   }
 }
