@@ -6,6 +6,7 @@ import type SegmentationRepresentations from './enums/SegmentationRepresentation
 
 /**
  * Options for converting between segmentation representations using PolySeg
+ * set
  */
 export type PolySegConversionOptions = {
   /** Optional array of segment indices to convert */
