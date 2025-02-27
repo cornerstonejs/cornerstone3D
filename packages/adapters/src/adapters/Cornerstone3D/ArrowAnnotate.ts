@@ -1,21 +1,23 @@
 import MeasurementReport from "./MeasurementReport";
 import { utilities } from "dcmjs";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
+import BaseAdapter3D from "./BaseAdapter3D";
 import CodingScheme from "./CodingScheme";
 
 const { Point: TID300Point } = utilities.TID300;
+const { codeValues } = CodingScheme;
 
-const ARROW_ANNOTATE = "ArrowAnnotate";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ARROW_ANNOTATE}`;
+class ArrowAnnotate extends BaseAdapter3D {
+    static {
+        this.init("ArrowAnnotate", TID300Point);
+        this.registerLegacy();
+    }
 
-const { codeValues, CodingSchemeDesignator } = CodingScheme;
-
-class ArrowAnnotate {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         imageToWorldCoords,
-        metadata
+        metadata,
+        _trackingIdentifier
     ) {
         const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
@@ -85,8 +87,8 @@ class ArrowAnnotate {
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
-        const { data, metadata } = tool;
-        let { finding, findingSites } = tool;
+        const { data, metadata, findingSites } = tool;
+        let { finding } = tool;
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
@@ -122,42 +124,22 @@ class ArrowAnnotate {
                     y: pointImage2[1]
                 }
             ],
-            trackingIdentifierTextValue,
-            findingSites: findingSites || []
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            findingSites: findingSites || [],
+            finding
         };
 
         // If freetext finding isn't present, add it from the tool text.
         if (!finding || finding.CodeValue !== codeValues.CORNERSTONEFREETEXT) {
             finding = {
                 CodeValue: codeValues.CORNERSTONEFREETEXT,
-                CodingSchemeDesignator,
+                CodingSchemeDesignator: CodingScheme.CodingSchemeDesignator,
                 CodeMeaning: data.text
             };
         }
 
-        TID300RepresentationArguments.finding = finding;
-
         return TID300RepresentationArguments;
     }
 }
-
-ArrowAnnotate.toolType = ARROW_ANNOTATE;
-ArrowAnnotate.utilityToolType = ARROW_ANNOTATE;
-ArrowAnnotate.TID300Representation = TID300Point;
-ArrowAnnotate.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
-
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    return toolType === ARROW_ANNOTATE;
-};
-
-MeasurementReport.registerTool(ArrowAnnotate);
 
 export default ArrowAnnotate;

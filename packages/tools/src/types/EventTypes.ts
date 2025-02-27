@@ -128,14 +128,17 @@ type AnnotationCompletedEventDetail = {
  * The data that is passed to the event handler when an annotation is modified.
  */
 type AnnotationModifiedEventDetail = {
-  /** unique id of the viewport */
-  viewportId: string;
-  /** unique id of the rendering engine */
-  renderingEngineId: string;
   /** The annotation that is being added to the annotations manager. */
   annotation: Annotation;
   /** The type of this change */
   changeType?: ChangeTypes;
+  /**
+   * unique id of the viewport.  Note this is optional and only included if the
+   * element is known/being modified on a given viewport
+   */
+  viewportId?: string;
+  /** unique id of the rendering engine */
+  renderingEngineId?: string;
 };
 
 /**

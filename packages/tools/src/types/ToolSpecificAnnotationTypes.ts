@@ -56,6 +56,15 @@ export interface ProbeAnnotation extends Annotation {
   };
 }
 
+export type KeyImageAnnotation = ProbeAnnotation & {
+  data: {
+    /** Indicates that the point selected is relevant rather than just the image */
+    isPoint: boolean;
+    /** Indicates that this key image selects the entire stack/volume (series) */
+    seriesLevel: boolean;
+  };
+};
+
 export interface LengthAnnotation extends Annotation {
   data: {
     handles: {

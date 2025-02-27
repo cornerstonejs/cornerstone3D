@@ -18,6 +18,14 @@ module.exports = {
   // Setup
   // setupFiles: ["jest-canvas-mock/lib/index.js"],
   // Coverage
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': [
+      'babel-jest',
+      {
+        plugins: ['babel-plugin-transform-import-meta'],
+      },
+    ],
+  },
   collectCoverageFrom: [
     '<rootDir>/src/**/*.{js,jsx}',
     // Not

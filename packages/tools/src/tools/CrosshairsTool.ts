@@ -109,9 +109,6 @@ class CrosshairsTool extends AnnotationTool {
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
   _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
-  editData: {
-    annotation: Annotation;
-  } | null;
 
   constructor(
     toolProps: PublicToolProps = {},

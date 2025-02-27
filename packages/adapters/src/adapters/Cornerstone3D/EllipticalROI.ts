@@ -1,23 +1,18 @@
 import { vec3 } from "gl-matrix";
 import { utilities } from "dcmjs";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
-import isValidCornerstoneTrackingIdentifier from "./isValidCornerstoneTrackingIdentifier";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 type Point3 = [number, number, number];
 
 const { Ellipse: TID300Ellipse } = utilities.TID300;
 
-const ELLIPTICALROI = "EllipticalROI";
 const EPSILON = 1e-4;
 
-class EllipticalROI {
-    static trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${ELLIPTICALROI}`;
-    static toolType = ELLIPTICALROI;
-    static utilityToolType = ELLIPTICALROI;
-    static TID300Representation = TID300Ellipse;
-    static isValidCornerstoneTrackingIdentifier =
-        isValidCornerstoneTrackingIdentifier;
+class EllipticalROI extends BaseAdapter3D {
+    static {
+        this.init("EllipticalROI", TID300Ellipse);
+    }
 
     static getMeasurementData(
         MeasurementGroup,
@@ -198,7 +193,5 @@ class EllipticalROI {
         };
     }
 }
-
-MeasurementReport.registerTool(EllipticalROI);
 
 export default EllipticalROI;

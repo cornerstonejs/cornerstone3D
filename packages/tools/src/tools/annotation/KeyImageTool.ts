@@ -13,21 +13,27 @@ import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
-import { drawArrow as drawArrowSvg } from '../../drawingSvg';
+import {
+  drawArrow as drawArrowSvg,
+  drawHandles as drawHandlesSvg,
+} from '../../drawingSvg';
 import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
-import { resetElementCursor } from '../../cursors/elementCursor';
+import {
+  resetElementCursor,
+  hideElementCursor,
+} from '../../cursors/elementCursor';
 
 import type {
   EventTypes,
-  ToolHandle,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
   Annotation,
 } from '../../types';
+import type { KeyImageAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 type Point2 = Types.Point2;
@@ -35,17 +41,23 @@ type Point2 = Types.Point2;
 class KeyImageTool extends AnnotationTool {
   static toolName = 'KeyImage';
 
+  /** A mix in data element to set the series level annotation */
+  public static dataSeries = {
+    data: {
+      seriesLevel: true,
+    },
+  };
+
+  /** A mix in data element to set the point to be true.  That renders as a point
+   * on the image rather than just selecting the image itself
+   */
+  public static dataPoint = {
+    data: {
+      isPoint: true,
+    },
+  };
+
   _throttledCalculateCachedStats: Function;
-  editData: {
-    annotation: Annotation;
-    viewportIdsToRender: string[];
-    handleIndex?: number;
-    movingTextBox?: boolean;
-    newAnnotation?: boolean;
-    hasMoved?: boolean;
-  } | null;
-  isDrawing: boolean;
-  isHandleOutsideImage: boolean;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -56,6 +68,11 @@ class KeyImageTool extends AnnotationTool {
         changeTextCallback,
         canvasPosition: [10, 10],
         canvasSize: 10,
+        handleRadius: '6',
+        /** If true, this selects the entire series/display set */
+        seriesLevel: false,
+        /** If true, shows the point selected */
+        isPoint: false,
       },
     }
   ) {
@@ -72,13 +89,20 @@ class KeyImageTool extends AnnotationTool {
    */
   addNewAnnotation = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
-    const { element } = eventDetail;
+    const { element, currentPoints } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+    const worldPos = currentPoints.world;
 
     const annotation = (<typeof KeyImageTool>(
       this.constructor
-    )).createAnnotationForViewport(viewport);
+    )).createAnnotationForViewport(viewport, {
+      data: {
+        handles: { points: [<Types.Point3>[...worldPos]] },
+        seriesLevel: this.configuration.seriesLevel,
+        isPoint: this.configuration.isPoint,
+      },
+    });
 
     addAnnotation(annotation, element);
 
@@ -110,10 +134,6 @@ class KeyImageTool extends AnnotationTool {
     return annotation;
   };
 
-  public cancel() {
-    // No op - the annotation can't be in a partial state
-  }
-
   /**
    * It returns if the canvas point is near the provided length annotation in the provided
    * element or not. A proximity is passed to the function to determine the
@@ -134,6 +154,10 @@ class KeyImageTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { data } = annotation;
+
+    if (!data?.isPoint) {
+      return false;
+    }
 
     const { canvasPosition, canvasSize } = this.configuration;
     if (!canvasPosition?.length) {
@@ -161,20 +185,79 @@ class KeyImageTool extends AnnotationTool {
 
   handleSelectedCallback(
     evt: EventTypes.InteractionEventType,
-    annotation: Annotation,
-    handle: ToolHandle
+    annotation: KeyImageAnnotation
   ): void {
-    // Nothing special to do here.
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+
+    annotation.highlighted = true;
+
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
+    // Find viewports to render on drag.
+
+    this.editData = {
+      //handle, // This would be useful for other tools with more than one handle
+      annotation,
+      viewportIdsToRender,
+    };
+    this._activateModify(element);
+
+    hideElementCursor(element);
+
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    evt.preventDefault();
+  }
+
+  public static setPoint(
+    annotation,
+    isPoint: boolean = !annotation.data.isPoint,
+    element?
+  ) {
+    annotation.data.isPoint = isPoint;
+    triggerAnnotationModified(annotation, element);
   }
 
   _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    this.doneEditMemo();
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
+
+    const { viewportId, renderingEngine } = getEnabledElement(element);
+    this.eventDispatchDetail = {
+      viewportId,
+      renderingEngineId: renderingEngine.id,
+    };
 
     this._deactivateModify(element);
+
     resetElementCursor(element);
+
+    if (newAnnotation) {
+      this.createMemo(element, annotation, { newAnnotation });
+    }
+
+    this.editData = null;
+    this.isDrawing = false;
+    this.doneEditMemo();
+
+    if (
+      this.isHandleOutsideImage &&
+      this.configuration.preventHandleOutsideImage
+    ) {
+      removeAnnotation(annotation.annotationUID);
+    }
+
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (newAnnotation) {
+      triggerAnnotationCompleted(annotation);
+    }
   };
 
   doubleClickCallback = (evt: EventTypes.TouchTapEventType): void => {
@@ -226,9 +309,6 @@ class KeyImageTool extends AnnotationTool {
   _doneChangingTextCallback(element, annotation, updatedText): void {
     annotation.data.text = updatedText;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
@@ -239,48 +319,69 @@ class KeyImageTool extends AnnotationTool {
     triggerAnnotationModified(annotation, element);
   }
 
-  _activateModify = (element: HTMLDivElement) => {
-    state.isInteractingWithTool = true;
+  _dragCallback = (evt) => {
+    this.isDrawing = true;
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
 
-    element.addEventListener(
-      Events.MOUSE_UP,
-      this._endCallback as EventListener
-    );
-    element.addEventListener(
-      Events.MOUSE_CLICK,
-      this._endCallback as EventListener
-    );
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
+    const { data } = annotation;
 
-    element.addEventListener(
-      Events.TOUCH_TAP,
-      this._endCallback as EventListener
-    );
-    element.addEventListener(
-      Events.TOUCH_END,
-      this._endCallback as EventListener
-    );
+    this.createMemo(element, annotation, { newAnnotation });
+
+    data.handles.points[0] = [...worldPos] as Types.Point3;
+    annotation.invalidated = true;
+
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
-  _deactivateModify = (element: HTMLDivElement) => {
+  public cancel(element: HTMLDivElement) {
+    // If it is mid-draw or mid-modify
+    if (this.isDrawing) {
+      this.isDrawing = false;
+      this._deactivateModify(element);
+      resetElementCursor(element);
+
+      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
+      const { data } = annotation;
+
+      annotation.highlighted = false;
+      data.handles.activeHandleIndex = null;
+
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+      if (newAnnotation) {
+        triggerAnnotationCompleted(annotation);
+      }
+
+      this.editData = null;
+      return annotation.annotationUID;
+    }
+  }
+
+  _activateModify = (element) => {
+    state.isInteractingWithTool = true;
+
+    element.addEventListener(Events.MOUSE_UP, this._endCallback);
+    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
+    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
+
+    element.addEventListener(Events.TOUCH_END, this._endCallback);
+    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
+    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
+  };
+
+  _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
 
-    element.removeEventListener(
-      Events.MOUSE_UP,
-      this._endCallback as EventListener
-    );
-    element.removeEventListener(
-      Events.MOUSE_CLICK,
-      this._endCallback as EventListener
-    );
+    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
+    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
+    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
 
-    element.removeEventListener(
-      Events.TOUCH_TAP,
-      this._endCallback as EventListener
-    );
-    element.removeEventListener(
-      Events.TOUCH_END,
-      this._endCallback as EventListener
-    );
+    element.removeEventListener(Events.TOUCH_END, this._endCallback);
+    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
+    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   /**
@@ -324,18 +425,33 @@ class KeyImageTool extends AnnotationTool {
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i];
-      const { annotationUID } = annotation;
+      const { annotationUID, data } = annotation;
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const { color } = this.getAnnotationStyle({
+      const { color, lineWidth } = this.getAnnotationStyle({
         annotation,
         styleSpecifier,
       });
 
       const { canvasPosition, canvasSize } = this.configuration;
-      if (canvasPosition?.length) {
-        const arrowUID = '1';
+      const arrowUID = '1';
+      if (data?.isPoint) {
+        const point = data.handles.points[0];
+        const canvasCoordinates = viewport.worldToCanvas(point);
+
+        drawHandlesSvg(
+          svgDrawingHelper,
+          annotationUID,
+          arrowUID,
+          [canvasCoordinates],
+          {
+            color,
+            lineWidth,
+            handleRadius: this.configuration.handleRadius,
+          }
+        );
+      } else if (canvasPosition?.length) {
         drawArrowSvg(
           svgDrawingHelper,
           annotationUID,
