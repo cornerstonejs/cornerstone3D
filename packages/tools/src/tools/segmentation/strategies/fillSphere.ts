@@ -58,7 +58,8 @@ const SPHERE_STRATEGY = new BrushStrategy(
   sphereComposition,
   compositions.determineSegmentIndex,
   compositions.preview,
-  compositions.labelmapStatistics
+  compositions.labelmapStatistics,
+  compositions.ensureSegmentationVolumeFor3DManipulation
 );
 
 /**
@@ -73,7 +74,9 @@ const SPHERE_THRESHOLD_STRATEGY = new BrushStrategy(
   'SphereThreshold',
   ...SPHERE_STRATEGY.compositions,
   compositions.dynamicThreshold,
-  compositions.threshold
+  compositions.threshold,
+  compositions.ensureSegmentationVolumeFor3DManipulation,
+  compositions.ensureImageVolumeFor3DManipulation
 );
 
 const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
@@ -81,7 +84,9 @@ const SPHERE_THRESHOLD_STRATEGY_ISLAND = new BrushStrategy(
   ...SPHERE_STRATEGY.compositions,
   compositions.dynamicThreshold,
   compositions.threshold,
-  compositions.islandRemoval
+  compositions.islandRemoval,
+  compositions.ensureSegmentationVolumeFor3DManipulation,
+  compositions.ensureImageVolumeFor3DManipulation
 );
 
 /**

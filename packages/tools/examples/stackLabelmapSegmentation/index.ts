@@ -84,7 +84,8 @@ const brushInstanceNames = {
   CircularBrush: 'CircularBrush',
   SphereBrush: 'SphereBrush',
   CircularEraser: 'CircularEraser',
-  ThresholdBrush: 'ThresholdBrush',
+  ThresholdBrushCircle: 'ThresholdBrushCircle',
+  ThresholdBrushSphere: 'ThresholdBrushSphere',
   DynamicThreshold: 'DynamicThreshold',
 };
 
@@ -92,7 +93,8 @@ const brushStrategies = {
   [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
   [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-  [brushInstanceNames.ThresholdBrush]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.ThresholdBrushCircle]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.ThresholdBrushSphere]: 'THRESHOLD_INSIDE_SPHERE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
 };
 
@@ -100,7 +102,14 @@ const brushValues = [
   brushInstanceNames.CircularBrush,
   brushInstanceNames.SphereBrush,
   brushInstanceNames.CircularEraser,
-  brushInstanceNames.ThresholdBrush,
+  brushInstanceNames.ThresholdBrushCircle,
+  brushInstanceNames.ThresholdBrushSphere,
+  brushInstanceNames.DynamicThreshold,
+];
+
+const thresholdBrushValues = [
+  brushInstanceNames.ThresholdBrushCircle,
+  brushInstanceNames.ThresholdBrushSphere,
   brushInstanceNames.DynamicThreshold,
 ];
 
@@ -155,9 +164,16 @@ addDropdownToToolbar({
 
     // Set the currently active tool disabled
     const toolName = toolGroup.getActivePrimaryMouseButtonTool();
-
     if (toolName) {
       toolGroup.setToolDisabled(toolName);
+    }
+
+    // Show/hide threshold dropdown based on selected tool
+    const thresholdDropdown = document.getElementById('thresholdDropdown');
+    if (thresholdDropdown) {
+      thresholdDropdown.style.display = thresholdBrushValues.includes(name)
+        ? 'block'
+        : 'none';
     }
 
     if (brushValues.includes(name)) {
@@ -165,9 +181,7 @@ addDropdownToToolbar({
         bindings: [{ mouseButton: MouseBindings.Primary }],
       });
     } else {
-      const toolName = name;
-
-      toolGroup.setToolActive(toolName, {
+      toolGroup.setToolActive(name, {
         bindings: [{ mouseButton: MouseBindings.Primary }],
       });
     }
@@ -194,7 +208,7 @@ addDropdownToToolbar({
 
     segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, threshold);
   },
-});
+}).style.display = 'none';
 
 addButtonToToolbar({
   title: 'Create New Segmentation on Current Image',
@@ -244,7 +258,6 @@ addDropdownToToolbar({
   options: { values: segmentationIds, defaultValue: '' },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
-    const index = segmentationIds.indexOf(name);
     segmentation.activeSegmentation.setActiveSegmentation(viewportId, name);
 
     // Update the dropdown
@@ -298,25 +311,20 @@ function setupTools(toolGroupId) {
       activeStrategy: brushStrategies.CircularEraser,
     }
   );
+
   toolGroup.addToolInstance(
-    brushInstanceNames.ThresholdBrush,
+    brushInstanceNames.ThresholdBrushCircle,
     BrushTool.toolName,
     {
-      activeStrategy: brushStrategies.ThresholdBrush,
+      activeStrategy: brushStrategies.ThresholdBrushCircle,
     }
   );
+
   toolGroup.addToolInstance(
-    brushInstanceNames.DynamicThreshold,
+    brushInstanceNames.ThresholdBrushSphere,
     BrushTool.toolName,
     {
-      activeStrategy: brushStrategies.DynamicThreshold,
-      preview: {
-        enabled: true,
-      },
-      strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
-      },
+      activeStrategy: brushStrategies.ThresholdBrushSphere,
     }
   );
 

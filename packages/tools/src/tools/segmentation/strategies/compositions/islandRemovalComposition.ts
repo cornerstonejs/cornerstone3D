@@ -15,15 +15,18 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const {
-      strategySpecificConfiguration,
       previewSegmentIndex,
       segmentIndex,
       viewport,
       previewVoxelManager,
       segmentationVoxelManager,
+      activeStrategy,
     } = operationData;
 
-    if (!strategySpecificConfiguration.THRESHOLD || segmentIndex === null) {
+    if (
+      activeStrategy !== 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL' ||
+      segmentIndex === null
+    ) {
       return;
     }
 

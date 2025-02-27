@@ -15,11 +15,13 @@
   },
   "scripts": {
     "api-check": "npx lerna run api-check",
-    "format-check": "npx lerna run format-check",
+    "format-check": "cross-env NODE_OPTIONS=--max_old_space_size=32896 npx lerna run format-check",
     "build": "npx lerna run build --stream && npx lerna run build:loader",
     "build:esm": "npx lerna run build:esm --stream",
     "watch": "npx lerna watch -- lerna run build --scope=$LERNA_PACKAGE_NAME --include-dependents",
     "build:update-api:ai": "cd packages/ai && npm run build:update-api",
+    "build:update-api:labelmap-interpolation": "cd packages/labelmap-interpolation && npm run build:update-api",
+    "build:update-api:polymorphic-segmentation": "cd packages/polymorphic-segmentation && npm run build:update-api",
     "build:update-api:core": "cd packages/core && npm run build:update-api",
     "build:update-api:tools": "cd packages/tools && npm run build:update-api",
     "build:update-api:nifti": "cd packages/nifti-volume-loader && npm run build:update-api",
@@ -95,6 +97,7 @@
     "autoprefixer": "^10.4.14",
     "babel-loader": "9.1.2",
     "babel-plugin-istanbul": "^6.1.1",
+    "babel-plugin-transform-import-meta": "2.3.2",
     "chai": "^5.1.2",
     "clean-webpack-plugin": "^4.0.0",
     "commander": "^10.0.1",
@@ -184,5 +187,6 @@
     "not ie < 11",
     "not op_mini all"
   ],
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "dependencies": {}
 }
