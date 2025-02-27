@@ -1000,6 +1000,8 @@ enum ChangeTypes {
     MetadataReferenceModified = "MetadataReferenceModified",
     // (undocumented)
     StatsUpdated = "StatsUpdated"
+    // (undocumented)
+    LabelChange = 'LabelChange',
 }
 
 // @public (undocumented)

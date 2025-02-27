@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { Events, ChangeTypes } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -481,6 +481,14 @@ class LengthTool extends AnnotationTool {
     this.editData.hasMoved = true;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -888,7 +896,7 @@ class LengthTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
 
     return cachedStats;
   }

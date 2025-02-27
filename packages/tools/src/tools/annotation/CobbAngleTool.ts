@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -477,6 +477,14 @@ class CobbAngleTool extends AnnotationTool {
     const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -1024,7 +1032,7 @@ class CobbAngleTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
 
     return cachedStats;
   }

@@ -42,6 +42,10 @@ enum ChangeTypes {
    * so as to cause it to be drawn on the change, or removed if it is no longer visible.
    */
   MetadataReferenceModified = 'MetadataReferenceModified',
+  /**
+   * Occurs when an annotation label is updated.
+   */
+  LabelChange = 'LabelChange',
 }
 
 export default ChangeTypes;

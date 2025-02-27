@@ -51,6 +51,7 @@ const roundNumber = utilities.roundNumber;
 import normalizeViewportPlane from './normalizeViewportPlane';
 import IslandRemoval from './segmentation/islandRemoval';
 import { getPixelValueUnits } from './getPixelValueUnits';
+import setAnnotationLabel from './setAnnotationLabel';
 
 export {
   math,
@@ -96,4 +97,5 @@ export {
   pointInSurroundingSphereCallback,
   normalizeViewportPlane,
   IslandRemoval,
+  setAnnotationLabel,
 };

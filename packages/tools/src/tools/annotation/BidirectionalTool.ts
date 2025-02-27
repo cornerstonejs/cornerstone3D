@@ -22,7 +22,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as lineSegment from '../../utilities/math/line';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -568,6 +568,7 @@ class BidirectionalTool extends AnnotationTool {
     annotation.invalidated = true;
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
+    triggerAnnotationModified(annotation, element, ChangeTypes.HandlesUpdated);
     this.editData.hasMoved = true;
   };
 
@@ -620,6 +621,14 @@ class BidirectionalTool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   /**
@@ -1313,7 +1322,7 @@ class BidirectionalTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
 
     return cachedStats;
   };

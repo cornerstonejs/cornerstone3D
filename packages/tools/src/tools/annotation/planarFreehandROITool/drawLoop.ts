@@ -3,7 +3,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../../cursors/elementCursor';
-import { Events } from '../../../enums';
+import { ChangeTypes, Events } from '../../../enums';
 import type { EventTypes } from '../../../types';
 import { state } from '../../../store/state';
 import { vec3 } from 'gl-matrix';
@@ -13,7 +13,10 @@ import {
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
 import getMouseModifierKey from '../../../eventDispatchers/shared/getMouseModifier';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
-import { triggerContourAnnotationCompleted } from '../../../stateManagement/annotation/helpers/state';
+import {
+  triggerAnnotationModified,
+  triggerContourAnnotationCompleted,
+} from '../../../stateManagement/annotation/helpers/state';
 import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
@@ -170,9 +173,13 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
 
       this.drawData.polylineIndex = polylineIndex + numPointsAdded;
     }
+    annotation.invalidated = true;
   }
 
   triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+  if (annotation.invalidated) {
+    triggerAnnotationModified(annotation, element, ChangeTypes.HandlesUpdated);
+  }
 }
 
 /**
