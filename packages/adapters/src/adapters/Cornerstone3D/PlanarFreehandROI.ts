@@ -1,31 +1,16 @@
 import MeasurementReport from "./MeasurementReport";
 import { utilities } from "dcmjs";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { vec3 } from "gl-matrix";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
-const PLANARFREEHANDROI = "PlanarFreehandROI";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${PLANARFREEHANDROI}`;
-const closedContourThreshold = 1e-5;
+class PlanarFreehandROI extends BaseAdapter3D {
+    public static closedContourThreshold = 1e-5;
 
-class PlanarFreehandROI {
-    public static toolType = PLANARFREEHANDROI;
-    public static utilityToolType = PLANARFREEHANDROI;
-    public static TID300Representation = TID300Polyline;
-    public static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-        if (!TrackingIdentifier.includes(":")) {
-            return false;
-        }
-
-        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-            return false;
-        }
-
-        return toolType === PLANARFREEHANDROI;
-    };
+    static {
+        this.init("PlanarFreehandROI", TID300Polyline);
+    }
 
     static getMeasurementData(
         MeasurementGroup,
@@ -64,7 +49,7 @@ class PlanarFreehandROI {
         let isOpenContour = true;
 
         // If the contour is closed, this should have been encoded as exactly the same point, so check for a very small difference.
-        if (distanceBetweenFirstAndLastPoint < closedContourThreshold) {
+        if (distanceBetweenFirstAndLastPoint < this.closedContourThreshold) {
             worldCoords.pop(); // Remove the last element which is duplicated.
 
             isOpenContour = false;
@@ -140,13 +125,11 @@ class PlanarFreehandROI {
             max,
             stdDev,
             /** Other */
-            trackingIdentifierTextValue,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []
         };
     }
 }
-
-MeasurementReport.registerTool(PlanarFreehandROI);
 
 export default PlanarFreehandROI;

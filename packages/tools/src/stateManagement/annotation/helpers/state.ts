@@ -95,14 +95,16 @@ function triggerAnnotationRemoved(
 
 /**
  * Triggers an annotation modified event.
+ * Note this no longer requires the element, which should be handled by testing
+ * to see which viewports this element is shown on.
  */
 function triggerAnnotationModified(
   annotation: Annotation,
-  element: HTMLDivElement,
+  element?: HTMLDivElement,
   changeType = ChangeTypes.HandlesUpdated
 ): void {
-  const enabledElement = getEnabledElement(element);
-  const { viewportId, renderingEngineId } = enabledElement;
+  const enabledElement = element && getEnabledElement(element);
+  const { viewportId, renderingEngineId } = enabledElement || {};
   const eventType = Events.ANNOTATION_MODIFIED;
   const eventDetail: AnnotationModifiedEventDetail = {
     annotation,

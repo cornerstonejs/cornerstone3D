@@ -405,10 +405,10 @@ type AnnotationLockChangeEventType = Types_2.CustomEventType<AnnotationLockChang
 
 // @public (undocumented)
 type AnnotationModifiedEventDetail = {
-    viewportId: string;
-    renderingEngineId: string;
     annotation: Annotation;
     changeType?: ChangeTypes;
+    viewportId?: string;
+    renderingEngineId?: string;
 };
 
 // @public (undocumented)
@@ -553,6 +553,20 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     // (undocumented)
     protected createMemo(element: any, annotation: any, options?: any): void;
     // (undocumented)
+    editData: {
+        annotation: Annotation;
+        viewportIdsToRender?: string[];
+        newAnnotation?: boolean;
+        handleIndex?: number;
+        movingTextBox?: boolean;
+        hasMoved?: boolean;
+    } | null;
+    // (undocumented)
+    protected eventDispatchDetail: {
+        viewportId: string;
+        renderingEngineId: string;
+    };
+    // (undocumented)
     protected getAnnotationStyle(context: {
         annotation: Annotation;
         styleSpecifier: StyleSpecifier;
@@ -563,6 +577,10 @@ export abstract class AnnotationTool extends AnnotationDisplayTool {
     getLinkedTextBoxStyle(specifications: StyleSpecifier, annotation?: Annotation): Record<string, unknown>;
     // (undocumented)
     abstract handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, handle: ToolHandle, interactionType: InteractionTypes): void;
+    // (undocumented)
+    isDrawing: boolean;
+    // (undocumented)
+    isHandleOutsideImage: boolean;
     // (undocumented)
     abstract isPointNearTool(element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number, interactionType: string): boolean;
     // (undocumented)
@@ -1836,10 +1854,6 @@ export class CrosshairsTool extends AnnotationTool {
     _deactivateModify: (element: any) => void;
     // (undocumented)
     _dragCallback: (evt: EventTypes_2.InteractionEventType) => void;
-    // (undocumented)
-    editData: {
-        annotation: Annotation;
-    } | null;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
@@ -3447,43 +3461,54 @@ type KeyDownEventDetail = {
 type KeyDownEventType = Types_2.CustomEventType<KeyDownEventDetail>;
 
 // @public (undocumented)
+type KeyImageAnnotation = ProbeAnnotation & {
+    data: {
+        isPoint: boolean;
+        seriesLevel: boolean;
+    };
+};
+
+// @public (undocumented)
 export class KeyImageTool extends AnnotationTool {
     constructor(toolProps?: PublicToolProps, defaultToolProps?: ToolProps);
     // (undocumented)
-    _activateModify: (element: HTMLDivElement) => void;
+    _activateModify: (element: any) => void;
     // (undocumented)
     addNewAnnotation: (evt: EventTypes_2.InteractionEventType) => Annotation;
     // (undocumented)
-    cancel(): void;
+    cancel(element: HTMLDivElement): string;
     // (undocumented)
-    _deactivateModify: (element: HTMLDivElement) => void;
+    static dataPoint: {
+        data: {
+            isPoint: boolean;
+        };
+    };
+    // (undocumented)
+    static dataSeries: {
+        data: {
+            seriesLevel: boolean;
+        };
+    };
+    // (undocumented)
+    _deactivateModify: (element: any) => void;
     // (undocumented)
     _doneChangingTextCallback(element: any, annotation: any, updatedText: any): void;
     // (undocumented)
     doubleClickCallback: (evt: EventTypes_2.TouchTapEventType) => void;
     // (undocumented)
-    editData: {
-        annotation: Annotation;
-        viewportIdsToRender: string[];
-        handleIndex?: number;
-        movingTextBox?: boolean;
-        newAnnotation?: boolean;
-        hasMoved?: boolean;
-    } | null;
+    _dragCallback: (evt: any) => void;
     // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
     // (undocumented)
-    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: Annotation, handle: ToolHandle): void;
-    // (undocumented)
-    isDrawing: boolean;
-    // (undocumented)
-    isHandleOutsideImage: boolean;
+    handleSelectedCallback(evt: EventTypes_2.InteractionEventType, annotation: KeyImageAnnotation): void;
     // (undocumented)
     _isInsideVolume(index1: any, index2: any, dimensions: any): boolean;
     // (undocumented)
     isPointNearTool: (element: HTMLDivElement, annotation: Annotation, canvasCoords: Types_2.Point2, proximity: number) => boolean;
     // (undocumented)
     renderAnnotation: (enabledElement: Types_2.IEnabledElement, svgDrawingHelper: SVGDrawingHelper) => boolean;
+    // (undocumented)
+    static setPoint(annotation: any, isPoint?: boolean, element?: any): void;
     // (undocumented)
     _throttledCalculateCachedStats: Function;
     // (undocumented)
@@ -4506,18 +4531,7 @@ export class ProbeTool extends AnnotationTool {
     // (undocumented)
     _dragCallback: (evt: any) => void;
     // (undocumented)
-    editData: {
-        annotation: Annotation;
-        viewportIdsToRender: string[];
-        newAnnotation?: boolean;
-    } | null;
-    // (undocumented)
     _endCallback: (evt: EventTypes_2.InteractionEventType) => void;
-    // (undocumented)
-    eventDispatchDetail: {
-        viewportId: string;
-        renderingEngineId: string;
-    };
     // (undocumented)
     getHandleNearImagePoint(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): ToolHandle | undefined;
     // (undocumented)
@@ -4526,10 +4540,6 @@ export class ProbeTool extends AnnotationTool {
     static hydrate: (viewportId: string, points: Types_2.Point3[], options?: {
         annotationUID?: string;
     }) => ProbeAnnotation;
-    // (undocumented)
-    isDrawing: boolean;
-    // (undocumented)
-    isHandleOutsideImage: boolean;
     // (undocumented)
     isPointNearTool(element: HTMLDivElement, annotation: ProbeAnnotation, canvasCoords: Types_2.Point2, proximity: number): boolean;
     // (undocumented)
@@ -6388,6 +6398,7 @@ declare namespace ToolSpecificAnnotationTypes {
         ROICachedStats,
         RectangleROIAnnotation,
         ProbeAnnotation,
+        KeyImageAnnotation,
         LengthAnnotation,
         AdvancedMagnifyAnnotation,
         CircleROIAnnotation,

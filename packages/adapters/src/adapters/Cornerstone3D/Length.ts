@@ -1,13 +1,18 @@
 import { utilities } from "dcmjs";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Length: TID300Length } = utilities.TID300;
 
 const LENGTH = "Length";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${LENGTH}`;
 
-class Length {
+export default class Length extends BaseAdapter3D {
+    static {
+        this.init(LENGTH, TID300Length);
+        // Register using the Cornerstone 1.x name so this tool is used to load it
+        this.registerLegacy();
+    }
+
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(
         MeasurementGroup,
@@ -20,7 +25,7 @@ class Length {
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
                 metadata,
-                Length.toolType
+                this.toolType
             );
 
         const referencedImageId =
@@ -84,30 +89,9 @@ class Length {
             point1,
             point2,
             distance,
-            trackingIdentifierTextValue,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []
         };
     }
 }
-
-Length.toolType = LENGTH;
-Length.utilityToolType = LENGTH;
-Length.TID300Representation = TID300Length;
-Length.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
-
-    const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-    if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-        return false;
-    }
-
-    return toolType === LENGTH;
-};
-
-MeasurementReport.registerTool(Length);
-
-export default Length;
