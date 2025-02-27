@@ -1,6 +1,6 @@
 ---
-id: general
-title: 'General'
+id: polyseg
+title: 'PolySeg'
 ---
 
 import Tabs from '@theme/Tabs';

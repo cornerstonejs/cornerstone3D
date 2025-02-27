@@ -131,7 +131,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "3.0.0-beta.6",
+      "version": "3.0.0",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -140,13 +140,13 @@
         "ndarray": "^1.0.19",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.0.0-beta.6",
-        "@cornerstonejs/tools": "^3.0.0-beta.6",
+        "@cornerstonejs/core": "^3.0.0",
+        "@cornerstonejs/tools": "^3.0.0",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "3.0.0-beta.6",
+      "version": "3.0.0",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -164,7 +164,7 @@
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "3.0.0-beta.6",
+      "version": "3.0.0",
       "dependencies": {
         "@kitware/vtk.js": "32.9.0",
         "comlink": "^4.4.1",
@@ -173,7 +173,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "3.0.0-beta.6",
+      "version": "3.0.0",
       "dependencies": {
         "@cornerstonejs/codec-charls": "^1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
@@ -185,7 +185,7 @@
         "uuid": "^9.0.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.0.0-beta.6",
+        "@cornerstonejs/core": "^3.0.0",
         "dicom-parser": "^1.8.9",
       },
     },
@@ -193,11 +193,11 @@
       "name": "docs",
       "version": "3.0.0-beta.5",
       "dependencies": {
-        "@cornerstonejs/adapters": "^3.0.0-beta.6",
-        "@cornerstonejs/core": "^3.0.0-beta.6",
-        "@cornerstonejs/dicom-image-loader": "^3.0.0-beta.6",
-        "@cornerstonejs/nifti-volume-loader": "^3.0.0-beta.6",
-        "@cornerstonejs/tools": "^3.0.0-beta.6",
+        "@cornerstonejs/adapters": "^3.0.0",
+        "@cornerstonejs/core": "^3.0.0",
+        "@cornerstonejs/dicom-image-loader": "^3.0.0",
+        "@cornerstonejs/nifti-volume-loader": "^3.0.0",
+        "@cornerstonejs/tools": "^3.0.0",
         "@docusaurus/core": "3.6.3",
         "@docusaurus/faster": "3.6.3",
         "@docusaurus/module-type-aliases": "3.6.3",
@@ -235,7 +235,7 @@
     },
     "packages/labelmap-interpolation": {
       "name": "@cornerstonejs/labelmap-interpolation",
-      "version": "3.0.0-beta.6",
+      "version": "3.0.0",
       "dependencies": {
         "@itk-wasm/morphological-contour-interpolation": "1.1.0",
         "itk-wasm": "1.0.0-b.165",
@@ -248,17 +248,17 @@
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "3.0.0-beta.6",
+      "version": "3.0.0",
       "dependencies": {
         "nifti-reader-js": "^0.6.8",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.0.0-beta.6",
+        "@cornerstonejs/core": "^3.0.0",
       },
     },
     "packages/polymorphic-segmentation": {
       "name": "@cornerstonejs/polymorphic-segmentation",
-      "version": "3.0.0-beta.6",
+      "version": "3.0.0",
       "dependencies": {
         "@icr/polyseg-wasm": "0.4.0",
       },
@@ -270,7 +270,7 @@
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "3.0.0-beta.6",
+      "version": "3.0.0",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "^4.4.1",
@@ -280,7 +280,7 @@
         "canvas": "^2.11.2",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.0.0-beta.6",
+        "@cornerstonejs/core": "^3.0.0",
         "@kitware/vtk.js": "32.9.0",
         "@types/d3-array": "^3.0.4",
         "@types/d3-interpolate": "^3.0.1",
@@ -5488,8 +5488,6 @@
     "@docusaurus/mdx-loader/fs-extra": ["fs-extra@11.3.0", "", { "dependencies": { "graceful-fs": "^4.2.0", "jsonfile": "^6.0.1", "universalify": "^2.0.0" } }, "sha512-Z4XaCL6dUDHfP/jT25jJKMmtxvuwbkrD1vNSMFlo9lNLY2c5FHYSQgHPRZUjAB26TpDEoW9HCOgplrdbaPV/ew=="],
 
     "@docusaurus/mdx-loader/webpack": ["webpack@5.97.1", "", { "dependencies": { "@types/eslint-scope": "^3.7.7", "@types/estree": "^1.0.6", "@webassemblyjs/ast": "^1.14.1", "@webassemblyjs/wasm-edit": "^1.14.1", "@webassemblyjs/wasm-parser": "^1.14.1", "acorn": "^8.14.0", "browserslist": "^4.24.0", "chrome-trace-event": "^1.0.2", "enhanced-resolve": "^5.17.1", "es-module-lexer": "^1.2.1", "eslint-scope": "5.1.1", "events": "^3.2.0", "glob-to-regexp": "^0.4.1", "graceful-fs": "^4.2.11", "json-parse-even-better-errors": "^2.3.1", "loader-runner": "^4.2.0", "mime-types": "^2.1.27", "neo-async": "^2.6.2", "schema-utils": "^3.2.0", "tapable": "^2.1.1", "terser-webpack-plugin": "^5.3.10", "watchpack": "^2.4.1", "webpack-sources": "^3.2.3" }, "bin": { "webpack": "bin/webpack.js" } }, "sha512-EksG6gFY3L1eFMROS/7Wzgrii5mBAFe4rIr3r2BTfo7bcc+DWwFZ4OJ/miOuHJO/A85HwyI4eQ0F6IKXesO7Fg=="],
-
-    "@docusaurus/module-type-aliases/react-helmet-async": ["react-helmet-async@2.0.5", "", { "dependencies": { "invariant": "^2.2.4", "react-fast-compare": "^3.2.2", "shallowequal": "^1.1.0" }, "peerDependencies": { "react": "^16.6.0 || ^17.0.0 || ^18.0.0" } }, "sha512-rYUYHeus+i27MvFE+Jaa4WsyBKGkL6qVgbJvSBoX8mbsWoABJXdEO0bZyi0F6i+4f0NuIb8AvqPMj3iXFHkMwg=="],
 
     "@docusaurus/plugin-content-blog/fs-extra": ["fs-extra@11.3.0", "", { "dependencies": { "graceful-fs": "^4.2.0", "jsonfile": "^6.0.1", "universalify": "^2.0.0" } }, "sha512-Z4XaCL6dUDHfP/jT25jJKMmtxvuwbkrD1vNSMFlo9lNLY2c5FHYSQgHPRZUjAB26TpDEoW9HCOgplrdbaPV/ew=="],
 
