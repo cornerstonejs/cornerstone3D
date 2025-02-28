@@ -135,6 +135,7 @@ class CrosshairsTool extends AnnotationTool {
           enabled: false,
           panSize: 10,
         },
+        handleRadius: 3,
         // radius of the area around the intersection of the planes, in which
         // the reference lines will not be rendered. This is only used when
         // having 3 viewports in the toolGroup.
@@ -1270,6 +1271,14 @@ class CrosshairsTool extends AnnotationTool {
           slabThicknessHandleWorldFour
         );
 
+        let handleRadius =
+          this.configuration.handleRadius * window.devicePixelRatio;
+        let opacity = 1;
+        if (this.configuration.mobile?.enabled) {
+          handleRadius = this.configuration.mobile.handleRadius;
+          opacity = this.configuration.mobile.opacity;
+        }
+
         if (
           (lineActive || this.configuration.mobile?.enabled) &&
           !rotHandlesActive &&
@@ -1286,12 +1295,8 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'circle',
             }
           );
@@ -1303,12 +1308,8 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'rect',
             }
           );
@@ -1327,12 +1328,8 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'circle',
             }
           );
@@ -1351,17 +1348,15 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'rect',
             }
           );
         } else if (rotHandlesActive && viewportDraggableRotatable) {
           const handleUID = `${lineIndex}`;
+          const handleRadius =
+            this.configuration.handleRadius * window.devicePixelRatio;
           // draw all rotation handles as active
           drawHandlesSvg(
             svgDrawingHelper,
@@ -1370,7 +1365,7 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: 2,
+              handleRadius,
               fill: color,
               type: 'circle',
             }
@@ -1380,6 +1375,8 @@ class CrosshairsTool extends AnnotationTool {
           selectedViewportId &&
           viewportSlabThicknessControlsOn
         ) {
+          const handleRadius =
+            this.configuration.handleRadius * window.devicePixelRatio;
           // draw only the slab thickness handles for the active viewport as active
           drawHandlesSvg(
             svgDrawingHelper,
@@ -1388,7 +1385,7 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: 2,
+              handleRadius,
               fill: color,
               type: 'rect',
             }
