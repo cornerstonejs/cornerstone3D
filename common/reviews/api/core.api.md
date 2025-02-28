@@ -3119,6 +3119,8 @@ enum RequestType {
     // (undocumented)
     Interaction = "interaction",
     // (undocumented)
+    Metadata = "metadata",
+    // (undocumented)
     Prefetch = "prefetch",
     // (undocumented)
     Thumbnail = "thumbnail"
