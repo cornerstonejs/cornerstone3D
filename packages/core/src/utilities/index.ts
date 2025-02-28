@@ -80,6 +80,7 @@ import * as color from './color';
 import { deepEqual } from './deepEqual';
 import type { IViewport } from '../types/IViewport';
 import FrameRange from './FrameRange';
+import fnv1aHash from './fnv1aHash';
 
 // solving the circular dependency issue
 import { _getViewportModality } from './getViewportModality';
@@ -94,7 +95,7 @@ import scroll from './scroll';
 import clip from './clip';
 import createSubVolume from './createSubVolume';
 import getVolumeDirectionVectors from './getVolumeDirectionVectors';
-
+import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 
@@ -108,6 +109,7 @@ export {
   scaleRgbTransferFunction,
   triggerEvent,
   imageIdToURI,
+  fnv1aHash,
   calibratedPixelSpacingMetadataProvider,
   clamp,
   uuidv4,
@@ -193,4 +195,5 @@ export {
   transformWorldToIndexContinuous,
   createSubVolume,
   getVolumeDirectionVectors,
+  calculateSpacingBetweenImageIds,
 };

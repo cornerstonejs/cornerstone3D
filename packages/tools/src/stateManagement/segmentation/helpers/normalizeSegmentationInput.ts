@@ -102,7 +102,7 @@ function normalizeSurfaceSegments(
   surfaceData: SurfaceSegmentationData
 ): void {
   const { geometryIds } = surfaceData;
-  geometryIds.forEach((geometryId) => {
+  geometryIds?.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId);
     if (geometry?.data) {
       const { segmentIndex } = geometry.data;

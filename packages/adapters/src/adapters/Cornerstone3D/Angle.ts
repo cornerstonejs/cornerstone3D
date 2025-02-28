@@ -1,29 +1,14 @@
 import { utilities } from "dcmjs";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 const { CobbAngle: TID300CobbAngle } = utilities.TID300;
 
-const MEASUREMENT_TYPE = "Angle";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${MEASUREMENT_TYPE}`;
-
-class Angle {
-    public static toolType = MEASUREMENT_TYPE;
-    public static utilityToolType = MEASUREMENT_TYPE;
-    public static TID300Representation = TID300CobbAngle;
-    public static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-        if (!TrackingIdentifier.includes(":")) {
-            return false;
-        }
-
-        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-            return false;
-        }
-
-        return toolType === MEASUREMENT_TYPE;
-    };
+class Angle extends BaseAdapter3D {
+    static {
+        this.init("Angle", TID300CobbAngle);
+        this.registerLegacy();
+    }
 
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     public static getMeasurementData(
@@ -107,13 +92,11 @@ class Angle {
             point3,
             point4,
             rAngle: angle,
-            trackingIdentifierTextValue,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []
         };
     }
 }
-
-MeasurementReport.registerTool(Angle);
 
 export default Angle;

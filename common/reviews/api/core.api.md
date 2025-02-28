@@ -276,6 +276,9 @@ type BoundsLPS = [Point3, Point3, Point3];
 export const cache: Cache_2;
 
 // @public (undocumented)
+function calculateSpacingBetweenImageIds(imageIds: string[]): number;
+
+// @public (undocumented)
 function calculateViewportsSpatialRegistration(viewport1: StackViewport | IVolumeViewport, viewport2: StackViewport | IVolumeViewport): void;
 
 // @public (undocumented)
@@ -1190,6 +1193,9 @@ interface FlipDirection {
     // (undocumented)
     flipVertical?: boolean;
 }
+
+// @public (undocumented)
+function fnv1aHash(str: string): string;
 
 // @public (undocumented)
 class FrameRange {
@@ -3966,6 +3972,7 @@ declare namespace utilities {
         scaleRGBTransferFunction as scaleRgbTransferFunction,
         triggerEvent,
         imageIdToURI,
+        fnv1aHash,
         metadataProvider as calibratedPixelSpacingMetadataProvider,
         clamp,
         uuidv4,
@@ -4050,7 +4057,8 @@ declare namespace utilities {
         clip,
         transformWorldToIndexContinuous,
         createSubVolume,
-        getVolumeDirectionVectors
+        getVolumeDirectionVectors,
+        calculateSpacingBetweenImageIds
     }
 }
 export { utilities }

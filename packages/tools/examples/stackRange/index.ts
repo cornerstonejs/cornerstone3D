@@ -180,6 +180,17 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  id: 'Toggle Point',
+  title: 'Toggle Point',
+  onClick() {
+    const annotation = getActiveAnnotation();
+    if (annotation) {
+      KeyImageTool.setPoint(annotation);
+    }
+  },
+});
+
 function annotationModifiedListener(evt) {
   updateAnnotationDiv(
     evt.detail.annotation?.annotationUID ||
