@@ -13,6 +13,7 @@ import { getSegmentation } from '../../../stateManagement/segmentation/getSegmen
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
+import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -55,7 +56,7 @@ async function render(
   viewport: Types.IVolumeViewport | Types.IStackViewport,
   representation: SegmentationRepresentation
 ): Promise<void> {
-  const { segmentationId } = representation;
+  const { segmentationId, type } = representation;
 
   const segmentation = getSegmentation(segmentationId);
 
@@ -124,10 +125,17 @@ async function render(
     }
     const segmentIndex = geometry.data.segmentIndex;
 
+    const hiddenSegments = internalGetHiddenSegmentIndices(viewport.id, {
+      segmentationId,
+      type,
+    });
+    const isHidden = hiddenSegments.has(segmentIndex);
+
     const surface = geometry.data as Types.ISurface;
 
     const color = colorLUT[segmentIndex];
     surface.color = color.slice(0, 3) as Types.Point3;
+    surface.visible = !isHidden;
 
     surfaces.push(surface);
     addOrUpdateSurfaceToElement(
