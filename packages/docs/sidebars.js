@@ -251,7 +251,6 @@ module.exports = {
       collapsed: true,
       items: [
         'contribute/pull-request',
-        'contribute/update-api',
         'contribute/documentation',
         'contribute/playwright-tests',
         'contribute/karma-tests',
