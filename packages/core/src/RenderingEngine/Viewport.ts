@@ -1881,8 +1881,11 @@ class Viewport {
     // right now if the view presentation requires a flip, it will flicker. The
     // correct way to handle this is to wait for camera and flip together and then
     // do one render
-    if (flipHorizontal || flipVertical) {
-      this.flip({ flipHorizontal, flipVertical });
+    if (flipHorizontal !== undefined) {
+      this.flip({ flipHorizontal });
+    }
+    if (flipVertical !== undefined) {
+      this.flip({ flipVertical });
     }
   }
 
