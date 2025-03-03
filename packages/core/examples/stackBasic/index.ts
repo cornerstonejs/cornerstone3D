@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -7,10 +7,12 @@ import {
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
 
+const { examplesLog } = utilities.logger;
+
+const log = examplesLog.getLogger('stackBasic');
+
 // This is for debugging purposes
-console.warn(
-  'Click on index.ts to open source code for this example --------->'
-);
+log.warn('Click on index.ts to open source code for this example --------->');
 
 const { ViewportType } = Enums;
 
