@@ -438,24 +438,31 @@ export default class SegmentationStateManager {
 
   /**
    * Helper function to update labelmap segmentation image references.
-   * @param {string} segmentationId - The ID of the segmentation representation.
-   * @param {Types.IViewport} viewport - The viewport.
-   * @param {string[]} labelmapImageIds - The labelmap image IDs.
-   * @param {Function} updateCallback - A callback to update the reference map.
+   * @param segmentationInfo - The segmentation info of the desired segment.
+   * @param viewport - The viewport.
+   * @param labelmapImageIds - The labelmap image IDs.
+   * @param updateCallback - A callback to update the reference map.
    * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
    */
   _updateLabelmapSegmentationReferences(
-    segmentationId,
-    viewport,
-    labelmapImageIds,
-    updateCallback
+    segmentationInfo: Segmentation,
+    viewport: Types.IStackViewport,
+    labelmapImageIds: string[],
+    updateCallback: (
+      viewport: Types.IStackViewport,
+      segmentationId: string,
+      labelmapImageIds: string[]
+    ) => void
   ): string | undefined {
     const currentImageId = viewport.getCurrentImageId();
+    const currentImageIndex = viewport.getCurrentImageIdIndex();
+    const segmentationId = segmentationInfo.segmentationId;
 
     let viewableLabelmapImageIdFound = false;
-    for (const labelmapImageId of labelmapImageIds) {
+    const labelForImageIndex = labelmapImageIds[currentImageIndex];
+    if (labelForImageIndex) {
       const viewableImageId = viewport.isReferenceViewable(
-        { referencedImageId: labelmapImageId },
+        { referencedImageId: labelForImageIndex },
         { asOverlay: true }
       );
 
@@ -463,7 +470,7 @@ export default class SegmentationStateManager {
         viewableLabelmapImageIdFound = true;
         this._stackLabelmapImageIdReferenceMap
           .get(segmentationId)
-          .set(currentImageId, labelmapImageId);
+          .set(currentImageId, labelForImageIndex);
       }
     }
 
@@ -504,7 +511,7 @@ export default class SegmentationStateManager {
     const stackViewport = enabledElement.viewport as Types.IStackViewport;
 
     return this._updateLabelmapSegmentationReferences(
-      segmentationId,
+      segmentation,
       stackViewport,
       labelmapImageIds,
       null
@@ -537,7 +544,7 @@ export default class SegmentationStateManager {
     const stackViewport = enabledElement.viewport as Types.IStackViewport;
 
     this._updateLabelmapSegmentationReferences(
-      segmentationId,
+      segmentation,
       stackViewport,
       labelmapImageIds,
       (stackViewport, segmentationId, labelmapImageIds) => {
