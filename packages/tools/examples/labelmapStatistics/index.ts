@@ -226,30 +226,30 @@ async function run() {
   const toolGroup = setupTools();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  // });
-  // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
-    SOPInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
-  const imageIds2 = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
-    SeriesInstanceUID:
-      '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
-    SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  });
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+  //   SOPInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
+  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  // });
+  // const imageIds2 = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
+  //   SeriesInstanceUID:
+  //     '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
+  //   SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
+  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  // });
 
   // Create a stack of images
   const imageIdsArray = imageIds.slice(0, 10);
@@ -270,7 +270,6 @@ async function run() {
 
   renderingEngine.setViewports([viewportInput]);
 
-  // Set the stack of images
   const viewport = renderingEngine.getViewport(viewportId);
   await viewport.setStack(imageIdsArray, 0);
 
