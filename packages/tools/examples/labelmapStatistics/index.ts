@@ -8,11 +8,11 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
   initDemo,
-  addDropdownToToolbar,
   setTitleAndDescription,
-  addButtonToToolbar,
   addBrushSizeSlider,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
+import addButtonToToolbar from '../../../../utils/demo/helpers/addButtonToToolbar';
 
 // This is for debugging purposes
 console.debug(
@@ -73,6 +73,16 @@ for (const statsId of statsIds) {
 
 content.appendChild(statsGrid);
 
+// Add calculate button
+addButtonToToolbar({
+  title: 'Calculate Statistics',
+  onClick: () => {
+    // Get the selected mode from the dropdown
+    calculateStatistics([1, 2], 'individual');
+    calculateStatistics([1, 2], 'collective');
+  },
+});
+
 const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
@@ -106,32 +116,59 @@ function displayStat(stat) {
   }`;
 }
 
-async function calculateStatistics(id, indices) {
-  const viewport = renderingEngine.getViewport(viewportId);
+async function calculateStatistics(indices, mode) {
   const stats = await segmentationUtils.getStatistics({
     segmentationId: 'SEGMENTATION_ID',
     segmentIndices: indices,
+    mode,
   });
 
   if (!stats) {
     return;
   }
-  const items = [`Statistics on ${indices.join(', ')}`];
-  stats.count.label = 'Voxels';
 
-  items.push(
-    displayStat(stats.volume),
-    displayStat(stats.count),
-    displayStat(stats.mean),
-    displayStat(stats.max),
-    displayStat(stats.min),
-    displayStat(stats.peakValue)
-  );
-  const statsDiv = document.getElementById(id);
-  statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+  if (mode === 'individual') {
+    // Handle individual mode where stats is an object with segment indices as keys
+    const segmentStats = stats as { [segmentIndex: number]: any };
+
+    for (const segmentIndex of indices) {
+      if (segmentStats[segmentIndex]) {
+        const segmentStat = segmentStats[segmentIndex];
+        segmentStat.count.label = 'Voxels';
+        const items = [`Statistics on segment ${segmentIndex}`];
+
+        items.push(
+          displayStat(segmentStat.volume),
+          displayStat(segmentStat.count),
+          displayStat(segmentStat.mean),
+          displayStat(segmentStat.max),
+          displayStat(segmentStat.min),
+          displayStat(segmentStat.peakValue)
+        );
+
+        const statsDiv = document.getElementById(`segment${segmentIndex}`);
+        statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+      }
+    }
+  } else {
+    const items = [`Statistics on ${indices.join(', ')}`];
+    // Handle collective mode where stats is a NamedStatistics object
+    const namedStats = stats as any;
+    namedStats.count.label = 'Voxels';
+
+    items.push(
+      displayStat(namedStats.volume),
+      displayStat(namedStats.count),
+      displayStat(namedStats.mean),
+      displayStat(namedStats.max),
+      displayStat(namedStats.min),
+      displayStat(namedStats.peakValue)
+    );
+
+    const statsDiv = document.getElementById('segmentCombined');
+    statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+  }
 }
-
-let timeoutId;
 
 function segmentationModifiedCallback(evt) {
   const { detail } = evt;
@@ -139,19 +176,7 @@ function segmentationModifiedCallback(evt) {
     return;
   }
 
-  const statsId = detail.segmentIndex === 1 ? statsIds[0] : statsIds[1];
-
-  const debounced = () => {
-    calculateStatistics(statsId, [detail.segmentIndex]);
-    // Also update combined stats
-    calculateStatistics(statsIds[2], [1, 2]);
-  };
-
-  if (timeoutId) {
-    window.clearTimeout(timeoutId);
-  }
-
-  timeoutId = window.setTimeout(debounced, 1000);
+  // No longer using setTimeout - statistics will be calculated on button click
 }
 
 // ============================= //
@@ -301,6 +326,8 @@ async function run() {
   addBrushSizeSlider({
     toolGroupId,
   });
+
+  addSegmentIndexDropdown('SEGMENTATION_ID', [1, 2]);
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element);
 

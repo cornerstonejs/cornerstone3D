@@ -1,12 +1,12 @@
 import { expose } from 'comlink';
 import { utilities } from '@cornerstonejs/core';
-import VolumetricCalculator from '../utilities/segmentation/VolumetricCalculator';
+import SegmentStatsCalculator from '../utilities/segmentation/SegmentStatsCalculator';
 
 const { VoxelManager } = utilities;
 
 const computeWorker = {
   calculateSegmentsStatisticsVolume: (args) => {
-    const { segmentationInfo, imageInfo, indices } = args;
+    const { segmentationInfo, imageInfo, indices, mode } = args;
 
     const {
       scalarData: segmentationScalarData,
@@ -38,6 +38,8 @@ const computeWorker = {
       scalarData: imageScalarData,
     });
 
+    SegmentStatsCalculator.statsInit({ storePointData: false, indices, mode });
+
     // Use forEach to iterate over all voxels and call statsCallback for those in the segmentation
     segVoxelManager.forEach(
       ({ value, pointIJK, index }) => {
@@ -48,9 +50,9 @@ const computeWorker = {
         // get the value from the image voxel manager
         const imageValue = imageVoxelManager.getAtIndex(index);
 
-        // Todo: later add the isInObject check based on lps for the different dimensions
-        // for now just assume the pointIJK is within the bounds
-        VolumetricCalculator.statsCallback({
+        // Process the voxel for the specific segment index
+        SegmentStatsCalculator.statsCallback({
+          segmentIndex: value,
           value: imageValue,
           pointIJK,
         });
@@ -60,16 +62,21 @@ const computeWorker = {
       }
     );
 
-    const stats = VolumetricCalculator.getStatistics({
+    // Get statistics based on the mode
+    const stats = SegmentStatsCalculator.getStatistics({
       spacing: segmentationSpacing,
       unit: 'mm',
+      mode,
     });
 
     return stats;
   },
 
   calculateSegmentsStatisticsStack: (args) => {
-    const { segmentationInfo, imageInfo, indices } = args;
+    const { segmentationInfo, imageInfo, indices, mode } = args;
+
+    // Initialize the SegmentStatsCalculator with the segment indices
+    SegmentStatsCalculator.init(indices, { storePointData: true });
 
     // Create voxel managers for each pair of segmentation and image info
     for (let i = 0; i < segmentationInfo.length; i++) {
@@ -95,9 +102,6 @@ const computeWorker = {
       // Use forEach to iterate and call statsCallback
       segVoxelManager.forEach(
         ({ value, pointIJK, index }) => {
-          // Todo: later add the isInObject check based on lps for the different dimensions
-          // for now just assume the pointIJK is within the bounds
-
           if (indices.indexOf(value) === -1) {
             return;
           }
@@ -105,8 +109,11 @@ const computeWorker = {
           // get the value from the image voxel manager
           const imageValue = imageVoxelManager.getAtIndex(index);
 
-          VolumetricCalculator.statsCallback({
+          // Process the voxel for the specific segment index
+          SegmentStatsCalculator.processVoxel({
+            segmentIndex: value,
             value: imageValue,
+            pointIJK,
           });
         },
         {
@@ -118,8 +125,10 @@ const computeWorker = {
     // Pick first one for spacing
     const spacing = segmentationInfo[0].spacing;
 
-    const stats = VolumetricCalculator.getStatistics({
+    // Get statistics based on the mode
+    const stats = SegmentStatsCalculator.getStatistics({
       spacing,
+      mode,
     });
 
     return stats;
