@@ -122,7 +122,7 @@ interface SetVOIOptions {
   voiUpdatedWithSetProperties?: boolean;
 }
 
-const log = coreLog.getLogger('StackViewport');
+const log = coreLog.getLogger('RenderingEngine', 'StackViewport');
 
 /**
  * An object representing a single stack viewport, which is a camera
