@@ -165,9 +165,10 @@ function setupTools(toolGroupId) {
       preview: {
         enabled: true,
       },
-      strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
+      useCenterSegmentIndex: true,
+      threshold: {
+        isDynamic: true,
+        dynamicRadius: 3,
       },
     }
   );
@@ -223,8 +224,8 @@ async function run() {
   // We need the map on all image ids
   const allImageIds = viewport.getImageIds();
   const firstImage = allImageIds[0];
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    allImageIds,
+  const segImages = await imageLoader.createAndCacheDerivedImages(
+    [firstImage],
     {
       skipCreateBuffer: true,
       onCacheAdd: csUtils.VoxelManager.addInstanceToImage,
