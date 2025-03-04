@@ -103,7 +103,7 @@
     "canvas": "^2.11.2"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.0.1",
+    "@cornerstonejs/core": "^3.0.2",
     "@kitware/vtk.js": "32.9.0",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
