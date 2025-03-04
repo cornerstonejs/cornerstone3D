@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.0.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.1...v3.0.2) (2025-03-04)
+
+### Bug Fixes
+
+- **CrosshairsTool:** support HPDI screens in CrosshairsTool ([#1824](https://github.com/cornerstonejs/cornerstone3D/issues/1824)) ([cd299e4](https://github.com/cornerstonejs/cornerstone3D/commit/cd299e40723fb94a6f2568a8008935d8e01ff4f4)), closes [#1822](https://github.com/cornerstonejs/cornerstone3D/issues/1822)
+- **segmentation:** resolve variable declaration and null check issues ([#1872](https://github.com/cornerstonejs/cornerstone3D/issues/1872)) ([029966d](https://github.com/cornerstonejs/cornerstone3D/commit/029966d0a3ffc86fa38d3e089d9b0d7d5c105f32))
+
+### Features
+
+- **surface-segmentation:** add visibilty configuration for surface segmentation ([#1846](https://github.com/cornerstonejs/cornerstone3D/issues/1846)) ([e1b5bc6](https://github.com/cornerstonejs/cornerstone3D/commit/e1b5bc646f3997be88ec237f86406c310420379a))
+
 ## [3.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0...v3.0.1) (2025-02-27)
 
 **Note:** Version bump only for package @cornerstonejs/tools
