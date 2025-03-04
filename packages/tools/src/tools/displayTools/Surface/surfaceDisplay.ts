@@ -11,10 +11,10 @@ import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
-import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
-import { computeAndAddSurfaceRepresentation } from '../../../stateManagement/segmentation/polySeg/Surface/computeAndAddSurfaceRepresentation';
+import { getPolySeg } from '../../../config';
+import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
+import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 
-const { ViewportType } = Enums;
 /**
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
@@ -56,7 +56,7 @@ async function render(
   viewport: Types.IVolumeViewport | Types.IStackViewport,
   representation: SegmentationRepresentation
 ): Promise<void> {
-  const { segmentationId } = representation;
+  const { segmentationId, type } = representation;
 
   const segmentation = getSegmentation(segmentationId);
 
@@ -68,19 +68,38 @@ async function render(
 
   if (
     !SurfaceData &&
-    canComputeRequestedRepresentation(segmentationId, Representations.Surface)
+    getPolySeg()?.canComputeRequestedRepresentation(
+      segmentationId,
+      Representations.Surface
+    )
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
-    SurfaceData = await computeAndAddSurfaceRepresentation(segmentationId, {
-      viewport,
-    });
+    const polySeg = getPolySeg();
+
+    SurfaceData = await computeAndAddRepresentation(
+      segmentationId,
+      Representations.Surface,
+      () => polySeg.computeSurfaceData(segmentationId, { viewport }),
+      () => polySeg.updateSurfaceData(segmentationId, { viewport })
+    );
 
     if (!SurfaceData) {
       throw new Error(
-        `No Surface data found for segmentationId ${segmentationId}.`
+        `No Surface data found for segmentationId ${segmentationId} even we tried to compute it`
       );
     }
+  } else if (!SurfaceData && !getPolySeg()) {
+    console.debug(
+      `No surface data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to surface. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
+    );
+  }
+
+  if (!SurfaceData) {
+    console.warn(
+      `No Surface data found for segmentationId ${segmentationId}. Skipping render.`
+    );
+    return;
   }
 
   const { geometryIds } = SurfaceData;
@@ -106,10 +125,17 @@ async function render(
     }
     const segmentIndex = geometry.data.segmentIndex;
 
+    const hiddenSegments = internalGetHiddenSegmentIndices(viewport.id, {
+      segmentationId,
+      type,
+    });
+    const isHidden = hiddenSegments.has(segmentIndex);
+
     const surface = geometry.data as Types.ISurface;
 
     const color = colorLUT[segmentIndex];
     surface.color = color.slice(0, 3) as Types.Point3;
+    surface.visible = !isHidden;
 
     surfaces.push(surface);
     addOrUpdateSurfaceToElement(

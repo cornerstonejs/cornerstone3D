@@ -4,10 +4,10 @@ import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import Representations from '../../../enums/SegmentationRepresentations';
 import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
-import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
-import { computeAndAddContourRepresentation } from '../../../stateManagement/segmentation/polySeg/Contour/computeAndAddContourRepresentation';
 import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 import removeContourFromElement from './removeContourFromElement';
+import { getPolySeg } from '../../../config';
+import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 
 let polySegConversionInProgress = false;
 
@@ -71,7 +71,7 @@ async function render(
 
   if (
     !contourData &&
-    canComputeRequestedRepresentation(
+    getPolySeg()?.canComputeRequestedRepresentation(
       segmentationId,
       Representations.Contour
     ) &&
@@ -79,11 +79,20 @@ async function render(
   ) {
     polySegConversionInProgress = true;
 
-    contourData = await computeAndAddContourRepresentation(segmentationId, {
-      viewport,
-    });
+    const polySeg = getPolySeg();
+
+    contourData = await computeAndAddRepresentation(
+      segmentationId,
+      Representations.Contour,
+      () => polySeg.computeContourData(segmentationId, { viewport }),
+      () => undefined
+    );
 
     polySegConversionInProgress = false;
+  } else if (!contourData && !getPolySeg()) {
+    console.debug(
+      `No contour data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to contour. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
+    );
   }
 
   if (!contourData) {

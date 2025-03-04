@@ -3,6 +3,93 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.2...v3.0.3) (2025-03-04)
+
+### Bug Fixes
+
+- try to pass the fake version number ([#1873](https://github.com/cornerstonejs/cornerstone3D/issues/1873)) ([06c82fb](https://github.com/cornerstonejs/cornerstone3D/commit/06c82fba65c1cf578eb322642dfe080d39ce0719))
+
+## [3.0.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.1...v3.0.2) (2025-03-04)
+
+### Bug Fixes
+
+- **CrosshairsTool:** support HPDI screens in CrosshairsTool ([#1824](https://github.com/cornerstonejs/cornerstone3D/issues/1824)) ([cd299e4](https://github.com/cornerstonejs/cornerstone3D/commit/cd299e40723fb94a6f2568a8008935d8e01ff4f4)), closes [#1822](https://github.com/cornerstonejs/cornerstone3D/issues/1822)
+- **segmentation:** resolve variable declaration and null check issues ([#1872](https://github.com/cornerstonejs/cornerstone3D/issues/1872)) ([029966d](https://github.com/cornerstonejs/cornerstone3D/commit/029966d0a3ffc86fa38d3e089d9b0d7d5c105f32))
+
+### Features
+
+- **surface-segmentation:** add visibilty configuration for surface segmentation ([#1846](https://github.com/cornerstonejs/cornerstone3D/issues/1846)) ([e1b5bc6](https://github.com/cornerstonejs/cornerstone3D/commit/e1b5bc646f3997be88ec237f86406c310420379a))
+
+## [3.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0...v3.0.1) (2025-02-27)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [3.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.16...v3.0.0) (2025-02-27)
+
+### Features
+
+- Cornerstone3D 3.0 ([#1865](https://github.com/cornerstonejs/cornerstone3D/issues/1865)) ([fe65459](https://github.com/cornerstonejs/cornerstone3D/commit/fe654590d16414e76361e1b2826fd64c3734ae87))
+
+# [3.0.0-beta.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0-beta.5...v3.0.0-beta.6) (2025-02-27)
+
+### Features
+
+- Add key image adapters for key image point mark ([#1754](https://github.com/cornerstonejs/cornerstone3D/issues/1754)) ([a1fd3f9](https://github.com/cornerstonejs/cornerstone3D/commit/a1fd3f9d0ea40d53cafd792d59bc1dbfc90663a5))
+
+# [3.0.0-beta.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0-beta.4...v3.0.0-beta.5) (2025-02-25)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [3.0.0-beta.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0-beta.3...v3.0.0-beta.4) (2025-02-25)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [3.0.0-beta.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0-beta.2...v3.0.0-beta.3) (2025-02-25)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [3.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.14...v3.0.0-beta.2) (2025-02-24)
+
+### Bug Fixes
+
+- publish beta for 3.0 ([8bf65df](https://github.com/cornerstonejs/cornerstone3D/commit/8bf65df9bec5f52459de1c49c4834b316f680f1b))
+
+## [2.19.14](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.13...v2.19.14) (2025-02-24)
+
+### Bug Fixes
+
+- **seg:** revert change ([#1843](https://github.com/cornerstonejs/cornerstone3D/issues/1843)) ([c483e81](https://github.com/cornerstonejs/cornerstone3D/commit/c483e811e12e494b3d764810f182b2be71b43645))
+
+## [2.19.13](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.12...v2.19.13) (2025-02-21)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [2.19.12](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.11...v2.19.12) (2025-02-20)
+
+### Bug Fixes
+
+- planar freehand roi undefined unit ([#1839](https://github.com/cornerstonejs/cornerstone3D/issues/1839)) ([ace8933](https://github.com/cornerstonejs/cornerstone3D/commit/ace893349ed4d066adf035ca776511ac9c394a86))
+
+## [2.19.11](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.10...v2.19.11) (2025-02-18)
+
+### Bug Fixes
+
+- changing opacity based on segment index ([#1833](https://github.com/cornerstonejs/cornerstone3D/issues/1833)) ([6bf44cf](https://github.com/cornerstonejs/cornerstone3D/commit/6bf44cf0e151f239dbc41ca4277f0360e2c873f7))
+
+## [2.19.10](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.9...v2.19.10) (2025-02-18)
+
+### Bug Fixes
+
+- Prevent overwriting existing inactive styles ([#1831](https://github.com/cornerstonejs/cornerstone3D/issues/1831)) ([8e8c29e](https://github.com/cornerstonejs/cornerstone3D/commit/8e8c29e6d6276936b1be5e4fb116a4ec2585dfd8))
+
+## [2.19.9](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.8...v2.19.9) (2025-02-18)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [2.19.8](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.7...v2.19.8) (2025-02-18)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [2.19.7](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.6...v2.19.7) (2025-02-06)
 
 ### Bug Fixes
