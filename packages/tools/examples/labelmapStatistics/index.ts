@@ -107,7 +107,6 @@ function displayStat(stat) {
 }
 
 async function calculateStatistics(id, indices) {
-  const viewport = renderingEngine.getViewport(viewportId);
   const stats = await segmentationUtils.getStatistics({
     segmentationId: 'SEGMENTATION_ID',
     segmentIndices: indices,
