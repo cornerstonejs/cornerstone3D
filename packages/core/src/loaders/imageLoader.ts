@@ -340,7 +340,7 @@ export function createAndCacheDerivedImage(
 export function createAndCacheDerivedImages(
   referencedImageIds: string[],
   options: DerivedImageOptions & {
-    getDerivedImageId?: (referencedImageId: string) => string;
+    getDerivedImageId?: (referencedImageId: string, index: number) => string;
     targetBuffer?: {
       type: PixelDataTypedArrayString;
     };
@@ -356,7 +356,7 @@ export function createAndCacheDerivedImages(
   const images = referencedImageIds.map((referencedImageId, index) => {
     const newOptions: DerivedImageOptions = {
       imageId:
-        options?.getDerivedImageId?.(referencedImageId) ||
+        options?.getDerivedImageId?.(referencedImageId, index) ||
         `derived:${uuidv4()}`,
       ...options,
     };
