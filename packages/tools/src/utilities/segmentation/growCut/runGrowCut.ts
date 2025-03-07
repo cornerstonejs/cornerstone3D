@@ -57,12 +57,12 @@ type GrowCutOptions = {
      * means if `numCyclesInterval` is set to 10 it would stop after 30 cycles
      * (3 batches * 10 cycles) saving 70 cycles.
      *
-     * It changes automaticaly to 1 once it detects that its running below the
+     * It changes automatically to 1 once it detects that its running below the
      * `threshold` and get back to `numCyclesInterval` if it gets above the
      * `threshold` again.
      *
      * Small values are not good because taking data out of the gpu to compare
-     * is very expesive. Higher values may let the algorithm run for a few more
+     * is very expensive. Higher values may let the algorithm run for a few more
      * cycles even when it is already done.
      *
      * PS: 1 cycle is equal to 1 grow cut iteration (FOR loop running in the GPU)
@@ -70,12 +70,12 @@ type GrowCutOptions = {
     numCyclesInterval?: number;
     /**
      * It stops running grow cut once it keeps below the threshold (see `threshold`)
-     * for a few cycles (`numCyclesBelowThreashold`).
+     * for a few cycles (`numCyclesBelowThreshold`).
      */
-    numCyclesBelowThreashold?: number;
+    numCyclesBelowThreshold?: number;
     /**
      * Threshold used to decide if it should or not stop running grow cut. It
-     * stops only after staying N cycles (`numCyclesBelowThreashold`) below this
+     * stops only after staying N cycles (`numCyclesBelowThreshold`) below this
      * threshold. In some cases the number of voxels updated may decrease
      * but increase again after a few cycles.
      *
@@ -100,11 +100,19 @@ type GrowCutOptions = {
  * @param labelmapVolumeId - Label map associated with the given volumeId
  * @param options - Options
  */
-async function runGrowCut(
-  referenceVolumeId: string,
-  labelmapVolumeId: string,
-  options: GrowCutOptions = DEFAULT_GROWCUT_OPTIONS
-) {
+async function runGrowCut({
+  referenceVolumeId,
+  labelmapVolumeId,
+  referenceImageId,
+  labelmapImageId,
+  options = DEFAULT_GROWCUT_OPTIONS,
+}: {
+  referenceVolumeId?: string;
+  labelmapVolumeId?: string;
+  referenceImageId?: string;
+  labelmapImageId?: string;
+  options?: GrowCutOptions;
+}) {
   const workGroupSize = [8, 8, 4];
   const { windowSize, maxProcessingTime } = Object.assign(
     {},
@@ -118,17 +126,37 @@ async function runGrowCut(
     options.inspection
   );
 
-  const volume = cache.getVolume(referenceVolumeId);
-  const labelmap = cache.getVolume(labelmapVolumeId);
+  let columns: number;
+  let rows: number;
+  let numSlices: number;
+  let reference;
+  let labelmap;
+  if (referenceVolumeId && labelmapVolumeId) {
+    reference = cache.getVolume(referenceVolumeId);
+    labelmap = cache.getVolume(labelmapVolumeId);
+    [columns, rows, numSlices] = reference.dimensions;
 
-  const [columns, rows, numSlices] = volume.dimensions;
+    if (
+      labelmap.dimensions[0] !== columns ||
+      labelmap.dimensions[1] !== rows ||
+      labelmap.dimensions[2] !== numSlices
+    ) {
+      throw new Error('Volume and labelmap must have the same size');
+    }
+  } else if (referenceImageId && labelmapImageId) {
+    reference = cache.getImage(referenceImageId);
+    labelmap = cache.getImage(labelmapImageId);
+    columns = reference.width;
+    rows = reference.height;
 
-  if (
-    labelmap.dimensions[0] !== columns ||
-    labelmap.dimensions[1] !== rows ||
-    labelmap.dimensions[2] !== numSlices
-  ) {
-    throw new Error('Volume and labelmap must have the same size');
+    if (labelmap.width !== columns || labelmap.height !== rows) {
+      throw new Error('Volume and labelmap must have the same size');
+    }
+    numSlices = 1;
+  } else {
+    throw new Error(
+      'Either referenceVolumeId and labelmapVolumeId or referenceImageId and labelmapImageId must be provided'
+    );
   }
 
   const numIterations = Math.floor(
@@ -139,7 +167,7 @@ async function runGrowCut(
     labelmap.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
 
   let volumePixelData =
-    volume.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
+    reference.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
   if (!(volumePixelData instanceof Float32Array)) {
     volumePixelData = new Float32Array(volumePixelData);
   }

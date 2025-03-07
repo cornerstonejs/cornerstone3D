@@ -3,6 +3,8 @@ import { utilities as csUtils, cache, volumeLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { run } from './runGrowCut';
 import type { GrowCutOptions } from './runGrowCut';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import type { LabelmapSegmentationDataStack } from '../../../types';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -121,29 +123,32 @@ function _createSubVolume(
 }
 
 /**
- * Get the some information about the voxels that will be set as positive seed
- * in order to be able to calculate the sub-volume size.
- * @param referencedVolume - Referenced volume
- * @param worldPosition - Coordinate where the user clicked in world space
- * @param options - OneClick grow cut options
- * @returns An object that contains all voxels that should be set as positive
- * in world space and its bounding box
+ * Get information about the voxels that will be set as positive seed
+ * to calculate the sub-volume size
  */
-function _getPositiveRegionData(
-  referencedVolume: Types.IImageVolume,
-  worldPosition: Types.Point3,
-  options?: GrowCutOneClickOptions
-): PositiveRegionData {
-  const [width, height, numSlices] = referencedVolume.dimensions;
-  const subVolPixelData =
-    referencedVolume.voxelManager.getCompleteScalarDataArray();
+function _getPositiveRegionData({
+  referenceDimensions,
+  referenceImageData,
+  referenceVoxelManager,
+  worldPosition,
+  options = {},
+}: {
+  referenceDimensions: Types.Point3;
+  referenceImageData: Types.IImageData;
+  referenceVoxelManager: Types.IVoxelManager<number>;
+  worldPosition: Types.Point3;
+  options?: GrowCutOneClickOptions;
+}): PositiveRegionData {
+  const [width, height, numSlices] = referenceDimensions;
+  const referencePixelData = referenceVoxelManager.getCompleteScalarDataArray();
+
   const numPixelsPerSlice = width * height;
   const ijkStartPosition = transformWorldToIndex(
-    referencedVolume.imageData,
+    referenceImageData,
     worldPosition
   );
   const referencePixelValue =
-    subVolPixelData[
+    referencePixelData[
       ijkStartPosition[2] * numPixelsPerSlice +
         ijkStartPosition[1] * width +
         ijkStartPosition[0]
@@ -216,7 +221,7 @@ function _getPositiveRegionData(
       }
 
       const neighborVoxelIndex = nz * numPixelsPerSlice + ny * width + nx;
-      const neighborPixelValue = subVolPixelData[neighborVoxelIndex];
+      const neighborPixelValue = referencePixelData[neighborVoxelIndex];
 
       if (
         voxelIndexesSet.has(neighborVoxelIndex) ||
@@ -227,10 +232,7 @@ function _getPositiveRegionData(
       }
 
       const ijkVoxel: Types.Point3 = [nx, ny, nz];
-      const worldVoxel = transformIndexToWorld(
-        referencedVolume.imageData,
-        ijkVoxel
-      );
+      const worldVoxel = transformIndexToWorld(referenceImageData, ijkVoxel);
 
       voxelIndexesSet.add(neighborVoxelIndex);
       worldVoxelSet.add(worldVoxel);
@@ -247,39 +249,55 @@ function _getPositiveRegionData(
   };
 }
 
-function _setPositiveSeedValues(
-  labelmap: Types.IImageVolume,
-  positiveRegionData: PositiveRegionData,
-  options?: GrowCutOneClickOptions
-) {
-  const { dimensions } = labelmap;
-  const [width, height] = dimensions;
+function _setPositiveSeedValues({
+  labelmapDimensions,
+  labelmapImageData,
+  labelmapVoxelManager,
+  positiveRegionData,
+  options = {},
+}: {
+  labelmapDimensions: Types.Point3;
+  labelmapImageData: Types.IImageData;
+  labelmapVoxelManager: Types.IVoxelManager<number>;
+  positiveRegionData: PositiveRegionData;
+  options?: GrowCutOneClickOptions;
+}) {
+  const [width, height] = labelmapDimensions;
   const numPixelsPerSlice = width * height;
   const positiveSeedValue = options.positiveSeedValue ?? POSITIVE_SEED_VALUE;
   const { worldVoxels } = positiveRegionData;
 
   for (let i = 0, len = worldVoxels.length; i < len; i++) {
     const worldVoxel = worldVoxels[i];
-    const ijkVoxel = transformWorldToIndex(labelmap.imageData, worldVoxel);
+    const ijkVoxel = transformWorldToIndex(labelmapImageData, worldVoxel);
     const voxelIndex =
       ijkVoxel[2] * numPixelsPerSlice + ijkVoxel[1] * width + ijkVoxel[0];
 
-    labelmap.voxelManager.setAtIndex(voxelIndex, positiveSeedValue);
+    labelmapVoxelManager.setAtIndex(voxelIndex, positiveSeedValue);
   }
 }
 
-function _setNegativeSeedValues(
-  subVolume: Types.IImageVolume,
-  labelmap: Types.IImageVolume,
-  worldPosition: Types.Point3,
-  options?: GrowCutOneClickOptions
-) {
-  const [width, height] = subVolume.dimensions;
-  const subVolPixelData = subVolume.voxelManager.getCompleteScalarDataArray();
-  const labelmapData = labelmap.voxelManager.getCompleteScalarDataArray();
-  const ijkPosition = transformWorldToIndex(subVolume.imageData, worldPosition);
+function _setNegativeSeedValues({
+  referenceDimensions,
+  referenceImageData,
+  referenceVoxelManager,
+  labelmapVoxelManager,
+  worldPosition,
+  options = {},
+}: {
+  referenceDimensions: Types.Point3;
+  referenceImageData: Types.IImageData;
+  referenceVoxelManager: Types.IVoxelManager<number>;
+  labelmapVoxelManager: Types.IVoxelManager<number>;
+  worldPosition: Types.Point3;
+  options?: GrowCutOneClickOptions;
+}) {
+  const [width, height] = referenceDimensions;
+  const referencePixelData = referenceVoxelManager.getCompleteScalarDataArray();
+  const labelmapData = labelmapVoxelManager.getCompleteScalarDataArray();
+  const ijkPosition = transformWorldToIndex(referenceImageData, worldPosition);
   const referencePixelValue =
-    subVolPixelData[
+    referencePixelData[
       ijkPosition[2] * width * height + ijkPosition[1] * width + ijkPosition[0]
     ];
 
@@ -293,14 +311,14 @@ function _setNegativeSeedValues(
   const minNegativePixelValue = referencePixelValue - negativeSeedVarianceValue;
   const maxNegativePixelValue = referencePixelValue + negativeSeedVarianceValue;
 
-  for (let i = 0, len = subVolPixelData.length; i < len; i++) {
-    const pixelValue = subVolPixelData[i];
+  for (let i = 0, len = referencePixelData.length; i < len; i++) {
+    const pixelValue = referencePixelData[i];
 
     if (
       !labelmapData[i] &&
       (pixelValue < minNegativePixelValue || pixelValue > maxNegativePixelValue)
     ) {
-      labelmap.voxelManager.setAtIndex(i, negativeSeedValue);
+      labelmapVoxelManager.setAtIndex(i, negativeSeedValue);
     }
   }
 }
@@ -314,7 +332,7 @@ function _setNegativeSeedValues(
  * @param options - OneClick grow cut options
  * @returns
  */
-async function _createAndCacheSegmentation(
+async function _createAndCacheSegmentationVolume(
   subVolume: Types.IImageVolume,
   positiveRegionData: PositiveRegionData,
   worldPosition: Types.Point3,
@@ -324,42 +342,123 @@ async function _createAndCacheSegmentation(
     subVolume.volumeId
   );
 
-  _setPositiveSeedValues(labelmap, positiveRegionData, options);
-  _setNegativeSeedValues(subVolume, labelmap, worldPosition, options);
+  _setPositiveSeedValues({
+    labelmapDimensions: labelmap.dimensions,
+    labelmapImageData: labelmap.imageData as unknown as Types.IImageData,
+    labelmapVoxelManager: labelmap.voxelManager as Types.IVoxelManager<number>,
+    positiveRegionData,
+    options,
+  });
+
+  _setNegativeSeedValues({
+    referenceDimensions: subVolume.dimensions,
+    referenceImageData: subVolume.imageData as unknown as Types.IImageData,
+    referenceVoxelManager:
+      subVolume.voxelManager as Types.IVoxelManager<number>,
+    labelmapVoxelManager: labelmap.voxelManager as Types.IVoxelManager<number>,
+    worldPosition,
+    options,
+  });
 
   return labelmap;
 }
 
-async function runOneClickGrowCut(
-  referencedVolumeId: string,
-  worldPosition: Types.Point3,
-  viewport: Types.IViewport,
-  options?: GrowCutOneClickOptions
-): Promise<Types.IImageVolume> {
-  const referencedVolume = cache.getVolume(referencedVolumeId);
+async function runOneClickGrowCut({
+  segmentationInfo,
+  worldPosition,
+  options,
+}: {
+  segmentationInfo: {
+    segmentationId: string;
+    segmentIndex: number;
+    labelmapVolumeId: string;
+    referencedVolumeId: string;
+    labelmapImageId: string;
+    referencedImageId: string;
+    imageData: Types.IImageData;
+  };
+  worldPosition: Types.Point3;
+  viewport: Types.IViewport;
+  options?: GrowCutOneClickOptions;
+}): Promise<Types.IImageVolume> {
+  if (!segmentationInfo.labelmapVolumeId) {
+    // it is a stack based non reconstructable images
+    const { referencedImageId, labelmapImageId, imageData } = segmentationInfo;
+    const referencedImage = cache.getImage(referencedImageId);
 
-  const positiveRegionData = _getPositiveRegionData(
-    referencedVolume,
-    worldPosition,
-    options
-  );
+    const positiveRegionData = _getPositiveRegionData({
+      referenceDimensions: [referencedImage.width, referencedImage.height, 1],
+      referenceImageData: imageData,
+      referenceVoxelManager:
+        referencedImage.voxelManager as Types.IVoxelManager<number>,
+      worldPosition,
+      options,
+    });
 
-  const subVolume = _createSubVolume(
-    referencedVolume,
-    positiveRegionData,
-    options
-  );
+    // Create a new labelmap volume
+    const labelmap =
+      volumeLoader.createAndCacheDerivedLabelmapVolume(referencedImageId);
 
-  const labelmap = await _createAndCacheSegmentation(
-    subVolume,
-    positiveRegionData,
-    worldPosition,
-    options
-  );
+    _setPositiveSeedValues({
+      labelmapDimensions: labelmap.dimensions,
+      labelmapImageData: labelmap.imageData as unknown as Types.IImageData,
+      labelmapVoxelManager:
+        labelmap.voxelManager as Types.IVoxelManager<number>,
+      positiveRegionData,
+      options,
+    });
 
-  await run(subVolume.volumeId, labelmap.volumeId);
+    _setNegativeSeedValues({
+      referenceDimensions: [referencedImage.width, referencedImage.height, 1],
+      referenceImageData: imageData,
+      referenceVoxelManager:
+        referencedImage.voxelManager as Types.IVoxelManager<number>,
+      labelmapVoxelManager:
+        labelmap.voxelManager as Types.IVoxelManager<number>,
+      worldPosition,
+      options,
+    });
 
-  return labelmap;
+    await run({
+      referenceImageId: referencedImageId,
+      labelmapImageId: labelmapImageId,
+    });
+
+    return labelmap;
+  } else {
+    const { referencedVolumeId } = segmentationInfo;
+    const referencedVolume = cache.getVolume(referencedVolumeId);
+
+    const positiveRegionData = _getPositiveRegionData({
+      referenceDimensions: referencedVolume.dimensions,
+      referenceImageData:
+        referencedVolume.imageData as unknown as Types.IImageData,
+      referenceVoxelManager:
+        referencedVolume.voxelManager as Types.IVoxelManager<number>,
+      worldPosition,
+      options,
+    });
+
+    const subVolume = _createSubVolume(
+      referencedVolume,
+      positiveRegionData,
+      options
+    );
+
+    const subVolumeLabelmap = await _createAndCacheSegmentationVolume(
+      subVolume,
+      positiveRegionData,
+      worldPosition,
+      options
+    );
+
+    await run({
+      referenceVolumeId: subVolume.volumeId,
+      labelmapVolumeId: subVolumeLabelmap.volumeId,
+    });
+
+    return subVolumeLabelmap;
+  }
 }
 
 export { runOneClickGrowCut as default, runOneClickGrowCut };

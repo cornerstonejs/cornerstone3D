@@ -363,7 +363,10 @@ async function runGrowCutForSphere(
     options
   );
 
-  await run(subVolume.volumeId, labelmap.volumeId);
+  await run({
+    referenceVolumeId: subVolume.volumeId,
+    labelmapVolumeId: labelmap.volumeId,
+  });
 
   return labelmap;
 }

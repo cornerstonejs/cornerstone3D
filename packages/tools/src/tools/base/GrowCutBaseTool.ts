@@ -8,12 +8,7 @@ import {
 } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import { SegmentationRepresentations } from '../../enums';
-import type {
-  ContourStyle,
-  EventTypes,
-  PublicToolProps,
-  ToolProps,
-} from '../../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 import {
   segmentIndex as segmentIndexController,
   state as segmentationState,
@@ -28,6 +23,7 @@ import type {
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
 import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 import { getOrCreateSegmentationVolume } from '../../utilities/segmentation';
+import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -39,7 +35,10 @@ type GrowCutToolData = {
     segmentationId: string;
     segmentIndex: number;
     labelmapVolumeId: string;
+    labelmapImageId: string;
     referencedVolumeId: string;
+    referencedImageId: string;
+    imageData: Types.IImageData;
   };
   islandRemoval?: {
     worldIslandPoints: Types.Point3[];
@@ -103,9 +102,15 @@ class GrowCutBaseTool extends BaseTool {
       segmentIndex,
       labelmapVolumeId,
       referencedVolumeId,
+      labelmapImageId,
+      referencedImageId,
+      imageData,
     } = await this.getLabelmapSegmentationData(viewport);
 
-    if (!this._isOrthogonalView(viewport, referencedVolumeId)) {
+    if (
+      labelmapVolumeId &&
+      !this._isOrthogonalView(viewport, referencedVolumeId)
+    ) {
       throw new Error('Oblique view is not supported yet');
     }
 
@@ -119,6 +124,9 @@ class GrowCutBaseTool extends BaseTool {
         segmentIndex,
         labelmapVolumeId,
         referencedVolumeId,
+        referencedImageId,
+        labelmapImageId,
+        imageData,
       },
       viewportId: viewport.id,
       renderingEngineId: renderingEngine.id,
@@ -295,9 +303,24 @@ class GrowCutBaseTool extends BaseTool {
       ).getImageIds();
 
       if (!csUtils.isValidVolume(referencedImageIds)) {
-        throw new Error(
-          'Grow cut for non reconstructable stack is not supported yet'
+        const currentImageId = (
+          viewport as Types.IStackViewport
+        ).getCurrentImageId();
+
+        const derivedImageId = getCurrentLabelmapImageIdForViewport(
+          viewport.id,
+          segmentationId
         );
+
+        return {
+          segmentationId,
+          segmentIndex,
+          labelmapVolumeId: null,
+          referencedVolumeId: null,
+          referencedImageId: currentImageId,
+          labelmapImageId: derivedImageId,
+          imageData: viewport.getImageData().imageData,
+        };
       }
 
       const segVolume = getOrCreateSegmentationVolume(segmentationId);
@@ -422,28 +445,6 @@ class GrowCutBaseTool extends BaseTool {
       viewportId,
     });
   }
-
-  // protected getLabelmapSegmentationData(viewport: Types.IViewport) {
-  //   const { segmentationId } = activeSegmentation.getActiveSegmentation(
-  //     viewport.id
-  //   );
-  //   const segmentIndex =
-  //     segmentIndexController.getActiveSegmentIndex(segmentationId);
-  //   const { representationData } =
-  //     segmentationState.getSegmentation(segmentationId);
-  //   const labelmapData =
-  //     representationData[SegmentationRepresentations.Labelmap];
-
-  //   const { volumeId: labelmapVolumeId, referencedVolumeId } =
-  //     labelmapData as LabelmapSegmentationDataVolume;
-
-  //   return {
-  //     segmentationId,
-  //     segmentIndex,
-  //     labelmapVolumeId,
-  //     referencedVolumeId,
-  //   };
-  // }
 }
 
 GrowCutBaseTool.toolName = 'GrowCutBaseTool';

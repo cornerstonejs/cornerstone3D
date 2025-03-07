@@ -73,13 +73,8 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
   }
 
   protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
-    const {
-      segmentation: { referencedVolumeId },
-      renderingEngineId,
-      viewportId,
-      worldPoint,
-      options,
-    } = growCutData;
+    const { segmentation, renderingEngineId, viewportId, worldPoint, options } =
+      growCutData;
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
@@ -90,12 +85,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       subVolumePaddingPercentage,
     };
 
-    return growCut.runOneClickGrowCut(
-      referencedVolumeId,
-      worldPoint,
+    return growCut.runOneClickGrowCut({
+      segmentationInfo: segmentation,
+      worldPosition: worldPoint,
       viewport,
-      mergedOptions
-    );
+      options: mergedOptions,
+    });
   }
 }
 
