@@ -1,6 +1,6 @@
 import * as Enums from '../../../enums';
 import type { SegmentationPublicInput } from '../../../types/SegmentationStateTypes';
-import { validatePublic as validatePublicLabelmap } from '../../../tools/displayTools/Labelmap/validateLabelmap';
+import { validatePublic as validatePublicLabelmap } from '../../../utilities/segmentation/validateLabelmap';
 
 /**
  * Validates the given segmentationInputArray to ensure it contains

@@ -28,17 +28,17 @@ import * as segmentIndex from './segmentIndex';
 import * as triggerSegmentationEvents from './triggerSegmentationEvents';
 import { convertStackToVolumeLabelmap } from './helpers/convertStackToVolumeLabelmap';
 import { computeVolumeLabelmapFromStack } from './helpers/computeVolumeLabelmapFromStack';
-import * as polySegManager from './polySeg';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
 import { removeSegment } from './removeSegment';
 import { getLabelmapImageIds } from './getLabelmapImageIds';
 import * as strategies from './../../tools/segmentation/strategies';
-
 import {
   removeAllSegmentations,
   removeSegmentation,
 } from './removeSegmentation';
+import { segmentationStyle } from './SegmentationStyle';
+import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
 const helpers = {
   clearSegmentValue,
@@ -74,9 +74,10 @@ export {
   segmentIndex,
   triggerSegmentationEvents,
   helpers,
-  polySegManager as polySeg,
   removeSegment,
   getLabelmapImageIds,
   addRepresentationData,
   strategies,
+  segmentationStyle,
+  defaultSegmentationStateManager,
 };

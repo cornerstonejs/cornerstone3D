@@ -121,11 +121,12 @@ export function getSurfaceActorEntry(
   segmentationId: string,
   segmentIndex?: number | string
 ) {
-  return getActorEntry(viewportId, segmentationId, (actor) =>
-    // @ts-expect-error
-    actor.representationUID?.startsWith(
+  return getActorEntry(
+    viewportId,
+    segmentationId,
+    (actor) =>
+      actor.representationUID ===
       getSurfaceRepresentationUID(segmentationId, segmentIndex)
-    )
   );
 }
 

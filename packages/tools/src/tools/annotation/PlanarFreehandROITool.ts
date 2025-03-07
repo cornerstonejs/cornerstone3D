@@ -987,13 +987,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     modalityUnit,
     calibratedScale,
   }) {
-    const { scale, units } = calibratedScale;
+    const { scale, unit } = calibratedScale;
 
     cachedStats[targetId] = {
       Modality: metadata.Modality,
       length: calculatePerimeter(canvasCoordinates, false) / scale,
       modalityUnit,
-      getPixelValueUnitunit: units,
+      unit,
     };
   }
 

@@ -165,9 +165,10 @@ function setupTools(toolGroupId) {
       preview: {
         enabled: true,
       },
-      strategySpecificConfiguration: {
-        useCenterSegmentIndex: true,
-        THRESHOLD: { isDynamic: true, dynamicRadius: 3 },
+      useCenterSegmentIndex: true,
+      threshold: {
+        isDynamic: true,
+        dynamicRadius: 3,
       },
     }
   );

@@ -1,0 +1,38 @@
+name: Format Check
+
+on:
+  pull_request:
+    branches: [ '*' ]
+  push:
+    branches: [ main, beta ]
+
+jobs:
+  format-check:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build dependencies
+        run: bun run build:esm
+
+      - name: Run format check
+        run: bun run format-check
+        env:
+          NODE_OPTIONS: --max_old_space_size=32896

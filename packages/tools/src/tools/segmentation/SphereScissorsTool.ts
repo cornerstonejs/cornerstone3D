@@ -184,7 +184,6 @@ class SphereScissorsTool extends LabelmapBaseTool {
       representationData,
       segmentsLocked,
       segmentationId,
-      volumeOperation: true,
     });
 
     this.editData = {

@@ -20,8 +20,6 @@ import { getActiveSegmentation } from '../../../stateManagement/segmentation/act
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
-import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
-import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
 import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
@@ -30,6 +28,10 @@ import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmen
 import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getPolySeg } from '../../../config';
+import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -105,7 +107,7 @@ async function render(
 
   if (
     !labelmapData &&
-    canComputeRequestedRepresentation(
+    getPolySeg()?.canComputeRequestedRepresentation(
       segmentationId,
       SegmentationRepresentations.Labelmap
     ) &&
@@ -118,9 +120,25 @@ async function render(
     // underlying representations to Surface
     polySegConversionInProgress = true;
 
-    labelmapData = await computeAndAddLabelmapRepresentation(segmentationId, {
-      viewport,
-    });
+    const polySeg = getPolySeg();
+
+    labelmapData = await computeAndAddRepresentation(
+      segmentationId,
+      SegmentationRepresentations.Labelmap,
+      () => polySeg.computeLabelmapData(segmentationId, { viewport }),
+      () => null,
+      () => {
+        defaultSegmentationStateManager.processLabelmapRepresentationAddition(
+          viewport.id,
+          segmentationId
+        );
+
+        /// need to figure out how to trigger the labelmap update properly
+        setTimeout(() => {
+          triggerSegmentationDataModified(segmentationId);
+        }, 0);
+      }
+    );
 
     if (!labelmapData) {
       throw new Error(
@@ -129,6 +147,10 @@ async function render(
     }
 
     polySegConversionInProgress = false;
+  } else if (!labelmapData && !getPolySeg()) {
+    console.debug(
+      `No labelmap data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to labelmap. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
+    );
   }
 
   if (!labelmapData) {

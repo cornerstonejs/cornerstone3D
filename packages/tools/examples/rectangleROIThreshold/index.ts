@@ -149,7 +149,6 @@ addButtonToToolbar({
     const ctVolume = cache.getVolume(ctVolumeId);
     const ptVolume = cache.getVolume(ptVolumeId);
     const segmentationVolume = cache.getVolume(segmentationId);
-
     csToolsUtils.segmentation.rectangleROIThresholdVolumeByRange(
       selectedAnnotationUIDs,
       segmentationVolume,

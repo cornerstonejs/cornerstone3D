@@ -297,7 +297,6 @@ class CircleScissorsTool extends LabelmapBaseTool {
       points: data.handles.points,
       viewPlaneNormal,
       viewUp,
-      strategySpecificConfiguration: {},
       createMemo: this.createMemo.bind(this),
     };
 

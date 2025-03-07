@@ -79,12 +79,8 @@ addButtonToToolbar({
 
     if (annotationUIDs && annotationUIDs.length) {
       const annotationUID = annotationUIDs[0];
-      const annotation =
-        defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
-          annotationUID
-        );
 
-      locking.setAnnotationLocked(annotation, true);
+      locking.setAnnotationLocked(annotationUID, true);
       selection.deselectAnnotation();
 
       // Render the image to see it was selected

@@ -12,26 +12,24 @@ export default {
   [StrategyCallbacks.CreateIsInThreshold]: (
     operationData: InitializedOperationData
   ) => {
-    const { imageVoxelManager, strategySpecificConfiguration, segmentIndex } =
-      operationData;
-    if (!strategySpecificConfiguration || !segmentIndex) {
+    const { imageVoxelManager, segmentIndex, configuration } = operationData;
+
+    if (!configuration || !segmentIndex) {
       return;
     }
-    return (index) => {
-      const { THRESHOLD, THRESHOLD_INSIDE_CIRCLE } =
-        strategySpecificConfiguration;
 
+    return (index) => {
       const voxelValue = imageVoxelManager.getAtIndex(index);
       const gray = Array.isArray(voxelValue)
         ? vec3.length(voxelValue as Types.Point3)
         : voxelValue;
-      // Prefer the generic version of the THRESHOLD configuration, but fallback
-      // to the older THRESHOLD_INSIDE_CIRCLE version.
-      const { threshold } = THRESHOLD || THRESHOLD_INSIDE_CIRCLE || {};
-      if (!threshold?.length) {
+
+      const { threshold } = configuration || {};
+
+      if (!threshold?.range?.length) {
         return true;
       }
-      return threshold[0] <= gray && gray <= threshold[1];
+      return threshold.range[0] <= gray && gray <= threshold.range[1];
     };
   },
 };
