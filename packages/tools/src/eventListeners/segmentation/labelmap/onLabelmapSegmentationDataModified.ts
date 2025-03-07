@@ -152,7 +152,7 @@ function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
             segmentationId
           );
 
-        const segmentationImage = cache.getImage(currentSegmentationImageId);
+        const segmentationImage = cache.getImage(currentSegmentationImageId[0]);
         segImageData.modified();
 
         // update the cache with the new image data
