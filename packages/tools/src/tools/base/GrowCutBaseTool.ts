@@ -4,7 +4,7 @@ import {
   cache,
   getRenderingEngine,
   type Types,
-  StackViewport,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import { SegmentationRepresentations } from '../../enums';
@@ -21,9 +21,13 @@ import {
 } from '../../stateManagement/segmentation';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import type {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
 import IslandRemoval from '../../utilities/segmentation/islandRemoval';
+import { getOrCreateSegmentationVolume } from '../../utilities/segmentation';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -282,11 +286,41 @@ class GrowCutBaseTool extends BaseTool {
       segmentationState.getSegmentation(segmentationId);
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-    const { volumeId: labelmapVolumeId, referencedVolumeId } =
+    let { volumeId: labelmapVolumeId, referencedVolumeId } =
       labelmapData as LabelmapSegmentationDataVolume;
 
     if (!labelmapVolumeId) {
-      throw new Error('Labelmap volume id not found - not implemented');
+      const referencedImageIds = (
+        viewport as Types.IStackViewport
+      ).getImageIds();
+
+      if (!csUtils.isValidVolume(referencedImageIds)) {
+        throw new Error(
+          'Grow cut for non reconstructable stack is not supported yet'
+        );
+      }
+
+      const segVolume = getOrCreateSegmentationVolume(segmentationId);
+      labelmapVolumeId = segVolume.volumeId;
+    }
+
+    if (!referencedVolumeId) {
+      const { imageIds: segImageIds } =
+        labelmapData as LabelmapSegmentationDataStack;
+      const referencedImageIds = segImageIds.map(
+        (imageId) => cache.getImage(imageId).referencedImageId
+      );
+      const volumeId = cache.generateVolumeId(referencedImageIds);
+      const imageVolume = cache.getVolume(volumeId);
+
+      referencedVolumeId = imageVolume
+        ? imageVolume.volumeId
+        : (
+            await volumeLoader.createAndCacheVolumeFromImagesSync(
+              volumeId,
+              referencedImageIds
+            )
+          ).volumeId;
     }
 
     return {
