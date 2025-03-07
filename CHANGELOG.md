@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.4...v3.0.5) (2025-03-06)
+
+### Bug Fixes
+
+- **segmentation:** Add segmentation ID requirement for threshold operations ([#1879](https://github.com/cornerstonejs/cornerstone3D/issues/1879)) ([eae9577](https://github.com/cornerstonejs/cornerstone3D/commit/eae957729848d44971050ca40d684dae8f919170))
+
+## [3.0.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.3...v3.0.4) (2025-03-05)
+
+### Bug Fixes
+
+- **worker:** should not change type of input ([#1877](https://github.com/cornerstonejs/cornerstone3D/issues/1877)) ([a97effd](https://github.com/cornerstonejs/cornerstone3D/commit/a97effd52abe35eaf532a5634a69b76f932099e7))
+
 ## [3.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.2...v3.0.3) (2025-03-04)
 
 ### Bug Fixes
