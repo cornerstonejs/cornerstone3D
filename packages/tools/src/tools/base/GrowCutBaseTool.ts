@@ -5,6 +5,7 @@ import {
   getRenderingEngine,
   type Types,
   volumeLoader,
+  imageLoader,
 } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import { SegmentationRepresentations } from '../../enums';
@@ -28,6 +29,7 @@ import type {
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
 import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 import { getOrCreateSegmentationVolume } from '../../utilities/segmentation';
+import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -194,7 +196,7 @@ class GrowCutBaseTool extends BaseTool {
         growcutLabelmap
       );
 
-      this._removeIslands(growCutData);
+      // this._removeIslands(growCutData);
     };
 
     // run and store the command for later execution
@@ -214,6 +216,7 @@ class GrowCutBaseTool extends BaseTool {
     targetLabelmap: Types.IImageVolume,
     sourceLabelmap: Types.IImageVolume
   ) {
+    console.time('applyGrowCutLabelmap');
     const srcLabelmapData =
       sourceLabelmap.voxelManager.getCompleteScalarDataArray();
     const tgtVoxelManager = targetLabelmap.voxelManager;
@@ -259,7 +262,7 @@ class GrowCutBaseTool extends BaseTool {
         }
       }
     }
-
+    console.timeEnd('applyGrowCutLabelmap');
     triggerSegmentationDataModified(segmentationId);
   }
 
@@ -295,13 +298,49 @@ class GrowCutBaseTool extends BaseTool {
       ).getImageIds();
 
       if (!csUtils.isValidVolume(referencedImageIds)) {
-        throw new Error(
-          'Grow cut for non reconstructable stack is not supported yet'
-        );
-      }
+        const currentImageId = (
+          viewport as Types.IStackViewport
+        ).getCurrentImageId();
+        const currentImage = cache.getImage(currentImageId);
 
-      const segVolume = getOrCreateSegmentationVolume(segmentationId);
-      labelmapVolumeId = segVolume.volumeId;
+        const fakeImage =
+          imageLoader.createAndCacheDerivedImage(currentImageId);
+
+        const volumeId = cache.generateVolumeId([
+          currentImageId,
+          fakeImage.imageId,
+        ]);
+        const fakeVolume = volumeLoader.createAndCacheVolumeFromImagesSync(
+          volumeId,
+          [currentImage.imageId, fakeImage.imageId]
+        );
+        referencedVolumeId = fakeVolume.volumeId;
+
+        const currentLabelmapImageId = getCurrentLabelmapImageIdForViewport(
+          viewport.id,
+          segmentationId
+        );
+
+        const fakeDerivedImage = imageLoader.createAndCacheDerivedImage(
+          currentLabelmapImageId
+        );
+
+        const fakeSegVolumeId = cache.generateVolumeId([
+          currentLabelmapImageId,
+          fakeDerivedImage.imageId,
+        ]);
+        // create fake labelmap volume
+        const fakeLabelmapVolume =
+          volumeLoader.createAndCacheVolumeFromImagesSync(fakeSegVolumeId, [
+            currentLabelmapImageId,
+            fakeDerivedImage.imageId,
+          ]);
+
+        labelmapVolumeId = fakeLabelmapVolume.volumeId;
+      } else {
+        const segVolume = getOrCreateSegmentationVolume(segmentationId);
+        labelmapVolumeId = segVolume.volumeId;
+      }
     }
 
     if (!referencedVolumeId) {

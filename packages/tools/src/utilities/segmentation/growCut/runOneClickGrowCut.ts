@@ -320,12 +320,19 @@ async function _createAndCacheSegmentation(
   worldPosition: Types.Point3,
   options?: GrowCutOneClickOptions
 ): Promise<Types.IImageVolume> {
+  console.time('createLabelmap');
   const labelmap = volumeLoader.createAndCacheDerivedLabelmapVolume(
     subVolume.volumeId
   );
+  console.timeEnd('createLabelmap');
 
+  console.time('setPositiveSeedValues');
   _setPositiveSeedValues(labelmap, positiveRegionData, options);
+  console.timeEnd('setPositiveSeedValues');
+
+  console.time('setNegativeSeedValues');
   _setNegativeSeedValues(subVolume, labelmap, worldPosition, options);
+  console.timeEnd('setNegativeSeedValues');
 
   return labelmap;
 }
@@ -337,27 +344,34 @@ async function runOneClickGrowCut(
   options?: GrowCutOneClickOptions
 ): Promise<Types.IImageVolume> {
   const referencedVolume = cache.getVolume(referencedVolumeId);
-
+  console.time('getPositiveRegionData');
   const positiveRegionData = _getPositiveRegionData(
     referencedVolume,
     worldPosition,
     options
   );
+  console.timeEnd('getPositiveRegionData');
 
+  console.time('createSubVolume');
   const subVolume = _createSubVolume(
     referencedVolume,
     positiveRegionData,
     options
   );
+  console.timeEnd('createSubVolume');
 
+  console.time('createAndCacheSegmentation');
   const labelmap = await _createAndCacheSegmentation(
     subVolume,
     positiveRegionData,
     worldPosition,
     options
   );
+  console.timeEnd('createAndCacheSegmentation');
 
+  console.time('runGrowCut');
   await run(subVolume.volumeId, labelmap.volumeId);
+  console.timeEnd('runGrowCut');
 
   return labelmap;
 }
