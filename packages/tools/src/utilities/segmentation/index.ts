@@ -16,6 +16,7 @@ import {
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
 import VolumetricCalculator from './VolumetricCalculator';
+import SegmentStatsCalculator from './SegmentStatsCalculator';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
@@ -48,6 +49,7 @@ export {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
   VolumetricCalculator,
+  SegmentStatsCalculator,
   thresholdSegmentationByRange,
   contourAndFindLargestBidirectional,
   createBidirectionalToolData,

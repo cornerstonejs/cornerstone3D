@@ -20,6 +20,8 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
+import type { NamedStatistics } from '../../types';
+
 // Radius for a volume of 10, eg 1 cm^3 = 1000 mm^3
 const radiusForVol1 = Math.pow((3 * 1000) / (4 * Math.PI), 1 / 3);
 
@@ -32,13 +34,31 @@ const triggerWorkerProgress = (eventTarget, progress) => {
   });
 };
 
+/**
+ * Get statistics for a segmentation.
+ *
+ * @param segmentationId - The segmentation ID.
+ * @param segmentIndices - The segment indices to get statistics for.
+ *   - If a single number is provided, it retrieves statistics for that specific segment.
+ *   - If an array is provided:
+ *     - In `collective` mode (default), it retrieves statistics for all voxels that belong to any of the specified segment indices (OR operation).
+ *     - In `individual` mode, it retrieves statistics separately for each segment index.
+ * @param mode - The computation mode (optional, defaults to `'collective'`).
+ *   - `'collective'` (default): Treats the segment indices as a group, computing combined statistics.
+ *   - `'individual'`: Treats each segment index separately, computing statistics for each one independently.
+ *
+ * @returns The statistics, either as a single aggregated result (if `collective` mode)
+ * or an object with segment indices as keys and statistics as values (if `individual` mode).
+ */
 async function getStatistics({
   segmentationId,
   segmentIndices,
+  mode = 'collective',
 }: {
   segmentationId: string;
   segmentIndices: number[] | number;
-}) {
+  mode?: 'collective' | 'individual';
+}): Promise<NamedStatistics | { [segmentIndex: number]: NamedStatistics }> {
   registerComputeWorker();
 
   triggerWorkerProgress(eventTarget, 0);
@@ -88,10 +108,19 @@ async function getStatistics({
   );
 
   const unit = getPixelValueUnitsImageId(refImageId, modalityUnitOptions);
-
   const stats = reconstructableVolume
-    ? await calculateVolumeStatistics(operationData, indices, unit)
-    : await calculateStackStatistics(segImageIds, indices, unit);
+    ? await calculateVolumeStatistics({
+        operationData,
+        indices,
+        unit,
+        mode,
+      })
+    : await calculateStackStatistics({
+        segImageIds,
+        indices,
+        unit,
+        mode,
+      });
 
   return stats;
 }
@@ -99,7 +128,12 @@ async function getStatistics({
 /**
  * Calculate statistics for a reconstructable volume
  */
-async function calculateVolumeStatistics(operationData, indices, unit) {
+async function calculateVolumeStatistics({
+  operationData,
+  indices,
+  unit,
+  mode,
+}) {
   // Get the strategy data
   const strategyData = getStrategyData({
     operationData,
@@ -151,12 +185,42 @@ async function calculateVolumeStatistics(operationData, indices, unit) {
       segmentationInfo,
       imageInfo,
       indices,
+      mode,
     }
   );
 
   triggerWorkerProgress(eventTarget, 100);
 
-  // Update units
+  if (mode === 'collective') {
+    return processSegmentationStatistics({
+      stats,
+      unit,
+      spacing,
+      segmentationImageData,
+      imageVoxelManager,
+    });
+  } else {
+    const finalStats = {};
+    Object.entries(stats).forEach(([segmentIndex, stat]) => {
+      finalStats[segmentIndex] = processSegmentationStatistics({
+        stats: stat,
+        unit,
+        spacing,
+        segmentationImageData,
+        imageVoxelManager,
+      });
+    });
+    return finalStats;
+  }
+}
+
+const processSegmentationStatistics = ({
+  stats,
+  unit,
+  spacing,
+  segmentationImageData,
+  imageVoxelManager,
+}) => {
   stats.mean.unit = unit;
   stats.max.unit = unit;
   stats.min.unit = unit;
@@ -195,12 +259,12 @@ async function calculateVolumeStatistics(operationData, indices, unit) {
   }
 
   return stats;
-}
+};
 
 /**
  * Calculate statistics for a stack of images
  */
-async function calculateStackStatistics(segImageIds, indices, unit) {
+async function calculateStackStatistics({ segImageIds, indices, unit, mode }) {
   triggerWorkerProgress(eventTarget, 0);
   // we need to loop over each seg image separately and calculate the stats
   const segmentationInfo = [];
@@ -237,6 +301,7 @@ async function calculateStackStatistics(segImageIds, indices, unit) {
       segmentationInfo,
       imageInfo,
       indices,
+      mode,
     }
   );
 

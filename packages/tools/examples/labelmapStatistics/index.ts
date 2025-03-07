@@ -8,11 +8,11 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
   initDemo,
-  addDropdownToToolbar,
   setTitleAndDescription,
-  addButtonToToolbar,
   addBrushSizeSlider,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
+import addButtonToToolbar from '../../../../utils/demo/helpers/addButtonToToolbar';
 
 // This is for debugging purposes
 console.debug(
@@ -73,6 +73,16 @@ for (const statsId of statsIds) {
 
 content.appendChild(statsGrid);
 
+// Add calculate button
+addButtonToToolbar({
+  title: 'Calculate Statistics',
+  onClick: () => {
+    // Get the selected mode from the dropdown
+    calculateStatistics([1, 2], 'individual');
+    calculateStatistics([1, 2], 'collective');
+  },
+});
+
 const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
@@ -106,31 +116,59 @@ function displayStat(stat) {
   }`;
 }
 
-async function calculateStatistics(id, indices) {
+async function calculateStatistics(indices, mode) {
   const stats = await segmentationUtils.getStatistics({
     segmentationId: 'SEGMENTATION_ID',
     segmentIndices: indices,
+    mode,
   });
 
   if (!stats) {
     return;
   }
-  const items = [`Statistics on ${indices.join(', ')}`];
-  stats.count.label = 'Voxels';
 
-  items.push(
-    displayStat(stats.volume),
-    displayStat(stats.count),
-    displayStat(stats.mean),
-    displayStat(stats.max),
-    displayStat(stats.min),
-    displayStat(stats.peakValue)
-  );
-  const statsDiv = document.getElementById(id);
-  statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+  if (mode === 'individual') {
+    // Handle individual mode where stats is an object with segment indices as keys
+    const segmentStats = stats as { [segmentIndex: number]: any };
+
+    for (const segmentIndex of indices) {
+      if (segmentStats[segmentIndex]) {
+        const segmentStat = segmentStats[segmentIndex];
+        segmentStat.count.label = 'Voxels';
+        const items = [`Statistics on segment ${segmentIndex}`];
+
+        items.push(
+          displayStat(segmentStat.volume),
+          displayStat(segmentStat.count),
+          displayStat(segmentStat.mean),
+          displayStat(segmentStat.max),
+          displayStat(segmentStat.min),
+          displayStat(segmentStat.peakValue)
+        );
+
+        const statsDiv = document.getElementById(`segment${segmentIndex}`);
+        statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+      }
+    }
+  } else {
+    const items = [`Statistics on ${indices.join(', ')}`];
+    // Handle collective mode where stats is a NamedStatistics object
+    const namedStats = stats as any;
+    namedStats.count.label = 'Voxels';
+
+    items.push(
+      displayStat(namedStats.volume),
+      displayStat(namedStats.count),
+      displayStat(namedStats.mean),
+      displayStat(namedStats.max),
+      displayStat(namedStats.min),
+      displayStat(namedStats.peakValue)
+    );
+
+    const statsDiv = document.getElementById('segmentCombined');
+    statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
+  }
 }
-
-let timeoutId;
 
 function segmentationModifiedCallback(evt) {
   const { detail } = evt;
@@ -138,19 +176,7 @@ function segmentationModifiedCallback(evt) {
     return;
   }
 
-  const statsId = detail.segmentIndex === 1 ? statsIds[0] : statsIds[1];
-
-  const debounced = () => {
-    calculateStatistics(statsId, [detail.segmentIndex]);
-    // Also update combined stats
-    calculateStatistics(statsIds[2], [1, 2]);
-  };
-
-  if (timeoutId) {
-    window.clearTimeout(timeoutId);
-  }
-
-  timeoutId = window.setTimeout(debounced, 1000);
+  // No longer using setTimeout - statistics will be calculated on button click
 }
 
 // ============================= //
@@ -225,30 +251,30 @@ async function run() {
   const toolGroup = setupTools();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  // });
-  // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
-    SOPInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
-  const imageIds2 = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
-    SeriesInstanceUID:
-      '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
-    SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  });
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+  //   SOPInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
+  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  // });
+  // const imageIds2 = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
+  //   SeriesInstanceUID:
+  //     '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
+  //   SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
+  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  // });
 
   // Create a stack of images
   const imageIdsArray = imageIds.slice(0, 10);
@@ -269,7 +295,6 @@ async function run() {
 
   renderingEngine.setViewports([viewportInput]);
 
-  // Set the stack of images
   const viewport = renderingEngine.getViewport(viewportId);
   await viewport.setStack(imageIdsArray, 0);
 
@@ -301,6 +326,8 @@ async function run() {
   addBrushSizeSlider({
     toolGroupId,
   });
+
+  addSegmentIndexDropdown('SEGMENTATION_ID', [1, 2]);
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element);
 

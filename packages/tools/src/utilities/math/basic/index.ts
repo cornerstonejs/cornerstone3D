@@ -1,4 +1,12 @@
-import BasicStatsCalculator from './BasicStatsCalculator';
-import Calculator from './Calculator';
+import {
+  BasicStatsCalculator,
+  InstanceBasicStatsCalculator,
+} from './BasicStatsCalculator';
+import { Calculator, InstanceCalculator } from './Calculator';
 
-export { BasicStatsCalculator, Calculator };
+export {
+  BasicStatsCalculator,
+  InstanceBasicStatsCalculator,
+  Calculator,
+  InstanceCalculator,
+};
