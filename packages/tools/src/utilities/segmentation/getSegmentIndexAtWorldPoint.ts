@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
-  getCurrentLabelmapImageIdForViewport,
+  getCurrentLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
@@ -90,10 +90,19 @@ export function getSegmentIndexAtWorldForLabelmap(
   }
 
   // stack segmentation case
-  const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+  const segmentationImageIds = getCurrentLabelmapImageIdsForViewport(
     viewport.id,
     segmentation.segmentationId
   );
+
+  if (segmentationImageIds.length > 1) {
+    console.warn(
+      'Segment selection for labelmaps with multiple imageIds in stack viewports is not supported yet.'
+    );
+    return;
+  }
+
+  const segmentationImageId = segmentationImageIds[0];
 
   const image = cache.getImage(segmentationImageId);
 
