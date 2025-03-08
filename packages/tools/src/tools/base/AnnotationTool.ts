@@ -51,6 +51,21 @@ const { PointsManager } = csUtils;
  * abstract methods.
  */
 abstract class AnnotationTool extends AnnotationDisplayTool {
+  protected eventDispatchDetail: {
+    viewportId: string;
+    renderingEngineId: string;
+  };
+  isDrawing: boolean;
+  isHandleOutsideImage: boolean;
+  editData: {
+    annotation: Annotation;
+    viewportIdsToRender?: string[];
+    newAnnotation?: boolean;
+    handleIndex?: number;
+    movingTextBox?: boolean;
+    hasMoved?: boolean;
+  } | null;
+
   /**
    * Creates a base annotation object, adding in any annotation base data provided
    */

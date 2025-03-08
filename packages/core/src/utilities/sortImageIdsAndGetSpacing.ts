@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import * as metaData from '../metaData';
-import { getConfiguration } from '../init';
+import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 import type { Point3 } from '../types';
 
 interface SortedImageIdsItem {
@@ -15,7 +15,7 @@ interface SortedImageIdsItem {
  * @param imageIds - array of imageIds
  * @param scanAxisNormal - [x, y, z] array or gl-matrix vec3
  *
- * @returns The sortedImageIds, zSpacing, and origin of the first image in the series.
+ * @returns The sortedImageIds, spacing, and origin of the first image in the series.
  */
 export default function sortImageIdsAndGetSpacing(
   imageIds: string[],
@@ -42,20 +42,12 @@ export default function sortImageIdsAndGetSpacing(
     vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
   }
 
-  const refIppVec = vec3.create();
-
   // Check if we are using wadouri scheme
   const usingWadoUri = imageIds[0].split(':')[0] === 'wadouri';
 
-  vec3.set(
-    refIppVec,
-    referenceImagePositionPatient[0],
-    referenceImagePositionPatient[1],
-    referenceImagePositionPatient[2]
-  );
+  const zSpacing = calculateSpacingBetweenImageIds(imageIds);
 
   let sortedImageIds: string[];
-  let zSpacing: number;
 
   function getDistance(imageId: string) {
     const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId);
@@ -89,19 +81,7 @@ export default function sortImageIdsAndGetSpacing(
     });
 
     distanceImagePairs.sort((a, b) => b.distance - a.distance);
-
     sortedImageIds = distanceImagePairs.map((a) => a.imageId);
-    const numImages = distanceImagePairs.length;
-
-    // Calculated average spacing.
-    // We would need to resample if these are not similar.
-    // It should be up to the host app to do this if it needed to.
-    zSpacing =
-      Math.abs(
-        distanceImagePairs[numImages - 1].distance -
-          distanceImagePairs[0].distance
-      ) /
-      (numImages - 1);
   } else {
     // Using wadouri, so we have only prefetched the first, middle, and last
     // images for metadata. Assume initial imageId array order is pre-sorted,
@@ -116,62 +96,13 @@ export default function sortImageIdsAndGetSpacing(
     if (firstImageDistance - middleImageDistance < 0) {
       sortedImageIds.reverse();
     }
-
-    // Calculate average spacing between the first and middle prefetched images,
-    // otherwise fall back to DICOM `spacingBetweenSlices`
-    const metadataForMiddleImage = metaData.get(
-      'imagePlaneModule',
-      prefetchedImageIds[1]
-    );
-
-    if (!metadataForMiddleImage) {
-      throw new Error('Incomplete metadata required for volume construction.');
-    }
-
-    const positionVector = vec3.create();
-
-    vec3.sub(
-      positionVector,
-      referenceImagePositionPatient,
-      metadataForMiddleImage.imagePositionPatient
-    );
-    const distanceBetweenFirstAndMiddleImages = vec3.dot(
-      positionVector,
-      scanAxisNormal
-    );
-    zSpacing =
-      Math.abs(distanceBetweenFirstAndMiddleImages) /
-      Math.floor(imageIds.length / 2);
   }
 
-  const {
-    imagePositionPatient: origin,
-    sliceThickness,
-    spacingBetweenSlices,
-  } = metaData.get('imagePlaneModule', sortedImageIds[0]);
+  const { imagePositionPatient: origin } = metaData.get(
+    'imagePlaneModule',
+    sortedImageIds[0]
+  );
 
-  const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
-
-  // We implemented these lines for multiframe dicom files that does not have
-  // position for each frame, leading to incorrect calculation of zSpacing = 0
-  // If possible, we use the sliceThickness, but we warn about this dicom file
-  // weirdness. If sliceThickness is not available, we set to 1 just to render
-  if (zSpacing === 0 && !strictZSpacingForVolumeViewport) {
-    if (spacingBetweenSlices) {
-      console.log('Could not calculate zSpacing. Using spacingBetweenSlices');
-      zSpacing = spacingBetweenSlices;
-    } else if (sliceThickness) {
-      console.log(
-        'Could not calculate zSpacing and no spacingBetweenSlices. Using sliceThickness'
-      );
-      zSpacing = sliceThickness;
-    } else {
-      console.log(
-        'Could not calculate zSpacing. The VolumeViewport visualization is compromised. Setting zSpacing to 1 to render'
-      );
-      zSpacing = 1;
-    }
-  }
   const result: SortedImageIdsItem = {
     zSpacing,
     origin,

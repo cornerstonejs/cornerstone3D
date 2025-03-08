@@ -1,13 +1,15 @@
 import type { Types } from '@cornerstonejs/core';
 import { getToolGroup } from '../../store/ToolGroupManager';
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
-import { getRenderingEngine } from '@cornerstonejs/core';
 import { getBrushToolInstances } from './getBrushToolInstances';
 
 export function setBrushThresholdForToolGroup(
   toolGroupId: string,
-  threshold: Types.Point2,
-  otherArgs: Record<string, unknown> = { isDynamic: false }
+  threshold: {
+    range: Types.Point2;
+    isDynamic: boolean;
+    dynamicRadius: number;
+  }
 ) {
   const toolGroup = getToolGroup(toolGroupId);
 
@@ -16,15 +18,20 @@ export function setBrushThresholdForToolGroup(
   }
 
   const brushBasedToolInstances = getBrushToolInstances(toolGroupId);
-  const configuration = {
-    ...otherArgs,
-    ...(threshold !== undefined && { threshold }),
-  };
 
   brushBasedToolInstances.forEach((tool) => {
-    tool.configuration.strategySpecificConfiguration.THRESHOLD = {
-      ...tool.configuration.strategySpecificConfiguration.THRESHOLD,
-      ...configuration,
+    const activeStrategy = tool.configuration.activeStrategy;
+
+    if (!activeStrategy.toLowerCase().includes('threshold')) {
+      return;
+    }
+
+    tool.configuration = {
+      ...tool.configuration,
+      threshold: {
+        ...tool.configuration.threshold,
+        ...threshold,
+      },
     };
   });
 
@@ -35,13 +42,9 @@ export function setBrushThresholdForToolGroup(
     return;
   }
 
-  const { renderingEngineId } = viewportsInfo[0];
-
   // Use helper to get array of viewportIds, or we just end up doing this mapping
   // ourselves here.
   const viewportIds = toolGroup.getViewportIds();
-
-  const renderingEngine = getRenderingEngine(renderingEngineId);
 
   triggerAnnotationRenderForViewportIds(viewportIds);
 }
@@ -66,7 +69,5 @@ export function getBrushThresholdForToolGroup(toolGroupId: string) {
     return;
   }
 
-  // TODO -> Assumes the
-  return brushToolInstance.configuration.strategySpecificConfiguration.THRESHOLD
-    .threshold;
+  return brushToolInstance.configuration.threshold.range;
 }

@@ -17,9 +17,7 @@ type LabelmapToolOperationData = {
   segmentsLocked: number[];
   viewPlaneNormal: number[];
   viewUp: number[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  strategySpecificConfiguration: any;
-  // constraintFn: (pointIJK: number) => boolean;
+  activeStrategy: string;
   points: Types.Point3[];
   voxelManager;
   override: {
