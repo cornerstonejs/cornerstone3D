@@ -1,11 +1,17 @@
-import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
+import type {
+  BaseVolumeViewport,
+  Types,
+  VolumeViewport3D,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
+  eventTarget,
 } from '@cornerstonejs/core';
+import { Enums as toolsEnums } from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -42,6 +48,8 @@ const { createSlabThicknessSynchronizer } = synchronizers;
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
+
+let sphereActor = undefined;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -151,6 +159,61 @@ addButtonToToolbar({
 });
 
 // ============================= //
+function addTemporaryPickedPositionLabel(
+  x: number,
+  y: number,
+  pickedPoint: Types.Point3
+) {
+  // Create a temporary div to show the coordinates
+  const coordDiv = document.createElement('div');
+  coordDiv.style.position = 'absolute';
+  coordDiv.style.top = `${y + 10}px`;
+  coordDiv.style.left = `${x + 10}px`;
+  coordDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  coordDiv.style.color = 'white';
+  coordDiv.style.padding = '5px';
+  coordDiv.style.borderRadius = '3px';
+  coordDiv.style.zIndex = '1000';
+  coordDiv.style.pointerEvents = 'none';
+  coordDiv.textContent = `X: ${pickedPoint[0].toFixed(
+    2
+  )}, Y: ${pickedPoint[1].toFixed(2)}, Z: ${pickedPoint[2].toFixed(2)}`;
+
+  element4.appendChild(coordDiv);
+
+  // Remove the div after a few seconds
+  setTimeout(() => {
+    if (element4.contains(coordDiv)) {
+      element4.removeChild(coordDiv);
+    }
+  }, 3000);
+}
+
+function setCrossHairPosition(pickedPoint) {
+  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+  const crosshairTool = toolGroup.getToolInstance(CrosshairsTool.toolName);
+  crosshairTool.setToolCenter(pickedPoint, true);
+}
+
+function addSphere(viewport, point) {
+  if (!sphereActor) {
+    // Generate a random string for the sphere UID
+    const randomUID = 'sphere_' + Math.random().toString(36).substring(2, 15);
+
+    const sphereSource = vtkSphereSource.newInstance();
+    sphereSource.setCenter(point);
+    sphereSource.setRadius(5);
+    const sphereMapper = vtkMapper.newInstance();
+    sphereMapper.setInputConnection(sphereSource.getOutputPort());
+    sphereActor = vtkActor.newInstance();
+    sphereActor.setMapper(sphereMapper);
+    sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
+    viewport.addActor({ actor: sphereActor, uid: randomUID });
+  } else {
+    sphereActor.getMapper().getInputConnection().filter.setCenter(point);
+  }
+  viewport.render();
+}
 
 const viewportColors = {
   [viewportId1]: 'rgb(200, 0, 0)',
@@ -444,28 +507,14 @@ async function run() {
     viewport.setProperties({
       preset: 'CT-Bone',
     });
-    const actor = viewport.getDefaultActor()?.actor;
-    if (actor) {
-      picker.addPickList(actor as vtkActor);
+    const defaultActor = viewport.getDefaultActor();
+    if (defaultActor?.actor) {
+      // Cast to any to avoid type errors with different actor types
+      picker.addPickList(defaultActor.actor as any);
+      prepareImageDataForPicking(viewport);
     }
     viewport.render();
   });
-
-  function addSphere(viewport, point) {
-    // Generate a random string for the sphere UID
-    const randomUID = 'sphere_' + Math.random().toString(36).substring(2, 15);
-
-    const sphere = vtkSphereSource.newInstance();
-    sphere.setCenter(point);
-    sphere.setRadius(50);
-    const sphereMapper = vtkMapper.newInstance();
-    sphereMapper.setInputData(sphere.getOutputData());
-    const sphereActor = vtkActor.newInstance();
-    sphereActor.setMapper(sphereMapper);
-    sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
-    viewport.addActor({ actor: sphereActor, uid: randomUID });
-    viewport.render();
-  }
 
   // Add right-click event handler to element4 for picking coordinates
   element4.addEventListener('mousedown', (evt) => {
@@ -483,44 +532,87 @@ async function run() {
       // Get canvas coordinates relative to the element
       const rect = element4.getBoundingClientRect();
       const x = evt.clientX - rect.left;
-      // Invert Y coordinate for VTK (VTK Y axis goes from bottom to top)
       const y = evt.clientY - rect.top;
 
+      const displayCoords = viewport.getVTKDisplayCoords([x, y]);
       // Use the picker to get the 3D coordinates
-      picker.pick([x, rect.height - y, 0], viewport.getRenderer());
+      picker.pick(
+        [displayCoords[0], displayCoords[1], 0],
+        viewport.getRenderer()
+      );
 
       // Get the picked position
-      const pickedPoint = picker.getPickPosition();
-
-      if (pickedPoint) {
-        addSphere(viewport, pickedPoint);
-        console.log('Picked point coordinates:', pickedPoint);
-
-        // Create a temporary div to show the coordinates
-        const coordDiv = document.createElement('div');
-        coordDiv.style.position = 'absolute';
-        coordDiv.style.top = `${y + 10}px`;
-        coordDiv.style.left = `${x + 10}px`;
-        coordDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-        coordDiv.style.color = 'white';
-        coordDiv.style.padding = '5px';
-        coordDiv.style.borderRadius = '3px';
-        coordDiv.style.zIndex = '1000';
-        coordDiv.style.pointerEvents = 'none';
-        coordDiv.textContent = `X: ${pickedPoint[0].toFixed(
-          2
-        )}, Y: ${pickedPoint[1].toFixed(2)}, Z: ${pickedPoint[2].toFixed(2)}`;
-
-        element4.appendChild(coordDiv);
-
-        // Remove the div after a few seconds
-        setTimeout(() => {
-          if (element4.contains(coordDiv)) {
-            element4.removeChild(coordDiv);
-          }
-        }, 3000);
+      const pickedPositions = picker.getPickedPositions();
+      const actors = picker.getActors();
+      if (actors.length > 0) {
+        const pickedPoint = pickedPositions[0];
+        if (pickedPoint) {
+          console.log('Picked point coordinates:', pickedPoint);
+          addSphere(viewport, pickedPoint);
+          addTemporaryPickedPositionLabel(x, y, pickedPoint);
+          setCrossHairPosition(pickedPoint);
+        }
       }
     }
+  });
+}
+
+eventTarget.addEventListener(
+  toolsEnums.Events.CROSSHAIR_TOOL_CENTER_CHANGED,
+  (evt) => {
+    const { toolCenter } = evt.detail;
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(
+      viewportId4
+    ) as VolumeViewport3D;
+    if (sphereActor) {
+      addSphere(viewport, toolCenter);
+    }
+  }
+);
+
+/**
+ * Creates the minimum infrastructure needed to pick a point in the 3D volume
+ * with VTK.js
+ * @remarks
+ * Is this the right place to put this function?
+ * @param viewport
+ * @returns
+ */
+function prepareImageDataForPicking(viewport: BaseVolumeViewport) {
+  const volumeActor = viewport.getDefaultActor()?.actor;
+  if (!volumeActor) {
+    return;
+  }
+  // Get the imageData from the volumeActor
+  const imageData = volumeActor.getMapper().getInputData();
+
+  if (!imageData) {
+    console.error('No imageData found in the volumeActor');
+    return null;
+  }
+
+  // Get the voxelManager from the imageData
+  const { voxelManager } = imageData.get('voxelManager');
+
+  if (!voxelManager) {
+    console.error('No voxelManager found in the imageData');
+    return imageData;
+  }
+
+  // Create a fake scalar object to expose the scalar data to VTK.js
+  const fakeScalars = {
+    getData: () => {
+      return voxelManager.getCompleteScalarDataArray();
+    },
+    getNumberOfComponents: () => voxelManager.numberOfComponents,
+    getDataType: () =>
+      voxelManager.getCompleteScalarDataArray().constructor.name,
+  };
+
+  // Set the point data to return the fakeScalars
+  imageData.setPointData({
+    getScalars: () => fakeScalars,
   });
 }
 

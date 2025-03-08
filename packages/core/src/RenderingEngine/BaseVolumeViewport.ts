@@ -1519,28 +1519,15 @@ abstract class BaseVolumeViewport extends Viewport {
     vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
+    const displayCoords = this.getVTKDisplayCoords(canvasPos);
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const size = openGLRenderWindow.getSize();
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const canvasPosWithDPR = [
-      canvasPos[0] * devicePixelRatio,
-      canvasPos[1] * devicePixelRatio,
-    ];
-    const displayCoord = [
-      canvasPosWithDPR[0] + this.sx,
-      canvasPosWithDPR[1] + this.sy,
-    ];
-
-    // The y axis display coordinates are inverted with respect to canvas coords
-    displayCoord[1] = size[1] - displayCoord[1];
-
     const worldCoord = openGLRenderWindow.displayToWorld(
-      displayCoord[0],
-      displayCoord[1],
-      0,
+      displayCoords[0],
+      displayCoords[1],
+      displayCoords[2],
       renderer
     );
 
@@ -1549,6 +1536,33 @@ abstract class BaseVolumeViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
+  /**
+   * Returns the VTK.js display coordinates of the given `canvasPos` projected onto the
+   * `Viewport`'s `vtkCamera`'s focal point and the direction of projection.
+   * @param canvasPos - The position in canvas coordinates.
+   * @returns The corresponding display coordinates.
+   *
+   */
+  public getVTKDisplayCoords = (canvasPos: Point2): Point3 => {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+    const offscreenMultiRenderWindow =
+      this.getRenderingEngine().offscreenMultiRenderWindow;
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow();
+    const size = openGLRenderWindow.getSize();
+    const displayCoord = [
+      canvasPosWithDPR[0] + this.sx,
+      canvasPosWithDPR[1] + this.sy,
+    ];
+
+    // The y axis display coordinates are inverted with respect to canvas coords
+    displayCoord[1] = size[1] - displayCoord[1];
+    return [displayCoord[0], displayCoord[1], 0];
+  };
   /**
    * Returns the canvas coordinates of the given `worldPos`
    * projected onto the `Viewport`'s `canvas`.
