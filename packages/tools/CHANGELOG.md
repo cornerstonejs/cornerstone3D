@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.5...v3.1.0) (2025-03-10)
+
+### Features
+
+- Updating proper values for ChangeType parameter in AnnotationModifiedEventDetail. ([#1821](https://github.com/cornerstonejs/cornerstone3D/issues/1821)) ([3c22338](https://github.com/cornerstonejs/cornerstone3D/commit/3c22338a25b5401e22d9f97efd953d09f1977dcc))
+
 ## [3.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.4...v3.0.5) (2025-03-06)
 
 ### Bug Fixes
