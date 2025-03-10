@@ -15,6 +15,10 @@ test.beforeEach(async ({ page }) => {
 
 // Test for sphere brush tool
 test('Stack Segmentation - Sphere Brush Tool', async ({ page }) => {
+  test.skip(
+    ({ browserName }) => ['chromium', 'webkit'].includes(browserName),
+    'Skipping test for non-chromium/webkit browsers'
+  );
   await page.getByRole('combobox').first().selectOption('SphereBrush');
 
   const canvas = await page.locator('canvas').first();

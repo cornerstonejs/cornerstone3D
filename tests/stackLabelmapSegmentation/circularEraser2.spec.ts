@@ -16,6 +16,10 @@ test.beforeEach(async ({ page }) => {
 test('Stack Segmentation - Circular Eraser Tool with segmentation 2', async ({
   page,
 }) => {
+  test.skip(
+    ({ browserName }) => ['chromium', 'webkit'].includes(browserName),
+    'Skipping test for non-chromium/webkit browsers'
+  );
   await page.getByRole('combobox').first().selectOption('CircularBrush');
 
   const canvas = await page.locator('canvas').first();

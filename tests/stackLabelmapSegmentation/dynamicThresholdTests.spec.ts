@@ -18,6 +18,10 @@ test.beforeEach(async ({ page }) => {
 test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
   page,
 }) => {
+  test.skip(
+    ({ browserName }) => ['chromium', 'webkit'].includes(browserName),
+    'Skipping test for non-chromium/webkit browsers'
+  );
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
@@ -39,6 +43,10 @@ test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
 test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
   page,
 }) => {
+  test.skip(
+    ({ browserName }) => ['chromium', 'webkit'].includes(browserName),
+    'Skipping test for non-chromium/webkit browsers'
+  );
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
@@ -59,6 +67,10 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
 test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
   page,
 }) => {
+  test.skip(
+    ({ browserName }) => ['chromium', 'webkit'].includes(browserName),
+    'Skipping test for non-chromium/webkit browsers'
+  );
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 

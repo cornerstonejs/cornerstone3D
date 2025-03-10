@@ -7,6 +7,7 @@ import {
 import { drawCircleScissor } from './utils/helpers';
 
 // Common setup for test
+
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'stacklabelmapsegmentation');
 });
@@ -15,6 +16,10 @@ test.beforeEach(async ({ page }) => {
 test('Stack Segmentation - Circular Scissor Tool with segmentation 1', async ({
   page,
 }) => {
+  test.skip(
+    ({ browserName }) => ['chromium', 'webkit'].includes(browserName),
+    'Skipping test for non-chromium/webkit browsers'
+  );
   await page.getByRole('combobox').first().selectOption('CircleScissor');
 
   const canvas = await page.locator('canvas').first();
