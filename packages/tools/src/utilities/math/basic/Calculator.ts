@@ -11,7 +11,11 @@ export abstract class Calculator {
  * An instantiable version of Calculator with instance methods.
  */
 export class InstanceCalculator {
-  constructor(private storePointData: boolean) {}
+  private storePointData: boolean;
+  constructor(options: { storePointData: boolean }) {
+    this.storePointData = options.storePointData;
+  }
+
   /**
    * Returns the calculated statistics.
    * @returns The statistics result.

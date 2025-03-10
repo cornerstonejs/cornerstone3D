@@ -160,8 +160,8 @@ export class VolumetricCalculator extends BasicStatsCalculator {
 export class InstanceVolumetricCalculator extends InstanceBasicStatsCalculator {
   private volumetricState: VolumetricState;
 
-  constructor(storePointData: boolean = true) {
-    super(storePointData);
+  constructor(options: { storePointData: boolean }) {
+    super(options);
     this.volumetricState = createVolumetricState();
   }
 

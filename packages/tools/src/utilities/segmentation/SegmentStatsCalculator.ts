@@ -33,14 +33,14 @@ export default class SegmentStatsCalculator {
       indices.forEach((index) => {
         this.calculators.set(
           index,
-          new InstanceVolumetricCalculator(storePointData)
+          new InstanceVolumetricCalculator({ storePointData })
         );
       });
     } else {
       // Create single calculator for all indices
       this.calculators.set(
         indices,
-        new InstanceVolumetricCalculator(storePointData)
+        new InstanceVolumetricCalculator({ storePointData })
       );
     }
   }

@@ -17,7 +17,7 @@ interface BasicStatsState {
   minLPS: Types.Point3 | null;
   runMean: number[];
   m2: number[];
-  pointsInShape: Types.IPointsManager<Types.Point3> | null;
+  pointsInShape?: Types.IPointsManager<Types.Point3> | null;
 }
 
 // Helper function to create a new state
@@ -56,7 +56,7 @@ function basicStatsCallback(
     state.m2.push(state.m2[0], state.m2[0]);
   }
 
-  if (state.pointsInShape && pointLPS) {
+  if (state?.pointsInShape && pointLPS) {
     state.pointsInShape.push(pointLPS);
   }
   const newArray = Array.isArray(newValue) ? newValue : [newValue];
@@ -171,6 +171,9 @@ export class BasicStatsCalculator extends Calculator {
   private static state: BasicStatsState = createBasicStatsState(true);
 
   public static statsInit(options: { storePointData: boolean }): void {
+    if (!options.storePointData) {
+      this.state.pointsInShape = null;
+    }
     this.state = createBasicStatsState(options.storePointData);
   }
 
@@ -199,9 +202,9 @@ export class BasicStatsCalculator extends Calculator {
 export class InstanceBasicStatsCalculator extends InstanceCalculator {
   private state: BasicStatsState;
 
-  constructor(storePointData: boolean = true) {
-    super(storePointData);
-    this.state = createBasicStatsState(storePointData);
+  constructor(options: { storePointData: boolean }) {
+    super(options);
+    this.state = createBasicStatsState(options.storePointData);
   }
 
   /**
