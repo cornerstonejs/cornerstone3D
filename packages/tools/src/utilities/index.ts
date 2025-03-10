@@ -55,6 +55,7 @@ import {
   getPixelValueUnitsImageId,
 } from './getPixelValueUnits';
 import * as geometricSurfaceUtils from './geometricSurfaceUtils';
+import setAnnotationLabel from './setAnnotationLabel';
 
 export {
   math,
@@ -102,4 +103,5 @@ export {
   normalizeViewportPlane,
   IslandRemoval,
   geometricSurfaceUtils,
+  setAnnotationLabel,
 };

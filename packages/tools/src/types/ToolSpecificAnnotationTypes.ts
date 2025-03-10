@@ -12,6 +12,7 @@ export interface ROICachedStats {
     max: number;
     mean: number;
     stdDev: number;
+    unit?: number;
   };
 }
 
