@@ -217,8 +217,9 @@ class GrowCutBaseTool extends BaseTool {
     sourceLabelmap: Types.IImageVolume
   ) {
     const tgtVoxelManager = targetLabelmap.voxelManager;
+    const srcVoxelManager = sourceLabelmap.voxelManager;
 
-    sourceLabelmap.voxelManager.forEach(({ value, index }) => {
+    srcVoxelManager.forEach(({ value, index }) => {
       if (value === segmentIndex) {
         tgtVoxelManager.setAtIndex(index, value);
       }
