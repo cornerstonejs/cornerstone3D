@@ -72,9 +72,9 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
   page,
   browserName,
 }) => {
+  console.log('browserName abbas', browserName);
   if (!['chromium', 'webkit'].includes(browserName)) {
     expect(true).toBe(true);
-    return;
   }
 
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
