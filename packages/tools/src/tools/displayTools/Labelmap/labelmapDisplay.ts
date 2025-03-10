@@ -18,7 +18,7 @@ import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { getActiveSegmentation } from '../../../stateManagement/segmentation/activeSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
-import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
@@ -27,7 +27,7 @@ import SegmentationRepresentations from '../../../enums/SegmentationRepresentati
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import { getLabelmapActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
@@ -100,7 +100,10 @@ async function render(
   let labelmapData =
     segmentation.representationData[SegmentationRepresentations.Labelmap];
 
-  let labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+  let labelmapActorEntries = getLabelmapActorEntries(
+    viewport.id,
+    segmentationId
+  );
 
   if (
     !labelmapData &&
@@ -155,7 +158,7 @@ async function render(
   }
 
   if (viewport instanceof VolumeViewport) {
-    if (!labelmapActorEntry) {
+    if (!labelmapActorEntries?.length) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(
         viewport,
@@ -165,21 +168,21 @@ async function render(
       );
     }
 
-    labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+    labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   } else {
     // stack segmentation
-    const labelmapImageId = getCurrentLabelmapImageIdForViewport(
+    const labelmapImageIds = getCurrentLabelmapImageIdsForViewport(
       viewport.id,
       segmentationId
     );
 
     // if the stack labelmap is not built for the current imageId that is
     // rendered at the viewport then return
-    if (!labelmapImageId) {
+    if (!labelmapImageIds?.length) {
       return;
     }
 
-    if (!labelmapActorEntry) {
+    if (!labelmapActorEntries) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(
         viewport,
@@ -189,14 +192,20 @@ async function render(
       );
     }
 
-    labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+    labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   }
 
-  if (!labelmapActorEntry) {
+  if (!labelmapActorEntries?.length) {
     return;
   }
 
-  _setLabelmapColorAndOpacity(viewport.id, labelmapActorEntry, representation);
+  for (const labelmapActorEntry of labelmapActorEntries) {
+    _setLabelmapColorAndOpacity(
+      viewport.id,
+      labelmapActorEntry,
+      representation
+    );
+  }
 }
 
 function _setLabelmapColorAndOpacity(

@@ -7,5 +7,6 @@ module.exports = {
     displayName: "adapters",
     moduleNameMapper: {
         "^@cornerstonejs/(.*)$": path.resolve(__dirname, "../$1/src")
-    }
+    },
+    testEnvironment: undefined
 };

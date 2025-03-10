@@ -19,7 +19,10 @@ import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import { removeColorLUT } from './removeColorLUT';
 import { getViewportSegmentations } from './getViewportSegmentations';
 import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation';
-import { getCurrentLabelmapImageIdForViewport } from './getCurrentLabelmapImageIdForViewport';
+import {
+  getCurrentLabelmapImageIdForViewport,
+  getCurrentLabelmapImageIdsForViewport,
+} from './getCurrentLabelmapImageIdForViewport';
 import { updateLabelmapSegmentationImageReferences } from './updateLabelmapSegmentationImageReferences';
 import { getStackSegmentationImageIdsForViewport } from './getStackSegmentationImageIdsForViewport';
 import {
@@ -37,6 +40,7 @@ export {
   // get
   getColorLUT,
   getCurrentLabelmapImageIdForViewport,
+  getCurrentLabelmapImageIdsForViewport,
   getNextColorLUTIndex,
   getSegmentation,
   getSegmentations,
