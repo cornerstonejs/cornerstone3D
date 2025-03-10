@@ -75,6 +75,8 @@ export default class SegmentStatsCalculator {
   public static getStatistics(options?: {
     spacing?: number[] | number;
     unit?: string;
+    calibration?: unknown;
+    hasPixelSpacing?: boolean;
   }): NamedStatistics | { [segmentIndex: number]: NamedStatistics } {
     if (this.mode === 'individual') {
       const result: { [segmentIndex: number]: NamedStatistics } = {};

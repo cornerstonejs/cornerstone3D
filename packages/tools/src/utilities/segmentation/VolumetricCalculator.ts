@@ -4,6 +4,7 @@ import {
   BasicStatsCalculator,
   InstanceBasicStatsCalculator,
 } from '../math/basic/BasicStatsCalculator';
+import { getCalibratedLengthUnitsAndScale } from '../getCalibratedUnits';
 
 const TEST_MAX_LOCATIONS = 10;
 
@@ -75,16 +76,22 @@ function volumetricGetStatistics(
   stats: NamedStatistics,
   options: {
     spacing?: number[] | number;
+    calibration?: unknown;
+    hasPixelSpacing?: boolean;
     unit?: string;
   }
 ): NamedStatistics {
-  const { spacing } = options;
-  const volumeUnit = spacing ? 'mm³' : 'voxels³';
-  const volumeScale = spacing
-    ? Array.isArray(spacing)
-      ? spacing[0] * spacing[1] * spacing[2] * 1000
-      : spacing * spacing * spacing * 1000
-    : 1;
+  const { spacing, calibration } = options;
+  const { volumeUnit } = getCalibratedLengthUnitsAndScale(
+    // Todo: fix this for volumes; we don't have calibration for volumes yet
+    // Also, if there is a volume, there should be spacing, so it is always true
+    {
+      calibration,
+      hasPixelSpacing: true,
+    },
+    []
+  );
+  const volumeScale = spacing ? spacing[0] * spacing[1] * spacing[2] * 1000 : 1;
 
   stats.volume = {
     value: Array.isArray(stats.count.value)
@@ -129,10 +136,14 @@ export class VolumetricCalculator extends BasicStatsCalculator {
   public static getStatistics(options: {
     spacing?: number[] | number;
     unit?: string;
+    calibration?: unknown;
+    hasPixelSpacing?: boolean;
   }): NamedStatistics {
     const optionsWithUnit = {
       ...options,
       unit: options?.unit || 'none',
+      calibration: options?.calibration,
+      hasPixelSpacing: options?.hasPixelSpacing,
     };
     const stats = super.getStatistics(optionsWithUnit);
     return volumetricGetStatistics(
@@ -171,10 +182,14 @@ export class InstanceVolumetricCalculator extends InstanceBasicStatsCalculator {
   getStatistics(options?: {
     spacing?: number[] | number;
     unit?: string;
+    calibration?: unknown;
+    hasPixelSpacing?: boolean;
   }): NamedStatistics {
     const optionsWithUnit = {
       ...options,
       unit: options?.unit || 'none',
+      calibration: options?.calibration,
+      hasPixelSpacing: options?.hasPixelSpacing,
     };
     const stats = super.getStatistics(optionsWithUnit);
     return volumetricGetStatistics(
