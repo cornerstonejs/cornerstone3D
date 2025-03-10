@@ -418,6 +418,10 @@
       "labelmapInterpolation": {
         "name": "Labelmap Interpolation",
         "description": "Interpolate between slices using labelmap"
+      },
+      "labelmapMIP": {
+        "name": "Labelmap MIP",
+        "description": "Demonstrates how to use the labelmap MIP tool"
       }
     },
     "advanced-gpu-segmentation": {

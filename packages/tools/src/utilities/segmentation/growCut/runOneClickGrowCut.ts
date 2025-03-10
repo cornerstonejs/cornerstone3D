@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import { utilities as csUtils, cache, volumeLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { run } from './runGrowCut';
@@ -10,115 +9,13 @@ const POSITIVE_SEED_VALUE = 254;
 const NEGATIVE_SEED_VALUE = 255;
 const POSITIVE_SEED_VARIANCE = 0.1;
 const NEGATIVE_SEED_VARIANCE = 0.8;
-const SUBVOLUME_PADDING_PERCENTAGE = 0.2;
-const SUBVOLUME_MIN_PADDING = 5;
 
 type GrowCutOneClickOptions = GrowCutOptions & {
   subVolumePaddingPercentage?: number | [number, number, number];
   subVolumeMinPadding?: number | [number, number, number];
+  negativeSeedMargin?: number;
+  negativeSeedsCount?: number;
 };
-
-type PositiveRegionData = {
-  worldVoxels: Types.Point3[];
-  boundingBox: {
-    topLeft: Types.Point3;
-    bottomRight: Types.Point3;
-  };
-};
-
-/**
- * Calculate the sub-volume size based on the bounding box that that contains
- * all the voxels set as positive seed
- * @param referencedVolume - Referenced volume
- * @param positiveRegionData - Positive region data
- * @returns A sub-volume with the size of the positive region + padding
- */
-function _createSubVolume(
-  referencedVolume: Types.IImageVolume,
-  positiveRegionData: PositiveRegionData,
-  options: GrowCutOneClickOptions
-) {
-  const { dimensions } = referencedVolume;
-  const positiveRegionSize = vec3.sub(
-    vec3.create(),
-    positiveRegionData.boundingBox.bottomRight,
-    positiveRegionData.boundingBox.topLeft
-  );
-
-  let subVolumePaddingPercentage =
-    options?.subVolumePaddingPercentage ?? SUBVOLUME_PADDING_PERCENTAGE;
-  let subVolumeMinPadding =
-    options?.subVolumeMinPadding ?? SUBVOLUME_MIN_PADDING;
-
-  if (typeof subVolumePaddingPercentage === 'number') {
-    subVolumePaddingPercentage = [
-      subVolumePaddingPercentage,
-      subVolumePaddingPercentage,
-      subVolumePaddingPercentage,
-    ];
-  }
-
-  if (typeof subVolumeMinPadding === 'number') {
-    subVolumeMinPadding = [
-      subVolumeMinPadding,
-      subVolumeMinPadding,
-      subVolumeMinPadding,
-    ];
-  }
-
-  // Calculate the sub-volume from subVolumePaddingPercentage
-  const padding = vec3.mul(
-    vec3.create(),
-    positiveRegionSize,
-    subVolumePaddingPercentage
-  );
-
-  // Round the padding since it is in IJK space and also consider the minimum
-  // padding (in pixels) otherwise it may add less than 3 pixels when dealing
-  // with very small positive regions.
-  vec3.round(padding, padding);
-  vec3.max(padding, padding, subVolumeMinPadding as vec3);
-
-  const subVolumeSize = vec3.scaleAndAdd(
-    vec3.create(),
-    positiveRegionSize,
-    padding,
-    2
-  );
-
-  const ijkTopLeft = vec3.sub(
-    vec3.create(),
-    positiveRegionData.boundingBox.topLeft,
-    padding
-  );
-
-  const ijkBottomRight = vec3.add(vec3.create(), ijkTopLeft, subVolumeSize);
-
-  vec3.max(ijkTopLeft, ijkTopLeft, [0, 0, 0]);
-  vec3.min(ijkTopLeft, ijkTopLeft, dimensions);
-
-  vec3.max(ijkBottomRight, ijkBottomRight, [0, 0, 0]);
-  vec3.min(ijkBottomRight, ijkBottomRight, dimensions);
-
-  const subVolumeBoundsIJK: Types.AABB3 = {
-    minX: ijkTopLeft[0],
-    maxX: ijkBottomRight[0],
-    minY: ijkTopLeft[1],
-    maxY: ijkBottomRight[1],
-    minZ: ijkTopLeft[2],
-    maxZ: ijkBottomRight[2],
-  };
-
-  return csUtils.createSubVolume(
-    referencedVolume.volumeId,
-    subVolumeBoundsIJK,
-    {
-      targetBuffer: {
-        type: 'Float32Array',
-      },
-    }
-  );
-}
 
 /**
  * Get the some information about the voxels that will be set as positive seed
@@ -129,25 +26,27 @@ function _createSubVolume(
  * @returns An object that contains all voxels that should be set as positive
  * in world space and its bounding box
  */
-function _getPositiveRegionData(
+function _generateSeeds(
   referencedVolume: Types.IImageVolume,
+  labelmap: Types.IImageVolume,
   worldPosition: Types.Point3,
   options?: GrowCutOneClickOptions
-): PositiveRegionData {
+) {
   const [width, height, numSlices] = referencedVolume.dimensions;
   const subVolPixelData =
     referencedVolume.voxelManager.getCompleteScalarDataArray();
   const numPixelsPerSlice = width * height;
+
+  // Convert clicked worldPosition => IJK index
   const ijkStartPosition = transformWorldToIndex(
     referencedVolume.imageData,
     worldPosition
   );
-  const referencePixelValue =
-    subVolPixelData[
-      ijkStartPosition[2] * numPixelsPerSlice +
-        ijkStartPosition[1] * width +
-        ijkStartPosition[0]
-    ];
+  const startIndex =
+    ijkStartPosition[2] * numPixelsPerSlice +
+    ijkStartPosition[1] * width +
+    ijkStartPosition[0];
+  const referencePixelValue = subVolPixelData[startIndex];
 
   const positiveSeedVariance =
     options.positiveSeedVariance ?? POSITIVE_SEED_VARIANCE;
@@ -157,7 +56,17 @@ function _getPositiveRegionData(
   const minPositivePixelValue = referencePixelValue - positiveSeedVarianceValue;
   const maxPositivePixelValue = referencePixelValue + positiveSeedVarianceValue;
 
-  // Neighbors distance that will be visited for every pixel
+  const negativeSeedVariance =
+    options.negativeSeedVariance ?? NEGATIVE_SEED_VARIANCE;
+  const negativeSeedVarianceValue = Math.abs(
+    referencePixelValue * negativeSeedVariance
+  );
+  const minNegativePixelValue = referencePixelValue - negativeSeedVarianceValue;
+  const maxNegativePixelValue = referencePixelValue + negativeSeedVarianceValue;
+
+  const positiveSeedValue = options.positiveSeedValue ?? POSITIVE_SEED_VALUE;
+  const negativeSeedValue = options.negativeSeedValue ?? NEGATIVE_SEED_VALUE;
+
   const neighborsCoordDelta = [
     [-1, 0, 0],
     [1, 0, 0],
@@ -167,43 +76,41 @@ function _getPositiveRegionData(
     [0, 0, 1],
   ];
 
-  let minX = Infinity;
-  let minY = Infinity;
-  let minZ = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  let maxZ = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    minZ = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity,
+    maxZ = -Infinity;
 
-  const startVoxelIndex =
-    ijkStartPosition[2] * numPixelsPerSlice +
-    ijkStartPosition[1] * width +
-    ijkStartPosition[0];
-  const voxelIndexesSet = new Set([startVoxelIndex]);
-  const worldVoxelSet = new Set<Types.Point3>([worldPosition]);
+  const voxelIndexesSet = new Set([startIndex]);
 
-  // Add the start point to the queue and traverse all neighbor pixels that are not visited yet and within the positive range
+  labelmap.voxelManager.setAtIndex(startIndex, positiveSeedValue);
+
   const queue = [ijkStartPosition];
 
-  // Run breadth first search in 3D space to update the positive and negative seed values
+  // ---------------------------------
+  // 1) BFS FOR POSITIVE SEEDS
+  // ---------------------------------
   while (queue.length) {
-    const ijkVoxel = queue.shift();
-    const [x, y, z] = ijkVoxel;
+    const [x, y, z] = queue.shift();
 
-    // No function calls for better performance
-    minX = ijkVoxel[0] < minX ? ijkVoxel[0] : minX;
-    minY = ijkVoxel[1] < minY ? ijkVoxel[1] : minY;
-    minZ = ijkVoxel[2] < minZ ? ijkVoxel[2] : minZ;
-    maxX = ijkVoxel[0] > maxX ? ijkVoxel[0] : maxX;
-    maxY = ijkVoxel[1] > maxY ? ijkVoxel[1] : maxY;
-    maxZ = ijkVoxel[2] > maxZ ? ijkVoxel[2] : maxZ;
+    // Update bounding box
+    minX = x < minX ? x : minX;
+    minY = y < minY ? y : minY;
+    minZ = z < minZ ? z : minZ;
+    maxX = x > maxX ? x : maxX;
+    maxY = y > maxY ? y : maxY;
+    maxZ = z > maxZ ? z : maxZ;
 
-    for (let i = 0, len = neighborsCoordDelta.length; i < len; i++) {
-      const neighborCoordDelta = neighborsCoordDelta[i];
-      const nx = x + neighborCoordDelta[0];
-      const ny = y + neighborCoordDelta[1];
-      const nz = z + neighborCoordDelta[2];
+    // Check neighbors
+    for (let i = 0; i < neighborsCoordDelta.length; i++) {
+      const [dx, dy, dz] = neighborsCoordDelta[i];
+      const nx = x + dx;
+      const ny = y + dy;
+      const nz = z + dz;
 
-      // Continue if it is out of bounds.
+      // Bounds check
       if (
         nx < 0 ||
         nx >= width ||
@@ -216,148 +123,97 @@ function _getPositiveRegionData(
       }
 
       const neighborVoxelIndex = nz * numPixelsPerSlice + ny * width + nx;
-      const neighborPixelValue = subVolPixelData[neighborVoxelIndex];
-
-      if (
-        voxelIndexesSet.has(neighborVoxelIndex) ||
-        neighborPixelValue < minPositivePixelValue ||
-        neighborPixelValue > maxPositivePixelValue
-      ) {
-        continue;
+      if (voxelIndexesSet.has(neighborVoxelIndex)) {
+        continue; // Already visited
       }
 
-      const ijkVoxel: Types.Point3 = [nx, ny, nz];
-      const worldVoxel = transformIndexToWorld(
-        referencedVolume.imageData,
-        ijkVoxel
-      );
+      const neighborPixelValue = subVolPixelData[neighborVoxelIndex];
 
-      voxelIndexesSet.add(neighborVoxelIndex);
-      worldVoxelSet.add(worldVoxel);
-      queue.push(ijkVoxel);
+      // Within the positive seed range?
+      if (
+        neighborPixelValue >= minPositivePixelValue &&
+        neighborPixelValue <= maxPositivePixelValue
+      ) {
+        labelmap.voxelManager.setAtIndex(neighborVoxelIndex, positiveSeedValue);
+        voxelIndexesSet.add(neighborVoxelIndex);
+        queue.push([nx, ny, nz]);
+      }
     }
   }
 
-  return {
-    worldVoxels: Array.from(worldVoxelSet),
-    boundingBox: {
-      topLeft: [minX, minY, minZ],
-      bottomRight: [maxX, maxY, maxZ],
-    },
-  };
-}
+  // ---------------------------------
+  // 2) SAMPLE NEGATIVE SEEDS NEAR THE POSITIVE BOUNDING BOX
+  // ---------------------------------
+  const margin = options.negativeSeedMargin ?? 30;
+  const minXwMargin = Math.max(0, minX - margin);
+  const minYwMargin = Math.max(0, minY - margin);
+  const minZwMargin = Math.max(0, minZ - margin);
+  const maxXwMargin = Math.min(width - 1, maxX + margin);
+  const maxYwMargin = Math.min(height - 1, maxY + margin);
+  const maxZwMargin = Math.min(numSlices - 1, maxZ + margin);
 
-function _setPositiveSeedValues(
-  labelmap: Types.IImageVolume,
-  positiveRegionData: PositiveRegionData,
-  options?: GrowCutOneClickOptions
-) {
-  const { dimensions } = labelmap;
-  const [width, height] = dimensions;
-  const numPixelsPerSlice = width * height;
-  const positiveSeedValue = options.positiveSeedValue ?? POSITIVE_SEED_VALUE;
-  const { worldVoxels } = positiveRegionData;
+  const negativeSeedsCount = options.negativeSeedsCount ?? 70;
+  const negativeIndexesSet = new Set<number>();
 
-  for (let i = 0, len = worldVoxels.length; i < len; i++) {
-    const worldVoxel = worldVoxels[i];
-    const ijkVoxel = transformWorldToIndex(labelmap.imageData, worldVoxel);
-    const voxelIndex =
-      ijkVoxel[2] * numPixelsPerSlice + ijkVoxel[1] * width + ijkVoxel[0];
+  let attempts = 0;
+  while (
+    negativeIndexesSet.size < negativeSeedsCount &&
+    attempts < negativeSeedsCount * 50
+  ) {
+    attempts++;
 
-    labelmap.voxelManager.setAtIndex(voxelIndex, positiveSeedValue);
-  }
-}
+    const rx = Math.floor(
+      Math.random() * (maxXwMargin - minXwMargin + 1) + minXwMargin
+    );
+    const ry = Math.floor(
+      Math.random() * (maxYwMargin - minYwMargin + 1) + minYwMargin
+    );
+    const rz = Math.floor(
+      Math.random() * (maxZwMargin - minZwMargin + 1) + minZwMargin
+    );
 
-function _setNegativeSeedValues(
-  subVolume: Types.IImageVolume,
-  labelmap: Types.IImageVolume,
-  worldPosition: Types.Point3,
-  options?: GrowCutOneClickOptions
-) {
-  const [width, height] = subVolume.dimensions;
-  const subVolPixelData = subVolume.voxelManager.getCompleteScalarDataArray();
-  const labelmapData = labelmap.voxelManager.getCompleteScalarDataArray();
-  const ijkPosition = transformWorldToIndex(subVolume.imageData, worldPosition);
-  const referencePixelValue =
-    subVolPixelData[
-      ijkPosition[2] * width * height + ijkPosition[1] * width + ijkPosition[0]
-    ];
+    const randomIndex = rz * numPixelsPerSlice + ry * width + rx;
 
-  const negativeSeedVariance =
-    options.negativeSeedVariance ?? NEGATIVE_SEED_VARIANCE;
-  const negativeSeedValue = options.negativeSeedValue ?? NEGATIVE_SEED_VALUE;
+    if (voxelIndexesSet.has(randomIndex)) {
+      continue;
+    }
 
-  const negativeSeedVarianceValue = Math.abs(
-    referencePixelValue * negativeSeedVariance
-  );
-  const minNegativePixelValue = referencePixelValue - negativeSeedVarianceValue;
-  const maxNegativePixelValue = referencePixelValue + negativeSeedVarianceValue;
-
-  for (let i = 0, len = subVolPixelData.length; i < len; i++) {
-    const pixelValue = subVolPixelData[i];
-
+    // Check intensity is in the negative range
+    const randomVal = subVolPixelData[randomIndex];
     if (
-      !labelmapData[i] &&
-      (pixelValue < minNegativePixelValue || pixelValue > maxNegativePixelValue)
+      randomVal >= minNegativePixelValue &&
+      randomVal <= maxNegativePixelValue
     ) {
-      labelmap.voxelManager.setAtIndex(i, negativeSeedValue);
+      labelmap.voxelManager.setAtIndex(randomIndex, negativeSeedValue);
+      negativeIndexesSet.add(randomIndex);
     }
   }
 }
 
 /**
- * Create a label map for the given sub-volume and update some all positive
- * and negative seed voxels
- * @param subVolume - Volume that shall be used to create a labelmap
- * @param positiveRegionData - Positive region data
- * @param worldPosition - Coordinate where the user clicked in world space
- * @param options - OneClick grow cut options
- * @returns
+ * Runs one click grow cut segmentation algorithm
+ * @param referencedVolumeId - The volume ID to segment
+ * @param worldPosition - The clicked position in world coordinates
+ * @param viewport - The viewport where the segmentation is being performed
+ * @param options - Configuration options for the grow cut algorithm
+ * @returns The segmented labelmap volume
  */
-async function _createAndCacheSegmentation(
-  subVolume: Types.IImageVolume,
-  positiveRegionData: PositiveRegionData,
-  worldPosition: Types.Point3,
-  options?: GrowCutOneClickOptions
-): Promise<Types.IImageVolume> {
-  const labelmap = volumeLoader.createAndCacheDerivedLabelmapVolume(
-    subVolume.volumeId
-  );
-
-  _setPositiveSeedValues(labelmap, positiveRegionData, options);
-  _setNegativeSeedValues(subVolume, labelmap, worldPosition, options);
-
-  return labelmap;
-}
-
-async function runOneClickGrowCut(
-  referencedVolumeId: string,
-  worldPosition: Types.Point3,
-  viewport: Types.IViewport,
-  options?: GrowCutOneClickOptions
-): Promise<Types.IImageVolume> {
+async function runOneClickGrowCut({
+  referencedVolumeId,
+  worldPosition,
+  options,
+}: {
+  referencedVolumeId: string;
+  worldPosition: Types.Point3;
+  options?: GrowCutOneClickOptions;
+}): Promise<Types.IImageVolume> {
   const referencedVolume = cache.getVolume(referencedVolumeId);
+  const labelmap =
+    volumeLoader.createAndCacheDerivedLabelmapVolume(referencedVolumeId);
 
-  const positiveRegionData = _getPositiveRegionData(
-    referencedVolume,
-    worldPosition,
-    options
-  );
+  _generateSeeds(referencedVolume, labelmap, worldPosition, options);
 
-  const subVolume = _createSubVolume(
-    referencedVolume,
-    positiveRegionData,
-    options
-  );
-
-  const labelmap = await _createAndCacheSegmentation(
-    subVolume,
-    positiveRegionData,
-    worldPosition,
-    options
-  );
-
-  await run(subVolume.volumeId, labelmap.volumeId);
+  await run(referencedVolumeId, labelmap.volumeId);
 
   return labelmap;
 }

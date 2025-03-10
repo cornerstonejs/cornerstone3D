@@ -352,6 +352,14 @@ export default class VoxelManager<T> {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
     const { isWithinObject } = options || {};
     const map = this.map as RLEVoxelMap<T>;
+
+    if (!map) {
+      console.warn(
+        'No map found, you need to use a map voxel manager to use rleForEach'
+      );
+      return;
+    }
+
     map.defaultValue = undefined;
     for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
       for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
@@ -442,16 +450,20 @@ export default class VoxelManager<T> {
     return value.BYTES_PER_ELEMENT;
   }
 
+  public clearBounds() {
+    this.boundsIJK.map((bound) => {
+      bound[0] = Infinity;
+      bound[1] = -Infinity;
+    });
+  }
+
   /**
    * Clears any map specific data, as well as the modified slices, points and
    * bounds.
    */
   public clear() {
     this.map?.clear();
-    this.boundsIJK.map((bound) => {
-      bound[0] = Infinity;
-      bound[1] = -Infinity;
-    });
+    this.clearBounds();
     this.modifiedSlices.clear();
     this.points?.clear();
   }
@@ -495,6 +507,14 @@ export default class VoxelManager<T> {
    */
   public resetModifiedSlices(): void {
     this.modifiedSlices.clear();
+  }
+
+  /**
+   * Sets the bounds of the voxel manager.
+   * @param bounds - The bounds to set.
+   */
+  public setBounds(bounds: BoundsIJK) {
+    this.boundsIJK = bounds;
   }
 
   /**

@@ -52,6 +52,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        isPartialVolume: true,
         /**
          * Range that shall be used to set voxel as positive seeds
          */
