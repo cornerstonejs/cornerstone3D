@@ -11,6 +11,8 @@ import {
   utilities as csUtils,
   Enums,
   CONSTANTS,
+  triggerEvent,
+  eventTarget,
 } from '@cornerstonejs/core';
 
 import {
@@ -393,14 +395,27 @@ class CrosshairsTool extends AnnotationTool {
 
     // Calculating the intersection of 3 planes
     // prettier-ignore
-    this.toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane)
+
+    const toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane);
+    this.setToolCenter(toolCenter);
+  };
+
+  setToolCenter(toolCenter: Types.Point3, suppressEvents = false): void {
+    // prettier-ignore
+    this.toolCenter = toolCenter;
+    const viewportsInfo = this._getViewportsInfo();
 
     // assuming all viewports are in the same rendering engine
-
     triggerAnnotationRenderForViewportIds(
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
-  };
+    if (!suppressEvents) {
+      triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
+        toolGroupId: this.toolGroupId,
+        toolCenter: this.toolCenter,
+      });
+    }
+  }
 
   /**
    * addNewAnnotation acts as jump for the crosshairs tool. It is called when
@@ -658,6 +673,11 @@ class CrosshairsTool extends AnnotationTool {
         this.toolCenter[0] += deltaCameraPosition[0];
         this.toolCenter[1] += deltaCameraPosition[1];
         this.toolCenter[2] += deltaCameraPosition[2];
+
+        triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
+          toolGroupId: this.toolGroupId,
+          toolCenter: this.toolCenter,
+        });
       }
     }
 
