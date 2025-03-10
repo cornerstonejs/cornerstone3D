@@ -6,6 +6,7 @@ import {
   type Types,
   volumeLoader,
   imageLoader,
+  ImageVolume,
 } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import { SegmentationRepresentations } from '../../enums';
@@ -26,7 +27,7 @@ import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 import { getOrCreateSegmentationVolume } from '../../utilities/segmentation';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 
-const { transformWorldToIndex, transformIndexToWorld } = csUtils;
+const { transformWorldToIndex } = csUtils;
 
 type GrowCutToolData = {
   metadata: Types.ViewReference & {
@@ -191,7 +192,7 @@ class GrowCutBaseTool extends BaseTool {
         growcutLabelmap
       );
 
-      // this._removeIslands(growCutData);
+      this._removeIslands(growCutData);
     };
 
     // run and store the command for later execution
@@ -263,14 +264,10 @@ class GrowCutBaseTool extends BaseTool {
         const fakeImage =
           imageLoader.createAndCacheDerivedImage(currentImageId);
 
-        const volumeId = cache.generateVolumeId([
-          currentImageId,
+        const fakeVolume = this._createFakeVolume([
+          currentImage.imageId,
           fakeImage.imageId,
         ]);
-        const fakeVolume = volumeLoader.createAndCacheVolumeFromImagesSync(
-          volumeId,
-          [currentImage.imageId, fakeImage.imageId]
-        );
         referencedVolumeId = fakeVolume.volumeId;
 
         const currentLabelmapImageId = getCurrentLabelmapImageIdForViewport(
@@ -282,16 +279,10 @@ class GrowCutBaseTool extends BaseTool {
           currentLabelmapImageId
         );
 
-        const fakeSegVolumeId = cache.generateVolumeId([
+        const fakeLabelmapVolume = this._createFakeVolume([
           currentLabelmapImageId,
           fakeDerivedImage.imageId,
         ]);
-        // create fake labelmap volume
-        const fakeLabelmapVolume =
-          volumeLoader.createAndCacheVolumeFromImagesSync(fakeSegVolumeId, [
-            currentLabelmapImageId,
-            fakeDerivedImage.imageId,
-          ]);
 
         labelmapVolumeId = fakeLabelmapVolume.volumeId;
       } else {
@@ -325,6 +316,47 @@ class GrowCutBaseTool extends BaseTool {
       labelmapVolumeId,
       referencedVolumeId,
     };
+  }
+
+  // Todo: move this to a utilities file
+  // this just fakes a volume from a non reconstructable stack viewport
+  private _createFakeVolume(imageIds: string[]) {
+    const volumeId = cache.generateVolumeId(imageIds);
+
+    const cachedVolume = cache.getVolume(volumeId);
+
+    if (cachedVolume) {
+      return cachedVolume;
+    }
+
+    // Todo: implement rle based voxel manager here for ultrasound later
+
+    const volumeProps = csUtils.generateVolumePropsFromImageIds(
+      imageIds,
+      volumeId
+    );
+
+    const spacing = volumeProps.spacing;
+    if (spacing[2] === 0) {
+      spacing[2] = 1;
+    }
+
+    const derivedVolume = new ImageVolume({
+      volumeId,
+      dataType: volumeProps.dataType,
+      metadata: structuredClone(volumeProps.metadata),
+      dimensions: volumeProps.dimensions,
+      spacing: volumeProps.spacing,
+      origin: volumeProps.origin,
+      direction: volumeProps.direction,
+      referencedVolumeId: volumeProps.referencedVolumeId,
+      imageIds: volumeProps.imageIds,
+      referencedImageIds: volumeProps.referencedImageIds,
+    });
+
+    cache.putVolumeSync(volumeId, derivedVolume);
+
+    return derivedVolume;
   }
 
   protected _isOrthogonalView(

@@ -57,11 +57,7 @@ function generateVolumePropsFromImageIds(
   const numFrames = imageIds.length;
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const spacing = [
-    PixelSpacing[1],
-    PixelSpacing[0],
-    zSpacing === 0 ? 1 : zSpacing,
-  ] as Point3;
+  const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing] as Point3;
   const dimensions = [Columns, Rows, numFrames].map((it) =>
     Math.floor(it)
   ) as Point3;

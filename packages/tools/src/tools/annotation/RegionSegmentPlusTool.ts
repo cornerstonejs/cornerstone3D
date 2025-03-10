@@ -22,14 +22,14 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        positiveSeedVariance: 0.1,
+        positiveSeedVariance: 0.4,
         negativeSeedVariance: 0.9,
         subVolumePaddingPercentage: 0.1,
         islandRemoval: {
           /**
            * Enable/disable island removal
            */
-          enabled: true,
+          enabled: false,
         },
       },
     }
