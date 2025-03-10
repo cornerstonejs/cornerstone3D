@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.0...v3.1.1) (2025-03-10)
+
+### Bug Fixes
+
+- **growcut:** Enable GrowCut in Stack viewport for all datasets ([#1888](https://github.com/cornerstonejs/cornerstone3D/issues/1888)) ([9e18e6b](https://github.com/cornerstonejs/cornerstone3D/commit/9e18e6b6e8054c4340b9069476cc0b404c4eea3f))
+
 # [3.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.5...v3.1.0) (2025-03-10)
 
 **Note:** Version bump only for package @cornerstonejs/core
