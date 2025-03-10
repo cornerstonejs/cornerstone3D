@@ -27,7 +27,7 @@ import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 import { getOrCreateSegmentationVolume } from '../../utilities/segmentation';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
 type GrowCutToolData = {
   metadata: Types.ViewReference & {
@@ -185,12 +185,13 @@ class GrowCutBaseTool extends BaseTool {
 
       const growcutLabelmap = await this.getGrowCutLabelmap(updatedGrowCutData);
 
-      this.applyGrowCutLabelmap(
-        segmentationId,
-        segmentIndex,
-        labelmap,
-        growcutLabelmap
-      );
+      const { isPartialVolume } = config;
+
+      const fn = isPartialVolume
+        ? this.applyPartialGrowCutLabelmap
+        : this.applyGrowCutLabelmap;
+
+      fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
 
       this._removeIslands(growCutData);
     };
@@ -204,6 +205,61 @@ class GrowCutBaseTool extends BaseTool {
     }
 
     this.growCutData = null;
+  }
+
+  protected applyPartialGrowCutLabelmap(
+    segmentationId: string,
+    segmentIndex: number,
+    targetLabelmap: Types.IImageVolume,
+    sourceLabelmap: Types.IImageVolume
+  ) {
+    const srcLabelmapData =
+      sourceLabelmap.voxelManager.getCompleteScalarDataArray();
+    const tgtVoxelManager = targetLabelmap.voxelManager;
+
+    const [srcColumns, srcRows, srcNumSlices] = sourceLabelmap.dimensions;
+    const [tgtColumns, tgtRows] = targetLabelmap.dimensions;
+    const srcPixelsPerSlice = srcColumns * srcRows;
+    const tgtPixelsPerSlice = tgtColumns * tgtRows;
+
+    // Since we know labelmap volumes have the same orientation as the referenced
+    // volumes we can calculate the position of the first voxel of each row,
+    // calculate its offset and copy all subsequent voxels without having to
+    // calculated the position of each voxel on by one.
+    for (let srcSlice = 0; srcSlice < srcNumSlices; srcSlice++) {
+      for (let srcRow = 0; srcRow < srcRows; srcRow++) {
+        // Converts coordinates in two steps;
+        //   - from sub-volume index space to world
+        //   - from world space to volume index space
+        //
+        // TODO: create a matrix that coverts the coordinates from sub-volume
+        // index space to volume index space without getting into world space
+        const srcRowIJK: Types.Point3 = [0, srcRow, srcSlice];
+        const rowVoxelWorld = transformIndexToWorld(
+          sourceLabelmap.imageData,
+          srcRowIJK
+        );
+        const tgtRowIJK = transformWorldToIndex(
+          targetLabelmap.imageData,
+          rowVoxelWorld
+        );
+        const [tgtColumn, tgtRow, tgtSlice] = tgtRowIJK;
+        const srcOffset = srcRow * srcColumns + srcSlice * srcPixelsPerSlice;
+        const tgtOffset =
+          tgtColumn + tgtRow * tgtColumns + tgtSlice * tgtPixelsPerSlice;
+
+        for (let column = 0; column < srcColumns; column++) {
+          const labelmapValue =
+            srcLabelmapData[srcOffset + column] === segmentIndex
+              ? segmentIndex
+              : 0;
+
+          tgtVoxelManager.setAtIndex(tgtOffset + column, labelmapValue);
+        }
+      }
+    }
+
+    triggerSegmentationDataModified(segmentationId);
   }
 
   protected applyGrowCutLabelmap(
