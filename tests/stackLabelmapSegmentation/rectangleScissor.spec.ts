@@ -14,11 +14,12 @@ test.beforeEach(async ({ page }) => {
 // Test for rectangle scissor tool with segmentation 2
 test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
   page,
+  browserName,
 }) => {
-  test.skip(
-    ({ browserName }) => ['chromium', 'webkit'].includes(browserName),
-    'Skipping test for non-chromium/webkit browsers'
-  );
+  if (!['chromium', 'webkit'].includes(browserName)) {
+    return;
+  }
+
   await page.getByRole('combobox').first().selectOption('RectangleScissor');
 
   const canvas = await page.locator('canvas').first();

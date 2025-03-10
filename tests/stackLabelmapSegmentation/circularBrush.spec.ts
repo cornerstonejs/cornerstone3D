@@ -13,11 +13,14 @@ test.beforeEach(async ({ page }) => {
 });
 
 // Test for circular brush tool
-test('Stack Segmentation - Circular Brush Tool', async ({ page }) => {
-  test.skip(
-    ({ browserName }) => ['chromium', 'webkit'].includes(browserName),
-    'Skipping test for non-chromium/webkit browsers'
-  );
+test('Stack Segmentation - Circular Brush Tool', async ({
+  page,
+  browserName,
+}) => {
+  if (!['chromium', 'webkit'].includes(browserName)) {
+    return;
+  }
+
   await page.getByRole('combobox').first().selectOption('CircularBrush');
 
   const canvas = await page.locator('canvas').first();
