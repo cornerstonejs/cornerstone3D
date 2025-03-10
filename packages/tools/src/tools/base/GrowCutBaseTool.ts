@@ -9,12 +9,7 @@ import {
 } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import { SegmentationRepresentations } from '../../enums';
-import type {
-  ContourStyle,
-  EventTypes,
-  PublicToolProps,
-  ToolProps,
-} from '../../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 import {
   segmentIndex as segmentIndexController,
   state as segmentationState,
