@@ -8,6 +8,7 @@ import {
   getEnabledElementByIds,
   cache,
   utilities,
+  VideoViewport,
 } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { updateLabelmapSegmentationImageReferences } from '../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
@@ -203,7 +204,11 @@ function _imageChangeEventListener(evt) {
           imageId: derivedImageId,
           representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
           callback: ({ imageActor }) => {
-            imageActor.getMapper().setInputData(imageData);
+            if (viewport instanceof VideoViewport) {
+              imageActor.getMapper().getInputData().setDerivedImage(imageData);
+            } else {
+              imageActor.getMapper().setInputData(imageData);
+            }
           },
         },
       ]);
