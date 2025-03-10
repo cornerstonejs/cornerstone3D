@@ -1,7 +1,7 @@
 import { normalizers, data, utilities, derivations } from "dcmjs";
 
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
-import { toArray, codeMeaningEquals } from "../helpers";
+import { toArray, codeMeaningEquals, copyStudyTags } from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
 
 const { TID1500, addAccessors } = utilities;
@@ -206,11 +206,7 @@ export default class MeasurementReport {
 
         const _meta = MeasurementReport.generateDatasetMeta();
 
-        const derivationSourceDataset = {
-            ...instance,
-            _meta: _meta,
-            _vrMap: _vrMap
-        };
+        const derivationSourceDataset = copyStudyTags(instance, _meta, _vrMap);
 
         return derivationSourceDataset;
     };
