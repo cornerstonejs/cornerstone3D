@@ -66,7 +66,7 @@ function volumetricStatsCallback(
     }
   }
 
-  if (maxIJKs.length >= TEST_MAX_LOCATIONS) {
+  if (length >= TEST_MAX_LOCATIONS) {
     maxIJKs.splice(0, 1);
   }
 }
