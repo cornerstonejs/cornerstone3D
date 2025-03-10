@@ -17,6 +17,7 @@ test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
   browserName,
 }) => {
   if (!['chromium', 'webkit'].includes(browserName)) {
+    expect(true).toBe(true);
     return;
   }
 

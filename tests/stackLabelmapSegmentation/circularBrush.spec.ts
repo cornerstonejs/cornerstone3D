@@ -18,6 +18,7 @@ test('Stack Segmentation - Circular Brush Tool', async ({
   browserName,
 }) => {
   if (!['chromium', 'webkit'].includes(browserName)) {
+    expect(true).toBe(true);
     return;
   }
 

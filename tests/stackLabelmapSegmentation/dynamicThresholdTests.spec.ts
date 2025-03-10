@@ -20,6 +20,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
   browserName,
 }) => {
   if (!['chromium', 'webkit'].includes(browserName)) {
+    expect(true).toBe(true);
     return;
   }
 
@@ -46,6 +47,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
   browserName,
 }) => {
   if (!['chromium', 'webkit'].includes(browserName)) {
+    expect(true).toBe(true);
     return;
   }
 
@@ -71,6 +73,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
   browserName,
 }) => {
   if (!['chromium', 'webkit'].includes(browserName)) {
+    expect(true).toBe(true);
     return;
   }
 

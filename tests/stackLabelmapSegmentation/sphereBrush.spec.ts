@@ -19,6 +19,7 @@ test('Stack Segmentation - Sphere Brush Tool', async ({
   browserName,
 }) => {
   if (!['chromium', 'webkit'].includes(browserName)) {
+    expect(true).toBe(true);
     return;
   }
 

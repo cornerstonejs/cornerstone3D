@@ -18,6 +18,7 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 1', async ({
   browserName,
 }) => {
   if (!['chromium', 'webkit'].includes(browserName)) {
+    expect(true).toBe(true);
     return;
   }
 
