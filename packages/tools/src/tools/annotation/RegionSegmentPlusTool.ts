@@ -93,7 +93,6 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
     return growCut.runOneClickGrowCut({
       referencedVolumeId,
-      labelmapVolumeId,
       worldPosition: worldPoint,
       options: mergedOptions,
     });

@@ -13,6 +13,8 @@ const NEGATIVE_SEED_VARIANCE = 0.8;
 type GrowCutOneClickOptions = GrowCutOptions & {
   subVolumePaddingPercentage?: number | [number, number, number];
   subVolumeMinPadding?: number | [number, number, number];
+  negativeSeedMargin?: number;
+  negativeSeedsCount?: number;
 };
 
 /**
