@@ -22,15 +22,31 @@ export const studyTags = [
     "StudyInstanceUID",
     "StudyDescription",
     "AccessionNumber",
-    "StudyID"
+    "StudyID",
+    "ReferringPhysicianName",
+    "BodyPartExamined",
+    "TimezoneOffsetFromUTC"
 ];
 
+/**
+ * A list of patient/study tag names used to create new instances in the same study
+ * from an existing instance.
+ */
 export const patientStudyTags = [...patientTags, ...studyTags];
 
-export function copyStudyTags(src, meta, vrMap) {
+/**
+ * Copies study (and patient) tags from src into a new object.
+ * This prevents copying series and instance tags from the src when
+ * creating a new object in the same study, but for a different/new series.
+ *
+ * Usage:  `const newStudyInstance = copyStudyTags(exampleInstance)`
+ * Then fill out the `newStudyInstance` with series and instance level data
+ * appropriate for whatever you are creating.
+ */
+export function copyStudyTags(src) {
     const study = {
-        _meta: meta,
-        _vrMap: vrMap
+        _meta: src._meta,
+        _vrMap: src._vrMap
     };
     for (const tagKey of patientStudyTags) {
         const value = src[tagKey];

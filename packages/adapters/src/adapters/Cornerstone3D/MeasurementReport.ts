@@ -206,7 +206,7 @@ export default class MeasurementReport {
 
         const _meta = MeasurementReport.generateDatasetMeta();
 
-        const derivationSourceDataset = copyStudyTags(instance, _meta, _vrMap);
+        const derivationSourceDataset = copyStudyTags(instance);
 
         return derivationSourceDataset;
     };
