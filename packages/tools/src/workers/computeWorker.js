@@ -76,7 +76,7 @@ const computeWorker = {
     const { segmentationInfo, imageInfo, indices, mode } = args;
 
     // Initialize the SegmentStatsCalculator with the segment indices
-    SegmentStatsCalculator.init(indices, { storePointData: true });
+    SegmentStatsCalculator.statsInit({ storePointData: true, indices, mode });
 
     // Create voxel managers for each pair of segmentation and image info
     for (let i = 0; i < segmentationInfo.length; i++) {
@@ -110,7 +110,7 @@ const computeWorker = {
           const imageValue = imageVoxelManager.getAtIndex(index);
 
           // Process the voxel for the specific segment index
-          SegmentStatsCalculator.processVoxel({
+          SegmentStatsCalculator.statsCallback({
             segmentIndex: value,
             value: imageValue,
             pointIJK,

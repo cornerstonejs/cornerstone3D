@@ -307,11 +307,31 @@ async function calculateStackStatistics({ segImageIds, indices, unit, mode }) {
 
   triggerWorkerProgress(eventTarget, 100);
 
-  stats.mean.unit = unit;
-  stats.max.unit = unit;
-  stats.min.unit = unit;
+  const spacing = segmentationInfo[0].spacing;
+  const segmentationImageData = segmentationInfo[0];
+  const imageVoxelManager = imageInfo[0].voxelManager;
 
-  return stats;
+  if (mode === 'collective') {
+    return processSegmentationStatistics({
+      stats,
+      unit,
+      spacing,
+      segmentationImageData,
+      imageVoxelManager,
+    });
+  } else {
+    const finalStats = {};
+    Object.entries(stats).forEach(([segmentIndex, stat]) => {
+      finalStats[segmentIndex] = processSegmentationStatistics({
+        stats: stat,
+        unit,
+        spacing,
+        segmentationImageData,
+        imageVoxelManager,
+      });
+    });
+    return finalStats;
+  }
 }
 
 /**
