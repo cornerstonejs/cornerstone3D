@@ -18,11 +18,6 @@ test('Stack Segmentation - Sphere Brush Tool', async ({
   page,
   browserName,
 }) => {
-  if (!['chromium', 'webkit'].includes(browserName)) {
-    expect(true).toBe(true);
-    return;
-  }
-
   await page.getByRole('combobox').first().selectOption('SphereBrush');
 
   const canvas = await page.locator('canvas').first();

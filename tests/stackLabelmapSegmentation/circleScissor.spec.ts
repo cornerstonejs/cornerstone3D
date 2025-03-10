@@ -17,11 +17,6 @@ test('Stack Segmentation - Circular Scissor Tool with segmentation 1', async ({
   page,
   browserName,
 }) => {
-  if (!['chromium', 'webkit'].includes(browserName)) {
-    expect(true).toBe(true);
-    return;
-  }
-
   await page.getByRole('combobox').first().selectOption('CircleScissor');
 
   const canvas = await page.locator('canvas').first();

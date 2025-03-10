@@ -16,11 +16,6 @@ test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
   page,
   browserName,
 }) => {
-  if (!['chromium', 'webkit'].includes(browserName)) {
-    expect(true).toBe(true);
-    return;
-  }
-
   await page.getByRole('combobox').first().selectOption('RectangleScissor');
 
   const canvas = await page.locator('canvas').first();

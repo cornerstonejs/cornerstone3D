@@ -17,11 +17,6 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 2', async ({
   page,
   browserName,
 }) => {
-  if (!['chromium', 'webkit'].includes(browserName)) {
-    expect(true).toBe(true);
-    return;
-  }
-
   await page.getByRole('combobox').first().selectOption('CircularBrush');
 
   const canvas = await page.locator('canvas').first();
