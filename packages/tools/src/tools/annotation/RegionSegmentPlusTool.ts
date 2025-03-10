@@ -22,7 +22,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        positiveSeedVariance: 0.4,
+        positiveSeedVariance: 0.1,
         negativeSeedVariance: 0.9,
         subVolumePaddingPercentage: 0.1,
         islandRemoval: {
@@ -74,7 +74,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
   protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { referencedVolumeId },
+      segmentation: { referencedVolumeId, labelmapVolumeId },
       renderingEngineId,
       viewportId,
       worldPoint,
@@ -90,12 +90,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       subVolumePaddingPercentage,
     };
 
-    return growCut.runOneClickGrowCut(
+    return growCut.runOneClickGrowCut({
       referencedVolumeId,
-      worldPoint,
-      viewport,
-      mergedOptions
-    );
+      labelmapVolumeId,
+      worldPosition: worldPoint,
+      options: mergedOptions,
+    });
   }
 }
 

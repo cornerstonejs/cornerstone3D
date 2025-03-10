@@ -216,6 +216,9 @@ class GrowCutBaseTool extends BaseTool {
     targetLabelmap: Types.IImageVolume,
     sourceLabelmap: Types.IImageVolume
   ) {
+    triggerSegmentationDataModified(segmentationId);
+
+    return;
     console.time('applyGrowCutLabelmap');
     const srcLabelmapData =
       sourceLabelmap.voxelManager.getCompleteScalarDataArray();
@@ -226,42 +229,48 @@ class GrowCutBaseTool extends BaseTool {
     const srcPixelsPerSlice = srcColumns * srcRows;
     const tgtPixelsPerSlice = tgtColumns * tgtRows;
 
+    sourceLabelmap.voxelManager.forEach(({ value, index }) => {
+      if (value === segmentIndex) {
+        tgtVoxelManager.setAtIndex(index, value);
+      }
+    });
+
     // Since we know labelmap volumes have the same orientation as the referenced
     // volumes we can calculate the position of the first voxel of each row,
     // calculate its offset and copy all subsequent voxels without having to
     // calculated the position of each voxel on by one.
-    for (let srcSlice = 0; srcSlice < srcNumSlices; srcSlice++) {
-      for (let srcRow = 0; srcRow < srcRows; srcRow++) {
-        // Converts coordinates in two steps;
-        //   - from sub-volume index space to world
-        //   - from world space to volume index space
-        //
-        // TODO: create a matrix that coverts the coordinates from sub-volume
-        // index space to volume index space without getting into world space
-        const srcRowIJK: Types.Point3 = [0, srcRow, srcSlice];
-        const rowVoxelWorld = transformIndexToWorld(
-          sourceLabelmap.imageData,
-          srcRowIJK
-        );
-        const tgtRowIJK = transformWorldToIndex(
-          targetLabelmap.imageData,
-          rowVoxelWorld
-        );
-        const [tgtColumn, tgtRow, tgtSlice] = tgtRowIJK;
-        const srcOffset = srcRow * srcColumns + srcSlice * srcPixelsPerSlice;
-        const tgtOffset =
-          tgtColumn + tgtRow * tgtColumns + tgtSlice * tgtPixelsPerSlice;
+    // for (let srcSlice = 0; srcSlice < srcNumSlices; srcSlice++) {
+    //   for (let srcRow = 0; srcRow < srcRows; srcRow++) {
+    //     // Converts coordinates in two steps;
+    //     //   - from sub-volume index space to world
+    //     //   - from world space to volume index space
+    //     //
+    //     // TODO: create a matrix that coverts the coordinates from sub-volume
+    //     // index space to volume index space without getting into world space
+    //     const srcRowIJK: Types.Point3 = [0, srcRow, srcSlice];
+    //     const rowVoxelWorld = transformIndexToWorld(
+    //       sourceLabelmap.imageData,
+    //       srcRowIJK
+    //     );
+    //     const tgtRowIJK = transformWorldToIndex(
+    //       targetLabelmap.imageData,
+    //       rowVoxelWorld
+    //     );
+    //     const [tgtColumn, tgtRow, tgtSlice] = tgtRowIJK;
+    //     const srcOffset = srcRow * srcColumns + srcSlice * srcPixelsPerSlice;
+    //     const tgtOffset =
+    //       tgtColumn + tgtRow * tgtColumns + tgtSlice * tgtPixelsPerSlice;
 
-        for (let column = 0; column < srcColumns; column++) {
-          const labelmapValue =
-            srcLabelmapData[srcOffset + column] === segmentIndex
-              ? segmentIndex
-              : 0;
+    //     for (let column = 0; column < srcColumns; column++) {
+    //       const labelmapValue =
+    //         srcLabelmapData[srcOffset + column] === segmentIndex
+    //           ? segmentIndex
+    //           : 0;
 
-          tgtVoxelManager.setAtIndex(tgtOffset + column, labelmapValue);
-        }
-      }
-    }
+    //       tgtVoxelManager.setAtIndex(tgtOffset + column, labelmapValue);
+    //     }
+    //   }
+    // }
     console.timeEnd('applyGrowCutLabelmap');
     triggerSegmentationDataModified(segmentationId);
   }
