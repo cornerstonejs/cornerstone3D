@@ -25,7 +25,7 @@
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "cross-env NODE_OPTIONS=--max_old_space_size=32896 node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot || (echo 'Build failed - likely due to memory constraints' && exit 1)",
-    "serve-static-examples": "npx serve .static-examples",
+    "serve-static-examples": "npx serve .static-examples --listen 3333",
     "build-and-serve-static-examples": "cross-env NODE_OPTIONS=--max_old_space_size=32896 yarn run build-all-examples && yarn run serve-static-examples",
     "build:all": "npx lerna run build:all",
     "dev": "yarn run all-examples",
