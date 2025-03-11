@@ -1,4 +1,4 @@
-import { cache as cornerstoneCache, type Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -6,15 +6,16 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getDeduplicatedVTKPolyDataPoints } from './getDeduplicatedVTKPolyDataPoints';
 import { findContoursFromReducedSet } from './contourFinder';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-
+import getOrCreateSegmentationVolume from '../segmentation/getOrCreateSegmentationVolume';
 const { Labelmap } = SegmentationRepresentations;
 
 function generateContourSetsFromLabelmap({ segmentations }) {
   const { representationData, segments = [0, 1] } = segmentations;
   const { volumeId: segVolumeId } = representationData[Labelmap];
 
+  const vol = getOrCreateSegmentationVolume(segVolumeId);
+
   // Get segmentation volume
-  const vol = cornerstoneCache.getVolume(segVolumeId);
   if (!vol) {
     console.warn(`No volume found for ${segVolumeId}`);
     return;

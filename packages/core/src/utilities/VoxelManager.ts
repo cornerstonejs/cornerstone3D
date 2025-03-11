@@ -43,12 +43,6 @@ export default class VoxelManager<T> {
 
   public getRange: () => [number, number];
   private scalarData = null as PixelDataTypedArray;
-  // caching for sliceData as it is expensive to get it from the cache
-  // I think we need to have a way to invalidate this cache and also have
-  // a limit on the number of slices to cache since it can grow indefinitely
-  private _sliceDataCache = null as Map<string, PixelDataTypedArray>;
-  // Cache for complete scalar data array to avoid expensive reconstruction
-  private _completeScalarDataCache = null as PixelDataTypedArray;
 
   public readonly _id: string;
 
@@ -121,8 +115,6 @@ export default class VoxelManager<T> {
     const changed = this._set(index, v);
     if (changed) {
       this.modifiedSlices.add(k);
-      // Invalidate the complete scalar data cache when a voxel is modified
-      this._completeScalarDataCache = null;
       VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
     }
 
@@ -179,8 +171,6 @@ export default class VoxelManager<T> {
     if (changed) {
       const pointIJK = this.toIJK(index);
       this.modifiedSlices.add(pointIJK[2]);
-      // Invalidate the complete scalar data cache when a voxel is modified
-      this._completeScalarDataCache = null;
       VoxelManager.addBounds(this.boundsIJK, pointIJK);
     }
     return changed;
@@ -472,8 +462,6 @@ export default class VoxelManager<T> {
     this.clearBounds();
     this.modifiedSlices.clear();
     this.points?.clear();
-    // Clear the complete scalar data cache when the voxel manager is cleared
-    this._completeScalarDataCache = null;
   }
 
   /**
@@ -871,14 +859,6 @@ export default class VoxelManager<T> {
      * @returns {ArrayLike<number>} The scalar data array (read-only)
      */
     voxelManager.getCompleteScalarDataArray = () => {
-      // Return cached data if available and no slices have been modified
-      if (
-        voxelManager._completeScalarDataCache &&
-        voxelManager.modifiedSlices.size === 0
-      ) {
-        return voxelManager._completeScalarDataCache;
-      }
-
       const ScalarDataConstructor = voxelManager._getConstructor();
       if (!ScalarDataConstructor) {
         return new Uint8Array(0);
@@ -886,7 +866,6 @@ export default class VoxelManager<T> {
 
       const dataLength = voxelManager.getScalarDataLength();
       const scalarData = new ScalarDataConstructor(dataLength);
-
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
@@ -911,7 +890,6 @@ export default class VoxelManager<T> {
         }
       }
 
-      voxelManager._completeScalarDataCache = scalarData;
       // Reset modified slices since we've just updated the cache
       voxelManager.resetModifiedSlices();
 
@@ -981,9 +959,6 @@ export default class VoxelManager<T> {
         [0, dimensions[1] - 1],
         [0, dimensions[2] - 1],
       ];
-
-      // Invalidate the complete scalar data cache
-      voxelManager._completeScalarDataCache = null;
     };
 
     return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;
