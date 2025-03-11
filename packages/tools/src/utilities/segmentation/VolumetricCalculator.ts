@@ -1,79 +1,203 @@
 import type { Types } from '@cornerstonejs/core';
 import type { NamedStatistics } from '../../types';
-import { BasicStatsCalculator } from '../math/basic';
+import {
+  BasicStatsCalculator,
+  InstanceBasicStatsCalculator,
+} from '../math/basic/BasicStatsCalculator';
+import { getCalibratedLengthUnitsAndScale } from '../getCalibratedUnits';
 
 const TEST_MAX_LOCATIONS = 10;
 
-/**
- * A basic stats calculator for volumetric data, generally for use with
- * segmentations.
- */
-export default class VolumetricCalculator extends BasicStatsCalculator {
-  /**
-   * maxIJKs is a list of possible peak value locations based
-   * on the statsCallback calls with the largest TEST_MAX_LOCATIONS values.
-   */
-  private static maxIJKs = [];
-  public static getStatistics(options: {
-    spacing?: number;
-    unit?: string;
-  }): NamedStatistics {
-    const { spacing } = options;
-    // Get the basic units
-    const stats = BasicStatsCalculator.getStatistics();
+interface VolumetricState {
+  maxIJKs: Array<{
+    value: number;
+    pointLPS?: Types.Point3;
+    pointIJK?: Types.Point3;
+  }>;
+}
 
-    // Add the volumetric units
-    const volumeUnit = spacing ? 'mm\xb3' : 'voxels\xb3';
-    const volumeScale = spacing
-      ? spacing[0] * spacing[1] * spacing[2] * 1000
-      : 1;
+function createVolumetricState(): VolumetricState {
+  return {
+    maxIJKs: [],
+  };
+}
 
-    stats.volume = {
-      value: Array.isArray(stats.count.value)
-        ? stats.count.value.map((v) => v * volumeScale)
-        : stats.count.value * volumeScale,
-      unit: volumeUnit,
-      name: 'volume',
-    };
-    stats.maxIJKs = this.maxIJKs;
+function volumetricStatsCallback(
+  state: VolumetricState,
+  data: {
+    value: number | Types.RGB;
+    pointLPS?: Types.Point3;
+    pointIJK?: Types.Point3;
+  }
+): void {
+  const { value } = data;
+  const { maxIJKs } = state;
+  const length = maxIJKs.length;
 
-    stats.array.push(stats.volume);
-    // Reset all the calculated values to agree with the BasicStatsCalculator API
-    this.maxIJKs = [];
-
-    return stats;
+  if (
+    typeof value !== 'number' ||
+    (length >= TEST_MAX_LOCATIONS && value < maxIJKs[0].value)
+  ) {
+    return;
   }
 
-  /**
-   * Calculate the basic stats, and then start collecting locations of peak values.
-   */
+  if (!length || value >= maxIJKs[length - 1].value) {
+    maxIJKs.push(
+      data as {
+        value: number;
+        pointLPS?: Types.Point3;
+        pointIJK?: Types.Point3;
+      }
+    );
+  } else {
+    for (let i = 0; i < length; i++) {
+      if (value <= maxIJKs[i].value) {
+        maxIJKs.splice(
+          i,
+          0,
+          data as {
+            value: number;
+            pointLPS?: Types.Point3;
+            pointIJK?: Types.Point3;
+          }
+        );
+        break;
+      }
+    }
+  }
+
+  if (length >= TEST_MAX_LOCATIONS) {
+    maxIJKs.splice(0, 1);
+  }
+}
+
+function volumetricGetStatistics(
+  state: VolumetricState,
+  stats: NamedStatistics,
+  options: {
+    spacing?: number[] | number;
+    calibration?: unknown;
+    hasPixelSpacing?: boolean;
+    unit?: string;
+  }
+): NamedStatistics {
+  const { spacing, calibration } = options;
+  const { volumeUnit } = getCalibratedLengthUnitsAndScale(
+    // Todo: fix this for volumes; we don't have calibration for volumes yet
+    // Also, if there is a volume, there should be spacing, so it is always true
+    {
+      calibration,
+      hasPixelSpacing: true,
+    },
+    []
+  );
+  const volumeScale = spacing ? spacing[0] * spacing[1] * spacing[2] * 1000 : 1;
+
+  stats.volume = {
+    value: Array.isArray(stats.count.value)
+      ? stats.count.value.map((v: number) => v * volumeScale)
+      : stats.count.value * volumeScale,
+    unit: volumeUnit,
+    name: 'volume',
+  };
+
+  stats.maxIJKs = state.maxIJKs.filter(
+    (entry): entry is { value: number; pointIJK: Types.Point3 } =>
+      entry.pointIJK !== undefined
+  );
+  stats.array.push(stats.volume);
+
+  // Reset state
+  state.maxIJKs = [];
+
+  return stats;
+}
+
+/**
+ * A basic stats calculator for volumetric data, generally for use with segmentations.
+ */
+export class VolumetricCalculator extends BasicStatsCalculator {
+  private static volumetricState: VolumetricState = createVolumetricState();
+
+  public static statsInit(options: { storePointData: boolean }): void {
+    super.statsInit(options);
+    this.volumetricState = createVolumetricState();
+  }
+
   public static statsCallback(data: {
     value: number | Types.RGB;
     pointLPS?: Types.Point3;
     pointIJK?: Types.Point3;
-  }) {
-    BasicStatsCalculator.statsCallback(data);
-    const { value } = data;
-    const { maxIJKs } = this;
-    const { length } = maxIJKs;
-    if (
-      typeof value !== 'number' ||
-      (length >= TEST_MAX_LOCATIONS && value < maxIJKs[0].value)
-    ) {
-      return;
-    }
-    if (!length || value >= maxIJKs[length - 1].value) {
-      maxIJKs.push(data);
-    } else {
-      for (let i = 0; i < length; i++) {
-        if (value <= maxIJKs[i].value) {
-          maxIJKs.splice(i, 0, data);
-          break;
-        }
-      }
-    }
-    if (length >= TEST_MAX_LOCATIONS) {
-      maxIJKs.splice(0, 1);
-    }
+  }): void {
+    super.statsCallback(data);
+    volumetricStatsCallback(this.volumetricState, data);
+  }
+
+  public static getStatistics(options: {
+    spacing?: number[] | number;
+    unit?: string;
+    calibration?: unknown;
+    hasPixelSpacing?: boolean;
+  }): NamedStatistics {
+    const optionsWithUnit = {
+      ...options,
+      unit: options?.unit || 'none',
+      calibration: options?.calibration,
+      hasPixelSpacing: options?.hasPixelSpacing,
+    };
+    const stats = super.getStatistics(optionsWithUnit);
+    return volumetricGetStatistics(
+      this.volumetricState,
+      stats,
+      optionsWithUnit
+    );
   }
 }
+
+/**
+ * An instantiable version of VolumetricCalculator that uses instance state.
+ */
+export class InstanceVolumetricCalculator extends InstanceBasicStatsCalculator {
+  private volumetricState: VolumetricState;
+
+  constructor(options: { storePointData: boolean }) {
+    super(options);
+    this.volumetricState = createVolumetricState();
+  }
+
+  statsInit(options: { storePointData: boolean }): void {
+    super.statsInit(options);
+    this.volumetricState = createVolumetricState();
+  }
+
+  statsCallback(data: {
+    value: number | Types.RGB;
+    pointLPS?: Types.Point3;
+    pointIJK?: Types.Point3;
+  }): void {
+    super.statsCallback(data);
+    volumetricStatsCallback(this.volumetricState, data);
+  }
+
+  getStatistics(options?: {
+    spacing?: number[] | number;
+    unit?: string;
+    calibration?: unknown;
+    hasPixelSpacing?: boolean;
+  }): NamedStatistics {
+    const optionsWithUnit = {
+      ...options,
+      unit: options?.unit || 'none',
+      calibration: options?.calibration,
+      hasPixelSpacing: options?.hasPixelSpacing,
+    };
+    const stats = super.getStatistics(optionsWithUnit);
+    return volumetricGetStatistics(
+      this.volumetricState,
+      stats,
+      optionsWithUnit
+    );
+  }
+}
+
+export default VolumetricCalculator;

@@ -48,10 +48,10 @@ export default defineConfig({
         isMobile: true,
       },
       testIgnore: [
-        '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
         '**/renderingPipeline.spec.ts',
+        '**/stackLabelmapSegmentation/**.spec.ts',
       ],
     },
     {
@@ -64,9 +64,9 @@ export default defineConfig({
         isMobile: true,
       },
       testIgnore: [
-        '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
+        '**/stackLabelmapSegmentation/**.spec.ts',
       ],
     },
   ],
