@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
-  workers: process.env.CI ? 1 : 4,
+  workers: 8,
   timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
