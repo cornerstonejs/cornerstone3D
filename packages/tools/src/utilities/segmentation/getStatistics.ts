@@ -258,6 +258,25 @@ const processSegmentationStatistics = ({
     }
   }
 
+  // Calculate Total Lesion Glycolysis (TLG) = Metabolic Tumor Volume (MTV) × SUVmean
+  // MTV is represented by the volume in stats
+  if (stats.volume && stats.mean) {
+    const mtv = stats.volume.value;
+    const suvMean = stats.mean.value;
+
+    stats.lesionGlycolysis = {
+      name: 'lesionGlycolysis',
+      label: 'Lesion Glycolysis',
+      value: mtv * suvMean,
+      unit: `${stats.volume.unit}·${unit}`,
+    };
+
+    // Add TLG to the array of statistics
+    if (stats.array) {
+      stats.array.push(stats.tlg);
+    }
+  }
+
   return stats;
 };
 

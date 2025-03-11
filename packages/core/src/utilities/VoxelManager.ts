@@ -47,6 +47,8 @@ export default class VoxelManager<T> {
   // I think we need to have a way to invalidate this cache and also have
   // a limit on the number of slices to cache since it can grow indefinitely
   private _sliceDataCache = null as Map<string, PixelDataTypedArray>;
+  // Cache for complete scalar data array to avoid expensive reconstruction
+  private _completeScalarDataCache = null as PixelDataTypedArray;
 
   public readonly _id: string;
 
@@ -117,8 +119,10 @@ export default class VoxelManager<T> {
   public setAtIJK = (i: number, j: number, k: number, v) => {
     const index = this.toIndex([i, j, k]);
     const changed = this._set(index, v);
-    if (changed !== false) {
+    if (changed) {
       this.modifiedSlices.add(k);
+      // Invalidate the complete scalar data cache when a voxel is modified
+      this._completeScalarDataCache = null;
       VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
     }
 
@@ -172,9 +176,11 @@ export default class VoxelManager<T> {
    */
   public setAtIndex = (index, v) => {
     const changed = this._set(index, v);
-    if (changed !== false) {
+    if (changed) {
       const pointIJK = this.toIJK(index);
       this.modifiedSlices.add(pointIJK[2]);
+      // Invalidate the complete scalar data cache when a voxel is modified
+      this._completeScalarDataCache = null;
       VoxelManager.addBounds(this.boundsIJK, pointIJK);
     }
     return changed;
@@ -466,6 +472,8 @@ export default class VoxelManager<T> {
     this.clearBounds();
     this.modifiedSlices.clear();
     this.points?.clear();
+    // Clear the complete scalar data cache when the voxel manager is cleared
+    this._completeScalarDataCache = null;
   }
 
   /**
@@ -506,7 +514,10 @@ export default class VoxelManager<T> {
    * effectively marking all slices as unmodified.
    */
   public resetModifiedSlices(): void {
+    // Reset the modified slices set
     this.modifiedSlices.clear();
+    // We don't need to invalidate the cache here since we're just clearing the tracking
+    // of modified slices, not actually modifying the data
   }
 
   /**
@@ -851,12 +862,23 @@ export default class VoxelManager<T> {
      * Retrieves the scalar data in a memory-inefficient manner.
      * Useful for debugging, testing, or methods requiring all scalar data at once.
      *
+     * This method uses caching to improve performance. The cached data is invalidated
+     * when any voxel is modified through setAtIJK, setAtIndex, or setCompleteScalarDataArray.
+     *
      * IMPORTANT: This is READ ONLY. Changes to the returned buffer are never
      * reflected in the underlying data unless individually merged back.
      *
      * @returns {ArrayLike<number>} The scalar data array (read-only)
      */
     voxelManager.getCompleteScalarDataArray = () => {
+      // Return cached data if available and no slices have been modified
+      if (
+        voxelManager._completeScalarDataCache &&
+        voxelManager.modifiedSlices.size === 0
+      ) {
+        return voxelManager._completeScalarDataCache;
+      }
+
       const ScalarDataConstructor = voxelManager._getConstructor();
       if (!ScalarDataConstructor) {
         return new Uint8Array(0);
@@ -888,6 +910,10 @@ export default class VoxelManager<T> {
           }
         }
       }
+
+      voxelManager._completeScalarDataCache = scalarData;
+      // Reset modified slices since we've just updated the cache
+      voxelManager.resetModifiedSlices();
 
       return scalarData;
     };
@@ -955,6 +981,9 @@ export default class VoxelManager<T> {
         [0, dimensions[1] - 1],
         [0, dimensions[2] - 1],
       ];
+
+      // Invalidate the complete scalar data cache
+      voxelManager._completeScalarDataCache = null;
     };
 
     return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;

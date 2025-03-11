@@ -42,7 +42,7 @@ const computeWorker = {
 
     // Use forEach to iterate over all voxels and call statsCallback for those in the segmentation
     segVoxelManager.forEach(
-      ({ value, pointIJK, index }) => {
+      ({ value, pointIJK, pointLPS, index }) => {
         if (indices.indexOf(value) === -1) {
           return;
         }
@@ -55,6 +55,7 @@ const computeWorker = {
           segmentIndex: value,
           value: imageValue,
           pointIJK,
+          pointLPS,
         });
       },
       {
@@ -101,7 +102,7 @@ const computeWorker = {
 
       // Use forEach to iterate and call statsCallback
       segVoxelManager.forEach(
-        ({ value, pointIJK, index }) => {
+        ({ value, pointIJK, pointLPS, index }) => {
           if (indices.indexOf(value) === -1) {
             return;
           }
@@ -114,6 +115,7 @@ const computeWorker = {
             segmentIndex: value,
             value: imageValue,
             pointIJK,
+            pointLPS,
           });
         },
         {
