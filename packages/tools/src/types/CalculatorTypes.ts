@@ -17,7 +17,6 @@ type NamedStatistics = {
   count: Statistics & { name: 'count' };
   area?: Statistics & { name: 'area' };
   volume?: Statistics & { name: 'volume' };
-  circumference?: Statistics & { name: 'circumference' };
   pointsInShape?: Types.IPointsManager<Types.Point3>;
   median?: Statistics & { name: 'median' };
   skewness?: Statistics & { name: 'skewness' };

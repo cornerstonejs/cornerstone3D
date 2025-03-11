@@ -214,6 +214,22 @@ async function calculateVolumeStatistics({
   }
 }
 
+const updateStatsArray = (stats, newStat) => {
+  if (!stats.array) {
+    return;
+  }
+
+  const existingIndex = stats.array.findIndex(
+    (stat) => stat.name === newStat.name
+  );
+
+  if (existingIndex !== -1) {
+    stats.array[existingIndex] = newStat;
+  } else {
+    stats.array.push(newStat);
+  }
+};
+
 const processSegmentationStatistics = ({
   stats,
   unit,
@@ -255,11 +271,11 @@ const processSegmentationStatistics = ({
         value: mean.value,
         unit,
       };
+
+      updateStatsArray(stats, stats.peakValue);
     }
   }
 
-  // Calculate Total Lesion Glycolysis (TLG) = Metabolic Tumor Volume (MTV) × SUVmean
-  // MTV is represented by the volume in stats
   if (stats.volume && stats.mean) {
     const mtv = stats.volume.value;
     const suvMean = stats.mean.value;
@@ -271,10 +287,7 @@ const processSegmentationStatistics = ({
       unit: `${stats.volume.unit}·${unit}`,
     };
 
-    // Add TLG to the array of statistics
-    if (stats.array) {
-      stats.array.push(stats.tlg);
-    }
+    updateStatsArray(stats, stats.lesionGlycolysis);
   }
 
   return stats;
@@ -424,7 +437,7 @@ function getImageReferenceInfo(segVolumeId, segImageIds) {
 
     modalityUnitOptions = {
       isPreScaled: Boolean(refImage.preScale?.scaled),
-      isSuvScaled: typeof scalingModule?.preScale?.scaled === 'number',
+      isSuvScaled: typeof scalingModule?.suvbw === 'number',
     };
   }
 

@@ -229,8 +229,7 @@ function basicGetStatistics(
     named.median,
     named.skewness,
     named.kurtosis,
-    named.count,
-    named.voxelCount
+    named.count
   );
 
   // Reset state for next computation
