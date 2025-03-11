@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.2...v3.2.3) (2025-03-11)
+
+### Bug Fixes
+
+- **tests:** reduce timeouts / retries / workers ([#1891](https://github.com/cornerstonejs/cornerstone3D/issues/1891)) ([558829c](https://github.com/cornerstonejs/cornerstone3D/commit/558829c8d9238eb42dc9d5b8554183279fbd9da7))
+
 ## [3.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.1...v3.2.2) (2025-03-11)
 
 ### Bug Fixes
