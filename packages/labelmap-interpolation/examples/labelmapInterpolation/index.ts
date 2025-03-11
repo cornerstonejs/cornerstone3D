@@ -1,219 +1,201 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  imageLoader,
-  eventTarget,
+  setVolumesForViewports,
+  volumeLoader,
 } from '@cornerstonejs/core';
-import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  createImageIdsAndCacheMetaData,
   initDemo,
+  createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addBrushSizeSlider,
+  addDropdownToToolbar,
+  addSliderToToolbar,
+  setCtTransferFunctionForVolumeActor,
+  addButtonToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
+import * as cornerstoneTools from '@cornerstonejs/tools';
+import * as labelmapInterpolation from '@cornerstonejs/labelmap-interpolation';
 
 // This is for debugging purposes
-console.debug(
+console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
 const {
   ToolGroupManager,
-  ZoomTool,
-  StackScrollTool,
   Enums: csToolsEnums,
+  segmentation,
   RectangleScissorsTool,
+  SphereScissorsTool,
   CircleScissorsTool,
   BrushTool,
   PaintFillTool,
-  PanTool,
-  segmentation,
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings, Events } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-const { segmentation: segmentationUtils, roundNumber } = cstUtils;
+const { segmentation: segmentationUtils } = cstUtils;
 
 // Define a unique id for the volume
-let renderingEngine;
-const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'STACK_VIEWPORT';
-const toolGroupId = 'TOOL_GROUP_ID';
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const segmentationId = 'MY_SEGMENTATION_ID';
+const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Stack Segmentation Statistics',
-  'Here we demonstrate how to calculate statistics for a stack segmentation.'
+  'Labelmap Interpolation',
+  'Here we demonstrate interpolation between slices for labelmaps'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
-
-const statsGrid = document.createElement('div');
-statsGrid.style.display = 'flex';
-statsGrid.style.flexDirection = 'row';
-statsGrid.style.fontSize = 'smaller';
-
-const statsIds = ['segment1', 'segment2', 'segmentCombined'];
-const statsStyle = {
-  width: '20em',
-  height: '10em',
-};
-
-for (const statsId of statsIds) {
-  const statsDiv = document.createElement('div');
-  statsDiv.id = statsId;
-  statsDiv.innerText = statsId;
-  Object.assign(statsDiv.style, statsStyle);
-  statsGrid.appendChild(statsDiv);
-}
-
-content.appendChild(statsGrid);
-
 const viewportGrid = document.createElement('div');
+
+viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const element = document.createElement('div');
-element.style.width = size;
-element.style.height = size;
-element.oncontextmenu = () => false;
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+const element3 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
+element3.style.width = size;
+element3.style.height = size;
 
-viewportGrid.appendChild(element);
+// Disable right click context menu so we can have right click tools
+element1.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
+element3.oncontextmenu = (e) => e.preventDefault();
+
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
+viewportGrid.appendChild(element3);
+
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Left Click: Use selected Segmentation Tool.
-  Middle Click: Pan
-  Right Click: Zoom
-  Mouse wheel: Scroll Stack
+  Use the labelmap tools in the normal way. Note preview is turned off for those
+  tools to simplify initial segment creation.
+  <br>Segments are interpolated BETWEEN slices, so you need to create two or more
+  segments of the same segment index on slices in a viewport separated by at least
+  one empty segment.</b>
+  Use "Extended Interpolation" button to interpolate segments which don't
+  overlap (assuming the segments were drawn on the same slice).
+  Use "Overlapping Interpolation" button to interpolate overlapping segments - that is, the segment must
+  overlap if drawn on the same slice to interpolate between them. This is a good choice
+  for multiple segments.
+  Accept the interpolation by hitting enter, or use the "Reject Preview/Interpolation" button.
   `;
 
 content.append(instructions);
 
-// ============================= //
+const interpolationTools = new Map<string, any>();
 
-function displayStat(stat) {
-  if (!stat) {
-    return;
-  }
-  return `${stat.label || stat.name}: ${roundNumber(stat.value)} ${
-    stat.unit ? stat.unit : ''
-  }`;
-}
+const configuration = {};
 
-async function calculateStatistics(id, indices) {
-  const viewport = renderingEngine.getViewport(viewportId);
-  const stats = await segmentationUtils.getStatistics({
-    segmentationId: 'SEGMENTATION_ID',
-    segmentIndices: indices,
-    viewportId: viewport.id,
-  });
+interpolationTools.set('CircularBrush', {
+  baseTool: BrushTool.toolName,
+  configuration: {
+    ...configuration,
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
+  },
+});
 
-  if (!stats) {
-    return;
-  }
-  const items = [`Statistics on ${indices.join(', ')}`];
-  stats.count.label = 'Voxels';
-
-  items.push(
-    displayStat(stats.volume),
-    displayStat(stats.count),
-    displayStat(stats.mean),
-    displayStat(stats.max),
-    displayStat(stats.min),
-    displayStat(stats.peakValue)
-  );
-  const statsDiv = document.getElementById(id);
-  statsDiv.innerHTML = items.map((span) => `${span}<br />\n`).join('\n');
-}
-
-let timeoutId;
-
-function segmentationModifiedCallback(evt) {
-  const { detail } = evt;
-  if (!detail || !detail.segmentIndex || detail.segmentIndex === 255) {
-    return;
-  }
-
-  const statsId = detail.segmentIndex === 1 ? statsIds[0] : statsIds[1];
-
-  const debounced = () => {
-    calculateStatistics(statsId, [detail.segmentIndex]);
-    // Also update combined stats
-    calculateStatistics(statsIds[2], [1, 2]);
-  };
-
-  if (timeoutId) {
-    window.clearTimeout(timeoutId);
-  }
-
-  timeoutId = window.setTimeout(debounced, 1000);
-}
+const optionsValues = [
+  ...interpolationTools.keys(),
+  RectangleScissorsTool.toolName,
+  CircleScissorsTool.toolName,
+  SphereScissorsTool.toolName,
+  PaintFillTool.toolName,
+];
 
 // ============================= //
+addDropdownToToolbar({
+  options: { values: optionsValues, defaultValue: BrushTool.toolName },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    const name = String(nameAsStringOrNumber);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-function setupTools() {
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollTool);
-  cornerstoneTools.addTool(RectangleScissorsTool);
-  cornerstoneTools.addTool(CircleScissorsTool);
-  cornerstoneTools.addTool(PaintFillTool);
-  cornerstoneTools.addTool(BrushTool);
+    // Set the currently active tool disabled
+    const toolName = toolGroup.getActivePrimaryMouseButtonTool();
 
-  // Define a tool group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+    if (toolName) {
+      toolGroup.setToolDisabled(toolName);
+    }
 
-  // Add tools to the group
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addTool(RectangleScissorsTool.toolName);
-  toolGroup.addTool(CircleScissorsTool.toolName);
-  toolGroup.addTool(PaintFillTool.toolName);
-  toolGroup.addTool(BrushTool.toolName);
+    toolGroup.setToolActive(name, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+  },
+});
 
-  // Set tool modes
-  toolGroup.setToolActive(BrushTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary,
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(StackScrollTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Wheel }],
-  });
-
-  return toolGroup;
-}
+addSliderToToolbar({
+  title: 'Brush Size',
+  range: [5, 100],
+  defaultValue: 25,
+  onSelectedValueChange: (valueAsStringOrNumber) => {
+    const value = Number(valueAsStringOrNumber);
+    segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
+  },
+});
 
 // ============================= //
+addDropdownToToolbar({
+  options: { values: ['1', '2', '3'], defaultValue: '1' },
+  labelText: 'Segment',
+  onSelectedValueChange: (segmentIndex) => {
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      segmentationId,
+      Number(segmentIndex)
+    );
+  },
+});
+
+addButtonToToolbar({
+  title: 'Run Extended Interpolation',
+  onClick: () => {
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    labelmapInterpolation.interpolate({
+      segmentationId,
+      segmentIndex: Number(segmentIndex),
+    });
+  },
+});
+
+// ============================= //
+
+async function addSegmentationsToState() {
+  // Create a segmentation of the same resolution as the source data
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        // The type of segmentation
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        // The actual segmentation data, in the case of labelmap this is a
+        // reference to the source volume of the segmentation.
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
+}
 
 /**
  * Runs the demo
@@ -222,9 +204,47 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
-  const toolGroup = setupTools();
+  // Add tools to Cornerstone3D
+  cornerstoneTools.addTool(RectangleScissorsTool);
+  cornerstoneTools.addTool(CircleScissorsTool);
+  cornerstoneTools.addTool(SphereScissorsTool);
+  cornerstoneTools.addTool(PaintFillTool);
+  cornerstoneTools.addTool(BrushTool);
 
-  // Get Cornerstone imageIds and fetch metadata into RAM
+  // Define tool groups to add the segmentation display tool to
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  // Manipulation Tools
+  addManipulationBindings(toolGroup);
+
+  // Segmentation Tools
+  toolGroup.addTool(RectangleScissorsTool.toolName);
+  toolGroup.addTool(CircleScissorsTool.toolName);
+  toolGroup.addTool(SphereScissorsTool.toolName);
+  toolGroup.addTool(PaintFillTool.toolName);
+  toolGroup.addTool(BrushTool.toolName);
+
+  for (const [toolName, config] of interpolationTools.entries()) {
+    if (config.baseTool) {
+      toolGroup.addToolInstance(
+        toolName,
+        config.baseTool,
+        config.configuration
+      );
+    } else {
+      toolGroup.addTool(toolName, config.configuration);
+    }
+    if (config.passive) {
+      // This can be applied during add/remove contours
+      toolGroup.setToolPassive(toolName);
+    }
+  }
+
+  toolGroup.setToolActive(interpolationTools.keys().next().value, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+
+  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
@@ -233,65 +253,76 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Create a stack of images
-  const imageIdsArray = imageIds.slice(0, 10);
-  // Create segmentation images for the stack
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIdsArray
-  );
-
-  // Instantiate a rendering engine
-  renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewport
-  const viewportInput = {
-    viewportId,
-    type: ViewportType.STACK,
-    element,
-  };
-
-  renderingEngine.setViewports([viewportInput]);
-
-  // Set the stack of images
-  const viewport = renderingEngine.getViewport(viewportId);
-  await viewport.setStack(imageIdsArray, 0);
-
-  // Add the viewport to the toolgroup
-  toolGroup.addViewport(viewportId, renderingEngineId);
-
-  // Add segmentation
-  segmentation.addSegmentations([
-    {
-      segmentationId: 'SEGMENTATION_ID',
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          imageIds: segImages.map((it) => it.imageId),
-        },
-      },
-    },
-  ]);
-
-  // Add the segmentation representation to the viewport
-  await segmentation.addSegmentationRepresentations(viewportId, [
-    {
-      segmentationId: 'SEGMENTATION_ID',
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
-
-  // Add brush size slider
-  addBrushSizeSlider({
-    toolGroupId,
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
   });
 
-  cornerstoneTools.utilities.stackContextPrefetch.enable(element);
+  // Add some segmentations based on the source data volume
+  await addSegmentationsToState();
 
-  // Add segmentation modified callback
-  eventTarget.addEventListener(
-    Events.SEGMENTATION_DATA_MODIFIED,
-    segmentationModifiedCallback
+  // Instantiate a rendering engine
+  const renderingEngineId = 'myRenderingEngine';
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  // Create the viewports
+  const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
+  const viewportId3 = 'CT_CORONAL';
+
+  const viewportInputArray = [
+    {
+      viewportId: viewportId1,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+    {
+      viewportId: viewportId3,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+  ];
+
+  renderingEngine.setViewports(viewportInputArray);
+
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup.addViewport(viewportId3, renderingEngineId);
+
+  // Set the volume to load
+  volume.load();
+
+  // Set volumes on the viewports
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [viewportId1, viewportId2, viewportId3]
   );
+
+  // Add the segmentation representation to the toolgroup
+  const segMap = {
+    [viewportId1]: [{ segmentationId }],
+    [viewportId2]: [{ segmentationId }],
+    [viewportId3]: [{ segmentationId }],
+  };
+  await segmentation.addLabelmapRepresentationToViewportMap(segMap);
 
   // Render the image
   renderingEngine.render();

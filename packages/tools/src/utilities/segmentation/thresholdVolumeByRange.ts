@@ -6,6 +6,7 @@ import { getVoxelOverlap, processVolumes } from './utilities';
 
 export type ThresholdRangeOptions = {
   overwrite: boolean;
+  segmentationId: string;
   boundsIJK: BoundsIJK;
   overlapType?: number;
   segmentIndex?: number;
@@ -37,7 +38,12 @@ function thresholdVolumeByRange(
 ): Types.IImageVolume {
   const { imageData: segmentationImageData } = segmentationVolume;
 
-  const { overwrite, boundsIJK } = options;
+  const { overwrite, boundsIJK, segmentationId } = options;
+  if (!segmentationId) {
+    throw new Error(
+      'Segmentation ID is required to be passed inside thresholdVolumeByRange as options'
+    );
+  }
   const overlapType = options?.overlapType || 0;
   const segVoxelManager =
     segmentationVolume.voxelManager as Types.IVoxelManager<number>;
@@ -153,7 +159,7 @@ function thresholdVolumeByRange(
     boundsIJK,
   });
 
-  triggerSegmentationDataModified(segmentationVolume.volumeId);
+  triggerSegmentationDataModified(options.segmentationId);
 
   return segmentationVolume;
 }

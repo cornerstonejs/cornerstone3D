@@ -3,6 +3,67 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.1...v3.2.2) (2025-03-11)
+
+### Bug Fixes
+
+- remove redundant Math.min call ([#1892](https://github.com/cornerstonejs/cornerstone3D/issues/1892)) ([e7ed238](https://github.com/cornerstonejs/cornerstone3D/commit/e7ed2382cd36b5e5ce9e1b26c4aadf796ce2c6a8))
+
+## [3.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.0...v3.2.1) (2025-03-11)
+
+**Note:** Version bump only for package root
+
+# [3.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.2...v3.2.0) (2025-03-11)
+
+### Features
+
+- **segmentStatsCalculator:** for calculation of statistics ([#1881](https://github.com/cornerstonejs/cornerstone3D/issues/1881)) ([cf25a4f](https://github.com/cornerstonejs/cornerstone3D/commit/cf25a4fa1acb878314ebeee971070484194da5da))
+
+## [3.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.1...v3.1.2) (2025-03-10)
+
+**Note:** Version bump only for package root
+
+## [3.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.0...v3.1.1) (2025-03-10)
+
+### Bug Fixes
+
+- **growcut:** Enable GrowCut in Stack viewport for all datasets ([#1888](https://github.com/cornerstonejs/cornerstone3D/issues/1888)) ([9e18e6b](https://github.com/cornerstonejs/cornerstone3D/commit/9e18e6b6e8054c4340b9069476cc0b404c4eea3f))
+
+# [3.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.5...v3.1.0) (2025-03-10)
+
+### Features
+
+- Updating proper values for ChangeType parameter in AnnotationModifiedEventDetail. ([#1821](https://github.com/cornerstonejs/cornerstone3D/issues/1821)) ([3c22338](https://github.com/cornerstonejs/cornerstone3D/commit/3c22338a25b5401e22d9f97efd953d09f1977dcc))
+
+## [3.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.4...v3.0.5) (2025-03-06)
+
+### Bug Fixes
+
+- **segmentation:** Add segmentation ID requirement for threshold operations ([#1879](https://github.com/cornerstonejs/cornerstone3D/issues/1879)) ([eae9577](https://github.com/cornerstonejs/cornerstone3D/commit/eae957729848d44971050ca40d684dae8f919170))
+
+## [3.0.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.3...v3.0.4) (2025-03-05)
+
+### Bug Fixes
+
+- **worker:** should not change type of input ([#1877](https://github.com/cornerstonejs/cornerstone3D/issues/1877)) ([a97effd](https://github.com/cornerstonejs/cornerstone3D/commit/a97effd52abe35eaf532a5634a69b76f932099e7))
+
+## [3.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.2...v3.0.3) (2025-03-04)
+
+### Bug Fixes
+
+- try to pass the fake version number ([#1873](https://github.com/cornerstonejs/cornerstone3D/issues/1873)) ([06c82fb](https://github.com/cornerstonejs/cornerstone3D/commit/06c82fba65c1cf578eb322642dfe080d39ce0719))
+
+## [3.0.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.1...v3.0.2) (2025-03-04)
+
+### Bug Fixes
+
+- **CrosshairsTool:** support HPDI screens in CrosshairsTool ([#1824](https://github.com/cornerstonejs/cornerstone3D/issues/1824)) ([cd299e4](https://github.com/cornerstonejs/cornerstone3D/commit/cd299e40723fb94a6f2568a8008935d8e01ff4f4)), closes [#1822](https://github.com/cornerstonejs/cornerstone3D/issues/1822)
+- **segmentation:** resolve variable declaration and null check issues ([#1872](https://github.com/cornerstonejs/cornerstone3D/issues/1872)) ([029966d](https://github.com/cornerstonejs/cornerstone3D/commit/029966d0a3ffc86fa38d3e089d9b0d7d5c105f32))
+
+### Features
+
+- **surface-segmentation:** add visibilty configuration for surface segmentation ([#1846](https://github.com/cornerstonejs/cornerstone3D/issues/1846)) ([e1b5bc6](https://github.com/cornerstonejs/cornerstone3D/commit/e1b5bc646f3997be88ec237f86406c310420379a))
+
 ## [3.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0...v3.0.1) (2025-02-27)
 
 **Note:** Version bump only for package root

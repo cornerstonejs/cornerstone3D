@@ -172,9 +172,9 @@ function getStrategyData({
   strategy: unknown;
 }) {
   if (
-    ('volumeId' in operationData && operationData.volumeId !== undefined) ||
+    ('volumeId' in operationData && operationData.volumeId != null) ||
     ('referencedVolumeId' in operationData &&
-      operationData.referencedVolumeId !== undefined)
+      operationData.referencedVolumeId != null)
   ) {
     return getStrategyDataForVolumeViewport({ operationData });
   }

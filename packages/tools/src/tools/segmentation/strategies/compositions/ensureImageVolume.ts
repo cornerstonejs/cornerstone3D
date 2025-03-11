@@ -9,7 +9,7 @@ export default {
 
     let referencedImageIds;
     if (viewport) {
-      const referencedImageIds = viewport.getImageIds();
+      referencedImageIds = viewport.getImageIds();
       const isValidVolumeForSphere = csUtils.isValidVolume(referencedImageIds);
       if (!isValidVolumeForSphere) {
         throw new Error(

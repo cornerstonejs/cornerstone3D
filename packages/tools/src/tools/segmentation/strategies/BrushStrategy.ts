@@ -247,7 +247,6 @@ export default class BrushStrategy {
   ): InitializedOperationData {
     const { viewport } = enabledElement;
 
-    // pass in the strategy to getStrategyData
     const data = getStrategyData({ operationData, viewport, strategy: this });
 
     if (!data) {

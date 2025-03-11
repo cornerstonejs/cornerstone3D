@@ -1838,6 +1838,13 @@ class StackViewport extends Viewport {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
+
+    if (currentImageIdIndex > imageIds.length) {
+      throw new Error(
+        'Current image index is greater than the number of images in the stack'
+      );
+    }
+
     this.imageKeyToIndexMap.clear();
     imageIds.forEach((imageId, index) => {
       this.imageKeyToIndexMap.set(imageId, index);
