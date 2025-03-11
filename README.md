@@ -42,3 +42,7 @@ Read our guide on [How-to Contribute](https://cornerstonejs.org/docs/category/co
 ### License
 
 Cornerstone is [MIT licensed](./LICENSE).
+
+<!--
+    Links
+-->
