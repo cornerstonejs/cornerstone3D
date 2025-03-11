@@ -20,7 +20,7 @@ import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
 
-export default async function initDemo(config) {
+export default async function initDemo(config = {}) {
   initProviders();
   cornerstoneDICOMImageLoader.init();
   initVolumeLoader();

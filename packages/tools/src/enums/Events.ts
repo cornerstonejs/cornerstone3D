@@ -33,6 +33,8 @@ enum Events {
    */
   TOOL_MODE_CHANGED = 'CORNERSTONE_TOOLS_TOOL_MODE_CHANGED',
 
+  CROSSHAIR_TOOL_CENTER_CHANGED = 'CORNERSTONE_TOOLS_CROSSHAIR_TOOL_CENTER_CHANGED',
+
   ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////

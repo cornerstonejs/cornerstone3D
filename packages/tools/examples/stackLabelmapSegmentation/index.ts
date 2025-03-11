@@ -7,6 +7,7 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addBrushSizeSlider,
+  labelmapTools,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -291,6 +292,20 @@ function setupTools(toolGroupId) {
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addToolInstance(
+    brushInstanceNames.DynamicThreshold,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.DynamicThreshold,
+      threshold: {
+        isDynamic: true,
+        dynamicRadius: 3,
+      },
+      preview: {
+        enabled: true,
+      },
+    }
+  );
+  toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
     {
@@ -317,6 +332,10 @@ function setupTools(toolGroupId) {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.ThresholdBrushCircle,
+      threshold: {
+        range: [-150, -70],
+        isDynamic: false,
+      },
     }
   );
 
@@ -325,6 +344,10 @@ function setupTools(toolGroupId) {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.ThresholdBrushSphere,
+      threshold: {
+        range: [100, 1000],
+        isDynamic: false,
+      },
     }
   );
 
