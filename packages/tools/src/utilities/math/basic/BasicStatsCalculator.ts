@@ -70,7 +70,6 @@ function basicStatsCallback(
     const delta2 = value - state.runMean[idx];
     state.m2[idx] += delta * delta2;
 
-    state.min[idx] = Math.min(state.min[idx], value);
     if (value < state.min[idx]) {
       state.min[idx] = value;
       if (idx === 0) {
