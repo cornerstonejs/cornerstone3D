@@ -67,7 +67,6 @@ async function createLabelmapsFromBufferInternal(
     options
 ) {
     const {
-        skipOverlapping = false,
         tolerance = 1e-3,
         TypedArrayConstructor = Uint8Array,
         maxBytesPerChunk = 199000000
@@ -163,29 +162,11 @@ async function createLabelmapsFromBufferInternal(
         return acc;
     }, {});
 
-    let overlapping = false;
-    if (!skipOverlapping) {
-        overlapping = checkSEGsOverlapping(
-            pixelDataChunks,
-            multiframe,
-            referencedImageIds,
-            validOrientations,
-            metadataProvider,
-            tolerance,
-            TypedArrayConstructor,
-            sopUIDImageIdIndexMap
-        );
-    }
-
     let insertFunction;
 
     switch (orientation) {
         case "Planar":
-            if (overlapping) {
-                insertFunction = insertOverlappingPixelDataPlanar;
-            } else {
-                insertFunction = insertPixelDataPlanar;
-            }
+            insertFunction = insertPixelDataPlanar;
             break;
         case "Perpendicular":
             throw new Error(
@@ -385,6 +366,21 @@ export function insertPixelDataPlanar({
                         if (data[x]) {
                             if (!overlapping && labelmap2DView[x] !== 0) {
                                 overlapping = true;
+                                return resolve(
+                                    insertOverlappingPixelDataPlanar({
+                                        segmentsOnFrame,
+                                        labelMapImages,
+                                        pixelDataChunks,
+                                        multiframe,
+                                        referencedImageIds,
+                                        validOrientations,
+                                        metadataProvider,
+                                        tolerance,
+                                        segmentsPixelIndices,
+                                        sopUIDImageIdIndexMap,
+                                        imageIdMaps
+                                    })
+                                );
                             }
                             labelmap2DView[x] = segmentIndex;
                             indexCache.push(x);
