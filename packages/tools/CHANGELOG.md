@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.2...v3.2.0) (2025-03-11)
+
+### Features
+
+- **segmentStatsCalculator:** for calculation of statistics ([#1881](https://github.com/cornerstonejs/cornerstone3D/issues/1881)) ([cf25a4f](https://github.com/cornerstonejs/cornerstone3D/commit/cf25a4fa1acb878314ebeee971070484194da5da))
+
 ## [3.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.1...v3.1.2) (2025-03-10)
 
 **Note:** Version bump only for package @cornerstonejs/tools
