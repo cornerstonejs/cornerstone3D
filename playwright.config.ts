@@ -38,37 +38,6 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
       testIgnore: ['**/renderingPipeline.spec.ts'],
     },
-    {
-      name: 'Mobile Safari',
-      use: {
-        ...devices['iPhone 15'],
-        deviceScaleFactor: 1,
-        viewport: { width: 500, height: 1000 },
-        hasTouch: true,
-        isMobile: true,
-      },
-      testIgnore: [
-        '**/splineContourSegmentationTools.spec.ts',
-        '**/stackLabelmapSegmentation.spec.ts',
-        '**/renderingPipeline.spec.ts',
-        '**/stackLabelmapSegmentation/**.spec.ts',
-      ],
-    },
-    {
-      name: 'Mobile Android',
-      use: {
-        ...devices['Pixel 7'],
-        deviceScaleFactor: 1,
-        viewport: { width: 500, height: 1000 },
-        hasTouch: true,
-        isMobile: true,
-      },
-      testIgnore: [
-        '**/splineContourSegmentationTools.spec.ts',
-        '**/stackLabelmapSegmentation.spec.ts',
-        '**/stackLabelmapSegmentation/**.spec.ts',
-      ],
-    },
   ],
   webServer: {
     command: 'yarn build-and-serve-static-examples',
