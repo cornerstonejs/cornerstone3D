@@ -16,7 +16,7 @@ test.describe('Stack Viewport API', async () => {
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.stackAPI.setVoiRange
+      screenShotPaths.stackAPI.previousImage
     );
   });
   test('should move to next image', async ({ page }) => {
