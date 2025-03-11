@@ -12,8 +12,6 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.50.0-noble
     strategy:
       fail-fast: false
-      matrix:
-        shardIndex: [1]
     steps:
       - name: Install unzip
         run: apt-get update && apt-get install -y unzip
@@ -27,12 +25,12 @@ jobs:
       - name: Run Playwright tests
         run: |
           export NODE_OPTIONS="--max_old_space_size=8192"
-          bun x playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} --workers=4
+          bun x playwright test
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: blob-report-${{ matrix.shardIndex }}
+          name: blob-report
           path: blob-report
           retention-days: 1
 
@@ -52,7 +50,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: all-blob-reports
-          pattern: blob-report-*
+          pattern: blob-report
           merge-multiple: true
       - name: Merge into HTML Report
         run: bun x playwright merge-reports --reporter html ./all-blob-reports
