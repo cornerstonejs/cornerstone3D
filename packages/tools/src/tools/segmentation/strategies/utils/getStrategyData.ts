@@ -11,6 +11,7 @@ import type {
 } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 import { getLabelmapActorEntry } from '../../../../stateManagement/segmentation/helpers';
+import { getReferenceVolumeForSegmentationVolume } from '../../../../utilities/segmentation/getReferenceVolumeForSegmentationVolume';
 
 /**
  * Get strategy data for volume viewport
@@ -33,26 +34,15 @@ function getStrategyDataForVolumeViewport({ operationData }) {
   }
 
   const segmentationVolume = cache.getVolume(volumeId);
+  const imageVolume = getReferenceVolumeForSegmentationVolume(volumeId);
 
-  if (!segmentationVolume) {
+  if (!segmentationVolume || !imageVolume) {
     return null;
   }
 
-  const referencedVolumeId = segmentationVolume.referencedVolumeId;
-
-  const segmentationVoxelManager = segmentationVolume.voxelManager;
-  let imageVoxelManager;
-  let imageData;
-
-  // we only need the referenceVolumeId if we do thresholding
-  // but for other operations we don't need it so make it optional
-  if (referencedVolumeId) {
-    const imageVolume = cache.getVolume(referencedVolumeId);
-    imageVoxelManager = imageVolume.voxelManager;
-    imageData = imageVolume.imageData;
-  }
-
   const { imageData: segmentationImageData } = segmentationVolume;
+  const { voxelManager: segmentationVoxelManager } = segmentationVolume;
+  const { voxelManager: imageVoxelManager, imageData } = imageVolume;
 
   return {
     segmentationImageData,

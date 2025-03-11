@@ -91,7 +91,6 @@ async function getStatistics({
     });
     reconstructableVolume = utilities.isValidVolume(refImageIds);
   }
-
   let indices = segmentIndices;
 
   if (!indices) {
@@ -414,32 +413,28 @@ function getSphereStats(testMax, radiusIJK, segData, imageVoxels, spacing) {
  */
 function getImageReferenceInfo(segVolumeId, segImageIds) {
   let refImageId;
-  let modalityUnitOptions;
 
   if (segVolumeId) {
     const segmentationVolume = cache.getVolume(segVolumeId);
-    const referencedVolumeId = segmentationVolume.referencedVolumeId;
-    const volume = cache.getVolume(referencedVolumeId);
+    const imageIds = segmentationVolume.imageIds;
 
-    if (volume?.imageIds?.length > 0) {
-      refImageId = volume.imageIds[0];
+    const cachedImage = cache.getImage(imageIds[0]);
+
+    if (cachedImage) {
+      refImageId = cachedImage.referencedImageId;
     }
-
-    modalityUnitOptions = {
-      isPreScaled: Object.keys(volume.scaling || {}).length > 0,
-      isSuvScaled: Boolean(volume.scaling?.PT),
-    };
   } else if (segImageIds?.length) {
     const segImage = cache.getImage(segImageIds[0]);
     refImageId = segImage.referencedImageId;
-    const refImage = cache.getImage(refImageId);
-    const scalingModule = metaData.get('scalingModule', refImageId);
-
-    modalityUnitOptions = {
-      isPreScaled: Boolean(refImage.preScale?.scaled),
-      isSuvScaled: typeof scalingModule?.suvbw === 'number',
-    };
   }
+
+  const refImage = cache.getImage(refImageId);
+  const scalingModule = metaData.get('scalingModule', refImageId);
+
+  const modalityUnitOptions = {
+    isPreScaled: Boolean(refImage.preScale?.scaled),
+    isSuvScaled: typeof scalingModule?.suvbw === 'number',
+  };
 
   return { refImageId, modalityUnitOptions };
 }

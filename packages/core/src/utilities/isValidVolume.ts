@@ -27,7 +27,12 @@ function isValidVolume(imageIds: string[]): boolean {
     frameOfReferenceUID,
     columns,
     rows,
+    usingDefaultValues,
   } = metaData.get('imagePlaneModule', imageId0);
+
+  if (usingDefaultValues) {
+    return false;
+  }
 
   const baseMetadata = {
     modality,
