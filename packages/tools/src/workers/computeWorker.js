@@ -13,75 +13,43 @@ import { createIsInSegmentMetadata } from '../utilities/segmentation/isLineInSeg
 const { VoxelManager } = utilities;
 
 const computeWorker = {
-  getArgsFromInfo: (args) => {
-    const { segmentationInfo, imageInfo } = args;
+  createVoxelManager: (dimensions, scalarData) => {
+    return VoxelManager.createScalarVolumeVoxelManager({
+      dimensions,
+      scalarData,
+    });
+  },
+  createDataStructure: (info) => {
+    const { scalarData, dimensions, spacing, origin, direction } = info;
 
-    // Create segmentation data
-    const getSegmentationData = () => {
-      const {
-        scalarData: segmentationScalarData,
-        dimensions: segmentationDimensions,
-        spacing: segmentationSpacing,
-        origin: segmentationOrigin,
-        direction: segmentationDirection,
-      } = segmentationInfo;
-
-      const segVoxelManager = VoxelManager.createScalarVolumeVoxelManager({
-        dimensions: segmentationDimensions,
-        scalarData: segmentationScalarData,
-      });
-
-      return {
-        voxelManager: segVoxelManager,
-        dimensions: segmentationDimensions,
-        spacing: segmentationSpacing,
-        origin: segmentationOrigin,
-        direction: segmentationDirection,
-        scalarData: segmentationScalarData,
-      };
-    };
-
-    // Create image data
-    const getImageData = () => {
-      const {
-        scalarData: imageScalarData,
-        dimensions: imageDimensions,
-        spacing: imageSpacing,
-        origin: imageOrigin,
-        direction: imageDirection,
-      } = imageInfo;
-
-      const imageVoxelManager = VoxelManager.createScalarVolumeVoxelManager({
-        dimensions: imageDimensions,
-        scalarData: imageScalarData,
-      });
-
-      return {
-        voxelManager: imageVoxelManager,
-        dimensions: imageDimensions,
-        spacing: imageSpacing,
-        origin: imageOrigin,
-        direction: imageDirection,
-        scalarData: imageScalarData,
-      };
-    };
+    const voxelManager = computeWorker.createVoxelManager(
+      dimensions,
+      scalarData
+    );
 
     return {
-      segmentation: segmentationInfo && getSegmentationData(),
-      image: imageInfo && getImageData(),
+      voxelManager,
+      dimensions,
+      spacing,
+      origin,
+      direction,
+      scalarData,
     };
   },
-  calculateSegmentsStatisticsVolume: (args) => {
-    const { mode, indices } = args;
-    const { segmentation, image } = computeWorker.getArgsFromInfo(args);
-
-    const { voxelManager: segVoxelManager, spacing: segmentationSpacing } =
-      segmentation;
-    const { voxelManager: imageVoxelManager } = image;
-
-    SegmentStatsCalculator.statsInit({ storePointData: false, indices, mode });
-
-    // Use forEach to iterate over all voxels and call statsCallback for those in the segmentation
+  createVTKImageData: (dimensions, origin, direction, spacing) => {
+    const imageData = vtkImageData.newInstance();
+    imageData.setDimensions(dimensions);
+    imageData.setOrigin(origin);
+    imageData.setDirection(direction);
+    imageData.setSpacing(spacing);
+    return imageData;
+  },
+  processSegmentStatistics: (
+    segVoxelManager,
+    imageVoxelManager,
+    indices,
+    bounds
+  ) => {
     segVoxelManager.forEach(
       ({ value, pointIJK, pointLPS, index }) => {
         if (indices.indexOf(value) === -1) {
@@ -99,8 +67,86 @@ const computeWorker = {
         });
       },
       {
-        boundsIJK: imageVoxelManager.getDefaultBounds(),
+        boundsIJK: bounds || imageVoxelManager.getDefaultBounds(),
       }
+    );
+  },
+  performMarchingSquares: (
+    imageData,
+    sliceIndex = null,
+    slicingMode = null
+  ) => {
+    const options = {};
+
+    if (sliceIndex !== null) {
+      options.slice = sliceIndex;
+    }
+
+    if (slicingMode !== null) {
+      options.slicingMode = slicingMode;
+    }
+
+    const mSquares = vtkImageMarchingSquares.newInstance(options);
+
+    // Connect pipeline
+    mSquares.setInputData(imageData);
+    mSquares.setContourValues([1]);
+    mSquares.setMergePoints(false);
+
+    // Perform marching squares
+    return mSquares.getOutputData();
+  },
+  createContoursFromPolyData: (msOutput, sliceIndex = null) => {
+    // Clean up output from marching squares
+    const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
+    if (reducedSet.points?.length) {
+      const contours = findContoursFromReducedSet(reducedSet.lines);
+
+      return {
+        contours,
+        polyData: reducedSet,
+        FrameNumber: sliceIndex !== null ? sliceIndex + 1 : undefined,
+        sliceIndex,
+      };
+    }
+    return null;
+  },
+  createSegmentsFromIndices: (indices) => {
+    return [null, ...indices.map((index) => ({ segmentIndex: index }))];
+  },
+  getArgsFromInfo: (args) => {
+    const { segmentationInfo, imageInfo } = args;
+
+    // Create segmentation data
+    const getSegmentationData = () => {
+      return computeWorker.createDataStructure(segmentationInfo);
+    };
+
+    // Create image data
+    const getImageData = () => {
+      return computeWorker.createDataStructure(imageInfo);
+    };
+
+    return {
+      segmentation: segmentationInfo && getSegmentationData(),
+      image: imageInfo && getImageData(),
+    };
+  },
+  calculateSegmentsStatisticsVolume: (args) => {
+    const { mode, indices } = args;
+    const { segmentation, image } = computeWorker.getArgsFromInfo(args);
+
+    const { voxelManager: segVoxelManager, spacing: segmentationSpacing } =
+      segmentation;
+    const { voxelManager: imageVoxelManager } = image;
+
+    SegmentStatsCalculator.statsInit({ storePointData: false, indices, mode });
+
+    // Process segment statistics
+    computeWorker.processSegmentStatistics(
+      segVoxelManager,
+      imageVoxelManager,
+      indices
     );
 
     // Get statistics based on the mode
@@ -130,37 +176,20 @@ const computeWorker = {
         1, // For a single slice
       ];
 
-      const segVoxelManager = VoxelManager.createScalarVolumeVoxelManager({
-        dimensions: segDimensions,
-        scalarData: segInfo.scalarData,
-      });
+      const segVoxelManager = computeWorker.createVoxelManager(
+        segDimensions,
+        segInfo.scalarData
+      );
+      const imageVoxelManager = computeWorker.createVoxelManager(
+        segDimensions,
+        imgInfo.scalarData
+      );
 
-      const imageVoxelManager = VoxelManager.createScalarVolumeVoxelManager({
-        dimensions: segDimensions,
-        scalarData: imgInfo.scalarData,
-      });
-
-      // Use forEach to iterate and call statsCallback
-      segVoxelManager.forEach(
-        ({ value, pointIJK, pointLPS, index }) => {
-          if (indices.indexOf(value) === -1) {
-            return;
-          }
-
-          // get the value from the image voxel manager
-          const imageValue = imageVoxelManager.getAtIndex(index);
-
-          // Process the voxel for the specific segment index
-          SegmentStatsCalculator.statsCallback({
-            segmentIndex: value,
-            value: imageValue,
-            pointIJK,
-            pointLPS,
-          });
-        },
-        {
-          boundsIJK: imageVoxelManager.getDefaultBounds(),
-        }
+      // Process segment statistics
+      computeWorker.processSegmentStatistics(
+        segVoxelManager,
+        imageVoxelManager,
+        indices
       );
     }
 
@@ -175,7 +204,6 @@ const computeWorker = {
 
     return stats;
   },
-
   getSegmentLargestBidirectionalInternal: (args) => {
     const { segmentationInfo, imageInfo, indices, mode, isStack } = args;
 
@@ -191,13 +219,17 @@ const computeWorker = {
     const { voxelManager, dimensions, origin, direction, spacing } =
       segmentation;
 
-    const imageData = vtkImageData.newInstance();
-    imageData.setDimensions(
-      isStack ? [dimensions[0], dimensions[1], 2] : dimensions
+    // Create VTK image data
+    const stackDimensions = isStack
+      ? [dimensions[0], dimensions[1], 2]
+      : dimensions;
+    const stackSpacing = isStack ? [spacing[0], spacing[1], 1] : spacing;
+    const imageData = computeWorker.createVTKImageData(
+      stackDimensions,
+      origin,
+      direction,
+      stackSpacing
     );
-    imageData.setOrigin(origin);
-    imageData.setDirection(direction);
-    imageData.setSpacing(isStack ? [spacing[0], spacing[1], 1] : spacing);
 
     let contourSets;
     if (!isStack) {
@@ -253,14 +285,12 @@ const computeWorker = {
       segmentation;
 
     const numSlices = dimensions[2];
-
-    const segments = [
-      null,
-      ...indices.map((index) => ({ segmentIndex: index })),
-    ];
-
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 
+    // Create segments from indices
+    const segments = computeWorker.createSegmentsFromIndices(indices);
+
+    // Clear the border of each slice to avoid edge artifacts
     for (let z = 0; z < numSlices; z++) {
       for (let y = 0; y < dimensions[1]; y++) {
         const index = y * dimensions[0] + z * pixelsPerSlice;
@@ -288,6 +318,7 @@ const computeWorker = {
         size: pixelsPerSlice * numSlices,
         dataType: 'Uint8Array',
       });
+
       for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
         // Check if the slice is empty before running marching cube
         if (
@@ -300,6 +331,7 @@ const computeWorker = {
         ) {
           continue;
         }
+
         const frameStart = sliceIndex * pixelsPerSlice;
 
         try {
@@ -313,37 +345,24 @@ const computeWorker = {
             }
           }
 
-          const mSquares = vtkImageMarchingSquares.newInstance({
-            slice: sliceIndex,
-          });
-
-          // filter out the scalar data so that only it has background and
-          // the current segment index
+          // Create a copy of image data with segment-specific scalars
           const imageDataCopy = vtkImageData.newInstance();
-
           imageDataCopy.shallowCopy(imageData);
           imageDataCopy.getPointData().setScalars(scalars);
 
-          // Connect pipeline
-          mSquares.setInputData(imageDataCopy);
-          const cValues = [1];
-          mSquares.setContourValues(cValues);
-          mSquares.setMergePoints(false);
-
           // Perform marching squares
-          const msOutput = mSquares.getOutputData();
+          const msOutput = computeWorker.performMarchingSquares(
+            imageDataCopy,
+            sliceIndex
+          );
 
-          // Clean up output from marching squares
-          const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
-          if (reducedSet.points?.length) {
-            const contours = findContoursFromReducedSet(reducedSet.lines);
-
-            sliceContours.push({
-              contours,
-              polyData: reducedSet,
-              FrameNumber: sliceIndex + 1,
-              sliceIndex,
-            });
+          // Process contours
+          const contourData = computeWorker.createContoursFromPolyData(
+            msOutput,
+            sliceIndex
+          );
+          if (contourData) {
+            sliceContours.push(contourData);
           }
         } catch (e) {
           console.warn(sliceIndex);
@@ -361,8 +380,9 @@ const computeWorker = {
 
     return ContourSets;
   },
+
   generateContourSetsFromLabelmapStack: (args) => {
-    const { segmentationInfo, imageInfo, indices, mode } = args;
+    const { segmentationInfo, indices } = args;
 
     if (segmentationInfo.length > 1) {
       throw new Error(
@@ -379,16 +399,9 @@ const computeWorker = {
       const dimensions = segInfo.dimensions;
       const segScalarData = segInfo.scalarData;
       const { spacing, direction, origin } = segInfo;
-      const segDimensions = [
-        dimensions[0],
-        dimensions[1],
-        1, // For a single slice
-      ];
 
-      const segments = [
-        null,
-        ...indices.map((index) => ({ segmentIndex: index })),
-      ];
+      // Create segments from indices
+      const segments = computeWorker.createSegmentsFromIndices(indices);
 
       const pixelsPerSlice = dimensions[0] * dimensions[1];
       // Iterate through all segments in current segmentation set
@@ -402,14 +415,6 @@ const computeWorker = {
         }
 
         const sliceContours = [];
-        const scalars = vtkDataArray.newInstance({
-          name: 'Scalars',
-          numberOfComponents: 1,
-          size: pixelsPerSlice,
-          dataType: 'Uint8Array',
-        });
-
-        // Check if the slice is empty before running marching cube
 
         // Filter the segScalarData to only include the current segment
         const filteredData = new Uint8Array(segScalarData.length);
@@ -427,35 +432,28 @@ const computeWorker = {
           values: filteredData,
         });
 
-        const imageData = vtkImageData.newInstance();
-        imageData.setDimensions(dimensions);
-        imageData.setSpacing([spacing[0], spacing[1], 1]);
-        imageData.setDirection(direction);
-        imageData.setOrigin(origin);
+        // Create VTK image data
+        const imageData = computeWorker.createVTKImageData(
+          dimensions,
+          origin,
+          direction,
+          [spacing[0], spacing[1], 1]
+        );
         imageData.getPointData().setScalars(scalarArray);
 
         try {
-          const mSquares = vtkImageMarchingSquares.newInstance({
-            slicingMode: 2, // Z axis
-            mergePoints: false,
-            contourValues: [1],
-          });
+          // Perform marching squares with Z-axis slicing mode
+          const msOutput = computeWorker.performMarchingSquares(
+            imageData,
+            null,
+            2
+          );
 
-          // Connect pipeline
-          mSquares.setInputData(imageData);
-
-          // Perform marching squares
-          const msOutput = mSquares.getOutputData();
-
-          // Clean up output from marching squares
-          const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
-          if (reducedSet.points?.length) {
-            const contours = findContoursFromReducedSet(reducedSet.lines);
-
-            sliceContours.push({
-              contours,
-              polyData: reducedSet,
-            });
+          // Process contours
+          const contourData =
+            computeWorker.createContoursFromPolyData(msOutput);
+          if (contourData) {
+            sliceContours.push(contourData);
           }
         } catch (e) {
           console.warn(e);
