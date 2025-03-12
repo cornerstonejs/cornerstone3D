@@ -11,10 +11,14 @@ import { cache as cornerstoneCache, utilities } from '@cornerstonejs/core';
 const { Labelmap } = SegmentationRepresentations;
 
 function generateContourSetsFromLabelmap({ segmentations }) {
-  const { representationData, segments = [0, 1] } = segmentations;
-  const { volumeId: segVolumeId, imageIds } = representationData[Labelmap];
+  const {
+    representationData,
+    segments = [0, 1],
+    segmentationId,
+  } = segmentations;
+  const { imageIds } = representationData[Labelmap];
 
-  const vol = getOrCreateSegmentationVolume(segVolumeId);
+  const vol = getOrCreateSegmentationVolume(segmentationId);
 
   // Get segmentation volume
   if (!vol) {

@@ -7,6 +7,8 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getDeduplicatedVTKPolyDataPoints } from '../utilities/contours/getDeduplicatedVTKPolyDataPoints';
 import { findContoursFromReducedSet } from '../utilities/contours/contourFinder';
+import { createBidirectionalForSlice } from '../utilities/segmentation/findLargestBidirectional';
+import { createIsInSegmentMetadata } from '../utilities/segmentation/isLineInSegment';
 
 const { VoxelManager } = utilities;
 
@@ -14,60 +16,59 @@ const computeWorker = {
   getArgsFromInfo: (args) => {
     const { segmentationInfo, imageInfo } = args;
 
-    const {
-      scalarData: segmentationScalarData,
-      dimensions: segmentationDimensions,
-      spacing: segmentationSpacing,
-      origin: segmentationOrigin,
-      direction: segmentationDirection,
-    } = segmentationInfo;
-    const {
-      scalarData: imageScalarData,
-      dimensions: imageDimensions,
-      spacing: imageSpacing,
-      origin: imageOrigin,
-      direction: imageDirection,
-    } = imageInfo;
+    // Create segmentation data
+    const getSegmentationData = () => {
+      const {
+        scalarData: segmentationScalarData,
+        dimensions: segmentationDimensions,
+        spacing: segmentationSpacing,
+        origin: segmentationOrigin,
+        direction: segmentationDirection,
+      } = segmentationInfo;
 
-    // if dimensions are not the same, for now just throw an error
-    if (
-      segmentationDimensions[0] !== imageDimensions[0] ||
-      segmentationDimensions[1] !== imageDimensions[1] ||
-      segmentationDimensions[2] !== imageDimensions[2]
-    ) {
-      throw new Error(
-        'Dimensions do not match to calculate statistics, different dimensions not supported yet'
-      );
-    }
+      const segVoxelManager = VoxelManager.createScalarVolumeVoxelManager({
+        dimensions: segmentationDimensions,
+        scalarData: segmentationScalarData,
+      });
 
-    // Create VoxelManagers for both segmentation and image data
-    const segVoxelManager = VoxelManager.createScalarVolumeVoxelManager({
-      dimensions: segmentationDimensions,
-      scalarData: segmentationScalarData,
-    });
-
-    const imageVoxelManager = VoxelManager.createScalarVolumeVoxelManager({
-      dimensions: imageDimensions,
-      scalarData: imageScalarData,
-    });
-
-    return {
-      segmentation: {
+      return {
         voxelManager: segVoxelManager,
         dimensions: segmentationDimensions,
         spacing: segmentationSpacing,
         origin: segmentationOrigin,
         direction: segmentationDirection,
         scalarData: segmentationScalarData,
-      },
-      image: {
+      };
+    };
+
+    // Create image data
+    const getImageData = () => {
+      const {
+        scalarData: imageScalarData,
+        dimensions: imageDimensions,
+        spacing: imageSpacing,
+        origin: imageOrigin,
+        direction: imageDirection,
+      } = imageInfo;
+
+      const imageVoxelManager = VoxelManager.createScalarVolumeVoxelManager({
+        dimensions: imageDimensions,
+        scalarData: imageScalarData,
+      });
+
+      return {
         voxelManager: imageVoxelManager,
         dimensions: imageDimensions,
         spacing: imageSpacing,
-        origin: imageInfo.origin,
-        direction: imageInfo.direction,
+        origin: imageOrigin,
+        direction: imageDirection,
         scalarData: imageScalarData,
-      },
+      };
+    };
+
+    return {
+      segmentation: segmentationInfo && getSegmentationData(),
+      image: imageInfo && getImageData(),
     };
   },
   calculateSegmentsStatisticsVolume: (args) => {
@@ -176,17 +177,78 @@ const computeWorker = {
   },
 
   getSegmentLargestBidirectionalInternal: (args) => {
-    const { segmentationInfo, indices, mode } = args;
-    const { segmentation, image } = computeWorker.getArgsFromInfo(args);
-    const contourSets = computeWorker.generateContourSetsFromLabelmap({
-      segmentation,
-      indices,
-    });
+    const { segmentationInfo, imageInfo, indices, mode, isStack } = args;
 
-    return contourSets;
+    let segmentation;
+    if (!isStack) {
+      ({ segmentation } = computeWorker.getArgsFromInfo(args));
+    } else {
+      ({ segmentation } = computeWorker.getArgsFromInfo({
+        segmentationInfo: segmentationInfo[0],
+      }));
+    }
+
+    const { voxelManager, dimensions, origin, direction, spacing } =
+      segmentation;
+
+    const imageData = vtkImageData.newInstance();
+    imageData.setDimensions(
+      isStack ? [dimensions[0], dimensions[1], 2] : dimensions
+    );
+    imageData.setOrigin(origin);
+    imageData.setDirection(direction);
+    imageData.setSpacing(isStack ? [spacing[0], spacing[1], 1] : spacing);
+
+    let contourSets;
+    if (!isStack) {
+      contourSets = computeWorker.generateContourSetsFromLabelmapVolume({
+        segmentation,
+        indices,
+        imageData,
+      });
+    } else {
+      contourSets = computeWorker.generateContourSetsFromLabelmapStack({
+        segmentationInfo,
+        indices,
+      });
+    }
+
+    const bidirectionalData = [];
+
+    for (let i = 0; i < contourSets.length; i++) {
+      const contourSet = contourSets[i];
+      const { segmentIndex } = contourSet.segment;
+      const contours = contourSet.sliceContours;
+
+      let maxBidirectional;
+      const isInSegment = createIsInSegmentMetadata({
+        dimensions,
+        imageData,
+        voxelManager,
+        segmentIndex,
+      });
+
+      for (const sliceContour of contours) {
+        const bidirectional = createBidirectionalForSlice(
+          sliceContour,
+          isInSegment,
+          maxBidirectional
+        );
+        if (!bidirectional) {
+          continue;
+        }
+        maxBidirectional = bidirectional;
+      }
+
+      bidirectionalData.push({
+        segmentIndex,
+        ...maxBidirectional,
+      });
+    }
+    return bidirectionalData;
   },
-  generateContourSetsFromLabelmap: (args) => {
-    const { segmentation, indices } = args;
+  generateContourSetsFromLabelmapVolume: (args) => {
+    const { segmentation, indices, imageData } = args;
     const { voxelManager, dimensions, scalarData, origin, direction, spacing } =
       segmentation;
 
@@ -206,12 +268,6 @@ const computeWorker = {
         scalarData[index + dimensions[0] - 1] = 0;
       }
     }
-
-    const imageData = vtkImageData.newInstance();
-    imageData.setDimensions(dimensions);
-    imageData.setOrigin(origin);
-    imageData.setDirection(direction);
-    imageData.setSpacing(spacing);
 
     const ContourSets = [];
 
@@ -305,6 +361,118 @@ const computeWorker = {
 
     return ContourSets;
   },
+  generateContourSetsFromLabelmapStack: (args) => {
+    const { segmentationInfo, imageInfo, indices, mode } = args;
+
+    if (segmentationInfo.length > 1) {
+      throw new Error(
+        'Segment Bidirectional Stack mode only supports one image at the moment'
+      );
+    }
+
+    let ContourSets = [];
+
+    // Create voxel managers for each pair of segmentation and image info
+    for (let i = 0; i < segmentationInfo.length; i++) {
+      const segInfo = segmentationInfo[i];
+
+      const dimensions = segInfo.dimensions;
+      const segScalarData = segInfo.scalarData;
+      const { spacing, direction, origin } = segInfo;
+      const segDimensions = [
+        dimensions[0],
+        dimensions[1],
+        1, // For a single slice
+      ];
+
+      const segments = [
+        null,
+        ...indices.map((index) => ({ segmentIndex: index })),
+      ];
+
+      const pixelsPerSlice = dimensions[0] * dimensions[1];
+      // Iterate through all segments in current segmentation set
+      const numSegments = segments.length;
+      for (let segIndex = 0; segIndex < numSegments; segIndex++) {
+        const segment = segments[segIndex];
+
+        // Skip empty segments
+        if (!segment) {
+          continue;
+        }
+
+        const sliceContours = [];
+        const scalars = vtkDataArray.newInstance({
+          name: 'Scalars',
+          numberOfComponents: 1,
+          size: pixelsPerSlice,
+          dataType: 'Uint8Array',
+        });
+
+        // Check if the slice is empty before running marching cube
+
+        // Filter the segScalarData to only include the current segment
+        const filteredData = new Uint8Array(segScalarData.length);
+        for (let i = 0; i < segScalarData.length; i++) {
+          if (segScalarData[i] === segIndex) {
+            filteredData[i] = 1;
+          } else {
+            filteredData[i] = 0;
+          }
+        }
+
+        const scalarArray = vtkDataArray.newInstance({
+          name: 'Pixels',
+          numberOfComponents: 1,
+          values: filteredData,
+        });
+
+        const imageData = vtkImageData.newInstance();
+        imageData.setDimensions(dimensions);
+        imageData.setSpacing([spacing[0], spacing[1], 1]);
+        imageData.setDirection(direction);
+        imageData.setOrigin(origin);
+        imageData.getPointData().setScalars(scalarArray);
+
+        try {
+          const mSquares = vtkImageMarchingSquares.newInstance({
+            slicingMode: 2, // Z axis
+            mergePoints: false,
+            contourValues: [1],
+          });
+
+          // Connect pipeline
+          mSquares.setInputData(imageData);
+
+          // Perform marching squares
+          const msOutput = mSquares.getOutputData();
+
+          // Clean up output from marching squares
+          const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
+          if (reducedSet.points?.length) {
+            const contours = findContoursFromReducedSet(reducedSet.lines);
+
+            sliceContours.push({
+              contours,
+              polyData: reducedSet,
+            });
+          }
+        } catch (e) {
+          console.warn(e);
+        }
+
+        const ContourSet = {
+          sliceContours,
+          segment,
+        };
+
+        ContourSets.push(ContourSet);
+      }
+    }
+
+    return ContourSets;
+  },
+
   isSliceEmptyForSegmentVolume: (
     sliceIndex,
     segData,

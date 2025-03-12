@@ -6,16 +6,12 @@ import {
   triggerEvent,
   utilities,
 } from '@cornerstonejs/core';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types';
-import { generateContourSetsFromLabelmap } from '../contours';
 import { registerComputeWorker } from '../registerComputeWorker';
-import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
-import findLargestBidirectional from './findLargestBidirectional';
 import { WorkerTypes } from '../../enums';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
@@ -34,6 +30,7 @@ export async function getSegmentLargestBidirectional({
   segmentIndices,
   mode = 'individual',
 }) {
+  // Todo: handle the 'collective' mode where segment indices are merged together
   registerComputeWorker();
 
   triggerWorkerProgress(eventTarget, 0);
@@ -75,7 +72,7 @@ export async function getSegmentLargestBidirectional({
     indices = [indices, 255];
   }
 
-  const stats = reconstructableVolume
+  const bidirectionalData = reconstructableVolume
     ? await calculateVolumeBidirectional({
         operationData,
         indices,
@@ -87,7 +84,9 @@ export async function getSegmentLargestBidirectional({
         mode,
       });
 
-  return stats;
+  triggerWorkerProgress(eventTarget, 100);
+
+  return bidirectionalData;
 }
 
 /**
@@ -105,17 +104,10 @@ async function calculateVolumeBidirectional({ operationData, indices, mode }) {
     },
   });
 
-  const {
-    segmentationVoxelManager,
-    imageVoxelManager,
-    segmentationImageData,
-    imageData,
-  } = strategyData;
+  const { segmentationVoxelManager, segmentationImageData } = strategyData;
 
   const segmentationScalarData =
     segmentationVoxelManager.getCompleteScalarDataArray();
-
-  const imageScalarData = imageVoxelManager.getCompleteScalarDataArray();
 
   const segmentationInfo = {
     scalarData: segmentationScalarData,
@@ -125,15 +117,41 @@ async function calculateVolumeBidirectional({ operationData, indices, mode }) {
     direction: segmentationImageData.getDirection(),
   };
 
-  const imageInfo = {
-    scalarData: imageScalarData,
-    dimensions: imageData.getDimensions(),
-    spacing: imageData.getSpacing(),
-    origin: imageData.getOrigin(),
-    direction: imageData.getDirection(),
-  };
+  const bidirectionalData = await getWebWorkerManager().executeTask(
+    'compute',
+    'getSegmentLargestBidirectionalInternal',
+    {
+      segmentationInfo,
+      indices,
+      mode,
+    }
+  );
 
-  const contours = await getWebWorkerManager().executeTask(
+  return bidirectionalData;
+}
+
+async function calculateStackBidirectional({ segImageIds, indices, mode }) {
+  const workerManager = getWebWorkerManager();
+
+  const segmentationInfo = [];
+  const imageInfo = [];
+  for (const segImageId of segImageIds) {
+    const segImage = cache.getImage(segImageId);
+    const segPixelData = segImage.getPixelData();
+
+    const { origin, direction, spacing, dimensions } =
+      utilities.getImageDataMetadata(segImage);
+
+    segmentationInfo.push({
+      scalarData: segPixelData,
+      dimensions,
+      spacing,
+      origin,
+      direction,
+    });
+  }
+
+  const bidirectionalData = await workerManager.executeTask(
     'compute',
     'getSegmentLargestBidirectionalInternal',
     {
@@ -141,45 +159,9 @@ async function calculateVolumeBidirectional({ operationData, indices, mode }) {
       imageInfo,
       indices,
       mode,
+      isStack: true,
     }
   );
 
-  triggerWorkerProgress(eventTarget, 100);
-  debugger;
-
-  // if (mode === 'collective') {
-  //   return processSegmentationStatistics({
-  //     stats,
-  //     unit,
-  //     spacing,
-  //     segmentationImageData,
-  //     imageVoxelManager,
-  //   });
-  // } else {
-  //   const finalStats = {};
-  //   Object.entries(stats).forEach(([segmentIndex, stat]) => {
-  //     finalStats[segmentIndex] = processSegmentationStatistics({
-  //       stats: stat,
-  //       unit,
-  //       spacing,
-  //       segmentationImageData,
-  //       imageVoxelManager,
-  //     });
-  //   });
-  //   return finalStats;
-  // }
-}
-
-async function calculateStackBidirectional({ segImageIds, indices, mode }) {
-  const workerManager = getWebWorkerManager();
-
-  const contours = await workerManager.executeTask(
-    'compute',
-    'calculateSegmentsLargestBidirectionalStack',
-    {
-      segImageIds,
-      indices,
-      mode,
-    }
-  );
+  return bidirectionalData;
 }
