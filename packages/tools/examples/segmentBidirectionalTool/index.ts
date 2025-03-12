@@ -179,8 +179,22 @@ addDropdownToToolbar({
 
 addButtonToToolbar({
   title: 'Find Bidirectional',
-  onClick: () => {
-    [element1].forEach((element) => {
+  onClick: async () => {
+    [element1].forEach(async (element) => {
+      const actionConfiguration = {
+        contourBidirectional: {
+          method: cstUtils.segmentation.segmentContourAction,
+          bindings: [
+            {
+              key: 'c',
+            },
+          ],
+          data: {
+            segmentData: new Map(),
+          },
+        },
+      };
+
       const bidirectional = actionConfiguration.contourBidirectional.method(
         element,
         actionConfiguration.contourBidirectional
@@ -190,13 +204,24 @@ addButtonToToolbar({
         console.log('No bidirectional found');
         return;
       }
+
+      const largest =
+        await cstUtils.segmentation.getSegmentLargestBidirectional({
+          segmentationId,
+          segmentIndices: [1],
+        });
+
       const { majorAxis, minorAxis, maxMajor, maxMinor } = bidirectional;
       const [majorPoint0, majorPoint1] = majorAxis;
       const [minorPoint0, minorPoint1] = minorAxis;
       instructions.innerText = `
-    Major Axis: ${majorPoint0}-${majorPoint1} length ${roundNumber(maxMajor)}
-    Minor Axis: ${minorPoint0}-${minorPoint1} length ${roundNumber(maxMinor)}
-    `;
+        Major Axis: ${majorPoint0}-${majorPoint1} length ${roundNumber(
+        maxMajor
+      )}
+        Minor Axis: ${minorPoint0}-${minorPoint1} length ${roundNumber(
+        maxMinor
+      )}
+      `;
     });
   },
 });

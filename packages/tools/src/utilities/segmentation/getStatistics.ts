@@ -168,6 +168,7 @@ async function calculateVolumeStatistics({
     dimensions: segmentationImageData.getDimensions(),
     spacing: segmentationImageData.getSpacing(),
     origin: segmentationImageData.getOrigin(),
+    direction: segmentationImageData.getDirection(),
   };
 
   const imageInfo = {
@@ -175,6 +176,7 @@ async function calculateVolumeStatistics({
     dimensions: imageData.getDimensions(),
     spacing: imageData.getSpacing(),
     origin: imageData.getOrigin(),
+    direction: imageData.getDirection(),
   };
 
   const stats = await workerManager.executeTask(
