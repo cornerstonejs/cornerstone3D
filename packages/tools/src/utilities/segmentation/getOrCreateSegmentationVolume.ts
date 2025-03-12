@@ -1,4 +1,4 @@
-import { cache, volumeLoader } from '@cornerstonejs/core';
+import { cache, volumeLoader, utilities } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type {
   LabelmapSegmentationDataStack,
@@ -29,6 +29,12 @@ function getOrCreateSegmentationVolume(segmentationId) {
   // making the scenario for multi-image non-consistent metadata is not likely.
 
   if (!labelmapImageIds || labelmapImageIds.length === 1) {
+    return;
+  }
+
+  const isValidVolume = utilities.isValidVolume(labelmapImageIds);
+
+  if (!isValidVolume) {
     return;
   }
 
