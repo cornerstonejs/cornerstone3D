@@ -72,7 +72,7 @@ import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { pointInShapeCallback } from './pointInShapeCallback';
 // name spaces
-import * as planar from './planar';
+export * as planar from './planar';
 import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
@@ -96,6 +96,8 @@ import clip from './clip';
 import createSubVolume from './createSubVolume';
 import getVolumeDirectionVectors from './getVolumeDirectionVectors';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
+export * as logger from './logger';
+
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 
@@ -113,7 +115,6 @@ export {
   calibratedPixelSpacingMetadataProvider,
   clamp,
   uuidv4,
-  planar,
   getMinMax,
   getRuntimeId,
   isEqual,

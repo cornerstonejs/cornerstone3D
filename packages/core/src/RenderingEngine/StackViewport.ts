@@ -9,6 +9,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
+import { coreLog } from '../utilities/logger';
 
 import type {
   ActorEntry,
@@ -120,6 +121,8 @@ interface SetVOIOptions {
   forceRecreateLUTFunction?: boolean;
   voiUpdatedWithSetProperties?: boolean;
 }
+
+const log = coreLog.getLogger('RenderingEngine', 'StackViewport');
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -1814,7 +1817,7 @@ class StackViewport extends Viewport {
         pixelArray,
       });
     } catch (e) {
-      console.error(e);
+      log.error(e);
     }
   }
 
@@ -1835,6 +1838,13 @@ class StackViewport extends Viewport {
     this._throwIfDestroyed();
 
     this.imageIds = imageIds;
+
+    if (currentImageIdIndex > imageIds.length) {
+      throw new Error(
+        'Current image index is greater than the number of images in the stack'
+      );
+    }
+
     this.imageKeyToIndexMap.clear();
     imageIds.forEach((imageId, index) => {
       this.imageKeyToIndexMap.set(imageId, index);
@@ -3170,7 +3180,7 @@ class StackViewport extends Viewport {
     const { referencedImageURI: referencedImageURI } = viewRef;
     const sliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
     if (sliceIndex === undefined) {
-      console.error(`No image URI found for ${referencedImageURI}`);
+      log.error(`No image URI found for ${referencedImageURI}`);
       return;
     }
 

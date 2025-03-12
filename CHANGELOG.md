@@ -3,6 +3,62 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.3.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.2...v3.3.3) (2025-03-11)
+
+**Note:** Version bump only for package root
+
+## [3.3.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.1...v3.3.2) (2025-03-11)
+
+**Note:** Version bump only for package root
+
+## [3.3.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.0...v3.3.1) (2025-03-11)
+
+**Note:** Version bump only for package root
+
+# [3.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.3...v3.3.0) (2025-03-11)
+
+### Features
+
+- Add logging framework ([#1870](https://github.com/cornerstonejs/cornerstone3D/issues/1870)) ([dea150e](https://github.com/cornerstonejs/cornerstone3D/commit/dea150e91d7843b49e92d309d36010e381561908))
+
+## [3.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.2...v3.2.3) (2025-03-11)
+
+### Bug Fixes
+
+- **tests:** reduce timeouts / retries / workers ([#1891](https://github.com/cornerstonejs/cornerstone3D/issues/1891)) ([558829c](https://github.com/cornerstonejs/cornerstone3D/commit/558829c8d9238eb42dc9d5b8554183279fbd9da7))
+
+## [3.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.1...v3.2.2) (2025-03-11)
+
+### Bug Fixes
+
+- remove redundant Math.min call ([#1892](https://github.com/cornerstonejs/cornerstone3D/issues/1892)) ([e7ed238](https://github.com/cornerstonejs/cornerstone3D/commit/e7ed2382cd36b5e5ce9e1b26c4aadf796ce2c6a8))
+
+## [3.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.0...v3.2.1) (2025-03-11)
+
+**Note:** Version bump only for package root
+
+# [3.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.2...v3.2.0) (2025-03-11)
+
+### Features
+
+- **segmentStatsCalculator:** for calculation of statistics ([#1881](https://github.com/cornerstonejs/cornerstone3D/issues/1881)) ([cf25a4f](https://github.com/cornerstonejs/cornerstone3D/commit/cf25a4fa1acb878314ebeee971070484194da5da))
+
+## [3.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.1...v3.1.2) (2025-03-10)
+
+**Note:** Version bump only for package root
+
+## [3.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.0...v3.1.1) (2025-03-10)
+
+### Bug Fixes
+
+- **growcut:** Enable GrowCut in Stack viewport for all datasets ([#1888](https://github.com/cornerstonejs/cornerstone3D/issues/1888)) ([9e18e6b](https://github.com/cornerstonejs/cornerstone3D/commit/9e18e6b6e8054c4340b9069476cc0b404c4eea3f))
+
+# [3.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.5...v3.1.0) (2025-03-10)
+
+### Features
+
+- Updating proper values for ChangeType parameter in AnnotationModifiedEventDetail. ([#1821](https://github.com/cornerstonejs/cornerstone3D/issues/1821)) ([3c22338](https://github.com/cornerstonejs/cornerstone3D/commit/3c22338a25b5401e22d9f97efd953d09f1977dcc))
+
 ## [3.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.4...v3.0.5) (2025-03-06)
 
 ### Bug Fixes

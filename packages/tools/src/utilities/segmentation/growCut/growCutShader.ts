@@ -2,8 +2,7 @@
 const shader = `
 const MAX_STRENGTH = 65535f;
 
-// Workgroup soze - X*Y*Z must be multiple of 32 for better performance
-// otherwise warps are sub allocated and some threads will not process anything
+// Workgroup size - X*Y*Z must be multiple of 32 for better performance
 override workGroupSizeX = 1u;
 override workGroupSizeY = 1u;
 override workGroupSizeZ = 1u;
@@ -16,6 +15,16 @@ struct Params {
   iteration: u32,
 }
 
+// New structure to track bounds of modified voxels
+struct Bounds {
+  minX: atomic<i32>,
+  minY: atomic<i32>,
+  minZ: atomic<i32>,
+  maxX: atomic<i32>,
+  maxY: atomic<i32>,
+  maxZ: atomic<i32>,
+}
+
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var<storage> volumePixelData: array<f32>;
 @group(0) @binding(2) var<storage, read_write> labelmap: array<u32>;
@@ -23,10 +32,23 @@ struct Params {
 @group(0) @binding(4) var<storage> prevLabelmap: array<u32>;
 @group(0) @binding(5) var<storage> prevStrengthData: array<f32>;
 @group(0) @binding(6) var<storage, read_write> updatedVoxelsCounter: array<atomic<u32>>;
+@group(0) @binding(7) var<storage, read_write> modifiedBounds: Bounds;
 
 fn getPixelIndex(ijkPos: vec3u) -> u32 {
   let numPixelsPerSlice = params.size.x * params.size.y;
   return ijkPos.x + ijkPos.y * params.size.x + ijkPos.z * numPixelsPerSlice;
+}
+
+fn updateBounds(position: vec3i) {
+  // Atomically update min bounds (use min operation)
+  let oldMinX = atomicMin(&modifiedBounds.minX, position.x);
+  let oldMinY = atomicMin(&modifiedBounds.minY, position.y);
+  let oldMinZ = atomicMin(&modifiedBounds.minZ, position.z);
+
+  // Atomically update max bounds (use max operation)
+  let oldMaxX = atomicMax(&modifiedBounds.maxX, position.x);
+  let oldMaxY = atomicMax(&modifiedBounds.maxY, position.y);
+  let oldMaxZ = atomicMax(&modifiedBounds.maxZ, position.z);
 }
 
 @compute @workgroup_size(workGroupSizeX, workGroupSizeY, workGroupSizeZ)
@@ -43,6 +65,17 @@ fn main(
     return;
   }
 
+  // Initialize bounds for the first iteration
+  if (params.iteration == 0 && globalId.x == 0 && globalId.y == 0 && globalId.z == 0) {
+    // Initialize to opposite extremes to ensure any update will improve the bounds
+    atomicStore(&modifiedBounds.minX, i32(params.size.x));
+    atomicStore(&modifiedBounds.minY, i32(params.size.y));
+    atomicStore(&modifiedBounds.minZ, i32(params.size.z));
+    atomicStore(&modifiedBounds.maxX, -1);
+    atomicStore(&modifiedBounds.maxY, -1);
+    atomicStore(&modifiedBounds.maxZ, -1);
+  }
+
   let currentCoord = vec3i(globalId);
   let currentPixelIndex = getPixelIndex(globalId);
 
@@ -52,6 +85,11 @@ fn main(
   if (params.iteration == 0) {
     // All non-zero initial labels are given maximum strength
     strengthData[currentPixelIndex] = select(MAX_STRENGTH, 0., labelmap[currentPixelIndex] == 0);
+
+    // Update bounds for non-zero initial labels
+    if (labelmap[currentPixelIndex] != 0) {
+      updateBounds(currentCoord);
+    }
     return;
   }
 
@@ -98,6 +136,9 @@ fn main(
 
   if (labelmap[currentPixelIndex] != newLabel) {
     atomicAdd(&updatedVoxelsCounter[params.iteration], 1u);
+
+    // Update bounds for modified voxels
+    updateBounds(currentCoord);
   }
 
   labelmap[currentPixelIndex] = newLabel;
