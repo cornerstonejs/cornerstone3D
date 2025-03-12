@@ -1,30 +1,20 @@
-import {
-  cache,
-  Enums,
-  eventTarget,
-  getWebWorkerManager,
-  triggerEvent,
-  utilities,
-} from '@cornerstonejs/core';
-import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
-import type {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types';
-import { registerComputeWorker } from '../registerComputeWorker';
+import { getWebWorkerManager } from '@cornerstonejs/core';
 import { WorkerTypes } from '../../enums';
-import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
-import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
-import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
-import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
+import { registerComputeWorker } from '../registerComputeWorker';
+import {
+  triggerWorkerProgress,
+  getSegmentationDataForWorker,
+  prepareVolumeStrategyDataForWorker,
+  prepareStackDataForWorker,
+} from './utilsForWorker';
 
-const triggerWorkerProgress = (eventTarget, progress) => {
-  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
-    progress,
-    type: WorkerTypes.COMPUTE_LARGEST_BIDIRECTIONAL,
-  });
-};
-
+/**
+ * Get largest bidirectional measurements for segmentation
+ * @param segmentationId - The segmentation ID
+ * @param segmentIndices - The segment indices
+ * @param mode - The computation mode
+ * @returns Bidirectional measurement data
+ */
 export async function getSegmentLargestBidirectional({
   segmentationId,
   segmentIndices,
@@ -33,44 +23,16 @@ export async function getSegmentLargestBidirectional({
   // Todo: handle the 'collective' mode where segment indices are merged together
   registerComputeWorker();
 
-  triggerWorkerProgress(eventTarget, 0);
+  triggerWorkerProgress(WorkerTypes.COMPUTE_LARGEST_BIDIRECTIONAL, 0);
 
-  const segmentation = getSegmentation(segmentationId);
-  const { representationData } = segmentation;
+  const segData = getSegmentationDataForWorker(segmentationId, segmentIndices);
 
-  const { Labelmap } = representationData;
-
-  if (!Labelmap) {
-    console.debug('No labelmap found for segmentation', segmentationId);
+  if (!segData) {
     return;
   }
 
-  const segVolumeId = (Labelmap as LabelmapSegmentationDataVolume).volumeId;
-  const segImageIds = (Labelmap as LabelmapSegmentationDataStack).imageIds;
-
-  // Create a minimal operationData object
-  const operationData = {
-    segmentationId,
-    volumeId: segVolumeId,
-    imageIds: segImageIds,
-  };
-
-  let reconstructableVolume = false;
-  if (segImageIds) {
-    const refImageIds = segImageIds.map((imageId) => {
-      const image = cache.getImage(imageId);
-      return image.referencedImageId;
-    });
-    reconstructableVolume = utilities.isValidVolume(refImageIds);
-  }
-  let indices = segmentIndices;
-
-  if (!indices) {
-    indices = [getActiveSegmentIndex(segmentationId)];
-  } else if (!Array.isArray(indices)) {
-    // Include the preview index
-    indices = [indices, 255];
-  }
+  const { operationData, segImageIds, reconstructableVolume, indices } =
+    segData;
 
   const bidirectionalData = reconstructableVolume
     ? await calculateVolumeBidirectional({
@@ -84,25 +46,21 @@ export async function getSegmentLargestBidirectional({
         mode,
       });
 
-  triggerWorkerProgress(eventTarget, 100);
+  triggerWorkerProgress(WorkerTypes.COMPUTE_LARGEST_BIDIRECTIONAL, 100);
 
   return bidirectionalData;
 }
 
 /**
- * Calculate statistics for a reconstructable volume
+ * Calculate bidirectional measurements for a volume
+ * @param operationData - The operation data
+ * @param indices - The segment indices
+ * @param mode - The computation mode
+ * @returns Bidirectional measurement data
  */
 async function calculateVolumeBidirectional({ operationData, indices, mode }) {
   // Get the strategy data
-  const strategyData = getStrategyData({
-    operationData,
-    strategy: {
-      ensureSegmentationVolumeFor3DManipulation:
-        ensureSegmentationVolume.ensureSegmentationVolumeFor3DManipulation,
-      ensureImageVolumeFor3DManipulation:
-        ensureImageVolume.ensureImageVolumeFor3DManipulation,
-    },
-  });
+  const strategyData = prepareVolumeStrategyDataForWorker(operationData);
 
   const { segmentationVoxelManager, segmentationImageData } = strategyData;
 
@@ -130,33 +88,22 @@ async function calculateVolumeBidirectional({ operationData, indices, mode }) {
   return bidirectionalData;
 }
 
+/**
+ * Calculate bidirectional measurements for a stack
+ * @param segImageIds - The segmentation image IDs
+ * @param indices - The segment indices
+ * @param mode - The computation mode
+ * @returns Bidirectional measurement data
+ */
 async function calculateStackBidirectional({ segImageIds, indices, mode }) {
-  const workerManager = getWebWorkerManager();
+  // Get segmentation and image info for each image in the stack
+  const { segmentationInfo } = prepareStackDataForWorker(segImageIds);
 
-  const segmentationInfo = [];
-  const imageInfo = [];
-  for (const segImageId of segImageIds) {
-    const segImage = cache.getImage(segImageId);
-    const segPixelData = segImage.getPixelData();
-
-    const { origin, direction, spacing, dimensions } =
-      utilities.getImageDataMetadata(segImage);
-
-    segmentationInfo.push({
-      scalarData: segPixelData,
-      dimensions,
-      spacing,
-      origin,
-      direction,
-    });
-  }
-
-  const bidirectionalData = await workerManager.executeTask(
+  const bidirectionalData = await getWebWorkerManager().executeTask(
     'compute',
     'getSegmentLargestBidirectionalInternal',
     {
       segmentationInfo,
-      imageInfo,
       indices,
       mode,
       isStack: true,

@@ -259,20 +259,12 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
   // Get Cornerstone imageIds and fetch metadata into RAM
-  // const imageIds = await createImageIdsAndCacheMetaData({
+
+  // const mgimageIds = await createImageIdsAndCacheMetaData({
   //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
+  //     '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
   //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
-  //   SOPInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
-  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  // });
-  // const imageIds2 = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
-  //   SeriesInstanceUID:
-  //     '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
-  //   SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
+  //     '1.3.6.1.4.1.14519.5.2.1.4792.2001.326862698868700146219088322924',
   //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   // });
 
