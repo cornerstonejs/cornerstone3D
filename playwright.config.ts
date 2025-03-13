@@ -5,8 +5,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 4 : undefined,
-  timeout: 720 * 1000,
+  workers: process.env.CI ? 8 : undefined,
+  timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
   outputDir: './tests/test-results',
@@ -17,7 +17,7 @@ export default defineConfig({
     ],
   ],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3333',
     trace: 'on-first-retry',
     video: 'on',
   },
@@ -52,6 +52,7 @@ export default defineConfig({
         '**/splineContourSegmentationTools.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
         '**/renderingPipeline.spec.ts',
+        '**/stackLabelmapSegmentation/**.spec.ts',
       ],
     },
     {
@@ -67,12 +68,13 @@ export default defineConfig({
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
+        '**/stackLabelmapSegmentation/**.spec.ts',
       ],
     },
   ],
   webServer: {
     command: 'yarn build-and-serve-static-examples',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3333',
     reuseExistingServer: !process.env.CI,
     timeout: 500 * 1000,
   },

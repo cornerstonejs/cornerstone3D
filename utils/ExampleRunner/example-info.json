@@ -155,6 +155,10 @@
         "name": "ETDRS Grid Tool",
         "description": "Demonstrates how to use the ETDRS Grid tool. An ETDRS Grid (Early Treatment Diabetic Retinopathy Study Grid) is a standardized grid used in ophthalmology to assess macular thickness and retinal changes."
       },
+      "cursor3D": {
+        "name": "3D Volume Picking",
+        "description": "Demonstrates how to use the VTK.js vtkCellPicker object to pick 3D point in volume rendering scene. Also shows how to synchronize between 3D and 2D viewports."
+      },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",
         "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
