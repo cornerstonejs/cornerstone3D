@@ -159,6 +159,10 @@
         "name": "3D Volume Picking",
         "description": "Demonstrates how to use the VTK.js vtkCellPicker object to pick 3D point in volume rendering scene. Also shows how to synchronize between 3D and 2D viewports."
       },
+      "hardwarePicking": {
+        "name": "Hardware Picking",
+        "description": "Demonstrates how to use the VTK.js vtkHardwareSelector picking feature to pick a point in the volume rendering scene. This picking process is more efficient because it's hardware accelerated but only works for surfaces."
+      },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",
         "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
