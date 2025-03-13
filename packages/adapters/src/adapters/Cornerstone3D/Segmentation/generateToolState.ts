@@ -53,14 +53,13 @@ function generateToolState(
 function createFromDICOMSegBuffer(
     referencedImageIds,
     arrayBuffer,
-    { metadataProvider, skipOverlapping = false, tolerance = 1e-3 }
+    { metadataProvider, tolerance = 1e-3 }
 ) {
     return createLabelmapsFromBufferInternal(
         referencedImageIds,
         arrayBuffer,
         metadataProvider,
         {
-            skipOverlapping,
             tolerance
         }
     );

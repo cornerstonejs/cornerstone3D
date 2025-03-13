@@ -1,5 +1,6 @@
 import validateSegmentationInput from './validateSegmentationInput';
 import {
+  getLabelmapActorEntries,
   getLabelmapActorEntry,
   getSurfaceActorEntry,
   getLabelmapActorUID,
@@ -8,6 +9,7 @@ import {
 
 export {
   validateSegmentationInput,
+  getLabelmapActorEntries,
   getLabelmapActorEntry,
   getSurfaceActorEntry,
   getLabelmapActorUID,
