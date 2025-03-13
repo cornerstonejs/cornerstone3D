@@ -37,7 +37,6 @@ function destroy() {
 }
 
 export {
-  // get
   getColorLUT,
   getCurrentLabelmapImageIdForViewport,
   getCurrentLabelmapImageIdsForViewport,
