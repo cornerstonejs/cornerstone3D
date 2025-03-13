@@ -1,4 +1,4 @@
-/* prettier-ignore-file */
+/* eslint-disable prettier/prettier */
 import loglevelImport from 'loglevel';
 import type { Logger as LogLevelLogger } from 'loglevel';
 
