@@ -266,6 +266,8 @@ function compareImages(
   outputName,
   updateBaselines = false
 ) {
+  console.log("🚀 ~ imageDataURL:", imageDataURL)
+  console.debug("🚀 ~ baseline:", baseline)
   if (updateBaselines) {
     console.debug(`[Update Baseline]`);
     console.debug(`${outputName}: ${imageDataURL}`);
@@ -289,6 +291,7 @@ function compareImages(
       .compareTo(imageDataURL)
       .onComplete((data) => {
         const mismatch = parseFloat(data.misMatchPercentage);
+        console.log("🚀 ~ .onComplete ~ mismatch:", mismatch)
         // If the error is greater than 1%, fail the test
         // and download the difference image
         // Todo: this should be a configurable threshold
