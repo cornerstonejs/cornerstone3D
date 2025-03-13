@@ -110,6 +110,8 @@ export default class SegmentationStateManager {
    * Resets the state to the default state.
    */
   resetState(): void {
+    this._stackLabelmapImageIdReferenceMap.clear();
+    this._labelmapImageIdReferenceMap.clear();
     this.state = Object.freeze(
       csUtils.deepClone(initialDefaultState) as SegmentationState
     );
