@@ -1,3 +1,4 @@
+/* prettier-ignore-file */
 import loglevelImport from 'loglevel';
 import type { Logger as LogLevelLogger } from 'loglevel';
 
@@ -27,7 +28,8 @@ export function getRootLogger(name: string): Logger {
   return logger;
 }
 
-/** Gets a nested logger.
+/**
+ * Gets a nested logger.
  * This will eventually inherit the level from the parent level, but right now
  * it doesn't
  */
@@ -35,7 +37,6 @@ export function getLogger(...name: string[]): Logger {
   return getRootLogger(name.join('.'));
 }
 
-/** Pre-setup categories for easy logging, by package name */
 /**
  * The cs3dLog is a root category for Cornerstone3D logs.  In forms a grouping
  * for the logs underneath it, although at this point the log levels are entirely
@@ -44,7 +45,7 @@ export function getLogger(...name: string[]): Logger {
  * that using `cs3dLog.setLevel("info")` for example, will set child categories
  * to level info unless they have been otherwise specified.
  *
- * As well, the categories could be used with an externally defined appender
+ * As well, the categories could be used with an externally defined appended
  * to separate various logs by source.  See dicom issue log below.
  */
 export const cs3dLog = getRootLogger('cs3d');
@@ -76,7 +77,7 @@ export const examplesLog = cs3dLog.getLogger('examples');
 /**
  * Dicom issue log is for reporting inconsistencies and issues with DICOM logging
  * This log is separated from the cs3d hierarchy to allow separation of logs
- * by use of an external appender to store inconsistencies and invalid DICOM
+ * by use of an external appended to store inconsistencies and invalid DICOM
  * values separately.
  *
  * Levels:
