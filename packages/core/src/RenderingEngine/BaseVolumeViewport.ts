@@ -686,6 +686,7 @@ abstract class BaseVolumeViewport extends Viewport {
       focalPoint: newFocalPoint,
       position: newPosition,
     });
+    this.render();
   }
 
   /**
