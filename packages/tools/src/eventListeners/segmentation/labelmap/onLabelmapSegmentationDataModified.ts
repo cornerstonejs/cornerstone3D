@@ -143,16 +143,18 @@ function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
         return;
       }
 
-      actorEntries.forEach((actorEntry) => {
+      actorEntries.forEach((actorEntry, i) => {
         const segImageData = actorEntry.actor.getMapper().getInputData();
 
-        const currentSegmentationImageId =
+        const currentSegmentationImageIds =
           SegmentationState.getCurrentLabelmapImageIdsForViewport(
             viewportId,
             segmentationId
           );
 
-        const segmentationImage = cache.getImage(currentSegmentationImageId[0]);
+        const segmentationImage = cache.getImage(
+          currentSegmentationImageIds[i]
+        );
         segImageData.modified();
 
         // update the cache with the new image data
