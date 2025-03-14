@@ -983,36 +983,18 @@ class RectangleROITool extends AnnotationTool {
     if (!enabledElement) {
       return;
     }
-    const { viewport } = enabledElement;
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    let { viewPlaneNormal, viewUp } = viewport.getCamera();
-    viewPlaneNormal = options?.viewplaneNormal ?? viewPlaneNormal;
-    viewUp = options?.viewUp ?? viewUp;
-
-    // This is a workaround to access the protected method getReferencedImageId
-    // we should make those static too
-    const instance = options?.toolInstance ?? new this();
-
-    let referencedImageId = instance.getReferencedImageId(
-      viewport,
-      points[0],
+    const {
+      FrameOfReferenceUID,
+      referencedImageId,
       viewPlaneNormal,
-      viewUp
+      instance,
+      viewport,
+    } = this.hydrateBase<RectangleROITool>(
+      RectangleROITool,
+      enabledElement,
+      points,
+      options
     );
-
-    if (options?.referencedImageId) {
-      // If the provided referencedImageId is not the same as the one calculated
-      // by the camera positions, only set the referencedImageId. The scenario
-      // here is that only a referencedImageId is given in the options, which
-      // does not match the current camera position, so the user is wanting to
-      // apply the annotation to a specific image.
-      if (referencedImageId !== options.referencedImageId) {
-        viewPlaneNormal = undefined;
-        viewUp = undefined;
-      }
-      referencedImageId = options.referencedImageId;
-    }
 
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),

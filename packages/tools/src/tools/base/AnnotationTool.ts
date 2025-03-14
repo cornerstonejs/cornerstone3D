@@ -4,6 +4,7 @@ import {
   getEnabledElement,
   metaData,
   utilities as csUtils,
+  getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -643,6 +644,62 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       annotation,
       options
     );
+  }
+
+  protected static hydrateBase<T extends AnnotationTool>(
+    ToolClass: new () => T,
+    enabledElement: Types.IEnabledElement,
+    points: Types.Point3[],
+    options?: {
+      annotationUID?: string;
+      toolInstance?: T;
+      referencedImageId?: string;
+      viewplaneNormal?: Types.Point3;
+      viewUp?: Types.Point3;
+    }
+  ) {
+    if (!enabledElement) {
+      return;
+    }
+    const { viewport } = enabledElement;
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
+    let { viewPlaneNormal, viewUp } = viewport.getCamera();
+    viewPlaneNormal = options?.viewplaneNormal ?? viewPlaneNormal;
+    viewUp = options?.viewUp ?? viewUp;
+
+    // This is a workaround to access the protected method getReferencedImageId
+    // we should make those static too
+    const instance = options?.toolInstance || new ToolClass();
+
+    let referencedImageId = instance.getReferencedImageId(
+      viewport,
+      points[0],
+      viewPlaneNormal,
+      viewUp
+    );
+
+    if (options?.referencedImageId) {
+      // If the provided referencedImageId is not the same as the one calculated
+      // by the camera positions, only set the referencedImageId. The scenario
+      // here is that only a referencedImageId is given in the options, which
+      // does not match the current camera position, so the user is wanting to
+      // apply the annotation to a specific image.
+      if (referencedImageId !== options.referencedImageId) {
+        viewPlaneNormal = undefined;
+        viewUp = undefined;
+      }
+      referencedImageId = options.referencedImageId;
+    }
+
+    return {
+      FrameOfReferenceUID,
+      referencedImageId,
+      viewPlaneNormal,
+      viewUp,
+      instance,
+      viewport,
+    };
   }
 }
 
