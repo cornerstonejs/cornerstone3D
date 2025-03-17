@@ -102,16 +102,16 @@ function basicStatsCallback(
     if (value < state.min[idx]) {
       state.min[idx] = value;
       if (idx === 0) {
-        state.minIJK = [...pointIJK];
-        state.minLPS = [...pointLPS];
+        state.minIJK = pointIJK ? [...pointIJK] : null;
+        state.minLPS = pointLPS ? [...pointLPS] : null;
       }
     }
 
     if (value > state.max[idx]) {
       state.max[idx] = value;
       if (idx === 0) {
-        state.maxIJK = [...pointIJK];
-        state.maxLPS = [...pointLPS];
+        state.maxIJK = pointIJK ? [...pointIJK] : null;
+        state.maxLPS = pointLPS ? [...pointLPS] : null;
       }
     }
   });
@@ -171,16 +171,16 @@ function basicGetStatistics(
       label: 'Max Pixel',
       value: state.max.length === 1 ? state.max[0] : state.max,
       unit,
-      pointIJK: [...state.maxIJK],
-      pointLPS: [...state.maxLPS],
+      pointIJK: state.maxIJK ? [...state.maxIJK] : null,
+      pointLPS: state.maxLPS ? [...state.maxLPS] : null,
     },
     min: {
       name: 'min',
       label: 'Min Pixel',
       value: state.min.length === 1 ? state.min[0] : state.min,
       unit,
-      pointIJK: [...state.minIJK],
-      pointLPS: [...state.minLPS],
+      pointIJK: state.minIJK ? [...state.minIJK] : null,
+      pointLPS: state.minLPS ? [...state.minLPS] : null,
     },
     mean: {
       name: 'mean',
