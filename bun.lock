@@ -132,7 +132,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "3.4.0",
+      "version": "3.5.1",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -141,13 +141,13 @@
         "ndarray": "^1.0.19",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.4.0",
-        "@cornerstonejs/tools": "^3.4.0",
+        "@cornerstonejs/core": "^3.5.1",
+        "@cornerstonejs/tools": "^3.5.1",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "3.4.0",
+      "version": "3.5.1",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -165,7 +165,7 @@
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "3.4.0",
+      "version": "3.5.1",
       "dependencies": {
         "@kitware/vtk.js": "32.12.0",
         "comlink": "^4.4.1",
@@ -175,7 +175,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "3.4.0",
+      "version": "3.5.1",
       "dependencies": {
         "@cornerstonejs/codec-charls": "^1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
@@ -188,13 +188,57 @@
         "uuid": "^9.0.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.4.0",
+        "@cornerstonejs/core": "^3.5.1",
         "dicom-parser": "^1.8.9",
+      },
+    },
+    "packages/docs": {
+      "name": "docs",
+      "version": "3.0.0",
+      "dependencies": {
+        "@cornerstonejs/adapters": "^3.5.1",
+        "@cornerstonejs/core": "^3.5.1",
+        "@cornerstonejs/dicom-image-loader": "^3.5.1",
+        "@cornerstonejs/nifti-volume-loader": "^3.5.1",
+        "@cornerstonejs/tools": "^3.5.1",
+        "@docusaurus/core": "3.6.3",
+        "@docusaurus/faster": "3.6.3",
+        "@docusaurus/module-type-aliases": "3.6.3",
+        "@docusaurus/plugin-google-gtag": "3.6.3",
+        "@docusaurus/preset-classic": "3.6.3",
+        "@kitware/vtk.js": "32.12.0",
+        "@mdx-js/react": "^3.0.1",
+        "@svgr/webpack": "^8.1.0",
+        "clsx": "^1.1.1",
+        "dcmjs": "^0.33.0",
+        "dicom-parser": "^1.8.21",
+        "dicomweb-client": "0.10.4",
+        "docusaurus-plugin-copy": "0.1.1",
+        "docusaurus-plugin-typedoc": "1.0.5",
+        "file-loader": "^6.2.0",
+        "gl-matrix": "^3.4.3",
+        "hammerjs": "^2.0.8",
+        "prism-react-renderer": "2.4.0",
+        "react": "18.3.1",
+        "react-dom": "18.3.1",
+        "react-resize-detector": "11.0.1",
+        "react-router-dom": "6.23.1",
+        "typedoc-plugin-markdown": "4.2.9",
+        "url-loader": "^4.1.1",
+      },
+      "devDependencies": {
+        "copyfiles": "2.4.1",
+        "esbuild-loader": "^2.18.0",
+        "karma-chrome-launcher": "^3.1.0",
+        "netlify-plugin-cache": "^1.0.3",
+        "puppeteer": "^13.1.3",
+        "shader-loader": "^1.3.1",
+        "typedoc": "0.26.10",
       },
     },
     "packages/labelmap-interpolation": {
       "name": "@cornerstonejs/labelmap-interpolation",
-      "version": "3.4.0",
+      "version": "3.5.1",
       "dependencies": {
         "@itk-wasm/morphological-contour-interpolation": "1.1.0",
         "itk-wasm": "1.0.0-b.165",
@@ -207,17 +251,17 @@
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "3.4.0",
+      "version": "3.5.1",
       "dependencies": {
         "nifti-reader-js": "^0.6.8",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.4.0",
+        "@cornerstonejs/core": "^3.5.1",
       },
     },
     "packages/polymorphic-segmentation": {
       "name": "@cornerstonejs/polymorphic-segmentation",
-      "version": "3.4.0",
+      "version": "3.5.1",
       "dependencies": {
         "@icr/polyseg-wasm": "0.4.0",
       },
@@ -229,7 +273,7 @@
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "3.4.0",
+      "version": "3.5.1",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "^4.4.1",
@@ -239,7 +283,7 @@
         "canvas": "^2.11.2",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.4.0",
+        "@cornerstonejs/core": "^3.5.1",
         "@kitware/vtk.js": "32.12.0",
         "@types/d3-array": "^3.0.4",
         "@types/d3-interpolate": "^3.0.1",

@@ -686,6 +686,7 @@ abstract class BaseVolumeViewport extends Viewport {
       focalPoint: newFocalPoint,
       position: newPosition,
     });
+    this.render();
   }
 
   /**
@@ -1520,7 +1521,7 @@ abstract class BaseVolumeViewport extends Viewport {
     vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
-    const displayCoords = this.getVTKDisplayCoords(canvasPos);
+    const displayCoords = this.getVtkDisplayCoords(canvasPos);
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
     const openGLRenderWindow =
@@ -1544,7 +1545,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns The corresponding display coordinates.
    *
    */
-  public getVTKDisplayCoords = (canvasPos: Point2): Point3 => {
+  public getVtkDisplayCoords = (canvasPos: Point2): Point3 => {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
