@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { cache as cornerstoneCache, type Types } from '@cornerstonejs/core';
 import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -6,275 +6,137 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getDeduplicatedVTKPolyDataPoints } from './getDeduplicatedVTKPolyDataPoints';
 import { findContoursFromReducedSet } from './contourFinder';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import getOrCreateSegmentationVolume from '../segmentation/getOrCreateSegmentationVolume';
-import { cache as cornerstoneCache, utilities } from '@cornerstonejs/core';
+
 const { Labelmap } = SegmentationRepresentations;
 
 function generateContourSetsFromLabelmap({ segmentations }) {
-  const {
-    representationData,
-    segments = [0, 1],
-    segmentationId,
-  } = segmentations;
-  const { imageIds } = representationData[Labelmap];
-
-  const vol = getOrCreateSegmentationVolume(segmentationId);
+  console.warn(
+    'Deprecation Alert: This function will be removed in a future version of Cornerstone Tools. Please use the worker version of this function in computeWorker.'
+  );
+  const { representationData, segments = [0, 1] } = segmentations;
+  const { volumeId: segVolumeId } = representationData[Labelmap];
 
   // Get segmentation volume
+  const vol = cornerstoneCache.getVolume(segVolumeId);
   if (!vol) {
-    // logic for when there is no volume
+    console.warn(`No volume found for ${segVolumeId}`);
+    return;
+  }
+  const voxelManager = vol.voxelManager as Types.IVoxelManager<number>;
+  const segData = voxelManager.getCompleteScalarDataArray() as Array<number>;
 
-    const firstImage = cornerstoneCache.getImage(imageIds[0]);
-    const vol = {
-      dimensions: [firstImage.width, firstImage.height, imageIds.length],
-    };
+  const numSlices = vol.dimensions[2];
 
-    // Get segmentation volume
-    // const voxelManager = vol.voxelManager as Types.IVoxelManager<number>;
-    // const segData = voxelManager.getCompleteScalarDataArray() as Array<number>;
+  const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
 
-    const numSlices = vol.dimensions[2];
-    const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
+  for (let z = 0; z < numSlices; z++) {
+    for (let y = 0; y < vol.dimensions[1]; y++) {
+      const index = y * vol.dimensions[0] + z * pixelsPerSlice;
+      segData[index] = 0;
+      segData[index + vol.dimensions[0] - 1] = 0;
+    }
+  }
 
-    // for (let z = 0; z < numSlices; z++) {
-    //   for (let y = 0; y < vol.dimensions[1]; y++) {
-    //     const index = y * vol.dimensions[0] + z * pixelsPerSlice;
-    //     segData[index] = 0;
-    //     segData[index + vol.dimensions[0] - 1] = 0;
-    //   }
-    // }
+  // end workaround
+  //
+  //
+  const ContourSets = [];
 
-    // end workaround
-    //
-    //
-    const ContourSets = [];
-    const FrameOfReferenceUID = firstImage.FrameOfReferenceUID;
+  const { FrameOfReferenceUID } = vol.metadata;
+  // Iterate through all segments in current segmentation set
+  const numSegments = segments.length;
+  for (let segIndex = 0; segIndex < numSegments; segIndex++) {
+    const segment = segments[segIndex];
 
-    const _isSliceEmptyForSegment = (segData, segIndex) => {
-      for (let i = 0; i < segData.length; i++) {
-        if (segData[i] === segIndex) {
-          return false;
-        }
-      }
-      return true;
-    };
+    // Skip empty segments
+    if (!segment) {
+      continue;
+    }
 
-    // Iterate through all segments in current segmentation set
-    const numSegments = segments.length;
-    for (let segIndex = 0; segIndex < numSegments; segIndex++) {
-      const segment = segments[segIndex];
-
-      // Skip empty segments
-      if (!segment) {
+    const sliceContours = [];
+    const scalars = vtkDataArray.newInstance({
+      name: 'Scalars',
+      numberOfComponents: 1,
+      size: pixelsPerSlice * numSlices,
+      dataType: 'Uint8Array',
+    });
+    const { containedSegmentIndices } = segment;
+    for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
+      // Check if the slice is empty before running marching cube
+      if (
+        isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex)
+      ) {
         continue;
       }
+      const frameStart = sliceIndex * pixelsPerSlice;
 
-      const sliceContours = [];
-      const scalars = vtkDataArray.newInstance({
-        name: 'Scalars',
-        numberOfComponents: 1,
-        size: pixelsPerSlice * numSlices,
-        dataType: 'Uint8Array',
-      });
-      for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
-        // Check if the slice is empty before running marching cube
-        const segImage = cornerstoneCache.getImage(imageIds[sliceIndex]);
-        const segData = segImage.getPixelData();
-        const imageData = vtkImageData.newInstance();
-
-        const { spacing, direction, origin, dimensions } =
-          utilities.getImageDataMetadata(segImage);
-
-        if (_isSliceEmptyForSegment(segData, segIndex)) {
-          continue;
-        }
-
-        // Filter the segData to only include the current segment
-        const filteredData = new Uint8Array(segData.length);
-        for (let i = 0; i < segData.length; i++) {
-          if (segData[i] === segIndex) {
-            filteredData[i] = 1;
+      try {
+        // Modify segData for this specific segment directly
+        for (let i = 0; i < pixelsPerSlice; i++) {
+          const value = segData[i + frameStart];
+          if (value === segIndex || containedSegmentIndices?.has(value)) {
+            // @ts-ignore
+            scalars.setValue(i + frameStart, 1);
           } else {
-            filteredData[i] = 0;
+            // @ts-ignore
+            scalars.setValue(i, 0);
           }
         }
 
-        const scalarArray = vtkDataArray.newInstance({
-          name: 'Pixels',
-          numberOfComponents: 1,
-          values: filteredData,
+        const mSquares = vtkImageMarchingSquares.newInstance({
+          slice: sliceIndex,
         });
 
-        imageData.setDimensions(dimensions);
-        imageData.setSpacing(spacing);
-        imageData.setDirection(direction);
-        imageData.setOrigin(origin);
-        imageData.getPointData().setScalars(scalarArray);
+        // filter out the scalar data so that only it has background and
+        // the current segment index
+        const imageDataCopy = vtkImageData.newInstance();
 
-        try {
-          const mSquares = vtkImageMarchingSquares.newInstance({
-            slicingMode: 2, // Z axis
-            mergePoints: false,
-            contourValues: [1], // Since we binarized the data
+        imageDataCopy.shallowCopy(vol.imageData);
+        imageDataCopy.getPointData().setScalars(scalars);
+
+        // Connect pipeline
+        mSquares.setInputData(imageDataCopy);
+        const cValues = [1];
+        mSquares.setContourValues(cValues);
+        mSquares.setMergePoints(false);
+
+        // Perform marching squares
+        const msOutput = mSquares.getOutputData();
+
+        // Clean up output from marching squares
+        const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
+        if (reducedSet.points?.length) {
+          const contours = findContoursFromReducedSet(reducedSet.lines);
+
+          sliceContours.push({
+            contours,
+            polyData: reducedSet,
+            FrameNumber: sliceIndex + 1,
+            sliceIndex,
+            FrameOfReferenceUID,
           });
-
-          // Connect pipeline
-          mSquares.setInputData(imageData);
-
-          // Perform marching squares
-          const msOutput = mSquares.getOutputData();
-
-          // Clean up output from marching squares
-          const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
-          if (reducedSet.points?.length) {
-            const contours = findContoursFromReducedSet(reducedSet.lines);
-
-            sliceContours.push({
-              contours,
-              polyData: reducedSet,
-              FrameNumber: sliceIndex + 1,
-              sliceIndex,
-              FrameOfReferenceUID,
-            });
-          }
-        } catch (e) {
-          console.warn(sliceIndex);
-          console.warn(e);
         }
-      }
-
-      const metadata = {
-        FrameOfReferenceUID,
-      };
-
-      const ContourSet = {
-        label: segment.label,
-        color: segment.color,
-        metadata,
-        sliceContours,
-      };
-
-      ContourSets.push(ContourSet);
-    }
-
-    return ContourSets;
-  } else {
-    const voxelManager = vol.voxelManager as Types.IVoxelManager<number>;
-    const segData = voxelManager.getCompleteScalarDataArray() as Array<number>;
-
-    const numSlices = vol.dimensions[2];
-
-    const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
-
-    for (let z = 0; z < numSlices; z++) {
-      for (let y = 0; y < vol.dimensions[1]; y++) {
-        const index = y * vol.dimensions[0] + z * pixelsPerSlice;
-        segData[index] = 0;
-        segData[index + vol.dimensions[0] - 1] = 0;
+      } catch (e) {
+        console.warn(sliceIndex);
+        console.warn(e);
       }
     }
 
-    // end workaround
-    //
-    //
-    const ContourSets = [];
+    const metadata = {
+      FrameOfReferenceUID,
+    };
 
-    const { FrameOfReferenceUID } = vol.metadata;
-    // Iterate through all segments in current segmentation set
-    const numSegments = segments.length;
-    for (let segIndex = 0; segIndex < numSegments; segIndex++) {
-      const segment = segments[segIndex];
+    const ContourSet = {
+      label: segment.label,
+      color: segment.color,
+      metadata,
+      sliceContours,
+    };
 
-      // Skip empty segments
-      if (!segment) {
-        continue;
-      }
-
-      const sliceContours = [];
-      const scalars = vtkDataArray.newInstance({
-        name: 'Scalars',
-        numberOfComponents: 1,
-        size: pixelsPerSlice * numSlices,
-        dataType: 'Uint8Array',
-      });
-      const { containedSegmentIndices } = segment;
-      for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
-        // Check if the slice is empty before running marching cube
-        if (
-          isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex)
-        ) {
-          continue;
-        }
-        const frameStart = sliceIndex * pixelsPerSlice;
-
-        try {
-          // Modify segData for this specific segment directly
-          for (let i = 0; i < pixelsPerSlice; i++) {
-            const value = segData[i + frameStart];
-            if (value === segIndex || containedSegmentIndices?.has(value)) {
-              // @ts-ignore
-              scalars.setValue(i + frameStart, 1);
-            } else {
-              // @ts-ignore
-              scalars.setValue(i, 0);
-            }
-          }
-
-          const mSquares = vtkImageMarchingSquares.newInstance({
-            slice: sliceIndex,
-          });
-
-          // filter out the scalar data so that only it has background and
-          // the current segment index
-          const imageDataCopy = vtkImageData.newInstance();
-
-          imageDataCopy.shallowCopy(vol.imageData);
-          imageDataCopy.getPointData().setScalars(scalars);
-
-          // Connect pipeline
-          mSquares.setInputData(imageDataCopy);
-          const cValues = [1];
-          mSquares.setContourValues(cValues);
-          mSquares.setMergePoints(false);
-
-          // Perform marching squares
-          const msOutput = mSquares.getOutputData();
-
-          // Clean up output from marching squares
-          const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
-          if (reducedSet.points?.length) {
-            const contours = findContoursFromReducedSet(reducedSet.lines);
-
-            sliceContours.push({
-              contours,
-              polyData: reducedSet,
-              FrameNumber: sliceIndex + 1,
-              sliceIndex,
-              FrameOfReferenceUID,
-            });
-          }
-        } catch (e) {
-          console.warn(sliceIndex);
-          console.warn(e);
-        }
-      }
-
-      const metadata = {
-        FrameOfReferenceUID,
-      };
-
-      const ContourSet = {
-        label: segment.label,
-        color: segment.color,
-        metadata,
-        sliceContours,
-      };
-
-      ContourSets.push(ContourSet);
-    }
-
-    return ContourSets;
+    ContourSets.push(ContourSet);
   }
+
+  return ContourSets;
 }
 
 function isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex) {

@@ -39,7 +39,7 @@ export default function segmentContourAction(
   configuration
 ) {
   console.warn(
-    'There is a new getSegmentLargestBidirectional function that handles volume, stack and individual segment cases properly. This function is deprecated and will be removed in a future version.'
+    'Deprecation Alert: There is a new getSegmentLargestBidirectional function that handles volume, stack and individual segment cases properly. This function is deprecated and will be removed in a future version.'
   );
   const { data: configurationData } = configuration;
   const enabledElement = getEnabledElement(element);
