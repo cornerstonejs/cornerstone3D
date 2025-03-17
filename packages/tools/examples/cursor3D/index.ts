@@ -534,7 +534,7 @@ async function run() {
       const x = evt.clientX - rect.left;
       const y = evt.clientY - rect.top;
 
-      const displayCoords = viewport.getVTKDisplayCoords([x, y]);
+      const displayCoords = viewport.getVtkDisplayCoords([x, y]);
       // Use the picker to get the 3D coordinates
       picker.pick(
         [displayCoords[0], displayCoords[1], 0],
