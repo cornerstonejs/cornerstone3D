@@ -1,4 +1,6 @@
 import { getWebWorkerManager } from '@cornerstonejs/core';
+import { getConfig } from '../config';
+
 let registered = false;
 
 export function registerComputeWorker() {
@@ -21,10 +23,12 @@ export function registerComputeWorker() {
   };
 
   const workerManager = getWebWorkerManager();
+  const config = getConfig();
+  const computeWorkerConfig = config.computeWorker;
 
   const options = {
     maxWorkerInstances: 1,
-    autoTerminateOnIdle: {
+    autoTerminateOnIdle: computeWorkerConfig?.autoTerminateOnIdle ?? {
       enabled: true,
       idleTimeThreshold: 2000,
     },

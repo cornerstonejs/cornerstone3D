@@ -51,11 +51,19 @@ type AddOns = {
   polySeg: PolySegAddOn;
 };
 
+type ComputeWorkerConfig = {
+  autoTerminateOnIdle?: {
+    enabled: boolean;
+    idleTimeThreshold?: number;
+  };
+};
+
 /**
  * Configuration type containing add-ons
  */
 export type Config = {
   addons: AddOns;
+  computeWorker?: ComputeWorkerConfig;
 };
 
 let config = {} as Config;

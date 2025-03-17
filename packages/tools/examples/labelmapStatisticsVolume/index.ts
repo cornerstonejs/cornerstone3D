@@ -1,8 +1,10 @@
 import {
   RenderingEngine,
   Enums,
-  imageLoader,
+  volumeLoader,
   eventTarget,
+  setVolumesForViewports,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -11,6 +13,7 @@ import {
   setTitleAndDescription,
   addBrushSizeSlider,
   addSegmentIndexDropdown,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import addButtonToToolbar from '../../../../utils/demo/helpers/addButtonToToolbar';
 
@@ -38,15 +41,16 @@ const { ViewportType } = Enums;
 const { segmentation: segmentationUtils, roundNumber } = cstUtils;
 
 // Define a unique id for the volume
-let renderingEngine;
-const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'STACK_VIEWPORT';
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const segmentationId = 'SEGMENTATION_ID';
 const toolGroupId = 'TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Stack Segmentation Statistics',
-  'Here we demonstrate how to calculate statistics for a stack segmentation.'
+  'Volume Segmentation Statistics',
+  'Here we demonstrate how to calculate statistics for a volume segmentation.'
 );
 
 const size = '500px';
@@ -87,12 +91,25 @@ const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const element = document.createElement('div');
-element.style.width = size;
-element.style.height = size;
-element.oncontextmenu = () => false;
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+const element3 = document.createElement('div');
+element1.style.width = size;
+element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
+element3.style.width = size;
+element3.style.height = size;
 
-viewportGrid.appendChild(element);
+// Disable right click context menu so we can have right click tools
+element1.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
+element3.oncontextmenu = (e) => e.preventDefault();
+
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
+viewportGrid.appendChild(element3);
+
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
@@ -118,7 +135,7 @@ function displayStat(stat) {
 
 async function calculateStatistics(indices, mode) {
   const stats = await segmentationUtils.getStatistics({
-    segmentationId: 'SEGMENTATION_ID',
+    segmentationId,
     segmentIndices: indices,
     mode,
   });
@@ -175,11 +192,29 @@ function segmentationModifiedCallback(evt) {
   if (!detail || !detail.segmentIndex || detail.segmentIndex === 255) {
     return;
   }
-
-  // No longer using setTimeout - statistics will be calculated on button click
 }
 
 // ============================= //
+
+async function addSegmentationsToState() {
+  // Create a segmentation of the same resolution as the source data
+  volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+
+  // Add the segmentations to state
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        data: {
+          volumeId: segmentationId,
+        },
+      },
+    },
+  ]);
+}
 
 function setupTools() {
   // Add tools to Cornerstone3D
@@ -239,8 +274,6 @@ function setupTools() {
   return toolGroup;
 }
 
-// ============================= //
-
 /**
  * Runs the demo
  */
@@ -258,70 +291,87 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
-  // Get Cornerstone imageIds and fetch metadata into RAM
 
-  // const mgimageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.4792.2001.326862698868700146219088322924',
-  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  // });
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
 
-  // Create a stack of images
-  const imageIdsArray = imageIds.slice(0, 10);
-  // Create segmentation images for the stack
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIdsArray
-  );
+  // Create the viewports
+  const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
+  const viewportId3 = 'CT_CORONAL';
 
   // Instantiate a rendering engine
-  renderingEngine = new RenderingEngine(renderingEngineId);
+  const renderingEngine = new RenderingEngine('myRenderingEngine');
 
-  // Create the viewport
-  const viewportInput = {
-    viewportId,
-    type: ViewportType.STACK,
-    element,
-  };
-
-  renderingEngine.setViewports([viewportInput]);
-
-  const viewport = renderingEngine.getViewport(viewportId);
-  await viewport.setStack(imageIdsArray, 0);
-
-  // Add the viewport to the toolgroup
-  toolGroup.addViewport(viewportId, renderingEngineId);
-
-  // Add segmentation
-  segmentation.addSegmentations([
+  const viewportInputArray = [
     {
-      segmentationId: 'SEGMENTATION_ID',
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          imageIds: segImages.map((it) => it.imageId),
-        },
+      viewportId: viewportId1,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: [0, 0, 0],
       },
     },
-  ]);
-
-  // Add the segmentation representation to the viewport
-  await segmentation.addSegmentationRepresentations(viewportId, [
     {
-      segmentationId: 'SEGMENTATION_ID',
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      viewportId: viewportId2,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: [0, 0, 0],
+      },
     },
-  ]);
+    {
+      viewportId: viewportId3,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: [0, 0, 0],
+      },
+    },
+  ];
+
+  renderingEngine.setViewports(viewportInputArray);
+
+  toolGroup.addViewport(viewportId1, 'myRenderingEngine');
+  toolGroup.addViewport(viewportId2, 'myRenderingEngine');
+  toolGroup.addViewport(viewportId3, 'myRenderingEngine');
+
+  // Set the volume to load
+  volume.load();
+
+  // Set volumes on the viewports
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    [viewportId1, viewportId2, viewportId3]
+  );
+
+  // Add some segmentations based on the source data volume
+  await addSegmentationsToState();
+
+  // Add the segmentation representation to the viewports
+  const segmentationRepresentation = {
+    segmentationId,
+    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  };
+
+  await segmentation.addLabelmapRepresentationToViewportMap({
+    [viewportId1]: [segmentationRepresentation],
+    [viewportId2]: [segmentationRepresentation],
+    [viewportId3]: [segmentationRepresentation],
+  });
 
   // Add brush size slider
   addBrushSizeSlider({
     toolGroupId,
   });
 
-  addSegmentIndexDropdown('SEGMENTATION_ID', [1, 2]);
-
-  cornerstoneTools.utilities.stackContextPrefetch.enable(element);
+  addSegmentIndexDropdown(segmentationId, [1, 2]);
 
   // Add segmentation modified callback
   eventTarget.addEventListener(

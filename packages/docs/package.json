@@ -48,6 +48,7 @@
     "@svgr/webpack": "^8.1.0",
     "clsx": "^1.1.1",
     "dcmjs": "^0.33.0",
+    "patch-package": "8.0.0",
     "dicom-parser": "^1.8.21",
     "dicomweb-client": "0.10.4",
     "docusaurus-plugin-copy": "0.1.1",

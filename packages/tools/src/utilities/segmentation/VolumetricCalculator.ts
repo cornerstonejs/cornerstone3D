@@ -99,6 +99,7 @@ function volumetricGetStatistics(
       : stats.count.value * volumeScale,
     unit: volumeUnit,
     name: 'volume',
+    label: 'Volume',
   };
 
   stats.maxIJKs = state.maxIJKs.filter(

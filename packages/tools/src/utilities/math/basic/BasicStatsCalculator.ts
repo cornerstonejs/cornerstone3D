@@ -17,6 +17,9 @@ interface BasicStatsState {
   minLPS: Types.Point3 | null;
   runMean: number[];
   m2: number[];
+  m3: number[]; // For skewness calculation
+  m4: number[]; // For kurtosis calculation
+  allValues: number[][]; // Store all values for median calculation
   pointsInShape?: Types.IPointsManager<Types.Point3> | null;
 }
 
@@ -33,6 +36,9 @@ function createBasicStatsState(storePointData: boolean): BasicStatsState {
     minLPS: null,
     runMean: [0],
     m2: [0],
+    m3: [0],
+    m4: [0],
+    allValues: [[]],
     pointsInShape: storePointData ? PointsManager.create3(1024) : null,
   };
 }
@@ -54,6 +60,9 @@ function basicStatsCallback(
     state.sum.push(state.sum[0], state.sum[0]);
     state.runMean.push(0, 0);
     state.m2.push(state.m2[0], state.m2[0]);
+    state.m3.push(state.m3[0], state.m3[0]);
+    state.m4.push(state.m4[0], state.m4[0]);
+    state.allValues.push([], []);
   }
 
   if (state?.pointsInShape && pointLPS) {
@@ -64,11 +73,32 @@ function basicStatsCallback(
   state.count += 1;
   state.max.forEach((it, idx) => {
     const value = newArray[idx];
+
+    // Store value for median calculation
+    state.allValues[idx].push(value);
+
+    // Calculate running statistics using Welford's online algorithm
+    // extended for higher moments (skewness and kurtosis)
+    const n = state.count;
     const delta = value - state.runMean[idx];
+    const delta_n = delta / n;
+    const term1 = delta * delta_n * (n - 1);
+
+    // Update mean
     state.sum[idx] += value;
-    state.runMean[idx] += delta / state.count;
-    const delta2 = value - state.runMean[idx];
-    state.m2[idx] += delta * delta2;
+    state.runMean[idx] += delta_n;
+
+    // For kurtosis, must be updated before m3 and m2
+    state.m4[idx] +=
+      term1 * delta_n * delta_n * (n * n - 3 * n + 3) +
+      6 * delta_n * delta_n * state.m2[idx] -
+      4 * delta_n * state.m3[idx];
+
+    // For skewness, must be updated before m2
+    state.m3[idx] += term1 * delta_n * (n - 2) - 3 * delta_n * state.m2[idx];
+
+    // For variance
+    state.m2[idx] += term1;
 
     if (value < state.min[idx]) {
       state.min[idx] = value;
@@ -88,6 +118,23 @@ function basicStatsCallback(
   });
 }
 
+// Helper function to calculate median
+function calculateMedian(values: number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  // Sort values
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  } else {
+    return sorted[mid];
+  }
+}
+
 // Shared logic for computing the statistics
 function basicGetStatistics(
   state: BasicStatsState,
@@ -97,6 +144,27 @@ function basicGetStatistics(
   const stdDev = state.m2.map((squaredDiffSum) =>
     Math.sqrt(squaredDiffSum / state.count)
   );
+
+  // Calculate skewness
+  const skewness = state.m3.map((m3, idx) => {
+    const variance = state.m2[idx] / state.count;
+    if (variance === 0) {
+      return 0;
+    }
+    return m3 / (state.count * Math.pow(variance, 1.5));
+  });
+
+  // Calculate kurtosis (excess kurtosis: normal distribution would be 0)
+  const kurtosis = state.m4.map((m4, idx) => {
+    const variance = state.m2[idx] / state.count;
+    if (variance === 0) {
+      return 0;
+    }
+    return m4 / (state.count * variance * variance) - 3;
+  });
+
+  // Calculate median for each channel
+  const median = state.allValues.map((values) => calculateMedian(values));
 
   const named: NamedStatistics = {
     max: {
@@ -129,8 +197,26 @@ function basicGetStatistics(
     },
     count: {
       name: 'count',
-      label: 'Pixel Count',
+      label: 'Voxel Count',
       value: state.count,
+      unit: null,
+    },
+    median: {
+      name: 'median',
+      label: 'Median',
+      value: median.length === 1 ? median[0] : median,
+      unit,
+    },
+    skewness: {
+      name: 'skewness',
+      label: 'Skewness',
+      value: skewness.length === 1 ? skewness[0] : skewness,
+      unit: null,
+    },
+    kurtosis: {
+      name: 'kurtosis',
+      label: 'Kurtosis',
+      value: kurtosis.length === 1 ? kurtosis[0] : kurtosis,
       unit: null,
     },
     pointsInShape: state.pointsInShape,
@@ -140,7 +226,9 @@ function basicGetStatistics(
     named.max,
     named.mean,
     named.stdDev,
-    named.stdDev,
+    named.median,
+    named.skewness,
+    named.kurtosis,
     named.count
   );
 
@@ -158,6 +246,9 @@ function basicGetStatistics(
   state.minLPS = freshState.minLPS;
   state.runMean = freshState.runMean;
   state.m2 = freshState.m2;
+  state.m3 = freshState.m3;
+  state.m4 = freshState.m4;
+  state.allValues = freshState.allValues;
   state.pointsInShape = freshState.pointsInShape;
 
   return named;
@@ -216,9 +307,7 @@ export class InstanceBasicStatsCalculator extends InstanceCalculator {
 
   /**
    * Processes a new data point for statistics calculation.
-   * @param newValue The new value or values to process.
-   * @param pointLPS Optional LPS point.
-   * @param pointIJK Optional IJK point.
+   * @param data The data object containing value and optional points
    */
   statsCallback(data: {
     value: number | Types.RGB;
@@ -230,8 +319,8 @@ export class InstanceBasicStatsCalculator extends InstanceCalculator {
 
   /**
    * Computes and returns the statistics based on the accumulated data.
-   * @param options Optional parameters including unit.
-   * @returns The computed statistics.
+   * @param options Optional parameters including unit
+   * @returns The computed statistics
    */
   getStatistics(options?: {
     unit: string;

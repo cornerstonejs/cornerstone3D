@@ -35,6 +35,8 @@ import getStatistics from './getStatistics';
 import * as validateLabelmap from './validateLabelmap';
 import { computeStackLabelmapFromVolume } from '../../stateManagement/segmentation/helpers/computeStackLabelmapFromVolume';
 import { computeVolumeLabelmapFromStack } from '../../stateManagement/segmentation/helpers/computeVolumeLabelmapFromStack';
+import { getReferenceVolumeForSegmentationVolume } from './getReferenceVolumeForSegmentationVolume';
+import { getSegmentLargestBidirectional } from './getSegmentLargestBidirectional';
 
 export {
   thresholdVolumeByRange,
@@ -68,4 +70,6 @@ export {
   validateLabelmap,
   computeStackLabelmapFromVolume,
   computeVolumeLabelmapFromStack,
+  getReferenceVolumeForSegmentationVolume,
+  getSegmentLargestBidirectional,
 };

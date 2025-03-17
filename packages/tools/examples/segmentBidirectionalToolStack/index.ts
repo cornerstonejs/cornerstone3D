@@ -1,10 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  RenderingEngine,
-  Enums,
-  setVolumesForViewports,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Enums, imageLoader } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import {
@@ -13,7 +8,6 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
-  setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
@@ -40,14 +34,11 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
 let renderingEngine;
-const viewportId1 = 'volumeViewport';
+const viewportId1 = 'STACK_VIEWPORT';
 
-// Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
-const segmentationId = 'volumeSegmentationId';
-const toolGroupId = 'toolgroupIdVolume';
+// Define a unique id for the segmentation
+const segmentationId = 'STACK_SEGMENTATION';
+const toolGroupId = 'TOOL_GROUP_ID';
 
 const actionConfiguration = {
   contourBidirectional: {
@@ -126,7 +117,7 @@ const brushValues = [
   brushInstanceNames.ThresholdBrush,
 ];
 
-const optionsValues = [...brushValues, SegmentBidirectionalTool.toolName];
+const optionsValues = [...brushValues, BidirectionalTool.toolName];
 
 // ============================= //
 addDropdownToToolbar({
@@ -192,10 +183,14 @@ addButtonToToolbar({
         const { segmentIndex } = bidirectional;
         const { majorAxis, minorAxis, maxMajor, maxMinor } = bidirectional;
 
-        SegmentBidirectionalTool.hydrate(viewportId1, [majorAxis, minorAxis], {
-          segmentIndex,
-          segmentationId,
-        });
+        cornerstoneTools.SegmentBidirectionalTool.hydrate(
+          viewportId1,
+          [majorAxis, minorAxis],
+          {
+            segmentIndex,
+            segmentationId,
+          }
+        );
 
         // render the bidirectional tool data
       });
@@ -205,11 +200,11 @@ addButtonToToolbar({
 
 // ============================= //
 
-async function addSegmentationsToState() {
+async function addSegmentationsToState(imageIds) {
   // Create a segmentation of the same resolution as the source data
-  volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
-    volumeId: segmentationId,
-  });
+  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
+    imageIds
+  );
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -218,10 +213,9 @@ async function addSegmentationsToState() {
       representation: {
         // The type of segmentation
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        // The actual segmentation data, in the case of labelmap this is a
-        // reference to the source volume of the segmentation.
+        // The actual segmentation data
         data: {
-          volumeId: segmentationId,
+          imageIds: segImages.map((it) => it.imageId),
         },
       },
     },
@@ -230,7 +224,7 @@ async function addSegmentationsToState() {
   // Add the segmentation representation to the viewport
   await segmentation.addSegmentationRepresentations(viewportId1, [
     {
-      segmentationId: segmentationId,
+      segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
@@ -285,12 +279,26 @@ const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const StudyInstanceUID =
   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
-function getCtImageIds() {
-  return createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
+async function getCtImageIds() {
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot,
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+    SOPInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
+  return imageIds;
+}
+
+function getMGImageIds() {
+  return createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.326862698868700146219088322924',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 }
 
@@ -303,18 +311,17 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(SegmentBidirectionalTool);
   cornerstoneTools.addTool(BrushTool);
-
+  cornerstoneTools.addTool(SegmentBidirectionalTool);
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  toolGroup.addTool(SegmentBidirectionalTool.toolName, {});
 
   addManipulationBindings(toolGroup, { enableShiftClickZoom: true });
 
   toolGroup.addTool(BidirectionalTool.toolName, {
     actions: actionConfiguration,
   });
-  toolGroup.addTool(SegmentBidirectionalTool.toolName, {});
 
   // Segmentation Tools
   toolGroup.addToolInstance(
@@ -352,11 +359,11 @@ async function run() {
       activeStrategy: brushStrategies.ThresholdBrush,
     }
   );
+  toolGroup.setToolPassive(SegmentBidirectionalTool.toolName, {});
 
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
-  toolGroup.setToolPassive(SegmentBidirectionalTool.toolName, {});
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
@@ -374,59 +381,50 @@ async function run() {
   toolGroup.setToolActive(BidirectionalTool.toolName);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
+  // const imageIds = await getCtImageIds();
+  // const imageIds = await getMGImageIds();
   const imageIds = await getCtImageIds();
-
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.STACK,
       element: element1,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[255, 0, 0],
       },
     },
   ];
 
+  cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
+
   renderingEngine.setViewports(viewportInputArray);
-  ToolGroupManager.getToolGroup(toolGroupId).addViewport(
-    viewportId1,
-    renderingEngineId
-  );
 
-  // Set the volume to load
-  volume.load();
+  // Add the viewport to the toolgroup
+  toolGroup.addViewport(viewportId1, renderingEngineId);
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1]
-  );
+  const viewport = renderingEngine.getViewport(viewportId1);
+  await viewport.setStack(imageIds, 0);
 
-  // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
+  // Add some segmentations based on the source data
+  await addSegmentationsToState(imageIds);
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
-  // // Add the segmentation representation to the viewport
   // Setup configuration for contour bidirectional action
   createSegmentConfiguration(1);
   createSegmentConfiguration(2);
   createSegmentConfiguration(3, [1, 2]);
 
+  // Enable stack prefetch
+  cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
+
   // Render the image
-  renderingEngine.renderViewports([viewportId1]);
+  renderingEngine.render();
 }
 
 run();

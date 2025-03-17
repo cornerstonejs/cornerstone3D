@@ -9,6 +9,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
+import { getImageDataMetadata as getImageDataMetadataUtil } from '../utilities/getImageDataMetadata';
 import { coreLog } from '../utilities/logger';
 
 import type {
@@ -60,6 +61,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 
 import Viewport from './Viewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
+import { getImagePlaneModule } from '../utilities/buildMetadata';
 
 import {
   Events,
@@ -582,66 +584,6 @@ class StackViewport extends Viewport {
   public getNumberOfSlices = (): number => {
     return this.imageIds.length;
   };
-
-  /**
-   * Retrieves the metadata from the metadata provider, and optionally adds the
-   * scaling to the viewport if modality is PET and scaling metadata is provided.
-   *
-   * @param imageId - a string representing the imageId for the image
-   * @returns imagePlaneModule and imagePixelModule containing the metadata for the image
-   */
-  private buildMetadata(image: IImage) {
-    const imageId = image.imageId;
-
-    const {
-      pixelRepresentation,
-      bitsAllocated,
-      bitsStored,
-      highBit,
-      photometricInterpretation,
-      samplesPerPixel,
-    } = metaData.get('imagePixelModule', imageId);
-
-    // we can grab the window center and width from the image object
-    // since it the loader already has used the metadata provider
-    // to get the values
-    const { windowWidth, windowCenter, voiLUTFunction } = image;
-
-    const { modality } = metaData.get('generalSeriesModule', imageId);
-    const imageIdScalingFactor = metaData.get('scalingModule', imageId);
-    const calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
-
-    if (modality === 'PT' && imageIdScalingFactor) {
-      this._addScalingToViewport(imageIdScalingFactor);
-    }
-
-    this.modality = modality;
-    const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
-    this.VOILUTFunction = voiLUTFunctionEnum;
-
-    this.calibration = calibration;
-    let imagePlaneModule = this._getImagePlaneModule(imageId);
-
-    if (!this.useCPURendering) {
-      imagePlaneModule = this.calibrateIfNecessary(imageId, imagePlaneModule);
-    }
-
-    return {
-      imagePlaneModule,
-      imagePixelModule: {
-        bitsAllocated,
-        bitsStored,
-        samplesPerPixel,
-        highBit,
-        photometricInterpretation,
-        pixelRepresentation,
-        windowWidth,
-        windowCenter,
-        modality,
-        voiLUTFunction: voiLUTFunctionEnum,
-      },
-    };
-  }
 
   /**
    * Checks the metadataProviders to see if a calibratedPixelSpacing is
@@ -1532,29 +1474,6 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * Calculates number of components based on the dicom metadata
-   *
-   * @param photometricInterpretation - string dicom tag
-   * @returns number representing number of components
-   */
-  private _getNumCompsFromPhotometricInterpretation(
-    photometricInterpretation: string
-  ): number {
-    // TODO: this function will need to have more logic later
-    // see http://dicom.nema.org/medical/Dicom/current/output/chtml/part03/sect_C.7.6.3.html#sect_C.7.6.3.1.2
-    let numberOfComponents = 1;
-    if (
-      photometricInterpretation === 'RGB' ||
-      photometricInterpretation.includes('YBR') ||
-      photometricInterpretation === 'PALETTE COLOR'
-    ) {
-      numberOfComponents = 3;
-    }
-
-    return numberOfComponents;
-  }
-
-  /**
    * Calculates image metadata based on the image object. It calculates normal
    * axis for the images, and output image metadata
    *
@@ -1567,63 +1486,46 @@ class StackViewport extends Viewport {
     // We should define the minimum we need to display an image and it should live on
     // the Image object itself. Additional stuff (e.g. pixel spacing, direction, origin, etc)
     // should be optional and used if provided through a metadata provider.
+    const imageId = image.imageId;
+    const props = getImageDataMetadataUtil(image);
 
-    const { imagePlaneModule, imagePixelModule } = this.buildMetadata(image);
+    const {
+      numberOfComponents,
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      numVoxels,
+      imagePixelModule,
+      voiLUTFunction,
+      modality,
+      scalingFactor,
+      calibration,
+    } = props;
 
-    let { rowCosines, columnCosines } = imagePlaneModule;
-
-    // if null or undefined
-    if (rowCosines == null || columnCosines == null) {
-      rowCosines = [1, 0, 0] as Point3;
-      columnCosines = [0, 1, 0] as Point3;
+    if (modality === 'PT' && scalingFactor) {
+      this._addScalingToViewport(scalingFactor);
     }
 
-    const rowCosineVec = vec3.fromValues(
-      rowCosines[0],
-      rowCosines[1],
-      rowCosines[2]
-    );
-    const colCosineVec = vec3.fromValues(
-      columnCosines[0],
-      columnCosines[1],
-      columnCosines[2]
-    );
-    const scanAxisNormal = vec3.create();
-    vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
+    this.modality = modality;
+    const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
+    this.VOILUTFunction = voiLUTFunctionEnum;
 
-    let origin = imagePlaneModule.imagePositionPatient;
-    // if null or undefined
-    if (origin == null) {
-      origin = [0, 0, 0];
+    this.calibration = calibration;
+    let imagePlaneModule = this._getImagePlaneModule(imageId);
+
+    if (!this.useCPURendering) {
+      imagePlaneModule = this.calibrateIfNecessary(imageId, imagePlaneModule);
     }
-
-    const xSpacing =
-      imagePlaneModule.columnPixelSpacing || image.columnPixelSpacing;
-    const ySpacing = imagePlaneModule.rowPixelSpacing || image.rowPixelSpacing;
-    const xVoxels = image.columns;
-    const yVoxels = image.rows;
-
-    // Note: For rendering purposes, we use the EPSILON as the z spacing.
-    // This is purely for internal implementation logic since we are still
-    // technically rendering 3D objects with vtk.js, but the abstracted intention
-    //  of the stack viewport is to render 2D images
-    const zSpacing = EPSILON;
-    const zVoxels = 1;
-
-    const numberOfComponents =
-      image.numberOfComponents ||
-      this._getNumCompsFromPhotometricInterpretation(
-        imagePixelModule.photometricInterpretation
-      );
 
     return {
       bitsAllocated: imagePixelModule.bitsAllocated,
       numberOfComponents,
       origin,
-      direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal] as Mat3,
-      dimensions: [xVoxels, yVoxels, zVoxels],
-      spacing: [xSpacing, ySpacing, zSpacing],
-      numVoxels: xVoxels * yVoxels * zVoxels,
+      direction,
+      dimensions,
+      spacing,
+      numVoxels,
       imagePlaneModule,
       imagePixelModule,
     };
@@ -3372,43 +3274,14 @@ class StackViewport extends Viewport {
 
   // create default values for imagePlaneModule if values are undefined
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
-    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
+    const imagePlaneModule = getImagePlaneModule(imageId);
 
     this.hasPixelSpacing =
       !imagePlaneModule.usingDefaultValues || this.calibration?.scale > 0;
 
     this.calibration ||= imagePlaneModule.calibration;
-    const newImagePlaneModule: ImagePlaneModule = {
-      ...imagePlaneModule,
-    };
 
-    if (!newImagePlaneModule.columnPixelSpacing) {
-      newImagePlaneModule.columnPixelSpacing = 1;
-    }
-
-    if (!newImagePlaneModule.rowPixelSpacing) {
-      newImagePlaneModule.rowPixelSpacing = 1;
-    }
-
-    if (!newImagePlaneModule.columnCosines) {
-      newImagePlaneModule.columnCosines = [0, 1, 0];
-    }
-
-    if (!newImagePlaneModule.rowCosines) {
-      newImagePlaneModule.rowCosines = [1, 0, 0];
-    }
-
-    if (!newImagePlaneModule.imagePositionPatient) {
-      newImagePlaneModule.imagePositionPatient = [0, 0, 0];
-    }
-
-    if (!newImagePlaneModule.imageOrientationPatient) {
-      newImagePlaneModule.imageOrientationPatient = new Float32Array([
-        1, 0, 0, 0, 1, 0,
-      ]);
-    }
-
-    return newImagePlaneModule;
+    return imagePlaneModule;
   }
 
   private renderingPipelineFunctions = {

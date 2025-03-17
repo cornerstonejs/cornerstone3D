@@ -15,6 +15,8 @@ enum ChangeTypes {
   COMPUTE_STATISTICS = 'Computing Statistics',
 
   INTERPOLATE_LABELMAP = 'Interpolating Labelmap',
+
+  COMPUTE_LARGEST_BIDIRECTIONAL = 'Computing Largest Bidirectional',
 }
 
 export default ChangeTypes;

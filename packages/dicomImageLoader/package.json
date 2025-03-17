@@ -111,6 +111,7 @@
     "@cornerstonejs/codec-openjph": "^2.4.5",
     "comlink": "^4.4.1",
     "jpeg-lossless-decoder-js": "^2.1.0",
+    "dicom-parser": "^1.8.9",
     "pako": "^2.0.4",
     "uuid": "^9.0.0"
   },
