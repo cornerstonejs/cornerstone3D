@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.5.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.5.1...v3.5.2) (2025-03-17)
+
+### Bug Fixes
+
+- switch from getVTKDisplayCoords to getVtkDisplayCoords ([#1903](https://github.com/cornerstonejs/cornerstone3D/issues/1903)) ([1b9fdae](https://github.com/cornerstonejs/cornerstone3D/commit/1b9fdae9119c5a969a392e4ba3245e35c237122b))
+
 ## [3.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.5.0...v3.5.1) (2025-03-17)
 
 **Note:** Version bump only for package @cornerstonejs/tools
