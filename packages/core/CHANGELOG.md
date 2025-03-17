@@ -3,6 +3,44 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.4...v3.4.0) (2025-03-13)
+
+### Features
+
+- **adapters:** overlapping segs with labelmap images ([#1815](https://github.com/cornerstonejs/cornerstone3D/issues/1815)) ([95972e2](https://github.com/cornerstonejs/cornerstone3D/commit/95972e205c722c72f37f951aec0ab6bb25ef0773))
+
+## [3.3.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.3...v3.3.4) (2025-03-13)
+
+### Bug Fixes
+
+- undefined window error ([#1897](https://github.com/cornerstonejs/cornerstone3D/issues/1897)) ([a142cdd](https://github.com/cornerstonejs/cornerstone3D/commit/a142cdd1866317fb64f91c2ff050b1e70f2451df))
+
+## [3.3.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.2...v3.3.3) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.3.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.1...v3.3.2) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.3.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.0...v3.3.1) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [3.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.3...v3.3.0) (2025-03-11)
+
+### Features
+
+- Add logging framework ([#1870](https://github.com/cornerstonejs/cornerstone3D/issues/1870)) ([dea150e](https://github.com/cornerstonejs/cornerstone3D/commit/dea150e91d7843b49e92d309d36010e381561908))
+
+## [3.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.2...v3.2.3) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.1...v3.2.2) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [3.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.0...v3.2.1) (2025-03-11)
 
 **Note:** Version bump only for package @cornerstonejs/core

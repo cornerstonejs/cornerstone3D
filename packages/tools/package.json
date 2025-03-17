@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "3.2.1",
+  "version": "3.4.0",
   "description": "Cornerstone3D Tools",
   "types": "./dist/esm/index.d.ts",
   "module": "./dist/esm/index.js",
@@ -103,7 +103,7 @@
     "canvas": "^2.11.2"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.2.1",
+    "@cornerstonejs/core": "^3.4.0",
     "@kitware/vtk.js": "32.9.0",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",

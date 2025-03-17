@@ -10,6 +10,8 @@ import { mat4, vec2, vec3 } from 'gl-matrix';
 import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
 import { getImageDataMetadata as getImageDataMetadataUtil } from '../utilities/getImageDataMetadata';
+import { coreLog } from '../utilities/logger';
+
 import type {
   ActorEntry,
   CPUFallbackColormapData,
@@ -121,6 +123,8 @@ interface SetVOIOptions {
   forceRecreateLUTFunction?: boolean;
   voiUpdatedWithSetProperties?: boolean;
 }
+
+const log = coreLog.getLogger('RenderingEngine', 'StackViewport');
 
 /**
  * An object representing a single stack viewport, which is a camera
@@ -1715,7 +1719,7 @@ class StackViewport extends Viewport {
         pixelArray,
       });
     } catch (e) {
-      console.error(e);
+      log.error(e);
     }
   }
 
@@ -3078,7 +3082,7 @@ class StackViewport extends Viewport {
     const { referencedImageURI: referencedImageURI } = viewRef;
     const sliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
     if (sliceIndex === undefined) {
-      console.error(`No image URI found for ${referencedImageURI}`);
+      log.error(`No image URI found for ${referencedImageURI}`);
       return;
     }
 

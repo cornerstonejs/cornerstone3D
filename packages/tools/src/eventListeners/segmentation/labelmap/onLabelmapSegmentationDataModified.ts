@@ -10,7 +10,7 @@ import * as SegmentationState from '../../../stateManagement/segmentation/segmen
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 import { SegmentationRepresentations } from '../../../enums';
-import { getLabelmapActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -137,28 +137,32 @@ function performStackLabelmapUpdate({ viewportIds, segmentationId }) {
         return;
       }
 
-      const actorEntry = getLabelmapActorEntry(viewportId, segmentationId);
+      const actorEntries = getLabelmapActorEntries(viewportId, segmentationId);
 
-      if (!actorEntry) {
+      if (!actorEntries?.length) {
         return;
       }
 
-      const segImageData = actorEntry.actor.getMapper().getInputData();
+      actorEntries.forEach((actorEntry, i) => {
+        const segImageData = actorEntry.actor.getMapper().getInputData();
 
-      const currentSegmentationImageId =
-        SegmentationState.getCurrentLabelmapImageIdForViewport(
-          viewportId,
-          segmentationId
+        const currentSegmentationImageIds =
+          SegmentationState.getCurrentLabelmapImageIdsForViewport(
+            viewportId,
+            segmentationId
+          );
+
+        const segmentationImage = cache.getImage(
+          currentSegmentationImageIds[i]
         );
+        segImageData.modified();
 
-      const segmentationImage = cache.getImage(currentSegmentationImageId);
-      segImageData.modified();
-
-      // update the cache with the new image data
-      csUtils.updateVTKImageDataWithCornerstoneImage(
-        segImageData,
-        segmentationImage
-      );
+        // update the cache with the new image data
+        csUtils.updateVTKImageDataWithCornerstoneImage(
+          segImageData,
+          segmentationImage
+        );
+      });
     });
   });
 }
