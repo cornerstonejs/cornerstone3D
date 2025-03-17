@@ -155,6 +155,10 @@
         "name": "ETDRS Grid Tool",
         "description": "Demonstrates how to use the ETDRS Grid tool. An ETDRS Grid (Early Treatment Diabetic Retinopathy Study Grid) is a standardized grid used in ophthalmology to assess macular thickness and retinal changes."
       },
+      "cursor3D": {
+        "name": "3D Volume Picking",
+        "description": "Demonstrates how to use the VTK.js vtkCellPicker object to pick 3D point in volume rendering scene. Also shows how to synchronize between 3D and 2D viewports."
+      },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",
         "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
@@ -174,6 +178,10 @@
       "stackAnnotationTools": {
         "name": "Stack Annotation Tools",
         "description": "Demonstrates usage of various annotation tools (Probe, Rectangle ROI, Elliptical ROI, Bidirectional measurements) on a Stack Viewport."
+      },
+      "stackRange": {
+        "name": "Stack Range",
+        "description": "Demonstrates use of a selection range for key image and other tools"
       },
       "calibrationTools": {
         "name": "Calibration Tools",
@@ -258,10 +266,6 @@
       "livewireContour": {
         "name": "Livewire",
         "description": "Demonstrates how to use the livewire tool to create ROIs"
-      },
-      "stackRange": {
-        "name": "Stack Range",
-        "description": "Demonstrates use of a selection range for key image and other tools"
       }
     },
     "viewports": {
@@ -414,6 +418,14 @@
       "labelmapEditWithContour": {
         "name": "Labelmap Editing with Contour",
         "description": "Use contour tools to edit the labelmap"
+      },
+      "labelmapInterpolation": {
+        "name": "Labelmap Interpolation",
+        "description": "Interpolate between slices using labelmap"
+      },
+      "labelmapMIP": {
+        "name": "Labelmap MIP",
+        "description": "Demonstrates how to use the labelmap MIP tool"
       }
     },
     "advanced-gpu-segmentation": {

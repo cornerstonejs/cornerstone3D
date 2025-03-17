@@ -28,7 +28,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
@@ -107,7 +107,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class EllipticalROITool extends AnnotationTool {
-  static toolName;
+  static toolName = 'EllipticalROI';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -551,6 +551,7 @@ class EllipticalROITool extends AnnotationTool {
     this.editData.hasMoved = true;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    triggerAnnotationModified(annotation, element, ChangeTypes.HandlesUpdated);
   };
 
   _dragModifyCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -602,6 +603,14 @@ class EllipticalROITool extends AnnotationTool {
     const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
@@ -1164,7 +1173,7 @@ class EllipticalROITool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
 
     return cachedStats;
   };
@@ -1250,5 +1259,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-EllipticalROITool.toolName = 'EllipticalROI';
 export default EllipticalROITool;

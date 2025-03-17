@@ -18,77 +18,136 @@ const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
 const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
 const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
 
-const codeValueMatch = (group, code, oldCode?) => {
-    const { ConceptNameCodeSequence } = group;
-    if (!ConceptNameCodeSequence) {
-        return;
-    }
-    const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
-    return (
-        (CodingSchemeDesignator == code.CodingSchemeDesignator &&
-            CodeValue == code.CodeValue) ||
-        (oldCode &&
-            CodingSchemeDesignator == oldCode.CodingSchemeDesignator &&
-            CodeValue == oldCode.CodeValue)
-    );
+export type AdapterOptions = {
+    /**
+     * The parent type is another type which could be used to parse this instance,
+     * but for which this sub-class has a better representation.  For example,
+     * key images are parseable as Probe instances, but are represented as a different tool
+     * Thus, the name for the key image is `Cornerstone3DTag:Probe:KeyImage` so that
+     * a prefix query testing just the Probe could parse this object and display it,
+     * but a better/full path key could also be done.
+     */
+    parentType?: string;
+
+    /**
+     * If set, then replace this
+     */
+    replace?: boolean | ((original: MeasurementAdapter) => void);
 };
 
-function getTID300ContentItem(
-    tool,
-    toolType,
-    ReferencedSOPSequence,
-    toolClass,
-    worldToImageCoords
-) {
-    const args = toolClass.getTID300RepresentationArguments(
+/**
+ * A measurement adapter parses/creates data for DICOM SR measurements
+ */
+export interface MeasurementAdapter {
+    toolType: string;
+    TID300Representation;
+    trackingIdentifierTextValue: string;
+    trackingIdentifiers: Set<string>;
+
+    /**
+     * The parent type is the base type of the adapter that is used for the
+     * identifier, being compatible with older versions to read that subtype.
+     */
+    parentType: string;
+
+    /**
+     * Applies the options and registers this tool
+     */
+    init(toolType: string, representation, options?: AdapterOptions);
+
+    getMeasurementData(
+        measurementGroup,
+        sopInstanceUIDToImageIdMap,
+        imageToWorldCoords,
+        metadata,
+        trackingIdentifier: string
+    );
+
+    isValidCornerstoneTrackingIdentifier(trackingIdentifier: string): boolean;
+
+    getTID300RepresentationArguments(
         tool,
         worldToImageCoords
-    );
-    args.ReferencedSOPSequence = ReferencedSOPSequence;
-
-    const TID300Measurement = new toolClass.TID300Representation(args);
-
-    return TID300Measurement;
-}
-
-function getMeasurementGroup(
-    toolType,
-    toolData,
-    ReferencedSOPSequence,
-    worldToImageCoords
-) {
-    const toolTypeData = toolData[toolType];
-    const toolClass =
-        MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE[toolType];
-    if (
-        !toolTypeData ||
-        !toolTypeData.data ||
-        !toolTypeData.data.length ||
-        !toolClass
-    ) {
-        return;
-    }
-
-    // Loop through the array of tool instances
-    // for this tool
-    const Measurements = toolTypeData.data.map(tool => {
-        return getTID300ContentItem(
-            tool,
-            toolType,
-            ReferencedSOPSequence,
-            toolClass,
-            worldToImageCoords
-        );
-    });
-
-    return new TID1501MeasurementGroup(Measurements);
+    ): Record<string, unknown>;
 }
 
 export default class MeasurementReport {
     public static CORNERSTONE_3D_TAG = CORNERSTONE_3D_TAG;
-    public static MEASUREMENT_BY_TOOLTYPE = {};
-    public static CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE = {};
-    public static CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE = {};
+
+    /** Maps tool type to the adapter name used to serialize this item to SR */
+    public static measurementAdapterByToolType = new Map<
+        string,
+        MeasurementAdapter
+    >();
+
+    /** Maps tracking identifier to tool class to deserialize from SR into a tool instance */
+    public static measurementAdapterByTrackingIdentifier = new Map<
+        string,
+        MeasurementAdapter
+    >();
+
+    public static getTID300ContentItem(
+        tool,
+        ReferencedSOPSequence,
+        toolClass,
+        worldToImageCoords
+    ) {
+        const args = toolClass.getTID300RepresentationArguments(
+            tool,
+            worldToImageCoords
+        );
+        args.ReferencedSOPSequence = ReferencedSOPSequence;
+
+        const TID300Measurement = new toolClass.TID300Representation(args);
+
+        return TID300Measurement;
+    }
+
+    public static codeValueMatch = (group, code, oldCode?) => {
+        const { ConceptNameCodeSequence } = group;
+        if (!ConceptNameCodeSequence) {
+            return;
+        }
+        const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
+        return (
+            (CodingSchemeDesignator == code.CodingSchemeDesignator &&
+                CodeValue == code.CodeValue) ||
+            (oldCode &&
+                CodingSchemeDesignator == oldCode.CodingSchemeDesignator &&
+                CodeValue == oldCode.CodeValue)
+        );
+    };
+
+    public static getMeasurementGroup(
+        toolType,
+        toolData,
+        ReferencedSOPSequence,
+        worldToImageCoords
+    ) {
+        const toolTypeData = toolData[toolType];
+        const toolClass = this.measurementAdapterByToolType.get(toolType);
+        if (
+            !toolTypeData ||
+            !toolTypeData.data ||
+            !toolTypeData.data.length ||
+            !toolClass
+        ) {
+            return;
+        }
+
+        // Loop through the array of tool instances
+        // for this tool
+        const Measurements = toolTypeData.data.map(tool => {
+            return this.getTID300ContentItem(
+                tool,
+                ReferencedSOPSequence,
+                toolClass,
+                worldToImageCoords
+            );
+        });
+
+        return new TID1501MeasurementGroup(Measurements);
+    }
 
     static getCornerstoneLabelFromDefaultState(defaultState) {
         const { findingSites = [], finding } = defaultState;
@@ -156,7 +215,7 @@ export default class MeasurementReport {
         return derivationSourceDataset;
     };
 
-    static getSetupMeasurementData(
+    public static getSetupMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         metadata,
@@ -166,11 +225,11 @@ export default class MeasurementReport {
 
         const contentSequenceArr = toArray(ContentSequence);
         const findingGroup = contentSequenceArr.find(group =>
-            codeValueMatch(group, FINDING)
+            this.codeValueMatch(group, FINDING)
         );
         const findingSiteGroups =
             contentSequenceArr.filter(group =>
-                codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
+                this.codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
             ) || [];
         const NUMGroup = contentSequenceArr.find(
             group => group.ValueType === "NUM"
@@ -300,7 +359,7 @@ export default class MeasurementReport {
             const measurementGroups = [];
 
             toolTypes.forEach(toolType => {
-                const group = getMeasurementGroup(
+                const group = this.getMeasurementGroup(
                     toolType,
                     toolData,
                     ReferencedSOPSequence,
@@ -370,69 +429,58 @@ export default class MeasurementReport {
         // For each of the supported measurement types, compute the measurement data
         const measurementData = {};
 
-        const cornerstoneToolClasses =
-            MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE;
-
-        const registeredToolClasses = [];
-
-        Object.keys(cornerstoneToolClasses).forEach(key => {
-            registeredToolClasses.push(cornerstoneToolClasses[key]);
-            measurementData[key] = [];
-        });
-
         measurementGroups.forEach(measurementGroup => {
             try {
                 const measurementGroupContentSequence = toArray(
                     measurementGroup.ContentSequence
                 );
 
-                const TrackingIdentifierGroup =
+                const trackingIdentifierGroup =
                     measurementGroupContentSequence.find(
                         contentItem =>
                             contentItem.ConceptNameCodeSequence.CodeMeaning ===
                             TRACKING_IDENTIFIER
                     );
 
-                const TrackingIdentifierValue =
-                    TrackingIdentifierGroup.TextValue;
+                const { TextValue: trackingIdentifierValue } =
+                    trackingIdentifierGroup;
 
-                const TrackingUniqueIdentifierGroup =
+                const trackingUniqueIdentifierGroup =
                     measurementGroupContentSequence.find(
                         contentItem =>
                             contentItem.ConceptNameCodeSequence.CodeMeaning ===
                             TRACKING_UNIQUE_IDENTIFIER
                     );
 
-                const TrackingUniqueIdentifierValue =
-                    TrackingUniqueIdentifierGroup?.UID;
+                const trackingUniqueIdentifierValue =
+                    trackingUniqueIdentifierGroup?.UID;
 
-                const toolClass =
+                const toolAdapter =
                     hooks?.getToolClass?.(
                         measurementGroup,
                         dataset,
-                        registeredToolClasses
+                        this.measurementAdapterByToolType
                     ) ||
-                    registeredToolClasses.find(tc =>
-                        tc.isValidCornerstoneTrackingIdentifier(
-                            TrackingIdentifierValue
-                        )
+                    this.getAdapterForTrackingIdentifier(
+                        trackingIdentifierValue
                     );
 
-                if (toolClass) {
-                    const measurement = toolClass.getMeasurementData(
+                if (toolAdapter) {
+                    const measurement = toolAdapter.getMeasurementData(
                         measurementGroup,
                         sopInstanceUIDToImageIdMap,
                         imageToWorldCoords,
-                        metadata
+                        metadata,
+                        trackingIdentifierValue
                     );
 
                     measurement.TrackingUniqueIdentifier =
-                        TrackingUniqueIdentifierValue;
+                        trackingUniqueIdentifierValue;
 
-                    console.log(`=== ${toolClass.toolType} ===`);
+                    console.log(`=== ${toolAdapter.toolType} ===`);
                     console.log(measurement);
-
-                    measurementData[toolClass.toolType].push(measurement);
+                    measurementData[toolAdapter.toolType] ||= [];
+                    measurementData[toolAdapter.toolType].push(measurement);
                 }
             } catch (e) {
                 console.warn(
@@ -450,16 +498,66 @@ export default class MeasurementReport {
 
     /**
      * Register a new tool type.
-     * @param toolClass to perform I/O to DICOM for this tool
+     * @param toolAdapter to perform I/O to DICOM for this tool
      */
-    public static registerTool(toolClass) {
-        MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_UTILITY_TYPE[
-            toolClass.utilityToolType
-        ] = toolClass;
-        MeasurementReport.CORNERSTONE_TOOL_CLASSES_BY_TOOL_TYPE[
-            toolClass.toolType
-        ] = toolClass;
-        MeasurementReport.MEASUREMENT_BY_TOOLTYPE[toolClass.toolType] =
-            toolClass.utilityToolType;
+    public static registerTool(
+        toolAdapter: MeasurementAdapter,
+        replace: boolean | ((original) => void) = false
+    ) {
+        const registerName = toolAdapter.toolType;
+        if (this.measurementAdapterByToolType.has(registerName)) {
+            if (!replace) {
+                throw new Error(
+                    `The registered tool name ${registerName} already exists in adapters, use a different toolType or use replace`
+                );
+            }
+            if (typeof replace === "function") {
+                // Call the function so it can call parent output
+                replace(this.measurementAdapterByToolType.get(registerName));
+            }
+        }
+        this.measurementAdapterByToolType.set(
+            toolAdapter.toolType,
+            toolAdapter
+        );
+        this.measurementAdapterByTrackingIdentifier.set(
+            toolAdapter.trackingIdentifierTextValue,
+            toolAdapter
+        );
+    }
+
+    public static registerTrackingIdentifier(
+        toolClass,
+        ...trackingIdentifiers: string[]
+    ) {
+        for (const identifier of trackingIdentifiers) {
+            this.measurementAdapterByTrackingIdentifier.set(
+                identifier,
+                toolClass
+            );
+        }
+    }
+
+    public static getAdapterForTrackingIdentifier(trackingIdentifier: string) {
+        const adapter =
+            this.measurementAdapterByTrackingIdentifier.get(trackingIdentifier);
+        if (adapter) {
+            return adapter;
+        }
+        for (const adapterTest of [
+            ...this.measurementAdapterByToolType.values()
+        ]) {
+            if (
+                adapterTest.isValidCornerstoneTrackingIdentifier(
+                    trackingIdentifier
+                )
+            ) {
+                this.measurementAdapterByTrackingIdentifier.set(
+                    trackingIdentifier,
+                    adapterTest
+                );
+                return adapterTest;
+            }
+        }
     }
 }

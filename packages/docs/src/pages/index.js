@@ -5,28 +5,9 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './index.module.css';
 import HomepageFeatures from '../components/HomepageFeatures';
 
-function NewAnnouncementBar() {
-  return (
-    <div className={styles.announcementBar}>
-      <div className={styles.newPart}>NEW</div>
-      <div className={styles.smallScreenAnnouncement}>
-        {/* Cornerstone 3D is now available! */}
-        Major Release: Cornerstone3D 2.0 is now available!
-      </div>
-      <div className={styles.bigScreenAnnouncement}>
-        🎉 Major Release: Cornerstone3D 2.0 is now available! 🎉
-        {/* <span style={{ fontWeight: 600 }}>Cornerstone3D</span>, released as
-        public beta on April 1st, 2022, represents a major improvement to the
-        framework */}
-      </div>
-    </div>
-  );
-}
-
 function HomepageHeader() {
   return (
     <div className={styles.cs3DBanner}>
-      <NewAnnouncementBar />
       <img
         className={styles.cs3DLogo}
         src={'img/cornerstone-logo-badge.png'}

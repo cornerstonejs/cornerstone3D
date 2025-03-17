@@ -10,6 +10,10 @@ import isEqual from './isEqual';
  * @returns true if the imageIds form a valid volume, false otherwise.
  */
 function isValidVolume(imageIds: string[]): boolean {
+  if (imageIds.length <= 1) {
+    return false;
+  }
+
   const imageId0 = imageIds[0];
 
   const { modality, seriesInstanceUID } = metaData.get(
@@ -23,7 +27,12 @@ function isValidVolume(imageIds: string[]): boolean {
     frameOfReferenceUID,
     columns,
     rows,
+    usingDefaultValues,
   } = metaData.get('imagePlaneModule', imageId0);
+
+  if (usingDefaultValues) {
+    return false;
+  }
 
   const baseMetadata = {
     modality,

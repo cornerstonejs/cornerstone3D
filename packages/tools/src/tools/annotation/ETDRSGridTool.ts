@@ -54,7 +54,7 @@ export interface ETDRSGridAnnotation extends Annotation {
  */
 
 class ETDRSGridTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'ETDRSGrid';
 
   touchDragCallback: unknown;
   mouseDragCallback: unknown;
@@ -639,5 +639,4 @@ class ETDRSGridTool extends AnnotationTool {
   };
 }
 
-ETDRSGridTool.toolName = 'ETDRSGrid';
 export default ETDRSGridTool;

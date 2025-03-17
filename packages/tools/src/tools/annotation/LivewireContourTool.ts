@@ -48,7 +48,8 @@ import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
 class LivewireContourTool extends ContourSegmentationBaseTool {
-  public static toolName: string;
+  public static toolName = 'LivewireContour';
+
   protected scissors: LivewireScissors;
   /** The scissors from the next handle, used for editing */
   protected scissorsNext: LivewireScissors;
@@ -1207,7 +1208,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   }
 }
 
-LivewireContourTool.toolName = 'LivewireContour';
 export default LivewireContourTool;
 
 function defaultGetTextLines(data, targetId): string[] {

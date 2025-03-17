@@ -33,8 +33,20 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   previewSegmentIndex?: number;
 
   brushStrategy: BrushStrategy;
+  activeStrategy: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  configuration?: Record<string, any>;
+  configuration?: {
+    [key: string]: unknown;
+    centerSegmentIndex?: {
+      segmentIndex: number;
+    };
+    threshold?: {
+      range?: number[];
+      isDynamic: boolean;
+      dynamicRadius: number;
+      dynamicRadiusInCanvas?: number;
+    };
+  };
   memo?: LabelmapMemo;
 };
 
@@ -66,13 +78,13 @@ export type Composition = CompositionFunction | CompositionInstance;
  *
  * These combine to form an actual brush:
  *
- * Circle - convexFill, defaultSetValue, inEllipse/boundingbox ellipse, empty threshold
- * Rectangle - - convexFill, defaultSetValue, inRectangle/boundingbox rectangle, empty threshold
+ * Circle - convexFill, defaultSetValue, inEllipse/bounding box ellipse, empty threshold
+ * Rectangle - - convexFill, defaultSetValue, inRectangle/bounding box rectangle, empty threshold
  * might also get parameter values from input,  init for setup of convexFill
  *
  * The pieces are combined to generate a strategyFunction, which performs
  * the actual strategy operation, as well as various callbacks for the strategy
- * to allow more control over behaviour in the specific strategy (such as displaying
+ * to allow more control over behavior in the specific strategy (such as displaying
  * preview)
  */
 
@@ -97,6 +109,10 @@ export default class BrushStrategy {
     [StrategyCallbacks.CreateIsInThreshold]: addSingletonMethod(
       StrategyCallbacks.CreateIsInThreshold
     ),
+    [StrategyCallbacks.Interpolate]: addListMethod(
+      StrategyCallbacks.Interpolate,
+      StrategyCallbacks.Initialize
+    ),
     [StrategyCallbacks.AcceptPreview]: addListMethod(
       StrategyCallbacks.AcceptPreview,
       StrategyCallbacks.Initialize
@@ -114,6 +130,13 @@ export default class BrushStrategy {
     ),
     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
       StrategyCallbacks.ComputeInnerCircleRadius
+    ),
+    [StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation]:
+      addListMethod(
+        StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation
+      ),
+    [StrategyCallbacks.EnsureImageVolumeFor3DManipulation]: addListMethod(
+      StrategyCallbacks.EnsureImageVolumeFor3DManipulation
     ),
     [StrategyCallbacks.AddPreview]: addListMethod(StrategyCallbacks.AddPreview),
     [StrategyCallbacks.GetStatistics]: addSingletonMethod(
@@ -178,13 +201,13 @@ export default class BrushStrategy {
       return;
     }
 
-    const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
+    const { configuration = {}, centerIJK } = initializedData;
     // Store the center IJK location so that we can skip an immediate same-point update
     // TODO - move this to the BrushTool
-    if (csUtils.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
+    if (csUtils.isEqual(centerIJK, configuration.centerIJK)) {
       return operationData.preview;
     } else {
-      strategySpecificConfiguration.centerIJK = centerIJK;
+      configuration.centerIJK = centerIJK;
     }
 
     this._fill.forEach((func) => func(initializedData));
@@ -223,7 +246,8 @@ export default class BrushStrategy {
     operationName?: string
   ): InitializedOperationData {
     const { viewport } = enabledElement;
-    const data = getStrategyData({ operationData, viewport });
+
+    const data = getStrategyData({ operationData, viewport, strategy: this });
 
     if (!data) {
       console.warn('No data found for BrushStrategy');
@@ -236,14 +260,10 @@ export default class BrushStrategy {
       segmentationImageData,
     } = data;
 
-    const segmentationVoxelManagerToUse =
-      operationData.override?.voxelManager || segmentationVoxelManager;
-    const segmentationImageDataToUse =
-      operationData.override?.imageData || segmentationImageData;
-
     const previewVoxelManager =
       operationData.preview?.previewVoxelManager ||
       VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
+
     const previewEnabled = !!operationData.previewColors;
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
@@ -253,8 +273,8 @@ export default class BrushStrategy {
       ...operationData,
       enabledElement,
       imageVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManagerToUse,
-      segmentationImageData: segmentationImageDataToUse,
+      segmentationVoxelManager,
+      segmentationImageData,
       previewVoxelManager,
       viewport,
       centerWorld: null,
@@ -264,7 +284,6 @@ export default class BrushStrategy {
     };
 
     this._initialize.forEach((func) => func(initializedData));
-
     return initializedData;
   }
 
@@ -359,6 +378,12 @@ export default class BrushStrategy {
     operationData: LabelmapToolOperationDataAny
   ) => unknown;
 
+  /** Interpolate the labelmaps */
+  public interpolate: (
+    enabledElement: Types.IEnabledElement,
+    operationData: LabelmapToolOperationDataAny
+  ) => unknown;
+
   /**
    * Over-written by the strategy composition.
    */
@@ -380,19 +405,22 @@ function addListMethod(name: string, createInitialized?: string) {
     brushStrategy[listName] ||= [];
     brushStrategy[listName].push(func);
     brushStrategy[name] ||= createInitialized
-      ? (enabledElement, operationData) => {
+      ? (enabledElement, operationData, ...args) => {
           const initializedData = brushStrategy[createInitialized](
             enabledElement,
             operationData,
             name
           );
-          brushStrategy[listName].forEach((func) =>
-            func.call(brushStrategy, initializedData)
-          );
+          let returnValue;
+          brushStrategy[listName].forEach((func) => {
+            const value = func.call(brushStrategy, initializedData, ...args);
+            returnValue ||= value;
+          });
+          return returnValue;
         }
-      : (operationData) => {
+      : (operationData, ...args) => {
           brushStrategy[listName].forEach((func) =>
-            func.call(brushStrategy, operationData)
+            func.call(brushStrategy, operationData, ...args)
           );
         };
   };

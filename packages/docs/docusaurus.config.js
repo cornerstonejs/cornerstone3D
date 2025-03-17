@@ -1,4 +1,3 @@
-const path = require('path');
 const lightCodeTheme = require('prism-react-renderer').themes.github;
 const darkCodeTheme = require('prism-react-renderer').themes.dracula;
 
@@ -74,8 +73,8 @@ module.exports = {
           ],
         },
         {
-          to: '/docs/migration-guides/2x/general',
-          label: '2.0 Migration Guides',
+          to: '/docs/migration-guides/3x/polyseg',
+          label: '3.0 Migration Guides',
           position: 'left',
           className: 'new-badge',
         },
@@ -86,6 +85,10 @@ module.exports = {
             {
               type: 'html',
               value: '<hr class="dropdown-separator">',
+            },
+            {
+              href: 'https://v2.cornerstonejs.org/',
+              label: '2.0',
             },
             {
               href: 'https://v1.cornerstonejs.org/',
@@ -216,7 +219,7 @@ module.exports = {
           onlyIncludeVersions: ['current'],
           versions: {
             current: {
-              label: `2.0 (Latest)`,
+              label: `3.0 (Latest)`,
             },
           },
         },

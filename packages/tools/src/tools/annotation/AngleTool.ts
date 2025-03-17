@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -48,7 +48,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class AngleTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Angle';
 
   angleStartedNotYetCompleted: boolean;
   _throttledCalculateCachedStats: Function;
@@ -473,6 +473,14 @@ class AngleTool extends AnnotationTool {
     const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -870,7 +878,7 @@ class AngleTool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
 
     return cachedStats;
   }
@@ -896,5 +904,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-AngleTool.toolName = 'Angle';
 export default AngleTool;

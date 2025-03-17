@@ -116,7 +116,7 @@ const PARALLEL_THRESHOLD = 1 - EPSILON;
  */
 
 class PlanarFreehandROITool extends ContourSegmentationBaseTool {
-  static toolName;
+  static toolName = 'PlanarFreehandROI';
 
   _throttledCalculateCachedStats: Function;
   private commonData?: PlanarFreehandROICommonData;
@@ -683,10 +683,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     if (!this.commonData?.movingTextBox) {
       const { data } = annotation;
-      if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
-      ) {
+      if (!data.cachedStats[targetId]?.unit) {
         data.cachedStats[targetId] = {
           Modality: null,
           area: null,
@@ -694,6 +691,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           mean: null,
           stdDev: null,
           areaUnit: null,
+          unit: null,
         };
 
         this._calculateCachedStats(
@@ -987,13 +985,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     modalityUnit,
     calibratedScale,
   }) {
-    const { scale, units } = calibratedScale;
+    const { scale, unit } = calibratedScale;
 
     cachedStats[targetId] = {
       Modality: metadata.Modality,
       length: calculatePerimeter(canvasCoordinates, false) / scale,
       modalityUnit,
-      getPixelValueUnitunit: units,
+      unit,
     };
   }
 
@@ -1107,5 +1105,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-PlanarFreehandROITool.toolName = 'PlanarFreehandROI';
 export default PlanarFreehandROITool;

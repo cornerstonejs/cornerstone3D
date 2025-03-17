@@ -39,7 +39,6 @@ import type {
   ToolHandle,
   PublicToolProps,
   SVGDrawingHelper,
-  Annotation,
 } from '../../types';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -92,19 +91,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class ProbeTool extends AnnotationTool {
-  static toolName;
-
-  editData: {
-    annotation: Annotation;
-    viewportIdsToRender: string[];
-    newAnnotation?: boolean;
-  } | null;
-  eventDispatchDetail: {
-    viewportId: string;
-    renderingEngineId: string;
-  };
-  isDrawing: boolean;
-  isHandleOutsideImage: boolean;
+  static toolName = 'Probe';
 
   public static probeDefaults = {
     supportedInteractionTypes: ['Mouse', 'Touch'],
@@ -213,14 +200,13 @@ class ProbeTool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const annotation = ProbeTool.createAnnotationForViewport<ProbeAnnotation>(
-      viewport,
-      {
-        data: {
-          handles: { points: [<Types.Point3>[...worldPos]] },
-        },
-      }
-    );
+    const annotation = (<typeof AnnotationTool>(
+      this.constructor
+    )).createAnnotationForViewport<ProbeAnnotation>(viewport, {
+      data: {
+        handles: { points: [<Types.Point3>[...worldPos]] },
+      },
+    });
 
     addAnnotation(annotation, element);
 
@@ -701,5 +687,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return textLines;
 }
 
-ProbeTool.toolName = 'Probe';
 export default ProbeTool;

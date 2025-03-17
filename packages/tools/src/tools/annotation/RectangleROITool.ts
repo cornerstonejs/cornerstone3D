@@ -27,7 +27,7 @@ import {
   drawRectByCoordinates as drawRectSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as rectangle from '../../utilities/math/rectangle';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -95,7 +95,7 @@ const { transformWorldToIndex } = csUtils;
  */
 
 class RectangleROITool extends AnnotationTool {
-  static toolName;
+  static toolName = 'RectangleROI';
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -152,32 +152,30 @@ class RectangleROITool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const annotation =
-      RectangleROITool.createAnnotationForViewport<RectangleROIAnnotation>(
-        viewport,
-        {
-          data: {
-            handles: {
-              points: [
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-                <Types.Point3>[...worldPos],
-              ],
-              textBox: {
-                hasMoved: false,
-                worldPosition: <Types.Point3>[0, 0, 0],
-                worldBoundingBox: {
-                  topLeft: <Types.Point3>[0, 0, 0],
-                  topRight: <Types.Point3>[0, 0, 0],
-                  bottomLeft: <Types.Point3>[0, 0, 0],
-                  bottomRight: <Types.Point3>[0, 0, 0],
-                },
-              },
+    const annotation = (<typeof AnnotationTool>(
+      this.constructor
+    )).createAnnotationForViewport<RectangleROIAnnotation>(viewport, {
+      data: {
+        handles: {
+          points: [
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+            <Types.Point3>[...worldPos],
+          ],
+          textBox: {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
-        }
-      );
+        },
+      },
+    });
 
     addAnnotation(annotation, element);
 
@@ -479,6 +477,14 @@ class RectangleROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -956,7 +962,7 @@ class RectangleROITool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
 
     return cachedStats;
   };
@@ -1051,5 +1057,4 @@ function defaultGetTextLines(data, targetId: string): string[] {
   return textLines;
 }
 
-RectangleROITool.toolName = 'RectangleROI';
 export default RectangleROITool;

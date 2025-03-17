@@ -149,7 +149,6 @@ addButtonToToolbar({
     const ctVolume = cache.getVolume(ctVolumeId);
     const ptVolume = cache.getVolume(ptVolumeId);
     const segmentationVolume = cache.getVolume(segmentationId);
-
     csToolsUtils.segmentation.rectangleROIThresholdVolumeByRange(
       selectedAnnotationUIDs,
       segmentationVolume,
@@ -299,7 +298,7 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
 
-  const wadoRsRoot = 'https://domvja9iplmyu.cloudfront.net/dicomweb';
+  const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
   const StudyInstanceUID =
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339';
 

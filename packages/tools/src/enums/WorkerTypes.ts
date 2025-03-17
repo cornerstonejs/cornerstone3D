@@ -11,6 +11,12 @@ enum ChangeTypes {
   POLYSEG_LABELMAP_TO_SURFACE = 'Converting Labelmap to Surface',
 
   SURFACE_CLIPPING = 'Clipping Surfaces',
+
+  COMPUTE_STATISTICS = 'Computing Statistics',
+
+  INTERPOLATE_LABELMAP = 'Interpolating Labelmap',
+
+  COMPUTE_LARGEST_BIDIRECTIONAL = 'Computing Largest Bidirectional',
 }
 
 export default ChangeTypes;

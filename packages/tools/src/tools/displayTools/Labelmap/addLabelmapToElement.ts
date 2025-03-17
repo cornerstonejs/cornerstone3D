@@ -14,7 +14,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
-import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import {
   triggerSegmentationDataModified,
@@ -52,7 +52,6 @@ async function addLabelmapToElement(
   const visibility = true;
   const immediateRender = false;
   const suppressEvents = true;
-
   if (viewport instanceof BaseVolumeViewport) {
     const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
     const volumeId = _ensureVolumeHasVolumeId(
@@ -60,19 +59,38 @@ async function addLabelmapToElement(
       segmentationId
     );
 
-    // Todo: Right now we use MIP blend mode for the labelmap, since the
-    // composite blend mode has a non linear behavior regarding fill and line
-    // opacity. This should be changed to a custom labelmap blendMode which does
-    // what composite does, but with a linear behavior.
     if (!cache.getVolume(volumeId)) {
       await _handleMissingVolume(labelMapData);
     }
 
-    const blendMode =
+    let blendMode =
       config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
 
-    const useIndependentComponents =
+    let useIndependentComponents =
       blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND;
+
+    // Add dimension check before deciding to use independent components
+    if (useIndependentComponents) {
+      const referenceVolumeId = viewport.getVolumeId();
+      const baseVolume = cache.getVolume(referenceVolumeId);
+      const segVolume = cache.getVolume(volumeId);
+
+      const segDims = segVolume.dimensions;
+      const refDims = baseVolume.dimensions;
+
+      if (
+        segDims[0] !== refDims[0] ||
+        segDims[1] !== refDims[1] ||
+        segDims[2] !== refDims[2]
+      ) {
+        // If dimensions don't match, fallback to regular volume addition
+        useIndependentComponents = false;
+        blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+        console.debug(
+          'Dimensions mismatch - falling back to regular volume addition'
+        );
+      }
+    }
 
     const volumeInputs: Types.IVolumeInput[] = [
       {
@@ -118,17 +136,17 @@ async function addLabelmapToElement(
   } else {
     // We can use the current imageId in the viewport to get the segmentation imageId
     // which later is used to create the actor and mapper.
-    const segmentationImageId = getCurrentLabelmapImageIdForViewport(
+    const segmentationImageIds = getCurrentLabelmapImageIdsForViewport(
       viewport.id,
       segmentationId
     );
 
-    const stackInputs: Types.IStackInput[] = [
-      {
-        imageId: segmentationImageId,
-        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
-      },
-    ];
+    const stackInputs: Types.IStackInput[] = segmentationImageIds.map(
+      (imageId) => ({
+        imageId,
+        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${imageId}`,
+      })
+    );
 
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
     addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);

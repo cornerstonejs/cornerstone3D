@@ -510,17 +510,17 @@ function _createDynamicVolumeViewportCinePlayContext(
 ): CINETypes.CinePlayContext {
   return {
     get numScrollSteps(): number {
-      return volume.numTimePoints;
+      return volume.numDimensionGroups;
     },
     get currentStepIndex(): number {
-      return volume.timePointIndex;
+      // Convert 1-based dimensionGroupNumber to 0-based index for consistency
+      return volume.dimensionGroupNumber - 1;
     },
     get frameTimeVectorEnabled(): boolean {
       // Looping though time does not uses frameTimeVector
       return false;
     },
     scroll(delta: number): void {
-      // Updating this property (setter) makes it move to the desired time point
       volume.scroll(delta);
     },
   };

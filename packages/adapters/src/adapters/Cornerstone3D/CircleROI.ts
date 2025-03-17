@@ -1,19 +1,14 @@
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
-import isValidCornerstoneTrackingIdentifier from "./isValidCornerstoneTrackingIdentifier";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Circle: TID300Circle } = utilities.TID300;
 
-const CIRCLEROI = "CircleROI";
-
-class CircleROI {
-    static trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${CIRCLEROI}`;
-    static toolType = CIRCLEROI;
-    static utilityToolType = CIRCLEROI;
-    static TID300Representation = TID300Circle;
-    static isValidCornerstoneTrackingIdentifier =
-        isValidCornerstoneTrackingIdentifier;
+class CircleROI extends BaseAdapter3D {
+    static {
+        this.init("CircleROI", TID300Circle);
+        this.registerLegacy();
+    }
 
     /** Gets the measurement data for cornerstone, given DICOM SR measurement data. */
     static getMeasurementData(
@@ -112,7 +107,5 @@ class CircleROI {
         };
     }
 }
-
-MeasurementReport.registerTool(CircleROI);
 
 export default CircleROI;

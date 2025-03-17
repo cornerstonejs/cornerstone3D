@@ -20,6 +20,7 @@ import VolumeRotateTool from './VolumeRotateTool';
 
 // Annotation tools
 import BidirectionalTool from './annotation/BidirectionalTool';
+import LabelTool from './annotation/LabelTool';
 import LengthTool from './annotation/LengthTool';
 import HeightTool from './annotation/HeightTool';
 import ProbeTool from './annotation/ProbeTool';
@@ -56,6 +57,7 @@ import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
 import SegmentSelectTool from './segmentation/SegmentSelectTool';
+import SegmentBidirectionalTool from './segmentation/SegmentBidirectionalTool';
 
 import * as strategies from './segmentation/strategies';
 
@@ -81,6 +83,7 @@ export {
   OverlayGridTool,
   SegmentationIntersectionTool,
   BidirectionalTool,
+  LabelTool,
   LengthTool,
   HeightTool,
   ProbeTool,
@@ -122,5 +125,6 @@ export {
   RegionSegmentPlusTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
+  SegmentBidirectionalTool,
   strategies,
 };

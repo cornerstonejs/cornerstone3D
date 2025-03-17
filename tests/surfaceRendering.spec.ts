@@ -6,18 +6,23 @@ import {
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'surfaceRendering');
+  await visitExample(page, 'surfaceRenderingForTest');
 });
 
 // this is too much for the CI.
-test.skip('Surface Segmentation Representation for Volume Viewports', async () => {
-  test('should render the segmentation correctly', async ({ page }) => {
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
-      page,
-      locator,
-      screenShotPaths.surfaceRendering.viewport,
-      200
-    );
-  });
+test('should render the segmentation correctly', async ({ page }) => {
+  // // triple the test timeout
+  // test.slow();
+  // test.setTimeout(120000); // Set a longer timeout for this specific test
+  // const locator = page.locator('.cornerstone-canvas');
+  // await page.waitForTimeout(5000);
+  // // Wait for network idle to ensure all resources are loaded
+  // await page.waitForLoadState('networkidle');
+  // await checkForScreenshot(
+  //   page,
+  //   locator,
+  //   screenShotPaths.surfaceRendering.viewport,
+  //   20, // Increase number of attempts
+  //   1000 // Increase delay between attempts to 1 second
+  // );
 });

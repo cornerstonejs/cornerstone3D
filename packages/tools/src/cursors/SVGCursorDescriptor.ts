@@ -229,8 +229,8 @@ const CursorSVG: Record<string, SVGCursorDescriptor> = {
       y: 1792,
     },
   }),
-  TextMarker: extend(BASE, {
-    name: 'TextMarker',
+  Label: extend(BASE, {
+    name: 'Label',
     iconContent: `<path fill="{{color}}" d="M789 559l-170 450q33 0 136.5 2t160.5 2q19 0
     57-2-87-253-184-452zm-725 1105l2-79q23-7 56-12.5t57-10.5 49.5-14.5 44.5-29
     31-50.5l237-616 280-724h128q8 14 11 21l205 480q33 78 106 257.5t114 274.5q15

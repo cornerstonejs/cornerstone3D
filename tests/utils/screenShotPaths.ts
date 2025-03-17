@@ -61,7 +61,7 @@ const screenShotPaths = {
     splinesOnSegmentTwo: 'splinesOnSegmentTwo.png',
   },
   surfaceRendering: {
-    viewport: 'viewport.png',
+    viewport: 'surfaceRendering.png',
   },
   labelmapSegmentationTools: {
     circularBrush: 'circularBrush.png',
@@ -104,6 +104,7 @@ const screenShotPaths = {
     circularScissorSegmentation2: 'circularScissorSegmentation2.png',
     paintFillSeg1OuterCircle: 'paintFillSeg1OuterCircle.png',
     paintFillSegmentation2: 'paintFillSegmentation2.png',
+    sphereBrush: 'sphereBrush.png',
   },
   labelmapRendering: {
     axial: 'axial.png',

@@ -72,8 +72,6 @@ after the commits are squashed.
 - [] My code has been well-documented (function documentation, inline comments,
   etc.)
 
-- [] I have run the `yarn build:update-api` to update the API documentation, and have
-  committed the changes to this PR. (Read more here https://www.cornerstonejs.org/docs/contribute/update-api)
 
 
 #### Public Documentation Updates

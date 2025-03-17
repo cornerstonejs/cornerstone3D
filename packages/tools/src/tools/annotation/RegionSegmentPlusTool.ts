@@ -14,7 +14,7 @@ type RegionSegmentPlusToolData = GrowCutToolData & {
 };
 
 class RegionSegmentPlusTool extends GrowCutBaseTool {
-  static toolName;
+  static toolName = 'RegionSegmentPlus';
   protected growCutData: RegionSegmentPlusToolData | null;
 
   constructor(
@@ -22,6 +22,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        isPartialVolume: false,
         positiveSeedVariance: 0.4,
         negativeSeedVariance: 0.9,
         subVolumePaddingPercentage: 0.1,
@@ -29,7 +30,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
           /**
            * Enable/disable island removal
            */
-          enabled: true,
+          enabled: false,
         },
       },
     }
@@ -74,7 +75,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
   protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { referencedVolumeId },
+      segmentation: { referencedVolumeId, labelmapVolumeId },
       renderingEngineId,
       viewportId,
       worldPoint,
@@ -90,15 +91,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       subVolumePaddingPercentage,
     };
 
-    return growCut.runOneClickGrowCut(
+    return growCut.runOneClickGrowCut({
       referencedVolumeId,
-      worldPoint,
-      viewport,
-      mergedOptions
-    );
+      worldPosition: worldPoint,
+      options: mergedOptions,
+    });
   }
 }
-
-RegionSegmentPlusTool.toolName = 'RegionSegmentPlus';
 
 export default RegionSegmentPlusTool;

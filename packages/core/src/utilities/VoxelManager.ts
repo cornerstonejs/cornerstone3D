@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import cache from '../cache/cache';
 import type {
   BoundsIJK,
@@ -353,6 +352,14 @@ export default class VoxelManager<T> {
     const boundsIJK = options?.boundsIJK || this.getBoundsIJK();
     const { isWithinObject } = options || {};
     const map = this.map as RLEVoxelMap<T>;
+
+    if (!map) {
+      console.warn(
+        'No map found, you need to use a map voxel manager to use rleForEach'
+      );
+      return;
+    }
+
     map.defaultValue = undefined;
     for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
       for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
@@ -443,16 +450,20 @@ export default class VoxelManager<T> {
     return value.BYTES_PER_ELEMENT;
   }
 
+  public clearBounds() {
+    this.boundsIJK.map((bound) => {
+      bound[0] = Infinity;
+      bound[1] = -Infinity;
+    });
+  }
+
   /**
    * Clears any map specific data, as well as the modified slices, points and
    * bounds.
    */
   public clear() {
     this.map?.clear();
-    this.boundsIJK.map((bound) => {
-      bound[0] = Infinity;
-      bound[1] = -Infinity;
-    });
+    this.clearBounds();
     this.modifiedSlices.clear();
     this.points?.clear();
   }
@@ -496,6 +507,14 @@ export default class VoxelManager<T> {
    */
   public resetModifiedSlices(): void {
     this.modifiedSlices.clear();
+  }
+
+  /**
+   * Sets the bounds of the voxel manager.
+   * @param bounds - The bounds to set.
+   */
+  public setBounds(bounds: BoundsIJK) {
+    this.boundsIJK = bounds;
   }
 
   /**
@@ -759,8 +778,8 @@ export default class VoxelManager<T> {
     }
 
     const _getConstructor = () => {
-      const { voxelManager: imageVoxelManager } = getPixelInfo(0);
-      if (!imageVoxelManager) {
+      const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(0);
+      if (!imageVoxelManager || pixelIndex === null) {
         return null;
       }
       return imageVoxelManager.getConstructor();
@@ -821,8 +840,8 @@ export default class VoxelManager<T> {
     };
 
     voxelManager._getScalarDataLength = () => {
-      const { voxelManager: imageVoxelManager } = getPixelInfo(0);
-      if (!imageVoxelManager) {
+      const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(0);
+      if (!imageVoxelManager || pixelIndex === null) {
         return 0;
       }
       return imageVoxelManager.getScalarDataLength() * dimensions[2];
@@ -844,17 +863,16 @@ export default class VoxelManager<T> {
       }
 
       const dataLength = voxelManager.getScalarDataLength();
-      // @ts-ignore
       const scalarData = new ScalarDataConstructor(dataLength);
 
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { voxelManager: imageVoxelManager } = getPixelInfo(
+        const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(
           (sliceIndex * sliceSize) / numberOfComponents
         );
 
-        if (imageVoxelManager) {
+        if (imageVoxelManager && pixelIndex !== null) {
           const sliceStart = sliceIndex * sliceSize;
           const pixelData = imageVoxelManager.getScalarData();
 
@@ -894,7 +912,20 @@ export default class VoxelManager<T> {
           const sliceData = new SliceDataConstructor(sliceSize);
           // @ts-ignore
           sliceData.set(scalarData.subarray(sliceStart, sliceEnd));
-          imageVoxelManager.scalarData = sliceData;
+
+          // Instead of directly assigning scalarData, use TypedArray's set method
+          // previously here we were using imageVoxelManager.scalarData = sliceData
+          // which had some weird side effects
+          if (imageVoxelManager.scalarData) {
+            imageVoxelManager.scalarData.set(sliceData);
+            // Ensure the voxel manager knows about the changes
+            imageVoxelManager.modifiedSlices.add(sliceIndex);
+          } else {
+            // Fallback to individual updates if scalarData is not directly accessible
+            for (let i = 0; i < sliceSize; i++) {
+              imageVoxelManager.setAtIndex(i, sliceData[i]);
+            }
+          }
 
           // Update min/max values for this slice
           for (let i = 0; i < sliceData.length; i++) {
@@ -940,7 +971,7 @@ export default class VoxelManager<T> {
   public static createScalarVolumeVoxelManager({
     dimensions,
     scalarData,
-    numberOfComponents = 1,
+    numberOfComponents,
   }: {
     dimensions: Point3;
     scalarData;
