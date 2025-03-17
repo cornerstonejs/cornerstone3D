@@ -112,6 +112,8 @@ function cleanupTestEnvironment(options = {}) {
   cache.purgeCache();
   destroy();
 
+  segmentation.state.destroy();
+
   // Destroy the rendering engine
   if (renderingEngineId) {
     const renderingEngine = getRenderingEngine(renderingEngineId);
