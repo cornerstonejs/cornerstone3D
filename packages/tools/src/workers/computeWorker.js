@@ -300,15 +300,6 @@ const computeWorker = {
       }));
     }
 
-    const { voxelManager, dimensions, origin, direction, spacing } =
-      segmentation;
-
-    // Create VTK image data
-    const stackDimensions = isStack
-      ? [dimensions[0], dimensions[1], 1]
-      : dimensions;
-    const stackSpacing = isStack ? [spacing[0], spacing[1], 1] : spacing;
-
     return isStack
       ? computeWorker.calculateBidirectionalStack({
           segmentationInfo,
@@ -321,15 +312,46 @@ const computeWorker = {
           mode,
         });
   },
+  findLargestBidirectionalFromContours: (
+    contours,
+    isInSegment,
+    segmentIndex
+  ) => {
+    let maxBidirectional;
+
+    for (const sliceContour of contours) {
+      const bidirectional = createBidirectionalForSlice(
+        sliceContour,
+        isInSegment,
+        maxBidirectional
+      );
+
+      if (!bidirectional) {
+        continue;
+      }
+
+      maxBidirectional = bidirectional;
+    }
+
+    if (maxBidirectional) {
+      return {
+        segmentIndex,
+        majorAxis: maxBidirectional.majorAxis,
+        minorAxis: maxBidirectional.minorAxis,
+        maxMajor: maxBidirectional.maxMajor,
+        maxMinor: maxBidirectional.maxMinor,
+      };
+    }
+
+    return null;
+  },
   calculateBidirectionalStack: ({ segmentationInfo, indices, mode }) => {
     const segments = computeWorker.createSegmentsFromIndices(indices);
+    let bidirectionalResults = [];
 
-    // we need to loop over each to find the bidirectional data
-    // Create voxel managers for each pair of segmentation and image info
-    let finalBidirectionalData = [];
+    // Process each slice in the stack
     for (let i = 0; i < segmentationInfo.length; i++) {
       const segInfo = segmentationInfo[i];
-
       const dimensions = segInfo.dimensions;
       const segScalarData = segInfo.scalarData;
       const { spacing, direction, origin } = segInfo;
@@ -339,22 +361,19 @@ const computeWorker = {
         segScalarData
       );
 
-      // Create segments from indices
-
       const pixelsPerSlice = dimensions[0] * dimensions[1];
-      // Iterate through all segments in current segmentation set
-      const numSegments = segments.length;
 
-      for (let segIndex = 0; segIndex < numSegments; segIndex++) {
+      // Process each segment index
+      for (let segIndex = 1; segIndex < segments.length; segIndex++) {
         const segment = segments[segIndex];
 
-        // Skip empty segments
         if (!segment) {
           continue;
         }
 
         const segmentIndex = segment.segmentIndex;
 
+        // Skip empty slices
         if (
           computeWorker.isSliceEmptyForSegmentVolume(
             0,
@@ -366,35 +385,33 @@ const computeWorker = {
           continue;
         }
 
+        // Generate contours for this segment on this slice
         const sliceContours = [];
 
-        // Filter the segScalarData to only include the current segment
+        // Filter data for current segment
         const filteredData = new Uint8Array(segScalarData.length);
         for (let i = 0; i < segScalarData.length; i++) {
-          if (segScalarData[i] === segmentIndex) {
-            filteredData[i] = 1;
-          } else {
-            filteredData[i] = 0;
-          }
+          filteredData[i] = segScalarData[i] === segmentIndex ? 1 : 0;
         }
 
+        // Create VTK image data
         const scalarArray = vtkDataArray.newInstance({
           name: 'Pixels',
           numberOfComponents: 1,
           values: filteredData,
         });
 
-        // Create VTK image data
         const imageData = computeWorker.createVTKImageData(
           dimensions,
           origin,
           direction,
           [spacing[0], spacing[1], 1]
         );
+
         imageData.getPointData().setScalars(scalarArray);
 
         try {
-          // Perform marching squares with Z-axis slicing mode
+          // Perform marching squares
           const msOutput = computeWorker.performMarchingSquares(
             imageData,
             null,
@@ -411,12 +428,7 @@ const computeWorker = {
           console.warn(e);
         }
 
-        const bidirectionalData = [];
-
-        const contours = sliceContours;
-
-        let maxBidirectional;
-
+        // Create isInSegment helper
         const isInSegment = createIsInSegmentMetadata({
           dimensions,
           imageData,
@@ -424,31 +436,21 @@ const computeWorker = {
           segmentIndex,
         });
 
-        for (const sliceContour of contours) {
-          const bidirectional = createBidirectionalForSlice(
-            sliceContour,
+        // Find largest bidirectional using shared function
+        const bidirectionalResult =
+          computeWorker.findLargestBidirectionalFromContours(
+            sliceContours,
             isInSegment,
-            maxBidirectional
+            segmentIndex
           );
-          if (!bidirectional) {
-            continue;
-          }
-          maxBidirectional = bidirectional;
-        }
 
-        if (maxBidirectional) {
-          finalBidirectionalData.push({
-            segmentIndex,
-            majorAxis: maxBidirectional.majorAxis,
-            minorAxis: maxBidirectional.minorAxis,
-            maxMajor: maxBidirectional.maxMajor,
-            maxMinor: maxBidirectional.maxMinor,
-          });
+        if (bidirectionalResult) {
+          bidirectionalResults.push(bidirectionalResult);
         }
       }
     }
 
-    return finalBidirectionalData;
+    return bidirectionalResults;
   },
   calculateVolumetricBidirectional: ({ segmentation, indices, mode }) => {
     const { voxelManager, dimensions, origin, direction, spacing } =
@@ -460,6 +462,7 @@ const computeWorker = {
       spacing
     );
 
+    // Generate contour sets from 3D volume
     const contourSets = computeWorker.generateContourSetsFromLabelmapVolume({
       segmentation,
       indices,
@@ -467,13 +470,15 @@ const computeWorker = {
       mode,
     });
 
-    const bidirectionalData = [];
+    const bidirectionalResults = [];
+
+    // Process each contour set
     for (let i = 0; i < contourSets.length; i++) {
       const contourSet = contourSets[i];
       const { segmentIndex } = contourSet.segment;
       const contours = contourSet.sliceContours;
 
-      let maxBidirectional;
+      // Create isInSegment helper
       const isInSegment = createIsInSegmentMetadata({
         dimensions,
         imageData,
@@ -481,29 +486,20 @@ const computeWorker = {
         segmentIndex,
       });
 
-      for (const sliceContour of contours) {
-        const bidirectional = createBidirectionalForSlice(
-          sliceContour,
+      // Find largest bidirectional using shared function
+      const bidirectionalResult =
+        computeWorker.findLargestBidirectionalFromContours(
+          contours,
           isInSegment,
-          maxBidirectional
+          segmentIndex
         );
-        if (!bidirectional) {
-          continue;
-        }
-        maxBidirectional = bidirectional;
-      }
 
-      if (maxBidirectional) {
-        bidirectionalData.push({
-          segmentIndex,
-          majorAxis: maxBidirectional.majorAxis,
-          minorAxis: maxBidirectional.minorAxis,
-          maxMajor: maxBidirectional.maxMajor,
-          maxMinor: maxBidirectional.maxMinor,
-        });
+      if (bidirectionalResult) {
+        bidirectionalResults.push(bidirectionalResult);
       }
     }
-    return bidirectionalData;
+
+    return bidirectionalResults;
   },
   generateContourSetsFromLabelmapVolume: (args) => {
     const { segmentation, indices, imageData } = args;
