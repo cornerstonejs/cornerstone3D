@@ -390,12 +390,6 @@ const computeWorker = {
   generateContourSetsFromLabelmapStack: (args) => {
     const { segmentationInfo, indices } = args;
 
-    if (segmentationInfo.length > 1) {
-      throw new Error(
-        'Segment Bidirectional Stack mode only supports one image at the moment'
-      );
-    }
-
     let ContourSets = [];
 
     // Create voxel managers for each pair of segmentation and image info
@@ -421,6 +415,17 @@ const computeWorker = {
         }
 
         const segmentIndex = segment.segmentIndex;
+
+        if (
+          computeWorker.isSliceEmptyForSegmentVolume(
+            0,
+            segScalarData,
+            pixelsPerSlice,
+            segmentIndex
+          )
+        ) {
+          continue;
+        }
 
         const sliceContours = [];
 
