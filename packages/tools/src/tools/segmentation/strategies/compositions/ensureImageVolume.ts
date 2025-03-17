@@ -1,7 +1,8 @@
-import { cache, utilities as csUtils, volumeLoader } from '@cornerstonejs/core';
+import { cache, utilities as csUtils } from '@cornerstonejs/core';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
 import type { LabelmapSegmentationDataStack } from '../../../../types';
+import getOrCreateImageVolume from '../../../../utilities/segmentation/getOrCreateImageVolume';
 
 export default {
   [StrategyCallbacks.EnsureImageVolumeFor3DManipulation]: (data) => {
@@ -29,20 +30,11 @@ export default {
       });
     }
 
-    const volumeId = cache.generateVolumeId(referencedImageIds);
+    const imageVolume = getOrCreateImageVolume(referencedImageIds);
 
-    let imageVolume = cache.getVolume(volumeId);
-    if (imageVolume) {
-      operationData.imageVoxelManager = imageVolume.voxelManager;
-      operationData.imageData = imageVolume.imageData;
-      return;
+    if (!imageVolume) {
+      throw new Error('Failed to create or get image volume');
     }
-
-    // it will return the cached volume if it already exists
-    imageVolume = volumeLoader.createAndCacheVolumeFromImagesSync(
-      volumeId,
-      referencedImageIds
-    );
 
     operationData.imageVoxelManager = imageVolume.voxelManager;
     operationData.imageData = imageVolume.imageData;

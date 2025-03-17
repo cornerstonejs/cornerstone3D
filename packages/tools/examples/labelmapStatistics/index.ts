@@ -143,7 +143,9 @@ async function calculateStatistics(indices, mode) {
           displayStat(segmentStat.mean),
           displayStat(segmentStat.max),
           displayStat(segmentStat.min),
-          displayStat(segmentStat.peakValue)
+          displayStat(segmentStat.peakValue),
+          displayStat(segmentStat.maxLPS),
+          displayStat(segmentStat.minLPS)
         );
 
         const statsDiv = document.getElementById(`segment${segmentIndex}`);
@@ -162,7 +164,9 @@ async function calculateStatistics(indices, mode) {
       displayStat(namedStats.mean),
       displayStat(namedStats.max),
       displayStat(namedStats.min),
-      displayStat(namedStats.peakValue)
+      displayStat(namedStats.peakValue),
+      displayStat(namedStats.maxLPS),
+      displayStat(namedStats.minLPS)
     );
 
     const statsDiv = document.getElementById('segmentCombined');

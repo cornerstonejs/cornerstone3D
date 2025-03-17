@@ -1,11 +1,18 @@
-import { cache, volumeLoader, utilities } from '@cornerstonejs/core';
+import {
+  cache,
+  volumeLoader,
+  utilities,
+  type Types,
+} from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 
-function getOrCreateSegmentationVolume(segmentationId) {
+function getOrCreateSegmentationVolume(
+  segmentationId
+): Types.IImageVolume | undefined {
   const { representationData } = getSegmentation(segmentationId);
   let { volumeId } =
     representationData.Labelmap as LabelmapSegmentationDataVolume;

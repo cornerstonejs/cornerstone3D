@@ -41,26 +41,23 @@ function volumetricStatsCallback(
     return;
   }
 
+  // Create a deep copy of the data object to prevent reference issues
+  const dataCopy = {
+    value: data.value as number,
+    pointLPS: data.pointLPS
+      ? ([data.pointLPS[0], data.pointLPS[1], data.pointLPS[2]] as Types.Point3)
+      : undefined,
+    pointIJK: data.pointIJK
+      ? ([data.pointIJK[0], data.pointIJK[1], data.pointIJK[2]] as Types.Point3)
+      : undefined,
+  };
+
   if (!length || value >= maxIJKs[length - 1].value) {
-    maxIJKs.push(
-      data as {
-        value: number;
-        pointLPS?: Types.Point3;
-        pointIJK?: Types.Point3;
-      }
-    );
+    maxIJKs.push(dataCopy);
   } else {
     for (let i = 0; i < length; i++) {
       if (value <= maxIJKs[i].value) {
-        maxIJKs.splice(
-          i,
-          0,
-          data as {
-            value: number;
-            pointLPS?: Types.Point3;
-            pointIJK?: Types.Point3;
-          }
-        );
+        maxIJKs.splice(i, 0, dataCopy);
         break;
       }
     }
