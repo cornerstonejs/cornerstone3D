@@ -221,7 +221,16 @@ const processSegmentationStatistics = ({
         unit,
       };
 
+      // Store the LPS point coordinates for peak SUV
+      stats.peakPoint = {
+        name: 'peakLPS',
+        label: 'Peak SUV Point',
+        value: testMax.pointLPS ? [...testMax.pointLPS] : null,
+        unit: null,
+      };
+
       updateStatsArray(stats, stats.peakValue);
+      updateStatsArray(stats, stats.peakPoint);
     }
   }
 
@@ -297,7 +306,7 @@ async function calculateStackStatistics({ segImageIds, indices, unit, mode }) {
  * Assumes the segmentation and pixel data are co-incident.
  */
 function getSphereStats(testMax, radiusIJK, segData, imageVoxels, spacing) {
-  const { pointIJK: centerIJK } = testMax;
+  const { pointIJK: centerIJK, pointLPS: centerLPS } = testMax;
 
   if (!centerIJK) {
     return;
