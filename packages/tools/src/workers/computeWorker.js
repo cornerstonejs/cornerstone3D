@@ -105,8 +105,6 @@ const computeWorker = {
       return {
         contours,
         polyData: reducedSet,
-        FrameNumber: sliceIndex !== null ? sliceIndex + 1 : undefined,
-        sliceIndex,
       };
     }
     return null;
@@ -237,11 +235,13 @@ const computeWorker = {
         segmentation,
         indices,
         imageData,
+        mode,
       });
     } else {
       contourSets = computeWorker.generateContourSetsFromLabelmapStack({
         segmentationInfo,
         indices,
+        mode,
       });
     }
 
@@ -272,10 +272,15 @@ const computeWorker = {
         maxBidirectional = bidirectional;
       }
 
-      bidirectionalData.push({
-        segmentIndex,
-        ...maxBidirectional,
-      });
+      if (maxBidirectional) {
+        bidirectionalData.push({
+          segmentIndex,
+          majorAxis: maxBidirectional.majorAxis,
+          minorAxis: maxBidirectional.minorAxis,
+          maxMajor: maxBidirectional.maxMajor,
+          maxMinor: maxBidirectional.maxMinor,
+        });
+      }
     }
     return bidirectionalData;
   },
@@ -300,7 +305,6 @@ const computeWorker = {
     }
 
     const ContourSets = [];
-
     // Iterate through all segments in current segmentation set
     const numSegments = segments.length;
     for (let segIndex = 0; segIndex < numSegments; segIndex++) {
@@ -310,6 +314,8 @@ const computeWorker = {
       if (!segment) {
         continue;
       }
+
+      const segmentIndex = segment.segmentIndex;
 
       const sliceContours = [];
       const scalars = vtkDataArray.newInstance({
@@ -326,7 +332,7 @@ const computeWorker = {
             sliceIndex,
             scalarData,
             pixelsPerSlice,
-            segIndex
+            segmentIndex
           )
         ) {
           continue;
@@ -338,7 +344,7 @@ const computeWorker = {
           // Modify segData for this specific segment directly
           for (let i = 0; i < pixelsPerSlice; i++) {
             const value = scalarData[i + frameStart];
-            if (value === segIndex) {
+            if (value === segmentIndex) {
               scalars.setValue(i + frameStart, 1);
             } else {
               scalars.setValue(i, 0);
@@ -414,12 +420,14 @@ const computeWorker = {
           continue;
         }
 
+        const segmentIndex = segment.segmentIndex;
+
         const sliceContours = [];
 
         // Filter the segScalarData to only include the current segment
         const filteredData = new Uint8Array(segScalarData.length);
         for (let i = 0; i < segScalarData.length; i++) {
-          if (segScalarData[i] === segIndex) {
+          if (segScalarData[i] === segmentIndex) {
             filteredData[i] = 1;
           } else {
             filteredData[i] = 0;

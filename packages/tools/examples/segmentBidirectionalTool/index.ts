@@ -30,6 +30,7 @@ const {
   BrushTool,
   PanTool,
   BidirectionalTool,
+  SegmentBidirectionalTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
@@ -125,7 +126,7 @@ const brushValues = [
   brushInstanceNames.ThresholdBrush,
 ];
 
-const optionsValues = [...brushValues, BidirectionalTool.toolName];
+const optionsValues = [...brushValues, SegmentBidirectionalTool.toolName];
 
 // ============================= //
 addDropdownToToolbar({
@@ -195,33 +196,32 @@ addButtonToToolbar({
         },
       };
 
-      const bidirectional = actionConfiguration.contourBidirectional.method(
-        element,
-        actionConfiguration.contourBidirectional
-      );
+      // const bidirectional = actionConfiguration.contourBidirectional.method(
+      //   element,
+      //   actionConfiguration.contourBidirectional
+      // );
 
-      if (!bidirectional) {
-        console.log('No bidirectional found');
-        return;
-      }
-
-      const largest =
+      const bidirectionalData =
         await cstUtils.segmentation.getSegmentLargestBidirectional({
           segmentationId,
           segmentIndices: [1],
         });
 
-      const { majorAxis, minorAxis, maxMajor, maxMinor } = bidirectional;
-      const [majorPoint0, majorPoint1] = majorAxis;
-      const [minorPoint0, minorPoint1] = minorAxis;
-      instructions.innerText = `
-        Major Axis: ${majorPoint0}-${majorPoint1} length ${roundNumber(
-        maxMajor
-      )}
-        Minor Axis: ${minorPoint0}-${minorPoint1} length ${roundNumber(
-        maxMinor
-      )}
-      `;
+      bidirectionalData.forEach((bidirectional) => {
+        const { segmentIndex } = bidirectional;
+        const { majorAxis, minorAxis, maxMajor, maxMinor } = bidirectional;
+
+        const bidirectionalToolData = SegmentBidirectionalTool.hydrate(
+          viewportId1,
+          [majorAxis, minorAxis],
+          {
+            segmentIndex,
+            segmentationId,
+          }
+        );
+
+        // render the bidirectional tool data
+      });
     });
   },
 });
@@ -326,6 +326,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(BidirectionalTool);
+  cornerstoneTools.addTool(SegmentBidirectionalTool);
   cornerstoneTools.addTool(BrushTool);
 
   // Define tool groups to add the segmentation display tool to
@@ -336,6 +337,7 @@ async function run() {
   toolGroup.addTool(BidirectionalTool.toolName, {
     actions: actionConfiguration,
   });
+  toolGroup.addTool(SegmentBidirectionalTool.toolName, {});
 
   // Segmentation Tools
   toolGroup.addToolInstance(
@@ -377,6 +379,7 @@ async function run() {
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
+  toolGroup.setToolPassive(SegmentBidirectionalTool.toolName, {});
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [

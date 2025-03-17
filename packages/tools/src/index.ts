@@ -31,6 +31,7 @@ import {
   WindowLevelTool,
   ZoomTool,
   StackScrollTool,
+  SegmentBidirectionalTool,
   PlanarRotateTool,
   MIPJumpToClickTool,
   LabelTool,
@@ -99,6 +100,7 @@ export {
   AnnotationDisplayTool,
   // Manipulation Tools
   PanTool,
+  SegmentBidirectionalTool,
   TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
