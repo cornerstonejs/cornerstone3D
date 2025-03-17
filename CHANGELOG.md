@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.5.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.5.2...v3.5.3) (2025-03-17)
+
+### Bug Fixes
+
+- trigger LabelChange for LabelTool ([#1904](https://github.com/cornerstonejs/cornerstone3D/issues/1904)) ([1d1cb57](https://github.com/cornerstonejs/cornerstone3D/commit/1d1cb5711c3be66067af9602490fe78cb7db5352)), closes [#1863](https://github.com/cornerstonejs/cornerstone3D/issues/1863) [#1858](https://github.com/cornerstonejs/cornerstone3D/issues/1858)
+
 ## [3.5.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.5.1...v3.5.2) (2025-03-17)
 
 ### Bug Fixes

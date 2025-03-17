@@ -1,5 +1,5 @@
 import { vec2 } from 'gl-matrix';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -41,7 +41,7 @@ import type { LabelAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 class LabelTool extends AnnotationTool {
-  static toolName;
+  static toolName = 'Label';
 
   editData: {
     annotation: Annotation;
@@ -247,6 +247,13 @@ class LabelTool extends AnnotationTool {
       this.getToolName()
     );
 
+    this.editData = {
+      annotation,
+      newAnnotation: true,
+      viewportIdsToRender,
+      offset: [0, 0, 0],
+    };
+
     evt.preventDefault();
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
@@ -352,7 +359,7 @@ class LabelTool extends AnnotationTool {
 
   _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
-    const { currentPoints } = eventDetail;
+    const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
 
     const { annotation, viewportIdsToRender, offset } = this.editData;
@@ -370,6 +377,9 @@ class LabelTool extends AnnotationTool {
     annotation.invalidated = true;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    // Dispatching annotation modified
+    triggerAnnotationModified(annotation, element, ChangeTypes.LabelChange);
   };
 
   _doneChangingTextCallback(element, annotation, updatedText): void {
