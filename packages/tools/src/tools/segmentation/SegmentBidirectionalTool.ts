@@ -38,6 +38,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import BidirectionalTool from '../annotation/BidirectionalTool';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 
+// @ts-expect-error
 class SegmentBidirectionalTool extends BidirectionalTool {
   static toolName = 'SegmentBidirectional';
 

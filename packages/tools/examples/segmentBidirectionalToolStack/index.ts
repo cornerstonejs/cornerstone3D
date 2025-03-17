@@ -24,6 +24,7 @@ const {
   BrushTool,
   PanTool,
   BidirectionalTool,
+  SegmentBidirectionalTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
@@ -172,23 +173,27 @@ addButtonToToolbar({
   title: 'Find Bidirectional',
   onClick: async () => {
     [element1].forEach(async (element) => {
-      const largest =
+      const bidirectionalData =
         await cstUtils.segmentation.getSegmentLargestBidirectional({
           segmentationId,
           segmentIndices: [1],
         });
 
-      const { majorAxis, minorAxis, maxMajor, maxMinor } = largest[0];
-      const [majorPoint0, majorPoint1] = majorAxis;
-      const [minorPoint0, minorPoint1] = minorAxis;
-      instructions.innerText = `
-        Major Axis: ${majorPoint0}-${majorPoint1} length ${roundNumber(
-        maxMajor
-      )}
-        Minor Axis: ${minorPoint0}-${minorPoint1} length ${roundNumber(
-        maxMinor
-      )}
-      `;
+      bidirectionalData.forEach((bidirectional) => {
+        const { segmentIndex } = bidirectional;
+        const { majorAxis, minorAxis, maxMajor, maxMinor } = bidirectional;
+
+        cornerstoneTools.SegmentBidirectionalTool.hydrate(
+          viewportId1,
+          [majorAxis, minorAxis],
+          {
+            segmentIndex,
+            segmentationId,
+          }
+        );
+
+        // render the bidirectional tool data
+      });
     });
   },
 });
@@ -274,13 +279,17 @@ const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const StudyInstanceUID =
   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
 
-function getCtImageIds() {
-  return createImageIdsAndCacheMetaData({
-    StudyInstanceUID,
+async function getCtImageIds() {
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot,
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+    SOPInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.295285318555680716246271899544',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
+  return imageIds;
 }
 
 function getMGImageIds() {
@@ -303,9 +312,10 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(BrushTool);
-
+  cornerstoneTools.addTool(SegmentBidirectionalTool);
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  toolGroup.addTool(SegmentBidirectionalTool.toolName, {});
 
   addManipulationBindings(toolGroup, { enableShiftClickZoom: true });
 
@@ -349,6 +359,7 @@ async function run() {
       activeStrategy: brushStrategies.ThresholdBrush,
     }
   );
+  toolGroup.setToolPassive(SegmentBidirectionalTool.toolName, {});
 
   toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
@@ -371,7 +382,8 @@ async function run() {
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   // const imageIds = await getCtImageIds();
-  const imageIds = await getMGImageIds();
+  // const imageIds = await getMGImageIds();
+  const imageIds = await getCtImageIds();
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -388,6 +400,8 @@ async function run() {
       },
     },
   ];
+
+  cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
 
   renderingEngine.setViewports(viewportInputArray);
 

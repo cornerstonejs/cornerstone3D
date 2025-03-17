@@ -182,25 +182,6 @@ addButtonToToolbar({
   title: 'Find Bidirectional',
   onClick: async () => {
     [element1].forEach(async (element) => {
-      const actionConfiguration = {
-        contourBidirectional: {
-          method: cstUtils.segmentation.segmentContourAction,
-          bindings: [
-            {
-              key: 'c',
-            },
-          ],
-          data: {
-            segmentData: new Map(),
-          },
-        },
-      };
-
-      // const bidirectional = actionConfiguration.contourBidirectional.method(
-      //   element,
-      //   actionConfiguration.contourBidirectional
-      // );
-
       const bidirectionalData =
         await cstUtils.segmentation.getSegmentLargestBidirectional({
           segmentationId,
@@ -211,14 +192,10 @@ addButtonToToolbar({
         const { segmentIndex } = bidirectional;
         const { majorAxis, minorAxis, maxMajor, maxMinor } = bidirectional;
 
-        const bidirectionalToolData = SegmentBidirectionalTool.hydrate(
-          viewportId1,
-          [majorAxis, minorAxis],
-          {
-            segmentIndex,
-            segmentationId,
-          }
-        );
+        SegmentBidirectionalTool.hydrate(viewportId1, [majorAxis, minorAxis], {
+          segmentIndex,
+          segmentationId,
+        });
 
         // render the bidirectional tool data
       });
