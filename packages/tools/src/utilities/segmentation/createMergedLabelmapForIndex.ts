@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { volumeLoader, utilities as csUtils } from '@cornerstonejs/core';
+import { volumeLoader, utilities as csUtils, cache } from '@cornerstonejs/core';
 
 /**
  * Given a list of labelmaps (with the possibility of overlapping regions), and
@@ -54,8 +54,15 @@ function createMergedLabelmapForIndex(
     dimensions: labelmap.dimensions,
   };
 
-  // Todo: make the local volume also use the new volume model
-  const mergedVolume = volumeLoader.createLocalVolume(volumeId, options);
+  const cachedVolume = cache.getVolume(volumeId);
+
+  let mergedVolume;
+  if (cachedVolume) {
+    mergedVolume = cachedVolume;
+    mergedVolume.voxelManager.setCompleteScalarDataArray(outputData);
+  } else {
+    mergedVolume = volumeLoader.createLocalVolume(volumeId, options);
+  }
 
   return mergedVolume;
 }

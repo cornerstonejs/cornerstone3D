@@ -69,7 +69,6 @@ function basicStatsCallback(
     state.pointsInShape.push(pointLPS);
   }
   const newArray = Array.isArray(newValue) ? newValue : [newValue];
-
   state.count += 1;
   state.max.forEach((it, idx) => {
     const value = newArray[idx];
@@ -103,16 +102,16 @@ function basicStatsCallback(
     if (value < state.min[idx]) {
       state.min[idx] = value;
       if (idx === 0) {
-        state.minIJK = pointIJK;
-        state.minLPS = pointLPS;
+        state.minIJK = [...pointIJK];
+        state.minLPS = [...pointLPS];
       }
     }
 
     if (value > state.max[idx]) {
       state.max[idx] = value;
       if (idx === 0) {
-        state.maxIJK = pointIJK;
-        state.maxLPS = pointLPS;
+        state.maxIJK = [...pointIJK];
+        state.maxLPS = [...pointLPS];
       }
     }
   });
@@ -219,17 +218,32 @@ function basicGetStatistics(
       value: kurtosis.length === 1 ? kurtosis[0] : kurtosis,
       unit: null,
     },
+    maxLPS: {
+      name: 'maxLPS',
+      label: 'Max LPS',
+      value: state.maxLPS ? Array.from(state.maxLPS) : null,
+      unit: null,
+    },
+    minLPS: {
+      name: 'minLPS',
+      label: 'Min LPS',
+      value: state.minLPS ? Array.from(state.minLPS) : null,
+      unit: null,
+    },
     pointsInShape: state.pointsInShape,
     array: [],
   };
   named.array.push(
+    named.min,
     named.max,
     named.mean,
     named.stdDev,
     named.median,
     named.skewness,
     named.kurtosis,
-    named.count
+    named.count,
+    named.maxLPS,
+    named.minLPS
   );
 
   // Reset state for next computation

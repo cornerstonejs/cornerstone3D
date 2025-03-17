@@ -36,20 +36,34 @@ const computeWorker = {
       scalarData,
     };
   },
-  createVTKImageData: (dimensions, origin, direction, spacing) => {
+  createVTKImageData: (dimensions, origin, direction, spacing, scalarData) => {
     const imageData = vtkImageData.newInstance();
     imageData.setDimensions(dimensions);
     imageData.setOrigin(origin);
     imageData.setDirection(direction);
     imageData.setSpacing(spacing);
+
+    if (!scalarData) {
+      return imageData;
+    }
+
+    const scalarArray = vtkDataArray.newInstance({
+      name: 'Scalars',
+      numberOfComponents: 1,
+      values: scalarData,
+    });
+
+    imageData.getPointData().setScalars(scalarArray);
+
     return imageData;
   },
-  processSegmentStatistics: (
+  processSegmentStatistics: ({
     segVoxelManager,
     imageVoxelManager,
     indices,
-    bounds
-  ) => {
+    bounds,
+    imageData,
+  }) => {
     segVoxelManager.forEach(
       ({ value, pointIJK, pointLPS, index }) => {
         if (indices.indexOf(value) === -1) {
@@ -68,6 +82,7 @@ const computeWorker = {
       },
       {
         boundsIJK: bounds || imageVoxelManager.getDefaultBounds(),
+        imageData,
       }
     );
   },
@@ -138,14 +153,22 @@ const computeWorker = {
       segmentation;
     const { voxelManager: imageVoxelManager } = image;
 
+    const imageData = computeWorker.createVTKImageData(
+      segmentation.dimensions,
+      segmentation.origin,
+      segmentation.direction,
+      segmentation.spacing
+    );
+
     SegmentStatsCalculator.statsInit({ storePointData: false, indices, mode });
 
     // Process segment statistics
-    computeWorker.processSegmentStatistics(
+    computeWorker.processSegmentStatistics({
       segVoxelManager,
       imageVoxelManager,
-      indices
-    );
+      indices,
+      imageData,
+    });
 
     // Get statistics based on the mode
     const stats = SegmentStatsCalculator.getStatistics({
@@ -155,6 +178,61 @@ const computeWorker = {
     });
 
     return stats;
+  },
+  computeMetabolicStats({ segmentationInfo, imageInfo }) {
+    const { scalarData, dimensions, spacing, origin, direction } =
+      segmentationInfo;
+
+    const {
+      spacing: imageSpacing,
+      dimensions: imageDimensions,
+      direction: imageDirection,
+      origin: imageOrigin,
+      scalarData: imageScalarData,
+    } = imageInfo;
+
+    const segVoxelManager = computeWorker.createVoxelManager(
+      segmentationInfo.dimensions,
+      segmentationInfo.scalarData
+    );
+
+    const refVoxelManager = computeWorker.createVoxelManager(
+      imageDimensions,
+      imageScalarData
+    );
+
+    let suv = 0;
+    let numVoxels = 0;
+    const scalarDataLength = segVoxelManager.getScalarDataLength();
+
+    // Single pass through the data
+    for (let i = 0; i < scalarDataLength; i++) {
+      // if not background
+      if (segVoxelManager.getAtIndex(i) !== 0) {
+        suv += refVoxelManager.getAtIndex(i);
+        numVoxels++;
+      }
+    }
+
+    // Calculate TMTV (total metabolic tumor volume)
+    const tmtv = 1e-3 * numVoxels * spacing[0] * spacing[1] * spacing[2];
+
+    // Average SUV for the merged labelmap
+    const averageSuv = numVoxels > 0 ? suv / numVoxels : 0;
+
+    // total Lesion Glycolysis [suv * ml]
+    const tlg =
+      averageSuv *
+      numVoxels *
+      imageSpacing[0] *
+      imageSpacing[1] *
+      imageSpacing[2] *
+      1e-3;
+
+    return {
+      tmtv,
+      tlg,
+    };
   },
 
   calculateSegmentsStatisticsStack: (args) => {
@@ -183,12 +261,20 @@ const computeWorker = {
         imgInfo.scalarData
       );
 
+      const imageData = computeWorker.createVTKImageData(
+        segDimensions,
+        segInfo.origin,
+        segInfo.direction,
+        segInfo.spacing
+      );
+
       // Process segment statistics
-      computeWorker.processSegmentStatistics(
+      computeWorker.processSegmentStatistics({
         segVoxelManager,
         imageVoxelManager,
-        indices
-      );
+        indices,
+        imageData,
+      });
     }
 
     // Pick first one for spacing
@@ -219,34 +305,169 @@ const computeWorker = {
 
     // Create VTK image data
     const stackDimensions = isStack
-      ? [dimensions[0], dimensions[1], 2]
+      ? [dimensions[0], dimensions[1], 1]
       : dimensions;
     const stackSpacing = isStack ? [spacing[0], spacing[1], 1] : spacing;
-    const imageData = computeWorker.createVTKImageData(
-      stackDimensions,
-      origin,
-      direction,
-      stackSpacing
-    );
 
-    let contourSets;
-    if (!isStack) {
-      contourSets = computeWorker.generateContourSetsFromLabelmapVolume({
-        segmentation,
-        indices,
-        imageData,
-        mode,
-      });
-    } else {
-      contourSets = computeWorker.generateContourSetsFromLabelmapStack({
-        segmentationInfo,
-        indices,
-        mode,
-      });
+    return isStack
+      ? computeWorker.calculateBidirectionalStack({
+          segmentationInfo,
+          indices,
+          mode,
+        })
+      : computeWorker.calculateVolumetricBidirectional({
+          segmentation,
+          indices,
+          mode,
+        });
+  },
+  calculateBidirectionalStack: ({ segmentationInfo, indices, mode }) => {
+    const segments = computeWorker.createSegmentsFromIndices(indices);
+
+    // we need to loop over each to find the bidirectional data
+    // Create voxel managers for each pair of segmentation and image info
+    let finalBidirectionalData = [];
+    for (let i = 0; i < segmentationInfo.length; i++) {
+      const segInfo = segmentationInfo[i];
+
+      const dimensions = segInfo.dimensions;
+      const segScalarData = segInfo.scalarData;
+      const { spacing, direction, origin } = segInfo;
+
+      const voxelManager = computeWorker.createVoxelManager(
+        dimensions,
+        segScalarData
+      );
+
+      // Create segments from indices
+
+      const pixelsPerSlice = dimensions[0] * dimensions[1];
+      // Iterate through all segments in current segmentation set
+      const numSegments = segments.length;
+
+      for (let segIndex = 0; segIndex < numSegments; segIndex++) {
+        const segment = segments[segIndex];
+
+        // Skip empty segments
+        if (!segment) {
+          continue;
+        }
+
+        const segmentIndex = segment.segmentIndex;
+
+        if (
+          computeWorker.isSliceEmptyForSegmentVolume(
+            0,
+            segScalarData,
+            pixelsPerSlice,
+            segmentIndex
+          )
+        ) {
+          continue;
+        }
+
+        const sliceContours = [];
+
+        // Filter the segScalarData to only include the current segment
+        const filteredData = new Uint8Array(segScalarData.length);
+        for (let i = 0; i < segScalarData.length; i++) {
+          if (segScalarData[i] === segmentIndex) {
+            filteredData[i] = 1;
+          } else {
+            filteredData[i] = 0;
+          }
+        }
+
+        const scalarArray = vtkDataArray.newInstance({
+          name: 'Pixels',
+          numberOfComponents: 1,
+          values: filteredData,
+        });
+
+        // Create VTK image data
+        const imageData = computeWorker.createVTKImageData(
+          dimensions,
+          origin,
+          direction,
+          [spacing[0], spacing[1], 1]
+        );
+        imageData.getPointData().setScalars(scalarArray);
+
+        try {
+          // Perform marching squares with Z-axis slicing mode
+          const msOutput = computeWorker.performMarchingSquares(
+            imageData,
+            null,
+            2
+          );
+
+          // Process contours
+          const contourData =
+            computeWorker.createContoursFromPolyData(msOutput);
+          if (contourData) {
+            sliceContours.push(contourData);
+          }
+        } catch (e) {
+          console.warn(e);
+        }
+
+        const bidirectionalData = [];
+
+        const contours = sliceContours;
+
+        let maxBidirectional;
+
+        const isInSegment = createIsInSegmentMetadata({
+          dimensions,
+          imageData,
+          voxelManager,
+          segmentIndex,
+        });
+
+        for (const sliceContour of contours) {
+          const bidirectional = createBidirectionalForSlice(
+            sliceContour,
+            isInSegment,
+            maxBidirectional
+          );
+          if (!bidirectional) {
+            continue;
+          }
+          maxBidirectional = bidirectional;
+        }
+
+        if (maxBidirectional) {
+          finalBidirectionalData.push({
+            segmentIndex,
+            majorAxis: maxBidirectional.majorAxis,
+            minorAxis: maxBidirectional.minorAxis,
+            maxMajor: maxBidirectional.maxMajor,
+            maxMinor: maxBidirectional.maxMinor,
+          });
+        }
+      }
     }
 
-    const bidirectionalData = [];
+    return finalBidirectionalData;
+  },
+  calculateVolumetricBidirectional: ({ segmentation, indices, mode }) => {
+    const { voxelManager, dimensions, origin, direction, spacing } =
+      segmentation;
+    const imageData = computeWorker.createVTKImageData(
+      dimensions,
+      origin,
+      direction,
+      spacing
+    );
 
+    const contourSets = computeWorker.generateContourSetsFromLabelmapVolume({
+      segmentation,
+      indices,
+      imageData,
+      mode,
+    });
+
+    const bidirectionalData = [];
     for (let i = 0; i < contourSets.length; i++) {
       const contourSet = contourSets[i];
       const { segmentIndex } = contourSet.segment;
@@ -382,103 +603,6 @@ const computeWorker = {
       };
 
       ContourSets.push(ContourSet);
-    }
-
-    return ContourSets;
-  },
-
-  generateContourSetsFromLabelmapStack: (args) => {
-    const { segmentationInfo, indices } = args;
-
-    let ContourSets = [];
-
-    // Create voxel managers for each pair of segmentation and image info
-    for (let i = 0; i < segmentationInfo.length; i++) {
-      const segInfo = segmentationInfo[i];
-
-      const dimensions = segInfo.dimensions;
-      const segScalarData = segInfo.scalarData;
-      const { spacing, direction, origin } = segInfo;
-
-      // Create segments from indices
-      const segments = computeWorker.createSegmentsFromIndices(indices);
-
-      const pixelsPerSlice = dimensions[0] * dimensions[1];
-      // Iterate through all segments in current segmentation set
-      const numSegments = segments.length;
-      for (let segIndex = 0; segIndex < numSegments; segIndex++) {
-        const segment = segments[segIndex];
-
-        // Skip empty segments
-        if (!segment) {
-          continue;
-        }
-
-        const segmentIndex = segment.segmentIndex;
-
-        if (
-          computeWorker.isSliceEmptyForSegmentVolume(
-            0,
-            segScalarData,
-            pixelsPerSlice,
-            segmentIndex
-          )
-        ) {
-          continue;
-        }
-
-        const sliceContours = [];
-
-        // Filter the segScalarData to only include the current segment
-        const filteredData = new Uint8Array(segScalarData.length);
-        for (let i = 0; i < segScalarData.length; i++) {
-          if (segScalarData[i] === segmentIndex) {
-            filteredData[i] = 1;
-          } else {
-            filteredData[i] = 0;
-          }
-        }
-
-        const scalarArray = vtkDataArray.newInstance({
-          name: 'Pixels',
-          numberOfComponents: 1,
-          values: filteredData,
-        });
-
-        // Create VTK image data
-        const imageData = computeWorker.createVTKImageData(
-          dimensions,
-          origin,
-          direction,
-          [spacing[0], spacing[1], 1]
-        );
-        imageData.getPointData().setScalars(scalarArray);
-
-        try {
-          // Perform marching squares with Z-axis slicing mode
-          const msOutput = computeWorker.performMarchingSquares(
-            imageData,
-            null,
-            2
-          );
-
-          // Process contours
-          const contourData =
-            computeWorker.createContoursFromPolyData(msOutput);
-          if (contourData) {
-            sliceContours.push(contourData);
-          }
-        } catch (e) {
-          console.warn(e);
-        }
-
-        const ContourSet = {
-          sliceContours,
-          segment,
-        };
-
-        ContourSets.push(ContourSet);
-      }
     }
 
     return ContourSets;
