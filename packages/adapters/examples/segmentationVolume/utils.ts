@@ -84,15 +84,14 @@ export async function readSegmentation(file: File, state) {
 }
 
 export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
-    const { referenceImageIds, skipOverlapping, segmentationId } = state;
+    const { referenceImageIds } = state;
 
     const { labelMapImages } =
         await Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
             referenceImageIds,
             arrayBuffer,
             {
-                metadataProvider: metaData,
-                skipOverlapping
+                metadataProvider: metaData
             }
         );
 

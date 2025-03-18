@@ -1,11 +1,11 @@
-import { imageLoader } from "@cornerstonejs/core";
+import { eventTarget, imageLoader, triggerEvent } from "@cornerstonejs/core";
+import { utilities as cstUtils } from "@cornerstonejs/tools";
 import { data as dcmjsData, normalizers, utilities } from "dcmjs";
 import ndarray from "ndarray";
 import checkOrientation from "../../helpers/checkOrientation";
 import {
     alignPixelDataWithSourceData,
     calculateCentroid,
-    checkSEGsOverlapping,
     findReferenceSourceImageId,
     getSegmentIndex,
     getSegmentMetadata,
@@ -14,6 +14,7 @@ import {
     unpackPixelData
 } from "../../Cornerstone/Segmentation_4X";
 import { compactMergeSegmentDataWithoutInformationLoss } from "./compactMergeSegData";
+import { Events } from "../../enums";
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
@@ -246,6 +247,12 @@ async function createLabelmapsFromBufferInternal(
     };
 }
 
+const throttledTriggerLoadProgressEvent = cstUtils.throttle(percentComplete => {
+    triggerEvent(eventTarget, Events.SEGMENTATION_LOAD_PROGRESS, {
+        percentComplete
+    });
+}, 200);
+
 export function insertPixelDataPlanar({
     segmentsOnFrame,
     labelMapImages,
@@ -280,131 +287,155 @@ export function insertPixelDataPlanar({
     // if the segmentation is large. We also use a promise to allow the caller to
     // wait for the processing to finish.
     return new Promise(resolve => {
-        for (let i = 0; i < groupsLen; ++i) {
-            const PerFrameFunctionalGroups =
-                PerFrameFunctionalGroupsSequence[i];
-
-            const ImageOrientationPatientI =
-                sharedImageOrientationPatient ||
-                PerFrameFunctionalGroups.PlaneOrientationSequence
-                    .ImageOrientationPatient;
-
-            const view = readFromUnpackedChunks(
-                pixelDataChunks,
-                i * sliceLength,
-                sliceLength
-            );
-
-            const pixelDataI2D = ndarray(view, [Rows, Columns]);
-
-            const alignedPixelDataI = alignPixelDataWithSourceData(
-                pixelDataI2D,
-                ImageOrientationPatientI,
-                validOrientations,
-                tolerance
-            );
-
-            if (!alignedPixelDataI) {
-                throw new Error(
-                    "Individual SEG frames are out of plane with respect to the first SEG frame. " +
-                        "This is not yet supported. Aborting segmentation loading."
-                );
-            }
-
-            const segmentIndex = getSegmentIndex(multiframe, i);
-
-            if (segmentIndex === undefined) {
-                throw new Error(
-                    "Could not retrieve the segment index. Aborting segmentation loading."
-                );
-            }
-
-            if (!segmentsPixelIndices.has(segmentIndex)) {
-                segmentsPixelIndices.set(segmentIndex, {});
-            }
-
-            const imageId = findReferenceSourceImageId(
-                multiframe,
-                i,
-                referencedImageIds,
-                metadataProvider,
-                tolerance,
-                sopUIDImageIdIndexMap
-            );
-
-            if (!imageId) {
-                console.warn(
-                    "Image not present in stack, can't import frame : " +
-                        i +
-                        "."
-                );
-                continue;
-            }
-
-            const sourceImageMetadata = imageIdMaps.metadata[imageId];
-            if (
-                Rows !== sourceImageMetadata.Rows ||
-                Columns !== sourceImageMetadata.Columns
+        const percentImagesPerChunk = 0.1;
+        const imagesPerChunk = Math.ceil(groupsLen * percentImagesPerChunk);
+        const processChunk = firstIndex => {
+            for (
+                let i = firstIndex;
+                i < firstIndex + imagesPerChunk && i < groupsLen;
+                i++
             ) {
-                throw new Error(
-                    "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
-                        "respect to the source image reference frame. This is not yet supported. " +
-                        "Aborting segmentation loading. "
+                const PerFrameFunctionalGroups =
+                    PerFrameFunctionalGroupsSequence[i];
+
+                const ImageOrientationPatientI =
+                    sharedImageOrientationPatient ||
+                    PerFrameFunctionalGroups.PlaneOrientationSequence
+                        .ImageOrientationPatient;
+
+                const view = readFromUnpackedChunks(
+                    pixelDataChunks,
+                    i * sliceLength,
+                    sliceLength
                 );
-            }
 
-            const imageIdIndex = imageIdMaps.indices[imageId];
-            const labelmapImage = labelMapImages[imageIdIndex];
-            const labelmap2DView = labelmapImage.getPixelData();
+                const pixelDataI2D = ndarray(view, [Rows, Columns]);
 
-            const data = alignedPixelDataI.data;
+                const alignedPixelDataI = alignPixelDataWithSourceData(
+                    pixelDataI2D,
+                    ImageOrientationPatientI,
+                    validOrientations,
+                    tolerance
+                );
 
-            const indexCache = [];
-            for (let j = 0, len = alignedPixelDataI.data.length; j < len; ++j) {
-                if (data[j]) {
-                    for (let x = j; x < len; ++x) {
-                        if (data[x]) {
-                            if (!overlapping && labelmap2DView[x] !== 0) {
-                                overlapping = true;
-                                return resolve(
-                                    insertOverlappingPixelDataPlanar({
-                                        segmentsOnFrame,
-                                        labelMapImages,
-                                        pixelDataChunks,
-                                        multiframe,
-                                        referencedImageIds,
-                                        validOrientations,
-                                        metadataProvider,
-                                        tolerance,
-                                        segmentsPixelIndices,
-                                        sopUIDImageIdIndexMap,
-                                        imageIdMaps
-                                    })
-                                );
-                            }
-                            labelmap2DView[x] = segmentIndex;
-                            indexCache.push(x);
-                        }
-                    }
-
-                    if (!segmentsOnFrame[imageIdIndex]) {
-                        segmentsOnFrame[imageIdIndex] = [];
-                    }
-
-                    segmentsOnFrame[imageIdIndex].push(segmentIndex);
-
-                    break;
+                if (!alignedPixelDataI) {
+                    throw new Error(
+                        "Individual SEG frames are out of plane with respect to the first SEG frame. " +
+                            "This is not yet supported. Aborting segmentation loading."
+                    );
                 }
+
+                const segmentIndex = getSegmentIndex(multiframe, i);
+
+                if (segmentIndex === undefined) {
+                    throw new Error(
+                        "Could not retrieve the segment index. Aborting segmentation loading."
+                    );
+                }
+
+                if (!segmentsPixelIndices.has(segmentIndex)) {
+                    segmentsPixelIndices.set(segmentIndex, {});
+                }
+
+                const imageId = findReferenceSourceImageId(
+                    multiframe,
+                    i,
+                    referencedImageIds,
+                    metadataProvider,
+                    tolerance,
+                    sopUIDImageIdIndexMap
+                );
+
+                if (!imageId) {
+                    console.warn(
+                        "Image not present in stack, can't import frame : " +
+                            i +
+                            "."
+                    );
+                    return;
+                }
+
+                const sourceImageMetadata = imageIdMaps.metadata[imageId];
+                if (
+                    Rows !== sourceImageMetadata.Rows ||
+                    Columns !== sourceImageMetadata.Columns
+                ) {
+                    throw new Error(
+                        "Individual SEG frames have different geometry dimensions (Rows and Columns) " +
+                            "respect to the source image reference frame. This is not yet supported. " +
+                            "Aborting segmentation loading. "
+                    );
+                }
+
+                const imageIdIndex = imageIdMaps.indices[imageId];
+                const labelmapImage = labelMapImages[imageIdIndex];
+                const labelmap2DView = labelmapImage.getPixelData();
+
+                const data = alignedPixelDataI.data;
+
+                const indexCache = [];
+                for (
+                    let k = 0, len = alignedPixelDataI.data.length;
+                    k < len;
+                    ++k
+                ) {
+                    if (data[k]) {
+                        for (let x = k; x < len; ++x) {
+                            if (data[x]) {
+                                if (!overlapping && labelmap2DView[x] !== 0) {
+                                    overlapping = true;
+                                    return resolve(
+                                        insertOverlappingPixelDataPlanar({
+                                            segmentsOnFrame,
+                                            labelMapImages,
+                                            pixelDataChunks,
+                                            multiframe,
+                                            referencedImageIds,
+                                            validOrientations,
+                                            metadataProvider,
+                                            tolerance,
+                                            segmentsPixelIndices,
+                                            sopUIDImageIdIndexMap,
+                                            imageIdMaps
+                                        })
+                                    );
+                                }
+                                labelmap2DView[x] = segmentIndex;
+                                indexCache.push(x);
+                            }
+                        }
+
+                        if (!segmentsOnFrame[imageIdIndex]) {
+                            segmentsOnFrame[imageIdIndex] = [];
+                        }
+
+                        segmentsOnFrame[imageIdIndex].push(segmentIndex);
+
+                        break;
+                    }
+                }
+
+                const segmentIndexObject =
+                    segmentsPixelIndices.get(segmentIndex);
+                segmentIndexObject[imageIdIndex] = indexCache;
+                segmentsPixelIndices.set(segmentIndex, segmentIndexObject);
             }
 
-            const segmentIndexObject = segmentsPixelIndices.get(segmentIndex);
-            segmentIndexObject[imageIdIndex] = indexCache;
-            segmentsPixelIndices.set(segmentIndex, segmentIndexObject);
-        }
-        resolve({
-            hasOverlappingSegments: overlapping,
-            arrayOfLabelMapImages: [labelMapImages]
-        });
+            const percentComplete = Math.round((firstIndex / groupsLen) * 100);
+            throttledTriggerLoadProgressEvent(percentComplete);
+
+            if (firstIndex < groupsLen) {
+                setTimeout(() => processChunk(firstIndex + imagesPerChunk), 0);
+            } else {
+                // resolve the Promise when all images have been processed
+                resolve({
+                    hasOverlappingSegments: false,
+                    arrayOfLabelMapImages: [labelMapImages]
+                });
+            }
+        };
+
+        processChunk(0);
     });
 }
 
