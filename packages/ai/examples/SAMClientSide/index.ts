@@ -126,6 +126,19 @@ toolGroup.setToolActive(MarkerExcludeToolName, {
   ],
 });
 
+cornerstoneTools.annotation.config.style.setToolGroupToolStyles(toolGroupId, {
+  [MarkerIncludeToolName]: {
+    color: 'rgb(0, 255, 0)', // Green
+    colorHighlighted: 'rgb(0, 255, 0)',
+    colorSelected: 'rgb(0, 255, 0)',
+  },
+  [MarkerExcludeToolName]: {
+    color: 'rgb(255, 0, 0)', // Red
+    colorHighlighted: 'rgb(255, 0, 0)',
+    colorSelected: 'rgb(255, 0, 0)',
+  },
+});
+
 // BoxPrompt - a rectangle ROI variant with Ctrl+click
 toolGroup.addToolInstance(
   BoxPromptToolName,
@@ -184,6 +197,14 @@ addButtonToToolbar({
   onClick: () => {
     ai.clear(activeViewport);
     viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Remove Points',
+  onClick: () => {
+    // Get all prompt annotations and remove them
+    ai.removePromptAnnotationsWithCache(activeViewport);
   },
 });
 

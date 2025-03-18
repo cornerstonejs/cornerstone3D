@@ -56,6 +56,7 @@ import {
 } from './getPixelValueUnits';
 import * as geometricSurfaceUtils from './geometricSurfaceUtils';
 import setAnnotationLabel from './setAnnotationLabel';
+import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 
 export {
   math,
@@ -104,4 +105,5 @@ export {
   IslandRemoval,
   geometricSurfaceUtils,
   setAnnotationLabel,
+  moveAnnotationToViewPlane,
 };

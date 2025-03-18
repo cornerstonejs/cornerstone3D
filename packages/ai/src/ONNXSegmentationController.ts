@@ -232,6 +232,7 @@ export default class ONNXSegmentationController {
     ONNXSegmentationController.MarkerExclude,
     ONNXSegmentationController.BoxPrompt,
   ];
+  protected _cachedPromptAnnotations;
 
   /**
    * Fill internal islands by size, and consider islands at the edge to
@@ -391,6 +392,86 @@ export default class ONNXSegmentationController {
     this.tool.rejectPreview(element);
   }
 
+  restoreCachedPromptAnnotations(viewport: Types.IViewport) {
+    if (!this._cachedPromptAnnotations) {
+      return [];
+    }
+
+    const annotations = [];
+    const { include, exclude } = this._cachedPromptAnnotations;
+    if (include) {
+      const newInclude = cornerstoneTools.utilities.moveAnnotationToViewPlane(
+        include,
+        viewport
+      );
+      annotations.push(newInclude);
+    }
+
+    if (exclude) {
+      const newExclude = cornerstoneTools.utilities.moveAnnotationToViewPlane(
+        exclude,
+        viewport
+      );
+      annotations.push(newExclude);
+    }
+
+    return annotations;
+  }
+
+  /**
+   * Removes all prompt annotations but caches one positive (include) and one negative (exclude)
+   * annotation. These cached annotations can be re-added later (for example, after an interpolateScroll).
+   *
+   * @param viewport - The viewport element on which annotations are rendered.
+   */
+  removePromptAnnotationsWithCache(viewport: Types.IViewport) {
+    const toolNames = [
+      ONNXSegmentationController.MarkerInclude,
+      ONNXSegmentationController.MarkerExclude,
+      ONNXSegmentationController.BoxPrompt,
+    ];
+
+    let cachedInclude = null;
+    let cachedExclude = null;
+
+    // Get all annotations once
+    const allAnnotations =
+      cornerstoneTools.annotation.state.getAllAnnotations();
+
+    // Single loop to filter, cache, and remove prompt annotations
+    for (const annotation of allAnnotations) {
+      const toolName = annotation.metadata.toolName;
+
+      if (toolNames.includes(toolName)) {
+        // Cache first found include/exclude annotations
+        if (
+          toolName === ONNXSegmentationController.MarkerInclude &&
+          !cachedInclude
+        ) {
+          cachedInclude = annotation;
+        } else if (
+          toolName === ONNXSegmentationController.MarkerExclude &&
+          !cachedExclude
+        ) {
+          cachedExclude = annotation;
+        }
+
+        // Remove the annotation
+        cornerstoneTools.annotation.state.removeAnnotation(
+          annotation.annotationUID
+        );
+      }
+    }
+
+    // Store cached annotations
+    this._cachedPromptAnnotations = {
+      include: cachedInclude,
+      exclude: cachedExclude,
+    };
+
+    viewport.render();
+  }
+
   /**
    * The interpolateScroll checks to see if there are any annotations on the
    * current image in the specified viewport, and if so, scrolls in the given
@@ -410,12 +491,7 @@ export default class ONNXSegmentationController {
     this.tool.acceptPreview(element);
     const promptAnnotations = this.getPromptAnnotations(viewport);
 
-    if (!promptAnnotations.length) {
-      return;
-    }
-
     const currentSliceIndex = viewport.getCurrentImageIdIndex();
-    const { focalPoint } = viewport.getCamera();
     const viewRef = viewport.getViewReference({
       sliceIndex: currentSliceIndex + dir,
     });
@@ -427,28 +503,35 @@ export default class ONNXSegmentationController {
     viewport.scroll(dir);
     // Wait for the scroll to complete
     await new Promise((resolve) => window.setTimeout(resolve, 250));
-    const nextAnnotations = this.getPromptAnnotations(viewport);
-    if (nextAnnotations.length > 0) {
-      return;
+
+    let annotations = [];
+    if (!promptAnnotations.length) {
+      annotations = this.restoreCachedPromptAnnotations(viewport);
+    } else {
+      // Add the difference between the new and old focal point as being the
+      // position difference between images.  Does not account for any
+      // rotational differences between frames that may occur on stacks
+      for (const annotation of promptAnnotations) {
+        const newAnnotation = <cstTypes.Annotation>structuredClone(annotation);
+
+        // remove the old annotation
+        cornerstoneTools.annotation.state.removeAnnotation(
+          annotation.annotationUID
+        );
+
+        Object.assign(newAnnotation.metadata, viewRef);
+        cornerstoneTools.utilities.moveAnnotationToViewPlane(
+          newAnnotation,
+          viewport
+        );
+        annotations.push(newAnnotation);
+      }
     }
 
-    // Add the difference between the new and old focal point as being the
-    // position difference between images.  Does not account for any
-    // rotational differences between frames that may occur on stacks
-    const { focalPoint: newFocal } = viewport.getCamera();
-    const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
-    for (const annotation of promptAnnotations) {
-      annotation.interpolationUID ||= crypto.randomUUID();
-      const newAnnotation = <cstTypes.Annotation>structuredClone(annotation);
-      newAnnotation.annotationUID = undefined;
-      Object.assign(newAnnotation.metadata, viewRef);
-      // @ts-ignore
-      newAnnotation.cachedStats = {};
-      for (const handle of newAnnotation.data.handles.points) {
-        vec3.add(handle, handle, newDelta);
-      }
-      annotationState.addAnnotation(newAnnotation, viewport.element);
+    for (const annotation of annotations) {
+      annotationState.addAnnotation(annotation, viewport.element);
     }
+
     viewport.render();
   }
 
@@ -532,14 +615,17 @@ export default class ONNXSegmentationController {
    * decoder starts running, and that encoding a new image may not start until
    * an ongoing decoder operations has completed.
    */
-  protected annotationModifiedListener = (_event?) => {
-    const currentAnnotations = this.getPromptAnnotations();
-    if (!currentAnnotations.length) {
-      return;
-    }
-    this.annotationsNeedUpdating = true;
-    this.tryLoad();
-  };
+  protected annotationModifiedListener = cornerstoneTools.utilities.debounce(
+    (_event?) => {
+      const currentAnnotations = this.getPromptAnnotations();
+      if (!currentAnnotations.length) {
+        return;
+      }
+      this.annotationsNeedUpdating = true;
+      this.tryLoad();
+    },
+    300
+  );
 
   /**
    * Disconnects the given viewport, removing the listeners.
@@ -898,7 +984,10 @@ export default class ONNXSegmentationController {
         // 2 and 3 are the codes for the handles on a box prompt
         this.labels.push(2, 3);
         this.points.push(
-          ...this.mapAnnotationPoint(annotation.data.handles.points[3])
+          ...this.mapAnnotationPoint(
+            annotation.data.handles.points[3],
+            useSession.canvasPosition
+          )
         );
       } else {
         const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
