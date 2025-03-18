@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.6.1...v3.7.0) (2025-03-18)
+
+### Features
+
+- Add options to tool hydrate method ([#1776](https://github.com/cornerstonejs/cornerstone3D/issues/1776)) ([0df5ce4](https://github.com/cornerstonejs/cornerstone3D/commit/0df5ce4651651840997553eb7239257363d40108))
+
 ## [3.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.6.0...v3.6.1) (2025-03-17)
 
 ### Bug Fixes
