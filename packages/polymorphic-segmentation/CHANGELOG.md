@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.0...v3.7.1) (2025-03-18)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
 # [3.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.6.1...v3.7.0) (2025-03-18)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
