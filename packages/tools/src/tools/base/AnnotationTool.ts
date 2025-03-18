@@ -4,6 +4,7 @@ import {
   getEnabledElement,
   metaData,
   utilities as csUtils,
+  StackViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -658,6 +659,78 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       annotation,
       options
     );
+  }
+
+  protected static hydrateBase<T extends AnnotationTool>(
+    ToolClass: new () => T,
+    enabledElement: Types.IEnabledElement,
+    points: Types.Point3[],
+    options: {
+      annotationUID?: string;
+      toolInstance?: T;
+      referencedImageId?: string;
+      viewplaneNormal?: Types.Point3;
+      viewUp?: Types.Point3;
+    } = {}
+  ) {
+    if (!enabledElement) {
+      return null;
+    }
+
+    const { viewport } = enabledElement;
+    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
+    const camera = viewport.getCamera();
+    const viewPlaneNormal = options.viewplaneNormal ?? camera.viewPlaneNormal;
+    const viewUp = options.viewUp ?? camera.viewUp;
+
+    // Create or use provided tool instance
+    const instance = options.toolInstance || new ToolClass();
+
+    let referencedImageId;
+    let finalViewPlaneNormal = viewPlaneNormal;
+    let finalViewUp = viewUp;
+
+    if (options.referencedImageId) {
+      // If the provided referencedImageId is not the same as the one calculated
+      // by the camera positions, only set the referencedImageId. The scenario
+      // here is that only a referencedImageId is given in the options, which
+      // does not match the current camera position, so the user is wanting to
+      // apply the annotation to a specific image.
+      referencedImageId = options.referencedImageId;
+      finalViewPlaneNormal = undefined;
+      finalViewUp = undefined;
+    } else {
+      // Only calculate the referenced image ID if not provided in options
+      if (viewport instanceof StackViewport) {
+        const closestImageIndex = csUtils.getClosestStackImageIndexForPoint(
+          points[0],
+          viewport
+        );
+
+        if (closestImageIndex) {
+          referencedImageId = viewport.getImageIds()[closestImageIndex];
+        }
+      } else if (viewport instanceof BaseVolumeViewport) {
+        referencedImageId = instance.getReferencedImageId(
+          viewport,
+          points[0],
+          viewPlaneNormal,
+          viewUp
+        );
+      } else {
+        throw new Error('Unsupported viewport type');
+      }
+    }
+
+    return {
+      FrameOfReferenceUID,
+      referencedImageId,
+      viewPlaneNormal: finalViewPlaneNormal,
+      viewUp: finalViewUp,
+      instance,
+      viewport,
+    };
   }
 }
 
