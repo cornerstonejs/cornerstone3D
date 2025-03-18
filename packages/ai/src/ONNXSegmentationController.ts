@@ -832,11 +832,9 @@ export default class ONNXSegmentationController {
 
   /**
    * Maps world points to destination points.
-   * Assumes the destination canvas is scale to fit at 100% in both dimensions,
-   * while the source point is also assumed to be in the same position, but not
-   * the same scale.
+   * Assumes the destination canvas is defined by the canvasPosition value
    */
-  mapAnnotationPoint(worldPoint) {
+  mapAnnotationPoint(worldPoint, canvasPosition) {
     const { viewport } = this;
     const canvasPoint = viewport.worldToCanvas(worldPoint);
     const { width, height } = viewport.canvas;
@@ -848,7 +846,23 @@ export default class ONNXSegmentationController {
     const y = Math.trunc(
       (canvasPoint[1] * destHeight * devicePixelRatio) / height
     );
-    return [x, y];
+
+    const { bottomLeft, topRight, origin } = canvasPosition;
+    const yVector = vec3.sub([0, 0, 0], origin, bottomLeft);
+    const xVector = vec3.sub([0, 0, 0], origin, topRight);
+    const xLen = vec3.length(xVector);
+    const yLen = vec3.length(yVector);
+    vec3.scale(xVector, xVector, 1 / xLen);
+    vec3.scale(yVector, yVector, 1 / yLen);
+    //const centerDelta = vec3.sub([0, 0, 0], worldPoint, origin);
+    const xDot = vec3.dot(worldPoint, xVector);
+    const yDot = vec3.dot(worldPoint, yVector);
+    const centerX = vec3.dot(origin, xVector);
+    const centerY = vec3.dot(origin, yVector);
+    const newX = Math.round(((centerX - xDot) * destWidth) / xLen);
+    const newY = Math.round(((centerY - yDot) * destHeight) / yLen);
+    console.log('Old/new X,Y', x, y, newX, newY, x - newX, y - newY);
+    return [newX, newY];
   }
 
   /**
@@ -857,7 +871,7 @@ export default class ONNXSegmentationController {
    * encoding of the image isn't ready yet, or the encoder is otherwise busy,
    * it will run the update again once the tryLoad is done at the end of the task.
    */
-  updateAnnotations() {
+  updateAnnotations(useSession = this.currentImage) {
     if (
       this.isGpuInUse ||
       !this.annotationsNeedUpdating ||
@@ -871,12 +885,12 @@ export default class ONNXSegmentationController {
     this.labels = [];
     this.worldPoints = [];
 
-    if (!promptAnnotations?.length) {
+    if (!promptAnnotations?.length || !useSession?.canvasPosition) {
       return;
     }
     for (const annotation of promptAnnotations) {
       const handle = annotation.data.handles.points[0];
-      const point = this.mapAnnotationPoint(handle);
+      const point = this.mapAnnotationPoint(handle, useSession.canvasPosition);
       this.points.push(...point);
       if (
         annotation.metadata.toolName === ONNXSegmentationController.BoxPrompt

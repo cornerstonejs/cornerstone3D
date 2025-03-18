@@ -17,13 +17,13 @@ import {
 import { ONNXSegmentationController } from '@cornerstonejs/ai';
 
 const { ViewportType, OrientationAxis } = Enums;
-const { MouseBindings, SegmentationRepresentations, Events } =
+const { MouseBindings, SegmentationRepresentations, Events, KeyboardBindings } =
   cornerstoneTools.Enums;
 const { segmentation } = cornerstoneTools;
 
 setTitleAndDescription(
   'Basic Single-Viewport AI Segmentation',
-  'This example demonstrates a simplified setup of a single viewport that can switch between stack and sagittal views. It includes minimal AI segmentation tools (MarkerInclude, MarkerExclude, BoxPrompt) and basic navigation tools (Pan, Zoom, Stack Scroll). Logging is also retained to show decoding and inference times.'
+  'This example demonstrates a simplified setup of a single viewport that can switch between stack and sagittal views. It includes minimal AI segmentation tools (MarkerInclude, MarkerExclude, BoxPrompt) and basic navigation tools (Pan, Zoom, Stack Scroll). Logging is also retained to show decoding and inference times.  Use ctrl+click to MarkerExclude'
 );
 
 // Logging elements and function
@@ -106,7 +106,10 @@ toolGroup.addToolInstance(
   }
 );
 toolGroup.setToolActive(MarkerIncludeToolName, {
-  bindings: [{ mouseButton: MouseBindings.Primary }],
+  bindings: [
+    { mouseButton: MouseBindings.Primary },
+    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Shift },
+  ],
 });
 
 // MarkerExclude - a probe variant with right-click
@@ -117,6 +120,11 @@ toolGroup.addToolInstance(
     getTextLines: () => null,
   }
 );
+toolGroup.setToolActive(MarkerExcludeToolName, {
+  bindings: [
+    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Ctrl },
+  ],
+});
 
 // BoxPrompt - a rectangle ROI variant with Ctrl+click
 toolGroup.addToolInstance(
@@ -137,7 +145,10 @@ toolGroup.setToolActive(cornerstoneTools.PanTool.toolName, {
 
 // Zoom (right mouse)
 toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
-  bindings: [{ mouseButton: MouseBindings.Secondary }],
+  bindings: [
+    { mouseButton: MouseBindings.Secondary },
+    { mouseButton: MouseBindings.Wheel, modifierKey: KeyboardBindings.Ctrl },
+  ],
 });
 
 // Stack Scroll (mouse wheel or Alt+drag)
