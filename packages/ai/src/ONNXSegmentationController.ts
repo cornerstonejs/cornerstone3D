@@ -1,5 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { utilities, eventTarget, Enums } from '@cornerstonejs/core';
+import {
+  utilities,
+  eventTarget,
+  Enums,
+  triggerEvent,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -26,6 +31,13 @@ const { IslandRemoval } = cornerstoneTools.utilities;
 
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
+
+// Define custom events for model loading
+const ONNX_EVENTS = {
+  MODEL_LOADING_STARTED: 'ONNX_MODEL_LOADING_STARTED',
+  MODEL_LOADING_COMPLETED: 'ONNX_MODEL_LOADING_COMPLETED',
+  MODEL_COMPONENT_LOADED: 'ONNX_MODEL_COMPONENT_LOADED',
+};
 
 export type ModelType = {
   name: string;
@@ -1244,16 +1256,41 @@ export default class ONNXSegmentationController {
       const cache = await caches.open('onnx');
       let cachedResponse = await cache.match(url);
       if (cachedResponse == undefined) {
+        // Trigger event when model component starts loading from network
+        triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+          name,
+          url,
+          status: 'loading',
+          source: 'network',
+        });
+
         await cache.add(url);
         cachedResponse = await cache.match(url);
         this.log(Loggers.Log, `${name} (network)`);
       } else {
+        // Trigger event when model component is loaded from cache
+        triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+          name,
+          url,
+          status: 'loaded',
+          source: 'cache',
+        });
+
         this.log(Loggers.Log, `${name} (cached)`);
       }
       const data = await cachedResponse.arrayBuffer();
       return data;
     } catch (error) {
       this.log(Loggers.Log, `${name} (network)`);
+
+      // Trigger event when model component has an error
+      triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+        name,
+        url,
+        status: 'error',
+        error,
+      });
+
       return await fetch(url).then((response) => response.arrayBuffer());
     }
   }
@@ -1275,6 +1312,14 @@ export default class ONNXSegmentationController {
       }
       urls.push(model.url);
     }
+
+    // Trigger event for model loading started
+    triggerEvent(eventTarget, ONNX_EVENTS.MODEL_LOADING_STARTED, {
+      modelConfig: this.config.model,
+      totalSize: missing,
+      urls,
+    });
+
     if (missing > 0) {
       this.log(
         Loggers.Log,
@@ -1305,16 +1350,21 @@ export default class ONNXSegmentationController {
       const sessionOptions = { ...opt, ...extra_opt };
       this.config[model.key] = model;
       imageSession[model.key] = await ort.InferenceSession.create(
-        model_bytes, // `http://localhost:4000${model.url}`,
+        model_bytes,
         sessionOptions
       );
     }
     const stop = performance.now();
-    this.log(
-      Loggers.Log,
-      `ready, ${(stop - start).toFixed(1)}ms`,
-      urls.join(', ')
-    );
+    const loadTime = stop - start;
+
+    // Trigger event for model loading completed
+    triggerEvent(eventTarget, ONNX_EVENTS.MODEL_LOADING_COMPLETED, {
+      modelConfig: this.config.model,
+      loadTimeMs: loadTime,
+      urls,
+    });
+
+    this.log(Loggers.Log, `ready, ${loadTime.toFixed(1)}ms`, urls.join(', '));
   }
 
   /**
