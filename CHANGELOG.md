@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.4...v3.7.5) (2025-03-19)
+
+### Performance Improvements
+
+- **segmentation:** Enhance labelmapmip performance ([#1919](https://github.com/cornerstonejs/cornerstone3D/issues/1919)) ([efe6eae](https://github.com/cornerstonejs/cornerstone3D/commit/efe6eae6fb2e3f998371b2f03ebe3d2d92ab0d02))
+
 ## [3.7.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.3...v3.7.4) (2025-03-19)
 
 ### Bug Fixes
