@@ -933,34 +933,17 @@ export default class ONNXSegmentationController {
    * Assumes the destination canvas is defined by the canvasPosition value
    */
   mapAnnotationPoint(worldPoint, canvasPosition) {
-    const { viewport } = this;
-    const canvasPoint = viewport.worldToCanvas(worldPoint);
-    const { width, height } = viewport.canvas;
-    const { width: destWidth, height: destHeight } = this.canvas;
+    const { origin, downVector, rightVector } = canvasPosition;
+    // Vectors are scaled to unit vectors in canvas index space
 
-    const x = Math.trunc(
-      (canvasPoint[0] * destWidth * devicePixelRatio) / width
+    const deltaOrigin = vec3.sub([0, 0, 0], worldPoint, origin);
+    const x = Math.round(
+      vec3.dot(deltaOrigin, rightVector) / vec3.sqrLen(rightVector)
     );
-    const y = Math.trunc(
-      (canvasPoint[1] * destHeight * devicePixelRatio) / height
+    const y = Math.round(
+      vec3.dot(deltaOrigin, downVector) / vec3.sqrLen(downVector)
     );
-
-    const { bottomLeft, topRight, origin } = canvasPosition;
-    const yVector = vec3.sub([0, 0, 0], origin, bottomLeft);
-    const xVector = vec3.sub([0, 0, 0], origin, topRight);
-    const xLen = vec3.length(xVector);
-    const yLen = vec3.length(yVector);
-    vec3.scale(xVector, xVector, 1 / xLen);
-    vec3.scale(yVector, yVector, 1 / yLen);
-    //const centerDelta = vec3.sub([0, 0, 0], worldPoint, origin);
-    const xDot = vec3.dot(worldPoint, xVector);
-    const yDot = vec3.dot(worldPoint, yVector);
-    const centerX = vec3.dot(origin, xVector);
-    const centerY = vec3.dot(origin, yVector);
-    const newX = Math.round(((centerX - xDot) * destWidth) / xLen);
-    const newY = Math.round(((centerY - yDot) * destHeight) / yLen);
-    console.log('Old/new X,Y', x, y, newX, newY, x - newX, y - newY);
-    return [newX, newY];
+    return [x, y];
   }
 
   /**
@@ -1106,12 +1089,7 @@ export default class ONNXSegmentationController {
     const { dimensions } = previewVoxelManager;
     const { data } = mask;
 
-    const { origin, topRight, bottomLeft } = canvasPosition;
-    const downVec = vec3.subtract(vec3.create(), bottomLeft, origin);
-    const rightVec = vec3.subtract(vec3.create(), topRight, origin);
-    // Vectors are scaled to unit vectors in CANVAS space
-    vec3.scale(downVec, downVec, 1 / canvas.height);
-    vec3.scale(rightVec, rightVec, 1 / canvas.width);
+    const { origin, rightVector, downVector } = canvasPosition;
 
     const worldPointJ = vec3.create();
     const worldPoint = vec3.create();
@@ -1120,9 +1098,9 @@ export default class ONNXSegmentationController {
     // Assumes that the load to canvas size is bigger than the destination
     // size - if that isnt true, then this should super-sample the data
     for (let j = 0; j < canvas.height; j++) {
-      vec3.scaleAndAdd(worldPointJ, origin, downVec, j);
+      vec3.scaleAndAdd(worldPointJ, origin, downVector, j);
       for (let i = 0; i < canvas.width; i++) {
-        vec3.scaleAndAdd(worldPoint, worldPointJ, rightVec, i);
+        vec3.scaleAndAdd(worldPoint, worldPointJ, rightVector, i);
         const ijkPoint = imageData.worldToIndex(worldPoint).map(Math.round);
         if (
           ijkPoint.findIndex((v, index) => v < 0 || v >= dimensions[index]) !==

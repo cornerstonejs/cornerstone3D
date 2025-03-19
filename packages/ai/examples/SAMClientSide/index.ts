@@ -247,7 +247,6 @@ async function updateViewport() {
     viewportId,
     element: viewportContainer,
     type: currentViewportType,
-    defaultOptions: {},
   };
 
   if (currentViewportType === ViewportType.ORTHOGRAPHIC) {
@@ -262,6 +261,10 @@ async function updateViewport() {
   if (currentViewportType === ViewportType.STACK) {
     viewport = renderingEngine.getViewport(viewportId);
     await viewport.setStack(imageIds);
+    viewport.setDisplayArea({
+      imageArea: [1, 1],
+    });
+
     viewport.render();
   } else {
     // For sagittal, create volume and set it
