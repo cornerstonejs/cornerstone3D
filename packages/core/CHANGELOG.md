@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.1...v3.7.2) (2025-03-19)
+
+### Bug Fixes
+
+- Use correct current position to rendered position for SAM ([#1910](https://github.com/cornerstonejs/cornerstone3D/issues/1910)) ([2937eae](https://github.com/cornerstonejs/cornerstone3D/commit/2937eae99518ebaa0c34c1cf97eaa3c4ebd4874e))
+
 ## [3.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.0...v3.7.1) (2025-03-18)
 
 **Note:** Version bump only for package @cornerstonejs/core
