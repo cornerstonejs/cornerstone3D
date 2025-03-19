@@ -1,10 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import {
-  utilities,
-  eventTarget,
-  Enums,
-  triggerEvent,
-} from '@cornerstonejs/core';
+import { type Types, cache, utilities } from '@cornerstonejs/core';
+import { eventTarget, Enums, triggerEvent } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -217,6 +212,7 @@ export default class ONNXSegmentationController {
   private points = [];
   private labels = [];
   private worldPoints = new Array<Types.Point3>();
+  private randomPoints;
 
   private loadingAI: Promise<unknown>;
 
@@ -245,6 +241,12 @@ export default class ONNXSegmentationController {
     ONNXSegmentationController.BoxPrompt,
   ];
   protected _cachedPromptAnnotations;
+
+  // Copilot mode properties
+  protected _enabled = false;
+  protected _autoSegmentMode = false;
+  protected imageIdsRunAgainst = new Map();
+  protected numRandomPoints = 2; // Default number of random points to sample
 
   /**
    * Fill internal islands by size, and consider islands at the edge to
@@ -277,6 +279,8 @@ export default class ONNXSegmentationController {
    *      alternate to the getPromptAnnotations
    *    * models - a set of model configurations to run - note these are added globally to the static models
    *    * modelName - the specific model name to choose.  Must exist in models.
+   *    * autoSegmentMode - whether to enable copilot mode by default
+   *    * numRandomPoints - the number of random points to sample for copilot mode
    */
   constructor(
     options = {
@@ -286,6 +290,8 @@ export default class ONNXSegmentationController {
       models: null,
       modelName: null,
       islandFillOptions: undefined,
+      autoSegmentMode: false,
+      numRandomPoints: 2,
     }
   ) {
     if (options.listeners) {
@@ -302,6 +308,43 @@ export default class ONNXSegmentationController {
     this.config = this.getConfig(options.modelName);
     this.islandFillOptions =
       options.islandFillOptions ?? this.islandFillOptions;
+
+    // Initialize copilot mode
+    this._autoSegmentMode = options.autoSegmentMode || false;
+    this.numRandomPoints = options.numRandomPoints || this.numRandomPoints;
+  }
+
+  /**
+   * Enable or disable the controller
+   */
+  public set enabled(enabled: boolean) {
+    this._enabled = enabled;
+  }
+
+  public get enabled() {
+    return this._enabled;
+  }
+
+  /**
+   * Enable or disable copilot mode
+   */
+  public set autoSegmentMode(enabled: boolean) {
+    this._autoSegmentMode = enabled;
+    // Automatically enable the controller when copilot mode is enabled
+    if (enabled) {
+      this._enabled = true;
+    }
+  }
+
+  public get autoSegmentMode() {
+    return this._autoSegmentMode;
+  }
+
+  /**
+   * Set the number of random points to sample in copilot mode
+   */
+  public set numSamplePoints(num: number) {
+    this.numRandomPoints = num;
   }
 
   /**
@@ -601,6 +644,54 @@ export default class ONNXSegmentationController {
     if (desiredImage.imageId === currentImage?.imageId) {
       return;
     }
+
+    // Copilot mode: Extract points from previous slice's segmentation
+    if (this._enabled && this._autoSegmentMode) {
+      if (
+        'isInAcquisitionPlane' in viewport &&
+        !viewport.isInAcquisitionPlane()
+      ) {
+        console.warn(
+          'Non acquisition plane viewports and auto segment mode is not yet supported'
+        );
+        return;
+      }
+
+      const segmentation = cornerstoneTools.segmentation.getActiveSegmentation(
+        viewport.id
+      );
+      // Get the labelmap for the previous image
+      const imageIds = viewport.getImageIds();
+      const imageIdIndex = viewport.getCurrentImageIdIndex();
+      const previousImageId = imageIds[imageIdIndex - 1];
+
+      if (segmentation) {
+        const previousLabelmapImage =
+          cache.getImageByReferencedImageId(previousImageId);
+
+        const previousLabelmapVoxelManager =
+          previousLabelmapImage?.voxelManager;
+
+        if (previousLabelmapVoxelManager) {
+          const pointLists = [];
+          previousLabelmapVoxelManager.forEach(({ value, pointIJK }) => {
+            if (value === 1) {
+              const worldCoords = utilities.imageToWorldCoords(
+                previousLabelmapImage.imageId,
+                [pointIJK[0], pointIJK[1]]
+              );
+              pointLists.push(worldCoords);
+            }
+          });
+
+          // Pick random points from the pointLists
+          this.randomPoints = pointLists
+            .sort(() => Math.random() - 0.5)
+            .slice(0, this.numRandomPoints);
+        }
+      }
+    }
+
     const { canvasMask } = this;
     const ctxMask = canvasMask.getContext('2d');
     ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
@@ -917,9 +1008,37 @@ export default class ONNXSegmentationController {
       if (this.currentImage !== session) {
         this.currentImage = session;
       }
-      this.updateAnnotations();
+
+      // Handle copilot mode
+      if (this._enabled && this._autoSegmentMode) {
+        this.points = [];
+        this.labels = [];
+
+        // Process random points from previous segmentation if available
+        if (this.randomPoints?.length) {
+          this.randomPoints.forEach((point) => {
+            const mappedPoint = this.mapAnnotationPoint(
+              point,
+              this.currentImage.canvasPosition
+            );
+            this.points.push(...mappedPoint);
+            this.labels.push(1);
+          });
+
+          // Only run segmentation once per image ID in copilot mode
+          if (!this.imageIdsRunAgainst.has(desiredImage.imageId)) {
+            this.imageIdsRunAgainst.set(desiredImage.imageId, true);
+            this.runDecode();
+          }
+        }
+      } else {
+        // Regular mode - process annotations
+        this.updateAnnotations();
+      }
+
       return;
     }
+
     this.handleImage(desiredImage, session);
   }
 
