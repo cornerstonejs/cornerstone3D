@@ -3,6 +3,31 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.3...v3.7.4) (2025-03-19)
+
+### Bug Fixes
+
+- avoid NaN Z spacing if possible ([#1909](https://github.com/cornerstonejs/cornerstone3D/issues/1909)) ([cc7c7b2](https://github.com/cornerstonejs/cornerstone3D/commit/cc7c7b2b6a5d249822311ba3950669ccfa193326))
+
+## [3.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.2...v3.7.3) (2025-03-19)
+
+### Bug Fixes
+
+- Added unimplemented "isPointNearTool" function ([#1914](https://github.com/cornerstonejs/cornerstone3D/issues/1914)) ([cce726f](https://github.com/cornerstonejs/cornerstone3D/commit/cce726f36bf68d5fd1cf2a26166855c0d30360c1))
+- **nifti-volume-loader:** add decache function to cornerstoneNiftiImageLoader ([#1912](https://github.com/cornerstonejs/cornerstone3D/issues/1912)) ([532603a](https://github.com/cornerstonejs/cornerstone3D/commit/532603a56c32a7a59ae2e6eb1bd31e5dd6a607f2))
+
+## [3.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.1...v3.7.2) (2025-03-19)
+
+### Bug Fixes
+
+- Use correct current position to rendered position for SAM ([#1910](https://github.com/cornerstonejs/cornerstone3D/issues/1910)) ([2937eae](https://github.com/cornerstonejs/cornerstone3D/commit/2937eae99518ebaa0c34c1cf97eaa3c4ebd4874e))
+
+## [3.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.0...v3.7.1) (2025-03-18)
+
+### Bug Fixes
+
+- reintroduce seg events and chunks ([#1913](https://github.com/cornerstonejs/cornerstone3D/issues/1913)) ([c23048c](https://github.com/cornerstonejs/cornerstone3D/commit/c23048c64295954c97f4ccbaefd7b34906bdda1d))
+
 # [3.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.6.1...v3.7.0) (2025-03-18)
 
 ### Features

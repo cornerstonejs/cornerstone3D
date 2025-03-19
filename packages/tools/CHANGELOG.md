@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.3...v3.7.4) (2025-03-19)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.2...v3.7.3) (2025-03-19)
+
+### Bug Fixes
+
+- Added unimplemented "isPointNearTool" function ([#1914](https://github.com/cornerstonejs/cornerstone3D/issues/1914)) ([cce726f](https://github.com/cornerstonejs/cornerstone3D/commit/cce726f36bf68d5fd1cf2a26166855c0d30360c1))
+
+## [3.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.1...v3.7.2) (2025-03-19)
+
+### Bug Fixes
+
+- Use correct current position to rendered position for SAM ([#1910](https://github.com/cornerstonejs/cornerstone3D/issues/1910)) ([2937eae](https://github.com/cornerstonejs/cornerstone3D/commit/2937eae99518ebaa0c34c1cf97eaa3c4ebd4874e))
+
+## [3.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.0...v3.7.1) (2025-03-18)
+
+### Bug Fixes
+
+- reintroduce seg events and chunks ([#1913](https://github.com/cornerstonejs/cornerstone3D/issues/1913)) ([c23048c](https://github.com/cornerstonejs/cornerstone3D/commit/c23048c64295954c97f4ccbaefd7b34906bdda1d))
+
 # [3.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.6.1...v3.7.0) (2025-03-18)
 
 ### Features

@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.3...v3.7.4) (2025-03-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.2...v3.7.3) (2025-03-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.1...v3.7.2) (2025-03-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.0...v3.7.1) (2025-03-18)
+
+### Bug Fixes
+
+-   reintroduce seg events and chunks ([#1913](https://github.com/cornerstonejs/cornerstone3D/issues/1913)) ([c23048c](https://github.com/cornerstonejs/cornerstone3D/commit/c23048c64295954c97f4ccbaefd7b34906bdda1d))
+
 # [3.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.6.1...v3.7.0) (2025-03-18)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
