@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.2...v3.7.3) (2025-03-19)
+
+### Bug Fixes
+
+- Added unimplemented "isPointNearTool" function ([#1914](https://github.com/cornerstonejs/cornerstone3D/issues/1914)) ([cce726f](https://github.com/cornerstonejs/cornerstone3D/commit/cce726f36bf68d5fd1cf2a26166855c0d30360c1))
+
 ## [3.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.1...v3.7.2) (2025-03-19)
 
 ### Bug Fixes
