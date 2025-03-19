@@ -13,7 +13,6 @@ import { RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
-import { getConfiguration } from '../init';
 import cache from '../cache/cache';
 
 /**

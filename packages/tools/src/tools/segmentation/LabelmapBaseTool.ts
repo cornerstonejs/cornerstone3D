@@ -315,14 +315,24 @@ export default class LabelmapBaseTool extends BaseTool {
       this._hoverData || this.createHoverData(element);
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
+
+    const configColor =
+      this.configuration.preview?.previewColors?.[segmentIndex];
+    const { viewport } = getEnabledElement(element);
+    const segmentColor = getSegmentIndexColor(
+      viewport.id,
+      segmentationId,
+      segmentIndex
+    );
+
+    if (!configColor && !segmentColor) {
+      return;
+    }
+
     const operationData = {
       ...editData,
       points: data?.handles?.points,
       segmentIndex,
-      previewColors:
-        this.configuration.preview?.enabled || this._previewData.preview
-          ? this.configuration.preview?.previewColors
-          : null,
       viewPlaneNormal,
       toolGroupId: this.toolGroupId,
       segmentationId,
@@ -330,6 +340,9 @@ export default class LabelmapBaseTool extends BaseTool {
       activeStrategy: this.configuration.activeStrategy,
       configuration: this.configuration,
       // Provide the preview information so that data can be used directly
+      previewColor: this.configuration.preview.enabled
+        ? configColor || lightenColor(...segmentColor)
+        : null,
       preview: this._previewData?.preview,
       createMemo: this.createMemo.bind(this),
     };
@@ -513,4 +526,13 @@ export default class LabelmapBaseTool extends BaseTool {
     const slices = previewVoxels.getArrayOfModifiedSlices();
     triggerSegmentationDataModified(segmentationId, slices);
   }
+}
+
+function lightenColor(r, g, b, a, factor = 0.4) {
+  return [
+    Math.round(r + (255 - r) * factor),
+    Math.round(g + (255 - g) * factor),
+    Math.round(b + (255 - b) * factor),
+    a,
+  ];
 }

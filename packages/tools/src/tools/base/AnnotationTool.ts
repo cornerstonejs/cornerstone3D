@@ -708,7 +708,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           viewport
         );
 
-        if (closestImageIndex) {
+        if (closestImageIndex !== undefined) {
           referencedImageId = viewport.getImageIds()[closestImageIndex];
         }
       } else if (viewport instanceof BaseVolumeViewport) {

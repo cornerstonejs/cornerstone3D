@@ -1,5 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { utilities, eventTarget, Enums } from '@cornerstonejs/core';
+import {
+  utilities,
+  eventTarget,
+  Enums,
+  triggerEvent,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -26,6 +31,13 @@ const { IslandRemoval } = cornerstoneTools.utilities;
 
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
+
+// Define custom events for model loading
+const ONNX_EVENTS = {
+  MODEL_LOADING_STARTED: 'ONNX_MODEL_LOADING_STARTED',
+  MODEL_LOADING_COMPLETED: 'ONNX_MODEL_LOADING_COMPLETED',
+  MODEL_COMPONENT_LOADED: 'ONNX_MODEL_COMPONENT_LOADED',
+};
 
 export type ModelType = {
   name: string;
@@ -232,6 +244,7 @@ export default class ONNXSegmentationController {
     ONNXSegmentationController.MarkerExclude,
     ONNXSegmentationController.BoxPrompt,
   ];
+  protected _cachedPromptAnnotations;
 
   /**
    * Fill internal islands by size, and consider islands at the edge to
@@ -342,11 +355,6 @@ export default class ONNXSegmentationController {
           activeStrategy: 'FILL_INSIDE_CIRCLE',
           preview: {
             enabled: true,
-            previewColors: {
-              0: [255, 255, 255, 128],
-              1: [0, 255, 255, 192],
-              2: [255, 0, 255, 255],
-            },
           },
         },
       }
@@ -391,6 +399,86 @@ export default class ONNXSegmentationController {
     this.tool.rejectPreview(element);
   }
 
+  restoreCachedPromptAnnotations(viewport: Types.IViewport) {
+    if (!this._cachedPromptAnnotations) {
+      return [];
+    }
+
+    const annotations = [];
+    const { include, exclude } = this._cachedPromptAnnotations;
+    if (include) {
+      const newInclude = cornerstoneTools.utilities.moveAnnotationToViewPlane(
+        include,
+        viewport
+      );
+      annotations.push(newInclude);
+    }
+
+    if (exclude) {
+      const newExclude = cornerstoneTools.utilities.moveAnnotationToViewPlane(
+        exclude,
+        viewport
+      );
+      annotations.push(newExclude);
+    }
+
+    return annotations;
+  }
+
+  /**
+   * Removes all prompt annotations but caches one positive (include) and one negative (exclude)
+   * annotation. These cached annotations can be re-added later (for example, after an interpolateScroll).
+   *
+   * @param viewport - The viewport element on which annotations are rendered.
+   */
+  removePromptAnnotationsWithCache(viewport: Types.IViewport) {
+    const toolNames = [
+      ONNXSegmentationController.MarkerInclude,
+      ONNXSegmentationController.MarkerExclude,
+      ONNXSegmentationController.BoxPrompt,
+    ];
+
+    let cachedInclude = null;
+    let cachedExclude = null;
+
+    // Get all annotations once
+    const allAnnotations =
+      cornerstoneTools.annotation.state.getAllAnnotations();
+
+    // Single loop to filter, cache, and remove prompt annotations
+    for (const annotation of allAnnotations) {
+      const toolName = annotation.metadata.toolName;
+
+      if (toolNames.includes(toolName)) {
+        // Cache first found include/exclude annotations
+        if (
+          toolName === ONNXSegmentationController.MarkerInclude &&
+          !cachedInclude
+        ) {
+          cachedInclude = annotation;
+        } else if (
+          toolName === ONNXSegmentationController.MarkerExclude &&
+          !cachedExclude
+        ) {
+          cachedExclude = annotation;
+        }
+
+        // Remove the annotation
+        cornerstoneTools.annotation.state.removeAnnotation(
+          annotation.annotationUID
+        );
+      }
+    }
+
+    // Store cached annotations
+    this._cachedPromptAnnotations = {
+      include: cachedInclude,
+      exclude: cachedExclude,
+    };
+
+    viewport.render();
+  }
+
   /**
    * The interpolateScroll checks to see if there are any annotations on the
    * current image in the specified viewport, and if so, scrolls in the given
@@ -410,12 +498,7 @@ export default class ONNXSegmentationController {
     this.tool.acceptPreview(element);
     const promptAnnotations = this.getPromptAnnotations(viewport);
 
-    if (!promptAnnotations.length) {
-      return;
-    }
-
     const currentSliceIndex = viewport.getCurrentImageIdIndex();
-    const { focalPoint } = viewport.getCamera();
     const viewRef = viewport.getViewReference({
       sliceIndex: currentSliceIndex + dir,
     });
@@ -427,28 +510,35 @@ export default class ONNXSegmentationController {
     viewport.scroll(dir);
     // Wait for the scroll to complete
     await new Promise((resolve) => window.setTimeout(resolve, 250));
-    const nextAnnotations = this.getPromptAnnotations(viewport);
-    if (nextAnnotations.length > 0) {
-      return;
+
+    let annotations = [];
+    if (!promptAnnotations.length) {
+      annotations = this.restoreCachedPromptAnnotations(viewport);
+    } else {
+      // Add the difference between the new and old focal point as being the
+      // position difference between images.  Does not account for any
+      // rotational differences between frames that may occur on stacks
+      for (const annotation of promptAnnotations) {
+        const newAnnotation = <cstTypes.Annotation>structuredClone(annotation);
+
+        // remove the old annotation
+        cornerstoneTools.annotation.state.removeAnnotation(
+          annotation.annotationUID
+        );
+
+        Object.assign(newAnnotation.metadata, viewRef);
+        cornerstoneTools.utilities.moveAnnotationToViewPlane(
+          newAnnotation,
+          viewport
+        );
+        annotations.push(newAnnotation);
+      }
     }
 
-    // Add the difference between the new and old focal point as being the
-    // position difference between images.  Does not account for any
-    // rotational differences between frames that may occur on stacks
-    const { focalPoint: newFocal } = viewport.getCamera();
-    const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
-    for (const annotation of promptAnnotations) {
-      annotation.interpolationUID ||= crypto.randomUUID();
-      const newAnnotation = <cstTypes.Annotation>structuredClone(annotation);
-      newAnnotation.annotationUID = undefined;
-      Object.assign(newAnnotation.metadata, viewRef);
-      // @ts-ignore
-      newAnnotation.cachedStats = {};
-      for (const handle of newAnnotation.data.handles.points) {
-        vec3.add(handle, handle, newDelta);
-      }
-      annotationState.addAnnotation(newAnnotation, viewport.element);
+    for (const annotation of annotations) {
+      annotationState.addAnnotation(annotation, viewport.element);
     }
+
     viewport.render();
   }
 
@@ -532,14 +622,17 @@ export default class ONNXSegmentationController {
    * decoder starts running, and that encoding a new image may not start until
    * an ongoing decoder operations has completed.
    */
-  protected annotationModifiedListener = (_event?) => {
-    const currentAnnotations = this.getPromptAnnotations();
-    if (!currentAnnotations.length) {
-      return;
-    }
-    this.annotationsNeedUpdating = true;
-    this.tryLoad();
-  };
+  protected annotationModifiedListener = cornerstoneTools.utilities.debounce(
+    (_event?) => {
+      const currentAnnotations = this.getPromptAnnotations();
+      if (!currentAnnotations.length) {
+        return;
+      }
+      this.annotationsNeedUpdating = true;
+      this.tryLoad();
+    },
+    300
+  );
 
   /**
    * Disconnects the given viewport, removing the listeners.
@@ -832,11 +925,9 @@ export default class ONNXSegmentationController {
 
   /**
    * Maps world points to destination points.
-   * Assumes the destination canvas is scale to fit at 100% in both dimensions,
-   * while the source point is also assumed to be in the same position, but not
-   * the same scale.
+   * Assumes the destination canvas is defined by the canvasPosition value
    */
-  mapAnnotationPoint(worldPoint) {
+  mapAnnotationPoint(worldPoint, canvasPosition) {
     const { viewport } = this;
     const canvasPoint = viewport.worldToCanvas(worldPoint);
     const { width, height } = viewport.canvas;
@@ -848,7 +939,23 @@ export default class ONNXSegmentationController {
     const y = Math.trunc(
       (canvasPoint[1] * destHeight * devicePixelRatio) / height
     );
-    return [x, y];
+
+    const { bottomLeft, topRight, origin } = canvasPosition;
+    const yVector = vec3.sub([0, 0, 0], origin, bottomLeft);
+    const xVector = vec3.sub([0, 0, 0], origin, topRight);
+    const xLen = vec3.length(xVector);
+    const yLen = vec3.length(yVector);
+    vec3.scale(xVector, xVector, 1 / xLen);
+    vec3.scale(yVector, yVector, 1 / yLen);
+    //const centerDelta = vec3.sub([0, 0, 0], worldPoint, origin);
+    const xDot = vec3.dot(worldPoint, xVector);
+    const yDot = vec3.dot(worldPoint, yVector);
+    const centerX = vec3.dot(origin, xVector);
+    const centerY = vec3.dot(origin, yVector);
+    const newX = Math.round(((centerX - xDot) * destWidth) / xLen);
+    const newY = Math.round(((centerY - yDot) * destHeight) / yLen);
+    console.log('Old/new X,Y', x, y, newX, newY, x - newX, y - newY);
+    return [newX, newY];
   }
 
   /**
@@ -857,7 +964,7 @@ export default class ONNXSegmentationController {
    * encoding of the image isn't ready yet, or the encoder is otherwise busy,
    * it will run the update again once the tryLoad is done at the end of the task.
    */
-  updateAnnotations() {
+  updateAnnotations(useSession = this.currentImage) {
     if (
       this.isGpuInUse ||
       !this.annotationsNeedUpdating ||
@@ -871,12 +978,12 @@ export default class ONNXSegmentationController {
     this.labels = [];
     this.worldPoints = [];
 
-    if (!promptAnnotations?.length) {
+    if (!promptAnnotations?.length || !useSession?.canvasPosition) {
       return;
     }
     for (const annotation of promptAnnotations) {
       const handle = annotation.data.handles.points[0];
-      const point = this.mapAnnotationPoint(handle);
+      const point = this.mapAnnotationPoint(handle, useSession.canvasPosition);
       this.points.push(...point);
       if (
         annotation.metadata.toolName === ONNXSegmentationController.BoxPrompt
@@ -884,7 +991,10 @@ export default class ONNXSegmentationController {
         // 2 and 3 are the codes for the handles on a box prompt
         this.labels.push(2, 3);
         this.points.push(
-          ...this.mapAnnotationPoint(annotation.data.handles.points[3])
+          ...this.mapAnnotationPoint(
+            annotation.data.handles.points[3],
+            useSession.canvasPosition
+          )
         );
       } else {
         const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
@@ -1141,16 +1251,41 @@ export default class ONNXSegmentationController {
       const cache = await caches.open('onnx');
       let cachedResponse = await cache.match(url);
       if (cachedResponse == undefined) {
+        // Trigger event when model component starts loading from network
+        triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+          name,
+          url,
+          status: 'loading',
+          source: 'network',
+        });
+
         await cache.add(url);
         cachedResponse = await cache.match(url);
         this.log(Loggers.Log, `${name} (network)`);
       } else {
+        // Trigger event when model component is loaded from cache
+        triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+          name,
+          url,
+          status: 'loaded',
+          source: 'cache',
+        });
+
         this.log(Loggers.Log, `${name} (cached)`);
       }
       const data = await cachedResponse.arrayBuffer();
       return data;
     } catch (error) {
       this.log(Loggers.Log, `${name} (network)`);
+
+      // Trigger event when model component has an error
+      triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+        name,
+        url,
+        status: 'error',
+        error,
+      });
+
       return await fetch(url).then((response) => response.arrayBuffer());
     }
   }
@@ -1172,6 +1307,14 @@ export default class ONNXSegmentationController {
       }
       urls.push(model.url);
     }
+
+    // Trigger event for model loading started
+    triggerEvent(eventTarget, ONNX_EVENTS.MODEL_LOADING_STARTED, {
+      modelConfig: this.config.model,
+      totalSize: missing,
+      urls,
+    });
+
     if (missing > 0) {
       this.log(
         Loggers.Log,
@@ -1202,16 +1345,21 @@ export default class ONNXSegmentationController {
       const sessionOptions = { ...opt, ...extra_opt };
       this.config[model.key] = model;
       imageSession[model.key] = await ort.InferenceSession.create(
-        model_bytes, // `http://localhost:4000${model.url}`,
+        model_bytes,
         sessionOptions
       );
     }
     const stop = performance.now();
-    this.log(
-      Loggers.Log,
-      `ready, ${(stop - start).toFixed(1)}ms`,
-      urls.join(', ')
-    );
+    const loadTime = stop - start;
+
+    // Trigger event for model loading completed
+    triggerEvent(eventTarget, ONNX_EVENTS.MODEL_LOADING_COMPLETED, {
+      modelConfig: this.config.model,
+      loadTimeMs: loadTime,
+      urls,
+    });
+
+    this.log(Loggers.Log, `ready, ${loadTime.toFixed(1)}ms`, urls.join(', '));
   }
 
   /**

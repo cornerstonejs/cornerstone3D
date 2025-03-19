@@ -13,7 +13,7 @@ type LabelmapToolOperationData = {
   /**
    * The colours to use for previewing
    */
-  previewColors?: Record<number, [number, number, number, number]>;
+  previewColor?: [number, number, number, number];
   segmentsLocked: number[];
   viewPlaneNormal: number[];
   viewUp: number[];
