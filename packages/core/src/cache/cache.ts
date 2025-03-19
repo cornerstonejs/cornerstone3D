@@ -1081,6 +1081,19 @@ class Cache {
   };
 
   /**
+   * Find the image that has the referenced ImageId
+   */
+  public getImageByReferencedImageId = (
+    referencedImageId: string
+  ): IImage | undefined => {
+    const cachedImage = Array.from(this._imageCache.values()).find(
+      (cachedImage) =>
+        cachedImage.image?.referencedImageId === referencedImageId
+    );
+    return cachedImage?.image;
+  };
+
+  /**
    * Returns the image associated with the imageId
    *
    * @param imageId - image ID

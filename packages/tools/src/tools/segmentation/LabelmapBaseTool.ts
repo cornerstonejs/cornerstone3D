@@ -401,10 +401,11 @@ export default class LabelmapBaseTool extends BaseTool {
     this.doneEditMemo();
 
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
 
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.AcceptPreview
     );
     this._previewData.isDrag = false;
