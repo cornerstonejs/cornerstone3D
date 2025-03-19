@@ -8,15 +8,6 @@ import {
 } from '../../../../stateManagement/segmentation/config/segmentationColor';
 import { getViewportIdsWithSegmentation } from '../../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
 
-function lightenColor(r, g, b, a, factor = 0.4) {
-  return [
-    Math.round(r + (255 - r) * factor),
-    Math.round(g + (255 - g) * factor),
-    Math.round(b + (255 - b) * factor),
-    a,
-  ];
-}
-
 /**
  * Sets up a preview to use an alternate set of colors.  First fills the
  * preview segment index with the final one for all pixels, then resets
@@ -28,9 +19,8 @@ export default {
   [StrategyCallbacks.Preview]: function (
     operationData: InitializedOperationData
   ) {
-    const { previewColors, configuration, enabledElement } = operationData;
-
-    if (!previewColors || !configuration) {
+    const { previewColor, configuration, enabledElement } = operationData;
+    if (!previewColor || !configuration) {
       return;
     }
 
@@ -58,13 +48,13 @@ export default {
     const {
       segmentIndex,
       previewSegmentIndex,
-      previewColors,
+      previewColor,
       preview,
       segmentationId,
       segmentationVoxelManager,
     } = operationData;
 
-    if (previewColors === undefined || !previewSegmentIndex) {
+    if (previewColor === undefined || !previewSegmentIndex) {
       operationData.memo = operationData.createMemo(
         segmentationId,
         segmentationVoxelManager
@@ -83,19 +73,6 @@ export default {
       // Null means to reset the value, so we don't change the preview colour,
       return;
     }
-
-    const configColor = previewColors?.[segmentIndex];
-    const segmentColor = getSegmentIndexColor(
-      operationData.viewport.id,
-      operationData.segmentationId,
-      segmentIndex
-    );
-
-    if (!configColor && !segmentColor) {
-      return;
-    }
-
-    const previewColor = configColor || lightenColor(...segmentColor);
 
     // check if there are other viewports that are displaying the segmentationId
     // which means we should add the preview color to all of them, otherwise
