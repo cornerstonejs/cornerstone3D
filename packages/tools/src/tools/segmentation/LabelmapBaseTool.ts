@@ -329,8 +329,6 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
-    const previewColor = configColor || lightenColor(...segmentColor);
-
     const operationData = {
       ...editData,
       points: data?.handles?.points,
@@ -342,7 +340,9 @@ export default class LabelmapBaseTool extends BaseTool {
       activeStrategy: this.configuration.activeStrategy,
       configuration: this.configuration,
       // Provide the preview information so that data can be used directly
-      previewColor,
+      previewColor: this.configuration.preview.enabled
+        ? configColor || lightenColor(...segmentColor)
+        : null,
       preview: this._previewData?.preview,
       createMemo: this.createMemo.bind(this),
     };
