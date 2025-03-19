@@ -1937,8 +1937,8 @@ class StackViewport extends Viewport {
 
         if (pixelData instanceof Float32Array && scaledWithNonIntegers) {
           const floatMinMax = {
-            min: image.maxPixelValue,
-            max: image.minPixelValue,
+            min: image.minPixelValue,
+            max: image.maxPixelValue,
           };
           const floatRange = Math.abs(floatMinMax.max - floatMinMax.min);
           const intRange = 65535;
@@ -1966,7 +1966,12 @@ class StackViewport extends Viewport {
           image.maxPixelValue = max;
           image.slope = slope;
           image.intercept = intercept;
-          image.getPixelData = () => intPixelData;
+          // voxelManager, when present, overrides getPixelData()
+          if (image.voxelManager) {
+            image.voxelManager.getScalarData = () => intPixelData;
+          } else {
+            image.getPixelData = () => intPixelData;
+          }
 
           image.preScale = {
             ...image.preScale,
