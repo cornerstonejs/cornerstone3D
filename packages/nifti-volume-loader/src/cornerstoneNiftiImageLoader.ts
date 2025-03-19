@@ -145,6 +145,9 @@ export default function cornerstoneNiftiImageLoader(
   return {
     promise: promise as Promise<Types.IImage>,
     cancelFn: undefined,
+    decache: () => {
+      dataFetchStateMap.delete(url);
+    },
   };
 }
 
