@@ -355,11 +355,6 @@ export default class ONNXSegmentationController {
           activeStrategy: 'FILL_INSIDE_CIRCLE',
           preview: {
             enabled: true,
-            previewColors: {
-              0: [255, 255, 255, 128],
-              1: [0, 255, 255, 192],
-              2: [255, 0, 255, 255],
-            },
           },
         },
       }

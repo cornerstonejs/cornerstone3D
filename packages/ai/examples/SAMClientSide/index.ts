@@ -13,6 +13,7 @@ import {
   addButtonToToolbar,
   setTitleAndDescription,
   getLocalUrl,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 import { ONNXSegmentationController } from '@cornerstonejs/ai';
 
@@ -207,6 +208,9 @@ addButtonToToolbar({
     ai.removePromptAnnotationsWithCache(activeViewport);
   },
 });
+const segmentationId = 'segmentationId';
+
+addSegmentIndexDropdown(segmentationId);
 
 const viewportId = 'CURRENT_VIEWPORT';
 
@@ -229,8 +233,6 @@ addDropdownToToolbar({
     });
   },
 });
-
-const segmentationId = 'segmentationId';
 
 async function updateViewport() {
   await initDemo();

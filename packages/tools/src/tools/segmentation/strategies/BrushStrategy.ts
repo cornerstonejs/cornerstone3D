@@ -31,6 +31,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // The index to use for the preview segment.  Currently always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;
+  previewColor?: [number, number, number, number];
 
   brushStrategy: BrushStrategy;
   activeStrategy: string;
@@ -264,7 +265,7 @@ export default class BrushStrategy {
       operationData.preview?.previewVoxelManager ||
       VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
 
-    const previewEnabled = !!operationData.previewColors;
+    const previewEnabled = !!operationData.previewColor;
     const previewSegmentIndex = previewEnabled ? 255 : undefined;
 
     const initializedData: InitializedOperationData = {
