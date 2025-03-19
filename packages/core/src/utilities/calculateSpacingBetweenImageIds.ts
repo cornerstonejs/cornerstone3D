@@ -129,7 +129,7 @@ export default function calculateSpacingBetweenImageIds(
   // position for each frame, leading to incorrect calculation of spacing = 0
   // If possible, we use the sliceThickness, but we warn about this dicom file
   // weirdness. If sliceThickness is not available, we set to 1 just to render
-  if (spacing === 0 && !strictZSpacingForVolumeViewport) {
+  if ((spacing === 0 || isNaN(spacing)) && !strictZSpacingForVolumeViewport) {
     if (spacingBetweenSlices) {
       console.debug('Could not calculate spacing. Using spacingBetweenSlices');
       spacing = spacingBetweenSlices;
