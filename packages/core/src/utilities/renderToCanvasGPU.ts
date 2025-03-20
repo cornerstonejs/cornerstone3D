@@ -1,3 +1,5 @@
+import { vec3 } from 'gl-matrix';
+
 import getOrCreateCanvas, {
   EPSILON,
 } from '../RenderingEngine/helpers/getOrCreateCanvas';
@@ -9,6 +11,7 @@ import type {
   ViewportInputOptions,
   IVolumeViewport,
   ViewReference,
+  Point3,
 } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import RenderingEngine from '../RenderingEngine';
@@ -32,7 +35,12 @@ import type { CanvasLoadPosition } from './loadImageToCanvas';
  * @param canvas - Canvas element to render to
  * @param imageOrVolume - The image to render
  * @param modality - [Default = undefined] The modality of the image
- * @returns - A promise that resolves when the image has been rendered with the imageId
+ * @returns - A promise that resolves when the image has been rendered with the imageId containing
+ *     origin for the bottom/left hand corner in world coordinates of the 0,0 canvas position
+ *     rightVector for a position difference of [1,0] of canvas indices as world coordinates
+ *     downVector for a position difference of [0,1] of canvas indices as world coordinates
+ *
+ * That is, for canvas indices `[x,y]` the coordinates in world space is `origin + x*rightVector + y*downVector`
  */
 export default function renderToCanvasGPU(
   canvas: HTMLCanvasElement,
@@ -141,6 +149,16 @@ export default function renderToCanvasGPU(
         0,
         temporaryCanvas.height / devicePixelRatio,
       ]);
+      const rightVector = vec3.sub(
+        [0, 0, 0],
+        viewport.canvasToWorld([1 / devicePixelRatio, 0]),
+        origin
+      ) as Point3;
+      const downVector = vec3.sub(
+        [0, 0, 0],
+        viewport.canvasToWorld([0, 1 / devicePixelRatio]),
+        origin
+      ) as Point3;
       const thicknessMm = 1;
       elementRendered = true;
 
@@ -168,6 +186,8 @@ export default function renderToCanvasGPU(
         bottomLeft,
         topRight,
         thicknessMm,
+        rightVector,
+        downVector,
       });
     };
 

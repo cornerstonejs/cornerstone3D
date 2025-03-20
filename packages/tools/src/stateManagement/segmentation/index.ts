@@ -39,7 +39,11 @@ import {
 } from './removeSegmentation';
 import { segmentationStyle } from './SegmentationStyle';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
-
+import {
+  getCurrentLabelmapImageIdsForViewport,
+  getLabelmapImageIdsForImageId,
+} from './getCurrentLabelmapImageIdForViewport';
+import { getActiveSegmentation } from './getActiveSegmentation';
 const helpers = {
   clearSegmentValue,
   convertStackToVolumeLabelmap,
@@ -80,4 +84,7 @@ export {
   strategies,
   segmentationStyle,
   defaultSegmentationStateManager,
+  getCurrentLabelmapImageIdsForViewport,
+  getLabelmapImageIdsForImageId,
+  getActiveSegmentation,
 };

@@ -41,12 +41,19 @@ export interface FullImageLoadOptions {
  * extraneous data such as segmentation and thus not be usable for external
  * computations.)
  */
-export interface CanvasLoadPosition {
+export type CanvasLoadPosition = {
   origin: Point3;
   topRight: Point3;
   bottomLeft: Point3;
   thicknessMm: number;
-}
+  /**
+   * The right vector is world coordinates vector whose length and direction
+   * is such that it corresponds to a `[1,0]` vector in canvas INDEX coordinates
+   * (not canvas image coordinates, although this is offset by `[1/devicePixelRatio,0]`)
+   */
+  rightVector: Point3;
+  downVector: Point3;
+};
 
 /**
  * The image canvas can be loaded/set with various view conditions to specify the initial
