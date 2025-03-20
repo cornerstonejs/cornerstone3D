@@ -763,10 +763,12 @@ class StackViewport extends Viewport {
 
   public resetCameraForResize = (): boolean => {
     return this.resetCamera({
-      resetPan: true,
-      resetZoom: true,
-      resetToCenter: true,
-      suppressEvents: true,
+      resetPan: this.options.resetCameraForResizeOptions.resetPan ?? true,
+      resetZoom: this.options.resetCameraForResizeOptions.resetZoom ?? true,
+      resetToCenter:
+        this.options.resetCameraForResizeOptions.resetToCenter ?? true,
+      suppressEvents:
+        this.options.resetCameraForResizeOptions.suppressEvents ?? true,
     });
   };
 
