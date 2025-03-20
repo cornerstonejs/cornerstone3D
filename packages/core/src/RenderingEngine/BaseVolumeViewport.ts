@@ -1223,10 +1223,12 @@ abstract class BaseVolumeViewport extends Viewport {
    *
    * @param orientation - The orientation to set the camera to.
    * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
+   * @param resetCamera - Whether the 'Camera' should be reset.
    */
   public setOrientation(
     _orientation: OrientationAxis | OrientationVectors,
-    _immediate = true
+    _immediate = true,
+    _resetCamera = true
   ): void {
     console.warn('Method "setOrientation" needs implementation');
   }
