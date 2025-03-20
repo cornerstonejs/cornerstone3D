@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.5...v3.7.6) (2025-03-20)
+
+### Bug Fixes
+
+- Only copy patient/study attributes rather than all ([#1887](https://github.com/cornerstonejs/cornerstone3D/issues/1887)) ([7584ec7](https://github.com/cornerstonejs/cornerstone3D/commit/7584ec78da64bf860ce389aad233f38a90020187))
+
 ## [3.7.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.4...v3.7.5) (2025-03-19)
 
 ### Performance Improvements
