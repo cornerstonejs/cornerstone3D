@@ -201,7 +201,7 @@ export interface BidirectionalAnnotation extends Annotation {
         };
       };
     };
-    label: string;
+    label?: string;
     cachedStats: {
       [targetId: string]: {
         length: number;
