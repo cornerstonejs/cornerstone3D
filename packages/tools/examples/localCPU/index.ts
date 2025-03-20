@@ -67,6 +67,7 @@ document
 async function run() {
   // Init Cornerstone and related libraries
   await initVolumeLoader();
+  cornerstoneDICOMImageLoader.init();
   await initProviders();
 
   setUseCPURendering(true);
