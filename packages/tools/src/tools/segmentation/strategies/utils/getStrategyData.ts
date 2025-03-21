@@ -161,6 +161,10 @@ function getStrategyData({
   viewport?: Types.IStackViewport | Types.IVolumeViewport;
   strategy: unknown;
 }) {
+  if (!operationData) {
+    return null;
+  }
+
   if (
     ('volumeId' in operationData && operationData.volumeId != null) ||
     ('referencedVolumeId' in operationData &&

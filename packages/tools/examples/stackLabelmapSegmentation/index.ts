@@ -291,25 +291,29 @@ function setupTools(toolGroupId) {
   toolGroup.addTool(RectangleScissorsTool.toolName);
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(PaintFillTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.DynamicThreshold,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.DynamicThreshold,
-      threshold: {
-        isDynamic: true,
-        dynamicRadius: 3,
-      },
-      preview: {
-        enabled: true,
-      },
-    }
-  );
+  // toolGroup.addToolInstance(
+  //   brushInstanceNames.DynamicThreshold,
+  //   BrushTool.toolName,
+  //   {
+  //     activeStrategy: brushStrategies.DynamicThreshold,
+  //     threshold: {
+  //       isDynamic: true,
+  //       dynamicRadius: 3,
+  //     },
+  //     preview: {
+  //       enabled: true,
+  //     },
+  //   }
+  // );
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularBrush,
+      preview: {
+        enabled: true,
+      },
+      // useCenterSegmentIndex: true,
     }
   );
   toolGroup.addToolInstance(
@@ -424,15 +428,15 @@ async function run() {
       type: ViewportType.STACK,
       element: element1,
     },
-    {
-      viewportId: viewportId2,
-      type: ViewportType.STACK,
-      element: element2,
-    },
+    // {
+    //   viewportId: viewportId2,
+    //   type: ViewportType.STACK,
+    //   element: element2,
+    // },
   ];
   renderingEngine.setViewports(viewportInputArray);
   toolGroup.addViewport(viewportId, renderingEngineId);
-  toolGroup.addViewport(viewportId2, renderingEngineId);
+  // toolGroup.addViewport(viewportId2, renderingEngineId);
   viewport = renderingEngine.getViewport(viewportId);
 
   const ctImageIds = imageIds.slice(0, 3);
@@ -440,13 +444,13 @@ async function run() {
     ctImageIds
   );
 
-  const mgSegImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    mgImageIds
-  );
+  // const mgSegImages = await imageLoader.createAndCacheDerivedLabelmapImages(
+  //   mgImageIds
+  // );
 
   const viewport2 = renderingEngine.getViewport(viewportId2);
   await viewport.setStack(ctImageIds, 0);
-  await viewport2.setStack([...mgImageIds, ctImageIds[2]], 0);
+  // await viewport2.setStack([...mgImageIds, ctImageIds[2]], 0);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
 
@@ -464,20 +468,20 @@ async function run() {
     },
   ]);
 
-  segmentation.addSegmentations([
-    {
-      segmentationId: segmentationIds[1],
-      representation: {
-        type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        data: {
-          imageIds: [
-            ...mgSegImages.map((it) => it.imageId),
-            ctSegImages[2].imageId,
-          ],
-        },
-      },
-    },
-  ]);
+  // segmentation.addSegmentations([
+  //   {
+  //     segmentationId: segmentationIds[1],
+  //     representation: {
+  //       type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  //       data: {
+  //         imageIds: [
+  //           ...mgSegImages.map((it) => it.imageId),
+  //           ctSegImages[2].imageId,
+  //         ],
+  //       },
+  //     },
+  //   },
+  // ]);
 
   // Add the segmentation representation to the toolgroup
   await segmentation.addSegmentationRepresentations(viewportId, [
@@ -487,12 +491,12 @@ async function run() {
     },
   ]);
 
-  await segmentation.addSegmentationRepresentations(viewportId2, [
-    {
-      segmentationId: segmentationIds[1],
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // await segmentation.addSegmentationRepresentations(viewportId2, [
+  //   {
+  //     segmentationId: segmentationIds[1],
+  //     type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  //   },
+  // ]);
 }
 
 run();

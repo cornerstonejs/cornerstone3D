@@ -136,12 +136,14 @@ export default class LabelmapBaseTool extends BaseTool {
    * object that stores the changes made to the labelmap rather than the
    * initial state.  This memo is then committed once done so that the
    */
-  public createMemo(segmentId: string, segmentationVoxelManager, preview) {
-    this.memo ||= LabelmapMemo.createLabelmapMemo(
-      segmentId,
-      segmentationVoxelManager,
-      preview
-    );
+  public createMemo(segmentId: string, segmentationVoxelManager) {
+    if (!this.memo) {
+      this.memo = LabelmapMemo.createLabelmapMemo(
+        segmentId,
+        segmentationVoxelManager
+      );
+    }
+
     return this.memo as LabelmapMemo.LabelmapMemo;
   }
 
@@ -329,6 +331,13 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
+    let previewColor = null,
+      previewSegmentIndex = null;
+    if (this.configuration.preview.enabled) {
+      previewColor = configColor || lightenColor(...segmentColor);
+      previewSegmentIndex = 255;
+    }
+
     const operationData = {
       ...editData,
       points: data?.handles?.points,
@@ -340,10 +349,8 @@ export default class LabelmapBaseTool extends BaseTool {
       activeStrategy: this.configuration.activeStrategy,
       configuration: this.configuration,
       // Provide the preview information so that data can be used directly
-      previewColor: this.configuration.preview.enabled
-        ? configColor || lightenColor(...segmentColor)
-        : null,
-      preview: this._previewData?.preview,
+      previewColor,
+      previewSegmentIndex,
       createMemo: this.createMemo.bind(this),
     };
     return operationData;
@@ -364,20 +371,20 @@ export default class LabelmapBaseTool extends BaseTool {
       this.rejectPreview(element);
     }
     const enabledElement = getEnabledElement(element);
-    _previewData.preview = this.applyActiveStrategyCallback(
+    const results = this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       StrategyCallbacks.AddPreview
     );
     _previewData.isDrag = true;
-    return _previewData.preview;
+    return results;
   }
 
   /**
    * Cancels any preview view being shown, resetting any segments being shown.
    */
   public rejectPreview(element = this._previewData.element) {
-    if (!element || !this._previewData.preview) {
+    if (!element) {
       return;
     }
     const enabledElement = getEnabledElement(element);
@@ -386,7 +393,8 @@ export default class LabelmapBaseTool extends BaseTool {
       this.getOperationData(element),
       StrategyCallbacks.RejectPreview
     );
-    this._previewData.preview = null;
+
+    // Make sure to fully reset all preview related data
     this._previewData.isDrag = false;
   }
 
@@ -408,8 +416,6 @@ export default class LabelmapBaseTool extends BaseTool {
       StrategyCallbacks.AcceptPreview
     );
     this._previewData.isDrag = false;
-    this._previewData.preview = null;
-    // Store the edit memo too
     this.doneEditMemo();
   }
 
@@ -450,8 +456,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     // @ts-expect-error
     const { memo, segmentationId } = preview;
-    // @ts-expect-error
-    const previewVoxels = memo?.voxelManager || preview.previewVoxelManager;
+    const previewVoxels = memo?.voxelManager;
     const segmentationVoxels =
       previewVoxels.sourceVoxelManager || previewVoxels;
     const { dimensions } = previewVoxels;

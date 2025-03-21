@@ -1275,11 +1275,9 @@ export default class VoxelManager<T> {
    * This will remember the original values in the voxels, and will apply the
    * update to the underlying source voxel manager.
    */
-  public static createHistoryVoxelManager<T>({
-    sourceVoxelManager,
-  }: {
-    sourceVoxelManager: VoxelManager<T>;
-  }): VoxelManager<T> {
+  public static createHistoryVoxelManager<T>(
+    sourceVoxelManager: VoxelManager<T>
+  ): VoxelManager<T> {
     const map = new Map<number, T>();
     const { dimensions } = sourceVoxelManager;
     const voxelManager = new VoxelManager(dimensions, {

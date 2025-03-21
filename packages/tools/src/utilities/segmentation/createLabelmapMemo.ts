@@ -1,7 +1,6 @@
 import { utilities } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import type { Types } from '@cornerstonejs/core';
-import type { InitializedOperationData } from '../../tools/segmentation/strategies/BrushStrategy';
 
 const { VoxelManager, RLEVoxelMap } = utilities;
 
@@ -25,12 +24,9 @@ export type LabelmapMemo = Types.Memo & {
  */
 export function createLabelmapMemo<T>(
   segmentationId: string,
-  segmentationVoxelManager: Types.IVoxelManager<T>,
-  preview?: InitializedOperationData
+  segmentationVoxelManager: Types.IVoxelManager<T>
 ) {
-  return preview
-    ? createPreviewMemo(segmentationId, preview)
-    : createRleMemo(segmentationId, segmentationVoxelManager);
+  return createRleMemo(segmentationId, segmentationVoxelManager);
 }
 
 /**
@@ -71,31 +67,6 @@ export function createRleMemo<T>(
 }
 
 /**
- * Creates a preview memo.
- */
-export function createPreviewMemo(
-  segmentationId: string,
-  preview: InitializedOperationData
-) {
-  const {
-    memo: previewMemo,
-    segmentationVoxelManager,
-    previewVoxelManager,
-  } = preview;
-
-  const state = {
-    segmentationId,
-    restoreMemo,
-    commitMemo,
-    segmentationVoxelManager,
-    voxelManager: previewVoxelManager,
-    memo: previewMemo,
-    preview,
-  };
-  return state;
-}
-
-/**
  * This is a member function of a memo that causes the completion of the
  * storage - that is, it copies the RLE data and creates a reverse RLE map
  */
@@ -110,7 +81,6 @@ function commitMemo() {
   const undoVoxelManager = VoxelManager.createRLEHistoryVoxelManager(
     segmentationVoxelManager
   );
-  // @ts-expect-error - TODO: fix this
   RLEVoxelMap.copyMap(undoVoxelManager.map, this.voxelManager.map);
   for (const key of this.voxelManager.modifiedSlices.keys()) {
     undoVoxelManager.modifiedSlices.add(key);
