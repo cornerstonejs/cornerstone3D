@@ -64,6 +64,7 @@ export class HistoryMemo {
    */
   public undo(items = 1) {
     while (items > 0 && this.undoAvailable > 0) {
+      console.log('running udno');
       const item = this.ring[this.position];
       item.restoreMemo(true);
       items--;

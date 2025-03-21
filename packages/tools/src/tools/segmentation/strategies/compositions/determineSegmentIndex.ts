@@ -39,13 +39,13 @@ export default {
       centerIJK,
       viewPlaneNormal,
       segmentationImageData,
-      preview,
       configuration,
     } = operationData;
 
     if (!configuration?.useCenterSegmentIndex) {
       return;
     }
+
     // Get rid of the previous data
     delete configuration.centerSegmentIndex;
 
@@ -79,17 +79,17 @@ export default {
       return;
     }
 
-    let existingValue = segmentationVoxelManager.getAtIJKPoint(centerIJK);
-    if (existingValue === previewSegmentIndex) {
-      if (preview) {
-        existingValue = preview.segmentIndex;
-      } else {
-        return;
-      }
-    } else if (hasPreviewIndex) {
-      // Clear the preview area
-      existingValue = null;
-    }
+    const existingValue = segmentationVoxelManager.getAtIJKPoint(centerIJK);
+    // if (existingValue === previewSegmentIndex) {
+    //   if (preview) {
+    //     existingValue = preview.segmentIndex;
+    //   } else {
+    //     return;
+    //   }
+    // } else if (hasPreviewIndex) {
+    //   // Clear the preview area
+    //   existingValue = null;
+    // }
     operationData.segmentIndex = existingValue;
     configuration.centerSegmentIndex = {
       segmentIndex: existingValue,

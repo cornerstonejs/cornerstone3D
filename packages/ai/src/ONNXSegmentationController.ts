@@ -1096,8 +1096,7 @@ export default class ONNXSegmentationController {
     const { canvas, viewport } = this;
     const preview = this.tool.addPreview(viewport.element);
     const { previewSegmentIndex, memo, segmentationId, segmentIndex } = preview;
-    const previewVoxelManager =
-      memo?.voxelManager || preview.previewVoxelManager;
+    const previewVoxelManager = memo?.voxelManager;
     const { dimensions } = previewVoxelManager;
     const { data } = mask;
 

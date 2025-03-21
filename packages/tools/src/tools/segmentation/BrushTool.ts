@@ -74,6 +74,7 @@ class BrushTool extends LabelmapBaseTool {
         defaultStrategy: 'FILL_INSIDE_CIRCLE',
         activeStrategy: 'FILL_INSIDE_CIRCLE',
         brushSize: 25,
+        useCenterSegmentIndex: false,
         preview: {
           // Have to enable the preview to use this
           enabled: false,
@@ -236,8 +237,7 @@ class BrushTool extends LabelmapBaseTool {
       const { currentPoints, element } = evt.detail;
       const { canvas } = currentPoints;
 
-      const { preview, startPoint, timer, timerStart, isDrag } =
-        this._previewData;
+      const { startPoint, timer, timerStart, isDrag } = this._previewData;
       const delta = vec2.distance(canvas, startPoint);
       const time = Date.now() - timerStart;
       if (
@@ -248,7 +248,7 @@ class BrushTool extends LabelmapBaseTool {
           window.clearTimeout(timer);
           this._previewData.timer = null;
         }
-        if (preview && !isDrag) {
+        if (!isDrag) {
           this.rejectPreview(element);
         }
       }
@@ -266,10 +266,7 @@ class BrushTool extends LabelmapBaseTool {
 
   previewCallback = () => {
     this._previewData.timer = null;
-    if (this._previewData.preview) {
-      return;
-    }
-    this._previewData.preview = this.applyActiveStrategyCallback(
+    this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
       this.getOperationData(this._previewData.element),
       StrategyCallbacks.Preview
@@ -314,7 +311,6 @@ class BrushTool extends LabelmapBaseTool {
     const { dragTimeMs, dragMoveDistance } = this.configuration.preview;
     if (
       !this._previewData.isDrag &&
-      this._previewData.preview &&
       Date.now() - this._previewData.timerStart < dragTimeMs &&
       delta < dragMoveDistance
     ) {
@@ -323,10 +319,7 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
 
-    this._previewData.preview = this.applyActiveStrategy(
-      enabledElement,
-      this.getOperationData(element)
-    );
+    this.applyActiveStrategy(enabledElement, this.getOperationData(element));
     this._previewData.element = element;
     // Add a bit of time to the timer start so small accidental movements dont
     // cause issues on clicking
@@ -422,7 +415,7 @@ class BrushTool extends LabelmapBaseTool {
     const operationData = this.getOperationData(element);
     // Don't re-fill when the preview is showing and the user clicks again
     // otherwise the new area of hover may get filled, which is unexpected
-    if (!this._previewData.preview && !this._previewData.isDrag) {
+    if (!this._previewData.isDrag) {
       this.applyActiveStrategy(enabledElement, operationData);
     }
 
@@ -465,7 +458,7 @@ class BrushTool extends LabelmapBaseTool {
    * Cancels any preview view being shown, resetting any segments being shown.
    */
   public rejectPreview(element = this._previewData.element) {
-    if (!element || !this._previewData.preview) {
+    if (!element) {
       return;
     }
     const enabledElement = getEnabledElement(element);
@@ -474,7 +467,6 @@ class BrushTool extends LabelmapBaseTool {
       this.getOperationData(element),
       StrategyCallbacks.RejectPreview
     );
-    this._previewData.preview = null;
     this._previewData.isDrag = false;
   }
 
@@ -487,7 +479,7 @@ class BrushTool extends LabelmapBaseTool {
     }
     const enabledElement = getEnabledElement(element);
 
-    this._previewData.preview = this.applyActiveStrategyCallback(
+    this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       StrategyCallbacks.Interpolate,
@@ -511,7 +503,6 @@ class BrushTool extends LabelmapBaseTool {
       StrategyCallbacks.AcceptPreview
     );
     this._previewData.isDrag = false;
-    this._previewData.preview = null;
   }
 
   /**

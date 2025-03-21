@@ -1,13 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import { utilities, type Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/events/triggerSegmentationDataModified';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import {
-  getSegmentIndexColor,
-  setSegmentIndexColor,
-} from '../../../../stateManagement/segmentation/config/segmentationColor';
+import { setSegmentIndexColor } from '../../../../stateManagement/segmentation/config/segmentationColor';
 import { getViewportIdsWithSegmentation } from '../../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
-
 /**
  * Sets up a preview to use an alternate set of colors.  First fills the
  * preview segment index with the final one for all pixels, then resets
@@ -19,14 +15,10 @@ export default {
   [StrategyCallbacks.Preview]: function (
     operationData: InitializedOperationData
   ) {
-    const { previewColor, configuration, enabledElement } = operationData;
-    if (!previewColor || !configuration) {
+    const { previewSegmentIndex, configuration, enabledElement } =
+      operationData;
+    if (!previewSegmentIndex || !configuration) {
       return;
-    }
-
-    // Clean up old preview data
-    if (operationData.preview) {
-      delete operationData.preview;
     }
 
     delete configuration.centerSegmentIndex;
@@ -36,8 +28,8 @@ export default {
 
     const preview = this.fill(enabledElement, operationData);
     if (preview) {
-      preview.isPreviewFromHover = true;
-      operationData.preview = preview;
+      // preview.isPreviewFromHover = true;
+      // operationData.preview = preview;
       this.onInteractionEnd?.(enabledElement, operationData);
     }
 
@@ -45,32 +37,9 @@ export default {
   },
 
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const {
-      segmentIndex,
-      previewSegmentIndex,
-      previewColor,
-      preview,
-      segmentationId,
-      segmentationVoxelManager,
-    } = operationData;
+    const { segmentIndex, previewColor, previewSegmentIndex } = operationData;
 
-    if (previewColor === undefined || !previewSegmentIndex) {
-      operationData.memo = operationData.createMemo(
-        segmentationId,
-        segmentationVoxelManager
-      );
-      return;
-    }
-
-    if (preview) {
-      preview.previewVoxelManager.sourceVoxelManager =
-        operationData.segmentationVoxelManager;
-      // And use the preview data associated with this tracking object as needed
-      operationData.previewVoxelManager = preview.previewVoxelManager;
-    }
-
-    if (segmentIndex === null) {
-      // Null means to reset the value, so we don't change the preview colour,
+    if (previewSegmentIndex == null || segmentIndex == null) {
       return;
     }
 
@@ -95,73 +64,44 @@ export default {
   [StrategyCallbacks.AcceptPreview]: (
     operationData: InitializedOperationData
   ) => {
-    const {
-      segmentationVoxelManager,
-      previewVoxelManager: previewVoxelManager,
-      previewSegmentIndex,
-      segmentationId,
-      preview,
-    } = operationData || {};
-    if (previewSegmentIndex === undefined) {
-      return;
-    }
+    const { segmentIndex, previewSegmentIndex, segmentationVoxelManager } =
+      operationData || {};
 
-    const segmentIndex = preview?.segmentIndex ?? operationData.segmentIndex;
-    if (!previewVoxelManager || previewVoxelManager.modifiedSlices.size === 0) {
-      return;
-    }
-
-    // TODO - figure out a better option for undo/redo of preview
-    const memo = operationData.createMemo(
-      segmentationId,
-      segmentationVoxelManager
-    );
-    operationData.memo = memo;
-    const { voxelManager } = memo;
-
-    const callback = ({ index, value }) => {
+    const callback = ({ index }) => {
       const oldValue = segmentationVoxelManager.getAtIndex(index);
       if (oldValue === previewSegmentIndex) {
-        // First restore the segmentation voxel manager
-        segmentationVoxelManager.setAtIndex(index, value);
-        // Then set it to the final value so that the memo voxel manager has
-        // the correct values.
-        voxelManager.setAtIndex(index, segmentIndex);
+        segmentationVoxelManager.setAtIndex(index, segmentIndex);
       }
     };
-    previewVoxelManager.forEach(callback, {});
+    segmentationVoxelManager.forEach(callback);
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfModifiedSlices(),
-      preview.segmentIndex
+      segmentationVoxelManager.getArrayOfModifiedSlices(),
+      segmentIndex
     );
-    previewVoxelManager.clear();
   },
 
   [StrategyCallbacks.RejectPreview]: (
     operationData: InitializedOperationData
   ) => {
-    const {
-      previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager,
-    } = operationData;
-    if (previewVoxelManager.modifiedSlices.size === 0) {
-      return;
-    }
-
-    const callback = ({ index, value }) => {
-      segmentationVoxelManager.setAtIndex(index, value);
-    };
-    previewVoxelManager.forEach(callback);
-
-    // Primarily rejects back to zero, so use 0 as the segment index - even
-    // if sometimes it modifies the data to other values on reject.
-    triggerSegmentationDataModified(
-      operationData.segmentationId,
-      previewVoxelManager.getArrayOfModifiedSlices(),
-      0
-    );
-    previewVoxelManager.clear();
+    console.debug('reject preview');
+    utilities.HistoryMemo.DefaultHistoryMemo.undo();
+    // const { segmentationVoxelManager } = operationData;
+    // if (previewVoxelManager.modifiedSlices.size === 0) {
+    //   return;
+    // }
+    // const callback = ({ index, value }) => {
+    //   segmentationVoxelManager.setAtIndex(index, value);
+    // };
+    // previewVoxelManager.forEach(callback);
+    // // Primarily rejects back to zero, so use 0 as the segment index - even
+    // // if sometimes it modifies the data to other values on reject.
+    // triggerSegmentationDataModified(
+    //   operationData.segmentationId,
+    //   previewVoxelManager.getArrayOfModifiedSlices(),
+    //   0
+    // );
+    // previewVoxelManager.clear();
   },
 };
