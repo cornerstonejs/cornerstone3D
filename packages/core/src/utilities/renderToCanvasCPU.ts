@@ -35,9 +35,7 @@ export default function renderToCanvasCPU(
     canvas,
     viewport,
     image,
-    renderingTools: {
-      renderCanvas: canvas,
-    },
+    renderingTools: {},
   };
 
   enabledElement.transform = calculateTransform(enabledElement);

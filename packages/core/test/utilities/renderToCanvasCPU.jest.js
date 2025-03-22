@@ -9,6 +9,10 @@ import {
 import { VOILUTFunctionType } from '../../src/enums';
 import { describe, it, expect } from '@jest/globals';
 import { createCanvas } from 'canvas';
+import getOrCreateCanvas, {
+  setCanvasCreator,
+  createCanvas as cs3dCreateCanvas,
+} from '../../src/RenderingEngine/helpers/getOrCreateCanvas';
 
 const rows = 64;
 const columns = 64;
@@ -49,8 +53,12 @@ const image = {
 };
 
 describe('Cornerstone-render Utilities:', function () {
-  it('Should correctly get runtimeIds', async () => {
-    const canvas = createCanvas(rows, columns);
+  beforeEach(() => {
+    setCanvasCreator(createCanvas);
+  });
+
+  it('Should render a grayscale image to canvas in node environment', async () => {
+    const canvas = cs3dCreateCanvas(null, rows, columns);
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < columns; j++) {
         bytePixelData[i * columns + j] = j % 256;
