@@ -2166,6 +2166,10 @@ class StackViewport extends Viewport {
   }
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
+    if (!imageId) {
+      console.warn('No image id set yet to load');
+      return;
+    }
     const eventDetail: EventTypes.PreStackNewImageEventDetail = {
       imageId,
       imageIdIndex,
@@ -2613,18 +2617,22 @@ class StackViewport extends Viewport {
   public scroll(delta: number, debounce = true, loop = false): void {
     const imageIds = this.imageIds;
 
+    if (isNaN(this.targetImageIdIndex)) {
+      // Scrolling before things are ready to display or on empty viewport
+      return;
+    }
     const currentTargetImageIdIndex = this.targetImageIdIndex;
     const numberOfFrames = imageIds.length;
 
     let newTargetImageIdIndex = currentTargetImageIdIndex + delta;
-    newTargetImageIdIndex = Math.max(0, newTargetImageIdIndex);
 
     if (loop) {
-      newTargetImageIdIndex = newTargetImageIdIndex % numberOfFrames;
+      newTargetImageIdIndex =
+        (newTargetImageIdIndex + numberOfFrames) % numberOfFrames;
     } else {
-      newTargetImageIdIndex = Math.min(
-        numberOfFrames - 1,
-        newTargetImageIdIndex
+      newTargetImageIdIndex = Math.max(
+        0,
+        Math.min(numberOfFrames - 1, newTargetImageIdIndex)
       );
     }
 
