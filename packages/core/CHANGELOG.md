@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.7...v3.7.8) (2025-03-24)
+
+### Bug Fixes
+
+- Scrolling sometimes set NaN and won't loop backwards ([#1932](https://github.com/cornerstonejs/cornerstone3D/issues/1932)) ([2cd1d53](https://github.com/cornerstonejs/cornerstone3D/commit/2cd1d53f52766d6e2fa1b17e55def62483ed8f6a))
+
+## [3.7.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.6...v3.7.7) (2025-03-24)
+
+### Bug Fixes
+
+- **segmentation:** Enhance Segmentation and Annotation Tools ([#1929](https://github.com/cornerstonejs/cornerstone3D/issues/1929)) ([b952d9b](https://github.com/cornerstonejs/cornerstone3D/commit/b952d9b05a871d8b8ac91def0e029703d19b57d6))
+
 ## [3.7.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.5...v3.7.6) (2025-03-20)
 
 **Note:** Version bump only for package @cornerstonejs/core
