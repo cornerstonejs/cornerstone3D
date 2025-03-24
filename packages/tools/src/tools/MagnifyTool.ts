@@ -1,19 +1,17 @@
 import { BaseTool } from './base';
 import { Events } from '../enums';
 
-import { getEnabledElement, StackViewport } from '@cornerstonejs/core';
+import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import type { EventTypes, PublicToolProps, ToolProps } from '../types';
+import type { EventTypes, PublicToolProps, ToolProps, IPoints } from '../types';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { state } from '../store/state';
-import { Enums } from '@cornerstonejs/core';
 
 import {
   hideElementCursor,
   resetElementCursor,
 } from '../cursors/elementCursor';
-import type { IPoints } from '../types';
 
 const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 
@@ -115,6 +113,8 @@ class MagnifyTool extends BaseTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
     const viewportProperties = viewport.getProperties();
+    const { rotation: originalViewportRotation } =
+      viewport.getViewPresentation();
 
     const { canvas: canvasPos, world: worldPos } = currentPoints;
 
@@ -162,6 +162,11 @@ class MagnifyTool extends BaseTool {
       }
       // match the original viewport voi range
       magnifyViewport.setProperties(viewportProperties);
+
+      // match the original viewport's rotation
+      magnifyViewport.setViewPresentation({
+        rotation: originalViewportRotation,
+      });
 
       // Use the original viewport for the base for parallelScale
       const { parallelScale } = viewport.getCamera();
