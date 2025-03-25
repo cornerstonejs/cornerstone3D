@@ -1363,7 +1363,6 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
         SourceImageSequence;
 
-    // Get the base imageId for this SOPInstanceUID
     const baseImageId = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
 
     if (!baseImageId) {
@@ -1373,7 +1372,7 @@ export function getImageIdOfSourceImageBySourceImageSequence(
         return undefined;
     }
 
-    // For multiframe images, handle wadors format specifically
+    // For multiframe images, construct the frame-specific imageId
     if (ReferencedFrameNumber !== undefined) {
         // If the baseImageId already has a frame parameter, replace it
         if (baseImageId.includes("frames/")) {
@@ -1438,7 +1437,7 @@ export function getImageIdOfSourceImagebyGeometry(
             continue;
         }
 
-        // Check if this is a multiframe image
+        // Check if this is a multiframe image using the corrected function
         const isMultiframe = sourceImageMetadata.NumberOfFrames > 1;
 
         if (
@@ -1450,27 +1449,18 @@ export function getImageIdOfSourceImagebyGeometry(
             continue;
         }
 
-        // For multiframe images, we need to check each frame's position
+        // For multiframe images, check each frame's position
         if (isMultiframe) {
-            let frameNumber;
-            if (imageId.includes("frames/")) {
-                frameNumber = parseInt(imageId.split("frames/").pop(), 10);
-            } else if (imageId.includes("frame=")) {
-                frameNumber = parseInt(imageId.split("frame=").pop(), 10) + 1;
-            }
+            const framePosition = metadataProvider.get(
+                "imagePlaneModule",
+                imageId
+            )?.imagePositionPatient;
 
-            if (frameNumber !== undefined) {
-                const framePosition = metadataProvider.get(
-                    "imagePlaneModule",
-                    imageId
-                )?.imagePositionPatient;
-
-                if (
-                    framePosition &&
-                    compareArrays(segFramePosition, framePosition, tolerance)
-                ) {
-                    return imageId;
-                }
+            if (
+                framePosition &&
+                compareArrays(segFramePosition, framePosition, tolerance)
+            ) {
+                return imageId;
             }
         } else if (
             compareArrays(
@@ -1508,15 +1498,13 @@ export function getImageIdOfReferencedFrame(
         return undefined;
     }
 
-    // Handle different imageId formats
+    // Handle wadors format differently from others
     if (baseImageId.includes("wadors:")) {
         return `${baseImageId}/frames/${frameNumber}`;
-    } else if (baseImageId.includes("frames/")) {
-        return baseImageId.replace(/frames\/\d+/, `frames/${frameNumber}`);
-    } else {
-        // For wadouri or other formats, use zero-based frame numbers
-        return `${baseImageId}?frame=${frameNumber - 1}`;
     }
+
+    // For all other formats use frame parameter
+    return `${baseImageId}?frame=${frameNumber - 1}`;
 }
 
 /**
@@ -1792,11 +1780,8 @@ export function calculateCentroid(
 }
 
 function isMultiframeImage(imageMetadata) {
-    return (
-        imageMetadata &&
-        (imageMetadata.NumberOfFrames > 1 ||
-            imageMetadata.imageId?.includes("frame="))
-    );
+    // Only rely on the actual NumberOfFrames from the metadata
+    return imageMetadata && imageMetadata.NumberOfFrames > 1;
 }
 
 const Segmentation = {
