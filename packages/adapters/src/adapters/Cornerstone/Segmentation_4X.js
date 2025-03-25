@@ -1363,21 +1363,41 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
         SourceImageSequence;
 
-    const imageId = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
+    // Get the base imageId for this SOPInstanceUID
+    const baseImageId = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
 
-    if (imageId) {
-        return imageId;
-    }
-
-    if (ReferencedFrameNumber) {
-        return getImageIdOfReferencedFrame(
-            ReferencedSOPInstanceUID,
-            ReferencedFrameNumber,
-            sopUIDImageIdIndexMap
+    if (!baseImageId) {
+        console.warn(
+            `No imageId found for SOPInstanceUID: ${ReferencedSOPInstanceUID}`
         );
+        return undefined;
     }
 
-    return undefined;
+    // For multiframe images, construct the frame-specific imageId
+    if (ReferencedFrameNumber !== undefined) {
+        // If the baseImageId already has a frame parameter, replace it
+        if (baseImageId.includes("frames/")) {
+            return baseImageId.replace(
+                /frames\/\d+/,
+                `frames/${ReferencedFrameNumber}`
+            );
+        } else if (baseImageId.includes("frame=")) {
+            return baseImageId.replace(
+                /frame=\d+/,
+                `frame=${ReferencedFrameNumber - 1}`
+            );
+        } else {
+            // Add frame parameter based on the imageId format
+            if (baseImageId.includes("wadors:")) {
+                return `${baseImageId}/frames/${ReferencedFrameNumber}`;
+            } else {
+                // For wadouri or other formats
+                return `${baseImageId}?frame=${ReferencedFrameNumber - 1}`;
+            }
+        }
+    }
+
+    return baseImageId;
 }
 
 /**
@@ -1401,28 +1421,28 @@ export function getImageIdOfSourceImagebyGeometry(
     tolerance
 ) {
     if (
-        ReferencedSeriesInstanceUID === undefined ||
-        PerFrameFunctionalGroup.PlanePositionSequence === undefined ||
-        PerFrameFunctionalGroup.PlanePositionSequence[0] === undefined ||
-        PerFrameFunctionalGroup.PlanePositionSequence[0]
-            .ImagePositionPatient === undefined
+        !ReferencedSeriesInstanceUID ||
+        !PerFrameFunctionalGroup.PlanePositionSequence?.[0]
+            ?.ImagePositionPatient
     ) {
         return undefined;
     }
 
-    for (
-        let imageIdsIndexc = 0;
-        imageIdsIndexc < imageIds.length;
-        ++imageIdsIndexc
-    ) {
-        const sourceImageMetadata = metadataProvider.get(
-            "instance",
-            imageIds[imageIdsIndexc]
-        );
+    const segFramePosition =
+        PerFrameFunctionalGroup.PlanePositionSequence[0].ImagePositionPatient;
+
+    for (let imageId of imageIds) {
+        const sourceImageMetadata = metadataProvider.get("instance", imageId);
+
+        if (!sourceImageMetadata) {
+            continue;
+        }
+
+        // Check if this is a multiframe image
+        const isMultiframe = sourceImageMetadata.NumberOfFrames > 1;
 
         if (
-            sourceImageMetadata === undefined ||
-            sourceImageMetadata.ImagePositionPatient === undefined ||
+            !sourceImageMetadata.ImagePositionPatient ||
             sourceImageMetadata.FrameOfReferenceUID !== FrameOfReferenceUID ||
             sourceImageMetadata.SeriesInstanceUID !==
                 ReferencedSeriesInstanceUID
@@ -1430,17 +1450,40 @@ export function getImageIdOfSourceImagebyGeometry(
             continue;
         }
 
-        if (
+        // For multiframe images, we need to check each frame's position
+        if (isMultiframe) {
+            let frameNumber;
+            if (imageId.includes("frames/")) {
+                frameNumber = parseInt(imageId.split("frames/").pop(), 10);
+            } else if (imageId.includes("frame=")) {
+                frameNumber = parseInt(imageId.split("frame=").pop(), 10) + 1;
+            }
+
+            if (frameNumber !== undefined) {
+                const framePosition = metadataProvider.get(
+                    "imagePlaneModule",
+                    imageId
+                )?.imagePositionPatient;
+
+                if (
+                    framePosition &&
+                    compareArrays(segFramePosition, framePosition, tolerance)
+                ) {
+                    return imageId;
+                }
+            }
+        } else if (
             compareArrays(
-                PerFrameFunctionalGroup.PlanePositionSequence[0]
-                    .ImagePositionPatient,
+                segFramePosition,
                 sourceImageMetadata.ImagePositionPatient,
                 tolerance
             )
         ) {
-            return imageIds[imageIdsIndexc];
+            return imageId;
         }
     }
+
+    return undefined;
 }
 
 /**
@@ -1458,15 +1501,22 @@ export function getImageIdOfReferencedFrame(
     frameNumber,
     sopUIDImageIdIndexMap
 ) {
-    const imageId = sopUIDImageIdIndexMap[sopInstanceUid];
+    const baseImageId = sopUIDImageIdIndexMap[sopInstanceUid];
 
-    if (!imageId) {
-        return;
+    if (!baseImageId) {
+        console.warn(`No imageId found for SOPInstanceUID: ${sopInstanceUid}`);
+        return undefined;
     }
 
-    const imageIdFrameNumber = Number(imageId.split("frame=")[1]);
-
-    return imageIdFrameNumber === frameNumber - 1 ? imageId : undefined;
+    // Handle different imageId formats
+    if (baseImageId.includes("wadors:")) {
+        return `${baseImageId}/frames/${frameNumber}`;
+    } else if (baseImageId.includes("frames/")) {
+        return baseImageId.replace(/frames\/\d+/, `frames/${frameNumber}`);
+    } else {
+        // For wadouri or other formats, use zero-based frame numbers
+        return `${baseImageId}?frame=${frameNumber - 1}`;
+    }
 }
 
 /**
@@ -1739,6 +1789,14 @@ export function calculateCentroid(
         },
         count
     };
+}
+
+function isMultiframeImage(imageMetadata) {
+    return (
+        imageMetadata &&
+        (imageMetadata.NumberOfFrames > 1 ||
+            imageMetadata.imageId?.includes("frame="))
+    );
 }
 
 const Segmentation = {
