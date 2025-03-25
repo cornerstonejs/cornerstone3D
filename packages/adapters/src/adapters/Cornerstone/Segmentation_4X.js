@@ -52,7 +52,7 @@ export function generateSegmentation(
     inputLabelmaps3D,
     userOptions = {}
 ) {
-    const isMultiframe = images[0].imageId.includes("?frame");
+    const isMultiframe = isMultiframeImage(images[0]);
     const segmentation = _createSegFromImages(
         images,
         isMultiframe,
@@ -1444,8 +1444,7 @@ export function getImageIdOfSourceImagebyGeometry(
             continue;
         }
 
-        // Check if this is a multiframe image using the corrected function
-        const isMultiframe = sourceImageMetadata.NumberOfFrames > 1;
+        const isMultiframe = isMultiframeImage(sourceImageMetadata);
 
         if (
             !sourceImageMetadata.ImagePositionPatient ||
