@@ -100,7 +100,7 @@
     "lodash.get": "^4.4.2"
   },
   "devDependencies": {
-    "canvas": "^2.11.2"
+    "canvas": "^3.1.0"
   },
   "peerDependencies": {
     "@cornerstonejs/core": "^3.7.8",
