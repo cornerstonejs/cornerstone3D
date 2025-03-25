@@ -1372,9 +1372,7 @@ export function getImageIdOfSourceImageBySourceImageSequence(
         return undefined;
     }
 
-    // For multiframe images, construct the frame-specific imageId
     if (ReferencedFrameNumber !== undefined) {
-        // If the baseImageId already has a frame parameter, replace it
         if (baseImageId.includes("frames/")) {
             return baseImageId.replace(
                 /frames\/\d+/,
@@ -1386,17 +1384,26 @@ export function getImageIdOfSourceImageBySourceImageSequence(
                 `frame=${ReferencedFrameNumber - 1}`
             );
         } else {
-            // Add frame parameter based on the imageId format
             if (baseImageId.includes("wadors:")) {
                 return `${baseImageId}/frames/${ReferencedFrameNumber}`;
             } else {
-                // For wadouri or other formats
                 return `${baseImageId}?frame=${ReferencedFrameNumber - 1}`;
             }
         }
     }
 
     return baseImageId;
+}
+
+/**
+ * Determines if an image is a multiframe image based on its metadata.
+ *
+ * @param {Object} imageMetadata - The metadata object for the image
+ * @param {number} [imageMetadata.NumberOfFrames] - The number of frames in the image
+ * @returns {boolean} True if the image is a multiframe image (NumberOfFrames > 1)
+ */
+function isMultiframeImage(imageMetadata) {
+    return imageMetadata && imageMetadata.NumberOfFrames > 1;
 }
 
 /**
@@ -1777,11 +1784,6 @@ export function calculateCentroid(
         },
         count
     };
-}
-
-function isMultiframeImage(imageMetadata) {
-    // Only rely on the actual NumberOfFrames from the metadata
-    return imageMetadata && imageMetadata.NumberOfFrames > 1;
 }
 
 const Segmentation = {
