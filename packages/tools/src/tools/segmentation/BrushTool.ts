@@ -7,6 +7,8 @@ import type {
   ToolProps,
   EventTypes,
   SVGDrawingHelper,
+  LabelmapToolOperationDataVolume,
+  LabelmapToolOperationDataStack,
 } from '../../types';
 import {
   fillInsideSphere,
@@ -28,6 +30,7 @@ import {
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import LabelmapBaseTool from './LabelmapBaseTool';
+import { getStrategyData } from './strategies/utils/getStrategyData';
 
 /**
  * @public
@@ -238,6 +241,11 @@ class BrushTool extends LabelmapBaseTool {
       const { canvas } = currentPoints;
 
       const { startPoint, timer, timerStart, isDrag } = this._previewData;
+
+      if (isDrag) {
+        return;
+      }
+
       const delta = vec2.distance(canvas, startPoint);
       const time = Date.now() - timerStart;
       if (
@@ -249,7 +257,6 @@ class BrushTool extends LabelmapBaseTool {
           this._previewData.timer = null;
         }
         if (!isDrag) {
-          this.doneEditMemo();
           this.rejectPreview(element);
         }
       }
@@ -267,9 +274,37 @@ class BrushTool extends LabelmapBaseTool {
 
   previewCallback = () => {
     this._previewData.timer = null;
-    this.applyActiveStrategyCallback(
+
+    // get strategy data
+    const operationData = this.getOperationData(this._previewData.element) as
+      | LabelmapToolOperationDataStack
+      | LabelmapToolOperationDataVolume;
+    const enabledElement = getEnabledElement(this._previewData.element);
+    if (!enabledElement) {
+      return;
+    }
+
+    const { viewport } = enabledElement;
+    // active strategy
+    const activeStrategy = this.configuration.activeStrategy;
+    const strategyData = getStrategyData({
+      operationData,
+      viewport,
+      strategy: activeStrategy,
+    });
+
+    const memo = this.createMemo(
+      operationData.segmentationId,
+      strategyData.segmentationVoxelManager
+    );
+
+    this._previewData.preview = this.applyActiveStrategyCallback(
       getEnabledElement(this._previewData.element),
-      this.getOperationData(this._previewData.element),
+      {
+        ...operationData,
+        ...strategyData,
+        memo,
+      },
       StrategyCallbacks.Preview
     );
   };
@@ -320,7 +355,10 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
 
-    this.applyActiveStrategy(enabledElement, this.getOperationData(element));
+    this._previewData.preview = this.applyActiveStrategy(
+      enabledElement,
+      this.getOperationData(element)
+    );
     this._previewData.element = element;
     // Add a bit of time to the timer start so small accidental movements dont
     // cause issues on clicking
@@ -416,7 +454,7 @@ class BrushTool extends LabelmapBaseTool {
     const operationData = this.getOperationData(element);
     // Don't re-fill when the preview is showing and the user clicks again
     // otherwise the new area of hover may get filled, which is unexpected
-    if (!this._previewData.isDrag) {
+    if (!this._previewData.preview && !this._previewData.isDrag) {
       this.applyActiveStrategy(enabledElement, operationData);
     }
 
@@ -462,12 +500,38 @@ class BrushTool extends LabelmapBaseTool {
     if (!element) {
       return;
     }
+
+    this.doneEditMemo();
+
     const enabledElement = getEnabledElement(element);
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       StrategyCallbacks.RejectPreview
     );
+
+    this._previewData.preview = null;
+    this._previewData.isDrag = false;
+  }
+
+  /**
+   * Accepts a preview, marking it as the active segment.
+   */
+  public acceptPreview(element = this._previewData.element) {
+    if (!element) {
+      return;
+    }
+    this.doneEditMemo();
+
+    const enabledElement = getEnabledElement(element);
+
+    this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.AcceptPreview
+    );
+
+    this._previewData.preview = null;
     this._previewData.isDrag = false;
   }
 
@@ -480,30 +544,13 @@ class BrushTool extends LabelmapBaseTool {
     }
     const enabledElement = getEnabledElement(element);
 
-    this.applyActiveStrategyCallback(
+    this._previewData.preview = this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       StrategyCallbacks.Interpolate,
       config.configuration
     );
     this._previewData.isDrag = true;
-  }
-
-  /**
-   * Accepts a preview, marking it as the active segment.
-   */
-  public acceptPreview(element = this._previewData.element) {
-    if (!element) {
-      return;
-    }
-    const enabledElement = getEnabledElement(element);
-
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      this.getOperationData(element),
-      StrategyCallbacks.AcceptPreview
-    );
-    this._previewData.isDrag = false;
   }
 
   /**

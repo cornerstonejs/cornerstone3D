@@ -122,8 +122,11 @@ export default class LabelmapBaseTool extends BaseTool {
     isDrag: false,
   };
 
+  protected memoMap: Map<string, LabelmapMemo.LabelmapMemo>;
+
   constructor(toolProps, defaultToolProps) {
     super(toolProps, defaultToolProps);
+    this.memoMap = new Map();
   }
 
   // Gets a shared preview data
@@ -132,22 +135,44 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
-   * Creates a labelmap memo instance, which is a partially created memo
-   * object that stores the changes made to the labelmap rather than the
-   * initial state.  This memo is then committed once done so that the
+   * Creates a labelmap memo instance, which stores the changes made to the
+   * labelmap rather than the initial state.
    */
-  public createMemo(segmentId: string, segmentationVoxelManager) {
-    if (!this.memo) {
-      this.memo = LabelmapMemo.createLabelmapMemo(
-        segmentId,
-        segmentationVoxelManager
-      );
-      console.log('Creating memo on this', !!this.memo);
-    } else {
-      console.log('Memo already exists on this');
+  public createMemo(segmentationId: string, segmentationVoxelManager) {
+    const voxelManagerId = segmentationVoxelManager.id;
+
+    if (
+      this.memo &&
+      this.memo.segmentationVoxelManager === segmentationVoxelManager
+    ) {
+      return this.memo;
     }
 
-    return this.memo as LabelmapMemo.LabelmapMemo;
+    if (this.memo) {
+      this.doneEditMemo();
+    }
+
+    let memo = this.memoMap.get(voxelManagerId);
+
+    if (!memo) {
+      memo = LabelmapMemo.createLabelmapMemo(
+        segmentationId,
+        segmentationVoxelManager
+      );
+      this.memoMap.set(voxelManagerId, memo);
+    } else {
+      // If the memo was previously committed, we need a fresh one
+      if (memo.redoVoxelManager) {
+        memo = LabelmapMemo.createLabelmapMemo(
+          segmentationId,
+          segmentationVoxelManager
+        );
+        this.memoMap.set(voxelManagerId, memo);
+      }
+    }
+
+    this.memo = memo;
+    return memo;
   }
 
   protected createEditData(element): EditDataReturnType {
@@ -399,6 +424,7 @@ export default class LabelmapBaseTool extends BaseTool {
     );
 
     // Make sure to fully reset all preview related data
+    this._previewData.preview = null;
     this._previewData.isDrag = false;
   }
 
@@ -419,6 +445,7 @@ export default class LabelmapBaseTool extends BaseTool {
       this.getOperationData(element),
       StrategyCallbacks.AcceptPreview
     );
+    this._previewData.preview = null;
     this._previewData.isDrag = false;
   }
 
