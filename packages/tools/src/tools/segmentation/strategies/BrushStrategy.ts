@@ -9,7 +9,9 @@ import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOp
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
 
-const { VoxelManager } = csUtils;
+const {
+  HistoryMemo: { DefaultHistoryMemo },
+} = csUtils;
 
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name

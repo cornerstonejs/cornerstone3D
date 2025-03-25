@@ -118,8 +118,11 @@ export default class VoxelManager<T> {
     const index = this.toIndex([i, j, k]);
     const changed = this._set(index, v);
     if (changed !== false) {
+      console.log('Adding modified slices', k);
       this.modifiedSlices.add(k);
       VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
+    } else {
+      console.log('Not adding modified slice, same value');
     }
 
     return changed;

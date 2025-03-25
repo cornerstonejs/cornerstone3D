@@ -249,6 +249,7 @@ class BrushTool extends LabelmapBaseTool {
           this._previewData.timer = null;
         }
         if (!isDrag) {
+          this.doneEditMemo();
           this.rejectPreview(element);
         }
       }

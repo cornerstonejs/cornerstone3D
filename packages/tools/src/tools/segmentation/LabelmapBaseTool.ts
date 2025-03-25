@@ -142,6 +142,9 @@ export default class LabelmapBaseTool extends BaseTool {
         segmentId,
         segmentationVoxelManager
       );
+      console.log('Creating memo on this', !!this.memo);
+    } else {
+      console.log('Memo already exists on this');
     }
 
     return this.memo as LabelmapMemo.LabelmapMemo;
@@ -387,6 +390,7 @@ export default class LabelmapBaseTool extends BaseTool {
     if (!element) {
       return;
     }
+    this.doneEditMemo();
     const enabledElement = getEnabledElement(element);
     this.applyActiveStrategyCallback(
       enabledElement,
@@ -416,7 +420,6 @@ export default class LabelmapBaseTool extends BaseTool {
       StrategyCallbacks.AcceptPreview
     );
     this._previewData.isDrag = false;
-    this.doneEditMemo();
   }
 
   /**
