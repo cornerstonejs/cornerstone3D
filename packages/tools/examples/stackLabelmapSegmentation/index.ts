@@ -313,6 +313,7 @@ function setupTools(toolGroupId) {
       preview: {
         enabled: true,
       },
+      useCenterSegmentIndex: true,
     }
   );
   toolGroup.addToolInstance(

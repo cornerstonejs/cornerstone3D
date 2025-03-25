@@ -1,10 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import {
-  utilities,
-  eventTarget,
-  Enums,
-  triggerEvent,
-} from '@cornerstonejs/core';
+import { type Types, cache, utilities } from '@cornerstonejs/core';
+import { eventTarget, Enums, triggerEvent } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -217,6 +212,7 @@ export default class ONNXSegmentationController {
   private points = [];
   private labels = [];
   private worldPoints = new Array<Types.Point3>();
+  private randomPoints;
 
   private loadingAI: Promise<unknown>;
 
@@ -245,6 +241,12 @@ export default class ONNXSegmentationController {
     ONNXSegmentationController.BoxPrompt,
   ];
   protected _cachedPromptAnnotations;
+
+  // autoSegment mode properties
+  protected _enabled = false;
+  protected _autoSegmentMode = false;
+  protected imageIdsRunAgainst = new Map();
+  protected numRandomPoints = 10; // Default number of random points to sample
 
   /**
    * Fill internal islands by size, and consider islands at the edge to
@@ -277,6 +279,8 @@ export default class ONNXSegmentationController {
    *      alternate to the getPromptAnnotations
    *    * models - a set of model configurations to run - note these are added globally to the static models
    *    * modelName - the specific model name to choose.  Must exist in models.
+   *    * autoSegmentMode - whether to enable autoSegment mode by default
+   *    * numRandomPoints - the number of random points to sample for autoSegment mode
    */
   constructor(
     options = {
@@ -286,6 +290,8 @@ export default class ONNXSegmentationController {
       models: null,
       modelName: null,
       islandFillOptions: undefined,
+      autoSegmentMode: false,
+      numRandomPoints: 2,
     }
   ) {
     if (options.listeners) {
@@ -302,6 +308,43 @@ export default class ONNXSegmentationController {
     this.config = this.getConfig(options.modelName);
     this.islandFillOptions =
       options.islandFillOptions ?? this.islandFillOptions;
+
+    // Initialize autoSegment mode
+    this._autoSegmentMode = options.autoSegmentMode || false;
+    this.numRandomPoints = options.numRandomPoints || this.numRandomPoints;
+  }
+
+  /**
+   * Enable or disable the controller
+   */
+  public set enabled(enabled: boolean) {
+    this._enabled = enabled;
+  }
+
+  public get enabled() {
+    return this._enabled;
+  }
+
+  /**
+   * Enable or disable autoSegment mode
+   */
+  public set autoSegmentMode(enabled: boolean) {
+    this._autoSegmentMode = enabled;
+    // Automatically enable the controller when autoSegment mode is enabled
+    if (enabled) {
+      this._enabled = true;
+    }
+  }
+
+  public get autoSegmentMode() {
+    return this._autoSegmentMode;
+  }
+
+  /**
+   * Set the number of random points to sample in autoSegment mode
+   */
+  public set numSamplePoints(num: number) {
+    this.numRandomPoints = num;
   }
 
   /**
@@ -601,6 +644,74 @@ export default class ONNXSegmentationController {
     if (desiredImage.imageId === currentImage?.imageId) {
       return;
     }
+
+    if (this._enabled && this._autoSegmentMode) {
+      if (
+        'isInAcquisitionPlane' in viewport &&
+        !viewport.isInAcquisitionPlane()
+      ) {
+        console.warn(
+          'Non acquisition plane viewports and auto segment mode is not yet supported'
+        );
+        return;
+      }
+
+      const segmentation =
+        cornerstoneTools.segmentation.activeSegmentation.getActiveSegmentation(
+          viewport.id
+        );
+
+      const segmentIndex =
+        cornerstoneTools.segmentation.segmentIndex.getActiveSegmentIndex(
+          segmentation.segmentationId
+        );
+      // Get the labelmap for the previous image
+      const imageIds = viewport.getImageIds();
+      const imageIdIndex = viewport.getCurrentImageIdIndex();
+      const previousImageId = imageIds[imageIdIndex - 1];
+      const nextImageId = imageIds[imageIdIndex + 1];
+
+      if (segmentation) {
+        const previousLabelmapImage =
+          cache.getImageByReferencedImageId(previousImageId);
+
+        const previousLabelmapVoxelManager =
+          previousLabelmapImage?.voxelManager;
+
+        const nextLabelmapImage =
+          cache.getImageByReferencedImageId(nextImageId);
+        const nextLabelmapVoxelManager = nextLabelmapImage?.voxelManager;
+
+        if (previousLabelmapVoxelManager || nextLabelmapVoxelManager) {
+          const pointLists = [];
+          previousLabelmapVoxelManager?.forEach(({ value, pointIJK }) => {
+            if (value === segmentIndex) {
+              const worldCoords = utilities.imageToWorldCoords(
+                previousLabelmapImage.imageId,
+                [pointIJK[0], pointIJK[1]]
+              );
+              pointLists.push(worldCoords);
+            }
+          });
+
+          nextLabelmapVoxelManager?.forEach(({ value, pointIJK }) => {
+            if (value === segmentIndex) {
+              const worldCoords = utilities.imageToWorldCoords(
+                nextLabelmapImage.imageId,
+                [pointIJK[0], pointIJK[1]]
+              );
+              pointLists.push(worldCoords);
+            }
+          });
+
+          // Pick random points from the pointLists
+          this.randomPoints = pointLists
+            .sort(() => Math.random() - 0.5)
+            .slice(0, this.numRandomPoints);
+        }
+      }
+    }
+
     const { canvasMask } = this;
     const ctxMask = canvasMask.getContext('2d');
     ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
@@ -917,9 +1028,32 @@ export default class ONNXSegmentationController {
       if (this.currentImage !== session) {
         this.currentImage = session;
       }
-      this.updateAnnotations();
+
+      if (this._enabled && this._autoSegmentMode) {
+        this.points = [];
+        this.labels = [];
+
+        // Process random points from previous segmentation if available
+        if (this.randomPoints?.length) {
+          this.randomPoints.forEach((point) => {
+            const mappedPoint = this.mapAnnotationPoint(
+              point,
+              this.currentImage.canvasPosition
+            );
+            this.points.push(...mappedPoint);
+            this.labels.push(1);
+          });
+
+          this.runDecode();
+        }
+      } else {
+        // Regular mode - process annotations
+        this.updateAnnotations();
+      }
+
       return;
     }
+
     this.handleImage(desiredImage, session);
   }
 
@@ -928,34 +1062,17 @@ export default class ONNXSegmentationController {
    * Assumes the destination canvas is defined by the canvasPosition value
    */
   mapAnnotationPoint(worldPoint, canvasPosition) {
-    const { viewport } = this;
-    const canvasPoint = viewport.worldToCanvas(worldPoint);
-    const { width, height } = viewport.canvas;
-    const { width: destWidth, height: destHeight } = this.canvas;
+    const { origin, downVector, rightVector } = canvasPosition;
+    // Vectors are scaled to unit vectors in canvas index space
 
-    const x = Math.trunc(
-      (canvasPoint[0] * destWidth * devicePixelRatio) / width
+    const deltaOrigin = vec3.sub([0, 0, 0], worldPoint, origin);
+    const x = Math.round(
+      vec3.dot(deltaOrigin, rightVector) / vec3.sqrLen(rightVector)
     );
-    const y = Math.trunc(
-      (canvasPoint[1] * destHeight * devicePixelRatio) / height
+    const y = Math.round(
+      vec3.dot(deltaOrigin, downVector) / vec3.sqrLen(downVector)
     );
-
-    const { bottomLeft, topRight, origin } = canvasPosition;
-    const yVector = vec3.sub([0, 0, 0], origin, bottomLeft);
-    const xVector = vec3.sub([0, 0, 0], origin, topRight);
-    const xLen = vec3.length(xVector);
-    const yLen = vec3.length(yVector);
-    vec3.scale(xVector, xVector, 1 / xLen);
-    vec3.scale(yVector, yVector, 1 / yLen);
-    //const centerDelta = vec3.sub([0, 0, 0], worldPoint, origin);
-    const xDot = vec3.dot(worldPoint, xVector);
-    const yDot = vec3.dot(worldPoint, yVector);
-    const centerX = vec3.dot(origin, xVector);
-    const centerY = vec3.dot(origin, yVector);
-    const newX = Math.round(((centerX - xDot) * destWidth) / xLen);
-    const newY = Math.round(((centerY - yDot) * destHeight) / yLen);
-    console.log('Old/new X,Y', x, y, newX, newY, x - newX, y - newY);
-    return [newX, newY];
+    return [x, y];
   }
 
   /**
@@ -1095,28 +1212,30 @@ export default class ONNXSegmentationController {
   createLabelmap(mask, canvasPosition, _points, _labels) {
     const { canvas, viewport } = this;
     const preview = this.tool.addPreview(viewport.element);
-    const { previewSegmentIndex, memo, segmentationId, segmentIndex } = preview;
-    const previewVoxelManager = memo?.voxelManager;
+    const {
+      previewSegmentIndex,
+      memo,
+      segmentationId,
+      segmentIndex,
+      segmentationVoxelManager,
+    } = preview;
+    const previewVoxelManager =
+      memo?.voxelManager || preview.previewVoxelManager;
     const { dimensions } = previewVoxelManager;
     const { data } = mask;
 
-    const { origin, topRight, bottomLeft } = canvasPosition;
-    const downVec = vec3.subtract(vec3.create(), bottomLeft, origin);
-    const rightVec = vec3.subtract(vec3.create(), topRight, origin);
-    // Vectors are scaled to unit vectors in CANVAS space
-    vec3.scale(downVec, downVec, 1 / canvas.height);
-    vec3.scale(rightVec, rightVec, 1 / canvas.width);
+    const { origin, rightVector, downVector } = canvasPosition;
 
     const worldPointJ = vec3.create();
     const worldPoint = vec3.create();
     const imageData = viewport.getDefaultImageData();
 
     // Assumes that the load to canvas size is bigger than the destination
-    // size - if that isnt true, then this should super-sample the data
+    // size - if that isn't true, then this should super-sample the data
     for (let j = 0; j < canvas.height; j++) {
-      vec3.scaleAndAdd(worldPointJ, origin, downVec, j);
+      vec3.scaleAndAdd(worldPointJ, origin, downVector, j);
       for (let i = 0; i < canvas.width; i++) {
-        vec3.scaleAndAdd(worldPoint, worldPointJ, rightVec, i);
+        vec3.scaleAndAdd(worldPoint, worldPointJ, rightVector, i);
         const ijkPoint = imageData.worldToIndex(worldPoint).map(Math.round);
         if (
           ijkPoint.findIndex((v, index) => v < 0 || v >= dimensions[index]) !==
@@ -1127,6 +1246,13 @@ export default class ONNXSegmentationController {
         // 4 values - RGBA - per pixel
         const maskIndex = 4 * (i + j * this.maxWidth);
         const v = data[maskIndex];
+
+        const segmentValue = segmentationVoxelManager.getAtIJKPoint(ijkPoint);
+
+        if (segmentValue !== 0) {
+          continue;
+        }
+
         if (v > this.pCutoff) {
           previewVoxelManager.setAtIJKPoint(ijkPoint, previewSegmentIndex);
         } else {

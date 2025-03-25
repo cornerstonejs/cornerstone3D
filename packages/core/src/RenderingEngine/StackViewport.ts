@@ -3284,6 +3284,10 @@ class StackViewport extends Viewport {
     return imagePlaneModule;
   }
 
+  public isInAcquisitionPlane(): boolean {
+    return true;
+  }
+
   private renderingPipelineFunctions = {
     getImageData: {
       cpu: this.getImageDataCPU,
