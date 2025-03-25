@@ -4,6 +4,7 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { setSegmentIndexColor } from '../../../../stateManagement/segmentation/config/segmentationColor';
 import { getViewportIdsWithSegmentation } from '../../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
+
 /**
  * Sets up a preview to use an alternate set of colors.  First fills the
  * preview segment index with the final one for all pixels, then resets
@@ -27,9 +28,10 @@ export default {
     this.onInteractionStart?.(enabledElement, operationData);
 
     const preview = this.fill(enabledElement, operationData);
+
     if (preview) {
-      // preview.isPreviewFromHover = true;
-      // operationData.preview = preview;
+      // memoToUse.voxelManager.sourceVoxelManager =
+      //   operationData.segmentationVoxelManager;
       this.onInteractionEnd?.(enabledElement, operationData);
     }
 
@@ -64,13 +66,17 @@ export default {
   [StrategyCallbacks.AcceptPreview]: (
     operationData: InitializedOperationData
   ) => {
-    const { segmentIndex, previewSegmentIndex, segmentationVoxelManager } =
-      operationData || {};
+    const {
+      segmentIndex,
+      previewSegmentIndex,
+      segmentationVoxelManager,
+      memo,
+    } = operationData || {};
 
     const callback = ({ index }) => {
       const oldValue = segmentationVoxelManager.getAtIndex(index);
       if (oldValue === previewSegmentIndex) {
-        segmentationVoxelManager.setAtIndex(index, segmentIndex);
+        memo.voxelManager.setAtIndex(index, segmentIndex);
       }
     };
     segmentationVoxelManager.forEach(callback);
@@ -80,28 +86,32 @@ export default {
       segmentationVoxelManager.getArrayOfModifiedSlices(),
       segmentIndex
     );
+
+    memo.voxelManager.clear();
   },
 
   [StrategyCallbacks.RejectPreview]: (
     operationData: InitializedOperationData
   ) => {
-    console.debug('reject preview');
-    utilities.HistoryMemo.DefaultHistoryMemo.undo();
-    // const { segmentationVoxelManager } = operationData;
-    // if (previewVoxelManager.modifiedSlices.size === 0) {
-    //   return;
-    // }
-    // const callback = ({ index, value }) => {
-    //   segmentationVoxelManager.setAtIndex(index, value);
-    // };
-    // previewVoxelManager.forEach(callback);
-    // // Primarily rejects back to zero, so use 0 as the segment index - even
-    // // if sometimes it modifies the data to other values on reject.
-    // triggerSegmentationDataModified(
-    //   operationData.segmentationId,
-    //   previewVoxelManager.getArrayOfModifiedSlices(),
-    //   0
-    // );
-    // previewVoxelManager.clear();
+    // check if the preview has value, if not we should not undo
+    // since it might be an actual brush stroke or an accept preview
+    utilities.HistoryMemo.DefaultHistoryMemo.undoIf((memo) => {
+      if (!memo?.voxelManager) {
+        return false;
+      }
+
+      const { segmentationVoxelManager } = memo;
+
+      let hasPreviewSegmentIndex = false;
+      const callback = ({ value }) => {
+        if (value === operationData.previewSegmentIndex) {
+          hasPreviewSegmentIndex = true;
+        }
+      };
+
+      segmentationVoxelManager.forEach(callback);
+
+      return hasPreviewSegmentIndex;
+    });
   },
 };

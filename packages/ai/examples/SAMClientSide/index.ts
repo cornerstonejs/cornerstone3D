@@ -253,7 +253,7 @@ async function updateViewport() {
   };
 
   if (currentViewportType === ViewportType.ORTHOGRAPHIC) {
-    viewportInput.defaultOptions.orientation = OrientationAxis.SAGITTAL;
+    viewportInput.defaultOptions.orientation = OrientationAxis.AXIAL;
   }
 
   renderingEngine.setViewports([viewportInput]);

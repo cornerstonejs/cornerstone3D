@@ -233,6 +233,10 @@ export default class BrushStrategy {
 
     const data = getStrategyData({ operationData, viewport, strategy: this });
 
+    if (!data) {
+      return null;
+    }
+
     const {
       imageVoxelManager,
       segmentationVoxelManager,

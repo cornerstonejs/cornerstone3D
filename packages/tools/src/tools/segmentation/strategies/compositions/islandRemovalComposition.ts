@@ -20,6 +20,7 @@ export default {
       viewport,
       segmentationVoxelManager,
       activeStrategy,
+      memo,
     } = operationData;
 
     if (
@@ -30,7 +31,7 @@ export default {
     }
 
     const islandRemoval = new IslandRemoval();
-    const voxelManager = segmentationVoxelManager;
+    const voxelManager = memo?.voxelManager || segmentationVoxelManager;
     if (
       !islandRemoval.initialize(viewport, voxelManager, {
         previewSegmentIndex,

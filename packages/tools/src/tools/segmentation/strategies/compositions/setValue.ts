@@ -21,6 +21,10 @@ export default {
       segmentationVoxelManager,
     } = operationData;
 
+    if (!memo) {
+      debugger;
+    }
+
     // const voxelManager = operationData.memo?.voxelManager;
     const segmentIndexToUse = previewSegmentIndex ?? segmentIndex;
 

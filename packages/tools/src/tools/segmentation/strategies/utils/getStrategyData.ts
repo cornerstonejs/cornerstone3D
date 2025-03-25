@@ -1,10 +1,4 @@
-import {
-  BaseVolumeViewport,
-  cache,
-  Enums,
-  eventTarget,
-  type Types,
-} from '@cornerstonejs/core';
+import { cache, Enums, eventTarget, type Types } from '@cornerstonejs/core';
 import type {
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,

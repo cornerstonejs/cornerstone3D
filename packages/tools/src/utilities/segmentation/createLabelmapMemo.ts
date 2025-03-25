@@ -71,14 +71,11 @@ export function createRleMemo<T>(
  * storage - that is, it copies the RLE data and creates a reverse RLE map
  */
 function commitMemo() {
-  console.log('**** Committing memo');
   if (this.redoVoxelManager) {
     return true;
   }
   if (!this.voxelManager.modifiedSlices.size) {
-    console.log("******** No modified slices, can't commit");
-    //return false;
-    this.voxelManager.modifiedSlices.add(0);
+    return false;
   }
   const { segmentationVoxelManager } = this;
   const undoVoxelManager = VoxelManager.createRLEHistoryVoxelManager(
@@ -100,6 +97,5 @@ function commitMemo() {
     }
     redoVoxelManager.setAtIndex(index, currentValue);
   });
-  console.log('Created update memo');
   return true;
 }

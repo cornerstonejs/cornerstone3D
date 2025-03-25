@@ -492,15 +492,18 @@ export function createAndCacheLocalImage(
     });
   });
 
+  const id = imageId;
+
   // Todo: probably here we need to consider the RLE voxel manager as well
   const voxelManager =
     (voxelRepresentation === VoxelManagerEnum.RLE &&
-      VoxelManager.createRLEImageVoxelManager<number>({ dimensions })) ||
+      VoxelManager.createRLEImageVoxelManager<number>({ dimensions, id })) ||
     (VoxelManager.createImageVoxelManager({
       height,
       width,
       numberOfComponents,
       scalarData: scalarDataToUse,
+      id,
     }) as VoxelManager<number>);
 
   // Calculate min and max pixel values

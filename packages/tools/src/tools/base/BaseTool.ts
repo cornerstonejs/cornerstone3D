@@ -304,10 +304,7 @@ abstract class BaseTool {
    */
   public doneEditMemo() {
     if (this.memo?.commitMemo?.()) {
-      console.log('**** Pushing edit preview');
       DefaultHistoryMemo.push(this.memo);
-    } else {
-      console.log('No edit preview to push');
     }
     this.memo = null;
   }
