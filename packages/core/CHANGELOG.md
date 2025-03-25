@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.8...v3.7.9) (2025-03-25)
+
+### Bug Fixes
+
+- **cpu:** broken CPU fallback renderer & example fix ([#1918](https://github.com/cornerstonejs/cornerstone3D/issues/1918)) ([6f17c79](https://github.com/cornerstonejs/cornerstone3D/commit/6f17c79f3c5431ea069c63ae1cac4f8371244790)), closes [#1907](https://github.com/cornerstonejs/cornerstone3D/issues/1907) [#1916](https://github.com/cornerstonejs/cornerstone3D/issues/1916)
+- node render to canvas ([#1927](https://github.com/cornerstonejs/cornerstone3D/issues/1927)) ([2525e9c](https://github.com/cornerstonejs/cornerstone3D/commit/2525e9c155dffa4cd195cc8a50128c8756ce7923))
+
 ## [3.7.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.7...v3.7.8) (2025-03-24)
 
 ### Bug Fixes
