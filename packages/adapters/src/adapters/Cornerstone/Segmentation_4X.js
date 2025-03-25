@@ -1373,7 +1373,7 @@ export function getImageIdOfSourceImageBySourceImageSequence(
         return undefined;
     }
 
-    // For multiframe images, construct the frame-specific imageId
+    // For multiframe images, handle wadors format specifically
     if (ReferencedFrameNumber !== undefined) {
         // If the baseImageId already has a frame parameter, replace it
         if (baseImageId.includes("frames/")) {
