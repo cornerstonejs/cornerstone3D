@@ -17,6 +17,7 @@ export default {
       segmentsLocked,
       segmentIndex,
       previewSegmentIndex,
+      memo,
       segmentationVoxelManager,
     } = operationData;
 
@@ -29,6 +30,6 @@ export default {
       return;
     }
 
-    segmentationVoxelManager.setAtIndex(index, segmentIndexToUse);
+    memo.voxelManager.setAtIndex(index, segmentIndexToUse);
   },
 };
