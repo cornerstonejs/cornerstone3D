@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.12...v3.7.13) (2025-03-26)
+
+### Bug Fixes
+
+- **annotation-tools:** trigger annotation modified only if invalidated across multiple tools ([#1944](https://github.com/cornerstonejs/cornerstone3D/issues/1944)) ([e84319d](https://github.com/cornerstonejs/cornerstone3D/commit/e84319dc92c0268315f0b107cf5026239241e257))
+
 ## [3.7.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.11...v3.7.12) (2025-03-26)
 
 **Note:** Version bump only for package root
