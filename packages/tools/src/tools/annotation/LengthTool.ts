@@ -46,6 +46,7 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
+  InteractionTypes,
 } from '../../types';
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -352,7 +353,8 @@ class LengthTool extends AnnotationTool {
   handleSelectedCallback(
     evt: EventTypes.InteractionEventType,
     annotation: LengthAnnotation,
-    handle: ToolHandle
+    handle: ToolHandle,
+    interactionType: InteractionTypes
   ): void {
     const eventDetail = evt.detail;
     const { element } = eventDetail;

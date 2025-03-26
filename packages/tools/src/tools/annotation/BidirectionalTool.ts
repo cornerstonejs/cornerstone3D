@@ -43,6 +43,7 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
+  InteractionTypes,
 } from '../../types';
 import type { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
@@ -413,7 +414,8 @@ class BidirectionalTool extends AnnotationTool {
   handleSelectedCallback = (
     evt: EventTypes.InteractionEventType,
     annotation: BidirectionalAnnotation,
-    handle: ToolHandle
+    handle: ToolHandle,
+    interactionType: InteractionTypes
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
