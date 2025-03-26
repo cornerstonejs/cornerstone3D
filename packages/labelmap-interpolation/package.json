@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/labelmap-interpolation",
-  "version": "3.7.10",
+  "version": "3.7.11",
   "description": "Labelmap Interpolation utility for Cornerstone3D",
   "files": [
     "dist"
