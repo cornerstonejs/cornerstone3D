@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.9...v3.7.10) (2025-03-26)
+
+### Bug Fixes
+
+- **label-tool:** add visibility check for annotations in rendering ([#1938](https://github.com/cornerstonejs/cornerstone3D/issues/1938)) ([812b750](https://github.com/cornerstonejs/cornerstone3D/commit/812b750ea33d1b626be88a3df51be2e8a9f702b2))
+
 ## [3.7.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.8...v3.7.9) (2025-03-25)
 
 ### Bug Fixes
