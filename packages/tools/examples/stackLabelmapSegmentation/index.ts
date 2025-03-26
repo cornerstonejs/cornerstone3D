@@ -399,12 +399,9 @@ function setupTools(toolGroupId) {
     }
   );
 
-  toolGroup.setToolActive(
-    brushInstanceNames.DynamicThresholdWithIslandRemoval,
-    {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
-    }
-  );
+  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
