@@ -1,4 +1,9 @@
-import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  imageLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
@@ -9,6 +14,7 @@ import {
   addBrushSizeSlider,
   labelmapTools,
 } from '../../../../utils/demo/helpers';
+const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
 // This is for debugging purposes
 console.warn(
@@ -253,6 +259,22 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  id: 'Undo',
+  title: 'Undo',
+  onClick() {
+    DefaultHistoryMemo.undo();
+  },
+});
+
+addButtonToToolbar({
+  id: 'Redo',
+  title: 'Redo',
+  onClick() {
+    DefaultHistoryMemo.redo();
+  },
+});
+
 addDropdownToToolbar({
   id: dropDownId,
   labelText: 'Set Active Segmentation',
@@ -313,7 +335,7 @@ function setupTools(toolGroupId) {
       preview: {
         enabled: true,
       },
-      useCenterSegmentIndex: true,
+      // useCenterSegmentIndex: true,
     }
   );
   toolGroup.addToolInstance(

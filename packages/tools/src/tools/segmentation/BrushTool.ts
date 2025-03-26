@@ -1,6 +1,7 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, eventTarget } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
+import { Events, ToolModes, StrategyCallbacks } from '../../enums';
 
 import type {
   PublicToolProps,
@@ -21,7 +22,6 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import { Events, ToolModes, StrategyCallbacks } from '../../enums';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
@@ -157,7 +157,18 @@ class BrushTool extends LabelmapBaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+
+    // Add event listener for labelmap undo
+    this._labelmapUndoHandler = this._labelmapUndoHandler.bind(this);
+    eventTarget.addEventListener(
+      Events.LABELMAP_UNDO,
+      this._labelmapUndoHandler
+    );
   }
+
+  private _labelmapUndoHandler = () => {
+    this._previewData.isDrag = true;
+  };
 
   onSetToolPassive = (evt) => {
     this.disableCursor();

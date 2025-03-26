@@ -148,9 +148,9 @@ export default class LabelmapBaseTool extends BaseTool {
       return this.memo;
     }
 
-    if (this.memo) {
-      this.doneEditMemo();
-    }
+    // if (this.memo) {
+    //   this.doneEditMemo();
+    // }
 
     let memo = this.memoMap.get(voxelManagerId);
 

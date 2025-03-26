@@ -179,6 +179,14 @@ enum Events {
    */
   SEGMENTATION_DATA_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED',
 
+  /**
+   * Triggers on the eventTarget when a labelmap undo operation is performed.
+   * Make use of {@link EventTypes.LabelmapUndoEventType | Labelmap Undo Event Type}
+   * for typing your event listeners for this labelmap undo event, and see what
+   * event detail is included in {@link EventTypes.LabelmapUndoEventDetail | Labelmap Undo Event Detail}
+   */
+  LABELMAP_UNDO = 'CORNERSTONE_TOOLS_LABELMAP_UNDO',
+
   ///////////////////////////////////////
   //         Keyboard Events
   ///////////////////////////////////////

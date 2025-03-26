@@ -1,6 +1,7 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities, eventTarget } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import type { Types } from '@cornerstonejs/core';
+import Events from '../../enums/Events';
 
 const { VoxelManager, RLEVoxelMap } = utilities;
 
@@ -43,6 +44,16 @@ export function restoreMemo(isUndo?: boolean) {
   });
   const slices = useVoxelManager.getArrayOfModifiedSlices();
   triggerSegmentationDataModified(this.segmentationId, slices);
+
+  // Trigger the LABELMAP_UNDO event
+  eventTarget.dispatchEvent(
+    new CustomEvent(Events.LABELMAP_UNDO, {
+      detail: {
+        segmentationId: this.segmentationId,
+        isUndo,
+      },
+    })
+  );
 }
 
 /**
