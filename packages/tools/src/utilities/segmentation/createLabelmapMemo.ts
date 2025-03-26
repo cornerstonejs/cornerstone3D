@@ -17,6 +17,8 @@ export type LabelmapMemo = Types.Memo & {
   redoVoxelManager?: Types.IVoxelManager<number>;
   undoVoxelManager?: Types.IVoxelManager<number>;
   memo?: LabelmapMemo;
+  /** A unique identifier for this memo */
+  id: string;
 };
 
 /**
@@ -51,6 +53,7 @@ export function restoreMemo(isUndo?: boolean) {
       detail: {
         segmentationId: this.segmentationId,
         isUndo,
+        id: this.id,
       },
     })
   );
@@ -73,6 +76,7 @@ export function createRleMemo<T>(
     commitMemo,
     segmentationVoxelManager,
     voxelManager,
+    id: utilities.uuidv4(),
   };
   return state;
 }
@@ -92,6 +96,7 @@ function commitMemo() {
   const undoVoxelManager = VoxelManager.createRLEHistoryVoxelManager(
     segmentationVoxelManager
   );
+  // @ts-expect-error
   RLEVoxelMap.copyMap(undoVoxelManager.map, this.voxelManager.map);
   for (const key of this.voxelManager.modifiedSlices.keys()) {
     undoVoxelManager.modifiedSlices.add(key);

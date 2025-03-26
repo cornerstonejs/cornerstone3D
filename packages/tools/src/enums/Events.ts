@@ -187,6 +187,13 @@ enum Events {
    */
   LABELMAP_UNDO = 'CORNERSTONE_TOOLS_LABELMAP_UNDO',
 
+  /**
+   * Triggers on the eventTarget when a labelmap redo operation is performed.
+   * This event is similar to LABELMAP_UNDO but specifically for redo operations.
+   * Contains information about the memo being redone, including whether it was from an acceptPreview operation.
+   */
+  LABELMAP_REDO = 'CORNERSTONE_TOOLS_LABELMAP_REDO',
+
   ///////////////////////////////////////
   //         Keyboard Events
   ///////////////////////////////////////

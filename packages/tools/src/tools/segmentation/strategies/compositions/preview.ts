@@ -5,6 +5,7 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { setSegmentIndexColor } from '../../../../stateManagement/segmentation/config/segmentationColor';
 import { getViewportIdsWithSegmentation } from '../../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
 import { getActiveSegmentIndex } from '../../../../stateManagement/segmentation/getActiveSegmentIndex';
+import type { LabelmapMemo } from '../../../../utilities/segmentation/createLabelmapMemo';
 
 /**
  * Sets up a preview to use an alternate set of colors.  First fills the
@@ -76,16 +77,19 @@ export default {
     const activeSegmentIndex = getActiveSegmentIndex(segmentationId);
     const { changedIndices } = centerSegmentIndexInfo || {};
 
+    // Type assertion as LabelmapMemo to access voxelManager
+    const labelmapMemo = memo as LabelmapMemo;
+
     const callback = ({ index }) => {
       const oldValue = segmentationVoxelManager.getAtIndex(index);
 
       if (changedIndices?.length > 0) {
         if (changedIndices.includes(index)) {
-          memo.voxelManager.setAtIndex(index, 0);
+          labelmapMemo.voxelManager.setAtIndex(index, 0);
         }
       } else {
         if (oldValue === previewSegmentIndex) {
-          memo.voxelManager.setAtIndex(index, activeSegmentIndex);
+          labelmapMemo.voxelManager.setAtIndex(index, activeSegmentIndex);
         }
       }
     };
@@ -97,7 +101,7 @@ export default {
       activeSegmentIndex
     );
 
-    memo.voxelManager.clear();
+    labelmapMemo.voxelManager.clear();
     // reset the centerSegmentIndexInfo
     operationData.centerSegmentIndexInfo.changedIndices = [];
   },
@@ -108,11 +112,16 @@ export default {
     // check if the preview has value, if not we should not undo
     // since it might be an actual brush stroke or an accept preview
     utilities.HistoryMemo.DefaultHistoryMemo.undoIf((memo) => {
-      if (!memo?.voxelManager) {
+      // Need to check and cast to LabelmapMemo to access voxelManager
+      const labelmapMemo = memo as LabelmapMemo;
+      if (!labelmapMemo?.voxelManager) {
         return false;
       }
 
-      const { segmentationVoxelManager } = memo;
+      // Since we can't check the fromAcceptPreview flag anymore, we'll rely on
+      // whether the memo has a previewSegmentIndex value present in it
+
+      const { segmentationVoxelManager } = labelmapMemo;
 
       let hasPreviewSegmentIndex = false;
       const callback = ({ value }) => {

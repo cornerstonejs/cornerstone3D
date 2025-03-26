@@ -19,7 +19,7 @@ import { getClosestImageIdForStackViewport } from '../../utilities/annotationHyd
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
-import { StrategyCallbacks } from '../../enums';
+import { StrategyCallbacks, Events } from '../../enums';
 import * as LabelmapMemo from '../../utilities/segmentation/createLabelmapMemo';
 import {
   getAllAnnotations,
@@ -130,16 +130,47 @@ export default class LabelmapBaseTool extends BaseTool {
   };
 
   protected memoMap: Map<string, LabelmapMemo.LabelmapMemo>;
+  protected acceptedMemoIds: Set<string>;
+  protected memo: LabelmapMemo.LabelmapMemo;
 
   constructor(toolProps, defaultToolProps) {
     super(toolProps, defaultToolProps);
     this.memoMap = new Map();
+    this.acceptedMemoIds = new Set();
     this.centerSegmentIndexInfo = {
       segmentIndex: null,
       hasSegmentIndex: false,
       hasPreviewIndex: false,
       changedIndices: [],
     };
+
+    // Add event listener for labelmap undo
+    this._labelmapUndoHandler = this._labelmapUndoHandler.bind(this);
+    eventTarget.addEventListener(
+      Events.LABELMAP_UNDO,
+      this._labelmapUndoHandler
+    );
+  }
+
+  protected _labelmapUndoHandler(evt) {
+    const { id, isUndo } = evt.detail;
+
+    // If this memo ID was from an accepted preview and it's being redone
+    if (this.acceptedMemoIds.has(id) && isUndo === false) {
+      // Auto-accept preview on redo, if it was previously accepted
+      // This will be called after the memo has been restored
+      const element = this._previewData.element;
+      if (element) {
+        this.applyActiveStrategyCallback(
+          getEnabledElement(element),
+          this.getOperationData(element),
+          StrategyCallbacks.AcceptPreview
+        );
+      }
+    }
+
+    // Mark the preview as a drag to prevent additional processing
+    this._previewData.isDrag = true;
   }
 
   // Gets a shared preview data
@@ -451,6 +482,12 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
+    // Track the memo ID if it was from an acceptPreview operation
+    if (this.memo && this.memo.id) {
+      // Store the ID so we can track it for future redo operations
+      this.acceptedMemoIds.add(this.memo.id);
+    }
+
     this.doneEditMemo();
 
     const enabledElement = getEnabledElement(element);
@@ -499,8 +536,11 @@ export default class LabelmapBaseTool extends BaseTool {
     );
     const preview = brushInstance.addPreview(viewport.element);
 
-    // @ts-expect-error
-    const { memo, segmentationId } = preview;
+    // Use type assertion for the preview object
+    const { memo, segmentationId } = preview as {
+      memo: LabelmapMemo.LabelmapMemo;
+      segmentationId: string;
+    };
     const previewVoxels = memo?.voxelManager;
     const segmentationVoxels =
       previewVoxels.sourceVoxelManager || previewVoxels;

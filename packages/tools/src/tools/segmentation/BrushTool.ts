@@ -166,8 +166,9 @@ class BrushTool extends LabelmapBaseTool {
     );
   }
 
-  private _labelmapUndoHandler = () => {
-    this._previewData.isDrag = true;
+  protected _labelmapUndoHandler = (evt) => {
+    // Call the parent handler to handle accepted memos
+    super._labelmapUndoHandler(evt);
   };
 
   onSetToolPassive = (evt) => {
@@ -483,9 +484,9 @@ class BrushTool extends LabelmapBaseTool {
     // otherwise the new area of hover may get filled, which is unexpected
     if (!this._previewData.preview && !this._previewData.isDrag) {
       this.applyActiveStrategy(enabledElement, operationData);
+      this.doneEditMemo();
     }
 
-    this.doneEditMemo();
     this._deactivateDraw(element);
 
     resetElementCursor(element);
@@ -548,18 +549,9 @@ class BrushTool extends LabelmapBaseTool {
     if (!element) {
       return;
     }
-    this.doneEditMemo();
 
-    const enabledElement = getEnabledElement(element);
-
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      this.getOperationData(element),
-      StrategyCallbacks.AcceptPreview
-    );
-
-    this._previewData.preview = null;
-    this._previewData.isDrag = false;
+    // Call parent method to handle memo tracking
+    super.acceptPreview(element);
   }
 
   /**

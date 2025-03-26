@@ -16,6 +16,11 @@ export type Memo = {
    *    after the commit is completed.
    */
   commitMemo?: () => boolean;
+
+  /**
+   * Unique identifier for the memo.
+   */
+  id?: string;
 };
 
 /**
