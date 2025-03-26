@@ -393,6 +393,13 @@ class ArrowAnnotateTool extends AnnotationTool {
         }
         annotation.data.text = text;
 
+        // Trigger modified before completed for new annotations
+        triggerAnnotationModified(
+          annotation,
+          element,
+          ChangeTypes.HandlesUpdated
+        );
+
         triggerAnnotationCompleted(annotation);
         // This is only new if it wasn't already memoed
         this.createMemo(element, annotation, { newAnnotation: !!this.memo });
@@ -466,10 +473,15 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     this.editData.hasMoved = true;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   touchTapCallback = (evt: EventTypes.TouchTapEventType) => {

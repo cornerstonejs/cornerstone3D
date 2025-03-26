@@ -6,6 +6,7 @@ import {
 
 import { describe, it, expect } from '@jest/globals';
 import { render } from 'react-dom';
+import { createCanvas } from 'canvas';
 
 const {
   utilities,
@@ -15,6 +16,7 @@ const {
   imageLoader,
   metaData,
   init,
+  setCanvasCreator,
 } = cornerstone3D;
 const { ViewportType, Events } = Enums;
 
@@ -73,6 +75,11 @@ function initCore() {
 }
 
 describe('stackViewport_node_render', function () {
+  beforeEach(() => {
+    // TODO - enable this once the full path works
+    // setCanvasCreator(createCanvas);
+  });
+
   let viewport, element, renderingEngine;
 
   beforeEach(() => {

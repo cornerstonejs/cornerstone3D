@@ -1363,13 +1363,21 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
         SourceImageSequence;
 
-    return ReferencedFrameNumber
-        ? getImageIdOfReferencedFrame(
-              ReferencedSOPInstanceUID,
-              ReferencedFrameNumber,
-              sopUIDImageIdIndexMap
-          )
-        : sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
+    const imageId = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
+
+    if (imageId) {
+        return imageId;
+    }
+
+    if (ReferencedFrameNumber) {
+        return getImageIdOfReferencedFrame(
+            ReferencedSOPInstanceUID,
+            ReferencedFrameNumber,
+            sopUIDImageIdIndexMap
+        );
+    }
+
+    return undefined;
 }
 
 /**

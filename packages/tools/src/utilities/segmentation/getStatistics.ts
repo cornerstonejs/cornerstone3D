@@ -101,6 +101,10 @@ async function calculateVolumeStatistics({
     imageData,
   } = strategyData;
 
+  if (!segmentationVoxelManager || !segmentationImageData) {
+    return;
+  }
+
   const spacing = segmentationImageData.getSpacing();
 
   const { boundsIJK: boundsOrig } = segmentationVoxelManager;

@@ -44,7 +44,10 @@ function isValidVolume(imageIds: string[]): boolean {
     seriesInstanceUID,
   };
 
-  const validVolume = imageIds.every((imageId) => {
+  let validVolume = true;
+
+  for (let i = 0; i < imageIds.length; i++) {
+    const imageId = imageIds[i];
     const { modality, seriesInstanceUID } = metaData.get(
       'generalSeriesModule',
       imageId
@@ -52,15 +55,38 @@ function isValidVolume(imageIds: string[]): boolean {
     const { imageOrientationPatient, pixelSpacing, columns, rows } =
       metaData.get('imagePlaneModule', imageId);
 
-    return (
-      seriesInstanceUID === baseMetadata.seriesInstanceUID &&
-      modality === baseMetadata.modality &&
-      columns === baseMetadata.columns &&
-      rows === baseMetadata.rows &&
-      isEqual(imageOrientationPatient, baseMetadata.imageOrientationPatient) &&
-      isEqual(pixelSpacing, baseMetadata.pixelSpacing)
-    );
-  });
+    if (seriesInstanceUID !== baseMetadata.seriesInstanceUID) {
+      validVolume = false;
+      break;
+    }
+
+    if (modality !== baseMetadata.modality) {
+      validVolume = false;
+      break;
+    }
+
+    if (columns !== baseMetadata.columns) {
+      validVolume = false;
+      break;
+    }
+
+    if (rows !== baseMetadata.rows) {
+      validVolume = false;
+      break;
+    }
+
+    if (
+      !isEqual(imageOrientationPatient, baseMetadata.imageOrientationPatient)
+    ) {
+      validVolume = false;
+      break;
+    }
+
+    if (!isEqual(pixelSpacing, baseMetadata.pixelSpacing)) {
+      validVolume = false;
+      break;
+    }
+  }
 
   return validVolume;
 }
