@@ -437,7 +437,7 @@ class VideoRedactionTool extends AnnotationTool {
   };
 
   /**
-   * Remove event handlers for the modify event loop, and enable default event prapogation.
+   * Remove event handlers for the modify event loop, and enable default event propagation.
    */
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
