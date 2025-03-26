@@ -384,6 +384,7 @@ export default class LabelmapBaseTool extends BaseTool {
       points: data?.handles?.points,
       segmentIndex,
       viewPlaneNormal,
+      previewOnHover: !this._previewData.isDrag,
       toolGroupId: this.toolGroupId,
       segmentationId,
       viewUp,
