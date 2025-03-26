@@ -268,6 +268,12 @@ export default class BrushStrategy {
       isInObjectBoundsIJK: null,
       brushStrategy: this,
       memo,
+      centerSegmentIndexInfo: {
+        segmentIndex: operationData.segmentIndex,
+        hasSegmentIndex: true,
+        hasPreviewIndex: false,
+        changedIndices: [],
+      },
     };
 
     this._initialize.forEach((func) => func(initializedData));
