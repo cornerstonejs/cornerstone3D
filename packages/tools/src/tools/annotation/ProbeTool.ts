@@ -653,10 +653,13 @@ class ProbeTool extends AnnotationTool {
           Modality: modality,
         };
       }
+    }
 
-      annotation.invalidated = false;
+    const invalidated = annotation.invalidated;
+    annotation.invalidated = false;
 
-      // Dispatching annotation modified
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
       triggerAnnotationModified(annotation, element, changeType);
     }
 
