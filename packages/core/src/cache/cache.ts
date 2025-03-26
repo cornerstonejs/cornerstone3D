@@ -36,6 +36,8 @@ class Cache {
   private readonly _volumeCache = new Map<string, ICachedVolume>();
   // used to store the reverse lookup from imageIds to volumeId
   private readonly _imageIdsToVolumeIdCache = new Map<string, string>();
+  // used to store the reverse lookup from referencedImageIds to imageIds
+  private readonly _referencedImageIdToImageIdCache = new Map<string, string>();
   // Todo: contour for now, but will be used for surface, etc.
   private readonly _geometryCache = new Map<string, ICachedGeometry>();
 
@@ -163,6 +165,13 @@ class Cache {
     }
 
     const { imageLoadObject } = cachedImage;
+
+    // Remove from referencedImageId map if needed
+    if (cachedImage.image?.referencedImageId) {
+      this._referencedImageIdToImageIdCache.delete(
+        cachedImage.image.referencedImageId
+      );
+    }
 
     // Cancel any in-progress loading
     if (imageLoadObject?.cancelFn) {
@@ -417,6 +426,15 @@ class Cache {
     const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
       image: cachedImage,
     };
+
+    debugger;
+    // Add to referencedImageId map if it exists
+    if (image.referencedImageId) {
+      this._referencedImageIdToImageIdCache.set(
+        image.referencedImageId,
+        imageId
+      );
+    }
 
     triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_ADDED, eventDetails);
 
@@ -1086,11 +1104,12 @@ class Cache {
   public getImageByReferencedImageId = (
     referencedImageId: string
   ): IImage | undefined => {
-    const cachedImage = Array.from(this._imageCache.values()).find(
-      (cachedImage) =>
-        cachedImage.image?.referencedImageId === referencedImageId
-    );
-    return cachedImage?.image;
+    const imageId =
+      this._referencedImageIdToImageIdCache.get(referencedImageId);
+    if (imageId) {
+      return this._imageCache.get(imageId)?.image;
+    }
+    return undefined;
   };
 
   /**
