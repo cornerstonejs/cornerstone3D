@@ -99,9 +99,9 @@ toolGroup.addToolInstance(
   cornerstoneTools.BrushTool.toolName,
   {
     activeStrategy: 'FILL_INSIDE_CIRCLE',
-    // preview: {
-    //   enabled: true,
-    // },
+    preview: {
+      enabled: true,
+    },
     useCenterSegmentIndex: true,
   }
 );
