@@ -180,19 +180,18 @@ enum Events {
   SEGMENTATION_DATA_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED',
 
   /**
-   * Triggers on the eventTarget when a labelmap undo operation is performed.
-   * Make use of {@link EventTypes.LabelmapUndoEventType | Labelmap Undo Event Type}
-   * for typing your event listeners for this labelmap undo event, and see what
-   * event detail is included in {@link EventTypes.LabelmapUndoEventDetail | Labelmap Undo Event Detail}
+   * Triggers on the eventTarget when a history undo operation is performed.
+   * Event detail includes information about the operation type, memo ID, and
+   * whether it was an undo or redo operation.
    */
-  LABELMAP_UNDO = 'CORNERSTONE_TOOLS_LABELMAP_UNDO',
+  HISTORY_UNDO = 'CORNERSTONE_TOOLS_HISTORY_UNDO',
 
   /**
-   * Triggers on the eventTarget when a labelmap redo operation is performed.
-   * This event is similar to LABELMAP_UNDO but specifically for redo operations.
-   * Contains information about the memo being redone, including whether it was from an acceptPreview operation.
+   * Triggers on the eventTarget when a history redo operation is performed.
+   * Event detail includes information about the operation type, memo ID, and
+   * whether it was an undo or redo operation.
    */
-  LABELMAP_REDO = 'CORNERSTONE_TOOLS_LABELMAP_REDO',
+  HISTORY_REDO = 'CORNERSTONE_TOOLS_HISTORY_REDO',
 
   ///////////////////////////////////////
   //         Keyboard Events

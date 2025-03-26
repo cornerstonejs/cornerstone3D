@@ -78,10 +78,17 @@ export class HistoryMemo {
     }
   }
 
-  public undoIf(condition: (item: Memo) => boolean) {
-    if (condition(this.ring[this.position])) {
+  /**
+   * Undoes if the condition is met for the current item
+   * @param condition - Function that evaluates if the undo should be performed
+   * @returns True if an undo was performed, false otherwise
+   */
+  public undoIf(condition: (item: Memo) => boolean): boolean {
+    if (this.undoAvailable > 0 && condition(this.ring[this.position])) {
       this.undo();
+      return true;
     }
+    return false;
   }
 
   /**

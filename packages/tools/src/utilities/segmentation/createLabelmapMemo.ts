@@ -47,13 +47,14 @@ export function restoreMemo(isUndo?: boolean) {
   const slices = useVoxelManager.getArrayOfModifiedSlices();
   triggerSegmentationDataModified(this.segmentationId, slices);
 
-  // Trigger the LABELMAP_UNDO event
+  // Trigger the HISTORY_UNDO event
   eventTarget.dispatchEvent(
-    new CustomEvent(Events.LABELMAP_UNDO, {
+    new CustomEvent(Events.HISTORY_UNDO, {
       detail: {
         segmentationId: this.segmentationId,
         isUndo,
         id: this.id,
+        operationType: 'labelmap',
       },
     })
   );

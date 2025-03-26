@@ -158,17 +158,14 @@ class BrushTool extends LabelmapBaseTool {
   ) {
     super(toolProps, defaultToolProps);
 
-    // Add event listener for labelmap undo
-    this._labelmapUndoHandler = this._labelmapUndoHandler.bind(this);
-    eventTarget.addEventListener(
-      Events.LABELMAP_UNDO,
-      this._labelmapUndoHandler
-    );
+    // Add event listener for history undo
+    this._historyUndoHandler = this._historyUndoHandler.bind(this);
+    eventTarget.addEventListener(Events.HISTORY_UNDO, this._historyUndoHandler);
   }
 
-  protected _labelmapUndoHandler = (evt) => {
+  protected _historyUndoHandler = (evt) => {
     // Call the parent handler to handle accepted memos
-    super._labelmapUndoHandler(evt);
+    super._historyUndoHandler(evt);
   };
 
   onSetToolPassive = (evt) => {
