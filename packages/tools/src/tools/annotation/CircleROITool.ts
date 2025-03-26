@@ -920,6 +920,7 @@ class CircleROITool extends AnnotationTool {
       // Some area to do stats over.
 
       if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
+        this.isHandleOutsideImage = false;
         const iMin = Math.min(pos1Index[0], pos2Index[0]);
         const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
@@ -1021,8 +1022,10 @@ class CircleROITool extends AnnotationTool {
 
     annotation.invalidated = false;
 
-    // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    if (!this.isHandleOutsideImage) {
+      // Dispatching annotation modified
+      triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    }
 
     return cachedStats;
   };
