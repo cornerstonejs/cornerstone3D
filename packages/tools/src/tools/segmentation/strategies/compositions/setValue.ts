@@ -15,25 +15,158 @@ export default {
   ) => {
     const {
       segmentsLocked,
-      segmentIndex,
       previewSegmentIndex,
       memo,
       segmentationVoxelManager,
+      configuration,
     } = operationData;
 
-    if (!memo) {
-      debugger;
-    }
-
-    // const voxelManager = operationData.memo?.voxelManager;
-    const segmentIndexToUse = previewSegmentIndex ?? segmentIndex;
-
+    const { segmentIndex } = operationData;
     const existingValue = segmentationVoxelManager.getAtIndex(index);
 
-    if (existingValue === segmentIndexToUse || segmentsLocked.includes(value)) {
+    if (segmentsLocked.includes(value)) {
       return;
     }
 
-    memo.voxelManager.setAtIndex(index, segmentIndexToUse);
+    if (!configuration.centerSegmentIndex && existingValue === segmentIndex) {
+      return;
+    }
+
+    if (
+      configuration.centerSegmentIndex &&
+      configuration.centerSegmentIndex.segmentIndex !== 0 &&
+      existingValue === segmentIndex
+    ) {
+      return;
+    }
+
+    if (!previewSegmentIndex) {
+      let useSegmentIndex = segmentIndex;
+      if (configuration.centerSegmentIndex) {
+        useSegmentIndex = configuration.centerSegmentIndex.segmentIndex;
+      }
+
+      memo.voxelManager.setAtIndex(index, useSegmentIndex);
+      return;
+    }
+
+    // this means we have previewSegmentIndex
+    if (!configuration.centerSegmentIndex) {
+      memo.voxelManager.setAtIndex(index, previewSegmentIndex);
+      return;
+    }
+
+    // we have centerSegmentIndex with preview enabled
+    const {
+      hasPreviewIndex,
+      hasSegmentIndex,
+      segmentIndex: centerSegmentIndex,
+    } = configuration.centerSegmentIndex;
+
+    if (centerSegmentIndex === 0 && hasSegmentIndex && hasPreviewIndex) {
+      if (existingValue === segmentIndex) {
+        return;
+      }
+
+      if (existingValue === previewSegmentIndex) {
+        memo.voxelManager.setAtIndex(index, 0);
+        return;
+      }
+
+      return;
+    }
+
+    if (centerSegmentIndex === 0 && hasSegmentIndex && !hasPreviewIndex) {
+      if (existingValue === 0 || existingValue !== segmentIndex) {
+        return;
+      }
+      const changed = memo.voxelManager.setAtIndex(index, previewSegmentIndex);
+
+      if (changed) {
+        configuration.centerSegmentIndex.changedIndices.push(index);
+      }
+      return;
+    }
+
+    if (centerSegmentIndex === 0 && !hasSegmentIndex && hasPreviewIndex) {
+      if (existingValue === segmentIndex) {
+        return;
+      }
+
+      if (existingValue === previewSegmentIndex) {
+        memo.voxelManager.setAtIndex(index, 0);
+        return;
+      }
+
+      return;
+    }
+
+    if (centerSegmentIndex === 0 && !hasSegmentIndex && !hasPreviewIndex) {
+      if (existingValue === segmentIndex) {
+        return;
+      }
+
+      if (existingValue === previewSegmentIndex) {
+        memo.voxelManager.setAtIndex(index, previewSegmentIndex);
+        return;
+      }
+
+      return;
+    }
+
+    if (
+      centerSegmentIndex === previewSegmentIndex &&
+      hasSegmentIndex &&
+      hasPreviewIndex
+    ) {
+      if (existingValue === segmentIndex) {
+        return;
+      }
+
+      memo.voxelManager.setAtIndex(index, previewSegmentIndex);
+
+      return;
+    }
+
+    if (
+      centerSegmentIndex === previewSegmentIndex &&
+      !hasSegmentIndex &&
+      hasPreviewIndex
+    ) {
+      if (existingValue === segmentIndex) {
+        return;
+      }
+
+      memo.voxelManager.setAtIndex(index, previewSegmentIndex);
+
+      return;
+    }
+
+    if (
+      centerSegmentIndex === segmentIndex &&
+      hasSegmentIndex &&
+      hasPreviewIndex
+    ) {
+      if (existingValue === segmentIndex) {
+        return;
+      }
+
+      memo.voxelManager.setAtIndex(index, previewSegmentIndex);
+
+      return;
+    }
+    if (
+      centerSegmentIndex === segmentIndex &&
+      hasSegmentIndex &&
+      !hasPreviewIndex
+    ) {
+      if (existingValue === segmentIndex) {
+        return;
+      }
+
+      memo.voxelManager.setAtIndex(index, previewSegmentIndex);
+
+      return;
+    }
   },
 };

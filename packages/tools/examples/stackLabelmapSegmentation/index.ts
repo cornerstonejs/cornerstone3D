@@ -13,6 +13,7 @@ import {
   addButtonToToolbar,
   addBrushSizeSlider,
   labelmapTools,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
@@ -275,6 +276,8 @@ addButtonToToolbar({
   },
 });
 
+addSegmentIndexDropdown(segmentationIds[0]);
+
 addDropdownToToolbar({
   id: dropDownId,
   labelText: 'Set Active Segmentation',
@@ -335,7 +338,7 @@ function setupTools(toolGroupId) {
       preview: {
         enabled: true,
       },
-      // useCenterSegmentIndex: true,
+      useCenterSegmentIndex: true,
     }
   );
   toolGroup.addToolInstance(

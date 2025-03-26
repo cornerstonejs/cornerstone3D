@@ -4,6 +4,7 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { setSegmentIndexColor } from '../../../../stateManagement/segmentation/config/segmentationColor';
 import { getViewportIdsWithSegmentation } from '../../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
+import { getActiveSegmentIndex } from '../../../../stateManagement/segmentation/getActiveSegmentIndex';
 
 /**
  * Sets up a preview to use an alternate set of colors.  First fills the
@@ -67,16 +68,27 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const {
-      segmentIndex,
       previewSegmentIndex,
       segmentationVoxelManager,
       memo,
+      configuration,
+      segmentationId,
     } = operationData || {};
+
+    const activeSegmentIndex = getActiveSegmentIndex(segmentationId);
+    const { changedIndices } = configuration.centerSegmentIndex || {};
 
     const callback = ({ index }) => {
       const oldValue = segmentationVoxelManager.getAtIndex(index);
-      if (oldValue === previewSegmentIndex) {
-        memo.voxelManager.setAtIndex(index, segmentIndex);
+
+      if (changedIndices?.length > 0) {
+        if (changedIndices.includes(index)) {
+          memo.voxelManager.setAtIndex(index, 0);
+        }
+      } else {
+        if (oldValue === previewSegmentIndex) {
+          memo.voxelManager.setAtIndex(index, activeSegmentIndex);
+        }
       }
     };
     segmentationVoxelManager.forEach(callback);
@@ -84,7 +96,7 @@ export default {
     triggerSegmentationDataModified(
       operationData.segmentationId,
       segmentationVoxelManager.getArrayOfModifiedSlices(),
-      segmentIndex
+      activeSegmentIndex
     );
 
     memo.voxelManager.clear();

@@ -284,6 +284,7 @@ class BrushTool extends LabelmapBaseTool {
   };
 
   previewCallback = () => {
+    return;
     this._previewData.timer = null;
 
     // get strategy data

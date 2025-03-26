@@ -19,16 +19,15 @@ import type { Types } from '@cornerstonejs/core';
  *
  */
 export default {
-  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const { centerSegmentIndex } = operationData.configuration || {};
+  // [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
+  //   const { centerSegmentIndex } = operationData.configuration || {};
 
-    if (!centerSegmentIndex) {
-      return;
-    }
+  //   if (!centerSegmentIndex) {
+  //     return;
+  //   }
 
-    operationData.segmentIndex = centerSegmentIndex.segmentIndex;
-  },
-
+  //   operationData.segmentIndex = centerSegmentIndex.segmentIndex;
+  // },
   [StrategyCallbacks.OnInteractionStart]: (
     operationData: InitializedOperationData
   ) => {
@@ -80,19 +79,32 @@ export default {
     }
 
     const existingValue = segmentationVoxelManager.getAtIJKPoint(centerIJK);
+
     // if (existingValue === previewSegmentIndex) {
-    //   if (preview) {
-    //     existingValue = preview.segmentIndex;
+    //   // nothing literally we are fine with the picked location
+    // } else if (existingValue === 0) {
+    //   if (hasPreviewIndex) {
+    //     existingValue = null;
+    //   } else if (hasSegmentIndex) {
+    //     // if we have picked from outside and the brush is touching the segment index
+    //     // we should clear the segment index
+    //     existingValue = null;
     //   } else {
-    //     return;
+    //     // if we have picked from outside and the brush is not touching the segment index
+    //     // we should set the segment index to the preview segment index
+    //     existingValue = previewSegmentIndex;
     //   }
-    // } else if (hasPreviewIndex) {
-    //   // Clear the preview area
-    //   existingValue = null;
     // }
-    operationData.segmentIndex = existingValue;
-    configuration.centerSegmentIndex = {
+
+    // operationData.previewSegmentIndex = existingValue;
+    console.debug('existingValue', existingValue);
+    console.debug('hasSegmentIndex', hasSegmentIndex);
+    console.debug('hasPreviewIndex', hasPreviewIndex);
+    operationData.configuration.centerSegmentIndex = {
       segmentIndex: existingValue,
+      hasSegmentIndex,
+      hasPreviewIndex,
+      changedIndices: [],
     };
   },
 };
