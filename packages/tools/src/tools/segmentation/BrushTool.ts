@@ -284,7 +284,12 @@ class BrushTool extends LabelmapBaseTool {
   };
 
   previewCallback = () => {
-    return;
+    // Don't run the preview callback if we're currently dragging
+    if (this._previewData.isDrag) {
+      this._previewData.timer = null;
+      return;
+    }
+
     this._previewData.timer = null;
 
     // get strategy data
@@ -365,6 +370,12 @@ class BrushTool extends LabelmapBaseTool {
       // If we are showing a preview, then don't start dragging quite immediately
       // so that click up can accept the preview.
       return;
+    }
+
+    // Clear any pending preview timer when dragging starts
+    if (this._previewData.timer) {
+      window.clearTimeout(this._previewData.timer);
+      this._previewData.timer = null;
     }
 
     this._previewData.preview = this.applyActiveStrategy(

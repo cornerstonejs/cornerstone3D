@@ -19,6 +19,7 @@ export default {
       memo,
       segmentationVoxelManager,
       centerSegmentIndexInfo,
+      previewOnHover,
     } = operationData;
 
     const { segmentIndex } = operationData;
@@ -68,6 +69,13 @@ export default {
         return;
       }
 
+      // Don't let previewOnHover override the value since basically there might be a
+      // moment where we have the preview from the hover and that might get confused by
+      // the actual segmentation
+      if (previewOnHover) {
+        return;
+      }
+
       if (existingValue === previewSegmentIndex) {
         memo.voxelManager.setAtIndex(index, 0);
         return;
@@ -80,6 +88,7 @@ export default {
       if (existingValue === 0 || existingValue !== segmentIndex) {
         return;
       }
+
       memo.voxelManager.setAtIndex(index, previewSegmentIndex);
       centerSegmentIndexInfo.changedIndices.push(index);
       return;
