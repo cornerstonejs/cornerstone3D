@@ -919,7 +919,10 @@ class CircleROITool extends AnnotationTool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
+      if (
+        this._isInsideVolume(pos1Index, pos2Index, dimensions) ||
+        viewport.type === 'wholeSlide'
+      ) {
         const iMin = Math.min(pos1Index[0], pos2Index[0]);
         const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
@@ -982,17 +985,19 @@ class CircleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            isInObject: (pointLPS) =>
-              pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
-
+        let pointsInShape;
+        if (viewport.type !== 'wholeSlide') {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              isInObject: (pointLPS) =>
+                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
