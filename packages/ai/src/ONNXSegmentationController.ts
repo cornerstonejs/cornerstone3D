@@ -219,7 +219,7 @@ export default class ONNXSegmentationController {
   private labels = [];
   private worldPoints = new Array<Types.Point3>();
   private randomPoints;
-
+  private _searchBreadth = 3;
   private loadingAI: Promise<unknown>;
 
   protected viewport;
@@ -298,6 +298,7 @@ export default class ONNXSegmentationController {
       islandFillOptions: undefined,
       autoSegmentMode: false,
       numRandomPoints: 2,
+      searchBreadth: 3,
     }
   ) {
     if (options.listeners) {
@@ -318,6 +319,9 @@ export default class ONNXSegmentationController {
     // Initialize autoSegment mode
     this._autoSegmentMode = options.autoSegmentMode || false;
     this.numRandomPoints = options.numRandomPoints || this.numRandomPoints;
+
+    // Set search breadth for neighbor slices
+    this._searchBreadth = options.searchBreadth || this._searchBreadth;
   }
 
   /**
@@ -671,54 +675,88 @@ export default class ONNXSegmentationController {
         cornerstoneTools.segmentation.segmentIndex.getActiveSegmentIndex(
           segmentation.segmentationId
         );
-      // Get the labelmap for the previous image
+
+      // Get all image IDs
       const imageIds = viewport.getImageIds();
-      const imageIdIndex = viewport.getCurrentImageIdIndex();
-      const previousImageId = imageIds[imageIdIndex - 1];
-      const nextImageId = imageIds[imageIdIndex + 1];
+      const currentImageIdIndex = viewport.getCurrentImageIdIndex();
 
-      if (segmentation) {
-        const previousLabelmapImage =
-          cache.getImageByReferencedImageId(previousImageId);
+      const pointLists = [];
+      let foundPrevious = false;
+      let foundNext = false;
 
-        const previousLabelmapVoxelManager =
-          previousLabelmapImage?.voxelManager;
+      // Check slices with increasing offset until we find points or reach max breadth
+      for (let offset = 1; offset <= this._searchBreadth; offset++) {
+        if (!foundPrevious) {
+          const previousImageIdIndex = currentImageIdIndex - offset;
+          if (previousImageIdIndex >= 0) {
+            const previousImageId = imageIds[previousImageIdIndex];
+            const previousLabelmapImage =
+              cache.getImageByReferencedImageId(previousImageId);
+            const previousLabelmapVoxelManager =
+              previousLabelmapImage?.voxelManager;
 
-        const nextLabelmapImage =
-          cache.getImageByReferencedImageId(nextImageId);
-        const nextLabelmapVoxelManager = nextLabelmapImage?.voxelManager;
+            if (previousLabelmapVoxelManager) {
+              let foundInThisSlice = false;
+              previousLabelmapVoxelManager.forEach(({ value, pointIJK }) => {
+                if (value === segmentIndex) {
+                  const worldCoords = utilities.imageToWorldCoords(
+                    previousLabelmapImage.imageId,
+                    [pointIJK[0], pointIJK[1]]
+                  );
+                  pointLists.push(worldCoords);
+                  foundInThisSlice = true;
+                }
+              });
 
-        if (previousLabelmapVoxelManager || nextLabelmapVoxelManager) {
-          const pointLists = [];
-          previousLabelmapVoxelManager?.forEach(({ value, pointIJK }) => {
-            if (value === segmentIndex) {
-              const worldCoords = utilities.imageToWorldCoords(
-                previousLabelmapImage.imageId,
-                [pointIJK[0], pointIJK[1]]
-              );
-              pointLists.push(worldCoords);
+              if (foundInThisSlice) {
+                foundPrevious = true;
+              }
             }
-          });
+          }
+        }
 
-          nextLabelmapVoxelManager?.forEach(({ value, pointIJK }) => {
-            if (value === segmentIndex) {
-              const worldCoords = utilities.imageToWorldCoords(
-                nextLabelmapImage.imageId,
-                [pointIJK[0], pointIJK[1]]
-              );
-              pointLists.push(worldCoords);
+        // Check next slice if we haven't found points in that direction yet
+        if (!foundNext) {
+          const nextImageIdIndex = currentImageIdIndex + offset;
+          if (nextImageIdIndex < imageIds.length) {
+            const nextImageId = imageIds[nextImageIdIndex];
+            const nextLabelmapImage =
+              cache.getImageByReferencedImageId(nextImageId);
+            const nextLabelmapVoxelManager = nextLabelmapImage?.voxelManager;
+
+            if (nextLabelmapVoxelManager) {
+              let foundInThisSlice = false;
+              nextLabelmapVoxelManager.forEach(({ value, pointIJK }) => {
+                if (value === segmentIndex) {
+                  const worldCoords = utilities.imageToWorldCoords(
+                    nextLabelmapImage.imageId,
+                    [pointIJK[0], pointIJK[1]]
+                  );
+                  pointLists.push(worldCoords);
+                  foundInThisSlice = true;
+                }
+              });
+
+              if (foundInThisSlice) {
+                foundNext = true;
+              }
             }
-          });
+          }
+        }
 
-          // Pick random points from the pointLists
-          this.randomPoints =
-            pointLists.length > 0
-              ? pointLists
-                  .sort(() => Math.random() - 0.5)
-                  .slice(0, Math.min(pointLists.length, this.numRandomPoints))
-              : [];
+        // If we have found points in both directions, we can stop
+        if (foundPrevious && foundNext) {
+          break;
         }
       }
+
+      // Pick random points from the pointLists
+      this.randomPoints =
+        pointLists.length > 0
+          ? pointLists
+              .sort(() => Math.random() - 0.5)
+              .slice(0, Math.min(pointLists.length, this.numRandomPoints))
+          : [];
     }
 
     const { canvasMask } = this;
