@@ -1,5 +1,11 @@
-import { type Types, cache, utilities } from '@cornerstonejs/core';
-import { eventTarget, Enums, triggerEvent } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import {
+  utilities,
+  eventTarget,
+  Enums,
+  triggerEvent,
+  cache,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -1219,8 +1225,7 @@ export default class ONNXSegmentationController {
       segmentIndex,
       segmentationVoxelManager,
     } = preview;
-    const previewVoxelManager =
-      memo?.voxelManager || preview.previewVoxelManager;
+    const previewVoxelManager = memo?.voxelManager;
     const { dimensions } = previewVoxelManager;
     const { data } = mask;
 
@@ -1260,6 +1265,9 @@ export default class ONNXSegmentationController {
         }
       }
     }
+
+    this.tool.doneEditMemo();
+    this.tool._previewData.isDrag = true;
 
     const voxelManager =
       previewVoxelManager.sourceVoxelManager || previewVoxelManager;
