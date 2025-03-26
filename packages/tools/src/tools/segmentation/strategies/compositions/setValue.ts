@@ -41,6 +41,12 @@ export default {
       return;
     }
 
+    // this means we have previewSegmentIndex
+    if (centerSegmentIndexInfo.segmentIndex === null) {
+      memo.voxelManager.setAtIndex(index, previewSegmentIndex ?? segmentIndex);
+      return;
+    }
+
     if (!previewSegmentIndex) {
       let useSegmentIndex = segmentIndex;
       if (centerSegmentIndexInfo) {
@@ -48,12 +54,6 @@ export default {
       }
 
       memo.voxelManager.setAtIndex(index, useSegmentIndex);
-      return;
-    }
-
-    // this means we have previewSegmentIndex
-    if (centerSegmentIndexInfo.segmentIndex === null) {
-      memo.voxelManager.setAtIndex(index, previewSegmentIndex);
       return;
     }
 
