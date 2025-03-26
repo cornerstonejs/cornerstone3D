@@ -427,7 +427,6 @@ class Cache {
       image: cachedImage,
     };
 
-    debugger;
     // Add to referencedImageId map if it exists
     if (image.referencedImageId) {
       this._referencedImageIdToImageIdCache.set(

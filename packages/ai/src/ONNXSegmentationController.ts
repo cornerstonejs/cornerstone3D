@@ -252,7 +252,7 @@ export default class ONNXSegmentationController {
   protected _enabled = false;
   protected _autoSegmentMode = false;
   protected imageIdsRunAgainst = new Map();
-  protected numRandomPoints = 10; // Default number of random points to sample
+  protected numRandomPoints = 25; // Default number of random points to sample
 
   /**
    * Fill internal islands by size, and consider islands at the edge to
@@ -711,9 +711,12 @@ export default class ONNXSegmentationController {
           });
 
           // Pick random points from the pointLists
-          this.randomPoints = pointLists
-            .sort(() => Math.random() - 0.5)
-            .slice(0, this.numRandomPoints);
+          this.randomPoints =
+            pointLists.length > 0
+              ? pointLists
+                  .sort(() => Math.random() - 0.5)
+                  .slice(0, Math.min(pointLists.length, this.numRandomPoints))
+              : [];
         }
       }
     }
