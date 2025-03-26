@@ -310,6 +310,10 @@ class BrushTool extends LabelmapBaseTool {
       strategy: activeStrategy,
     });
 
+    if (!operationData) {
+      return;
+    }
+
     const memo = this.createMemo(
       operationData.segmentationId,
       strategyData.segmentationVoxelManager

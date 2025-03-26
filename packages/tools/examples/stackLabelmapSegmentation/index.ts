@@ -95,6 +95,7 @@ const brushInstanceNames = {
   ThresholdBrushCircle: 'ThresholdBrushCircle',
   ThresholdBrushSphere: 'ThresholdBrushSphere',
   DynamicThreshold: 'DynamicThreshold',
+  DynamicThresholdWithIslandRemoval: 'DynamicThresholdWithIslandRemoval',
 };
 
 const brushStrategies = {
@@ -104,6 +105,8 @@ const brushStrategies = {
   [brushInstanceNames.ThresholdBrushCircle]: 'THRESHOLD_INSIDE_CIRCLE',
   [brushInstanceNames.ThresholdBrushSphere]: 'THRESHOLD_INSIDE_SPHERE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.DynamicThresholdWithIslandRemoval]:
+    'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
 };
 
 const brushValues = [
@@ -113,12 +116,14 @@ const brushValues = [
   brushInstanceNames.ThresholdBrushCircle,
   brushInstanceNames.ThresholdBrushSphere,
   brushInstanceNames.DynamicThreshold,
+  brushInstanceNames.DynamicThresholdWithIslandRemoval,
 ];
 
 const thresholdBrushValues = [
   brushInstanceNames.ThresholdBrushCircle,
   brushInstanceNames.ThresholdBrushSphere,
   brushInstanceNames.DynamicThreshold,
+  brushInstanceNames.DynamicThresholdWithIslandRemoval,
 ];
 
 const optionsValues = [
@@ -331,6 +336,20 @@ function setupTools(toolGroupId) {
     }
   );
   toolGroup.addToolInstance(
+    brushInstanceNames.DynamicThresholdWithIslandRemoval,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.DynamicThresholdWithIslandRemoval,
+      threshold: {
+        isDynamic: true,
+        dynamicRadius: 3,
+      },
+      preview: {
+        enabled: true,
+      },
+    }
+  );
+  toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
     {
@@ -380,9 +399,12 @@ function setupTools(toolGroupId) {
     }
   );
 
-  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
+  toolGroup.setToolActive(
+    brushInstanceNames.DynamicThresholdWithIslandRemoval,
+    {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    }
+  );
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
