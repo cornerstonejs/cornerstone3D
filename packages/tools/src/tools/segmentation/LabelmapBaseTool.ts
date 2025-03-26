@@ -102,6 +102,13 @@ export default class LabelmapBaseTool extends BaseTool {
     referencedVolumeId?: string;
   } | null;
 
+  protected centerSegmentIndexInfo: {
+    segmentIndex: number;
+    hasSegmentIndex: boolean;
+    hasPreviewIndex: boolean;
+    changedIndices: number[];
+  };
+
   protected _hoverData?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     brushCursor: any;
@@ -127,6 +134,12 @@ export default class LabelmapBaseTool extends BaseTool {
   constructor(toolProps, defaultToolProps) {
     super(toolProps, defaultToolProps);
     this.memoMap = new Map();
+    this.centerSegmentIndexInfo = {
+      segmentIndex: null,
+      hasSegmentIndex: false,
+      hasPreviewIndex: false,
+      changedIndices: [],
+    };
   }
 
   // Gets a shared preview data
@@ -374,6 +387,7 @@ export default class LabelmapBaseTool extends BaseTool {
       toolGroupId: this.toolGroupId,
       segmentationId,
       viewUp,
+      centerSegmentIndexInfo: this.centerSegmentIndexInfo,
       activeStrategy: this.configuration.activeStrategy,
       configuration: this.configuration,
       // Provide the preview information so that data can be used directly

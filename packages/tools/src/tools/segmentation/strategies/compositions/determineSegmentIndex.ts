@@ -46,7 +46,6 @@ export default {
     }
 
     // Get rid of the previous data
-    delete configuration.centerSegmentIndex;
 
     let hasSegmentIndex = false;
     let hasPreviewIndex = false;
@@ -75,36 +74,14 @@ export default {
     });
 
     if (!hasSegmentIndex && !hasPreviewIndex) {
+      operationData.centerSegmentIndexInfo.segmentIndex = null;
       return;
     }
 
     const existingValue = segmentationVoxelManager.getAtIJKPoint(centerIJK);
 
-    // if (existingValue === previewSegmentIndex) {
-    //   // nothing literally we are fine with the picked location
-    // } else if (existingValue === 0) {
-    //   if (hasPreviewIndex) {
-    //     existingValue = null;
-    //   } else if (hasSegmentIndex) {
-    //     // if we have picked from outside and the brush is touching the segment index
-    //     // we should clear the segment index
-    //     existingValue = null;
-    //   } else {
-    //     // if we have picked from outside and the brush is not touching the segment index
-    //     // we should set the segment index to the preview segment index
-    //     existingValue = previewSegmentIndex;
-    //   }
-    // }
-
-    // operationData.previewSegmentIndex = existingValue;
-    console.debug('existingValue', existingValue);
-    console.debug('hasSegmentIndex', hasSegmentIndex);
-    console.debug('hasPreviewIndex', hasPreviewIndex);
-    operationData.configuration.centerSegmentIndex = {
-      segmentIndex: existingValue,
-      hasSegmentIndex,
-      hasPreviewIndex,
-      changedIndices: [],
-    };
+    operationData.centerSegmentIndexInfo.segmentIndex = existingValue;
+    operationData.centerSegmentIndexInfo.hasSegmentIndex = hasSegmentIndex;
+    operationData.centerSegmentIndexInfo.hasPreviewIndex = hasPreviewIndex;
   },
 };

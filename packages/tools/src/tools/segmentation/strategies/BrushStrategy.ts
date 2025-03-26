@@ -17,6 +17,12 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name
   operationName?: string;
 
+  centerSegmentIndexInfo: {
+    segmentIndex: number;
+    hasSegmentIndex: boolean;
+    hasPreviewIndex: boolean;
+    changedIndices: number[];
+  };
   // Additional data for performing the strategy
   enabledElement: Types.IEnabledElement;
   centerIJK?: Types.Point3;

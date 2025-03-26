@@ -18,7 +18,7 @@ export default {
       previewSegmentIndex,
       memo,
       segmentationVoxelManager,
-      configuration,
+      centerSegmentIndexInfo,
     } = operationData;
 
     const { segmentIndex } = operationData;
@@ -28,13 +28,13 @@ export default {
       return;
     }
 
-    if (!configuration.centerSegmentIndex && existingValue === segmentIndex) {
+    if (!centerSegmentIndexInfo && existingValue === segmentIndex) {
       return;
     }
 
     if (
-      configuration.centerSegmentIndex &&
-      configuration.centerSegmentIndex.segmentIndex !== 0 &&
+      centerSegmentIndexInfo &&
+      centerSegmentIndexInfo.segmentIndex !== 0 &&
       existingValue === segmentIndex
     ) {
       return;
@@ -42,8 +42,8 @@ export default {
 
     if (!previewSegmentIndex) {
       let useSegmentIndex = segmentIndex;
-      if (configuration.centerSegmentIndex) {
-        useSegmentIndex = configuration.centerSegmentIndex.segmentIndex;
+      if (centerSegmentIndexInfo) {
+        useSegmentIndex = centerSegmentIndexInfo.segmentIndex;
       }
 
       memo.voxelManager.setAtIndex(index, useSegmentIndex);
@@ -51,17 +51,17 @@ export default {
     }
 
     // this means we have previewSegmentIndex
-    if (!configuration.centerSegmentIndex) {
+    if (centerSegmentIndexInfo.segmentIndex === null) {
       memo.voxelManager.setAtIndex(index, previewSegmentIndex);
       return;
     }
 
-    // we have centerSegmentIndex with preview enabled
+    // we have centerSegmentIndexInfo with preview enabled
     const {
       hasPreviewIndex,
       hasSegmentIndex,
       segmentIndex: centerSegmentIndex,
-    } = configuration.centerSegmentIndex;
+    } = centerSegmentIndexInfo;
 
     if (centerSegmentIndex === 0 && hasSegmentIndex && hasPreviewIndex) {
       if (existingValue === segmentIndex) {
@@ -80,11 +80,8 @@ export default {
       if (existingValue === 0 || existingValue !== segmentIndex) {
         return;
       }
-      const changed = memo.voxelManager.setAtIndex(index, previewSegmentIndex);
-
-      if (changed) {
-        configuration.centerSegmentIndex.changedIndices.push(index);
-      }
+      memo.voxelManager.setAtIndex(index, previewSegmentIndex);
+      centerSegmentIndexInfo.changedIndices.push(index);
       return;
     }
 

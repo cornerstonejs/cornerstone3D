@@ -23,8 +23,6 @@ export default {
       return;
     }
 
-    delete configuration.centerSegmentIndex;
-
     // Now generate a normal preview as though the user had clicked, filled, released
     this.onInteractionStart?.(enabledElement, operationData);
 
@@ -71,12 +69,12 @@ export default {
       previewSegmentIndex,
       segmentationVoxelManager,
       memo,
-      configuration,
       segmentationId,
+      centerSegmentIndexInfo,
     } = operationData || {};
 
     const activeSegmentIndex = getActiveSegmentIndex(segmentationId);
-    const { changedIndices } = configuration.centerSegmentIndex || {};
+    const { changedIndices } = centerSegmentIndexInfo || {};
 
     const callback = ({ index }) => {
       const oldValue = segmentationVoxelManager.getAtIndex(index);
@@ -100,6 +98,8 @@ export default {
     );
 
     memo.voxelManager.clear();
+    // reset the centerSegmentIndexInfo
+    operationData.centerSegmentIndexInfo.changedIndices = [];
   },
 
   [StrategyCallbacks.RejectPreview]: (
