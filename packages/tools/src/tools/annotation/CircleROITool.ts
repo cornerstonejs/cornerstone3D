@@ -986,7 +986,7 @@ class CircleROITool extends AnnotationTool {
         );
 
         let pointsInShape;
-        if (viewport.type !== 'wholeSlide') {
+        if (imageData.getScalarData() !== null) {
           pointsInShape = voxelManager.forEach(
             this.configuration.statsCalculator.statsCallback,
             {
