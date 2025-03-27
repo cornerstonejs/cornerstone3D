@@ -1095,11 +1095,17 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       };
     }
 
-    this.triggerAnnotationModified(
-      annotation,
-      enabledElement,
-      ChangeTypes.StatsUpdated
-    );
+    const invalidated = annotation.invalidated;
+    annotation.invalidated = false;
+
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
+      this.triggerAnnotationModified(
+        annotation,
+        enabledElement,
+        ChangeTypes.StatsUpdated
+      );
+    }
 
     return cachedStats;
   };

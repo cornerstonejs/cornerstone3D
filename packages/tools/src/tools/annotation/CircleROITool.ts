@@ -873,6 +873,8 @@ class CircleROITool extends AnnotationTool {
     const data = annotation.data;
     const { element } = viewport;
 
+    const wasInvalidated = annotation.invalidated;
+
     const { points } = data.handles;
 
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
@@ -1022,7 +1024,9 @@ class CircleROITool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    if (wasInvalidated) {
+      triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    }
 
     return cachedStats;
   };

@@ -39,6 +39,7 @@ import type {
 } from '../../types';
 import type { LabelAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 class LabelTool extends AnnotationTool {
   static toolName = 'Label';
@@ -596,6 +597,10 @@ class LabelTool extends AnnotationTool {
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
         return renderStatus;
+      }
+
+      if (!isAnnotationVisible(annotationUID)) {
+        continue;
       }
 
       if (!data.text) {

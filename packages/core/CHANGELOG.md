@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.13...v3.7.14) (2025-03-27)
+
+### Bug Fixes
+
+- Color rendering in node ([#1945](https://github.com/cornerstonejs/cornerstone3D/issues/1945)) ([70f466e](https://github.com/cornerstonejs/cornerstone3D/commit/70f466e95fd15af2c75e9838d267154bf290b056))
+
+## [3.7.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.12...v3.7.13) (2025-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.7.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.11...v3.7.12) (2025-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.7.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.10...v3.7.11) (2025-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.7.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.9...v3.7.10) (2025-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [3.7.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.8...v3.7.9) (2025-03-25)
 
 ### Bug Fixes
