@@ -12,7 +12,12 @@ import {
   VIEWPORT_PRESETS,
 } from '../constants';
 import type { BlendModes, InterpolationType, OrientationAxis } from '../enums';
-import { Events, ViewportStatus, VOILUTFunctionType } from '../enums';
+import {
+  Events,
+  MetadataModules,
+  ViewportStatus,
+  VOILUTFunctionType,
+} from '../enums';
 import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
@@ -61,6 +66,7 @@ import isEqual, { isEqualNegative } from '../utilities/isEqual';
 import applyPreset from '../utilities/applyPreset';
 import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
+import * as metaData from '../metaData';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -689,6 +695,8 @@ abstract class BaseVolumeViewport extends Viewport {
     this.render();
   }
 
+  abstract isInAcquisitionPlane(): boolean;
+
   /**
    * Navigates to the specified view reference.
    */
@@ -701,6 +709,7 @@ abstract class BaseVolumeViewport extends Viewport {
       viewPlaneNormal: refViewPlaneNormal,
       FrameOfReferenceUID: refFrameOfReference,
       cameraFocalPoint,
+      referencedImageId,
       viewUp,
     } = viewRef;
     let { sliceIndex } = viewRef;
@@ -764,6 +773,42 @@ abstract class BaseVolumeViewport extends Viewport {
         const newFocal = vec3.add([0, 0, 0], focalPoint, focalDelta) as Point3;
         const newPosition = vec3.add([0, 0, 0], position, focalDelta) as Point3;
         this.setCamera({ focalPoint: newFocal, position: newPosition });
+      }
+      if (referencedImageId && this.isInAcquisitionPlane()) {
+        // we can't simply use the scroll function since the order of image
+        // ids is not guaranteed to be the same as the order of the slices
+        // so we just need to get the referencedImageId origin from the cache
+        // and align it with the current focal point and then set cameraFocalPoint
+        const imagePlaneModule = metaData.get(
+          MetadataModules.IMAGE_PLANE,
+          referencedImageId
+        );
+
+        const { imagePositionPatient } = imagePlaneModule;
+        const { focalPoint } = this.getCamera();
+        // move the imagePositionPatient in the direction of the viewPlaneNormal
+        // to the focalPoint
+        const diffVector = vec3.subtract(
+          vec3.create(),
+          focalPoint,
+          imagePositionPatient
+        );
+        // projected distance
+        const projectedDistance = vec3.dot(diffVector, viewPlaneNormal);
+        const newImagePositionPatient = vec3.scaleAndAdd(
+          vec3.create(),
+          focalPoint,
+          [-viewPlaneNormal[0], -viewPlaneNormal[1], -viewPlaneNormal[2]],
+          projectedDistance
+        );
+        // this.setViewReference({
+        //   ...viewRef,
+        //   cameraFocalPoint: newImagePositionPatient as Point3,
+        // });
+        this.setCamera({
+          focalPoint: newImagePositionPatient as Point3,
+        });
+        this.render();
       }
     } else {
       throw new Error(
