@@ -37,10 +37,9 @@ export default function (
         lut[pixelData[storedPixelDataIndex++] + -minPixelValue]; // Red
       canvasImageDataData[canvasImageDataIndex++] =
         lut[pixelData[storedPixelDataIndex++] + -minPixelValue]; // Green
-      canvasImageDataData[canvasImageDataIndex] =
-        lut[pixelData[storedPixelDataIndex] + -minPixelValue]; // Blue
-      storedPixelDataIndex += 2;
-      canvasImageDataIndex += 2;
+      canvasImageDataData[canvasImageDataIndex++] =
+        lut[pixelData[storedPixelDataIndex++] + -minPixelValue]; // Blue
+      canvasImageDataData[canvasImageDataIndex++] = 255;
     }
   } else {
     while (storedPixelDataIndex < numPixels) {
@@ -48,10 +47,9 @@ export default function (
         lut[pixelData[storedPixelDataIndex++]]; // Red
       canvasImageDataData[canvasImageDataIndex++] =
         lut[pixelData[storedPixelDataIndex++]]; // Green
-      canvasImageDataData[canvasImageDataIndex] =
-        lut[pixelData[storedPixelDataIndex]]; // Blue
-      storedPixelDataIndex += 2;
-      canvasImageDataIndex += 2;
+      canvasImageDataData[canvasImageDataIndex++] =
+        lut[pixelData[storedPixelDataIndex++]]; // Blue
+      canvasImageDataData[canvasImageDataIndex++] = 255;
     }
   }
   image.stats.lastStoredPixelDataToCanvasImageDataTime = now() - start;
