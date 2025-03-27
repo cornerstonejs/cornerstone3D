@@ -130,13 +130,16 @@ export default class LabelmapBaseTool extends BaseTool {
   };
 
   protected memoMap: Map<string, LabelmapMemo.LabelmapMemo>;
-  protected acceptedMemoIds: Set<string>;
+  protected acceptedMemoIds: Map<
+    string,
+    { element: HTMLDivElement; segmentIndex: number }
+  >;
   protected memo: LabelmapMemo.LabelmapMemo;
 
   constructor(toolProps, defaultToolProps) {
     super(toolProps, defaultToolProps);
     this.memoMap = new Map();
-    this.acceptedMemoIds = new Set();
+    this.acceptedMemoIds = new Map();
     this.centerSegmentIndexInfo = {
       segmentIndex: null,
       hasSegmentIndex: false,
@@ -157,15 +160,23 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
-    // If this memo ID was from an accepted preview and it's being redone
     if (this.acceptedMemoIds.has(id) && isUndo === false) {
-      // Auto-accept preview on redo, if it was previously accepted
-      // This will be called after the memo has been restored
-      const element = this._previewData.element;
+      // Note: this is very important to null here, since the undo might happen while
+      // the viewport is not active OR through some UI, so the cursor might not be
+      // on the element so we need to null out the hover data so that it get
+      // recalculated again based on the current element (that we stored previously)
+      this._hoverData = null;
+
+      const memoData = this.acceptedMemoIds.get(id);
+
+      const element = memoData?.element;
+      const operationData = this.getOperationData(element);
+      operationData.segmentIndex = memoData?.segmentIndex;
+
       if (element) {
         this.applyActiveStrategyCallback(
           getEnabledElement(element),
-          this.getOperationData(element),
+          operationData,
           StrategyCallbacks.AcceptPreview
         );
       }
@@ -193,10 +204,6 @@ export default class LabelmapBaseTool extends BaseTool {
     ) {
       return this.memo;
     }
-
-    // if (this.memo) {
-    //   this.doneEditMemo();
-    // }
 
     let memo = this.memoMap.get(voxelManagerId);
 
@@ -484,10 +491,16 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
+    const operationData = this.getOperationData(element);
+
     // Track the memo ID if it was from an acceptPreview operation
     if (this.memo && this.memo.id) {
-      // Store the ID so we can track it for future redo operations
-      this.acceptedMemoIds.add(this.memo.id);
+      // Store the element and current segment index
+
+      this.acceptedMemoIds.set(this.memo.id, {
+        element,
+        segmentIndex: operationData.segmentIndex,
+      });
     }
 
     this.doneEditMemo();
@@ -496,7 +509,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.AcceptPreview
     );
     this._previewData.preview = null;

@@ -685,7 +685,6 @@ class BrushTool extends LabelmapBaseTool {
       radius,
       {
         color,
-        // dash line
         lineDash:
           this.centerSegmentIndexInfo.segmentIndex === 0 ? [1, 2] : null,
       }

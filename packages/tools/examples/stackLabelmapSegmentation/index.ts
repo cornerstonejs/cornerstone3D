@@ -136,7 +136,7 @@ const optionsValues = [
 let viewport;
 const viewportId2 = 'STACK_VIEWPORT_2';
 
-const segmentationIds = ['STACK_SEGMENTATION', 'STACK_SEGMENTATION_2'];
+const segmentationIds = ['SEGMENTATION_CT', 'SEGMENTATION_MG'];
 const dropDownId = 'SEGMENTATION_DROPDOWN';
 
 function updateSegmentationDropdownOptions(

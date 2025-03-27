@@ -70,11 +70,10 @@ export default {
       previewSegmentIndex,
       segmentationVoxelManager,
       memo,
-      segmentationId,
+      segmentIndex,
       centerSegmentIndexInfo,
     } = operationData || {};
 
-    const activeSegmentIndex = getActiveSegmentIndex(segmentationId);
     const { changedIndices } = centerSegmentIndexInfo || {};
 
     // Type assertion as LabelmapMemo to access voxelManager
@@ -89,7 +88,7 @@ export default {
         }
       } else {
         if (oldValue === previewSegmentIndex) {
-          labelmapMemo.voxelManager.setAtIndex(index, activeSegmentIndex);
+          labelmapMemo.voxelManager.setAtIndex(index, segmentIndex);
         }
       }
     };
@@ -98,7 +97,7 @@ export default {
     triggerSegmentationDataModified(
       operationData.segmentationId,
       segmentationVoxelManager.getArrayOfModifiedSlices(),
-      activeSegmentIndex
+      segmentIndex
     );
 
     labelmapMemo.voxelManager.clear();
