@@ -11,6 +11,7 @@ import type {
   CPUFallbackViewport,
   CPUFallbackEnabledElement,
 } from '../../../../types';
+import { createCanvas } from '../../getOrCreateCanvas';
 
 /**
  * Generates an appropriate Look Up Table to render the given image with the given window width and level (specified in the viewport)
@@ -64,8 +65,11 @@ function getRenderCanvas(
   const canvasWasColor = enabledElement.renderingTools.lastRenderedIsColor;
 
   if (!enabledElement.renderingTools.renderCanvas || !canvasWasColor) {
-    enabledElement.renderingTools.renderCanvas =
-      document.createElement('canvas');
+    enabledElement.renderingTools.renderCanvas = createCanvas(
+      null,
+      image.width,
+      image.height
+    ) as unknown as HTMLCanvasElement;
   }
 
   const renderCanvas = enabledElement.renderingTools.renderCanvas;
@@ -93,6 +97,7 @@ function getRenderCanvas(
   // NOTE: This might be inefficient if we are updating multiple images of different
   // Sizes frequently.
   if (
+    !enabledElement.renderingTools.renderCanvasContext ||
     renderCanvas.width !== image.width ||
     renderCanvas.height !== image.height
   ) {

@@ -9,6 +9,7 @@ import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelData
 import * as colors from '../colors/index';
 import type { IImage, CPUFallbackEnabledElement } from '../../../../types';
 import { clamp } from '../../../../utilities/clamp';
+import { createCanvas } from '../../getOrCreateCanvas';
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
@@ -26,8 +27,11 @@ function getRenderCanvas(
   invalidated: boolean
 ): HTMLCanvasElement {
   if (!enabledElement.renderingTools.renderCanvas) {
-    enabledElement.renderingTools.renderCanvas =
-      document.createElement('canvas');
+    enabledElement.renderingTools.renderCanvas = createCanvas(
+      null,
+      image.width,
+      image.height
+    ) as unknown as HTMLCanvasElement;
   }
 
   const renderCanvas = enabledElement.renderingTools.renderCanvas;
@@ -62,6 +66,7 @@ function getRenderCanvas(
   // NOTE: This might be inefficient if we are updating multiple images of different
   // Sizes frequently.
   if (
+    !enabledElement.renderingTools.renderCanvasContext ||
     renderCanvas.width !== image.width ||
     renderCanvas.height !== image.height
   ) {

@@ -38,8 +38,7 @@ export default function (
       canvasImageDataData[canvasImageDataIndex++] =
         lut[pixelData[storedPixelDataIndex++] + -minPixelValue]; // Green
       canvasImageDataData[canvasImageDataIndex] =
-        lut[pixelData[storedPixelDataIndex] + -minPixelValue]; // Blue
-      storedPixelDataIndex += 2;
+        lut[pixelData[storedPixelDataIndex++] + -minPixelValue]; // Blue
       canvasImageDataIndex += 2;
     }
   } else {
@@ -49,8 +48,7 @@ export default function (
       canvasImageDataData[canvasImageDataIndex++] =
         lut[pixelData[storedPixelDataIndex++]]; // Green
       canvasImageDataData[canvasImageDataIndex] =
-        lut[pixelData[storedPixelDataIndex]]; // Blue
-      storedPixelDataIndex += 2;
+        lut[pixelData[storedPixelDataIndex++]]; // Blue
       canvasImageDataIndex += 2;
     }
   }
