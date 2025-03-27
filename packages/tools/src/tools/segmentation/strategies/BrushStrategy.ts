@@ -9,10 +9,6 @@ import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOp
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
 
-const {
-  HistoryMemo: { DefaultHistoryMemo },
-} = csUtils;
-
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name
   operationName?: string;
@@ -245,6 +241,7 @@ export default class BrushStrategy {
       segmentationVoxelManager
     );
 
+    // @ts-expect-error
     const initializedData: InitializedOperationData = {
       operationName,
       ...operationData,
