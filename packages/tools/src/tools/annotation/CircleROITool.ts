@@ -919,10 +919,7 @@ class CircleROITool extends AnnotationTool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (
-        this._isInsideVolume(pos1Index, pos2Index, dimensions) ||
-        viewport.type === 'wholeSlide'
-      ) {
+      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
         const iMin = Math.min(pos1Index[0], pos2Index[0]);
         const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
