@@ -34,15 +34,14 @@ export default {
     }
 
     if (
-      centerSegmentIndexInfo &&
-      centerSegmentIndexInfo.segmentIndex !== 0 &&
+      centerSegmentIndexInfo?.segmentIndex !== 0 &&
       existingValue === segmentIndex
     ) {
       return;
     }
 
     // this means we have previewSegmentIndex
-    if (centerSegmentIndexInfo.segmentIndex === null) {
+    if (centerSegmentIndexInfo?.segmentIndex === null) {
       memo.voxelManager.setAtIndex(index, previewSegmentIndex ?? segmentIndex);
       return;
     }
