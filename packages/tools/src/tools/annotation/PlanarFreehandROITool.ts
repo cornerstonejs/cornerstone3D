@@ -811,13 +811,17 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       }
     }
 
-    triggerAnnotationModified(
-      annotation,
-      enabledElement.viewport.element,
-      ChangeTypes.StatsUpdated
-    );
-
+    const invalidated = annotation.invalidated;
     annotation.invalidated = false;
+
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        enabledElement.viewport.element,
+        ChangeTypes.StatsUpdated
+      );
+    }
 
     return cachedStats;
   };
