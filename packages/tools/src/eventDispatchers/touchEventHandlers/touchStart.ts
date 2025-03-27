@@ -111,7 +111,7 @@ export default function touchStart(evt: EventTypes.TouchStartEventType) {
     );
 
     toggleAnnotationSelection(annotation.annotationUID, isMultiSelect);
-    tool.toolSelectedCallback(evt, annotation, 'Touch');
+    tool.toolSelectedCallback(evt, annotation, 'Touch', canvasCoords);
 
     return;
   }

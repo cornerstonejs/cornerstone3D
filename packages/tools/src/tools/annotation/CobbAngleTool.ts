@@ -538,9 +538,22 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_CLICK,
       this._endCallback as EventListener
     );
-
-    // element.addEventListener(Events.TOUCH_END, this._endCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_START,
+      this._mouseDownCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   _deactivateModify = (element: HTMLDivElement) => {
@@ -558,9 +571,22 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_CLICK,
       this._endCallback as EventListener
     );
-
-    // element.removeEventListener(Events.TOUCH_END, this._endCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_START,
+      this._mouseDownCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   _activateDraw = (element: HTMLDivElement) => {
@@ -586,9 +612,22 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_DOWN,
       this._mouseDownCallback as EventListener
     );
-
-    // element.addEventListener(Events.TOUCH_END, this._endCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_START,
+      this._mouseDownCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   _deactivateDraw = (element: HTMLDivElement) => {
@@ -614,9 +653,22 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_DOWN,
       this._mouseDownCallback as EventListener
     );
-
-    // element.removeEventListener(Events.TOUCH_END, this._endCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_START,
+      this._mouseDownCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   /**
