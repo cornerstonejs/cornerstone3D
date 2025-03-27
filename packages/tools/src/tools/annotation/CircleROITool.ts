@@ -1030,9 +1030,6 @@ class CircleROITool extends AnnotationTool {
   };
 
   _isInsideVolume = (index1, index2, dimensions) => {
-    //console.debug(index1, index2, dimensions);
-    index1[1] = index1[1] / 2 + dimensions[1] / 2;
-    index2[1] = index2[1] / 2 + dimensions[1] / 2;
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
