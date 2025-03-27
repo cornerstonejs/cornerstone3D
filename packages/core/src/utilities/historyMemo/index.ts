@@ -1,3 +1,12 @@
+import eventTarget from '../../eventTarget';
+
+// Define Events from tools package
+// Note: We can't directly import from tools package due to circular dependency
+const Events = {
+  HISTORY_UNDO: 'CORNERSTONE_TOOLS_HISTORY_UNDO',
+  HISTORY_REDO: 'CORNERSTONE_TOOLS_HISTORY_REDO',
+};
+
 export type Memo = {
   /**
    * This restores memo state.  It is an undo if undo is true, or a redo if it
@@ -21,6 +30,12 @@ export type Memo = {
    * Unique identifier for the memo.
    */
   id?: string;
+
+  /**
+   * Operation type for the memo. This is used to identify the type of operation
+   * when dispatching history events. Examples include 'labelmap', 'annotation', etc.
+   */
+  operationType?: string;
 };
 
 /**
@@ -71,6 +86,21 @@ export class HistoryMemo {
     while (items > 0 && this.undoAvailable > 0) {
       const item = this.ring[this.position];
       item.restoreMemo(true);
+
+      // Dispatch history undo event
+      if (item.id) {
+        eventTarget.dispatchEvent(
+          new CustomEvent(Events.HISTORY_UNDO, {
+            detail: {
+              isUndo: true,
+              id: item.id,
+              operationType: item.operationType || 'annotation',
+              memo: item,
+            },
+          })
+        );
+      }
+
       items--;
       this.redoAvailable++;
       this.undoAvailable--;
@@ -99,6 +129,21 @@ export class HistoryMemo {
       const newPosition = (this.position + 1) % this.size;
       const item = this.ring[newPosition];
       item.restoreMemo(false);
+
+      // Dispatch history redo event
+      if (item.id) {
+        eventTarget.dispatchEvent(
+          new CustomEvent(Events.HISTORY_REDO, {
+            detail: {
+              isUndo: false,
+              id: item.id,
+              operationType: item.operationType || 'annotation',
+              memo: item,
+            },
+          })
+        );
+      }
+
       items--;
       this.position = newPosition;
       this.undoAvailable++;

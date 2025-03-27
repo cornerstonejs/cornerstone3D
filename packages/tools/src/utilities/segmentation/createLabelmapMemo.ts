@@ -47,17 +47,7 @@ export function restoreMemo(isUndo?: boolean) {
   const slices = useVoxelManager.getArrayOfModifiedSlices();
   triggerSegmentationDataModified(this.segmentationId, slices);
 
-  // Trigger the HISTORY_UNDO event
-  eventTarget.dispatchEvent(
-    new CustomEvent(Events.HISTORY_UNDO, {
-      detail: {
-        segmentationId: this.segmentationId,
-        isUndo,
-        id: this.id,
-        operationType: 'labelmap',
-      },
-    })
-  );
+  // Event dispatch moved to historyMemo/index.ts
 }
 
 /**
@@ -78,6 +68,7 @@ export function createRleMemo<T>(
     segmentationVoxelManager,
     voxelManager,
     id: utilities.uuidv4(),
+    operationType: 'labelmap',
   };
   return state;
 }

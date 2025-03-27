@@ -148,19 +148,19 @@ export default class LabelmapBaseTool extends BaseTool {
     };
 
     // Add event listener for history undo
-    this._historyUndoHandler = this._historyUndoHandler.bind(this);
-    eventTarget.addEventListener(Events.HISTORY_UNDO, this._historyUndoHandler);
+    this._historyRedoHandler = this._historyRedoHandler.bind(this);
+    eventTarget.addEventListener(Events.HISTORY_REDO, this._historyRedoHandler);
   }
 
-  protected _historyUndoHandler(evt) {
-    const { id, isUndo, operationType } = evt.detail;
+  protected _historyRedoHandler(evt) {
+    const { id, operationType } = evt.detail;
 
     // Skip if not a labelmap operation
     if (operationType !== 'labelmap') {
       return;
     }
 
-    if (this.acceptedMemoIds.has(id) && isUndo === false) {
+    if (this.acceptedMemoIds.has(id)) {
       // Note: this is very important to null here, since the undo might happen while
       // the viewport is not active OR through some UI, so the cursor might not be
       // on the element so we need to null out the hover data so that it get
