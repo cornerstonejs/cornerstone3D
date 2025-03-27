@@ -207,15 +207,6 @@ export default class BrushStrategy {
       return;
     }
 
-    const { configuration = {}, centerIJK } = initializedData;
-    // Store the center IJK location so that we can skip an immediate same-point update
-    // TODO - move this to the BrushTool
-    // if (csUtils.isEqual(centerIJK, configuration.centerIJK)) {
-    //   return operationData.preview;
-    // } else {
-    //   configuration.centerIJK = centerIJK;
-    // }
-
     this._fill.forEach((func) => func(initializedData));
 
     const { segmentationVoxelManager, segmentIndex } = initializedData;
@@ -268,12 +259,6 @@ export default class BrushStrategy {
       isInObjectBoundsIJK: null,
       brushStrategy: this,
       memo,
-      centerSegmentIndexInfo: {
-        segmentIndex: operationData.segmentIndex,
-        hasSegmentIndex: true,
-        hasPreviewIndex: false,
-        changedIndices: [],
-      },
     };
 
     this._initialize.forEach((func) => func(initializedData));
