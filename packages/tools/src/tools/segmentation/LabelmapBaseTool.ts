@@ -146,10 +146,6 @@ export default class LabelmapBaseTool extends BaseTool {
       hasPreviewIndex: false,
       changedIndices: [],
     };
-
-    // Add event listener for history undo
-    this._historyRedoHandler = this._historyRedoHandler.bind(this);
-    eventTarget.addEventListener(Events.HISTORY_REDO, this._historyRedoHandler);
   }
 
   protected _historyRedoHandler(evt) {
@@ -503,8 +499,6 @@ export default class LabelmapBaseTool extends BaseTool {
       });
     }
 
-    this.doneEditMemo();
-
     const enabledElement = getEnabledElement(element);
 
     this.applyActiveStrategyCallback(
@@ -512,6 +506,10 @@ export default class LabelmapBaseTool extends BaseTool {
       operationData,
       StrategyCallbacks.AcceptPreview
     );
+
+    // perform the commit after we accept the preview so that
+    // we choose the correct timestamp with the confirmed segment index
+    this.doneEditMemo();
     this._previewData.preview = null;
     this._previewData.isDrag = false;
   }

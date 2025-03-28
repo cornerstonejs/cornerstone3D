@@ -4,7 +4,6 @@ import { triggerSegmentationDataModified } from '../../../../stateManagement/seg
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { setSegmentIndexColor } from '../../../../stateManagement/segmentation/config/segmentationColor';
 import { getViewportIdsWithSegmentation } from '../../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
-import { getActiveSegmentIndex } from '../../../../stateManagement/segmentation/getActiveSegmentIndex';
 import type { LabelmapMemo } from '../../../../utilities/segmentation/createLabelmapMemo';
 
 /**
@@ -100,7 +99,6 @@ export default {
       segmentIndex
     );
 
-    labelmapMemo.voxelManager.clear();
     // reset the centerSegmentIndexInfo
     operationData.centerSegmentIndexInfo.changedIndices = [];
   },
