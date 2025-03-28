@@ -65,6 +65,13 @@ export default class VoxelManager<T> {
   }) => PixelDataTypedArray;
 
   /**
+   * Gets the ID of the voxel manager
+   */
+  public get id(): string {
+    return this._id;
+  }
+
+  /**
    * Creates a generic voxel value accessor, with access to the values
    * provided by the _get and optionally _set values.
    * @param dimensions - for the voxel volume
@@ -671,10 +678,12 @@ export default class VoxelManager<T> {
     dimensions,
     scalarData,
     numberOfComponents = 3,
+    id,
   }: {
     dimensions: Point3;
     scalarData;
     numberOfComponents;
+    id?: string;
   }): VoxelManager<RGB> {
     const voxels = new VoxelManager<RGB>(dimensions, {
       _get: (index) => {
@@ -685,7 +694,7 @@ export default class VoxelManager<T> {
           scalarData[index++],
         ] as RGB;
       },
-      _id: '_createRGBScalarVolumeVoxelManager',
+      _id: id || '_createRGBScalarVolumeVoxelManager',
       _set: (index, v) => {
         index *= 3;
         const isChanged = !isEqual(scalarData[index], v);
@@ -715,10 +724,12 @@ export default class VoxelManager<T> {
     dimensions,
     imageIds,
     numberOfComponents = 1,
+    id,
   }: {
     dimensions: Point3;
     imageIds: string[];
     numberOfComponents: number;
+    id?: string;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 
@@ -790,7 +801,7 @@ export default class VoxelManager<T> {
       _set: setVoxelValue,
       numberOfComponents,
       _getConstructor,
-      _id: 'createImageVolumeVoxelManager',
+      _id: id || 'createImageVolumeVoxelManager',
     });
 
     voxelManager.getMiddleSliceData = () => {
@@ -972,10 +983,12 @@ export default class VoxelManager<T> {
     dimensions,
     scalarData,
     numberOfComponents,
+    id,
   }: {
     dimensions: Point3;
     scalarData;
     numberOfComponents?: number;
+    id?: string;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     if (dimensions.length !== 3) {
       throw new Error(
@@ -1003,11 +1016,13 @@ export default class VoxelManager<T> {
         dimensions,
         scalarData,
         numberOfComponents,
+        id,
       });
     }
     return VoxelManager._createNumberVolumeVoxelManager({
       dimensions,
       scalarData,
+      id,
     });
   }
 
@@ -1017,12 +1032,14 @@ export default class VoxelManager<T> {
     dimensionGroupNumber = 1,
     timePoint = 0,
     numberOfComponents = 1,
+    id,
   }: {
     imageIdGroups: string[][];
     dimensions: Point3;
     dimensionGroupNumber?: number;
     timePoint?: number;
     numberOfComponents?: number;
+    id?: string;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     // Convert to zero-based index for internal use
     let activeDimensionGroup = 0;
@@ -1061,6 +1078,7 @@ export default class VoxelManager<T> {
         dimensions,
         imageIds,
         numberOfComponents,
+        id,
       });
     });
 
@@ -1070,7 +1088,7 @@ export default class VoxelManager<T> {
       // @ts-ignore
       _set: (index, v) => voxelGroups[activeDimensionGroup]._set(index, v),
       numberOfComponents,
-      _id: 'createScalarDynamicVolumeVoxelManager',
+      _id: id || 'createScalarDynamicVolumeVoxelManager',
     }) as IVoxelManager<number> | IVoxelManager<RGB>;
 
     voxelManager.getScalarDataLength = () => {
@@ -1179,11 +1197,13 @@ export default class VoxelManager<T> {
     height,
     scalarData,
     numberOfComponents = 1,
+    id,
   }: {
     width: number;
     height: number;
     scalarData: PixelDataTypedArray;
     numberOfComponents?: number;
+    id?: string;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     const dimensions = [width, height, 1] as Point3;
     if (!numberOfComponents) {
@@ -1203,11 +1223,13 @@ export default class VoxelManager<T> {
         dimensions,
         scalarData,
         numberOfComponents,
+        id,
       });
     }
     return VoxelManager._createNumberVolumeVoxelManager({
       dimensions,
       scalarData,
+      id,
     });
   }
 
@@ -1218,9 +1240,11 @@ export default class VoxelManager<T> {
   private static _createNumberVolumeVoxelManager({
     dimensions,
     scalarData,
+    id,
   }: {
     dimensions: Point3;
     scalarData: PixelDataTypedArray;
+    id?: string;
   }): IVoxelManager<number> {
     const voxels = new VoxelManager<number>(dimensions, {
       _get: (index) => scalarData[index],
@@ -1231,7 +1255,7 @@ export default class VoxelManager<T> {
       },
       _getConstructor: () =>
         scalarData.constructor as new (length: number) => PixelDataTypedArray,
-      _id: '_createNumberVolumeVoxelManager',
+      _id: id || '_createNumberVolumeVoxelManager',
     });
     voxels.scalarData = scalarData;
     voxels.clear = () => {
@@ -1257,14 +1281,16 @@ export default class VoxelManager<T> {
    */
   public static createMapVoxelManager<T>({
     dimension,
+    id,
   }: {
     dimension: Point3;
+    id?: string;
   }): IVoxelManager<T> {
     const map = new Map<number, T>();
     const voxelManager = new VoxelManager<T>(dimension, {
       _get: map.get.bind(map),
       _set: (index, v) => map.set(index, v) && true,
-      _id: 'createMapVoxelManager',
+      _id: id || 'createMapVoxelManager',
     });
     voxelManager.map = map;
     return voxelManager;
@@ -1275,11 +1301,10 @@ export default class VoxelManager<T> {
    * This will remember the original values in the voxels, and will apply the
    * update to the underlying source voxel manager.
    */
-  public static createHistoryVoxelManager<T>({
-    sourceVoxelManager,
-  }: {
-    sourceVoxelManager: VoxelManager<T>;
-  }): VoxelManager<T> {
+  public static createHistoryVoxelManager<T>(
+    sourceVoxelManager: VoxelManager<T>,
+    id?: string
+  ): VoxelManager<T> {
     const map = new Map<number, T>();
     const { dimensions } = sourceVoxelManager;
     const voxelManager = new VoxelManager(dimensions, {
@@ -1297,7 +1322,7 @@ export default class VoxelManager<T> {
         }
         this.sourceVoxelManager.setAtIndex(index, v);
       },
-      _id: 'createHistoryVoxelManager',
+      _id: id || 'createHistoryVoxelManager',
     });
     voxelManager.map = map;
     voxelManager.scalarData = sourceVoxelManager.scalarData;
@@ -1312,7 +1337,8 @@ export default class VoxelManager<T> {
    * update to the underlying source voxel manager.
    */
   public static createRLEHistoryVoxelManager<T>(
-    sourceVoxelManager: VoxelManager<T>
+    sourceVoxelManager: VoxelManager<T>,
+    id?: string
   ): VoxelManager<T> {
     const { dimensions } = sourceVoxelManager;
     const map = new RLEVoxelMap<T>(dimensions[0], dimensions[1], dimensions[2]);
@@ -1338,7 +1364,7 @@ export default class VoxelManager<T> {
         map.updateScalarData(scalarData as PixelDataTypedArray);
         return scalarData as PixelDataTypedArray;
       },
-      _id: 'createRLEHistoryVoxelManager',
+      _id: id || 'createRLEHistoryVoxelManager',
     });
     voxelManager.map = map;
     voxelManager.sourceVoxelManager = sourceVoxelManager;
@@ -1353,9 +1379,11 @@ export default class VoxelManager<T> {
   public static createLazyVoxelManager<T>({
     dimensions,
     planeFactory,
+    id,
   }: {
     dimensions: Point3;
     planeFactory: (width: number, height: number) => T;
+    id?: string;
   }): VoxelManager<T> {
     const map = new Map<number, T>();
     const [width, height] = dimensions;
@@ -1374,7 +1402,7 @@ export default class VoxelManager<T> {
         layer[index % planeSize] = v;
         return true;
       },
-      _id: 'createLazyVoxelManager',
+      _id: id || 'createLazyVoxelManager',
     });
     voxelManager.map = map;
     return voxelManager;
@@ -1386,8 +1414,10 @@ export default class VoxelManager<T> {
    */
   public static createRLEVolumeVoxelManager<T>({
     dimensions,
+    id,
   }: {
     dimensions: Point3;
+    id?: string;
   }): VoxelManager<T> {
     const [width, height, depth] = dimensions;
     const map = new RLEVoxelMap<T>(width, height, depth);
@@ -1403,7 +1433,7 @@ export default class VoxelManager<T> {
         map.updateScalarData(scalarData as PixelDataTypedArray);
         return scalarData as PixelDataTypedArray;
       },
-      _id: 'createRLEVolumeVoxelManager',
+      _id: id || 'createRLEVolumeVoxelManager',
     });
     voxelManager.map = map;
     // @ts-ignore
@@ -1414,12 +1444,15 @@ export default class VoxelManager<T> {
 
   public static createRLEImageVoxelManager<T>({
     dimensions,
+    id,
   }: {
     dimensions: Point2;
+    id?: string;
   }): VoxelManager<T> {
     const [width, height] = dimensions;
     return VoxelManager.createRLEVolumeVoxelManager<T>({
       dimensions: [width, height, 1],
+      id,
     });
   }
 

@@ -9,65 +9,66 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
   initDemo,
-  addDropdownToToolbar,
+  addToggleButtonToToolbar,
+  addSliderToToolbar,
   addButtonToToolbar,
   setTitleAndDescription,
   getLocalUrl,
   addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 import { ONNXSegmentationController } from '@cornerstonejs/ai';
-
-const { ViewportType, OrientationAxis } = Enums;
 const { MouseBindings, SegmentationRepresentations, Events, KeyboardBindings } =
   cornerstoneTools.Enums;
+const { ViewportType, OrientationAxis } = Enums;
+
 const { segmentation } = cornerstoneTools;
+const { segmentation: segmentationUtils } = cornerstoneTools.utilities;
+const currentViewportType = ViewportType.STACK;
 
 setTitleAndDescription(
-  'Basic Single-Viewport AI Segmentation',
-  'This example demonstrates a simplified setup of a single viewport that can switch between stack and sagittal views. It includes minimal AI segmentation tools (MarkerInclude, MarkerExclude, BoxPrompt) and basic navigation tools (Pan, Zoom, Stack Scroll). Logging is also retained to show decoding and inference times.  Use ctrl+click to MarkerExclude'
+  'Segment Assistant',
+  'Segment Assistant for Segmentation'
 );
 
-// Logging elements and function
-const logs = [];
-function mlLogger(logName, ...args) {
-  console.log(logName, ...args);
-  const element = document.getElementById(logName);
-  if (!element) {
-    return;
-  }
-  if (logName === 'status') {
-    logs.push(args.join(' '));
-    if (logs.length > 5) {
-      logs.splice(0, 1);
-    }
-    element.innerText = logs.join('\n');
-    return;
-  }
-  element.innerText = args.join(' ');
-}
-
 // Model configuration for segmentation
-const models = {
-  sam_b: [
-    {
-      name: 'sam-b-encoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
-      size: 180,
-      key: 'encoder',
-    },
-    {
-      name: 'sam-b-decoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
-      size: 17,
-      key: 'decoder',
-    },
-  ],
-};
-
-const ai = new ONNXSegmentationController({
-  models,
+const segmentAI = new ONNXSegmentationController({
+  autoSegmentMode: true,
+  models: {
+    sam_b: [
+      {
+        name: 'sam-b-encoder',
+        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
+        size: 180,
+        key: 'encoder',
+      },
+      {
+        name: 'sam-b-decoder',
+        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
+        size: 17,
+        key: 'decoder',
+      },
+    ],
+  },
   modelName: 'sam_b',
-  listeners: [mlLogger],
+});
+
+addSliderToToolbar({
+  title: 'Brush Size',
+  range: [5, 50],
+  defaultValue: 25,
+  onSelectedValueChange: (valueAsStringOrNumber) => {
+    const value = Number(valueAsStringOrNumber);
+    segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Toggle Enable',
+  onClick: () => {
+    // Toggle the enable state
+    segmentAI.enabled = !segmentAI.enabled;
+    segmentAI.initViewport(viewport);
+  },
 });
 
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
@@ -77,12 +78,6 @@ const volumeId = 'volumeId';
 let renderingEngine;
 let viewport;
 let activeViewport;
-const currentViewportType = ViewportType.STACK;
-
-// Tools to include: MarkerInclude, MarkerExclude, BoxPrompt, plus pan/zoom/scroll
-const MarkerIncludeToolName = ONNXSegmentationController.MarkerInclude;
-const MarkerExcludeToolName = ONNXSegmentationController.MarkerExclude;
-const BoxPromptToolName = ONNXSegmentationController.BoxPrompt;
 
 // Add the base tools we need
 cornerstoneTools.addTool(cornerstoneTools.PanTool);
@@ -90,7 +85,7 @@ cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
 cornerstoneTools.addTool(cornerstoneTools.StackScrollTool);
 cornerstoneTools.addTool(cornerstoneTools.ProbeTool); // Needed as a base for MarkerInclude/Exclude
 cornerstoneTools.addTool(cornerstoneTools.RectangleROITool); // Base for BoxPrompt
-
+cornerstoneTools.addTool(cornerstoneTools.BrushTool); // Base for BoxPrompt
 // Create a tool group and add the needed tools
 const toolGroup =
   cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
@@ -98,64 +93,24 @@ const toolGroup =
 toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
 toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
 toolGroup.addTool(cornerstoneTools.PanTool.toolName);
-// MarkerInclude - a probe variant
+toolGroup.addTool(cornerstoneTools.ProbeTool.toolName);
 toolGroup.addToolInstance(
-  MarkerIncludeToolName,
-  cornerstoneTools.ProbeTool.toolName,
+  'CircularBrush',
+  cornerstoneTools.BrushTool.toolName,
   {
-    getTextLines: () => null,
+    activeStrategy: 'FILL_INSIDE_CIRCLE',
+    preview: {
+      enabled: true,
+    },
+    useCenterSegmentIndex: true,
   }
 );
-toolGroup.setToolActive(MarkerIncludeToolName, {
-  bindings: [
-    { mouseButton: MouseBindings.Primary },
-    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Shift },
-  ],
-});
-
-// MarkerExclude - a probe variant with right-click
-toolGroup.addToolInstance(
-  MarkerExcludeToolName,
-  cornerstoneTools.ProbeTool.toolName,
-  {
-    getTextLines: () => null,
-  }
-);
-toolGroup.setToolActive(MarkerExcludeToolName, {
-  bindings: [
-    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Ctrl },
-  ],
-});
-
-cornerstoneTools.annotation.config.style.setToolGroupToolStyles(toolGroupId, {
-  [MarkerIncludeToolName]: {
-    color: 'rgb(0, 255, 0)', // Green
-    colorHighlighted: 'rgb(0, 255, 0)',
-    colorSelected: 'rgb(0, 255, 0)',
-  },
-  [MarkerExcludeToolName]: {
-    color: 'rgb(255, 0, 0)', // Red
-    colorHighlighted: 'rgb(255, 0, 0)',
-    colorSelected: 'rgb(255, 0, 0)',
-  },
-});
-
-// BoxPrompt - a rectangle ROI variant with Ctrl+click
-toolGroup.addToolInstance(
-  BoxPromptToolName,
-  cornerstoneTools.RectangleROITool.toolName,
-  {
-    getTextLines: () => null,
-  }
-);
-toolGroup.setToolActive(BoxPromptToolName, {
-  bindings: [{ mouseButton: MouseBindings.Primary }],
-});
 
 // Pan (middle or Ctrl+drag)
 toolGroup.setToolActive(cornerstoneTools.PanTool.toolName, {
   bindings: [{ mouseButton: MouseBindings.Auxiliary }],
 });
+toolGroup.setToolPassive(cornerstoneTools.ProbeTool.toolName, {});
 
 // Zoom (right mouse)
 toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
@@ -168,6 +123,9 @@ toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
 // Stack Scroll (mouse wheel or Alt+drag)
 toolGroup.setToolActive(cornerstoneTools.StackScrollTool.toolName, {
   bindings: [{ mouseButton: MouseBindings.Wheel }],
+});
+toolGroup.setToolActive('CircularBrush', {
+  bindings: [{ mouseButton: MouseBindings.Primary }],
 });
 
 const content = document.getElementById('content');
@@ -193,46 +151,20 @@ content.appendChild(logDiv);
 // disable context menu
 viewportContainer.oncontextmenu = () => false;
 
+segmentationUtils.setBrushSizeForToolGroup(toolGroupId, 15);
+
 addButtonToToolbar({
   title: 'Clear',
   onClick: () => {
-    ai.clear(activeViewport);
+    segmentAI.clear(activeViewport);
     viewport.render();
   },
 });
 
-addButtonToToolbar({
-  title: 'Remove Points',
-  onClick: () => {
-    // Get all prompt annotations and remove them
-    ai.removePromptAnnotationsWithCache(activeViewport);
-  },
-});
+const viewportId = 'CURRENT_VIEWPORT';
 const segmentationId = 'segmentationId';
 
 addSegmentIndexDropdown(segmentationId);
-
-const viewportId = 'CURRENT_VIEWPORT';
-
-addDropdownToToolbar({
-  options: {
-    values: [MarkerIncludeToolName, MarkerExcludeToolName, BoxPromptToolName],
-    defaultValue: MarkerIncludeToolName,
-  },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
-
-    // Disable all AI tools first
-    toolGroup.setToolDisabled(MarkerIncludeToolName);
-    toolGroup.setToolDisabled(MarkerExcludeToolName);
-    toolGroup.setToolDisabled(BoxPromptToolName);
-
-    // Enable the selected tool
-    toolGroup.setToolActive(name, {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
-    });
-  },
-});
 
 async function updateViewport() {
   await initDemo();
@@ -253,7 +185,7 @@ async function updateViewport() {
   };
 
   if (currentViewportType === ViewportType.ORTHOGRAPHIC) {
-    viewportInput.defaultOptions.orientation = OrientationAxis.AXIAL;
+    viewportInput.defaultOptions.orientation = OrientationAxis.SAGITTAL;
   }
 
   renderingEngine.setViewports([viewportInput]);
@@ -263,7 +195,9 @@ async function updateViewport() {
 
   if (currentViewportType === ViewportType.STACK) {
     viewport = renderingEngine.getViewport(viewportId);
-    await viewport.setStack(imageIds);
+    await viewport.setStack(imageIds.reverse().slice(50, 190));
+
+    cornerstoneTools.utilities.stackContextPrefetch.enable(viewportContainer);
     viewport.render();
   } else {
     // For sagittal, create volume and set it
@@ -302,19 +236,16 @@ async function updateViewport() {
   await segmentation.addLabelmapRepresentationToViewportMap(segMap);
 
   activeViewport = viewport;
-  await ai.initModel();
-  ai.initViewport(viewport);
+  await segmentAI.initModel();
 
   viewport.element.addEventListener(Events.KEY_DOWN, (evt) => {
     const { key } = evt.detail;
     const { element } = activeViewport;
     if (key === 'Escape') {
       cornerstoneTools.cancelActiveManipulations(element);
-      ai.rejectPreview(element);
+      segmentAI.rejectPreview(element);
     } else if (key === 'Enter') {
-      ai.acceptPreview(element);
-    } else if (key === 'n') {
-      ai.interpolateScroll(activeViewport, 1);
+      segmentAI.acceptPreview(element);
     }
   });
 }

@@ -607,6 +607,14 @@ export default class SegmentationStateManager {
     return labelmapImageIds;
   }
 
+  getLabelmapImageIdsForImageId(imageId: string, segmentationId: string) {
+    const key = this._generateMapKey({
+      segmentationId,
+      referenceImageId: imageId,
+    });
+    return this._labelmapImageIdReferenceMap.get(key);
+  }
+
   /**
    * Retrieves the stack labelmap imageIds associated with the current imageId
    * that is rendered on the viewport.
@@ -627,11 +635,7 @@ export default class SegmentationStateManager {
     const stackViewport = enabledElement.viewport as Types.IStackViewport;
     const referenceImageId = stackViewport.getCurrentImageId();
 
-    const key = this._generateMapKey({
-      segmentationId,
-      referenceImageId,
-    });
-    return this._labelmapImageIdReferenceMap.get(key);
+    return this.getLabelmapImageIdsForImageId(referenceImageId, segmentationId);
   }
 
   /**

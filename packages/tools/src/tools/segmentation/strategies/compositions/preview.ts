@@ -1,12 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import { utilities, type Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/events/triggerSegmentationDataModified';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import {
-  getSegmentIndexColor,
-  setSegmentIndexColor,
-} from '../../../../stateManagement/segmentation/config/segmentationColor';
+import { setSegmentIndexColor } from '../../../../stateManagement/segmentation/config/segmentationColor';
 import { getViewportIdsWithSegmentation } from '../../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
+import type { LabelmapMemo } from '../../../../utilities/segmentation/createLabelmapMemo';
 
 /**
  * Sets up a preview to use an alternate set of colors.  First fills the
@@ -19,25 +17,18 @@ export default {
   [StrategyCallbacks.Preview]: function (
     operationData: InitializedOperationData
   ) {
-    const { previewColor, configuration, enabledElement } = operationData;
-    if (!previewColor || !configuration) {
+    const { previewSegmentIndex, configuration, enabledElement } =
+      operationData;
+    if (!previewSegmentIndex || !configuration) {
       return;
     }
-
-    // Clean up old preview data
-    if (operationData.preview) {
-      delete operationData.preview;
-    }
-
-    delete configuration.centerSegmentIndex;
 
     // Now generate a normal preview as though the user had clicked, filled, released
     this.onInteractionStart?.(enabledElement, operationData);
 
     const preview = this.fill(enabledElement, operationData);
+
     if (preview) {
-      preview.isPreviewFromHover = true;
-      operationData.preview = preview;
       this.onInteractionEnd?.(enabledElement, operationData);
     }
 
@@ -45,32 +36,9 @@ export default {
   },
 
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const {
-      segmentIndex,
-      previewSegmentIndex,
-      previewColor,
-      preview,
-      segmentationId,
-      segmentationVoxelManager,
-    } = operationData;
+    const { segmentIndex, previewColor, previewSegmentIndex } = operationData;
 
-    if (previewColor === undefined || !previewSegmentIndex) {
-      operationData.memo = operationData.createMemo(
-        segmentationId,
-        segmentationVoxelManager
-      );
-      return;
-    }
-
-    if (preview) {
-      preview.previewVoxelManager.sourceVoxelManager =
-        operationData.segmentationVoxelManager;
-      // And use the preview data associated with this tracking object as needed
-      operationData.previewVoxelManager = preview.previewVoxelManager;
-    }
-
-    if (segmentIndex === null) {
-      // Null means to reset the value, so we don't change the preview colour,
+    if (previewSegmentIndex == null || segmentIndex == null) {
       return;
     }
 
@@ -96,72 +64,74 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const {
-      segmentationVoxelManager,
-      previewVoxelManager: previewVoxelManager,
       previewSegmentIndex,
-      segmentationId,
-      preview,
+      segmentationVoxelManager,
+      memo,
+      segmentIndex,
+      centerSegmentIndexInfo,
     } = operationData || {};
-    if (previewSegmentIndex === undefined) {
-      return;
-    }
 
-    const segmentIndex = preview?.segmentIndex ?? operationData.segmentIndex;
-    if (!previewVoxelManager || previewVoxelManager.modifiedSlices.size === 0) {
-      return;
-    }
+    const { changedIndices } = centerSegmentIndexInfo || {};
 
-    // TODO - figure out a better option for undo/redo of preview
-    const memo = operationData.createMemo(
-      segmentationId,
-      segmentationVoxelManager
-    );
-    operationData.memo = memo;
-    const { voxelManager } = memo;
+    // Type assertion as LabelmapMemo to access voxelManager
+    const labelmapMemo = memo as LabelmapMemo;
 
-    const callback = ({ index, value }) => {
+    const callback = ({ index }) => {
       const oldValue = segmentationVoxelManager.getAtIndex(index);
-      if (oldValue === previewSegmentIndex) {
-        // First restore the segmentation voxel manager
-        segmentationVoxelManager.setAtIndex(index, value);
-        // Then set it to the final value so that the memo voxel manager has
-        // the correct values.
-        voxelManager.setAtIndex(index, segmentIndex);
+
+      if (changedIndices?.length > 0) {
+        if (changedIndices.includes(index)) {
+          labelmapMemo.voxelManager.setAtIndex(index, 0);
+        }
+      } else {
+        if (oldValue === previewSegmentIndex) {
+          labelmapMemo.voxelManager.setAtIndex(index, segmentIndex);
+        }
       }
     };
-    previewVoxelManager.forEach(callback, {});
+    segmentationVoxelManager.forEach(callback);
 
     triggerSegmentationDataModified(
       operationData.segmentationId,
-      previewVoxelManager.getArrayOfModifiedSlices(),
-      preview.segmentIndex
+      segmentationVoxelManager.getArrayOfModifiedSlices(),
+      segmentIndex
     );
-    previewVoxelManager.clear();
+
+    // reset the centerSegmentIndexInfo
+    operationData.centerSegmentIndexInfo.changedIndices = [];
   },
 
   [StrategyCallbacks.RejectPreview]: (
     operationData: InitializedOperationData
   ) => {
-    const {
-      previewVoxelManager: previewVoxelManager,
-      segmentationVoxelManager,
-    } = operationData;
-    if (previewVoxelManager.modifiedSlices.size === 0) {
+    if (!operationData) {
       return;
     }
 
-    const callback = ({ index, value }) => {
-      segmentationVoxelManager.setAtIndex(index, value);
-    };
-    previewVoxelManager.forEach(callback);
+    // check if the preview has value, if not we should not undo
+    // since it might be an actual brush stroke or an accept preview
+    utilities.HistoryMemo.DefaultHistoryMemo.undoIf((memo) => {
+      // Need to check and cast to LabelmapMemo to access voxelManager
+      const labelmapMemo = memo as LabelmapMemo;
+      if (!labelmapMemo?.voxelManager) {
+        return false;
+      }
 
-    // Primarily rejects back to zero, so use 0 as the segment index - even
-    // if sometimes it modifies the data to other values on reject.
-    triggerSegmentationDataModified(
-      operationData.segmentationId,
-      previewVoxelManager.getArrayOfModifiedSlices(),
-      0
-    );
-    previewVoxelManager.clear();
+      // Since we can't check the fromAcceptPreview flag anymore, we'll rely on
+      // whether the memo has a previewSegmentIndex value present in it
+
+      const { segmentationVoxelManager } = labelmapMemo;
+
+      let hasPreviewSegmentIndex = false;
+      const callback = ({ value }) => {
+        if (value === operationData.previewSegmentIndex) {
+          hasPreviewSegmentIndex = true;
+        }
+      };
+
+      segmentationVoxelManager.forEach(callback);
+
+      return hasPreviewSegmentIndex;
+    });
   },
 };

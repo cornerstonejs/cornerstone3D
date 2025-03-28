@@ -645,6 +645,8 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           ChangeTypes.History
         );
       },
+      id: annotationUID,
+      operationType: 'annotation',
     };
     DefaultHistoryMemo.push(annotationMemo);
     return annotationMemo;
