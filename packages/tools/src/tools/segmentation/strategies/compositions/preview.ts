@@ -29,8 +29,6 @@ export default {
     const preview = this.fill(enabledElement, operationData);
 
     if (preview) {
-      // memoToUse.voxelManager.sourceVoxelManager =
-      //   operationData.segmentationVoxelManager;
       this.onInteractionEnd?.(enabledElement, operationData);
     }
 
@@ -106,6 +104,10 @@ export default {
   [StrategyCallbacks.RejectPreview]: (
     operationData: InitializedOperationData
   ) => {
+    if (!operationData) {
+      return;
+    }
+
     // check if the preview has value, if not we should not undo
     // since it might be an actual brush stroke or an accept preview
     utilities.HistoryMemo.DefaultHistoryMemo.undoIf((memo) => {

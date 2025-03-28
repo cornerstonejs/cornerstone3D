@@ -53,6 +53,13 @@ export function handleUseSegmentCenterIndex({
       return;
     }
 
+    // Don't let previewOnHover override the value since basically there might be a
+    // moment where we have the preview from the hover and that might get confused by
+    // the actual segmentation
+    if (previewOnHover) {
+      return;
+    }
+
     if (existingValue === previewSegmentIndex) {
       memo.voxelManager.setAtIndex(index, 0);
       return;
