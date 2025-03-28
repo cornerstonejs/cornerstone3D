@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.7.17](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.16...v3.7.17) (2025-03-27)
+
+### Bug Fixes
+
+- Implement isInAcquisitionPlane method in volume viewports ([#1950](https://github.com/cornerstonejs/cornerstone3D/issues/1950)) ([d0702e4](https://github.com/cornerstonejs/cornerstone3D/commit/d0702e4e29c5f12c5614ffd3262864b16a713a45))
+
+## [3.7.16](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.15...v3.7.16) (2025-03-27)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.7.15](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.14...v3.7.15) (2025-03-27)
+
+### Bug Fixes
+
+- **CobbAngleTool - touch:** Add touch event listeners for CobbAngleTool ([#1948](https://github.com/cornerstonejs/cornerstone3D/issues/1948)) ([4477a5c](https://github.com/cornerstonejs/cornerstone3D/commit/4477a5c33101439f2427230dd7434836f73131fd))
+
 ## [3.7.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.13...v3.7.14) (2025-03-27)
 
 **Note:** Version bump only for package @cornerstonejs/tools
