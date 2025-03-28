@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.17...v3.8.0) (2025-03-28)
+
+### Features
+
+- **segmentation:** Simplify preview handling and remove unused code ([#1928](https://github.com/cornerstonejs/cornerstone3D/issues/1928)) ([bfa93c5](https://github.com/cornerstonejs/cornerstone3D/commit/bfa93c5dc8677bd7d79b9b8e8eb5b50ad02cd144)), closes [#1941](https://github.com/cornerstonejs/cornerstone3D/issues/1941) [#1894](https://github.com/cornerstonejs/cornerstone3D/issues/1894)
+
 ## [3.7.17](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.16...v3.7.17) (2025-03-27)
 
 **Note:** Version bump only for package @cornerstonejs/ai
