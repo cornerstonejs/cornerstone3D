@@ -56,6 +56,7 @@ toolMap.set('ThresholdCircle', {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_CIRCLE',
     threshold: thresholdArgs,
+    useCenterSegmentIndex: true,
   },
 });
 
@@ -65,6 +66,7 @@ toolMap.set('ThresholdSphere', {
     ...configuration,
     activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
     threshold: thresholdArgs,
+    useCenterSegmentIndex: true,
   },
 });
 
@@ -73,6 +75,7 @@ toolMap.set('CircularBrush', {
   configuration: {
     ...configurationNoPreview,
     activeStrategy: 'FILL_INSIDE_CIRCLE',
+    useCenterSegmentIndex: true,
   },
 });
 
