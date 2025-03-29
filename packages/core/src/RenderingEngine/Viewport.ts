@@ -576,14 +576,19 @@ class Viewport {
       this.addActor(actor);
     });
 
-    const prevViewPresentation = this.getViewPresentation();
-    const prevViewRef = this.getViewReference();
-
-    this.resetCamera();
-
+    // In the case of loading a new volume with WADO-URI, we may not have loaded
+    // metadata for all imageIds, as they are streaming in. The
+    // getViewReference() call uses getClosestImageId() in its call stack, which
+    // will error in that scenario as it tries to loop over all imageId
+    // metadata. So only call getViewReference if necessary.
     if (!resetCamera) {
+      const prevViewPresentation = this.getViewPresentation();
+      const prevViewRef = this.getViewReference();
+      this.resetCamera();
       this.setViewReference(prevViewRef);
       this.setViewPresentation(prevViewPresentation);
+    } else {
+      this.resetCamera();
     }
   }
 
