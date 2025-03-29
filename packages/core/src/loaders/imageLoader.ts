@@ -7,17 +7,17 @@ import triggerEvent from '../utilities/triggerEvent';
 import uuidv4 from '../utilities/uuidv4';
 import VoxelManager from '../utilities/VoxelManager';
 import type {
-  IImage,
-  ImageLoaderFn,
-  IImageLoadObject,
   EventTypes,
+  IImage,
+  IImageLoadObject,
+  ImageLoaderFn,
+  ImagePixelModuleMetadata,
+  ImagePlaneModuleMetadata,
+  Mat3,
+  PixelDataTypedArray,
+  PixelDataTypedArrayString,
   Point2,
   Point3,
-  Mat3,
-  PixelDataTypedArrayString,
-  PixelDataTypedArray,
-  ImagePlaneModuleMetadata,
-  ImagePixelModuleMetadata,
 } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import * as metaData from '../metaData';
@@ -372,6 +372,17 @@ export function createAndCacheDerivedImages(
   return images;
 }
 
+function isValidDirection(direction: LocalImageOptions['direction']): boolean {
+  if (!direction) {
+    return false;
+  } else {
+    // NOTE: [0,0,0,0,0,0] is invalid direction
+    return !direction.slice(0, 6).every((d) => {
+      return d === 0;
+    });
+  }
+}
+
 export function createAndCacheLocalImage(
   imageId: string,
   options: LocalImageOptions
@@ -402,13 +413,15 @@ export function createAndCacheLocalImage(
   const columnPixelSpacing = spacing[0];
   const rowPixelSpacing = spacing[1];
 
+  const valid = isValidDirection(direction);
+
   const imagePlaneModule = {
     frameOfReferenceUID,
     rows: height,
     columns: width,
-    imageOrientationPatient: direction ?? [1, 0, 0, 0, 1, 0],
-    rowCosines: direction ? direction.slice(0, 3) : [1, 0, 0],
-    columnCosines: direction ? direction.slice(3, 6) : [0, 1, 0],
+    imageOrientationPatient: valid ? direction : [1, 0, 0, 0, 1, 0],
+    rowCosines: valid ? direction.slice(0, 3) : [1, 0, 0],
+    columnCosines: valid ? direction.slice(3, 6) : [0, 1, 0],
     imagePositionPatient: origin ?? [0, 0, 0],
     pixelSpacing: [rowPixelSpacing, columnPixelSpacing],
     rowPixelSpacing: rowPixelSpacing,
