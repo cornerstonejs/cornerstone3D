@@ -1,10 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
 import type { SVGDrawingHelper } from '../types';
 
-import _getHash from './_getHash';
-
 import setAttributesIfNecessary from './setAttributesIfNecessary';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
+import _draw from './_draw';
 
 function drawCircle(
   svgDrawingHelper: SVGDrawingHelper,
@@ -12,8 +11,7 @@ function drawCircle(
   circleUID: string,
   center: Types.Point2,
   radius: number,
-  options = {},
-  dataId = ''
+  options = {}
 ): void {
   const {
     color,
@@ -39,11 +37,6 @@ function drawCircle(
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
 
-  // variable for the namespace
-  const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(annotationUID, 'circle', circleUID);
-  const existingCircleElement = svgDrawingHelper.getSvgNode(svgNodeHash);
-
   const attributes = {
     cx: `${center[0]}`,
     cy: `${center[1]}`,
@@ -56,21 +49,7 @@ function drawCircle(
     'stroke-opacity': strokeOpacity, // setting stroke opacity
   };
 
-  if (existingCircleElement) {
-    setAttributesIfNecessary(attributes, existingCircleElement);
-
-    svgDrawingHelper.setNodeTouched(svgNodeHash);
-  } else {
-    const newCircleElement = document.createElementNS(svgns, 'circle');
-
-    if (dataId !== '') {
-      newCircleElement.setAttribute('data-id', dataId);
-    }
-
-    setNewAttributesIfValid(attributes, newCircleElement);
-
-    svgDrawingHelper.appendNode(newCircleElement, svgNodeHash);
-  }
+  _draw('circle', svgDrawingHelper, annotationUID, circleUID, attributes);
 }
 
 export default drawCircle;

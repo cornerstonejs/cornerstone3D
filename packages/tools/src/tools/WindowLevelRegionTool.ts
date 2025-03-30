@@ -286,7 +286,6 @@ class WindowLevelRegionTool extends AnnotationTool {
         return renderStatus;
       }
 
-      const dataId = `${annotationUID}-rect`;
       const rectangleUID = '0';
       drawRectSvg(
         svgDrawingHelper,
@@ -298,8 +297,7 @@ class WindowLevelRegionTool extends AnnotationTool {
           color,
           lineDash,
           lineWidth,
-        },
-        dataId
+        }
       );
 
       renderStatus = true;

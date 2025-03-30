@@ -1,9 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-
-import _getHash from './_getHash';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
 import type { SVGDrawingHelper } from '../types';
+import _draw from './_draw';
 
 function drawHandle(
   svgDrawingHelper: SVGDrawingHelper,
@@ -29,14 +28,6 @@ function drawHandle(
 
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
-
-  // variable for the namespace
-  const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(
-    annotationUID,
-    'handle',
-    `hg-${handleGroupUID}-index-${uniqueIndex}`
-  );
 
   let attributes;
   if (type === 'circle') {
@@ -69,20 +60,13 @@ function drawHandle(
   } else {
     throw new Error(`Unsupported handle type: ${type}`);
   }
-
-  const existingHandleElement = svgDrawingHelper.getSvgNode(svgNodeHash);
-
-  if (existingHandleElement) {
-    setAttributesIfNecessary(attributes, existingHandleElement);
-
-    svgDrawingHelper.setNodeTouched(svgNodeHash);
-  } else {
-    const newHandleElement = document.createElementNS(svgns, type);
-
-    setNewAttributesIfValid(attributes, newHandleElement);
-
-    svgDrawingHelper.appendNode(newHandleElement, svgNodeHash);
-  }
+  _draw(
+    type,
+    svgDrawingHelper,
+    annotationUID,
+    `hg-${handleGroupUID}-index-${uniqueIndex}`,
+    attributes
+  );
 }
 
 export default drawHandle;

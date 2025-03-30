@@ -1190,9 +1190,6 @@ class BidirectionalTool extends AnnotationTool {
         );
       }
 
-      const dataId1 = `${annotationUID}-line-1`;
-      const dataId2 = `${annotationUID}-line-2`;
-
       const lineUID = '0';
       drawLineSvg(
         svgDrawingHelper,
@@ -1205,8 +1202,7 @@ class BidirectionalTool extends AnnotationTool {
           lineDash,
           lineWidth,
           shadow,
-        },
-        dataId1
+        }
       );
 
       const secondLineUID = '1';
@@ -1221,8 +1217,7 @@ class BidirectionalTool extends AnnotationTool {
           lineDash,
           lineWidth,
           shadow,
-        },
-        dataId2
+        }
       );
 
       renderStatus = true;

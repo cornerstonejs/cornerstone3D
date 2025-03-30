@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import _getHash from './_getHash';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
 import type { SVGDrawingHelper } from '../types';
+import _draw from './_draw';
 
 /**
  * Draws an SVG path with the given points.
@@ -44,9 +44,6 @@ export default function drawPath(
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
 
-  const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(annotationUID, 'path', pathUID);
-  const existingNode = svgDrawingHelper.getSvgNode(svgNodeHash);
   let pointsAttribute = '';
 
   for (let i = 0, numArrays = pointsArrays.length; i < numArrays; i++) {
@@ -84,15 +81,5 @@ export default function drawPath(
     'stroke-dasharray': lineDash,
   };
 
-  if (existingNode) {
-    // This is run to avoid re-rendering annotations that actually haven't changed
-    setAttributesIfNecessary(attributes, existingNode);
-
-    svgDrawingHelper.setNodeTouched(svgNodeHash);
-  } else {
-    const newNode = document.createElementNS(svgns, 'path');
-
-    setNewAttributesIfValid(attributes, newNode);
-    svgDrawingHelper.appendNode(newNode, svgNodeHash);
-  }
+  _draw('path', svgDrawingHelper, annotationUID, pathUID, attributes);
 }

@@ -1,17 +1,15 @@
 import type { Types } from '@cornerstonejs/core';
-
-import _getHash from './_getHash';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
 import type { SVGDrawingHelper } from '../types';
+import _draw from './_draw';
 
 export default function drawRectByCoordinates(
   svgDrawingHelper: SVGDrawingHelper,
   annotationUID: string,
   rectangleUID: string,
   canvasCoordinates: Types.Point2[],
-  options = {},
-  dataId = ''
+  options = {}
 ): void {
   const {
     color,
@@ -31,10 +29,6 @@ export default function drawRectByCoordinates(
   // for supporting both lineWidth and width options
 
   const strokeWidth = lineWidth || _width;
-
-  const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(annotationUID, 'rect', rectangleUID);
-  const existingRect = svgDrawingHelper.getSvgNode(svgNodeHash);
 
   const [topLeft, topRight, bottomLeft, bottomRight] = canvasCoordinates;
 
@@ -68,20 +62,5 @@ export default function drawRectByCoordinates(
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
   };
-
-  if (existingRect) {
-    setAttributesIfNecessary(attributes, existingRect);
-
-    svgDrawingHelper.setNodeTouched(svgNodeHash);
-  } else {
-    const svgRectElement = document.createElementNS(svgns, 'rect');
-
-    if (dataId !== '') {
-      svgRectElement.setAttribute('data-id', dataId);
-    }
-
-    setNewAttributesIfValid(attributes, svgRectElement);
-
-    svgDrawingHelper.appendNode(svgRectElement, svgNodeHash);
-  }
+  _draw('rect', svgDrawingHelper, annotationUID, rectangleUID, attributes);
 }

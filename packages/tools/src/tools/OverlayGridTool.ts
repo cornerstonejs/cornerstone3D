@@ -286,8 +286,6 @@ class OverlayGridTool extends AnnotationDisplayTool {
       const canvasCoordinates = [lineStartWorld, lineEndWorld].map((world) =>
         targetViewport.worldToCanvas(world)
       );
-
-      const dataId = `${annotationUID}-line`;
       const lineUID = `${i}`;
       drawLineSvg(
         svgDrawingHelper,
@@ -300,8 +298,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
           width: lineWidth,
           lineDash,
           shadow,
-        },
-        dataId
+        }
       );
     }
 

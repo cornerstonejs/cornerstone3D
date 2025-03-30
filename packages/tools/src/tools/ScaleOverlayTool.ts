@@ -270,7 +270,6 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     const color = this.getStyle('color', styleSpecifier, annotation);
     const shadow = this.getStyle('shadow', styleSpecifier, annotation);
 
-    const scaleId = `${annotationUID}-scaleline`;
     const scaleLineUID = '1';
     drawLineSvg(
       svgDrawingHelper,
@@ -283,10 +282,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
         width: lineWidth,
         lineDash,
         shadow,
-      },
-      scaleId
+      }
     );
-    const leftTickId = `${annotationUID}-left`;
     const leftTickUID = '2';
 
     drawLineSvg(
@@ -300,10 +297,8 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
         width: lineWidth,
         lineDash,
         shadow,
-      },
-      leftTickId
+      }
     );
-    const rightTickId = `${annotationUID}-right`;
     const rightTickUID = '3';
 
     drawLineSvg(
@@ -317,8 +312,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
         width: lineWidth,
         lineDash,
         shadow,
-      },
-      rightTickId
+      }
     );
 
     const locationTextOffest = {
@@ -355,8 +349,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
           width: lineWidth,
           lineDash,
           shadow,
-        },
-        tickIds[i]
+        }
       );
     }
 

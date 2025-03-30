@@ -581,8 +581,7 @@ class ETDRSGridTool extends AnnotationTool {
 
       // draw the circles
       for (let i = 0; i < diametersCanvas.length; i++) {
-        const dataId = `${annotationUID}-circle-${i}`;
-        const circleUID = `${annotationUID}-circle-${i}`;
+        const circleUID = `${i}`;
         drawCircleSvg(
           svgDrawingHelper,
           annotationUID,
@@ -593,8 +592,7 @@ class ETDRSGridTool extends AnnotationTool {
             color,
             lineDash,
             lineWidth,
-          },
-          dataId
+          }
         );
       }
 

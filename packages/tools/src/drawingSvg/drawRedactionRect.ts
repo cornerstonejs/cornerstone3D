@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import type { SVGDrawingHelper } from '../types';
-import _getHash from './_getHash';
 import _setAttributesIfNecessary from './setAttributesIfNecessary';
 import _setNewAttributesIfValid from './setNewAttributesIfValid';
+import _draw from './_draw';
 
 // <rect x="120" y="100" width="100" height="100" />
 export default function drawRedactionRect(
@@ -31,10 +31,6 @@ export default function drawRedactionRect(
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || _width;
 
-  const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(annotationUID, 'rect', rectangleUID);
-  const existingRect = svgDrawingHelper.getSvgNode(svgNodeHash);
-
   const tlhc = [Math.min(start[0], end[0]), Math.min(start[1], end[1])];
   const width = Math.abs(start[0] - end[0]);
   const height = Math.abs(start[1] - end[1]);
@@ -49,16 +45,5 @@ export default function drawRedactionRect(
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
   };
-
-  if (existingRect) {
-    _setAttributesIfNecessary(attributes, existingRect);
-
-    svgDrawingHelper.setNodeTouched(svgNodeHash);
-  } else {
-    const svgRectElement = document.createElementNS(svgns, 'rect');
-
-    _setNewAttributesIfValid(attributes, svgRectElement);
-
-    svgDrawingHelper.appendNode(svgRectElement, svgNodeHash);
-  }
+  _draw('rect', svgDrawingHelper, annotationUID, rectangleUID, attributes);
 }

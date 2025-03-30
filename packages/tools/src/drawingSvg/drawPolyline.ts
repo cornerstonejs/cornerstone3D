@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
-import _getHash from './_getHash';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
 import type { SVGDrawingHelper } from '../types';
+import _draw from './_draw';
 
 /**
  * Draws an SVG polyline with the given points.
@@ -45,11 +45,6 @@ export default function drawPolyline(
 
   // for supporting both lineWidth and width options
   const strokeWidth = lineWidth || width;
-
-  const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(annotationUID, 'polyline', polylineUID);
-  const existingPolyLine = svgDrawingHelper.getSvgNode(svgNodeHash);
-
   let pointsAttribute = '';
 
   for (const point of points) {
@@ -72,17 +67,5 @@ export default function drawPolyline(
     'marker-start': markerStartId ? `url(#${markerStartId})` : '',
     'marker-end': markerEndId ? `url(#${markerEndId})` : '',
   };
-
-  if (existingPolyLine) {
-    // This is run to avoid re-rendering annotations that actually haven't changed
-    setAttributesIfNecessary(attributes, existingPolyLine);
-
-    svgDrawingHelper.setNodeTouched(svgNodeHash);
-  } else {
-    const newPolyLine = document.createElementNS(svgns, 'polyline');
-
-    setNewAttributesIfValid(attributes, newPolyLine);
-
-    svgDrawingHelper.appendNode(newPolyLine, svgNodeHash);
-  }
+  _draw('polyline', svgDrawingHelper, annotationUID, polylineUID, attributes);
 }
