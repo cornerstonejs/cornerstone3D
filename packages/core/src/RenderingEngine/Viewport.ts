@@ -904,7 +904,6 @@ class Viewport {
       this.setZoom(this.insetImageMultiplier * zoom, false);
     }
     if (imageCanvasPoint) {
-      console.log('Starting pan update zoom=', zoom);
       const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
         imageCanvasPoint;
       const [canvasX, canvasY] = canvasPoint;
@@ -926,13 +925,7 @@ class Viewport {
       const newPositionY = imagePanY + canvasPanY;
 
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
-      console.log(
-        'delta point',
-        newPositionX,
-        this.getPan()[0],
-        imagePanX,
-        canvasPanX
-      );
+
       // Use getPan from current for the setting
       vec2.add(deltaPoint2, deltaPoint2, this.getPan());
       // The pan is part of the display area settings, not the initial camera, so
