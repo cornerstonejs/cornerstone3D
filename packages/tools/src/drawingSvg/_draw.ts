@@ -15,7 +15,7 @@ function _draw(
 } {
   // variable for the namespace
   const svgns = 'http://www.w3.org/2000/svg';
-  const dataId = `${what}-${annotationUID}-${drawingId}`;
+  const dataId = `${annotationUID}-${what}-${drawingId}`;
   const existingElement = svgDrawingHelper.getSvgNode(dataId);
 
   if (existingElement) {

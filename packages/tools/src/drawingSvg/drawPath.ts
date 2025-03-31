@@ -1,6 +1,4 @@
 import type { Types } from '@cornerstonejs/core';
-import setNewAttributesIfValid from './setNewAttributesIfValid';
-import setAttributesIfNecessary from './setAttributesIfNecessary';
 import type { SVGDrawingHelper } from '../types';
 import _draw from './_draw';
 

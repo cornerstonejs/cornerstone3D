@@ -16,8 +16,10 @@ import drawArrow from './drawArrow';
 import drawRedactionRect from './drawRedactionRect';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
 import setNewAttributesIfValid from './setNewAttributesIfValid';
+import _draw from './_draw';
 
 export {
+  _draw,
   draw,
   drawCircle,
   drawEllipse,
