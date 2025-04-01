@@ -17,7 +17,10 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
-import { DEFAULT_POSITIVE_STD_DEV_MULTIPLIER } from '../../utilities/segmentation/growCut/constants';
+import {
+  DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
+  DEFAULT_NEGATIVE_SEED_MARGIN,
+} from '../../utilities/segmentation/growCut/constants';
 
 import type {
   LabelmapSegmentationDataStack,
@@ -175,6 +178,18 @@ class GrowCutBaseTool extends BaseTool {
         config.positiveStdDevMultiplier + shrinkExpandAccumulator
       );
 
+      // Adjust negativeSeedMargin based on shrinkExpandAmount
+      // When shrinking (negative amount), reduce margin to sample negatives closer to positives
+      // When expanding (positive amount), increase margin
+      const negativeSeedMargin =
+        shrinkExpandAmount < 0
+          ? Math.max(
+              1,
+              DEFAULT_NEGATIVE_SEED_MARGIN -
+                Math.abs(shrinkExpandAccumulator) * 3
+            )
+          : DEFAULT_NEGATIVE_SEED_MARGIN + shrinkExpandAccumulator * 3;
+
       const updatedGrowCutData = {
         ...growCutData,
         options: {
@@ -182,6 +197,7 @@ class GrowCutBaseTool extends BaseTool {
           positiveSeedValue: segmentIndex,
           negativeSeedValue: 255,
           positiveStdDevMultiplier: newPositiveStdDevMultiplier,
+          negativeSeedMargin,
         },
       };
 

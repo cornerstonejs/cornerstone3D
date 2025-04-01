@@ -22,7 +22,6 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
   static toolName = 'RegionSegmentPlus';
   protected growCutData: RegionSegmentPlusToolData | null;
   private mouseTimer: number | null = null;
-  private allowedToProceed = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -80,7 +79,8 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const { positiveSeedIndices, negativeSeedIndices } = seeds;
 
     // if the ratio of positive to negative is significant, this is not a good
-    // seed and we should not run grow cut
+    // seed and we should not run grow cut. These are just heuristics numbers
+    // and can be adjusted.
     let cursor;
     if (
       positiveSeedIndices.size / negativeSeedIndices.size > 20 ||

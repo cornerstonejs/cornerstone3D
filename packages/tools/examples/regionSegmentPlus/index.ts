@@ -227,20 +227,20 @@ async function run() {
   });
 
   // Get Cornerstone imageIds for PT data
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.2.826.0.1.3680043.2.1125.1.11608962641993666019702920539307840',
-  //   SeriesInstanceUID:
-  //     '1.2.826.0.1.3680043.2.1125.1.71880611468617661972108550785274516',
-  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  // });
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '1.2.826.0.1.3680043.2.1125.1.11608962641993666019702920539307840',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      '1.2.826.0.1.3680043.2.1125.1.71880611468617661972108550785274516',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+  //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  // });
 
   const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
