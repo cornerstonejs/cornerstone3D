@@ -925,7 +925,6 @@ class Viewport {
       const newPositionY = imagePanY + canvasPanY;
 
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
-
       // Use getPan from current for the setting
       vec2.add(deltaPoint2, deltaPoint2, this.getPan());
       // The pan is part of the display area settings, not the initial camera, so
