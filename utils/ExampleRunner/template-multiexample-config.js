@@ -79,7 +79,7 @@ module.exports = {
         {
           from:
             '../../../node_modules/onnxruntime-web/dist',
-          to: '${destPath.replace(/\\/g, '/')}/dist',
+          to: '${destPath.replace(/\\/g, '/')}/ort',
         },
       ],
     }),

@@ -99,6 +99,7 @@ import createSubVolume from './createSubVolume';
 import getVolumeDirectionVectors from './getVolumeDirectionVectors';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
+import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -201,4 +202,5 @@ export {
   calculateSpacingBetweenImageIds,
   getImageDataMetadata,
   buildMetadata,
+  calculateNeighborhoodStats,
 };

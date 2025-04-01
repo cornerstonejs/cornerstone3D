@@ -1,4 +1,8 @@
-import { getRenderingEngine, utilities as csUtils } from '@cornerstonejs/core';
+import {
+  cache,
+  utilities as csUtils,
+  getEnabledElement,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 
@@ -8,6 +12,7 @@ import type {
   GrowCutToolData,
   RemoveIslandData,
 } from '../base/GrowCutBaseTool';
+import { calculateGrowCutSeeds } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
   worldPoint: Types.Point3;
@@ -16,7 +21,8 @@ type RegionSegmentPlusToolData = GrowCutToolData & {
 class RegionSegmentPlusTool extends GrowCutBaseTool {
   static toolName = 'RegionSegmentPlus';
   protected growCutData: RegionSegmentPlusToolData | null;
-
+  private mouseTimer: number | null = null;
+  private allowedToProceed = false;
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -38,11 +44,99 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     super(toolProps, defaultToolProps);
   }
 
+  mouseMoveCallback(evt: EventTypes.MouseMoveEventType) {
+    const eventData = evt.detail;
+    const { currentPoints, element } = eventData;
+    const { world: worldPoint } = currentPoints;
+
+    element.style.cursor = 'default';
+
+    // Reset timer on mouse move
+    if (this.mouseTimer !== null) {
+      window.clearTimeout(this.mouseTimer);
+      this.mouseTimer = null;
+    }
+
+    this.mouseTimer = window.setTimeout(() => {
+      this.onMouseStable(evt, worldPoint, element);
+    }, this.configuration.mouseStabilityDelay || 500);
+  }
+
+  async onMouseStable(
+    evt: EventTypes.MouseMoveEventType,
+    worldPoint: Types.Point3,
+    element: HTMLDivElement
+  ) {
+    await super.preMouseDownCallback(
+      evt as EventTypes.MouseDownActivateEventType
+    );
+
+    const refVolume = cache.getVolume(
+      this.growCutData.segmentation.referencedVolumeId
+    );
+    const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {});
+
+    const { positiveSeedIndices, negativeSeedIndices } = seeds;
+
+    // if the ratio of positive to negative is significant, this is not a good
+    // seed and we should not run grow cut. These are just heuristics numbers
+    // and can be adjusted.
+    let cursor;
+    if (
+      positiveSeedIndices.size / negativeSeedIndices.size > 20 ||
+      negativeSeedIndices.size < 30
+    ) {
+      cursor = 'not-allowed';
+      this.allowedToProceed = false;
+    } else {
+      cursor = 'copy';
+      this.allowedToProceed = true;
+    }
+
+    // Get the enabled element first
+    const enabledElement = getEnabledElement(element);
+
+    if (element) {
+      element.style.cursor = cursor;
+
+      requestAnimationFrame(() => {
+        if (element.style.cursor !== cursor) {
+          element.style.cursor = cursor;
+        }
+      });
+    }
+
+    if (this.allowedToProceed) {
+      this.seeds = seeds;
+    }
+
+    // Ensure the viewport renders after cursor is updated
+    if (enabledElement && enabledElement.viewport) {
+      enabledElement.viewport.render();
+    }
+  }
+
   async preMouseDownCallback(
     evt: EventTypes.MouseDownActivateEventType
   ): Promise<boolean> {
+    // change cursor to loading
+    if (!this.allowedToProceed) {
+      return false;
+    }
+
     const eventData = evt.detail;
-    const { currentPoints } = eventData;
+    const { currentPoints, element } = eventData;
+    const enabledElement = getEnabledElement(element);
+    if (enabledElement) {
+      element.style.cursor = 'wait';
+
+      requestAnimationFrame(() => {
+        if (element.style.cursor !== 'wait') {
+          element.style.cursor = 'wait';
+        }
+      });
+    }
+
     const { world: worldPoint } = currentPoints;
 
     await super.preMouseDownCallback(evt);
@@ -58,7 +152,11 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     this.growCutData.islandRemoval = {
       worldIslandPoints: [worldPoint],
     };
-    this.runGrowCut();
+    await this.runGrowCut();
+
+    if (element) {
+      element.style.cursor = 'default';
+    }
 
     return true;
   }
@@ -75,20 +173,16 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
   protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { referencedVolumeId, labelmapVolumeId },
-      renderingEngineId,
-      viewportId,
+      segmentation: { referencedVolumeId },
       worldPoint,
       options,
     } = growCutData;
-
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
 
     const { subVolumePaddingPercentage } = this.configuration;
     const mergedOptions = {
       ...options,
       subVolumePaddingPercentage,
+      seeds: this.seeds,
     };
 
     return growCut.runOneClickGrowCut({
