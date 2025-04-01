@@ -2,20 +2,18 @@ import { utilities as csUtils, cache, volumeLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { run } from './runGrowCut';
 import type { GrowCutOptions } from './runGrowCut';
+import {
+  POSITIVE_SEED_LABEL,
+  NEGATIVE_SEED_LABEL,
+  DEFAULT_NEIGHBORHOOD_RADIUS,
+  DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
+  DEFAULT_NEGATIVE_STD_DEV_MULTIPLIER,
+  DEFAULT_NEGATIVE_SEED_MARGIN,
+  DEFAULT_NEGATIVE_SEEDS_COUNT,
+  MAX_NEGATIVE_SEED_ATTEMPTS_MULTIPLIER,
+} from './constants';
 
 const { transformWorldToIndex } = csUtils;
-
-// Default Seed Values (Labelmap values)
-const POSITIVE_SEED_LABEL = 254;
-const NEGATIVE_SEED_LABEL = 255;
-
-// Default Parameters for Seed Criteria
-const DEFAULT_NEIGHBORHOOD_RADIUS = 1;
-const DEFAULT_POSITIVE_STD_DEV_MULTIPLIER = 2.0;
-const DEFAULT_NEGATIVE_STD_DEV_MULTIPLIER = 3.0;
-const DEFAULT_NEGATIVE_SEED_MARGIN = 30;
-const DEFAULT_NEGATIVE_SEEDS_COUNT = 70;
-const MAX_NEGATIVE_SEED_ATTEMPTS_MULTIPLIER = 50;
 
 type GrowCutOneClickOptions = GrowCutOptions & {
   // Radius of the neighborhood (in voxels) around the click point used to calculate initial statistics (mean, stdDev). E.g., 1 means a 3x3x3 neighborhood.

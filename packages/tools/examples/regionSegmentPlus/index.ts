@@ -1,4 +1,3 @@
-import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -10,7 +9,6 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   createInfoSection,
-  addManipulationBindings,
   addButtonToToolbar,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
@@ -229,12 +227,34 @@ async function run() {
   });
 
   // Get Cornerstone imageIds for PT data
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.2.826.0.1.3680043.2.1125.1.11608962641993666019702920539307840',
+    SeriesInstanceUID:
+      '1.2.826.0.1.3680043.2.1125.1.71880611468617661972108550785274516',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
   // const imageIds = await createImageIdsAndCacheMetaData({
-  //   // PT
   //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
   //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+  //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  // });
+
+  const ctImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+  });
+
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
   //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   // });
   // const imageIds = await createImageIdsAndCacheMetaData({
@@ -244,13 +264,13 @@ async function run() {
   //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
   //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
   // });
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.4792.2001.326862698868700146219088322924',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  });
+  // const imageIds = await createImageIdsAndCacheMetaData({
+  //   StudyInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
+  //   SeriesInstanceUID:
+  //     '1.3.6.1.4.1.14519.5.2.1.4792.2001.326862698868700146219088322924',
+  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  // });
   // Create segmentation for the stack
   await addSegmentationToState(imageIds);
 
@@ -268,8 +288,8 @@ async function run() {
   viewport = renderingEngine.getViewport(viewportId);
 
   // Set the stack of images on the viewport
-  await viewport.setStack(imageIds);
-  // await viewport.setStack(imageIds, 20);
+  // await viewport.setStack(imageIds);
+  await viewport.setStack(imageIds, 80);
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element);
 
