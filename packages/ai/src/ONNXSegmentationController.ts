@@ -1326,7 +1326,7 @@ export default class ONNXSegmentationController {
 
         const segmentValue = segmentationVoxelManager.getAtIJKPoint(ijkPoint);
 
-        if (segmentValue !== 0) {
+        if (segmentValue !== 0 && segmentValue !== 255) {
           continue;
         }
 
@@ -1338,7 +1338,9 @@ export default class ONNXSegmentationController {
       }
     }
 
-    this.tool.doneEditMemo();
+    if (this._autoSegmentMode) {
+      this.tool.doneEditMemo();
+    }
     this.tool._previewData.isDrag = true;
 
     const voxelManager =
@@ -1643,7 +1645,7 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
-    ort.env.wasm.wasmPaths = '/ort/';
+    ort.env.wasm.wasmPaths = 'ort/';
     ort.env.wasm.numThreads = config.threads;
     ort.env.wasm.proxy = config.provider == 'wasm';
 

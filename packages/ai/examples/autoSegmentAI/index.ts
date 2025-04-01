@@ -49,7 +49,7 @@ addToggleButtonToToolbar({
     toolGroup.setToolConfiguration(LabelmapSlicePropagationTool.toolName, {
       ...currentToolConfiguration,
       enabled: !currentToolConfiguration.enabled,
-      viewportId: activeViewport.id,
+      sourceViewportId: activeViewport.id,
     });
   },
 });
