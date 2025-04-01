@@ -22,6 +22,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
   static toolName = 'RegionSegmentPlus';
   protected growCutData: RegionSegmentPlusToolData | null;
   private mouseTimer: number | null = null;
+  private allowedToProceed = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -86,8 +87,10 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       negativeSeedIndices.size < 30
     ) {
       cursor = 'not-allowed';
+      this.allowedToProceed = false;
     } else {
       cursor = 'copy';
+      this.allowedToProceed = true;
     }
 
     // Get the enabled element first
@@ -103,7 +106,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       });
     }
 
-    if (cursor !== 'not-allowed') {
+    if (this.allowedToProceed) {
       this.seeds = seeds;
     }
 
@@ -117,6 +120,10 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     evt: EventTypes.MouseDownActivateEventType
   ): Promise<boolean> {
     // change cursor to loading
+    if (!this.allowedToProceed) {
+      return false;
+    }
+
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const enabledElement = getEnabledElement(element);
