@@ -11,13 +11,13 @@ import {
   initDemo,
   addToggleButtonToToolbar,
   addSliderToToolbar,
-  addButtonToToolbar,
   setTitleAndDescription,
   getLocalUrl,
   addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
-import { ONNXSegmentationController } from '@cornerstonejs/ai';
-const { MouseBindings, SegmentationRepresentations, Events, KeyboardBindings } =
+import { LabelmapSlicePropagationTool } from '@cornerstonejs/ai';
+
+const { MouseBindings, SegmentationRepresentations, KeyboardBindings } =
   cornerstoneTools.Enums;
 const { ViewportType, OrientationAxis } = Enums;
 
@@ -29,28 +29,6 @@ setTitleAndDescription(
   'Segment Assistant',
   'Segment Assistant for Segmentation'
 );
-
-// Model configuration for segmentation
-const segmentAI = new ONNXSegmentationController({
-  autoSegmentMode: true,
-  models: {
-    sam_b: [
-      {
-        name: 'sam-b-encoder',
-        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
-        size: 180,
-        key: 'encoder',
-      },
-      {
-        name: 'sam-b-decoder',
-        url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
-        size: 17,
-        key: 'decoder',
-      },
-    ],
-  },
-  modelName: 'sam_b',
-});
 
 addSliderToToolbar({
   title: 'Brush Size',
@@ -65,9 +43,14 @@ addSliderToToolbar({
 addToggleButtonToToolbar({
   title: 'Toggle Enable',
   onClick: () => {
-    // Toggle the enable state
-    segmentAI.enabled = !segmentAI.enabled;
-    segmentAI.initViewport(viewport);
+    const currentToolConfiguration = toolGroup.getToolConfiguration(
+      LabelmapSlicePropagationTool.toolName
+    );
+    toolGroup.setToolConfiguration(LabelmapSlicePropagationTool.toolName, {
+      ...currentToolConfiguration,
+      enabled: !currentToolConfiguration.enabled,
+      viewportId: activeViewport.id,
+    });
   },
 });
 
@@ -83,6 +66,7 @@ let activeViewport;
 cornerstoneTools.addTool(cornerstoneTools.PanTool);
 cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
 cornerstoneTools.addTool(cornerstoneTools.StackScrollTool);
+cornerstoneTools.addTool(LabelmapSlicePropagationTool);
 cornerstoneTools.addTool(cornerstoneTools.ProbeTool); // Needed as a base for MarkerInclude/Exclude
 cornerstoneTools.addTool(cornerstoneTools.RectangleROITool); // Base for BoxPrompt
 cornerstoneTools.addTool(cornerstoneTools.BrushTool); // Base for BoxPrompt
@@ -94,6 +78,8 @@ toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
 toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
 toolGroup.addTool(cornerstoneTools.PanTool.toolName);
 toolGroup.addTool(cornerstoneTools.ProbeTool.toolName);
+toolGroup.addTool(LabelmapSlicePropagationTool.toolName);
+
 toolGroup.addToolInstance(
   'CircularBrush',
   cornerstoneTools.BrushTool.toolName,
@@ -152,14 +138,6 @@ content.appendChild(logDiv);
 viewportContainer.oncontextmenu = () => false;
 
 segmentationUtils.setBrushSizeForToolGroup(toolGroupId, 15);
-
-addButtonToToolbar({
-  title: 'Clear',
-  onClick: () => {
-    segmentAI.clear(activeViewport);
-    viewport.render();
-  },
-});
 
 const viewportId = 'CURRENT_VIEWPORT';
 const segmentationId = 'segmentationId';
@@ -236,18 +214,6 @@ async function updateViewport() {
   await segmentation.addLabelmapRepresentationToViewportMap(segMap);
 
   activeViewport = viewport;
-  await segmentAI.initModel();
-
-  viewport.element.addEventListener(Events.KEY_DOWN, (evt) => {
-    const { key } = evt.detail;
-    const { element } = activeViewport;
-    if (key === 'Escape') {
-      cornerstoneTools.cancelActiveManipulations(element);
-      segmentAI.rejectPreview(element);
-    } else if (key === 'Enter') {
-      segmentAI.acceptPreview(element);
-    }
-  });
 }
 
 async function createAndLoadData() {

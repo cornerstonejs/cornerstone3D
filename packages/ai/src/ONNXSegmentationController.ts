@@ -258,7 +258,10 @@ export default class ONNXSegmentationController {
    * Fill internal islands by size, and consider islands at the edge to
    * be included as internal.
    */
-  protected islandFillOptions = {
+  protected islandFillOptions: {
+    maxInternalRemove: number;
+    fillInternalEdge: boolean;
+  } = {
     maxInternalRemove: 16,
     fillInternalEdge: true,
   };
@@ -289,13 +292,31 @@ export default class ONNXSegmentationController {
    *    * numRandomPoints - the number of random points to sample for autoSegment mode
    */
   constructor(
-    options = {
+    options: {
+      listeners?: Array<(message: string) => void>;
+      getPromptAnnotations?: (
+        viewport?: Types.IViewport
+      ) => cornerstoneTools.Types.Annotation[];
+      promptAnnotationTypes?: string[];
+      models?: Record<string, ModelType[]>;
+      modelName?: string;
+      islandFillOptions?: {
+        maxInternalRemove?: number;
+        fillInternalEdge?: boolean;
+      };
+      autoSegmentMode?: boolean;
+      numRandomPoints?: number;
+      searchBreadth?: number;
+    } = {
       listeners: null,
       getPromptAnnotations: null,
       promptAnnotationTypes: null,
       models: null,
       modelName: null,
-      islandFillOptions: undefined,
+      islandFillOptions: {
+        maxInternalRemove: 16,
+        fillInternalEdge: true,
+      },
       autoSegmentMode: false,
       numRandomPoints: 2,
       searchBreadth: 3,
@@ -313,8 +334,18 @@ export default class ONNXSegmentationController {
       Object.assign(ONNXSegmentationController.MODELS, options.models);
     }
     this.config = this.getConfig(options.modelName);
-    this.islandFillOptions =
-      options.islandFillOptions ?? this.islandFillOptions;
+
+    // Ensure we have non-optional properties when assigning
+    if (options.islandFillOptions) {
+      this.islandFillOptions = {
+        maxInternalRemove:
+          options.islandFillOptions.maxInternalRemove ??
+          this.islandFillOptions.maxInternalRemove,
+        fillInternalEdge:
+          options.islandFillOptions.fillInternalEdge ??
+          this.islandFillOptions.fillInternalEdge,
+      };
+    }
 
     // Initialize autoSegment mode
     this._autoSegmentMode = options.autoSegmentMode || false;
@@ -929,7 +960,7 @@ export default class ONNXSegmentationController {
    * are other high priority tasks to complete.
    */
   protected async handleImage({ imageId, sampleImageId }, imageSession) {
-    if (imageId === imageSession.imageId || this.isGpuInUse) {
+    if (imageId === imageSession.imageId || this.isGpuInUse || !this.enabled) {
       return;
     }
     const { viewport, desiredImage } = this;
@@ -1071,7 +1102,7 @@ export default class ONNXSegmentationController {
     // Always use session 0 for the current session
     const [session] = this.sessions;
 
-    if (session.imageId === desiredImage.imageId) {
+    if (session?.imageId === desiredImage.imageId) {
       if (this.currentImage !== session) {
         this.currentImage = session;
       }
@@ -1612,7 +1643,7 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
-    ort.env.wasm.wasmPaths = 'dist/';
+    ort.env.wasm.wasmPaths = '/ort/';
     ort.env.wasm.numThreads = config.threads;
     ort.env.wasm.proxy = config.provider == 'wasm';
 
