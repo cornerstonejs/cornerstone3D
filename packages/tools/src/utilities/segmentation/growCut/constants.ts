@@ -1,6 +1,6 @@
 // Default Seed Values (Labelmap values)
 export const POSITIVE_SEED_LABEL = 254;
-export const NEGATIVE_SEED_LABEL = 255;
+export const NEGATIVE_SEED_LABEL = 2;
 
 // Default Parameters for Seed Criteria
 export const DEFAULT_NEIGHBORHOOD_RADIUS = 1;

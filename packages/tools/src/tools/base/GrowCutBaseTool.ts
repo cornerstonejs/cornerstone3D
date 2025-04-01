@@ -17,6 +17,7 @@ import {
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import { DEFAULT_POSITIVE_STD_DEV_MULTIPLIER } from '../../utilities/segmentation/growCut/constants';
 
 import type {
   LabelmapSegmentationDataStack,
@@ -26,6 +27,7 @@ import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleF
 import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 import { getOrCreateSegmentationVolume } from '../../utilities/segmentation';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import type { GrowCutOneClickOptions } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -44,6 +46,7 @@ type GrowCutToolData = {
   };
   viewportId: string;
   renderingEngineId: string;
+  options?: Partial<GrowCutOneClickOptions>;
 };
 
 /**
@@ -69,9 +72,8 @@ class GrowCutBaseTool extends BaseTool {
     const baseToolProps = csUtils.deepMerge(
       {
         configuration: {
-          positiveSeedVariance: 0.1,
-          negativeSeedVariance: 0.9,
-          shrinkExpandIncrement: 0.05,
+          positiveStdDevMultiplier: DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
+          shrinkExpandIncrement: 0.1,
           islandRemoval: {
             /**
              * Enable/disable island removal
@@ -155,33 +157,30 @@ class GrowCutBaseTool extends BaseTool {
       segmentation: { segmentationId, segmentIndex, labelmapVolumeId },
     } = growCutData;
 
-    const hasSeedVarianceData =
-      config.positiveSeedVariance !== undefined &&
-      config.negativeSeedVariance !== undefined;
-
     const labelmap = cache.getVolume(labelmapVolumeId);
-    let shrinkExpandValue = 0;
+    let shrinkExpandAccumulator = 0;
 
     const growCutCommand = async ({ shrinkExpandAmount = 0 } = {}) => {
-      const { positiveSeedVariance, negativeSeedVariance } = config;
-      let newPositiveSeedVariance = undefined;
-      let newNegativeSeedVariance = undefined;
+      shrinkExpandAccumulator += shrinkExpandAmount;
 
-      shrinkExpandValue += shrinkExpandAmount;
+      const newPositiveStdDevMultiplier = Math.max(
+        0.1,
+        config.positiveStdDevMultiplier + shrinkExpandAccumulator
+      );
 
-      if (hasSeedVarianceData) {
-        newPositiveSeedVariance = positiveSeedVariance + shrinkExpandValue;
-        newNegativeSeedVariance = negativeSeedVariance + shrinkExpandValue;
-      }
+      console.debug(
+        `Running GrowCut with positiveStdDevMultiplier: ${newPositiveStdDevMultiplier}`
+      );
 
-      const updatedGrowCutData = Object.assign({}, growCutData, {
+      const updatedGrowCutData = {
+        ...growCutData,
         options: {
+          ...(growCutData.options || {}),
           positiveSeedValue: segmentIndex,
           negativeSeedValue: 255,
-          positiveSeedVariance: newPositiveSeedVariance,
-          negativeSeedVariance: newNegativeSeedVariance,
+          positiveStdDevMultiplier: newPositiveStdDevMultiplier,
         },
-      });
+      };
 
       const growcutLabelmap = await this.getGrowCutLabelmap(updatedGrowCutData);
 
@@ -193,16 +192,12 @@ class GrowCutBaseTool extends BaseTool {
 
       fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
 
-      this._removeIslands(growCutData);
+      this._removeIslands(updatedGrowCutData);
     };
 
-    // run and store the command for later execution
     await growCutCommand();
 
-    // Only growcut with seed variance data can shrink/expand
-    if (hasSeedVarianceData) {
-      GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
-    }
+    GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
 
     this.growCutData = null;
   }
@@ -272,9 +267,9 @@ class GrowCutBaseTool extends BaseTool {
     const srcVoxelManager = sourceLabelmap.voxelManager;
 
     srcVoxelManager.forEach(({ value, index }) => {
-      if (value === segmentIndex) {
-        tgtVoxelManager.setAtIndex(index, value);
-      }
+      // if (value === segmentIndex) {
+      tgtVoxelManager.setAtIndex(index, value);
+      // }
     });
 
     triggerSegmentationDataModified(segmentationId);

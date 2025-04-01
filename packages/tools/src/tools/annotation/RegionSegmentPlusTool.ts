@@ -1,4 +1,4 @@
-import { getRenderingEngine, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 
@@ -36,6 +36,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+  }
+
+  mouseMoveCallback(evt: EventTypes.MouseMoveEventType) {
+    const eventData = evt.detail;
+    const { currentPoints } = eventData;
+    const { world: worldPoint } = currentPoints;
   }
 
   async preMouseDownCallback(

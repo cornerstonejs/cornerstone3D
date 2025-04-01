@@ -25,7 +25,7 @@ type GrowCutOneClickOptions = GrowCutOptions & {
   // Margin (in voxels) around the bounding box of positive seeds where negative seeds are sampled.
   negativeSeedMargin?: number;
   // Target number of negative seeds to sample.
-  negativeSeedsCount?: number;
+  negativeSeedsTargetPatches?: number;
   // The value assigned to positive seeds in the labelmap.
   positiveSeedValue?: number;
   // The value assigned to negative seeds in the labelmap.
@@ -60,8 +60,8 @@ function _generateSeeds(
     options?.negativeStdDevMultiplier ?? DEFAULT_NEGATIVE_STD_DEV_MULTIPLIER;
   const negativeSeedMargin =
     options?.negativeSeedMargin ?? DEFAULT_NEGATIVE_SEED_MARGIN;
-  const negativeSeedsCount =
-    options?.negativeSeedsCount ?? DEFAULT_NEGATIVE_SEEDS_COUNT;
+  const negativeSeedsTargetPatches =
+    options?.negativeSeedsTargetPatches ?? DEFAULT_NEGATIVE_SEEDS_COUNT;
   const positiveSeedLabel = options?.positiveSeedValue ?? POSITIVE_SEED_LABEL;
   const negativeSeedLabel = options?.negativeSeedValue ?? NEGATIVE_SEED_LABEL;
 
@@ -130,17 +130,23 @@ function _generateSeeds(
     minY = maxY = ijkStart[1];
     minZ = maxZ = ijkStart[2];
   } else {
+    console.warn(
+      'Clicked voxel intensity is outside the calculated positive range. No positive seeds generated.'
+    );
     return;
   }
 
   // ---------------------------------
   // 1) BFS FOR POSITIVE SEEDS using local stats
   // ---------------------------------
+  const MAX_POSITIVE_SEEDS = 100000; // Maximum number of positive seeds to prevent excessive growth
   let currentQueueIndex = 0;
-  while (currentQueueIndex < queue.length) {
-    const [x, y, z] = queue[currentQueueIndex++]; // Efficient queue processing
+  while (
+    currentQueueIndex < queue.length &&
+    positiveSeedIndices.size < MAX_POSITIVE_SEEDS
+  ) {
+    const [x, y, z] = queue[currentQueueIndex++];
 
-    // Update bounding box (already done for the first point)
     minX = Math.min(x, minX);
     minY = Math.min(y, minY);
     minZ = Math.min(z, minZ);
@@ -148,14 +154,12 @@ function _generateSeeds(
     maxY = Math.max(y, maxY);
     maxZ = Math.max(z, maxZ);
 
-    // Check neighbors
     for (let i = 0; i < neighborsCoordDelta.length; i++) {
       const [dx, dy, dz] = neighborsCoordDelta[i];
       const nx = x + dx;
       const ny = y + dy;
       const nz = z + dz;
 
-      // Bounds check
       if (
         nx < 0 ||
         nx >= width ||
@@ -173,16 +177,23 @@ function _generateSeeds(
       }
 
       const neighborValue = scalarData[neighborIndex];
-
       if (
         neighborValue >= positiveIntensityMin &&
         neighborValue <= positiveIntensityMax
       ) {
         labelmap.voxelManager.setAtIndex(neighborIndex, positiveSeedLabel);
         positiveSeedIndices.add(neighborIndex);
-        queue.push([nx, ny, nz]);
+        if (positiveSeedIndices.size < MAX_POSITIVE_SEEDS) {
+          queue.push([nx, ny, nz]);
+        }
       }
     }
+  }
+
+  if (positiveSeedIndices.size >= MAX_POSITIVE_SEEDS) {
+    console.debug(
+      `Reached maximum number of positive seeds (${MAX_POSITIVE_SEEDS}). Stopping BFS.`
+    );
   }
 
   if (positiveSeedIndices.size === 0) {
@@ -206,11 +217,10 @@ function _generateSeeds(
   const positiveVariance =
     positiveSumSq / positiveCount - positiveMean * positiveMean;
   const positiveStdDev = Math.sqrt(Math.max(0, positiveVariance));
-
   const negativeDiffThreshold = negativeK * positiveStdDev;
 
   // ---------------------------------
-  // 3) SAMPLE NEGATIVE SEEDS
+  // 3) SAMPLE NEGATIVE SEED PATCHES (3x3x1)
   // ---------------------------------
   const minXm = Math.max(0, minX - negativeSeedMargin);
   const minYm = Math.max(0, minY - negativeSeedMargin);
@@ -221,34 +231,62 @@ function _generateSeeds(
 
   const negativeSeedIndices = new Set<number>();
   let attempts = 0;
+  let patchesAdded = 0;
   const maxAttempts =
-    negativeSeedsCount * MAX_NEGATIVE_SEED_ATTEMPTS_MULTIPLIER;
+    negativeSeedsTargetPatches * MAX_NEGATIVE_SEED_ATTEMPTS_MULTIPLIER;
 
-  while (
-    negativeSeedIndices.size < negativeSeedsCount &&
-    attempts < maxAttempts
-  ) {
+  while (patchesAdded < negativeSeedsTargetPatches && attempts < maxAttempts) {
     attempts++;
 
-    // Sample within the margin box
+    // Sample a *center* point for the potential patch
     const rx = Math.floor(Math.random() * (maxXm - minXm + 1) + minXm);
     const ry = Math.floor(Math.random() * (maxYm - minYm + 1) + minYm);
     const rz = Math.floor(Math.random() * (maxZm - minZm + 1) + minZm);
 
-    const randomIndex = rz * numPixelsPerSlice + ry * width + rx;
+    const centerIndex = rz * numPixelsPerSlice + ry * width + rx;
 
     if (
-      positiveSeedIndices.has(randomIndex) ||
-      negativeSeedIndices.has(randomIndex)
+      positiveSeedIndices.has(centerIndex) ||
+      negativeSeedIndices.has(centerIndex)
     ) {
       continue;
     }
 
-    const randomValue = scalarData[randomIndex];
-    if (Math.abs(randomValue - positiveMean) > negativeDiffThreshold) {
-      // Intensity is sufficiently different, add as negative seed
-      labelmap.voxelManager.setAtIndex(randomIndex, negativeSeedLabel);
-      negativeSeedIndices.add(randomIndex);
+    const centerValue = scalarData[centerIndex];
+    if (Math.abs(centerValue - positiveMean) > negativeDiffThreshold) {
+      let patchContributed = false;
+      for (let dy = -1; dy <= 1; dy++) {
+        const ny = ry + dy;
+        if (ny < 0 || ny >= height) {
+          continue;
+        }
+
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = rx + dx;
+          // Bounds check X
+          if (nx < 0 || nx >= width) {
+            continue;
+          }
+
+          // Z coordinate is fixed at rz (slice of the center point)
+          const neighborIndex = rz * numPixelsPerSlice + ny * width + nx;
+
+          if (
+            positiveSeedIndices.has(neighborIndex) ||
+            negativeSeedIndices.has(neighborIndex)
+          ) {
+            continue;
+          }
+
+          labelmap.voxelManager.setAtIndex(neighborIndex, negativeSeedLabel);
+          negativeSeedIndices.add(neighborIndex);
+          patchContributed = true;
+        }
+      }
+
+      if (patchContributed) {
+        patchesAdded++;
+      }
     }
   }
 
@@ -281,7 +319,7 @@ async function runOneClickGrowCut({
     volumeLoader.createAndCacheDerivedLabelmapVolume(referencedVolumeId);
 
   _generateSeeds(referencedVolume, labelmap, worldPosition, options);
-  await run(referencedVolumeId, labelmap.volumeId, options); // Pass options if run accepts them
+  // await run(referencedVolumeId, labelmap.volumeId, options);
 
   return labelmap;
 }
