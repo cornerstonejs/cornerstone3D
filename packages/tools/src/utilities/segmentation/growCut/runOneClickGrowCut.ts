@@ -36,6 +36,8 @@ type GrowCutOneClickOptions = GrowCutOptions & {
   };
 };
 
+const MAX_POSITIVE_SEEDS = 100000; // Maximum number of positive seeds to prevent excessive growth
+
 /**
  * Calculates positive and negative seed indices for the GrowCut algorithm based on a single click.
  * Does not modify any labelmap volume.
@@ -142,7 +144,6 @@ function calculateGrowCutSeeds(
   // ---------------------------------
   // 1) BFS FOR POSITIVE SEEDS using local stats
   // ---------------------------------
-  const MAX_POSITIVE_SEEDS = 100000; // Maximum number of positive seeds to prevent excessive growth
   let currentQueueIndex = 0;
   while (
     currentQueueIndex < queue.length &&
@@ -297,6 +298,9 @@ function calculateGrowCutSeeds(
     );
   }
 
+  console.debug('positiveSeedIndices', positiveSeedIndices.size);
+  console.debug('negativeSeedIndices', negativeSeedIndices.size);
+
   return { positiveSeedIndices, negativeSeedIndices };
 }
 
@@ -320,6 +324,13 @@ async function runOneClickGrowCut({
   const labelmap =
     volumeLoader.createAndCacheDerivedLabelmapVolume(referencedVolumeId);
 
+  // reset the volume
+  labelmap.voxelManager.forEach(({ index, value }) => {
+    if (value !== 0) {
+      labelmap.voxelManager.setAtIndex(index, 0);
+    }
+  });
+
   const seeds =
     options.seeds ??
     calculateGrowCutSeeds(referencedVolume, worldPosition, options);
@@ -328,11 +339,21 @@ async function runOneClickGrowCut({
   const negativeSeedLabel = options?.negativeSeedValue ?? NEGATIVE_SEED_LABEL;
 
   if (!seeds) {
-    console.warn('Seed calculation failed.');
     return null;
   }
 
   const { positiveSeedIndices, negativeSeedIndices } = seeds;
+
+  if (
+    positiveSeedIndices.size < 10 ||
+    positiveSeedIndices.size > MAX_POSITIVE_SEEDS ||
+    negativeSeedIndices.size < 10
+  ) {
+    console.warn(
+      'Not enough seeds found. GrowCut might fail or produce poor results.'
+    );
+    return labelmap;
+  }
 
   // Apply the calculated seeds to the labelmap
   positiveSeedIndices.forEach((index) => {
