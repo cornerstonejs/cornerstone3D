@@ -148,6 +148,11 @@ export const prepareStackDataForWorker = (segImageIds) => {
     const refImageId = segImage.referencedImageId;
     if (refImageId) {
       const refImage = cache.getImage(refImageId);
+
+      if (!refImage) {
+        continue;
+      }
+
       const refPixelData = refImage.getPixelData();
 
       const refVoxelManager = refImage.voxelManager;
