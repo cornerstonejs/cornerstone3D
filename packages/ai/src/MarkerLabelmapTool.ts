@@ -211,7 +211,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
   /**
    * Clear all segmentations in the current viewport
    */
-  clear = (): void => {
+  clearMarkers = (): void => {
     if (!this.segmentAI) {
       return;
     }

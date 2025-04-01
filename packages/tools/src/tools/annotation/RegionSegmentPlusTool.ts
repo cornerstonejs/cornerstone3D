@@ -75,15 +75,10 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
   protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { referencedVolumeId, labelmapVolumeId },
-      renderingEngineId,
-      viewportId,
+      segmentation: { referencedVolumeId },
       worldPoint,
       options,
     } = growCutData;
-
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
 
     const { subVolumePaddingPercentage } = this.configuration;
     const mergedOptions = {

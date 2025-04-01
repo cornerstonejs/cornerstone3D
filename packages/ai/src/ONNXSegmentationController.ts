@@ -891,7 +891,10 @@ export default class ONNXSegmentationController {
     this.getPromptAnnotations(viewport).forEach((annotation) =>
       annotationState.removeAnnotation(annotation.annotationUID)
     );
-    this.tool.rejectPreview(this.viewport.element);
+
+    if (this.tool) {
+      this.tool.rejectPreview(this.viewport.element);
+    }
   }
 
   /**
