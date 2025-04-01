@@ -21,10 +21,7 @@ type RegionSegmentPlusToolData = GrowCutToolData & {
 class RegionSegmentPlusTool extends GrowCutBaseTool {
   static toolName = 'RegionSegmentPlus';
   protected growCutData: RegionSegmentPlusToolData | null;
-  private seeds: {
-    positiveSeedIndices: Set<number>;
-    negativeSeedIndices: Set<number>;
-  } | null;
+  private mouseTimer: number | null = null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -60,12 +57,9 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       this.mouseTimer = null;
     }
 
-    // Hide checkmark when mouse moves
-
-    // Set a new timer
     this.mouseTimer = window.setTimeout(() => {
       this.onMouseStable(evt, worldPoint, element);
-    }, this.configuration.mouseStabilityDelay || 300);
+    }, this.configuration.mouseStabilityDelay || 500);
   }
 
   async onMouseStable(
@@ -73,14 +67,9 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     worldPoint: Types.Point3,
     element: HTMLDivElement
   ) {
-    this.growCutData = csUtils.deepMerge(this.growCutData, {
-      worldPoint,
-      islandRemoval: {
-        worldIslandPoints: [worldPoint],
-      },
-    });
-
-    await super.preMouseDownCallback(evt);
+    await super.preMouseDownCallback(
+      evt as EventTypes.MouseDownActivateEventType
+    );
 
     const refVolume = cache.getVolume(
       this.growCutData.segmentation.referencedVolumeId
@@ -90,7 +79,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const { positiveSeedIndices, negativeSeedIndices } = seeds;
 
     // if the ratio of positive to negative is significant, this is not a good
-    // seed and we should not run growcut
+    // seed and we should not run grow cut
     let cursor;
     if (
       positiveSeedIndices.size / negativeSeedIndices.size > 20 ||
@@ -101,22 +90,46 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       cursor = 'copy';
     }
 
-    // update the cursor
+    // Get the enabled element first
     const enabledElement = getEnabledElement(element);
-    if (enabledElement) {
+
+    if (element) {
       element.style.cursor = cursor;
+
+      requestAnimationFrame(() => {
+        if (element.style.cursor !== cursor) {
+          element.style.cursor = cursor;
+        }
+      });
     }
 
     if (cursor !== 'not-allowed') {
       this.seeds = seeds;
+    }
+
+    // Ensure the viewport renders after cursor is updated
+    if (enabledElement && enabledElement.viewport) {
+      enabledElement.viewport.render();
     }
   }
 
   async preMouseDownCallback(
     evt: EventTypes.MouseDownActivateEventType
   ): Promise<boolean> {
+    // change cursor to loading
     const eventData = evt.detail;
-    const { currentPoints } = eventData;
+    const { currentPoints, element } = eventData;
+    const enabledElement = getEnabledElement(element);
+    if (enabledElement) {
+      element.style.cursor = 'wait';
+
+      requestAnimationFrame(() => {
+        if (element.style.cursor !== 'wait') {
+          element.style.cursor = 'wait';
+        }
+      });
+    }
+
     const { world: worldPoint } = currentPoints;
 
     await super.preMouseDownCallback(evt);
@@ -132,7 +145,11 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     this.growCutData.islandRemoval = {
       worldIslandPoints: [worldPoint],
     };
-    this.runGrowCut();
+    await this.runGrowCut();
+
+    if (element) {
+      element.style.cursor = 'default';
+    }
 
     return true;
   }

@@ -67,6 +67,10 @@ class GrowCutBaseTool extends BaseTool {
   static toolName;
   protected growCutData: GrowCutToolData | null;
   private static lastGrowCutCommand = null;
+  protected seeds: {
+    positiveSeedIndices: Set<number>;
+    negativeSeedIndices: Set<number>;
+  } | null;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     const baseToolProps = csUtils.deepMerge(
@@ -161,6 +165,9 @@ class GrowCutBaseTool extends BaseTool {
     let shrinkExpandAccumulator = 0;
 
     const growCutCommand = async ({ shrinkExpandAmount = 0 } = {}) => {
+      if (shrinkExpandAmount !== 0) {
+        this.seeds = null;
+      }
       shrinkExpandAccumulator += shrinkExpandAmount;
 
       const newPositiveStdDevMultiplier = Math.max(
@@ -263,9 +270,9 @@ class GrowCutBaseTool extends BaseTool {
     const srcVoxelManager = sourceLabelmap.voxelManager;
 
     srcVoxelManager.forEach(({ value, index }) => {
-      // if (value === segmentIndex) {
-      tgtVoxelManager.setAtIndex(index, value);
-      // }
+      if (value === segmentIndex) {
+        tgtVoxelManager.setAtIndex(index, value);
+      }
     });
 
     triggerSegmentationDataModified(segmentationId);
