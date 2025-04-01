@@ -22,7 +22,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
   static toolName = 'RegionSegmentPlus';
   protected growCutData: RegionSegmentPlusToolData | null;
   private mouseTimer: number | null = null;
-
+  private allowedToProceed = false;
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
