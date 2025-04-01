@@ -168,10 +168,6 @@ class GrowCutBaseTool extends BaseTool {
         config.positiveStdDevMultiplier + shrinkExpandAccumulator
       );
 
-      console.debug(
-        `Running GrowCut with positiveStdDevMultiplier: ${newPositiveStdDevMultiplier}`
-      );
-
       const updatedGrowCutData = {
         ...growCutData,
         options: {

@@ -30,22 +30,28 @@ type GrowCutOneClickOptions = GrowCutOptions & {
   positiveSeedValue?: number;
   // The value assigned to negative seeds in the labelmap.
   negativeSeedValue?: number;
+  seeds?: {
+    positiveSeedIndices: Set<number>;
+    negativeSeedIndices: Set<number>;
+  };
 };
 
 /**
- * Generates positive and negative seeds for the GrowCut algorithm based on a single click.
- * Modifies the provided labelmap volume directly.
+ * Calculates positive and negative seed indices for the GrowCut algorithm based on a single click.
+ * Does not modify any labelmap volume.
  * @param referencedVolume - Referenced volume
- * @param labelmap - Labelmap volume to be seeded
  * @param worldPosition - Coordinate where the user clicked in world space
  * @param options - Configuration options for seed generation
+ * @returns An object containing sets of positive and negative seed indices, or null if seeding fails.
  */
-function _generateSeeds(
+function calculateGrowCutSeeds(
   referencedVolume: Types.IImageVolume,
-  labelmap: Types.IImageVolume,
   worldPosition: Types.Point3,
   options?: GrowCutOneClickOptions
-) {
+): {
+  positiveSeedIndices: Set<number>;
+  negativeSeedIndices: Set<number>;
+} | null {
   const { dimensions, imageData: refImageData } = referencedVolume;
   const [width, height, numSlices] = dimensions;
   const referenceVolumeVoxelManager = referencedVolume.voxelManager;
@@ -62,8 +68,6 @@ function _generateSeeds(
     options?.negativeSeedMargin ?? DEFAULT_NEGATIVE_SEED_MARGIN;
   const negativeSeedsTargetPatches =
     options?.negativeSeedsTargetPatches ?? DEFAULT_NEGATIVE_SEEDS_COUNT;
-  const positiveSeedLabel = options?.positiveSeedValue ?? POSITIVE_SEED_LABEL;
-  const negativeSeedLabel = options?.negativeSeedValue ?? NEGATIVE_SEED_LABEL;
 
   const ijkStart = transformWorldToIndex(refImageData, worldPosition).map(
     Math.round
@@ -79,7 +83,7 @@ function _generateSeeds(
     ijkStart[2] >= numSlices
   ) {
     console.warn('Click position is outside volume bounds.');
-    return;
+    return null;
   }
 
   const initialStats = csUtils.calculateNeighborhoodStats(
@@ -123,7 +127,6 @@ function _generateSeeds(
     startValue >= positiveIntensityMin &&
     startValue <= positiveIntensityMax
   ) {
-    labelmap.voxelManager.setAtIndex(startIndex, positiveSeedLabel);
     positiveSeedIndices.add(startIndex);
     queue.push(ijkStart);
     minX = maxX = ijkStart[0];
@@ -133,7 +136,7 @@ function _generateSeeds(
     console.warn(
       'Clicked voxel intensity is outside the calculated positive range. No positive seeds generated.'
     );
-    return;
+    return { positiveSeedIndices: new Set(), negativeSeedIndices: new Set() };
   }
 
   // ---------------------------------
@@ -181,7 +184,6 @@ function _generateSeeds(
         neighborValue >= positiveIntensityMin &&
         neighborValue <= positiveIntensityMax
       ) {
-        labelmap.voxelManager.setAtIndex(neighborIndex, positiveSeedLabel);
         positiveSeedIndices.add(neighborIndex);
         if (positiveSeedIndices.size < MAX_POSITIVE_SEEDS) {
           queue.push([nx, ny, nz]);
@@ -198,7 +200,7 @@ function _generateSeeds(
 
   if (positiveSeedIndices.size === 0) {
     console.warn('No positive seeds found after BFS.');
-    return;
+    return { positiveSeedIndices: new Set(), negativeSeedIndices: new Set() };
   }
 
   // ---------------------------------
@@ -278,7 +280,6 @@ function _generateSeeds(
             continue;
           }
 
-          labelmap.voxelManager.setAtIndex(neighborIndex, negativeSeedLabel);
           negativeSeedIndices.add(neighborIndex);
           patchContributed = true;
         }
@@ -295,6 +296,8 @@ function _generateSeeds(
       'Could not find any negative seeds. GrowCut might fail or produce poor results.'
     );
   }
+
+  return { positiveSeedIndices, negativeSeedIndices };
 }
 
 /**
@@ -313,16 +316,41 @@ async function runOneClickGrowCut({
   worldPosition: Types.Point3;
   options?: GrowCutOneClickOptions;
 }): Promise<Types.IImageVolume | null> {
-  // Return null if seeding fails?
   const referencedVolume = cache.getVolume(referencedVolumeId);
   const labelmap =
     volumeLoader.createAndCacheDerivedLabelmapVolume(referencedVolumeId);
 
-  _generateSeeds(referencedVolume, labelmap, worldPosition, options);
-  // await run(referencedVolumeId, labelmap.volumeId, options);
+  const seeds =
+    options.seeds ??
+    calculateGrowCutSeeds(referencedVolume, worldPosition, options);
+
+  const positiveSeedLabel = options?.positiveSeedValue ?? POSITIVE_SEED_LABEL;
+  const negativeSeedLabel = options?.negativeSeedValue ?? NEGATIVE_SEED_LABEL;
+
+  if (!seeds) {
+    console.warn('Seed calculation failed.');
+    return null;
+  }
+
+  const { positiveSeedIndices, negativeSeedIndices } = seeds;
+
+  // Apply the calculated seeds to the labelmap
+  positiveSeedIndices.forEach((index) => {
+    labelmap.voxelManager.setAtIndex(index, positiveSeedLabel);
+  });
+
+  negativeSeedIndices.forEach((index) => {
+    labelmap.voxelManager.setAtIndex(index, negativeSeedLabel);
+  });
+
+  await run(referencedVolumeId, labelmap.volumeId, options);
 
   return labelmap;
 }
 
-export { runOneClickGrowCut as default, runOneClickGrowCut };
+export {
+  runOneClickGrowCut as default,
+  runOneClickGrowCut,
+  calculateGrowCutSeeds,
+};
 export type { GrowCutOneClickOptions };
