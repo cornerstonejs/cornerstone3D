@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.3...v3.8.4) (2025-04-02)
+
+### Bug Fixes
+
+- **segmentation:** Enhance RTSS generation, surface updates, and contour set processing; address minor tool issues ([#1962](https://github.com/cornerstonejs/cornerstone3D/issues/1962)) ([f51c38c](https://github.com/cornerstonejs/cornerstone3D/commit/f51c38c535b026fc22cf7f9195a749644aee4996))
+
 ## [3.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.2...v3.8.3) (2025-04-02)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
