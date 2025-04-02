@@ -5,6 +5,7 @@ import {
   VolumeViewport,
   utilities as csUtils,
   getEnabledElementByViewportId,
+  EPSILON,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -943,11 +944,15 @@ class CircleROITool extends AnnotationTool {
           (topLeftWorld[2] + bottomRightWorld[2]) / 2,
         ] as Types.Point3;
 
+        const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
+        const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
+        const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
+
         const ellipseObj = {
           center,
-          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+          xRadius: xRadius < EPSILON / 2 ? 0 : xRadius,
+          yRadius: yRadius < EPSILON / 2 ? 0 : yRadius,
+          zRadius: zRadius < EPSILON / 2 ? 0 : zRadius,
         };
 
         const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
