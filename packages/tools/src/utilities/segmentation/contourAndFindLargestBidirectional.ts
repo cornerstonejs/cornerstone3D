@@ -12,8 +12,8 @@ import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
  * @param segmentation.segments.label - the label for the segment
  * @param segmentation.segments.color - the color to use for the segment label
  */
-export default function contourAndFindLargestBidirectional(segmentation) {
-  const contours = generateContourSetsFromLabelmap({
+export default async function contourAndFindLargestBidirectional(segmentation) {
+  const contours = await generateContourSetsFromLabelmap({
     segmentations: segmentation,
   });
 

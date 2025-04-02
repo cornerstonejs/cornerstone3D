@@ -17,6 +17,8 @@ enum ChangeTypes {
   INTERPOLATE_LABELMAP = 'Interpolating Labelmap',
 
   COMPUTE_LARGEST_BIDIRECTIONAL = 'Computing Largest Bidirectional',
+
+  GENERATE_CONTOUR_SETS = 'Generating Contour Sets',
 }
 
 export default ChangeTypes;

@@ -1,20 +1,37 @@
-import { cache as cornerstoneCache, type Types } from '@cornerstonejs/core';
-import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-
-import { getDeduplicatedVTKPolyDataPoints } from './getDeduplicatedVTKPolyDataPoints';
-import { findContoursFromReducedSet } from './contourFinder';
+import {
+  cache as cornerstoneCache,
+  type Types,
+  getWebWorkerManager,
+  cache,
+  utilities,
+} from '@cornerstonejs/core';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-
+import { WorkerTypes } from '../../enums';
+import { registerComputeWorker } from '../registerComputeWorker';
+import { triggerWorkerProgress } from '../segmentation/utilsForWorker';
+import getOrCreateSegmentationVolume from '../segmentation/getOrCreateSegmentationVolume';
 const { Labelmap } = SegmentationRepresentations;
 
-function generateContourSetsFromLabelmap({ segmentations }) {
-  console.warn(
-    'Deprecation Alert: This function will be removed in a future version of Cornerstone Tools. Please use the worker version of this function in computeWorker.'
-  );
-  const { representationData, segments = [0, 1] } = segmentations;
-  const { volumeId: segVolumeId } = representationData[Labelmap];
+async function generateContourSetsFromLabelmap({ segmentations }) {
+  // Register worker if not already registered
+  registerComputeWorker();
+
+  // Trigger progress indicator
+  triggerWorkerProgress(WorkerTypes.GENERATE_CONTOUR_SETS, 0);
+
+  const {
+    representationData,
+    segments = [0, 1],
+    segmentationId,
+  } = segmentations;
+  let { volumeId: segVolumeId } = representationData[Labelmap];
+
+  if (!segVolumeId) {
+    const segVolume = getOrCreateSegmentationVolume(segmentationId);
+    if (segVolume) {
+      segVolumeId = segVolume.volumeId;
+    }
+  }
 
   // Get segmentation volume
   const vol = cornerstoneCache.getVolume(segVolumeId);
@@ -22,134 +39,143 @@ function generateContourSetsFromLabelmap({ segmentations }) {
     console.warn(`No volume found for ${segVolumeId}`);
     return;
   }
+
   const voxelManager = vol.voxelManager as Types.IVoxelManager<number>;
-  const segData = voxelManager.getCompleteScalarDataArray() as Array<number>;
+  const segScalarData =
+    voxelManager.getCompleteScalarDataArray() as Array<number>;
 
-  const numSlices = vol.dimensions[2];
+  // Prepare segmentation info for worker
+  const segmentationInfo = {
+    scalarData: segScalarData,
+    dimensions: vol.dimensions,
+    spacing: vol.imageData.getSpacing(),
+    origin: vol.imageData.getOrigin(),
+    direction: vol.imageData.getDirection(),
+  };
 
-  const pixelsPerSlice = vol.dimensions[0] * vol.dimensions[1];
+  // Prepare indices from segments
+  const indices = Array.isArray(segments)
+    ? segments
+        .filter((segment) => segment !== null)
+        .map((segment) => segment.segmentIndex || segment)
+    : Object.values(segments)
+        .filter((segment) => segment !== null)
+        // @ts-expect-error
+        .map((segment) => segment.segmentIndex || segment);
 
-  for (let z = 0; z < numSlices; z++) {
-    for (let y = 0; y < vol.dimensions[1]; y++) {
-      const index = y * vol.dimensions[0] + z * pixelsPerSlice;
-      segData[index] = 0;
-      segData[index + vol.dimensions[0] - 1] = 0;
+  // Execute task in worker
+  const contourSets = await getWebWorkerManager().executeTask(
+    'compute',
+    'generateContourSetsFromLabelmapVolume',
+    {
+      segmentation: segmentationInfo,
+      indices,
+      mode: 'individual',
     }
-  }
+  );
 
-  // end workaround
-  //
-  //
-  const ContourSets = [];
+  const refImages = vol.imageIds.map((imageId) => {
+    const refImageId = cache.getImage(imageId)?.referencedImageId;
+    return refImageId ? cache.getImage(refImageId) : undefined;
+  });
 
-  const { FrameOfReferenceUID } = vol.metadata;
-  // Iterate through all segments in current segmentation set
-  const numSegments = segments.length;
-  for (let segIndex = 0; segIndex < numSegments; segIndex++) {
-    const segment = segments[segIndex];
+  const refImageDataMetadata = refImages.map((image) => {
+    return utilities.getImageDataMetadata(image);
+  });
 
-    // Skip empty segments
-    if (!segment) {
-      continue;
+  // Post-process to match expected return format
+  const processedContourSets = contourSets.map((contourSet, index) => {
+    const segment = segments[contourSet.segment.segmentIndex] || {};
+
+    if (!contourSet.sliceContours.length) {
+      return null;
     }
 
-    const sliceContours = [];
-    const scalars = vtkDataArray.newInstance({
-      name: 'Scalars',
-      numberOfComponents: 1,
-      size: pixelsPerSlice * numSlices,
-      dataType: 'Uint8Array',
-    });
-    const { containedSegmentIndices } = segment;
-    for (let sliceIndex = 0; sliceIndex < numSlices; sliceIndex++) {
-      // Check if the slice is empty before running marching cube
-      if (
-        isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex)
-      ) {
-        continue;
-      }
-      const frameStart = sliceIndex * pixelsPerSlice;
+    const p1 = contourSet.sliceContours[0].polyData.points[0];
+    const p2 = contourSet.sliceContours[0].polyData.points[1];
 
-      try {
-        // Modify segData for this specific segment directly
-        for (let i = 0; i < pixelsPerSlice; i++) {
-          const value = segData[i + frameStart];
-          if (value === segIndex || containedSegmentIndices?.has(value)) {
-            // @ts-ignore
-            scalars.setValue(i + frameStart, 1);
-          } else {
-            // @ts-ignore
-            scalars.setValue(i, 0);
-          }
+    let refImageId;
+    if (p1 && p2) {
+      // find the closest image that these two points are on its plane
+      const refImageIndex = refImageDataMetadata.findIndex(
+        (imageDataMetadata) => {
+          const { origin, direction } = imageDataMetadata;
+          const rowCosineVec = direction.slice(0, 3);
+          const colCosineVec = direction.slice(3, 6);
+          const [x1, y1, z1] = p1;
+          const [x2, y2, z2] = p2;
+
+          const normalVec = [
+            rowCosineVec[1] * colCosineVec[2] -
+              rowCosineVec[2] * colCosineVec[1],
+            rowCosineVec[2] * colCosineVec[0] -
+              rowCosineVec[0] * colCosineVec[2],
+            rowCosineVec[0] * colCosineVec[1] -
+              rowCosineVec[1] * colCosineVec[0],
+          ];
+
+          // Normalize the normal vector
+          const normalLength = Math.sqrt(
+            normalVec[0] * normalVec[0] +
+              normalVec[1] * normalVec[1] +
+              normalVec[2] * normalVec[2]
+          );
+          const unitNormal = [
+            normalVec[0] / normalLength,
+            normalVec[1] / normalLength,
+            normalVec[2] / normalLength,
+          ];
+
+          const originToP1 = [x1 - origin[0], y1 - origin[1], z1 - origin[2]];
+          const originToP2 = [x2 - origin[0], y2 - origin[1], z2 - origin[2]];
+
+          const distanceP1 = Math.abs(
+            originToP1[0] * unitNormal[0] +
+              originToP1[1] * unitNormal[1] +
+              originToP1[2] * unitNormal[2]
+          );
+
+          const distanceP2 = Math.abs(
+            originToP2[0] * unitNormal[0] +
+              originToP2[1] * unitNormal[1] +
+              originToP2[2] * unitNormal[2]
+          );
+
+          // Define a small threshold to account for floating-point precision
+          const EPSILON = 0.001;
+
+          // Return true if both points are close enough to the plane
+          return distanceP1 < EPSILON && distanceP2 < EPSILON;
         }
+      );
 
-        const mSquares = vtkImageMarchingSquares.newInstance({
-          slice: sliceIndex,
-        });
-
-        // filter out the scalar data so that only it has background and
-        // the current segment index
-        const imageDataCopy = vtkImageData.newInstance();
-
-        imageDataCopy.shallowCopy(vol.imageData);
-        imageDataCopy.getPointData().setScalars(scalars);
-
-        // Connect pipeline
-        mSquares.setInputData(imageDataCopy);
-        const cValues = [1];
-        mSquares.setContourValues(cValues);
-        mSquares.setMergePoints(false);
-
-        // Perform marching squares
-        const msOutput = mSquares.getOutputData();
-
-        // Clean up output from marching squares
-        const reducedSet = getDeduplicatedVTKPolyDataPoints(msOutput);
-        if (reducedSet.points?.length) {
-          const contours = findContoursFromReducedSet(reducedSet.lines);
-
-          sliceContours.push({
-            contours,
-            polyData: reducedSet,
-            FrameNumber: sliceIndex + 1,
-            sliceIndex,
-            FrameOfReferenceUID,
-          });
-        }
-      } catch (e) {
-        console.warn(sliceIndex);
-        console.warn(e);
+      if (refImageIndex !== -1) {
+        refImageId = refImages[refImageIndex].imageId;
       }
     }
 
-    const metadata = {
-      FrameOfReferenceUID,
-    };
-
-    const ContourSet = {
+    return {
       label: segment.label,
       color: segment.color,
-      metadata,
-      sliceContours,
+      metadata: {
+        FrameOfReferenceUID: vol.metadata.FrameOfReferenceUID,
+        referencedImageId: refImageId,
+      },
+      sliceContours: contourSet.sliceContours.map((contourData) => ({
+        contours: contourData.contours,
+        polyData: contourData.polyData,
+        FrameNumber: contourData.sliceIndex + 1,
+        sliceIndex: contourData.sliceIndex,
+        FrameOfReferenceUID: vol.metadata.FrameOfReferenceUID,
+        referencedImageId: refImageId,
+      })),
     };
+  });
 
-    ContourSets.push(ContourSet);
-  }
+  // Trigger completion
+  triggerWorkerProgress(WorkerTypes.GENERATE_CONTOUR_SETS, 100);
 
-  return ContourSets;
-}
-
-function isSliceEmptyForSegment(sliceIndex, segData, pixelsPerSlice, segIndex) {
-  const startIdx = sliceIndex * pixelsPerSlice;
-  const endIdx = startIdx + pixelsPerSlice;
-
-  for (let i = startIdx; i < endIdx; i++) {
-    if (segData[i] === segIndex) {
-      return false;
-    }
-  }
-
-  return true;
+  return processedContourSets;
 }
 
 export { generateContourSetsFromLabelmap };
