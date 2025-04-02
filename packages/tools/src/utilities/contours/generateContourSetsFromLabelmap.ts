@@ -84,48 +84,53 @@ async function generateContourSetsFromLabelmap({ segmentations }) {
   });
 
   // Post-process to match expected return format
-  const processedContourSets = contourSets.map((contourSet, index) => {
-    const segment = segments[contourSet.segment.segmentIndex] || {};
+  const processedContourSets = contourSets
+    .map((contourSet) => {
+      const segment = segments[contourSet.segment.segmentIndex] || {};
 
-    if (!contourSet.sliceContours.length) {
-      return null;
-    }
-
-    const p1 = contourSet.sliceContours[0].polyData.points[0] as Types.Point3;
-
-    let refImageId;
-    if (p1) {
-      // find the closest image that these two points are on its plane
-      const refImageIndex = refImageDataMetadata.findIndex(
-        (imageDataMetadata) => {
-          const { scanAxisNormal, origin } = imageDataMetadata;
-          const plane = utilities.planar.planeEquation(scanAxisNormal, origin);
-          return utilities.planar.isPointOnPlane(p1, plane);
-        }
-      );
-
-      if (refImageIndex !== -1) {
-        refImageId = refImages[refImageIndex].imageId;
+      if (!contourSet.sliceContours.length) {
+        return null;
       }
-    }
 
-    return {
-      label: segment.label,
-      color: segment.color,
-      metadata: {
-        FrameOfReferenceUID: vol.metadata.FrameOfReferenceUID,
-        referencedImageId: refImageId,
-      },
-      sliceContours: contourSet.sliceContours.map((contourData) => ({
-        contours: contourData.contours,
-        polyData: contourData.polyData,
-        FrameNumber: contourData.sliceIndex + 1,
-        sliceIndex: contourData.sliceIndex,
-        FrameOfReferenceUID: vol.metadata.FrameOfReferenceUID,
-        referencedImageId: refImageId,
-      })),
-    };
-  });
+      const p1 = contourSet.sliceContours[0].polyData.points[0] as Types.Point3;
+
+      let refImageId;
+      if (p1) {
+        // find the closest image that these two points are on its plane
+        const refImageIndex = refImageDataMetadata.findIndex(
+          (imageDataMetadata) => {
+            const { scanAxisNormal, origin } = imageDataMetadata;
+            const plane = utilities.planar.planeEquation(
+              scanAxisNormal,
+              origin
+            );
+            return utilities.planar.isPointOnPlane(p1, plane);
+          }
+        );
+
+        if (refImageIndex !== -1) {
+          refImageId = refImages[refImageIndex].imageId;
+        }
+      }
+
+      return {
+        label: segment.label,
+        color: segment.color,
+        metadata: {
+          FrameOfReferenceUID: vol.metadata.FrameOfReferenceUID,
+          referencedImageId: refImageId,
+        },
+        sliceContours: contourSet.sliceContours.map((contourData) => ({
+          contours: contourData.contours,
+          polyData: contourData.polyData,
+          FrameNumber: contourData.sliceIndex + 1,
+          sliceIndex: contourData.sliceIndex,
+          FrameOfReferenceUID: vol.metadata.FrameOfReferenceUID,
+          referencedImageId: refImageId,
+        })),
+      };
+    })
+    .filter((contourSet) => contourSet !== null);
 
   // Trigger completion
   triggerWorkerProgress(WorkerTypes.GENERATE_CONTOUR_SETS, 100);
