@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { cache } from '@cornerstonejs/core';
+import { cache, getEnabledElementByViewportId } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
@@ -48,6 +48,44 @@ export async function updateSurfaceData(segmentationId) {
     return;
   }
 
+  const viewportIds = getViewportIdsWithSegmentation(segmentationId);
+
+  // if new surfaceObj does not have the same segment indices as the previous one,
+  // and some were deleted, we need to remove the geometries for the deleted segments
+  viewportIds.forEach((viewportId) => {
+    const enabledElement = getEnabledElementByViewportId(viewportId);
+    const viewport = enabledElement.viewport;
+    if (viewport.type !== 'volume3d') {
+      return;
+    }
+
+    const actorEntries = (viewport as Types.IVolumeViewport).getActors();
+
+    const segmentIndicesAsSurface = actorEntries
+      .map((actor) => (actor.representationUID as string)?.split('-').pop())
+      .filter((segment) => segment && Number(segment))
+      .map(Number);
+
+    segmentIndicesAsSurface.forEach((segmentIndex) => {
+      if (!indices.includes(segmentIndex)) {
+        const filteredSurfaceActors = actorEntries.filter(
+          (actor) =>
+            actor.representationUID &&
+            actor.representationUID ===
+              `${segmentationId}-${SegmentationRepresentations.Surface}-${segmentIndex}`
+        );
+
+        const removingUIDs = filteredSurfaceActors.map((actor) => actor.uid);
+        viewport.removeActors(removingUIDs);
+        viewport.render();
+
+        // remove the geometry from the cache
+        const geometryId = `segmentation_${segmentationId}_surface_${segmentIndex}`;
+        cache.removeGeometryLoadObject(geometryId);
+      }
+    });
+  });
+
   const promises = surfacesObj.map(({ data, segmentIndex }) => {
     const geometryId = `segmentation_${segmentationId}_surface_${segmentIndex}`;
 
@@ -56,7 +94,6 @@ export async function updateSurfaceData(segmentationId) {
     if (!geometry) {
       // means it is a new segment getting added while we were
       // listening to the segmentation data modified event
-      const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
       return viewportIds.map((viewportId) => {
         const surfaceRepresentation = getSegmentationRepresentation(
@@ -73,11 +110,14 @@ export async function updateSurfaceData(segmentationId) {
             geometryId
           );
 
+          const enabledElement = getEnabledElementByViewportId(viewportId);
+
           return createAndCacheSurfacesFromRaw(
             segmentationId,
             [{ segmentIndex, data }],
             {
               segmentationId: surfaceRepresentation.segmentationId,
+              viewport: enabledElement.viewport,
             }
           );
         });

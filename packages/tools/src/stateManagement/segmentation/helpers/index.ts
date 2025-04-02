@@ -4,7 +4,6 @@ import {
   getLabelmapActorEntry,
   getSurfaceActorEntry,
   getLabelmapActorUID,
-  getSurfaceActorUID,
 } from './getSegmentationActor';
 
 export {
@@ -13,5 +12,4 @@ export {
   getLabelmapActorEntry,
   getSurfaceActorEntry,
   getLabelmapActorUID,
-  getSurfaceActorUID,
 };
