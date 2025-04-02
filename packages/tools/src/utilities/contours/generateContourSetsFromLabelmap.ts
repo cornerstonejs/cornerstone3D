@@ -91,61 +91,16 @@ async function generateContourSetsFromLabelmap({ segmentations }) {
       return null;
     }
 
-    const p1 = contourSet.sliceContours[0].polyData.points[0];
-    const p2 = contourSet.sliceContours[0].polyData.points[1];
+    const p1 = contourSet.sliceContours[0].polyData.points[0] as Types.Point3;
 
     let refImageId;
-    if (p1 && p2) {
+    if (p1) {
       // find the closest image that these two points are on its plane
       const refImageIndex = refImageDataMetadata.findIndex(
         (imageDataMetadata) => {
-          const { origin, direction } = imageDataMetadata;
-          const rowCosineVec = direction.slice(0, 3);
-          const colCosineVec = direction.slice(3, 6);
-          const [x1, y1, z1] = p1;
-          const [x2, y2, z2] = p2;
-
-          const normalVec = [
-            rowCosineVec[1] * colCosineVec[2] -
-              rowCosineVec[2] * colCosineVec[1],
-            rowCosineVec[2] * colCosineVec[0] -
-              rowCosineVec[0] * colCosineVec[2],
-            rowCosineVec[0] * colCosineVec[1] -
-              rowCosineVec[1] * colCosineVec[0],
-          ];
-
-          // Normalize the normal vector
-          const normalLength = Math.sqrt(
-            normalVec[0] * normalVec[0] +
-              normalVec[1] * normalVec[1] +
-              normalVec[2] * normalVec[2]
-          );
-          const unitNormal = [
-            normalVec[0] / normalLength,
-            normalVec[1] / normalLength,
-            normalVec[2] / normalLength,
-          ];
-
-          const originToP1 = [x1 - origin[0], y1 - origin[1], z1 - origin[2]];
-          const originToP2 = [x2 - origin[0], y2 - origin[1], z2 - origin[2]];
-
-          const distanceP1 = Math.abs(
-            originToP1[0] * unitNormal[0] +
-              originToP1[1] * unitNormal[1] +
-              originToP1[2] * unitNormal[2]
-          );
-
-          const distanceP2 = Math.abs(
-            originToP2[0] * unitNormal[0] +
-              originToP2[1] * unitNormal[1] +
-              originToP2[2] * unitNormal[2]
-          );
-
-          // Define a small threshold to account for floating-point precision
-          const EPSILON = 0.001;
-
-          // Return true if both points are close enough to the plane
-          return distanceP1 < EPSILON && distanceP2 < EPSILON;
+          const { scanAxisNormal, origin } = imageDataMetadata;
+          const plane = utilities.planar.planeEquation(scanAxisNormal, origin);
+          return utilities.planar.isPointOnPlane(p1, plane);
         }
       );
 
