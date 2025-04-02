@@ -12,7 +12,6 @@ const _colormaps = new Map();
  * @param colormap - colormap object
  */
 function registerColormap(colormap: ColormapRegistration) {
-  // @ts-ignore
   colormap.name = colormap.Name;
   _colormaps.set(colormap.Name, colormap);
 }
