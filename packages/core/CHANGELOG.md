@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.2...v3.8.3) (2025-04-02)
+
+### Bug Fixes
+
+- **wsi scaling:** adjust canvas-to-index and index-to-canvas transformations for device pixel ratio ([#1959](https://github.com/cornerstonejs/cornerstone3D/issues/1959)) ([2779862](https://github.com/cornerstonejs/cornerstone3D/commit/2779862c97115e863010a004bbf5ddb0e2148264))
+
 ## [3.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.1...v3.8.2) (2025-04-01)
 
 ### Bug Fixes
