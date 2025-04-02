@@ -131,24 +131,6 @@ export function getSurfaceActorEntry(
 }
 
 /**
- * Retrieves the UID of the surface actor for the given viewport, segmentation, and segment index.
- * @param viewportId - The ID of the viewport.
- * @param segmentationId - The ID of the segmentation.
- * @param segmentIndex - The index of the segment.
- * @returns The UID of the surface actor if found, undefined otherwise.
- */
-export function getSurfaceActorUID(
-  viewportId: string,
-  segmentationId: string,
-  segmentIndex?: number | string
-): string | undefined {
-  const segIndex = segmentIndex ? segmentIndex.toString() : '';
-
-  const actorEntry = getSurfaceActorEntry(viewportId, segmentationId, segIndex);
-  return actorEntry?.uid;
-}
-
-/**
  * Generates a unique identifier for a surface representation of a segmentation segment
  * @param segmentationId - The ID of the segmentation
  * @param segmentIndex - Optional index of the specific segment within the segmentation

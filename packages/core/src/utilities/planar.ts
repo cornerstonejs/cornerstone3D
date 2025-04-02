@@ -1,6 +1,7 @@
 import type { Point3, Plane } from '../types';
 import type { vec3 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
+import { EPSILON } from '../constants';
 
 /**
  * It calculates the intersection of a line and a plane.
@@ -95,9 +96,18 @@ function planeDistanceToPoint(
   return sign * distance;
 }
 
+function isPointOnPlane(
+  point: Point3,
+  plane: Plane,
+  tolerance = EPSILON
+): boolean {
+  return planeDistanceToPoint(plane, point) < tolerance;
+}
+
 export {
   linePlaneIntersection,
   planeEquation,
   threePlaneIntersection,
   planeDistanceToPoint,
+  isPointOnPlane,
 };
