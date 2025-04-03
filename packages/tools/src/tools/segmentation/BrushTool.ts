@@ -472,8 +472,9 @@ class BrushTool extends LabelmapBaseTool {
     // otherwise the new area of hover may get filled, which is unexpected
     if (!this._previewData.preview && !this._previewData.isDrag) {
       this.applyActiveStrategy(enabledElement, operationData);
-      this.doneEditMemo();
     }
+
+    this.doneEditMemo();
 
     this._deactivateDraw(element);
 
