@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.4...v3.8.5) (2025-04-04)
+
+### Bug Fixes
+
+- **segmentation:** Refactor State Management ([#1969](https://github.com/cornerstonejs/cornerstone3D/issues/1969)) ([029ace4](https://github.com/cornerstonejs/cornerstone3D/commit/029ace485e804f526f2b923df303fc18a4be42ef))
+
 ## [3.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.3...v3.8.4) (2025-04-02)
 
 ### Bug Fixes
