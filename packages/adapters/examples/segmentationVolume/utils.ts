@@ -18,7 +18,7 @@ export async function readDicom(files: FileList, state) {
     }
 }
 
-export async function createSegmentation(state) {
+export async function createEmptySegmentation(state) {
     const { referenceImageIds, segmentationId } = state;
 
     const derivedSegmentationImages =
@@ -38,6 +38,25 @@ export async function createSegmentation(state) {
                     .Labelmap,
                 data: {
                     imageIds: derivedSegmentationImageIds
+                }
+            }
+        }
+    ]);
+}
+
+export async function createSegmentation({ state, labelMapImages }) {
+    const { segmentationId } = state;
+
+    const imageIds = labelMapImages?.flat().map(image => image.imageId);
+
+    csToolsSegmentation.addSegmentations([
+        {
+            segmentationId,
+            representation: {
+                type: cornerstoneTools.Enums.SegmentationRepresentations
+                    .Labelmap,
+                data: {
+                    imageIds
                 }
             }
         }
@@ -65,36 +84,18 @@ export async function readSegmentation(file: File, state) {
 }
 
 export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
-    const { referenceImageIds, skipOverlapping, segmentationId } = state;
+    const { referenceImageIds } = state;
 
-    const generateToolState =
+    const { labelMapImages } =
         await Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
             referenceImageIds,
             arrayBuffer,
             {
-                metadataProvider: metaData,
-                skipOverlapping
+                metadataProvider: metaData
             }
         );
 
-    await createSegmentation(state);
-
-    const segmentation =
-        csToolsSegmentation.state.getSegmentation(segmentationId);
-
-    const { imageIds } = segmentation.representationData.Labelmap;
-    const derivedSegmentationImages = imageIds.map(imageId =>
-        cache.getImage(imageId)
-    );
-
-    const labelmapImagesNonOverlapping = generateToolState.labelMapImages[0];
-
-    for (let i = 0; i < derivedSegmentationImages.length; i++) {
-        const voxelManager = derivedSegmentationImages[i].voxelManager;
-        const scalarData = voxelManager.getScalarData();
-        scalarData.set(labelmapImagesNonOverlapping[i].getPixelData());
-        voxelManager.setScalarData(scalarData);
-    }
+    await createSegmentation({ state, labelMapImages });
 }
 
 export async function exportSegmentation(state) {

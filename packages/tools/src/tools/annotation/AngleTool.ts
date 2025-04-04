@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -88,27 +88,23 @@ class AngleTool extends AnnotationTool {
     points: Types.Point3[],
     options?: {
       annotationUID?: string;
+      toolInstance?: AngleTool;
+      referencedImageId?: string;
+      viewplaneNormal?: Types.Point3;
+      viewUp?: Types.Point3;
     }
   ): AngleAnnotation => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (!enabledElement) {
       return;
     }
-    const { viewport } = enabledElement;
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
-
-    // This is a workaround to access the protected method getReferencedImageId
-    // we should make those static too
-    const instance = new this();
-
-    const referencedImageId = instance.getReferencedImageId(
-      viewport,
-      points[0],
+    const {
+      FrameOfReferenceUID,
+      referencedImageId,
       viewPlaneNormal,
-      viewUp
-    );
+      instance,
+      viewport,
+    } = this.hydrateBase<AngleTool>(AngleTool, enabledElement, points, options);
 
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
@@ -477,6 +473,14 @@ class AngleTool extends AnnotationTool {
     const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -871,10 +875,13 @@ class AngleTool extends AnnotationTool {
       };
     }
 
+    const invalidated = annotation.invalidated;
     annotation.invalidated = false;
 
-    // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
+      triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    }
 
     return cachedStats;
   }

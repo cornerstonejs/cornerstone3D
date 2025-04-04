@@ -15,6 +15,7 @@ console.warn(
 );
 
 const {
+  EraserTool,
   LengthTool,
   ProbeTool,
   ZoomTool,
@@ -25,7 +26,7 @@ const {
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 const viewportId2 = 'CT_STACK2';
@@ -60,6 +61,7 @@ const toolsNames = [
   LengthTool.toolName,
   ProbeTool.toolName,
   UltrasoundDirectionalTool.toolName,
+  EraserTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
 
@@ -108,6 +110,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(UltrasoundDirectionalTool);
+  cornerstoneTools.addTool(EraserTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -119,6 +122,7 @@ async function run() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(UltrasoundDirectionalTool.toolName);
+  toolGroup.addTool(EraserTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -132,14 +136,22 @@ async function run() {
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary, // Left Click
+        mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   });
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Auxiliary, // Left Click
+        mouseButton: MouseBindings.Auxiliary, // Mouse Wheel Click
+      },
+    ],
+  });
+  toolGroup.setToolActive(EraserTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+        modifierKey: KeyboardBindings.Ctrl, // Ctrl Key
       },
     ],
   });

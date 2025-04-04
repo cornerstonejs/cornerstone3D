@@ -17,8 +17,14 @@ type NamedStatistics = {
   count: Statistics & { name: 'count' };
   area?: Statistics & { name: 'area' };
   volume?: Statistics & { name: 'volume' };
-  circumference?: Statistics & { name: 'circumference' };
   pointsInShape?: Types.IPointsManager<Types.Point3>;
+  median?: Statistics & { name: 'median' };
+  skewness?: Statistics & { name: 'skewness' };
+  kurtosis?: Statistics & { name: 'kurtosis' };
+  voxelCount?: Statistics & { name: 'count' };
+  lesionGlycolysis?: Statistics & { name: 'lesionGlycolysis' };
+  maxLPS?: Statistics & { name: 'maxLPS' };
+  minLPS?: Statistics & { name: 'minLPS' };
   /**
    * A set of stats callback arguments containing maximum values.
    * This can be used to test peak intensities in the areas.

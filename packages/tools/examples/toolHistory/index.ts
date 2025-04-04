@@ -275,15 +275,6 @@ async function run() {
   await segmentation.addLabelmapRepresentationToViewport(viewportId, [
     { segmentationId: labelmapSegmentationId },
   ]);
-
-  // await segmentation.addContourRepresentationToViewport(viewportId, [
-  //   { segmentationId: contourSegmentationId },
-  // ]);
-
-  // segmentation.activeSegmentation.setActiveSegmentation(
-  //   viewportId,
-  //   labelmapSegmentationId
-  // );
 }
 
 run();

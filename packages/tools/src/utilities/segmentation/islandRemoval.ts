@@ -118,15 +118,15 @@ export default class IslandRemoval {
       : VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
 
     const { segmentIndex = 1, previewSegmentIndex = 1 } = options;
-
-    const clickedPoints = options.points || previewVoxelManager.getPoints();
+    const clickedPoints =
+      options.points || segmentationVoxelManager.getPoints();
     if (!clickedPoints?.length) {
       return;
     }
 
     // Ensure the bounds includes the clicked points, otherwise the fill
     // fails.
-    const boundsIJK = previewVoxelManager
+    const boundsIJK = segmentationVoxelManager
       .getBoundsIJK()
       .map((bound, i) => [
         Math.min(bound[0], ...clickedPoints.map((point) => point[i])),

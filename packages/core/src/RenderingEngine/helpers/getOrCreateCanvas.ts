@@ -3,13 +3,29 @@ const CANVAS_CSS_CLASS = 'cornerstone-canvas';
 export const EPSILON = 1e-4;
 
 /**
+ * The canvas creator is used for applications where the element isn't
+ * defined/setup such as nodejs environments.
+ */
+let canvasCreator;
+
+/**
  * Create a canvas and append it to the element
  *
  * @param element - An HTML Element
  * @returns canvas - A Canvas DOM element
  */
-function createCanvas(element: Element | HTMLDivElement): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
+export function createCanvas(
+  element: Element | HTMLDivElement,
+  width = 512,
+  height = 512
+): HTMLCanvasElement {
+  const canvas = canvasCreator
+    ? canvasCreator(width, height)
+    : document.createElement('canvas');
+
+  if (!element) {
+    return canvas;
+  }
 
   canvas.style.position = 'absolute';
   canvas.style.width = '100%';
@@ -41,6 +57,15 @@ export function createViewportElement(element: HTMLDivElement): HTMLDivElement {
 }
 
 /**
+ * Allows setting the canvas creator for rendering into.  This provides direct
+ * render capabilities for environments such as nodejs
+ * @param canvasCreatorArg
+ */
+export function setCanvasCreator(canvasCreatorArg) {
+  canvasCreator = canvasCreatorArg;
+}
+
+/**
  * Create a canvas or returns the one that already exists for a given element.
  * It first checks if the element has a canvas, if not it creates one and returns it.
  * The canvas is updated for:
@@ -53,9 +78,7 @@ export function createViewportElement(element: HTMLDivElement): HTMLDivElement {
  * @param element - An HTML Element
  * @returns canvas a Canvas DOM element
  */
-export default function getOrCreateCanvas(
-  element: HTMLDivElement
-): HTMLCanvasElement {
+export function getOrCreateCanvas(element: HTMLDivElement): HTMLCanvasElement {
   const canvasSelector = `canvas.${CANVAS_CSS_CLASS}`;
   const viewportElement = `div.${VIEWPORT_ELEMENT}`;
 
@@ -92,3 +115,5 @@ export default function getOrCreateCanvas(
 
   return canvas;
 }
+
+export default getOrCreateCanvas;

@@ -1,5 +1,5 @@
 import type { SegmentationRepresentations } from '../../enums';
-import type { Segmentation } from '../../types';
+import type { Segmentation, SegmentationRepresentation } from '../../types';
 import { getSegmentation } from './getSegmentation';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 
@@ -13,10 +13,8 @@ export function getViewportSegmentations(
   viewportId: string,
   type?: SegmentationRepresentations
 ): Segmentation[] {
-  const segmentationStateManager = defaultSegmentationStateManager;
-  const state = segmentationStateManager.getState();
-
-  const viewportRepresentations = state.viewportSegRepresentations[viewportId];
+  const viewportRepresentations =
+    getViewportSegmentationRepresentations(viewportId);
 
   const segmentations = viewportRepresentations.map((representation) => {
     if (type && representation.type === type) {
@@ -31,4 +29,15 @@ export function getViewportSegmentations(
   );
 
   return filteredSegmentations;
+}
+
+export function getViewportSegmentationRepresentations(
+  viewportId: string
+): SegmentationRepresentation[] {
+  const segmentationStateManager = defaultSegmentationStateManager;
+  const state = segmentationStateManager.getState();
+
+  const viewportRepresentations = state.viewportSegRepresentations[viewportId];
+
+  return viewportRepresentations;
 }

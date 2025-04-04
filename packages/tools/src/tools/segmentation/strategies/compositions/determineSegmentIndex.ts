@@ -19,16 +19,15 @@ import type { Types } from '@cornerstonejs/core';
  *
  */
 export default {
-  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const { centerSegmentIndex } = operationData.configuration || {};
+  // [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
+  //   const { centerSegmentIndex } = operationData.configuration || {};
 
-    if (!centerSegmentIndex) {
-      return;
-    }
+  //   if (!centerSegmentIndex) {
+  //     return;
+  //   }
 
-    operationData.segmentIndex = centerSegmentIndex.segmentIndex;
-  },
-
+  //   operationData.segmentIndex = centerSegmentIndex.segmentIndex;
+  // },
   [StrategyCallbacks.OnInteractionStart]: (
     operationData: InitializedOperationData
   ) => {
@@ -39,15 +38,14 @@ export default {
       centerIJK,
       viewPlaneNormal,
       segmentationImageData,
-      preview,
       configuration,
     } = operationData;
 
     if (!configuration?.useCenterSegmentIndex) {
       return;
     }
+
     // Get rid of the previous data
-    delete configuration.centerSegmentIndex;
 
     let hasSegmentIndex = false;
     let hasPreviewIndex = false;
@@ -76,23 +74,14 @@ export default {
     });
 
     if (!hasSegmentIndex && !hasPreviewIndex) {
+      operationData.centerSegmentIndexInfo.segmentIndex = null;
       return;
     }
 
-    let existingValue = segmentationVoxelManager.getAtIJKPoint(centerIJK);
-    if (existingValue === previewSegmentIndex) {
-      if (preview) {
-        existingValue = preview.segmentIndex;
-      } else {
-        return;
-      }
-    } else if (hasPreviewIndex) {
-      // Clear the preview area
-      existingValue = null;
-    }
-    operationData.segmentIndex = existingValue;
-    configuration.centerSegmentIndex = {
-      segmentIndex: existingValue,
-    };
+    const existingValue = segmentationVoxelManager.getAtIJKPoint(centerIJK);
+
+    operationData.centerSegmentIndexInfo.segmentIndex = existingValue;
+    operationData.centerSegmentIndexInfo.hasSegmentIndex = hasSegmentIndex;
+    operationData.centerSegmentIndexInfo.hasPreviewIndex = hasPreviewIndex;
   },
 };

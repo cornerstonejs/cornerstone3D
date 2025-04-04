@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "3.0.1",
+  "version": "3.8.5",
   "description": "Cornerstone3D Core",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -12,38 +12,47 @@
   "exports": {
     ".": {
       "import": "./dist/esm/index.js",
+      "node": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
     "./utilities": {
       "import": "./dist/esm/utilities/index.js",
+      "node": "./dist/esm/utilities/index.js",
       "types": "./dist/esm/utilities/index.d.ts"
     },
     "./utilities/*": {
       "import": "./dist/esm/utilities/*.js",
+      "node": "./dist/esm/utilities/*.js",
       "types": "./dist/esm/utilities/*.d.ts"
     },
     "./constants": {
       "import": "./dist/esm/constants/index.js",
+      "node": "./dist/esm/constants/index.js",
       "types": "./dist/esm/constants/index.d.ts"
     },
     "./constants/*": {
       "import": "./dist/esm/constants/*.js",
+      "node": "./dist/esm/constants/*.js",
       "types": "./dist/esm/constants/*.d.ts"
     },
     "./enums": {
       "import": "./dist/esm/enums/index.js",
+      "node": "./dist/esm/enums/index.js",
       "types": "./dist/esm/enums/index.d.ts"
     },
     "./enums/*": {
       "import": "./dist/esm/enums/*.js",
+      "node": "./dist/esm/enums/*.js",
       "types": "./dist/esm/enums/*.d.ts"
     },
     "./loaders": {
       "import": "./dist/esm/loaders/index.js",
+      "node": "./dist/esm/loaders/index.js",
       "types": "./dist/esm/loaders/index.d.ts"
     },
     "./loaders/*": {
       "import": "./dist/esm/loaders/*.js",
+      "node": "./dist/esm/loaders/*.js",
       "types": "./dist/esm/loaders/*.d.ts"
     },
     "./types": {
@@ -66,9 +75,10 @@
     "prepublishOnly": "yarn run build"
   },
   "dependencies": {
-    "@kitware/vtk.js": "32.9.0",
+    "@kitware/vtk.js": "32.12.1",
     "comlink": "^4.4.1",
-    "gl-matrix": "^3.4.3"
+    "gl-matrix": "^3.4.3",
+    "loglevel": "^1.9.2"
   },
   "contributors": [
     {

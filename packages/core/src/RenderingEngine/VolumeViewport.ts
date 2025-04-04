@@ -481,6 +481,23 @@ class VolumeViewport extends BaseVolumeViewport {
     this.viewportProperties.slabThickness = undefined;
   }
 
+  public isInAcquisitionPlane(): boolean {
+    const imageData = this.getImageData();
+
+    if (!imageData) {
+      return false;
+    }
+
+    const { direction } = imageData;
+    const { viewPlaneNormal } = this.getCamera();
+    const normalDirection = [direction[6], direction[7], direction[8]];
+
+    const TOLERANCE = 0.99;
+    return (
+      Math.abs(vec3.dot(viewPlaneNormal, normalDirection as Point3)) > TOLERANCE
+    );
+  }
+
   /**
    * Uses the slice range information to compute the current image id index.
    * Note that this may be offset from the origin location, or opposite in

@@ -1,5 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
-import { utilities, eventTarget, Enums } from '@cornerstonejs/core';
+import {
+  utilities,
+  eventTarget,
+  Enums,
+  triggerEvent,
+  cache,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -26,6 +32,13 @@ const { IslandRemoval } = cornerstoneTools.utilities;
 
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
+
+// Define custom events for model loading
+const ONNX_EVENTS = {
+  MODEL_LOADING_STARTED: 'ONNX_MODEL_LOADING_STARTED',
+  MODEL_LOADING_COMPLETED: 'ONNX_MODEL_LOADING_COMPLETED',
+  MODEL_COMPONENT_LOADED: 'ONNX_MODEL_COMPONENT_LOADED',
+};
 
 export type ModelType = {
   name: string;
@@ -205,7 +218,8 @@ export default class ONNXSegmentationController {
   private points = [];
   private labels = [];
   private worldPoints = new Array<Types.Point3>();
-
+  private randomPoints;
+  private _searchBreadth = 3;
   private loadingAI: Promise<unknown>;
 
   protected viewport;
@@ -232,12 +246,22 @@ export default class ONNXSegmentationController {
     ONNXSegmentationController.MarkerExclude,
     ONNXSegmentationController.BoxPrompt,
   ];
+  protected _cachedPromptAnnotations;
+
+  // autoSegment mode properties
+  protected _enabled = false;
+  protected _autoSegmentMode = false;
+  protected imageIdsRunAgainst = new Map();
+  protected numRandomPoints = 25; // Default number of random points to sample
 
   /**
    * Fill internal islands by size, and consider islands at the edge to
    * be included as internal.
    */
-  protected islandFillOptions = {
+  protected islandFillOptions: {
+    maxInternalRemove: number;
+    fillInternalEdge: boolean;
+  } = {
     maxInternalRemove: 16,
     fillInternalEdge: true,
   };
@@ -264,15 +288,38 @@ export default class ONNXSegmentationController {
    *      alternate to the getPromptAnnotations
    *    * models - a set of model configurations to run - note these are added globally to the static models
    *    * modelName - the specific model name to choose.  Must exist in models.
+   *    * autoSegmentMode - whether to enable autoSegment mode by default
+   *    * numRandomPoints - the number of random points to sample for autoSegment mode
    */
   constructor(
-    options = {
+    options: {
+      listeners?: Array<(message: string) => void>;
+      getPromptAnnotations?: (
+        viewport?: Types.IViewport
+      ) => cornerstoneTools.Types.Annotation[];
+      promptAnnotationTypes?: string[];
+      models?: Record<string, ModelType[]>;
+      modelName?: string;
+      islandFillOptions?: {
+        maxInternalRemove?: number;
+        fillInternalEdge?: boolean;
+      };
+      autoSegmentMode?: boolean;
+      numRandomPoints?: number;
+      searchBreadth?: number;
+    } = {
       listeners: null,
       getPromptAnnotations: null,
       promptAnnotationTypes: null,
       models: null,
       modelName: null,
-      islandFillOptions: undefined,
+      islandFillOptions: {
+        maxInternalRemove: 16,
+        fillInternalEdge: true,
+      },
+      autoSegmentMode: false,
+      numRandomPoints: 2,
+      searchBreadth: 3,
     }
   ) {
     if (options.listeners) {
@@ -287,8 +334,58 @@ export default class ONNXSegmentationController {
       Object.assign(ONNXSegmentationController.MODELS, options.models);
     }
     this.config = this.getConfig(options.modelName);
-    this.islandFillOptions =
-      options.islandFillOptions ?? this.islandFillOptions;
+
+    // Ensure we have non-optional properties when assigning
+    if (options.islandFillOptions) {
+      this.islandFillOptions = {
+        maxInternalRemove:
+          options.islandFillOptions.maxInternalRemove ??
+          this.islandFillOptions.maxInternalRemove,
+        fillInternalEdge:
+          options.islandFillOptions.fillInternalEdge ??
+          this.islandFillOptions.fillInternalEdge,
+      };
+    }
+
+    // Initialize autoSegment mode
+    this._autoSegmentMode = options.autoSegmentMode || false;
+    this.numRandomPoints = options.numRandomPoints || this.numRandomPoints;
+
+    // Set search breadth for neighbor slices
+    this._searchBreadth = options.searchBreadth || this._searchBreadth;
+  }
+
+  /**
+   * Enable or disable the controller
+   */
+  public set enabled(enabled: boolean) {
+    this._enabled = enabled;
+  }
+
+  public get enabled() {
+    return this._enabled;
+  }
+
+  /**
+   * Enable or disable autoSegment mode
+   */
+  public set autoSegmentMode(enabled: boolean) {
+    this._autoSegmentMode = enabled;
+    // Automatically enable the controller when autoSegment mode is enabled
+    if (enabled) {
+      this._enabled = true;
+    }
+  }
+
+  public get autoSegmentMode() {
+    return this._autoSegmentMode;
+  }
+
+  /**
+   * Set the number of random points to sample in autoSegment mode
+   */
+  public set numSamplePoints(num: number) {
+    this.numRandomPoints = num;
   }
 
   /**
@@ -342,11 +439,6 @@ export default class ONNXSegmentationController {
           activeStrategy: 'FILL_INSIDE_CIRCLE',
           preview: {
             enabled: true,
-            previewColors: {
-              0: [255, 255, 255, 128],
-              1: [0, 255, 255, 192],
-              2: [255, 0, 255, 255],
-            },
           },
         },
       }
@@ -391,6 +483,86 @@ export default class ONNXSegmentationController {
     this.tool.rejectPreview(element);
   }
 
+  restoreCachedPromptAnnotations(viewport: Types.IViewport) {
+    if (!this._cachedPromptAnnotations) {
+      return [];
+    }
+
+    const annotations = [];
+    const { include, exclude } = this._cachedPromptAnnotations;
+    if (include) {
+      const newInclude = cornerstoneTools.utilities.moveAnnotationToViewPlane(
+        include,
+        viewport
+      );
+      annotations.push(newInclude);
+    }
+
+    if (exclude) {
+      const newExclude = cornerstoneTools.utilities.moveAnnotationToViewPlane(
+        exclude,
+        viewport
+      );
+      annotations.push(newExclude);
+    }
+
+    return annotations;
+  }
+
+  /**
+   * Removes all prompt annotations but caches one positive (include) and one negative (exclude)
+   * annotation. These cached annotations can be re-added later (for example, after an interpolateScroll).
+   *
+   * @param viewport - The viewport element on which annotations are rendered.
+   */
+  removePromptAnnotationsWithCache(viewport: Types.IViewport) {
+    const toolNames = [
+      ONNXSegmentationController.MarkerInclude,
+      ONNXSegmentationController.MarkerExclude,
+      ONNXSegmentationController.BoxPrompt,
+    ];
+
+    let cachedInclude = null;
+    let cachedExclude = null;
+
+    // Get all annotations once
+    const allAnnotations =
+      cornerstoneTools.annotation.state.getAllAnnotations();
+
+    // Single loop to filter, cache, and remove prompt annotations
+    for (const annotation of allAnnotations) {
+      const toolName = annotation.metadata.toolName;
+
+      if (toolNames.includes(toolName)) {
+        // Cache first found include/exclude annotations
+        if (
+          toolName === ONNXSegmentationController.MarkerInclude &&
+          !cachedInclude
+        ) {
+          cachedInclude = annotation;
+        } else if (
+          toolName === ONNXSegmentationController.MarkerExclude &&
+          !cachedExclude
+        ) {
+          cachedExclude = annotation;
+        }
+
+        // Remove the annotation
+        cornerstoneTools.annotation.state.removeAnnotation(
+          annotation.annotationUID
+        );
+      }
+    }
+
+    // Store cached annotations
+    this._cachedPromptAnnotations = {
+      include: cachedInclude,
+      exclude: cachedExclude,
+    };
+
+    viewport.render();
+  }
+
   /**
    * The interpolateScroll checks to see if there are any annotations on the
    * current image in the specified viewport, and if so, scrolls in the given
@@ -410,12 +582,7 @@ export default class ONNXSegmentationController {
     this.tool.acceptPreview(element);
     const promptAnnotations = this.getPromptAnnotations(viewport);
 
-    if (!promptAnnotations.length) {
-      return;
-    }
-
     const currentSliceIndex = viewport.getCurrentImageIdIndex();
-    const { focalPoint } = viewport.getCamera();
     const viewRef = viewport.getViewReference({
       sliceIndex: currentSliceIndex + dir,
     });
@@ -427,28 +594,35 @@ export default class ONNXSegmentationController {
     viewport.scroll(dir);
     // Wait for the scroll to complete
     await new Promise((resolve) => window.setTimeout(resolve, 250));
-    const nextAnnotations = this.getPromptAnnotations(viewport);
-    if (nextAnnotations.length > 0) {
-      return;
+
+    let annotations = [];
+    if (!promptAnnotations.length) {
+      annotations = this.restoreCachedPromptAnnotations(viewport);
+    } else {
+      // Add the difference between the new and old focal point as being the
+      // position difference between images.  Does not account for any
+      // rotational differences between frames that may occur on stacks
+      for (const annotation of promptAnnotations) {
+        const newAnnotation = <cstTypes.Annotation>structuredClone(annotation);
+
+        // remove the old annotation
+        cornerstoneTools.annotation.state.removeAnnotation(
+          annotation.annotationUID
+        );
+
+        Object.assign(newAnnotation.metadata, viewRef);
+        cornerstoneTools.utilities.moveAnnotationToViewPlane(
+          newAnnotation,
+          viewport
+        );
+        annotations.push(newAnnotation);
+      }
     }
 
-    // Add the difference between the new and old focal point as being the
-    // position difference between images.  Does not account for any
-    // rotational differences between frames that may occur on stacks
-    const { focalPoint: newFocal } = viewport.getCamera();
-    const newDelta = vec3.sub(vec3.create(), newFocal as vec3, focalPoint);
-    for (const annotation of promptAnnotations) {
-      annotation.interpolationUID ||= crypto.randomUUID();
-      const newAnnotation = <cstTypes.Annotation>structuredClone(annotation);
-      newAnnotation.annotationUID = undefined;
-      Object.assign(newAnnotation.metadata, viewRef);
-      // @ts-ignore
-      newAnnotation.cachedStats = {};
-      for (const handle of newAnnotation.data.handles.points) {
-        vec3.add(handle, handle, newDelta);
-      }
-      annotationState.addAnnotation(newAnnotation, viewport.element);
+    for (const annotation of annotations) {
+      annotationState.addAnnotation(annotation, viewport.element);
     }
+
     viewport.render();
   }
 
@@ -511,6 +685,111 @@ export default class ONNXSegmentationController {
     if (desiredImage.imageId === currentImage?.imageId) {
       return;
     }
+
+    if (this._enabled && this._autoSegmentMode) {
+      if (
+        'isInAcquisitionPlane' in viewport &&
+        !viewport.isInAcquisitionPlane()
+      ) {
+        console.warn(
+          'Non acquisition plane viewports and auto segment mode is not yet supported'
+        );
+        return;
+      }
+
+      const segmentation =
+        cornerstoneTools.segmentation.activeSegmentation.getActiveSegmentation(
+          viewport.id
+        );
+
+      const segmentIndex =
+        cornerstoneTools.segmentation.segmentIndex.getActiveSegmentIndex(
+          segmentation.segmentationId
+        );
+
+      // Get all image IDs
+      const imageIds = viewport.getImageIds();
+      const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+
+      const pointLists = [];
+      let foundPrevious = false;
+      let foundNext = false;
+
+      // Check slices with increasing offset until we find points or reach max breadth
+      for (let offset = 1; offset <= this._searchBreadth; offset++) {
+        if (!foundPrevious) {
+          const previousImageIdIndex = currentImageIdIndex - offset;
+          if (previousImageIdIndex >= 0) {
+            const previousImageId = imageIds[previousImageIdIndex];
+            const previousLabelmapImage =
+              cache.getImageByReferencedImageId(previousImageId);
+            const previousLabelmapVoxelManager =
+              previousLabelmapImage?.voxelManager;
+
+            if (previousLabelmapVoxelManager) {
+              let foundInThisSlice = false;
+              previousLabelmapVoxelManager.forEach(({ value, pointIJK }) => {
+                if (value === segmentIndex) {
+                  const worldCoords = utilities.imageToWorldCoords(
+                    previousLabelmapImage.imageId,
+                    [pointIJK[0], pointIJK[1]]
+                  );
+                  pointLists.push(worldCoords);
+                  foundInThisSlice = true;
+                }
+              });
+
+              if (foundInThisSlice) {
+                foundPrevious = true;
+              }
+            }
+          }
+        }
+
+        // Check next slice if we haven't found points in that direction yet
+        if (!foundNext) {
+          const nextImageIdIndex = currentImageIdIndex + offset;
+          if (nextImageIdIndex < imageIds.length) {
+            const nextImageId = imageIds[nextImageIdIndex];
+            const nextLabelmapImage =
+              cache.getImageByReferencedImageId(nextImageId);
+            const nextLabelmapVoxelManager = nextLabelmapImage?.voxelManager;
+
+            if (nextLabelmapVoxelManager) {
+              let foundInThisSlice = false;
+              nextLabelmapVoxelManager.forEach(({ value, pointIJK }) => {
+                if (value === segmentIndex) {
+                  const worldCoords = utilities.imageToWorldCoords(
+                    nextLabelmapImage.imageId,
+                    [pointIJK[0], pointIJK[1]]
+                  );
+                  pointLists.push(worldCoords);
+                  foundInThisSlice = true;
+                }
+              });
+
+              if (foundInThisSlice) {
+                foundNext = true;
+              }
+            }
+          }
+        }
+
+        // If we have found points in both directions, we can stop
+        if (foundPrevious && foundNext) {
+          break;
+        }
+      }
+
+      // Pick random points from the pointLists
+      this.randomPoints =
+        pointLists.length > 0
+          ? pointLists
+              .sort(() => Math.random() - 0.5)
+              .slice(0, Math.min(pointLists.length, this.numRandomPoints))
+          : [];
+    }
+
     const { canvasMask } = this;
     const ctxMask = canvasMask.getContext('2d');
     ctxMask.clearRect(0, 0, canvasMask.width, canvasMask.height);
@@ -532,14 +811,17 @@ export default class ONNXSegmentationController {
    * decoder starts running, and that encoding a new image may not start until
    * an ongoing decoder operations has completed.
    */
-  protected annotationModifiedListener = (_event?) => {
-    const currentAnnotations = this.getPromptAnnotations();
-    if (!currentAnnotations.length) {
-      return;
-    }
-    this.annotationsNeedUpdating = true;
-    this.tryLoad();
-  };
+  protected annotationModifiedListener = cornerstoneTools.utilities.debounce(
+    (_event?) => {
+      const currentAnnotations = this.getPromptAnnotations();
+      if (!currentAnnotations.length) {
+        return;
+      }
+      this.annotationsNeedUpdating = true;
+      this.tryLoad();
+    },
+    300
+  );
 
   /**
    * Disconnects the given viewport, removing the listeners.
@@ -609,7 +891,10 @@ export default class ONNXSegmentationController {
     this.getPromptAnnotations(viewport).forEach((annotation) =>
       annotationState.removeAnnotation(annotation.annotationUID)
     );
-    this.tool.rejectPreview(this.viewport.element);
+
+    if (this.tool) {
+      this.tool.rejectPreview(this.viewport.element);
+    }
   }
 
   /**
@@ -678,7 +963,7 @@ export default class ONNXSegmentationController {
    * are other high priority tasks to complete.
    */
   protected async handleImage({ imageId, sampleImageId }, imageSession) {
-    if (imageId === imageSession.imageId || this.isGpuInUse) {
+    if (imageId === imageSession.imageId || this.isGpuInUse || !this.enabled) {
       return;
     }
     const { viewport, desiredImage } = this;
@@ -820,33 +1105,53 @@ export default class ONNXSegmentationController {
     // Always use session 0 for the current session
     const [session] = this.sessions;
 
-    if (session.imageId === desiredImage.imageId) {
+    if (session?.imageId === desiredImage.imageId) {
       if (this.currentImage !== session) {
         this.currentImage = session;
       }
-      this.updateAnnotations();
+
+      if (this._enabled && this._autoSegmentMode) {
+        this.points = [];
+        this.labels = [];
+
+        // Process random points from previous segmentation if available
+        if (this.randomPoints?.length) {
+          this.randomPoints.forEach((point) => {
+            const mappedPoint = this.mapAnnotationPoint(
+              point,
+              this.currentImage.canvasPosition
+            );
+            this.points.push(...mappedPoint);
+            this.labels.push(1);
+          });
+
+          this.runDecode();
+        }
+      } else {
+        // Regular mode - process annotations
+        this.updateAnnotations();
+      }
+
       return;
     }
+
     this.handleImage(desiredImage, session);
   }
 
   /**
    * Maps world points to destination points.
-   * Assumes the destination canvas is scale to fit at 100% in both dimensions,
-   * while the source point is also assumed to be in the same position, but not
-   * the same scale.
+   * Assumes the destination canvas is defined by the canvasPosition value
    */
-  mapAnnotationPoint(worldPoint) {
-    const { viewport } = this;
-    const canvasPoint = viewport.worldToCanvas(worldPoint);
-    const { width, height } = viewport.canvas;
-    const { width: destWidth, height: destHeight } = this.canvas;
+  mapAnnotationPoint(worldPoint, canvasPosition) {
+    const { origin, downVector, rightVector } = canvasPosition;
+    // Vectors are scaled to unit vectors in canvas index space
 
-    const x = Math.trunc(
-      (canvasPoint[0] * destWidth * devicePixelRatio) / width
+    const deltaOrigin = vec3.sub([0, 0, 0], worldPoint, origin);
+    const x = Math.round(
+      vec3.dot(deltaOrigin, rightVector) / vec3.sqrLen(rightVector)
     );
-    const y = Math.trunc(
-      (canvasPoint[1] * destHeight * devicePixelRatio) / height
+    const y = Math.round(
+      vec3.dot(deltaOrigin, downVector) / vec3.sqrLen(downVector)
     );
     return [x, y];
   }
@@ -857,7 +1162,7 @@ export default class ONNXSegmentationController {
    * encoding of the image isn't ready yet, or the encoder is otherwise busy,
    * it will run the update again once the tryLoad is done at the end of the task.
    */
-  updateAnnotations() {
+  updateAnnotations(useSession = this.currentImage) {
     if (
       this.isGpuInUse ||
       !this.annotationsNeedUpdating ||
@@ -871,12 +1176,12 @@ export default class ONNXSegmentationController {
     this.labels = [];
     this.worldPoints = [];
 
-    if (!promptAnnotations?.length) {
+    if (!promptAnnotations?.length || !useSession?.canvasPosition) {
       return;
     }
     for (const annotation of promptAnnotations) {
       const handle = annotation.data.handles.points[0];
-      const point = this.mapAnnotationPoint(handle);
+      const point = this.mapAnnotationPoint(handle, useSession.canvasPosition);
       this.points.push(...point);
       if (
         annotation.metadata.toolName === ONNXSegmentationController.BoxPrompt
@@ -884,7 +1189,10 @@ export default class ONNXSegmentationController {
         // 2 and 3 are the codes for the handles on a box prompt
         this.labels.push(2, 3);
         this.points.push(
-          ...this.mapAnnotationPoint(annotation.data.handles.points[3])
+          ...this.mapAnnotationPoint(
+            annotation.data.handles.points[3],
+            useSession.canvasPosition
+          )
         );
       } else {
         const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
@@ -985,29 +1293,29 @@ export default class ONNXSegmentationController {
   createLabelmap(mask, canvasPosition, _points, _labels) {
     const { canvas, viewport } = this;
     const preview = this.tool.addPreview(viewport.element);
-    const { previewSegmentIndex, memo, segmentationId, segmentIndex } = preview;
-    const previewVoxelManager =
-      memo?.voxelManager || preview.previewVoxelManager;
+    const {
+      previewSegmentIndex,
+      memo,
+      segmentationId,
+      segmentIndex,
+      segmentationVoxelManager,
+    } = preview;
+    const previewVoxelManager = memo?.voxelManager;
     const { dimensions } = previewVoxelManager;
     const { data } = mask;
 
-    const { origin, topRight, bottomLeft } = canvasPosition;
-    const downVec = vec3.subtract(vec3.create(), bottomLeft, origin);
-    const rightVec = vec3.subtract(vec3.create(), topRight, origin);
-    // Vectors are scaled to unit vectors in CANVAS space
-    vec3.scale(downVec, downVec, 1 / canvas.height);
-    vec3.scale(rightVec, rightVec, 1 / canvas.width);
+    const { origin, rightVector, downVector } = canvasPosition;
 
     const worldPointJ = vec3.create();
     const worldPoint = vec3.create();
     const imageData = viewport.getDefaultImageData();
 
     // Assumes that the load to canvas size is bigger than the destination
-    // size - if that isnt true, then this should super-sample the data
+    // size - if that isn't true, then this should super-sample the data
     for (let j = 0; j < canvas.height; j++) {
-      vec3.scaleAndAdd(worldPointJ, origin, downVec, j);
+      vec3.scaleAndAdd(worldPointJ, origin, downVector, j);
       for (let i = 0; i < canvas.width; i++) {
-        vec3.scaleAndAdd(worldPoint, worldPointJ, rightVec, i);
+        vec3.scaleAndAdd(worldPoint, worldPointJ, rightVector, i);
         const ijkPoint = imageData.worldToIndex(worldPoint).map(Math.round);
         if (
           ijkPoint.findIndex((v, index) => v < 0 || v >= dimensions[index]) !==
@@ -1018,6 +1326,13 @@ export default class ONNXSegmentationController {
         // 4 values - RGBA - per pixel
         const maskIndex = 4 * (i + j * this.maxWidth);
         const v = data[maskIndex];
+
+        const segmentValue = segmentationVoxelManager.getAtIJKPoint(ijkPoint);
+
+        if (segmentValue !== 0 && segmentValue !== 255) {
+          continue;
+        }
+
         if (v > this.pCutoff) {
           previewVoxelManager.setAtIJKPoint(ijkPoint, previewSegmentIndex);
         } else {
@@ -1025,6 +1340,11 @@ export default class ONNXSegmentationController {
         }
       }
     }
+
+    if (this._autoSegmentMode) {
+      this.tool.doneEditMemo();
+    }
+    this.tool._previewData.isDrag = true;
 
     const voxelManager =
       previewVoxelManager.sourceVoxelManager || previewVoxelManager;
@@ -1141,16 +1461,41 @@ export default class ONNXSegmentationController {
       const cache = await caches.open('onnx');
       let cachedResponse = await cache.match(url);
       if (cachedResponse == undefined) {
+        // Trigger event when model component starts loading from network
+        triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+          name,
+          url,
+          status: 'loading',
+          source: 'network',
+        });
+
         await cache.add(url);
         cachedResponse = await cache.match(url);
         this.log(Loggers.Log, `${name} (network)`);
       } else {
+        // Trigger event when model component is loaded from cache
+        triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+          name,
+          url,
+          status: 'loaded',
+          source: 'cache',
+        });
+
         this.log(Loggers.Log, `${name} (cached)`);
       }
       const data = await cachedResponse.arrayBuffer();
       return data;
     } catch (error) {
       this.log(Loggers.Log, `${name} (network)`);
+
+      // Trigger event when model component has an error
+      triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+        name,
+        url,
+        status: 'error',
+        error,
+      });
+
       return await fetch(url).then((response) => response.arrayBuffer());
     }
   }
@@ -1172,6 +1517,14 @@ export default class ONNXSegmentationController {
       }
       urls.push(model.url);
     }
+
+    // Trigger event for model loading started
+    triggerEvent(eventTarget, ONNX_EVENTS.MODEL_LOADING_STARTED, {
+      modelConfig: this.config.model,
+      totalSize: missing,
+      urls,
+    });
+
     if (missing > 0) {
       this.log(
         Loggers.Log,
@@ -1202,16 +1555,21 @@ export default class ONNXSegmentationController {
       const sessionOptions = { ...opt, ...extra_opt };
       this.config[model.key] = model;
       imageSession[model.key] = await ort.InferenceSession.create(
-        model_bytes, // `http://localhost:4000${model.url}`,
+        model_bytes,
         sessionOptions
       );
     }
     const stop = performance.now();
-    this.log(
-      Loggers.Log,
-      `ready, ${(stop - start).toFixed(1)}ms`,
-      urls.join(', ')
-    );
+    const loadTime = stop - start;
+
+    // Trigger event for model loading completed
+    triggerEvent(eventTarget, ONNX_EVENTS.MODEL_LOADING_COMPLETED, {
+      modelConfig: this.config.model,
+      loadTimeMs: loadTime,
+      urls,
+    });
+
+    this.log(Loggers.Log, `ready, ${loadTime.toFixed(1)}ms`, urls.join(', '));
   }
 
   /**
@@ -1290,7 +1648,7 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
-    ort.env.wasm.wasmPaths = 'dist/';
+    ort.env.wasm.wasmPaths = 'ort/';
     ort.env.wasm.numThreads = config.threads;
     ort.env.wasm.proxy = config.provider == 'wasm';
 

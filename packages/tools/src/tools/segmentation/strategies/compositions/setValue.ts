@@ -1,11 +1,12 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import { handleUseSegmentCenterIndex } from '../utils/handleUseSegmentCenterIndex';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex
  * to the given location.
  * If segmentIndex is null, it will clear the given segment index instead
- * This is all done through the previewVoxelManager so that values can be recorded
+ * This is all done through the voxelManager so that values can be recorded
  * as changed, and the original values remembered.
  */
 export default {
@@ -15,42 +16,51 @@ export default {
   ) => {
     const {
       segmentsLocked,
-      segmentIndex,
       previewSegmentIndex,
-      segmentationVoxelManager,
       memo,
+      segmentationVoxelManager,
+      centerSegmentIndexInfo,
+      segmentIndex,
     } = operationData;
-
-    const previewVoxelManager =
-      memo?.voxelManager || operationData.previewVoxelManager;
 
     const existingValue = segmentationVoxelManager.getAtIndex(index);
 
-    let changed = false;
-    if (segmentIndex === null) {
-      const oldValue = previewVoxelManager.getAtIndex(index);
-      if (oldValue !== undefined) {
-        changed = previewVoxelManager.setAtIndex(index, oldValue);
-      }
+    if (segmentsLocked.includes(value)) {
       return;
     }
 
-    if (existingValue === segmentIndex || segmentsLocked.includes(value)) {
+    if (!centerSegmentIndexInfo && existingValue === segmentIndex) {
       return;
     }
 
-    // Correct for preview data getting into the image area and not accepted/rejected
-    if (existingValue === previewSegmentIndex) {
-      if (previewVoxelManager.getAtIndex(index) === undefined) {
-        // Reset the value to ensure preview gets added to the indices
-        changed = segmentationVoxelManager.setAtIndex(index, segmentIndex);
-      } else {
-        return;
-      }
+    if (
+      centerSegmentIndexInfo?.segmentIndex !== 0 &&
+      existingValue === segmentIndex
+    ) {
+      return;
     }
 
-    // Now, just update the displayed value
-    const useSegmentIndex = previewSegmentIndex ?? segmentIndex;
-    changed = previewVoxelManager.setAtIndex(index, useSegmentIndex);
+    // this means we have previewSegmentIndex
+    if (centerSegmentIndexInfo?.segmentIndex === null) {
+      memo.voxelManager.setAtIndex(index, previewSegmentIndex ?? segmentIndex);
+      return;
+    }
+
+    if (!previewSegmentIndex) {
+      let useSegmentIndex = segmentIndex;
+      if (centerSegmentIndexInfo) {
+        useSegmentIndex = centerSegmentIndexInfo.segmentIndex;
+      }
+
+      memo.voxelManager.setAtIndex(index, useSegmentIndex);
+      return;
+    }
+
+    // we have centerSegmentIndexInfo with preview enabled
+    handleUseSegmentCenterIndex({
+      operationData,
+      existingValue,
+      index,
+    });
   },
 };

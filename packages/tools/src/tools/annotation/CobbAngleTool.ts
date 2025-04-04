@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -477,6 +477,14 @@ class CobbAngleTool extends AnnotationTool {
     const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -530,9 +538,22 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_CLICK,
       this._endCallback as EventListener
     );
-
-    // element.addEventListener(Events.TOUCH_END, this._endCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_START,
+      this._mouseDownCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   _deactivateModify = (element: HTMLDivElement) => {
@@ -550,9 +571,22 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_CLICK,
       this._endCallback as EventListener
     );
-
-    // element.removeEventListener(Events.TOUCH_END, this._endCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_START,
+      this._mouseDownCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   _activateDraw = (element: HTMLDivElement) => {
@@ -578,9 +612,22 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_DOWN,
       this._mouseDownCallback as EventListener
     );
-
-    // element.addEventListener(Events.TOUCH_END, this._endCallback)
-    // element.addEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_START,
+      this._mouseDownCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   _deactivateDraw = (element: HTMLDivElement) => {
@@ -606,9 +653,22 @@ class CobbAngleTool extends AnnotationTool {
       Events.MOUSE_DOWN,
       this._mouseDownCallback as EventListener
     );
-
-    // element.removeEventListener(Events.TOUCH_END, this._endCallback)
-    // element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback)
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_START,
+      this._mouseDownCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   /**
@@ -1021,10 +1081,13 @@ class CobbAngleTool extends AnnotationTool {
       };
     }
 
+    const invalidated = annotation.invalidated;
     annotation.invalidated = false;
 
-    // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
+      triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    }
 
     return cachedStats;
   }

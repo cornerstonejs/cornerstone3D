@@ -16,6 +16,7 @@ import {
   setBrushThresholdForToolGroup,
 } from './brushThresholdForToolGroup';
 import VolumetricCalculator from './VolumetricCalculator';
+import SegmentStatsCalculator from './SegmentStatsCalculator';
 import thresholdSegmentationByRange from './thresholdSegmentationByRange';
 import contourAndFindLargestBidirectional from './contourAndFindLargestBidirectional';
 import createBidirectionalToolData from './createBidirectionalToolData';
@@ -30,10 +31,14 @@ import * as growCut from './growCut';
 import * as LabelmapMemo from './createLabelmapMemo';
 import IslandRemoval from './islandRemoval';
 import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
+import getOrCreateImageVolume from './getOrCreateImageVolume';
 import getStatistics from './getStatistics';
 import * as validateLabelmap from './validateLabelmap';
 import { computeStackLabelmapFromVolume } from '../../stateManagement/segmentation/helpers/computeStackLabelmapFromVolume';
 import { computeVolumeLabelmapFromStack } from '../../stateManagement/segmentation/helpers/computeVolumeLabelmapFromStack';
+import { getReferenceVolumeForSegmentationVolume } from './getReferenceVolumeForSegmentationVolume';
+import { getSegmentLargestBidirectional } from './getSegmentLargestBidirectional';
+import { computeMetabolicStats } from './computeMetabolicStats';
 
 export {
   thresholdVolumeByRange,
@@ -48,6 +53,7 @@ export {
   getBrushThresholdForToolGroup,
   setBrushThresholdForToolGroup,
   VolumetricCalculator,
+  SegmentStatsCalculator,
   thresholdSegmentationByRange,
   contourAndFindLargestBidirectional,
   createBidirectionalToolData,
@@ -62,8 +68,12 @@ export {
   LabelmapMemo,
   IslandRemoval,
   getOrCreateSegmentationVolume,
+  getOrCreateImageVolume,
   getStatistics,
   validateLabelmap,
   computeStackLabelmapFromVolume,
   computeVolumeLabelmapFromStack,
+  getReferenceVolumeForSegmentationVolume,
+  getSegmentLargestBidirectional,
+  computeMetabolicStats,
 };

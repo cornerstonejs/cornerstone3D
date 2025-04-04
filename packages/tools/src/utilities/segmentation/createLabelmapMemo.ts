@@ -1,7 +1,7 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities, eventTarget } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import type { Types } from '@cornerstonejs/core';
-import type { InitializedOperationData } from '../../tools/segmentation/strategies/BrushStrategy';
+import Events from '../../enums/Events';
 
 const { VoxelManager, RLEVoxelMap } = utilities;
 
@@ -17,6 +17,8 @@ export type LabelmapMemo = Types.Memo & {
   redoVoxelManager?: Types.IVoxelManager<number>;
   undoVoxelManager?: Types.IVoxelManager<number>;
   memo?: LabelmapMemo;
+  /** A unique identifier for this memo */
+  id: string;
 };
 
 /**
@@ -25,12 +27,9 @@ export type LabelmapMemo = Types.Memo & {
  */
 export function createLabelmapMemo<T>(
   segmentationId: string,
-  segmentationVoxelManager: Types.IVoxelManager<T>,
-  preview?: InitializedOperationData
+  segmentationVoxelManager: Types.IVoxelManager<T>
 ) {
-  return preview
-    ? createPreviewMemo(segmentationId, preview)
-    : createRleMemo(segmentationId, segmentationVoxelManager);
+  return createRleMemo(segmentationId, segmentationVoxelManager);
 }
 
 /**
@@ -47,6 +46,8 @@ export function restoreMemo(isUndo?: boolean) {
   });
   const slices = useVoxelManager.getArrayOfModifiedSlices();
   triggerSegmentationDataModified(this.segmentationId, slices);
+
+  // Event dispatch moved to historyMemo/index.ts
 }
 
 /**
@@ -66,31 +67,8 @@ export function createRleMemo<T>(
     commitMemo,
     segmentationVoxelManager,
     voxelManager,
-  };
-  return state;
-}
-
-/**
- * Creates a preview memo.
- */
-export function createPreviewMemo(
-  segmentationId: string,
-  preview: InitializedOperationData
-) {
-  const {
-    memo: previewMemo,
-    segmentationVoxelManager,
-    previewVoxelManager,
-  } = preview;
-
-  const state = {
-    segmentationId,
-    restoreMemo,
-    commitMemo,
-    segmentationVoxelManager,
-    voxelManager: previewVoxelManager,
-    memo: previewMemo,
-    preview,
+    id: utilities.uuidv4(),
+    operationType: 'labelmap',
   };
   return state;
 }
@@ -110,7 +88,7 @@ function commitMemo() {
   const undoVoxelManager = VoxelManager.createRLEHistoryVoxelManager(
     segmentationVoxelManager
   );
-  // @ts-expect-error - TODO: fix this
+  // @ts-expect-error
   RLEVoxelMap.copyMap(undoVoxelManager.map, this.voxelManager.map);
   for (const key of this.voxelManager.modifiedSlices.keys()) {
     undoVoxelManager.modifiedSlices.add(key);

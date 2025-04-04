@@ -1,4 +1,9 @@
-import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  imageLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
@@ -7,7 +12,10 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addBrushSizeSlider,
+  labelmapTools,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
+const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
 // This is for debugging purposes
 console.warn(
@@ -87,6 +95,7 @@ const brushInstanceNames = {
   ThresholdBrushCircle: 'ThresholdBrushCircle',
   ThresholdBrushSphere: 'ThresholdBrushSphere',
   DynamicThreshold: 'DynamicThreshold',
+  DynamicThresholdWithIslandRemoval: 'DynamicThresholdWithIslandRemoval',
 };
 
 const brushStrategies = {
@@ -96,6 +105,8 @@ const brushStrategies = {
   [brushInstanceNames.ThresholdBrushCircle]: 'THRESHOLD_INSIDE_CIRCLE',
   [brushInstanceNames.ThresholdBrushSphere]: 'THRESHOLD_INSIDE_SPHERE',
   [brushInstanceNames.DynamicThreshold]: 'THRESHOLD_INSIDE_CIRCLE',
+  [brushInstanceNames.DynamicThresholdWithIslandRemoval]:
+    'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
 };
 
 const brushValues = [
@@ -105,12 +116,14 @@ const brushValues = [
   brushInstanceNames.ThresholdBrushCircle,
   brushInstanceNames.ThresholdBrushSphere,
   brushInstanceNames.DynamicThreshold,
+  brushInstanceNames.DynamicThresholdWithIslandRemoval,
 ];
 
 const thresholdBrushValues = [
   brushInstanceNames.ThresholdBrushCircle,
   brushInstanceNames.ThresholdBrushSphere,
   brushInstanceNames.DynamicThreshold,
+  brushInstanceNames.DynamicThresholdWithIslandRemoval,
 ];
 
 const optionsValues = [
@@ -123,7 +136,7 @@ const optionsValues = [
 let viewport;
 const viewportId2 = 'STACK_VIEWPORT_2';
 
-const segmentationIds = ['STACK_SEGMENTATION', 'STACK_SEGMENTATION_2'];
+const segmentationIds = ['SEGMENTATION_CT', 'SEGMENTATION_MG'];
 const dropDownId = 'SEGMENTATION_DROPDOWN';
 
 function updateSegmentationDropdownOptions(
@@ -252,6 +265,24 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  id: 'Undo',
+  title: 'Undo',
+  onClick() {
+    DefaultHistoryMemo.undo();
+  },
+});
+
+addButtonToToolbar({
+  id: 'Redo',
+  title: 'Redo',
+  onClick() {
+    DefaultHistoryMemo.redo();
+  },
+});
+
+addSegmentIndexDropdown(segmentationIds[0]);
+
 addDropdownToToolbar({
   id: dropDownId,
   labelText: 'Set Active Segmentation',
@@ -291,10 +322,42 @@ function setupTools(toolGroupId) {
   toolGroup.addTool(CircleScissorsTool.toolName);
   toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addToolInstance(
+    brushInstanceNames.DynamicThreshold,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.DynamicThreshold,
+      threshold: {
+        isDynamic: true,
+        dynamicRadius: 3,
+      },
+      preview: {
+        enabled: true,
+      },
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.DynamicThresholdWithIslandRemoval,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.DynamicThresholdWithIslandRemoval,
+      threshold: {
+        isDynamic: true,
+        dynamicRadius: 3,
+      },
+      preview: {
+        enabled: true,
+      },
+    }
+  );
+  toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.CircularBrush,
+      preview: {
+        enabled: true,
+      },
+      useCenterSegmentIndex: true,
     }
   );
   toolGroup.addToolInstance(
@@ -317,6 +380,10 @@ function setupTools(toolGroupId) {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.ThresholdBrushCircle,
+      threshold: {
+        range: [-150, -70],
+        isDynamic: false,
+      },
     }
   );
 
@@ -325,6 +392,10 @@ function setupTools(toolGroupId) {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.ThresholdBrushSphere,
+      threshold: {
+        range: [100, 1000],
+        isDynamic: false,
+      },
     }
   );
 

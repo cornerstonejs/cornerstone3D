@@ -24,7 +24,7 @@ const { DicomMetaDictionary } = dcmjs.data;
  * @param csTools - cornerstone tool instance
  * @returns Report object containing the dataset
  */
-function generateRTSSFromSegmentations(
+async function generateRTSSFromSegmentations(
     segmentations,
     metadataProvider,
     DicomMetadataStore
@@ -32,7 +32,7 @@ function generateRTSSFromSegmentations(
     // Convert segmentations to ROIContours
     const roiContours = [];
 
-    const contourSets = generateContourSetsFromLabelmap({
+    const contourSets = await generateContourSetsFromLabelmap({
         segmentations
     });
 

@@ -19,6 +19,10 @@ export default {
 
     const segVolume = getOrCreateSegmentationVolume(segmentationId);
 
+    if (!segVolume) {
+      return;
+    }
+
     operationData.segmentationVoxelManager = segVolume.voxelManager;
     operationData.segmentationImageData = segVolume.imageData;
     return;
