@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.5...v3.8.6) (2025-04-04)
+
+### Bug Fixes
+
+- **flip:** seperate flip calls ([#1868](https://github.com/cornerstonejs/cornerstone3D/issues/1868)) ([f742a18](https://github.com/cornerstonejs/cornerstone3D/commit/f742a1845e8a26f27fe94ccbf1062e523658a3c3))
+
 ## [3.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.4...v3.8.5) (2025-04-04)
 
 ### Bug Fixes
