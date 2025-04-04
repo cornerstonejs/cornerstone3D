@@ -86,4 +86,16 @@ test.describe('Stack Viewport API', async () => {
       screenShotPaths.stackAPI.resetViewport
     );
   });
+
+  test('should flip both h and v and be able to scroll and keep the flip', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: 'Flip H' }).click();
+    await page.getByRole('button', { name: 'Flip V' }).click();
+
+    // click on next image
+    await page.getByRole('button', { name: 'Next Image' }).click();
+    const locator = page.locator('.cornerstone-canvas');
+    await checkForScreenshot(page, locator, screenShotPaths.stackAPI.flipBoth);
+  });
 });
