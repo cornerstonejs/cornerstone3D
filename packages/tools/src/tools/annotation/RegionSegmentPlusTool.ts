@@ -78,7 +78,10 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const refVolume = cache.getVolume(
       this.growCutData.segmentation.referencedVolumeId
     );
-    const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {});
+    const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {}) || {
+      positiveSeedIndices: new Set(),
+      negativeSeedIndices: new Set(),
+    };
 
     const { positiveSeedIndices, negativeSeedIndices } = seeds;
 

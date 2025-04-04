@@ -57,6 +57,7 @@ import {
 import * as geometricSurfaceUtils from './geometricSurfaceUtils';
 import setAnnotationLabel from './setAnnotationLabel';
 import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
+import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 
 export {
   math,
@@ -106,4 +107,5 @@ export {
   geometricSurfaceUtils,
   setAnnotationLabel,
   moveAnnotationToViewPlane,
+  getOrCreateImageVolume,
 };
