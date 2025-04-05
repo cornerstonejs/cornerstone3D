@@ -989,17 +989,19 @@ class CircleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            isInObject: (pointLPS) =>
-              pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
-
+        let pointsInShape;
+        if (imageData.getScalarData() !== null) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              isInObject: (pointLPS) =>
+                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
