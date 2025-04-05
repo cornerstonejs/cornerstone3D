@@ -371,10 +371,6 @@ class SegmentBidirectionalTool extends BidirectionalTool {
           }
         );
       }
-
-      const dataId1 = `${annotationUID}-line-1`;
-      const dataId2 = `${annotationUID}-line-2`;
-
       const lineUID = '0';
       drawLineSvg(
         svgDrawingHelper,
@@ -387,8 +383,7 @@ class SegmentBidirectionalTool extends BidirectionalTool {
           lineWidth,
           lineDash,
           shadow,
-        },
-        dataId1
+        }
       );
 
       const secondLineUID = '1';
@@ -403,8 +398,7 @@ class SegmentBidirectionalTool extends BidirectionalTool {
           lineWidth,
           lineDash,
           shadow,
-        },
-        dataId2
+        }
       );
 
       renderStatus = true;
