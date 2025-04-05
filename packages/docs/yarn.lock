@@ -1187,10 +1187,10 @@
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.5.0.tgz#bb504579c1cae923e6576a4f5da43d25f97bdbd9"
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
-"@cornerstonejs/adapters@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/adapters/-/adapters-3.7.10.tgz#8df0506b6048dd7f0f3d17e8083d7be922627574"
-  integrity sha512-GorV6k+ty+0RdHrqhtDNr2wYbZ/t/+lCxH9rvyGYyqFdxLLyO7ltdbvsN0+SVp4w+qR+dCNuUKWXTlwE9GtFNw==
+"@cornerstonejs/adapters@^3.8.2":
+  version "3.8.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/adapters/-/adapters-3.8.2.tgz#44faeeb1cf3a384254630cf17c015e7427853feb"
+  integrity sha512-6bxIa1BBvWD/X06MbB4QBOScTYmA1eTdLwg9jL+dHw5od8/CQhR22pfa0ZWsa8lkfFAMAdC1cU8BbiPNadG/0Q==
   dependencies:
     "@babel/runtime-corejs2" "^7.17.8"
     buffer "^6.0.3"
@@ -1218,20 +1218,20 @@
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.7.tgz#784394d05d8cf735640e9c3baa206535ee8e0376"
   integrity sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w==
 
-"@cornerstonejs/core@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/core/-/core-3.7.10.tgz#3ea2fed67b7265d664d2d828f455e1f5e4ebeb28"
-  integrity sha512-WK9EY8kTxTQTXFCdBldMrYjO3IZPWhT88ByaHHos3Zs5QRR6zeITN1hHOaSCBhP06zZUv0j+olAvzTEMxcghcw==
+"@cornerstonejs/core@^3.8.2":
+  version "3.8.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/core/-/core-3.8.2.tgz#27f7bc10603f3ce6fd41057ec4ef52b09e3a62d5"
+  integrity sha512-zhtCXXXZMGooVYCmsfL7sC/o7wSFxXAfFm4rOp92t5m8n8UFbtmcLAB167/EEp/csHiRuv0PR/dOgd6y9tLb0A==
   dependencies:
     "@kitware/vtk.js" "32.12.1"
     comlink "^4.4.1"
     gl-matrix "^3.4.3"
     loglevel "^1.9.2"
 
-"@cornerstonejs/dicom-image-loader@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/dicom-image-loader/-/dicom-image-loader-3.7.10.tgz#dbbe0c379cf134651793c5a962e05935647fc9fd"
-  integrity sha512-Nd1KiDXg101DaDrj+0bL6SmAYo/BUV4N8G5UvaocoDz65r6RsR6eE3H+zCXftGgQZ2IlHEnQUCebdCyX+oXe4A==
+"@cornerstonejs/dicom-image-loader@^3.8.2":
+  version "3.8.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/dicom-image-loader/-/dicom-image-loader-3.8.2.tgz#dcfefe7fb77b63286e84c5bfbdaecd0647ef4e3f"
+  integrity sha512-K0z5N+X6GpuRTfZhyuqpLIl+Y4JePyybQof/ZZ4aqwEIUm9NjXAYEUiYZEQQGtLItkPw+Vl7TbWA0FeI5GAC3Q==
   dependencies:
     "@cornerstonejs/codec-charls" "^1.2.3"
     "@cornerstonejs/codec-libjpeg-turbo-8bit" "^1.2.2"
@@ -1243,17 +1243,17 @@
     pako "^2.0.4"
     uuid "^9.0.0"
 
-"@cornerstonejs/nifti-volume-loader@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/nifti-volume-loader/-/nifti-volume-loader-3.7.10.tgz#d214676a87bf6bca8120db73f601d64b3cee066e"
-  integrity sha512-4VeeE9Y21qDd/0xLxJB1nJ7SZjxcIlHh+R3yQKJPNLlqI7yhpO9TSGVWawi1wjVcUtqXMD1GMSw6Jju+K8pCMA==
+"@cornerstonejs/nifti-volume-loader@^3.8.2":
+  version "3.8.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/nifti-volume-loader/-/nifti-volume-loader-3.8.2.tgz#ad38f67cfdef835f3ea1b88ff05ad720eb0e9dca"
+  integrity sha512-drfoRbKj6rZJEZ7cWmGLqVFrbeGh0cXrLk3sY0f5lChjRPDFfsc6j6553pu8l+LWIcLF7ZyR5F+6D89RTofZOQ==
   dependencies:
     nifti-reader-js "^0.6.8"
 
-"@cornerstonejs/tools@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/tools/-/tools-3.7.10.tgz#68e43cbe879e90b8f9001f7d65808b85b5d65eaa"
-  integrity sha512-kOaoidftQIdlWLgwysYyKGhnWOsEAicihrVOGyAheJtgSpIEmtRAsHrLUyKITg3PIlmKVdIvZW1bxvpnmsZtqg==
+"@cornerstonejs/tools@^3.8.2":
+  version "3.8.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/tools/-/tools-3.8.2.tgz#661cd986a19e5e3f49fffedea365aa290c0646fb"
+  integrity sha512-da8pJGv7b+sjAGIomH5CyM8+xHOvjhLipY4i/gp7Z6f5Wr5b/gYWc/l0CTD9G0aVFkyP06scGaBjwv0Ei1mqMQ==
   dependencies:
     "@types/offscreencanvas" "2019.7.3"
     comlink "^4.4.1"
@@ -6264,9 +6264,9 @@ ignore@^5.2.0, ignore@^5.2.4:
   integrity sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==
 
 image-size@^1.0.2:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/image-size/-/image-size-1.2.0.tgz#312af27a2ff4ff58595ad00b9344dd684c910df6"
-  integrity sha512-4S8fwbO6w3GeCVN6OPtA9I5IGKkcDMPcKndtUlpJuCwu7JLjtj7JZpwqLuyY2nrmQT3AWsCJLSKPsc2mPBSl3w==
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/image-size/-/image-size-1.2.1.tgz#ee118aedfe666db1a6ee12bed5821cde3740276d"
+  integrity sha512-rH+46sQJ2dlwfjfhCyNx5thzrv+dtmBIhPHk0zgRUukHzZ/kRueTJXoYYsclBaKcSMBWuGbOFXtioLpzTb5euw==
   dependencies:
     queue "6.0.2"
 
