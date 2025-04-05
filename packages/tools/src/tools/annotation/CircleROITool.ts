@@ -137,6 +137,7 @@ class CircleROITool extends AnnotationTool {
         // Radius of the circle to draw  at the center point of the circle.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -871,6 +872,9 @@ class CircleROITool extends AnnotationTool {
     renderingEngine,
     enabledElement
   ) => {
+    if (!this.configuration.calculateStats) {
+      return;
+    }
     const data = annotation.data;
     const { element } = viewport;
 
