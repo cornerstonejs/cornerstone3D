@@ -59,6 +59,7 @@ import * as volumeLoader from './loaders/volumeLoader';
 import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
 import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
+// eslint-disable-next-line import/no-duplicates
 import type * as Types from './types';
 import type {
   IRetrieveConfiguration,
@@ -66,6 +67,7 @@ import type {
   RetrieveOptions,
   RetrieveStage,
   ImageLoadListener,
+  // eslint-disable-next-line import/no-duplicates
 } from './types';
 import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
@@ -73,6 +75,7 @@ import { registerImageLoader } from './loaders/imageLoader'; // since it is used
 import triggerEvent from './utilities/triggerEvent';
 import { cornerstoneStreamingImageVolumeLoader } from './loaders/cornerstoneStreamingImageVolumeLoader';
 import { cornerstoneStreamingDynamicImageVolumeLoader } from './loaders/cornerstoneStreamingDynamicImageVolumeLoader';
+import { cornerstoneMeshLoader } from './loaders/cornerstoneMeshLoader';
 
 import {
   setVolumesForViewports,
@@ -155,6 +158,7 @@ export {
   resetUseCPURendering,
   // Geometry Loader
   geometryLoader,
+  cornerstoneMeshLoader,
   ProgressiveRetrieveImages,
   cornerstoneStreamingImageVolumeLoader,
   cornerstoneStreamingDynamicImageVolumeLoader,

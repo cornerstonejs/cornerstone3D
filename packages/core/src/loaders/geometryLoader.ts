@@ -1,23 +1,41 @@
 import '@kitware/vtk.js/Rendering/Profiles/Geometry';
-
 import cache from '../cache/cache';
 import { GeometryType } from '../enums';
 import type {
   IGeometry,
   PublicContourSetData,
   PublicSurfaceData,
+  PublicMeshData,
   IGeometryLoadObject,
   GeometryLoaderFn,
 } from '../types';
 import { createContourSet } from './utils/contourSet/createContourSet';
 import { createSurface } from './utils/surface/createSurface';
+import { createMesh } from './utils/mesh/createMesh';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import type { GeometryLoaderOptions } from '../types/GeometryLoaderFn';
+import { cornerstoneMeshLoader } from './cornerstoneMeshLoader';
 
-interface GeometryOptions {
+let loaderOptions: GeometryLoaderOptions = {
+  // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
+  beforeSend(xhr) {
+    // before send code
+  },
+};
+
+export function setOptions(newOptions: GeometryLoaderOptions): void {
+  loaderOptions = Object.assign(loaderOptions, newOptions);
+}
+
+export function getOptions(): GeometryLoaderOptions {
+  return loaderOptions;
+}
+
+export interface GeometryOptions {
   type: GeometryType;
-  geometryData: PublicContourSetData | PublicSurfaceData;
+  geometryData: PublicContourSetData | PublicSurfaceData | PublicMeshData;
   sizeInBytes?: number;
   segmentIndex?: number;
 }
@@ -58,7 +76,7 @@ function loadGeometryFromGeometryLoader(
     loader = unknownGeometryLoader;
   }
 
-  const geometryLoadObject = loader(geometryId, options);
+  const geometryLoadObject = loader(geometryId, options, loaderOptions);
 
   // Broadcast a geometry loaded event once the geometry is loaded
   geometryLoadObject.promise.then(
@@ -172,8 +190,14 @@ export function createAndCacheGeometry(
       geometryId,
       options.geometryData as PublicSurfaceData
     );
+  } else if (options.type === GeometryType.MESH) {
+    createMesh(geometryId, options.geometryData as PublicMeshData).then(
+      (mesh) => {
+        geometry = mesh;
+      }
+    );
   } else {
-    throw new Error('Unknown geometry type');
+    throw new Error(`Unknown geometry type: ${options.type}`);
   }
 
   cache.putGeometrySync(geometryId, geometry);
@@ -210,3 +234,5 @@ export function registerUnknownGeometryLoader(
 
   return oldGeometryLoader;
 }
+
+registerGeometryLoader('mesh', cornerstoneMeshLoader);

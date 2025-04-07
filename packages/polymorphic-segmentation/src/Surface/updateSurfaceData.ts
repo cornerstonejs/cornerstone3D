@@ -89,7 +89,7 @@ export async function updateSurfaceData(segmentationId) {
   const promises = surfacesObj.map(({ data, segmentIndex }) => {
     const geometryId = `segmentation_${segmentationId}_surface_${segmentIndex}`;
 
-    const geometry = cache.getGeometry(geometryId);
+    const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
 
     if (!geometry) {
       // means it is a new segment getting added while we were

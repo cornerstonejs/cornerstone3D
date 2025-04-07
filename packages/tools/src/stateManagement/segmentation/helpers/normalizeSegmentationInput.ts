@@ -6,6 +6,7 @@ import type {
   RepresentationData,
 } from '../../../types/SegmentationStateTypes';
 import type { ContourSegmentationData } from '../../../types/ContourTypes';
+import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
 import type { SurfaceSegmentationData } from '../../../types/SurfaceTypes';
 
@@ -103,9 +104,9 @@ function normalizeSurfaceSegments(
 ): void {
   const { geometryIds } = surfaceData;
   geometryIds?.forEach((geometryId) => {
-    const geometry = cache.getGeometry(geometryId);
+    const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
     if (geometry?.data) {
-      const { segmentIndex } = geometry.data;
+      const { segmentIndex } = geometry.data as Types.ISurface;
       normalizedSegments[segmentIndex] = { segmentIndex } as Segment;
     }
   });
