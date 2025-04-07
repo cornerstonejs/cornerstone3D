@@ -2751,9 +2751,10 @@ class StackViewport extends Viewport {
     const { direction, spacing } = imageData;
 
     const imageId = getClosestImageId(
-      { direction: direction, spacing, imageIds },
+      { direction, spacing, imageIds },
       worldPos,
-      this.getCamera().viewPlaneNormal
+      this.getCamera().viewPlaneNormal,
+      { ignoreSpacing: true }
     );
 
     const index = imageIds.indexOf(imageId);

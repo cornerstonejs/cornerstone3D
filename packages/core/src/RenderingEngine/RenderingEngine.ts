@@ -353,7 +353,7 @@ class RenderingEngine {
    * @returns viewport
    */
   public getViewport(viewportId: string): IViewport {
-    return this._viewports.get(viewportId);
+    return this._viewports?.get(viewportId);
   }
 
   /**
