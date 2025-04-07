@@ -25,6 +25,7 @@ type NamedStatistics = {
   lesionGlycolysis?: Statistics & { name: 'lesionGlycolysis' };
   maxLPS?: Statistics & { name: 'maxLPS' };
   minLPS?: Statistics & { name: 'minLPS' };
+  center?: Statistics & { name: 'center' };
   /**
    * A set of stats callback arguments containing maximum values.
    * This can be used to test peak intensities in the areas.
