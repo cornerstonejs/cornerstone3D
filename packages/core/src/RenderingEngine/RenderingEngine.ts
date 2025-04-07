@@ -421,6 +421,34 @@ class RenderingEngine {
     return viewports.filter(isVolumeViewport) as IVolumeViewport[];
   }
 
+/**
+ * Retrieves a volume viewport by its ID. used just for type safety
+ *
+ * @param viewportId - The ID of the viewport to retrieve.
+ * @returns The volume viewport with the specified ID.
+ * @throws Error if the viewport with the given ID does not exist or is not a StackViewport.
+*/
+  public getVolumeViewport(viewportId:string): IVolumeViewport {
+    this._throwIfDestroyed();
+
+    const viewports = this.getViewports();
+
+    const isVolumeViewport = (
+      viewport: IViewport
+    ): viewport is BaseVolumeViewport => {
+      return viewport instanceof BaseVolumeViewport;
+    };
+
+    const VolumeViewportList = viewports.filter(isVolumeViewport) as IVolumeViewport[];
+
+    const volumeViewport = VolumeViewportList.find(viewport =>viewportId === viewport.id)
+
+    if(!volumeViewport){
+       throw new Error(`Viewport with Id ${viewportId} does not exist`);
+    }
+    return volumeViewport;
+  }
+
   /**
    * Renders all viewports on the next animation frame.
    *
