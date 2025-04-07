@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.0...v3.9.1) (2025-04-07)
+
+### Bug Fixes
+
+- **jump:** Add Center Statistic, and Refactor Code and choose closest imageId for stack to jump ([#1977](https://github.com/cornerstonejs/cornerstone3D/issues/1977)) ([3d8ab9e](https://github.com/cornerstonejs/cornerstone3D/commit/3d8ab9ee5c28d984a4aea7f459c0a736215470b9))
+
 # [3.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.6...v3.9.0) (2025-04-07)
 
 ### Features
