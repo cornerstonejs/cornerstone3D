@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.2...v3.9.3) (2025-04-08)
+
+### Bug Fixes
+
+- flip flickering ([#1984](https://github.com/cornerstonejs/cornerstone3D/issues/1984)) ([5602a59](https://github.com/cornerstonejs/cornerstone3D/commit/5602a59f32805c0f75d7e1acf5f2abcc30bf3d11))
+
 ## [3.9.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.1...v3.9.2) (2025-04-08)
 
 ### Bug Fixes
