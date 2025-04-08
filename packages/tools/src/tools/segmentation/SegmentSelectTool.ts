@@ -2,11 +2,15 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type { PublicToolProps, ToolProps, EventTypes } from '../../types';
+import type {
+  PublicToolProps,
+  ToolProps,
+  EventTypes,
+  SVGDrawingHelper,
+} from '../../types';
 import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/activeSegmentation';
-import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
 import {
   getHoveredContourSegmentationAnnotation,
@@ -14,10 +18,8 @@ import {
   getSegmentIndexAtWorldPoint,
 } from '../../utilities/segmentation';
 import { state } from '../../store/state';
-import type {
-  Segmentation,
-  SegmentationRepresentation,
-} from '../../types/SegmentationStateTypes';
+import type { Segmentation } from '../../types/SegmentationStateTypes';
+import drawLinkedTextBoxSvg from '../../drawingSvg/drawLinkedTextBox';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -27,6 +29,8 @@ import type {
 class SegmentSelectTool extends BaseTool {
   static toolName;
   private hoverTimer: ReturnType<typeof setTimeout> | null;
+  private data;
+  private _editData;
 
   static SelectMode = {
     Inside: 'Inside',
@@ -34,7 +38,21 @@ class SegmentSelectTool extends BaseTool {
   };
 
   constructor(
-    toolProps: PublicToolProps = {},
+    toolProps: PublicToolProps & Record<string, unknown> = {
+      data: {
+        handles: {
+          textBox: {
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          },
+        },
+      },
+    },
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
@@ -45,6 +63,19 @@ class SegmentSelectTool extends BaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+    this.data = toolProps.data ?? {
+      handles: {
+        textBox: {
+          worldPosition: <Types.Point3>[0, 0, 0],
+          worldBoundingBox: {
+            topLeft: <Types.Point3>[0, 0, 0],
+            topRight: <Types.Point3>[0, 0, 0],
+            bottomLeft: <Types.Point3>[0, 0, 0],
+            bottomRight: <Types.Point3>[0, 0, 0],
+          },
+        },
+      },
+    };
     this.hoverTimer = null;
   }
 
@@ -122,6 +153,14 @@ class SegmentSelectTool extends BaseTool {
           viewport,
         }
       );
+      const segment = activeSegmentation.segments[hoveredSegmentIndex];
+      const label = segment?.label;
+      const canvasCoordinates = viewport.worldToCanvas(worldPoint);
+      this._editData = {
+        hoveredSegmentIndex,
+        hoveredSegmentLabel: label,
+        canvasCoordinates,
+      };
     } else {
       if (representationData.Labelmap) {
         hoveredSegmentIndex = getSegmentIndexAtLabelmapBorder(
@@ -153,6 +192,47 @@ class SegmentSelectTool extends BaseTool {
     // update states
     triggerSegmentationModified(segmentationId);
     triggerAnnotationRenderForViewportIds(viewportIds);
+  }
+
+  renderAnnotation(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: SVGDrawingHelper
+  ) {
+    if (!this._editData) {
+      return;
+    }
+
+    const { viewport } = enabledElement;
+
+    const {
+      hoveredSegmentIndex,
+      hoveredSegmentLabel = '(empty)',
+      canvasCoordinates,
+    } = this._editData;
+
+    const textBoxPosition = viewport.worldToCanvas(
+      this.data.handles.textBox.worldPosition
+    );
+
+    const boundingBox = drawLinkedTextBoxSvg(
+      svgDrawingHelper,
+      'annotationUID',
+      'textBoxUID',
+      [hoveredSegmentLabel],
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      {}
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+
+    this.data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
   }
 }
 

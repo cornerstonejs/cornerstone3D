@@ -115,7 +115,9 @@ function setupTools(toolGroupId, isContour = false) {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentSelectTool.toolName);
+  toolGroup.addTool(SegmentSelectTool.toolName, {
+    mode: SegmentSelectTool.SelectMode.Inside,
+  });
 
   toolGroup.setToolActive(SegmentSelectTool.toolName);
 
