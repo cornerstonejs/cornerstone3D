@@ -119,7 +119,6 @@ function calculateUSPixelSpacing(instance) {
   };
 }
 
-// See https://github.com/OHIF/Viewers/blob/94a9067fe3d291d30e25a1bda5913511388edea2/platform/core/src/utils/metadataProvider/getPixelSpacingInformation.js
 export default function getPixelSpacingInformation(instance) {
   // See http://gdcm.sourceforge.net/wiki/index.php/Imager_Pixel_Spacing
   // TODO: Add manual calibration
