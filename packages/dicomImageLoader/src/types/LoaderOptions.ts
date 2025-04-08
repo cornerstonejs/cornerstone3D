@@ -32,13 +32,28 @@ export interface LoaderOptions {
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
   /**
-   * Specifies the url/path to the web worker.
+   * Pass a custom web worker factory function to create the web worker.
    *
-   * By default, the web worker is included in the final build by your bundler
-   * (webpack, vite etc). However, for in some cases, it may be required to
-   * manually specify the deployment path.  Specifically this is useful for
-   * Angular projects, allowing the `decodeImageFrameWorker.js` to be included
-   * in the standard Angular build process.
+   * By default, cornerstone creates the path to the web worker, relying on a
+   * bundler to resolve the path. This is not always possible, especially when
+   * using a custom bundler or when the web worker is not in the same directory
+   * as the main script.  This is particularly helpful when including
+   * `@cornerstonejs/dicom-image-loader` in an Angular project.
+   *
+   * This option allows you to provide a custom function that returns a new web
+   * worker instance.
+   *
+   * @example
+   * ```typescript
+   * const customWebWorkerFactory = () => {
+   *  const worker = new Worker('path/to/your/customWorker.js');
+   *  return worker;
+   * }
+   *
+   * const loaderOptions: LoaderOptions = {
+   *   webWorkerFactory: customWebWorkerFactory,
+   * }
+   * ```
    */
   webWorkerFactory?: () => Worker;
 }
