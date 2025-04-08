@@ -1,14 +1,17 @@
+import openJphFactory from '@cornerstonejs/codec-openjph/wasmjs'; // @ts-ignore
 import type { ByteArray } from 'dicom-parser';
-// @ts-ignore
-import openJphFactory from '@cornerstonejs/codec-openjph/wasmjs';
-// @ts-ignore
-// import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
+import type { LoaderDecodeOptions } from '../../types';
+
+/**
+ * Default URL to load the OpenJPH codec from.
+ *
+ * In order for this to be loaded correctly, you will need to configure your
+ * bundler to treat `.wasm` files as an asset/resource.
+ */
 const openjphWasm = new URL(
   '@cornerstonejs/codec-openjph/wasm',
   import.meta.url
 );
-
-import type { LoaderDecodeOptions } from '../../types';
 
 const local: {
   codec: unknown;
@@ -34,7 +37,17 @@ function calculateSizeAtDecompositionLevel(
   return result;
 }
 
-export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
+/**
+ *
+ * @param decodeConfig
+ * @param wasmUrlCodecOpenJph Optional path to load the OpenJPH WASM codec from.
+ * If not given, it will default to using the default `openjphWasm`
+ * @returns
+ */
+export function initialize(
+  decodeConfig?: LoaderDecodeOptions,
+  wasmUrlCodecOpenJph?: string
+): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.codec) {
@@ -44,6 +57,9 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   const openJphModule = openJphFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
+        if (wasmUrlCodecOpenJph) {
+          return wasmUrlCodecOpenJph;
+        }
         return openjphWasm.toString();
       }
 
@@ -61,8 +77,12 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
-async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
-  await initialize();
+async function decodeAsync(
+  compressedImageFrame: ByteArray,
+  imageInfo,
+  wasmUrlCodecOpenJph?: string
+) {
+  await initialize(undefined, wasmUrlCodecOpenJph);
   // const decoder = local.decoder; // This is much slower for some reason
   // @ts-expect-error
   const decoder = new local.codec.HTJ2KDecoder();

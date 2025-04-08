@@ -18,11 +18,17 @@ function init(options: LoaderOptions = {}): void {
   setOptions(options);
   registerLoaders();
 
+  const isValidWorkerFactory = validateWorkerFactoryOption(options);
+
   const workerManager = getWebWorkerManager();
   const maxWorkers = options?.maxWebWorkers || getReasonableWorkerCount();
-  workerManager.registerWorker('dicomImageLoader', workerFn, {
-    maxWorkerInstances: maxWorkers,
-  });
+  workerManager.registerWorker(
+    'dicomImageLoader',
+    isValidWorkerFactory ? options.webWorkerFactory : workerFn,
+    {
+      maxWorkerInstances: maxWorkers,
+    }
+  );
 }
 
 function getReasonableWorkerCount(): number {
@@ -35,3 +41,14 @@ function getReasonableWorkerCount(): number {
 }
 
 export default init;
+
+function validateWorkerFactoryOption(options: LoaderOptions) {
+  const isValidWorkerFactory =
+    options.webWorkerFactory && typeof options.webWorkerFactory === 'function';
+  if (!!options.webWorkerFactory && !isValidWorkerFactory) {
+    console.warn(
+      'webWorkerFactory should be a function that returns a Worker instance.'
+    );
+  }
+  return isValidWorkerFactory;
+}

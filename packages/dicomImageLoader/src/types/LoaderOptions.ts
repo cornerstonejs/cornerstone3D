@@ -31,4 +31,14 @@ export interface LoaderOptions {
   errorInterceptor?: (error: LoaderXhrRequestError) => void;
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
+  /**
+   * Specifies the url/path to the web worker.
+   *
+   * By default, the web worker is included in the final build by your bundler
+   * (webpack, vite etc). However, for in some cases, it may be required to
+   * manually specify the deployment path.  Specifically this is useful for
+   * Angular projects, allowing the `decodeImageFrameWorker.js` to be included
+   * in the standard Angular build process.
+   */
+  webWorkerFactory?: () => Worker;
 }
