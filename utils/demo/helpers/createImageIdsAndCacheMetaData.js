@@ -104,6 +104,7 @@ export default async function createImageIdsAndCacheMetaData({
         calibratedPixelSpacingMetadataProvider.add(imageId, {
           rowPixelSpacing: parseFloat(pixelSpacing[0]),
           columnPixelSpacing: parseFloat(pixelSpacing[1]),
+          type: pixelSpacingInformation.type,
         });
       }
     }
