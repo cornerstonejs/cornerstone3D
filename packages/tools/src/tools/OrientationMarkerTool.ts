@@ -257,7 +257,8 @@ class OrientationMarkerTool extends BaseTool {
 
       const renderWindow = viewport
         .getRenderingEngine()
-        .offscreenMultiRenderWindow.getRenderWindow();
+        .getOffScreenMultiRenderWindow(viewport.id)
+        .getRenderWindow();
       renderWindow.render();
       viewport.getRenderingEngine().render();
 
@@ -314,7 +315,8 @@ class OrientationMarkerTool extends BaseTool {
       const renderer = viewport.getRenderer();
       const renderWindow = viewport
         .getRenderingEngine()
-        .offscreenMultiRenderWindow.getRenderWindow();
+        .getOffScreenMultiRenderWindow(viewport.id)
+        .getRenderWindow();
 
       const {
         enabled,

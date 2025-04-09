@@ -2829,7 +2829,7 @@ class StackViewport extends Viewport {
     vtkCamera.setClippingRange(distance, distance + 0.1);
 
     const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
+      this.getRenderingEngine().getOffScreenMultiRenderWindow(this.id);
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
@@ -2874,7 +2874,7 @@ class StackViewport extends Viewport {
     vtkCamera.setClippingRange(distance, distance + 0.1);
 
     const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
+      this.getRenderingEngine().getOffScreenMultiRenderWindow(this.id);
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
