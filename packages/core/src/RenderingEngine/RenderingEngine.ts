@@ -25,6 +25,7 @@ import type {
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
@@ -75,8 +76,9 @@ class RenderingEngine {
   /** A flag which tells if the renderingEngine has been destroyed or not */
   public hasBeenDestroyed: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public offscreenMultiRenderWindow: any;
-  readonly offScreenCanvasContainer: HTMLDivElement;
+  public offscreenMultiRenderWindows: any[];
+  readonly offScreenCanvasContainers: HTMLDivElement[];
+  private _viewportToOffscreenCanvasIndex: Map<string, number>;
   private _viewports: Map<string, IViewport>;
   private _needsRender = new Set<string>();
   private _animationFrameSet = false;
@@ -99,15 +101,17 @@ class RenderingEngine {
     }
 
     if (!this.useCPURendering) {
-      this.offscreenMultiRenderWindow =
-        vtkOffscreenMultiRenderWindow.newInstance();
-      this.offScreenCanvasContainer = document.createElement('div');
-      this.offscreenMultiRenderWindow.setContainer(
-        this.offScreenCanvasContainer
+      this.offscreenMultiRenderWindows = [
+        vtkOffscreenMultiRenderWindow.newInstance(),
+      ];
+      this.offScreenCanvasContainers = [document.createElement('div')];
+      this.offscreenMultiRenderWindows[0].setContainer(
+        this.offScreenCanvasContainers[0]
       );
     }
 
     this._viewports = new Map();
+    this._viewportToOffscreenCanvasIndex = new Map();
     this.hasBeenDestroyed = false;
   }
 
@@ -522,6 +526,32 @@ class RenderingEngine {
     // wait for the next stack to load
     ctx.fillStyle = fillStyle;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  /**
+   * Returns the offscreen multi render window for the given viewport ID.
+   * @param viewportId - The ID of the viewport.
+   * @returns The offscreen multi render window for the given viewport ID.
+   */
+  public getOffscreenMultiRenderWindow(
+    viewportId: string
+  ): typeof vtkOffscreenMultiRenderWindow {
+    const index = this._viewportToOffscreenCanvasIndex.get(viewportId);
+    if (!index) {
+      throw new Error(`Viewport with Id ${viewportId} does not exist`);
+    }
+    return this.offscreenMultiRenderWindows[index];
+  }
+
+  /**
+   * Returns the renderer for the given viewport ID.
+   * @param viewportId - The ID of the viewport.
+   * @returns The renderer for the given viewport ID.
+   */
+  public getRenderer(viewportId: string): vtkRenderer {
+    const offscreenMultiRenderWindow =
+      this.getOffscreenMultiRenderWindow(viewportId);
+    return offscreenMultiRenderWindow.getRenderer(viewportId);
   }
 
   private _normalizeViewportInputEntry(
