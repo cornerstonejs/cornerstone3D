@@ -1,7 +1,5 @@
-import { utilities, Enums } from '@cornerstonejs/core';
-
-const { isEqual } = utilities;
-const { CalibrationTypes } = Enums;
+import { isEqual } from './isEqual';
+import { CalibrationTypes } from '../enums';
 
 // TODO: Use ENUMS from dcmjs
 const projectionRadiographSOPClassUIDs = new Set([
