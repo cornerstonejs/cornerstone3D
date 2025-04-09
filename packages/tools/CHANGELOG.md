@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.9.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.4...v3.9.5) (2025-04-09)
+
+### Bug Fixes
+
+- add mode check in mouseMoveCallback for SegmentSelectTool ([#1988](https://github.com/cornerstonejs/cornerstone3D/issues/1988)) ([79c2ed0](https://github.com/cornerstonejs/cornerstone3D/commit/79c2ed00db50c71fa481f32297c7a27bf69b0415))
+
 ## [3.9.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.3...v3.9.4) (2025-04-09)
 
 ### Bug Fixes
