@@ -19,7 +19,7 @@ import {
 } from '../../utilities/segmentation';
 import { state } from '../../store/state';
 import type { Segmentation } from '../../types/SegmentationStateTypes';
-import drawLinkedTextBoxSvg from '../../drawingSvg/drawLinkedTextBox';
+import { drawLinkedTextBox as drawLinkedTextBoxSvg } from '../../drawingSvg';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -160,6 +160,7 @@ class SegmentSelectTool extends BaseTool {
         hoveredSegmentIndex,
         hoveredSegmentLabel: label,
         canvasCoordinates,
+        worldPoint,
       };
     } else {
       if (representationData.Labelmap) {
@@ -206,26 +207,31 @@ class SegmentSelectTool extends BaseTool {
 
     const {
       hoveredSegmentIndex,
-      hoveredSegmentLabel = '(empty)',
+      hoveredSegmentLabel,
       canvasCoordinates,
+      worldPoint,
     } = this._editData;
 
-    const textBoxPosition = viewport.worldToCanvas(
-      this.data.handles.textBox.worldPosition
-    );
+    if (!hoveredSegmentIndex) {
+      return;
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(worldPoint);
 
     const boundingBox = drawLinkedTextBoxSvg(
       svgDrawingHelper,
-      'annotationUID',
-      'textBoxUID',
-      [hoveredSegmentLabel],
+      'segmentSelectLabelAnnotation',
+      'segmentSelectLabelTextBox',
+      [hoveredSegmentLabel ? hoveredSegmentLabel : '(unnamed segment)'],
       textBoxPosition,
-      canvasCoordinates,
+      [canvasCoordinates],
       {},
       {}
     );
 
-    const { x: left, y: top, width, height } = boundingBox;
+    const left = canvasCoordinates[0];
+    const top = canvasCoordinates[1];
+    const { width, height } = boundingBox;
 
     this.data.handles.textBox.worldBoundingBox = {
       topLeft: viewport.canvasToWorld([left, top]),
