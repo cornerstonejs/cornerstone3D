@@ -26,7 +26,7 @@ import type {
 import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import type { VtkOffscreenMultiRenderWindow } from '../types/vtkOffscreenMultiRenderWindow';
+import type { VtkOffscreenMultiRenderWindow } from '../types/VtkOffscreenMultiRenderWindow';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
