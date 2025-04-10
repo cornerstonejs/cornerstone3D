@@ -97,6 +97,10 @@
         "name": "Basic Volume using streaming WADOURI",
         "description": "Demonstrates how to displays a DICOM series (via URL) in a Volume viewport"
       },
+      "meshLoader": {
+        "name": "Load Mesh of PLY, OBJ, STL or VTP format",
+        "description": "Demonstrates how to load a mesh in a volume3D viewport"
+      },
       "webLoader": {
         "name": "Load Web images of PNG or JPG format",
         "description": "Demonstrates how render web images in a stack viewport"

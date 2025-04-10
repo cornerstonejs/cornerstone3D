@@ -284,6 +284,14 @@ enum Events {
   GEOMETRY_LOADED = 'GEOMETRY_LOADED',
 
   /**
+   * Triggers on the eventTarget when a geometry is being loaded by geometryLoaders
+   *
+   * Make use of {@link EventTypes.GeometryLoadProgressEvent | GeometryLoadProgress Event Type } for typing your event listeners for GEOMETRY_LOAD_PROGRESS event,
+   * and see what event detail is included in {@link EventTypes.GeometryLoadProgressEventDetail | GeometryLoadProgress Event Detail }
+   */
+  GEOMETRY_LOAD_PROGRESS = 'GEOMETRY_LOAD_PROGRESS',
+
+  /**
    * Triggers on the eventTarget when a geometry has failed loading by geometryLoaders
    *
    * Make use of {@link EventTypes.GeometryLoadedFailedEvent | GeometryLoadedFailed Event Type } for typing your event listeners for GEOMETRY_LOADED_FAILED event,

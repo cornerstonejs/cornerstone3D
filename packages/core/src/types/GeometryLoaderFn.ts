@@ -7,7 +7,8 @@ import type IGeometry from './IGeometry';
  */
 type GeometryLoaderFn = (
   geometryId: string,
-  options?: Record<string, unknown>
+  options?: Record<string, unknown>,
+  loaderOptions?: GeometryLoaderOptions
 ) => {
   /** promise that resolves to the geometry object */
   promise: Promise<IGeometry>;
@@ -16,5 +17,12 @@ type GeometryLoaderFn = (
   /** decache function */
   decache?: () => void | undefined;
 };
+
+export interface GeometryLoaderOptions {
+  beforeSend?: (
+    xhr: XMLHttpRequest,
+    defaultHeaders: Record<string, string>
+  ) => Record<string, string> | void;
+}
 
 export type { GeometryLoaderFn as default };

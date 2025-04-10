@@ -6,6 +6,7 @@ import BlendModes from './BlendModes';
 import OrientationAxis from './OrientationAxis';
 import GeometryType from './GeometryType';
 import ContourType from './ContourType';
+import MeshType from './MeshType';
 import VOILUTFunctionType from './VOILUTFunctionType';
 import DynamicOperatorType from './DynamicOperatorType';
 import CalibrationTypes from './CalibrationTypes';
@@ -26,6 +27,7 @@ export {
   OrientationAxis,
   GeometryType,
   ContourType,
+  MeshType,
   VOILUTFunctionType,
   DynamicOperatorType,
   ViewportStatus,

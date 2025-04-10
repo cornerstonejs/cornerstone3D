@@ -3,6 +3,42 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.9.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.4...v3.9.5) (2025-04-09)
+
+### Bug Fixes
+
+- add mode check in mouseMoveCallback for SegmentSelectTool ([#1988](https://github.com/cornerstonejs/cornerstone3D/issues/1988)) ([79c2ed0](https://github.com/cornerstonejs/cornerstone3D/commit/79c2ed00db50c71fa481f32297c7a27bf69b0415))
+
+## [3.9.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.3...v3.9.4) (2025-04-09)
+
+### Bug Fixes
+
+- x-ray pixel spacing calibration ([#1966](https://github.com/cornerstonejs/cornerstone3D/issues/1966)) ([c158fc8](https://github.com/cornerstonejs/cornerstone3D/commit/c158fc881e359b2f9d8df8c4b70e706295b8c348))
+
+## [3.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.2...v3.9.3) (2025-04-08)
+
+### Bug Fixes
+
+- flip flickering ([#1984](https://github.com/cornerstonejs/cornerstone3D/issues/1984)) ([5602a59](https://github.com/cornerstonejs/cornerstone3D/commit/5602a59f32805c0f75d7e1acf5f2abcc30bf3d11))
+
+## [3.9.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.1...v3.9.2) (2025-04-08)
+
+### Bug Fixes
+
+- make ROI stats configurable ([#1971](https://github.com/cornerstonejs/cornerstone3D/issues/1971)) ([2586450](https://github.com/cornerstonejs/cornerstone3D/commit/25864505f45e09d4e9ccdfbca75b81245418db33))
+
+## [3.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.0...v3.9.1) (2025-04-07)
+
+### Bug Fixes
+
+- **jump:** Add Center Statistic, and Refactor Code and choose closest imageId for stack to jump ([#1977](https://github.com/cornerstonejs/cornerstone3D/issues/1977)) ([3d8ab9e](https://github.com/cornerstonejs/cornerstone3D/commit/3d8ab9ee5c28d984a4aea7f459c0a736215470b9))
+
+# [3.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.6...v3.9.0) (2025-04-07)
+
+### Features
+
+- **geometryLoader:** add support for loading and caching meshes ([#1974](https://github.com/cornerstonejs/cornerstone3D/issues/1974)) ([f88dfe8](https://github.com/cornerstonejs/cornerstone3D/commit/f88dfe8eb52db0ca5f6dc017906d738378daba98)), closes [#1970](https://github.com/cornerstonejs/cornerstone3D/issues/1970)
+
 ## [3.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.5...v3.8.6) (2025-04-04)
 
 ### Bug Fixes

@@ -552,27 +552,25 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
-      // range of slices to render based on the start and end slice, like
-      // np.arange
-
       const focalPoint = viewport.getCamera().focalPoint;
       const viewplaneNormal = viewport.getCamera().viewPlaneNormal;
 
       let startCoord: number | vec3 = startCoordinate;
       let endCoord: number | vec3 = endCoordinate;
+
       if (Array.isArray(startCoordinate)) {
         startCoord = this._getCoordinateForViewplaneNormal(
           startCoord,
           viewplaneNormal
         );
+        const indexOfDirection =
+          this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal);
+
+        data.handles.points.forEach((point) => {
+          point[indexOfDirection] = startCoord as number;
+        });
+
         data.startCoordinate = startCoord;
-        data.handles.points[0][
-          this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
-        ] = startCoord;
-        data.startCoordinate = startCoord;
-        data.handles.points[0][
-          this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal)
-        ] = startCoord;
       }
 
       if (Array.isArray(endCoordinate)) {

@@ -2751,9 +2751,10 @@ class StackViewport extends Viewport {
     const { direction, spacing } = imageData;
 
     const imageId = getClosestImageId(
-      { direction: direction, spacing, imageIds },
+      { direction, spacing, imageIds },
       worldPos,
-      this.getCamera().viewPlaneNormal
+      this.getCamera().viewPlaneNormal,
+      { ignoreSpacing: true }
     );
 
     const index = imageIds.indexOf(imageId);
@@ -3290,7 +3291,9 @@ class StackViewport extends Viewport {
     const imagePlaneModule = getImagePlaneModule(imageId);
 
     this.hasPixelSpacing =
-      !imagePlaneModule.usingDefaultValues || this.calibration?.scale > 0;
+      !imagePlaneModule.usingDefaultValues ||
+      this.calibration?.scale > 0 ||
+      this.calibration?.rowPixelSpacing > 0;
 
     this.calibration ||= imagePlaneModule.calibration;
 
