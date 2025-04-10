@@ -85,18 +85,18 @@ class RenderingEngine {
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   private useCPURendering: boolean;
-  private numOfScreenCanvases: number;
+  private numOffScreenCanvases: number;
 
   /**
    * @param uid - Unique identifier for RenderingEngine
-   * @param numOfScreenCanvases - Optional number of offscreen canvases to distribute rendering (default: 1),
+   * @param numOffScreenCanvases - Optional number of offscreen canvases to distribute rendering (default: 1),
    * This is useful for high resolution rendering where viewports are expected to exceed the maximum offscreen canvas width for the browser.
    * An example is 16k on Chrome.
    */
-  constructor(id?: string, numOfScreenCanvases = 1) {
+  constructor(id?: string, numOffScreenCanvases = 1) {
     this.id = id ? id : uuidv4();
     this.useCPURendering = getShouldUseCPURendering();
-    this.numOfScreenCanvases = numOfScreenCanvases;
+    this.numOffScreenCanvases = numOffScreenCanvases;
 
     renderingEngineCache.set(this);
 
@@ -110,7 +110,7 @@ class RenderingEngine {
       this.offscreenMultiRenderWindows = [];
       this.offScreenCanvasContainers = [];
 
-      for (let i = 0; i < numOfScreenCanvases; i++) {
+      for (let i = 0; i < numOffScreenCanvases; i++) {
         const offscreenMultiRenderWindow =
           vtkOffscreenMultiRenderWindow.newInstance();
         const offScreenCanvasContainer = document.createElement('div');
@@ -1569,12 +1569,12 @@ class RenderingEngine {
 
   // Add new method to determine which offscreen canvas to use for a new viewport
   private _getOffscreenCanvasIndexForViewport(): number {
-    if (this.numOfScreenCanvases === 1) {
+    if (this.numOffScreenCanvases === 1) {
       return 0;
     }
 
     // Count viewports per canvas
-    const viewportsPerCanvas = new Array(this.numOfScreenCanvases).fill(0);
+    const viewportsPerCanvas = new Array(this.numOffScreenCanvases).fill(0);
     this._viewportToOffscreenCanvasIndex.forEach((canvasIndex) => {
       viewportsPerCanvas[canvasIndex]++;
     });
