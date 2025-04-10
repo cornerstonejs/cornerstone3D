@@ -26,6 +26,7 @@ import type {
 import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import type { VtkOffscreenMultiRenderWindow } from '../types/vtkOffscreenMultiRenderWindow';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
@@ -88,7 +89,9 @@ class RenderingEngine {
 
   /**
    * @param uid - Unique identifier for RenderingEngine
-   * @param numOfScreenCanvases - Optional number of offscreen canvases to distribute rendering (default: 1)
+   * @param numOfScreenCanvases - Optional number of offscreen canvases to distribute rendering (default: 1),
+   * This is useful for high resolution rendering where viewports are expected to exceed the maximum offscreen canvas width for the browser.
+   * An example is 16k on Chrome.
    */
   constructor(id?: string, numOfScreenCanvases = 1) {
     this.id = id ? id : uuidv4();
@@ -558,7 +561,7 @@ class RenderingEngine {
    */
   public getOffScreenMultiRenderWindow(
     viewportId: string
-  ): typeof vtkOffscreenMultiRenderWindow {
+  ): VtkOffscreenMultiRenderWindow {
     const canvasIndex = this._viewportToOffscreenCanvasIndex.get(viewportId);
     if (canvasIndex === undefined) {
       throw new Error(
