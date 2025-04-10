@@ -41,6 +41,8 @@ interface ViewportDisplayCoords {
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 const VIEWPORT_MIN_SIZE = 2;
+// Maximum width for offscreen canvas in Chrome (and some other browsers)
+const MAX_OFFSCREEN_CANVAS_WIDTH = 16384;
 
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
@@ -85,18 +87,13 @@ class RenderingEngine {
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   private useCPURendering: boolean;
-  private numOffScreenCanvases: number;
 
   /**
    * @param uid - Unique identifier for RenderingEngine
-   * @param numOffScreenCanvases - Optional number of offscreen canvases to distribute rendering (default: 1),
-   * This is useful for high resolution rendering where viewports are expected to exceed the maximum offscreen canvas width for the browser.
-   * An example is 16k on Chrome.
    */
-  constructor(id?: string, numOffScreenCanvases = 1) {
+  constructor(id?: string) {
     this.id = id ? id : uuidv4();
     this.useCPURendering = getShouldUseCPURendering();
-    this.numOffScreenCanvases = numOffScreenCanvases;
 
     renderingEngineCache.set(this);
 
@@ -110,15 +107,8 @@ class RenderingEngine {
       this.offscreenMultiRenderWindows = [];
       this.offScreenCanvasContainers = [];
 
-      for (let i = 0; i < numOffScreenCanvases; i++) {
-        const offscreenMultiRenderWindow =
-          vtkOffscreenMultiRenderWindow.newInstance();
-        const offScreenCanvasContainer = document.createElement('div');
-        offscreenMultiRenderWindow.setContainer(offScreenCanvasContainer);
-
-        this.offscreenMultiRenderWindows.push(offscreenMultiRenderWindow);
-        this.offScreenCanvasContainers.push(offScreenCanvasContainer);
-      }
+      // Initialize with one canvas
+      this._createNewOffscreenCanvas();
     } else {
       this.offscreenMultiRenderWindows = [];
       this.offScreenCanvasContainers = [];
@@ -127,6 +117,63 @@ class RenderingEngine {
     this._viewports = new Map();
     this._viewportToOffscreenCanvasIndex = new Map();
     this.hasBeenDestroyed = false;
+  }
+
+  /**
+   * Creates a new offscreen canvas and its container
+   * @returns The index of the newly created canvas
+   */
+  private _createNewOffscreenCanvas(): number {
+    const offscreenMultiRenderWindow =
+      vtkOffscreenMultiRenderWindow.newInstance();
+    const offScreenCanvasContainer = document.createElement('div');
+    offscreenMultiRenderWindow.setContainer(offScreenCanvasContainer);
+
+    this.offscreenMultiRenderWindows.push(offscreenMultiRenderWindow);
+    this.offScreenCanvasContainers.push(offScreenCanvasContainer);
+
+    return this.offscreenMultiRenderWindows.length - 1;
+  }
+
+  /**
+   * Removes offscreen canvases that have no viewports associated with them
+   * Keeps at least one canvas
+   */
+  private _removeUnusedOffscreenCanvases(): void {
+    // Must keep at least one canvas
+    if (this.offscreenMultiRenderWindows.length <= 1) {
+      return;
+    }
+
+    // Find canvases with no viewports
+    const canvasUsage = new Set<number>();
+    this._viewportToOffscreenCanvasIndex.forEach((canvasIndex) => {
+      canvasUsage.add(canvasIndex);
+    });
+
+    // Remove canvases without any viewports, from highest index to lowest
+    for (let i = this.offscreenMultiRenderWindows.length - 1; i > 0; i--) {
+      if (!canvasUsage.has(i)) {
+        // Free WebGL resources
+        this.offscreenMultiRenderWindows[i].delete();
+
+        // Remove from arrays
+        this.offscreenMultiRenderWindows.splice(i, 1);
+        this.offScreenCanvasContainers.splice(i, 1);
+
+        // Update the viewport to canvas index mapping for any higher indexes
+        this._viewportToOffscreenCanvasIndex.forEach(
+          (canvasIndex, viewportId) => {
+            if (canvasIndex > i) {
+              this._viewportToOffscreenCanvasIndex.set(
+                viewportId,
+                canvasIndex - 1
+              );
+            }
+          }
+        );
+      }
+    }
   }
 
   /**
@@ -251,6 +298,9 @@ class RenderingEngine {
     if (!viewports.length) {
       this._clearAnimationFrame();
     }
+
+    // 8. Remove any unused canvases
+    this._removeUnusedOffscreenCanvases();
 
     // Note: we should not call resize at the end of here, the reason is that
     // in batch rendering, we might disable a viewport and enable others at the same
@@ -689,13 +739,13 @@ class RenderingEngine {
 
       // Process each canvas group
       viewportsByCanvas.forEach((viewportsForCanvas, canvasIndex) => {
-        const canvasesForThisGroup = viewportsForCanvas.map((vp) =>
+        const vtkDrivenCanvases = viewportsForCanvas.map((vp) =>
           getOrCreateCanvas(vp.element)
         );
 
         // 1. Recalculate and resize the offscreen canvas size
         const { offScreenCanvasWidth, offScreenCanvasHeight } =
-          this._resizeOffScreenCanvas(canvasesForThisGroup, canvasIndex);
+          this._resizeOffScreenCanvas(vtkDrivenCanvases, canvasIndex);
 
         // 2. Recalculate the viewports location on the off screen canvas
         this._resize(
@@ -752,17 +802,25 @@ class RenderingEngine {
       (vp) => viewportTypeUsesCustomRenderingPipeline(vp.type) === false
     );
 
-    const canvasesDrivenByVtkJs = viewportsDrivenByVtkJs.map((vp) => vp.canvas);
-
     const canvas = getOrCreateCanvas(viewportInputEntry.element);
-    canvasesDrivenByVtkJs.push(canvas);
+
+    // Get width of the new viewport
+    const requiredWidth = canvas.width;
 
     // Determine which offscreen canvas to use for this viewport
-    const canvasIndex = this._getOffscreenCanvasIndexForViewport();
+    const canvasIndex = this._getOffscreenCanvasIndexForViewport(requiredWidth);
     this._viewportToOffscreenCanvasIndex.set(
       viewportInputEntry.viewportId,
       canvasIndex
     );
+
+    // Get all canvases for the selected offscreen canvas
+    const viewportsForCanvas = viewportsDrivenByVtkJs.filter(
+      (vp) => this._viewportToOffscreenCanvasIndex.get(vp.id) === canvasIndex
+    );
+
+    const canvasesDrivenByVtkJs = viewportsForCanvas.map((vp) => vp.canvas);
+    canvasesDrivenByVtkJs.push(canvas);
 
     // 2.c Calculating the new size for offScreen Canvas
     const { offScreenCanvasWidth, offScreenCanvasHeight } =
@@ -771,12 +829,12 @@ class RenderingEngine {
     // 2.d Re-position previous viewports on the offScreen Canvas based on the new
     // offScreen canvas size
     // Only reposition viewports that belong to the same offscreen canvas
-    const viewportsForCanvas = viewportsDrivenByVtkJs.filter(
+    const viewportsForResize = viewportsDrivenByVtkJs.filter(
       (vp) => this._viewportToOffscreenCanvasIndex.get(vp.id) === canvasIndex
     ) as (IStackViewport | IVolumeViewport)[];
 
     const xOffset = this._resize(
-      viewportsForCanvas,
+      viewportsForResize,
       offScreenCanvasWidth,
       offScreenCanvasHeight,
       canvasIndex
@@ -791,6 +849,9 @@ class RenderingEngine {
       xOffset,
       canvasIndex,
     });
+
+    // Remove any unused canvases
+    this._removeUnusedOffscreenCanvases();
   }
 
   /**
@@ -1004,51 +1065,79 @@ class RenderingEngine {
   ) {
     // Deal with vtkjs driven viewports
     if (viewportInputEntries.length) {
-      // Group viewports by assigned canvas
-      const viewportsByCanvas = new Map<number, NormalizedViewportInput[]>();
+      // Calculate the canvas sizes first to help with distribution
+      const canvasInfo = viewportInputEntries.map((vpEntry) => {
+        const canvas = getOrCreateCanvas(vpEntry.element);
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * devicePixelRatio;
+        canvas.height = rect.height * devicePixelRatio;
 
-      // Assign each viewport to a canvas and group them
-      viewportInputEntries.forEach((vpEntry) => {
-        const canvasIndex = this._getOffscreenCanvasIndexForViewport();
+        return {
+          entry: vpEntry,
+          canvas,
+          width: canvas.width,
+        };
+      });
+
+      // Assign and group viewports by canvas
+      const viewportsByCanvas = new Map<
+        number,
+        { entry: NormalizedViewportInput; canvas: HTMLCanvasElement }[]
+      >();
+
+      // Distribute viewports to canvases based on width limits
+      let currentCanvasIndex = 0;
+      let currentWidthSum = 0;
+
+      canvasInfo.forEach((info) => {
+        // If adding this viewport would exceed max width, start a new canvas
+        if (
+          currentWidthSum + info.width > MAX_OFFSCREEN_CANVAS_WIDTH &&
+          currentWidthSum > 0
+        ) {
+          currentCanvasIndex++;
+          currentWidthSum = 0;
+
+          // Create a new canvas if needed
+          if (currentCanvasIndex >= this.offscreenMultiRenderWindows.length) {
+            this._createNewOffscreenCanvas();
+          }
+        }
+
+        // Add to current canvas
+        if (!viewportsByCanvas.has(currentCanvasIndex)) {
+          viewportsByCanvas.set(currentCanvasIndex, []);
+        }
+        viewportsByCanvas.get(currentCanvasIndex).push({
+          entry: info.entry,
+          canvas: info.canvas,
+        });
+
+        // Update viewport to canvas mapping
         this._viewportToOffscreenCanvasIndex.set(
-          vpEntry.viewportId,
-          canvasIndex
+          info.entry.viewportId,
+          currentCanvasIndex
         );
 
-        if (!viewportsByCanvas.has(canvasIndex)) {
-          viewportsByCanvas.set(canvasIndex, []);
-        }
-        viewportsByCanvas.get(canvasIndex).push(vpEntry);
+        // Update width sum
+        currentWidthSum += info.width;
       });
 
       // Process each canvas group
       viewportsByCanvas.forEach((canvasViewports, canvasIndex) => {
-        // 1. Getting all the canvases from viewports for this canvas
-        const vtkDrivenCanvases = canvasViewports.map((vp) =>
-          getOrCreateCanvas(vp.element)
-        );
+        const vtkDrivenCanvases = canvasViewports.map((item) => item.canvas);
 
-        // Ensure the canvas size includes any scaling due to device pixel ratio
-        vtkDrivenCanvases.forEach((canvas) => {
-          const devicePixelRatio = window.devicePixelRatio || 1;
-
-          const rect = canvas.getBoundingClientRect();
-          canvas.width = rect.width * devicePixelRatio;
-          canvas.height = rect.height * devicePixelRatio;
-        });
-
-        // 2. Set canvas size based on height and sum of widths
+        // Set canvas size based on height and sum of widths
         const { offScreenCanvasWidth, offScreenCanvasHeight } =
           this._resizeOffScreenCanvas(vtkDrivenCanvases, canvasIndex);
 
-        // 3. Adding the viewports based on the viewportInputEntry definition to the
-        // rendering engine.
+        // Adding the viewports based on the viewportInputEntry definition
         let xOffset = 0;
         for (let i = 0; i < canvasViewports.length; i++) {
-          const vtkDrivenViewportInputEntry = canvasViewports[i];
-          const canvas = vtkDrivenCanvases[i];
+          const { entry, canvas } = canvasViewports[i];
           const internalViewportEntry = {
-            ...vtkDrivenViewportInputEntry,
+            ...entry,
             canvas,
           };
 
@@ -1059,11 +1148,13 @@ class RenderingEngine {
             canvasIndex,
           });
 
-          // Incrementing the xOffset which provides the horizontal location of each
-          // viewport on the offScreen canvas
+          // Incrementing the xOffset for each viewport on the canvas
           xOffset += canvas.width;
         }
       });
+
+      // Remove any unused canvases
+      this._removeUnusedOffscreenCanvases();
     }
   }
 
@@ -1096,6 +1187,14 @@ class RenderingEngine {
     canvasesDrivenByVtkJs.forEach((canvas) => {
       offScreenCanvasWidth += canvas.width;
     });
+
+    if (offScreenCanvasWidth > MAX_OFFSCREEN_CANVAS_WIDTH) {
+      console.warn(
+        `Offscreen canvas width (${offScreenCanvasWidth}) exceeds maximum allowed (${MAX_OFFSCREEN_CANVAS_WIDTH}). Creating additional canvas.`
+      );
+
+      return { offScreenCanvasWidth, offScreenCanvasHeight };
+    }
 
     // @ts-expect-error
     offScreenCanvasContainer.width = offScreenCanvasWidth;
@@ -1569,31 +1668,51 @@ class RenderingEngine {
 
   /**
    * Returns the index of the offscreen canvas that should be used for a new viewport.
+   * @param requiredWidth - The width required for the viewport
    * @returns The index of the offscreen canvas that should be used for a new viewport.
    */
-  private _getOffscreenCanvasIndexForViewport(): number {
-    if (this.numOffScreenCanvases === 1) {
-      return 0;
+  private _getOffscreenCanvasIndexForViewport(requiredWidth = 0): number {
+    // If there's only one canvas and it can fit the viewport, use it
+    if (this.offscreenMultiRenderWindows.length === 1) {
+      const currentCanvasWidth = this._getCurrentCanvasWidth(0);
+      if (currentCanvasWidth + requiredWidth <= MAX_OFFSCREEN_CANVAS_WIDTH) {
+        return 0;
+      }
+      // Otherwise, create a new canvas
+      return this._createNewOffscreenCanvas();
     }
 
-    // Count viewports per canvas
-    const viewportsPerCanvas = new Array(this.numOffScreenCanvases).fill(0);
-    this._viewportToOffscreenCanvasIndex.forEach((canvasIndex) => {
-      viewportsPerCanvas[canvasIndex]++;
-    });
-
-    // Find the canvas with the fewest viewports
-    let minCount = Infinity;
-    let minIndex = 0;
-
-    for (let i = 0; i < viewportsPerCanvas.length; i++) {
-      if (viewportsPerCanvas[i] < minCount) {
-        minCount = viewportsPerCanvas[i];
-        minIndex = i;
+    // Check each existing canvas to see if it can fit the new viewport
+    for (let i = 0; i < this.offscreenMultiRenderWindows.length; i++) {
+      const currentCanvasWidth = this._getCurrentCanvasWidth(i);
+      if (currentCanvasWidth + requiredWidth <= MAX_OFFSCREEN_CANVAS_WIDTH) {
+        return i;
       }
     }
 
-    return minIndex;
+    // If no existing canvas can fit the viewport, create a new one
+    return this._createNewOffscreenCanvas();
+  }
+
+  /**
+   * Gets the current width of an offscreen canvas based on viewports assigned to it
+   * @param canvasIndex - The index of the canvas
+   * @returns The current width of the canvas
+   */
+  private _getCurrentCanvasWidth(canvasIndex: number): number {
+    // Find all viewports on this canvas
+    const viewportsOnCanvas = this._getViewportsAsArray().filter(
+      (viewport) =>
+        this._viewportToOffscreenCanvasIndex.get(viewport.id) === canvasIndex
+    );
+
+    // Sum up their widths
+    let totalWidth = 0;
+    viewportsOnCanvas.forEach((viewport) => {
+      totalWidth += viewport.canvas.width;
+    });
+
+    return totalWidth;
   }
 }
 
