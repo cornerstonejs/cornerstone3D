@@ -512,8 +512,8 @@ class RenderingEngine {
       }
 
       // Make sure all references go stale and are garbage collected.
-      this.offscreenMultiRenderWindows = null;
-      this.offScreenCanvasContainers = null;
+      delete this.offscreenMultiRenderWindows;
+      delete this.offScreenCanvasContainers;
     }
 
     this._reset();
@@ -547,6 +547,36 @@ class RenderingEngine {
     // wait for the next stack to load
     ctx.fillStyle = fillStyle;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  /**
+   * Gets the offscreen multi render window for a specific viewport
+   *
+   * @param viewportId - The ID of the viewport
+   * @returns The offscreen multi render window for the viewport
+   */
+  public getOffScreenMultiRenderWindow(
+    viewportId: string
+  ): typeof vtkOffscreenMultiRenderWindow {
+    const canvasIndex = this._viewportToOffscreenCanvasIndex.get(viewportId);
+    if (canvasIndex === undefined) {
+      throw new Error(
+        `Viewport ${viewportId} not found in any offscreen canvas`
+      );
+    }
+    return this.offscreenMultiRenderWindows[canvasIndex];
+  }
+
+  /**
+   * Gets the renderer for a specific viewport
+   *
+   * @param viewportId - The ID of the viewport
+   * @returns The renderer for the viewport
+   */
+  public getRenderer(viewportId: string): unknown {
+    const offscreenMultiRenderWindow =
+      this.getOffScreenMultiRenderWindow(viewportId);
+    return offscreenMultiRenderWindow.getRenderer(viewportId);
   }
 
   private _normalizeViewportInputEntry(
@@ -1557,36 +1587,6 @@ class RenderingEngine {
     }
 
     return minIndex;
-  }
-
-  /**
-   * Gets the offscreen multi render window for a specific viewport
-   *
-   * @param viewportId - The ID of the viewport
-   * @returns The offscreen multi render window for the viewport
-   */
-  public getOffScreenMultiRenderWindow(
-    viewportId: string
-  ): typeof vtkOffscreenMultiRenderWindow {
-    const canvasIndex = this._viewportToOffscreenCanvasIndex.get(viewportId);
-    if (canvasIndex === undefined) {
-      throw new Error(
-        `Viewport ${viewportId} not found in any offscreen canvas`
-      );
-    }
-    return this.offscreenMultiRenderWindows[canvasIndex];
-  }
-
-  /**
-   * Gets the renderer for a specific viewport
-   *
-   * @param viewportId - The ID of the viewport
-   * @returns The renderer for the viewport
-   */
-  public getRenderer(viewportId: string): unknown {
-    const offscreenMultiRenderWindow =
-      this.getOffScreenMultiRenderWindow(viewportId);
-    return offscreenMultiRenderWindow.getRenderer(viewportId);
   }
 }
 
