@@ -1567,7 +1567,10 @@ class RenderingEngine {
     return dataURLs;
   }
 
-  // Add new method to determine which offscreen canvas to use for a new viewport
+  /**
+   * Returns the index of the offscreen canvas that should be used for a new viewport.
+   * @returns The index of the offscreen canvas that should be used for a new viewport.
+   */
   private _getOffscreenCanvasIndexForViewport(): number {
     if (this.numOffScreenCanvases === 1) {
       return 0;
