@@ -17,6 +17,7 @@ class ZoomTool extends BaseTool {
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   initialMousePosWorld: Types.Point3;
   dirVec: Types.Point3;
+  initialParallelScales: Map<string, number>;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -39,6 +40,7 @@ class ZoomTool extends BaseTool {
     super(toolProps, defaultToolProps);
     this.initialMousePosWorld = [0, 0, 0];
     this.dirVec = [0, 0, 0];
+    this.initialParallelScales = new Map();
     if (this.configuration.pinchToZoom) {
       this.touchDragCallback = this._pinchCallback.bind(this);
     } else {
@@ -57,10 +59,16 @@ class ZoomTool extends BaseTool {
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
 
-    const camera = enabledElement.viewport.getCamera();
-    const { focalPoint } = camera;
+    const { viewport } = enabledElement;
+    const camera = viewport.getCamera();
+    const { focalPoint, parallelScale } = camera;
 
     this.initialMousePosWorld = worldPos;
+
+    const initialParallelScale = this.initialParallelScales.get(viewport.id);
+    if (!initialParallelScale) {
+      this.initialParallelScales.set(viewport.id, parallelScale);
+    }
 
     // The direction vector from the clicked location to the focal point
     // which would act as the vector to translate the image (if zoomToCenter is false)
@@ -155,9 +163,9 @@ class ZoomTool extends BaseTool {
     const { parallelScale, focalPoint, position } = camera;
 
     const zoomScale = 5 / size[1];
-    const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
-
-    const parallelScaleToSet = (1.0 - k) * parallelScale;
+    const zoomFactor =
+      deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
+    const parallelScaleToSet = (1.0 - zoomFactor) * parallelScale;
 
     let focalPointToSet = focalPoint;
     let positionToSet = position;
@@ -177,42 +185,31 @@ class ZoomTool extends BaseTool {
         vec3.create(),
         position,
         this.dirVec,
-        -distanceToCanvasCenter * k
+        -distanceToCanvasCenter * zoomFactor
       ) as Types.Point3;
 
       focalPointToSet = vec3.scaleAndAdd(
         vec3.create(),
         focalPoint,
         this.dirVec,
-        -distanceToCanvasCenter * k
+        -distanceToCanvasCenter * zoomFactor
       ) as Types.Point3;
-    }
-
-    // If it is a regular GPU accelerated viewport, then parallel scale
-    // has a physical meaning and we can use that to determine the threshold
-    // Added spacing preset in case there is no imageData on viewport
-    const imageData = viewport.getImageData();
-    let spacing = [1, 1, 1];
-    if (imageData) {
-      spacing = imageData.spacing;
     }
 
     const { minZoomScale, maxZoomScale } = this.configuration;
 
-    const t = element.clientHeight * spacing[1] * 0.5;
-    const scale = t / parallelScaleToSet;
+    const initialScale = this.initialParallelScales.get(viewport.id) || 1;
+    const scale = initialScale / parallelScaleToSet;
 
     let cappedParallelScale = parallelScaleToSet;
     let thresholdExceeded = false;
 
-    if (imageData) {
-      if (scale < minZoomScale) {
-        cappedParallelScale = t / minZoomScale;
-        thresholdExceeded = true;
-      } else if (scale >= maxZoomScale) {
-        cappedParallelScale = t / maxZoomScale;
-        thresholdExceeded = true;
-      }
+    if (scale < minZoomScale) {
+      cappedParallelScale = initialScale / minZoomScale;
+      thresholdExceeded = true;
+    } else if (scale >= maxZoomScale) {
+      cappedParallelScale = initialScale / maxZoomScale;
+      thresholdExceeded = true;
     }
 
     viewport.setCamera({
@@ -269,9 +266,11 @@ class ZoomTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
     const wheelData = evt.detail.wheel;
     const direction = wheelData.direction;
+
+    const camera = viewport.getCamera();
+    const { parallelScale } = camera;
 
     // Fake event to simulate a drag event
     const eventDetails = {
@@ -295,6 +294,11 @@ class ZoomTool extends BaseTool {
 
     if (viewport.type === Enums.ViewportType.STACK) {
       this.preMouseDownCallback(eventDetails);
+    }
+
+    const initialParallelScale = this.initialParallelScales.get(viewport.id);
+    if (!initialParallelScale) {
+      this.initialParallelScales.set(viewport.id, parallelScale);
     }
 
     this._dragCallback(eventDetails);
