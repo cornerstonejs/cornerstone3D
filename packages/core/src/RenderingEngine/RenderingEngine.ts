@@ -25,7 +25,6 @@ import type {
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
-import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
@@ -40,8 +39,6 @@ interface ViewportDisplayCoords {
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 const VIEWPORT_MIN_SIZE = 2;
-// The maximum width of an offscreen canvas in Chrome
-const MAX_OFFSCREEN_CANVAS_WIDTH = 16384;
 
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
@@ -78,9 +75,8 @@ class RenderingEngine {
   /** A flag which tells if the renderingEngine has been destroyed or not */
   public hasBeenDestroyed: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public offscreenMultiRenderWindows: any[];
-  readonly offScreenCanvasContainers: HTMLDivElement[];
-  private _viewportToOffscreenCanvasIndex: Map<string, number>;
+  public offscreenMultiRenderWindow: any;
+  readonly offScreenCanvasContainer: HTMLDivElement;
   private _viewports: Map<string, IViewport>;
   private _needsRender = new Set<string>();
   private _animationFrameSet = false;
@@ -103,17 +99,15 @@ class RenderingEngine {
     }
 
     if (!this.useCPURendering) {
-      this.offscreenMultiRenderWindows = [
-        vtkOffscreenMultiRenderWindow.newInstance(),
-      ];
-      this.offScreenCanvasContainers = [document.createElement('div')];
-      this.offscreenMultiRenderWindows[0].setContainer(
-        this.offScreenCanvasContainers[0]
+      this.offscreenMultiRenderWindow =
+        vtkOffscreenMultiRenderWindow.newInstance();
+      this.offScreenCanvasContainer = document.createElement('div');
+      this.offscreenMultiRenderWindow.setContainer(
+        this.offScreenCanvasContainer
       );
     }
 
     this._viewports = new Map();
-    this._viewportToOffscreenCanvasIndex = new Map();
     this.hasBeenDestroyed = false;
   }
 
@@ -219,7 +213,7 @@ class RenderingEngine {
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
       !this.useCPURendering
     ) {
-      this.getOffscreenMultiRenderWindow(viewportId).removeRenderer(viewportId);
+      this.offscreenMultiRenderWindow.removeRenderer(viewportId);
     }
 
     // 5. Remove the requested viewport from the rendering engine
@@ -487,16 +481,14 @@ class RenderingEngine {
     if (!this.useCPURendering) {
       const viewports = this._getViewportsAsArray();
       viewports.forEach((vp) => {
-        this.getOffscreenMultiRenderWindow(vp.id).removeRenderer(vp.id);
+        this.offscreenMultiRenderWindow.removeRenderer(vp.id);
       });
 
       // Free up WebGL resources
-      this.offscreenMultiRenderWindows.forEach((offscreenMultiRenderWindow) => {
-        offscreenMultiRenderWindow.delete();
-      });
+      this.offscreenMultiRenderWindow.delete();
 
       // Make sure all references go stale and are garbage collected.
-      this.offscreenMultiRenderWindows = [];
+      delete this.offscreenMultiRenderWindow;
     }
 
     this._reset();
@@ -530,32 +522,6 @@ class RenderingEngine {
     // wait for the next stack to load
     ctx.fillStyle = fillStyle;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
-  /**
-   * Returns the offscreen multi render window for the given viewport ID.
-   * @param viewportId - The ID of the viewport.
-   * @returns The offscreen multi render window for the given viewport ID.
-   */
-  public getOffscreenMultiRenderWindow(
-    viewportId: string
-  ): typeof vtkOffscreenMultiRenderWindow {
-    const index = this._viewportToOffscreenCanvasIndex.get(viewportId);
-    if (!index) {
-      throw new Error(`Viewport with Id ${viewportId} does not exist`);
-    }
-    return this.offscreenMultiRenderWindows[index];
-  }
-
-  /**
-   * Returns the renderer for the given viewport ID.
-   * @param viewportId - The ID of the viewport.
-   * @returns The renderer for the given viewport ID.
-   */
-  public getRenderer(viewportId: string): vtkRenderer {
-    const offscreenMultiRenderWindow =
-      this.getOffscreenMultiRenderWindow(viewportId);
-    return offscreenMultiRenderWindow.getRenderer(viewportId);
   }
 
   private _normalizeViewportInputEntry(
@@ -751,7 +717,6 @@ class RenderingEngine {
 
     // 2. Delete the viewports from the the viewports
     this._viewports.delete(viewportId);
-    this._viewportToOffscreenCanvasIndex.delete(viewportId);
   }
 
   /**
@@ -1202,33 +1167,32 @@ class RenderingEngine {
    */
   private performVtkDrawCall() {
     // Render all viewports under vtk.js' control.
-    this.offscreenMultiRenderWindows.forEach((offscreenMultiRenderWindow) => {
-      const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
+    const { offscreenMultiRenderWindow } = this;
+    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
-      const renderers = offscreenMultiRenderWindow.getRenderers();
+    const renderers = offscreenMultiRenderWindow.getRenderers();
 
-      if (!renderers.length) {
-        return;
+    if (!renderers.length) {
+      return;
+    }
+
+    for (let i = 0; i < renderers.length; i++) {
+      const { renderer, id } = renderers[i];
+
+      // Requesting viewports that need rendering to be rendered only
+      if (this._needsRender.has(id)) {
+        renderer.setDraw(true);
+      } else {
+        renderer.setDraw(false);
       }
+    }
 
-      for (let i = 0; i < renderers.length; i++) {
-        const { renderer, id } = renderers[i];
+    renderWindow.render();
 
-        // Requesting viewports that need rendering to be rendered only
-        if (this._needsRender.has(id)) {
-          renderer.setDraw(true);
-        } else {
-          renderer.setDraw(false);
-        }
-      }
-
-      renderWindow.render();
-
-      // After redraw we set all renderers to not render until necessary
-      for (let i = 0; i < renderers.length; i++) {
-        renderers[i].renderer.setDraw(false);
-      }
-    });
+    // After redraw we set all renderers to not render until necessary
+    for (let i = 0; i < renderers.length; i++) {
+      renderers[i].renderer.setDraw(false);
+    }
   }
 
   /**
@@ -1261,9 +1225,7 @@ class RenderingEngine {
         );
       }
 
-      const offscreenMultiRenderWindow = this.getOffscreenMultiRenderWindow(
-        viewport.id
-      );
+      const { offscreenMultiRenderWindow } = this;
       const openGLRenderWindow =
         offscreenMultiRenderWindow.getOpenGLRenderWindow();
       const context = openGLRenderWindow.get3DContext();
