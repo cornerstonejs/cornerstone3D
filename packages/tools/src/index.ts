@@ -80,6 +80,7 @@ import {
   RegionSegmentTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
+  SegmentLabelTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -151,6 +152,7 @@ export {
   BrushTool,
   OrientationMarkerTool,
   SegmentSelectTool,
+  SegmentLabelTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

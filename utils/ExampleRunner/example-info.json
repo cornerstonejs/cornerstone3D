@@ -395,6 +395,10 @@
         "name": "Segment Select Tool",
         "description": "Demonstrates the segmentSelectTool capabilities which you can use to switch active segment by only hovering over them."
       },
+      "segmentLabel": {
+        "name": "Segment Label Tool",
+        "description": "Demonstrates the segmentLabelTool capabilities which you can use to see the labels of segments by only hovering over them."
+      },
       "splineContourSegmentationTools": {
         "name": "Spline Segmentation Tools",
         "description": "Demonstrates how to create contour segmentations using SplineROI tool"
