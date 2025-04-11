@@ -161,6 +161,9 @@ class LengthTool extends AnnotationTool {
       options
     );
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options;
+
     const annotation = {
       annotationUID: options?.annotationUID || utilities.uuidv4(),
       data: {
@@ -178,7 +181,7 @@ class LengthTool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
     addAnnotation(annotation, viewport.element);
