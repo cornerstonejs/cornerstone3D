@@ -7,7 +7,7 @@ on:
 jobs:
   playwright-tests:
     timeout-minutes: 60
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -37,7 +37,7 @@ jobs:
   merge-reports:
     if: ${{ !cancelled() }}
     needs: [playwright-tests]
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: oven-sh/setup-bun@v2
       - uses: actions/checkout@v4
