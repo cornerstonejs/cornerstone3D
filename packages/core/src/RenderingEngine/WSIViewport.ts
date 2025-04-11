@@ -9,7 +9,6 @@ import type {
   CPUIImageData,
   ViewportInput,
   BoundsIJK,
-  CPUImageData,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -22,6 +21,9 @@ import { peerImport } from '../init';
 import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
+import { coreLog } from '../utilities/logger';
+
+const log = coreLog.getLogger('WSIViewport');
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
@@ -64,14 +66,6 @@ class WSIViewport extends Viewport {
   };
 
   private viewer;
-
-  /**
-   * The VOI Range is used to apply contrast/brightness adjustments to the image.
-   */
-  private voiRange: VOIRange = {
-    lower: 0,
-    upper: 255,
-  };
 
   constructor(props: ViewportInput) {
     super({
@@ -156,14 +150,8 @@ class WSIViewport extends Viewport {
       this.imageIds[imageIndex]
     );
 
-    let rowCosines = ImageOrientationSlide.slice(0, 3);
-    let columnCosines = ImageOrientationSlide.slice(3, 6);
-
-    // if null or undefined
-    if (rowCosines == null || columnCosines == null) {
-      rowCosines = [1, 0, 0] as Point3;
-      columnCosines = [0, 1, 0] as Point3;
-    }
+    const rowCosines = ImageOrientationSlide?.slice(0, 3) || [1, 0, 0];
+    const columnCosines = ImageOrientationSlide?.slice(3, 6) || [0, 1, 0];
 
     const rowCosineVec = vec3.fromValues(
       rowCosines[0],
@@ -175,8 +163,11 @@ class WSIViewport extends Viewport {
       columnCosines[1],
       columnCosines[2]
     );
-    const scanAxisNormal = vec3.create();
-    vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
+    const scanAxisNormal = vec3.cross(
+      vec3.create(),
+      rowCosineVec,
+      colCosineVec
+    );
 
     const {
       XOffsetInSlideCoordinateSystem = 0,
@@ -447,7 +438,7 @@ class WSIViewport extends Viewport {
     // convert pixel coordinate to world coordinate
     const { origin, spacing, direction } = this.getImageData();
 
-    const worldPos = vec3.fromValues(0, 0, 0);
+    const worldPos = vec3.create();
 
     // Calculate size of spacing vector in normal direction
     const iVector = direction.slice(0, 3) as Point3;
@@ -615,9 +606,17 @@ class WSIViewport extends Viewport {
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const transform = this.getTransform();
     transform.invert();
-    return transform.transformPoint(
+    const indexPt = transform.transformPoint(
       canvasPos.map((it) => it * devicePixelRatio) as Point2
     );
+    log.debug(
+      'canvasToIndex',
+      canvasPos[0],
+      canvasPos[1],
+      indexPt[0],
+      indexPt[1]
+    );
+    return indexPt;
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
@@ -731,10 +730,9 @@ class WSIViewport extends Viewport {
     // Translate to the center of the canvas (move origin of the transform
     // to the center of the canvas)
     transform.translate(halfCanvas[0], halfCanvas[1]);
-    // Difference in sign for x/y to account for screen coordinates
-    transform.rotate(rotation);
-    transform.scale(1 / resolution, -1 / resolution);
-    transform.translate(-center[0], -center[1]);
+    transform.rotate(-rotation);
+    transform.scale(1 / resolution, 1 / resolution);
+    transform.translate(-center[0], center[1]);
     return transform;
   }
 

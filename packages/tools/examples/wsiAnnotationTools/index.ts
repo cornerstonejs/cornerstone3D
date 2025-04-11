@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, WSIViewport } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
@@ -51,6 +51,7 @@ setTitleAndDescription(
 );
 
 const toolsNames = [
+  CircleROITool.toolName,
   LengthTool.toolName,
   // ProbeTool.toolName,
   // RectangleROITool.toolName,
