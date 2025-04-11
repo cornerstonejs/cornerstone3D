@@ -1717,6 +1717,7 @@ class Viewport {
    * in a given viewport.
    * See getViewPresentation for HOW a view is displayed.
    *
+   *
    * @param viewRefSpecifier - choose an alternate view to be specified, typically
    *      a different slice index in the same set of images.
    */
