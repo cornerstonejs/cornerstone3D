@@ -76,7 +76,7 @@ async function decodeAsync(
   imageInfo,
   wasmUrlCodecLibjpegTurbo8bit?: string
 ): Promise<Types.IImageFrame> {
-  await initLibjpegTurbo();
+  await initLibjpegTurbo(wasmUrlCodecLibjpegTurbo8bit);
   const decoder = local.decoder;
 
   // get pointer to the source/encoded bit stream buffer in WASM memory
