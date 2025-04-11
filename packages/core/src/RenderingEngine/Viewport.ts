@@ -1740,7 +1740,6 @@ class Viewport {
 
   /**
    * Find out if this viewport does or could show this view reference.
-   *
    * @param options - allows specifying whether the view COULD display this with
    *                  some modification - either navigation or displaying as volume.
    * @returns true if the viewport could show this view reference
