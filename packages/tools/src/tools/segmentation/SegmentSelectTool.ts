@@ -18,6 +18,7 @@ import type {
   Segmentation,
   SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
+import { ToolModes } from '../../enums';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -49,6 +50,10 @@ class SegmentSelectTool extends BaseTool {
   }
 
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): boolean => {
+    if (this.mode !== ToolModes.Active) {
+      return;
+    }
+
     if (this.hoverTimer) {
       clearTimeout(this.hoverTimer);
     }

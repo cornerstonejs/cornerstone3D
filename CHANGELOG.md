@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.9.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.4...v3.9.5) (2025-04-09)
+
+### Bug Fixes
+
+- add mode check in mouseMoveCallback for SegmentSelectTool ([#1988](https://github.com/cornerstonejs/cornerstone3D/issues/1988)) ([79c2ed0](https://github.com/cornerstonejs/cornerstone3D/commit/79c2ed00db50c71fa481f32297c7a27bf69b0415))
+
+## [3.9.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.3...v3.9.4) (2025-04-09)
+
+### Bug Fixes
+
+- x-ray pixel spacing calibration ([#1966](https://github.com/cornerstonejs/cornerstone3D/issues/1966)) ([c158fc8](https://github.com/cornerstonejs/cornerstone3D/commit/c158fc881e359b2f9d8df8c4b70e706295b8c348))
+
+## [3.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.2...v3.9.3) (2025-04-08)
+
+### Bug Fixes
+
+- flip flickering ([#1984](https://github.com/cornerstonejs/cornerstone3D/issues/1984)) ([5602a59](https://github.com/cornerstonejs/cornerstone3D/commit/5602a59f32805c0f75d7e1acf5f2abcc30bf3d11))
+
+## [3.9.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.1...v3.9.2) (2025-04-08)
+
+### Bug Fixes
+
+- make ROI stats configurable ([#1971](https://github.com/cornerstonejs/cornerstone3D/issues/1971)) ([2586450](https://github.com/cornerstonejs/cornerstone3D/commit/25864505f45e09d4e9ccdfbca75b81245418db33))
+
 ## [3.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.0...v3.9.1) (2025-04-07)
 
 ### Bug Fixes
