@@ -490,15 +490,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       );
     }
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        targetId,
-        imageVolume,
-        enabledElement
-      );
-    }
-
     annotation.invalidated = false;
 
     // Dispatching annotation modified
