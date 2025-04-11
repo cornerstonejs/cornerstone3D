@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.5...v3.10.0) (2025-04-11)
+
+### Features
+
+- add segment label on hover ([#1987](https://github.com/cornerstonejs/cornerstone3D/issues/1987)) ([cb31fd0](https://github.com/cornerstonejs/cornerstone3D/commit/cb31fd08d1ed314ae1b45204ef1aba6c714961cf))
+
 ## [3.9.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.4...v3.9.5) (2025-04-09)
 
 ### Bug Fixes
