@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.0...v3.10.1) (2025-04-11)
+
+### Bug Fixes
+
+- **wadouri:** cache could not decache wadouri images ([#1991](https://github.com/cornerstonejs/cornerstone3D/issues/1991)) ([c519ba5](https://github.com/cornerstonejs/cornerstone3D/commit/c519ba54a7a8ccb12fed52fa2f3af917ae46a06c))
+
 # [3.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.5...v3.10.0) (2025-04-11)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
