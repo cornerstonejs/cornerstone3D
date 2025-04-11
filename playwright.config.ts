@@ -4,8 +4,8 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 8 : undefined,
+  retries: process.env.CI ? 3 : 0,
+  workers: process.env.CI ? 4 : undefined,
   timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
