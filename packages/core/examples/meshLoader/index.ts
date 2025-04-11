@@ -40,7 +40,6 @@ const viewportId1 = 'POLYDATA_1';
 const viewportId2 = 'POLYDATA_2';
 const viewportId3 = 'POLYDATA_3';
 const viewportId4 = 'POLYDATA_4';
-const viewportId5 = 'POLYDATA_5';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -88,7 +87,7 @@ instructions.innerText = `
   Basic controls:
   - Left Click / Drag : Rotate
   - Middle Click / Drag : Pan
-  - Right Click / Drag : Zoom
+  - MouseWheel : Zoom
   `;
 
 content.append(instructions);
@@ -137,7 +136,7 @@ async function run() {
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary, // Right Click + Drag
+        mouseButton: MouseBindings.Wheel, // Wheel
       },
     ],
   });
