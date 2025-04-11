@@ -315,7 +315,6 @@ class Viewport {
    *    * flipOptions.flipVertical - Flip the viewport on vertical axis
    */
   protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
-    return;
     const imageData = this.getDefaultImageData();
 
     if (!imageData) {
