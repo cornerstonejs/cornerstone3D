@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "3.10.1",
+  "version": "3.10.2",
   "description": "Cornerstone3D Core",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
