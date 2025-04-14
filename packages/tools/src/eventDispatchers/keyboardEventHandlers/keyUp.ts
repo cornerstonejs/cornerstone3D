@@ -1,6 +1,6 @@
 import { resetModifierKey } from '../../eventListeners/keyboard/keyDownListener';
 import getActiveToolForKeyboardEvent from '../shared/getActiveToolForKeyboardEvent';
-import type { KeyDownEventType } from '../../types/EventTypes';
+import type { KeyUpEventType } from '../../types/EventTypes';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 
 /**
@@ -8,7 +8,7 @@ import { getToolGroupForViewport } from '../../store/ToolGroupManager';
  *
  * @param evt - The KeyboardEvent
  */
-export default function keyUp(evt: KeyDownEventType): void {
+export default function keyUp(evt: KeyUpEventType): void {
   // get the active tool for the primary mouse button
   const activeTool = getActiveToolForKeyboardEvent(evt);
 

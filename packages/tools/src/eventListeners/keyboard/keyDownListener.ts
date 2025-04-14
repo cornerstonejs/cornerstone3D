@@ -10,6 +10,10 @@ interface IKeyDownListenerState {
   viewportId: string;
   key: string | null;
   keyCode: number | null;
+  ctrl: boolean;
+  meta: boolean;
+  alt: boolean;
+  shift: boolean;
   element: HTMLDivElement;
 }
 
@@ -20,6 +24,10 @@ const defaultState: IKeyDownListenerState = {
   //
   key: undefined,
   keyCode: undefined,
+  ctrl: false,
+  meta: false,
+  alt: false,
+  shift: false,
   element: null,
 };
 
@@ -30,14 +38,24 @@ let state: IKeyDownListenerState = {
   //
   key: undefined,
   keyCode: undefined,
+  ctrl: false,
+  meta: false,
+  alt: false,
+  shift: false,
   element: null,
 };
+
+const ignoredModifierNames = ['control', 'alt', 'shift', 'meta'];
 
 /**
  * Normalizes the keyboard event and triggers KEY_DOWN event from CornerstoneTools3D events
  * @param evt - DOM Keyboard event
  */
 function keyListener(evt: KeyboardEvent): void {
+  if (ignoredModifierNames.includes(evt.key.toLowerCase())) {
+    return;
+  }
+  // Only listen to key events on the element
   state.element = <HTMLDivElement>evt.currentTarget;
 
   const enabledElement = getEnabledElement(state.element);
@@ -47,6 +65,10 @@ function keyListener(evt: KeyboardEvent): void {
   state.viewportId = viewportId;
   state.key = evt.key;
   state.keyCode = evt.keyCode;
+  state.ctrl = evt.ctrlKey;
+  state.meta = evt.metaKey;
+  state.alt = evt.altKey;
+  state.shift = evt.shiftKey;
 
   evt.preventDefault();
   const eventDetail: KeyDownEventDetail = {
@@ -55,7 +77,10 @@ function keyListener(evt: KeyboardEvent): void {
     element: state.element,
     key: state.key,
     keyCode: state.keyCode,
-
+    ctrl: evt.ctrlKey,
+    meta: evt.metaKey,
+    alt: evt.altKey,
+    shift: evt.shiftKey,
     // detail: evt,
     // Todo: mouse event points can be used later for placing tools with a key
     // e.g., putting an arrow/probe/etc. on the mouse position. Another use case
@@ -90,6 +115,10 @@ function _onKeyUp(evt: KeyboardEvent): void {
     element: state.element,
     key: state.key,
     keyCode: state.keyCode,
+    ctrl: evt.ctrlKey,
+    meta: evt.metaKey,
+    alt: evt.altKey,
+    shift: evt.shiftKey,
     // detail: evt,
   };
 
@@ -103,12 +132,24 @@ function _onKeyUp(evt: KeyboardEvent): void {
   triggerEvent(eventDetail.element, Events.KEY_UP, eventDetail);
 }
 
-export function getModifierKey(): number | undefined {
-  return state.keyCode;
+export function getModifierKey() {
+  return {
+    key: state.key,
+    keyCode: state.keyCode,
+    ctrl: state.ctrl,
+    meta: state.meta,
+    alt: state.alt,
+    shift: state.shift,
+  };
 }
 
 export function resetModifierKey(): void {
   state.keyCode = undefined;
+  state.key = undefined;
+  state.ctrl = false;
+  state.meta = false;
+  state.alt = false;
+  state.shift = false;
 }
 
 export default keyListener;

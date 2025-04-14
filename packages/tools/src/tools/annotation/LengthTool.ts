@@ -1,4 +1,4 @@
-import { Events, ChangeTypes } from '../../enums';
+import { Events, ChangeTypes, KeyboardBindings } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -114,11 +114,11 @@ class LengthTool extends AnnotationTool {
           // is almost always active.
           undo: {
             method: 'undo',
-            bindings: [{ key: 'z' }],
+            bindings: [{ key: 'z', modifierKey: KeyboardBindings.Ctrl }],
           },
           redo: {
             method: 'redo',
-            bindings: [{ key: 'y' }],
+            bindings: [{ key: 'y', modifierKey: KeyboardBindings.Ctrl }],
           },
         },
       },

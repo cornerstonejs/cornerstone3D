@@ -1,4 +1,4 @@
-import { ToolModes } from '../../enums';
+import { KeyboardBindings, ToolModes } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import type { EventTypes } from '../../types';
@@ -26,11 +26,10 @@ export default function getActiveToolForMouseEvent(
   // Todo: we should refactor this to use getToolsWithModesForMouseEvent instead
   const { renderingEngineId, viewportId, event: mouseEvent } = evt.detail;
 
-  // If any keyboard modifier key is also pressed - get the mouse version
-  // first since it handles combinations, while the key event handles non-modifier
-  // keys.
-  const modifierKey =
-    getMouseModifier(mouseEvent) || keyEventListener.getModifierKey();
+  const shift = mouseEvent.shiftKey;
+  const ctrl = mouseEvent.ctrlKey;
+  const meta = mouseEvent.metaKey;
+  const alt = mouseEvent.altKey;
 
   const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
 
@@ -41,7 +40,7 @@ export default function getActiveToolForMouseEvent(
   const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
   const defaultMousePrimary = toolGroup.getDefaultMousePrimary();
   const mouseButton =
-    evt.detail.buttons ?? mouseEvent?.buttons ?? defaultMousePrimary;
+    mouseEvent.buttons ?? mouseEvent?.buttons ?? defaultMousePrimary;
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
     const toolName = toolGroupToolNames[j];
@@ -52,10 +51,22 @@ export default function getActiveToolForMouseEvent(
     const correctBinding =
       toolOptions.bindings.length &&
       toolOptions.bindings.some((binding) => {
-        return (
-          binding.mouseButton === mouseButton &&
-          binding.modifierKey === modifierKey
-        );
+        const hasCorrectMouseButton = binding.mouseButton === mouseButton;
+        const modifierCombinations = {
+          undefined: !ctrl && !meta && !shift && !alt,
+          [KeyboardBindings.Ctrl]: ctrl && !meta && !shift && !alt,
+          [KeyboardBindings.Meta]: !ctrl && meta && !shift && !alt,
+          [KeyboardBindings.Shift]: !ctrl && !meta && shift && !alt,
+          [KeyboardBindings.Alt]: !ctrl && !meta && !shift && alt,
+          [KeyboardBindings.ShiftCtrl]: ctrl && !meta && shift && !alt,
+          [KeyboardBindings.ShiftMeta]: !ctrl && meta && shift && !alt,
+          [KeyboardBindings.ShiftAlt]: !ctrl && !meta && shift && alt,
+          [KeyboardBindings.CtrlAlt]: ctrl && !meta && !shift && alt,
+          [KeyboardBindings.CtrlMeta]: ctrl && meta && !shift && !alt,
+          [KeyboardBindings.AltMeta]: !ctrl && meta && !shift && alt,
+        };
+        const hasCorrectModifier = !!modifierCombinations[binding.modifierKey];
+        return hasCorrectMouseButton && hasCorrectModifier;
       });
 
     if (toolOptions.mode === Active && correctBinding) {

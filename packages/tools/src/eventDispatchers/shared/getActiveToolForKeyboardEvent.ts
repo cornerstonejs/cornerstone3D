@@ -1,4 +1,4 @@
-import { ToolModes } from '../../enums';
+import { KeyboardBindings, ToolModes } from '../../enums';
 import { keyEventListener } from '../../eventListeners';
 import type { EventTypes } from '../../types';
 import { getMouseButton } from '../../eventListeners/mouse/mouseDownListener';
@@ -45,13 +45,30 @@ export default function getActiveToolForKeyboardEvent(
     }
     // tool has binding that matches the mouse button, if mouseEvent is undefined
     // it uses the primary button
-    const correctBinding =
-      toolOptions.bindings.length &&
-      toolOptions.bindings.some(
-        (binding) =>
-          binding.mouseButton === (mouseButton ?? defaultMousePrimary) &&
-          binding.modifierKey === modifierKey
-      );
+    const { alt, ctrl, meta, shift } = modifierKey;
+
+    let correctBinding = false;
+    if (toolOptions.bindings.length) {
+      correctBinding = toolOptions.bindings.some((binding) => {
+        const hasCorrectMouseButton =
+          binding.mouseButton === (mouseButton ?? defaultMousePrimary);
+        const modifierCombinations = {
+          undefined: !ctrl && !meta && !shift && !alt,
+          [KeyboardBindings.Ctrl]: ctrl && !meta && !shift && !alt,
+          [KeyboardBindings.Meta]: !ctrl && meta && !shift && !alt,
+          [KeyboardBindings.Shift]: !ctrl && !meta && shift && !alt,
+          [KeyboardBindings.Alt]: !ctrl && !meta && !shift && alt,
+          [KeyboardBindings.ShiftCtrl]: ctrl && !meta && shift && !alt,
+          [KeyboardBindings.ShiftMeta]: !ctrl && meta && shift && !alt,
+          [KeyboardBindings.ShiftAlt]: !ctrl && !meta && shift && alt,
+          [KeyboardBindings.CtrlAlt]: ctrl && !meta && !shift && alt,
+          [KeyboardBindings.CtrlMeta]: ctrl && meta && !shift && !alt,
+          [KeyboardBindings.AltMeta]: !ctrl && meta && !shift && alt,
+        };
+        const hasCorrectModifier = !!modifierCombinations[binding.modifierKey];
+        return hasCorrectMouseButton && hasCorrectModifier;
+      });
+    }
 
     if (correctBinding) {
       return toolGroup.getToolInstance(toolName);
