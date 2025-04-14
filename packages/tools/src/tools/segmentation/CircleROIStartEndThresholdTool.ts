@@ -60,6 +60,7 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { debounce } from '../../utilities';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -85,20 +86,26 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         // Whether to store point data in the annotation
         storePointData: false,
         numSlicesToPropagate: 10,
-        calculatePointsInsideVolume: false,
+        computeStatsDuringEditing: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         showTextBox: false,
+        throttleTimeout: 100,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
 
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStatsTool,
-      100,
-      { trailing: true }
-    );
+    if (this.configuration.computeStatsDuringEditing) {
+      this._throttledCalculateCachedStats = throttle(
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout,
+        { trailing: true }
+      );
+    } else {
+      this._throttledCalculateCachedStats = debounce(
+        this._calculateCachedStatsTool, this.configuration.throttleTimeout);
+    }
   }
 
   /**
@@ -272,19 +279,20 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        imageVolume,
-        targetId,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      imageVolume,
+      targetId,
+      enabledElement
+    );
+
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
+    } else {
+      triggerAnnotationModified(annotation, element);
     }
   };
 
@@ -379,9 +387,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
         roundedCameraCoordinate <
-          Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
+        Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
         roundedCameraCoordinate >
-          Math.max(roundedStartCoordinate, roundedEndCoordinate)
+        Math.max(roundedStartCoordinate, roundedEndCoordinate)
       ) {
         continue;
       }
@@ -485,8 +493,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       renderStatus = true;
 
       if (
-        this.configuration.showTextBox == true &&
-        this.configuration.calculatePointsInsideVolume == true
+        this.configuration.showTextBox
       ) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
@@ -644,8 +651,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
-        (worldWidth / measureInfo.scale / 2) *
-        (worldHeight / aspect / measureInfo.scale / 2)
+      (worldWidth / measureInfo.scale / 2) *
+      (worldHeight / aspect / measureInfo.scale / 2)
     );
 
     const modalityUnitOptions = {
@@ -781,14 +788,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        imageVolume,
-        targetId,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      imageVolume,
+      targetId,
+      enabledElement
+    );
 
     annotation.invalidated = false;
 

@@ -51,6 +51,7 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { debounce } from '../../utilities';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -86,20 +87,27 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         // Whether to store point data in the annotation
         storePointData: false,
         numSlicesToPropagate: 10,
-        computePointsInsideVolume: false,
+        computeStatsDuringEditing: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         showTextBox: false,
+        throttleTimeout: 100,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
 
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStatsTool,
-      100,
-      { trailing: true }
-    );
+    if (this.configuration.computeStatsDuringEditing) {
+      this._throttledCalculateCachedStats = throttle(
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout,
+        { trailing: true }
+      );
+    } else {
+      this._throttledCalculateCachedStats = debounce(
+        this._calculateCachedStatsTool, this.configuration.throttleTimeout);
+    }
+
   }
 
   /**
@@ -266,19 +274,21 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        targetId,
-        imageVolume,
-        enabledElement
-      );
-    }
+
+    this._computePointsInsideVolume(
+      annotation,
+      targetId,
+      imageVolume,
+      enabledElement
+    );
+
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
+    } else {
+      triggerAnnotationModified(annotation, element);
     }
   };
 
@@ -481,23 +491,12 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        targetId,
-        imageVolume,
-        enabledElement
-      );
-    }
-
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        targetId,
-        imageVolume,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      targetId,
+      imageVolume,
+      enabledElement
+    );
 
     annotation.invalidated = false;
 
@@ -599,7 +598,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       }
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-
       if (annotation.invalidated) {
         this._throttledCalculateCachedStats(annotation, enabledElement);
       }
@@ -673,8 +671,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       renderStatus = true;
 
       if (
-        this.configuration.showTextBox &&
-        this.configuration.calculatePointsInsideVolume
+        this.configuration.showTextBox
       ) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
