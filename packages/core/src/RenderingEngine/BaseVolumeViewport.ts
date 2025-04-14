@@ -1881,20 +1881,20 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
- * Gets the blend mode for the volume viewport. If filterActorUIDs is provided,
- * it will return the blend mode for the first matching actor. Otherwise, it returns
- * the blend mode of the first actor.
- *
- * @param filterActorUIDs - Optional array of actor UIDs to filter by
- * @returns The blend mode of the matched actor
- */
+   * Gets the blend mode for the volume viewport. If filterActorUIDs is provided,
+   * it will return the blend mode for the first matching actor. Otherwise, it returns
+   * the blend mode of the first actor.
+   *
+   * @param filterActorUIDs - Optional array of actor UIDs to filter by
+   * @returns The blend mode of the matched actor
+   */
   public getBlendMode(filterActorUIDs?: string[]): BlendModes {
     const actorEntries = this.getActors();
     const actorForBlend =
       filterActorUIDs?.length > 0
         ? actorEntries.find((actorEntry) =>
-          filterActorUIDs.includes(actorEntry.uid)
-        )
+            filterActorUIDs.includes(actorEntry.uid)
+          )
         : actorEntries[0];
 
     return (

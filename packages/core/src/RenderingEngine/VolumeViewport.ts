@@ -273,7 +273,6 @@ class VolumeViewport extends BaseVolumeViewport {
     this.resetCamera();
   }
 
-
   /**
    * Sets the blend mode for actors in the volume viewport. Can optionally filter which
    * actors to apply the blend mode to using filterActorUIDs.
