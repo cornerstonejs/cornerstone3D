@@ -23,6 +23,7 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import throttle from '../../utilities/throttle';
+import debounce  from '../../utilities/debounce';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   hideElementCursor,
@@ -60,7 +61,6 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import { debounce } from '../../utilities';
 
 const { transformWorldToIndex } = csUtils;
 

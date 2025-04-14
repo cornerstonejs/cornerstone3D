@@ -20,6 +20,7 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
+import debounce  from '../../utilities/debounce';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
 
@@ -51,7 +52,6 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import { debounce } from '../../utilities';
 
 const { transformWorldToIndex } = csUtils;
 
