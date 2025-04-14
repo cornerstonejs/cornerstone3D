@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   volumeLoader,
   imageLoader,
-  BaseVolumeViewport
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
