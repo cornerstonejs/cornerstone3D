@@ -60,6 +60,7 @@ import SegmentSelectTool from './segmentation/SegmentSelectTool';
 import SegmentBidirectionalTool from './segmentation/SegmentBidirectionalTool';
 
 import * as strategies from './segmentation/strategies';
+import SegmentLabelTool from './segmentation/SegmentLabelTool';
 
 export {
   // ~~ BASE
@@ -126,5 +127,6 @@ export {
   WholeBodySegmentTool,
   LabelmapBaseTool,
   SegmentBidirectionalTool,
+  SegmentLabelTool,
   strategies,
 };

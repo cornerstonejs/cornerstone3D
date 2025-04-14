@@ -6,7 +6,6 @@ import type { PublicToolProps, ToolProps, EventTypes } from '../../types';
 import { triggerSegmentationModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/activeSegmentation';
-import RepresentationTypes from '../../enums/SegmentationRepresentations';
 import { setActiveSegmentIndex } from '../../stateManagement/segmentation/segmentIndex';
 import {
   getHoveredContourSegmentationAnnotation,
@@ -14,10 +13,7 @@ import {
   getSegmentIndexAtWorldPoint,
 } from '../../utilities/segmentation';
 import { state } from '../../store/state';
-import type {
-  Segmentation,
-  SegmentationRepresentation,
-} from '../../types/SegmentationStateTypes';
+import type { Segmentation } from '../../types/SegmentationStateTypes';
 import { ToolModes } from '../../enums';
 
 /**
