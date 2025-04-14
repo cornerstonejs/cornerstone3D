@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.2...v3.10.3) (2025-04-14)
+
+### Bug Fixes
+
+- **polyseg:** Align canComputeRequestedRepresentation with interface ([#1999](https://github.com/cornerstonejs/cornerstone3D/issues/1999)) ([1303fee](https://github.com/cornerstonejs/cornerstone3D/commit/1303fee618f96e0a72b7cffa46a6d8a28c89ae89))
+
 ## [3.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.1...v3.10.2) (2025-04-14)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
