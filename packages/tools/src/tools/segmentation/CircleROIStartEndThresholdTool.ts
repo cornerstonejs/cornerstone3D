@@ -104,7 +104,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       );
     } else {
       this._throttledCalculateCachedStats = debounce(
-        this._calculateCachedStatsTool, this.configuration.throttleTimeout);
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout
+      );
     }
   }
 
@@ -286,7 +288,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       enabledElement
     );
 
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
@@ -387,9 +388,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
         roundedCameraCoordinate <
-        Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
+          Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
         roundedCameraCoordinate >
-        Math.max(roundedStartCoordinate, roundedEndCoordinate)
+          Math.max(roundedStartCoordinate, roundedEndCoordinate)
       ) {
         continue;
       }
@@ -492,9 +493,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       renderStatus = true;
 
-      if (
-        this.configuration.showTextBox
-      ) {
+      if (this.configuration.showTextBox) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
           data.handles.textBox = {
@@ -651,8 +650,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
-      (worldWidth / measureInfo.scale / 2) *
-      (worldHeight / aspect / measureInfo.scale / 2)
+        (worldWidth / measureInfo.scale / 2) *
+        (worldHeight / aspect / measureInfo.scale / 2)
     );
 
     const modalityUnitOptions = {

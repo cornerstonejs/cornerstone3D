@@ -105,9 +105,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       );
     } else {
       this._throttledCalculateCachedStats = debounce(
-        this._calculateCachedStatsTool, this.configuration.throttleTimeout);
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout
+      );
     }
-
   }
 
   /**
@@ -274,14 +275,12 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
-
     this._computePointsInsideVolume(
       annotation,
       targetId,
       imageVolume,
       enabledElement
     );
-
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -670,9 +669,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
       renderStatus = true;
 
-      if (
-        this.configuration.showTextBox
-      ) {
+      if (this.configuration.showTextBox) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
           data.handles.textBox = {
