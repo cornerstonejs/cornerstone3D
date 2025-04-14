@@ -1,5 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
-import { volumeLoader, imageLoader, BaseVolumeViewport } from '@cornerstonejs/core';
+import {
+  volumeLoader,
+  imageLoader,
+  BaseVolumeViewport
+} from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
