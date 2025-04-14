@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { volumeLoader, imageLoader, VolumeViewport } from '@cornerstonejs/core';
+import { volumeLoader, imageLoader, BaseVolumeViewport } from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
@@ -70,7 +70,7 @@ async function computeLabelmapFromContourSegmentation(
   | ToolsTypes.LabelmapSegmentationDataStack
 > {
   const isVolume = options.viewport
-    ? options.viewport instanceof VolumeViewport
+    ? options.viewport instanceof BaseVolumeViewport
     : true;
 
   if (isVolume && !options.viewport) {
@@ -111,7 +111,7 @@ async function computeLabelmapFromSurfaceSegmentation(
   | ToolsTypes.LabelmapSegmentationDataStack
 > {
   const { viewport } = options;
-  const isVolume = viewport ? viewport instanceof VolumeViewport : true;
+  const isVolume = viewport ? viewport instanceof BaseVolumeViewport : true;
 
   const segmentIndices = options.segmentIndices?.length
     ? options.segmentIndices

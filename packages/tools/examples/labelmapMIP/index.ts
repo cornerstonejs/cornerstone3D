@@ -141,7 +141,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_3D,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,

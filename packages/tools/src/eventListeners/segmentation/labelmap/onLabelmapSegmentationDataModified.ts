@@ -2,6 +2,7 @@ import {
   VolumeViewport,
   getEnabledElementByViewportId,
   StackViewport,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
@@ -25,7 +26,7 @@ const onLabelmapSegmentationDataModified = function (
 
   const hasVolumeViewport = viewportIds.some((viewportId) => {
     const { viewport } = getEnabledElementByViewportId(viewportId);
-    return viewport instanceof VolumeViewport;
+    return viewport instanceof BaseVolumeViewport;
   });
 
   const hasStackViewport = viewportIds.some((viewportId) => {
@@ -38,7 +39,7 @@ const onLabelmapSegmentationDataModified = function (
   viewportIds.forEach((viewportId) => {
     const { viewport } = getEnabledElementByViewportId(viewportId);
 
-    if (viewport instanceof VolumeViewport) {
+    if (viewport instanceof BaseVolumeViewport) {
       // For combined stack and volume scenarios in the rendering engine, updating only affected
       // slices is not ideal. Stack indices (e.g., 0 for just one image) don't
       // correspond to image indices in the volume. In this case, we update all slices.
