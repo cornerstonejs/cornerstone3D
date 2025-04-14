@@ -20,7 +20,7 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
-import debounce  from '../../utilities/debounce';
+import debounce from '../../utilities/debounce';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
 
