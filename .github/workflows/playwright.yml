@@ -29,8 +29,8 @@ jobs:
       #   run: bun x playwright install-deps chromium
       - name: Run Playwright tests
         run: |
-          export NODE_OPTIONS="--max_old_space_size=8192"
-          bun x playwright test
+          export NODE_OPTIONS="--max_old_space_size=10192"
+          bun x playwright test -g "@debug"
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -57,8 +57,12 @@ jobs:
           path: all-blob-reports
           pattern: blob-report
           merge-multiple: true
+      - name: Ensure report directory exists
+        run: mkdir -p packages/docs/static/playwright-report
       - name: Merge into HTML Report
         run: bun x playwright merge-reports --reporter html ./all-blob-reports packages/docs/static/playwright-report
+      - name: List generated report files # For debugging
+        run: ls -la packages/docs/static/playwright-report
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
         with:
@@ -67,7 +71,7 @@ jobs:
           retention-days: 14
 
   build-docs:
-    if: ${{ !cancelled() && github.event_name != 'schedule' }}
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     needs: [merge-reports]
     runs-on: self-hosted
     steps:
