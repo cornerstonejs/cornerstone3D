@@ -56,7 +56,7 @@
     "onnxruntime-web": "1.17.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.10.3",
-    "@cornerstonejs/tools": "^3.10.3"
+    "@cornerstonejs/core": "^3.10.4",
+    "@cornerstonejs/tools": "^3.10.4"
   }
 }
