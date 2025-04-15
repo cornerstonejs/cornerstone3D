@@ -414,6 +414,7 @@ class AngleTool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    this.doneEditMemo();
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -428,9 +429,16 @@ class AngleTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
+
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - moving text box
