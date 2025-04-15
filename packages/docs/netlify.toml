@@ -26,6 +26,12 @@
   to = "/index.html"
   status = 200
 
+# Redirect for Playwright coverage report
+[[redirects]]
+  from = "/coverage"
+  to = "/playwright-report/index.html"
+  status = 200
+
 # Attempt to speed up docusaurus builds by persisting the webpack cache
 # across deploys. This is done in the main docusaurus repo: https://github.com/facebook/docusaurus/blob/cc0bceab9c1678303f6237f5526753edc1b12fc3/website/netlify.toml#L22
 [[plugins]]
