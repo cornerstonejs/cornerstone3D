@@ -13,6 +13,8 @@ jobs:
       matrix:
         node-version: [20]
     steps:
+      - name: Cancel Previous Runs Actions
+        uses: LarchLiu/cancel_previous_runs@V1.1.0
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
@@ -39,6 +41,8 @@ jobs:
     needs: [playwright-tests]
     runs-on: self-hosted
     steps:
+      - name: Cancel Previous Runs Actions
+        uses: LarchLiu/cancel_previous_runs@V1.1.0
       - uses: oven-sh/setup-bun@v2
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
