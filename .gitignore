@@ -1,5 +1,6 @@
 # dependencies
 node_modules
+.nyc_output
 .nx
 .vscode/settings.json
 # builds
