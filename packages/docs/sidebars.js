@@ -291,6 +291,11 @@ module.exports = {
         'migration-guides/legacy-to-3d',
       ],
     },
+    {
+      type: 'link',
+      label: 'Test Coverage',
+      href: '/coverage',
+    },
     'faq',
     'help',
     'examples',
