@@ -1,0 +1,35 @@
+{
+  "all": true,
+  "include": [
+    "packages/*/src/**/*.ts",
+    "packages/*/src/**/*.js"
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/test/**",
+    "**/tests/**",
+    "**/examples/**",
+    "**/stories/**",
+    "packages/docs/**"
+  ],
+  "reporter": [
+    "html",
+    "lcov",
+    "text-summary",
+    "json"
+  ],
+  "extension": [
+    ".js",
+    ".ts",
+    ".jsx",
+    ".tsx"
+  ],
+  "check-coverage": false,
+  "report-dir": "./coverage",
+  "temp-dir": "./.nyc_output",
+  "instrument": true,
+  "sourceMap": true,
+  "cache": true,
+  "skip-full": false
+}
