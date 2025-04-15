@@ -33,7 +33,7 @@ jobs:
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
           # Tests will now directly generate the HTML report to packages/docs/static/playwright-report
-          bun x playwright test -g "@debug"
+          bun x playwright test
       - name: Upload HTML report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

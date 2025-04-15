@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Basic Stack', async () => {
-  test('should display a single DICOM image in a Stack viewport. @debug', async ({
+  test('should display a single DICOM image in a Stack viewport', async ({
     page,
   }) => {
     const locator = page.locator('.cornerstone-canvas');

@@ -6,24 +6,13 @@ const prod = process.env.NODE_ENV === 'production';
 
 module.exports = [
   {
-    test: /\.(j|t)s$/,
+    test: /\.[jt]sx?$/,
     exclude,
-    loader: 'builtin:swc-loader',
-    options: {
-      jsc: {
-        parser: {
-          syntax: 'typescript',
-        },
-        transform: {
-          react: {
-            runtime: 'automatic',
-            development: !prod,
-            refresh: !prod,
-          },
-        },
-      },
-      env: {
-        targets: 'Chrome >= 48',
+    use: {
+      loader: 'babel-loader',
+      options: {
+        presets: ['@babel/preset-typescript', '@babel/preset-react'],
+        plugins: ['istanbul'],
       },
     },
   },
