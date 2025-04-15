@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.3...v3.10.4) (2025-04-15)
+
+### Bug Fixes
+
+- Add history memo integration to AngleTool for undo/redo functionality (OHI-1790) ([#1998](https://github.com/cornerstonejs/cornerstone3D/issues/1998)) ([1f9533e](https://github.com/cornerstonejs/cornerstone3D/commit/1f9533ea6120a63eb2e22caaaea0f7163f4c5516))
+
 ## [3.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.2...v3.10.3) (2025-04-14)
 
 ### Bug Fixes
