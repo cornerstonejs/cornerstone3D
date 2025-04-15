@@ -13,7 +13,7 @@ export default defineConfig({
   reporter: [
     [
       process.env.CI ? 'blob' : 'html',
-      { outputFolder: './tests/playwright-report' },
+      { outputFolder: './packages/docs/static/playwright-report' },
     ],
   ],
   use: {
