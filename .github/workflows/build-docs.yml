@@ -50,12 +50,13 @@ jobs:
           echo "Found PR Number: $PR_NUMBER"
           echo "Found PR Head SHA: $PR_HEAD_SHA"
 
-          # Find the latest successful workflow run ID for the playwright workflow on the PR head commit
+          # Find the latest workflow run ID for the playwright workflow on the PR head commit
           # Uses the workflow file name 'playwright.yml'
-          RUN_ID=$(gh run list --workflow playwright.yml --commit "$PR_HEAD_SHA" --event pull_request --status success --json databaseId --jq '.[0].databaseId')
+          # Remove the --status success flag to find any run
+          RUN_ID=$(gh run list --workflow playwright.yml --commit "$PR_HEAD_SHA" --event pull_request --json databaseId --jq '.[0].databaseId')
 
           if [ -z "$RUN_ID" ]; then
-            echo "Could not find successful 'playwright.yml' run for PR $PR_NUMBER (Head SHA: $PR_HEAD_SHA)."
+            echo "Could not find any 'playwright.yml' run for PR $PR_NUMBER (Head SHA: $PR_HEAD_SHA)."
             # Decide how to handle - maybe try finding the artifact from the merge commit run if that exists?
             # For now, let's fail.
             exit 1
