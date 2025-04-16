@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.9...v3.10.10) (2025-04-16)
+
+### Bug Fixes
+
+- artifact for test ([#2006](https://github.com/cornerstonejs/cornerstone3D/issues/2006)) ([9a5dabe](https://github.com/cornerstonejs/cornerstone3D/commit/9a5dabeb52d8179ea875925ea08a8bf4d0946ee6))
+
 ## [3.10.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.8...v3.10.9) (2025-04-16)
 
 ### Bug Fixes
