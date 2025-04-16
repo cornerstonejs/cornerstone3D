@@ -156,7 +156,7 @@ class ProbeTool extends AnnotationTool {
     } = this.hydrateBase<ProbeTool>(ProbeTool, enabledElement, points, options);
 
     // Exclude toolInstance from the options passed into the metadata
-    const { toolInstance, ...serializableOptions } = options;
+    const { toolInstance, ...serializableOptions } = options || {};
 
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
