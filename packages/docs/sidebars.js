@@ -295,6 +295,7 @@ module.exports = {
       type: 'link',
       label: 'Test Coverage',
       href: '/coverage',
+      target: '_self',
     },
     'faq',
     'help',
