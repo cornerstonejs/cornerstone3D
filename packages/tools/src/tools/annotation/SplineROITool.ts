@@ -1297,7 +1297,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     // );
 
     // Exclude toolInstance from the options passed into the metadata
-    const { toolInstance, ...serializableOptions } = options;
+    const { toolInstance, ...serializableOptions } = options || {};
 
     const annotation = {
       annotationUID: options?.annotationUID || utilities.uuidv4(),
