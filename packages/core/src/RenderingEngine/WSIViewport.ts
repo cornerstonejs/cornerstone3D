@@ -10,6 +10,7 @@ import type {
   ViewportInput,
   BoundsIJK,
   CPUImageData,
+  PixelDataTypedArray,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -228,8 +229,11 @@ class WSIViewport extends Viewport {
     this.setProperties({});
   }
 
-  protected getScalarData() {
-    return null;
+  public getScalarData() {
+    const scalarData = null as PixelDataTypedArray;
+    //scalarData.length = 0;
+    //scarlarData = [];
+    return scalarData;
   }
 
   public getImageData(): CPUIImageData {
@@ -272,7 +276,7 @@ class WSIViewport extends Viewport {
       preScale: {
         scaled: false,
       },
-      scalarData: this.getScalarData(),
+      scalarData: null,
       imageData,
       // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
       voxelManager: {
