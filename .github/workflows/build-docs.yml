@@ -33,7 +33,7 @@ jobs:
       - name: Find PR and associated workflow run
         id: find_pr_run
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           MERGE_COMMIT_SHA: ${{ github.sha }}
         run: |
           # Find the PR associated with the merge commit SHA
@@ -65,7 +65,7 @@ jobs:
 
       - name: Download coverage artifact from PR run
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p ./coverage-artifact
           gh run download ${{ steps.find_pr_run.outputs.run_id }} -n coverage-report-pr --dir ./coverage-artifact
