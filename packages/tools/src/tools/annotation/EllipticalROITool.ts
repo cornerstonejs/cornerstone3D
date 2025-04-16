@@ -137,6 +137,7 @@ class EllipticalROITool extends AnnotationTool {
         // Radius of the circle to draw  at the center point of the ellipse.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -179,6 +180,9 @@ class EllipticalROITool extends AnnotationTool {
       options
     );
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
+
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
@@ -199,7 +203,7 @@ class EllipticalROITool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 
@@ -1026,6 +1030,9 @@ class EllipticalROITool extends AnnotationTool {
   };
 
   _calculateCachedStats = (annotation, viewport, renderingEngine) => {
+    if (!this.configuration.calculateStats) {
+      return;
+    }
     const data = annotation.data;
     const { element } = viewport;
 

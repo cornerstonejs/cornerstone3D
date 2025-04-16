@@ -13,6 +13,7 @@ import type {
   RemoveIslandData,
 } from '../base/GrowCutBaseTool';
 import { calculateGrowCutSeeds } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
+import { ToolModes } from '../../enums';
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
   worldPoint: Types.Point3;
@@ -45,6 +46,9 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
   }
 
   mouseMoveCallback(evt: EventTypes.MouseMoveEventType) {
+    if (this.mode !== ToolModes.Active) {
+      return;
+    }
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const { world: worldPoint } = currentPoints;
@@ -74,7 +78,10 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const refVolume = cache.getVolume(
       this.growCutData.segmentation.referencedVolumeId
     );
-    const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {});
+    const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {}) || {
+      positiveSeedIndices: new Set(),
+      negativeSeedIndices: new Set(),
+    };
 
     const { positiveSeedIndices, negativeSeedIndices } = seeds;
 

@@ -168,6 +168,8 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     CalibrationTypes.USER,
     CalibrationTypes.ERROR,
     CalibrationTypes.PROJECTION,
+    CalibrationTypes.CALIBRATED,
+    CalibrationTypes.UNKNOWN,
   ];
 
   if (types.includes(calibration?.type)) {

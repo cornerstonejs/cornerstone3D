@@ -106,6 +106,9 @@ class AngleTool extends AnnotationTool {
       viewport,
     } = this.hydrateBase<AngleTool>(AngleTool, enabledElement, points, options);
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
+
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
@@ -123,7 +126,7 @@ class AngleTool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
     addAnnotation(annotation, viewport.element);
@@ -414,6 +417,7 @@ class AngleTool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    this.doneEditMemo();
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
@@ -428,9 +432,16 @@ class AngleTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
+
+    this.createMemo(element, annotation, { newAnnotation });
 
     if (movingTextBox) {
       // Drag mode - moving text box

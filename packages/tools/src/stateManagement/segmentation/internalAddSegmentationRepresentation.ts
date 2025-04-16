@@ -8,9 +8,7 @@ import { triggerAnnotationRenderForViewportIds } from '../../utilities/triggerAn
 import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
-import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
-import { getColorLUT } from './getColorLUT';
 
 function internalAddSegmentationRepresentation(
   viewportId: string,

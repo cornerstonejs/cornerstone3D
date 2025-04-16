@@ -3,6 +3,7 @@ import type RGB from './RGB';
 interface ColormapRegistration {
   ColorSpace: string;
   Name: string;
+  name?: string;
   RGBPoints: RGB[] | number[];
 }
 

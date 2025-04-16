@@ -88,6 +88,17 @@ async function calculateForVolume({ segmentationIds, segmentIndex }) {
     scalarData: referenceVolume.voxelManager.getCompleteScalarDataArray(),
   };
 
+  if (
+    imageInfo.scalarData.length === 0 ||
+    segmentationInfo.scalarData.length === 0
+  ) {
+    return {
+      [segmentIndex]: {
+        name: 'TMTV',
+        value: 0,
+      },
+    };
+  }
   const stats = await getWebWorkerManager().executeTask(
     'compute',
     'computeMetabolicStats',

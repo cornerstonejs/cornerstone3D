@@ -1717,6 +1717,7 @@ class Viewport {
    * in a given viewport.
    * See getViewPresentation for HOW a view is displayed.
    *
+   *
    * @param viewRefSpecifier - choose an alternate view to be specified, typically
    *      a different slice index in the same set of images.
    */
@@ -1740,7 +1741,6 @@ class Viewport {
 
   /**
    * Find out if this viewport does or could show this view reference.
-   *
    * @param options - allows specifying whether the view COULD display this with
    *                  some modification - either navigation or displaying as volume.
    * @returns true if the viewport could show this view reference
@@ -1873,8 +1873,14 @@ class Viewport {
     // right now if the view presentation requires a flip, it will flicker. The
     // correct way to handle this is to wait for camera and flip together and then
     // do one render
-    if (flipHorizontal || flipVertical) {
-      this.flip({ flipHorizontal, flipVertical });
+    if (
+      flipHorizontal !== undefined &&
+      flipHorizontal !== this.flipHorizontal
+    ) {
+      this.flip({ flipHorizontal });
+    }
+    if (flipVertical !== undefined && flipVertical !== this.flipVertical) {
+      this.flip({ flipVertical });
     }
   }
 

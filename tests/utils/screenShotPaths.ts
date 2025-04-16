@@ -15,6 +15,7 @@ const screenShotPaths = {
     viewport: 'viewport.png',
   },
   stackAPI: {
+    flipBoth: 'flipBoth.png',
     setVoiRange: 'setVoiRange.png',
     nextImage: 'nextImage.png',
     previousImage: 'previousImage.png',

@@ -116,14 +116,15 @@ async function render(
 
   const surfaces = [];
   geometryIds.forEach((geometryId) => {
-    const geometry = cache.getGeometry(geometryId);
+    const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
+
     if (!geometry?.data) {
       console.warn(
         `No Surfaces found for geometryId ${geometryId}. Skipping render.`
       );
       return;
     }
-    const segmentIndex = geometry.data.segmentIndex;
+    const { segmentIndex } = geometry.data as Types.ISurface;
 
     const hiddenSegments = internalGetHiddenSegmentIndices(viewport.id, {
       segmentationId,
