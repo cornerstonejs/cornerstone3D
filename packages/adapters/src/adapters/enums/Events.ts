@@ -1,7 +1,7 @@
 /**
  * Cornerstone adapters events
  */
-enum Events {
+export enum Events {
     /**
      * Cornerstone segmentation load progress event
      */

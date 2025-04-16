@@ -1,12 +1,14 @@
 {
-  "version": "2.19.14",
+  "version": "3.8.2",
   "packages": [
     "packages/core",
     "packages/tools",
     "packages/adapters",
     "packages/nifti-volume-loader",
     "packages/dicomImageLoader",
-    "packages/ai"
+    "packages/ai",
+    "packages/labelmap-interpolation",
+    "packages/polymorphic-segmentation"
   ],
   "npmClient": "yarn"
 }

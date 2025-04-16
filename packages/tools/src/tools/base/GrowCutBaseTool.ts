@@ -4,26 +4,33 @@ import {
   cache,
   getRenderingEngine,
   type Types,
-  StackViewport,
+  volumeLoader,
+  imageLoader,
+  ImageVolume,
 } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import { SegmentationRepresentations } from '../../enums';
-import type {
-  ContourStyle,
-  EventTypes,
-  PublicToolProps,
-  ToolProps,
-} from '../../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 import {
   segmentIndex as segmentIndexController,
   state as segmentationState,
   activeSegmentation,
 } from '../../stateManagement/segmentation';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import {
+  DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
+  DEFAULT_NEGATIVE_SEED_MARGIN,
+} from '../../utilities/segmentation/growCut/constants';
 
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import type {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
 import IslandRemoval from '../../utilities/segmentation/islandRemoval';
+import { getOrCreateSegmentationVolume } from '../../utilities/segmentation';
+import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import type { GrowCutOneClickOptions } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -42,6 +49,7 @@ type GrowCutToolData = {
   };
   viewportId: string;
   renderingEngineId: string;
+  options?: Partial<GrowCutOneClickOptions>;
 };
 
 /**
@@ -62,14 +70,17 @@ class GrowCutBaseTool extends BaseTool {
   static toolName;
   protected growCutData: GrowCutToolData | null;
   private static lastGrowCutCommand = null;
+  protected seeds: {
+    positiveSeedIndices: Set<number>;
+    negativeSeedIndices: Set<number>;
+  } | null;
 
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     const baseToolProps = csUtils.deepMerge(
       {
         configuration: {
-          positiveSeedVariance: 0.1,
-          negativeSeedVariance: 0.9,
-          shrinkExpandIncrement: 0.05,
+          positiveStdDevMultiplier: DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
+          shrinkExpandIncrement: 0.1,
           islandRemoval: {
             /**
              * Enable/disable island removal
@@ -153,58 +164,64 @@ class GrowCutBaseTool extends BaseTool {
       segmentation: { segmentationId, segmentIndex, labelmapVolumeId },
     } = growCutData;
 
-    const hasSeedVarianceData =
-      config.positiveSeedVariance !== undefined &&
-      config.negativeSeedVariance !== undefined;
-
     const labelmap = cache.getVolume(labelmapVolumeId);
-    let shrinkExpandValue = 0;
+    let shrinkExpandAccumulator = 0;
 
     const growCutCommand = async ({ shrinkExpandAmount = 0 } = {}) => {
-      const { positiveSeedVariance, negativeSeedVariance } = config;
-      let newPositiveSeedVariance = undefined;
-      let newNegativeSeedVariance = undefined;
-
-      shrinkExpandValue += shrinkExpandAmount;
-
-      if (hasSeedVarianceData) {
-        newPositiveSeedVariance = positiveSeedVariance + shrinkExpandValue;
-        newNegativeSeedVariance = negativeSeedVariance + shrinkExpandValue;
+      if (shrinkExpandAmount !== 0) {
+        this.seeds = null;
       }
+      shrinkExpandAccumulator += shrinkExpandAmount;
 
-      const updatedGrowCutData = Object.assign({}, growCutData, {
+      const newPositiveStdDevMultiplier = Math.max(
+        0.1,
+        config.positiveStdDevMultiplier + shrinkExpandAccumulator
+      );
+
+      // Adjust negativeSeedMargin based on shrinkExpandAmount
+      // When shrinking (negative amount), reduce margin to sample negatives closer to positives
+      // When expanding (positive amount), increase margin
+      const negativeSeedMargin =
+        shrinkExpandAmount < 0
+          ? Math.max(
+              1,
+              DEFAULT_NEGATIVE_SEED_MARGIN -
+                Math.abs(shrinkExpandAccumulator) * 3
+            )
+          : DEFAULT_NEGATIVE_SEED_MARGIN + shrinkExpandAccumulator * 3;
+
+      const updatedGrowCutData = {
+        ...growCutData,
         options: {
+          ...(growCutData.options || {}),
           positiveSeedValue: segmentIndex,
           negativeSeedValue: 255,
-          positiveSeedVariance: newPositiveSeedVariance,
-          negativeSeedVariance: newNegativeSeedVariance,
+          positiveStdDevMultiplier: newPositiveStdDevMultiplier,
+          negativeSeedMargin,
         },
-      });
+      };
 
       const growcutLabelmap = await this.getGrowCutLabelmap(updatedGrowCutData);
 
-      this.applyGrowCutLabelmap(
-        segmentationId,
-        segmentIndex,
-        labelmap,
-        growcutLabelmap
-      );
+      const { isPartialVolume } = config;
 
-      this._removeIslands(growCutData);
+      const fn = isPartialVolume
+        ? this.applyPartialGrowCutLabelmap
+        : this.applyGrowCutLabelmap;
+
+      fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
+
+      this._removeIslands(updatedGrowCutData);
     };
 
-    // run and store the command for later execution
     await growCutCommand();
 
-    // Only growcut with seed variance data can shrink/expand
-    if (hasSeedVarianceData) {
-      GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
-    }
+    GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
 
     this.growCutData = null;
   }
 
-  protected applyGrowCutLabelmap(
+  protected applyPartialGrowCutLabelmap(
     segmentationId: string,
     segmentIndex: number,
     targetLabelmap: Types.IImageVolume,
@@ -259,6 +276,24 @@ class GrowCutBaseTool extends BaseTool {
     triggerSegmentationDataModified(segmentationId);
   }
 
+  protected applyGrowCutLabelmap(
+    segmentationId: string,
+    segmentIndex: number,
+    targetLabelmap: Types.IImageVolume,
+    sourceLabelmap: Types.IImageVolume
+  ) {
+    const tgtVoxelManager = targetLabelmap.voxelManager;
+    const srcVoxelManager = sourceLabelmap.voxelManager;
+
+    srcVoxelManager.forEach(({ value, index }) => {
+      if (value === segmentIndex) {
+        tgtVoxelManager.setAtIndex(index, value);
+      }
+    });
+
+    triggerSegmentationDataModified(segmentationId);
+  }
+
   private _runLastCommand({ shrinkExpandAmount = 0 } = {}) {
     const cmd = GrowCutBaseTool.lastGrowCutCommand;
 
@@ -282,11 +317,67 @@ class GrowCutBaseTool extends BaseTool {
       segmentationState.getSegmentation(segmentationId);
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-    const { volumeId: labelmapVolumeId, referencedVolumeId } =
+    let { volumeId: labelmapVolumeId, referencedVolumeId } =
       labelmapData as LabelmapSegmentationDataVolume;
 
     if (!labelmapVolumeId) {
-      throw new Error('Labelmap volume id not found - not implemented');
+      const referencedImageIds = (
+        viewport as Types.IStackViewport
+      ).getImageIds();
+
+      if (!csUtils.isValidVolume(referencedImageIds)) {
+        const currentImageId = (
+          viewport as Types.IStackViewport
+        ).getCurrentImageId();
+        const currentImage = cache.getImage(currentImageId);
+
+        const fakeImage =
+          imageLoader.createAndCacheDerivedImage(currentImageId);
+
+        const fakeVolume = this._createFakeVolume([
+          currentImage.imageId,
+          fakeImage.imageId,
+        ]);
+        referencedVolumeId = fakeVolume.volumeId;
+
+        const currentLabelmapImageId = getCurrentLabelmapImageIdForViewport(
+          viewport.id,
+          segmentationId
+        );
+
+        const fakeDerivedImage = imageLoader.createAndCacheDerivedImage(
+          currentLabelmapImageId
+        );
+
+        const fakeLabelmapVolume = this._createFakeVolume([
+          currentLabelmapImageId,
+          fakeDerivedImage.imageId,
+        ]);
+
+        labelmapVolumeId = fakeLabelmapVolume.volumeId;
+      } else {
+        const segVolume = getOrCreateSegmentationVolume(segmentationId);
+        labelmapVolumeId = segVolume.volumeId;
+      }
+    }
+
+    if (!referencedVolumeId) {
+      const { imageIds: segImageIds } =
+        labelmapData as LabelmapSegmentationDataStack;
+      const referencedImageIds = segImageIds.map(
+        (imageId) => cache.getImage(imageId).referencedImageId
+      );
+      const volumeId = cache.generateVolumeId(referencedImageIds);
+      const imageVolume = cache.getVolume(volumeId);
+
+      referencedVolumeId = imageVolume
+        ? imageVolume.volumeId
+        : (
+            await volumeLoader.createAndCacheVolumeFromImagesSync(
+              volumeId,
+              referencedImageIds
+            )
+          ).volumeId;
     }
 
     return {
@@ -295,6 +386,47 @@ class GrowCutBaseTool extends BaseTool {
       labelmapVolumeId,
       referencedVolumeId,
     };
+  }
+
+  // Todo: move this to a utilities file
+  // this just fakes a volume from a non reconstructable stack viewport
+  private _createFakeVolume(imageIds: string[]) {
+    const volumeId = cache.generateVolumeId(imageIds);
+
+    const cachedVolume = cache.getVolume(volumeId);
+
+    if (cachedVolume) {
+      return cachedVolume;
+    }
+
+    // Todo: implement rle based voxel manager here for ultrasound later
+
+    const volumeProps = csUtils.generateVolumePropsFromImageIds(
+      imageIds,
+      volumeId
+    );
+
+    const spacing = volumeProps.spacing;
+    if (spacing[2] === 0) {
+      spacing[2] = 1;
+    }
+
+    const derivedVolume = new ImageVolume({
+      volumeId,
+      dataType: volumeProps.dataType,
+      metadata: structuredClone(volumeProps.metadata),
+      dimensions: volumeProps.dimensions,
+      spacing: volumeProps.spacing,
+      origin: volumeProps.origin,
+      direction: volumeProps.direction,
+      referencedVolumeId: volumeProps.referencedVolumeId,
+      imageIds: volumeProps.imageIds,
+      referencedImageIds: volumeProps.referencedImageIds,
+    });
+
+    cache.putVolumeSync(volumeId, derivedVolume);
+
+    return derivedVolume;
   }
 
   protected _isOrthogonalView(
@@ -388,28 +520,6 @@ class GrowCutBaseTool extends BaseTool {
       viewportId,
     });
   }
-
-  // protected getLabelmapSegmentationData(viewport: Types.IViewport) {
-  //   const { segmentationId } = activeSegmentation.getActiveSegmentation(
-  //     viewport.id
-  //   );
-  //   const segmentIndex =
-  //     segmentIndexController.getActiveSegmentIndex(segmentationId);
-  //   const { representationData } =
-  //     segmentationState.getSegmentation(segmentationId);
-  //   const labelmapData =
-  //     representationData[SegmentationRepresentations.Labelmap];
-
-  //   const { volumeId: labelmapVolumeId, referencedVolumeId } =
-  //     labelmapData as LabelmapSegmentationDataVolume;
-
-  //   return {
-  //     segmentationId,
-  //     segmentIndex,
-  //     labelmapVolumeId,
-  //     referencedVolumeId,
-  //   };
-  // }
 }
 
 GrowCutBaseTool.toolName = 'GrowCutBaseTool';

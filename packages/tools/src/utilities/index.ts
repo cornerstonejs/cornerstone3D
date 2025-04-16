@@ -50,7 +50,13 @@ import { pointInSurroundingSphereCallback } from './pointInSurroundingSphereCall
 const roundNumber = utilities.roundNumber;
 import normalizeViewportPlane from './normalizeViewportPlane';
 import IslandRemoval from './segmentation/islandRemoval';
-import { getPixelValueUnits } from './getPixelValueUnits';
+import {
+  getPixelValueUnits,
+  getPixelValueUnitsImageId,
+} from './getPixelValueUnits';
+import * as geometricSurfaceUtils from './geometricSurfaceUtils';
+import setAnnotationLabel from './setAnnotationLabel';
+import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 
 export {
   math,
@@ -69,6 +75,7 @@ export {
   getCalibratedProbeUnitsAndValue,
   getCalibratedAspect,
   getPixelValueUnits,
+  getPixelValueUnitsImageId,
   segmentation,
   contours,
   triggerAnnotationRenderForViewportIds,
@@ -96,4 +103,7 @@ export {
   pointInSurroundingSphereCallback,
   normalizeViewportPlane,
   IslandRemoval,
+  geometricSurfaceUtils,
+  setAnnotationLabel,
+  moveAnnotationToViewPlane,
 };

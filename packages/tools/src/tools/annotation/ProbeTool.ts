@@ -39,7 +39,6 @@ import type {
   ToolHandle,
   PublicToolProps,
   SVGDrawingHelper,
-  Annotation,
 } from '../../types';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -94,18 +93,6 @@ const { transformWorldToIndex } = csUtils;
 class ProbeTool extends AnnotationTool {
   static toolName = 'Probe';
 
-  editData: {
-    annotation: Annotation;
-    viewportIdsToRender: string[];
-    newAnnotation?: boolean;
-  } | null;
-  eventDispatchDetail: {
-    viewportId: string;
-    renderingEngineId: string;
-  };
-  isDrawing: boolean;
-  isHandleOutsideImage: boolean;
-
   public static probeDefaults = {
     supportedInteractionTypes: ['Mouse', 'Touch'],
     configuration: {
@@ -149,27 +136,24 @@ class ProbeTool extends AnnotationTool {
     points: Types.Point3[],
     options?: {
       annotationUID?: string;
+      toolInstance?: ProbeTool;
+      referencedImageId?: string;
+      viewplaneNormal?: Types.Point3;
+      viewUp?: Types.Point3;
     }
   ): ProbeAnnotation => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (!enabledElement) {
       return;
     }
-    const { viewport } = enabledElement;
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
-
-    // This is a workaround to access the protected method getReferencedImageId
-    // we should make those static too
-    const instance = new this();
-
-    const referencedImageId = instance.getReferencedImageId(
-      viewport,
-      points[0],
+    const {
+      FrameOfReferenceUID,
+      referencedImageId,
       viewPlaneNormal,
-      viewUp
-    );
+      viewUp,
+      instance,
+      viewport,
+    } = this.hydrateBase<ProbeTool>(ProbeTool, enabledElement, points, options);
 
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
@@ -669,10 +653,13 @@ class ProbeTool extends AnnotationTool {
           Modality: modality,
         };
       }
+    }
 
-      annotation.invalidated = false;
+    const invalidated = annotation.invalidated;
+    annotation.invalidated = false;
 
-      // Dispatching annotation modified
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
       triggerAnnotationModified(annotation, element, changeType);
     }
 

@@ -8,6 +8,7 @@ import getBoundsIJKFromRectangleAnnotations from '../rectangleROITool/getBoundsI
 import type { ThresholdInformation } from './utilities';
 
 export type ThresholdOptions = {
+  segmentationId: string;
   numSlicesToProject?: number; // number of slices to project before and after current slice
   overwrite: boolean;
   overlapType?: number; // type of the voxel overlap
@@ -67,7 +68,7 @@ function rectangleROIThresholdVolumeByRange(
   const outputSegmentationVolume = thresholdVolumeByRange(
     segmentationVolume,
     thresholdVolumeInformation,
-    { ...options, boundsIJK }
+    { ...options, boundsIJK, segmentationId: options.segmentationId }
   );
 
   outputSegmentationVolume.modified();

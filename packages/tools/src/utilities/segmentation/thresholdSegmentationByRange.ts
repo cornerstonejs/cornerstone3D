@@ -18,8 +18,14 @@ function thresholdSegmentationByRange(
   segmentationVolume: Types.IImageVolume,
   segmentationIndex: number,
   thresholdVolumeInformation: ThresholdInformation[],
-  overlapType: number
+  overlapType: number,
+  segmentationId: string
 ): Types.IImageVolume {
+  if (!segmentationId) {
+    throw new Error(
+      'Segmentation ID is required to be passed inside thresholdSegmentationByRange'
+    );
+  }
   // prepare a list of volume information objects for callback functions
   const { baseVolumeIdx, volumeInfoList } = processVolumes(
     segmentationVolume,
@@ -66,7 +72,7 @@ function thresholdSegmentationByRange(
     }
   });
 
-  triggerSegmentationDataModified(segmentationVolume.volumeId);
+  triggerSegmentationDataModified(segmentationId);
 
   return segmentationVolume;
 }

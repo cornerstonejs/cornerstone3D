@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "2.19.14",
+  "version": "3.8.2",
   "description": "Cornerstone3D Tools",
   "types": "./dist/esm/index.d.ts",
   "module": "./dist/esm/index.js",
@@ -89,7 +89,6 @@
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "dev": "tsc --project ./tsconfig.json --watch",
-    "build:update-api": "yarn run build:esm && api-extractor run --local",
     "format-check": "npx eslint ./src --quiet",
     "api-check": "api-extractor --debug run ",
     "prepublishOnly": "yarn run build",
@@ -101,11 +100,11 @@
     "lodash.get": "^4.4.2"
   },
   "devDependencies": {
-    "canvas": "^2.11.2"
+    "canvas": "^3.1.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^2.19.14",
-    "@kitware/vtk.js": "32.9.0",
+    "@cornerstonejs/core": "^3.8.2",
+    "@kitware/vtk.js": "32.12.1",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",
     "d3-array": "^3.2.3",

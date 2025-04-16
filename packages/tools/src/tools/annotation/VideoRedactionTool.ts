@@ -21,7 +21,7 @@ import {
   drawRedactionRect as drawRedactionRectSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as rectangle from '../../utilities/math/rectangle';
 import {
@@ -702,18 +702,21 @@ class VideoRedactionTool extends AnnotationTool {
       }
     }
 
-    data.invalidated = false;
+    const invalidated = annotation.invalidated;
+    annotation.invalidated = false;
 
-    // Dispatching measurement modified
-    const eventType = Events.ANNOTATION_MODIFIED;
-
-    const eventDetail = {
-      annotation,
-      viewportUID,
-      renderingEngineUID,
-      sceneUID: sceneUID,
-    };
-    triggerEvent(eventTarget, eventType, eventDetail);
+    // Dispatching measurement modified only if it was invalidated
+    if (invalidated) {
+      const eventType = Events.ANNOTATION_MODIFIED;
+      const eventDetail = {
+        annotation,
+        viewportUID,
+        renderingEngineUID,
+        sceneUID: sceneUID,
+        changeType: ChangeTypes.StatsUpdated,
+      };
+      triggerEvent(eventTarget, eventType, eventDetail);
+    }
 
     return cachedStats;
   };

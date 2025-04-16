@@ -683,10 +683,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     if (!this.commonData?.movingTextBox) {
       const { data } = annotation;
-      if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
-      ) {
+      if (!data.cachedStats[targetId]?.unit) {
         data.cachedStats[targetId] = {
           Modality: null,
           area: null,
@@ -694,6 +691,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           mean: null,
           stdDev: null,
           areaUnit: null,
+          unit: null,
         };
 
         this._calculateCachedStats(
@@ -813,13 +811,17 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       }
     }
 
-    triggerAnnotationModified(
-      annotation,
-      enabledElement.viewport.element,
-      ChangeTypes.StatsUpdated
-    );
-
+    const invalidated = annotation.invalidated;
     annotation.invalidated = false;
+
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        enabledElement.viewport.element,
+        ChangeTypes.StatsUpdated
+      );
+    }
 
     return cachedStats;
   };

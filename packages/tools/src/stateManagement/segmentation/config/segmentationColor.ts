@@ -87,7 +87,8 @@ function getSegmentIndexColor(
   let colorValue = colorLUT[segmentIndex];
   if (!colorValue) {
     if (typeof segmentIndex !== 'number') {
-      throw new Error(`Can't create colour for LUT index ${segmentIndex}`);
+      console.warn(`Can't create colour for LUT index ${segmentIndex}`);
+      return null;
     }
     colorValue = colorLUT[segmentIndex] = [0, 0, 0, 0];
   }

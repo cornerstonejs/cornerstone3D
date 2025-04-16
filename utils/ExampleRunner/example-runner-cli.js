@@ -111,6 +111,11 @@ const configuration = {
     { path: 'packages/core/examples', regexp: 'index.ts' },
     { path: 'packages/tools/examples', regexp: 'index.ts' },
     { path: 'packages/ai/examples', regexp: 'index.ts' },
+    { path: 'packages/labelmap-interpolation/examples', regexp: 'index.ts' },
+    {
+      path: 'packages/polymorphic-segmentation/examples',
+      regexp: 'index.ts',
+    },
     {
       path: 'packages/dicomImageLoader/examples',
       regexp: 'index.ts',

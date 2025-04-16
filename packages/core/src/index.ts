@@ -6,7 +6,7 @@ import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
   convertMapperToNotSharedMapper,
 } from './RenderingEngine/helpers/createVolumeMapper';
-import getOrCreateCanvas from './RenderingEngine/helpers/getOrCreateCanvas';
+export * from './RenderingEngine/helpers/getOrCreateCanvas';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
@@ -126,7 +126,6 @@ export {
   getEnabledElements,
   getEnabledElementByViewportId,
   createVolumeActor,
-  getOrCreateCanvas,
   createVolumeMapper,
   // cache
   cache,

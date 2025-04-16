@@ -66,7 +66,7 @@ describe('Calculator', function () {
     });
 
     it('should not remember pointsLPS list', () => {
-      VolumetricCalculator.statsInit({ noPointsCollection: true });
+      VolumetricCalculator.statsInit({ storePointData: false });
       for (let value = 0; value < count; value++) {
         VolumetricCalculator.statsCallback({
           value,
@@ -78,7 +78,7 @@ describe('Calculator', function () {
     });
 
     it('should find top value locations for points', () => {
-      VolumetricCalculator.statsInit({ noPointsCollection: true });
+      VolumetricCalculator.statsInit({ storePointData: false });
       const bigCount = 25;
       for (let value = 0; value < bigCount; value++) {
         VolumetricCalculator.statsCallback({
@@ -94,7 +94,7 @@ describe('Calculator', function () {
     });
 
     it('should find reversed duplicated values', () => {
-      VolumetricCalculator.statsInit({ noPointsCollection: true });
+      VolumetricCalculator.statsInit({ storePointData: false });
       const bigCount = 25;
       for (let value = 0; value < bigCount; value++) {
         VolumetricCalculator.statsCallback({
@@ -118,7 +118,7 @@ describe('Calculator', function () {
     });
 
     it('should find duplicated values', () => {
-      VolumetricCalculator.statsInit({ noPointsCollection: true });
+      VolumetricCalculator.statsInit({ storePointData: false });
       const bigCount = 25;
       for (let value = 0; value < bigCount; value++) {
         VolumetricCalculator.statsCallback({

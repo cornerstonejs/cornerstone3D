@@ -10,6 +10,9 @@ import SegmentationRepresentations from '../../enums/SegmentationRepresentations
 const { Labelmap } = SegmentationRepresentations;
 
 function generateContourSetsFromLabelmap({ segmentations }) {
+  console.warn(
+    'Deprecation Alert: This function will be removed in a future version of Cornerstone Tools. Please use the worker version of this function in computeWorker.'
+  );
   const { representationData, segments = [0, 1] } = segmentations;
   const { volumeId: segVolumeId } = representationData[Labelmap];
 

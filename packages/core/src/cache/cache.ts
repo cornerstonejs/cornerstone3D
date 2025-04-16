@@ -16,6 +16,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 import { ImageQualityStatus } from '../enums';
+import fnv1aHash from '../utilities/fnv1aHash';
 
 const ONE_GB = 1073741824;
 
@@ -33,12 +34,46 @@ class Cache {
   private readonly _imageCache = new Map<string, ICachedImage>();
   // used to store volume data (3d)
   private readonly _volumeCache = new Map<string, ICachedVolume>();
+  // used to store the reverse lookup from imageIds to volumeId
+  private readonly _imageIdsToVolumeIdCache = new Map<string, string>();
+  // used to store the reverse lookup from referencedImageIds to imageIds
+  private readonly _referencedImageIdToImageIdCache = new Map<string, string>();
   // Todo: contour for now, but will be used for surface, etc.
   private readonly _geometryCache = new Map<string, ICachedGeometry>();
 
   private _imageCacheSize = 0;
   private _maxCacheSize = 3 * ONE_GB;
   private _geometryCacheSize = 0;
+
+  /**
+   * Generates a deterministic volume ID from a list of image IDs
+   * @param imageIds - Array of image IDs
+   * @returns A deterministic volume ID
+   */
+  public generateVolumeId(imageIds: string[]): string {
+    const imageURIs = imageIds.map(imageIdToURI).sort();
+
+    let combinedHash = 0x811c9dc5;
+    for (const id of imageURIs) {
+      const idHash = fnv1aHash(id);
+      for (let i = 0; i < idHash.length; i++) {
+        combinedHash ^= idHash.charCodeAt(i);
+        combinedHash +=
+          (combinedHash << 1) +
+          (combinedHash << 4) +
+          (combinedHash << 7) +
+          (combinedHash << 8) +
+          (combinedHash << 24);
+      }
+    }
+    return `volume-${(combinedHash >>> 0).toString(36)}`;
+  }
+
+  public getImageIdsForVolumeId(volumeId: string): string[] {
+    return Array.from(this._imageIdsToVolumeIdCache.entries())
+      .filter(([_, id]) => id === volumeId)
+      .map(([key]) => key);
+  }
 
   /**
    * Set the maximum cache Size
@@ -130,6 +165,13 @@ class Cache {
     }
 
     const { imageLoadObject } = cachedImage;
+
+    // Remove from referencedImageId map if needed
+    if (cachedImage.image?.referencedImageId) {
+      this._referencedImageIdToImageIdCache.delete(
+        cachedImage.image.referencedImageId
+      );
+    }
 
     // Cancel any in-progress loading
     if (imageLoadObject?.cancelFn) {
@@ -384,6 +426,14 @@ class Cache {
     const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
       image: cachedImage,
     };
+
+    // Add to referencedImageId map if it exists
+    if (image.referencedImageId) {
+      this._referencedImageIdToImageIdCache.set(
+        image.referencedImageId,
+        imageId
+      );
+    }
 
     triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_ADDED, eventDetails);
 
@@ -1045,6 +1095,20 @@ class Cache {
    */
   public decrementGeometryCacheSize = (decrement: number) => {
     this._geometryCacheSize -= decrement;
+  };
+
+  /**
+   * Find the image that has the referenced ImageId
+   */
+  public getImageByReferencedImageId = (
+    referencedImageId: string
+  ): IImage | undefined => {
+    const imageId =
+      this._referencedImageIdToImageIdCache.get(referencedImageId);
+    if (imageId) {
+      return this._imageCache.get(imageId)?.image;
+    }
+    return undefined;
   };
 
   /**

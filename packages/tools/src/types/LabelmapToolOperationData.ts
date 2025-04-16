@@ -13,26 +13,19 @@ type LabelmapToolOperationData = {
   /**
    * The colours to use for previewing
    */
-  previewColors?: Record<number, [number, number, number, number]>;
+  previewColor?: [number, number, number, number];
+  previewSegmentIndex?: number;
+  //
   segmentsLocked: number[];
   viewPlaneNormal: number[];
   viewUp: number[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  strategySpecificConfiguration: any;
-  // constraintFn: (pointIJK: number) => boolean;
+  activeStrategy: string;
   points: Types.Point3[];
   voxelManager;
   override: {
     voxelManager: Types.IVoxelManager<number>;
     imageData: vtkImageData;
   };
-  /**
-   * preview is used for sharing preview data between views/interactions with
-   * a tool, and needs to be maintained by the tool side in order to be able
-   * to accept/reject/update the preview information.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  preview: any;
   toolGroupId: string;
   /**
    * Creates a labelmap memo, given the preview information and segment voxels.

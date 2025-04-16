@@ -12,6 +12,7 @@ export interface ROICachedStats {
     max: number;
     mean: number;
     stdDev: number;
+    unit?: number;
   };
 }
 
@@ -55,6 +56,15 @@ export interface ProbeAnnotation extends Annotation {
     label: string;
   };
 }
+
+export type KeyImageAnnotation = ProbeAnnotation & {
+  data: {
+    /** Indicates that the point selected is relevant rather than just the image */
+    isPoint: boolean;
+    /** Indicates that this key image selects the entire stack/volume (series) */
+    seriesLevel: boolean;
+  };
+};
 
 export interface LengthAnnotation extends Annotation {
   data: {
@@ -191,7 +201,7 @@ export interface BidirectionalAnnotation extends Annotation {
         };
       };
     };
-    label: string;
+    label?: string;
     cachedStats: {
       [targetId: string]: {
         length: number;
@@ -488,6 +498,41 @@ export interface ScaleOverlayAnnotation extends Annotation {
       points: Types.Point3[];
     };
     viewportId: string;
+  };
+}
+
+export interface SegmentBidirectionalAnnotation extends Annotation {
+  data: {
+    cachedStats: {
+      [targetId: string]: {
+        length: number;
+        width: number;
+        unit: string;
+      };
+    };
+    handles: {
+      points: Types.Point3[];
+      activeHandleIndex: number | null;
+      textBox: {
+        hasMoved: boolean;
+        worldPosition: Types.Point3;
+        worldBoundingBox: {
+          topLeft: Types.Point3;
+          topRight: Types.Point3;
+          bottomLeft: Types.Point3;
+          bottomRight: Types.Point3;
+        };
+      };
+    };
+  };
+  metadata: {
+    toolName: string;
+    viewPlaneNormal?: Types.Point3;
+    viewUp?: Types.Point3;
+    FrameOfReferenceUID: string;
+    referencedImageId?: string;
+    segmentIndex: number;
+    segmentationId: string;
   };
 }
 

@@ -15,18 +15,19 @@ import { state } from './state';
  * @returns
  */
 export function addTool(ToolClass): void {
-  // Check if tool exists and name is not undefined
   const toolName = ToolClass.toolName;
-  const toolAlreadyAdded = state.tools[toolName] !== undefined;
 
   if (!toolName) {
     throw new Error(`No Tool Found for the ToolClass ${ToolClass.name}`);
   }
 
-  // Stores the toolNames and ToolClass to be instantiated in the toolGroup on `toolGroup.addTool`
-  state.tools[toolName] = {
-    toolClass: ToolClass,
-  };
+  // Only add the tool if it hasn't been added already
+  if (!state.tools[toolName]) {
+    // Stores the toolNames and ToolClass to be instantiated in the toolGroup on `toolGroup.addTool`
+    state.tools[toolName] = {
+      toolClass: ToolClass,
+    };
+  }
 }
 
 /**

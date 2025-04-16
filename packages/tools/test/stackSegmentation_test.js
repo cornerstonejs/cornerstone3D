@@ -6,8 +6,7 @@ import * as imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked from './groundTruth/imag
 import * as imageURI_64_64_10_5_1_1_0_SEG_Mocked_Brushed from './groundTruth/imageURI_64_64_10_5_1_1_0_SEG_Mocked_Brushed.png';
 import { encodeImageIdInfo } from '../../../utils/test/testUtils';
 
-const { cache, RenderingEngine, Enums, metaData, imageLoader, eventTarget } =
-  cornerstone3D;
+const { cache, Enums, metaData, imageLoader, eventTarget } = cornerstone3D;
 
 const { ViewportType } = Enums;
 

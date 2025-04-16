@@ -6,7 +6,7 @@ export interface ImagePixelModule {
   samplesPerPixel: number;
   highBit: number;
   photometricInterpretation: string;
-  pixelRepresentation: string;
+  pixelRepresentation: number;
   windowWidth: number | number[];
   windowCenter: number | number[];
   voiLUTFunction: VOILUTFunctionType;

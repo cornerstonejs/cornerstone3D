@@ -80,10 +80,12 @@ export async function addVolumesAsIndependentComponents({
   }
 
   const segVoxelManager = segImageVolume.voxelManager;
+  const segData = segVoxelManager.getCompleteScalarDataArray();
 
   const { imageData: segImageData } = segImageVolume;
   const baseVolume = cache.getVolume(referenceVolumeId);
   const baseVoxelManager = baseVolume.voxelManager;
+  const baseData = baseVoxelManager.getCompleteScalarDataArray();
 
   const newComp = 2;
   const cubeData = new Float32Array(
@@ -94,12 +96,8 @@ export async function addVolumesAsIndependentComponents({
     for (let y = 0; y < dims[1]; ++y) {
       for (let x = 0; x < dims[0]; ++x) {
         const iTuple = x + dims[0] * (y + dims[1] * z);
-        cubeData[iTuple * newComp + 0] = baseVoxelManager.getAtIndex(
-          iTuple
-        ) as number;
-        cubeData[iTuple * newComp + 1] = segVoxelManager.getAtIndex(
-          iTuple
-        ) as number;
+        cubeData[iTuple * newComp + 0] = baseData[iTuple];
+        cubeData[iTuple * newComp + 1] = segData[iTuple];
       }
     }
   }
@@ -141,10 +139,9 @@ export async function addVolumesAsIndependentComponents({
     preLoad: load,
   });
 
-  // Todo: this is really ugly this shouldn't be here at all
   function onSegmentationDataModified(evt) {
     // update the second component of the array with the new segmentation data
-    const { segmentationId, modifiedSlicesToUse } = evt.detail;
+    const { segmentationId } = evt.detail;
     const { representationData } = getSegmentation(segmentationId);
     const { volumeId: segVolumeId } =
       representationData.Labelmap as LabelmapSegmentationDataVolume;
@@ -156,14 +153,13 @@ export async function addVolumesAsIndependentComponents({
     const segmentationVolume = cache.getVolume(segVolumeId);
     const segVoxelManager = segmentationVolume.voxelManager;
 
-    const array = mapper.getInputData().getPointData().getArray(0);
+    const imageData = mapper.getInputData();
+    const array = imageData.getPointData().getArray(0);
     const baseData = array.getData();
     const newComp = 2;
     const dims = segImageData.getDimensions();
 
-    const slices = modifiedSlicesToUse?.length
-      ? modifiedSlicesToUse
-      : Array.from({ length: dims[2] }, (_, i) => i);
+    const slices = Array.from({ length: dims[2] }, (_, i) => i);
 
     for (const z of slices) {
       for (let y = 0; y < dims[1]; ++y) {
@@ -177,11 +173,15 @@ export async function addVolumesAsIndependentComponents({
     }
 
     array.setData(baseData);
+
+    imageData.modified();
+    viewport.render();
   }
 
-  eventTarget.addEventListener(
+  eventTarget.addEventListenerDebounced(
     Events.SEGMENTATION_DATA_MODIFIED,
-    onSegmentationDataModified
+    onSegmentationDataModified,
+    200
   );
 
   eventTarget.addEventListener(

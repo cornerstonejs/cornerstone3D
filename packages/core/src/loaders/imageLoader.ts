@@ -41,6 +41,7 @@ interface LocalImageOptions {
   spacing?: Point2;
   origin?: Point3;
   direction?: Mat3;
+  referencedImageId?: string;
   /**
    * Skip creation of the actual buffer object.
    * In fact, this creates a very short buffer, as there are lots of places
@@ -316,6 +317,7 @@ export function createAndCacheDerivedImage(
     origin: imagePlaneModule.imagePositionPatient,
     direction: imagePlaneModule.imageOrientationPatient,
     frameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
+    referencedImageId: referencedImageId,
   });
 
   localImage.referencedImageId = referencedImageId;
@@ -383,6 +385,7 @@ export function createAndCacheLocalImage(
     onCacheAdd,
     frameOfReferenceUID,
     voxelRepresentation,
+    referencedImageId,
   } = options;
 
   const dimensions = options.dimensions;
@@ -492,15 +495,18 @@ export function createAndCacheLocalImage(
     });
   });
 
+  const id = imageId;
+
   // Todo: probably here we need to consider the RLE voxel manager as well
   const voxelManager =
     (voxelRepresentation === VoxelManagerEnum.RLE &&
-      VoxelManager.createRLEImageVoxelManager<number>({ dimensions })) ||
+      VoxelManager.createRLEImageVoxelManager<number>({ dimensions, id })) ||
     (VoxelManager.createImageVoxelManager({
       height,
       width,
       numberOfComponents,
       scalarData: scalarDataToUse,
+      id,
     }) as VoxelManager<number>);
 
   // Calculate min and max pixel values
@@ -540,6 +546,7 @@ export function createAndCacheLocalImage(
     getPixelData: () => voxelManager.getScalarData(),
     voxelManager,
     sizeInBytes: scalarData.byteLength,
+    referencedImageId,
   } as IImage;
 
   onCacheAdd?.(image);

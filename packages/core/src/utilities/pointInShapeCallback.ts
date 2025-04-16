@@ -73,10 +73,17 @@ export function pointInShapeCallback(
   if ((imageData as CPUImageData).getScalarData) {
     scalarData = (imageData as CPUImageData).getScalarData();
   } else {
-    scalarData = (imageData as vtkImageData)
-      .getPointData()
-      .getScalars()
-      .getData();
+    const scalars = (imageData as vtkImageData).getPointData().getScalars();
+
+    if (scalars) {
+      scalarData = scalars.getData();
+    } else {
+      // @ts-ignore
+      const { voxelManager } = imageData.get('voxelManager') || {};
+      if (voxelManager) {
+        scalarData = voxelManager.getCompleteScalarDataArray();
+      }
+    }
   }
 
   const dimensions = imageData.getDimensions();

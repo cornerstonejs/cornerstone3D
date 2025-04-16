@@ -239,13 +239,8 @@ enum Events {
   /**
    * Triggers when the webworker has made progress
    * You should use it with a workerType to indicate the type of worker that is making progress
-   * Checkout the polySEG convertors in the cornerstone tools
-   * to lean how to use it
    */
   WEB_WORKER_PROGRESS = 'CORNERSTONE_WEB_WORKER_PROGRESS',
-  // IMAGE_CACHE_FULL = 'CORNERSTONE_IMAGE_CACHE_FULL',
-  // PRE_RENDER = 'CORNERSTONE_PRE_RENDER',
-  // ELEMENT_RESIZED = 'CORNERSTONE_ELEMENT_RESIZED',
 
   /**
    * Triggers on the HTML element when viewport modifies its colormap

@@ -39,6 +39,10 @@ class VolumeViewport3D extends BaseVolumeViewport {
     return 1;
   };
 
+  public isInAcquisitionPlane(): boolean {
+    return false;
+  }
+
   public resetCamera({
     resetPan = true,
     resetZoom = true,

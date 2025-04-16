@@ -72,7 +72,7 @@ import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { pointInShapeCallback } from './pointInShapeCallback';
 // name spaces
-import * as planar from './planar';
+export * as planar from './planar';
 import * as windowLevel from './windowLevel';
 import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
@@ -80,6 +80,9 @@ import * as color from './color';
 import { deepEqual } from './deepEqual';
 import type { IViewport } from '../types/IViewport';
 import FrameRange from './FrameRange';
+import fnv1aHash from './fnv1aHash';
+import { getImageDataMetadata } from './getImageDataMetadata';
+import { buildMetadata } from './buildMetadata';
 
 // solving the circular dependency issue
 import { _getViewportModality } from './getViewportModality';
@@ -94,6 +97,9 @@ import scroll from './scroll';
 import clip from './clip';
 import createSubVolume from './createSubVolume';
 import getVolumeDirectionVectors from './getVolumeDirectionVectors';
+import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
+export * as logger from './logger';
+import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -108,10 +114,10 @@ export {
   scaleRgbTransferFunction,
   triggerEvent,
   imageIdToURI,
+  fnv1aHash,
   calibratedPixelSpacingMetadataProvider,
   clamp,
   uuidv4,
-  planar,
   getMinMax,
   getRuntimeId,
   isEqual,
@@ -193,4 +199,8 @@ export {
   transformWorldToIndexContinuous,
   createSubVolume,
   getVolumeDirectionVectors,
+  calculateSpacingBetweenImageIds,
+  getImageDataMetadata,
+  buildMetadata,
+  calculateNeighborhoodStats,
 };

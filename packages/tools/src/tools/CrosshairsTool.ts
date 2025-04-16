@@ -11,6 +11,8 @@ import {
   utilities as csUtils,
   Enums,
   CONSTANTS,
+  triggerEvent,
+  eventTarget,
 } from '@cornerstonejs/core';
 
 import {
@@ -109,9 +111,6 @@ class CrosshairsTool extends AnnotationTool {
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
   _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
-  editData: {
-    annotation: Annotation;
-  } | null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -138,6 +137,9 @@ class CrosshairsTool extends AnnotationTool {
           enabled: false,
           panSize: 10,
         },
+        handleRadius: 3,
+        // Enable HDPI rendering for handles using devicePixelRatio
+        enableHDPIHandles: false,
         // radius of the area around the intersection of the planes, in which
         // the reference lines will not be rendered. This is only used when
         // having 3 viewports in the toolGroup.
@@ -393,14 +395,27 @@ class CrosshairsTool extends AnnotationTool {
 
     // Calculating the intersection of 3 planes
     // prettier-ignore
-    this.toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane)
+
+    const toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane);
+    this.setToolCenter(toolCenter);
+  };
+
+  setToolCenter(toolCenter: Types.Point3, suppressEvents = false): void {
+    // prettier-ignore
+    this.toolCenter = toolCenter;
+    const viewportsInfo = this._getViewportsInfo();
 
     // assuming all viewports are in the same rendering engine
-
     triggerAnnotationRenderForViewportIds(
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
-  };
+    if (!suppressEvents) {
+      triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
+        toolGroupId: this.toolGroupId,
+        toolCenter: this.toolCenter,
+      });
+    }
+  }
 
   /**
    * addNewAnnotation acts as jump for the crosshairs tool. It is called when
@@ -658,6 +673,11 @@ class CrosshairsTool extends AnnotationTool {
         this.toolCenter[0] += deltaCameraPosition[0];
         this.toolCenter[1] += deltaCameraPosition[1];
         this.toolCenter[2] += deltaCameraPosition[2];
+
+        triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
+          toolGroupId: this.toolGroupId,
+          toolCenter: this.toolCenter,
+        });
       }
     }
 
@@ -1273,6 +1293,15 @@ class CrosshairsTool extends AnnotationTool {
           slabThicknessHandleWorldFour
         );
 
+        let handleRadius =
+          this.configuration.handleRadius *
+          (this.configuration.enableHDPIHandles ? window.devicePixelRatio : 1);
+        let opacity = 1;
+        if (this.configuration.mobile?.enabled) {
+          handleRadius = this.configuration.mobile.handleRadius;
+          opacity = this.configuration.mobile.opacity;
+        }
+
         if (
           (lineActive || this.configuration.mobile?.enabled) &&
           !rotHandlesActive &&
@@ -1289,12 +1318,8 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'circle',
             }
           );
@@ -1306,12 +1331,8 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'rect',
             }
           );
@@ -1330,12 +1351,8 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'circle',
             }
           );
@@ -1354,17 +1371,18 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.handleRadius
-                : 3,
-              opacity: this.configuration.mobile?.enabled
-                ? this.configuration.mobile?.opacity
-                : 1,
+              handleRadius,
+              opacity,
               type: 'rect',
             }
           );
         } else if (rotHandlesActive && viewportDraggableRotatable) {
           const handleUID = `${lineIndex}`;
+          const handleRadius =
+            this.configuration.handleRadius *
+            (this.configuration.enableHDPIHandles
+              ? window.devicePixelRatio
+              : 1);
           // draw all rotation handles as active
           drawHandlesSvg(
             svgDrawingHelper,
@@ -1373,7 +1391,7 @@ class CrosshairsTool extends AnnotationTool {
             rotationHandles,
             {
               color,
-              handleRadius: 2,
+              handleRadius,
               fill: color,
               type: 'circle',
             }
@@ -1383,6 +1401,11 @@ class CrosshairsTool extends AnnotationTool {
           selectedViewportId &&
           viewportSlabThicknessControlsOn
         ) {
+          const handleRadius =
+            this.configuration.handleRadius *
+            (this.configuration.enableHDPIHandles
+              ? window.devicePixelRatio
+              : 1);
           // draw only the slab thickness handles for the active viewport as active
           drawHandlesSvg(
             svgDrawingHelper,
@@ -1391,7 +1414,7 @@ class CrosshairsTool extends AnnotationTool {
             slabThicknessHandles,
             {
               color,
-              handleRadius: 2,
+              handleRadius,
               fill: color,
               type: 'rect',
             }

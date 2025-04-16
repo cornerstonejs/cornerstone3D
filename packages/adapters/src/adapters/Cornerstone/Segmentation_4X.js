@@ -52,7 +52,7 @@ export function generateSegmentation(
     inputLabelmaps3D,
     userOptions = {}
 ) {
-    const isMultiframe = images[0].imageId.includes("?frame");
+    const isMultiframe = isMultiframeImage(images[0]);
     const segmentation = _createSegFromImages(
         images,
         isMultiframe,
@@ -1363,13 +1363,47 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
         SourceImageSequence;
 
-    return ReferencedFrameNumber
-        ? getImageIdOfReferencedFrame(
-              ReferencedSOPInstanceUID,
-              ReferencedFrameNumber,
-              sopUIDImageIdIndexMap
-          )
-        : sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
+    const baseImageId = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
+
+    if (!baseImageId) {
+        console.warn(
+            `No imageId found for SOPInstanceUID: ${ReferencedSOPInstanceUID}`
+        );
+        return undefined;
+    }
+
+    if (ReferencedFrameNumber !== undefined) {
+        if (baseImageId.includes("frames/")) {
+            return baseImageId.replace(
+                /frames\/\d+/,
+                `frames/${ReferencedFrameNumber}`
+            );
+        } else if (baseImageId.includes("frame=")) {
+            return baseImageId.replace(
+                /frame=\d+/,
+                `frame=${ReferencedFrameNumber - 1}`
+            );
+        } else {
+            if (baseImageId.includes("wadors:")) {
+                return `${baseImageId}/frames/${ReferencedFrameNumber}`;
+            } else {
+                return `${baseImageId}?frame=${ReferencedFrameNumber - 1}`;
+            }
+        }
+    }
+
+    return baseImageId;
+}
+
+/**
+ * Determines if an image is a multiframe image based on its metadata.
+ *
+ * @param {Object} imageMetadata - The metadata object for the image
+ * @param {number} [imageMetadata.NumberOfFrames] - The number of frames in the image
+ * @returns {boolean} True if the image is a multiframe image (NumberOfFrames > 1)
+ */
+function isMultiframeImage(imageMetadata) {
+    return imageMetadata && imageMetadata.NumberOfFrames > 1;
 }
 
 /**
@@ -1393,28 +1427,27 @@ export function getImageIdOfSourceImagebyGeometry(
     tolerance
 ) {
     if (
-        ReferencedSeriesInstanceUID === undefined ||
-        PerFrameFunctionalGroup.PlanePositionSequence === undefined ||
-        PerFrameFunctionalGroup.PlanePositionSequence[0] === undefined ||
-        PerFrameFunctionalGroup.PlanePositionSequence[0]
-            .ImagePositionPatient === undefined
+        !ReferencedSeriesInstanceUID ||
+        !PerFrameFunctionalGroup.PlanePositionSequence?.[0]
+            ?.ImagePositionPatient
     ) {
         return undefined;
     }
 
-    for (
-        let imageIdsIndexc = 0;
-        imageIdsIndexc < imageIds.length;
-        ++imageIdsIndexc
-    ) {
-        const sourceImageMetadata = metadataProvider.get(
-            "instance",
-            imageIds[imageIdsIndexc]
-        );
+    const segFramePosition =
+        PerFrameFunctionalGroup.PlanePositionSequence[0].ImagePositionPatient;
+
+    for (let imageId of imageIds) {
+        const sourceImageMetadata = metadataProvider.get("instance", imageId);
+
+        if (!sourceImageMetadata) {
+            continue;
+        }
+
+        const isMultiframe = isMultiframeImage(sourceImageMetadata);
 
         if (
-            sourceImageMetadata === undefined ||
-            sourceImageMetadata.ImagePositionPatient === undefined ||
+            !sourceImageMetadata.ImagePositionPatient ||
             sourceImageMetadata.FrameOfReferenceUID !== FrameOfReferenceUID ||
             sourceImageMetadata.SeriesInstanceUID !==
                 ReferencedSeriesInstanceUID
@@ -1422,17 +1455,31 @@ export function getImageIdOfSourceImagebyGeometry(
             continue;
         }
 
-        if (
+        // For multiframe images, check each frame's position
+        if (isMultiframe) {
+            const framePosition = metadataProvider.get(
+                "imagePlaneModule",
+                imageId
+            )?.imagePositionPatient;
+
+            if (
+                framePosition &&
+                compareArrays(segFramePosition, framePosition, tolerance)
+            ) {
+                return imageId;
+            }
+        } else if (
             compareArrays(
-                PerFrameFunctionalGroup.PlanePositionSequence[0]
-                    .ImagePositionPatient,
+                segFramePosition,
                 sourceImageMetadata.ImagePositionPatient,
                 tolerance
             )
         ) {
-            return imageIds[imageIdsIndexc];
+            return imageId;
         }
     }
+
+    return undefined;
 }
 
 /**
@@ -1450,15 +1497,20 @@ export function getImageIdOfReferencedFrame(
     frameNumber,
     sopUIDImageIdIndexMap
 ) {
-    const imageId = sopUIDImageIdIndexMap[sopInstanceUid];
+    const baseImageId = sopUIDImageIdIndexMap[sopInstanceUid];
 
-    if (!imageId) {
-        return;
+    if (!baseImageId) {
+        console.warn(`No imageId found for SOPInstanceUID: ${sopInstanceUid}`);
+        return undefined;
     }
 
-    const imageIdFrameNumber = Number(imageId.split("frame=")[1]);
+    // Handle wadors format differently from others
+    if (baseImageId.includes("wadors:")) {
+        return `${baseImageId}/frames/${frameNumber}`;
+    }
 
-    return imageIdFrameNumber === frameNumber - 1 ? imageId : undefined;
+    // For all other formats use frame parameter
+    return `${baseImageId}?frame=${frameNumber - 1}`;
 }
 
 /**
