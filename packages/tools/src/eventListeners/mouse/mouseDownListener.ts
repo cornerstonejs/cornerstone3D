@@ -2,7 +2,6 @@ import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import Events from '../../enums/Events';
-import { MouseBindings } from '../../enums/ToolBindings';
 import mouseMoveListener from './mouseMoveListener';
 import type { EventTypes, IPoints } from '../../types';
 import getMouseEventPoints from './getMouseEventPoints';

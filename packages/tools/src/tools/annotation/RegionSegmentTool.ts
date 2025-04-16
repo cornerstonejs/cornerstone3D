@@ -39,6 +39,7 @@ class RegionSegmentTool extends GrowCutBaseTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        isPartialVolume: true,
         positiveSeedVariance: 0.5,
         negativeSeedVariance: 0.9,
       },

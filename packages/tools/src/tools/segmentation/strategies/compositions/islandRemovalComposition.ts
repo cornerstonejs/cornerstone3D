@@ -15,20 +15,23 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const {
-      strategySpecificConfiguration,
       previewSegmentIndex,
       segmentIndex,
       viewport,
-      previewVoxelManager,
       segmentationVoxelManager,
+      activeStrategy,
+      memo,
     } = operationData;
 
-    if (!strategySpecificConfiguration.THRESHOLD || segmentIndex === null) {
+    if (
+      activeStrategy !== 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL' ||
+      segmentIndex === null
+    ) {
       return;
     }
 
     const islandRemoval = new IslandRemoval();
-    const voxelManager = previewVoxelManager ?? segmentationVoxelManager;
+    const voxelManager = memo?.voxelManager || segmentationVoxelManager;
     if (
       !islandRemoval.initialize(viewport, voxelManager, {
         previewSegmentIndex,

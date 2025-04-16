@@ -13,7 +13,6 @@ export default {
       segmentsLocked,
       segmentationImageData,
       segmentationVoxelManager,
-      previewVoxelManager,
       brushStrategy,
       centerIJK,
     } = operationData;
@@ -37,6 +36,6 @@ export default {
       boundsIJK: operationData.isInObjectBoundsIJK,
     });
 
-    previewVoxelManager.addPoint(centerIJK);
+    segmentationVoxelManager.addPoint(centerIJK);
   },
 };

@@ -63,6 +63,12 @@ enum StrategyCallbacks {
 
   /** Compute statistics on this instance */
   GetStatistics = 'getStatistics',
+
+  /** Handle stack viewport sphere brush overrides */
+  EnsureImageVolumeFor3DManipulation = 'ensureImageVolumeFor3DManipulation',
+
+  /** Handle stack image reference for 3D manipulation */
+  EnsureSegmentationVolumeFor3DManipulation = 'ensureSegmentationVolumeFor3DManipulation',
 }
 
 export default StrategyCallbacks;

@@ -57,8 +57,10 @@ import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
 import SegmentSelectTool from './segmentation/SegmentSelectTool';
+import SegmentBidirectionalTool from './segmentation/SegmentBidirectionalTool';
 
 import * as strategies from './segmentation/strategies';
+import SegmentLabelTool from './segmentation/SegmentLabelTool';
 
 export {
   // ~~ BASE
@@ -124,5 +126,7 @@ export {
   RegionSegmentPlusTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
+  SegmentBidirectionalTool,
+  SegmentLabelTool,
   strategies,
 };

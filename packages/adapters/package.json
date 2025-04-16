@@ -1,6 +1,6 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "2.19.7",
+    "version": "3.10.24",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "module": "./dist/esm/index.js",
     "types": "./dist/esm/index.d.ts",
@@ -68,9 +68,9 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/dcmjs-org/dcmjs.git"
+        "url": "git+https://github.com/cornerstonejs/cornerstone3D.git"
     },
-    "author": "@cornerstonejs (formerly Steve Pieper from dcmjs)",
+    "author": "@cornerstonejs adapters package",
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
@@ -84,7 +84,7 @@
         "ndarray": "^1.0.19"
     },
     "peerDependencies": {
-        "@cornerstonejs/core": "^2.19.7",
-        "@cornerstonejs/tools": "^2.19.7"
+        "@cornerstonejs/core": "^3.10.24",
+        "@cornerstonejs/tools": "^3.10.24"
     }
 }

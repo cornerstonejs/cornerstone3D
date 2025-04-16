@@ -13,9 +13,6 @@ import TabItem from '@theme/TabItem';
 
 We have removed all dependency cycles in the library, ensuring it is now free of any such issues. To maintain this, we have added rules in our linters that will catch any dependency cycles in pull requests during continuous integration. Additionally, you can run `yarn run format-check` to ensure that the formatting is correct and to check for dependencies as well.
 
-### Published APIs
-
-We have now published the APIs for the DICOM Image Loader and Nifti Volume Loader. So in creating your PRs don't forget to run `yarn run build:update-api` and include the generated files in your PR.
 
 ### Karma tests
 

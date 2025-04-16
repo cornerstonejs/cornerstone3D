@@ -33,6 +33,8 @@ enum Events {
    */
   TOOL_MODE_CHANGED = 'CORNERSTONE_TOOLS_TOOL_MODE_CHANGED',
 
+  CROSSHAIR_TOOL_CENTER_CHANGED = 'CORNERSTONE_TOOLS_CROSSHAIR_TOOL_CENTER_CHANGED',
+
   ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////
@@ -176,6 +178,20 @@ enum Events {
    * event detail is included in {@link EventTypes.SegmentationDataModifiedEventDetail | Segmentation Data Modified Event Detail}.
    */
   SEGMENTATION_DATA_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED',
+
+  /**
+   * Triggers on the eventTarget when a history undo operation is performed.
+   * Event detail includes information about the operation type, memo ID, and
+   * whether it was an undo or redo operation.
+   */
+  HISTORY_UNDO = 'CORNERSTONE_TOOLS_HISTORY_UNDO',
+
+  /**
+   * Triggers on the eventTarget when a history redo operation is performed.
+   * Event detail includes information about the operation type, memo ID, and
+   * whether it was an undo or redo operation.
+   */
+  HISTORY_REDO = 'CORNERSTONE_TOOLS_HISTORY_REDO',
 
   ///////////////////////////////////////
   //         Keyboard Events

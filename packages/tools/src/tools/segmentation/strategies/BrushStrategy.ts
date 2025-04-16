@@ -9,12 +9,16 @@ import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOp
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
 
-const { VoxelManager } = csUtils;
-
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name
   operationName?: string;
 
+  centerSegmentIndexInfo: {
+    segmentIndex: number;
+    hasSegmentIndex: boolean;
+    hasPreviewIndex: boolean;
+    changedIndices: number[];
+  };
   // Additional data for performing the strategy
   enabledElement: Types.IEnabledElement;
   centerIJK?: Types.Point3;
@@ -27,14 +31,25 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
     | Types.IVoxelManager<Types.RGB>;
   segmentationVoxelManager: Types.IVoxelManager<number>;
   segmentationImageData: vtkImageData;
-  previewVoxelManager: Types.IVoxelManager<number>;
   // The index to use for the preview segment.  Currently always undefined or 255
   // but define it here for future expansion of LUT tables
   previewSegmentIndex?: number;
-
+  previewColor?: [number, number, number, number];
   brushStrategy: BrushStrategy;
+  activeStrategy: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  configuration?: Record<string, any>;
+  configuration?: {
+    [key: string]: unknown;
+    centerSegmentIndex?: {
+      segmentIndex: number;
+    };
+    threshold?: {
+      range?: number[];
+      isDynamic: boolean;
+      dynamicRadius: number;
+      dynamicRadiusInCanvas?: number;
+    };
+  };
   memo?: LabelmapMemo;
 };
 
@@ -66,13 +81,13 @@ export type Composition = CompositionFunction | CompositionInstance;
  *
  * These combine to form an actual brush:
  *
- * Circle - convexFill, defaultSetValue, inEllipse/boundingbox ellipse, empty threshold
- * Rectangle - - convexFill, defaultSetValue, inRectangle/boundingbox rectangle, empty threshold
+ * Circle - convexFill, defaultSetValue, inEllipse/bounding box ellipse, empty threshold
+ * Rectangle - - convexFill, defaultSetValue, inRectangle/bounding box rectangle, empty threshold
  * might also get parameter values from input,  init for setup of convexFill
  *
  * The pieces are combined to generate a strategyFunction, which performs
  * the actual strategy operation, as well as various callbacks for the strategy
- * to allow more control over behaviour in the specific strategy (such as displaying
+ * to allow more control over behavior in the specific strategy (such as displaying
  * preview)
  */
 
@@ -118,6 +133,13 @@ export default class BrushStrategy {
     ),
     [StrategyCallbacks.ComputeInnerCircleRadius]: addListMethod(
       StrategyCallbacks.ComputeInnerCircleRadius
+    ),
+    [StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation]:
+      addListMethod(
+        StrategyCallbacks.EnsureSegmentationVolumeFor3DManipulation
+      ),
+    [StrategyCallbacks.EnsureImageVolumeFor3DManipulation]: addListMethod(
+      StrategyCallbacks.EnsureImageVolumeFor3DManipulation
     ),
     [StrategyCallbacks.AddPreview]: addListMethod(StrategyCallbacks.AddPreview),
     [StrategyCallbacks.GetStatistics]: addSingletonMethod(
@@ -178,47 +200,21 @@ export default class BrushStrategy {
     );
 
     if (!initializedData) {
-      // Happens when there is no label map
       return;
-    }
-
-    const { strategySpecificConfiguration = {}, centerIJK } = initializedData;
-    // Store the center IJK location so that we can skip an immediate same-point update
-    // TODO - move this to the BrushTool
-    if (csUtils.isEqual(centerIJK, strategySpecificConfiguration.centerIJK)) {
-      return operationData.preview;
-    } else {
-      strategySpecificConfiguration.centerIJK = centerIJK;
     }
 
     this._fill.forEach((func) => func(initializedData));
 
-    const {
-      segmentationVoxelManager,
-      previewVoxelManager,
-      previewSegmentIndex,
-      segmentIndex,
-    } = initializedData;
-
-    const isPreview =
-      previewSegmentIndex && previewVoxelManager.modifiedSlices.size;
+    const { segmentationVoxelManager, segmentIndex } = initializedData;
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
       segmentationVoxelManager.getArrayOfModifiedSlices(),
-      isPreview ? previewSegmentIndex : segmentIndex
+      segmentIndex
     );
 
-    // We are only previewing if there is a preview index, and there is at
-    // least one slice modified
-    if (!previewSegmentIndex || !previewVoxelManager.modifiedSlices.size) {
-      // reset the modified slices since we are done
-      segmentationVoxelManager.resetModifiedSlices();
-
-      return null;
-    }
     // Use the original initialized data set to preserve preview info
-    return initializedData.preview || initializedData;
+    return initializedData;
   };
 
   protected initialize(
@@ -227,11 +223,11 @@ export default class BrushStrategy {
     operationName?: string
   ): InitializedOperationData {
     const { viewport } = enabledElement;
-    const data = getStrategyData({ operationData, viewport });
+
+    const data = getStrategyData({ operationData, viewport, strategy: this });
 
     if (!data) {
-      console.warn('No data found for BrushStrategy');
-      return operationData.preview;
+      return null;
     }
 
     const {
@@ -240,35 +236,29 @@ export default class BrushStrategy {
       segmentationImageData,
     } = data;
 
-    const segmentationVoxelManagerToUse =
-      operationData.override?.voxelManager || segmentationVoxelManager;
-    const segmentationImageDataToUse =
-      operationData.override?.imageData || segmentationImageData;
+    const memo = operationData.createMemo(
+      operationData.segmentationId,
+      segmentationVoxelManager
+    );
 
-    const previewVoxelManager =
-      operationData.preview?.previewVoxelManager ||
-      VoxelManager.createRLEHistoryVoxelManager(segmentationVoxelManager);
-    const previewEnabled = !!operationData.previewColors;
-    const previewSegmentIndex = previewEnabled ? 255 : undefined;
-
+    // @ts-expect-error
     const initializedData: InitializedOperationData = {
       operationName,
-      previewSegmentIndex,
       ...operationData,
+      segmentIndex: operationData.segmentIndex,
       enabledElement,
       imageVoxelManager,
-      segmentationVoxelManager: segmentationVoxelManagerToUse,
-      segmentationImageData: segmentationImageDataToUse,
-      previewVoxelManager,
+      segmentationVoxelManager,
+      segmentationImageData,
       viewport,
       centerWorld: null,
       isInObject: null,
       isInObjectBoundsIJK: null,
       brushStrategy: this,
+      memo,
     };
 
     this._initialize.forEach((func) => func(initializedData));
-
     return initializedData;
   }
 
@@ -281,13 +271,13 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: LabelmapToolOperationDataAny
   ) => {
-    const { preview } = operationData;
+    // const { preview } = operationData;
     // Need to skip the init down if it has already occurred in teh preview
     // That prevents resetting values which were used to determine the preview
-    if (preview?.isPreviewFromHover) {
-      preview.isPreviewFromHover = false;
-      return;
-    }
+    // if (preview?.isPreviewFromHover) {
+    //   preview.isPreviewFromHover = false;
+    //   return;
+    // }
     const initializedData = this.initialize(enabledElement, operationData);
     if (!initializedData) {
       // Happens if there isn't a labelmap to apply to
@@ -337,7 +327,7 @@ export default class BrushStrategy {
       return;
     }
 
-    return initializedData.preview || initializedData;
+    return initializedData;
   };
 
   /**

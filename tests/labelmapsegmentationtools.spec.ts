@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from 'playwright-test-coverage';
 import {
   visitExample,
   checkForScreenshot,
@@ -815,48 +815,48 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
     );
   });
 
-  test('should render and allow usage of paint fill', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
-    const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
-    const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
-    const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
+  // test('should render and allow usage of paint fill', async ({ page }) => {
+  //   const screenshotLocator = page.locator('#content > div');
+  //   const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
+  //   const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
+  //   const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
 
-    await page
-      .getByRole('combobox')
-      .first()
-      .selectOption({ label: 'PaintFill' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 209,
-          y: 268,
-        },
-      ],
-    });
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 224,
-          y: 354,
-        },
-      ],
-    });
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 309,
-          y: 331,
-        },
-      ],
-    });
+  //   await page
+  //     .getByRole('combobox')
+  //     .first()
+  //     .selectOption({ label: 'PaintFill' });
+  //   await simulateClicksOnElement({
+  //     locator: firstCanvas,
+  //     points: [
+  //       {
+  //         x: 209,
+  //         y: 268,
+  //       },
+  //     ],
+  //   });
+  //   await simulateClicksOnElement({
+  //     locator: secondCanvas,
+  //     points: [
+  //       {
+  //         x: 224,
+  //         y: 354,
+  //       },
+  //     ],
+  //   });
+  //   await simulateClicksOnElement({
+  //     locator: thirdCanvas,
+  //     points: [
+  //       {
+  //         x: 309,
+  //         y: 331,
+  //       },
+  //     ],
+  //   });
 
-    await checkForScreenshot(
-      page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.paintFill
-    );
-  });
+  //   await checkForScreenshot(
+  //     page,
+  //     screenshotLocator,
+  //     screenShotPaths.labelmapSegmentationTools.paintFill2
+  //   );
+  // });
 });

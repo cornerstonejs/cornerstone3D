@@ -15,6 +15,7 @@ const screenShotPaths = {
     viewport: 'viewport.png',
   },
   stackAPI: {
+    flipBoth: 'flipBoth.png',
     setVoiRange: 'setVoiRange.png',
     nextImage: 'nextImage.png',
     previousImage: 'previousImage.png',
@@ -104,6 +105,7 @@ const screenShotPaths = {
     circularScissorSegmentation2: 'circularScissorSegmentation2.png',
     paintFillSeg1OuterCircle: 'paintFillSeg1OuterCircle.png',
     paintFillSegmentation2: 'paintFillSegmentation2.png',
+    sphereBrush: 'sphereBrush.png',
   },
   labelmapRendering: {
     axial: 'axial.png',

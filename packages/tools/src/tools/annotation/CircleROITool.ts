@@ -5,6 +5,7 @@ import {
   VolumeViewport,
   utilities as csUtils,
   getEnabledElementByViewportId,
+  EPSILON,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -30,7 +31,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
@@ -136,6 +137,7 @@ class CircleROITool extends AnnotationTool {
         // Radius of the circle to draw  at the center point of the circle.
         // Set this zero(0) in order not to draw the circle.
         centerPointRadius: 0,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -431,6 +433,8 @@ class CircleROITool extends AnnotationTool {
     this.editData.hasMoved = true;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    triggerAnnotationModified(annotation, element, ChangeTypes.HandlesUpdated);
   };
 
   _dragModifyCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -482,6 +486,14 @@ class CircleROITool extends AnnotationTool {
     const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
@@ -860,8 +872,13 @@ class CircleROITool extends AnnotationTool {
     renderingEngine,
     enabledElement
   ) => {
+    if (!this.configuration.calculateStats) {
+      return;
+    }
     const data = annotation.data;
     const { element } = viewport;
+
+    const wasInvalidated = annotation.invalidated;
 
     const { points } = data.handles;
 
@@ -931,11 +948,15 @@ class CircleROITool extends AnnotationTool {
           (topLeftWorld[2] + bottomRightWorld[2]) / 2,
         ] as Types.Point3;
 
+        const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
+        const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
+        const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
+
         const ellipseObj = {
           center,
-          xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-          yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-          zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
+          xRadius: xRadius < EPSILON / 2 ? 0 : xRadius,
+          yRadius: yRadius < EPSILON / 2 ? 0 : yRadius,
+          zRadius: zRadius < EPSILON / 2 ? 0 : zRadius,
         };
 
         const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
@@ -1012,7 +1033,9 @@ class CircleROITool extends AnnotationTool {
     annotation.invalidated = false;
 
     // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    if (wasInvalidated) {
+      triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    }
 
     return cachedStats;
   };
@@ -1029,27 +1052,31 @@ class CircleROITool extends AnnotationTool {
     points: Types.Point3[],
     options?: {
       annotationUID?: string;
+      toolInstance?: CircleROITool;
+      referencedImageId?: string;
+      viewplaneNormal?: Types.Point3;
+      viewUp?: Types.Point3;
     }
   ): CircleROIAnnotation => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (!enabledElement) {
       return;
     }
-    const { viewport } = enabledElement;
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
-
-    // This is a workaround to access the protected method getReferencedImageId
-    // we should make those static too
-    const instance = new this();
-
-    const referencedImageId = instance.getReferencedImageId(
-      viewport,
-      points[0],
+    const {
+      FrameOfReferenceUID,
+      referencedImageId,
       viewPlaneNormal,
-      viewUp
+      instance,
+      viewport,
+    } = this.hydrateBase<CircleROITool>(
+      CircleROITool,
+      enabledElement,
+      points,
+      options
     );
+
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
 
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
@@ -1081,7 +1108,7 @@ class CircleROITool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 

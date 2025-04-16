@@ -1,31 +1,15 @@
 import { utilities } from "dcmjs";
-import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import MeasurementReport from "./MeasurementReport";
+import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
-const TOOLTYPE = "RectangleROI";
-const trackingIdentifierTextValue = `${CORNERSTONE_3D_TAG}:${TOOLTYPE}`;
-
-class RectangleROI {
-    public static toolType = TOOLTYPE;
-    public static utilityToolType = TOOLTYPE;
-    public static TID300Representation = TID300Polyline;
-
-    public static isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-        if (!TrackingIdentifier.includes(":")) {
-            return false;
-        }
-
-        const [cornerstone3DTag, toolType] = TrackingIdentifier.split(":");
-
-        if (cornerstone3DTag !== CORNERSTONE_3D_TAG) {
-            return false;
-        }
-
-        return toolType === TOOLTYPE;
-    };
-
+class RectangleROI extends BaseAdapter3D {
+    static {
+        this.init("RectangleROI", TID300Polyline);
+        // Register using the Cornerstone 1.x name so this tool is used to load it
+        this.registerLegacy();
+    }
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -109,13 +93,11 @@ class RectangleROI {
             ],
             area,
             perimeter,
-            trackingIdentifierTextValue,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || []
         };
     }
 }
-
-MeasurementReport.registerTool(RectangleROI);
 
 export default RectangleROI;

@@ -13,17 +13,18 @@ import {
   addButtonToToolbar,
   setTitleAndDescription,
   getLocalUrl,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 import { ONNXSegmentationController } from '@cornerstonejs/ai';
 
 const { ViewportType, OrientationAxis } = Enums;
-const { MouseBindings, SegmentationRepresentations, Events } =
+const { MouseBindings, SegmentationRepresentations, Events, KeyboardBindings } =
   cornerstoneTools.Enums;
 const { segmentation } = cornerstoneTools;
 
 setTitleAndDescription(
   'Basic Single-Viewport AI Segmentation',
-  'This example demonstrates a simplified setup of a single viewport that can switch between stack and sagittal views. It includes minimal AI segmentation tools (MarkerInclude, MarkerExclude, BoxPrompt) and basic navigation tools (Pan, Zoom, Stack Scroll). Logging is also retained to show decoding and inference times.'
+  'This example demonstrates a simplified setup of a single viewport that can switch between stack and sagittal views. It includes minimal AI segmentation tools (MarkerInclude, MarkerExclude, BoxPrompt) and basic navigation tools (Pan, Zoom, Stack Scroll). Logging is also retained to show decoding and inference times.  Use ctrl+click to MarkerExclude'
 );
 
 // Logging elements and function
@@ -69,6 +70,8 @@ const ai = new ONNXSegmentationController({
   listeners: [mlLogger],
 });
 
+ai.enabled = true;
+
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const volumeId = 'volumeId';
@@ -106,7 +109,10 @@ toolGroup.addToolInstance(
   }
 );
 toolGroup.setToolActive(MarkerIncludeToolName, {
-  bindings: [{ mouseButton: MouseBindings.Primary }],
+  bindings: [
+    { mouseButton: MouseBindings.Primary },
+    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Shift },
+  ],
 });
 
 // MarkerExclude - a probe variant with right-click
@@ -117,6 +123,24 @@ toolGroup.addToolInstance(
     getTextLines: () => null,
   }
 );
+toolGroup.setToolActive(MarkerExcludeToolName, {
+  bindings: [
+    { mouseButton: MouseBindings.Primary, modifierKey: KeyboardBindings.Ctrl },
+  ],
+});
+
+cornerstoneTools.annotation.config.style.setToolGroupToolStyles(toolGroupId, {
+  [MarkerIncludeToolName]: {
+    color: 'rgb(0, 255, 0)', // Green
+    colorHighlighted: 'rgb(0, 255, 0)',
+    colorSelected: 'rgb(0, 255, 0)',
+  },
+  [MarkerExcludeToolName]: {
+    color: 'rgb(255, 0, 0)', // Red
+    colorHighlighted: 'rgb(255, 0, 0)',
+    colorSelected: 'rgb(255, 0, 0)',
+  },
+});
 
 // BoxPrompt - a rectangle ROI variant with Ctrl+click
 toolGroup.addToolInstance(
@@ -137,7 +161,10 @@ toolGroup.setToolActive(cornerstoneTools.PanTool.toolName, {
 
 // Zoom (right mouse)
 toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
-  bindings: [{ mouseButton: MouseBindings.Secondary }],
+  bindings: [
+    { mouseButton: MouseBindings.Secondary },
+    { mouseButton: MouseBindings.Wheel, modifierKey: KeyboardBindings.Ctrl },
+  ],
 });
 
 // Stack Scroll (mouse wheel or Alt+drag)
@@ -176,6 +203,17 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Remove Points',
+  onClick: () => {
+    // Get all prompt annotations and remove them
+    ai.removePromptAnnotationsWithCache(activeViewport);
+  },
+});
+const segmentationId = 'segmentationId';
+
+addSegmentIndexDropdown(segmentationId);
+
 const viewportId = 'CURRENT_VIEWPORT';
 
 addDropdownToToolbar({
@@ -198,8 +236,6 @@ addDropdownToToolbar({
   },
 });
 
-const segmentationId = 'segmentationId';
-
 async function updateViewport() {
   await initDemo();
 
@@ -219,7 +255,7 @@ async function updateViewport() {
   };
 
   if (currentViewportType === ViewportType.ORTHOGRAPHIC) {
-    viewportInput.defaultOptions.orientation = OrientationAxis.SAGITTAL;
+    viewportInput.defaultOptions.orientation = OrientationAxis.AXIAL;
   }
 
   renderingEngine.setViewports([viewportInput]);

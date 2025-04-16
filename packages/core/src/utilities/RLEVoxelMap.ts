@@ -642,7 +642,6 @@ export default class RLEVoxelMap<T> {
 //     const { start, end, value } = rle;
 //     if (start < 0 || end > 1920 || start >= end) {
 //       console.log('Wrong order', ...inputs);
-//       debugger;
 //     }
 //     if (!lastRle) {
 //       lastRle = rle;
@@ -652,11 +651,9 @@ export default class RLEVoxelMap<T> {
 //     lastRle = rle;
 //     if (start < lastEnd) {
 //       console.log('inputs for wrong overlap', ...inputs);
-//       debugger;
 //     }
 //     if (start === lastEnd && value === lastValue) {
 //       console.log('inputs for two in a row same', ...inputs);
-//       debugger;
 //     }
 //   }
 // }

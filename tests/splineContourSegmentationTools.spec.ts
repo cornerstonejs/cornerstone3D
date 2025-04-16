@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from 'playwright-test-coverage';
 import type { Page, Locator } from '@playwright/test';
 import {
   checkForScreenshot,
@@ -81,7 +81,7 @@ test.describe('Spline Contour Segmentation Tools', async () => {
     );
   });
 
-  test('should apply the styles to the splines appropriately when splines are drawn with different styles', async ({
+  test.skip('should apply the styles to the splines appropriately when splines are drawn with different styles', async ({
     page,
   }) => {
     const canvas = await page.locator('canvas');

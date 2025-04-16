@@ -12,6 +12,7 @@ import {
   setTitleAndDescription,
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
@@ -70,6 +71,20 @@ viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
+
+addButtonToToolbar({
+  title: 'Add Labelmap Representation',
+  onClick: () => {
+    segmentation.addLabelmapRepresentationToViewport(viewportId2, [
+      {
+        segmentationId,
+        config: {
+          blendMode: BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,
+        },
+      },
+    ]);
+  },
+});
 
 /**
  * Runs the demo
@@ -230,17 +245,6 @@ async function run() {
   await segmentation.addLabelmapRepresentationToViewport(viewportId1, [
     { segmentationId },
   ]);
-
-  setTimeout(() => {
-    segmentation.addLabelmapRepresentationToViewport(viewportId2, [
-      {
-        segmentationId,
-        config: {
-          blendMode: BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,
-        },
-      },
-    ]);
-  }, 1000);
 
   triggerSegmentationDataModified(segmentationId);
 }

@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from 'playwright-test-coverage';
 import {
   visitExample,
   checkForScreenshot,
@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Stack Viewport API', async () => {
-  test('should set VOI range correctly', async ({ page }) => {
+  test('should set VOI range correctly -- @debug', async ({ page }) => {
     await page.getByRole('button', { name: 'Set VOI Range' }).click();
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(
@@ -85,5 +85,17 @@ test.describe('Stack Viewport API', async () => {
       locator,
       screenShotPaths.stackAPI.resetViewport
     );
+  });
+
+  test('should flip both h and v and be able to scroll and keep the flip', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: 'Flip H' }).click();
+    await page.getByRole('button', { name: 'Flip V' }).click();
+
+    // click on next image
+    await page.getByRole('button', { name: 'Next Image' }).click();
+    const locator = page.locator('.cornerstone-canvas');
+    await checkForScreenshot(page, locator, screenShotPaths.stackAPI.flipBoth);
   });
 });

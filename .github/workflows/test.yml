@@ -1,0 +1,41 @@
+name: Run Unit Tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest # Or pin to a specific version like '1.1.18'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run unit tests
+        run: bun run test:unit:ci
+        env:
+          JUNIT_REPORT_PATH: ./junit/
+          JUNIT_REPORT_NAME: test-results.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always() # Upload even if the test step fails
+        with:
+          name: test-results
+          path: ./junit/
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always() # Upload even if the test step fails
+        with:
+          name: coverage-report
+          path: ./coverage/

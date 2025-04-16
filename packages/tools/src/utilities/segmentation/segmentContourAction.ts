@@ -34,10 +34,13 @@ export type SegmentContourActionConfiguration = {
   toolGroupId?: string;
 };
 
-export default function segmentContourAction(
+export default async function segmentContourAction(
   element: HTMLDivElement,
   configuration
 ) {
+  console.warn(
+    'Deprecation Alert: There is a new getSegmentLargestBidirectional function that handles volume, stack and individual segment cases properly. This function is deprecated and will be removed in a future version.'
+  );
   const { data: configurationData } = configuration;
   const enabledElement = getEnabledElement(element);
   const segment = (configurationData.getSegment || defaultGetSegment)(
@@ -82,48 +85,51 @@ export default function segmentContourAction(
   }
 
   let newBidirectional;
-  existingLargestBidirectionals.forEach((existingLargestBidirectional) => {
-    const segments: Segment[] = [];
-    const updateSegment = existingLargestBidirectional.data.segment as Segment;
-    const { segmentIndex, segmentationId } = updateSegment;
-    segments[segmentIndex] = updateSegment;
-    annotationState.removeAnnotation(
-      existingLargestBidirectional.annotationUID
-    );
-    const bidirectionalData = contourAndFindLargestBidirectional({
-      ...segmentationsList.find(
-        (segmentation) => segmentation.segmentationId === segmentationId
-      ),
-      segments,
-    });
+  existingLargestBidirectionals.forEach(
+    async (existingLargestBidirectional) => {
+      const segments: Segment[] = [];
+      const updateSegment = existingLargestBidirectional.data
+        .segment as Segment;
+      const { segmentIndex, segmentationId } = updateSegment;
+      segments[segmentIndex] = updateSegment;
+      annotationState.removeAnnotation(
+        existingLargestBidirectional.annotationUID
+      );
+      const bidirectionalData = await contourAndFindLargestBidirectional({
+        ...segmentationsList.find(
+          (segmentation) => segmentation.segmentationId === segmentationId
+        ),
+        segments,
+      });
 
-    if (!bidirectionalData) {
-      return;
-    }
-    const bidirectionalToolData = createBidirectionalToolData(
-      bidirectionalData,
-      enabledElement.viewport
-    );
-    bidirectionalToolData.annotationUID =
-      existingLargestBidirectional.annotationUID;
-    bidirectionalToolData.data.segment = updateSegment;
+      if (!bidirectionalData) {
+        return;
+      }
+      const bidirectionalToolData = createBidirectionalToolData(
+        bidirectionalData,
+        enabledElement.viewport
+      );
+      bidirectionalToolData.annotationUID =
+        existingLargestBidirectional.annotationUID;
+      bidirectionalToolData.data.segment = updateSegment;
 
-    const annotationUID = annotationState.addAnnotation(
-      bidirectionalToolData,
-      FrameOfReferenceUID
-    );
+      const annotationUID = annotationState.addAnnotation(
+        bidirectionalToolData,
+        FrameOfReferenceUID
+      );
 
-    if (
-      updateSegment.segmentIndex === segment.segmentIndex &&
-      updateSegment.segmentationId === segment.segmentationId
-    ) {
-      newBidirectional = bidirectionalData;
-      const { style } = segment;
-      if (style) {
-        annotationConfig.style.setAnnotationStyles(annotationUID, style);
+      if (
+        updateSegment.segmentIndex === segment.segmentIndex &&
+        updateSegment.segmentationId === segment.segmentationId
+      ) {
+        newBidirectional = bidirectionalData;
+        const { style } = segment;
+        if (style) {
+          annotationConfig.style.setAnnotationStyles(annotationUID, style);
+        }
       }
     }
-  });
+  );
 
   if (newBidirectional) {
     const { sliceIndex } = newBidirectional;

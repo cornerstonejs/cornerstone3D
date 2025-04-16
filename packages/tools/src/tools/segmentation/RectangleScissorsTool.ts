@@ -318,7 +318,6 @@ class RectangleScissorsTool extends LabelmapBaseTool {
     const operationData = {
       ...this.editData,
       points: data.handles.points,
-      strategySpecificConfiguration: {},
       createMemo: this.createMemo.bind(this),
     };
 

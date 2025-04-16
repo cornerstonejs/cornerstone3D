@@ -3,89 +3,351 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [2.19.7](https://github.com/dcmjs-org/dcmjs/compare/v2.19.6...v2.19.7) (2025-02-06)
+## [3.10.24](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.23...v3.10.24) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.19.6](https://github.com/dcmjs-org/dcmjs/compare/v2.19.5...v2.19.6) (2025-02-05)
+## [3.10.23](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.22...v3.10.23) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.19.5](https://github.com/dcmjs-org/dcmjs/compare/v2.19.4...v2.19.5) (2025-02-04)
+## [3.10.22](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.21...v3.10.22) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.19.4](https://github.com/dcmjs-org/dcmjs/compare/v2.19.3...v2.19.4) (2025-02-04)
+## [3.10.21](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.20...v3.10.21) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.19.3](https://github.com/dcmjs-org/dcmjs/compare/v2.19.2...v2.19.3) (2025-02-04)
+## [3.10.20](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.19...v3.10.20) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.19.2](https://github.com/dcmjs-org/dcmjs/compare/v2.19.1...v2.19.2) (2025-02-03)
+## [3.10.19](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.18...v3.10.19) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.19.1](https://github.com/dcmjs-org/dcmjs/compare/v2.19.0...v2.19.1) (2025-02-03)
+## [3.10.18](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.17...v3.10.18) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-# [2.19.0](https://github.com/dcmjs-org/dcmjs/compare/v2.18.9...v2.19.0) (2025-02-03)
+## [3.10.17](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.16...v3.10.17) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.9](https://github.com/dcmjs-org/dcmjs/compare/v2.18.8...v2.18.9) (2025-02-03)
+## [3.10.16](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.15...v3.10.16) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.8](https://github.com/dcmjs-org/dcmjs/compare/v2.18.7...v2.18.8) (2025-02-03)
+## [3.10.15](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.14...v3.10.15) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.7](https://github.com/dcmjs-org/dcmjs/compare/v2.18.6...v2.18.7) (2025-02-03)
+## [3.10.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.13...v3.10.14) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.6](https://github.com/dcmjs-org/dcmjs/compare/v2.18.5...v2.18.6) (2025-02-03)
+## [3.10.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.12...v3.10.13) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.5](https://github.com/dcmjs-org/dcmjs/compare/v2.18.4...v2.18.5) (2025-02-03)
+## [3.10.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.11...v3.10.12) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.4](https://github.com/dcmjs-org/dcmjs/compare/v2.18.3...v2.18.4) (2025-02-03)
+## [3.10.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.10...v3.10.11) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.3](https://github.com/dcmjs-org/dcmjs/compare/v2.18.2...v2.18.3) (2025-01-31)
+## [3.10.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.9...v3.10.10) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.2](https://github.com/dcmjs-org/dcmjs/compare/v2.18.1...v2.18.2) (2025-01-31)
+## [3.10.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.8...v3.10.9) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.18.1](https://github.com/dcmjs-org/dcmjs/compare/v2.18.0...v2.18.1) (2025-01-31)
+## [3.10.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.7...v3.10.8) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-# [2.18.0](https://github.com/dcmjs-org/dcmjs/compare/v2.17.6...v2.18.0) (2025-01-30)
+## [3.10.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.6...v3.10.7) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.17.6](https://github.com/dcmjs-org/dcmjs/compare/v2.17.5...v2.17.6) (2025-01-29)
+## [3.10.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.5...v3.10.6) (2025-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.17.5](https://github.com/dcmjs-org/dcmjs/compare/v2.17.4...v2.17.5) (2025-01-27)
+## [3.10.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.4...v3.10.5) (2025-04-15)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
 
-## [2.17.4](https://github.com/dcmjs-org/dcmjs/compare/v2.17.3...v2.17.4) (2025-01-24)
+## [3.10.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.3...v3.10.4) (2025-04-15)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.2...v3.10.3) (2025-04-14)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.1...v3.10.2) (2025-04-14)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.0...v3.10.1) (2025-04-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.5...v3.10.0) (2025-04-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.9.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.4...v3.9.5) (2025-04-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.9.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.3...v3.9.4) (2025-04-09)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.2...v3.9.3) (2025-04-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.9.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.1...v3.9.2) (2025-04-08)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.0...v3.9.1) (2025-04-07)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.6...v3.9.0) (2025-04-07)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.5...v3.8.6) (2025-04-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.4...v3.8.5) (2025-04-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.3...v3.8.4) (2025-04-02)
+
+### Bug Fixes
+
+-   **segmentation:** Enhance RTSS generation, surface updates, and contour set processing; address minor tool issues ([#1962](https://github.com/cornerstonejs/cornerstone3D/issues/1962)) ([f51c38c](https://github.com/cornerstonejs/cornerstone3D/commit/f51c38c535b026fc22cf7f9195a749644aee4996))
+
+## [3.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.2...v3.8.3) (2025-04-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.1...v3.8.2) (2025-04-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.0...v3.8.1) (2025-04-01)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.17...v3.8.0) (2025-03-28)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.17](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.16...v3.7.17) (2025-03-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.16](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.15...v3.7.16) (2025-03-27)
+
+### Bug Fixes
+
+-   Add multiframe SEG support ([#1934](https://github.com/cornerstonejs/cornerstone3D/issues/1934)) ([e469a37](https://github.com/cornerstonejs/cornerstone3D/commit/e469a373534d3413aeac91bc85aecc7b8041568d))
+
+## [3.7.15](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.14...v3.7.15) (2025-03-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.13...v3.7.14) (2025-03-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.12...v3.7.13) (2025-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.11...v3.7.12) (2025-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.10...v3.7.11) (2025-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.9...v3.7.10) (2025-03-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.8...v3.7.9) (2025-03-25)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.7...v3.7.8) (2025-03-24)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.6...v3.7.7) (2025-03-24)
+
+### Bug Fixes
+
+-   **segmentation:** Enhance Segmentation and Annotation Tools ([#1929](https://github.com/cornerstonejs/cornerstone3D/issues/1929)) ([b952d9b](https://github.com/cornerstonejs/cornerstone3D/commit/b952d9b05a871d8b8ac91def0e029703d19b57d6))
+
+## [3.7.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.5...v3.7.6) (2025-03-20)
+
+### Bug Fixes
+
+-   Only copy patient/study attributes rather than all ([#1887](https://github.com/cornerstonejs/cornerstone3D/issues/1887)) ([7584ec7](https://github.com/cornerstonejs/cornerstone3D/commit/7584ec78da64bf860ce389aad233f38a90020187))
+
+## [3.7.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.4...v3.7.5) (2025-03-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.3...v3.7.4) (2025-03-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.2...v3.7.3) (2025-03-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.1...v3.7.2) (2025-03-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.0...v3.7.1) (2025-03-18)
+
+### Bug Fixes
+
+-   reintroduce seg events and chunks ([#1913](https://github.com/cornerstonejs/cornerstone3D/issues/1913)) ([c23048c](https://github.com/cornerstonejs/cornerstone3D/commit/c23048c64295954c97f4ccbaefd7b34906bdda1d))
+
+# [3.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.6.1...v3.7.0) (2025-03-18)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.6.0...v3.6.1) (2025-03-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.5.3...v3.6.0) (2025-03-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.5.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.5.2...v3.5.3) (2025-03-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.5.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.5.1...v3.5.2) (2025-03-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.5.0...v3.5.1) (2025-03-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.4.0...v3.5.0) (2025-03-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.4...v3.4.0) (2025-03-13)
+
+### Features
+
+-   **adapters:** overlapping segs with labelmap images ([#1815](https://github.com/cornerstonejs/cornerstone3D/issues/1815)) ([95972e2](https://github.com/cornerstonejs/cornerstone3D/commit/95972e205c722c72f37f951aec0ab6bb25ef0773))
+
+## [3.3.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.3...v3.3.4) (2025-03-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.3.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.2...v3.3.3) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.3.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.1...v3.3.2) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.3.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.3.0...v3.3.1) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.3...v3.3.0) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.2...v3.2.3) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.1...v3.2.2) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.2.0...v3.2.1) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.2...v3.2.0) (2025-03-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.1...v3.1.2) (2025-03-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.1.0...v3.1.1) (2025-03-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.5...v3.1.0) (2025-03-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.4...v3.0.5) (2025-03-06)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.0.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.3...v3.0.4) (2025-03-05)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.2...v3.0.3) (2025-03-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.0.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.1...v3.0.2) (2025-03-04)
+
+### Features
+
+-   **surface-segmentation:** add visibilty configuration for surface segmentation ([#1846](https://github.com/cornerstonejs/cornerstone3D/issues/1846)) ([e1b5bc6](https://github.com/cornerstonejs/cornerstone3D/commit/e1b5bc646f3997be88ec237f86406c310420379a))
+
+## [3.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0...v3.0.1) (2025-02-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [3.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v2.19.16...v3.0.0) (2025-02-27)
+
+### Features
+
+-   Cornerstone3D 3.0 ([#1865](https://github.com/cornerstonejs/cornerstone3D/issues/1865)) ([fe65459](https://github.com/cornerstonejs/cornerstone3D/commit/fe654590d16414e76361e1b2826fd64c3734ae87))
+
+# [3.0.0-beta.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.0.0-beta.5...v3.0.0-beta.6) (2025-02-27)
+
+### Features
+
+-   Add key image adapters for key image point mark ([#1754](https://github.com/cornerstonejs/cornerstone3D/issues/1754)) ([a1fd3f9](https://github.com/cornerstonejs/cornerstone3D/commit/a1fd3f9d0ea40d53cafd792d59bc1dbfc90663a5))
 
 ## [2.17.3](https://github.com/dcmjs-org/dcmjs/compare/v2.17.2...v2.17.3) (2025-01-22)
 

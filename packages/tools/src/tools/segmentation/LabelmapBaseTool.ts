@@ -5,15 +5,11 @@ import {
   Enums,
   eventTarget,
   BaseVolumeViewport,
-  volumeLoader,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
@@ -21,10 +17,9 @@ import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segm
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { getClosestImageIdForStackViewport } from '../../utilities/annotationHydration';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
-import { getStackSegmentationImageIdsForViewport } from '../../stateManagement/segmentation/getStackSegmentationImageIdsForViewport';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
-import { StrategyCallbacks } from '../../enums';
+import { StrategyCallbacks, Events } from '../../enums';
 import * as LabelmapMemo from '../../utilities/segmentation/createLabelmapMemo';
 import {
   getAllAnnotations,
@@ -107,6 +102,13 @@ export default class LabelmapBaseTool extends BaseTool {
     referencedVolumeId?: string;
   } | null;
 
+  protected centerSegmentIndexInfo: {
+    segmentIndex: number;
+    hasSegmentIndex: boolean;
+    hasPreviewIndex: boolean;
+    changedIndices: number[];
+  };
+
   protected _hoverData?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     brushCursor: any;
@@ -127,8 +129,57 @@ export default class LabelmapBaseTool extends BaseTool {
     isDrag: false,
   };
 
+  protected memoMap: Map<string, LabelmapMemo.LabelmapMemo>;
+  protected acceptedMemoIds: Map<
+    string,
+    { element: HTMLDivElement; segmentIndex: number }
+  >;
+  protected memo: LabelmapMemo.LabelmapMemo;
+
   constructor(toolProps, defaultToolProps) {
     super(toolProps, defaultToolProps);
+    this.memoMap = new Map();
+    this.acceptedMemoIds = new Map();
+    this.centerSegmentIndexInfo = {
+      segmentIndex: null,
+      hasSegmentIndex: false,
+      hasPreviewIndex: false,
+      changedIndices: [],
+    };
+  }
+
+  protected _historyRedoHandler(evt) {
+    const { id, operationType } = evt.detail;
+
+    // Skip if not a labelmap operation
+    if (operationType !== 'labelmap') {
+      return;
+    }
+
+    if (this.acceptedMemoIds.has(id)) {
+      // Note: this is very important to null here, since the undo might happen while
+      // the viewport is not active OR through some UI, so the cursor might not be
+      // on the element so we need to null out the hover data so that it get
+      // recalculated again based on the current element (that we stored previously)
+      this._hoverData = null;
+
+      const memoData = this.acceptedMemoIds.get(id);
+
+      const element = memoData?.element;
+      const operationData = this.getOperationData(element);
+      operationData.segmentIndex = memoData?.segmentIndex;
+
+      if (element) {
+        this.applyActiveStrategyCallback(
+          getEnabledElement(element),
+          operationData,
+          StrategyCallbacks.AcceptPreview
+        );
+      }
+    }
+
+    // Mark the preview as a drag to prevent additional processing
+    this._previewData.isDrag = true;
   }
 
   // Gets a shared preview data
@@ -137,17 +188,40 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
-   * Creates a labelmap memo instance, which is a partially created memo
-   * object that stores the changes made to the labelmap rather than the
-   * initial state.  This memo is then committed once done so that the
+   * Creates a labelmap memo instance, which stores the changes made to the
+   * labelmap rather than the initial state.
    */
-  public createMemo(segmentId: string, segmentationVoxelManager, preview) {
-    this.memo ||= LabelmapMemo.createLabelmapMemo(
-      segmentId,
-      segmentationVoxelManager,
-      preview
-    );
-    return this.memo as LabelmapMemo.LabelmapMemo;
+  public createMemo(segmentationId: string, segmentationVoxelManager) {
+    const voxelManagerId = segmentationVoxelManager.id;
+
+    if (
+      this.memo &&
+      this.memo.segmentationVoxelManager === segmentationVoxelManager
+    ) {
+      return this.memo;
+    }
+
+    let memo = this.memoMap.get(voxelManagerId);
+
+    if (!memo) {
+      memo = LabelmapMemo.createLabelmapMemo(
+        segmentationId,
+        segmentationVoxelManager
+      );
+      this.memoMap.set(voxelManagerId, memo);
+    } else {
+      // If the memo was previously committed, we need a fresh one
+      if (memo.redoVoxelManager) {
+        memo = LabelmapMemo.createLabelmapMemo(
+          segmentationId,
+          segmentationVoxelManager
+        );
+        this.memoMap.set(voxelManagerId, memo);
+      }
+    }
+
+    this.memo = memo;
+    return memo;
   }
 
   protected createEditData(element): EditDataReturnType {
@@ -189,7 +263,6 @@ export default class LabelmapBaseTool extends BaseTool {
     representationData,
     segmentsLocked,
     segmentationId,
-    volumeOperation = false,
   }): EditDataReturnType {
     if (viewport instanceof BaseVolumeViewport) {
       const { volumeId } = representationData[
@@ -228,7 +301,8 @@ export default class LabelmapBaseTool extends BaseTool {
       return {
         volumeId,
         referencedVolumeId:
-          this.configuration.thresholdVolumeId ?? referencedVolumeIdToThreshold,
+          this.configuration.threshold?.volumeId ??
+          referencedVolumeIdToThreshold,
         segmentsLocked,
       };
     } else {
@@ -243,67 +317,10 @@ export default class LabelmapBaseTool extends BaseTool {
         return;
       }
 
-      // I hate this, but what can you do sometimes
-      if (
-        this.configuration.activeStrategy.includes('SPHERE') ||
-        volumeOperation
-      ) {
-        const referencedImageIds = viewport.getImageIds();
-        const isValidVolumeForSphere =
-          csUtils.isValidVolume(referencedImageIds);
-
-        if (!isValidVolumeForSphere) {
-          throw new Error(
-            'Volume is not reconstructable for sphere manipulation'
-          );
-        }
-
-        const volumeId = `${segmentationId}_${viewport.id}`;
-        const volume = cache.getVolume(volumeId);
-        if (volume) {
-          return {
-            imageId: segmentationImageId,
-            segmentsLocked,
-            override: {
-              voxelManager: volume.voxelManager,
-              imageData: volume.imageData,
-            },
-          };
-        } else {
-          // We don't need to call `getStackSegmentationImageIdsForViewport` here
-          // because we've already ensured the stack constructs a volume,
-          // making the scenario for multi-image non-consistent metadata is not likely.
-          const { imageIds: labelmapImageIds } =
-            representationData.Labelmap as LabelmapSegmentationDataStack;
-
-          if (!labelmapImageIds || labelmapImageIds.length === 1) {
-            return {
-              imageId: segmentationImageId,
-              segmentsLocked,
-            };
-          }
-
-          // it will return the cached volume if it already exists
-          const volume = volumeLoader.createAndCacheVolumeFromImagesSync(
-            volumeId,
-            labelmapImageIds
-          );
-
-          return {
-            imageId: segmentationImageId,
-            segmentsLocked,
-            override: {
-              voxelManager: volume.voxelManager,
-              imageData: volume.imageData,
-            },
-          };
-        }
-      } else {
-        return {
-          imageId: segmentationImageId,
-          segmentsLocked,
-        };
-      }
+      return {
+        imageId: segmentationImageId,
+        segmentsLocked,
+      };
     }
   }
 
@@ -377,22 +394,42 @@ export default class LabelmapBaseTool extends BaseTool {
       this._hoverData || this.createHoverData(element);
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
+
+    const configColor =
+      this.configuration.preview?.previewColors?.[segmentIndex];
+    const { viewport } = getEnabledElement(element);
+    const segmentColor = getSegmentIndexColor(
+      viewport.id,
+      segmentationId,
+      segmentIndex
+    );
+
+    if (!configColor && !segmentColor) {
+      return;
+    }
+
+    let previewColor = null,
+      previewSegmentIndex = null;
+    if (this.configuration.preview.enabled) {
+      previewColor = configColor || lightenColor(...segmentColor);
+      previewSegmentIndex = 255;
+    }
+
     const operationData = {
       ...editData,
       points: data?.handles?.points,
       segmentIndex,
-      previewColors:
-        this.configuration.preview?.enabled || this._previewData.preview
-          ? this.configuration.preview?.previewColors
-          : null,
       viewPlaneNormal,
+      previewOnHover: !this._previewData.isDrag,
       toolGroupId: this.toolGroupId,
       segmentationId,
       viewUp,
-      strategySpecificConfiguration:
-        this.configuration.strategySpecificConfiguration,
+      centerSegmentIndexInfo: this.centerSegmentIndexInfo,
+      activeStrategy: this.configuration.activeStrategy,
+      configuration: this.configuration,
       // Provide the preview information so that data can be used directly
-      preview: this._previewData?.preview,
+      previewColor,
+      previewSegmentIndex,
       createMemo: this.createMemo.bind(this),
     };
     return operationData;
@@ -413,28 +450,31 @@ export default class LabelmapBaseTool extends BaseTool {
       this.rejectPreview(element);
     }
     const enabledElement = getEnabledElement(element);
-    _previewData.preview = this.applyActiveStrategyCallback(
+    const results = this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       StrategyCallbacks.AddPreview
     );
     _previewData.isDrag = true;
-    return _previewData.preview;
+    return results;
   }
 
   /**
    * Cancels any preview view being shown, resetting any segments being shown.
    */
   public rejectPreview(element = this._previewData.element) {
-    if (!element || !this._previewData.preview) {
+    if (!element) {
       return;
     }
+    this.doneEditMemo();
     const enabledElement = getEnabledElement(element);
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
       StrategyCallbacks.RejectPreview
     );
+
+    // Make sure to fully reset all preview related data
     this._previewData.preview = null;
     this._previewData.isDrag = false;
   }
@@ -447,19 +487,31 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
-    this.doneEditMemo();
+    const operationData = this.getOperationData(element);
+
+    // Track the memo ID if it was from an acceptPreview operation
+    if (this.memo && this.memo.id) {
+      // Store the element and current segment index
+
+      this.acceptedMemoIds.set(this.memo.id, {
+        element,
+        segmentIndex: operationData.segmentIndex,
+      });
+    }
 
     const enabledElement = getEnabledElement(element);
 
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.AcceptPreview
     );
-    this._previewData.isDrag = false;
-    this._previewData.preview = null;
-    // Store the edit memo too
+
+    // perform the commit after we accept the preview so that
+    // we choose the correct timestamp with the confirmed segment index
     this.doneEditMemo();
+    this._previewData.preview = null;
+    this._previewData.isDrag = false;
   }
 
   /**
@@ -497,10 +549,12 @@ export default class LabelmapBaseTool extends BaseTool {
     );
     const preview = brushInstance.addPreview(viewport.element);
 
-    // @ts-expect-error
-    const { memo, segmentationId } = preview;
-    // @ts-expect-error
-    const previewVoxels = memo?.voxelManager || preview.previewVoxelManager;
+    // Use type assertion for the preview object
+    const { memo, segmentationId } = preview as {
+      memo: LabelmapMemo.LabelmapMemo;
+      segmentationId: string;
+    };
+    const previewVoxels = memo?.voxelManager;
     const segmentationVoxels =
       previewVoxels.sourceVoxelManager || previewVoxels;
     const { dimensions } = previewVoxels;
@@ -575,4 +629,13 @@ export default class LabelmapBaseTool extends BaseTool {
     const slices = previewVoxels.getArrayOfModifiedSlices();
     triggerSegmentationDataModified(segmentationId, slices);
   }
+}
+
+function lightenColor(r, g, b, a, factor = 0.4) {
+  return [
+    Math.round(r + (255 - r) * factor),
+    Math.round(g + (255 - g) * factor),
+    Math.round(b + (255 - b) * factor),
+    a,
+  ];
 }

@@ -18,10 +18,8 @@ import addLabelmapToElement from './addLabelmapToElement';
 import removeLabelmapFromElement from './removeLabelmapFromElement';
 import { getActiveSegmentation } from '../../../stateManagement/segmentation/activeSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
-import { getCurrentLabelmapImageIdForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
-import { canComputeRequestedRepresentation } from '../../../stateManagement/segmentation/polySeg/canComputeRequestedRepresentation';
-import { computeAndAddLabelmapRepresentation } from '../../../stateManagement/segmentation/polySeg/Labelmap/computeAndAddLabelmapRepresentation';
 import type vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
@@ -29,7 +27,11 @@ import SegmentationRepresentations from '../../../enums/SegmentationRepresentati
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 import { getActiveSegmentIndex } from '../../../stateManagement/segmentation/getActiveSegmentIndex';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import { getLabelmapActorEntry } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getPolySeg } from '../../../config';
+import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
+import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -98,11 +100,14 @@ async function render(
   let labelmapData =
     segmentation.representationData[SegmentationRepresentations.Labelmap];
 
-  let labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+  let labelmapActorEntries = getLabelmapActorEntries(
+    viewport.id,
+    segmentationId
+  );
 
   if (
     !labelmapData &&
-    canComputeRequestedRepresentation(
+    getPolySeg()?.canComputeRequestedRepresentation(
       segmentationId,
       SegmentationRepresentations.Labelmap
     ) &&
@@ -115,9 +120,25 @@ async function render(
     // underlying representations to Surface
     polySegConversionInProgress = true;
 
-    labelmapData = await computeAndAddLabelmapRepresentation(segmentationId, {
-      viewport,
-    });
+    const polySeg = getPolySeg();
+
+    labelmapData = await computeAndAddRepresentation(
+      segmentationId,
+      SegmentationRepresentations.Labelmap,
+      () => polySeg.computeLabelmapData(segmentationId, { viewport }),
+      () => null,
+      () => {
+        defaultSegmentationStateManager.processLabelmapRepresentationAddition(
+          viewport.id,
+          segmentationId
+        );
+
+        /// need to figure out how to trigger the labelmap update properly
+        setTimeout(() => {
+          triggerSegmentationDataModified(segmentationId);
+        }, 0);
+      }
+    );
 
     if (!labelmapData) {
       throw new Error(
@@ -126,6 +147,10 @@ async function render(
     }
 
     polySegConversionInProgress = false;
+  } else if (!labelmapData && !getPolySeg()) {
+    console.debug(
+      `No labelmap data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to labelmap. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
+    );
   }
 
   if (!labelmapData) {
@@ -133,7 +158,7 @@ async function render(
   }
 
   if (viewport instanceof VolumeViewport) {
-    if (!labelmapActorEntry) {
+    if (!labelmapActorEntries?.length) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(
         viewport,
@@ -143,21 +168,21 @@ async function render(
       );
     }
 
-    labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+    labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   } else {
     // stack segmentation
-    const labelmapImageId = getCurrentLabelmapImageIdForViewport(
+    const labelmapImageIds = getCurrentLabelmapImageIdsForViewport(
       viewport.id,
       segmentationId
     );
 
     // if the stack labelmap is not built for the current imageId that is
     // rendered at the viewport then return
-    if (!labelmapImageId) {
+    if (!labelmapImageIds?.length) {
       return;
     }
 
-    if (!labelmapActorEntry) {
+    if (!labelmapActorEntries) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(
         viewport,
@@ -167,14 +192,20 @@ async function render(
       );
     }
 
-    labelmapActorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+    labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   }
 
-  if (!labelmapActorEntry) {
+  if (!labelmapActorEntries?.length) {
     return;
   }
 
-  _setLabelmapColorAndOpacity(viewport.id, labelmapActorEntry, representation);
+  for (const labelmapActorEntry of labelmapActorEntries) {
+    _setLabelmapColorAndOpacity(
+      viewport.id,
+      labelmapActorEntry,
+      representation
+    );
+  }
 }
 
 function _setLabelmapColorAndOpacity(
@@ -327,6 +358,10 @@ function _setLabelmapColorAndOpacity(
     }
 
     labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
+
+    labelmapActor.modified();
+    labelmapActor.getProperty().modified();
+    labelmapActor.getMapper().modified();
   } else {
     // reset outline width to 0
     labelmapActor

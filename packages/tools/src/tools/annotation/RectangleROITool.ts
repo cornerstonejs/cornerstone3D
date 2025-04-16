@@ -27,7 +27,7 @@ import {
   drawRectByCoordinates as drawRectSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as rectangle from '../../utilities/math/rectangle';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -118,6 +118,7 @@ class RectangleROITool extends AnnotationTool {
         storePointData: false,
         shadow: true,
         preventHandleOutsideImage: false,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -174,6 +175,7 @@ class RectangleROITool extends AnnotationTool {
             },
           },
         },
+        cachedStats: {},
       },
     });
 
@@ -477,6 +479,14 @@ class RectangleROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -832,6 +842,9 @@ class RectangleROITool extends AnnotationTool {
     renderingEngine,
     enabledElement
   ) => {
+    if (!this.configuration.calculateStats) {
+      return;
+    }
     const { data } = annotation;
     const { viewport } = enabledElement;
     const { element } = viewport;
@@ -951,10 +964,13 @@ class RectangleROITool extends AnnotationTool {
       }
     }
 
+    const invalidated = annotation.invalidated;
     annotation.invalidated = false;
 
-    // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
+      triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    }
 
     return cachedStats;
   };
@@ -971,27 +987,31 @@ class RectangleROITool extends AnnotationTool {
     points: Types.Point3[],
     options?: {
       annotationUID?: string;
+      toolInstance?: RectangleROITool;
+      referencedImageId?: string;
+      viewplaneNormal?: Types.Point3;
+      viewUp?: Types.Point3;
     }
   ): RectangleROIAnnotation => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (!enabledElement) {
       return;
     }
-    const { viewport } = enabledElement;
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
-
-    // This is a workaround to access the protected method getReferencedImageId
-    // we should make those static too
-    const instance = new this();
-
-    const referencedImageId = instance.getReferencedImageId(
-      viewport,
-      points[0],
+    const {
+      FrameOfReferenceUID,
+      referencedImageId,
       viewPlaneNormal,
-      viewUp
+      instance,
+      viewport,
+    } = this.hydrateBase<RectangleROITool>(
+      RectangleROITool,
+      enabledElement,
+      points,
+      options
     );
+
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
 
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
@@ -1013,7 +1033,7 @@ class RectangleROITool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 
@@ -1034,7 +1054,7 @@ function defaultGetTextLines(data, targetId: string): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
   const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
 
-  if (mean === undefined) {
+  if (mean === undefined || mean === null) {
     return;
   }
 

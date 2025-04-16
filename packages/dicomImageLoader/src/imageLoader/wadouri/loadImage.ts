@@ -144,7 +144,7 @@ function loadImageFromDataSet(
         image = image as DICOMLoaderIImage;
 
         image.data = dataSet;
-        image.sharedCacheKey = sharedCacheKey;
+        // image.sharedCacheKey = sharedCacheKey;
         const end = new Date().getTime();
 
         image.loadTimeInMS = loadEnd - start;

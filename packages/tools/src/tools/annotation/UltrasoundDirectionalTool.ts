@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -46,6 +46,7 @@ import type {
 } from '../../types';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
+import { lineSegment } from '../../utilities/math';
 const { transformWorldToIndex } = csUtils;
 
 /**
@@ -208,6 +209,34 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    const { data } = annotation;
+    const [point1, point2] = data.handles.points;
+    const canvasPoint1 = viewport.worldToCanvas(point1);
+    const canvasPoint2 = viewport.worldToCanvas(point2);
+
+    const line = {
+      start: {
+        x: canvasPoint1[0],
+        y: canvasPoint1[1],
+      },
+      end: {
+        x: canvasPoint2[0],
+        y: canvasPoint2[1],
+      },
+    };
+
+    const distanceToPoint = lineSegment.distanceToPoint(
+      [line.start.x, line.start.y],
+      [line.end.x, line.end.y],
+      [canvasCoords[0], canvasCoords[1]]
+    );
+
+    if (distanceToPoint <= proximity) {
+      return true;
+    }
+
     return false;
   };
 
@@ -847,10 +876,13 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       };
     }
 
+    const invalidated = annotation.invalidated;
     annotation.invalidated = false;
 
-    // Dispatching annotation modified
-    triggerAnnotationModified(annotation, element);
+    // Dispatching annotation modified only if it was invalidated
+    if (invalidated) {
+      triggerAnnotationModified(annotation, element, ChangeTypes.StatsUpdated);
+    }
 
     return cachedStats;
   }

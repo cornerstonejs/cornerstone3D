@@ -1,8 +1,6 @@
 import { generateContourSetsFromLabelmap } from '../contours';
-import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import findLargestBidirectional from './findLargestBidirectional';
-
-const { Labelmap } = SegmentationRepresentations;
+import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
 
 /**
  * Generates a contour object over the segment, and then uses the contouring to
@@ -14,8 +12,8 @@ const { Labelmap } = SegmentationRepresentations;
  * @param segmentation.segments.label - the label for the segment
  * @param segmentation.segments.color - the color to use for the segment label
  */
-export default function contourAndFindLargestBidirectional(segmentation) {
-  const contours = generateContourSetsFromLabelmap({
+export default async function contourAndFindLargestBidirectional(segmentation) {
+  const contours = await generateContourSetsFromLabelmap({
     segmentations: segmentation,
   });
 
@@ -24,13 +22,17 @@ export default function contourAndFindLargestBidirectional(segmentation) {
   }
 
   const {
-    representationData,
     segments = [
       null,
       { label: 'Unspecified', color: null, containedSegmentIndices: null },
     ],
   } = segmentation;
-  const { volumeId: segVolumeId } = representationData[Labelmap];
+
+  const vol = getOrCreateSegmentationVolume(segmentation.segmentationId);
+
+  if (!vol) {
+    return;
+  }
 
   const segmentIndex = segments.findIndex((it) => !!it);
   if (segmentIndex === -1) {
@@ -39,7 +41,7 @@ export default function contourAndFindLargestBidirectional(segmentation) {
   segments[segmentIndex].segmentIndex = segmentIndex;
   return findLargestBidirectional(
     contours[0],
-    segVolumeId,
+    vol.volumeId,
     segments[segmentIndex]
   );
 }

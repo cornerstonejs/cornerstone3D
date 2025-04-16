@@ -1,4 +1,3 @@
-// eslint-
 import { cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import shaderCode from './growCutShader';
@@ -131,9 +130,11 @@ async function runGrowCut(
     throw new Error('Volume and labelmap must have the same size');
   }
 
-  const numIterations = Math.floor(
+  let numIterations = Math.floor(
     Math.sqrt(rows ** 2 + columns ** 2 + numSlices ** 2) / 2
   );
+
+  numIterations = Math.min(numIterations, 500);
 
   const labelmapData =
     labelmap.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
@@ -158,6 +159,9 @@ async function runGrowCut(
   // we know how many voxels got updated per iteration.
   const UPDATED_VOXELS_COUNTER_BUFFER_SIZE =
     numIterations * Uint32Array.BYTES_PER_ELEMENT;
+
+  // Buffer to track the bounds of modified voxels 6 int32 values for min/max x,y,z
+  const BOUNDS_BUFFER_SIZE = 6 * Int32Array.BYTES_PER_ELEMENT;
 
   const shaderModule = device.createShaderModule({
     code: shaderCode,
@@ -224,6 +228,26 @@ async function runGrowCut(
       GPUBufferUsage.COPY_DST,
   });
 
+  const gpuBoundsBuffer = device.createBuffer({
+    size: BOUNDS_BUFFER_SIZE,
+    usage:
+      GPUBufferUsage.STORAGE |
+      GPUBufferUsage.COPY_SRC |
+      GPUBufferUsage.COPY_DST,
+  });
+
+  // Initialize bounds buffer with extreme values
+  const initialBounds = new Int32Array([
+    columns, // minX (initialized to max value)
+    rows, // minY (initialized to max value)
+    numSlices, // minZ (initialized to max value)
+    -1, // maxX (initialized to min value)
+    -1, // maxY (initialized to min value)
+    -1, // maxZ (initialized to min value)
+  ]);
+
+  device.queue.writeBuffer(gpuBoundsBuffer, 0, initialBounds);
+
   const bindGroupLayout = device.createBindGroupLayout({
     entries: [
       {
@@ -270,6 +294,13 @@ async function runGrowCut(
       },
       {
         binding: 6,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'storage',
+        },
+      },
+      {
+        binding: 7,
         visibility: GPUShaderStage.COMPUTE,
         buffer: {
           type: 'storage',
@@ -329,6 +360,12 @@ async function runGrowCut(
             buffer: gpuCounterBuffer,
           },
         },
+        {
+          binding: 7,
+          resource: {
+            buffer: gpuBoundsBuffer,
+          },
+        },
       ],
     });
   });
@@ -357,11 +394,6 @@ async function runGrowCut(
 
   const gpuUpdatedVoxelsCounterStagingBuffer = device.createBuffer({
     size: UPDATED_VOXELS_COUNTER_BUFFER_SIZE,
-    usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
-  });
-
-  const labelmapStagingBufferTemp = device.createBuffer({
-    size: BUFFER_SIZE,
     usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
   });
 
@@ -455,6 +487,12 @@ async function runGrowCut(
     usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
   });
 
+  // Create a staging buffer for reading the bounds
+  const boundsStagingBuffer = device.createBuffer({
+    size: BOUNDS_BUFFER_SIZE,
+    usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+  });
+
   // Copy output buffer to staging buffer
   commandEncoder.copyBufferToBuffer(
     gpuLabelmapBuffers[outputLabelmapBufferIndex],
@@ -462,6 +500,15 @@ async function runGrowCut(
     labelmapStagingBuffer,
     0, // Destination offset
     BUFFER_SIZE
+  );
+
+  // Copy bounds buffer to staging buffer
+  commandEncoder.copyBufferToBuffer(
+    gpuBoundsBuffer,
+    0, // Source offset
+    boundsStagingBuffer,
+    0, // Destination offset
+    BOUNDS_BUFFER_SIZE
   );
 
   device.queue.submit([commandEncoder.finish()]);
@@ -486,8 +533,38 @@ async function runGrowCut(
   // Release the gpu staging buffer used to copy the data from the gpu
   labelmapStagingBuffer.unmap();
 
+  // Read the bounds information from the GPU
+  await boundsStagingBuffer.mapAsync(
+    GPUMapMode.READ,
+    0, // Offset
+    BOUNDS_BUFFER_SIZE // Length
+  );
+
+  const boundsResultBuffer = boundsStagingBuffer.getMappedRange(
+    0,
+    BOUNDS_BUFFER_SIZE
+  );
+
+  const boundsResult = new Int32Array(boundsResultBuffer.slice(0));
+  boundsStagingBuffer.unmap();
+
+  // Extract bounds values
+  const minX = boundsResult[0];
+  const minY = boundsResult[1];
+  const minZ = boundsResult[2];
+  const maxX = boundsResult[3];
+  const maxY = boundsResult[4];
+  const maxZ = boundsResult[5];
+
   // update the voxel manager with the new labelmap data
   labelmap.voxelManager.setCompleteScalarDataArray(labelmapData);
+
+  labelmap.voxelManager.clearBounds();
+  labelmap.voxelManager.setBounds([
+    [minX, maxX],
+    [minY, maxY],
+    [minZ, maxZ],
+  ]);
 }
 
 export { runGrowCut as default, runGrowCut as run };

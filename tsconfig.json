@@ -8,6 +8,8 @@
       "@cornerstonejs/dicomImageLoader": ["dicomImageLoader/src"],
       "@cornerstonejs/nifti-volume-loader": ["nifti-volume-loader/src"],
       "@cornerstonejs/ai": ["ai/src"],
+      "@cornerstonejs/labelmap-interpolation": ["labelmap-interpolation/src"],
+      "@cornerstonejs/polymorphic-segmentation": ["polymorphic-segmentation/src"],
       "@cornerstonejs/adapters": ["adapters/src"]
     }
   }

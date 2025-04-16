@@ -65,6 +65,11 @@ function createFormElement(): HTMLFormElement {
       <br>
       <button style="margin-left: 52px;" type="button" id="${coordType}-stack">Add Stack</button>
       <button type="button" id="${coordType}-volume">Add Volume</button>
+      ${
+        coordType === 'image'
+          ? `<button type="button" id="${coordType}-volume-imageId">Add to specific image in volume (first imageId/inferior-most image in volume)</button> `
+          : ''
+      }
       <br><br>
     `;
   });
@@ -76,37 +81,48 @@ function addButtonListeners(form: HTMLFormElement): void {
   const buttons = form.querySelectorAll('button');
   buttons.forEach((button) => {
     button.addEventListener('click', () => {
-      const [type, viewportType] = button.id.split('-') as [
+      const [type, viewportType, useImageId] = button.id.split('-') as [
         'canvas' | 'image',
-        keyof typeof typeToIdMap
+        keyof typeof typeToIdMap,
+        'imageId'?
       ];
       const enabledElement = getEnabledElementByViewportId(
         typeToIdMap[viewportType]
       );
       const viewport = enabledElement.viewport;
+      const imageId = useImageId && viewport.getImageIds()[0];
       const coords = getCoordinates(form, type);
       const currentImageId = viewport.getCurrentImageId() as string;
 
       const worldPoint1 =
         type === 'image'
-          ? utilities.imageToWorldCoords(currentImageId, coords.point1)
+          ? utilities.imageToWorldCoords(
+              imageId || currentImageId,
+              coords.point1
+            )
           : viewport.canvasToWorld(coords.point1);
 
       const worldPoint2 =
         type === 'image'
-          ? utilities.imageToWorldCoords(currentImageId, coords.point2)
+          ? utilities.imageToWorldCoords(
+              imageId || currentImageId,
+              coords.point2
+            )
           : viewport.canvasToWorld(coords.point2);
 
       const worldPoint3 =
         type === 'image'
-          ? utilities.imageToWorldCoords(currentImageId, coords.point3)
+          ? utilities.imageToWorldCoords(
+              imageId || currentImageId,
+              coords.point3
+            )
           : viewport.canvasToWorld(coords.point3);
 
-      SplineROITool.hydrate(viewport.id, [
-        worldPoint1,
-        worldPoint2,
-        worldPoint3,
-      ]);
+      SplineROITool.hydrate(
+        viewport.id,
+        [worldPoint1, worldPoint2, worldPoint3],
+        { referencedImageId: imageId }
+      );
     });
   });
 }

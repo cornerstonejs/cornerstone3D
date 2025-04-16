@@ -1,4 +1,4 @@
-import { Events } from '../../enums';
+import { ChangeTypes, Events } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -45,6 +45,7 @@ import type {
 import type { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { setAnnotationLabel } from '../../utilities';
 
 class ArrowAnnotateTool extends AnnotationTool {
   static toolName = 'ArrowAnnotate';
@@ -87,27 +88,32 @@ class ArrowAnnotateTool extends AnnotationTool {
     text?: string,
     options?: {
       annotationUID?: string;
+      toolInstance?: ArrowAnnotateTool;
+      referencedImageId?: string;
+      viewplaneNormal?: Types.Point3;
+      viewUp?: Types.Point3;
     }
   ): ArrowAnnotation => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (!enabledElement) {
       return;
     }
-    const { viewport } = enabledElement;
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
-
-    // This is a workaround to access the protected method getReferencedImageId
-    // we should make those static too
-    const instance = new this();
-
-    const referencedImageId = instance.getReferencedImageId(
-      viewport,
-      points[0],
+    const {
+      FrameOfReferenceUID,
+      referencedImageId,
       viewPlaneNormal,
-      viewUp
+      instance,
+      viewport,
+    } = this.hydrateBase<ArrowAnnotateTool>(
+      ArrowAnnotateTool,
+      enabledElement,
+      points,
+      options
     );
+
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
 
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
@@ -127,7 +133,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
     addAnnotation(annotation, viewport.element);
@@ -352,8 +358,13 @@ class ArrowAnnotateTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      newAnnotation,
+      hasMoved,
+      movingTextBox,
+    } = this.editData;
     const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
@@ -386,14 +397,26 @@ class ArrowAnnotateTool extends AnnotationTool {
         }
         annotation.data.text = text;
 
+        // Trigger modified before completed for new annotations
+        triggerAnnotationModified(
+          annotation,
+          element,
+          ChangeTypes.HandlesUpdated
+        );
+
         triggerAnnotationCompleted(annotation);
         // This is only new if it wasn't already memoed
         this.createMemo(element, annotation, { newAnnotation: !!this.memo });
+        setAnnotationLabel(annotation, element, text);
 
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
       });
-    } else {
-      triggerAnnotationModified(annotation, element);
+    } else if (!movingTextBox) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
     }
 
     this.doneEditMemo();
@@ -454,10 +477,15 @@ class ArrowAnnotateTool extends AnnotationTool {
 
     this.editData.hasMoved = true;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    if (annotation.invalidated) {
+      triggerAnnotationModified(
+        annotation,
+        element,
+        ChangeTypes.HandlesUpdated
+      );
+    }
   };
 
   touchTapCallback = (evt: EventTypes.TouchTapEventType) => {

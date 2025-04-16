@@ -31,6 +31,7 @@ import {
   WindowLevelTool,
   ZoomTool,
   StackScrollTool,
+  SegmentBidirectionalTool,
   PlanarRotateTool,
   MIPJumpToClickTool,
   LabelTool,
@@ -79,6 +80,7 @@ import {
   RegionSegmentTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
+  SegmentLabelTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -99,6 +101,7 @@ export {
   AnnotationDisplayTool,
   // Manipulation Tools
   PanTool,
+  SegmentBidirectionalTool,
   TrackballRotateTool,
   DragProbeTool,
   WindowLevelTool,
@@ -149,6 +152,7 @@ export {
   BrushTool,
   OrientationMarkerTool,
   SegmentSelectTool,
+  SegmentLabelTool,
   // Synchronizers
   synchronizers,
   Synchronizer,

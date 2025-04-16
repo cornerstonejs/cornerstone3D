@@ -2,7 +2,7 @@ import { Enums, utilities } from '@cornerstonejs/core';
 
 const { CalibrationTypes } = Enums;
 const PIXEL_UNITS = 'px';
-
+const VOXEL_UNITS = 'voxels';
 /**
  * DICOM Region Data Types as defined in the DICOM standard
  * https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.5.5.html#sect_C.8.5.5.1.2
@@ -55,6 +55,7 @@ const SQUARE = '\xb2';
 const getCalibratedLengthUnitsAndScale = (image, handles) => {
   const { calibration, hasPixelSpacing } = image;
   let unit = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
+  const volumeUnit = hasPixelSpacing ? 'mm\xb3' : VOXEL_UNITS;
   let areaUnit = unit + SQUARE;
   let scale = 1;
   let calibrationType = '';
@@ -63,11 +64,16 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     !calibration ||
     (!calibration.type && !calibration.sequenceOfUltrasoundRegions)
   ) {
-    return { unit, areaUnit, scale };
+    return { unit, areaUnit, scale, volumeUnit };
   }
 
   if (calibration.type === CalibrationTypes.UNCALIBRATED) {
-    return { unit: PIXEL_UNITS, areaUnit: PIXEL_UNITS + SQUARE, scale };
+    return {
+      unit: PIXEL_UNITS,
+      areaUnit: PIXEL_UNITS + SQUARE,
+      scale,
+      volumeUnit: VOXEL_UNITS,
+    };
   }
 
   if (calibration.sequenceOfUltrasoundRegions) {
@@ -95,7 +101,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     // If we are not in a region at all we should show the underlying calibration
     // which might be the mm spacing for the image
     if (!regions?.length) {
-      return { unit, areaUnit, scale };
+      return { unit, areaUnit, scale, volumeUnit };
     }
 
     // if we are in a region then it is the question of whether we support it
@@ -114,6 +120,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
         unit: PIXEL_UNITS,
         areaUnit: PIXEL_UNITS + SQUARE,
         scale,
+        volumeUnit: VOXEL_UNITS,
       };
     }
 
@@ -148,6 +155,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
         unit: PIXEL_UNITS,
         areaUnit: PIXEL_UNITS + SQUARE,
         scale,
+        volumeUnit: VOXEL_UNITS,
       };
     }
   } else if (calibration.scale) {
@@ -160,6 +168,8 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     CalibrationTypes.USER,
     CalibrationTypes.ERROR,
     CalibrationTypes.PROJECTION,
+    CalibrationTypes.CALIBRATED,
+    CalibrationTypes.UNKNOWN,
   ];
 
   if (types.includes(calibration?.type)) {
@@ -170,6 +180,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     unit: unit + (calibrationType ? ` ${calibrationType}` : ''),
     areaUnit: areaUnit + (calibrationType ? ` ${calibrationType}` : ''),
     scale,
+    volumeUnit: volumeUnit + (calibrationType ? ` ${calibrationType}` : ''),
   };
 };
 

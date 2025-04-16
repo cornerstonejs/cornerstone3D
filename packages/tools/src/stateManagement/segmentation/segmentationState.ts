@@ -17,9 +17,15 @@ import { addColorLUT } from './addColorLUT';
 import { getColorLUT } from './getColorLUT';
 import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import { removeColorLUT } from './removeColorLUT';
-import { getViewportSegmentations } from './getViewportSegmentations';
+import {
+  getViewportSegmentations,
+  getViewportSegmentationRepresentations,
+} from './getViewportSegmentations';
 import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation';
-import { getCurrentLabelmapImageIdForViewport } from './getCurrentLabelmapImageIdForViewport';
+import {
+  getCurrentLabelmapImageIdForViewport,
+  getCurrentLabelmapImageIdsForViewport,
+} from './getCurrentLabelmapImageIdForViewport';
 import { updateLabelmapSegmentationImageReferences } from './updateLabelmapSegmentationImageReferences';
 import { getStackSegmentationImageIdsForViewport } from './getStackSegmentationImageIdsForViewport';
 import {
@@ -34,9 +40,9 @@ function destroy() {
 }
 
 export {
-  // get
   getColorLUT,
   getCurrentLabelmapImageIdForViewport,
+  getCurrentLabelmapImageIdsForViewport,
   getNextColorLUTIndex,
   getSegmentation,
   getSegmentations,
@@ -44,6 +50,7 @@ export {
   getViewportIdsWithSegmentation,
   getSegmentationRepresentation,
   getSegmentationRepresentations,
+  getViewportSegmentationRepresentations,
   // set
   // remove
   removeColorLUT,

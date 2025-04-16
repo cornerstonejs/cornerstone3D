@@ -63,7 +63,7 @@ export default function findLargestBidirectional(
  * major distances.
  *
  */
-function createBidirectionalForSlice(
+export function createBidirectionalForSlice(
   sliceContour,
   isInSegment,
   currentMax = { maxMajor: 0, maxMinor: 0 }
