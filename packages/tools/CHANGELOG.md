@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.5...v3.10.6) (2025-04-16)
+
+### Bug Fixes
+
+- **tools:** Prevent tool instance from breaking annotation serialization ([1f5e758](https://github.com/cornerstonejs/cornerstone3D/commit/1f5e7584ede8eaf38a63e06d145eb7d5b20d4aba))
+
 ## [3.10.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.4...v3.10.5) (2025-04-15)
 
 **Note:** Version bump only for package @cornerstonejs/tools
