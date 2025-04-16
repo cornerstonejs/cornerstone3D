@@ -27,20 +27,20 @@ jobs:
         run: bun install --frozen-lockfile
       # - name: Install Playwright browsers
       #   run: bun x playwright install-deps chromium
-      - name: Ensure report directory exists
-        run: mkdir -p packages/docs/static/playwright-report
       - name: Run Playwright tests
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
-          # Tests will now directly generate the HTML report to packages/docs/static/playwright-report
-          bun x playwright test
-      - name: Upload HTML report to GitHub Actions Artifacts
+          bun run test:e2e:coverage
+      - name: create the coverage report
+        run: |
+          bun nyc report --reporter=lcov --reporter=text
+      - name: Upload the coverage report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: html-report--attempt-${{ github.run_attempt }}
-          path: packages/docs/static/playwright-report
-          retention-days: 14
+          name: coverage-report--attempt-${{ github.run_attempt }}
+          path: coverage
+          retention-days: 7
 
 
   build-docs:
@@ -60,16 +60,24 @@ jobs:
       - name: Download HTML report artifact
         uses: actions/download-artifact@v4
         with:
-          name: html-report--attempt-${{ github.run_attempt }}
-          path: packages/docs/static/playwright-report
-      - name: Build Docusaurus site
-        run: cd packages/docs && bun run build
-      - name: Upload Docusaurus build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docusaurus-build
-          path: packages/docs/build
-          retention-days: 7
+          name: coverage-report--attempt-${{ github.run_attempt }}
+          path: coverage
+
+      - name: Copy coverage to docs static directory
+        run: |
+          mkdir -p packages/docs/static/coverage
+          cp -r coverage/* packages/docs/static/coverage/
+          # Copy specific asset files from coverage root to static root
+          cp coverage/base.css packages/docs/static/
+          cp coverage/block-navigation.js packages/docs/static/
+          cp coverage/prettify.css packages/docs/static/
+          cp coverage/prettify.js packages/docs/static/
+          cp coverage/favicon.png packages/docs/static/
+          cp coverage/sort-arrow-sprite.png packages/docs/static/
+          cp coverage/sorter.js packages/docs/static/
+
+      - name: Build docs
+        run: cd packages/docs && bun run build:docs
 
       - name: Install Netlify CLI
         run: bun add -g netlify-cli
