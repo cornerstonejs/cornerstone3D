@@ -4,11 +4,11 @@
     "": {
       "name": "docs",
       "dependencies": {
-        "@cornerstonejs/adapters": "^3.10.9",
-        "@cornerstonejs/core": "^3.10.9",
-        "@cornerstonejs/dicom-image-loader": "^3.10.9",
-        "@cornerstonejs/nifti-volume-loader": "^3.10.9",
-        "@cornerstonejs/tools": "^3.10.9",
+        "@cornerstonejs/adapters": "^3.10.10",
+        "@cornerstonejs/core": "^3.10.10",
+        "@cornerstonejs/dicom-image-loader": "^3.10.10",
+        "@cornerstonejs/nifti-volume-loader": "^3.10.10",
+        "@cornerstonejs/tools": "^3.10.10",
         "@docusaurus/core": "3.6.3",
         "@docusaurus/faster": "3.6.3",
         "@docusaurus/module-type-aliases": "3.6.3",
@@ -307,7 +307,7 @@
 
     "@colors/colors": ["@colors/colors@1.5.0", "", {}, "sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ=="],
 
-    "@cornerstonejs/adapters": ["@cornerstonejs/adapters@3.10.9", "", { "dependencies": { "@babel/runtime-corejs2": "^7.17.8", "buffer": "^6.0.3", "dcmjs": "^0.29.8", "gl-matrix": "^3.4.3", "ndarray": "^1.0.19" }, "peerDependencies": { "@cornerstonejs/core": "^3.10.9", "@cornerstonejs/tools": "^3.10.9" } }, "sha512-D0R0FrkIS9Dv16GCq7AhgvTaZIi4X84HBtD+nkYJBl0RGtzX1SCoYnE8HbRn1EfA1jwsY9lluM/R6prA+gPQhA=="],
+    "@cornerstonejs/adapters": ["@cornerstonejs/adapters@3.10.10", "", { "dependencies": { "@babel/runtime-corejs2": "^7.17.8", "buffer": "^6.0.3", "dcmjs": "^0.29.8", "gl-matrix": "^3.4.3", "ndarray": "^1.0.19" }, "peerDependencies": { "@cornerstonejs/core": "^3.10.10", "@cornerstonejs/tools": "^3.10.10" } }, "sha512-Z84aEjXR3R4rvBav52bt3VuSCgs14dNQEozGcWz1kKDmBdon+ozBw8j8kmIeIT82kZKiqd3sLBa69NF4usuk4g=="],
 
     "@cornerstonejs/codec-charls": ["@cornerstonejs/codec-charls@1.2.3", "", {}, "sha512-qKUe6DN0dnGzhhfZLYhH9UZacMcudjxcaLXCrpxJImT/M/PQvZCT2rllu6VGJbWKJWG+dMVV2zmmleZcdJ7/cA=="],
 
@@ -317,13 +317,13 @@
 
     "@cornerstonejs/codec-openjph": ["@cornerstonejs/codec-openjph@2.4.7", "", {}, "sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w=="],
 
-    "@cornerstonejs/core": ["@cornerstonejs/core@3.10.9", "", { "dependencies": { "@kitware/vtk.js": "32.12.1", "comlink": "^4.4.1", "gl-matrix": "^3.4.3", "loglevel": "^1.9.2" } }, "sha512-zX2G1mIE8V0i0py5JGjfTXMAIYrxwFdqWyOU3/PM1vI6GcMj7P+hUx05lT4LrQKyiUgD2Net3TckUMNxZd+4TQ=="],
+    "@cornerstonejs/core": ["@cornerstonejs/core@3.10.10", "", { "dependencies": { "@kitware/vtk.js": "32.12.1", "comlink": "^4.4.1", "gl-matrix": "^3.4.3", "loglevel": "^1.9.2" } }, "sha512-M3Mh23xgkdJD5x9g33eGarKWrIek+Cv1ghIPVUGKRZjale1Z9PvGHXF6UXPskBQHw5D1RzNA5DurJQBEf26ZZw=="],
 
-    "@cornerstonejs/dicom-image-loader": ["@cornerstonejs/dicom-image-loader@3.10.9", "", { "dependencies": { "@cornerstonejs/codec-charls": "^1.2.3", "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2", "@cornerstonejs/codec-openjpeg": "^1.2.2", "@cornerstonejs/codec-openjph": "^2.4.5", "comlink": "^4.4.1", "dicom-parser": "^1.8.9", "jpeg-lossless-decoder-js": "^2.1.0", "pako": "^2.0.4", "uuid": "^9.0.0" }, "peerDependencies": { "@cornerstonejs/core": "^3.10.9" } }, "sha512-kXHlOlgX5d7HkrYzNw1OHDwpbsZBt8yGd41ywQc2IBEleBV4Pu6m/f7+zBR27RiWta+S5cP3O73drh3ZZWn63w=="],
+    "@cornerstonejs/dicom-image-loader": ["@cornerstonejs/dicom-image-loader@3.10.10", "", { "dependencies": { "@cornerstonejs/codec-charls": "^1.2.3", "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2", "@cornerstonejs/codec-openjpeg": "^1.2.2", "@cornerstonejs/codec-openjph": "^2.4.5", "comlink": "^4.4.1", "dicom-parser": "^1.8.9", "jpeg-lossless-decoder-js": "^2.1.0", "pako": "^2.0.4", "uuid": "^9.0.0" }, "peerDependencies": { "@cornerstonejs/core": "^3.10.10" } }, "sha512-Tqj+VuwupA3p5BPBSZDFcTXjb54fighnG2LKkIQzyGjHvFQSyoeQN56+XPrITKCRY71H/5z9bSqG7h3jeVX9wQ=="],
 
-    "@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@3.10.9", "", { "dependencies": { "nifti-reader-js": "^0.6.8" }, "peerDependencies": { "@cornerstonejs/core": "^3.10.9" } }, "sha512-Woigs6yfrrmgCfG6miwPYf/D+IShHjOxrT5H6HMv/JcqpDoCQDmzVfKUqNpKB1oF0B7+YwAxDB9Y5YKz9QrB/w=="],
+    "@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@3.10.10", "", { "dependencies": { "nifti-reader-js": "^0.6.8" }, "peerDependencies": { "@cornerstonejs/core": "^3.10.10" } }, "sha512-9ZBC11kjFEia6EQk2xlXYiXM5l/rf+2VQqds+7S1zET+nbgnFSfIf9T558CuBZEu9xDcrZHWNP7I+73i7phX4A=="],
 
-    "@cornerstonejs/tools": ["@cornerstonejs/tools@3.10.9", "", { "dependencies": { "@types/offscreencanvas": "2019.7.3", "comlink": "^4.4.1", "lodash.get": "^4.4.2" }, "peerDependencies": { "@cornerstonejs/core": "^3.10.9", "@kitware/vtk.js": "32.12.1", "@types/d3-array": "^3.0.4", "@types/d3-interpolate": "^3.0.1", "d3-array": "^3.2.3", "d3-interpolate": "^3.0.1", "gl-matrix": "^3.4.3" } }, "sha512-/baVU095/2f34OxfwwXbL6QbHg1PEYV+OTavmltUFd5eEQ/5t2gisO28sM8fQpdsP9lWQM8mcTLLe7267PTa4Q=="],
+    "@cornerstonejs/tools": ["@cornerstonejs/tools@3.10.10", "", { "dependencies": { "@types/offscreencanvas": "2019.7.3", "comlink": "^4.4.1", "lodash.get": "^4.4.2" }, "peerDependencies": { "@cornerstonejs/core": "^3.10.10", "@kitware/vtk.js": "32.12.1", "@types/d3-array": "^3.0.4", "@types/d3-interpolate": "^3.0.1", "d3-array": "^3.2.3", "d3-interpolate": "^3.0.1", "gl-matrix": "^3.4.3" } }, "sha512-U8AhBhIaq0FpToQymN2mdO+2ei4cCnTclal5cCLFsd2x5/0A6YtLq7HfJiQ+XY/eJRgTOHpG4qnisOYiumj8YQ=="],
 
     "@csstools/cascade-layer-name-parser": ["@csstools/cascade-layer-name-parser@2.0.4", "", { "peerDependencies": { "@csstools/css-parser-algorithms": "^3.0.4", "@csstools/css-tokenizer": "^3.0.3" } }, "sha512-7DFHlPuIxviKYZrOiwVU/PiHLm3lLUR23OMuEEtfEOQTOp9hzQ2JjdY6X5H18RVuUPJqSCI+qNnD5iOLMVE0bA=="],
 
