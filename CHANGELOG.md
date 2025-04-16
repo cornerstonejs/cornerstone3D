@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.6...v3.10.7) (2025-04-16)
+
+### Bug Fixes
+
+- add test coverage per line ([#2002](https://github.com/cornerstonejs/cornerstone3D/issues/2002)) ([7b0fd80](https://github.com/cornerstonejs/cornerstone3D/commit/7b0fd8071031fe855c4923f510afbb95e877b0af))
+
 ## [3.10.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.5...v3.10.6) (2025-04-16)
 
 ### Bug Fixes
