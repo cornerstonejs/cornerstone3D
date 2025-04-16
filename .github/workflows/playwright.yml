@@ -1,7 +1,5 @@
 name: Playwright Tests
 on:
-  push:
-    branches: [main, master]
   pull_request:
     branches: [main, master]
 
@@ -38,52 +36,6 @@ jobs:
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report--attempt-${{ github.run_attempt }}
+          name: coverage-report-pr
           path: coverage
-          retention-days: 7
-
-
-  build-docs:
-    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    needs: [playwright-tests]
-    runs-on: self-hosted
-    steps:
-      - uses: oven-sh/setup-bun@v2
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install root dependencies
-        run: bun install --frozen-lockfile
-      - name: Install docs dependencies
-        run: cd packages/docs && bun install --frozen-lockfile
-      - name: Download HTML report artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report--attempt-${{ github.run_attempt }}
-          path: coverage
-
-      - name: Copy coverage to docs static directory
-        run: |
-          mkdir -p packages/docs/static/coverage
-          cp -r coverage/* packages/docs/static/coverage/
-          # Copy specific asset files from coverage root to static root
-          cp coverage/base.css packages/docs/static/
-          cp coverage/block-navigation.js packages/docs/static/
-          cp coverage/prettify.css packages/docs/static/
-          cp coverage/prettify.js packages/docs/static/
-          cp coverage/favicon.png packages/docs/static/
-          cp coverage/sort-arrow-sprite.png packages/docs/static/
-          cp coverage/sorter.js packages/docs/static/
-
-      - name: Build docs
-        run: cd packages/docs && bun run build:docs
-
-      - name: Install Netlify CLI
-        run: bun add -g netlify-cli
-
-      - name: Deploy to Netlify
-        env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        run: netlify deploy --dir=packages/docs/build --prod --site $NETLIFY_SITE_ID --auth $NETLIFY_AUTH_TOKEN
+          retention-days: 3
