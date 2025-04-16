@@ -13,7 +13,7 @@ export default defineConfig({
   reporter: [
     [
       process.env.CI ? 'blob' : 'html',
-      { outputFolder: './tests/playwright-report' },
+      { outputFolder: './packages/docs/static/playwright-report' },
     ],
   ],
   use: {
@@ -73,7 +73,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'yarn build-and-serve-static-examples',
+    command: 'COVERAGE=true nyc yarn build-and-serve-static-examples',
     url: 'http://localhost:3333',
     reuseExistingServer: !process.env.CI,
     timeout: 500 * 1000,

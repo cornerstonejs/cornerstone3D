@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from 'playwright-test-coverage';
 import {
   visitExample,
   checkForScreenshot,
@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Stack Viewport API', async () => {
-  test('should set VOI range correctly', async ({ page }) => {
+  test('should set VOI range correctly -- @debug', async ({ page }) => {
     await page.getByRole('button', { name: 'Set VOI Range' }).click();
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(

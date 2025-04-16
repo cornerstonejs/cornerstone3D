@@ -294,5 +294,10 @@ module.exports = {
     'faq',
     'help',
     'examples',
+    {
+      type: 'link',
+      label: 'Test Coverage',
+      href: 'https://www.cornerstonejs.org/coverage',
+    },
   ],
 };
