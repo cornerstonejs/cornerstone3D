@@ -231,8 +231,6 @@ class WSIViewport extends Viewport {
 
   public getScalarData() {
     const scalarData = null as PixelDataTypedArray;
-    //scalarData.length = 0;
-    //scarlarData = [];
     return scalarData;
   }
 
