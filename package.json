@@ -42,7 +42,7 @@
     "prepare": "husky",
     "commit:prepare": "yarn test:ci && yarn test:unit",
     "start": "yarn run dev",
-    "test:e2e:coverage": "nyc --reporter=html yarn run test:e2e:ci",
+    "test:e2e:coverage": "nyc --reporter=html yarn run test:e2e:ci -g @debug",
     "test:e2e:ci": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
