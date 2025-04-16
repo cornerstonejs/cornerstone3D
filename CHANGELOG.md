@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.18](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.17...v3.10.18) (2025-04-16)
+
+### Bug Fixes
+
+- handle undefined options in ArrowAnnotateTool.hydrate ([#2016](https://github.com/cornerstonejs/cornerstone3D/issues/2016)) ([1bc0209](https://github.com/cornerstonejs/cornerstone3D/commit/1bc0209d87fb10e6ac3b8854de5d03c7dd6482af))
+
 ## [3.10.17](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.16...v3.10.17) (2025-04-16)
 
 ### Bug Fixes
