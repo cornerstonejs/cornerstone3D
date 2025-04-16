@@ -50,8 +50,8 @@
     "itk-wasm": "1.0.0-b.165"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.10.18",
-    "@cornerstonejs/tools": "^3.10.18",
+    "@cornerstonejs/core": "^3.10.19",
+    "@cornerstonejs/tools": "^3.10.19",
     "@kitware/vtk.js": "32.12.1"
   }
 }
