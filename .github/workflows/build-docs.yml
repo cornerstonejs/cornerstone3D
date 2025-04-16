@@ -77,7 +77,7 @@ jobs:
           echo "Artifact downloaded successfully."
 
       - name: Install docs dependencies
-        run: cd packages/docs && bun install --frozen-lockfile
+        run: cd packages/docs && bun install
 
       - name: Copy coverage to docs static directory
         run: |
