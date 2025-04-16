@@ -163,6 +163,10 @@
         "name": "3D Volume Picking",
         "description": "Demonstrates how to use the VTK.js vtkCellPicker object to pick 3D point in volume rendering scene. Also shows how to synchronize between 3D and 2D viewports."
       },
+      "volumeCroppingTool": {
+        "name": "3D Volume Cropping",
+        "description": "Demonstrates how to use the VTK.js vtkImageCroppingWidget."
+      },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",
         "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
