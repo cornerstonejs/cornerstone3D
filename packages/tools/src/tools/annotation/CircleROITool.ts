@@ -996,7 +996,6 @@ class CircleROITool extends AnnotationTool {
           );
         }
         const stats = this.configuration.statsCalculator.getStatistics();
-
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
@@ -1030,6 +1029,14 @@ class CircleROITool extends AnnotationTool {
   };
 
   _isInsideVolume = (index1, index2, dimensions) => {
+    // for wsiViewport
+    if (index1[1] < 0) {
+      index1[1] = -index1[1];
+    }
+    if (index2[1] < 0) {
+      index2[1] = -index2[1];
+    }
+
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
@@ -1137,7 +1144,7 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max) {
+  if (max && isFinite(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 

@@ -930,16 +930,18 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
+        let pointsInShape;
+        if (imageData.getScalarData() !== null) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
         const stats = this.configuration.statsCalculator.getStatistics();
-
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
@@ -968,6 +970,14 @@ class RectangleROITool extends AnnotationTool {
   };
 
   _isInsideVolume = (index1, index2, dimensions) => {
+    // for wsiViewport
+    if (index1[1] < 0) {
+      index1[1] = -index1[1];
+    }
+    if (index2[1] < 0) {
+      index2[1] = -index2[1];
+    }
+
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
@@ -1048,12 +1058,16 @@ function defaultGetTextLines(data, targetId: string): string[] {
   }
 
   const textLines: string[] = [];
-
   textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
-
+  if (isFinite(mean) && !isNaN(mean)) {
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
+  }
+  if (isFinite(max) && !isNaN(max)) {
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (isFinite(stdDev) && !isNaN(stdDev)) {
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  }
   return textLines;
 }
 
