@@ -297,8 +297,7 @@ module.exports = {
     {
       type: 'link',
       label: 'Test Coverage',
-      href: '/coverage',
-      target: '_self',
+      href: 'https://cornerstone3D.js.org/coverage',
     },
   ],
 };
