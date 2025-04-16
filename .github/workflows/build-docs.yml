@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build-and-deploy-docs:
     timeout-minutes: 60
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     # Need permissions to read actions and pull requests
     permissions:
       actions: read
