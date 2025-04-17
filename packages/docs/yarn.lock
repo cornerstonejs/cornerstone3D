@@ -1187,10 +1187,10 @@
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.5.0.tgz#bb504579c1cae923e6576a4f5da43d25f97bdbd9"
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
-"@cornerstonejs/adapters@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/adapters/-/adapters-3.7.10.tgz#8df0506b6048dd7f0f3d17e8083d7be922627574"
-  integrity sha512-GorV6k+ty+0RdHrqhtDNr2wYbZ/t/+lCxH9rvyGYyqFdxLLyO7ltdbvsN0+SVp4w+qR+dCNuUKWXTlwE9GtFNw==
+"@cornerstonejs/adapters@^3.10.24":
+  version "3.10.24"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/adapters/-/adapters-3.10.24.tgz#dcd4d994f73fc1fdaeead9f0dc005e2b42658161"
+  integrity sha512-VCpBpvwdGiozALQMRvw5zvO3UFvCiUbhfhwxgOZWjQHcjvahHzG7aI4yNCoujZvyzEC1T7eS6FgYJimYZJ54EA==
   dependencies:
     "@babel/runtime-corejs2" "^7.17.8"
     buffer "^6.0.3"
@@ -1218,20 +1218,20 @@
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.7.tgz#784394d05d8cf735640e9c3baa206535ee8e0376"
   integrity sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w==
 
-"@cornerstonejs/core@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/core/-/core-3.7.10.tgz#3ea2fed67b7265d664d2d828f455e1f5e4ebeb28"
-  integrity sha512-WK9EY8kTxTQTXFCdBldMrYjO3IZPWhT88ByaHHos3Zs5QRR6zeITN1hHOaSCBhP06zZUv0j+olAvzTEMxcghcw==
+"@cornerstonejs/core@^3.10.24":
+  version "3.10.24"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/core/-/core-3.10.24.tgz#09d9c04ac78b3772c49a8b8455621d8fd1e47615"
+  integrity sha512-r8Oxs3J9NviaS2a9XJ6Y2R+2KxRW/MhkbV6iuKjpI36QqXi+LEa9LLF0pMM8Lw3/JLxG3VsCgoRoMH4R7btHeQ==
   dependencies:
     "@kitware/vtk.js" "32.12.1"
     comlink "^4.4.1"
     gl-matrix "^3.4.3"
     loglevel "^1.9.2"
 
-"@cornerstonejs/dicom-image-loader@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/dicom-image-loader/-/dicom-image-loader-3.7.10.tgz#dbbe0c379cf134651793c5a962e05935647fc9fd"
-  integrity sha512-Nd1KiDXg101DaDrj+0bL6SmAYo/BUV4N8G5UvaocoDz65r6RsR6eE3H+zCXftGgQZ2IlHEnQUCebdCyX+oXe4A==
+"@cornerstonejs/dicom-image-loader@^3.10.24":
+  version "3.10.24"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/dicom-image-loader/-/dicom-image-loader-3.10.24.tgz#d6e781bbec385a739dc4d6647396a2ddbd6cc7e8"
+  integrity sha512-uLLW5VlWQLfiFBSwGMTu73P+lGnX00e7m8gXY9LA6GY5gG/qQcf2FAHt42bHmHirooxhWb2Q42iXXiwgLh0m1w==
   dependencies:
     "@cornerstonejs/codec-charls" "^1.2.3"
     "@cornerstonejs/codec-libjpeg-turbo-8bit" "^1.2.2"
@@ -1243,17 +1243,17 @@
     pako "^2.0.4"
     uuid "^9.0.0"
 
-"@cornerstonejs/nifti-volume-loader@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/nifti-volume-loader/-/nifti-volume-loader-3.7.10.tgz#d214676a87bf6bca8120db73f601d64b3cee066e"
-  integrity sha512-4VeeE9Y21qDd/0xLxJB1nJ7SZjxcIlHh+R3yQKJPNLlqI7yhpO9TSGVWawi1wjVcUtqXMD1GMSw6Jju+K8pCMA==
+"@cornerstonejs/nifti-volume-loader@^3.10.24":
+  version "3.10.24"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/nifti-volume-loader/-/nifti-volume-loader-3.10.24.tgz#1094436b481a4544a8fed1a24361189fc3473e69"
+  integrity sha512-QslHdzgjxfEcbwwrw2w452PdIRIjJPutLVDQcHV4YnzewQdMtlo3vOR6uWeNf475953/5LSeJIEkO0zZij1brQ==
   dependencies:
     nifti-reader-js "^0.6.8"
 
-"@cornerstonejs/tools@^3.7.6":
-  version "3.7.10"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/tools/-/tools-3.7.10.tgz#68e43cbe879e90b8f9001f7d65808b85b5d65eaa"
-  integrity sha512-kOaoidftQIdlWLgwysYyKGhnWOsEAicihrVOGyAheJtgSpIEmtRAsHrLUyKITg3PIlmKVdIvZW1bxvpnmsZtqg==
+"@cornerstonejs/tools@^3.10.24":
+  version "3.10.24"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/tools/-/tools-3.10.24.tgz#4f0fbc97bd4b6c269c7a7177fe39ad3c849eecc2"
+  integrity sha512-ZvhS7yCUuzJbTxs4c8XBlur58PxZ06jGw3Vuho/fI2XAIPaFL4UzCKLiHWLVKcM+iMIO8H6Afw5FWAZaburG+Q==
   dependencies:
     "@types/offscreencanvas" "2019.7.3"
     comlink "^4.4.1"
@@ -4378,6 +4378,13 @@ cosmiconfig@^8.1.3, cosmiconfig@^8.3.5:
     parse-json "^5.2.0"
     path-type "^4.0.0"
 
+cross-env@^7.0.3:
+  version "7.0.3"
+  resolved "https://registry.yarnpkg.com/cross-env/-/cross-env-7.0.3.tgz#865264b29677dc015ba8418918965dd232fc54cf"
+  integrity sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==
+  dependencies:
+    cross-spawn "^7.0.1"
+
 cross-fetch@3.1.5:
   version "3.1.5"
   resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.1.5.tgz#e1389f44d9e7ba767907f7af8454787952ab534f"
@@ -4385,7 +4392,7 @@ cross-fetch@3.1.5:
   dependencies:
     node-fetch "2.6.7"
 
-cross-spawn@^7.0.3:
+cross-spawn@^7.0.1, cross-spawn@^7.0.3:
   version "7.0.6"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.6.tgz#8a58fe78f00dcd70c370451759dfbfaf03e8ee9f"
   integrity sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==

@@ -47,6 +47,7 @@
     "@mdx-js/react": "^3.0.1",
     "@svgr/webpack": "^8.1.0",
     "clsx": "^1.1.1",
+    "cross-env": "^7.0.3",
     "dcmjs": "^0.33.0",
     "dicom-parser": "^1.8.21",
     "dicomweb-client": "0.10.4",
