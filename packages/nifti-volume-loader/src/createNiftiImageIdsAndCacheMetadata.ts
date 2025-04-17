@@ -1,5 +1,5 @@
 import * as NiftiReader from 'nifti-reader-js';
-import { eventTarget, triggerEvent, utilities } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent, utilities, cache, Events as CoreEvents } from '@cornerstonejs/core';
 import type { mat3 } from 'gl-matrix';
 import { rasToLps } from './helpers/convert';
 import Events from './enums/Events';
@@ -226,6 +226,20 @@ async function fetchAndAllocateNiftiVolume(url) {
   const onLoad = () => {
     const data = { volumeId: url };
     triggerEvent(eventTarget, Events.NIFTI_VOLUME_LOADED, { data });
+    
+    const volume = cache.getVolume(url);
+    if (volume && volume.loadStatus?.loaded) {
+      const eventDetail = {
+        FrameOfReferenceUID: volume.metadata?.FrameOfReferenceUID,
+        volumeId: url,
+      };
+      
+      triggerEvent(
+        eventTarget,
+        CoreEvents.IMAGE_VOLUME_LOADING_COMPLETED,
+        eventDetail
+      );
+    }
   };
 
   const controller = new AbortController();
