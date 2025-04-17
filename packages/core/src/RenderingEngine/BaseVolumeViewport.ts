@@ -1570,7 +1570,7 @@ abstract class BaseVolumeViewport extends Viewport {
     const renderer = this.getRenderer();
     const displayCoords = this.getVtkDisplayCoords(canvasPos);
     const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
+      this.getRenderingEngine().getOffScreenMultiRenderWindow(this.id);
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const worldCoord = openGLRenderWindow.displayToWorld(
@@ -1599,7 +1599,7 @@ abstract class BaseVolumeViewport extends Viewport {
       canvasPos[1] * devicePixelRatio,
     ];
     const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
+      this.getRenderingEngine().getOffScreenMultiRenderWindow(this.id);
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
@@ -1649,7 +1649,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const renderer = this.getRenderer();
     const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
+      this.getRenderingEngine().getOffScreenMultiRenderWindow(this.id);
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const size = openGLRenderWindow.getSize();
