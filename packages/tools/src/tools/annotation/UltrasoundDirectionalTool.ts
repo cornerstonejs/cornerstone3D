@@ -688,7 +688,6 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         }
 
         // create a line from the first point to the third point
-        let dataId = `${annotationUID}-line-1`;
         let lineUID = '1';
         drawLineSvg(
           svgDrawingHelper,
@@ -700,12 +699,10 @@ class UltrasoundDirectionalTool extends AnnotationTool {
             color,
             width: 1,
             shadow: this.configuration.shadow,
-          },
-          dataId
+          }
         );
 
         // draw another line from first point to the projected one
-        dataId = `${annotationUID}-line-2`;
         lineUID = '2';
 
         drawLineSvg(
@@ -719,12 +716,10 @@ class UltrasoundDirectionalTool extends AnnotationTool {
             width: 1,
             lineDash: [1, 1],
             shadow: this.configuration.shadow,
-          },
-          dataId
+          }
         );
       } else {
         // draw straight line between the two points
-        const dataId = `${annotationUID}-line-1`;
         const lineUID = '1';
         drawLineSvg(
           svgDrawingHelper,
@@ -736,8 +731,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
             color,
             width: 1,
             shadow: this.configuration.shadow,
-          },
-          dataId
+          }
         );
       }
 
