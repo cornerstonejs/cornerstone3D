@@ -20,13 +20,18 @@ class EllipticalROI extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                EllipticalROI.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup,
+            ReferencedFrameNumber,
+            TextBoxGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            EllipticalROI.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -131,7 +136,12 @@ class EllipticalROI extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
@@ -189,7 +199,12 @@ class EllipticalROI extends BaseAdapter3D {
             points,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles,
+                referencedImageId,
+                worldToImageCoords
+            })
         };
     }
 }

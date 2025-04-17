@@ -19,13 +19,17 @@ class ArrowAnnotate extends BaseAdapter3D {
         metadata,
         _trackingIdentifier
     ) {
-        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                ArrowAnnotate.toolType
-            );
+        const {
+            defaultState,
+            SCOORDGroup,
+            ReferencedFrameNumber,
+            TextBoxGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            ArrowAnnotate.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -83,7 +87,12 @@ class ArrowAnnotate extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
@@ -126,7 +135,12 @@ class ArrowAnnotate extends BaseAdapter3D {
             ],
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
-            finding
+            finding,
+            textBoxPoint: this.getTextBoxPoint({
+                handles: data.handles,
+                referencedImageId,
+                worldToImageCoords
+            })
         };
 
         // If freetext finding isn't present, add it from the tool text.

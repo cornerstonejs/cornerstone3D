@@ -21,7 +21,7 @@ class Bidirectional extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, ReferencedFrameNumber } =
+        const { defaultState, ReferencedFrameNumber, TextBoxGroup } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
@@ -86,7 +86,12 @@ class Bidirectional extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
@@ -173,7 +178,12 @@ class Bidirectional extends BaseAdapter3D {
             shortAxisLength: width,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding: finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles,
+                referencedImageId,
+                worldToImageCoords
+            })
         };
     }
 }

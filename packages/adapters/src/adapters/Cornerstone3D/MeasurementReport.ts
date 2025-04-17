@@ -227,6 +227,15 @@ export default class MeasurementReport {
             contentSequenceArr.filter(group =>
                 this.codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
             ) || [];
+
+        const TextBoxGroup = contentSequenceArr.find(
+            group =>
+                group.ValueType === "SCOORD" &&
+                group.GraphicType === "POINT" &&
+                group.ConceptNameCodeSequence.CodeMeaning ===
+                    "Annotation Position"
+        );
+
         const NUMGroup = contentSequenceArr.find(
             group => group.ValueType === "NUM"
         );
@@ -280,7 +289,8 @@ export default class MeasurementReport {
             SCOORDGroup,
             ReferencedSOPSequence,
             ReferencedSOPInstanceUID,
-            ReferencedFrameNumber
+            ReferencedFrameNumber,
+            TextBoxGroup
         };
     }
 

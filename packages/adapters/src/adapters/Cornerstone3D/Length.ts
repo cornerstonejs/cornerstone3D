@@ -20,13 +20,18 @@ export default class Length extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                this.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup,
+            ReferencedFrameNumber,
+            TextBoxGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            this.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -61,7 +66,12 @@ export default class Length extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return super.addTextBoxDataToState({
+            state,
+            TextBoxGroup,
+            imageToWorldCoords,
+            referencedImageId
+        });
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
@@ -91,7 +101,12 @@ export default class Length extends BaseAdapter3D {
             distance,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles,
+                referencedImageId,
+                worldToImageCoords
+            })
         };
     }
 }

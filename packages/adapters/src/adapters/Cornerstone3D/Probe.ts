@@ -25,7 +25,7 @@ class Probe extends BaseAdapter3D {
             trackingIdentifier
         );
 
-        const { defaultState, SCOORDGroup } =
+        const { defaultState, SCOORDGroup, TextBoxGroup } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
@@ -58,7 +58,12 @@ class Probe extends BaseAdapter3D {
             }
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 }
 

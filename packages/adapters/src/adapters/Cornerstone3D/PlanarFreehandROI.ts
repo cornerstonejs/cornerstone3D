@@ -18,13 +18,18 @@ class PlanarFreehandROI extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                PlanarFreehandROI.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup,
+            ReferencedFrameNumber,
+            TextBoxGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            PlanarFreehandROI.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -82,7 +87,12 @@ class PlanarFreehandROI extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
@@ -127,7 +137,12 @@ class PlanarFreehandROI extends BaseAdapter3D {
             /** Other */
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles: data.handles,
+                referencedImageId,
+                worldToImageCoords
+            })
         };
     }
 }

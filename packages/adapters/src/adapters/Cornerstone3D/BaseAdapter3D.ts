@@ -175,4 +175,38 @@ export default class BaseAdapter3D {
 
         return tidArguments;
     }
+
+    public static addTextBoxDataToState({
+        TextBoxGroup,
+        state,
+        referencedImageId,
+        imageToWorldCoords
+    }) {
+        if (TextBoxGroup) {
+            const { GraphicData } = TextBoxGroup;
+            const point = imageToWorldCoords(referencedImageId, [
+                GraphicData[0],
+                GraphicData[1]
+            ]);
+            state.annotation.data.handles.textBox.worldPosition = point;
+            state.annotation.data.handles.textBox.hasMoved = true;
+        }
+
+        return state;
+    }
+
+    public static getTextBoxPoint({
+        handles,
+        referencedImageId,
+        worldToImageCoords
+    }) {
+        const textBoxWorldPosition = handles?.textBox?.worldPosition;
+        const textBoxImageCoords = textBoxWorldPosition
+            ? worldToImageCoords(referencedImageId, textBoxWorldPosition)
+            : undefined;
+
+        return textBoxImageCoords
+            ? { x: textBoxImageCoords[0], y: textBoxImageCoords[1] }
+            : undefined;
+    }
 }

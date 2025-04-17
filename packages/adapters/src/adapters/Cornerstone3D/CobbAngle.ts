@@ -18,13 +18,18 @@ class CobbAngle extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                CobbAngle.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup,
+            ReferencedFrameNumber,
+            TextBoxGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            CobbAngle.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -64,7 +69,12 @@ class CobbAngle extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     public static getTID300RepresentationArguments(tool, worldToImageCoords) {
@@ -100,7 +110,12 @@ class CobbAngle extends BaseAdapter3D {
             rAngle: angle,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles,
+                referencedImageId,
+                worldToImageCoords
+            })
         };
     }
 }

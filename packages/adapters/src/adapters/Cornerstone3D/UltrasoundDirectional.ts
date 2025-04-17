@@ -15,13 +15,17 @@ class UltrasoundDirectional extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                UltrasoundDirectional.toolType
-            );
+        const {
+            defaultState,
+            SCOORDGroup,
+            ReferencedFrameNumber,
+            TextBoxGroup
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            UltrasoundDirectional.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -50,7 +54,12 @@ class UltrasoundDirectional extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
@@ -76,7 +85,12 @@ class UltrasoundDirectional extends BaseAdapter3D {
             point2,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles,
+                referencedImageId,
+                worldToImageCoords
+            })
         };
     }
 }
