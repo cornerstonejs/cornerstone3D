@@ -931,7 +931,7 @@ class RectangleROITool extends AnnotationTool {
         );
 
         let pointsInShape;
-        if (imageData.getScalarData() !== null) {
+        if (image.scalarData.length > 0) {
           pointsInShape = voxelManager.forEach(
             this.configuration.statsCalculator.statsCallback,
             {

@@ -915,7 +915,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let intersections = [];
     let intersectionCounter = 0;
     let pointsInShape;
-    if (imageData.getScalarData() !== null) {
+    if (imageData.scalarData) {
       pointsInShape = voxelManager.forEach(
         this.configuration.statsCalculator.statsCallback,
         {
@@ -956,26 +956,27 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           returnPoints: this.configuration.storePointData,
         }
       );
+
+      const stats = this.configuration.statsCalculator.getStatistics();
+      cachedStats[targetId] = {
+        Modality: metadata.Modality,
+        area,
+        perimeter: calculatePerimeter(canvasCoordinates, closed) / scale,
+        mean: stats.mean?.value,
+        max: stats.max?.value,
+        stdDev: stats.stdDev?.value,
+        statsArray: stats.array,
+        pointsInShape: pointsInShape,
+        /**
+         * areaUnit are sizing, eg mm^2 typically
+         * modality units are pixel value units, eg HU or other
+         * unit is linear measurement unit, eg mm
+         */
+        areaUnit,
+        modalityUnit,
+        unit,
+      };
     }
-    const stats = this.configuration.statsCalculator.getStatistics();
-    cachedStats[targetId] = {
-      Modality: metadata.Modality,
-      area,
-      perimeter: calculatePerimeter(canvasCoordinates, closed) / scale,
-      mean: stats.mean?.value,
-      max: stats.max?.value,
-      stdDev: stats.stdDev?.value,
-      statsArray: stats.array,
-      pointsInShape: pointsInShape,
-      /**
-       * areaUnit are sizing, eg mm^2 typically
-       * modality units are pixel value units, eg HU or other
-       * unit is linear measurement unit, eg mm
-       */
-      areaUnit,
-      modalityUnit,
-      unit,
-    };
   }
 
   protected updateOpenCachedStats({

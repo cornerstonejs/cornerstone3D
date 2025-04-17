@@ -24,6 +24,11 @@ import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
 
+export type CanvasScalarData = Uint8ClampedArray & {
+  frameNumber?: number;
+  getRange?: () => [number, number];
+};
+
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
 /**
@@ -229,9 +234,12 @@ class WSIViewport extends Viewport {
     this.setProperties({});
   }
 
-  public getScalarData() {
-    const scalarData = null as PixelDataTypedArray;
-    return scalarData;
+  protected getScalarData() {
+    // Return an empty CanvasScalarData object
+    const emptyData = new Uint8ClampedArray() as CanvasScalarData;
+    emptyData.getRange = () => [0, 255];
+    emptyData.frameNumber = -1;
+    return emptyData;
   }
 
   public getImageData(): CPUIImageData {
@@ -274,7 +282,7 @@ class WSIViewport extends Viewport {
       preScale: {
         scaled: false,
       },
-      scalarData: null,
+      scalarData: this.getScalarData(),
       imageData,
       // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
       voxelManager: {
