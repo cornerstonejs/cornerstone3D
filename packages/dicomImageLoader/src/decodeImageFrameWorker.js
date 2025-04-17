@@ -1,3 +1,4 @@
+// @ts-check
 /* eslint-disable complexity */
 import bilinear from './shared/scaling/bilinear';
 import replicate from './shared/scaling/replicate';
@@ -33,6 +34,14 @@ const typedArrayConstructors = {
   Float32Array,
 };
 
+/**
+ *
+ * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
+ * @param {*} options
+ * @param {number} start
+ * @param {import('./types').LoaderDecodeOptions} decodeConfig
+ * @returns
+ */
 function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
@@ -166,6 +175,14 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   return imageFrame;
 }
 
+/**
+ *
+ * @param {*} options
+ * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
+ * @param {*} typedArrayConstructors
+ * @param {import("@cornerstonejs/core").Types.PixelDataTypedArray} pixelDataArray
+ * @returns
+ */
 function _handleTargetBuffer(
   options,
   imageFrame,
@@ -218,6 +235,14 @@ function _handleTargetBuffer(
   return pixelDataArray;
 }
 
+/**
+ *
+ * @param {*} options
+ * @param {number} minBeforeScale
+ * @param {number} maxBeforeScale
+ * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
+ * @returns
+ */
 function _handlePreScaleSetup(
   options,
   minBeforeScale,
@@ -242,6 +267,13 @@ function _handlePreScaleSetup(
   return _getDefaultPixelDataArray(scaledMin, scaledMax, imageFrame);
 }
 
+/**
+ *
+ * @param {number} min
+ * @param {number} max
+ * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
+ * @returns
+ */
 function _getDefaultPixelDataArray(min, max, imageFrame) {
   const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
   // @ts-ignore
@@ -259,6 +291,13 @@ function _validateScalingParameters(scalingParameters) {
   }
 }
 
+/**
+ *
+ * @param {*} imageFrame  - The type probably should be import("@cornerstonejs/core").Types.IImageFrame but this causes build errors
+ * @param {*} targetBuffer
+ * @param {*} TypedArrayConstructor
+ * @returns
+ */
 function createDestinationImage(
   imageFrame,
   targetBuffer,
@@ -287,8 +326,14 @@ function createDestinationImage(
   };
 }
 
-/** Scales the image frame, updating the frame in place with a new scaled
- * version of it (in place modification)
+/**
+ *
+ * @description Scales the image frame, updating the frame in place with a new
+ * scaled version of it (in place modification)
+ * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
+ * @param {*} targetBuffer
+ * @param {*} TypedArrayConstructor
+ * @returns
  */
 function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
   const dest = createDestinationImage(
@@ -308,6 +353,17 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
  * This is an async function return the result, or you can provide an optional
  * callbackFn that is called with the results.
  */
+/**
+ *
+ * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
+ * @param {string} transferSyntax
+ * @param {import('dicom-parser').ByteArray} pixelData
+ * @param {import('./types').LoaderDecodeOptions} decodeConfig
+ * @param {import("./types").DICOMLoaderImageOptions} options
+ * @param {(image: import("@cornerstonejs/core").Types.IImageFrame) => void} callbackFn - (Deprecated) Optional callback function for handling
+ * the decoded frame.
+ * @returns {Promise<import("@cornerstonejs/core").Types.IImageFrame>} - The decoded image frame.
+ */
 export async function decodeImageFrame(
   imageFrame,
   transferSyntax,
@@ -318,6 +374,7 @@ export async function decodeImageFrame(
 ) {
   const start = new Date().getTime();
 
+  /** @type {Promise<import("@cornerstonejs/core").Types.IImageFrame> | null} */
   let decodePromise = null;
 
   let opts;
@@ -346,7 +403,11 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
+      decodePromise = decodeJPEGBaseline8Bit(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecLibJpegTurbo8bit
+      );
       break;
     case '1.2.840.10008.1.2.4.51':
       // JPEG Baseline lossy process 2 & 4 (12 bit)
@@ -374,7 +435,11 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGLS(pixelData, opts);
+      decodePromise = decodeJPEGLS(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecCharls
+      );
       break;
     case '1.2.840.10008.1.2.4.81':
       // JPEG-LS Lossy (Near-Lossless) Image Compression
@@ -385,7 +450,11 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGLS(pixelData, opts);
+      decodePromise = decodeJPEGLS(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecCharls
+      );
       break;
     case '1.2.840.10008.1.2.4.90':
       opts = {
@@ -394,7 +463,11 @@ export async function decodeImageFrame(
 
       // JPEG 2000 Lossless
       // imageFrame, pixelData, decodeConfig, options
-      decodePromise = decodeJPEG2000(pixelData, opts);
+      decodePromise = decodeJPEG2000(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecOpenJpeg
+      );
       break;
     case '1.2.840.10008.1.2.4.91':
       // JPEG 2000 Lossy
@@ -404,7 +477,11 @@ export async function decodeImageFrame(
 
       // JPEG 2000 Lossy
       // imageFrame, pixelData, decodeConfig, options
-      decodePromise = decodeJPEG2000(pixelData, opts);
+      decodePromise = decodeJPEG2000(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecOpenJpeg
+      );
       break;
     case '3.2.840.10008.1.2.4.96':
     case '1.2.840.10008.1.2.4.201':
@@ -415,7 +492,11 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeHTJ2K(pixelData, opts);
+      decodePromise = decodeHTJ2K(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecOpenJph
+      );
       break;
     default:
       throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
