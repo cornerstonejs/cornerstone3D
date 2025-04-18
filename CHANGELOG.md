@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.27](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.26...v3.10.27) (2025-04-18)
+
+### Bug Fixes
+
+- **AngleTool:** draw angle arc ([#2010](https://github.com/cornerstonejs/cornerstone3D/issues/2010)) ([2a10264](https://github.com/cornerstonejs/cornerstone3D/commit/2a10264a950ae1731b5fbed4631a341bc23b9cc5))
+
 ## [3.10.26](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.25...v3.10.26) (2025-04-17)
 
 ### Bug Fixes
