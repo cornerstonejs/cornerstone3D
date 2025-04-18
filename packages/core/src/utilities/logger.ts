@@ -13,7 +13,6 @@ if (typeof window !== 'undefined') {
   (window as unknown as WindowLog).log = loglevel;
 }
 
-
 export type Logger = LogLevelLogger & {
   getLogger: (...categories: string[]) => Logger;
 };
@@ -24,9 +23,10 @@ export type Logger = LogLevelLogger & {
  * for forwards compatibility.
  */
 export function getRootLogger(name: string): Logger {
-  const logger = loglevel.getLogger(name[0]) as Logger;
+  const logger = loglevel.getLogger(name) as Logger;
+  const baseName = name;
   logger.getLogger = (...names: string[]) => {
-    return getRootLogger(`${name}.${names.join('.')}`);
+    return getRootLogger(`${baseName}.${names.join('.')}`);
   };
   return logger;
 }
@@ -37,7 +37,8 @@ export function getRootLogger(name: string): Logger {
  * it doesn't
  */
 export function getLogger(...name: string[]): Logger {
-  return getRootLogger(name.join('.'));
+  const logger = getRootLogger(name.join('.'));
+  return logger;
 }
 
 /**
