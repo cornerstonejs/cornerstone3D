@@ -20,6 +20,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
+  drawPath as drawPathSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
@@ -69,6 +70,8 @@ class AngleTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
+        showAngleArc: false,
+        arcOffset: 5, // Calculate radius as 1/5 of the minimum distance from center to lines
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
       },
@@ -697,10 +700,11 @@ class AngleTool extends AnnotationTool {
 
       styleSpecifier.annotationUID = annotationUID;
 
-      const { color, lineWidth, lineDash } = this.getAnnotationStyle({
-        annotation,
-        styleSpecifier,
-      });
+      const { color, lineWidth, lineDash, angleArcLineDash } =
+        this.getAnnotationStyle({
+          annotation,
+          styleSpecifier,
+        });
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -794,6 +798,64 @@ class AngleTool extends AnnotationTool {
           lineDash,
         }
       );
+
+      if (this.configuration.showAngleArc) {
+        const center = canvasCoordinates[1];
+
+        // Calculate radius as 1/arcOffset of the minimum distance from center to lines
+        const offset = this.configuration.arcOffset; // Default offset is 5 if not provided
+        const radius =
+          Math.min(
+            lineSegment.distanceToPoint(
+              [center[0], center[1]],
+              [canvasCoordinates[0][0], canvasCoordinates[0][1]],
+              [canvasCoordinates[2][0], canvasCoordinates[2][1]]
+            ),
+            lineSegment.distanceToPoint(
+              [center[0], center[1]],
+              [canvasCoordinates[2][0], canvasCoordinates[2][1]],
+              [canvasCoordinates[0][0], canvasCoordinates[0][1]]
+            )
+          ) / offset;
+
+        // Calculate start and end angles
+        const anglePoints = [];
+        let startAngle = Math.atan2(
+          canvasCoordinates[0][1] - center[1],
+          canvasCoordinates[0][0] - center[0]
+        );
+        let endAngle = Math.atan2(
+          canvasCoordinates[2][1] - center[1],
+          canvasCoordinates[2][0] - center[0]
+        );
+
+        // Adjust angles if the angle is more than 180 degrees
+        if (endAngle < startAngle) {
+          endAngle += 2 * Math.PI;
+        }
+        const angleDifference = endAngle - startAngle;
+        if (angleDifference > Math.PI) {
+          const temp = startAngle;
+          startAngle = endAngle;
+          endAngle = temp + 2 * Math.PI;
+        }
+
+        // Generate points for the arc
+        const segments = 32;
+        for (let i = 0; i <= segments; i++) {
+          const angle = startAngle + (i / segments) * (endAngle - startAngle);
+          anglePoints.push([
+            center[0] + radius * Math.cos(angle),
+            center[1] + radius * Math.sin(angle),
+          ]);
+        }
+
+        drawPathSvg(svgDrawingHelper, annotationUID, '3', anglePoints, {
+          color: color as string,
+          width: lineWidth as number,
+          lineDash: angleArcLineDash as string,
+        });
+      }
 
       if (!data.cachedStats[targetId]?.angle) {
         continue;
