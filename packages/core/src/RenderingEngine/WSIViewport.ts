@@ -10,6 +10,7 @@ import type {
   ViewportInput,
   BoundsIJK,
   CPUImageData,
+  PixelDataTypedArray,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -22,6 +23,11 @@ import { peerImport } from '../init';
 import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
+
+export type CanvasScalarData = Uint8ClampedArray & {
+  frameNumber?: number;
+  getRange?: () => [number, number];
+};
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
@@ -229,7 +235,11 @@ class WSIViewport extends Viewport {
   }
 
   protected getScalarData() {
-    return null;
+    // Return an empty CanvasScalarData object
+    const emptyData = new Uint8ClampedArray() as CanvasScalarData;
+    emptyData.getRange = () => [0, 255];
+    emptyData.frameNumber = -1;
+    return emptyData;
   }
 
   public getImageData(): CPUIImageData {
