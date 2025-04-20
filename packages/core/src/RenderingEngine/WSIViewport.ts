@@ -233,8 +233,16 @@ class WSIViewport extends Viewport {
   public resetProperties() {
     this.setProperties({});
   }
-
+  /*
   protected getScalarData() {
+    // Return an empty CanvasScalarData object
+    const emptyData = new Uint8ClampedArray() as CanvasScalarData;
+    emptyData.getRange = () => [0, 255];
+    emptyData.frameNumber = -1;
+    return emptyData;
+  }
+ */
+  protected _getScalarData() {
     // Return an empty CanvasScalarData object
     const emptyData = new Uint8ClampedArray() as CanvasScalarData;
     emptyData.getRange = () => [0, 255];
@@ -254,7 +262,7 @@ class WSIViewport extends Viewport {
       getDirection: () => metadata.direction,
       getDimensions: () => metadata.dimensions,
       getRange: () => [0, 255],
-      getScalarData: () => this.getScalarData(),
+      getScalarData: () => this._getScalarData(),
       getSpacing: () => metadata.spacing,
       worldToIndex: (point: Point3) => {
         const canvasPoint = this.worldToCanvas(point);
@@ -282,7 +290,7 @@ class WSIViewport extends Viewport {
       preScale: {
         scaled: false,
       },
-      scalarData: this.getScalarData(),
+      scalarData: this._getScalarData(),
       imageData,
       // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
       voxelManager: {
