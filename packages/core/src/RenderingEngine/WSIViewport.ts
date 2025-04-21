@@ -233,15 +233,7 @@ class WSIViewport extends Viewport {
   public resetProperties() {
     this.setProperties({});
   }
-  /*
-  protected getScalarData() {
-    // Return an empty CanvasScalarData object
-    const emptyData = new Uint8ClampedArray() as CanvasScalarData;
-    emptyData.getRange = () => [0, 255];
-    emptyData.frameNumber = -1;
-    return emptyData;
-  }
- */
+
   protected _getScalarData() {
     // Return an empty CanvasScalarData object
     const emptyData = new Uint8ClampedArray() as CanvasScalarData;
