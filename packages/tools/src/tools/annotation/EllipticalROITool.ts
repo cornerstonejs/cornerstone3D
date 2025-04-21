@@ -1145,7 +1145,7 @@ class EllipticalROITool extends AnnotationTool {
       );
 
       let pointsInShape;
-      if (imageData.getScalarValueFromWorld) {
+      if (voxelManager) {
         pointsInShape = voxelManager.forEach(
           this.configuration.statsCalculator.statsCallback,
           {

@@ -293,6 +293,7 @@ class WSIViewport extends Viewport {
       scalarData: this._getScalarData(),
       imageData,
       // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
+      /*
       voxelManager: {
         forEach: (
           callback: (args: {
@@ -316,6 +317,7 @@ class WSIViewport extends Viewport {
           });
         },
       },
+      */
     };
 
     // @ts-expect-error we need to fully migrate the voxelManager to the new system

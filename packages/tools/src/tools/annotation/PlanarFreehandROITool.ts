@@ -915,7 +915,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let intersections = [];
     let intersectionCounter = 0;
     let pointsInShape;
-    if (imageData.getScalarValueFromWorld) {
+    if (voxelManager) {
       pointsInShape = voxelManager.forEach(
         this.configuration.statsCalculator.statsCallback,
         {
