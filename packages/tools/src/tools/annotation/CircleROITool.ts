@@ -983,7 +983,7 @@ class CircleROITool extends AnnotationTool {
         );
 
         let pointsInShape;
-        if (image.scalarData.length > 0) {
+        if (voxelManager.length) {
           pointsInShape = voxelManager.forEach(
             this.configuration.statsCalculator.statsCallback,
             {
