@@ -732,6 +732,17 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       viewport,
     };
   }
+
+  /**
+   * @param n - array of numbers or a simple number
+   * @returns True if n or the first element of n is finite and not NaN
+   */
+  public static isNumber(n: number[] | number): boolean {
+    if (Array.isArray(n)) {
+      return this.isNumber(n[0]);
+    }
+    return isFinite(n) && !isNaN(n);
+  }
 }
 
 AnnotationTool.toolName = 'AnnotationTool';

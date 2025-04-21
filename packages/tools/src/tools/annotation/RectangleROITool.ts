@@ -474,8 +474,6 @@ class RectangleROITool extends AnnotationTool {
 
     this.editData.hasMoved = true;
 
-    const enabledElement = getEnabledElement(element);
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (annotation.invalidated) {
@@ -1059,13 +1057,13 @@ function defaultGetTextLines(data, targetId: string): string[] {
 
   const textLines: string[] = [];
   textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  if (isFinite(mean) && !isNaN(mean)) {
+  if (AnnotationTool.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
-  if (isFinite(max) && !isNaN(max)) {
+  if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
-  if (isFinite(stdDev) && !isNaN(stdDev)) {
+  if (AnnotationTool.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
   return textLines;

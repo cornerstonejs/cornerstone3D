@@ -1141,15 +1141,15 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(areaLine);
   }
 
-  if (mean) {
+  if (AnnotationTool.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max && isFinite(max)) {
+  if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
-  if (stdDev) {
+  if (AnnotationTool.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
