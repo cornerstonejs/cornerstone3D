@@ -983,7 +983,7 @@ class CircleROITool extends AnnotationTool {
         );
 
         let pointsInShape;
-        if (voxelManager.length) {
+        if (imageData.getScalarValueFromWorld) {
           pointsInShape = voxelManager.forEach(
             this.configuration.statsCalculator.statsCallback,
             {
@@ -995,6 +995,7 @@ class CircleROITool extends AnnotationTool {
             }
           );
         }
+
         const stats = this.configuration.statsCalculator.getStatistics();
         cachedStats[targetId] = {
           Modality: metadata.Modality,
