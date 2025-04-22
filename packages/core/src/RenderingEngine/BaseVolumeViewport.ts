@@ -46,7 +46,11 @@ import * as colormapUtils from '../utilities/colormap';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
-import { findMatchingColormap } from '../utilities/colormap';
+import {
+  findMatchingColormap,
+  updateOpacity as colormapUpdateOpacity,
+  updateThreshold as colormapUpdateThreshold,
+} from '../utilities/colormap';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
 import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
@@ -315,19 +319,17 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const ofun = vtkPiecewiseFunction.newInstance();
     if (typeof colormap.opacity === 'number') {
-      const range = volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0)
-        .getRange();
-
-      ofun.addPoint(range[0], colormap.opacity);
-      ofun.addPoint(range[1], colormap.opacity);
+      // Use the new utility to update opacity while preserving threshold
+      colormapUpdateOpacity(volumeActor, colormap.opacity);
     } else {
+      // Existing logic for setting opacity points array
+      // Note: This might overwrite threshold settings implicitly.
+      // Consider how array-based opacity should interact with thresholds.
       colormap.opacity.forEach(({ opacity, value }) => {
         ofun.addPoint(value, opacity);
       });
+      volumeActor.getProperty().setScalarOpacity(0, ofun);
     }
-    volumeActor.getProperty().setScalarOpacity(0, ofun);
 
     if (!this.viewportProperties.colormap) {
       this.viewportProperties.colormap = {};
@@ -833,27 +835,8 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     const { volumeActor } = applicableVolumeActorInfo;
 
-    // Get the transfer function and its range
-    const transferFunction = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0);
-    const range = transferFunction.getRange();
-    const thresholdValue =
-      range[0] + (range[1] - range[0]) * colormap.threshold;
-
-    const ofun = vtkPiecewiseFunction.newInstance();
-
-    ofun.addPoint(range[0], 0);
-
-    ofun.addPoint(thresholdValue - (range[1] - range[0]) * 0.001, 0);
-
-    const opacityValue =
-      typeof colormap.opacity === 'number' ? colormap.opacity : 1.0;
-
-    ofun.addPoint(thresholdValue, opacityValue);
-    ofun.addPoint(range[1], opacityValue);
-
-    volumeActor.getProperty().setScalarOpacity(0, ofun);
+    // Use the new utility to update threshold while preserving opacity
+    colormapUpdateThreshold(volumeActor, colormap.threshold);
 
     if (!this.viewportProperties.colormap) {
       this.viewportProperties.colormap = {};
@@ -969,10 +952,6 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setSlabThickness(properties.slabThickness);
       //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
-    }
-
-    if (properties.preset !== undefined) {
-      this.setPreset(properties.preset, volumeId, false);
     }
 
     if (properties.preset !== undefined) {
