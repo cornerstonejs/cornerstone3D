@@ -1262,9 +1262,9 @@ abstract class BaseVolumeViewport extends Viewport {
 
   /**
    * It sets the orientation for the camera, the orientation can be one of the
-   * following: axial, sagittal, coronal, default. Use the `Enums.OrientationAxis`
-   * to set the orientation. The "default" orientation is the orientation that
-   * the volume was acquired in (scan axis)
+   * following: axial, sagittal, coronal, acquisition. Use the `Enums.OrientationAxis`
+   * to set the orientation. The "acquisition" orientation is the orientation that
+   * the volume was acquired in (scan axis).
    *
    * @param orientation - The orientation to set the camera to.
    * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
@@ -1714,20 +1714,51 @@ abstract class BaseVolumeViewport extends Viewport {
           'Invalid orientation object. It must contain viewPlaneNormal and viewUp'
         );
       }
-    } else if (
-      typeof orientation === 'string' &&
-      MPR_CAMERA_VALUES[orientation]
-    ) {
-      this.viewportProperties.orientation = orientation;
-      return MPR_CAMERA_VALUES[orientation];
-    } else {
+    } else if (typeof orientation === 'string') {
+      if (orientation === 'acquisition') {
+        return this._getAcquisitionPlaneOrientation();
+      } else if (MPR_CAMERA_VALUES[orientation]) {
+        this.viewportProperties.orientation = orientation;
+        return MPR_CAMERA_VALUES[orientation];
+      }
+    }
+
+    throw new Error(
+      `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
+        MPR_CAMERA_VALUES
+      ).join(', ')}`
+    );
+  }
+
+  protected _getAcquisitionPlaneOrientation(): OrientationVectors {
+    const actorEntry = this.getDefaultActor();
+
+    if (!actorEntry) {
+      return;
+    }
+
+    // Todo: fix this after we add the volumeId reference to actorEntry later
+    // in the segmentation refactor
+    const volumeId = this.getVolumeId();
+
+    const imageVolume = cache.getVolume(volumeId);
+
+    if (!imageVolume) {
       throw new Error(
-        `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
-          MPR_CAMERA_VALUES
-        ).join(', ')}`
+        `imageVolume with id: ${volumeId} does not exist in cache`
       );
     }
+
+    const { direction } = imageVolume;
+    const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
+    const viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
+
+    return {
+      viewPlaneNormal,
+      viewUp,
+    };
   }
+
   /**
    * Gets the largest slab thickness from all actors in the viewport.
    *

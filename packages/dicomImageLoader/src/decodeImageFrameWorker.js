@@ -335,8 +335,6 @@ export async function decodeImageFrame(
 
   let opts;
 
-  debugger;
-
   switch (transferSyntax) {
     case '1.2.840.10008.1.2':
     case '1.2.840.10008.1.2.1':

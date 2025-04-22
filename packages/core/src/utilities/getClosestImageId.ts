@@ -43,9 +43,6 @@ export default function getClosestImageId(
   // If not, the view is not aligned with the image plane, so return early.
   const dotProduct = vec3.dot(kVector, viewPlaneNormal);
   if (Math.abs(dotProduct) < 1 - EPSILON) {
-    console.debug(
-      'View plane normal is not parallel to the image scan axis. Unable to find closest imageId.'
-    );
     return;
   }
 
