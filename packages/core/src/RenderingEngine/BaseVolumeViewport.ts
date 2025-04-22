@@ -818,6 +818,51 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
+   * Sets the opacity threshold for a volume with the given ID.
+   * Values below the threshold will be transparent.
+   *
+   * @param colormap - An object containing threshold property
+   * @param volumeId - The ID of the volume to set the threshold for.
+   *
+   * @returns void
+   */
+  private setThreshold(colormap: ColormapPublic, volumeId: string) {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+    if (!applicableVolumeActorInfo) {
+      return;
+    }
+    const { volumeActor } = applicableVolumeActorInfo;
+
+    // Get the transfer function and its range
+    const transferFunction = volumeActor
+      .getProperty()
+      .getRGBTransferFunction(0);
+    const range = transferFunction.getRange();
+    const thresholdValue =
+      range[0] + (range[1] - range[0]) * colormap.threshold;
+
+    const ofun = vtkPiecewiseFunction.newInstance();
+
+    ofun.addPoint(range[0], 0);
+
+    ofun.addPoint(thresholdValue - (range[1] - range[0]) * 0.001, 0);
+
+    const opacityValue =
+      typeof colormap.opacity === 'number' ? colormap.opacity : 1.0;
+
+    ofun.addPoint(thresholdValue, opacityValue);
+    ofun.addPoint(range[1], opacityValue);
+
+    volumeActor.getProperty().setScalarOpacity(0, ofun);
+
+    if (!this.viewportProperties.colormap) {
+      this.viewportProperties.colormap = {};
+    }
+
+    this.viewportProperties.colormap.threshold = colormap.threshold;
+  }
+
+  /**
    * Sets the properties for the volume viewport on the volume
    * and if setProperties is called for the first time, the properties will also become the default one.
    * (if fusion, it sets it for the first volume in the fusion)
@@ -869,6 +914,9 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     if (colormap?.opacity != null) {
       this.setOpacity(colormap, volumeId);
+    }
+    if (colormap?.threshold != null) {
+      this.setThreshold(colormap, volumeId);
     }
 
     if (voiRange !== undefined) {
