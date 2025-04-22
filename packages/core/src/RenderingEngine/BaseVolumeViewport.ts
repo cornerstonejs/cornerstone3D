@@ -322,9 +322,6 @@ abstract class BaseVolumeViewport extends Viewport {
       // Use the new utility to update opacity while preserving threshold
       colormapUpdateOpacity(volumeActor, colormap.opacity);
     } else {
-      // Existing logic for setting opacity points array
-      // Note: This might overwrite threshold settings implicitly.
-      // Consider how array-based opacity should interact with thresholds.
       colormap.opacity.forEach(({ opacity, value }) => {
         ofun.addPoint(value, opacity);
       });
@@ -952,6 +949,10 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setSlabThickness(properties.slabThickness);
       //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
+    }
+
+    if (properties.preset !== undefined) {
+      this.setPreset(properties.preset, volumeId, false);
     }
 
     if (properties.preset !== undefined) {

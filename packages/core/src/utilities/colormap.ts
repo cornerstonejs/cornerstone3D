@@ -106,17 +106,12 @@ function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
   };
 }
 
-/**
- * Sets the colormap transfer function for a volume actor, including initial opacity and threshold.
- *
- * @param volumeInfo - Information about the volume, including the actor, preset, opacity, threshold, and color range.
- */
-function setColorMapTransferFunctionForVolumeActor(volumeInfo) {
+export function setColorMapTransferFunctionForVolumeActor(volumeInfo) {
   const {
     volumeActor,
     preset,
     opacity = 0.9,
-    threshold = 0.02,
+    threshold = null,
     colorRange = [0, 5],
   } = volumeInfo;
   const mapper = volumeActor.getMapper();
@@ -134,50 +129,46 @@ function setColorMapTransferFunctionForVolumeActor(volumeInfo) {
 }
 
 /**
- * Updates only the opacity value while preserving threshold.
- *
- * @param volumeActor - The vtkVolume actor.
- * @param newOpacity - The new maximum opacity value.
+ * Updates only the opacity value while preserving threshold
  */
-function updateOpacity(volumeActor, newOpacity) {
+export function updateOpacity(volumeActor, newOpacity) {
   const currentThreshold = getThresholdValue(volumeActor);
   updateOpacityWithThreshold(volumeActor, newOpacity, currentThreshold);
 }
 
 /**
- * Updates only the threshold value while preserving the maximum opacity.
- *
- * @param volumeActor - The vtkVolume actor.
- * @param newThreshold - The new threshold value (normalized 0-1).
+ * Updates only the threshold while preserving opacity
  */
-function updateThreshold(volumeActor, newThreshold) {
+export function updateThreshold(volumeActor, newThreshold) {
   const currentOpacity = getMaxOpacity(volumeActor);
   updateOpacityWithThreshold(volumeActor, currentOpacity, newThreshold);
 }
 
 /**
- * Helper function to update opacity function with threshold.
- *
- * @param volumeActor - The vtkVolume actor.
- * @param opacity - The maximum opacity value.
- * @param threshold - The threshold value (normalized 0-1).
+ * Helper function to update opacity function with threshold
+ * @param {Object} volumeActor - The volume actor to update
+ * @param {number} opacity - The opacity value to set (0-1)
+ * @param {number|null} threshold - The absolute threshold value (not normalized)
  */
 function updateOpacityWithThreshold(volumeActor, opacity, threshold) {
   const transferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
   const range = transferFunction.getRange();
   const ofun = vtkPiecewiseFunction.newInstance();
 
-  if (threshold > 0 && threshold < 1) {
-    const thresholdValue = range[0] + (range[1] - range[0]) * threshold;
-    // Small delta for sharp threshold, ensuring it's not zero if range is small
-    const delta = Math.max((range[1] - range[0]) * 0.0001, 1e-6);
+  if (threshold !== null) {
+    // Small delta for sharp threshold transition
+    const delta = Math.abs(range[1] - range[0]) * 0.001;
 
+    // Make sure threshold is within range
+    const thresholdValue = Math.max(range[0], Math.min(range[1], threshold));
+
+    // Create points for the piecewise function
     ofun.addPoint(range[0], 0);
     ofun.addPoint(thresholdValue - delta, 0);
     ofun.addPoint(thresholdValue, opacity);
     ofun.addPoint(range[1], opacity);
   } else {
-    // Simple uniform opacity without threshold or full range threshold
+    // Simple uniform opacity without threshold
     ofun.addPoint(range[0], opacity);
     ofun.addPoint(range[1], opacity);
   }
@@ -186,57 +177,39 @@ function updateOpacityWithThreshold(volumeActor, opacity, threshold) {
 }
 
 /**
- * Extract threshold value from the actor's opacity function.
- *
- * @param volumeActor - The vtkVolume actor.
- * @returns The threshold value (normalized 0-1), or 0 if no threshold is set.
+ * Extract threshold value from the actor's opacity function
+ * @returns {number|null} The absolute threshold value or null if no threshold
  */
 function getThresholdValue(volumeActor) {
   const opacityFunction = volumeActor.getProperty().getScalarOpacity(0);
   if (!opacityFunction) {
-    return 0;
+    return null;
   }
 
-  const transferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
-  if (!transferFunction) {
-    return 0; // Need transfer function to determine range
-  }
-  const range = transferFunction.getRange();
   const dataArray = opacityFunction.getDataPointer();
 
-  // Check if range is valid
-  if (range[0] >= range[1]) {
-    return 0;
+  if (!dataArray || dataArray.length <= 4) {
+    return null; // No threshold if simple opacity function
   }
 
-  // Need at least 4 points (2 pairs) for a threshold step: [min, 0, threshold-delta, 0, threshold, opacity, max, opacity]
-  if (!dataArray || dataArray.length < 6) {
-    return 0; // No threshold if simple opacity function or not enough points
-  }
-
-  // Find transition from 0 to non-zero opacity after the first point
-  for (let i = 2; i < dataArray.length - 2; i += 2) {
+  // Find transition from 0 to non-zero opacity
+  for (let i = 0; i < dataArray.length - 2; i += 2) {
     const x1 = dataArray[i];
     const y1 = dataArray[i + 1];
     const x2 = dataArray[i + 2];
     const y2 = dataArray[i + 3];
 
     if (y1 === 0 && y2 > 0) {
-      // Found threshold point (x2) - normalize to [0,1] range
-      const thresholdValue = (x2 - range[0]) / (range[1] - range[0]);
-      // Clamp value between 0 and 1 to handle potential floating point inaccuracies
-      return Math.max(0, Math.min(1, thresholdValue));
+      // Found threshold point - return the actual value
+      return x2;
     }
   }
 
-  return 0; // Default if no threshold transition found
+  return null; // No threshold found
 }
 
 /**
- * Extract maximum opacity value from actor's opacity function.
- *
- * @param volumeActor - The vtkVolume actor.
- * @returns The maximum opacity value found in the piecewise function.
+ * Extract maximum opacity value from actor's opacity function
  */
 function getMaxOpacity(volumeActor) {
   const opacityFunction = volumeActor.getProperty().getScalarOpacity(0);
@@ -249,7 +222,7 @@ function getMaxOpacity(volumeActor) {
     return 1.0;
   }
 
-  // Find maximum opacity value (y-component)
+  // Find maximum opacity value
   let maxOpacity = 0;
   for (let i = 1; i < dataArray.length; i += 2) {
     if (dataArray[i] > maxOpacity) {
@@ -265,7 +238,4 @@ export {
   getColormapNames,
   registerColormap,
   findMatchingColormap,
-  setColorMapTransferFunctionForVolumeActor,
-  updateOpacity,
-  updateThreshold,
 };
