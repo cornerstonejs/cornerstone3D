@@ -32,7 +32,11 @@ async function decodeLittleEndian(
       offset = 0;
     }
 
-    imageFrame.pixelData = new Float32Array(arrayBuffer, offset, length / 4);
+    if (imageFrame.pixelRepresentation === 0) {
+      imageFrame.pixelData = new Uint32Array(arrayBuffer, offset, length / 4);
+    } else {
+      imageFrame.pixelData = new Float32Array(arrayBuffer, offset, length / 4);
+    }
   }
 
   return imageFrame;
