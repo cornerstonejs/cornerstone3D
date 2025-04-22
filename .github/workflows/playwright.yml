@@ -38,4 +38,4 @@ jobs:
         with:
           name: coverage-report-pr
           path: coverage
-          retention-days: 3
+          retention-days: 7
