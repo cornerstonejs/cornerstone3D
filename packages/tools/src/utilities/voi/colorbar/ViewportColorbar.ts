@@ -216,45 +216,7 @@ class ViewportColorbar extends Colorbar {
       Events.COLORMAP_MODIFIED,
       this._viewportColormapModifiedCallback as EventListener
     );
-
-    // Add listeners for actor changes
-    element.addEventListener(
-      Events.ACTOR_ADDED,
-      this._actorChangedCallback as EventListener
-    );
-
-    element.addEventListener(
-      Events.ACTOR_REMOVED,
-      this._actorChangedCallback as EventListener
-    );
   }
-
-  private _actorChangedCallback = (evt: Types.EventTypes.ActorChangeEvent) => {
-    const { viewport } = this.enabledElement;
-    const { viewportId, actorEntry } = evt.detail;
-
-    if (actorEntry.referencedId) {
-      // it means it is a derived actor such as SEG or etc which we don't need
-      // colorbar. Todo: make this more robust
-      return;
-    }
-
-    // Only process events for our viewport
-    if (viewportId !== viewport.id) {
-      return;
-    }
-
-    // Check if our volumeId still exists in the viewport
-    const volumeExists = viewport.hasVolumeId?.(this._volumeId);
-
-    console.debug('actorChangedCallback');
-
-    // Update the image range in case actors were added/removed
-    this.imageRange = ViewportColorbar._getImageRange(
-      this._element,
-      this._volumeId
-    );
-  };
 
   /**
    * Gets the container element where this colorbar is rendered
@@ -286,17 +248,6 @@ class ViewportColorbar extends Colorbar {
     element.removeEventListener(
       Events.COLORMAP_MODIFIED,
       this._viewportColormapModifiedCallback as EventListener
-    );
-
-    // Remove actor change listeners
-    element.removeEventListener(
-      Events.ACTOR_ADDED,
-      this._actorChangedCallback as EventListener
-    );
-
-    element.removeEventListener(
-      Events.ACTOR_REMOVED,
-      this._actorChangedCallback as EventListener
     );
   }
 }

@@ -13,6 +13,7 @@ import type DisplayArea from './displayArea';
 import type IImageCalibration from './IImageCalibration';
 import type { ColormapPublic } from './Colormap';
 import type IVolumeViewport from './IVolumeViewport';
+import type { ActorEntry } from './IActor';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -459,30 +460,25 @@ type VolumeScrollOutOfBoundsEvent =
   CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
 /**
- * ACTOR_ADDED and ACTOR_REMOVED Events' data
+ * ACTORS_CHANGED Event's data
  */
-interface ActorChangeEventDetail {
-  /** Viewport Unique ID in the renderingEngine */
+interface ActorsChangedEventDetail {
   viewportId: string;
-  /** Actor entry information */
-  actorEntry: {
-    /** Actor unique ID */
-    uid: string;
-    /** Referenced ID (e.g., volumeId) */
-    referencedId?: string;
-  };
+  removedActors: ActorEntry[];
+  addedActors: ActorEntry[];
+  currentActors: ActorEntry[];
 }
 
 /**
- * ACTOR_ADDED and ACTOR_REMOVED Event type
+ * ACTORS_CHANGED Event type
  */
-type ActorChangeEvent = CustomEventType<ActorChangeEventDetail>;
+type ActorsChangedEvent = CustomEventType<ActorsChangedEventDetail>;
 
 export type {
   VolumeScrollOutOfBoundsEventDetail,
   VolumeScrollOutOfBoundsEvent,
-  ActorChangeEventDetail,
-  ActorChangeEvent,
+  ActorsChangedEventDetail,
+  ActorsChangedEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,

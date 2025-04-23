@@ -300,14 +300,9 @@ enum Events {
   GEOMETRY_LOADED_FAILED = 'GEOMETRY_LOADED_FAILED',
 
   /**
-   * Triggers on the viewport's element when an actor is added to the viewport
+   * Triggers on the viewport's element when the actors are changed via set operator
    */
-  ACTOR_ADDED = 'CORNERSTONE_ACTOR_ADDED',
-
-  /**
-   * Triggers on the viewport's element when an actor is removed from the viewport
-   */
-  ACTOR_REMOVED = 'CORNERSTONE_ACTOR_REMOVED',
+  ACTORS_CHANGED = 'CORNERSTONE_ACTORS_CHANGED',
 }
 
 export default Events;
