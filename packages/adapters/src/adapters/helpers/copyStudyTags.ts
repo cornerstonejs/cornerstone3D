@@ -1,5 +1,3 @@
-import dcmjs from "dcmjs";
-
 export const patientTags = [
     "PatientName",
     "PatientID",
@@ -28,11 +26,13 @@ export const studyTags = [
     "TimezoneOffsetFromUTC"
 ];
 
+export const seriesTags = ["SeriesInstanceUID"];
+
 /**
  * A list of patient/study tag names used to create new instances in the same study
  * from an existing instance.
  */
-export const patientStudyTags = [...patientTags, ...studyTags];
+export const patientStudyTags = [...patientTags, ...studyTags, ...seriesTags];
 
 /**
  * Copies study (and patient) tags from src into a new object.
