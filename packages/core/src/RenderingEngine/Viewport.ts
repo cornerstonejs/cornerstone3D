@@ -534,13 +534,25 @@ class Viewport {
    */
   _removeActor(actorUID: string): void {
     const actorEntry = this.getActor(actorUID);
+
     if (!actorEntry) {
-      console.warn(`Actor ${actorUID} does not exist for this viewport`);
+      console.warn(
+        `Actor ${actorUID} does not exist in ${this.id}, can't remove`
+      );
       return;
     }
+
     const renderer = this.getRenderer();
-    renderer.removeViewProp(actorEntry.actor as vtkProp); // removeActor not implemented in vtk?
+    renderer.removeActor(actorEntry.actor as vtkActor);
     this._actors.delete(actorUID);
+
+    triggerEvent(this.element, Events.ACTOR_REMOVED, {
+      viewportId: this.id,
+      actorEntry: {
+        uid: actorUID,
+        referencedId: actorEntry.referencedId,
+      },
+    });
   }
 
   /**
@@ -622,6 +634,14 @@ class Viewport {
     // when we add an actor we should update the camera clipping range and
     // clipping planes as well
     this.updateCameraClippingPlanesAndRange();
+
+    triggerEvent(this.element, Events.ACTOR_ADDED, {
+      viewportId: this.id,
+      actorEntry: {
+        uid: actorUID,
+        referencedId: actorEntry.referencedId,
+      },
+    });
   }
 
   /**

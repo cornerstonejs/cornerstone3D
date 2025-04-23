@@ -298,6 +298,16 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.GeometryLoadedFailedEventDetail | GeometryLoadedFailed Event Detail }
    */
   GEOMETRY_LOADED_FAILED = 'GEOMETRY_LOADED_FAILED',
+
+  /**
+   * Triggers on the viewport's element when an actor is added to the viewport
+   */
+  ACTOR_ADDED = 'CORNERSTONE_ACTOR_ADDED',
+
+  /**
+   * Triggers on the viewport's element when an actor is removed from the viewport
+   */
+  ACTOR_REMOVED = 'CORNERSTONE_ACTOR_REMOVED',
 }
 
 export default Events;

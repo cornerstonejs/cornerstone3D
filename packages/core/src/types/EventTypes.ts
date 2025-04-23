@@ -458,9 +458,31 @@ type StackScrollOutOfBoundsEvent =
 type VolumeScrollOutOfBoundsEvent =
   CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
+/**
+ * ACTOR_ADDED and ACTOR_REMOVED Events' data
+ */
+interface ActorChangeEventDetail {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** Actor entry information */
+  actorEntry: {
+    /** Actor unique ID */
+    uid: string;
+    /** Referenced ID (e.g., volumeId) */
+    referencedId?: string;
+  };
+}
+
+/**
+ * ACTOR_ADDED and ACTOR_REMOVED Event type
+ */
+type ActorChangeEvent = CustomEventType<ActorChangeEventDetail>;
+
 export type {
   VolumeScrollOutOfBoundsEventDetail,
   VolumeScrollOutOfBoundsEvent,
+  ActorChangeEventDetail,
+  ActorChangeEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,
