@@ -1031,7 +1031,18 @@ class Viewport {
     });
 
     const previousCamera = this.getCamera();
-    const bounds = renderer.computeVisiblePropBounds();
+    let bounds;
+    const defaultActor = this.getDefaultActor();
+
+    if (defaultActor && isImageActor(defaultActor)) {
+      // Use the default actor's bounds
+      const imageData = defaultActor.actor.getMapper().getInputData();
+      bounds = imageData.getBounds();
+    } else {
+      // Fallback to all actors if no default image actor is found
+      bounds = renderer.computeVisiblePropBounds();
+    }
+
     const focalPoint = [0, 0, 0] as Point3;
     const imageData = this.getDefaultImageData();
 

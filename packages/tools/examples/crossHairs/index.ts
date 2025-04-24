@@ -280,7 +280,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
