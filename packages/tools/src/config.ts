@@ -3,6 +3,15 @@ import type { Types } from '@cornerstonejs/core';
 import type { LabelmapSegmentationData } from './types/LabelmapTypes';
 import type { SurfaceSegmentationData } from './types/SurfaceTypes';
 import type SegmentationRepresentations from './enums/SegmentationRepresentations';
+import { eventTarget, triggerEvent } from '@cornerstonejs/core';
+import Events from './enums/Events';
+
+export type SurfacesInfo = {
+  id: string;
+  points: number[];
+  polys: number[];
+  segmentIndex: number;
+};
 
 /**
  * Options for converting between segmentation representations using PolySeg
@@ -25,6 +34,15 @@ type ComputeRepresentationFn<T> = (
   options: PolySegConversionOptions
 ) => Promise<T>;
 
+/**
+ * The result of the surface clipping
+ */
+export type SurfaceClipResult = {
+  points: number[];
+  lines: number[];
+  numberOfCells: number;
+};
+
 type PolySegAddOn = {
   /** Checks if a representation type can be computed for a segmentation */
   canComputeRequestedRepresentation: (
@@ -42,6 +60,17 @@ type PolySegAddOn = {
 
   /** Updates different segmentation representation data */
   updateSurfaceData: ComputeRepresentationFn<SurfaceSegmentationData>;
+
+  /** Clips and caches surfaces for a viewport */
+  clipAndCacheSurfacesForViewport: (
+    surfacesInfo: SurfacesInfo[],
+    viewport: Types.IVolumeViewport
+  ) => Promise<Types.SurfaceData[]>;
+
+  /** Extracts contour data from the given polyDataCache */
+  extractContourData: (
+    polyDataCache: Map<number, Map<string, SurfaceClipResult>>
+  ) => Map<number, SurfaceClipResult[]>;
 };
 
 /**

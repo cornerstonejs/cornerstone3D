@@ -1,5 +1,9 @@
 import type { StackViewport, Types } from '@cornerstonejs/core';
-import { getEnabledElementByViewportId } from '@cornerstonejs/core';
+import {
+  cache,
+  getEnabledElementByViewportId,
+  Enums,
+} from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
@@ -8,8 +12,11 @@ import type { ContourRepresentation } from '../../../types/SegmentationStateType
 import removeContourFromElement from './removeContourFromElement';
 import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
+import { getUniqueSegmentIndices } from '../../../utilities/segmentation/getUniqueSegmentIndices';
+import { getAnnotation } from '../../../stateManagement/annotation/annotationState';
+import { vec3 } from 'gl-matrix';
 
-let polySegConversionInProgress = false;
+const polySegConversionInProgressForViewportId = new Map<string, boolean>();
 
 const processedViewportSegmentations = new Map<string, Set<string>>();
 
@@ -68,6 +75,7 @@ async function render(
   }
 
   let contourData = segmentation.representationData[Representations.Contour];
+  const polySeg = getPolySeg();
 
   if (
     !contourData &&
@@ -75,11 +83,9 @@ async function render(
       segmentationId,
       Representations.Contour
     ) &&
-    !polySegConversionInProgress
+    !polySegConversionInProgressForViewportId.get(viewport.id)
   ) {
-    polySegConversionInProgress = true;
-
-    const polySeg = getPolySeg();
+    polySegConversionInProgressForViewportId.set(viewport.id, true);
 
     contourData = await computeAndAddRepresentation(
       segmentationId,
@@ -88,7 +94,7 @@ async function render(
       () => undefined
     );
 
-    polySegConversionInProgress = false;
+    polySegConversionInProgressForViewportId.set(viewport.id, false);
   } else if (!contourData && !getPolySeg()) {
     console.debug(
       `No contour data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to contour. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
@@ -104,73 +110,82 @@ async function render(
   }
 
   // here we need to check if the contour data matches the viewport really.
-  // let hasContourDataButNotMatchingViewport = false;
+  let hasContourDataButNotMatchingViewport = false;
+  const viewportNormal = viewport.getCamera().viewPlaneNormal;
 
-  // if (contourData.annotationUIDsMap) {
-  //   const viewportNormal = viewport.getCamera().viewPlaneNormal;
-  //   hasContourDataButNotMatchingViewport = !_checkContourNormalsMatchViewport(
-  //     contourData.annotationUIDsMap,
-  //     viewportNormal
-  //   );
-  // }
+  if (contourData.annotationUIDsMap) {
+    hasContourDataButNotMatchingViewport = !_checkContourNormalsMatchViewport(
+      contourData.annotationUIDsMap,
+      viewportNormal
+    );
+  }
 
-  // // Get or create the set of processed segmentations for this viewport
-  // const viewportProcessed =
-  //   processedViewportSegmentations.get(viewport.id) || new Set();
+  if (contourData.geometryIds.length > 0) {
+    hasContourDataButNotMatchingViewport = !_checkContourGeometryMatchViewport(
+      contourData.geometryIds,
+      viewportNormal
+    );
+  }
 
-  // // Modify the condition to include viewport-segmentation check
-  // if (
-  //   hasContourDataButNotMatchingViewport &&
-  //   !polySegConversionInProgress &&
-  //   !viewportProcessed.has(segmentationId)
-  // ) {
-  //   polySegConversionInProgress = true;
-  //   const segmentIndices = getUniqueSegmentIndices(segmentationId);
+  // Get or create the set of processed segmentations for this viewport
+  const viewportProcessed =
+    processedViewportSegmentations.get(viewport.id) || new Set();
 
-  //   registerPolySegWorker();
-  //   const pointsAndPolys = [];
+  // Modify the condition to include viewport-segmentation check
+  if (
+    hasContourDataButNotMatchingViewport &&
+    !polySegConversionInProgressForViewportId.get(viewport.id) &&
+    !viewportProcessed.has(segmentationId) &&
+    viewport.viewportStatus === Enums.ViewportStatus.RENDERED
+  ) {
+    polySegConversionInProgressForViewportId.set(viewport.id, true);
+    const segmentIndices = getUniqueSegmentIndices(segmentationId);
 
-  //   for (const segmentIndex of segmentIndices) {
-  //     const surfacesInfo = await convertContourToSurface(
-  //       contourData,
-  //       segmentIndex
-  //     );
+    // for (const segmentIndex of segmentIndices) {
+    const surfacesInfo = await polySeg.computeSurfaceData(segmentationId, {
+      segmentIndices,
+      viewport,
+    });
 
-  //     pointsAndPolys.push({
-  //       points: surfacesInfo.points,
-  //       polys: surfacesInfo.polys,
-  //       segmentIndex,
-  //       id: segmentIndex.toString(),
-  //     });
-  //   }
+    const geometryIds = surfacesInfo.geometryIds;
 
-  //   const polyDataCache = await clipAndCacheSurfacesForViewport(
-  //     pointsAndPolys,
-  //     viewport as Types.IVolumeViewport
-  //   );
+    const pointsAndPolys = [];
+    // loop into the map for geometryIds and get the geometry
+    for (const geometryId of geometryIds.values()) {
+      const geometry = cache.getGeometry(geometryId);
+      const data = geometry.data as Types.ISurface;
+      pointsAndPolys.push({
+        points: data.points,
+        polys: data.polys,
+        segmentIndex: data.segmentIndex,
+        id: data.segmentIndex,
+      });
+    }
 
-  //   const rawResults = extractContourData(polyDataCache);
+    const polyDataCache = await polySeg.clipAndCacheSurfacesForViewport(
+      pointsAndPolys,
+      viewport as Types.IVolumeViewport
+    );
 
-  //   const annotationUIDsMap =
-  //     createAndAddContourSegmentationsFromClippedSurfaces(
-  //       rawResults,
-  //       viewport,
-  //       segmentationId
-  //     );
+    const rawResults = polySeg.extractContourData(polyDataCache);
 
-  //   polySegConversionInProgress = false;
-  //   // grab the contour data from the clipped surfaces of the contours
+    const annotationUIDsMap =
+      polySeg.createAndAddContourSegmentationsFromClippedSurfaces(
+        rawResults,
+        viewport,
+        segmentationId
+      );
 
-  //   // merge with previous annotationUIDsMap
-  //   contourData.annotationUIDsMap = new Map([
-  //     ...contourData.annotationUIDsMap,
-  //     ...annotationUIDsMap,
-  //   ]);
+    contourData.annotationUIDsMap = new Map([
+      ...contourData.annotationUIDsMap,
+      ...annotationUIDsMap,
+    ]);
 
-  //   // Add the segmentation to the viewport's processed set
-  //   viewportProcessed.add(segmentationId);
-  //   processedViewportSegmentations.set(viewport.id, viewportProcessed);
-  // }
+    // Add the segmentation to the viewport's processed set
+    viewportProcessed.add(segmentationId);
+    processedViewportSegmentations.set(viewport.id, viewportProcessed);
+    polySegConversionInProgressForViewportId.set(viewport.id, false);
+  }
 
   handleContourSegmentation(
     viewport,
@@ -180,42 +195,71 @@ async function render(
   );
 }
 
-// function _checkContourNormalsMatchViewport(
-//   annotationUIDsMap: Map<number, Set<string>>,
-//   viewportNormal: Types.Point3
-// ): boolean {
-//   const annotationUIDs = Array.from(annotationUIDsMap.values())
-//     .flat()
-//     .map((uidSet) => Array.from(uidSet))
-//     .flat();
+function _checkContourGeometryMatchViewport(
+  geometryIds: string[],
+  viewportNormal: Types.Point3
+): boolean {
+  const geometry = cache.getGeometry(geometryIds[0]);
 
-//   // Take up to 3 random annotations to check
-//   const sampleSize = Math.min(3, annotationUIDs.length);
-//   const randomAnnotationUIDs = [];
-//   for (let i = 0; i < sampleSize; i++) {
-//     const randomIndex = Math.floor(Math.random() * annotationUIDs.length);
-//     randomAnnotationUIDs.push(annotationUIDs[randomIndex]);
-//   }
+  if (!geometry) {
+    return false;
+  }
 
-//   for (const annotationUID of randomAnnotationUIDs) {
-//     const annotation = getAnnotation(annotationUID);
-//     if (annotation?.metadata?.viewPlaneNormal) {
-//       const annotationNormal = annotation.metadata.viewPlaneNormal;
-//       // Check if normals are parallel or anti-parallel (dot product close to 1 or -1)
-//       const dotProduct = Math.abs(
-//         viewportNormal[0] * annotationNormal[0] +
-//           viewportNormal[1] * annotationNormal[1] +
-//           viewportNormal[2] * annotationNormal[2]
-//       );
+  const geometryData = geometry.data as Types.IContourSet;
 
-//       if (Math.abs(dotProduct - 1) > 0.01) {
-//         return false;
-//       }
-//     }
-//   }
+  const contours = geometryData.contours;
+  const points = contours[0].points;
+  const point1 = points[0];
+  const point2 = points[1];
+  const point3 = points[2];
 
-//   return true;
-// }
+  // get the normal from two points
+  let normal = vec3.cross(
+    vec3.create(),
+    vec3.sub(vec3.create(), point2, point1),
+    vec3.sub(vec3.create(), point3, point1)
+  );
+  normal = vec3.normalize(vec3.create(), normal);
+  const dotProduct = vec3.dot(normal, viewportNormal);
+  return Math.abs(dotProduct) > 0.9;
+}
+
+function _checkContourNormalsMatchViewport(
+  annotationUIDsMap: Map<number, Set<string>>,
+  viewportNormal: Types.Point3
+): boolean {
+  const annotationUIDs = Array.from(annotationUIDsMap.values())
+    .flat()
+    .map((uidSet) => Array.from(uidSet))
+    .flat();
+
+  // Take up to 3 random annotations to check
+  const sampleSize = Math.min(3, annotationUIDs.length);
+  const randomAnnotationUIDs = [];
+  for (let i = 0; i < sampleSize; i++) {
+    const randomIndex = Math.floor(Math.random() * annotationUIDs.length);
+    randomAnnotationUIDs.push(annotationUIDs[randomIndex]);
+  }
+
+  for (const annotationUID of randomAnnotationUIDs) {
+    const annotation = getAnnotation(annotationUID);
+    if (annotation?.metadata?.viewPlaneNormal) {
+      const annotationNormal = annotation.metadata.viewPlaneNormal;
+      // Check if normals are parallel or anti-parallel (dot product close to 1 or -1)
+      const dotProduct = Math.abs(
+        viewportNormal[0] * annotationNormal[0] +
+          viewportNormal[1] * annotationNormal[1] +
+          viewportNormal[2] * annotationNormal[2]
+      );
+
+      if (Math.abs(dotProduct - 1) > 0.01) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
 
 export default {
   render,
