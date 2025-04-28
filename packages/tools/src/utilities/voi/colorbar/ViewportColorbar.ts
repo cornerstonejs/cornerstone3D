@@ -218,14 +218,6 @@ class ViewportColorbar extends Colorbar {
     );
   }
 
-  /**
-   * Gets the container element where this colorbar is rendered
-   * @returns The HTML container element
-   */
-  public getContainer(): HTMLElement {
-    return this.container;
-  }
-
   public destroy(): void {
     super.destroy();
     const { _element: element } = this;

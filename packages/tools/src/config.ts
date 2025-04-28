@@ -65,12 +65,19 @@ type PolySegAddOn = {
   clipAndCacheSurfacesForViewport: (
     surfacesInfo: SurfacesInfo[],
     viewport: Types.IVolumeViewport
-  ) => Promise<Types.SurfaceData[]>;
+  ) => Promise<Map<number, Map<string, SurfaceClipResult>>>;
 
   /** Extracts contour data from the given polyDataCache */
   extractContourData: (
     polyDataCache: Map<number, Map<string, SurfaceClipResult>>
   ) => Map<number, SurfaceClipResult[]>;
+
+  /** Creates and adds contour segmentations from clipped surfaces */
+  createAndAddContourSegmentationsFromClippedSurfaces: (
+    rawContourData: Map<number, SurfaceClipResult[]>,
+    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    segmentationId: string
+  ) => Map<number, Set<string>>;
 };
 
 /**
