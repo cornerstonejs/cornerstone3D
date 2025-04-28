@@ -3,6 +3,136 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.30](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.29...v3.10.30) (2025-04-23)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.29](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.28...v3.10.29) (2025-04-22)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.28](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.27...v3.10.28) (2025-04-22)
+
+### Bug Fixes
+
+- brush tool crashing ([#2026](https://github.com/cornerstonejs/cornerstone3D/issues/2026)) ([c59d376](https://github.com/cornerstonejs/cornerstone3D/commit/c59d376533c1877687ef7518ba56775bff653239))
+
+## [3.10.27](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.26...v3.10.27) (2025-04-18)
+
+### Bug Fixes
+
+- **AngleTool:** draw angle arc ([#2010](https://github.com/cornerstonejs/cornerstone3D/issues/2010)) ([2a10264](https://github.com/cornerstonejs/cornerstone3D/commit/2a10264a950ae1731b5fbed4631a341bc23b9cc5))
+
+## [3.10.26](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.25...v3.10.26) (2025-04-17)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.25](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.24...v3.10.25) (2025-04-17)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.24](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.23...v3.10.24) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.23](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.22...v3.10.23) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.22](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.21...v3.10.22) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.21](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.20...v3.10.21) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.20](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.19...v3.10.20) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.19](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.18...v3.10.19) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.18](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.17...v3.10.18) (2025-04-16)
+
+### Bug Fixes
+
+- handle undefined options in ArrowAnnotateTool.hydrate ([#2016](https://github.com/cornerstonejs/cornerstone3D/issues/2016)) ([1bc0209](https://github.com/cornerstonejs/cornerstone3D/commit/1bc0209d87fb10e6ac3b8854de5d03c7dd6482af))
+
+## [3.10.17](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.16...v3.10.17) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.16](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.15...v3.10.16) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.15](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.14...v3.10.15) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.13...v3.10.14) (2025-04-16)
+
+### Bug Fixes
+
+- **ZoomTool:** add support for mouseWheel ([#1983](https://github.com/cornerstonejs/cornerstone3D/issues/1983)) ([082fd43](https://github.com/cornerstonejs/cornerstone3D/commit/082fd43385ea61d166a67ba896068078fe7f6eb2)), closes [#1130](https://github.com/cornerstonejs/cornerstone3D/issues/1130)
+
+## [3.10.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.12...v3.10.13) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.11...v3.10.12) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.10...v3.10.11) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.9...v3.10.10) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.8...v3.10.9) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.7...v3.10.8) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.6...v3.10.7) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.5...v3.10.6) (2025-04-16)
+
+### Bug Fixes
+
+- **tools:** Prevent tool instance from breaking annotation serialization ([1f5e758](https://github.com/cornerstonejs/cornerstone3D/commit/1f5e7584ede8eaf38a63e06d145eb7d5b20d4aba))
+
+## [3.10.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.4...v3.10.5) (2025-04-15)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.3...v3.10.4) (2025-04-15)
+
+### Bug Fixes
+
+- Add history memo integration to AngleTool for undo/redo functionality (OHI-1790) ([#1998](https://github.com/cornerstonejs/cornerstone3D/issues/1998)) ([1f9533e](https://github.com/cornerstonejs/cornerstone3D/commit/1f9533ea6120a63eb2e22caaaea0f7163f4c5516))
+
+## [3.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.2...v3.10.3) (2025-04-14)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.1...v3.10.2) (2025-04-14)
+
+### Bug Fixes
+
+- remove duplicated code ([#1990](https://github.com/cornerstonejs/cornerstone3D/issues/1990)) ([f80c19c](https://github.com/cornerstonejs/cornerstone3D/commit/f80c19c02165444f9a32d9d20e04f2308e9f9502))
+
 ## [3.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.0...v3.10.1) (2025-04-11)
 
 **Note:** Version bump only for package @cornerstonejs/tools

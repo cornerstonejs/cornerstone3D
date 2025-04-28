@@ -723,6 +723,7 @@ abstract class BaseVolumeViewport extends Viewport {
     // Handle slices
     if (
       typeof sliceIndex === 'number' &&
+      volumeId !== undefined &&
       viewRef.volumeId === volumeId &&
       (isNegativeNormal || isSameNormal)
     ) {
@@ -757,22 +758,6 @@ abstract class BaseVolumeViewport extends Viewport {
         this.setOrientation({ viewPlaneNormal: refViewPlaneNormal, viewUp });
         this.setViewReference(viewRef);
         return;
-      }
-      if (cameraFocalPoint) {
-        const focalDelta = vec3.subtract(
-          [0, 0, 0],
-          cameraFocalPoint,
-          focalPoint
-        );
-        const useNormal = refViewPlaneNormal ?? viewPlaneNormal;
-        const normalDot = vec3.dot(focalDelta, useNormal);
-        if (!isEqual(normalDot, 0)) {
-          // Gets the portion of the focal point in the normal direction
-          vec3.scale(focalDelta, useNormal, normalDot);
-        }
-        const newFocal = vec3.add([0, 0, 0], focalPoint, focalDelta) as Point3;
-        const newPosition = vec3.add([0, 0, 0], position, focalDelta) as Point3;
-        this.setCamera({ focalPoint: newFocal, position: newPosition });
       }
       if (referencedImageId && this.isInAcquisitionPlane()) {
         // we can't simply use the scroll function since the order of image
@@ -809,6 +794,23 @@ abstract class BaseVolumeViewport extends Viewport {
           focalPoint: newImagePositionPatient as Point3,
         });
         this.render();
+        return;
+      }
+      if (cameraFocalPoint) {
+        const focalDelta = vec3.subtract(
+          [0, 0, 0],
+          cameraFocalPoint,
+          focalPoint
+        );
+        const useNormal = refViewPlaneNormal ?? viewPlaneNormal;
+        const normalDot = vec3.dot(focalDelta, useNormal);
+        if (!isEqual(normalDot, 0)) {
+          // Gets the portion of the focal point in the normal direction
+          vec3.scale(focalDelta, useNormal, normalDot);
+        }
+        const newFocal = vec3.add([0, 0, 0], focalPoint, focalDelta) as Point3;
+        const newPosition = vec3.add([0, 0, 0], position, focalDelta) as Point3;
+        this.setCamera({ focalPoint: newFocal, position: newPosition });
       }
     } else {
       throw new Error(
