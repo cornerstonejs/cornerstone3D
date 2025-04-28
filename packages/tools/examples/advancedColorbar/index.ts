@@ -15,7 +15,6 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
   setTitleAndDescription,
   addDropdownToToolbar,
-  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -160,29 +159,6 @@ addInstruction(
 addInstruction('- Select different colormaps');
 addInstruction('- Click and drag on the viewport to change VOI');
 addInstruction('- Click and drag on the color bar to change VOI');
-
-// Add button to toolbar using the helper function
-addButtonToToolbar({
-  title: 'Remove PT from middle viewport',
-  onClick: () => {
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport('CT_VOLUME_SAGITTAL');
-
-    if (viewport) {
-      // Find the PT volume actor UID
-      const actors = viewport.getActors();
-      const ptActorEntry = actors.find(
-        (actorEntry) => actorEntry.referencedId === ptVolumeId
-      );
-
-      if (ptActorEntry) {
-        // Remove the actor - the colorbar will update automatically via events
-        viewport.removeActors([ptActorEntry.uid]);
-        viewport.render();
-      }
-    }
-  },
-});
 
 // =============================================================================
 
