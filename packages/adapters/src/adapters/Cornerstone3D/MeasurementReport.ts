@@ -3,6 +3,7 @@ import { normalizers, data, utilities, derivations } from "dcmjs";
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { toArray, codeMeaningEquals, copyStudyTags } from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
+import { copySeriesTags } from "../helpers/copySeriesTags";
 
 const { TID1500, addAccessors } = utilities;
 
@@ -200,15 +201,10 @@ export default class MeasurementReport {
     }
 
     static generateDerivationSourceDataset = instance => {
-        const _vrMap = {
-            PixelData: "OW"
-        };
+        const studyTags = copyStudyTags(instance);
+        const seriesTags = copySeriesTags(instance);
 
-        const _meta = MeasurementReport.generateDatasetMeta();
-
-        const derivationSourceDataset = copyStudyTags(instance);
-
-        return derivationSourceDataset;
+        return { ...studyTags, ...seriesTags };
     };
 
     public static getSetupMeasurementData(

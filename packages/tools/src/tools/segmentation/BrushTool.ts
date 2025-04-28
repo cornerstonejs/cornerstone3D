@@ -521,6 +521,9 @@ class BrushTool extends LabelmapBaseTool {
     this.doneEditMemo();
 
     const enabledElement = getEnabledElement(element);
+    if (!enabledElement) {
+      return;
+    }
     this.applyActiveStrategyCallback(
       enabledElement,
       this.getOperationData(element),
