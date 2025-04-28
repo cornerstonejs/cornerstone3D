@@ -3,6 +3,7 @@ import {
   cache,
   getEnabledElementByViewportId,
   Enums,
+  utilities,
 } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
@@ -233,13 +234,11 @@ function _checkContourNormalsMatchViewport(
     .map((uidSet) => Array.from(uidSet))
     .flat();
 
-  // Take up to 3 random annotations to check
-  const sampleSize = Math.min(3, annotationUIDs.length);
-  const randomAnnotationUIDs = [];
-  for (let i = 0; i < sampleSize; i++) {
-    const randomIndex = Math.floor(Math.random() * annotationUIDs.length);
-    randomAnnotationUIDs.push(annotationUIDs[randomIndex]);
-  }
+  // Use getRandomSampleFromArray to get up to 3 random annotations
+  const randomAnnotationUIDs = utilities.getRandomSampleFromArray(
+    annotationUIDs,
+    3
+  );
 
   for (const annotationUID of randomAnnotationUIDs) {
     const annotation = getAnnotation(annotationUID);
