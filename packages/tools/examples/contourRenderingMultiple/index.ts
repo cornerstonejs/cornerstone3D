@@ -4,12 +4,14 @@ import {
   Enums,
   setVolumesForViewports,
   volumeLoader,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   createAndCacheGeometriesFromContours,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -48,16 +50,27 @@ const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
-viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.flexWrap = 'wrap';
 
 const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+const element3 = document.createElement('div');
+
 element1.oncontextmenu = () => false;
+element2.oncontextmenu = () => false;
+element3.oncontextmenu = () => false;
 
 element1.style.width = size;
 element1.style.height = size;
+element2.style.width = size;
+element2.style.height = size;
+element3.style.width = size;
+element3.style.height = size;
 
 viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
+viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
@@ -84,6 +97,7 @@ async function run() {
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(TrackballRotateTool.toolName);
 
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
@@ -108,6 +122,14 @@ async function run() {
     ],
   });
 
+  toolGroup.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
@@ -123,7 +145,6 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-
   const geometriesInfo = await createAndCacheGeometriesFromContours(
     'SampleContour'
   );
@@ -147,6 +168,8 @@ async function run() {
 
   // Create the viewports
   const viewportId1 = 'CT_AXIAL';
+  const viewportId2 = 'CT_SAGITTAL';
+  const viewportId3 = 'CT_CORONAL';
 
   const viewportInputArray = [
     {
@@ -158,19 +181,68 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+    {
+      viewportId: viewportId3,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
   toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup.addViewport(viewportId3, renderingEngineId);
 
   // Set the volume to load
   volume.load();
 
   // Set volumes on the viewports
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1]);
+  setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId1, viewportId2, viewportId3]
+  );
 
-  // // Add the segmentation representation to the viewport
+  // Add button to add contour representation to sagittal and coronal viewports
+  addButtonToToolbar({
+    title: 'Add Contours to Sagittal and Coronal Views',
+    onClick: async () => {
+      // Get the rendering engine
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      // Add the segmentation representation to the sagittal and coronal viewports
+      await segmentation.addContourRepresentationToViewport(viewportId2, [
+        {
+          segmentationId,
+        },
+      ]);
+
+      await segmentation.addContourRepresentationToViewport(viewportId3, [
+        {
+          segmentationId,
+        },
+      ]);
+
+      // Render to update the viewports
+      renderingEngine.render();
+    },
+  });
+
+  // Add the segmentation representation to the axial viewport only initially
   await segmentation.addContourRepresentationToViewport(viewportId1, [
     {
       segmentationId,
