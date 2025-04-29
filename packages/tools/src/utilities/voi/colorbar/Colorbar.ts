@@ -296,20 +296,8 @@ class Colorbar extends Widget {
       startPoints.local
     );
 
-    const { width: containerWidth, height: containerHeight } =
-      this.containerSize;
-    const isHorizontal = containerWidth >= containerHeight;
-
-    // For horizontal colorbar, X affects window center and Y affects window width (inverted)
-    // For vertical colorbar, X affects window width and Y affects window center
-    let wwDelta, wcDelta;
-    if (isHorizontal) {
-      wwDelta = -canvasDelta[1] * multipliers[0]; // Invert Y for intuitive interaction
-      wcDelta = canvasDelta[0] * multipliers[1];
-    } else {
-      wwDelta = canvasDelta[0] * multipliers[0];
-      wcDelta = canvasDelta[1] * multipliers[1];
-    }
+    const wwDelta = canvasDelta[0] * multipliers[0];
+    const wcDelta = canvasDelta[1] * multipliers[1];
 
     if (!wwDelta && !wcDelta) {
       return;
