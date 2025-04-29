@@ -94,9 +94,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "PlanarFreehandROI.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
         // Using image coordinates for 2D points
@@ -128,11 +126,12 @@ class PlanarFreehandROI extends BaseAdapter3D {
             /** Other */
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: false
         };
     }
 
-    static getTID300RepresentationArgumentsSCOORD3D(tool, worldToImageCoords) {
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
         const { data, finding, findingSites } = tool;
 
         const { polyline, closed } = data.contour;
@@ -166,7 +165,8 @@ class PlanarFreehandROI extends BaseAdapter3D {
             /** Other */
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: true
         };
     }
 }

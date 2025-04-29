@@ -118,7 +118,7 @@ export default class Length extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
-            use3DSpatialCoordinates: false
+            use3DSpatialCoordinates: true
         };
     }
 }
