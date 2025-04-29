@@ -92,9 +92,7 @@ class ArrowAnnotate extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "ArrowAnnotate.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
         const { points, arrowFirst } = data.handles;
@@ -110,6 +108,7 @@ class ArrowAnnotate extends BaseAdapter3D {
             point2 = points[0];
         }
 
+        // Using image coordinates for 2D points
         const pointImage = worldToImageCoords(referencedImageId, point);
         const pointImage2 = worldToImageCoords(referencedImageId, point2);
 
@@ -126,7 +125,60 @@ class ArrowAnnotate extends BaseAdapter3D {
             ],
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
-            finding
+            finding,
+            use3DSpatialCoordinates: false
+        };
+
+        // If freetext finding isn't present, add it from the tool text.
+        if (!finding || finding.CodeValue !== codeValues.CORNERSTONEFREETEXT) {
+            finding = {
+                CodeValue: codeValues.CORNERSTONEFREETEXT,
+                CodingSchemeDesignator: CodingScheme.CodingSchemeDesignator,
+                CodeMeaning: data.text
+            };
+        }
+
+        return TID300RepresentationArguments;
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, findingSites } = tool;
+        let { finding } = tool;
+
+        const { points, arrowFirst } = data.handles;
+
+        let point;
+        let point2;
+
+        if (arrowFirst) {
+            point = points[0];
+            point2 = points[1];
+        } else {
+            point = points[1];
+            point2 = points[0];
+        }
+
+        // Using world coordinates for 3D points
+        const pointImage = point;
+        const pointImage2 = point2;
+
+        const TID300RepresentationArguments = {
+            points: [
+                {
+                    x: pointImage[0],
+                    y: pointImage[1],
+                    z: pointImage[2]
+                },
+                {
+                    x: pointImage2[0],
+                    y: pointImage2[1],
+                    z: pointImage2[2]
+                }
+            ],
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            findingSites: findingSites || [],
+            finding,
+            use3DSpatialCoordinates: true
         };
 
         // If freetext finding isn't present, add it from the tool text.

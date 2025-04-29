@@ -141,11 +141,11 @@ class EllipticalROI extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "EllipticalROI.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
         let top, bottom, left, right;
+
+        // Using image coordinates for 2D points
         // this way when it's restored we can assume the initial rotation is 0.
         if (rotation == 90 || rotation == 270) {
             bottom = worldToImageCoords(referencedImageId, handles.points[2]);
@@ -183,6 +183,70 @@ class EllipticalROI extends BaseAdapter3D {
         }
 
         const { area } = cachedStats[`imageId:${referencedImageId}`] || {};
+
+        return {
+            area,
+            points,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || []
+        };
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, finding, findingSites } = tool;
+        const { cachedStats, handles } = data;
+        const rotation = data.initialRotation || 0;
+
+        let top, bottom, left, right;
+
+        // Using world coordinates for 3D points
+        // this way when it's restored we can assume the initial rotation is 0.
+        if (rotation == 90 || rotation == 270) {
+            bottom = handles.points[2];
+            top = handles.points[3];
+            left = handles.points[0];
+            right = handles.points[1];
+        } else {
+            top = handles.points[0];
+            bottom = handles.points[1];
+            left = handles.points[2];
+            right = handles.points[3];
+        }
+
+        // find the major axis and minor axis
+        const topBottomLength = Math.sqrt(
+            (top[0] - bottom[0]) ** 2 +
+                (top[1] - bottom[1]) ** 2 +
+                (top[2] - bottom[2]) ** 2
+        );
+        const leftRightLength = Math.sqrt(
+            (left[0] - right[0]) ** 2 +
+                (left[1] - right[1]) ** 2 +
+                (left[2] - right[2]) ** 2
+        );
+
+        const points = [];
+        if (topBottomLength > leftRightLength) {
+            // major axis is bottom to top
+            points.push({ x: top[0], y: top[1], z: top[2] });
+            points.push({ x: bottom[0], y: bottom[1], z: bottom[2] });
+
+            // minor axis is left to right
+            points.push({ x: left[0], y: left[1], z: left[2] });
+            points.push({ x: right[0], y: right[1], z: right[2] });
+        } else {
+            // major axis is left to right
+            points.push({ x: left[0], y: left[1], z: left[2] });
+            points.push({ x: right[0], y: right[1], z: right[2] });
+
+            // minor axis is bottom to top
+            points.push({ x: top[0], y: top[1], z: top[2] });
+            points.push({ x: bottom[0], y: bottom[1], z: bottom[2] });
+        }
+
+        const cachedStatsKeys = Object.keys(cachedStats)[0];
+        const { area } = cachedStatsKeys ? cachedStats[cachedStatsKeys] : {};
 
         return {
             area,

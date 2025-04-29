@@ -99,6 +99,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
             );
         }
 
+        // Using image coordinates for 2D points
         const points = polyline.map(worldPos =>
             worldToImageCoords(referencedImageId, worldPos)
         );
@@ -113,6 +114,44 @@ class PlanarFreehandROI extends BaseAdapter3D {
 
         const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
             data.cachedStats[`imageId:${referencedImageId}`] || {};
+
+        return {
+            /** From cachedStats */
+            points,
+            area,
+            areaUnit,
+            perimeter,
+            modalityUnit,
+            mean,
+            max,
+            stdDev,
+            /** Other */
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || []
+        };
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool, worldToImageCoords) {
+        const { data, finding, findingSites } = tool;
+
+        const { polyline, closed } = data.contour;
+        const isOpenContour = closed !== true;
+
+        // Using world coordinates for 3D points
+        const points = polyline;
+
+        if (!isOpenContour) {
+            // Need to repeat the first point at the end of to have an explicitly closed contour.
+            const firstPoint = points[0];
+
+            // Explicitly expand to avoid circular references.
+            points.push([firstPoint[0], firstPoint[1], firstPoint[2]]);
+        }
+
+        const cachedStatsKeys = Object.keys(data.cachedStats)[0];
+        const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
+            cachedStatsKeys ? data.cachedStats[cachedStatsKeys] : {};
 
         return {
             /** From cachedStats */

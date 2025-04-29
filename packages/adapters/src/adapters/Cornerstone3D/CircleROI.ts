@@ -80,11 +80,10 @@ class CircleROI extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "CircleROI.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
+        // Using image coordinates for 2D points
         const center = worldToImageCoords(referencedImageId, handles.points[0]);
         const end = worldToImageCoords(referencedImageId, handles.points[1]);
 
@@ -103,7 +102,38 @@ class CircleROI extends BaseAdapter3D {
             points,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: false
+        };
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, finding, findingSites } = tool;
+        const { cachedStats = {}, handles } = data;
+
+        // Using world coordinates for 3D points
+        const center = handles.points[0];
+        const end = handles.points[1];
+
+        const points = [];
+        points.push({ x: center[0], y: center[1], z: center[2] });
+        points.push({ x: end[0], y: end[1], z: center[2] });
+
+        const cachedStatsKeys = Object.keys(cachedStats)[0];
+        const { area, radius } = cachedStatsKeys
+            ? cachedStats[cachedStatsKeys]
+            : {};
+        const perimeter = 2 * Math.PI * radius;
+
+        return {
+            area,
+            perimeter,
+            radius,
+            points,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: true
         };
     }
 }
