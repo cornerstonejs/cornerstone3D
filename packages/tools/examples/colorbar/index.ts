@@ -106,7 +106,7 @@ addDropdownToToolbar({
 addDropdownToToolbar({
   labelText: 'Colorbar Position: ',
   options: {
-    values: ['right', 'left', 'bottom'],
+    values: ['right', 'bottom'],
     defaultValue: 'right',
   },
   style: {
