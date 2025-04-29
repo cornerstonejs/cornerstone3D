@@ -31,6 +31,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
@@ -100,6 +101,10 @@ class ProbeTool extends AnnotationTool {
       preventHandleOutsideImage: false,
       getTextLines: defaultGetTextLines,
       handleRadius: '6',
+      textCanvasOffset: {
+        x: 6,
+        y: -6,
+      },
     },
   };
 
@@ -519,6 +524,10 @@ class ProbeTool extends AnnotationTool {
         return renderStatus;
       }
 
+      if (!isAnnotationVisible(annotationUID!)) {
+        continue;
+      }
+
       const handleGroupUID = '0';
 
       drawHandlesSvg(
@@ -539,8 +548,8 @@ class ProbeTool extends AnnotationTool {
       const textLines = this.configuration.getTextLines(data, targetId);
       if (textLines) {
         const textCanvasCoordinates = [
-          canvasCoordinates[0] + 6,
-          canvasCoordinates[1] - 6,
+          canvasCoordinates[0] + this.configuration.textCanvasOffset.x,
+          canvasCoordinates[1] + this.configuration.textCanvasOffset.y,
         ];
 
         const textUID = '0';
