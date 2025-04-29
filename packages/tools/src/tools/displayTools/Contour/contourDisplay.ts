@@ -242,7 +242,13 @@ function _checkContourNormalsMatchViewport(
 
   for (const annotationUID of randomAnnotationUIDs) {
     const annotation = getAnnotation(annotationUID);
-    if (annotation?.metadata?.viewPlaneNormal) {
+    if (annotation?.metadata) {
+      // If viewPlaneNormal is not defined (e.g., in SR annotations),
+      // we'll consider it a match to avoid throwing errors
+      if (!annotation.metadata.viewPlaneNormal) {
+        continue;
+      }
+
       const annotationNormal = annotation.metadata.viewPlaneNormal;
       // Check if normals are parallel or anti-parallel (dot product close to 1 or -1)
       const dotProduct = Math.abs(

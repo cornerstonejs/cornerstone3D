@@ -5,7 +5,8 @@ export type PixelDataTypedArray =
   | Uint8Array
   | Int8Array
   | Uint8ClampedArray
-  | Uint32Array;
+  | Uint32Array
+  | Int32Array;
 
 export type PixelDataTypedArrayString =
   | 'Float32Array'
@@ -15,5 +16,6 @@ export type PixelDataTypedArrayString =
   | 'Int8Array'
   | 'Uint8ClampedArray'
   | 'Uint32Array'
+  | 'Int32Array'
   // Used to not create an array object
   | 'none';
