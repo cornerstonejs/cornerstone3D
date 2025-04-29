@@ -5,11 +5,14 @@ import { canComputeRequestedRepresentation } from './canComputeRequestedRepresen
 
 // updates
 import { updateSurfaceData } from './Surface/updateSurfaceData';
-import { registerPolySegWorker } from './registerPolySegWorker';
+import {
+  registerPolySegWorker,
+  type PolySegInitOptions,
+} from './registerPolySegWorker';
 
-function init() {
+function init(options?: PolySegInitOptions) {
   // register the worker if it hasn't been registered yet
-  registerPolySegWorker();
+  registerPolySegWorker(options);
 }
 
 export {
