@@ -71,11 +71,10 @@ export default class Length extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "Length.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
+        // Using image coordinates for 2D points
         const start = worldToImageCoords(referencedImageId, handles.points[0]);
         const end = worldToImageCoords(referencedImageId, handles.points[1]);
 
@@ -91,7 +90,35 @@ export default class Length extends BaseAdapter3D {
             distance,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: false
+        };
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, finding, findingSites } = tool;
+        const { cachedStats = {}, handles } = data;
+
+        // Using world coordinates for 3D points
+        const start = handles.points[0];
+        const end = handles.points[1];
+
+        const point1 = { x: start[0], y: start[1], z: start[2] };
+        const point2 = { x: end[0], y: end[1], z: end[2] };
+
+        const cachedStatsKeys = Object.keys(cachedStats)[0];
+        const { length: distance } = cachedStatsKeys
+            ? cachedStats[cachedStatsKeys]
+            : {};
+
+        return {
+            point1,
+            point2,
+            distance,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: false
         };
     }
 }

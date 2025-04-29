@@ -100,7 +100,6 @@ export default class MeasurementReport {
         args.ReferencedSOPSequence = ReferencedSOPSequence;
 
         const TID300Measurement = new toolClass.TID300Representation(args);
-
         return TID300Measurement;
     }
 
@@ -280,6 +279,60 @@ export default class MeasurementReport {
         };
     }
 
+    static generateReferencedSOPSequence({
+        metadataProvider,
+        imageId,
+        sopInstanceUIDsToSeriesInstanceUIDMap,
+        derivationSourceDatasets
+    }) {
+        if (imageId === "orphan") {
+            return;
+        }
+
+        const sopCommonModule = metadataProvider.get(
+            "sopCommonModule",
+            imageId
+        );
+        const instance = metadataProvider.get("instance", imageId);
+
+        const { sopInstanceUID, sopClassUID } = sopCommonModule;
+        const { SeriesInstanceUID: seriesInstanceUID } = instance;
+
+        sopInstanceUIDsToSeriesInstanceUIDMap[sopInstanceUID] =
+            seriesInstanceUID;
+
+        if (
+            !derivationSourceDatasets.find(
+                dsd => dsd.SeriesInstanceUID === seriesInstanceUID
+            )
+        ) {
+            // Entry not present for series, create one.
+            const derivationSourceDataset =
+                MeasurementReport.generateDerivationSourceDataset(instance);
+
+            derivationSourceDatasets.push(derivationSourceDataset);
+        }
+
+        const frameNumber = metadataProvider.get("frameNumber", imageId);
+
+        const ReferencedSOPSequence = {
+            ReferencedSOPClassUID: sopClassUID,
+            ReferencedSOPInstanceUID: sopInstanceUID,
+            ReferencedFrameNumber: undefined
+        };
+
+        if (
+            (instance &&
+                instance.NumberOfFrames &&
+                instance.NumberOfFrames > 1) ||
+            Normalizer.isMultiframeSOPClassUID(sopClassUID)
+        ) {
+            ReferencedSOPSequence.ReferencedFrameNumber = frameNumber;
+        }
+
+        return ReferencedSOPSequence;
+    }
+
     static generateReport(
         toolState,
         metadataProvider,
@@ -304,48 +357,15 @@ export default class MeasurementReport {
 
         // Loop through each image in the toolData
         Object.keys(toolState).forEach(imageId => {
-            const sopCommonModule = metadataProvider.get(
-                "sopCommonModule",
-                imageId
-            );
-            const instance = metadataProvider.get("instance", imageId);
+            const ReferencedSOPSequence = this.generateReferencedSOPSequence({
+                metadataProvider,
+                imageId,
+                sopInstanceUIDsToSeriesInstanceUIDMap,
+                derivationSourceDatasets
+            });
 
-            const { sopInstanceUID, sopClassUID } = sopCommonModule;
-            const { SeriesInstanceUID: seriesInstanceUID } = instance;
-
-            sopInstanceUIDsToSeriesInstanceUIDMap[sopInstanceUID] =
-                seriesInstanceUID;
-
-            if (
-                !derivationSourceDatasets.find(
-                    dsd => dsd.SeriesInstanceUID === seriesInstanceUID
-                )
-            ) {
-                // Entry not present for series, create one.
-                const derivationSourceDataset =
-                    MeasurementReport.generateDerivationSourceDataset(instance);
-
-                derivationSourceDatasets.push(derivationSourceDataset);
-            }
-
-            const frameNumber = metadataProvider.get("frameNumber", imageId);
             const toolData = toolState[imageId];
             const toolTypes = Object.keys(toolData);
-
-            const ReferencedSOPSequence = {
-                ReferencedSOPClassUID: sopClassUID,
-                ReferencedSOPInstanceUID: sopInstanceUID,
-                ReferencedFrameNumber: undefined
-            };
-
-            if (
-                (instance &&
-                    instance.NumberOfFrames &&
-                    instance.NumberOfFrames > 1) ||
-                Normalizer.isMultiframeSOPClassUID(sopClassUID)
-            ) {
-                ReferencedSOPSequence.ReferencedFrameNumber = frameNumber;
-            }
 
             // Loop through each tool type for the image
             const measurementGroups = [];
