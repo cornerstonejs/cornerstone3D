@@ -189,7 +189,8 @@ class EllipticalROI extends BaseAdapter3D {
             points,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: false
         };
     }
 
@@ -253,7 +254,8 @@ class EllipticalROI extends BaseAdapter3D {
             points,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: true
         };
     }
 }

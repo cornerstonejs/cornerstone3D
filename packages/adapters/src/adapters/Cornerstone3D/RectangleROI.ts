@@ -72,11 +72,10 @@ class RectangleROI extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "CobbAngle.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
+        //Using image coordinates for 2D points
         const corners = handles.points.map(point =>
             worldToImageCoords(referencedImageId, point)
         );
@@ -95,7 +94,34 @@ class RectangleROI extends BaseAdapter3D {
             perimeter,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: false
+        };
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, finding, findingSites } = tool;
+        const { cachedStats = {}, handles } = data;
+
+        //Using world coordinates for 3D points
+        const corners = handles.points;
+
+        const { area, perimeter } = cachedStats;
+
+        return {
+            points: [
+                corners[0],
+                corners[1],
+                corners[3],
+                corners[2],
+                corners[0]
+            ],
+            area,
+            perimeter,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: true
         };
     }
 }
