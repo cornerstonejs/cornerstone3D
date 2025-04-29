@@ -66,7 +66,7 @@ Object.assign(viewportGrid.style, {
   height: '512px',
   marginTop: '5px',
   display: 'grid',
-  gridTemplateColumns: `1fr ${colorbarWidth}px`,
+  gridTemplateColumns: `1fr ${colorbarWidth}px`, // Default with colorbar on the right
 });
 
 content.appendChild(viewportGrid);
@@ -88,6 +88,7 @@ addInstruction('- Click and drag on the color bar to change VOI');
 
 // Dropdown that allows the user to select a different colormap
 addDropdownToToolbar({
+  labelText: 'Colormap: ',
   options: {
     values: colormaps.map((cm) => cm.Name),
     defaultValue: currentPTColormapName,
@@ -98,6 +99,21 @@ addDropdownToToolbar({
   onSelectedValueChange: (selectedValue) => {
     ctColorbar.activeColormapName = selectedValue;
     setViewportColormap(<string>selectedValue);
+  },
+});
+
+// Dropdown that allows the user to change colorbar position
+addDropdownToToolbar({
+  labelText: 'Colorbar Position: ',
+  options: {
+    values: ['right', 'left', 'bottom'],
+    defaultValue: 'right',
+  },
+  style: {
+    maxWidth: '120px',
+  },
+  onSelectedValueChange: (position) => {
+    updateColorbarPosition(position as string);
   },
 });
 
@@ -115,6 +131,103 @@ function setViewportColormap(colormapName: string) {
 
   viewport.setProperties({ colormap: { name: colormapName } });
   viewport.render();
+}
+
+// Update the colorbar position
+function updateColorbarPosition(position: string) {
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  if (!renderingEngine) {
+    return; // Exit if rendering engine not ready yet
+  }
+
+  const viewport = renderingEngine.getViewport(viewportId);
+  if (!viewport) {
+    return; // Exit if viewport not ready yet
+  }
+
+  const element = viewport.element;
+
+  // Save current colormap if colorbar exists
+  const currentColormapName = ctColorbar
+    ? ctColorbar.activeColormapName
+    : 'Grayscale';
+
+  // Remove the old colorbar and its container if they exist
+  if (ctColorbar) {
+    ctColorbar.destroy();
+  }
+
+  const oldContainer = document.querySelector('#colorbarContainer');
+  if (oldContainer) {
+    oldContainer.remove();
+  }
+
+  // Recreate the grid layout based on position
+  if (position === 'bottom') {
+    viewportGrid.style.display = 'grid';
+    viewportGrid.style.gridTemplateRows = `1fr ${colorbarWidth}px`;
+    viewportGrid.style.gridTemplateColumns = '1fr';
+  } else {
+    viewportGrid.style.display = 'grid';
+    viewportGrid.style.gridTemplateRows = '1fr';
+    viewportGrid.style.gridTemplateColumns =
+      position === 'right'
+        ? `1fr ${colorbarWidth}px`
+        : `${colorbarWidth}px 1fr`;
+  }
+
+  // Create a new colorbar container
+  const colorbarContainer = document.createElement('div');
+  colorbarContainer.id = 'colorbarContainer';
+
+  Object.assign(colorbarContainer.style, {
+    position: 'relative',
+    boxSizing: 'border-box',
+    border: 'solid 1px #555',
+    cursor: 'initial',
+    width: '100%',
+    height: '100%',
+  });
+
+  // Position the container based on selected position
+  if (position === 'bottom') {
+    colorbarContainer.style.gridRow = '2';
+  } else if (position === 'right') {
+    colorbarContainer.style.gridColumn = '2';
+  } else if (position === 'left') {
+    colorbarContainer.style.gridColumn = '1';
+  }
+
+  viewportGrid.appendChild(colorbarContainer);
+
+  // Get proper tick position based on colorbar position
+  let tickPosition = ColorbarRangeTextPosition.Top; // Default for bottom position
+
+  if (position === 'right') {
+    tickPosition = ColorbarRangeTextPosition.Left;
+  } else if (position === 'left') {
+    tickPosition = ColorbarRangeTextPosition.Right;
+  }
+
+  // Create a new colorbar
+  ctColorbar = new ViewportColorbar({
+    id: 'ctColorbar',
+    element,
+    container: colorbarContainer,
+    colormaps,
+    activeColormapName: currentColormapName,
+    ticks: {
+      position: tickPosition,
+      style: {
+        font: '12px Arial',
+        color: '#fff',
+        maxNumTicks: 8,
+        tickSize: 5,
+        tickWidth: 1,
+        labelMargin: 10,
+      },
+    },
+  });
 }
 
 /**
@@ -234,39 +347,8 @@ async function run() {
   // Load the stack
   viewport.setStack(imageIds);
 
-  // Create the container that is located on the left side of the viewport
-  const colorbarContainer = document.createElement('div');
-
-  Object.assign(colorbarContainer.style, {
-    position: 'relative',
-    boxSizing: 'border-box',
-    border: 'solid 1px #555',
-    cursor: 'initial',
-    width: '100%',
-    height: '100%',
-  });
-
-  viewportGrid.appendChild(colorbarContainer);
-
-  // Create and add the color bar to the DOM
-  ctColorbar = new ViewportColorbar({
-    id: 'ctColorbar',
-    element,
-    container: colorbarContainer,
-    colormaps,
-    activeColormapName: 'Grayscale',
-    ticks: {
-      position: ColorbarRangeTextPosition.Left,
-      style: {
-        font: '12px Arial',
-        color: '#fff',
-        maxNumTicks: 8,
-        tickSize: 5,
-        tickWidth: 1,
-        labelMargin: 3,
-      },
-    },
-  });
+  // Initial position of colorbar is 'right' (matching the dropdown default)
+  updateColorbarPosition('right');
 }
 
 run();
