@@ -10,16 +10,12 @@ concurrency:
 jobs:
   playwright-tests:
     timeout-minutes: 60
-    runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.51.1-noble
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
         node-version: [20]
     steps:
-      - name: Install unzip
-        run: apt-get update && apt-get install -y unzip
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
