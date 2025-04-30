@@ -9,6 +9,9 @@ import {
   registerPolySegWorker,
   type PolySegInitOptions,
 } from './registerPolySegWorker';
+import { clipAndCacheSurfacesForViewport } from './utilities/clipAndCacheSurfacesForViewport';
+import { extractContourData } from './Contour/utils/extractContourData';
+import { createAndAddContourSegmentationsFromClippedSurfaces } from './Contour/utils/createAndAddContourSegmentationsFromClippedSurfaces';
 
 function init(options?: PolySegInitOptions) {
   // register the worker if it hasn't been registered yet
@@ -25,4 +28,7 @@ export {
   updateSurfaceData,
   // init
   init,
+  clipAndCacheSurfacesForViewport,
+  extractContourData,
+  createAndAddContourSegmentationsFromClippedSurfaces,
 };
