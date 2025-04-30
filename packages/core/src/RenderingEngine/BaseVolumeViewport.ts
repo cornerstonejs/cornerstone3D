@@ -46,7 +46,11 @@ import * as colormapUtils from '../utilities/colormap';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
-import { findMatchingColormap } from '../utilities/colormap';
+import {
+  findMatchingColormap,
+  updateOpacity as colormapUpdateOpacity,
+  updateThreshold as colormapUpdateThreshold,
+} from '../utilities/colormap';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
 import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
@@ -315,19 +319,14 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const ofun = vtkPiecewiseFunction.newInstance();
     if (typeof colormap.opacity === 'number') {
-      const range = volumeActor
-        .getProperty()
-        .getRGBTransferFunction(0)
-        .getRange();
-
-      ofun.addPoint(range[0], colormap.opacity);
-      ofun.addPoint(range[1], colormap.opacity);
+      // Use the new utility to update opacity while preserving threshold
+      colormapUpdateOpacity(volumeActor, colormap.opacity);
     } else {
       colormap.opacity.forEach(({ opacity, value }) => {
         ofun.addPoint(value, opacity);
       });
+      volumeActor.getProperty().setScalarOpacity(0, ofun);
     }
-    volumeActor.getProperty().setScalarOpacity(0, ofun);
 
     if (!this.viewportProperties.colormap) {
       this.viewportProperties.colormap = {};
@@ -820,6 +819,32 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
+   * Sets the opacity threshold for a volume with the given ID.
+   * Values below the threshold will be transparent.
+   *
+   * @param colormap - An object containing threshold property
+   * @param volumeId - The ID of the volume to set the threshold for.
+   *
+   * @returns void
+   */
+  private setThreshold(colormap: ColormapPublic, volumeId: string) {
+    const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
+    if (!applicableVolumeActorInfo) {
+      return;
+    }
+    const { volumeActor } = applicableVolumeActorInfo;
+
+    // Use the new utility to update threshold while preserving opacity
+    colormapUpdateThreshold(volumeActor, colormap.threshold);
+
+    if (!this.viewportProperties.colormap) {
+      this.viewportProperties.colormap = {};
+    }
+
+    this.viewportProperties.colormap.threshold = colormap.threshold;
+  }
+
+  /**
    * Sets the properties for the volume viewport on the volume
    * and if setProperties is called for the first time, the properties will also become the default one.
    * (if fusion, it sets it for the first volume in the fusion)
@@ -871,6 +896,9 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     if (colormap?.opacity != null) {
       this.setOpacity(colormap, volumeId);
+    }
+    if (colormap?.threshold != null) {
+      this.setThreshold(colormap, volumeId);
     }
 
     if (voiRange !== undefined) {
@@ -1264,9 +1292,9 @@ abstract class BaseVolumeViewport extends Viewport {
 
   /**
    * It sets the orientation for the camera, the orientation can be one of the
-   * following: axial, sagittal, coronal, default. Use the `Enums.OrientationAxis`
-   * to set the orientation. The "default" orientation is the orientation that
-   * the volume was acquired in (scan axis)
+   * following: axial, sagittal, coronal, acquisition. Use the `Enums.OrientationAxis`
+   * to set the orientation. The "acquisition" orientation is the orientation that
+   * the volume was acquired in (scan axis).
    *
    * @param orientation - The orientation to set the camera to.
    * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
@@ -1716,20 +1744,51 @@ abstract class BaseVolumeViewport extends Viewport {
           'Invalid orientation object. It must contain viewPlaneNormal and viewUp'
         );
       }
-    } else if (
-      typeof orientation === 'string' &&
-      MPR_CAMERA_VALUES[orientation]
-    ) {
-      this.viewportProperties.orientation = orientation;
-      return MPR_CAMERA_VALUES[orientation];
-    } else {
+    } else if (typeof orientation === 'string') {
+      if (orientation === 'acquisition') {
+        return this._getAcquisitionPlaneOrientation();
+      } else if (MPR_CAMERA_VALUES[orientation]) {
+        this.viewportProperties.orientation = orientation;
+        return MPR_CAMERA_VALUES[orientation];
+      }
+    }
+
+    throw new Error(
+      `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
+        MPR_CAMERA_VALUES
+      ).join(', ')}`
+    );
+  }
+
+  protected _getAcquisitionPlaneOrientation(): OrientationVectors {
+    const actorEntry = this.getDefaultActor();
+
+    if (!actorEntry) {
+      return;
+    }
+
+    // Todo: fix this after we add the volumeId reference to actorEntry later
+    // in the segmentation refactor
+    const volumeId = this.getVolumeId();
+
+    const imageVolume = cache.getVolume(volumeId);
+
+    if (!imageVolume) {
       throw new Error(
-        `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
-          MPR_CAMERA_VALUES
-        ).join(', ')}`
+        `imageVolume with id: ${volumeId} does not exist in cache`
       );
     }
+
+    const { direction } = imageVolume;
+    const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
+    const viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
+
+    return {
+      viewPlaneNormal,
+      viewUp,
+    };
   }
+
   /**
    * Gets the largest slab thickness from all actors in the viewport.
    *
