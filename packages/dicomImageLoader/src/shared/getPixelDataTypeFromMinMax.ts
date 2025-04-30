@@ -12,6 +12,7 @@ import type { Types } from '@cornerstonejs/core';
  *   - If all values are positive (min >= 0):
  *     - Returns Uint8Array if max <= 255
  *     - Returns Uint16Array if max <= 65535
+ *     - Returns Uint32Array if max <= 4294967295
  *   - If values include negatives:
  *     - Returns Int8Array if values are within [-128, 127]
  *     - Returns Int16Array if values are within [-32768, 32767]
@@ -29,6 +30,8 @@ export default function getPixelDataTypeFromMinMax(
         pixelDataType = Uint8Array;
       } else if (max <= 65535) {
         pixelDataType = Uint16Array;
+      } else if (max <= 4294967295) {
+        pixelDataType = Uint32Array;
       }
     } else {
       if (min >= -128 && max <= 127) {

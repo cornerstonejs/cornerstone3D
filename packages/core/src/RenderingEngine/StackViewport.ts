@@ -1883,6 +1883,12 @@ class StackViewport extends Viewport {
 
     this._imageData.setOrigin(origin);
 
+    // change actor referencedId to image.imageId
+    const actor = this.getActor(this.id);
+    if (actor) {
+      actor.referencedId = image.imageId;
+    }
+
     // Update the pixel data in the vtkImageData object with the pixelData
     // from the loaded Cornerstone image
     updateVTKImageDataWithCornerstoneImage(this._imageData, image);
@@ -2407,7 +2413,7 @@ class StackViewport extends Viewport {
     if (oldActors.length && oldActors[0].uid === this.id) {
       oldActors[0].actor = actor;
     } else {
-      oldActors.unshift({ uid: this.id, actor });
+      oldActors.unshift({ uid: this.id, actor, referencedId: image.imageId });
     }
     this.setActors(oldActors);
 
