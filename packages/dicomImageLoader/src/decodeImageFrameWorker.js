@@ -31,6 +31,7 @@ const typedArrayConstructors = {
   Uint16Array,
   Int16Array,
   Float32Array,
+  Uint32Array,
 };
 
 function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
@@ -126,10 +127,9 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     _validateScalingParameters(scalingParameters);
 
     const { rescaleSlope, rescaleIntercept } = scalingParameters;
-    const isSlopeAndInterceptNumbers =
-      typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+    const isRequiredScaling = _isRequiredScaling(scalingParameters);
 
-    if (isSlopeAndInterceptNumbers) {
+    if (isRequiredScaling) {
       applyModalityLUT(pixelDataArray, scalingParameters);
       imageFrame.preScale = {
         ...options.preScale,
@@ -164,6 +164,19 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   imageFrame.decodeTimeInMS = end - start;
 
   return imageFrame;
+}
+
+function _isRequiredScaling(scalingParameters) {
+  const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
+    scalingParameters;
+
+  const hasRescaleValues =
+    typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+  const isRTDOSEWithScaling =
+    modality === 'RTDOSE' && typeof doseGridScaling === 'number';
+  const isPTWithSUV = modality === 'PT' && typeof suvbw === 'number';
+
+  return hasRescaleValues || isRTDOSEWithScaling || isPTWithSUV;
 }
 
 function _handleTargetBuffer(
