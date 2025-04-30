@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.0...v3.11.1) (2025-04-30)
+
+### Bug Fixes
+
+- Add polyseg worker init options ([#2040](https://github.com/cornerstonejs/cornerstone3D/issues/2040)) ([d5fed5b](https://github.com/cornerstonejs/cornerstone3D/commit/d5fed5bf35e760c52e6aa214c027da21d19e66ed))
+
 # [3.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.31...v3.11.0) (2025-04-30)
 
 ### Features
