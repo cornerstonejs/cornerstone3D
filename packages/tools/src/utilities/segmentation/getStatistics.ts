@@ -131,6 +131,10 @@ async function calculateVolumeStatistics({
     direction: imageData.getDirection(),
   };
 
+  if (!imageInfo.scalarData?.length) {
+    return;
+  }
+
   const stats = await getWebWorkerManager().executeTask(
     'compute',
     'calculateSegmentsStatisticsVolume',
