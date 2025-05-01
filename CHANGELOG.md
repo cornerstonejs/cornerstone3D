@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.11.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.1...v3.11.2) (2025-05-01)
+
+### Bug Fixes
+
+- **tools:** tweaks to Probe and PlanarFreehandRoi tools ([#2038](https://github.com/cornerstonejs/cornerstone3D/issues/2038)) ([99d40c1](https://github.com/cornerstonejs/cornerstone3D/commit/99d40c164e58014d37e265ff2226431fa5bf7358))
+
 ## [3.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.0...v3.11.1) (2025-04-30)
 
 ### Bug Fixes
