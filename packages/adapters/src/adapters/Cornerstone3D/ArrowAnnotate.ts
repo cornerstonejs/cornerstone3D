@@ -142,7 +142,7 @@ class ArrowAnnotate extends BaseAdapter3D {
     }
 
     static getTID300RepresentationArgumentsSCOORD3D(tool) {
-        const { data, findingSites } = tool;
+        const { data, findingSites, metadata } = tool;
         let { finding } = tool;
 
         const { points, arrowFirst } = data.handles;
@@ -178,6 +178,7 @@ class ArrowAnnotate extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
             finding,
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
             use3DSpatialCoordinates: true
         };
 

@@ -132,7 +132,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
     }
 
     static getTID300RepresentationArgumentsSCOORD3D(tool) {
-        const { data, finding, findingSites } = tool;
+        const { data, finding, findingSites, metadata } = tool;
 
         const { polyline, closed } = data.contour;
         const isOpenContour = closed !== true;
@@ -166,6 +166,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
             use3DSpatialCoordinates: true
         };
     }

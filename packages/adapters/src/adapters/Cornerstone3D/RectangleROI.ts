@@ -100,7 +100,7 @@ class RectangleROI extends BaseAdapter3D {
     }
 
     static getTID300RepresentationArgumentsSCOORD3D(tool) {
-        const { data, finding, findingSites } = tool;
+        const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         //Using world coordinates for 3D points
@@ -121,6 +121,7 @@ class RectangleROI extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
             use3DSpatialCoordinates: true
         };
     }

@@ -195,7 +195,7 @@ class EllipticalROI extends BaseAdapter3D {
     }
 
     static getTID300RepresentationArgumentsSCOORD3D(tool) {
-        const { data, finding, findingSites } = tool;
+        const { data, finding, findingSites, metadata } = tool;
         const { cachedStats, handles } = data;
         const rotation = data.initialRotation || 0;
 
@@ -255,6 +255,7 @@ class EllipticalROI extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
             use3DSpatialCoordinates: true
         };
     }

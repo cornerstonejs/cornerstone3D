@@ -187,7 +187,7 @@ class Bidirectional extends BaseAdapter3D {
         shortAxisPoints,
         longAxisPoints
     }) {
-        const { data, finding, findingSites } = tool;
+        const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {} } = data;
 
         // Using world coordinates for 3D points
@@ -231,6 +231,7 @@ class Bidirectional extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding: finding,
             findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
             use3DSpatialCoordinates: true
         };
     }
