@@ -6,8 +6,9 @@
   "scripts": {
     "preinstall": "node preinstall.js",
     "build": "echo 'build'",
-    "build:docs": "cd ../../ && yarn install && yarn run build:esm && cd packages/docs && cross-env NODE_OPTIONS=--max_old_space_size=32384 yarn run prep-examples && docusaurus build && node ./scripts/prepare-markdown-files.js",
+    "build:docs": "cd ../../ && yarn install && yarn run build:esm && cd packages/docs && cross-env NODE_OPTIONS=--max_old_space_size=32384 yarn run prep-examples && docusaurus build && node ./scripts/prepare-markdown-files.js && node ./scripts/generate-llms-txt.js",
     "prepare-markdown-files": "node ./scripts/prepare-markdown-files.js",
+    "generate-llms-txt": "node ./scripts/generate-llms-txt.js",
     "copy-coverage-to-docs": "cp -R ../../coverage/*Chrome*/. ./static/test-coverage/",
     "copy-examples-to-docs": "cp -R ../../.static-examples/. ./static/live-examples/ && cp -R ../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/dicom-microscopy-viewer ./static/dicom-microscopy-viewer",
     "docusaurus": "docusaurus",

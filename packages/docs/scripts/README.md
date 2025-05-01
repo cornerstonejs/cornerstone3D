@@ -31,3 +31,34 @@ You can also run this script manually with:
 cd packages/docs
 bun run prepare-markdown-files
 ```
+
+## generate-llms-txt.js
+
+This script generates a llms.txt file that follows the [llms.txt specification](https://llmstxt.site) by creating an index of all the markdown files that have been copied to the `/docs/llm` directory.
+
+### Purpose
+
+The llms.txt file provides an overview of all available documentation in a format that's optimized for use with Large Language Models (LLMs). It creates a structured index that LLMs can use to efficiently navigate and find information in the documentation.
+
+### Access URL
+
+After deployment, the llms.txt file can be accessed at:
+
+- `https://cornerstonejs.org/llms.txt`
+
+### Implementation
+
+The script is automatically run as part of the `build:docs` command (after `prepare-markdown-files.js`) and will:
+
+1. Scan all the markdown files that were copied to the `/docs/llm` directory
+2. Extract titles and summaries from the frontmatter of each file
+3. Organize them into sections based on their directory structure
+4. Generate a single llms.txt file in the standard format with links to all the documentation files
+5. Save the file to the build directory root so it will be accessible at the root of the website
+
+You can also run this script manually with (after running `prepare-markdown-files.js`):
+
+```bash
+cd packages/docs
+bun run generate-llms-txt
+```
