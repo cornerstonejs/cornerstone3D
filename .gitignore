@@ -61,3 +61,5 @@ coverage/
 # Add Playwright HTML report output from playwright.config.ts
 /packages/docs/static/playwright-report/
 .cursor
+
+**/.claude/settings.local.json

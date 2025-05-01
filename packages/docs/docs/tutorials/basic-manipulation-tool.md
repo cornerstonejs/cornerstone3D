@@ -1,5 +1,7 @@
 ---
 id: basic-manipulation-tool
+title: Manipulation Tools
+summary: Tutorial on implementing manipulation tools like zoom and window level for interacting with medical images in Cornerstone3D
 ---
 
 # Manipulation Tools

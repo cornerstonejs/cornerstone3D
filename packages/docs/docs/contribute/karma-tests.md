@@ -1,5 +1,7 @@
 ---
 id: karma-tests
+title: Writing Karma Tests
+summary: Instructions for writing and running Karma tests for Cornerstone3D rendering and tools, including visual inspection of test results
 ---
 
 # Writing Karma Tests

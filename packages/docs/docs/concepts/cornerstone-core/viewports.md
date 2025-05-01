@@ -1,6 +1,7 @@
 ---
 id: viewports
 title: Viewports
+summary: Core rendering components that act as cameras for displaying medical images with different capabilities including stack viewing, MPR, 3D rendering, and video playback
 ---
 
 # Viewports

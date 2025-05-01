@@ -1,5 +1,7 @@
 ---
 id: legacy-to-3d
+title: 'Legacy to Cornerstone3D 1.0'
+summary: Comprehensive guide for migrating from legacy Cornerstone to Cornerstone3D 1.0, covering API changes for initialization, viewports, image loading, and coordinate systems
 ---
 
 import Tabs from '@theme/Tabs';

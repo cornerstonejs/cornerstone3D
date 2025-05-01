@@ -1,6 +1,7 @@
 ---
 id: locking
 title: Segment Locking
+summary: Feature that prevents modification of specified segments, protecting completed segmentation work from accidental changes during editing
 ---
 
 # Segment Locking

@@ -1,5 +1,7 @@
 ---
 id: custom-image-loader
+title: Custom Image Loader
+summary: Step-by-step guide for implementing a custom image loader in Cornerstone3D, including creating, registering, and using the loader with viewports
 ---
 
 # Custom Image Loader

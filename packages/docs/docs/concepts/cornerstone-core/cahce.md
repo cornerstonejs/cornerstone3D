@@ -1,6 +1,7 @@
 ---
 id: cache
 title: Cache
+summary: Core component for managing memory usage of images and volumes, handling caching mechanisms and optimizing memory allocation
 ---
 
 # Cache
