@@ -96,7 +96,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
-import { reflectVector } from '../utilities/reflectVector';
+import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -1100,34 +1100,20 @@ class StackViewport extends Viewport {
       flipHorizontal,
     } = this.getCameraNoRotation();
 
-    // The initial view up vector without any rotation, but incorporating vertical flip.
-    let adjustedInitialViewUp = vec3.clone(this.initialViewUp);
-
-    if (flipVertical) {
-      vec3.negate(adjustedInitialViewUp, adjustedInitialViewUp);
-    }
-
-    if (flipHorizontal) {
-      const screenVerticalAxis = vec3.cross(
-        vec3.create(),
-        viewPlaneNormal,
-        adjustedInitialViewUp
-      );
-      vec3.normalize(screenVerticalAxis, screenVerticalAxis);
-
-      adjustedInitialViewUp = reflectVector(
-        adjustedInitialViewUp,
-        screenVerticalAxis
-      );
-    }
+    const adjustedViewUp = adjustInitialViewUp(
+      this.initialViewUp,
+      flipHorizontal,
+      flipVertical,
+      viewPlaneNormal
+    );
     // The angle between the initial and current view up vectors.
     // TODO: check with VTK about rounding errors here.
-    const angleRad = vec3.angle(adjustedInitialViewUp, currentViewUp);
+    const angleRad = vec3.angle(adjustedViewUp, currentViewUp);
     const initialToCurrentViewUpAngle = (angleRad * 180) / Math.PI;
 
     const initialToCurrentViewUpCross = vec3.cross(
       vec3.create(),
-      adjustedInitialViewUp,
+      adjustedViewUp,
       currentViewUp
     );
 
@@ -1208,30 +1194,16 @@ class StackViewport extends Viewport {
     this.setPan(panSub, false);
     const { flipVertical, flipHorizontal, viewPlaneNormal } = this.getCamera();
 
-    let adjustedInitialViewUp = vec3.clone(this.initialViewUp);
-
-    // Handle vertical flip
-    if (flipVertical) {
-      vec3.negate(adjustedInitialViewUp, adjustedInitialViewUp);
-    }
-
-    // Handle horizontal flip (mirror over vertical axis)
-    if (flipHorizontal) {
-      const screenVerticalAxis = vec3.cross(
-        vec3.create(),
-        viewPlaneNormal,
-        adjustedInitialViewUp
-      );
-      vec3.normalize(screenVerticalAxis, screenVerticalAxis);
-      adjustedInitialViewUp = reflectVector(
-        adjustedInitialViewUp,
-        screenVerticalAxis
-      );
-    }
+    const adjustedViewUp = adjustInitialViewUp(
+      this.initialViewUp,
+      flipHorizontal,
+      flipVertical,
+      viewPlaneNormal
+    );
 
     // Reset camera to adjusted initial viewUp
     this.setCameraNoEvent({
-      viewUp: adjustedInitialViewUp as Point3,
+      viewUp: adjustedViewUp as Point3,
     });
 
     // rotating camera to the new value
