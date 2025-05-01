@@ -1012,6 +1012,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       toolGroupId: this.toolGroupId,
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
+      annotationUID: annotation.annotationUID,
     };
 
     const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
