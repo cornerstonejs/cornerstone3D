@@ -1,6 +1,7 @@
 ---
 id: active-segmentation
 title: Active Segmentation
+summary: Viewport-specific system for determining which segmentation is currently being edited, with distinct visual styling for active versus inactive segmentations
 ---
 
 

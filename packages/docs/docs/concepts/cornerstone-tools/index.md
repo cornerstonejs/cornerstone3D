@@ -1,6 +1,7 @@
 ---
 id: index
 title: Cornerstone Tools
+summary: Framework for creating and managing interactive tools for manipulating and annotating medical images in 3D space, with annotations stored in patient coordinates
 ---
 
 import DocCardList from '@theme/DocCardList';

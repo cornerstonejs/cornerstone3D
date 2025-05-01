@@ -99,6 +99,13 @@ jobs:
 
       - name: Build docs
         run: cd packages/docs && bun run build:docs
+        # This runs:
+        # 1. prepare-markdown-files.js - which copies markdown files to /docs/llm directory 
+        #    making them available at cornerstonejs.org/docs/llm/[folder]/[filename.md]
+        # 2. generate-llms-txt.js - which creates a llms.txt file in the build directory
+        #    following the llms.txt specification
+        # 3. generate-llms-full-txt.js - which creates a llms-full.txt file containing
+        #    the concatenated content of all documentation files
 
       - name: Install Netlify CLI
         run: bun add -g netlify-cli

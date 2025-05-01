@@ -1,5 +1,7 @@
 ---
 id: custom-volume-loading
+title: Custom Volume Loading Order
+summary: Tutorial for customizing the order in which volume slices are loaded, allowing for interleaved loading of multiple volumes for improved visualization
 ---
 
 # Custom Volume Loading Order

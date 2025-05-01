@@ -1,6 +1,7 @@
 ---
 id: advance-retrieve-config
 title: Advance Options
+summary: Advanced configuration options for progressive loading, including position-based retrieval, decimation strategies, priority handling, and frame replication techniques
 ---
 
 There are more advanced options both for `retrieve stages` and also for

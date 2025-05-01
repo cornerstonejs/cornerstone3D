@@ -1,6 +1,7 @@
 ---
 id: help
 title: Help
+summary: Resources for getting assistance with Cornerstone3D, including community support channels, bug reporting guidelines, and information about paid support options
 ---
 
 # Help

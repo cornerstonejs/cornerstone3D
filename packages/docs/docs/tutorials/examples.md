@@ -1,6 +1,7 @@
 ---
 id: examples
 title: Examples
+summary: Guide to accessing, debugging, and running Cornerstone3D example applications, with instructions for local development and source code exploration
 ---
 
 import Link from '@docusaurus/Link';

@@ -1,6 +1,7 @@
 ---
 id: imageId
 title: ImageId
+summary: URL-based identifiers that uniquely identify medical images, used by Cornerstone to determine which image loader to use for loading specific types of images
 ---
 
 # ImageId

@@ -1,5 +1,7 @@
 ---
 id: index
+title: Progressive Loading
+summary: System for incrementally loading medical images, enabling faster initial display by loading smaller or lossy versions first, then enhancing quality as more data arrives
 ---
 
 import DocCardList from '@theme/DocCardList';

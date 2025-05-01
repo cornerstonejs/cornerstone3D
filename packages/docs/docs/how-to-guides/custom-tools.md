@@ -1,5 +1,7 @@
 ---
 title: Custom Tools
+id: custom-tools
+summary: Guide for creating custom annotation and manipulation tools by extending BaseTool or AnnotationTool classes in Cornerstone3D
 ---
 
 # Custom Tools

@@ -1,6 +1,7 @@
 ---
 id: nifti-volume-loader
 title: '@cornerstonejs/nifti-volume-loader'
+summary: Migration guide for the NIFTI volume loader when updating from Cornerstone3D 1.x to 2.x
 ---
 
 

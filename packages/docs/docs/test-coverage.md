@@ -2,6 +2,8 @@
 sidebar_position: 14
 sidebar_label: Test Coverage
 id: test-coverage
+title: Test Coverage
+summary: Information about Cornerstone3D's test coverage using Playwright, with links to the latest coverage reports and notes on the testing strategy
 ---
 
 # Test Coverage
