@@ -6,7 +6,8 @@
   "scripts": {
     "preinstall": "node preinstall.js",
     "build": "echo 'build'",
-    "build:docs": "cd ../../ && yarn install && yarn run build:esm && cd packages/docs && cross-env NODE_OPTIONS=--max_old_space_size=32384 yarn run prep-examples && docusaurus build",
+    "build:docs": "cd ../../ && yarn install && yarn run build:esm && cd packages/docs && cross-env NODE_OPTIONS=--max_old_space_size=32384 yarn run prep-examples && docusaurus build && node ./scripts/prepare-markdown-files.js",
+    "prepare-markdown-files": "node ./scripts/prepare-markdown-files.js",
     "copy-coverage-to-docs": "cp -R ../../coverage/*Chrome*/. ./static/test-coverage/",
     "copy-examples-to-docs": "cp -R ../../.static-examples/. ./static/live-examples/ && cp -R ../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/dicom-microscopy-viewer ./static/dicom-microscopy-viewer",
     "docusaurus": "docusaurus",
@@ -80,6 +81,7 @@
   "devDependencies": {
     "copyfiles": "2.4.1",
     "esbuild-loader": "^2.18.0",
+    "glob": "^10.3.10",
     "karma-chrome-launcher": "^3.1.0",
     "netlify-plugin-cache": "^1.0.3",
     "puppeteer": "^13.1.3",
