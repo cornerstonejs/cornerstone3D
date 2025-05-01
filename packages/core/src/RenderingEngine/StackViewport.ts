@@ -2694,6 +2694,7 @@ class StackViewport extends Viewport {
 
     // Otherwise, get the imageId and attempt to display it
     const imageIdPromise = this._setImageIdIndex(imageIdIndex);
+    this.targetImageIdIndex = imageIdIndex;
 
     return imageIdPromise;
   }
