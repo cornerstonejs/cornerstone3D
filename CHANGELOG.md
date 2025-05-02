@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.4...v3.11.5) (2025-05-02)
+
+### Bug Fixes
+
+- redirect coverage ([#2046](https://github.com/cornerstonejs/cornerstone3D/issues/2046)) ([3038c17](https://github.com/cornerstonejs/cornerstone3D/commit/3038c1720af9abfaf7a178035b76be9a97ee3ed6))
+
 ## [3.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.3...v3.11.4) (2025-05-02)
 
 ### Bug Fixes
