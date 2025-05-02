@@ -236,7 +236,7 @@ async function run() {
   // Segmentation Tools
   toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
     /* Define if the stats are calculated while drawing the annotation or at the end */
-    computeStatsDuringEditing: true,
+    calculatePointsInsideVolume: true,
     showTextBox: true,
     storePointData: true,
     /* Set a custom wait time */

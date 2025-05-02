@@ -87,7 +87,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         // Whether to store point data in the annotation
         storePointData: false,
         numSlicesToPropagate: 10,
-        computeStatsDuringEditing: true,
+        calculatePointsInsideVolume: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         showTextBox: false,
@@ -97,7 +97,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   ) {
     super(toolProps, defaultToolProps);
 
-    if (this.configuration.computeStatsDuringEditing) {
+    if (this.configuration.calculatePointsInsideVolume) {
       this._throttledCalculateCachedStats = throttle(
         this._calculateCachedStatsTool,
         this.configuration.throttleTimeout,

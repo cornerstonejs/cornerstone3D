@@ -86,7 +86,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         // Whether to store point data in the annotation
         storePointData: false,
         numSlicesToPropagate: 10,
-        computeStatsDuringEditing: true,
+        calculatePointsInsideVolume: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         showTextBox: false,
@@ -96,7 +96,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   ) {
     super(toolProps, defaultToolProps);
 
-    if (this.configuration.computeStatsDuringEditing) {
+    if (this.configuration.calculatePointsInsideVolume) {
       this._throttledCalculateCachedStats = throttle(
         this._calculateCachedStatsTool,
         this.configuration.throttleTimeout,
