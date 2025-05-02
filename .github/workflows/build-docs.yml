@@ -99,8 +99,8 @@ jobs:
 
       - name: Build docs
         run: cd packages/docs && bun run build:docs
-        # This runs:
-        # 1. prepare-markdown-files.js - which copies markdown files to /docs/llm directory 
+        # This runs
+        # 1. prepare-markdown-files.js - which copies markdown files to /docs/llm directory
         #    making them available at cornerstonejs.org/docs/llm/[folder]/[filename.md]
         # 2. generate-llms-txt.js - which creates a llms.txt file in the build directory
         #    following the llms.txt specification
