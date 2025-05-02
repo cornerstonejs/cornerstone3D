@@ -40,20 +40,11 @@ function removeRepresentation(
 
   const { viewport } = enabledElement;
 
-  // Remove the segmentation from the viewport's processed set
-  // const viewportProcessed = processedViewportSegmentations.get(viewportId);
-  // if (viewportProcessed) {
-  //   viewportProcessed.delete(segmentationId);
-  //   if (viewportProcessed.size === 0) {
-  //     processedViewportSegmentations.delete(viewportId);
-  //   }
-  // }
+  removeContourFromElement(viewportId, segmentationId);
 
   if (!renderImmediate) {
     return;
   }
-
-  removeContourFromElement(viewportId, segmentationId);
 
   viewport.render();
 }
