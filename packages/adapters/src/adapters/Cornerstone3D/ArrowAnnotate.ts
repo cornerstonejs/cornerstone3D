@@ -19,19 +19,89 @@ class ArrowAnnotate extends BaseAdapter3D {
         metadata,
         _trackingIdentifier
     ) {
-        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                ArrowAnnotate.toolType
-            );
+        const {
+            defaultState,
+            SCOORDGroup,
+            SCOORD3DGroup,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            ArrowAnnotate.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
         const text = defaultState.annotation.metadata.label;
 
+        if (SCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                SCOORDGroup,
+                referencedImageId,
+                metadata,
+                imageToWorldCoords,
+                defaultState,
+                text,
+                ReferencedFrameNumber
+            });
+        } else if (SCOORD3DGroup) {
+            return this.getMeasurementDataFromScoord3D({
+                SCOORD3DGroup,
+                defaultState,
+                text
+            });
+        } else {
+            throw new Error(
+                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
+            );
+        }
+    }
+
+    static getMeasurementDataFromScoord3D({
+        SCOORD3DGroup,
+        defaultState,
+        text
+    }) {
+        const { GraphicData } = SCOORD3DGroup;
+
+        const worldCoords = [];
+        for (let i = 0; i < GraphicData.length; i += 3) {
+            const point = [
+                GraphicData[i],
+                GraphicData[i + 1],
+                GraphicData[i + 2]
+            ];
+            worldCoords.push(point);
+        }
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            text,
+            handles: {
+                arrowFirst: true,
+                points: [worldCoords[0], worldCoords[1]],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            }
+        };
+
+        return state;
+    }
+
+    static getMeasurementDataFromScoord({
+        SCOORDGroup,
+        referencedImageId,
+        metadata,
+        imageToWorldCoords,
+        defaultState,
+        text,
+        ReferencedFrameNumber
+    }) {
         const { GraphicData } = SCOORDGroup;
 
         const worldCoords = [];
