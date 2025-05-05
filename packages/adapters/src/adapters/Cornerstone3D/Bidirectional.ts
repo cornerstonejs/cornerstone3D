@@ -37,18 +37,48 @@ class Bidirectional extends BaseAdapter3D {
             group => group.ConceptNameCodeSequence.CodeMeaning === LONG_AXIS
         );
 
-        const longAxisSCOORDGroup = toArray(
-            longAxisNUMGroup.ContentSequence
-        ).find(group => group.ValueType === "SCOORD");
-
         const shortAxisNUMGroup = toArray(ContentSequence).find(
             group => group.ConceptNameCodeSequence.CodeMeaning === SHORT_AXIS
         );
+
+        const longAxisSCOORDGroup = toArray(
+            longAxisNUMGroup.ContentSequence
+        ).find(group => group.ValueType === "SCOORD");
 
         const shortAxisSCOORDGroup = toArray(
             shortAxisNUMGroup.ContentSequence
         ).find(group => group.ValueType === "SCOORD");
 
+        if (longAxisSCOORDGroup && shortAxisSCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                longAxisNUMGroup,
+                shortAxisNUMGroup,
+                longAxisSCOORDGroup,
+                shortAxisSCOORDGroup,
+                referencedImageId,
+                imageToWorldCoords,
+                ReferencedFrameNumber,
+                defaultState
+            });
+        } else {
+            return this.getMeasurementDataFromScoord3d({
+                longAxisNUMGroup,
+                shortAxisNUMGroup,
+                defaultState
+            });
+        }
+    }
+
+    static getMeasurementDataFromScoord({
+        longAxisNUMGroup,
+        shortAxisNUMGroup,
+        longAxisSCOORDGroup,
+        shortAxisSCOORDGroup,
+        referencedImageId,
+        imageToWorldCoords,
+        ReferencedFrameNumber,
+        defaultState
+    }) {
         const worldCoords = [];
 
         [longAxisSCOORDGroup, shortAxisSCOORDGroup].forEach(group => {
@@ -84,6 +114,53 @@ class Bidirectional extends BaseAdapter3D {
                 }
             },
             frameNumber: ReferencedFrameNumber
+        };
+
+        return state;
+    }
+
+    static getMeasurementDataFromScoord3d({
+        longAxisNUMGroup,
+        shortAxisNUMGroup,
+        defaultState
+    }) {
+        const worldCoords = [];
+        const longAxisSCOORD3DGroup = toArray(
+            longAxisNUMGroup.ContentSequence
+        ).find(group => group.ValueType === "SCOORD3D");
+
+        const shortAxisSCOORD3DGroup = toArray(
+            shortAxisNUMGroup.ContentSequence
+        ).find(group => group.ValueType === "SCOORD3D");
+
+        [longAxisSCOORD3DGroup, shortAxisSCOORD3DGroup].forEach(group => {
+            const { GraphicData } = group;
+            for (let i = 0; i < GraphicData.length; i += 3) {
+                const point = [
+                    GraphicData[i],
+                    GraphicData[i + 1],
+                    GraphicData[i + 2]
+                ];
+                worldCoords.push(point);
+            }
+        });
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [
+                    worldCoords[0],
+                    worldCoords[1],
+                    worldCoords[2],
+                    worldCoords[3]
+                ],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {}
         };
 
         return state;
