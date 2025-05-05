@@ -13,21 +13,13 @@ export default class Length extends BaseAdapter3D {
         this.registerLegacy();
     }
 
-    // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
-    static getMeasurementData(
-        MeasurementGroup,
-        sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
-        metadata
-    ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                this.toolType
-            );
-
+    static getMeasurementDataFromScoord({
+        defaultState,
+        NUMGroup,
+        SCOORDGroup,
+        ReferencedFrameNumber,
+        imageToWorldCoords
+    }) {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
@@ -62,6 +54,66 @@ export default class Length extends BaseAdapter3D {
         };
 
         return state;
+    }
+
+    static getMeasurementDataFromScoord3d({ defaultState, SCOORD3DGroup }) {
+        const { GraphicData } = SCOORD3DGroup;
+        const worldCoords = GraphicData;
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [worldCoords.slice(0, 3), worldCoords.slice(3, 6)],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {}
+        };
+
+        return state;
+    }
+
+    // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
+    static getMeasurementData(
+        MeasurementGroup,
+        sopInstanceUIDToImageIdMap,
+        imageToWorldCoords,
+        metadata
+    ) {
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup,
+            SCOORD3DGroup,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            this.toolType
+        );
+
+        if (SCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                defaultState,
+                NUMGroup,
+                SCOORDGroup,
+                ReferencedFrameNumber,
+                imageToWorldCoords
+            });
+        } else if (SCOORD3DGroup) {
+            return this.getMeasurementDataFromScoord3d({
+                defaultState,
+                SCOORD3DGroup
+            });
+        } else {
+            throw new Error(
+                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
+            );
+        }
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
