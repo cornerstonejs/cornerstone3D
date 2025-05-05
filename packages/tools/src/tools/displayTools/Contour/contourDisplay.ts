@@ -191,13 +191,29 @@ function _checkContourGeometryMatchViewport(
   geometryIds: string[],
   viewportNormal: Types.Point3
 ): boolean {
-  const geometry = cache.getGeometry(geometryIds[0]);
+  // Find a geometry with at least 3 points in its first contour
+  let validGeometry = null;
+  let geometryData = null;
 
-  if (!geometry) {
-    return false;
+  for (const geometryId of geometryIds) {
+    const geometry = cache.getGeometry(geometryId);
+
+    if (!geometry) {
+      continue;
+    }
+
+    const data = geometry.data as Types.IContourSet;
+
+    if (data.contours?.[0]?.points?.length >= 3) {
+      validGeometry = geometry;
+      geometryData = data;
+      break;
+    }
   }
 
-  const geometryData = geometry.data as Types.IContourSet;
+  if (!validGeometry || !geometryData) {
+    return false;
+  }
 
   const contours = geometryData.contours;
   const points = contours[0].points;
