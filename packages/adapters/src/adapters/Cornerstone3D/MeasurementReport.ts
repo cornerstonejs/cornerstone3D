@@ -419,7 +419,7 @@ export default class MeasurementReport {
         sopInstanceUIDsToSeriesInstanceUIDMap,
         derivationSourceDatasets
     }) {
-        if (imageId === "orphan") {
+        if (imageId === "none") {
             return;
         }
 
