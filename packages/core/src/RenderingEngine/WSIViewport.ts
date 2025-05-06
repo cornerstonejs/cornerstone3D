@@ -370,13 +370,9 @@ class WSIViewport extends Viewport {
 
   public getCamera(): ICamera {
     this.refreshRenderValues();
-    const { resolution, xSpacing } = this.internalCamera;
+    const { resolution, xSpacing, centerIndex } = this.internalCamera;
     const canvasToWorldRatio = resolution * xSpacing;
-
-    const canvasCenter: Point2 = [
-      this.element.clientWidth / 2,
-      this.element.clientHeight / 2,
-    ];
+    const canvasCenter = this.indexToCanvas(centerIndex.slice(0, 2) as Point2);
     const focalPoint = this.canvasToWorld(canvasCenter);
 
     return {
