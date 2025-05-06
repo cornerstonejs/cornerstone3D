@@ -18,14 +18,46 @@ class PlanarFreehandROI extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                PlanarFreehandROI.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup,
+            SCOORD3DGroup,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            PlanarFreehandROI.toolType
+        );
 
+        if (SCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                defaultState,
+                SCOORDGroup,
+                imageToWorldCoords,
+                NUMGroup,
+                ReferencedFrameNumber
+            });
+        } else if (SCOORD3DGroup) {
+            return this.getMeasurementDataFromScoord3D({
+                defaultState,
+                SCOORD3DGroup
+            });
+        } else {
+            throw new Error(
+                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
+            );
+        }
+    }
+
+    static getMeasurementDataFromScoord({
+        defaultState,
+        SCOORDGroup,
+        imageToWorldCoords,
+        NUMGroup,
+        ReferencedFrameNumber
+    }) {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
         const { GraphicData } = SCOORDGroup;
@@ -80,6 +112,58 @@ class PlanarFreehandROI extends BaseAdapter3D {
                 }
             },
             frameNumber: ReferencedFrameNumber
+        };
+
+        return state;
+    }
+
+    static getMeasurementDataFromScoord3D({ defaultState, SCOORD3DGroup }) {
+        const { GraphicData } = SCOORD3DGroup;
+
+        const worldCoords = [];
+
+        for (let i = 0; i < GraphicData.length; i += 3) {
+            const point = [
+                GraphicData[i],
+                GraphicData[i + 1],
+                GraphicData[i + 2]
+            ];
+
+            worldCoords.push(point);
+        }
+
+        const distanceBetweenFirstAndLastPoint = vec3.distance(
+            worldCoords[worldCoords.length - 1],
+            worldCoords[0]
+        );
+
+        let isOpenContour = true;
+
+        // If the contour is closed, this should have been encoded as exactly the same point, so check for a very small difference.
+        if (distanceBetweenFirstAndLastPoint < this.closedContourThreshold) {
+            worldCoords.pop(); // Remove the last element which is duplicated.
+
+            isOpenContour = false;
+        }
+
+        const points = [];
+
+        if (isOpenContour) {
+            points.push(worldCoords[0], worldCoords[worldCoords.length - 1]);
+        }
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            contour: { polyline: worldCoords, closed: !isOpenContour },
+            handles: {
+                points,
+                activeHandleIndex: null,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {}
         };
 
         return state;
