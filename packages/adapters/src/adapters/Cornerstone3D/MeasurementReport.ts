@@ -1,4 +1,5 @@
 import { normalizers, data, utilities, derivations } from "dcmjs";
+import { cache } from "@cornerstonejs/core";
 
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { toArray, codeMeaningEquals, copyStudyTags } from "../helpers";
@@ -467,6 +468,33 @@ export default class MeasurementReport {
         return ReferencedSOPSequence;
     }
 
+    static findDerivationSeriesFromVolume({
+        toolData,
+        toolTypes,
+        metadataProvider,
+        derivationSourceDatasets
+    }) {
+        const referenceToolData = toolData?.[toolTypes?.[0]]?.data?.[0];
+        const volumeId = referenceToolData?.metadata?.volumeId;
+        const volume = cache.getVolume(volumeId);
+
+        const instance = metadataProvider.get("instance", volume.imageIds[0]);
+
+        const { SeriesInstanceUID: seriesInstanceUID } = instance;
+
+        if (
+            !derivationSourceDatasets.find(
+                dsd => dsd.SeriesInstanceUID === seriesInstanceUID
+            )
+        ) {
+            // Entry not present for series, create one.
+            const derivationSourceDataset =
+                MeasurementReport.generateDerivationSourceDataset(instance);
+
+            derivationSourceDatasets.push(derivationSourceDataset);
+        }
+    }
+
     static generateReport(
         toolState,
         metadataProvider,
@@ -500,6 +528,15 @@ export default class MeasurementReport {
 
             const toolData = toolState[imageId];
             const toolTypes = Object.keys(toolData);
+
+            if (!ReferencedSOPSequence) {
+                this.findDerivationSeriesFromVolume({
+                    toolData,
+                    toolTypes,
+                    metadataProvider,
+                    derivationSourceDatasets
+                });
+            }
 
             // Loop through each tool type for the image
             const measurementGroups = [];
