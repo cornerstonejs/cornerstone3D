@@ -17,14 +17,46 @@ class CircleROI extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                CircleROI.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup,
+            SCOORD3DGroup,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            CircleROI.toolType
+        );
 
+        if (SCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                defaultState,
+                SCOORDGroup,
+                imageToWorldCoords,
+                NUMGroup,
+                ReferencedFrameNumber
+            });
+        } else if (SCOORD3DGroup) {
+            return this.getMeasurementDataFromScoord3D({
+                defaultState,
+                SCOORD3DGroup
+            });
+        } else {
+            throw new Error(
+                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
+            );
+        }
+    }
+
+    static getMeasurementDataFromScoord({
+        defaultState,
+        SCOORDGroup,
+        imageToWorldCoords,
+        NUMGroup,
+        ReferencedFrameNumber
+    }) {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
@@ -62,6 +94,37 @@ class CircleROI extends BaseAdapter3D {
                 }
             },
             frameNumber: ReferencedFrameNumber
+        };
+
+        return state;
+    }
+
+    static getMeasurementDataFromScoord3D({ defaultState, SCOORD3DGroup }) {
+        const { GraphicData } = SCOORD3DGroup;
+
+        // GraphicData is ordered as [centerX, centerY, endX, endY]
+        const pointsWorld = [];
+        for (let i = 0; i < GraphicData.length; i += 3) {
+            const worldPos = [
+                GraphicData[i],
+                GraphicData[i + 1],
+                GraphicData[i + 2]
+            ];
+
+            pointsWorld.push(worldPos);
+        }
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [...pointsWorld],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {}
         };
 
         return state;

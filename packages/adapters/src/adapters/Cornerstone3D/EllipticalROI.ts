@@ -20,14 +20,48 @@ class EllipticalROI extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                EllipticalROI.toolType
-            );
+        const {
+            defaultState,
+            NUMGroup,
+            SCOORDGroup,
+            SCOORD3DGroup,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            EllipticalROI.toolType
+        );
 
+        if (SCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                defaultState,
+                SCOORDGroup,
+                imageToWorldCoords,
+                metadata,
+                NUMGroup,
+                ReferencedFrameNumber
+            });
+        } else if (SCOORD3DGroup) {
+            return this.getMeasurementDataFromScoord3D({
+                defaultState,
+                SCOORD3DGroup
+            });
+        } else {
+            throw new Error(
+                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
+            );
+        }
+    }
+
+    static getMeasurementDataFromScoord({
+        defaultState,
+        SCOORDGroup,
+        imageToWorldCoords,
+        metadata,
+        NUMGroup,
+        ReferencedFrameNumber
+    }) {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
@@ -129,6 +163,60 @@ class EllipticalROI extends BaseAdapter3D {
                 }
             },
             frameNumber: ReferencedFrameNumber
+        };
+
+        return state;
+    }
+
+    static getMeasurementDataFromScoord3D({ defaultState, SCOORD3DGroup }) {
+        const { GraphicData } = SCOORD3DGroup;
+
+        // GraphicData is ordered as [majorAxisStartX, majorAxisStartY, majorAxisEndX, majorAxisEndY, minorAxisStartX, minorAxisStartY, minorAxisEndX, minorAxisEndY]
+        // But Cornerstone3D points are ordered as top, bottom, left, right for the
+        // ellipse so we need to identify if the majorAxis is horizontal or vertical
+        // in the image plane and then choose the correct points to use for the ellipse.
+        const pointsWorld: Point3[] = [];
+        for (let i = 0; i < GraphicData.length; i += 3) {
+            const worldPos = [
+                GraphicData[i],
+                GraphicData[i + 1],
+                GraphicData[i + 2]
+            ];
+
+            pointsWorld.push(worldPos);
+        }
+
+        const majorAxisStart = vec3.fromValues(...pointsWorld[0]);
+        const majorAxisEnd = vec3.fromValues(...pointsWorld[1]);
+        const minorAxisStart = vec3.fromValues(...pointsWorld[2]);
+        const minorAxisEnd = vec3.fromValues(...pointsWorld[3]);
+
+        const majorAxisVec = vec3.create();
+        vec3.sub(majorAxisVec, majorAxisEnd, majorAxisStart);
+
+        // normalize majorAxisVec to avoid scaling issues
+        vec3.normalize(majorAxisVec, majorAxisVec);
+
+        const minorAxisVec = vec3.create();
+        vec3.sub(minorAxisVec, minorAxisEnd, minorAxisStart);
+        vec3.normalize(minorAxisVec, minorAxisVec);
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [
+                    majorAxisStart,
+                    majorAxisEnd,
+                    minorAxisStart,
+                    minorAxisEnd
+                ],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {}
         };
 
         return state;
