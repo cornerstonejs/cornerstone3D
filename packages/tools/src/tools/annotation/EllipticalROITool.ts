@@ -1151,17 +1151,19 @@ class EllipticalROITool extends AnnotationTool {
         pixelUnitsOptions
       );
 
-      const pointsInShape = voxelManager.forEach(
-        this.configuration.statsCalculator.statsCallback,
-        {
-          boundsIJK,
-          imageData,
-          isInObject: (pointLPS) =>
-            pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-          returnPoints: this.configuration.storePointData,
-        }
-      );
-
+      let pointsInShape;
+      if (voxelManager) {
+        pointsInShape = voxelManager.forEach(
+          this.configuration.statsCalculator.statsCallback,
+          {
+            boundsIJK,
+            imageData,
+            isInObject: (pointLPS) =>
+              pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+            returnPoints: this.configuration.storePointData,
+          }
+        );
+      }
       const stats = this.configuration.statsCalculator.getStatistics();
       cachedStats[targetId] = {
         Modality: metadata.Modality,
@@ -1258,7 +1260,7 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max) {
+  if (max && isFinite(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
