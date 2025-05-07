@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.8...v3.12.0) (2025-05-07)
+
+### Features
+
+- **Circle/RectangleStartEndThresholdTool:** Added debounce mode for Start/End tools ([#1994](https://github.com/cornerstonejs/cornerstone3D/issues/1994)) ([87bb90c](https://github.com/cornerstonejs/cornerstone3D/commit/87bb90c5c8da21863c7a273acb4ed34c28e3c697))
+
 ## [3.11.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.7...v3.11.8) (2025-05-06)
 
 ### Bug Fixes
