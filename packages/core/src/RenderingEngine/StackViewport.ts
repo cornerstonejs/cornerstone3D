@@ -96,6 +96,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
+import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -1096,25 +1097,23 @@ class StackViewport extends Viewport {
       viewUp: currentViewUp,
       viewPlaneNormal,
       flipVertical,
+      flipHorizontal,
     } = this.getCameraNoRotation();
 
-    // The initial view up vector without any rotation, but incorporating vertical flip.
-    const initialViewUp = flipVertical
-      ? vec3.negate(vec3.create(), this.initialViewUp)
-      : this.initialViewUp;
-
+    const adjustedViewUp = adjustInitialViewUp(
+      this.initialViewUp,
+      flipHorizontal,
+      flipVertical,
+      viewPlaneNormal
+    );
     // The angle between the initial and current view up vectors.
     // TODO: check with VTK about rounding errors here.
-    const initialToCurrentViewUpAngle =
-      (vec3.angle(initialViewUp, currentViewUp) * 180) / Math.PI;
-
-    // Now determine if initialToCurrentViewUpAngle is positive or negative by comparing
-    // the direction of the initial/current view up cross product with the current
-    // viewPlaneNormal.
+    const angleRad = vec3.angle(adjustedViewUp, currentViewUp);
+    const initialToCurrentViewUpAngle = (angleRad * 180) / Math.PI;
 
     const initialToCurrentViewUpCross = vec3.cross(
       vec3.create(),
-      initialViewUp,
+      adjustedViewUp,
       currentViewUp
     );
 
@@ -1193,19 +1192,24 @@ class StackViewport extends Viewport {
     const pan = this.getPan();
     const panSub = vec2.sub([0, 0], panFit, pan) as Point2;
     this.setPan(panSub, false);
-    const { flipVertical } = this.getCamera();
+    const { flipVertical, flipHorizontal, viewPlaneNormal } = this.getCamera();
 
-    // Moving back to zero rotation, for new scrolled slice rotation is 0 after camera reset
-    const initialViewUp = flipVertical
-      ? vec3.negate(vec3.create(), this.initialViewUp)
-      : this.initialViewUp;
+    const adjustedViewUp = adjustInitialViewUp(
+      this.initialViewUp,
+      flipHorizontal,
+      flipVertical,
+      viewPlaneNormal
+    );
 
+    // Reset camera to adjusted initial viewUp
     this.setCameraNoEvent({
-      viewUp: initialViewUp as Point3,
+      viewUp: adjustedViewUp as Point3,
     });
 
     // rotating camera to the new value
     this.getVtkActiveCamera().roll(-rotation);
+
+    // Adjust the pan to bring the center back
     const afterPan = this.getPan();
     const afterPanFit = this.getPan(this.fitToCanvasCamera);
     const newCenter = vec2.sub([0, 0], afterPan, afterPanFit);

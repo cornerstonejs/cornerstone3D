@@ -1930,9 +1930,6 @@ class Viewport {
     if (pan) {
       this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
     }
-    if (rotation >= 0) {
-      this.setRotation(rotation);
-    }
 
     // flip operation requires another re-render to take effect, so unfortunately
     // right now if the view presentation requires a flip, it will flicker. The
@@ -1946,6 +1943,9 @@ class Viewport {
     }
     if (flipVertical !== undefined && flipVertical !== this.flipVertical) {
       this.flip({ flipVertical });
+    }
+    if (rotation >= 0) {
+      this.setRotation(rotation);
     }
   }
 
