@@ -9,7 +9,6 @@ import type {
   CPUIImageData,
   ViewportInput,
   BoundsIJK,
-  CPUImageData,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -394,7 +393,11 @@ class WSIViewport extends Viewport {
     this.refreshRenderValues();
     const { resolution, xSpacing, centerIndex } = this.internalCamera;
     const canvasToWorldRatio = resolution * xSpacing;
-    const canvasCenter = this.indexToCanvas(centerIndex.slice(0, 2) as Point2);
+    const canvasCenter = this.indexToCanvas([
+      centerIndex[0],
+      centerIndex[1],
+      0,
+    ]);
     const focalPoint = this.canvasToWorld(canvasCenter);
 
     return {
@@ -503,8 +506,9 @@ class WSIViewport extends Viewport {
       return;
     }
     // compute the pixel coordinate in the image
-    const [px, py] = this.canvasToIndex(canvasPos);
-    return this.indexToWorld([px, py, 0]);
+    const indexPoint = this.canvasToIndex(canvasPos);
+    indexPoint[1] = -indexPoint[1]; // flip y axis to match canvas coordinates
+    return this.indexToWorld(indexPoint);
   };
 
   /**
@@ -518,9 +522,10 @@ class WSIViewport extends Viewport {
       return;
     }
     const indexPoint = this.worldToIndex(worldPos);
+    indexPoint[1] = -indexPoint[1]; // flip y axis to match canvas coordinates
 
     // pixel to canvas
-    const canvasPoint = this.indexToCanvas([indexPoint[0], indexPoint[1]]);
+    const canvasPoint = this.indexToCanvas([indexPoint[0], indexPoint[1], 0]);
     return canvasPoint;
   };
 
@@ -650,19 +655,19 @@ class WSIViewport extends Viewport {
 
   public getRotation = () => 0;
 
-  protected canvasToIndex = (canvasPos: Point2): Point2 => {
+  protected canvasToIndex = (canvasPos: Point2): Point3 => {
     const transform = this.getTransform();
     transform.invert();
     const indexPoint = transform.transformPoint(
       canvasPos.map((it) => it * devicePixelRatio) as Point2
     );
-    return indexPoint as Point2;
+    return [indexPoint[0], indexPoint[1], 0] as Point3;
   };
 
-  protected indexToCanvas = (indexPos: Point2): Point2 => {
+  protected indexToCanvas = (indexPos: Point3): Point2 => {
     const transform = this.getTransform();
     return transform
-      .transformPoint(indexPos)
+      .transformPoint([indexPos[0], indexPos[1]])
       .map((it) => it / devicePixelRatio) as Point2;
   };
 
