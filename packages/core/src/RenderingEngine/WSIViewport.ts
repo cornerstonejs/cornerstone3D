@@ -477,17 +477,17 @@ class WSIViewport extends Viewport {
     return [sliceCoords[0], sliceCoords[1], 0] as Point3;
   }
 
-  public worldToIndex(point: Point3): Point2 {
+  public worldToIndex(point: Point3): Point3 {
     const { worldToIndex: worldToIndexMatrix } = this.computeTransforms();
     const imageCoord = vec3.create();
     vec3.transformMat4(imageCoord, point, worldToIndexMatrix);
-    return [imageCoord[0], imageCoord[1]] as Point2;
+    return imageCoord as Point3;
   }
 
-  public indexToWorld(point: Point2): Point3 {
+  public indexToWorld(point: Point3): Point3 {
     const { indexToWorld: indexToWorldMatrix } = this.computeTransforms();
     const worldPos = vec3.create();
-    const point3D = vec3.fromValues(point[0], point[1], 0);
+    const point3D = vec3.fromValues(...point);
     vec3.transformMat4(worldPos, point3D, indexToWorldMatrix);
     return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
   }
