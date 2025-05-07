@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, mat4 } from 'gl-matrix';
 import { Events as EVENTS, MetadataModules } from '../enums';
 import type {
   WSIViewportProperties,
@@ -23,6 +23,7 @@ import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
 
+let WSIUtilFunctions = null;
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
 /**
@@ -232,6 +233,30 @@ class WSIViewport extends Viewport {
     return null;
   }
 
+  public computeTransforms() {
+    const indexToWorld = mat4.create();
+    const worldToIndex = mat4.create();
+
+    mat4.fromTranslation(indexToWorld, this.metadata.origin);
+
+    indexToWorld[0] = this.metadata.direction[0];
+    indexToWorld[1] = this.metadata.direction[1];
+    indexToWorld[2] = this.metadata.direction[2];
+
+    indexToWorld[4] = this.metadata.direction[3];
+    indexToWorld[5] = this.metadata.direction[4];
+    indexToWorld[6] = this.metadata.direction[5];
+
+    indexToWorld[8] = this.metadata.direction[6];
+    indexToWorld[9] = this.metadata.direction[7];
+    indexToWorld[10] = this.metadata.direction[8];
+
+    mat4.scale(indexToWorld, indexToWorld, this.metadata.spacing);
+
+    mat4.invert(worldToIndex, indexToWorld);
+    return { indexToWorld, worldToIndex };
+  }
+
   public getImageData(): CPUIImageData {
     const { metadata } = this;
     if (!metadata) {
@@ -247,13 +272,10 @@ class WSIViewport extends Viewport {
       getScalarData: () => this.getScalarData(),
       getSpacing: () => metadata.spacing,
       worldToIndex: (point: Point3) => {
-        const canvasPoint = this.worldToCanvas(point);
-        const pixelCoord = this.canvasToIndex(canvasPoint);
-        return [pixelCoord[0], pixelCoord[1], 0] as Point3;
+        return this.worldToIndex(point);
       },
       indexToWorld: (point: Point3) => {
-        const canvasPoint = this.indexToCanvas([point[0], point[1]]);
-        return this.canvasToWorld(canvasPoint);
+        return this.indexToWorld(point);
       },
     };
     const imageDataReturn = {
@@ -433,6 +455,48 @@ class WSIViewport extends Viewport {
   };
 
   /**
+   * Converts a slide coordinate to a image coordinate using WSI utils functions
+   * @param point
+   * @returns
+   */
+  public worldToIndexWSI(point: Point3): Point2 {
+    const affine = this.viewer[Symbol.for('affine')];
+    const pixelCoords = WSIUtilFunctions?.applyInverseTransform({
+      coordinate: [point[0], point[1]],
+      affine,
+    });
+    return [pixelCoords[0], pixelCoords[1]] as Point2;
+  }
+
+  /**
+   * Converts a image coordinate to a slide coordinate using WSI utils functions
+   * @param point
+   * @returns
+   */
+  public indexToWorldWSI(point: Point2): Point3 {
+    const sliceCoords = WSIUtilFunctions?.applyTransform({
+      coordinate: [point[0], point[1]],
+      affine: this.viewer[Symbol.for('affine')],
+    });
+    return [sliceCoords[0], sliceCoords[1], 0] as Point3;
+  }
+
+  public worldToIndex(point: Point3): Point2 {
+    const { worldToIndex: worldToIndexMatrix } = this.computeTransforms();
+    const imageCoord = vec3.create();
+    vec3.transformMat4(imageCoord, point, worldToIndexMatrix);
+    return [imageCoord[0], imageCoord[1]] as Point2;
+  }
+
+  public indexToWorld(point: Point2): Point3 {
+    const { indexToWorld: indexToWorldMatrix } = this.computeTransforms();
+    const worldPos = vec3.create();
+    const point3D = vec3.fromValues(point[0], point[1], 0);
+    vec3.transformMat4(worldPos, point3D, indexToWorldMatrix);
+    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
+  }
+
+  /**
    * Converts a VideoViewport canvas coordinate to a video coordinate.
    *
    * @param canvasPosition - to convert to world
@@ -444,20 +508,7 @@ class WSIViewport extends Viewport {
     }
     // compute the pixel coordinate in the image
     const [px, py] = this.canvasToIndex(canvasPos);
-    // convert pixel coordinate to world coordinate
-    const { origin, spacing, direction } = this.getImageData();
-
-    const worldPos = vec3.fromValues(0, 0, 0);
-
-    // Calculate size of spacing vector in normal direction
-    const iVector = direction.slice(0, 3) as Point3;
-    const jVector = direction.slice(3, 6) as Point3;
-
-    // Calculate the world coordinate of the pixel
-    vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
-    vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
-
-    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
+    return this.indexToWorld([px, py, 0]);
   };
 
   /**
@@ -470,20 +521,10 @@ class WSIViewport extends Viewport {
     if (!this.metadata) {
       return;
     }
-    const { spacing, direction, origin } = this.metadata;
-
-    const iVector = direction.slice(0, 3) as Point3;
-    const jVector = direction.slice(3, 6) as Point3;
-
-    const diff = vec3.subtract([0, 0, 0], worldPos, origin);
-
-    const indexPoint: Point2 = [
-      vec3.dot(diff, iVector) / spacing[0],
-      vec3.dot(diff, jVector) / spacing[1],
-    ];
+    const indexPoint = this.worldToIndex(worldPos);
 
     // pixel to canvas
-    const canvasPoint = this.indexToCanvas(indexPoint);
+    const canvasPoint = this.indexToCanvas([indexPoint[0], indexPoint[1]]);
     return canvasPoint;
   };
 
@@ -518,6 +559,7 @@ class WSIViewport extends Viewport {
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
     const DicomMicroscopyViewer = await WSIViewport.getDicomMicroscopyViewer();
+    WSIUtilFunctions = DicomMicroscopyViewer.utils;
     this.frameOfReferenceUID = null;
 
     const metadataDicomweb = this.imageIds.map((imageId) => {
@@ -615,12 +657,15 @@ class WSIViewport extends Viewport {
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const transform = this.getTransform();
     transform.invert();
-    return transform.transformPoint(
+    const indexPoint = transform.transformPoint(
       canvasPos.map((it) => it * devicePixelRatio) as Point2
     );
+    indexPoint[1] = indexPoint[1] * -1; // Reverse y axis to match CS3D
+    return indexPoint as Point2;
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
+    indexPos[1] = indexPos[1] * -1; // Reverse y axis to match CS3D
     const transform = this.getTransform();
     return transform
       .transformPoint(indexPos)
