@@ -656,12 +656,10 @@ class WSIViewport extends Viewport {
     const indexPoint = transform.transformPoint(
       canvasPos.map((it) => it * devicePixelRatio) as Point2
     );
-    indexPoint[1] = indexPoint[1] * -1; // Reverse y axis to match CS3D
     return indexPoint as Point2;
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
-    indexPos[1] = indexPos[1] * -1; // Reverse y axis to match CS3D
     const transform = this.getTransform();
     return transform
       .transformPoint(indexPos)
