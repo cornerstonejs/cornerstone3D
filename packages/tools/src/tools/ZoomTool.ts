@@ -188,24 +188,41 @@ class ZoomTool extends BaseTool {
     // Added spacing preset in case there is no imageData on viewport
     const imageData = viewport.getImageData();
     let spacing = [1, 1, 1];
-    if (imageData) {
-      spacing = imageData.spacing;
-    }
-
-    const { minZoomScale, maxZoomScale } = this.configuration;
-
-    const t = element.clientHeight * spacing[1] * 0.5;
-    const scale = t / parallelScaleToSet;
-
     let cappedParallelScale = parallelScaleToSet;
     let thresholdExceeded = false;
 
     if (imageData) {
-      if (scale < minZoomScale) {
-        cappedParallelScale = t / minZoomScale;
+      spacing = imageData.spacing;
+
+      const { dimensions } = imageData;
+      const imageWidth = dimensions[0] * spacing[0];
+      const imageHeight = dimensions[1] * spacing[1];
+
+      const canvasAspect = size[0] / size[1];
+      const imageAspect = imageWidth / imageHeight;
+
+      // Determine the minimum parallel scale required to fully fit the image
+      let minParallelScaleRequired;
+      if (imageAspect > canvasAspect) {
+        // Wider image, limit by width
+        minParallelScaleRequired = (imageWidth / canvasAspect) * 0.5;
+      } else {
+        // Taller image, limit by height
+        minParallelScaleRequired = imageHeight * 0.5;
+      }
+
+      const { minZoomScale, maxZoomScale } = this.configuration;
+
+      // Translate zoom scale limits to world-space scale
+      const minScaleInWorld = minParallelScaleRequired / maxZoomScale;
+      const maxScaleInWorld = minParallelScaleRequired / minZoomScale;
+
+      // Clamp zoom within allowed limits
+      if (parallelScaleToSet < minScaleInWorld) {
+        cappedParallelScale = minScaleInWorld;
         thresholdExceeded = true;
-      } else if (scale >= maxZoomScale) {
-        cappedParallelScale = t / maxZoomScale;
+      } else if (parallelScaleToSet > maxScaleInWorld) {
+        cappedParallelScale = maxScaleInWorld;
         thresholdExceeded = true;
       }
     }
