@@ -24,6 +24,7 @@ import type { DataSetOptions } from '../types/IViewport';
 
 let WSIUtilFunctions = null;
 const _map = Symbol.for('map');
+const affineSymbol = Symbol.for('affine');
 const EVENT_POSTRENDER = 'postrender';
 /**
  * A viewport which shows a microscopy view using the dicom-microscopy-viewer
@@ -459,8 +460,11 @@ class WSIViewport extends Viewport {
    * @returns
    */
   public worldToIndexWSI(point: Point3): Point2 {
-    const affine = this.viewer[Symbol.for('affine')];
-    const pixelCoords = WSIUtilFunctions?.applyInverseTransform({
+    if (!WSIUtilFunctions) {
+      return;
+    }
+    const affine = this.viewer[affineSymbol];
+    const pixelCoords = WSIUtilFunctions.applyInverseTransform({
       coordinate: [point[0], point[1]],
       affine,
     });
@@ -473,9 +477,12 @@ class WSIViewport extends Viewport {
    * @returns
    */
   public indexToWorldWSI(point: Point2): Point3 {
-    const sliceCoords = WSIUtilFunctions?.applyTransform({
+    if (!WSIUtilFunctions) {
+      return;
+    }
+    const sliceCoords = WSIUtilFunctions.applyTransform({
       coordinate: [point[0], point[1]],
-      affine: this.viewer[Symbol.for('affine')],
+      affine: this.viewer[affineSymbol],
     });
     return [sliceCoords[0], sliceCoords[1], 0] as Point3;
   }
@@ -560,7 +567,7 @@ class WSIViewport extends Viewport {
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
     const DicomMicroscopyViewer = await WSIViewport.getDicomMicroscopyViewer();
-    WSIUtilFunctions = DicomMicroscopyViewer.utils;
+    WSIUtilFunctions ||= DicomMicroscopyViewer.utils;
     this.frameOfReferenceUID = null;
 
     const metadataDicomweb = this.imageIds.map((imageId) => {
