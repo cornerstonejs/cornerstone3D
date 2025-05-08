@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.1...v3.12.2) (2025-05-08)
+
+### Bug Fixes
+
+- **contourHandler:** remove unnecessary camera reset in handleContourSegmentation function ([#2056](https://github.com/cornerstonejs/cornerstone3D/issues/2056)) ([2adb54f](https://github.com/cornerstonejs/cornerstone3D/commit/2adb54f37cb80f945132b4d6abdd35f765fd4cdb))
+
 ## [3.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.0...v3.12.1) (2025-05-07)
 
 **Note:** Version bump only for package @cornerstonejs/tools
