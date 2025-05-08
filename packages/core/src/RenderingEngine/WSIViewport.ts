@@ -370,13 +370,9 @@ class WSIViewport extends Viewport {
 
   public getCamera(): ICamera {
     this.refreshRenderValues();
-    const { resolution, xSpacing } = this.internalCamera;
+    const { resolution, xSpacing, centerIndex } = this.internalCamera;
     const canvasToWorldRatio = resolution * xSpacing;
-
-    const canvasCenter: Point2 = [
-      this.element.clientWidth / 2,
-      this.element.clientHeight / 2,
-    ];
+    const canvasCenter = this.indexToCanvas(centerIndex.slice(0, 2) as Point2);
     const focalPoint = this.canvasToWorld(canvasCenter);
 
     return {
@@ -615,12 +611,16 @@ class WSIViewport extends Viewport {
   protected canvasToIndex = (canvasPos: Point2): Point2 => {
     const transform = this.getTransform();
     transform.invert();
-    return transform.transformPoint(canvasPos);
+    return transform.transformPoint(
+      canvasPos.map((it) => it * devicePixelRatio) as Point2
+    );
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
     const transform = this.getTransform();
-    return transform.transformPoint(indexPos);
+    return transform
+      .transformPoint(indexPos)
+      .map((it) => it / devicePixelRatio) as Point2;
   };
 
   /** This can be implemented later when multi-slice WSI is supported */

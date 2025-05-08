@@ -25,6 +25,7 @@ type ReturnImageDataMetadata = {
   modality: string;
   scalingFactor: number;
   calibration: IImageCalibration;
+  scanAxisNormal: Point3;
 };
 /**
  * Calculates image metadata based on the image object. It calculates normal
@@ -107,6 +108,7 @@ export function getImageDataMetadata(image: IImage): ReturnImageDataMetadata {
     modality,
     scalingFactor,
     calibration,
+    scanAxisNormal: scanAxisNormal as Point3,
   };
 }
 

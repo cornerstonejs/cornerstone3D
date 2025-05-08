@@ -179,6 +179,20 @@ enum Events {
    */
   SEGMENTATION_DATA_MODIFIED = 'CORNERSTONE_TOOLS_SEGMENTATION_DATA_MODIFIED',
 
+  /**
+   * Triggers on the eventTarget when a history undo operation is performed.
+   * Event detail includes information about the operation type, memo ID, and
+   * whether it was an undo or redo operation.
+   */
+  HISTORY_UNDO = 'CORNERSTONE_TOOLS_HISTORY_UNDO',
+
+  /**
+   * Triggers on the eventTarget when a history redo operation is performed.
+   * Event detail includes information about the operation type, memo ID, and
+   * whether it was an undo or redo operation.
+   */
+  HISTORY_REDO = 'CORNERSTONE_TOOLS_HISTORY_REDO',
+
   ///////////////////////////////////////
   //         Keyboard Events
   ///////////////////////////////////////

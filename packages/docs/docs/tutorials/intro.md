@@ -1,5 +1,7 @@
 ---
 id: intro
+title: Introduction
+summary: Overview of tutorial components in Cornerstone3D, including instructions for running tutorials locally and explanation of image loaders and metadata providers
 ---
 
 # Introduction

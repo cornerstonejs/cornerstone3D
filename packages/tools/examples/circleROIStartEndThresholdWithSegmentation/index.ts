@@ -165,7 +165,6 @@ addButtonToToolbar({
   title: 'Run Segmentation',
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
-
     const labelmapVolume = cache.getVolume(segmentationId);
 
     annotations.map((annotation, i) => {
@@ -236,8 +235,12 @@ async function run() {
 
   // Segmentation Tools
   toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
+    /* Define if the stats are calculated while drawing the annotation or at the end */
     calculatePointsInsideVolume: true,
     showTextBox: true,
+    storePointData: true,
+    /* Set a custom wait time */
+    throttleTimeout: 100,
   });
 
   toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {

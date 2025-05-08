@@ -1,9 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import type { Types } from '@cornerstonejs/core';
-import { getEnabledElement } from '@cornerstonejs/core';
+import { Enums, getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
+import { Events } from '../enums';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -44,6 +45,10 @@ class ZoomTool extends BaseTool {
       this.touchDragCallback = this._dragCallback.bind(this);
     }
     this.mouseDragCallback = this._dragCallback.bind(this);
+  }
+
+  mouseWheelCallback(evt: EventTypes.MouseWheelEventType) {
+    this._zoom(evt);
   }
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
@@ -275,6 +280,42 @@ class ZoomTool extends BaseTool {
 
     viewport.setCamera({ position, focalPoint });
   };
+
+  _zoom(evt: EventTypes.MouseWheelEventType): void {
+    const { element, points } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const camera = viewport.getCamera();
+    const wheelData = evt.detail.wheel;
+    const direction = wheelData.direction;
+
+    // Fake event to simulate a drag event
+    const eventDetails = {
+      detail: {
+        element,
+        eventName: Events.MOUSE_WHEEL,
+        renderingEngineId: enabledElement.renderingEngineId,
+        viewportId: viewport.id,
+        camera: {},
+        deltaPoints: {
+          page: points.page as Types.Point2,
+          client: points.client as Types.Point2,
+          world: points.world as Types.Point3,
+          canvas: [0, -direction * 5] as Types.Point2, // Simulate a drag of 5 pixels up or down
+        },
+        startPoints: points,
+        lastPoints: points,
+        currentPoints: points,
+      },
+    } as EventTypes.InteractionEventType;
+
+    if (viewport.type === Enums.ViewportType.STACK) {
+      this.preMouseDownCallback(eventDetails);
+    }
+
+    this._dragCallback(eventDetails);
+  }
 
   _panCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;

@@ -1,6 +1,7 @@
 ---
 id: images
 title: Image Object
+summary: Core data structure representing medical images in Cornerstone, containing pixel data, metadata, and methods for image manipulation and rendering
 ---
 
 # Image Object

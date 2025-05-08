@@ -94,9 +94,11 @@ import type {
   ContourData,
 } from './ContourData';
 import type { PublicSurfaceData, SurfaceData } from './SurfaceData';
+import type { PublicMeshData, MeshData } from './MeshData';
 import type ICachedGeometry from './ICachedGeometry';
 import type { IContourSet } from './IContourSet';
 import type { IContour } from './IContour';
+import type { IMesh } from './IMesh';
 import type RGB from './RGB';
 import type { Memo, HistoryMemo } from '../utilities/historyMemo';
 import type { VoxelManager } from '../utilities/VoxelManager';
@@ -265,6 +267,10 @@ export type {
   PublicSurfaceData,
   SurfaceData,
   ISurface,
+  // Mesh
+  PublicMeshData,
+  MeshData,
+  IMesh,
   // Color
   RGB,
   ColormapPublic,

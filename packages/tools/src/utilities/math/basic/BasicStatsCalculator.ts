@@ -21,6 +21,7 @@ interface BasicStatsState {
   m4: number[]; // For kurtosis calculation
   allValues: number[][]; // Store all values for median calculation
   pointsInShape?: Types.IPointsManager<Types.Point3> | null;
+  sumLPS: Types.Point3; // To calculate the center point
 }
 
 // Helper function to create a new state
@@ -40,6 +41,7 @@ function createBasicStatsState(storePointData: boolean): BasicStatsState {
     m4: [0],
     allValues: [[]],
     pointsInShape: storePointData ? PointsManager.create3(1024) : null,
+    sumLPS: [0, 0, 0],
   };
 }
 
@@ -70,6 +72,14 @@ function basicStatsCallback(
   }
   const newArray = Array.isArray(newValue) ? newValue : [newValue];
   state.count += 1;
+
+  // Accumulate LPS sum if pointLPS is provided
+  if (pointLPS) {
+    state.sumLPS[0] += pointLPS[0];
+    state.sumLPS[1] += pointLPS[1];
+    state.sumLPS[2] += pointLPS[2];
+  }
+
   state.max.forEach((it, idx) => {
     const value = newArray[idx];
 
@@ -143,6 +153,7 @@ function basicGetStatistics(
   const stdDev = state.m2.map((squaredDiffSum) =>
     Math.sqrt(squaredDiffSum / state.count)
   );
+  const center = state.sumLPS.map((sum) => sum / state.count) as Types.Point3;
 
   // Calculate skewness
   const skewness = state.m3.map((m3, idx) => {
@@ -231,6 +242,12 @@ function basicGetStatistics(
       unit: null,
     },
     pointsInShape: state.pointsInShape,
+    center: {
+      name: 'center',
+      label: 'Center',
+      value: center ? [...center] : null,
+      unit: null,
+    },
     array: [],
   };
   named.array.push(
@@ -245,6 +262,9 @@ function basicGetStatistics(
     named.maxLPS,
     named.minLPS
   );
+  if (named.center.value) {
+    named.array.push(named.center);
+  }
 
   // Reset state for next computation
   const store = state.pointsInShape !== null;
@@ -264,6 +284,7 @@ function basicGetStatistics(
   state.m4 = freshState.m4;
   state.allValues = freshState.allValues;
   state.pointsInShape = freshState.pointsInShape;
+  state.sumLPS = freshState.sumLPS; // Reset sumLPS
 
   return named;
 }

@@ -50,6 +50,11 @@ export enum CalibrationTypes {
   ERROR = 'Error',
   /** Uncalibrated image */
   UNCALIBRATED = 'Uncalibrated',
+  /** When the calibration is present and can be accessed by the
+   * PixelSpacingCalibrationType or PixelSpacingCalibrationDescription tags*/
+  CALIBRATED = 'Calibrated',
+  /** When it is unknown if the pixelSpacing is calibrated*/
+  UNKNOWN = 'Unknown',
 }
 
 export default CalibrationTypes;

@@ -522,25 +522,40 @@ class Viewport {
    * @param actors - An array of ActorEntry objects.
    */
   public setActors(actors: ActorEntry[]): void {
+    const currentActors = this.getActors();
     this.removeAllActors();
     // when we set the actor we need to reset the camera to initialize the
     // camera focal point with the bounds of the actors.
     this.addActors(actors, { resetCamera: true });
+
+    triggerEvent(this.element, Events.ACTORS_CHANGED, {
+      viewportId: this.id,
+      removedActors: currentActors,
+      addedActors: actors,
+      currentActors: actors,
+    });
   }
 
   /**
    * Remove the actor from the viewport
    * @param actorUID - The unique identifier for the actor.
+   * @returns The removed actor entry or undefined if it didn't exist
    */
-  _removeActor(actorUID: string): void {
+  _removeActor(actorUID: string): ActorEntry | undefined {
     const actorEntry = this.getActor(actorUID);
+
     if (!actorEntry) {
-      console.warn(`Actor ${actorUID} does not exist for this viewport`);
+      console.warn(
+        `Actor ${actorUID} does not exist in ${this.id}, can't remove`
+      );
       return;
     }
+
     const renderer = this.getRenderer();
-    renderer.removeViewProp(actorEntry.actor as vtkProp); // removeActor not implemented in vtk?
+    renderer.removeActor(actorEntry.actor as vtkActor);
     this._actors.delete(actorUID);
+
+    return actorEntry;
   }
 
   /**
@@ -548,8 +563,21 @@ class Viewport {
    * @param actorUIDs - An array of actor UIDs to remove.
    */
   public removeActors(actorUIDs: string[]): void {
+    const removedActors: ActorEntry[] = [];
+
     actorUIDs.forEach((actorUID) => {
-      this._removeActor(actorUID);
+      const removedActor = this._removeActor(actorUID);
+      if (removedActor) {
+        removedActors.push(removedActor);
+      }
+    });
+
+    const currentActors = this.getActors();
+    triggerEvent(this.element, Events.ACTORS_CHANGED, {
+      viewportId: this.id,
+      removedActors,
+      addedActors: [],
+      currentActors,
     });
   }
 
@@ -585,6 +613,14 @@ class Viewport {
       this.setViewReference(prevViewRef);
       this.setViewPresentation(prevViewPresentation);
     }
+
+    // Trigger ACTORS_CHANGED event after adding actors
+    triggerEvent(this.element, Events.ACTORS_CHANGED, {
+      viewportId: this.id,
+      removedActors: [],
+      addedActors: actors,
+      currentActors: this.getActors(),
+    });
   }
 
   /**
@@ -622,14 +658,32 @@ class Viewport {
     // when we add an actor we should update the camera clipping range and
     // clipping planes as well
     this.updateCameraClippingPlanesAndRange();
+
+    // Trigger ACTORS_CHANGED event for individual actor addition
+    triggerEvent(this.element, Events.ACTORS_CHANGED, {
+      viewportId: this.id,
+      removedActors: [],
+      addedActors: [actorEntry],
+      currentActors: this.getActors(),
+    });
   }
 
   /**
    * Remove all actors from the renderer
    */
   public removeAllActors(): void {
+    const currentActors = this.getActors();
     this.getRenderer()?.removeAllViewProps();
     this._actors = new Map();
+
+    // Trigger ACTORS_CHANGED event when removing all actors
+    triggerEvent(this.element, Events.ACTORS_CHANGED, {
+      viewportId: this.id,
+      removedActors: currentActors,
+      addedActors: [],
+      currentActors: [],
+    });
+
     return;
   }
 
@@ -904,7 +958,6 @@ class Viewport {
       this.setZoom(this.insetImageMultiplier * zoom, false);
     }
     if (imageCanvasPoint) {
-      console.log('Starting pan update zoom=', zoom);
       const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
         imageCanvasPoint;
       const [canvasX, canvasY] = canvasPoint;
@@ -926,13 +979,6 @@ class Viewport {
       const newPositionY = imagePanY + canvasPanY;
 
       const deltaPoint2: Point2 = [newPositionX, newPositionY];
-      console.log(
-        'delta point',
-        newPositionX,
-        this.getPan()[0],
-        imagePanX,
-        canvasPanX
-      );
       // Use getPan from current for the setting
       vec2.add(deltaPoint2, deltaPoint2, this.getPan());
       // The pan is part of the display area settings, not the initial camera, so
@@ -985,7 +1031,18 @@ class Viewport {
     });
 
     const previousCamera = this.getCamera();
-    const bounds = renderer.computeVisiblePropBounds();
+    let bounds;
+    const defaultActor = this.getDefaultActor();
+
+    if (defaultActor && isImageActor(defaultActor)) {
+      // Use the default actor's bounds
+      const imageData = defaultActor.actor.getMapper().getInputData();
+      bounds = imageData.getBounds();
+    } else {
+      // Fallback to all actors if no default image actor is found
+      bounds = renderer.computeVisiblePropBounds();
+    }
+
     const focalPoint = [0, 0, 0] as Point3;
     const imageData = this.getDefaultImageData();
 
@@ -1725,6 +1782,7 @@ class Viewport {
    * in a given viewport.
    * See getViewPresentation for HOW a view is displayed.
    *
+   *
    * @param viewRefSpecifier - choose an alternate view to be specified, typically
    *      a different slice index in the same set of images.
    */
@@ -1748,7 +1806,6 @@ class Viewport {
 
   /**
    * Find out if this viewport does or could show this view reference.
-   *
    * @param options - allows specifying whether the view COULD display this with
    *                  some modification - either navigation or displaying as volume.
    * @returns true if the viewport could show this view reference
@@ -1873,16 +1930,22 @@ class Viewport {
     if (pan) {
       this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
     }
-    if (rotation >= 0) {
-      this.setRotation(rotation);
-    }
 
     // flip operation requires another re-render to take effect, so unfortunately
     // right now if the view presentation requires a flip, it will flicker. The
     // correct way to handle this is to wait for camera and flip together and then
     // do one render
-    if (flipHorizontal || flipVertical) {
-      this.flip({ flipHorizontal, flipVertical });
+    if (
+      flipHorizontal !== undefined &&
+      flipHorizontal !== this.flipHorizontal
+    ) {
+      this.flip({ flipHorizontal });
+    }
+    if (flipVertical !== undefined && flipVertical !== this.flipVertical) {
+      this.flip({ flipVertical });
+    }
+    if (rotation >= 0) {
+      this.setRotation(rotation);
     }
   }
 

@@ -14,7 +14,11 @@ const screenShotPaths = {
   stackBasic: {
     viewport: 'viewport.png',
   },
+  stackToVolumeFusion: {
+    viewport: 'viewport.png',
+  },
   stackAPI: {
+    flipBoth: 'flipBoth.png',
     setVoiRange: 'setVoiRange.png',
     nextImage: 'nextImage.png',
     previousImage: 'previousImage.png',
@@ -27,6 +31,7 @@ const screenShotPaths = {
     // randomZoomAndPan: 'randomZoomAndPan.png',
     colormap: 'colormap.png',
     resetViewport: 'resetViewport.png',
+    rotate30FlipBothNext: 'rotate30FlipBothNext.png',
   },
   stackManipulationTools: {
     planarRotate: 'planarRotate.png',

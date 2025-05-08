@@ -4,8 +4,8 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 8 : undefined,
+  retries: process.env.CI ? 3 : 0,
+  workers: process.env.CI ? 16 : undefined,
   timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
@@ -13,7 +13,7 @@ export default defineConfig({
   reporter: [
     [
       process.env.CI ? 'blob' : 'html',
-      { outputFolder: './tests/playwright-report' },
+      { outputFolder: './packages/docs/static/playwright-report' },
     ],
   ],
   use: {
@@ -73,7 +73,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'yarn build-and-serve-static-examples',
+    command: 'cross-env COVERAGE=true nyc yarn build-and-serve-static-examples',
     url: 'http://localhost:3333',
     reuseExistingServer: !process.env.CI,
     timeout: 500 * 1000,

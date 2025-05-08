@@ -42,3 +42,14 @@ export function getCurrentLabelmapImageIdsForViewport(
     segmentationId
   );
 }
+
+export function getLabelmapImageIdsForImageId(
+  imageId: string,
+  segmentationId: string
+) {
+  const segmentationStateManager = defaultSegmentationStateManager;
+  return segmentationStateManager.getLabelmapImageIdsForImageId(
+    imageId,
+    segmentationId
+  );
+}

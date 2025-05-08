@@ -3,6 +3,272 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.0...v3.12.1) (2025-05-07)
+
+### Bug Fixes
+
+- **viewport:** preserve rotation and flip state across stack scroll ([#2033](https://github.com/cornerstonejs/cornerstone3D/issues/2033)) ([3e0ce3f](https://github.com/cornerstonejs/cornerstone3D/commit/3e0ce3fc5603c783be1922c7e01388aa64936369))
+
+# [3.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.8...v3.12.0) (2025-05-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.11.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.7...v3.11.8) (2025-05-06)
+
+### Bug Fixes
+
+- **viewport:** update getCamera method to use centerIndex for canvas center calculation ([#2052](https://github.com/cornerstonejs/cornerstone3D/issues/2052)) ([fab3363](https://github.com/cornerstonejs/cornerstone3D/commit/fab33634971a6b6e234763b05ca2d6269c184fa0))
+
+## [3.11.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.6...v3.11.7) (2025-05-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.11.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.5...v3.11.6) (2025-05-05)
+
+### Bug Fixes
+
+- **colorbar:** enable bottom placement ([#2039](https://github.com/cornerstonejs/cornerstone3D/issues/2039)) ([afbd3e4](https://github.com/cornerstonejs/cornerstone3D/commit/afbd3e42a09f104b76a4d36df18193c14155c354))
+
+## [3.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.4...v3.11.5) (2025-05-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.3...v3.11.4) (2025-05-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.11.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.2...v3.11.3) (2025-05-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.11.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.1...v3.11.2) (2025-05-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.0...v3.11.1) (2025-04-30)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [3.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.31...v3.11.0) (2025-04-30)
+
+### Features
+
+- Enhance Rendering Engine with Opacity Utils, Acquisition Orientation, Actor Lifecycle, and Data Type Support ([#2034](https://github.com/cornerstonejs/cornerstone3D/issues/2034)) ([f486e7a](https://github.com/cornerstonejs/cornerstone3D/commit/f486e7a021fa3987abfb67122e663d1c97031110))
+
+## [3.10.31](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.30...v3.10.31) (2025-04-29)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.30](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.29...v3.10.30) (2025-04-23)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.29](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.28...v3.10.29) (2025-04-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.28](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.27...v3.10.28) (2025-04-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.27](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.26...v3.10.27) (2025-04-18)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.26](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.25...v3.10.26) (2025-04-17)
+
+### Bug Fixes
+
+- **zoom:** fix Stack to Volume Fusion and Viewport zoom preservation ([#1997](https://github.com/cornerstonejs/cornerstone3D/issues/1997)) ([b4c8764](https://github.com/cornerstonejs/cornerstone3D/commit/b4c8764ff4e0f5c2c953ac49bbfaa54ee6c5aea4))
+
+## [3.10.25](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.24...v3.10.25) (2025-04-17)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.24](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.23...v3.10.24) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.23](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.22...v3.10.23) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.22](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.21...v3.10.22) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.21](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.20...v3.10.21) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.20](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.19...v3.10.20) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.19](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.18...v3.10.19) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.18](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.17...v3.10.18) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.17](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.16...v3.10.17) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.16](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.15...v3.10.16) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.15](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.14...v3.10.15) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.13...v3.10.14) (2025-04-16)
+
+### Bug Fixes
+
+- **ZoomTool:** add support for mouseWheel ([#1983](https://github.com/cornerstonejs/cornerstone3D/issues/1983)) ([082fd43](https://github.com/cornerstonejs/cornerstone3D/commit/082fd43385ea61d166a67ba896068078fe7f6eb2)), closes [#1130](https://github.com/cornerstonejs/cornerstone3D/issues/1130)
+
+## [3.10.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.12...v3.10.13) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.11...v3.10.12) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.10...v3.10.11) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.9...v3.10.10) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.8...v3.10.9) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.7...v3.10.8) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.6...v3.10.7) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.5...v3.10.6) (2025-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.4...v3.10.5) (2025-04-15)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.3...v3.10.4) (2025-04-15)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.2...v3.10.3) (2025-04-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.1...v3.10.2) (2025-04-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.10.0...v3.10.1) (2025-04-11)
+
+### Bug Fixes
+
+- **wadouri:** cache could not decache wadouri images ([#1991](https://github.com/cornerstonejs/cornerstone3D/issues/1991)) ([c519ba5](https://github.com/cornerstonejs/cornerstone3D/commit/c519ba54a7a8ccb12fed52fa2f3af917ae46a06c))
+
+# [3.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.5...v3.10.0) (2025-04-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.9.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.4...v3.9.5) (2025-04-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.9.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.3...v3.9.4) (2025-04-09)
+
+### Bug Fixes
+
+- x-ray pixel spacing calibration ([#1966](https://github.com/cornerstonejs/cornerstone3D/issues/1966)) ([c158fc8](https://github.com/cornerstonejs/cornerstone3D/commit/c158fc881e359b2f9d8df8c4b70e706295b8c348))
+
+## [3.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.2...v3.9.3) (2025-04-08)
+
+### Bug Fixes
+
+- flip flickering ([#1984](https://github.com/cornerstonejs/cornerstone3D/issues/1984)) ([5602a59](https://github.com/cornerstonejs/cornerstone3D/commit/5602a59f32805c0f75d7e1acf5f2abcc30bf3d11))
+
+## [3.9.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.1...v3.9.2) (2025-04-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.9.0...v3.9.1) (2025-04-07)
+
+### Bug Fixes
+
+- **jump:** Add Center Statistic, and Refactor Code and choose closest imageId for stack to jump ([#1977](https://github.com/cornerstonejs/cornerstone3D/issues/1977)) ([3d8ab9e](https://github.com/cornerstonejs/cornerstone3D/commit/3d8ab9ee5c28d984a4aea7f459c0a736215470b9))
+
+# [3.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.6...v3.9.0) (2025-04-07)
+
+### Features
+
+- **geometryLoader:** add support for loading and caching meshes ([#1974](https://github.com/cornerstonejs/cornerstone3D/issues/1974)) ([f88dfe8](https://github.com/cornerstonejs/cornerstone3D/commit/f88dfe8eb52db0ca5f6dc017906d738378daba98)), closes [#1970](https://github.com/cornerstonejs/cornerstone3D/issues/1970)
+
+## [3.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.5...v3.8.6) (2025-04-04)
+
+### Bug Fixes
+
+- **flip:** seperate flip calls ([#1868](https://github.com/cornerstonejs/cornerstone3D/issues/1868)) ([f742a18](https://github.com/cornerstonejs/cornerstone3D/commit/f742a1845e8a26f27fe94ccbf1062e523658a3c3))
+
+## [3.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.4...v3.8.5) (2025-04-04)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.3...v3.8.4) (2025-04-02)
+
+### Bug Fixes
+
+- **segmentation:** Enhance RTSS generation, surface updates, and contour set processing; address minor tool issues ([#1962](https://github.com/cornerstonejs/cornerstone3D/issues/1962)) ([f51c38c](https://github.com/cornerstonejs/cornerstone3D/commit/f51c38c535b026fc22cf7f9195a749644aee4996))
+
+## [3.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.2...v3.8.3) (2025-04-02)
+
+### Bug Fixes
+
+- **wsi scaling:** adjust canvas-to-index and index-to-canvas transformations for device pixel ratio ([#1959](https://github.com/cornerstonejs/cornerstone3D/issues/1959)) ([2779862](https://github.com/cornerstonejs/cornerstone3D/commit/2779862c97115e863010a004bbf5ddb0e2148264))
+
+## [3.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.1...v3.8.2) (2025-04-01)
+
+### Bug Fixes
+
+- **segmentation:** enhanced one click segmentation ([#1956](https://github.com/cornerstonejs/cornerstone3D/issues/1956)) ([3181fd7](https://github.com/cornerstonejs/cornerstone3D/commit/3181fd7a57513ec19871b2953732614121ae6152))
+
+## [3.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.8.0...v3.8.1) (2025-04-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [3.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.17...v3.8.0) (2025-03-28)
+
+### Features
+
+- **segmentation:** Simplify preview handling and remove unused code ([#1928](https://github.com/cornerstonejs/cornerstone3D/issues/1928)) ([bfa93c5](https://github.com/cornerstonejs/cornerstone3D/commit/bfa93c5dc8677bd7d79b9b8e8eb5b50ad02cd144)), closes [#1941](https://github.com/cornerstonejs/cornerstone3D/issues/1941) [#1894](https://github.com/cornerstonejs/cornerstone3D/issues/1894)
+
+## [3.7.17](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.16...v3.7.17) (2025-03-27)
+
+### Bug Fixes
+
+- Implement isInAcquisitionPlane method in volume viewports ([#1950](https://github.com/cornerstonejs/cornerstone3D/issues/1950)) ([d0702e4](https://github.com/cornerstonejs/cornerstone3D/commit/d0702e4e29c5f12c5614ffd3262864b16a713a45))
+
+## [3.7.16](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.15...v3.7.16) (2025-03-27)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [3.7.15](https://github.com/cornerstonejs/cornerstone3D/compare/v3.7.14...v3.7.15) (2025-03-27)
 
 **Note:** Version bump only for package @cornerstonejs/core

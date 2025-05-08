@@ -146,7 +146,7 @@ const computeWorker = {
     };
   },
   calculateSegmentsStatisticsVolume: (args) => {
-    const { mode, indices } = args;
+    const { mode, indices, unit } = args;
     const { segmentation, image } = computeWorker.getArgsFromInfo(args);
 
     const { voxelManager: segVoxelManager, spacing: segmentationSpacing } =
@@ -173,8 +173,8 @@ const computeWorker = {
     // Get statistics based on the mode
     const stats = SegmentStatsCalculator.getStatistics({
       spacing: segmentationSpacing,
-      unit: 'mm',
       mode,
+      unit,
     });
 
     return stats;
@@ -502,10 +502,18 @@ const computeWorker = {
     return bidirectionalResults;
   },
   generateContourSetsFromLabelmapVolume: (args) => {
-    const { segmentation, indices, imageData } = args;
-    const { voxelManager, dimensions, scalarData, origin, direction, spacing } =
-      segmentation;
+    const { segmentation, indices } = args;
+    const { dimensions, scalarData, origin, direction, spacing } = segmentation;
 
+    let imageData = args.imageData;
+    if (!imageData) {
+      imageData = computeWorker.createVTKImageData(
+        dimensions,
+        origin,
+        direction,
+        spacing
+      );
+    }
     const numSlices = dimensions[2];
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 

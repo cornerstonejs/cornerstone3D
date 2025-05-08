@@ -1,6 +1,7 @@
 ---
 id: segment-index
 title: Segment Index
+summary: System for selecting which segment to edit within a segmentation, allowing tools to target specific segments identified by their index
 ---
 
 # Segment Index

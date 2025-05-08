@@ -70,6 +70,8 @@ const ai = new ONNXSegmentationController({
   listeners: [mlLogger],
 });
 
+ai.enabled = true;
+
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const volumeId = 'volumeId';
@@ -253,7 +255,7 @@ async function updateViewport() {
   };
 
   if (currentViewportType === ViewportType.ORTHOGRAPHIC) {
-    viewportInput.defaultOptions.orientation = OrientationAxis.SAGITTAL;
+    viewportInput.defaultOptions.orientation = OrientationAxis.AXIAL;
   }
 
   renderingEngine.setViewports([viewportInput]);

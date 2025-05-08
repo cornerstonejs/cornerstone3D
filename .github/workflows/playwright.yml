@@ -1,9 +1,12 @@
 name: Playwright Tests
 on:
-  push:
-    branches: [main, master]
   pull_request:
     branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   playwright-tests:
     timeout-minutes: 60
@@ -20,43 +23,19 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Install Playwright browsers
-        run: bun x playwright install --with-deps
+      # - name: Install Playwright browsers
+      #   run: bun x playwright install-deps chromium
       - name: Run Playwright tests
         run: |
-          export NODE_OPTIONS="--max_old_space_size=8192"
-          bun x playwright test
-      - name: Upload blob report to GitHub Actions Artifacts
+          export NODE_OPTIONS="--max_old_space_size=10192"
+          bun run test:e2e:coverage
+      - name: create the coverage report
+        run: |
+          bun nyc report --reporter=lcov --reporter=text
+      - name: Upload the coverage report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: blob-report
-          path: blob-report
-          retention-days: 1
-
-  merge-reports:
-    if: ${{ !cancelled() }}
-    needs: [playwright-tests]
-    runs-on: self-hosted
-    steps:
-      - uses: oven-sh/setup-bun@v2
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Download blob reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: all-blob-reports
-          pattern: blob-report
-          merge-multiple: true
-      - name: Merge into HTML Report
-        run: bun x playwright merge-reports --reporter html ./all-blob-reports
-      - name: Upload HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: html-report--attempt-${{ github.run_attempt }}
-          path: playwright-report
-          retention-days: 14
+          name: coverage-report-pr
+          path: coverage
+          retention-days: 7

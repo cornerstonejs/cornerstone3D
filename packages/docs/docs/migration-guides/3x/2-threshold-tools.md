@@ -1,6 +1,7 @@
 ---
 id: threshold-tools
 title: 'Labelmap Thresholding Tools'
+summary: Changes to labelmap thresholding tools when upgrading to Cornerstone3D 3.x
 ---
 
 import Tabs from '@theme/Tabs';

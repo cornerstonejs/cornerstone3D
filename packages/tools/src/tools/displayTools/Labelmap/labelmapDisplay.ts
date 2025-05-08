@@ -358,6 +358,10 @@ function _setLabelmapColorAndOpacity(
     }
 
     labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
+
+    labelmapActor.modified();
+    labelmapActor.getProperty().modified();
+    labelmapActor.getMapper().modified();
   } else {
     // reset outline width to 0
     labelmapActor

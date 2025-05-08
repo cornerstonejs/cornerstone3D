@@ -212,6 +212,9 @@ class SegmentBidirectionalTool extends BidirectionalTool {
     const [minor0, minor1] = minorAxis;
     const points = [major0, major1, minor0, minor1];
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
+
     const annotation = {
       annotationUID: options?.annotationUID || utilities.uuidv4(),
       data: {
@@ -243,7 +246,7 @@ class SegmentBidirectionalTool extends BidirectionalTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
     addAnnotation(annotation, viewport.element);

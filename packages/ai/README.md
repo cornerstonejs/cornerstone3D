@@ -9,6 +9,25 @@ This package provides AI interfaces for use with Cornerstone in client-side appl
 
 ## Getting Started
 
+### WASM Files
+
+The ONNX Runtime Web requires WASM files to run in the browser. These files need to be copied to your application's public directory. The files should be placed in an `/ort/` directory in your public folder.
+
+In Webpack you can add the WASM files to the public folder like this:
+
+```js
+new CopyPlugin({
+  patterns: [
+    {
+      from: '../../../node_modules/onnxruntime-web/dist',
+      to: '${destPath.replace(/\\/g, '/')}/ort',
+    },
+  ],
+}),
+```
+
+This will copy all the necessary WASM files from the ONNX Runtime Web package to your application's public directory. Make sure your build system is configured to handle WASM files and that the `asyncWebAssembly` experiment is enabled in your build configuration.
+
 ### Running the Example
 
 To see the package in action with the Segment Anything Model, use the following command:
@@ -36,7 +55,6 @@ Huge model (vit_h) - 2.38 GB compressed
 - https://ohif-assets-new.s3.us-east-1.amazonaws.com/SAM/sam_h.zip
 
 For the examples we are using the model url and fetch it from the web. If you see in example code we have:
-
 
 #### URL to the model files
 

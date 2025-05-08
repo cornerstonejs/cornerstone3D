@@ -1,6 +1,7 @@
 ---
 id: state
 title: State
+summary: Central storage system for segmentation data and representations, managing color lookup tables and viewport-specific rendering configurations
 ---
 
 # State

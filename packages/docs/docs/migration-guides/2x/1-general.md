@@ -1,6 +1,7 @@
 ---
 id: general
 title: 'General'
+summary: Overview of general changes when migrating from Cornerstone3D 1.x to 2.x, including frameworks support, SharedArrayBuffer removal, TypeScript updates, and package exports
 ---
 
 import Tabs from '@theme/Tabs';

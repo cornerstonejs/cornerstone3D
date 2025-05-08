@@ -47,6 +47,7 @@ class ToolStyle {
       textBoxLinkLineDash: '2,3',
       textBoxShadow: true,
       markerSize: '10',
+      angleArcLineDash: '',
     };
 
     this._initializeConfig(defaultConfig);

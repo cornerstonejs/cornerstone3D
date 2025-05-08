@@ -148,6 +148,11 @@ export const prepareStackDataForWorker = (segImageIds) => {
     const refImageId = segImage.referencedImageId;
     if (refImageId) {
       const refImage = cache.getImage(refImageId);
+
+      if (!refImage) {
+        continue;
+      }
+
       const refPixelData = refImage.getPixelData();
 
       const refVoxelManager = refImage.voxelManager;
@@ -196,7 +201,7 @@ export const getImageReferenceInfo = (segVolumeId, segImageIds) => {
   const scalingModule = metaData.get('scalingModule', refImageId);
 
   const modalityUnitOptions = {
-    isPreScaled: Boolean(refImage.preScale?.scaled),
+    isPreScaled: Boolean(refImage?.preScale?.scaled),
     isSuvScaled: typeof scalingModule?.suvbw === 'number',
   };
 

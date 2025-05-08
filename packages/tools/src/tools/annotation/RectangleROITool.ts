@@ -118,6 +118,7 @@ class RectangleROITool extends AnnotationTool {
         storePointData: false,
         shadow: true,
         preventHandleOutsideImage: false,
+        calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
@@ -174,6 +175,7 @@ class RectangleROITool extends AnnotationTool {
             },
           },
         },
+        cachedStats: {},
       },
     });
 
@@ -840,6 +842,9 @@ class RectangleROITool extends AnnotationTool {
     renderingEngine,
     enabledElement
   ) => {
+    if (!this.configuration.calculateStats) {
+      return;
+    }
     const { data } = annotation;
     const { viewport } = enabledElement;
     const { element } = viewport;
@@ -1005,6 +1010,9 @@ class RectangleROITool extends AnnotationTool {
       options
     );
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
+
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
@@ -1025,7 +1033,7 @@ class RectangleROITool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 
@@ -1046,7 +1054,7 @@ function defaultGetTextLines(data, targetId: string): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
   const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
 
-  if (mean === undefined) {
+  if (mean === undefined || mean === null) {
     return;
   }
 
