@@ -109,6 +109,7 @@
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
     "@cornerstonejs/codec-openjpeg": "^1.2.2",
     "@cornerstonejs/codec-openjph": "^2.4.5",
+    "@cornerstonejs/codec-libjxl": "file:../../cornerstonejs-codec-libjxl-0.0.1.tgz",
     "comlink": "^4.4.1",
     "dicom-parser": "^1.8.9",
     "jpeg-lossless-decoder-js": "^2.1.0",
