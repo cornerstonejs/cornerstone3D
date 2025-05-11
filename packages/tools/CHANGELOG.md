@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.12.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.2...v3.12.3) (2025-05-11)
+
+### Bug Fixes
+
+- type error in updateSurfaceData ([#2060](https://github.com/cornerstonejs/cornerstone3D/issues/2060)) ([3d62456](https://github.com/cornerstonejs/cornerstone3D/commit/3d62456909300ebcd523e4194811cbd4e75d25e9))
+
 ## [3.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.1...v3.12.2) (2025-05-08)
 
 ### Bug Fixes
