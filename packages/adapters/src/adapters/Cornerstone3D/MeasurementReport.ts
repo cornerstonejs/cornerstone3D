@@ -516,6 +516,7 @@ export default class MeasurementReport {
         const derivationSourceDatasets = [];
 
         const _meta = MeasurementReport.generateDatasetMeta();
+        let is3DSR = false;
 
         // Loop through each image in the toolData
         Object.keys(toolState).forEach(imageId => {
@@ -536,6 +537,7 @@ export default class MeasurementReport {
                     metadataProvider,
                     derivationSourceDatasets
                 });
+                is3DSR = true;
             }
 
             // Loop through each tool type for the image
@@ -573,6 +575,11 @@ export default class MeasurementReport {
         report.dataset = Object.assign(report.dataset, contentItem);
         report.dataset._meta = _meta;
         report.SpecificCharacterSet = "ISO_IR 192";
+
+        if (is3DSR) {
+            report.dataset.SOPClassUID =
+                DicomMetaDictionary.sopClassUIDsByName.Comprehensive3DSR;
+        }
 
         return report;
     }
