@@ -35,12 +35,11 @@ export default function filterMoveableAnnotationTools(
   const moveableAnnotationTools = [];
 
   ToolAndAnnotations.forEach(({ tool, annotations }) => {
+    if (tool.mode === ToolModes.Passive) {
+      return;
+    }
     for (const annotation of annotations) {
-      if (
-        annotation.isLocked ||
-        !annotation.isVisible ||
-        tool.mode === ToolModes.Passive
-      ) {
+      if (annotation.isLocked || !annotation.isVisible) {
         continue;
       }
 
