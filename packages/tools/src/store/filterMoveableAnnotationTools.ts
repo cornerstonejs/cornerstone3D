@@ -4,6 +4,7 @@ import type {
   ToolAnnotationPair,
   ToolAnnotationsPair,
 } from '../types/InternalToolTypes';
+import { ToolModes } from '../enums';
 
 /**
  * Filters an array of tools with annotations, returning the first annotation
@@ -35,7 +36,11 @@ export default function filterMoveableAnnotationTools(
 
   ToolAndAnnotations.forEach(({ tool, annotations }) => {
     for (const annotation of annotations) {
-      if (annotation.isLocked || !annotation.isVisible) {
+      if (
+        annotation.isLocked ||
+        !annotation.isVisible ||
+        tool.mode === ToolModes.Passive
+      ) {
         continue;
       }
 
