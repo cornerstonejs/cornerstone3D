@@ -143,6 +143,8 @@ function playClip(
 
         newStepIndex = Math.max(0, Math.min(numScrollSteps - 1, newStepIndex));
       } else if (!playClipData.loop) {
+        // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
+        // prevent stopping a 4D CINE in case it is playing on another viewport.
         _stopClip(element, {
           stopDynamicCine: !isDynamicCinePlaying,
           viewportId: viewport.id,
