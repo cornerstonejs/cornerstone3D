@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the current file's directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Get the package path from the arguments
 const packagePath = process.argv[2];
@@ -11,23 +16,26 @@ if (!packagePath) {
   process.exit(1);
 }
 
-// Read the package.json file
-const packageJsonPath = path.join(packagePath, 'package.json');
-let packageJson;
+// Get the root directory (two levels up from scripts/)
+const rootDir = path.resolve(__dirname, '..');
+
+// Read the version.json file from the root directory
+const versionJsonPath = path.join(rootDir, 'version.json');
+let versionData;
 
 try {
-  packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  versionData = JSON.parse(fs.readFileSync(versionJsonPath, 'utf8'));
 } catch (error) {
-  console.error(`Error reading package.json at ${packageJsonPath}:`, error);
+  console.error(`Error reading version.json at ${versionJsonPath}:`, error);
   process.exit(1);
 }
 
 // Create the version.ts file content
 const versionContent = `/**
- * Auto-generated from package.json version
+ * Auto-generated from version.json
  * Do not modify this file directly
  */
-export const version = '${packageJson.version}';\n`;
+export const version = '${versionData.version}';\n`;
 
 // Determine the src directory
 const srcDir = path.join(packagePath, 'src');

@@ -1,4 +1,3 @@
-console.debug('streaming: link: init: 83034EB5-FF1D-42A6-8EC2-B9C9516525EF');
 import { init, destroy } from './init';
 import {
   addTool,
