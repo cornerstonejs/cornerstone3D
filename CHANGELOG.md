@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.14.0...v3.14.1) (2025-05-13)
+
+### Bug Fixes
+
+- **version:** bump version.ts during publish ([#2070](https://github.com/cornerstonejs/cornerstone3D/issues/2070)) ([8f01da8](https://github.com/cornerstonejs/cornerstone3D/commit/8f01da8a0b3db3246c6fbf6ce699a275801253c6))
+
 # [3.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.13.0...v3.14.0) (2025-05-13)
 
 ### Features
