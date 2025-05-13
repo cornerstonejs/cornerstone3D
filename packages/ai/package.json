@@ -14,12 +14,18 @@
     ".": {
       "import": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
+    },
+    "./version": {
+      "node": "./dist/esm/version.js",
+      "import": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
     "test": "jest --testTimeout 60000",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
