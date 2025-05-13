@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.3...v3.13.0) (2025-05-13)
+
+### Features
+
+- **cine:** bounce playback option ([#2064](https://github.com/cornerstonejs/cornerstone3D/issues/2064)) ([d16b9f6](https://github.com/cornerstonejs/cornerstone3D/commit/d16b9f6d31fc498bc547537dd6159d52ccac04b3))
+
 ## [3.12.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.2...v3.12.3) (2025-05-11)
 
 ### Bug Fixes
