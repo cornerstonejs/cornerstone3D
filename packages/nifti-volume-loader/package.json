@@ -40,9 +40,15 @@
     "./enums/*": {
       "import": "./dist/esm/enums/*.js",
       "types": "./dist/esm/enums/*.d.ts"
+    },
+    "./version": {
+      "node": "./dist/esm/version.js",
+      "import": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts"
     }
   },
   "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
     "build:esm": "tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:all": "yarn run build:esm",

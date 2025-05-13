@@ -46,6 +46,11 @@
         "./helpers/*": {
             "import": "./dist/esm/adapters/helpers/*.js",
             "types": "./dist/esm/adapters/helpers/*.d.ts"
+        },
+        "./version": {
+            "node": "./dist/esm/version.js",
+            "import": "./dist/esm/version.js",
+            "types": "./dist/esm/version.d.ts"
         }
     },
     "publishConfig": {
@@ -64,7 +69,8 @@
         "api-check": "echo 'No API check for this package'",
         "start": "rollup --watch -c rollup.config.mjs",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-        "lint": "eslint --fix ."
+        "lint": "eslint --fix .",
+        "prebuild": "node ../../scripts/generate-version.js ./"
     },
     "repository": {
         "type": "git",
