@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.13.0...v3.14.0) (2025-05-13)
+
+### Features
+
+- **version:** add version property ([#2068](https://github.com/cornerstonejs/cornerstone3D/issues/2068)) ([b7db4cc](https://github.com/cornerstonejs/cornerstone3D/commit/b7db4cc157027ebbd108c9ef9e4a01abb0769864))
+
 # [3.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.3...v3.13.0) (2025-05-13)
 
 ### Features
