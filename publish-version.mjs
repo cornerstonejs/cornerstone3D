@@ -139,8 +139,8 @@ async function run() {
 
   console.log('Version set using lerna');
 
-  for (const package of packages) {
-    await execa('node', ['./scripts/generate-version.js', package]);
+  for (const pkg of packages) {
+    await execa('node', ['./scripts/generate-version.js', pkg]);
   }
 
   await execa('git', ['add', '.']);
