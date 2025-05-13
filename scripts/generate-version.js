@@ -1,12 +1,8 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Get the current file's directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+const path = require('path');
 
 // Get the package path from the arguments
 const packagePath = process.argv[2];
