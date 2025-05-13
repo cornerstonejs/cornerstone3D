@@ -84,6 +84,7 @@ function playClip(
       speed: playClipOptions.frameTimeVectorSpeedMultiplier ?? 1,
       reverse: playClipOptions.reverse ?? false,
       loop: playClipOptions.loop ?? true,
+      bounce: playClipOptions.bounce ?? false,
     };
     addToolState(element, playClipData);
   } else {
@@ -125,32 +126,33 @@ function playClip(
     playClipIsTimeVarying = isTimeVarying;
   }
 
+  if (playClipOptions.bounce !== undefined) {
+    playClipData.bounce = playClipOptions.bounce;
+  }
+
   // This function encapsulates the frame rendering logic...
   const playClipAction = () => {
     const { numScrollSteps, currentStepIndex } = playClipContext;
     let newStepIndex = currentStepIndex + (playClipData.reverse ? -1 : 1);
-    const newStepIndexOutOfRange =
-      newStepIndex < 0 || newStepIndex >= numScrollSteps;
+    const outOfRange = newStepIndex < 0 || newStepIndex >= numScrollSteps;
 
-    if (!playClipData.loop && newStepIndexOutOfRange) {
-      // If a 3D CINE was playing it passes isDynamicCinePlaying as FALSE to
-      // prevent stopping a 4D CINE in case it is playing on another viewport.
-      _stopClip(element, {
-        stopDynamicCine: !isDynamicCinePlaying,
-        viewportId: viewport.id,
-      });
+    if (outOfRange) {
+      if (playClipData.bounce) {
+        playClipData.reverse = !playClipData.reverse;
+        newStepIndex = currentStepIndex + (playClipData.reverse ? -1 : 1);
 
-      const eventDetail = { element };
+        newStepIndex = Math.max(0, Math.min(numScrollSteps - 1, newStepIndex));
+      } else if (!playClipData.loop) {
+        _stopClip(element, {
+          stopDynamicCine: !isDynamicCinePlaying,
+          viewportId: viewport.id,
+        });
 
-      triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, eventDetail);
-      return;
-    }
-
-    // Loop around if newStepIndex is out of range
-    if (newStepIndex >= numScrollSteps) {
-      newStepIndex = 0;
-    } else if (newStepIndex < 0) {
-      newStepIndex = numScrollSteps - 1;
+        triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, { element });
+        return;
+      } else {
+        newStepIndex = playClipData.reverse ? numScrollSteps - 1 : 0;
+      }
     }
 
     const delta = newStepIndex - currentStepIndex;
@@ -161,8 +163,7 @@ function playClip(
       } catch (e) {
         console.warn('Play clip not scrolling', e);
         _stopClipWithData(playClipData);
-        triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, eventDetail);
-        return;
+        triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, { element });
       }
     }
   };
