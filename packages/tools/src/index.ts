@@ -1,3 +1,4 @@
+console.debug('streaming: link: init: 83034EB5-FF1D-42A6-8EC2-B9C9516525EF');
 import { init, destroy } from './init';
 import {
   addTool,
@@ -10,6 +11,7 @@ import {
 import { state } from './store/state';
 import * as store from './store';
 import * as CONSTANTS from './constants';
+import { version } from './version';
 
 // Name spaces
 import * as synchronizers from './synchronizers';
@@ -184,4 +186,6 @@ export {
   LabelmapBaseTool,
   // Spline classes
   splines,
+  // Version
+  version,
 };
