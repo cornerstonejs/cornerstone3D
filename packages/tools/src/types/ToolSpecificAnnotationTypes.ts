@@ -92,6 +92,17 @@ export interface LengthAnnotation extends Annotation {
   };
 }
 
+export interface UltrasoundAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: [Types.Point3, Types.Point3];
+      activeHandleIndex: number | null;
+    };
+    annotationType: string; // "pleura", "bLine"
+    label: string;
+  };
+}
+
 export interface AdvancedMagnifyAnnotation extends Annotation {
   data: {
     zoomFactor: number;
