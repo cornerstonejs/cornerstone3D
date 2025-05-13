@@ -52,6 +52,9 @@ jobs:
       - run:
           name: 'Perform the versioning before build'
           command: bun ./version.mjs
+      - run:
+          name: 'Generate version.ts files'
+
       - run: bun run build
       - persist_to_workspace:
           root: ~/repo
@@ -99,7 +102,7 @@ jobs:
 workflows:
   version: 2
 
-  # PULL REQUEST
+  # PULL REQUESTS
   PULL_REQUEST:
     jobs:
       - CHECKOUT:
