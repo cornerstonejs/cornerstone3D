@@ -180,7 +180,7 @@ function updateOpacityWithThreshold(volumeActor, opacity, threshold) {
  * Extract threshold value from the actor's opacity function
  * @returns {number|null} The absolute threshold value or null if no threshold
  */
-export function getThresholdValue(volumeActor) {
+function getThresholdValue(volumeActor) {
   const opacityFunction = volumeActor.getProperty().getScalarOpacity(0);
   if (!opacityFunction) {
     return null;
@@ -211,7 +211,7 @@ export function getThresholdValue(volumeActor) {
 /**
  * Extract maximum opacity value from actor's opacity function
  */
-export function getMaxOpacity(volumeActor) {
+function getMaxOpacity(volumeActor) {
   const opacityFunction = volumeActor.getProperty().getScalarOpacity(0);
   if (!opacityFunction) {
     return 1.0;

@@ -294,9 +294,11 @@ abstract class BaseVolumeViewport extends Viewport {
     this.viewportProperties.colormap = colormap;
 
     if (!suppressEvents) {
+      const completeColormap = this.getColormap(volumeId);
+
       const eventDetail = {
         viewportId: this.id,
-        colormap,
+        colormap: completeColormap,
         volumeId,
       };
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
@@ -335,6 +337,14 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     this.viewportProperties.colormap.opacity = colormap.opacity;
+
+    const matchedColormap = this.getColormap(volumeId);
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: matchedColormap,
+      volumeId,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   /**
@@ -844,6 +854,15 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     this.viewportProperties.colormap.threshold = colormap.threshold;
+
+    // Trigger COLORMAP_MODIFIED event with threshold information
+    const matchedColormap = this.getColormap(volumeId);
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: matchedColormap,
+      volumeId,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   /**
