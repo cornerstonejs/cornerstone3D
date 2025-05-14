@@ -10,6 +10,7 @@ import {
 import { state } from './store/state';
 import * as store from './store';
 import * as CONSTANTS from './constants';
+import { version } from './version';
 
 // Name spaces
 import * as synchronizers from './synchronizers';
@@ -186,4 +187,6 @@ export {
   LabelmapBaseTool,
   // Spline classes
   splines,
+  // Version
+  version,
 };
