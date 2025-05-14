@@ -103,7 +103,6 @@ export default function filterAnnotationsWithinSlice(
   for (const annotation of annotationsWithParallelNormals) {
     const data = annotation.data;
 
-    // @ts-expect-error
     const point = data.handles.points[0] || data.contour?.polyline[0];
 
     if (!annotation.isVisible) {
