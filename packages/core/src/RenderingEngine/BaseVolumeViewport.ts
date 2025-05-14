@@ -50,6 +50,8 @@ import {
   findMatchingColormap,
   updateOpacity as colormapUpdateOpacity,
   updateThreshold as colormapUpdateThreshold,
+  getThresholdValue,
+  getMaxOpacity,
 } from '../utilities/colormap';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
@@ -292,9 +294,11 @@ abstract class BaseVolumeViewport extends Viewport {
     this.viewportProperties.colormap = colormap;
 
     if (!suppressEvents) {
+      const completeColormap = this.getColormap(volumeId);
+
       const eventDetail = {
         viewportId: this.id,
-        colormap,
+        colormap: completeColormap,
         volumeId,
       };
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
@@ -333,6 +337,14 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     this.viewportProperties.colormap.opacity = colormap.opacity;
+
+    const matchedColormap = this.getColormap(volumeId);
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: matchedColormap,
+      volumeId,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   /**
@@ -842,6 +854,15 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     this.viewportProperties.colormap.threshold = colormap.threshold;
+
+    // Trigger COLORMAP_MODIFIED event with threshold information
+    const matchedColormap = this.getColormap(volumeId);
+    const eventDetail = {
+      viewportId: this.id,
+      colormap: matchedColormap,
+      volumeId,
+    };
+    triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
   }
 
   /**
@@ -1122,6 +1143,12 @@ abstract class BaseVolumeViewport extends Viewport {
     }, []);
 
     const matchedColormap = findMatchingColormap(RGBPoints, volumeActor);
+
+    const threshold = getThresholdValue(volumeActor);
+    const opacity = getMaxOpacity(volumeActor);
+
+    matchedColormap.threshold = threshold;
+    matchedColormap.opacity = opacity;
 
     return matchedColormap;
   };

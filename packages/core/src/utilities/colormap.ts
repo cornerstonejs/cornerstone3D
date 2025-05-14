@@ -238,4 +238,6 @@ export {
   getColormapNames,
   registerColormap,
   findMatchingColormap,
+  getThresholdValue,
+  getMaxOpacity,
 };
