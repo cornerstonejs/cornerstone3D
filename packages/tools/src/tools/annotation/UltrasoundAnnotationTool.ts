@@ -199,20 +199,15 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    * Deletes the last pleura annotation
    * @returns {void}
    */
-  public deleteLastPleuraAnnotation() {
-    if (this.pleuraAnnotations.length > 0) {
-      const annotation = this.pleuraAnnotations.pop();
-      removeAnnotation(annotation.annotationUID);
-      triggerAnnotationRenderForViewportIds([annotation.metadata.viewportId]);
+  public deleteLastAnnotationType(type: string) {
+    let annotationList;
+    if (type === UltrasoundAnnotationTool.USAnnotationType.PLEURA) {
+      annotationList = this.pleuraAnnotations;
+    } else {
+      annotationList = this.bLineAnnotations;
     }
-  }
-  /**
-   * Deletes the last bLine annotation
-   * @returns {void}
-   */
-  public deleteLastBLineAnnotation() {
-    if (this.bLineAnnotations.length > 0) {
-      const annotation = this.bLineAnnotations.pop();
+    if (annotationList.length > 0) {
+      const annotation = annotationList.pop();
       removeAnnotation(annotation.annotationUID);
       triggerAnnotationRenderForViewportIds([annotation.metadata.viewportId]);
     }

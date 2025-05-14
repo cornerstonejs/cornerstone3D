@@ -27,7 +27,7 @@ const { MouseBindings } = csToolsEnums;
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 const leftClickTools = [UltrasoundAnnotationTool.toolName];
 const defaultLeftClickTool = leftClickTools[0];
-const currentLeftClickTool = leftClickTools[0];
+let usAnnotation = undefined;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -66,18 +66,6 @@ addButtonToToolbar({
 
 addButtonToToolbar({
   onClick: () => {
-    const viewport = renderingEngine.getViewport(viewportId);
-    viewport.scroll(1);
-  },
-  title: 'Scroll',
-});
-
-addButtonToToolbar({
-  onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const usAnnotation = toolGroup.getToolInstance(
-      UltrasoundAnnotationTool.toolName
-    );
     usAnnotation.setActiveAnnotationType(
       UltrasoundAnnotationTool.USAnnotationType.BLINE
     );
@@ -87,10 +75,6 @@ addButtonToToolbar({
 
 addButtonToToolbar({
   onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const usAnnotation = toolGroup.getToolInstance(
-      UltrasoundAnnotationTool.toolName
-    );
     usAnnotation.setActiveAnnotationType(
       UltrasoundAnnotationTool.USAnnotationType.PLEURA
     );
@@ -100,11 +84,9 @@ addButtonToToolbar({
 
 addButtonToToolbar({
   onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const usAnnotation = toolGroup.getToolInstance(
-      UltrasoundAnnotationTool.toolName
+    usAnnotation.deleteLastAnnotationType(
+      UltrasoundAnnotationTool.USAnnotationType.PLEURA
     );
-    usAnnotation.deleteLastPleuraAnnotation();
 
     // Get the stack viewport that was created
     const viewport = <Types.IStackViewport>(
@@ -117,11 +99,9 @@ addButtonToToolbar({
 
 addButtonToToolbar({
   onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const usAnnotation = toolGroup.getToolInstance(
-      UltrasoundAnnotationTool.toolName
+    usAnnotation.deleteLastAnnotationType(
+      UltrasoundAnnotationTool.USAnnotationType.BLINE
     );
-    usAnnotation.deleteLastBLineAnnotation();
 
     // Get the stack viewport that was created
     const viewport = <Types.IStackViewport>(
@@ -134,10 +114,6 @@ addButtonToToolbar({
 
 addButtonToToolbar({
   onClick: () => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-    const usAnnotation = toolGroup.getToolInstance(
-      UltrasoundAnnotationTool.toolName
-    );
     // Get the stack viewport that was created
     const viewport = <Types.IStackViewport>(
       renderingEngine.getViewport(viewportId)
@@ -267,6 +243,8 @@ async function run() {
     startAngle: 65,
     endAngle: 115,
   });
+
+  usAnnotation = toolGroup.getToolInstance(UltrasoundAnnotationTool.toolName);
 
   cornerstoneTools.utilities.stackPrefetch.enable(viewport.element);
 
