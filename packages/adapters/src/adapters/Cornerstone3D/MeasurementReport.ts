@@ -415,20 +415,23 @@ export default class MeasurementReport {
     }
 
     static generateReferencedSOPSequence({
+        toolData,
+        toolTypes,
         metadataProvider,
         imageId,
         sopInstanceUIDsToSeriesInstanceUIDMap,
         derivationSourceDatasets
     }) {
-        if (imageId === "none") {
-            return;
-        }
+        const effectiveImageId =
+            imageId === "none"
+                ? this.getImageIdFromVolume({ toolData, toolTypes })
+                : imageId;
 
         const sopCommonModule = metadataProvider.get(
             "sopCommonModule",
-            imageId
+            effectiveImageId
         );
-        const instance = metadataProvider.get("instance", imageId);
+        const instance = metadataProvider.get("instance", effectiveImageId);
 
         const { sopInstanceUID, sopClassUID } = sopCommonModule;
         const { SeriesInstanceUID: seriesInstanceUID } = instance;
@@ -448,7 +451,10 @@ export default class MeasurementReport {
             derivationSourceDatasets.push(derivationSourceDataset);
         }
 
-        const frameNumber = metadataProvider.get("frameNumber", imageId);
+        const frameNumber = metadataProvider.get(
+            "frameNumber",
+            effectiveImageId
+        );
 
         const ReferencedSOPSequence = {
             ReferencedSOPClassUID: sopClassUID,
@@ -468,31 +474,12 @@ export default class MeasurementReport {
         return ReferencedSOPSequence;
     }
 
-    static findDerivationSeriesFromVolume({
-        toolData,
-        toolTypes,
-        metadataProvider,
-        derivationSourceDatasets
-    }) {
+    static getImageIdFromVolume({ toolData, toolTypes }) {
         const referenceToolData = toolData?.[toolTypes?.[0]]?.data?.[0];
         const volumeId = referenceToolData?.metadata?.volumeId;
         const volume = cache.getVolume(volumeId);
-
-        const instance = metadataProvider.get("instance", volume.imageIds[0]);
-
-        const { SeriesInstanceUID: seriesInstanceUID } = instance;
-
-        if (
-            !derivationSourceDatasets.find(
-                dsd => dsd.SeriesInstanceUID === seriesInstanceUID
-            )
-        ) {
-            // Entry not present for series, create one.
-            const derivationSourceDataset =
-                MeasurementReport.generateDerivationSourceDataset(instance);
-
-            derivationSourceDatasets.push(derivationSourceDataset);
-        }
+        const imageId = volume.imageIds[0];
+        return imageId;
     }
 
     static generateReport(
@@ -520,23 +507,19 @@ export default class MeasurementReport {
 
         // Loop through each image in the toolData
         Object.keys(toolState).forEach(imageId => {
+            const toolData = toolState[imageId];
+            const toolTypes = Object.keys(toolData);
+
             const ReferencedSOPSequence = this.generateReferencedSOPSequence({
+                toolData,
+                toolTypes,
                 metadataProvider,
                 imageId,
                 sopInstanceUIDsToSeriesInstanceUIDMap,
                 derivationSourceDatasets
             });
 
-            const toolData = toolState[imageId];
-            const toolTypes = Object.keys(toolData);
-
-            if (!ReferencedSOPSequence) {
-                this.findDerivationSeriesFromVolume({
-                    toolData,
-                    toolTypes,
-                    metadataProvider,
-                    derivationSourceDatasets
-                });
+            if (imageId === "none") {
                 is3DSR = true;
             }
 
