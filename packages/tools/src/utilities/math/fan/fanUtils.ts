@@ -58,7 +58,7 @@ export function angleFromCenter(
  */
 export function intervalFromPoints(
   center: Types.Point2,
-  pair: [Types.Point2, Types.Point2]
+  pair: FanPair
 ): number[] {
   const start = angleFromCenter(center, pair[0]);
   const end = angleFromCenter(center, pair[1]);
@@ -72,7 +72,7 @@ export function intervalFromPoints(
  * @param intervals - An array of angular intervals to merge.
  * @returns A new array of merged, non-overlapping angular intervals.
  */
-function mergeIntervals(intervals: Interval[]): Interval[] {
+export function mergeIntervals(intervals: Interval[]): Interval[] {
   if (!intervals.length) {
     return [];
   }
@@ -105,7 +105,7 @@ function mergeIntervals(intervals: Interval[]): Interval[] {
  * @returns An array of clipped angular intervals. Each interval is a part of the `inner`
  * interval that intersects with one of the `outerMerged` intervals.
  */
-function clipInterval(
+export function clipInterval(
   inner: Types.Point2,
   outerMerged: Interval[]
 ): Interval[] {

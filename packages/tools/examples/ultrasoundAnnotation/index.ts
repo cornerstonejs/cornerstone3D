@@ -4,13 +4,11 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addDropdownToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import WindowLevelTool from '../../src/tools/WindowLevelTool';
 
-// This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
@@ -51,12 +49,12 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Middle Click: Pan\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
+  'Middle Click: Window Level\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
 
 content.append(instructions);
 // ============================= //
 let renderingEngine;
-const viewportId = 'CT_STACK';
+const viewportId = 'US_STACK';
 
 addButtonToToolbar({
   onClick: () => {
@@ -80,7 +78,9 @@ addButtonToToolbar({
     const usAnnotation = toolGroup.getToolInstance(
       UltrasoundAnnotationTool.toolName
     );
-    usAnnotation.setActiveAnnotationType('bLine');
+    usAnnotation.setActiveAnnotationType(
+      UltrasoundAnnotationTool.USAnnotationType.BLINE
+    );
   },
   title: 'Add B-Line annotation',
 });
@@ -91,7 +91,9 @@ addButtonToToolbar({
     const usAnnotation = toolGroup.getToolInstance(
       UltrasoundAnnotationTool.toolName
     );
-    usAnnotation.setActiveAnnotationType('pleura');
+    usAnnotation.setActiveAnnotationType(
+      UltrasoundAnnotationTool.USAnnotationType.PLEURA
+    );
   },
   title: 'Add Pleura annotation',
 });
@@ -128,6 +130,43 @@ addButtonToToolbar({
     viewport.render();
   },
   title: 'Delete last B-line annotation',
+});
+
+addButtonToToolbar({
+  onClick: () => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const usAnnotation = toolGroup.getToolInstance(
+      UltrasoundAnnotationTool.toolName
+    );
+    // Get the stack viewport that was created
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    const percentage = usAnnotation.calculateBLinePleuraPercentage(viewport);
+
+    // Display the percentage in the UI
+    const element = viewport.element;
+    const textDiv = document.createElement('div');
+    textDiv.innerText = `B-Line/Pleura percentage : ${percentage} %`;
+    textDiv.style.position = 'absolute';
+    textDiv.style.top = '10px';
+    textDiv.style.left = '10px';
+    textDiv.style.color = 'white';
+    textDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    textDiv.style.padding = '5px';
+    textDiv.style.borderRadius = '5px';
+    textDiv.style.zIndex = '100';
+
+    // Remove any existing percentage display
+    const existingText = element.querySelector('.percentage-display');
+    if (existingText) {
+      element.removeChild(existingText);
+    }
+
+    textDiv.className = 'percentage-display';
+    element.appendChild(textDiv);
+  },
+  title: 'Update B-Line/Pleura percentage',
 });
 
 /**1
@@ -185,11 +224,12 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.2.826.0.1.3680043.8.498.11889728349464882910820154643384495521',
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
     SeriesInstanceUID:
-      '1.2.826.0.1.3680043.8.498.10961844486401378159517283922864429321',
-    SOPInstanceUID: '1.2.156.112536.1.2149.116254072124172199.14959810310.1432',
-    wadoRsRoot: 'http://localhost:5000/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+    SOPInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.260509337872681089220763036630',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -221,11 +261,11 @@ async function run() {
   viewport.setStack(imageIds);
 
   toolGroup.setToolConfiguration(UltrasoundAnnotationTool.toolName, {
-    fanCenter: [659, -77, 0],
-    innerRadius: -30,
-    outerRadius: 650,
-    startAngle: 58.92289884918813,
-    endAngle: 120.65710813833665,
+    fanCenter: [440, -270, 0],
+    innerRadius: 220.6,
+    outerRadius: 682.8,
+    startAngle: 65,
+    endAngle: 115,
   });
 
   cornerstoneTools.utilities.stackPrefetch.enable(viewport.element);
