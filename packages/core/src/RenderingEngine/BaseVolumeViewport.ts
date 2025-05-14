@@ -50,6 +50,8 @@ import {
   findMatchingColormap,
   updateOpacity as colormapUpdateOpacity,
   updateThreshold as colormapUpdateThreshold,
+  getThresholdValue,
+  getMaxOpacity,
 } from '../utilities/colormap';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
@@ -1122,6 +1124,12 @@ abstract class BaseVolumeViewport extends Viewport {
     }, []);
 
     const matchedColormap = findMatchingColormap(RGBPoints, volumeActor);
+
+    const threshold = getThresholdValue(volumeActor);
+    const opacity = getMaxOpacity(volumeActor);
+
+    matchedColormap.threshold = threshold;
+    matchedColormap.opacity = opacity;
 
     return matchedColormap;
   };
