@@ -32,7 +32,7 @@ let usAnnotation = undefined;
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Ultrasound annotations',
-  'Showcases how the bline and pleura annotations of ultrasound images are displayed and rendered correctly'
+  'Showcases how the b-line and pleura annotations of ultrasound images are displayed and rendered correctly. The tool uses fan shape geometry parameters to define the ultrasound sector display area: fanCenter (origin point in image coordinates), innerRadius and outerRadius (define the near and far field boundaries), and startAngle/endAngle (define the angular span of the sector).'
 );
 
 const content = document.getElementById('content');
