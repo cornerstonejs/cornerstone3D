@@ -1,4 +1,4 @@
-import { Events, ChangeTypes } from '../../enums';
+import { Events, ChangeTypes } from '../../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -7,34 +7,33 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { AnnotationTool } from '../base';
+import { AnnotationTool } from '../../base';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+} from '../../../stateManagement/annotation/annotationState';
+import { isAnnotationLocked } from '../../../stateManagement/annotation/annotationLocking';
+import { isAnnotationVisible } from '../../../stateManagement/annotation/annotationVisibility';
 import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
-} from '../../stateManagement/annotation/helpers/state';
-import * as lineSegment from '../../utilities/math/line';
+} from '../../../stateManagement/annotation/helpers/state';
+import * as lineSegment from '../../../utilities/math/line';
 
 import {
   drawHandles as drawHandlesSvg,
-  drawHandle as drawHandleSvg,
   drawLine as drawLineSvg,
   drawFan as drawFanSvg,
-} from '../../drawingSvg';
-import { state } from '../../store/state';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../../drawingSvg';
+import { state } from '../../../store/state';
+import { getViewportIdsWithToolToRender } from '../../../utilities/viewportFilters';
+import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
+} from '../../../cursors/elementCursor';
 
 import type {
   EventTypes,
@@ -44,9 +43,9 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
-} from '../../types';
-import type { UltrasoundAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import type { StyleSpecifier } from '../../types/AnnotationStyle';
+} from '../../../types';
+import type { UltrasoundAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../../types/AnnotationStyle';
 import {
   calculateInnerFanPercentage,
   clipInterval,
@@ -54,7 +53,9 @@ import {
   mergeIntervals,
   type FanPair,
   type FanPairs,
-} from '../../utilities/math/fan/fanUtils';
+} from '../../../utilities/math/fan/fanUtils';
+import { calculateFanGeometry } from './utils/fanExtraction';
+const { transformIndexToWorld } = csUtils;
 
 /**
  * UltrasoundAnnotationTool facilitates the creation and manipulation of specialized annotations
@@ -78,6 +79,8 @@ import {
  * import { UltrasoundAnnotationTool, ToolGroupManager, Enums, addTool } from '@cornerstonejs/tools';
 import { canvasCoordinates } from '../../utilities/math/circle/_types';
 import { getUnknownVolumeLoaderSchema } from '../../../../core/src/loaders/volumeLoader';
+import { deriveFanGeometry } from './utils/deriveFanGeometry';
+import { Point3 } from '../../../../../../.nx/cache/6836589865368719691/packages/core/dist/esm/types/Point3';
  *
  * // Register the tool with the ToolGroupManager (or globally if preferred)
  * addTool(UltrasoundAnnotationTool);
@@ -111,6 +114,9 @@ import { getUnknownVolumeLoaderSchema } from '../../../../core/src/loaders/volum
  *   // Note: startAngle and endAngle are typically derived from the drawn line points.
  * });
  * ```
+ * If the user do not give the fan shape geometry parameters it will be derived
+ * via US image segmentation. The method gives a good rough estimate of the US fan shape
+ * and should not be considered as the best parameters.
  *
  * For comprehensive details on API, configuration options, and advanced usage patterns,
  * refer to the official CornerstoneJS documentation.
@@ -153,7 +159,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       configuration: {
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
-        fanCenter: null,
+        fanCenter: null as Types.Point3,
         innerRadius: null,
         outerRadius: null,
         startAngle: null,
@@ -209,7 +215,6 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     if (annotationList.length > 0) {
       const annotation = annotationList.pop();
       removeAnnotation(annotation.annotationUID);
-      triggerAnnotationRenderForViewportIds([annotation.metadata.viewportId]);
     }
   }
   /**
@@ -219,11 +224,9 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   public deleteAllAnnotations() {
     this.pleuraAnnotations.forEach((annotation) => {
       removeAnnotation(annotation.annotationUID);
-      triggerAnnotationRenderForViewportIds([annotation.metadata.viewportId]);
     });
     this.bLineAnnotations.forEach((annotation) => {
       removeAnnotation(annotation.annotationUID);
-      triggerAnnotationRenderForViewportIds([annotation.metadata.viewportId]);
     });
     this.pleuraAnnotations = [];
     this.bLineAnnotations = [];
@@ -792,11 +795,52 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   };
 
   /**
+   * Derive the fan shape geometry parameters via US image segmentation, if the
+   * parameters were not defined
+   * @param viewport
+   */
+  deriveFanGeometryFromViewport(viewport) {
+    const imageId = viewport.getCurrentImageId();
+    const fanGeometry = calculateFanGeometry(imageId);
+    this.configuration.fanCenter = [
+      fanGeometry.center[0],
+      fanGeometry.center[1],
+      0,
+    ];
+    this.configuration.innerRadius = fanGeometry.innerRadius;
+    this.configuration.outerRadius = fanGeometry.outerRadius;
+    this.configuration.startAngle = (fanGeometry.startAngle * 180) / Math.PI;
+    this.configuration.endAngle = (fanGeometry.endAngle * 180) / Math.PI;
+  }
+
+  /**
+   * Check fan shape geometry parameters
+   * @returns
+   */
+  checkFanShapeGeometryParameters(): boolean {
+    return (
+      this.configuration.fanCenter &&
+      this.configuration.innerRadius > 0 &&
+      this.configuration.outerRadius &&
+      this.configuration.startAngle > 0 &&
+      this.configuration.startAngle < 360 &&
+      this.configuration.endAngle > 0 &&
+      this.configuration.endAngle < 360
+    );
+  }
+  /**
    * Calculates the percentage of bLine inside the pleura
    * @param viewport - viewport
    * @returns {number} percentage of bLine inside the pleura
    */
   calculateBLinePleuraPercentage(viewport): number {
+    if (!this.checkFanShapeGeometryParameters()) {
+      this.deriveFanGeometryFromViewport(viewport);
+    }
+    // if no valid parameters, then leave
+    if (!this.checkFanShapeGeometryParameters()) {
+      return;
+    }
     const { imageData } = viewport.getImageData();
     const fanCenter = viewport.worldToCanvas(
       imageData.indexToWorld(this.configuration.fanCenter)
@@ -841,6 +885,16 @@ class UltrasoundAnnotationTool extends AnnotationTool {
 
     return bLineColor;
   }
+  getIndexToCanvasRatio(viewport): number {
+    const { imageData } = viewport.getImageData();
+    const v1 = viewport.worldToCanvas(imageData.indexToWorld([1, 0, 0]));
+    const v2 = viewport.worldToCanvas(imageData.indexToWorld([2, 0, 0]));
+    const diffVector = [v2[0] - v1[0], v2[1] - v1[1]];
+    const vectorSize = Math.sqrt(
+      diffVector[0] * diffVector[0] + diffVector[1] * diffVector[1]
+    );
+    return vectorSize;
+  }
   /**
    * it is used to draw the length annotation in each
    * request animation frame. It calculates the updated cached statistics if
@@ -873,6 +927,14 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       return renderStatus;
     }
 
+    if (!this.checkFanShapeGeometryParameters()) {
+      this.deriveFanGeometryFromViewport(viewport);
+    }
+    // if no valid parameters, then leave
+    if (!this.checkFanShapeGeometryParameters()) {
+      return renderStatus;
+    }
+
     const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
@@ -884,57 +946,12 @@ class UltrasoundAnnotationTool extends AnnotationTool {
 
     const { imageData } = viewport.getImageData();
     const fanCenter = viewport.worldToCanvas(
-      imageData.indexToWorld(this.configuration.fanCenter)
+      transformIndexToWorld(imageData, this.configuration.fanCenter)
     );
-    const innerCoordinates = viewport.worldToCanvas(
-      imageData.indexToWorld([0, this.configuration.innerRadius, 0])
-    );
-    const innerRadius = innerCoordinates[1];
 
-    const outerCoordinates = viewport.worldToCanvas(
-      imageData.indexToWorld([0, this.configuration.outerRadius, 0])
-    );
-    const outerRadius = outerCoordinates[1];
-
-    //for debug purposes to find the correct parameters of the annotations
-    // if (1) {
-    //   // drawFan
-    //   const fanUID = '2';
-    //   const startAngle = this.configuration.startAngle;
-    //   const endAngle = this.configuration.endAngle;
-    //   const fanDataId = 'main-fan';
-    //   const annotationUID = 'main-fan';
-    //   drawFanSvg(
-    //     svgDrawingHelper,
-    //     annotationUID,
-    //     fanUID,
-    //     fanCenter,
-    //     innerRadius,
-    //     outerRadius,
-    //     startAngle,
-    //     endAngle,
-    //     {
-    //       color: this.configuration.bLineColor,
-    //       fill: this.configuration.bLineColor,
-    //       fillOpacity: 0.2,
-    //     },
-    //     fanDataId
-    //   );
-
-    //   drawHandleSvg(
-    //     svgDrawingHelper,
-    //     'center',
-    //     '1',
-    //     fanCenter,
-    //     {
-    //       color: this.configuration.bLineColor,
-    //       fill: this.configuration.bLineColor,
-    //       radius: 5,
-    //     },
-    //     1
-    //   );
-    //   return;
-    // }
+    const indexToCanvasRatio = this.getIndexToCanvasRatio(viewport);
+    const innerRadius = this.configuration.innerRadius * indexToCanvasRatio;
+    const outerRadius = this.configuration.outerRadius * indexToCanvasRatio;
 
     // get all pleura intervals
     const unMergedIntervals = this.pleuraAnnotations.map((annotation) => {

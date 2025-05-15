@@ -59,7 +59,7 @@ export function angleFromCenter(
 export function intervalFromPoints(
   center: Types.Point2,
   pair: FanPair
-): number[] {
+): Types.Point2 {
   const start = angleFromCenter(center, pair[0]);
   const end = angleFromCenter(center, pair[1]);
   return start < end ? [start, end] : [end, start];

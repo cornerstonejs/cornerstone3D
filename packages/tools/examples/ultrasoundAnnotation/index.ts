@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import { cache, RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -112,39 +112,6 @@ addButtonToToolbar({
   title: 'Delete last B-line annotation',
 });
 
-addButtonToToolbar({
-  onClick: () => {
-    // Get the stack viewport that was created
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
-    const percentage = usAnnotation.calculateBLinePleuraPercentage(viewport);
-
-    // Display the percentage in the UI
-    const element = viewport.element;
-    const textDiv = document.createElement('div');
-    textDiv.innerText = `B-Line/Pleura percentage : ${percentage} %`;
-    textDiv.style.position = 'absolute';
-    textDiv.style.top = '10px';
-    textDiv.style.left = '10px';
-    textDiv.style.color = 'white';
-    textDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-    textDiv.style.padding = '5px';
-    textDiv.style.borderRadius = '5px';
-    textDiv.style.zIndex = '100';
-
-    // Remove any existing percentage display
-    const existingText = element.querySelector('.percentage-display');
-    if (existingText) {
-      element.removeChild(existingText);
-    }
-
-    textDiv.className = 'percentage-display';
-    element.appendChild(textDiv);
-  },
-  title: 'Update B-Line/Pleura percentage',
-});
-
 /**1
  * Runs the demo
  */
@@ -235,15 +202,6 @@ async function run() {
 
   // Set the stack on the viewport
   viewport.setStack(imageIds);
-
-  toolGroup.setToolConfiguration(UltrasoundAnnotationTool.toolName, {
-    fanCenter: [440, -270, 0],
-    innerRadius: 220.6,
-    outerRadius: 682.8,
-    startAngle: 65,
-    endAngle: 115,
-  });
-
   usAnnotation = toolGroup.getToolInstance(UltrasoundAnnotationTool.toolName);
 
   cornerstoneTools.utilities.stackPrefetch.enable(viewport.element);
