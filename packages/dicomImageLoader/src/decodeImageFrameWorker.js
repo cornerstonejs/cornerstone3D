@@ -11,6 +11,7 @@ import decodeJPEGBaseline8Bit from './shared/decoders/decodeJPEGBaseline8Bit';
 import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit-js';
 import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
 import decodeJPEGLS from './shared/decoders/decodeJPEGLS';
+import decodeJPEGXL from './shared/decoders/decodeJPEGXL';
 import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
 import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
@@ -460,6 +461,16 @@ export async function decodeImageFrame(
       };
 
       decodePromise = decodeHTJ2K(pixelData, opts);
+      break;
+    case '1.2.840.10008.1.2.4.110':
+    case '1.2.840.10008.1.2.4.111':
+    case '1.2.840.10008.1.2.4.112':
+      // JPEG XL
+      opts = {
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGXL(pixelData, opts);
       break;
     default:
       throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
