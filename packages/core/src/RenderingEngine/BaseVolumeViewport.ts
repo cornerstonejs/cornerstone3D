@@ -1142,7 +1142,7 @@ abstract class BaseVolumeViewport extends Viewport {
       return acc;
     }, []);
 
-    const matchedColormap = findMatchingColormap(RGBPoints, volumeActor);
+    const matchedColormap = findMatchingColormap(RGBPoints, volumeActor) || {};
 
     const threshold = getThresholdValue(volumeActor);
     const opacity = getMaxOpacity(volumeActor);
