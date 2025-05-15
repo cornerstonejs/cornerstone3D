@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.15.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.1...v3.15.2) (2025-05-15)
+
+### Bug Fixes
+
+- Add SeriesDescription to the WADO URI and WADO RS metadata providers ([#2076](https://github.com/cornerstonejs/cornerstone3D/issues/2076)) ([bc770bc](https://github.com/cornerstonejs/cornerstone3D/commit/bc770bcdf0ceb809d238444e3a4b5d5b243535bf))
+
 ## [3.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.0...v3.15.1) (2025-05-15)
 
 ### Bug Fixes
