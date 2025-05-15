@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { cache, RenderingEngine, Enums } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -8,6 +8,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import WindowLevelTool from '../../src/tools/WindowLevelTool';
+import { downloadFanJpeg } from '../../src/tools/annotation/UltrasoundAnnotationTool/utils/fanExtraction';
 
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -112,7 +113,18 @@ addButtonToToolbar({
   title: 'Delete last B-line annotation',
 });
 
-/**1
+addButtonToToolbar({
+  onClick: () => {
+    const viewport = <Types.IStackViewport>(
+      renderingEngine.getViewport(viewportId)
+    );
+    const imageId = viewport.getCurrentImageId();
+    downloadFanJpeg(imageId);
+  },
+  title: 'Download fan shape',
+});
+
+/**
  * Runs the demo
  */
 async function run() {

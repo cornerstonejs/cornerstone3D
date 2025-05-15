@@ -186,22 +186,48 @@ function exportFanJpeg(
   return canvas.toDataURL('image/jpeg', quality);
 }
 
-export function downloadFanJpeg(imageId: string): void {
-  const fanGeometry = calculateFanGeometry(imageId);
+export function downloadFanJpeg(
+  imageId: string,
+  contourType: number = 5
+): void {
+  const { contour, simplified, hull, refined, fanGeometry } =
+    calculateFanGeometry(imageId);
   const { imageBuffer, width, height } = getImageBuffer(imageId);
-  const jpegDataUrl = exportFanJpeg(imageBuffer, width, height, fanGeometry, {
-    strokeStyle: '#f00', // red outline
-    lineWidth: 3,
-    quality: 0.95,
-  });
+  let jpegDataUrl;
+  if (contourType === 1) {
+    jpegDataUrl = exportContourJpeg(imageBuffer, width, height, contour);
+  } else if (contourType === 2) {
+    jpegDataUrl = exportContourJpeg(imageBuffer, width, height, simplified);
+  } else if (contourType === 3) {
+    jpegDataUrl = exportContourJpeg(imageBuffer, width, height, hull);
+  } else if (contourType === 4) {
+    jpegDataUrl = exportContourJpeg(imageBuffer, width, height, [
+      refined.P1,
+      refined.P2,
+      refined.P3,
+      refined.P4,
+    ]);
+  } else {
+    jpegDataUrl = exportFanJpeg(imageBuffer, width, height, fanGeometry, {
+      strokeStyle: '#f00', // red outline
+      lineWidth: 3,
+      quality: 0.95,
+    });
+  }
   saveBinaryData(jpegDataUrl, 'contour.jpg');
 }
 
-export function calculateFanGeometry(imageId: string): FanGeometry {
+export function calculateFanGeometry(imageId: string) {
   const { imageBuffer, width, height } = getImageBuffer(imageId);
   const contour = segmentLargestUSOutlineFromBuffer(imageBuffer, width, height);
-  const hull = generateConvexHullFromContour(contour);
-  const refined = calculateFanShapeCorners(imageBuffer, width, height, hull);
+  const { simplified, hull } = generateConvexHullFromContour(contour);
+  const refined = calculateFanShapeCorners(
+    imageBuffer,
+    width,
+    height,
+    hull,
+    simplified
+  );
 
   const fanGeometry = deriveFanGeometry({
     P1: refined.P1,
@@ -209,5 +235,5 @@ export function calculateFanGeometry(imageId: string): FanGeometry {
     P3: refined.P3,
     P4: refined.P4,
   });
-  return fanGeometry;
+  return { contour, simplified, hull, refined, fanGeometry };
 }

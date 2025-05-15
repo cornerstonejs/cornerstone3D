@@ -97,6 +97,69 @@ export function mergeIntervals(intervals: Interval[]): Interval[] {
 }
 
 /**
+ * Subtract a list of intervals from a target interval.
+ *
+ * All intervals are of the form [start, end] where start ≤ end.
+ * They are treated as *closed* on both ends.  (If you need half-open
+ * semantics, adjust the comparison operators as noted in comments.)
+ *
+ * @param {Interval[]} blocked  intervals to remove
+ * @param {Interval}        target   interval to subtract from
+ * @returns {Interval[]}        gaps that remain
+ */
+export function subtractIntervals(
+  blocked: Interval[],
+  target: Interval
+): Interval[] {
+  const [T0, T1] = target;
+  if (T1 <= T0) {
+    return [];
+  } // empty / invalid target
+
+  /* ---- 1. clip “blocked” intervals to the target and keep only overlaps ---- */
+  const overlaps = blocked
+    .map(([a, b]) => [Math.max(a, T0), Math.min(b, T1)])
+    .filter(([a, b]) => b > a); //  use “>=” for closed–open
+
+  if (overlaps.length === 0) {
+    return [[T0, T1]];
+  } // nothing blocked at all
+
+  /* ---- 2. merge overlaps so we deal with a single, sorted union ---- */
+  overlaps.sort((p, q) => p[0] - q[0]);
+  const merged = [];
+  let [curA, curB] = overlaps[0];
+
+  for (let i = 1; i < overlaps.length; i++) {
+    const [a, b] = overlaps[i];
+    if (a <= curB) {
+      // intervals touch / overlap  →  extend the current one
+      curB = Math.max(curB, b);
+    } else {
+      merged.push([curA, curB]);
+      [curA, curB] = [a, b];
+    }
+  }
+  merged.push([curA, curB]); // last segment
+
+  /* ---- 3. walk through the merged blocks and collect the gaps ---- */
+  const gaps = [];
+  let cursor = T0;
+
+  for (const [a, b] of merged) {
+    if (a > cursor) {
+      gaps.push([cursor, a]);
+    } // gap before this block
+    cursor = Math.max(cursor, b); // advance behind the block
+  }
+  if (cursor < T1) {
+    gaps.push([cursor, T1]);
+  } // trailing gap
+
+  return gaps;
+}
+
+/**
  * Clips an inner angular interval against a set of merged outer angular intervals.
  * This function finds the parts of the inner interval that are also covered by any of the outer intervals.
  *
