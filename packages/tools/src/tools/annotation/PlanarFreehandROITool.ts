@@ -3,6 +3,7 @@ import {
   getEnabledElement,
   VolumeViewport,
   utilities as csUtils,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -479,7 +480,50 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     const annotationsWithParallelNormals = annotations.filter(
       (td: Annotation) => {
-        const annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+        let annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+
+        if (
+          !td.metadata.referencedImageId &&
+          !annotationViewPlaneNormal &&
+          td.metadata.FrameOfReferenceUID
+        ) {
+          for (const point of td.data.contour.polyline) {
+            const vector = vec3.sub(vec3.create(), point, camera.focalPoint);
+            const dotProduct = vec3.dot(vector, camera.viewPlaneNormal);
+            if (!csUtils.isEqual(dotProduct, 0)) {
+              return false;
+            }
+          }
+          td.metadata.viewPlaneNormal = camera.viewPlaneNormal;
+          td.metadata.cameraFocalPoint = camera.focalPoint;
+          return true;
+        }
+
+        if (!annotationViewPlaneNormal) {
+          // This code is run to set the annotation view plane normal
+          // for historical data which was saved without the normal.
+          const { referencedImageId } = td.metadata;
+          const { imageOrientationPatient } = metaData.get(
+            'imagePlaneModule',
+            referencedImageId
+          );
+          const rowCosineVec = vec3.fromValues(
+            imageOrientationPatient[0],
+            imageOrientationPatient[1],
+            imageOrientationPatient[2]
+          );
+
+          const colCosineVec = vec3.fromValues(
+            imageOrientationPatient[3],
+            imageOrientationPatient[4],
+            imageOrientationPatient[5]
+          );
+
+          annotationViewPlaneNormal = vec3.create() as Types.Point3;
+
+          vec3.cross(annotationViewPlaneNormal, rowCosineVec, colCosineVec);
+          td.metadata.viewPlaneNormal = annotationViewPlaneNormal;
+        }
 
         const isParallel =
           Math.abs(vec3.dot(viewPlaneNormal, annotationViewPlaneNormal)) >

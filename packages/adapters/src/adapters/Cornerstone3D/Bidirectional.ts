@@ -37,18 +37,48 @@ class Bidirectional extends BaseAdapter3D {
             group => group.ConceptNameCodeSequence.CodeMeaning === LONG_AXIS
         );
 
-        const longAxisSCOORDGroup = toArray(
-            longAxisNUMGroup.ContentSequence
-        ).find(group => group.ValueType === "SCOORD");
-
         const shortAxisNUMGroup = toArray(ContentSequence).find(
             group => group.ConceptNameCodeSequence.CodeMeaning === SHORT_AXIS
         );
+
+        const longAxisSCOORDGroup = toArray(
+            longAxisNUMGroup.ContentSequence
+        ).find(group => group.ValueType === "SCOORD");
 
         const shortAxisSCOORDGroup = toArray(
             shortAxisNUMGroup.ContentSequence
         ).find(group => group.ValueType === "SCOORD");
 
+        if (longAxisSCOORDGroup && shortAxisSCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                longAxisNUMGroup,
+                shortAxisNUMGroup,
+                longAxisSCOORDGroup,
+                shortAxisSCOORDGroup,
+                referencedImageId,
+                imageToWorldCoords,
+                ReferencedFrameNumber,
+                defaultState
+            });
+        } else {
+            return this.getMeasurementDataFromScoord3d({
+                longAxisNUMGroup,
+                shortAxisNUMGroup,
+                defaultState
+            });
+        }
+    }
+
+    static getMeasurementDataFromScoord({
+        longAxisNUMGroup,
+        shortAxisNUMGroup,
+        longAxisSCOORDGroup,
+        shortAxisSCOORDGroup,
+        referencedImageId,
+        imageToWorldCoords,
+        ReferencedFrameNumber,
+        defaultState
+    }) {
         const worldCoords = [];
 
         [longAxisSCOORDGroup, shortAxisSCOORDGroup].forEach(group => {
@@ -89,20 +119,59 @@ class Bidirectional extends BaseAdapter3D {
         return state;
     }
 
+    static getMeasurementDataFromScoord3d({
+        longAxisNUMGroup,
+        shortAxisNUMGroup,
+        defaultState
+    }) {
+        const worldCoords = [];
+        const longAxisSCOORD3DGroup = toArray(
+            longAxisNUMGroup.ContentSequence
+        ).find(group => group.ValueType === "SCOORD3D");
+
+        const shortAxisSCOORD3DGroup = toArray(
+            shortAxisNUMGroup.ContentSequence
+        ).find(group => group.ValueType === "SCOORD3D");
+
+        [longAxisSCOORD3DGroup, shortAxisSCOORD3DGroup].forEach(group => {
+            const { GraphicData } = group;
+            for (let i = 0; i < GraphicData.length; i += 3) {
+                const point = [
+                    GraphicData[i],
+                    GraphicData[i + 1],
+                    GraphicData[i + 2]
+                ];
+                worldCoords.push(point);
+            }
+        });
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [
+                    worldCoords[0],
+                    worldCoords[1],
+                    worldCoords[2],
+                    worldCoords[3]
+                ],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {}
+        };
+
+        return state;
+    }
+
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
 
-        if (!referencedImageId) {
-            throw new Error(
-                "Bidirectional.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
-        }
-
-        const { length, width } =
-            cachedStats[`imageId:${referencedImageId}`] || {};
         const { points } = handles;
 
         // Find the length and width point pairs by comparing the distances of the points at 0,1 to points at 2,3
@@ -131,6 +200,15 @@ class Bidirectional extends BaseAdapter3D {
             longAxisPoints = firstPointPairs;
         }
 
+        if (!referencedImageId) {
+            return this.getTID300RepresentationArgumentsSCOORD3D({
+                tool,
+                shortAxisPoints,
+                longAxisPoints
+            });
+        }
+
+        // Using image coordinates for 2D points
         const longAxisStartImage = worldToImageCoords(
             referencedImageId,
             shortAxisPoints[0]
@@ -147,6 +225,9 @@ class Bidirectional extends BaseAdapter3D {
             referencedImageId,
             longAxisPoints[1]
         );
+
+        const { length, width } =
+            cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             longAxis: {
@@ -173,7 +254,62 @@ class Bidirectional extends BaseAdapter3D {
             shortAxisLength: width,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding: finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: false
+        };
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D({
+        tool,
+        shortAxisPoints,
+        longAxisPoints
+    }) {
+        const { data, finding, findingSites, metadata } = tool;
+        const { cachedStats = {} } = data;
+
+        // Using world coordinates for 3D points
+        const longAxisStart = shortAxisPoints[0];
+        const longAxisEnd = shortAxisPoints[1];
+        const shortAxisStart = longAxisPoints[0];
+        const shortAxisEnd = longAxisPoints[1];
+
+        const cachedStatsKeys = Object.keys(cachedStats)[0];
+        const { length, width } = cachedStatsKeys
+            ? cachedStats[cachedStatsKeys]
+            : {};
+
+        return {
+            longAxis: {
+                point1: {
+                    x: longAxisStart[0],
+                    y: longAxisStart[1],
+                    z: longAxisStart[2]
+                },
+                point2: {
+                    x: longAxisEnd[0],
+                    y: longAxisEnd[1],
+                    z: longAxisEnd[2]
+                }
+            },
+            shortAxis: {
+                point1: {
+                    x: shortAxisStart[0],
+                    y: shortAxisStart[1],
+                    z: shortAxisStart[2]
+                },
+                point2: {
+                    x: shortAxisEnd[0],
+                    y: shortAxisEnd[1],
+                    z: shortAxisEnd[2]
+                }
+            },
+            longAxisLength: length,
+            shortAxisLength: width,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            finding: finding,
+            findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
+            use3DSpatialCoordinates: true
         };
     }
 }
