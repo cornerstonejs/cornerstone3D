@@ -86,6 +86,9 @@ export function exportContourJpeg(
 
 export function getImageBuffer(imageId: string): ImageBufferResult {
   const image = cache.getImage(imageId);
+  if (!image) {
+    return;
+  }
   const width = image.width;
   const height = image.height;
   const imageBuffer = image.getPixelData();
@@ -192,7 +195,10 @@ export function downloadFanJpeg(
 ): void {
   const { contour, simplified, hull, refined, fanGeometry } =
     calculateFanGeometry(imageId);
-  const { imageBuffer, width, height } = getImageBuffer(imageId);
+  const { imageBuffer, width, height } = getImageBuffer(imageId) || {};
+  if (!imageBuffer) {
+    return;
+  }
   let jpegDataUrl;
   if (contourType === 1) {
     jpegDataUrl = exportContourJpeg(imageBuffer, width, height, contour);
@@ -218,7 +224,10 @@ export function downloadFanJpeg(
 }
 
 export function calculateFanGeometry(imageId: string) {
-  const { imageBuffer, width, height } = getImageBuffer(imageId);
+  const { imageBuffer, width, height } = getImageBuffer(imageId) || {};
+  if (!imageBuffer) {
+    return;
+  }
   const contour = segmentLargestUSOutlineFromBuffer(imageBuffer, width, height);
   const { simplified, hull } = generateConvexHullFromContour(contour);
   const refined = calculateFanShapeCorners(

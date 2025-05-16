@@ -171,6 +171,12 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         endAngle: null,
         bLineColor: 'rgb(0, 255, 0)',
         pleuraColor: 'rgb(0, 4, 255)',
+        drawDepthGuide: true,
+        depth_ratio: 0.5,
+        depthGuideColor: 'rgb(0, 255, 255)',
+        depthGuideThickness: 4,
+        depthGuideDashLength: 20,
+        depthGuideDashGap: 16,
         actions: {
           // TODO - bind globally - but here is actually pretty good as it
           // is almost always active.
@@ -799,11 +805,16 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     );
   };
 
+  /**
+   * Updates the fan geometry configuration with the provided parameters
+   * @param fanGeometry - The fan geometry parameters to update the configuration with
+   * @returns {void}
+   */
   updateFanGeometryConfiguration(fanGeometry: FanGeometry) {
     if (!fanGeometry) {
       return;
     }
-    if (this.checkFanShapeGeometryParameters(fanGeometry)) {
+    if (this.isFanShapeGeometryParametersValid(fanGeometry)) {
       this.configuration.center = [
         fanGeometry.center[0],
         fanGeometry.center[1],
@@ -818,19 +829,23 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   /**
    * Derive the fan shape geometry parameters via US image segmentation, if the
    * parameters were not defined
-   * @param viewport
+   * @param viewport - The viewport to derive fan geometry from
+   * @returns {void}
    */
   deriveFanGeometryFromViewport(viewport) {
     const imageId = viewport.getCurrentImageId();
-    const { fanGeometry } = calculateFanGeometry(imageId);
-    this.updateFanGeometryConfiguration(fanGeometry);
+    const { fanGeometry } = calculateFanGeometry(imageId) || {};
+    if (fanGeometry) {
+      this.updateFanGeometryConfiguration(fanGeometry);
+    }
   }
 
   /**
    * Check fan shape geometry parameters
-   * @returns
+   * @param fanGeometry - Optional fan geometry to check, if not provided uses the tool's configuration
+   * @returns {boolean} True if the fan geometry parameters are valid, false otherwise
    */
-  checkFanShapeGeometryParameters(fanGeometry?: FanGeometry): boolean {
+  isFanShapeGeometryParametersValid(fanGeometry?: FanGeometry): boolean {
     if (!fanGeometry) {
       fanGeometry = this.configuration as FanGeometry;
     }
@@ -845,11 +860,16 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     );
   }
 
-  getFanShapeGeometryIfInvalid(viewport): boolean {
-    if (this.checkFanShapeGeometryParameters()) {
+  /**
+   * Gets the fan shape geometry parameters, attempting to derive them if they are invalid
+   * @param viewport - The viewport to get or derive fan geometry from
+   * @returns {boolean} True if valid fan geometry parameters are available, false otherwise
+   */
+  getFanShapeGeometryParameters(viewport): boolean {
+    if (this.isFanShapeGeometryParametersValid()) {
       return true;
     }
-    if (!this.checkFanShapeGeometryParameters()) {
+    if (!this.isFanShapeGeometryParametersValid()) {
       const imageId = viewport.getCurrentImageId();
       const fanGeometry = metaData.get(
         'ultrasoundFanShapeGeometry',
@@ -857,10 +877,10 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       ) as FanGeometry;
       this.updateFanGeometryConfiguration(fanGeometry);
     }
-    if (!this.checkFanShapeGeometryParameters()) {
+    if (!this.isFanShapeGeometryParametersValid()) {
       this.deriveFanGeometryFromViewport(viewport);
     }
-    return this.checkFanShapeGeometryParameters();
+    return this.isFanShapeGeometryParametersValid();
   }
 
   /**
@@ -869,7 +889,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    * @returns {number} percentage of bLine inside the pleura
    */
   calculateBLinePleuraPercentage(viewport): number {
-    if (!this.getFanShapeGeometryIfInvalid(viewport)) {
+    if (!this.getFanShapeGeometryParameters(viewport)) {
       return;
     }
     const { imageData } = viewport.getImageData();
@@ -916,6 +936,11 @@ class UltrasoundAnnotationTool extends AnnotationTool {
 
     return bLineColor;
   }
+  /**
+   * Calculates the ratio between index coordinates and canvas coordinates
+   * @param viewport - The viewport to calculate the ratio for
+   * @returns {number} The ratio between index and canvas coordinates
+   */
   getIndexToCanvasRatio(viewport): number {
     const { imageData } = viewport.getImageData();
     const v1 = viewport.worldToCanvas(imageData.indexToWorld([1, 0, 0]));
@@ -925,6 +950,78 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       diffVector[0] * diffVector[0] + diffVector[1] * diffVector[1]
     );
     return vectorSize;
+  }
+
+  /**
+   * Draws the depth guide lines on the ultrasound fan
+   * @param svgDrawingHelper - The SVG drawing helper
+   * @param viewport - The viewport to draw on
+   * @returns {void}
+   */
+  drawDepthGuide(svgDrawingHelper: SVGDrawingHelper, viewport) {
+    if (!this.getFanShapeGeometryParameters(viewport)) {
+      return;
+    }
+
+    const { imageData } = viewport.getImageData();
+    if (!imageData) {
+      return;
+    }
+
+    const radToDegree = (rad) => (rad * 180) / Math.PI;
+    const degreeToRad = (degree) => (degree * Math.PI) / 180;
+    const indexToCanvas = (point: Types.Point3): Types.Point2 => {
+      return viewport.worldToCanvas(transformIndexToWorld(imageData, point));
+    };
+
+    const depth_radius =
+      this.configuration.innerRadius +
+      this.configuration.depth_ratio *
+        (this.configuration.outerRadius - this.configuration.innerRadius);
+
+    const theta_start = this.configuration.startAngle;
+    const theta_end = this.configuration.endAngle;
+    const theta_range = theta_end - theta_start;
+    const arc_length = degreeToRad(theta_range) * depth_radius;
+    let num_dashes = Math.round(
+      arc_length /
+        (this.configuration.depthGuideDashLength +
+          this.configuration.depthGuideDashGap)
+    );
+    if (num_dashes <= 0) {
+      num_dashes = Math.max(15, Math.round(theta_range / 5));
+    }
+    const theta_step = theta_range / num_dashes;
+    for (let i = 0; i < num_dashes; i++) {
+      const theta1 = degreeToRad(theta_start + i * theta_step);
+      const theta2 = degreeToRad(
+        theta_start +
+          i * theta_step +
+          radToDegree(this.configuration.depthGuideDashLength) / depth_radius
+      );
+
+      const start_point = [
+        this.configuration.center[0] + depth_radius * Math.cos(theta1),
+        this.configuration.center[1] + depth_radius * Math.sin(theta1),
+        0,
+      ] as Types.Point3;
+      const end_point = [
+        this.configuration.center[0] + depth_radius * Math.cos(theta2),
+        this.configuration.center[1] + depth_radius * Math.sin(theta2),
+        0,
+      ] as Types.Point3;
+      drawLineSvg(
+        svgDrawingHelper,
+        viewport.id,
+        `depthGuide-${i}`,
+        indexToCanvas(start_point),
+        indexToCanvas(end_point),
+        {
+          color: this.configuration.depthGuideColor,
+          lineWidth: this.configuration.depthGuideThickness,
+        }
+      );
+    }
   }
   /**
    * it is used to draw the length annotation in each
@@ -942,6 +1039,17 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
+    if (!this.getFanShapeGeometryParameters(viewport)) {
+      return;
+    }
+    const { imageData } = viewport.getImageData();
+    if (!imageData) {
+      return renderStatus;
+    }
+
+    if (this.configuration.drawDepthGuide) {
+      this.drawDepthGuide(svgDrawingHelper, viewport);
+    }
     let annotations = getAnnotations(this.getToolName(), element);
 
     // Todo: We don't need this anymore, filtering happens in triggerAnnotationRender
@@ -958,10 +1066,6 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       return renderStatus;
     }
 
-    if (!this.getFanShapeGeometryIfInvalid(viewport)) {
-      return;
-    }
-
     const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
@@ -971,7 +1075,6 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       viewportId: enabledElement.viewport.id,
     };
 
-    const { imageData } = viewport.getImageData();
     const fanCenter = viewport.worldToCanvas(
       transformIndexToWorld(imageData, this.configuration.center)
     );
@@ -1151,6 +1254,13 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     return renderStatus;
   };
 
+  /**
+   * Checks if the given indices are inside the volume dimensions
+   * @param index1 - First index to check
+   * @param index2 - Second index to check
+   * @param dimensions - The dimensions of the volume
+   * @returns {boolean} True if both indices are inside the volume, false otherwise
+   */
   _isInsideVolume(index1, index2, dimensions) {
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
