@@ -197,8 +197,9 @@ testCases.forEach(
       // Check Calculations
       for (const stat in expectedStats) {
         if (stat === 'lesionGlycolysis' || stat === 'volume') {
+          console.log(stats['1'][stat]);
           await expect
-            .soft(stats['1'][stat].value / 1000000)
+            .soft(stats['1'][stat].value / 1000)
             .toBeCloseTo(expectedStats[stat], 1);
         } else {
           await expect
