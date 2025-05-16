@@ -476,8 +476,6 @@ class RectangleROITool extends AnnotationTool {
 
     this.editData.hasMoved = true;
 
-    const enabledElement = getEnabledElement(element);
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (annotation.invalidated) {
@@ -935,16 +933,18 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
+        let pointsInShape;
+        if (voxelManager) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
         const stats = this.configuration.statsCalculator.getStatistics();
-
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
@@ -976,6 +976,14 @@ class RectangleROITool extends AnnotationTool {
   };
 
   _isInsideVolume = (index1, index2, dimensions) => {
+    // for wsiViewport
+    if (index1[1] < 0) {
+      index1[1] = -index1[1];
+    }
+    if (index2[1] < 0) {
+      index2[1] = -index2[1];
+    }
+
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
@@ -1059,12 +1067,16 @@ function defaultGetTextLines(data, targetId: string): string[] {
   }
 
   const textLines: string[] = [];
-
   textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
-
+  if (AnnotationTool.isNumber(mean)) {
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
+  }
+  if (AnnotationTool.isNumber(max)) {
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (AnnotationTool.isNumber(stdDev)) {
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  }
   return textLines;
 }
 

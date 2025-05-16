@@ -993,19 +993,21 @@ class CircleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            isInObject: (pointLPS) =>
-              pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
+        let pointsInShape;
+        if (voxelManager) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              isInObject: (pointLPS) =>
+                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
 
         const stats = this.configuration.statsCalculator.getStatistics();
-
         cachedStats[targetId] = {
           Modality: metadata.Modality,
           area,
@@ -1041,6 +1043,14 @@ class CircleROITool extends AnnotationTool {
   };
 
   _isInsideVolume = (index1, index2, dimensions) => {
+    // for wsiViewport
+    if (index1[1] < 0) {
+      index1[1] = -index1[1];
+    }
+    if (index2[1] < 0) {
+      index2[1] = -index2[1];
+    }
+
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
@@ -1147,15 +1157,15 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(areaLine);
   }
 
-  if (mean) {
+  if (AnnotationTool.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max) {
+  if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
-  if (stdDev) {
+  if (AnnotationTool.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
