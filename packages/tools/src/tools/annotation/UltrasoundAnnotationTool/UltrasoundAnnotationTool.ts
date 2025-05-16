@@ -127,7 +127,7 @@ import { FanGeometry } from '../../../../../../.nx/cache/283231214975993815/pack
  * refer to the official CornerstoneJS documentation.
  */
 class UltrasoundAnnotationTool extends AnnotationTool {
-  static toolName = 'UltrasoundAnnotation';
+  static toolName = 'UltrasoundAnnotationTool';
 
   /**
    * Enum for ultrasound annotation types
