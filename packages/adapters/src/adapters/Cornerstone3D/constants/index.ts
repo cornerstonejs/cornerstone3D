@@ -1,1 +1,1 @@
-export const NULLISH_IMAGE_ID_GROUP = "CS3D:NULLISH_IMAGE_ID_GROUP";
+export const NO_IMAGE_ID = "none";
