@@ -5,6 +5,7 @@ import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { toArray, codeMeaningEquals, copyStudyTags } from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
 import { copySeriesTags } from "../helpers/copySeriesTags";
+import { NO_IMAGE_ID } from "./constants";
 
 const { TID1500, addAccessors } = utilities;
 
@@ -423,7 +424,7 @@ export default class MeasurementReport {
         derivationSourceDatasets
     }) {
         const effectiveImageId =
-            imageId === "none"
+            imageId === NO_IMAGE_ID
                 ? this.getImageIdFromVolume({ toolData, toolTypes })
                 : imageId;
 
@@ -519,7 +520,7 @@ export default class MeasurementReport {
                 derivationSourceDatasets
             });
 
-            if (imageId === "none") {
+            if (imageId === NO_IMAGE_ID) {
                 is3DSR = true;
             }
 
