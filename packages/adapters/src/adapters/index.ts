@@ -5,6 +5,7 @@ import {
     Cornerstone3DPMAP,
     Cornerstone3DRT
 } from "./Cornerstone3D";
+import { NULLISH_IMAGE_ID_GROUP } from "./Cornerstone3D/constants";
 import { VTKjsSEG } from "./VTKjs";
 import * as Enums from "./enums";
 import * as helpers from "./helpers";
@@ -30,4 +31,12 @@ const adaptersRT = {
     Cornerstone3D: Cornerstone3DRT
 };
 
-export { adaptersSR, adaptersSEG, adaptersPMAP, adaptersRT, Enums, helpers };
+export {
+    adaptersSR,
+    adaptersSEG,
+    adaptersPMAP,
+    adaptersRT,
+    Enums,
+    helpers,
+    NULLISH_IMAGE_ID_GROUP
+};
