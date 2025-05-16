@@ -174,8 +174,8 @@ testCases.forEach(
       // Set end slice
       await page.getByRole('button', { name: 'Set End Slice' }).click();
 
-      // Pause 100 ms to account for debounce
-      await page.waitForTimeout(100);
+      // Pause 150 ms to account for 100 ms debounce
+      await page.waitForTimeout(150);
 
       // Run threshold over ROI
       await page.getByRole('button', { name: 'Run Segmentation' }).click();
