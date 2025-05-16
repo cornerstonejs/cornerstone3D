@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.15.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.2...v3.15.3) (2025-05-16)
+
+### Bug Fixes
+
+- remove random none string ([#2081](https://github.com/cornerstonejs/cornerstone3D/issues/2081)) ([c1df7de](https://github.com/cornerstonejs/cornerstone3D/commit/c1df7dea9a448427c36a7b1dcd60f728e7d54d86))
+
 ## [3.15.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.1...v3.15.2) (2025-05-15)
 
 ### Bug Fixes
