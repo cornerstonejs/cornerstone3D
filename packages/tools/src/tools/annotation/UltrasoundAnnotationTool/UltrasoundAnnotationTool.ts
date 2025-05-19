@@ -48,6 +48,7 @@ import type {
 import type { UltrasoundAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../../types/AnnotationStyle';
 import {
+  angleFromCenter,
   calculateInnerFanPercentage,
   clipInterval,
   intervalFromPoints,
@@ -85,6 +86,7 @@ import { getUnknownVolumeLoaderSchema } from '../../../../core/src/loaders/volum
 import { deriveFanGeometry } from './utils/deriveFanGeometry';
 import { Point3 } from '../../../../../../.nx/cache/6836589865368719691/packages/core/dist/esm/types/Point3';
 import { FanGeometry } from '../../../../../../.nx/cache/283231214975993815/packages/tools/dist/esm/tools/annotation/UltrasoundAnnotationTool/utils/types';
+import { subtractIntervals } from '../../../utilities/math/fan/fanUtils';
  *
  * // Register the tool with the ToolGroupManager (or globally if preferred)
  * addTool(UltrasoundAnnotationTool);
@@ -178,6 +180,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         depthGuideDashLength: 20,
         depthGuideDashGap: 16,
         fanOpacity: 0.4,
+        updatePercentageCallback: null,
         actions: {
           // TODO - bind globally - but here is actually pretty good as it
           // is almost always active.
@@ -562,6 +565,24 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     this.isDrawing = false;
   };
 
+  isInsideFanShape(viewport, point: Types.Point3) {
+    if (!this.getFanShapeGeometryParameters(viewport)) {
+      return false;
+    }
+    const { imageData } = viewport.getImageData() || {};
+    if (imageData) {
+      const fanCenter = viewport.worldToCanvas(
+        imageData.indexToWorld(this.configuration.center)
+      );
+
+      const canvasCoordinates = viewport.worldToCanvas(point);
+      const angle = angleFromCenter(fanCenter, canvasCoordinates);
+      return (
+        angle >= this.configuration.startAngle &&
+        angle <= this.configuration.endAngle
+      );
+    }
+  }
   /**
    * Callback that is called when the tool is dragged
    * @param evt - event
@@ -571,6 +592,10 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
+    const { viewport } = getEnabledElement(element) || {};
+    if (!viewport) {
+      return;
+    }
 
     const {
       annotation,
@@ -603,19 +628,34 @@ class UltrasoundAnnotationTool extends AnnotationTool {
 
       const points = data.handles.points;
 
-      points.forEach((point) => {
-        point[0] += worldPosDelta[0];
-        point[1] += worldPosDelta[1];
-        point[2] += worldPosDelta[2];
+      // Check if all points + worldPosDelta are inside the shape
+      const allPointsInsideShape = points.every((point) => {
+        const newPoint = [
+          point[0] + worldPosDelta[0],
+          point[1] + worldPosDelta[1],
+          point[2] + worldPosDelta[2],
+        ] as Types.Point3;
+        return this.isInsideFanShape(viewport, newPoint);
       });
-      annotation.invalidated = true;
+
+      // Only modify points if all are inside the shape
+      if (allPointsInsideShape) {
+        points.forEach((point) => {
+          point[0] += worldPosDelta[0];
+          point[1] += worldPosDelta[1];
+          point[2] += worldPosDelta[2];
+        });
+        annotation.invalidated = true;
+      }
     } else {
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
       const worldPos = currentPoints.world;
 
-      data.handles.points[handleIndex] = [...worldPos];
-      annotation.invalidated = true;
+      if (this.isInsideFanShape(viewport, worldPos)) {
+        data.handles.points[handleIndex] = [...worldPos];
+        annotation.invalidated = true;
+      }
     }
 
     this.editData.hasMoved = true;
@@ -875,10 +915,9 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     }
     if (!this.isFanShapeGeometryParametersValid()) {
       const imageId = viewport.getCurrentImageId();
-      const { sopInstanceUID } = metaData.get('generalImageModule', imageId);
       const fanGeometry = metaData.get(
         'ultrasoundFanShapeGeometry',
-        sopInstanceUID
+        imageId
       ) as FanGeometry;
       this.updateFanGeometryConfiguration(fanGeometry);
     }
@@ -897,7 +936,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     if (!this.getFanShapeGeometryParameters(viewport)) {
       return;
     }
-    const { imageData } = viewport.getImageData();
+    const { imageData } = viewport.getImageData() || {};
     const fanCenter = viewport.worldToCanvas(
       imageData.indexToWorld(this.configuration.center)
     );
@@ -947,7 +986,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    * @returns {number} The ratio between index and canvas coordinates
    */
   getIndexToCanvasRatio(viewport): number {
-    const { imageData } = viewport.getImageData();
+    const { imageData } = viewport.getImageData() || {};
     const v1 = viewport.worldToCanvas(imageData.indexToWorld([1, 0, 0]));
     const v2 = viewport.worldToCanvas(imageData.indexToWorld([2, 0, 0]));
     const diffVector = [v2[0] - v1[0], v2[1] - v1[1]];
@@ -968,7 +1007,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       return;
     }
 
-    const { imageData } = viewport.getImageData();
+    const { imageData } = viewport.getImageData() || {};
     if (!imageData) {
       return;
     }
@@ -1047,7 +1086,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     if (!this.getFanShapeGeometryParameters(viewport)) {
       return;
     }
-    const { imageData } = viewport.getImageData();
+    const { imageData } = viewport.getImageData() || {};
     if (!imageData) {
       return renderStatus;
     }
@@ -1259,6 +1298,11 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       }
     }
 
+    if (this.configuration.updatePercentageCallback && viewport) {
+      this.configuration.updatePercentageCallback(
+        this.calculateBLinePleuraPercentage(viewport)
+      );
+    }
     return renderStatus;
   };
 

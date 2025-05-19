@@ -53,6 +53,15 @@ instructions.innerText =
   'Middle Click: Window Level\nRight Click: Zoom\n Mouse Wheel: Stack Scroll';
 
 content.append(instructions);
+
+// Create a label to display B-Line/Pleura Percentage
+const percentageLabel = document.createElement('div');
+percentageLabel.id = 'percentage-label';
+percentageLabel.style.marginTop = '10px';
+percentageLabel.style.fontWeight = 'bold';
+percentageLabel.innerText = 'B-Line/Pleura Percentage: 0%';
+content.append(percentageLabel);
+
 // ============================= //
 let renderingEngine;
 const viewportId = 'US_STACK';
@@ -215,6 +224,17 @@ async function run() {
   // Set the stack on the viewport
   viewport.setStack(imageIds);
   usAnnotation = toolGroup.getToolInstance(UltrasoundAnnotationTool.toolName);
+  // Define the callback function to update the percentage label
+  function updatePercentageCallback(percentage) {
+    const percentageLabel = document.getElementById('percentage-label');
+    if (percentageLabel) {
+      percentageLabel.innerText = `B-Line/Pleura Percentage: ${percentage}%`;
+    }
+  }
+
+  toolGroup.setToolConfiguration(UltrasoundAnnotationTool.toolName, {
+    updatePercentageCallback,
+  });
 
   cornerstoneTools.utilities.stackPrefetch.enable(viewport.element);
 
