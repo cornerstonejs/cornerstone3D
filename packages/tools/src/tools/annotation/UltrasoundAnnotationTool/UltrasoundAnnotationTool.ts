@@ -221,7 +221,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     let annotationList;
     if (type === UltrasoundAnnotationTool.USAnnotationType.PLEURA) {
       annotationList = this.pleuraAnnotations;
-    } else {
+    } else if (type === UltrasoundAnnotationTool.USAnnotationType.BLINE) {
       annotationList = this.bLineAnnotations;
     }
     if (annotationList.length > 0) {
@@ -359,7 +359,10 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       UltrasoundAnnotationTool.USAnnotationType.PLEURA
     ) {
       this.pleuraAnnotations.push(annotation as UltrasoundAnnotation);
-    } else {
+    } else if (
+      this.activeAnnotationType ===
+      UltrasoundAnnotationTool.USAnnotationType.BLINE
+    ) {
       this.bLineAnnotations.push(annotation as UltrasoundAnnotation);
     }
 
@@ -1213,7 +1216,10 @@ class UltrasoundAnnotationTool extends AnnotationTool {
             bLineIntervalsDisplayed.push(clippedInterval);
           });
         });
-      } else {
+      } else if (
+        annotation.data.annotationType ===
+        UltrasoundAnnotationTool.USAnnotationType.PLEURA
+      ) {
         const uncoveredIntervals = subtractIntervals(
           pleuraIntervalsDisplayed,
           lineInterval
