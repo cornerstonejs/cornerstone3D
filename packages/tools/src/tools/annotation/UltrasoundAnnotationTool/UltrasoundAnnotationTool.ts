@@ -177,6 +177,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         depthGuideThickness: 4,
         depthGuideDashLength: 20,
         depthGuideDashGap: 16,
+        fanOpacity: 0.4,
         actions: {
           // TODO - bind globally - but here is actually pretty good as it
           // is almost always active.
@@ -1202,7 +1203,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
               {
                 color: 'transparent',
                 fill: this.getColorForLineType(annotation),
-                fillOpacity: 0.2,
+                fillOpacity: this.configuration.fanOpacity,
                 width: lineWidth,
                 lineDash,
                 shadow,
@@ -1232,7 +1233,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
             {
               color: 'transparent',
               fill: this.getColorForLineType(annotation),
-              fillOpacity: 0.2,
+              fillOpacity: this.configuration.fanOpacity,
               width: lineWidth,
               lineDash,
               shadow,
