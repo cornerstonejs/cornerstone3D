@@ -875,9 +875,10 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     }
     if (!this.isFanShapeGeometryParametersValid()) {
       const imageId = viewport.getCurrentImageId();
+      const { sopInstanceUID } = metaData.get('generalImageModule', imageId);
       const fanGeometry = metaData.get(
         'ultrasoundFanShapeGeometry',
-        imageId
+        sopInstanceUID
       ) as FanGeometry;
       this.updateFanGeometryConfiguration(fanGeometry);
     }
