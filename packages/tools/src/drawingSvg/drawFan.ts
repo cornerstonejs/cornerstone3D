@@ -99,6 +99,7 @@ function drawFan(
     'stroke-dasharray': lineDash,
     'fill-opacity': fillOpacity,
     'stroke-opacity': strokeOpacity,
+    'mix-blend-mode': 'normal',
   };
 
   if (existingFanElement) {
