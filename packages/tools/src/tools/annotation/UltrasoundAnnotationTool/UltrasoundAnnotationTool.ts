@@ -179,6 +179,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         depthGuideThickness: 4,
         depthGuideDashLength: 20,
         depthGuideDashGap: 16,
+        depthGuideOpacity: 0.2,
         fanOpacity: 0.4,
         updatePercentageCallback: null,
         actions: {
@@ -1063,6 +1064,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         {
           color: this.configuration.depthGuideColor,
           lineWidth: this.configuration.depthGuideThickness,
+          strokeOpacity: this.configuration.depthGuideOpacity,
         }
       );
     }
