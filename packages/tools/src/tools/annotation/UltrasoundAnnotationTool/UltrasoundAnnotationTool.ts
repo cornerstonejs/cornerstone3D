@@ -1191,6 +1191,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
           canvasCoordinates,
           {
             color: this.getColorForLineType(annotation),
+            fill: this.getColorForLineType(annotation),
             lineDash,
             lineWidth,
           }
