@@ -240,7 +240,7 @@ class BidirectionalTool extends AnnotationTool {
     } = this.hydrateBase<BidirectionalTool>(
       BidirectionalTool,
       enabledElement,
-      [],
+      axis[0],
       options
     );
 
