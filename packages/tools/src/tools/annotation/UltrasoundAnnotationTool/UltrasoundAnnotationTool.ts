@@ -202,6 +202,68 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   }
 
   /**
+   * Counts the number of annotations per image ID.
+   * @param {HTMLDivElement} element - The HTML element.
+   * @returns {Map<string, {bLineCount: number, pleuraCount: number}>} A map of image IDs to annotation counts.
+   */
+  public countAnnotationsPerImageId(element: HTMLDivElement) {
+    const annotations = getAnnotations(this.getToolName(), element);
+
+    if (!annotations?.length) {
+      return;
+    }
+    const annotationMapping = new Map();
+    annotations.forEach((annotation) => {
+      const imageId = annotation.metadata.referencedImageId;
+      const { annotationType } = annotation.data;
+      let counts;
+      if (annotationMapping.has(imageId)) {
+        counts = annotationMapping.get(imageId);
+      } else {
+        counts = {
+          bLineCount: 0,
+          pleuraCount: 0,
+        };
+      }
+      if (annotationType === UltrasoundAnnotationTool.USAnnotationType.PLEURA) {
+        counts.pleuraCount++;
+      } else if (
+        annotationType === UltrasoundAnnotationTool.USAnnotationType.BLINE
+      ) {
+        counts.bLineCount++;
+      }
+      annotationMapping.set(imageId, counts);
+    });
+    return annotationMapping;
+  }
+
+  /**
+   * Deletes annotations from a specific image ID.
+   * @param {HTMLDivElement} element - The HTML element.
+   * @param {string} imageId - The image ID to delete annotations from.
+   * @returns {void}
+   */
+  public deleteAnnotationsFromImageId(
+    element: HTMLDivElement,
+    imageId: string
+  ) {
+    const annotations = getAnnotations(
+      UltrasoundAnnotationTool.toolName,
+      element
+    );
+
+    if (!annotations?.length) {
+      return;
+    }
+    annotations.forEach((annotation) => {
+      if (annotation.metadata.referencedImageId !== imageId) {
+        return;
+      }
+      removeAnnotation(annotation.annotationUID);
+    });
+  }
+
+  /**
    * Sets the active annotation type (bLine or pleura)
    * @param type - annotation type from UltrasoundAnnotationTool.USAnnotationType
    */
@@ -218,7 +280,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   }
 
   /**
-   * Deletes the last pleura annotation
+   * Deletes the last annotation of a specific type.
+   * @param {string} type - The annotation type to delete (UltrasoundAnnotationTool.USAnnotationType.PLEURA or UltrasoundAnnotationTool.USAnnotationType.BLINE).
    * @returns {void}
    */
   public deleteLastAnnotationType(type: string) {
@@ -234,7 +297,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     }
   }
   /**
-   * Deletes all annotations
+   * Deletes all annotations of both pleura and bLine types.
    * @returns {void}
    */
   public deleteAllAnnotations() {
@@ -248,7 +311,18 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     this.bLineAnnotations = [];
   }
 
-  // needs revision
+  /**
+   * Hydrates an UltrasoundAnnotation from a set of points and options.
+   * @param {string} viewportId - The ID of the viewport.
+   * @param {Types.Point3[]} points - The points to hydrate from.
+   * @param {object} options - The options to hydrate with.
+   * @param {string} options.annotationUID - The annotation UID.
+   * @param {UltrasoundAnnotationTool} options.toolInstance - The tool instance.
+   * @param {string} options.referencedImageId - The referenced image ID.
+   * @param {Types.Point3} options.viewplaneNormal - The viewplane normal.
+   * @param {Types.Point3} options.viewUp - The view up.
+   * @returns {UltrasoundAnnotation} The hydrated annotation.
+   */
   static hydrate = (
     viewportId: string,
     points: Types.Point3[],
@@ -306,12 +380,9 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   };
 
   /**
-   * Based on the current position of the mouse and the current imageId to create
-   * a Length Annotation and stores it in the annotationManager
-   *
-   * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object.
-   *
+   * Adds a new annotation based on the current mouse position and image ID.
+   * @param {EventTypes.InteractionEventType} evt - The event.
+   * @returns {UltrasoundAnnotation} The new annotation object.
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
@@ -1221,6 +1292,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         canvasCoordinates as FanPair
       );
 
+      let fanNumber = 0;
       if (
         annotation.data.annotationType ===
         UltrasoundAnnotationTool.USAnnotationType.BLINE
@@ -1235,8 +1307,10 @@ class UltrasoundAnnotationTool extends AnnotationTool {
             mergedPleuraIntervals
           );
           clippedIntervals.forEach((clippedInterval, index) => {
-            const fanDataId = `${annotationUID}-fan-${index}`;
-            const fanUID = `2-${index}`;
+            fanNumber++;
+            const fanIndex = fanNumber;
+            const fanDataId = `${annotationUID}-fan-${fanIndex}`;
+            const fanUID = `2-${fanIndex}`;
             drawFanSvg(
               svgDrawingHelper,
               annotationUID,
@@ -1268,8 +1342,10 @@ class UltrasoundAnnotationTool extends AnnotationTool {
           lineInterval
         );
         uncoveredIntervals.forEach((interval, index) => {
-          const fanDataId = `${annotationUID}-fan-${index}`;
-          const fanUID = `2-${index}`;
+          fanNumber++;
+          const fanIndex = fanNumber;
+          const fanDataId = `${annotationUID}-fan-${fanIndex}`;
+          const fanUID = `2-${fanIndex}`;
           drawFanSvg(
             svgDrawingHelper,
             annotationUID,
