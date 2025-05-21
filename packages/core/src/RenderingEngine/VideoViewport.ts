@@ -553,6 +553,10 @@ class VideoViewport extends Viewport {
       loop: false,
       muted: true,
     });
+    this.setVOI({
+      lower: 0,
+      upper: 255,
+    });
   }
 
   protected getScalarData(): CanvasScalarData {

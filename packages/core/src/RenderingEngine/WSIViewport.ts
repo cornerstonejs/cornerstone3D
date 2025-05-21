@@ -241,13 +241,17 @@ class WSIViewport extends Viewport {
     };
   };
 
+  /**
+   * resetProperties resets the properties of the viewport to the default
+   * values.  It is called by the resetViewer command in OHIF which is called when using
+   * the reset toolbar button.
+   */
   public resetProperties() {
-    // this.setProperties({});
+    this.setProperties({});
     this.setVOI({
       lower: 0,
       upper: 255,
     });
-    console.debug('Resetting properties');
   }
 
   /**
@@ -256,6 +260,8 @@ class WSIViewport extends Viewport {
    * feFilter is an inline string value for the CSS filter on the openLayers
    * CSS filters can reference SVG filters, so for the typical use case here
    * the CSS filter is actually an link link to a SVG filter.
+   * the WSI viewport has two openlayers canvases; one for the main display and one for
+   * the map overlay on the bottom left corner.
    */
   public setVOI(voiRange: VOIRange): void {
     this.voiRange = voiRange;
