@@ -181,6 +181,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         depthGuideDashGap: 16,
         depthGuideOpacity: 0.2,
         fanOpacity: 0.4,
+        showFanAnnotations: true,
         updatePercentageCallback: null,
         actions: {
           // TODO - bind globally - but here is actually pretty good as it
@@ -1216,9 +1217,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
 
     const pleuraIntervalsDisplayed = [];
     const bLineIntervalsDisplayed = [];
-    // Draw SVG
-    for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as UltrasoundAnnotation;
+    // Draw SVG function
+    const drawAnnotation = (annotation: UltrasoundAnnotation) => {
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
 
@@ -1240,7 +1240,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       let activeHandleCanvasCoords;
 
       if (!isAnnotationVisible(annotationUID)) {
-        continue;
+        return;
       }
 
       if (
@@ -1286,27 +1286,64 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         dataId
       );
 
-      // drawFan
-      const lineInterval = intervalFromPoints(
-        fanCenter,
-        canvasCoordinates as FanPair
-      );
-
-      let fanNumber = 0;
-      if (
-        annotation.data.annotationType ===
-        UltrasoundAnnotationTool.USAnnotationType.BLINE
-      ) {
-        const uncoveredIntervals = subtractIntervals(
-          bLineIntervalsDisplayed,
-          lineInterval
+      if (this.configuration.showFanAnnotations) {
+        // drawFan
+        const lineInterval = intervalFromPoints(
+          fanCenter,
+          canvasCoordinates as FanPair
         );
-        uncoveredIntervals.forEach((interval) => {
-          const clippedIntervals = clipInterval(
-            interval,
-            mergedPleuraIntervals
+
+        let fanNumber = 0;
+        if (
+          annotation.data.annotationType ===
+          UltrasoundAnnotationTool.USAnnotationType.BLINE
+        ) {
+          const uncoveredIntervals = subtractIntervals(
+            bLineIntervalsDisplayed,
+            lineInterval
           );
-          clippedIntervals.forEach((clippedInterval, index) => {
+          uncoveredIntervals.forEach((interval) => {
+            const clippedIntervals = clipInterval(
+              interval,
+              mergedPleuraIntervals
+            );
+            clippedIntervals.forEach((clippedInterval, index) => {
+              fanNumber++;
+              const fanIndex = fanNumber;
+              const fanDataId = `${annotationUID}-fan-${fanIndex}`;
+              const fanUID = `2-${fanIndex}`;
+              drawFanSvg(
+                svgDrawingHelper,
+                annotationUID,
+                fanUID,
+                fanCenter,
+                innerRadius,
+                outerRadius,
+                clippedInterval[0],
+                clippedInterval[1],
+                {
+                  color: 'transparent',
+                  fill: this.getColorForLineType(annotation),
+                  fillOpacity: this.configuration.fanOpacity,
+                  width: lineWidth,
+                  lineDash,
+                  shadow,
+                },
+                fanDataId,
+                10 // Higher z-index for bline annotations to appear on top
+              );
+              bLineIntervalsDisplayed.push(clippedInterval);
+            });
+          });
+        } else if (
+          annotation.data.annotationType ===
+          UltrasoundAnnotationTool.USAnnotationType.PLEURA
+        ) {
+          const uncoveredIntervals = subtractIntervals(
+            pleuraIntervalsDisplayed,
+            lineInterval
+          );
+          uncoveredIntervals.forEach((interval, index) => {
             fanNumber++;
             const fanIndex = fanNumber;
             const fanDataId = `${annotationUID}-fan-${fanIndex}`;
@@ -1318,8 +1355,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
               fanCenter,
               innerRadius,
               outerRadius,
-              clippedInterval[0],
-              clippedInterval[1],
+              interval[0],
+              interval[1],
               {
                 color: 'transparent',
                 fill: this.getColorForLineType(annotation),
@@ -1328,54 +1365,45 @@ class UltrasoundAnnotationTool extends AnnotationTool {
                 lineDash,
                 shadow,
               },
-              fanDataId
+              fanDataId,
+              5 // Lower z-index for pleura annotations to appear below bline annotations
             );
-            bLineIntervalsDisplayed.push(clippedInterval);
+            pleuraIntervalsDisplayed.push(interval);
           });
-        });
-      } else if (
+        }
+      }
+    };
+
+    // Draw pleura annotations
+    const pleuraAnnotationsToDraw = annotations.filter(
+      (annotation) =>
         annotation.data.annotationType ===
         UltrasoundAnnotationTool.USAnnotationType.PLEURA
-      ) {
-        const uncoveredIntervals = subtractIntervals(
-          pleuraIntervalsDisplayed,
-          lineInterval
-        );
-        uncoveredIntervals.forEach((interval, index) => {
-          fanNumber++;
-          const fanIndex = fanNumber;
-          const fanDataId = `${annotationUID}-fan-${fanIndex}`;
-          const fanUID = `2-${fanIndex}`;
-          drawFanSvg(
-            svgDrawingHelper,
-            annotationUID,
-            fanUID,
-            fanCenter,
-            innerRadius,
-            outerRadius,
-            interval[0],
-            interval[1],
-            {
-              color: 'transparent',
-              fill: this.getColorForLineType(annotation),
-              fillOpacity: this.configuration.fanOpacity,
-              width: lineWidth,
-              lineDash,
-              shadow,
-            },
-            fanDataId
-          );
-          pleuraIntervalsDisplayed.push(interval);
-        });
-      }
-      renderStatus = true;
-
+    );
+    pleuraAnnotationsToDraw.forEach((annotation) => {
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
-    }
+      drawAnnotation(annotation as UltrasoundAnnotation);
+    });
+
+    // Draw BLine annotations
+    const bLineAnnotationsToDraw = annotations.filter(
+      (annotation) =>
+        annotation.data.annotationType ===
+        UltrasoundAnnotationTool.USAnnotationType.BLINE
+    );
+    bLineAnnotationsToDraw.forEach((annotation) => {
+      // If rendering engine has been destroyed while rendering
+      if (!viewport.getRenderingEngine()) {
+        console.warn('Rendering Engine has been destroyed');
+        return renderStatus;
+      }
+      drawAnnotation(annotation as UltrasoundAnnotation);
+    });
+    renderStatus = true;
 
     if (this.configuration.updatePercentageCallback && viewport) {
       this.configuration.updatePercentageCallback(

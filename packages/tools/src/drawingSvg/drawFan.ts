@@ -19,6 +19,7 @@ import setNewAttributesIfValid from './setNewAttributesIfValid';
  * @param endAngle - The end angle of the fan in degrees
  * @param options - Drawing options (color, fill, etc.)
  * @param dataId - Optional data ID attribute
+ * @param zIndex - Optional z-index for controlling the stacking order
  */
 function drawFan(
   svgDrawingHelper: SVGDrawingHelper,
@@ -30,7 +31,8 @@ function drawFan(
   startAngle: number,
   endAngle: number,
   options = {},
-  dataId = ''
+  dataId = '',
+  zIndex?: number
 ): void {
   const {
     color,
@@ -111,6 +113,10 @@ function drawFan(
 
     if (dataId !== '') {
       newFanElement.setAttribute('data-id', dataId);
+    }
+
+    if (zIndex !== undefined) {
+      newFanElement.style.zIndex = zIndex.toString();
     }
 
     setNewAttributesIfValid(attributes, newFanElement);
