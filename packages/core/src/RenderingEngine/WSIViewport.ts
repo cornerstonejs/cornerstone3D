@@ -242,49 +242,35 @@ class WSIViewport extends Viewport {
   };
 
   public resetProperties() {
-    this.setProperties({});
+    // this.setProperties({});
+    this.setVOI({
+      lower: 0,
+      upper: 255,
+    });
+    console.debug('Resetting properties');
   }
 
+  /**
+   * setVOI sets the window level and window width for the image.  This is
+   * used to set the contrast and brightness of the image.
+   * feFilter is an inline string value for the CSS filter on the openLayers
+   * CSS filters can reference SVG filters, so for the typical use case here
+   * the CSS filter is actually an link link to a SVG filter.
+   */
   public setVOI(voiRange: VOIRange): void {
-    // This sets the window level
     this.voiRange = voiRange;
-    this.setColorTransform();
-  }
-
-  public setAverageWhite(averageWhite: [number, number, number]) {
-    this.averageWhite = averageWhite;
-    this.setColorTransform();
-  }
-
-  protected setColorTransform() {
-    if (!this.voiRange && !this.averageWhite) {
-      this.feFilter = null;
-      return;
-    }
-    const white = this.averageWhite || [255, 255, 255];
-    const maxWhite = Math.max(...white);
-    const scaleWhite = white.map((c) => maxWhite / c);
-    const { lower = 0, upper = 255 } = this.voiRange || {};
-    const wlScale = (upper - lower + 1) / 255;
-    const wlDelta = lower / 255;
-    this.feFilter = `url('data:image/svg+xml,\
-      <svg xmlns="http://www.w3.org/2000/svg">\
-        <filter id="colour" color-interpolation-filters="linearRGB">\
-        <feColorMatrix type="matrix" \
-        values="\
-          ${scaleWhite[0] * wlScale} 0 0 0 ${wlDelta} \
-          0 ${scaleWhite[1] * wlScale} 0 0 ${wlDelta} \
-          0 0 ${scaleWhite[2] * wlScale} 0 ${wlDelta} \
-          0 0 0 1 0" />\
-        </filter>\
-      </svg>#colour')`;
-
+    const feFilter = this.setColorTransform(voiRange, this.averageWhite);
     const olCanvases = this.map
       .getViewport()
       .querySelectorAll('.ol-layers canvas');
     olCanvases.forEach((canvas) => {
-      canvas.style.filter = this.feFilter;
+      canvas.style.filter = feFilter;
     });
+  }
+
+  public setAverageWhite(averageWhite: [number, number, number]) {
+    this.averageWhite = averageWhite;
+    this.setColorTransform(this.voiRange, averageWhite);
   }
 
   protected getScalarData() {
