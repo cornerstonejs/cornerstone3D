@@ -120,7 +120,7 @@ export function convexHull(pts: Array<Types.Point2>): Array<Types.Point2> {
  */
 export function generateConvexHullFromContour(contour: Array<Types.Point2>) {
   // 1) Simplify jagged bits (ε = e.g. 2px):
-  const simplified = simplifyContour(contour, 2);
+  const simplified = utilities.math.polyline.decimate(contour, 2);
 
   // calculate convex hull
   const hull = convexHull(simplified);

@@ -47,42 +47,34 @@ export function segmentLargestUSOutlineFromBuffer(
   let currentLabel = 0;
   const regionSizes = {};
 
-  function floodFill(sx, sy, label) {
-    const stack = [[sx, sy]];
-    labels[sy][sx] = label;
-    let count = 0;
-    while (stack.length) {
-      const [x, y] = stack.pop();
-      count++;
-      for (const [dx, dy] of [
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1],
-      ]) {
-        const nx = x + dx,
-          ny = y + dy;
-        if (
-          nx >= 0 &&
-          nx < width &&
-          ny >= 0 &&
-          ny < height &&
-          mask[ny][nx] &&
-          labels[ny][nx] === 0
-        ) {
-          labels[ny][nx] = label;
-          stack.push([nx, ny]);
-        }
-      }
-    }
-    return count;
-  }
-
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       if (mask[y][x] && labels[y][x] === 0) {
         currentLabel++;
-        regionSizes[currentLabel] = floodFill(x, y, currentLabel);
+
+        // Create a getter function for the floodFill utility
+        const getter = (px, py) => {
+          if (px < 0 || px >= width || py < 0 || py >= height) {
+            return false;
+          }
+          return mask[py][px] && labels[py][px] === 0;
+        };
+
+        // Set up the flood fill options
+        let pixelCount = 0;
+        const options = {
+          onFlood: (px, py) => {
+            labels[py][px] = currentLabel;
+            pixelCount++;
+          },
+          diagonals: false, // Use 4-connectivity
+        };
+
+        // Execute the flood fill
+        floodFill(getter, [x, y], options);
+
+        // Store the region size
+        regionSizes[currentLabel] = pixelCount;
       }
     }
   }
