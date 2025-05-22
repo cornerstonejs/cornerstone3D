@@ -171,7 +171,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         outerRadius: null,
         startAngle: null,
         endAngle: null,
-        bLineColor: 'rgb(0, 255, 0)',
+        bLineColor: 'rgb(60, 255, 60)',
         pleuraColor: 'rgb(0, 4, 255)',
         drawDepthGuide: true,
         depth_ratio: 0.5,
@@ -180,7 +180,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         depthGuideDashLength: 20,
         depthGuideDashGap: 16,
         depthGuideOpacity: 0.2,
-        fanOpacity: 0.4,
+        fanOpacity: 0.1,
         showFanAnnotations: true,
         updatePercentageCallback: null,
         actions: {

@@ -9,22 +9,24 @@ import type {
   FanGeometry,
   ContourExportOptions,
   FanExportOptions,
-  ImageBufferResult,
+  PixelDataResult,
+  FanGeometryResult,
 } from './types';
 /**
  * Overlays a contour on top of an image buffer and returns a JPEG data URL.
  *
- * @param {ImageBuffer} buffer
+ * @param {Types.PixelDataTypedArray} pixelData
  *   Grayscale (1-channel), RGB (3-channel) or RGBA (4-channel) buffer.
- * @param {number} width  Image width
- * @param {number} height Image height
+ * @param {number} width  Image width in pixels
+ * @param {number} height Image height in pixels
  * @param {FanShapeContour} contour
- *   Array of {x,y} points in pixel coords (closed loop) to draw.
+ *   Array of 2D points in pixel coordinates (closed loop) to draw.
  * @param {ContourExportOptions} [opts]
+ *   Optional configuration for the contour rendering.
  * @returns {string}  A data URL "data:image/jpeg;base64,..." you can set as `src` or download.
  */
 export function exportContourJpeg(
-  buffer: Types.PixelDataTypedArray,
+  pixelData: Types.PixelDataTypedArray,
   width: number,
   height: number,
   contour: FanShapeContour,
@@ -38,9 +40,9 @@ export function exportContourJpeg(
   canvas.height = height;
   const ctx = canvas.getContext('2d');
 
-  // 1) Draw the image buffer into the canvas
+  // 1) Draw the image pixelData into the canvas
   const totalPixels = width * height;
-  const channels = buffer.length / totalPixels;
+  const channels = pixelData.length / totalPixels;
   const imgData = ctx.createImageData(width, height);
   const out = imgData.data; // Uint8ClampedArray length = w*h*4
 
@@ -49,17 +51,17 @@ export function exportContourJpeg(
     const baseOut = i * 4;
     if (channels === 1) {
       // grayscale → replicate to R,G,B
-      const v = buffer[baseIn];
+      const v = pixelData[baseIn];
       out[baseOut] = v;
       out[baseOut + 1] = v;
       out[baseOut + 2] = v;
       out[baseOut + 3] = 255;
     } else {
       // RGB or RGBA: copy first 3 channels, set alpha=channel 4 or opaque
-      out[baseOut] = buffer[baseIn];
-      out[baseOut + 1] = buffer[baseIn + 1];
-      out[baseOut + 2] = buffer[baseIn + 2];
-      out[baseOut + 3] = channels === 4 ? buffer[baseIn + 3] : 255;
+      out[baseOut] = pixelData[baseIn];
+      out[baseOut + 1] = pixelData[baseIn + 1];
+      out[baseOut + 2] = pixelData[baseIn + 2];
+      out[baseOut + 3] = channels === 4 ? pixelData[baseIn + 3] : 255;
     }
   }
   ctx.putImageData(imgData, 0, 0);
@@ -84,21 +86,35 @@ export function exportContourJpeg(
   return canvas.toDataURL('image/jpeg', quality);
 }
 
-export function getImageBuffer(imageId: string): ImageBufferResult {
+/**
+ * Retrieves pixel data and dimensions from an image in the Cornerstone cache.
+ *
+ * @param {string} imageId - The Cornerstone image ID to retrieve
+ * @returns {PixelDataResult} Object containing pixelData, width, and height
+ *   Returns undefined if the image is not found in cache
+ */
+export function getPixelData(imageId: string): PixelDataResult {
   const image = cache.getImage(imageId);
   if (!image) {
     return;
   }
   const width = image.width;
   const height = image.height;
-  const imageBuffer = image.getPixelData();
+  const pixelData = image.getPixelData();
   return {
-    imageBuffer,
+    pixelData,
     width,
     height,
   };
 }
 
+/**
+ * Triggers a file download for binary data represented as a URL.
+ *
+ * @param {string} url - Data URL or object URL to download
+ * @param {string} filename - Name to give the downloaded file
+ * @returns {void}
+ */
 export default function saveBinaryData(url: string, filename: string): void {
   const a = document.createElement('a');
   a.href = url;
@@ -113,16 +129,16 @@ export default function saveBinaryData(url: string, filename: string): void {
 /**
  * Render a fan-shaped region on top of the image buffer and export as JPEG.
  *
- * @param {ImageBuffer} buffer
+ * @param {Types.PixelDataTypedArray} pixelData
  *   Image buffer: grayscale (1ch), RGB (3ch), or RGBA (4ch)
- * @param {number} width
- * @param {number} height
- * @param {FanGeometry} fan
- * @param {FanExportOptions} [opts]
+ * @param {number} width - Image width in pixels
+ * @param {number} height - Image height in pixels
+ * @param {FanGeometry} fan - Fan geometry parameters (center, angles, radii)
+ * @param {FanExportOptions} [opts] - Optional configuration for the fan rendering
  * @returns {string} JPEG data URL (data:image/jpeg;base64,...)
  */
 function exportFanJpeg(
-  buffer: Types.PixelDataTypedArray,
+  pixelData: Types.PixelDataTypedArray,
   width: number,
   height: number,
   fan: FanGeometry,
@@ -138,24 +154,24 @@ function exportFanJpeg(
 
   // Draw the base image
   const total = width * height;
-  const channels = buffer.length / total;
+  const channels = pixelData.length / total;
   const imgData = ctx.createImageData(width, height);
   const out = imgData.data;
 
   for (let i = 0; i < total; i++) {
     const baseOut = i * 4;
     if (channels === 1) {
-      const v = buffer[i];
+      const v = pixelData[i];
       out[baseOut] = v;
       out[baseOut + 1] = v;
       out[baseOut + 2] = v;
       out[baseOut + 3] = 255;
     } else {
       const baseIn = i * channels;
-      out[baseOut] = buffer[baseIn];
-      out[baseOut + 1] = buffer[baseIn + 1];
-      out[baseOut + 2] = buffer[baseIn + 2];
-      out[baseOut + 3] = channels === 4 ? buffer[baseIn + 3] : 255;
+      out[baseOut] = pixelData[baseIn];
+      out[baseOut + 1] = pixelData[baseIn + 1];
+      out[baseOut + 2] = pixelData[baseIn + 2];
+      out[baseOut + 3] = channels === 4 ? pixelData[baseIn + 3] : 255;
     }
   }
   ctx.putImageData(imgData, 0, 0);
@@ -189,32 +205,44 @@ function exportFanJpeg(
   return canvas.toDataURL('image/jpeg', quality);
 }
 
+/**
+ * Calculates fan geometry from an image and downloads a JPEG visualization.
+ *
+ * @param {string} imageId - The Cornerstone image ID to process
+ * @param {number} contourType - Type of contour to visualize (default: 5)
+ *   1: Raw contour
+ *   2: Simplified contour
+ *   3: Convex hull
+ *   4: Refined corner points
+ *   5: Fan geometry (default)
+ * @returns {void}
+ */
 export function downloadFanJpeg(
   imageId: string,
   contourType: number = 5
 ): void {
   const { contour, simplified, hull, refined, fanGeometry } =
     calculateFanGeometry(imageId);
-  const { imageBuffer, width, height } = getImageBuffer(imageId) || {};
-  if (!imageBuffer) {
+  const { pixelData, width, height } = getPixelData(imageId) || {};
+  if (!pixelData) {
     return;
   }
   let jpegDataUrl;
   if (contourType === 1) {
-    jpegDataUrl = exportContourJpeg(imageBuffer, width, height, contour);
+    jpegDataUrl = exportContourJpeg(pixelData, width, height, contour);
   } else if (contourType === 2) {
-    jpegDataUrl = exportContourJpeg(imageBuffer, width, height, simplified);
+    jpegDataUrl = exportContourJpeg(pixelData, width, height, simplified);
   } else if (contourType === 3) {
-    jpegDataUrl = exportContourJpeg(imageBuffer, width, height, hull);
+    jpegDataUrl = exportContourJpeg(pixelData, width, height, hull);
   } else if (contourType === 4) {
-    jpegDataUrl = exportContourJpeg(imageBuffer, width, height, [
+    jpegDataUrl = exportContourJpeg(pixelData, width, height, [
       refined.P1,
       refined.P2,
       refined.P3,
       refined.P4,
     ]);
   } else {
-    jpegDataUrl = exportFanJpeg(imageBuffer, width, height, fanGeometry, {
+    jpegDataUrl = exportFanJpeg(pixelData, width, height, fanGeometry, {
       strokeStyle: '#f00', // red outline
       lineWidth: 3,
       quality: 0.95,
@@ -223,15 +251,28 @@ export function downloadFanJpeg(
   saveBinaryData(jpegDataUrl, 'contour.jpg');
 }
 
-export function calculateFanGeometry(imageId: string) {
-  const { imageBuffer, width, height } = getImageBuffer(imageId) || {};
-  if (!imageBuffer) {
+/**
+ * Calculates the complete fan geometry from an ultrasound image.
+ *
+ * @param {string} imageId - The Cornerstone image ID to process
+ * @returns {FanGeometryResult} An object containing:
+ *   - contour: The raw contour points of the ultrasound image
+ *   - simplified: A simplified version of the contour with fewer points
+ *   - hull: The convex hull of the simplified contour
+ *   - refined: The four corner points that define the fan shape
+ *   - fanGeometry: The calculated fan geometry parameters
+ */
+export function calculateFanGeometry(
+  imageId: string
+): FanGeometryResult | undefined {
+  const { pixelData, width, height } = getPixelData(imageId) || {};
+  if (!pixelData) {
     return;
   }
-  const contour = segmentLargestUSOutlineFromBuffer(imageBuffer, width, height);
+  const contour = segmentLargestUSOutlineFromBuffer(pixelData, width, height);
   const { simplified, hull } = generateConvexHullFromContour(contour);
   const refined = calculateFanShapeCorners(
-    imageBuffer,
+    pixelData,
     width,
     height,
     hull,

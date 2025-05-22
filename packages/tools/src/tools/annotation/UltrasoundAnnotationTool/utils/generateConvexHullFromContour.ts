@@ -1,4 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/tools';
 
 /**
  * Compute the perpendicular distance from point p to the line segment [a→b].
@@ -22,43 +23,6 @@ function _perpDist(p: Types.Point2, a: Types.Point2, b: Types.Point2) {
   const projX = a[0] + tClamped * dx;
   const projY = a[1] + tClamped * dy;
   return Math.hypot(p[0] - projX, p[1] - projY);
-}
-
-/**
- * Ramer–Douglas–Peucker contour simplification.
- * @param {Array<Types.Point2>} points  original contour
- * @param {number} epsilon       max allowed deviation (pixels)
- * @returns {Array<Types.Point2>}       simplified contour
- */
-export function simplifyContour(
-  points: Array<Types.Point2>,
-  epsilon: number
-): Array<Types.Point2> {
-  if (points.length < 3) {
-    return points.slice();
-  }
-
-  let maxDist = 0,
-    index = 0;
-  const a = points[0],
-    b = points[points.length - 1];
-  // find point furthest from chord a→b
-  for (let i = 1; i < points.length - 1; i++) {
-    const d = _perpDist(points[i], a, b);
-    if (d > maxDist) {
-      maxDist = d;
-      index = i;
-    }
-  }
-  // if max deviation > ε, recurse, else approximate by [a,b]
-  if (maxDist > epsilon) {
-    const left = simplifyContour(points.slice(0, index + 1), epsilon);
-    const right = simplifyContour(points.slice(index), epsilon);
-    // concatenate, dropping duplicate at join
-    return left.slice(0, -1).concat(right);
-  } else {
-    return [a, b];
-  }
 }
 
 /**

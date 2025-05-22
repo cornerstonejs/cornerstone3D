@@ -47,8 +47,8 @@ export interface FanShapeCorners {
 /**
  * Result of image buffer extraction
  */
-export interface ImageBufferResult {
-  imageBuffer: Types.PixelDataTypedArray;
+export interface PixelDataResult {
+  pixelData: Types.PixelDataTypedArray;
   width: number;
   height: number;
 }
@@ -59,4 +59,15 @@ export interface ImageBufferResult {
 export interface RefinementOptions {
   maxDist?: number;
   step?: number;
+}
+
+/**
+ * Result of fan geometry calculation
+ */
+export interface FanGeometryResult {
+  contour: FanShapeContour;
+  simplified: FanShapeContour;
+  hull: FanShapeContour;
+  refined: FanShapeCorners;
+  fanGeometry: FanGeometry;
 }

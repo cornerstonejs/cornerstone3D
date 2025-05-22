@@ -1,4 +1,5 @@
 import type { FanShapeContour } from './types';
+import { floodFill } from '../../../../utilities/segmentation';
 
 /**
  * Given a raw image buffer (grayscale, RGB, or RGBA) plus dimensions,
