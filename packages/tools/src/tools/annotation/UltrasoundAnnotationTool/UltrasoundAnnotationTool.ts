@@ -1,7 +1,6 @@
 import { Events, ChangeTypes } from '../../../enums';
 import {
   getEnabledElement,
-  utilities as csUtils,
   utilities,
   metaData,
   getEnabledElementByViewportId,
@@ -59,8 +58,9 @@ import {
 } from '../../../utilities/math/fan/fanUtils';
 import { calculateFanGeometry } from './utils/fanExtraction';
 import type { FanGeometry } from './utils/types';
-const { transformIndexToWorld } = csUtils;
+const { transformIndexToWorld } = utilities;
 
+type FilterFunction = (imageId: string) => boolean;
 /**
  * UltrasoundAnnotationTool facilitates the creation and manipulation of specialized annotations
  * for ultrasound imaging. Each annotation comprises a line segment and an associated fan-shaped
@@ -203,50 +203,98 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   }
 
   /**
+   * Filters annotations based on a provided filter function.
+   * @param {HTMLDivElement} element - The HTML element containing the annotations.
+   * @param {FilterFunction} filterFunction - A function that takes an imageId and returns a boolean.
+   * If not provided, all annotations will be returned.
+   * @returns {UltrasoundAnnotation[]} An array of filtered ultrasound annotations.
+   */
+  public static filterAnnotations(
+    element: HTMLDivElement,
+    filterFunction: FilterFunction = () => true
+  ): UltrasoundAnnotation[] {
+    const annotations = getAnnotations(
+      UltrasoundAnnotationTool.toolName,
+      element
+    );
+    if (!annotations?.length) {
+      return [];
+    }
+    const filteredAnnotations = annotations.filter((annotation) => {
+      const currentImageId = annotation.metadata.referencedImageId;
+      return filterFunction(currentImageId);
+    });
+    return filteredAnnotations as UltrasoundAnnotation[];
+  }
+
+  /**
    * Counts the number of annotations per image ID.
    * @param {HTMLDivElement} element - The HTML element.
-   * @returns {Map<string, {bLineCount: number, pleuraCount: number}>} A map of image IDs to annotation counts.
+   * @param {FilterFunction} filterFunction - A function that takes an imageId and returns a boolean to filter annotations.
+   * If not provided, all annotations will be counted.
+   * @returns {Map<string, {frame:number, bLine: number, pleura: number}>} A map of image IDs to annotation counts.
    */
-  public countAnnotationsPerImageId(element: HTMLDivElement) {
-    const annotations = getAnnotations(this.getToolName(), element);
+  public static countAnnotations(
+    element: HTMLDivElement,
+    filterFunction: FilterFunction = () => true
+  ) {
+    const annotations = getAnnotations(
+      UltrasoundAnnotationTool.toolName,
+      element
+    );
+    const { viewport } = getEnabledElement(element);
+    const imageIds = viewport.getImageIds();
+
+    const getImageIdIndex = (imageId: string) => {
+      const index = imageIds.findIndex((id) => id === imageId);
+      if (index === -1) {
+        return 0;
+      }
+      return index;
+    };
 
     if (!annotations?.length) {
       return;
     }
     const annotationMapping = new Map();
     annotations.forEach((annotation) => {
-      const imageId = annotation.metadata.referencedImageId;
+      const currentImageId = annotation.metadata.referencedImageId;
+      if (!filterFunction(currentImageId)) {
+        return;
+      }
       const { annotationType } = annotation.data;
       let counts;
-      if (annotationMapping.has(imageId)) {
-        counts = annotationMapping.get(imageId);
+      if (annotationMapping.has(currentImageId)) {
+        counts = annotationMapping.get(currentImageId);
       } else {
         counts = {
-          bLineCount: 0,
-          pleuraCount: 0,
+          frame: getImageIdIndex(currentImageId),
+          bLine: 0,
+          pleura: 0,
         };
       }
       if (annotationType === UltrasoundAnnotationTool.USAnnotationType.PLEURA) {
-        counts.pleuraCount++;
+        counts.pleura++;
       } else if (
         annotationType === UltrasoundAnnotationTool.USAnnotationType.BLINE
       ) {
-        counts.bLineCount++;
+        counts.bLine++;
       }
-      annotationMapping.set(imageId, counts);
+      annotationMapping.set(currentImageId, counts);
     });
     return annotationMapping;
   }
 
   /**
-   * Deletes annotations from a specific image ID.
+   * Deletes annotations based on a provided filter function.
    * @param {HTMLDivElement} element - The HTML element.
-   * @param {string} imageId - The image ID to delete annotations from.
+   * @param {FilterFunction} filterFunction - A function that takes an imageId and returns a boolean to filter annotations for deletion.
+   * If not provided or returns false for all annotations, no annotations will be deleted.
    * @returns {void}
    */
-  public deleteAnnotationsFromImageId(
+  public static deleteAnnotations(
     element: HTMLDivElement,
-    imageId: string
+    filterFunction: FilterFunction = () => false
   ) {
     const annotations = getAnnotations(
       UltrasoundAnnotationTool.toolName,
@@ -257,7 +305,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       return;
     }
     annotations.forEach((annotation) => {
-      if (annotation.metadata.referencedImageId !== imageId) {
+      if (!filterFunction(annotation.metadata.referencedImageId)) {
         return;
       }
       removeAnnotation(annotation.annotationUID);
@@ -282,34 +330,33 @@ class UltrasoundAnnotationTool extends AnnotationTool {
 
   /**
    * Deletes the last annotation of a specific type.
+   * @param {HTMLDivElement} element - The HTML element containing the annotations.
    * @param {string} type - The annotation type to delete (UltrasoundAnnotationTool.USAnnotationType.PLEURA or UltrasoundAnnotationTool.USAnnotationType.BLINE).
    * @returns {void}
    */
-  public deleteLastAnnotationType(type: string) {
+  public deleteLastAnnotationType(element: HTMLDivElement, type: string) {
     let annotationList;
+    const annotations = getAnnotations(
+      UltrasoundAnnotationTool.toolName,
+      element
+    );
     if (type === UltrasoundAnnotationTool.USAnnotationType.PLEURA) {
-      annotationList = this.pleuraAnnotations;
+      annotationList = annotations.filter(
+        (annotation) =>
+          annotation.data.annotationType ===
+          UltrasoundAnnotationTool.USAnnotationType.PLEURA
+      );
     } else if (type === UltrasoundAnnotationTool.USAnnotationType.BLINE) {
-      annotationList = this.bLineAnnotations;
+      annotationList = annotations.filter(
+        (annotation) =>
+          annotation.data.annotationType ===
+          UltrasoundAnnotationTool.USAnnotationType.BLINE
+      );
     }
     if (annotationList.length > 0) {
       const annotation = annotationList.pop();
       removeAnnotation(annotation.annotationUID);
     }
-  }
-  /**
-   * Deletes all annotations of both pleura and bLine types.
-   * @returns {void}
-   */
-  public deleteAllAnnotations() {
-    this.pleuraAnnotations.forEach((annotation) => {
-      removeAnnotation(annotation.annotationUID);
-    });
-    this.bLineAnnotations.forEach((annotation) => {
-      removeAnnotation(annotation.annotationUID);
-    });
-    this.pleuraAnnotations = [];
-    this.bLineAnnotations = [];
   }
 
   /**
@@ -430,17 +477,6 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     };
 
     addAnnotation(annotation, element);
-    if (
-      this.activeAnnotationType ===
-      UltrasoundAnnotationTool.USAnnotationType.PLEURA
-    ) {
-      this.pleuraAnnotations.push(annotation as UltrasoundAnnotation);
-    } else if (
-      this.activeAnnotationType ===
-      UltrasoundAnnotationTool.USAnnotationType.BLINE
-    ) {
-      this.bLineAnnotations.push(annotation as UltrasoundAnnotation);
-    }
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -638,6 +674,12 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     this.isDrawing = false;
   };
 
+  /**
+   * Checks if a point is inside the fan shape defined by the tool's configuration
+   * @param viewport - The viewport to check against
+   * @param point - The 3D point to check
+   * @returns {boolean} True if the point is inside the fan shape, false otherwise
+   */
   isInsideFanShape(viewport, point: Types.Point3) {
     if (!this.getFanShapeGeometryParameters(viewport)) {
       return false;
@@ -1001,33 +1043,56 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   }
 
   /**
-   * Calculates the percentage of bLine inside the pleura
+   * Calculates the percentage of bLine inside the pleura for the current image
    * @param viewport - viewport
-   * @returns {number} percentage of bLine inside the pleura
+   * @returns {number} percentage of bLine inside the pleura for the current image
    */
   calculateBLinePleuraPercentage(viewport): number {
     if (!this.getFanShapeGeometryParameters(viewport)) {
       return;
     }
     const { imageData } = viewport.getImageData() || {};
+    const { element } = viewport;
     const fanCenter = viewport.worldToCanvas(
       imageData.indexToWorld(this.configuration.center)
     );
 
-    const pleuraIntervals = this.pleuraAnnotations.map((annotation) => {
-      const canvasCoordinates = annotation.data.handles.points.map((p) =>
-        viewport.worldToCanvas(p)
-      );
+    const currentImageId = viewport.getCurrentImageId();
 
-      return canvasCoordinates;
-    });
-    const bLineIntervals = this.bLineAnnotations.map((annotation) => {
-      const canvasCoordinates = annotation.data.handles.points.map((p) =>
-        viewport.worldToCanvas(p)
-      );
+    // Get all annotations from the annotation state
+    const annotations = getAnnotations(this.getToolName(), element) || [];
 
-      return canvasCoordinates;
-    });
+    // Filter and map pleura annotations
+    const pleuraIntervals = annotations
+      .filter(
+        (annotation) =>
+          annotation.data.annotationType ===
+            UltrasoundAnnotationTool.USAnnotationType.PLEURA &&
+          annotation.metadata.referencedImageId === currentImageId
+      )
+      .map((annotation) => {
+        const canvasCoordinates = annotation.data.handles.points.map((p) =>
+          viewport.worldToCanvas(p)
+        );
+
+        return canvasCoordinates;
+      });
+
+    // Filter and map bLine annotations
+    const bLineIntervals = annotations
+      .filter(
+        (annotation) =>
+          annotation.data.annotationType ===
+            UltrasoundAnnotationTool.USAnnotationType.BLINE &&
+          annotation.metadata.referencedImageId === currentImageId
+      )
+      .map((annotation) => {
+        const canvasCoordinates = annotation.data.handles.points.map((p) =>
+          viewport.worldToCanvas(p)
+        );
+
+        return canvasCoordinates;
+      });
     return calculateInnerFanPercentage(
       fanCenter,
       pleuraIntervals as FanPairs,
@@ -1142,9 +1207,10 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     }
   }
   /**
-   * it is used to draw the length annotation in each
+   * It is used to draw the length annotation in each
    * request animation frame. It calculates the updated cached statistics if
-   * data is invalidated and cache it.
+   * data is invalidated and cache it. Only annotations from the current image
+   * are rendered.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
@@ -1200,19 +1266,27 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     const indexToCanvasRatio = this.getIndexToCanvasRatio(viewport);
     const innerRadius = this.configuration.innerRadius * indexToCanvasRatio;
     const outerRadius = this.configuration.outerRadius * indexToCanvasRatio;
+    const currentImageId = viewport.getCurrentImageId();
 
-    // get all pleura intervals
-    const unMergedPleuraIntervals = this.pleuraAnnotations.map((annotation) => {
-      const canvasCoordinates = annotation.data.handles.points.map((p) =>
-        viewport.worldToCanvas(p)
-      );
+    // Get all pleura intervals from current imageId and merge them
+    const unMergedPleuraIntervals = annotations
+      .filter(
+        (annotation) =>
+          annotation.data.annotationType ===
+            UltrasoundAnnotationTool.USAnnotationType.PLEURA &&
+          annotation.metadata.referencedImageId === currentImageId
+      )
+      .map((annotation) => {
+        const canvasCoordinates = annotation.data.handles.points.map((p) =>
+          viewport.worldToCanvas(p)
+        );
 
-      const interval = intervalFromPoints(
-        fanCenter,
-        canvasCoordinates as FanPair
-      );
-      return interval;
-    });
+        const interval = intervalFromPoints(
+          fanCenter,
+          canvasCoordinates as FanPair
+        );
+        return interval;
+      });
     const mergedPleuraIntervals = mergeIntervals(unMergedPleuraIntervals);
 
     const pleuraIntervalsDisplayed = [];
@@ -1307,7 +1381,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
               interval,
               mergedPleuraIntervals
             );
-            clippedIntervals.forEach((clippedInterval, index) => {
+            clippedIntervals.forEach((clippedInterval) => {
               fanNumber++;
               const fanIndex = fanNumber;
               const fanDataId = `${annotationUID}-fan-${fanIndex}`;
@@ -1378,7 +1452,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     const pleuraAnnotationsToDraw = annotations.filter(
       (annotation) =>
         annotation.data.annotationType ===
-        UltrasoundAnnotationTool.USAnnotationType.PLEURA
+          UltrasoundAnnotationTool.USAnnotationType.PLEURA &&
+        annotation.metadata.referencedImageId === currentImageId
     );
     pleuraAnnotationsToDraw.forEach((annotation) => {
       // If rendering engine has been destroyed while rendering
@@ -1393,7 +1468,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     const bLineAnnotationsToDraw = annotations.filter(
       (annotation) =>
         annotation.data.annotationType ===
-        UltrasoundAnnotationTool.USAnnotationType.BLINE
+          UltrasoundAnnotationTool.USAnnotationType.BLINE &&
+        annotation.metadata.referencedImageId === currentImageId
     );
     bLineAnnotationsToDraw.forEach((annotation) => {
       // If rendering engine has been destroyed while rendering
@@ -1422,8 +1498,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    */
   _isInsideVolume(index1, index2, dimensions) {
     return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions)
+      utilities.indexWithinDimensions(index1, dimensions) &&
+      utilities.indexWithinDimensions(index2, dimensions)
     );
   }
 }
