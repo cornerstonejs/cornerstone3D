@@ -1059,6 +1059,9 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
       return;
     }
     const { imageData } = viewport.getImageData() || {};
+    if (!imageData) {
+      return;
+    }
     const { element } = viewport;
     const fanCenter = viewport.worldToCanvas(
       imageData.indexToWorld(this.configuration.center)
