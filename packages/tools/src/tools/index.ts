@@ -39,7 +39,7 @@ import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
 import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
-import UltrasoundAnnotationTool from './annotation/UltrasoundAnnotationTool/UltrasoundAnnotationTool';
+import UltrasoundPleuraBLineTool from './annotation/UltrasoundPleuraBLineTool/UltrasoundPleuraBLineTool';
 import KeyImageTool from './annotation/KeyImageTool';
 import AnnotationEraserTool from './AnnotationEraserTool';
 import RegionSegmentTool from './annotation/RegionSegmentTool';
@@ -102,7 +102,7 @@ export {
   AngleTool,
   CobbAngleTool,
   UltrasoundDirectionalTool,
-  UltrasoundAnnotationTool,
+  UltrasoundPleuraBLineTool,
   KeyImageTool,
   AnnotationEraserTool as EraserTool,
   // Segmentations Display

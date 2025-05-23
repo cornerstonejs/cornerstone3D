@@ -92,7 +92,7 @@ export interface LengthAnnotation extends Annotation {
   };
 }
 
-export interface UltrasoundAnnotation extends Annotation {
+export interface UltrasoundPleuraBLineAnnotation extends Annotation {
   data: {
     handles: {
       points: [Types.Point3, Types.Point3];

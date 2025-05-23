@@ -8,7 +8,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import WindowLevelTool from '../../src/tools/WindowLevelTool';
-import { downloadFanJpeg } from '../../src/tools/annotation/UltrasoundAnnotationTool/utils/fanExtraction';
+import { downloadFanJpeg } from '../../src/tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
 
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -17,7 +17,7 @@ console.warn(
 const {
   StackScrollTool,
   ZoomTool,
-  UltrasoundAnnotationTool,
+  UltrasoundPleuraBLineTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
@@ -26,14 +26,14 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const leftClickTools = [UltrasoundAnnotationTool.toolName];
+const leftClickTools = [UltrasoundPleuraBLineTool.toolName];
 const defaultLeftClickTool = leftClickTools[0];
 let usAnnotation = undefined;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Ultrasound annotations',
-  'Showcases how the b-line and pleura annotations of ultrasound images are displayed and rendered correctly. The tool uses fan shape geometry parameters to define the ultrasound sector display area: fanCenter (origin point in image coordinates), innerRadius and outerRadius (define the near and far field boundaries), and startAngle/endAngle (define the angular span of the sector).'
+  'Showcases how the pleura and b-line annotations of ultrasound images are displayed and rendered correctly. The tool uses fan shape geometry parameters to define the ultrasound sector display area: fanCenter (origin point in image coordinates), innerRadius and outerRadius (define the near and far field boundaries), and startAngle/endAngle (define the angular span of the sector).'
 );
 
 const content = document.getElementById('content');
@@ -77,7 +77,7 @@ addButtonToToolbar({
 addButtonToToolbar({
   onClick: () => {
     usAnnotation.setActiveAnnotationType(
-      UltrasoundAnnotationTool.USAnnotationType.BLINE
+      UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
     );
   },
   title: 'Add B-Line annotation',
@@ -86,7 +86,7 @@ addButtonToToolbar({
 addButtonToToolbar({
   onClick: () => {
     usAnnotation.setActiveAnnotationType(
-      UltrasoundAnnotationTool.USAnnotationType.PLEURA
+      UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA
     );
   },
   title: 'Add Pleura annotation',
@@ -94,14 +94,15 @@ addButtonToToolbar({
 
 addButtonToToolbar({
   onClick: () => {
-    usAnnotation.deleteLastAnnotationType(
-      UltrasoundAnnotationTool.USAnnotationType.PLEURA
-    );
-
     // Get the stack viewport that was created
     const viewport = <Types.IStackViewport>(
       renderingEngine.getViewport(viewportId)
     );
+    usAnnotation.deleteLastAnnotationType(
+      viewport.element,
+      UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA
+    );
+
     viewport.render();
   },
   title: 'Delete last Pleura annotation',
@@ -109,14 +110,15 @@ addButtonToToolbar({
 
 addButtonToToolbar({
   onClick: () => {
-    usAnnotation.deleteLastAnnotationType(
-      UltrasoundAnnotationTool.USAnnotationType.BLINE
-    );
-
     // Get the stack viewport that was created
     const viewport = <Types.IStackViewport>(
       renderingEngine.getViewport(viewportId)
     );
+    usAnnotation.deleteLastAnnotationType(
+      viewport.element,
+      UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
+    );
+
     viewport.render();
   },
   title: 'Delete last B-line annotation',
@@ -143,7 +145,7 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(UltrasoundAnnotationTool);
+  cornerstoneTools.addTool(UltrasoundPleuraBLineTool);
   cornerstoneTools.addTool(WindowLevelTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -154,7 +156,7 @@ async function run() {
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName, { loop: false });
-  toolGroup.addTool(UltrasoundAnnotationTool.toolName);
+  toolGroup.addTool(UltrasoundPleuraBLineTool.toolName);
 
   // Set the initial state of the tools, here all tools are active and bound to
   // Different mouse inputs
@@ -223,7 +225,7 @@ async function run() {
 
   // Set the stack on the viewport
   viewport.setStack(imageIds);
-  usAnnotation = toolGroup.getToolInstance(UltrasoundAnnotationTool.toolName);
+  usAnnotation = toolGroup.getToolInstance(UltrasoundPleuraBLineTool.toolName);
   // Define the callback function to update the percentage label
   function updatePercentageCallback(percentage) {
     const percentageLabel = document.getElementById('percentage-label');
@@ -232,7 +234,7 @@ async function run() {
     }
   }
 
-  toolGroup.setToolConfiguration(UltrasoundAnnotationTool.toolName, {
+  toolGroup.setToolConfiguration(UltrasoundPleuraBLineTool.toolName, {
     updatePercentageCallback,
   });
 

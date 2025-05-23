@@ -44,7 +44,7 @@ import type {
   SVGDrawingHelper,
   Annotation,
 } from '../../../types';
-import type { UltrasoundAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { UltrasoundPleuraBLineAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../../types/AnnotationStyle';
 import {
   angleFromCenter,
@@ -62,7 +62,7 @@ const { transformIndexToWorld } = utilities;
 
 type FilterFunction = (imageId: string) => boolean;
 /**
- * UltrasoundAnnotationTool facilitates the creation and manipulation of specialized annotations
+ * UltrasoundPleuraBLineAnnotationTool facilitates the creation and manipulation of specialized annotations
  * for ultrasound imaging. Each annotation comprises a line segment and an associated fan-shaped
  * region, designed to highlight or measure features like B-lines or pleural abnormalities.
  *
@@ -80,29 +80,29 @@ type FilterFunction = (imageId: string) => boolean;
  * @example
  * ```javascript
  * // Import necessary modules from Cornerstone Tools
- * import { UltrasoundAnnotationTool, ToolGroupManager, Enums, addTool } from '@cornerstonejs/tools';
+ * import { UltrasoundPleuraBLineAnnotationTool, ToolGroupManager, Enums, addTool } from '@cornerstonejs/tools';
 import { canvasCoordinates } from '../../utilities/math/circle/_types';
 import { getUnknownVolumeLoaderSchema } from '../../../../core/src/loaders/volumeLoader';
 import { deriveFanGeometry } from './utils/deriveFanGeometry';
 import { Point3 } from '../../../../../../.nx/cache/6836589865368719691/packages/core/dist/esm/types/Point3';
-import { FanGeometry } from '../../../../../../.nx/cache/283231214975993815/packages/tools/dist/esm/tools/annotation/UltrasoundAnnotationTool/utils/types';
+import { FanGeometry } from '../../../../../../.nx/cache/283231214975993815/packages/tools/dist/esm/tools/annotation/UltrasoundPleuraBLineAnnotationTool/utils/types';
 import { subtractIntervals } from '../../../utilities/math/fan/fanUtils';
  *
  * // Register the tool with the ToolGroupManager (or globally if preferred)
- * addTool(UltrasoundAnnotationTool);
+ * addTool(UltrasoundPleuraBLineAnnotationTool);
  *
  * // Create a new tool group or get an existing one
  * const toolGroupId = 'myUltrasoundToolGroup';
  * const toolGroup = ToolGroupManager.getToolGroup(toolGroupId) || ToolGroupManager.createToolGroup(toolGroupId);
  *
- * // Add the UltrasoundAnnotationTool's name to the tool group
- * toolGroup.addTool(UltrasoundAnnotationTool.toolName);
+ * // Add the UltrasoundPleuraBLineAnnotationTool's name to the tool group
+ * toolGroup.addTool(UltrasoundPleuraBLineAnnotationTool.toolName);
  *
  * // Associate a viewport with the tool group
  * toolGroup.addViewport('myViewportId', 'myRenderingEngineId');
  *
  * // Activate the tool for interaction
- * toolGroup.setToolActive(UltrasoundAnnotationTool.toolName, {
+ * toolGroup.setToolActive(UltrasoundPleuraBLineAnnotationTool.toolName, {
  *   bindings: [
  *     {
  *       mouseButton: Enums.MouseBindings.Primary, // e.g., Left mouse button
@@ -111,7 +111,7 @@ import { subtractIntervals } from '../../../utilities/math/fan/fanUtils';
  * });
  *
  * // Optionally, customize the tool's behavior and appearance
- * toolGroup.setToolConfiguration(UltrasoundAnnotationTool.toolName, {
+ * toolGroup.setToolConfiguration(UltrasoundPleuraBLineAnnotationTool.toolName, {
  *   center: [128, 128, 0], // Center of the fan in image voxel coordinates (IJK)
  *   innerRadius: 10,          // Inner radius of the fan in image voxel units
  *   outerRadius: 50,          // Outer radius of the fan in image voxel units
@@ -128,13 +128,13 @@ import { subtractIntervals } from '../../../utilities/math/fan/fanUtils';
  * For comprehensive details on API, configuration options, and advanced usage patterns,
  * refer to the official CornerstoneJS documentation.
  */
-class UltrasoundAnnotationTool extends AnnotationTool {
-  static toolName = 'UltrasoundAnnotationTool';
+class UltrasoundPleuraBLineTool extends AnnotationTool {
+  static toolName = 'UltrasoundPleuraBLineTool';
 
   /**
    * Enum for ultrasound annotation types
    */
-  static USAnnotationType = {
+  static USPleuraBLineAnnotationType = {
     BLINE: 'bLine',
     PLEURA: 'pleura',
   } as const;
@@ -151,11 +151,11 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
   activeAnnotationType: string;
-  pleuraAnnotations: UltrasoundAnnotation[] = [];
-  bLineAnnotations: UltrasoundAnnotation[] = [];
+  pleuraAnnotations: UltrasoundPleuraBLineAnnotation[] = [];
+  bLineAnnotations: UltrasoundPleuraBLineAnnotation[] = [];
 
   /**
-   * constructor for the UltrasoundAnnotationTool
+   * constructor for the UltrasoundPleuraBLineTool
    * @param toolProps - public tool props
    * @param defaultToolProps - default tool props
    */
@@ -199,7 +199,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     }
   ) {
     super(toolProps, defaultToolProps);
-    this.activeAnnotationType = UltrasoundAnnotationTool.USAnnotationType.BLINE;
+    this.activeAnnotationType =
+      UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE;
   }
 
   /**
@@ -207,14 +208,14 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    * @param {HTMLDivElement} element - The HTML element containing the annotations.
    * @param {FilterFunction} filterFunction - A function that takes an imageId and returns a boolean.
    * If not provided, all annotations will be returned.
-   * @returns {UltrasoundAnnotation[]} An array of filtered ultrasound annotations.
+   * @returns {UltrasoundPleuraBLineAnnotation[]} An array of filtered ultrasound annotations.
    */
   public static filterAnnotations(
     element: HTMLDivElement,
     filterFunction: FilterFunction = () => true
-  ): UltrasoundAnnotation[] {
+  ): UltrasoundPleuraBLineAnnotation[] {
     const annotations = getAnnotations(
-      UltrasoundAnnotationTool.toolName,
+      UltrasoundPleuraBLineTool.toolName,
       element
     );
     if (!annotations?.length) {
@@ -224,7 +225,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       const currentImageId = annotation.metadata.referencedImageId;
       return filterFunction(currentImageId);
     });
-    return filteredAnnotations as UltrasoundAnnotation[];
+    return filteredAnnotations as UltrasoundPleuraBLineAnnotation[];
   }
 
   /**
@@ -239,7 +240,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     filterFunction: FilterFunction = () => true
   ) {
     const annotations = getAnnotations(
-      UltrasoundAnnotationTool.toolName,
+      UltrasoundPleuraBLineTool.toolName,
       element
     );
     const { viewport } = getEnabledElement(element);
@@ -273,10 +274,14 @@ class UltrasoundAnnotationTool extends AnnotationTool {
           pleura: 0,
         };
       }
-      if (annotationType === UltrasoundAnnotationTool.USAnnotationType.PLEURA) {
+      if (
+        annotationType ===
+        UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA
+      ) {
         counts.pleura++;
       } else if (
-        annotationType === UltrasoundAnnotationTool.USAnnotationType.BLINE
+        annotationType ===
+        UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
       ) {
         counts.bLine++;
       }
@@ -297,7 +302,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     filterFunction: FilterFunction = () => false
   ) {
     const annotations = getAnnotations(
-      UltrasoundAnnotationTool.toolName,
+      UltrasoundPleuraBLineTool.toolName,
       element
     );
 
@@ -314,7 +319,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
 
   /**
    * Sets the active annotation type (bLine or pleura)
-   * @param type - annotation type from UltrasoundAnnotationTool.USAnnotationType
+   * @param type - annotation type from UltrasoundPleuraBLineAnnotationTool.USAnnotationType
    */
   public setActiveAnnotationType(type: string) {
     this.activeAnnotationType = type;
@@ -331,57 +336,59 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   /**
    * Deletes the last annotation of a specific type.
    * @param {HTMLDivElement} element - The HTML element containing the annotations.
-   * @param {string} type - The annotation type to delete (UltrasoundAnnotationTool.USAnnotationType.PLEURA or UltrasoundAnnotationTool.USAnnotationType.BLINE).
+   * @param {string} type - The annotation type to delete (UltrasoundPleuraBLineAnnotationTool.USAnnotationType.PLEURA or UltrasoundPleuraBLineAnnotationTool.USAnnotationType.BLINE).
    * @returns {void}
    */
   public deleteLastAnnotationType(element: HTMLDivElement, type: string) {
     let annotationList;
     const annotations = getAnnotations(
-      UltrasoundAnnotationTool.toolName,
+      UltrasoundPleuraBLineTool.toolName,
       element
     );
-    if (type === UltrasoundAnnotationTool.USAnnotationType.PLEURA) {
+    if (type === UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA) {
       annotationList = annotations.filter(
         (annotation) =>
           annotation.data.annotationType ===
-          UltrasoundAnnotationTool.USAnnotationType.PLEURA
+          UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA
       );
-    } else if (type === UltrasoundAnnotationTool.USAnnotationType.BLINE) {
+    } else if (
+      type === UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
+    ) {
       annotationList = annotations.filter(
         (annotation) =>
           annotation.data.annotationType ===
-          UltrasoundAnnotationTool.USAnnotationType.BLINE
+          UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
       );
     }
-    if (annotationList.length > 0) {
+    if (annotationList?.length > 0) {
       const annotation = annotationList.pop();
       removeAnnotation(annotation.annotationUID);
     }
   }
 
   /**
-   * Hydrates an UltrasoundAnnotation from a set of points and options.
+   * Hydrates an UltrasoundPleuraBLineAnnotation from a set of points and options.
    * @param {string} viewportId - The ID of the viewport.
    * @param {Types.Point3[]} points - The points to hydrate from.
    * @param {object} options - The options to hydrate with.
    * @param {string} options.annotationUID - The annotation UID.
-   * @param {UltrasoundAnnotationTool} options.toolInstance - The tool instance.
+   * @param {UltrasoundPleuraBLineAnnotationTool} options.toolInstance - The tool instance.
    * @param {string} options.referencedImageId - The referenced image ID.
    * @param {Types.Point3} options.viewplaneNormal - The viewplane normal.
    * @param {Types.Point3} options.viewUp - The view up.
-   * @returns {UltrasoundAnnotation} The hydrated annotation.
+   * @returns {UltrasoundPleuraBLineAnnotation} The hydrated annotation.
    */
   static hydrate = (
     viewportId: string,
     points: Types.Point3[],
     options?: {
       annotationUID?: string;
-      toolInstance?: UltrasoundAnnotationTool;
+      toolInstance?: UltrasoundPleuraBLineTool;
       referencedImageId?: string;
       viewplaneNormal?: Types.Point3;
       viewUp?: Types.Point3;
     }
-  ): UltrasoundAnnotation => {
+  ): UltrasoundPleuraBLineAnnotation => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (!enabledElement) {
       return;
@@ -392,8 +399,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       viewPlaneNormal,
       instance,
       viewport,
-    } = this.hydrateBase<UltrasoundAnnotationTool>(
-      UltrasoundAnnotationTool,
+    } = this.hydrateBase<UltrasoundPleuraBLineTool>(
+      UltrasoundPleuraBLineTool,
       enabledElement,
       points,
       options
@@ -430,11 +437,11 @@ class UltrasoundAnnotationTool extends AnnotationTool {
   /**
    * Adds a new annotation based on the current mouse position and image ID.
    * @param {EventTypes.InteractionEventType} evt - The event.
-   * @returns {UltrasoundAnnotation} The new annotation object.
+   * @returns {UltrasoundPleuraBLineAnnotation} The new annotation object.
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
-  ): UltrasoundAnnotation => {
+  ): UltrasoundPleuraBLineAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -497,7 +504,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
-    return annotation as UltrasoundAnnotation;
+    return annotation as UltrasoundPleuraBLineAnnotation;
   };
 
   /**
@@ -513,7 +520,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: UltrasoundAnnotation,
+    annotation: UltrasoundPleuraBLineAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -556,7 +563,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    */
   toolSelectedCallback = (
     evt: EventTypes.InteractionEventType,
-    annotation: UltrasoundAnnotation
+    annotation: UltrasoundPleuraBLineAnnotation
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -592,7 +599,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    */
   handleSelectedCallback(
     evt: EventTypes.InteractionEventType,
-    annotation: UltrasoundAnnotation,
+    annotation: UltrasoundPleuraBLineAnnotation,
     handle: ToolHandle
   ): void {
     const eventDetail = evt.detail;
@@ -1067,7 +1074,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       .filter(
         (annotation) =>
           annotation.data.annotationType ===
-            UltrasoundAnnotationTool.USAnnotationType.PLEURA &&
+            UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA &&
           annotation.metadata.referencedImageId === currentImageId
       )
       .map((annotation) => {
@@ -1083,7 +1090,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       .filter(
         (annotation) =>
           annotation.data.annotationType ===
-            UltrasoundAnnotationTool.USAnnotationType.BLINE &&
+            UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE &&
           annotation.metadata.referencedImageId === currentImageId
       )
       .map((annotation) => {
@@ -1104,15 +1111,21 @@ class UltrasoundAnnotationTool extends AnnotationTool {
    * @param annotation - annotation
    * @returns {string} color for the line type
    */
-  getColorForLineType(annotation: UltrasoundAnnotation) {
+  getColorForLineType(annotation: UltrasoundPleuraBLineAnnotation) {
     const { annotationType } = annotation.data;
     const { bLineColor, pleuraColor } = this.configuration;
 
-    if (annotationType === UltrasoundAnnotationTool.USAnnotationType.BLINE) {
+    if (
+      annotationType ===
+      UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
+    ) {
       return bLineColor;
     }
 
-    if (annotationType === UltrasoundAnnotationTool.USAnnotationType.PLEURA) {
+    if (
+      annotationType ===
+      UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA
+    ) {
       return pleuraColor;
     }
 
@@ -1273,7 +1286,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
       .filter(
         (annotation) =>
           annotation.data.annotationType ===
-            UltrasoundAnnotationTool.USAnnotationType.PLEURA &&
+            UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA &&
           annotation.metadata.referencedImageId === currentImageId
       )
       .map((annotation) => {
@@ -1292,7 +1305,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     const pleuraIntervalsDisplayed = [];
     const bLineIntervalsDisplayed = [];
     // Draw SVG function
-    const drawAnnotation = (annotation: UltrasoundAnnotation) => {
+    const drawAnnotation = (annotation: UltrasoundPleuraBLineAnnotation) => {
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
 
@@ -1370,7 +1383,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         let fanNumber = 0;
         if (
           annotation.data.annotationType ===
-          UltrasoundAnnotationTool.USAnnotationType.BLINE
+          UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
         ) {
           const uncoveredIntervals = subtractIntervals(
             bLineIntervalsDisplayed,
@@ -1411,7 +1424,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
           });
         } else if (
           annotation.data.annotationType ===
-          UltrasoundAnnotationTool.USAnnotationType.PLEURA
+          UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA
         ) {
           const uncoveredIntervals = subtractIntervals(
             pleuraIntervalsDisplayed,
@@ -1452,7 +1465,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     const pleuraAnnotationsToDraw = annotations.filter(
       (annotation) =>
         annotation.data.annotationType ===
-          UltrasoundAnnotationTool.USAnnotationType.PLEURA &&
+          UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA &&
         annotation.metadata.referencedImageId === currentImageId
     );
     pleuraAnnotationsToDraw.forEach((annotation) => {
@@ -1461,14 +1474,14 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         console.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
-      drawAnnotation(annotation as UltrasoundAnnotation);
+      drawAnnotation(annotation as UltrasoundPleuraBLineAnnotation);
     });
 
     // Draw BLine annotations
     const bLineAnnotationsToDraw = annotations.filter(
       (annotation) =>
         annotation.data.annotationType ===
-          UltrasoundAnnotationTool.USAnnotationType.BLINE &&
+          UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE &&
         annotation.metadata.referencedImageId === currentImageId
     );
     bLineAnnotationsToDraw.forEach((annotation) => {
@@ -1477,7 +1490,7 @@ class UltrasoundAnnotationTool extends AnnotationTool {
         console.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
-      drawAnnotation(annotation as UltrasoundAnnotation);
+      drawAnnotation(annotation as UltrasoundPleuraBLineAnnotation);
     });
     renderStatus = true;
 
@@ -1508,4 +1521,4 @@ function defaultGetTextLines(data, targetId): string[] {
   return [''];
 }
 
-export default UltrasoundAnnotationTool;
+export default UltrasoundPleuraBLineTool;
