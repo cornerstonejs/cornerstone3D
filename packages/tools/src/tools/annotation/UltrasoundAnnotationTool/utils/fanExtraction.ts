@@ -93,7 +93,7 @@ export function exportContourJpeg(
  * @returns {PixelDataResult} Object containing pixelData, width, and height
  *   Returns undefined if the image is not found in cache
  */
-export function getPixelData(imageId: string): PixelDataResult {
+export function getPixelData(imageId: string): PixelDataResult | undefined {
   const image = cache.getImage(imageId);
   if (!image) {
     return;
@@ -123,7 +123,6 @@ export default function saveBinaryData(url: string, filename: string): void {
   a.style.display = 'none';
   a.click();
   a.remove();
-  window.URL.revokeObjectURL(url);
 }
 
 /**
@@ -144,9 +143,17 @@ function exportFanJpeg(
   fan: FanGeometry,
   opts: FanExportOptions = {}
 ): string {
-  const { center, startAngle, endAngle, innerRadius, outerRadius } = fan;
+  const {
+    center,
+    startAngle: startAngleInDegrees,
+    endAngle: endAngleInDegrees,
+    innerRadius,
+    outerRadius,
+  } = fan;
   const { strokeStyle = '#0ff', lineWidth = 2, quality = 0.92 } = opts;
 
+  const startAngle = (startAngleInDegrees * Math.PI) / 180;
+  const endAngle = (endAngleInDegrees * Math.PI) / 180;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;

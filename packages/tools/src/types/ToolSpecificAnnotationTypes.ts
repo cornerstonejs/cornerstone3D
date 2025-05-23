@@ -98,7 +98,7 @@ export interface UltrasoundAnnotation extends Annotation {
       points: [Types.Point3, Types.Point3];
       activeHandleIndex: number | null;
     };
-    annotationType: string; // "pleura", "bLine"
+    annotationType: 'pleura' | 'bLine'; // Allowed values
     label: string;
   };
 }

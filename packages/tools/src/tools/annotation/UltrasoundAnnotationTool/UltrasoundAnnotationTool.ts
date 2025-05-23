@@ -982,8 +982,8 @@ class UltrasoundAnnotationTool extends AnnotationTool {
     }
     this.configuration.innerRadius = fanGeometry.innerRadius;
     this.configuration.outerRadius = fanGeometry.outerRadius;
-    this.configuration.startAngle = (fanGeometry.startAngle * 180) / Math.PI;
-    this.configuration.endAngle = (fanGeometry.endAngle * 180) / Math.PI;
+    this.configuration.startAngle = fanGeometry.startAngle;
+    this.configuration.endAngle = fanGeometry.endAngle;
   }
   /**
    * Derive the fan shape geometry parameters via US image segmentation, if the

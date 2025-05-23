@@ -1,35 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import type { FanGeometry, FanShapeCorners } from './types';
-
-/**
- * Compute intersection of two infinite lines (p1→p2) and (p3→p4).
- * Returns a point or null if parallel.
- *
- * @param {Types.Point2} p1 - First point of first line
- * @param {Types.Point2} p2 - Second point of first line
- * @param {Types.Point2} p3 - First point of second line
- * @param {Types.Point2} p4 - Second point of second line
- * @returns {Types.Point2|null} Intersection point or null if lines are parallel
- */
-function intersect(
-  p1: Types.Point2,
-  p2: Types.Point2,
-  p3: Types.Point2,
-  p4: Types.Point2
-): Types.Point2 | null {
-  const rx = p2[0] - p1[0];
-  const ry = p2[1] - p1[1];
-  const sx = p4[0] - p3[0];
-  const sy = p4[1] - p3[1];
-  const denom = rx * sy - ry * sx;
-  if (denom === 0) {
-    return null;
-  } // parallel
-  const qpx = p3[0] - p1[0];
-  const qpy = p3[1] - p1[1];
-  const t = (qpx * sy - qpy * sx) / denom;
-  return [p1[0] + t * rx, p1[1] + t * ry];
-}
+import { intersectLine } from '../../../..//utilities/math/line';
 
 /**
  * Calculate angle in radians from center to point p
@@ -65,14 +36,15 @@ export function deriveFanGeometry(params: FanShapeCorners): FanGeometry {
   const { P1, P2, P3, P4 } = params;
 
   // --- 1) Apex (intersection of P1→P2 and P4→P3)
-  const center = intersect(P1, P2, P4, P3);
-  if (!center) {
+  const centerResult = intersectLine(P1, P2, P4, P3, true);
+  if (!centerResult) {
     throw new Error('Fan edges appear parallel — no apex found');
   }
+  const center = centerResult as Types.Point2;
 
   // --- 2) Angle range (ensure end > start, handle wrap-around)
-  let startAngle = angleRad(center, P1);
-  let endAngle = angleRad(center, P4);
+  let startAngle = angleRad(center, P1) * (180 / Math.PI);
+  let endAngle = angleRad(center, P4) * (180 / Math.PI);
   if (endAngle <= startAngle) {
     const tempAngle = startAngle;
     startAngle = endAngle;
