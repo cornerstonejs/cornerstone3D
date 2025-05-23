@@ -35,6 +35,10 @@ export type SculptData = {
   points: Array<Types.Point3>;
   maxSpacing: number;
   element: HTMLDivElement;
+  configuration?: {
+    neighborInfluenceRadius?: number;
+    falloffType?: string;
+  };
 };
 
 type CommonData = {
@@ -73,6 +77,8 @@ class SculptorTool extends BaseTool {
         ],
         toolShape: 'circle',
         referencedToolName: 'PlanarFreehandROI',
+        neighborInfluenceRadius: 2.0, // Multiplier for the tool radius to determine influence area
+        falloffType: 'linear', // 'linear' or 'exponential'
       },
     }
   ) {
@@ -143,6 +149,10 @@ class SculptorTool extends BaseTool {
       points,
       maxSpacing: cursorShape.getMaxSpacing(config.minSpacing),
       element: element,
+      configuration: {
+        neighborInfluenceRadius: config.neighborInfluenceRadius,
+        falloffType: config.falloffType,
+      },
     };
 
     const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);

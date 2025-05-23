@@ -1,6 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { ISculptToolShape } from '../../types/ISculptToolShape';
 import type { SculptData } from '../SculptorTool';
 import { distancePointToContour } from '../distancePointToContour';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
@@ -10,11 +9,7 @@ import type {
   EventTypes,
   ContourAnnotationData,
 } from '../../types';
-
-export type PushedHandles = {
-  first?: number;
-  last?: number;
-};
+import SculptCursor from './SculptCursor';
 
 /**
  * Implements a dynamic radius circle sculpt tool to edit contour annotations.
@@ -23,13 +18,8 @@ export type PushedHandles = {
  * TODO: Update this tool to allow modifying spline and other handle containing
  * contours.
  */
-class CircleSculptCursor implements ISculptToolShape {
+class CircleSculptCursor extends SculptCursor {
   static shapeName = 'Circle';
-
-  private toolInfo = {
-    toolSize: null,
-    maxToolSize: null,
-  };
 
   /**
    * Renders a circle at the current sculpt tool location
@@ -48,41 +38,6 @@ class CircleSculptCursor implements ISculptToolShape {
       this.toolInfo.toolSize,
       options
     );
-  }
-
-  /**
-   * Pushes the points radially away from the mouse if they are
-   * contained within the shape defined by the freehandSculpter tool
-   */
-  pushHandles(
-    viewport: Types.IViewport,
-    sculptData: SculptData
-  ): PushedHandles {
-    const { points, mouseCanvasPoint } = sculptData;
-    const pushedHandles: PushedHandles = { first: undefined, last: undefined };
-
-    for (let i = 0; i < points.length; i++) {
-      const handleCanvasPoint = viewport.worldToCanvas(points[i]);
-      const distanceToHandle = point.distanceToPoint(
-        handleCanvasPoint,
-        mouseCanvasPoint
-      );
-
-      if (distanceToHandle > this.toolInfo.toolSize) {
-        continue;
-      }
-
-      // Push point if inside circle, to edge of circle.
-      this.pushOneHandle(i, distanceToHandle, sculptData);
-      if (pushedHandles.first === undefined) {
-        pushedHandles.first = i;
-        pushedHandles.last = i;
-      } else {
-        pushedHandles.last = i;
-      }
-    }
-
-    return pushedHandles;
   }
 
   /**
@@ -177,35 +132,6 @@ class CircleSculptCursor implements ISculptToolShape {
     const worldPosition = viewport.canvasToWorld(insertPosition);
 
     return worldPosition;
-  }
-
-  /**
-   * Adds a new point into the sculpt data.
-   */
-  private pushOneHandle(
-    i: number,
-    distanceToHandle: number,
-    sculptData: SculptData
-  ): void {
-    const { points, mousePoint } = sculptData;
-    const toolSize = this.toolInfo.toolSize;
-    const handle = points[i];
-
-    const directionUnitVector = {
-      x: (handle[0] - mousePoint[0]) / distanceToHandle,
-      y: (handle[1] - mousePoint[1]) / distanceToHandle,
-      z: (handle[2] - mousePoint[2]) / distanceToHandle,
-    };
-
-    const position = {
-      x: mousePoint[0] + toolSize * directionUnitVector.x,
-      y: mousePoint[1] + toolSize * directionUnitVector.y,
-      z: mousePoint[2] + toolSize * directionUnitVector.z,
-    };
-
-    handle[0] = position.x;
-    handle[1] = position.y;
-    handle[2] = position.z;
   }
 }
 
