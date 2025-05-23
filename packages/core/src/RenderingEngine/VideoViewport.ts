@@ -552,10 +552,10 @@ class VideoViewport extends Viewport {
     this.setProperties({
       loop: false,
       muted: true,
-    });
-    this.setVOI({
-      lower: 0,
-      upper: 255,
+      voiRange: {
+        lower: 0,
+        upper: 255,
+      },
     });
   }
 

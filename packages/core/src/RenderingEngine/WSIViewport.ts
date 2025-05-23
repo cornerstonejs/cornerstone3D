@@ -247,10 +247,11 @@ class WSIViewport extends Viewport {
    * the reset toolbar button.
    */
   public resetProperties() {
-    this.setProperties({});
-    this.setVOI({
-      lower: 0,
-      upper: 255,
+    this.setProperties({
+      voiRange: {
+        lower: 0,
+        upper: 255,
+      },
     });
   }
 
