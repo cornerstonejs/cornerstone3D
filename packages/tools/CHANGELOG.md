@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.15.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.5...v3.15.6) (2025-05-24)
+
+### Bug Fixes
+
+- **ellipse:** EllipticalROITool.isPointNearTool now mimics what drawEllipseByCoordinates for rotated ellipses. ([#2094](https://github.com/cornerstonejs/cornerstone3D/issues/2094)) ([6fc7dd6](https://github.com/cornerstonejs/cornerstone3D/commit/6fc7dd615d8c9bf951da8300e9cf4d7da5f1d1ac))
+
 ## [3.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.4...v3.15.5) (2025-05-23)
 
 **Note:** Version bump only for package @cornerstonejs/tools
