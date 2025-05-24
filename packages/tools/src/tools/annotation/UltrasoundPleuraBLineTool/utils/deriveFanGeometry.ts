@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import type { FanGeometry, FanShapeCorners } from './types';
-import { intersectLine } from '../../../..//utilities/math/line';
+import { intersectLine } from '../../../../utilities/math/line';
 
 /**
  * Calculate angle in radians from center to point p
