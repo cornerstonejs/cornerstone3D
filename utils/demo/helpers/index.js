@@ -2,6 +2,7 @@ import addBrushSizeSlider from './addBrushSizeSlider';
 import addButtonToToolbar from './addButtonToToolbar';
 import addCheckboxToToolbar from './addCheckboxToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
+import addInputToToolbar from './addInputToToolbar';
 import addLabelToToolbar from './addLabelToToolbar';
 import addManipulationBindings from './addManipulationBindings';
 import addSegmentIndexDropdown from './addSegmentIndexDropdown';
@@ -39,6 +40,7 @@ export {
   addButtonToToolbar,
   addCheckboxToToolbar,
   addDropdownToToolbar,
+  addInputToToolbar,
   addLabelToToolbar,
   addManipulationBindings,
   addSegmentIndexDropdown,
