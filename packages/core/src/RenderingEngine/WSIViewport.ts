@@ -10,6 +10,7 @@ import type {
   ViewportInput,
   BoundsIJK,
   CPUImageData,
+  PixelDataTypedArray,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -22,6 +23,11 @@ import { peerImport } from '../init';
 import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
+
+export type CanvasScalarData = Uint8ClampedArray & {
+  frameNumber?: number;
+  getRange?: () => [number, number];
+};
 
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
@@ -228,8 +234,12 @@ class WSIViewport extends Viewport {
     this.setProperties({});
   }
 
-  protected getScalarData() {
-    return null;
+  protected _getScalarData() {
+    // Return an empty CanvasScalarData object
+    const emptyData = new Uint8ClampedArray() as CanvasScalarData;
+    emptyData.getRange = () => [0, 255];
+    emptyData.frameNumber = -1;
+    return emptyData;
   }
 
   public getImageData(): CPUIImageData {
@@ -244,7 +254,7 @@ class WSIViewport extends Viewport {
       getDirection: () => metadata.direction,
       getDimensions: () => metadata.dimensions,
       getRange: () => [0, 255],
-      getScalarData: () => this.getScalarData(),
+      getScalarData: () => this._getScalarData(),
       getSpacing: () => metadata.spacing,
       worldToIndex: (point: Point3) => {
         const canvasPoint = this.worldToCanvas(point);
@@ -272,9 +282,10 @@ class WSIViewport extends Viewport {
       preScale: {
         scaled: false,
       },
-      scalarData: this.getScalarData(),
+      scalarData: this._getScalarData(),
       imageData,
       // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
+      /*
       voxelManager: {
         forEach: (
           callback: (args: {
@@ -298,6 +309,7 @@ class WSIViewport extends Viewport {
           });
         },
       },
+      */
     };
 
     // @ts-expect-error we need to fully migrate the voxelManager to the new system
