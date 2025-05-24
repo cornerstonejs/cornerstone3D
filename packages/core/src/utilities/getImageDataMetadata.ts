@@ -88,6 +88,13 @@ export function getImageDataMetadata(image: IImage): ReturnImageDataMetadata {
   const zSpacing = EPSILON;
   const zVoxels = 1;
 
+  //TODO NEED TO CHECK IT !!!!!
+  if (
+    !imagePixelModule.photometricInterpretation &&
+    image.sizeInBytes === 3 * image.width * image.height
+  ) {
+    image.numberOfComponents = 3;
+  }
   const numberOfComponents =
     image.numberOfComponents ||
     _getNumCompsFromPhotometricInterpretation(
@@ -126,7 +133,7 @@ function _getNumCompsFromPhotometricInterpretation(
   let numberOfComponents = 1;
   if (
     photometricInterpretation === 'RGB' ||
-    photometricInterpretation.includes('YBR') ||
+    photometricInterpretation?.includes('YBR') ||
     photometricInterpretation === 'PALETTE COLOR'
   ) {
     numberOfComponents = 3;
