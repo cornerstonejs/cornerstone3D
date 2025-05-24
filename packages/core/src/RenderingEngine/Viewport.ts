@@ -227,6 +227,31 @@ class Viewport {
     this.viewportStatus = ViewportStatus.RENDERED;
   }
 
+  protected setColorTransform(voiRange, averageWhite) {
+    let feFilter = null;
+    if (!voiRange && !averageWhite) {
+      return;
+    }
+    const white = averageWhite || [255, 255, 255];
+    const maxWhite = Math.max(...white);
+    const scaleWhite = white.map((c) => maxWhite / c);
+    const { lower = 0, upper = 255 } = voiRange || {};
+    const wlScale = (upper - lower + 1) / 255;
+    const wlDelta = lower / 255;
+    feFilter = `url('data:image/svg+xml,\
+      <svg xmlns="http://www.w3.org/2000/svg">\
+        <filter id="colour" color-interpolation-filters="linearRGB">\
+        <feColorMatrix type="matrix" \
+        values="\
+          ${scaleWhite[0] * wlScale} 0 0 0 ${wlDelta} \
+          0 ${scaleWhite[1] * wlScale} 0 0 ${wlDelta} \
+          0 0 ${scaleWhite[2] * wlScale} 0 ${wlDelta} \
+          0 0 0 1 0" />\
+        </filter>\
+      </svg>#colour')`;
+    return feFilter;
+  }
+
   /**
    * Returns the rendering engine driving the `Viewport`.
    *
