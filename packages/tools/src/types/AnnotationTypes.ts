@@ -47,6 +47,11 @@ type Annotation = {
      * The viewUp for the view position
      */
     viewUp?: Types.Point3;
+
+    /**
+     * For custom annotation, there can be additional metadata
+     */
+    [key: string]: unknown;
   };
   /**
    * Data for annotation, Derivatives need to define their own data types.
