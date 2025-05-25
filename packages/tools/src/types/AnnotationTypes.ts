@@ -49,7 +49,7 @@ type Annotation = {
     viewUp?: Types.Point3;
 
     /**
-     * For custom annotation, there can be additional metadata
+     * Optional custom metadata for the annotation.
      */
     [key: string]: unknown;
   };
@@ -59,6 +59,9 @@ type Annotation = {
   data: {
     /** Annotation handles that are grabbable for manipulation */
     handles?: Handles;
+    /**
+     * Optional custom data for the annotation.
+     */
     [key: string]: unknown;
     /** Cached Annotation statistics which is specific to the tool */
     cachedStats?: Record<string, unknown>;
