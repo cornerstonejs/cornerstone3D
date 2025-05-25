@@ -204,16 +204,25 @@ class ZoomTool extends BaseTool {
       const imageHeight = dimensions[1] * spacing[1];
 
       const canvasAspect = size[0] / size[1];
-      const imageAspect = imageWidth / imageHeight;
+
+      // Get display area, if available
+      const displayArea = viewport.options?.displayArea;
+      const imageAreaScaleX = displayArea?.imageArea?.[0] ?? 1.1;
+      const imageAreaScaleY = displayArea?.imageArea?.[1] ?? 1.1;
+
+      // Adjust image dimensions by display area scale
+      const scaledImageWidth = imageWidth * imageAreaScaleX;
+      const scaledImageHeight = imageHeight * imageAreaScaleY;
+      const scaledImageAspect = scaledImageWidth / scaledImageHeight;
 
       // Determine the minimum parallel scale required to fully fit the image
       let minParallelScaleRequired;
-      if (imageAspect > canvasAspect) {
+      if (scaledImageAspect > canvasAspect) {
         // Wider image, limit by width
-        minParallelScaleRequired = (imageWidth / canvasAspect) * 0.5;
+        minParallelScaleRequired = (scaledImageWidth / canvasAspect) * 0.5;
       } else {
         // Taller image, limit by height
-        minParallelScaleRequired = imageHeight * 0.5;
+        minParallelScaleRequired = scaledImageHeight * 0.5;
       }
 
       const { minZoomScale, maxZoomScale } = this.configuration;
