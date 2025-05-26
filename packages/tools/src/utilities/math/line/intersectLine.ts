@@ -36,14 +36,13 @@ export default function intersectLine(
   const [x3, y3] = line2Start;
   const [x4, y4] = line2End;
 
-  // Check for parallel lines using determinant
-  const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-
-  if (Math.abs(denom) < 1e-10) {
-    return undefined; // Lines are parallel or coincident
-  }
-
   if (infinite) {
+    // Check for parallel lines using determinant
+    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+    if (Math.abs(denom) < 1e-10) {
+      return undefined; // Lines are parallel or coincident
+    }
     // For infinite lines, use the simpler parametric approach
     const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
     const x = x1 + t * (x2 - x1);
