@@ -951,6 +951,7 @@ class RectangleROITool extends AnnotationTool {
           mean: stats.mean?.value,
           stdDev: stats.stdDev?.value,
           max: stats.max?.value,
+          min: stats.min?.value,
           statsArray: stats.array,
           pointsInShape: pointsInShape,
           areaUnit,
@@ -1052,7 +1053,8 @@ class RectangleROITool extends AnnotationTool {
  */
 function defaultGetTextLines(data, targetId: string): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, max, stdDev, areaUnit, modalityUnit, min } =
+    cachedVolumeStats;
 
   if (mean === undefined || mean === null) {
     return;
@@ -1063,6 +1065,7 @@ function defaultGetTextLines(data, targetId: string): string[] {
   textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
   textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
   textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
 
   return textLines;

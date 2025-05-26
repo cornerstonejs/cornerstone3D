@@ -1174,6 +1174,7 @@ class EllipticalROITool extends AnnotationTool {
         area,
         mean: stats.mean?.value,
         max: stats.max?.value,
+        min: stats.min?.value,
         stdDev: stats.stdDev?.value,
         statsArray: stats.array,
         pointsInShape,
@@ -1248,7 +1249,7 @@ class EllipticalROITool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit, min } =
     cachedVolumeStats;
 
   const textLines: string[] = [];
@@ -1266,6 +1267,9 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (max) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (min) {
+    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
   }
 
   if (stdDev) {
