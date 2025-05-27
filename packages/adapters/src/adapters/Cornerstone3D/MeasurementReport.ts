@@ -104,7 +104,8 @@ export interface MeasurementAdapter {
 
     getTID300RepresentationArguments(
         tool,
-        worldToImageCoords
+        worldToImageCoords,
+        is3DMeasurement
     ): Record<string, unknown>;
 }
 
@@ -127,11 +128,13 @@ export default class MeasurementReport {
         tool,
         ReferencedSOPSequence,
         toolClass,
-        worldToImageCoords
+        worldToImageCoords,
+        is3DMeasurement
     ) {
         const args = toolClass.getTID300RepresentationArguments(
             tool,
-            worldToImageCoords
+            worldToImageCoords,
+            is3DMeasurement
         );
         args.ReferencedSOPSequence = ReferencedSOPSequence;
 
@@ -158,7 +161,8 @@ export default class MeasurementReport {
         toolType,
         toolData,
         ReferencedSOPSequence,
-        worldToImageCoords
+        worldToImageCoords,
+        is3DMeasurement
     ) {
         const toolTypeData = toolData[toolType];
         const toolClass = this.measurementAdapterByToolType.get(toolType);
@@ -178,7 +182,8 @@ export default class MeasurementReport {
                 tool,
                 ReferencedSOPSequence,
                 toolClass,
-                worldToImageCoords
+                worldToImageCoords,
+                is3DMeasurement
             );
         });
 
@@ -510,6 +515,7 @@ export default class MeasurementReport {
         Object.keys(toolState).forEach(imageId => {
             const toolData = toolState[imageId];
             const toolTypes = Object.keys(toolData);
+            const is3DMeasurement = imageId === NO_IMAGE_ID;
 
             const ReferencedSOPSequence = this.generateReferencedSOPSequence({
                 toolData,
@@ -520,7 +526,7 @@ export default class MeasurementReport {
                 derivationSourceDatasets
             });
 
-            if (imageId === NO_IMAGE_ID) {
+            if (is3DMeasurement) {
                 is3DSR = true;
             }
 
@@ -532,7 +538,8 @@ export default class MeasurementReport {
                     toolType,
                     toolData,
                     ReferencedSOPSequence,
-                    worldToImageCoords
+                    worldToImageCoords,
+                    is3DMeasurement
                 );
                 if (group) {
                     measurementGroups.push(group);

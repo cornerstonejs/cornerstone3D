@@ -142,13 +142,14 @@ export default class BaseAdapter3D {
 
     public static getTID300RepresentationArguments(
         tool,
-        worldToImageCoords
+        worldToImageCoords,
+        is3DMeasurement = false
     ): TID300Arguments {
         const { data, metadata } = tool;
         const { finding, findingSites } = tool;
         const { referencedImageId } = metadata;
 
-        if (!referencedImageId) {
+        if (is3DMeasurement) {
             return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 

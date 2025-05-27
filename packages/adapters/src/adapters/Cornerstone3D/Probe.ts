@@ -113,12 +113,16 @@ class Probe extends BaseAdapter3D {
         return state;
     }
 
-    public static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    public static getTID300RepresentationArguments(
+        tool,
+        worldToImageCoords,
+        is3DMeasurement = false
+    ) {
         const { data, metadata } = tool;
         const { finding, findingSites } = tool;
         const { referencedImageId } = metadata;
 
-        if (!referencedImageId) {
+        if (is3DMeasurement) {
             return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
