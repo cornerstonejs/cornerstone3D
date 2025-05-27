@@ -31,14 +31,11 @@ import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
 export type SculptData = {
   mousePoint: Types.Point3;
+  deltaWorld: Types.Point3;
   mouseCanvasPoint: Types.Point2;
   points: Array<Types.Point3>;
   maxSpacing: number;
   element: HTMLDivElement;
-  configuration?: {
-    neighborInfluenceRadius?: number;
-    falloffType?: string;
-  };
 };
 
 type CommonData = {
@@ -77,8 +74,7 @@ class SculptorTool extends BaseTool {
         ],
         toolShape: 'circle',
         referencedToolName: 'PlanarFreehandROI',
-        neighborInfluenceRadius: 2.0, // Multiplier for the tool radius to determine influence area
-        falloffType: 'linear', // 'linear' or 'exponential'
+        updateCursorSize: 'dynamic',
       },
     }
   ) {
@@ -146,17 +142,13 @@ class SculptorTool extends BaseTool {
     this.sculptData = {
       mousePoint: eventData.currentPoints.world,
       mouseCanvasPoint: eventData.currentPoints.canvas,
+      deltaWorld: eventData.deltaPoints.world,
       points,
       maxSpacing: cursorShape.getMaxSpacing(config.minSpacing),
       element: element,
-      configuration: {
-        neighborInfluenceRadius: config.neighborInfluenceRadius,
-        falloffType: config.falloffType,
-      },
     };
 
     const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);
-
     if (pushedHandles.first !== undefined) {
       this.insertNewHandles(pushedHandles);
     }
@@ -222,7 +214,11 @@ class SculptorTool extends BaseTool {
     } else {
       const cursorShape = this.registeredShapes.get(this.selectedShape);
       const canvasCoords = eventData.currentPoints.canvas;
-      cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
+
+      // Only call updateToolSize when updateCursorSize is set to 'dynamic'
+      if (this.configuration.updateCursorSize === 'dynamic') {
+        cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
+      }
     }
 
     triggerAnnotationRenderForViewportIds(this.commonData.viewportIdsToRender);
