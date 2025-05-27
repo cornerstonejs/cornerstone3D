@@ -26,6 +26,7 @@ export type PushedHandles = {
  */
 class CircleSculptCursor implements ISculptToolShape {
   static shapeName = 'Circle';
+  static CHAIN_MAINTENANCE_ITERATIONS = 3;
 
   private toolInfo = {
     toolSize: null,
@@ -97,12 +98,15 @@ class CircleSculptCursor implements ISculptToolShape {
 
     // Apply influence to points outside the pushed interval
     if (pushedHandles.first !== undefined && pushedHandles.last !== undefined) {
-      for (let i = 0; i < 5; i++) {
+      for (
+        let i = 0;
+        i < CircleSculptCursor.CHAIN_MAINTENANCE_ITERATIONS;
+        i++
+      ) {
         this.maintainChainStructure(sculptData, pushedHandles);
       }
     }
 
-    console.log('Length variation:', oldLength, points.length);
     return pushedHandles;
   }
 
