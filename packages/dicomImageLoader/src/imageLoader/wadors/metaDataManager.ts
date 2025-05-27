@@ -30,7 +30,92 @@ function retrieveMultiframeMetadataImageId(imageId) {
   return _retrieveMultiframeMetadataImageURI(imageURI);
 }
 
+/**
+ * List based on https://dicom.nema.org/medical/dicom/current/output/chtml/part03/chapter_A.html#sect_A.1.3
+ *
+ * using 'Multi-frame' or 'Multi-frame Functional Groups' modules
+ *
+ * IOD list https://dicom.nema.org/medical/dicom/current/output/chtml/part04/sect_b.5.html
+ */
+const knownMultiframeIODs = {
+  '1.2.840.10008.5.1.4.1.1.2.1': 'Enhanced CT Image Storage',
+  '1.2.840.10008.5.1.4.1.1.4.1': 'Enhanced MR Image Storage',
+  '1.2.840.10008.5.1.4.1.1.4.3': 'Enhanced MR Color Image Storage',
+  '1.2.840.10008.5.1.4.1.1.7.1':
+    'Multi-frame Single Bit Secondary Capture Image Storage',
+  '1.2.840.10008.5.1.4.1.1.7.2':
+    'Multi-frame Grayscale Byte Secondary Capture Image Storage',
+  '1.2.840.10008.5.1.4.1.1.7.3':
+    'Multi-frame Grayscale Word Secondary Capture Image Storage',
+  '1.2.840.10008.5.1.4.1.1.7.4':
+    'Multi-frame True Color Secondary Capture Image Storage',
+  '1.2.840.10008.5.1.4.1.1.20': 'Nuclear Medicine Image Storage',
+  '1.2.840.10008.5.1.4.1.1.3.1': 'Ultrasound Multi-frame Image Storage',
+  '1.2.840.10008.5.1.4.1.1.6.2': 'Enhanced US Volume Storage',
+  '1.2.840.10008.5.1.4.1.1.6.3': 'Photoacoustic Image Storage',
+  '1.2.840.10008.5.1.4.1.1.130': 'Enhanced PET Image Storage',
+  '1.2.840.10008.5.1.4.1.1.12.1.1': 'Enhanced XA Image Storage',
+  '1.2.840.10008.5.1.4.1.1.12.2.1': 'Enhanced XRF Image Storage',
+  '1.2.840.10008.5.1.4.1.1.13.1.1': 'X-Ray 3D Angiographic Image Storage',
+  '1.2.840.10008.5.1.4.1.1.13.1.2': 'X-Ray 3D Craniofacial Image Storage',
+  '1.2.840.10008.5.1.4.1.1.13.1.3': 'Breast Tomosynthesis Image Storage',
+  '1.2.840.10008.5.1.4.1.1.13.1.4':
+    'Breast Projection X-Ray Image Storage - For Presentation',
+  '1.2.840.10008.5.1.4.1.1.13.1.5':
+    'Breast Projection X-Ray Image Storage - For Processing',
+  '1.2.840.10008.5.1.4.1.1.30': 'Parametric Map Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.6': 'VL Whole Slide Microscopy Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.8': 'Confocal Microscopy Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.9':
+    'Confocal Microscopy Tiled Pyramidal Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.1.1': 'Video Endoscopic Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.2.1': 'Video Microscopic Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.4.1': 'Video Photographic Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.5.1':
+    'Ophthalmic Photography 8 Bit Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.5.2':
+    'Ophthalmic Photography 16 Bit Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.5.5':
+    'Wide Field Ophthalmic Photography Stereographic Projection Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.5.6':
+    'Wide Field Ophthalmic Photography 3D Coordinates Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.5.4': 'Ophthalmic Tomography Image Storage',
+  '1.2.840.10008.5.1.4.1.1.77.1.5.8':
+    'Ophthalmic Optical Coherence Tomography B-scan Volume Analysis Storage',
+  '1.2.840.10008.5.1.4.1.1.14.1':
+    'Intravascular Optical Coherence Tomography Image Storage - For Presentation',
+  '1.2.840.10008.5.1.4.1.1.14.2':
+    'Intravascular Optical Coherence Tomography Image Storage - For Processing',
+  '1.2.840.10008.5.1.4.1.1.66.4': 'Segmentation Storage',
+  '1.2.840.10008.5.1.4.1.1.4.2': 'MR Spectroscopy Storage',
+  '1.2.840.10008.5.1.4.1.1.481.23': 'Enhanced RT Image Storage',
+  '1.2.840.10008.5.1.4.1.1.481.24': 'Enhanced Continuous RT Image Storage',
+};
+const conditionalMultiframeIODs = {
+  '1.2.840.10008.5.1.4.1.1.12.1': 'X-Ray Angiographic Image Storage',
+  '1.2.840.10008.5.1.4.1.1.12.2': 'X-Ray Radiofluoroscopic Image Storage',
+  '1.2.840.10008.5.1.4.1.1.481.1': 'RT Image Storage',
+  '1.2.840.10008.5.1.4.1.1.481.2': 'RT Dose Storage',
+};
+
+export function isMultiframeIOD(data): boolean | undefined {
+  const sopClassUid = getValue<string>(data['00080016']);
+  if (sopClassUid) {
+    if (knownMultiframeIODs[sopClassUid.trim()] !== undefined) {
+      // This is a known multiframe IOD
+      return true;
+    }
+  }
+  if (conditionalMultiframeIODs[sopClassUid] !== undefined) {
+    // TODO
+  }
+  return undefined;
+}
+
 function isMultiframe(metadata) {
+  if (isMultiframeIOD(metadata)) {
+    return true;
+  }
   // Checks if dicomTag NumberOf Frames exists and it is greater than one
   const numberOfFrames = getValue<number>(metadata['00280008']);
 
