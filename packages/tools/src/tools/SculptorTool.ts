@@ -35,6 +35,7 @@ export type SculptData = {
   mouseCanvasPoint: Types.Point2;
   points: Array<Types.Point3>;
   maxSpacing: number;
+  meanDistance?: number; // Optional, used for CircleSculptCursor to calculate the mean distance between points
   element: HTMLDivElement;
 };
 

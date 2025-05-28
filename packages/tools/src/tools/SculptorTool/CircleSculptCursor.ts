@@ -26,13 +26,14 @@ export type PushedHandles = {
  */
 class CircleSculptCursor implements ISculptToolShape {
   static shapeName = 'Circle';
-  static CHAIN_MAINTENANCE_ITERATIONS = 3;
+  static readonly CHAIN_MAINTENANCE_ITERATIONS = 3;
+  static readonly CHAIN_PULL_STRENGTH_FACTOR = 0.3;
+  static readonly MAX_INTER_DISTANCE_FACTOR = 1.2;
 
   private toolInfo = {
     toolSize: null,
     maxToolSize: null,
   };
-  meanDistance: number = 0;
 
   /**
    * Renders a circle at the current sculpt tool location using SVG drawing helper.
@@ -73,8 +74,14 @@ class CircleSculptCursor implements ISculptToolShape {
   ): PushedHandles {
     const { points, mouseCanvasPoint } = sculptData;
     const pushedHandles: PushedHandles = { first: undefined, last: undefined };
-    const oldLength = points.length;
 
+    const worldRadius = point.distanceToPoint(
+      viewport.canvasToWorld(mouseCanvasPoint),
+      viewport.canvasToWorld([
+        mouseCanvasPoint[0] + this.toolInfo.toolSize,
+        mouseCanvasPoint[1],
+      ])
+    );
     for (let i = 0; i < points.length; i++) {
       const handleCanvasPoint = viewport.worldToCanvas(points[i]);
       const distanceToHandle = point.distanceToPoint(
@@ -87,7 +94,7 @@ class CircleSculptCursor implements ISculptToolShape {
       }
 
       // Push point if inside circle, to edge of circle.
-      this.pushOneHandle(i, distanceToHandle, sculptData);
+      this.pushOneHandle(i, worldRadius, sculptData);
       if (pushedHandles.first === undefined) {
         pushedHandles.first = i;
         pushedHandles.last = i;
@@ -234,28 +241,24 @@ class CircleSculptCursor implements ISculptToolShape {
    */
   private pushOneHandle(
     i: number,
-    distanceToHandle: number,
+    worldRadius: number,
     sculptData: SculptData
   ): void {
     const { points, mousePoint } = sculptData;
-    const toolSize = this.toolInfo.toolSize;
     const handle = points[i];
 
-    const directionUnitVector = {
-      x: (handle[0] - mousePoint[0]) / distanceToHandle,
-      y: (handle[1] - mousePoint[1]) / distanceToHandle,
-      z: (handle[2] - mousePoint[2]) / distanceToHandle,
-    };
+    const directionUnitVector = this.directionalVector(mousePoint, handle);
 
-    const position = {
-      x: mousePoint[0] + toolSize * directionUnitVector.x,
-      y: mousePoint[1] + toolSize * directionUnitVector.y,
-      z: mousePoint[2] + toolSize * directionUnitVector.z,
-    };
+    const position = vec3.scaleAndAdd(
+      vec3.create(),
+      mousePoint,
+      directionUnitVector,
+      worldRadius
+    );
 
-    handle[0] = position.x;
-    handle[1] = position.y;
-    handle[2] = position.z;
+    handle[0] = position[0];
+    handle[1] = position[1];
+    handle[2] = position[2];
   }
 
   /**
@@ -323,10 +326,11 @@ class CircleSculptCursor implements ISculptToolShape {
     const last = pushedHandles.last!;
     const mean = Math.round((first + last) / 2);
     const numPoints = points.length;
-    if (this.meanDistance === 0) {
-      this.meanDistance = this.calculateMeanConsecutiveDistance(points);
+    if (!sculptData.meanDistance) {
+      sculptData.meanDistance = this.calculateMeanConsecutiveDistance(points);
     }
-    const maxInterDistance = this.meanDistance * 1.2;
+    const maxInterDistance =
+      sculptData.meanDistance * CircleSculptCursor.MAX_INTER_DISTANCE_FACTOR;
 
     // Adjust points from center backwards to beginning
     for (let i = mean; i >= 0; i--) {
@@ -343,9 +347,12 @@ class CircleSculptCursor implements ISculptToolShape {
           points[nextIndex]
         );
         const pullStrength =
-          (distanceToNext - this.meanDistance) / this.meanDistance;
+          (distanceToNext - sculptData.meanDistance) / sculptData.meanDistance;
 
-        const adjustmentMagnitude = pullStrength * this.meanDistance * 0.3;
+        const adjustmentMagnitude =
+          pullStrength *
+          sculptData.meanDistance *
+          CircleSculptCursor.CHAIN_PULL_STRENGTH_FACTOR;
 
         points[i][0] += pullDirection[0] * adjustmentMagnitude;
         points[i][1] += pullDirection[1] * adjustmentMagnitude;
@@ -367,9 +374,13 @@ class CircleSculptCursor implements ISculptToolShape {
           points[previousIndex]
         );
         const pullStrength =
-          (distanceToPrevious - this.meanDistance) / this.meanDistance;
+          (distanceToPrevious - sculptData.meanDistance) /
+          sculptData.meanDistance;
 
-        const adjustmentMagnitude = pullStrength * this.meanDistance * 0.3;
+        const adjustmentMagnitude =
+          pullStrength *
+          sculptData.meanDistance *
+          CircleSculptCursor.CHAIN_PULL_STRENGTH_FACTOR;
 
         points[i][0] += pullDirection[0] * adjustmentMagnitude;
         points[i][1] += pullDirection[1] * adjustmentMagnitude;
