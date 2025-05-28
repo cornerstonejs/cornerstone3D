@@ -38,10 +38,10 @@ const typedArrayConstructors = {
 /**
  *
  * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @param {*} options
+ * @param {import("./types").DICOMLoaderImageOptions} options
  * @param {number} start
  * @param {import('./types').LoaderDecodeOptions} decodeConfig
- * @returns
+ * @returns {import("@cornerstonejs/core").Types.IImageFrame}
  */
 function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   const shouldShift =
@@ -174,7 +174,13 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   return imageFrame;
 }
 
+/**
+ *
+ * @param {import("@cornerstonejs/core").Types.ScalingParameters} scalingParameters
+ * @returns {boolean}
+ */
 function _isRequiredScaling(scalingParameters) {
+  // @ts-expect-error ScalingParameters type does not include `doseGridScaling`
   const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
     scalingParameters;
 
@@ -193,7 +199,7 @@ function _isRequiredScaling(scalingParameters) {
  * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
  * @param {*} typedArrayConstructors
  * @param {import("@cornerstonejs/core").Types.PixelDataTypedArray} pixelDataArray
- * @returns
+ * @returns {import("@cornerstonejs/core").Types.PixelDataTypedArray}
  */
 function _handleTargetBuffer(
   options,
@@ -249,7 +255,7 @@ function _handleTargetBuffer(
 
 /**
  *
- * @param {*} options
+ * @param {import("./types").DICOMLoaderImageOptions} options
  * @param {number} minBeforeScale
  * @param {number} maxBeforeScale
  * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
@@ -282,7 +288,7 @@ function _handlePreScaleSetup(
  * @param {number} min
  * @param {number} max
  * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @returns
+ * @returns {import("@cornerstonejs/core").Types.PixelDataTypedArray}
  */
 function _getDefaultPixelDataArray(min, max, imageFrame) {
   const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
@@ -293,7 +299,15 @@ function _getDefaultPixelDataArray(min, max, imageFrame) {
   return typedArray;
 }
 
+/**
+ *
+ * @param {number} minValue
+ * @param {number} maxValue
+ * @param {import("@cornerstonejs/core").Types.ScalingParameters} scalingParameters
+ * @returns {{ min: number, max: number }}
+ */
 function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
+  // @ts-expect-error ScalingParameters type does not include `doseGridScaling`
   const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
     scalingParameters;
 
