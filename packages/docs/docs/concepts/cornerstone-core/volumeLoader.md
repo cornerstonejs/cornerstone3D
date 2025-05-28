@@ -1,6 +1,7 @@
 ---
 id: volumeLoader
 title: Volume Loaders
+summary: Pluggable functions that retrieve and prepare 3D volumes for rendering, supporting both streaming of 2D image sets and direct 3D data formats
 ---
 
 # Volume Loaders

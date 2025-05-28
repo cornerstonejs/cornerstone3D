@@ -10,6 +10,7 @@ import {
 import { state } from './store/state';
 import * as store from './store';
 import * as CONSTANTS from './constants';
+import { version } from './version';
 
 // Name spaces
 import * as synchronizers from './synchronizers';
@@ -63,6 +64,7 @@ import {
   AngleTool,
   CobbAngleTool,
   UltrasoundDirectionalTool,
+  UltrasoundPleuraBLineTool,
   MagnifyTool,
   AdvancedMagnifyTool,
   ReferenceCursors,
@@ -134,6 +136,7 @@ export {
   AngleTool,
   CobbAngleTool,
   UltrasoundDirectionalTool,
+  UltrasoundPleuraBLineTool,
   KeyImageTool,
   MagnifyTool,
   AdvancedMagnifyTool,
@@ -184,4 +187,6 @@ export {
   LabelmapBaseTool,
   // Spline classes
   splines,
+  // Version
+  version,
 };

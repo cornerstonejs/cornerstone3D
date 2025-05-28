@@ -1,6 +1,7 @@
 ---
 id: volumeProgressive
 title: Volume Progressive Loading
+summary: Techniques for optimizing volume loading through image interleaving, allowing fast initial rendering with progressive quality improvement
 ---
 
 ## Volume Viewport Interleaved Decode

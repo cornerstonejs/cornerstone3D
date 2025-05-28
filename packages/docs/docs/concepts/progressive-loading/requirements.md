@@ -1,6 +1,7 @@
 ---
 id: requirements
 title: Server Requirements
+summary: Server-side capabilities needed for progressive loading, including HTJ2K RPCL encoding support, streaming data responses, and byte range request handling
 ---
 
 # Server Requirements

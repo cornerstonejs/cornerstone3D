@@ -85,6 +85,7 @@ export function metadataForDataset(
     return {
       modality: dataSet.string('x00080060'),
       seriesInstanceUID: dataSet.string('x0020000e'),
+      seriesDescription: dataSet.string('x0008103e'),
       seriesNumber: dataSet.intString('x00200011'),
       studyInstanceUID: dataSet.string('x0020000d'),
       seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),

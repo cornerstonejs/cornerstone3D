@@ -529,7 +529,6 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
     const contourAnnotations = viewAnnotations.filter(
-      // @ts-expect-error
       (annotation) => annotation.data.contour?.polyline?.length
     );
     if (!contourAnnotations.length) {
@@ -573,7 +572,6 @@ export default class LabelmapBaseTool extends BaseTool {
         [Infinity, -Infinity],
       ];
 
-      // @ts-expect-error
       const { polyline } = annotation.data.contour;
       for (const point of polyline) {
         const indexPoint = imageData.worldToIndex(point);

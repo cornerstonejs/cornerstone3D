@@ -23,7 +23,8 @@ class CobbAngle extends BaseAdapter3D {
             NUMGroup,
             SCOORDGroup,
             ReferencedFrameNumber,
-            TextBoxGroup
+            TextBoxGroup,
+            SCOORD3DGroup
         } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
@@ -31,6 +32,35 @@ class CobbAngle extends BaseAdapter3D {
             CobbAngle.toolType
         );
 
+        if (SCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                defaultState,
+                SCOORDGroup,
+                imageToWorldCoords,
+                NUMGroup,
+                ReferencedFrameNumber,
+                TextBoxGroup
+            });
+        } else if (SCOORD3DGroup) {
+            return this.getMeasurementDataFromScoord3D({
+                defaultState,
+                SCOORD3DGroup
+            });
+        } else {
+            throw new Error(
+                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
+            );
+        }
+    }
+
+    static getMeasurementDataFromScoord({
+        defaultState,
+        SCOORDGroup,
+        imageToWorldCoords,
+        NUMGroup,
+        ReferencedFrameNumber,
+        TextBoxGroup
+    }) {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
@@ -77,6 +107,39 @@ class CobbAngle extends BaseAdapter3D {
         });
     }
 
+    static getMeasurementDataFromScoord3D({ defaultState, SCOORD3DGroup }) {
+        const { GraphicData } = SCOORD3DGroup;
+        const worldCoords = [];
+        for (let i = 0; i < GraphicData.length; i += 3) {
+            const point = [
+                GraphicData[i],
+                GraphicData[i + 1],
+                GraphicData[i + 2]
+            ];
+            worldCoords.push(point);
+        }
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [
+                    worldCoords[0],
+                    worldCoords[1],
+                    worldCoords[2],
+                    worldCoords[3]
+                ],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {}
+        };
+
+        return state;
+    }
+
     public static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
@@ -84,14 +147,12 @@ class CobbAngle extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "CobbAngle.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
+        // Using image coordinates for 2D points
         const start1 = worldToImageCoords(referencedImageId, handles.points[0]);
         const end1 = worldToImageCoords(referencedImageId, handles.points[1]);
-
         const start2 = worldToImageCoords(referencedImageId, handles.points[2]);
         const end2 = worldToImageCoords(referencedImageId, handles.points[3]);
 
@@ -115,7 +176,40 @@ class CobbAngle extends BaseAdapter3D {
                 handles,
                 referencedImageId,
                 worldToImageCoords
-            })
+            }),
+            use3DSpatialCoordinates: false
+        };
+    }
+
+    public static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, finding, findingSites, metadata } = tool;
+        const { cachedStats = {}, handles } = data;
+
+        // Using world coordinates for 3D points
+        const start1 = handles.points[0];
+        const end1 = handles.points[1];
+        const start2 = handles.points[2];
+        const end2 = handles.points[3];
+
+        const point1 = { x: start1[0], y: start1[1], z: start1[2] };
+        const point2 = { x: end1[0], y: end1[1], z: end1[2] };
+        const point3 = { x: start2[0], y: start2[1], z: start2[2] };
+        const point4 = { x: end2[0], y: end2[1], z: end2[2] };
+
+        const cachedStatsKeys = Object.keys(cachedStats)[0];
+        const { angle } = cachedStatsKeys ? cachedStats[cachedStatsKeys] : {};
+
+        return {
+            point1,
+            point2,
+            point3,
+            point4,
+            rAngle: angle,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
+            use3DSpatialCoordinates: true
         };
     }
 }

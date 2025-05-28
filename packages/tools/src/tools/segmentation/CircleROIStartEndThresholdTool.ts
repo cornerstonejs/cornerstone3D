@@ -23,6 +23,7 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import throttle from '../../utilities/throttle';
+import debounce from '../../utilities/debounce';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   hideElementCursor,
@@ -85,20 +86,28 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         // Whether to store point data in the annotation
         storePointData: false,
         numSlicesToPropagate: 10,
-        calculatePointsInsideVolume: false,
+        calculatePointsInsideVolume: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         showTextBox: false,
+        throttleTimeout: 100,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
 
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStatsTool,
-      100,
-      { trailing: true }
-    );
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._throttledCalculateCachedStats = throttle(
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout,
+        { trailing: true }
+      );
+    } else {
+      this._throttledCalculateCachedStats = debounce(
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout
+      );
+    }
   }
 
   /**
@@ -272,19 +281,19 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        imageVolume,
-        targetId,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      imageVolume,
+      targetId,
+      enabledElement
+    );
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
+    } else {
+      triggerAnnotationModified(annotation, element);
     }
   };
 
@@ -484,10 +493,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       renderStatus = true;
 
-      if (
-        this.configuration.showTextBox == true &&
-        this.configuration.calculatePointsInsideVolume == true
-      ) {
+      if (this.configuration.showTextBox) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
           data.handles.textBox = {
@@ -781,14 +787,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        imageVolume,
-        targetId,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      imageVolume,
+      targetId,
+      enabledElement
+    );
 
     annotation.invalidated = false;
 

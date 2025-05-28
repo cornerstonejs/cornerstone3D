@@ -21,7 +21,8 @@ class RectangleROI extends BaseAdapter3D {
             NUMGroup,
             SCOORDGroup,
             ReferencedFrameNumber,
-            TextBoxGroup
+            TextBoxGroup,
+            SCOORD3DGroup
         } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
@@ -29,6 +30,35 @@ class RectangleROI extends BaseAdapter3D {
             RectangleROI.toolType
         );
 
+        if (SCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                defaultState,
+                SCOORDGroup,
+                imageToWorldCoords,
+                NUMGroup,
+                ReferencedFrameNumber,
+                TextBoxGroup
+            });
+        } else if (SCOORD3DGroup) {
+            return this.getMeasurementDataFromScoord3D({
+                SCOORD3DGroup,
+                defaultState
+            });
+        } else {
+            throw new Error(
+                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
+            );
+        }
+    }
+
+    static getMeasurementDataFromScoord({
+        defaultState,
+        SCOORDGroup,
+        imageToWorldCoords,
+        NUMGroup,
+        ReferencedFrameNumber,
+        TextBoxGroup
+    }) {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
@@ -75,6 +105,39 @@ class RectangleROI extends BaseAdapter3D {
         });
     }
 
+    static getMeasurementDataFromScoord3D({ SCOORD3DGroup, defaultState }) {
+        const { GraphicData } = SCOORD3DGroup;
+        const worldCoords = [];
+        for (let i = 0; i < GraphicData.length; i += 3) {
+            const point = [
+                GraphicData[i],
+                GraphicData[i + 1],
+                GraphicData[i + 2]
+            ];
+            worldCoords.push(point);
+        }
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            handles: {
+                points: [
+                    worldCoords[0],
+                    worldCoords[1],
+                    worldCoords[3],
+                    worldCoords[2]
+                ],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            },
+            cachedStats: {}
+        };
+
+        return state;
+    }
+
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
@@ -82,11 +145,10 @@ class RectangleROI extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "CobbAngle.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
+        //Using image coordinates for 2D points
         const corners = handles.points.map(point =>
             worldToImageCoords(referencedImageId, point)
         );
@@ -110,7 +172,35 @@ class RectangleROI extends BaseAdapter3D {
                 handles,
                 referencedImageId,
                 worldToImageCoords
-            })
+            }),
+            use3DSpatialCoordinates: false
+        };
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, finding, findingSites, metadata } = tool;
+        const { cachedStats = {}, handles } = data;
+
+        //Using world coordinates for 3D points
+        const corners = handles.points;
+
+        const { area, perimeter } = cachedStats;
+
+        return {
+            points: [
+                corners[0],
+                corners[1],
+                corners[3],
+                corners[2],
+                corners[0]
+            ],
+            area,
+            perimeter,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            finding,
+            findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
+            use3DSpatialCoordinates: true
         };
     }
 }

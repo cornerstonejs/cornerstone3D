@@ -1,5 +1,7 @@
 ---
 id: re-order
+title: Re-ordering Image Requests
+summary: Technique for optimizing volume loading by controlling the order in which image requests are processed, allowing for custom loading patterns
 ---
 
 # Re-ordering Image Requests

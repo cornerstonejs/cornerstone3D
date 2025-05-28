@@ -1,6 +1,7 @@
 ---
 id: threshold-tools
 title: 'Labelmap Thresholding Tools'
+summary: Changes to labelmap thresholding tools when upgrading to Cornerstone3D 3.x
 ---
 
 import Tabs from '@theme/Tabs';
@@ -8,20 +9,21 @@ import TabItem from '@theme/TabItem';
 
 ## Key Changes:
 
-* The nested `strategySpecificConfiguration` object has been removed completely
-* Configuration properties have been moved to the root level of the configuration object
-* Threshold configuration has been restructured:
-  * `threshold` array is now a `range` property inside a `threshold` object
-  * Additional threshold properties (`isDynamic`, `dynamicRadius`) are part of the same object
-* `setBrushThresholdForToolGroup()` function signature has changed to accept a structured threshold object
-* Strategy-specific properties like `useCenterSegmentIndex` have been moved to the root configuration level
-* `activeStrategy` is now a standalone property in tool operations data, no longer inside a nested configuration
+- The nested `strategySpecificConfiguration` object has been removed completely
+- Configuration properties have been moved to the root level of the configuration object
+- Threshold configuration has been restructured:
+  - `threshold` array is now a `range` property inside a `threshold` object
+  - Additional threshold properties (`isDynamic`, `dynamicRadius`) are part of the same object
+- `setBrushThresholdForToolGroup()` function signature has changed to accept a structured threshold object
+- Strategy-specific properties like `useCenterSegmentIndex` have been moved to the root configuration level
+- `activeStrategy` is now a standalone property in tool operations data, no longer inside a nested configuration
 
 ## Migration Steps:
 
 ### 1. Replace strategySpecificConfiguration with direct properties
 
 **Before:**
+
 ```diff
 - configuration: {
 -   activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
@@ -36,6 +38,7 @@ import TabItem from '@theme/TabItem';
 ```
 
 **After:**
+
 ```diff
 + configuration: {
 +   activeStrategy: 'THRESHOLD_INSIDE_SPHERE_WITH_ISLAND_REMOVAL',
@@ -51,6 +54,7 @@ import TabItem from '@theme/TabItem';
 ### 2. Update threshold configuration structure
 
 **Before:**
+
 ```diff
 - strategySpecificConfiguration: {
 -   THRESHOLD: {
@@ -62,6 +66,7 @@ import TabItem from '@theme/TabItem';
 ```
 
 **After:**
+
 ```diff
 + threshold: {
 +   range: [-150, -70], // New 'range' property replaces 'threshold'
@@ -73,6 +78,7 @@ import TabItem from '@theme/TabItem';
 ### 3. Update setBrushThresholdForToolGroup calls
 
 **Before:**
+
 ```diff
 - segmentationUtils.setBrushThresholdForToolGroup(
 -   toolGroupId,
@@ -82,6 +88,7 @@ import TabItem from '@theme/TabItem';
 ```
 
 **After:**
+
 ```diff
 + segmentationUtils.setBrushThresholdForToolGroup(
 +   toolGroupId,
@@ -90,6 +97,7 @@ import TabItem from '@theme/TabItem';
 ```
 
 Note that `thresholdArgs` should now be an object with the structure:
+
 ```javascript
 {
   range: [min, max], // Previously 'threshold'

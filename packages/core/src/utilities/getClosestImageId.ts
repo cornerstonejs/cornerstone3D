@@ -2,9 +2,12 @@ import type { mat3 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import * as metaData from '../metaData';
 import type { IImageVolume, Point3 } from '../types';
+import { coreLog } from './logger';
 
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import { EPSILON } from '../constants';
+
+const log = coreLog.getLogger('utilities', 'getClosestImageId');
 
 /**
  * Given an image volume, a point in world space, and the view plane normal,
@@ -43,9 +46,6 @@ export default function getClosestImageId(
   // If not, the view is not aligned with the image plane, so return early.
   const dotProduct = vec3.dot(kVector, viewPlaneNormal);
   if (Math.abs(dotProduct) < 1 - EPSILON) {
-    console.debug(
-      'View plane normal is not parallel to the image scan axis. Unable to find closest imageId.'
-    );
     return;
   }
 
@@ -69,7 +69,7 @@ export default function getClosestImageId(
     // 4.a Get metadata for the imageId
     const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
     if (!imagePlaneModule?.imagePositionPatient) {
-      console.warn(`Missing imagePositionPatient for imageId: ${imageId}`);
+      log.warn(`Missing imagePositionPatient for imageId: ${imageId}`);
       continue; // Skip if essential metadata is missing
     }
     const { imagePositionPatient } = imagePlaneModule;
@@ -97,7 +97,7 @@ export default function getClosestImageId(
   }
 
   if (closestImageId === undefined) {
-    console.debug(
+    log.warn(
       'No imageId found within the specified criteria (half spacing or absolute closest).'
     );
   }

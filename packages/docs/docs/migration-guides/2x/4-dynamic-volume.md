@@ -1,6 +1,7 @@
 ---
 id: dynamic-volume
 title: '4D or Dynamic Volume'
+summary: Migration guide for handling 4D or dynamic volumes when upgrading from Cornerstone3D 1.x to 2.x
 ---
 
 import Tabs from '@theme/Tabs';

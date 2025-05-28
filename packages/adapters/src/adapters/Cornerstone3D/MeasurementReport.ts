@@ -1,8 +1,11 @@
 import { normalizers, data, utilities, derivations } from "dcmjs";
+import { cache } from "@cornerstonejs/core";
 
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { toArray, codeMeaningEquals, copyStudyTags } from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
+import { copySeriesTags } from "../helpers/copySeriesTags";
+import { NO_IMAGE_ID } from "./constants";
 
 const { TID1500, addAccessors } = utilities;
 
@@ -17,6 +20,41 @@ const { DicomMetaDictionary } = data;
 const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
 const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
 const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
+
+type SpatialCoordinatesState = {
+    description?: string;
+    sopInstanceUid?: string;
+    annotation: {
+        annotationUID: string;
+        metadata: {
+            toolName: string;
+            referencedImageId?: string;
+            FrameOfReferenceUID: string;
+            label: string;
+        };
+    };
+    finding?: unknown;
+    findingSites?: unknown;
+};
+
+type SetupMeasurementData = {
+    defaultState: SpatialCoordinatesState;
+    NUMGroup: Record<string, unknown>;
+    SCOORDGroup?: Record<string, unknown>;
+    ReferencedSOPSequence?: Record<string, unknown>;
+    ReferencedSOPInstanceUID?: string;
+    ReferencedFrameNumber?: string;
+    SCOORD3DGroup?: Record<string, unknown>;
+    FrameOfReferenceUID?: string;
+    TextBoxGroup?: Record<string, unknown>;
+};
+
+type SpatialCoordinatesData = Omit<
+    SetupMeasurementData,
+    "defaultState" | "NUMGroup"
+> & {
+    state: SpatialCoordinatesState;
+};
 
 export type AdapterOptions = {
     /**
@@ -99,7 +137,6 @@ export default class MeasurementReport {
         args.ReferencedSOPSequence = ReferencedSOPSequence;
 
         const TID300Measurement = new toolClass.TID300Representation(args);
-
         return TID300Measurement;
     }
 
@@ -200,48 +237,18 @@ export default class MeasurementReport {
     }
 
     static generateDerivationSourceDataset = instance => {
-        const _vrMap = {
-            PixelData: "OW"
-        };
+        const studyTags = copyStudyTags(instance);
+        const seriesTags = copySeriesTags(instance);
 
-        const _meta = MeasurementReport.generateDatasetMeta();
-
-        const derivationSourceDataset = copyStudyTags(instance);
-
-        return derivationSourceDataset;
+        return { ...studyTags, ...seriesTags };
     };
 
-    public static getSetupMeasurementData(
-        MeasurementGroup,
+    public static processSCOORDGroup({
+        SCOORDGroup,
+        toolType,
         sopInstanceUIDToImageIdMap,
-        metadata,
-        toolType
-    ) {
-        const { ContentSequence } = MeasurementGroup;
-
-        const contentSequenceArr = toArray(ContentSequence);
-        const findingGroup = contentSequenceArr.find(group =>
-            this.codeValueMatch(group, FINDING)
-        );
-        const findingSiteGroups =
-            contentSequenceArr.filter(group =>
-                this.codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
-            ) || [];
-
-        const TextBoxGroup = contentSequenceArr.find(
-            group =>
-                group.ValueType === "SCOORD" &&
-                group.GraphicType === "POINT" &&
-                group.ConceptNameCodeSequence.CodeMeaning ===
-                    "Annotation Position"
-        );
-
-        const NUMGroup = contentSequenceArr.find(
-            group => group.ValueType === "NUM"
-        );
-        const SCOORDGroup = toArray(NUMGroup.ContentSequence).find(
-            group => group.ValueType === "SCOORD"
-        );
+        metadata
+    }): SpatialCoordinatesData {
         const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
         const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
             ReferencedSOPSequence;
@@ -253,6 +260,101 @@ export default class MeasurementReport {
             referencedImageId
         );
 
+        return {
+            SCOORDGroup,
+            ReferencedSOPSequence,
+            ReferencedSOPInstanceUID,
+            ReferencedFrameNumber,
+            state: {
+                description: undefined,
+                sopInstanceUid: ReferencedSOPInstanceUID,
+                annotation: {
+                    annotationUID: DicomMetaDictionary.uid(),
+                    metadata: {
+                        toolName: toolType,
+                        referencedImageId,
+                        FrameOfReferenceUID:
+                            imagePlaneModule.frameOfReferenceUID,
+                        label: ""
+                    }
+                }
+            }
+        };
+    }
+
+    public static processSCOORD3DGroup({
+        SCOORD3DGroup,
+        toolType
+    }): SpatialCoordinatesData {
+        return {
+            SCOORD3DGroup,
+            FrameOfReferenceUID: SCOORD3DGroup.ReferencedFrameOfReferenceUID,
+            state: {
+                description: undefined,
+                annotation: {
+                    annotationUID: DicomMetaDictionary.uid(),
+                    metadata: {
+                        toolName: toolType,
+                        FrameOfReferenceUID:
+                            SCOORD3DGroup.ReferencedFrameOfReferenceUID,
+                        label: ""
+                    }
+                }
+            }
+        };
+    }
+
+    public static getSpatialCoordinatesState({
+        NUMGroup,
+        sopInstanceUIDToImageIdMap,
+        metadata,
+        toolType
+    }): SpatialCoordinatesData {
+        const SCOORDGroup = toArray(NUMGroup.ContentSequence).find(
+            group => group.ValueType === "SCOORD"
+        );
+        const SCOORD3DGroup = toArray(NUMGroup.ContentSequence).find(
+            group => group.ValueType === "SCOORD3D"
+        );
+
+        if (SCOORDGroup) {
+            return this.processSCOORDGroup({
+                SCOORDGroup,
+                toolType,
+                metadata,
+                sopInstanceUIDToImageIdMap
+            });
+        } else if (SCOORD3DGroup) {
+            return this.processSCOORD3DGroup({ SCOORD3DGroup, toolType });
+        } else {
+            throw new Error("No spatial coordinates group found.");
+        }
+    }
+
+    public static processSpatialCoordinatesGroup({
+        NUMGroup,
+        sopInstanceUIDToImageIdMap,
+        metadata,
+        findingGroup,
+        findingSiteGroups,
+        toolType,
+        TextBoxGroup
+    }) {
+        const {
+            state,
+            SCOORDGroup,
+            ReferencedSOPSequence,
+            ReferencedSOPInstanceUID,
+            ReferencedFrameNumber,
+            SCOORD3DGroup,
+            FrameOfReferenceUID
+        } = this.getSpatialCoordinatesState({
+            NUMGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            toolType
+        });
+
         const finding = findingGroup
             ? addAccessors(findingGroup.ConceptCodeSequence)
             : undefined;
@@ -261,21 +363,11 @@ export default class MeasurementReport {
         });
 
         const defaultState = {
-            description: undefined,
-            sopInstanceUid: ReferencedSOPInstanceUID,
-            annotation: {
-                annotationUID: DicomMetaDictionary.uid(),
-                metadata: {
-                    toolName: toolType,
-                    referencedImageId,
-                    FrameOfReferenceUID: imagePlaneModule.frameOfReferenceUID,
-                    label: ""
-                },
-                data: undefined
-            },
+            ...state,
             finding,
             findingSites
         };
+
         if (defaultState.finding) {
             defaultState.description = defaultState.finding.CodeMeaning;
         }
@@ -290,8 +382,117 @@ export default class MeasurementReport {
             ReferencedSOPSequence,
             ReferencedSOPInstanceUID,
             ReferencedFrameNumber,
-            TextBoxGroup
+            TextBoxGroup,
+            SCOORD3DGroup,
+            FrameOfReferenceUID
         };
+    }
+
+    public static getSetupMeasurementData(
+        MeasurementGroup,
+        sopInstanceUIDToImageIdMap,
+        metadata,
+        toolType
+    ): SetupMeasurementData {
+        const { ContentSequence } = MeasurementGroup;
+
+        const contentSequenceArr = toArray(ContentSequence);
+        const findingGroup = contentSequenceArr.find(group =>
+            this.codeValueMatch(group, FINDING)
+        );
+        const findingSiteGroups =
+            contentSequenceArr.filter(group =>
+                this.codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
+            ) || [];
+        const NUMGroup = contentSequenceArr.find(
+            group => group.ValueType === "NUM"
+        );
+
+        const TextBoxGroup = contentSequenceArr.find(
+            group =>
+                group.ValueType === "SCOORD" &&
+                group.GraphicType === "POINT" &&
+                group.ConceptNameCodeSequence.CodeMeaning ===
+                    "Annotation Position"
+        );
+
+        return this.processSpatialCoordinatesGroup({
+            NUMGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            findingGroup,
+            findingSiteGroups,
+            toolType,
+            TextBoxGroup
+        });
+    }
+
+    static generateReferencedSOPSequence({
+        toolData,
+        toolTypes,
+        metadataProvider,
+        imageId,
+        sopInstanceUIDsToSeriesInstanceUIDMap,
+        derivationSourceDatasets
+    }) {
+        const effectiveImageId =
+            imageId === NO_IMAGE_ID
+                ? this.getImageIdFromVolume({ toolData, toolTypes })
+                : imageId;
+
+        const sopCommonModule = metadataProvider.get(
+            "sopCommonModule",
+            effectiveImageId
+        );
+        const instance = metadataProvider.get("instance", effectiveImageId);
+
+        const { sopInstanceUID, sopClassUID } = sopCommonModule;
+        const { SeriesInstanceUID: seriesInstanceUID } = instance;
+
+        sopInstanceUIDsToSeriesInstanceUIDMap[sopInstanceUID] =
+            seriesInstanceUID;
+
+        if (
+            !derivationSourceDatasets.find(
+                dsd => dsd.SeriesInstanceUID === seriesInstanceUID
+            )
+        ) {
+            // Entry not present for series, create one.
+            const derivationSourceDataset =
+                MeasurementReport.generateDerivationSourceDataset(instance);
+
+            derivationSourceDatasets.push(derivationSourceDataset);
+        }
+
+        const frameNumber = metadataProvider.get(
+            "frameNumber",
+            effectiveImageId
+        );
+
+        const ReferencedSOPSequence = {
+            ReferencedSOPClassUID: sopClassUID,
+            ReferencedSOPInstanceUID: sopInstanceUID,
+            ReferencedFrameNumber: undefined
+        };
+
+        if (
+            (instance &&
+                instance.NumberOfFrames &&
+                instance.NumberOfFrames > 1) ||
+            Normalizer.isMultiframeSOPClassUID(sopClassUID)
+        ) {
+            ReferencedSOPSequence.ReferencedFrameNumber = frameNumber;
+        }
+
+        return ReferencedSOPSequence;
+    }
+
+    static getImageIdFromVolume({ toolData, toolTypes }) {
+        const referenceToolData = toolData?.[toolTypes?.[0]]?.data?.[0];
+        const volumeId = referenceToolData?.metadata?.volumeId;
+        const volume = cache.getVolume(volumeId);
+        const imageId = volume.imageIds[0];
+        return imageId;
     }
 
     static generateReport(
@@ -315,50 +516,24 @@ export default class MeasurementReport {
         const derivationSourceDatasets = [];
 
         const _meta = MeasurementReport.generateDatasetMeta();
+        let is3DSR = false;
 
         // Loop through each image in the toolData
         Object.keys(toolState).forEach(imageId => {
-            const sopCommonModule = metadataProvider.get(
-                "sopCommonModule",
-                imageId
-            );
-            const instance = metadataProvider.get("instance", imageId);
-
-            const { sopInstanceUID, sopClassUID } = sopCommonModule;
-            const { SeriesInstanceUID: seriesInstanceUID } = instance;
-
-            sopInstanceUIDsToSeriesInstanceUIDMap[sopInstanceUID] =
-                seriesInstanceUID;
-
-            if (
-                !derivationSourceDatasets.find(
-                    dsd => dsd.SeriesInstanceUID === seriesInstanceUID
-                )
-            ) {
-                // Entry not present for series, create one.
-                const derivationSourceDataset =
-                    MeasurementReport.generateDerivationSourceDataset(instance);
-
-                derivationSourceDatasets.push(derivationSourceDataset);
-            }
-
-            const frameNumber = metadataProvider.get("frameNumber", imageId);
             const toolData = toolState[imageId];
             const toolTypes = Object.keys(toolData);
 
-            const ReferencedSOPSequence = {
-                ReferencedSOPClassUID: sopClassUID,
-                ReferencedSOPInstanceUID: sopInstanceUID,
-                ReferencedFrameNumber: undefined
-            };
+            const ReferencedSOPSequence = this.generateReferencedSOPSequence({
+                toolData,
+                toolTypes,
+                metadataProvider,
+                imageId,
+                sopInstanceUIDsToSeriesInstanceUIDMap,
+                derivationSourceDatasets
+            });
 
-            if (
-                (instance &&
-                    instance.NumberOfFrames &&
-                    instance.NumberOfFrames > 1) ||
-                Normalizer.isMultiframeSOPClassUID(sopClassUID)
-            ) {
-                ReferencedSOPSequence.ReferencedFrameNumber = frameNumber;
+            if (imageId === NO_IMAGE_ID) {
+                is3DSR = true;
             }
 
             // Loop through each tool type for the image
@@ -396,6 +571,11 @@ export default class MeasurementReport {
         report.dataset = Object.assign(report.dataset, contentItem);
         report.dataset._meta = _meta;
         report.SpecificCharacterSet = "ISO_IR 192";
+
+        if (is3DSR) {
+            report.dataset.SOPClassUID =
+                DicomMetaDictionary.sopClassUIDsByName.Comprehensive3DSR;
+        }
 
         return report;
     }

@@ -1,6 +1,7 @@
 ---
 id: examples
 title: Examples
+summary: Guide to accessing, debugging, and running Cornerstone3D example applications, with instructions for local development and source code exploration
 ---
 
 import Link from '@docusaurus/Link';
@@ -29,7 +30,7 @@ being called.
 
 <!-- /For some reason vimeo gives CORS errors for embed -->
 <div style={{padding:"56.25% 0 0 0", position:"relative"}}>
-    <iframe src="https://player.vimeo.com/video/694244249?h=06d45e5a5f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;dnt=1"
+    <iframe src="https://player.vimeo.com/video/843234360?h=06d45e5a5f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;dnt=1"
     frameBorder="0" allow="cross-origin-isolated" allowFullScreen style= {{ position:"absolute",top:0,left:0,width:"100%",height:"100%"}} title="Examples"></iframe>
 </div>
 

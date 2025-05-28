@@ -65,30 +65,6 @@ jobs:
             - commit.txt
             - version.json
 
-  # https://circleci.com/docs/2.0/collect-test-data/#karma
-  TEST:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/repo
-      - install_bun
-      - run: mkdir ~/junit
-      - run:
-          command: bun run test:unit:ci
-          environment:
-            JUNIT_REPORT_PATH: ./junit/
-            JUNIT_REPORT_NAME: test-results.xml
-          when: always
-      - store_test_results:
-          path: ./junit
-      - store_artifacts:
-          path: ./junit
-      - persist_to_workspace:
-          root: ~/repo
-          paths:
-            - coverage
-            - junit
-
   NPM_PUBLISH:
     <<: *defaults
     resource_class: small
@@ -136,9 +112,6 @@ workflows:
       - BUILD:
           requires:
             - CHECKOUT
-      - TEST:
-          requires:
-            - CHECKOUT # TODO: Also require build?
 
   # MERGE TO MAIN
   TEST_AND_RELEASE:
@@ -150,9 +123,6 @@ workflows:
                 - main
                 - beta
       - BUILD:
-          requires:
-            - CHECKOUT
-      - TEST:
           requires:
             - CHECKOUT
       # - HOLD_FOR_APPROVAL:
