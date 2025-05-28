@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.5...v3.17.0) (2025-05-28)
+
+### Features
+
+- **tools:** add min statistics to circle, ellipse, freehand(closed), rectangle ([#2097](https://github.com/cornerstonejs/cornerstone3D/issues/2097)) ([0d5ade4](https://github.com/cornerstonejs/cornerstone3D/commit/0d5ade493bca2c25bda0e2fb3c364db9dada81cd))
+
 ## [3.16.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.4...v3.16.5) (2025-05-28)
 
 **Note:** Version bump only for package @cornerstonejs/tools
