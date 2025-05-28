@@ -3,18 +3,6 @@ import { visitExample, simulateClicksOnElement } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'rectangleROIStartEndThresholdWithSegmentation');
-  page.on('console', async (msg) => {
-    const msgType = msg.type();
-    const msgText = msg.text();
-    console.log(`BROWSER CONSOLE [${msgType}]: ${msgText}`);
-    if (msgType === 'error' || msgType === 'warn') {
-      // For more detailed error objects
-      for (const arg of msg.args()) {
-        const val = await arg.jsonValue();
-        console.log(`  ARG: ${JSON.stringify(val, null, 2)}`);
-      }
-    }
-  });
 });
 
 const testCases = [
@@ -103,8 +91,6 @@ const testCases = [
 testCases.forEach(
   ({ name, startSlice, endSlice, threshold, maxRelative, expectedStats }) => {
     test(name, async ({ page }) => {
-      //const canvas = await page.locator('canvas');
-
       // Jump to slice - Move to utils?
       const jumpToSlice = async (sliceIndex) => {
         await page.evaluate((index) => {
@@ -171,7 +157,6 @@ testCases.forEach(
       // Check Calculations
       for (const stat in expectedStats) {
         if (stat === 'lesionGlycolysis' || stat === 'volume') {
-          console.log(stats['1'][stat]);
           await expect
             .soft(stats['1'][stat].value / 1000)
             .toBeCloseTo(expectedStats[stat], 1);
