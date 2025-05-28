@@ -30,8 +30,7 @@ function createImage(
   // whether to use RGBA for color images, default true as cs-legacy uses RGBA
   // but we don't need RGBA in cs3d, and it's faster, and memory-efficient
   // in cs3d
-  // const useRGBA = options.useRGBA;
-  const useRGBA = false;
+  const useRGBA = options.useRGBA;
 
   // always preScale the pixel array unless it is asked not to
   options.preScale = {
@@ -221,13 +220,6 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
-        const voxelManager = utilities.VoxelManager.createImageVoxelManager({
-          scalarData: imageFrame.pixelData,
-          width: imageFrame.columns,
-          height: imageFrame.rows,
-          numberOfComponents: imageFrame.samplesPerPixel,
-        });
-
         if (isColorImage) {
           // for GPU
           const width = imageFrame.columns;
@@ -260,6 +252,13 @@ function createImage(
 
           imageFrame.imageData = imageData;
         }
+
+        const voxelManager = utilities.VoxelManager.createImageVoxelManager({
+          scalarData: imageFrame.pixelData,
+          width: imageFrame.columns,
+          height: imageFrame.rows,
+          numberOfComponents: imageFrame.samplesPerPixel,
+        });
 
         const image: DICOMLoaderIImage = {
           imageId,
@@ -304,6 +303,7 @@ function createImage(
           getCanvas: undefined,
           numberOfComponents: imageFrame.samplesPerPixel,
         };
+        console.debug('image.imageFrame.pixelData', image.imageFrame.pixelData);
 
         // CPU Rendering
         if (isColorImage) {
@@ -352,7 +352,7 @@ function createImage(
             imageFrame.imageData = imageData;
             ctx.putImageData(imageFrame.imageData, 0, 0);
             lastImageIdDrawn = imageId;
-
+            console.debug('CPU', imageFrame.pixelData);
             return canvas;
           };
         }
@@ -392,6 +392,7 @@ function createImage(
           image.windowWidth = maxVoi - minVoi;
           image.windowCenter = (maxVoi + minVoi) / 2;
         }
+        console.debug('GPU', imageFrame.pixelData);
         resolve(image);
       }, reject);
     }
