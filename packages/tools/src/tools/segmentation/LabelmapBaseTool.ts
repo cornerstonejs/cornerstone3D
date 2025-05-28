@@ -16,6 +16,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { StrategyCallbacks } from '../../enums';
