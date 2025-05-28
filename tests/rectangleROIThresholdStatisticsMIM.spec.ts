@@ -116,19 +116,6 @@ testCases.forEach(
           );
         }, sliceIndex);
       };
-      await page.evaluate(() => {
-        const cornerstone = window.cornerstone;
-        const renderingEngine =
-          cornerstone.getRenderingEngine('myRenderingEngine'); // Use your actual rendering engine ID
-        if (renderingEngine) {
-          const viewport = renderingEngine.getViewport('PT_AXIAL'); // Use one of your viewport IDs
-          if (viewport) {
-            viewport.render(); // Explicitly call render again
-            return new Promise((resolve) => requestAnimationFrame(resolve));
-          }
-        }
-        return Promise.resolve(); // Fallback
-      });
 
       // Set threshold if provided
       if (threshold) {
@@ -141,19 +128,6 @@ testCases.forEach(
 
       // Goto start slice
       await jumpToSlice(startSlice);
-      await page.evaluate(() => {
-        const cornerstone = window.cornerstone;
-        const renderingEngine =
-          cornerstone.getRenderingEngine('myRenderingEngine'); // Use your actual rendering engine ID
-        if (renderingEngine) {
-          const viewport = renderingEngine.getViewport('PT_AXIAL'); // Use one of your viewport IDs
-          if (viewport) {
-            viewport.render(); // Explicitly call render again
-            return new Promise((resolve) => requestAnimationFrame(resolve));
-          }
-        }
-        return Promise.resolve(); // Fallback
-      });
 
       // Define region
       const locator = page.locator('canvas').first();
