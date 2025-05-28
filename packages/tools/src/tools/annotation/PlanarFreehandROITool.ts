@@ -1011,6 +1011,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       perimeter: calculatePerimeter(canvasCoordinates, closed) / scale,
       mean: stats.mean?.value,
       max: stats.max?.value,
+      min: stats.min?.value,
       stdDev: stats.stdDev?.value,
       statsArray: stats.array,
       pointsInShape: pointsInShape,
@@ -1115,6 +1116,7 @@ function defaultGetTextLines(data, targetId): string[] {
     length,
     perimeter,
     max,
+    min,
     isEmptyArea,
     unit,
     areaUnit,
@@ -1136,6 +1138,9 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (Number.isFinite(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (Number.isFinite(min)) {
+    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
   }
 
   if (stdDev) {
