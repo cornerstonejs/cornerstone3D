@@ -1,3 +1,4 @@
+import { AnnotationTool } from '../base';
 import {
   CONSTANTS,
   getEnabledElement,
@@ -1086,7 +1087,7 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (Number.isFinite(max) && !isNaN(max)) {
+  if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 

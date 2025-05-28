@@ -1250,7 +1250,7 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max && isFinite(max)) {
+  if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
