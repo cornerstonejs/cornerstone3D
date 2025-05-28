@@ -27,6 +27,7 @@ export type CanvasScalarData = Uint8ClampedArray & {
   getRange?: () => [number, number];
 };
 
+const WSIUtilFunctions = null;
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
 /**
@@ -634,7 +635,7 @@ class WSIViewport extends Viewport {
   protected indexToCanvas = (indexPos: Point2): Point2 => {
     const transform = this.getTransform();
     return transform
-      .transformPoint(indexPos)
+      .transformPoint([indexPos[0], indexPos[1]])
       .map((it) => it / devicePixelRatio) as Point2;
   };
 
