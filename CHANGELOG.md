@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.16.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.1...v3.16.2) (2025-05-28)
+
+### Bug Fixes
+
+- sculptor tool bug fixes ([#2101](https://github.com/cornerstonejs/cornerstone3D/issues/2101)) ([72fac6f](https://github.com/cornerstonejs/cornerstone3D/commit/72fac6f7164de3f470847c923574519ab720a08d))
+
 ## [3.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.0...v3.16.1) (2025-05-27)
 
 **Note:** Version bump only for package root
