@@ -229,6 +229,10 @@ class WSIViewport extends Viewport {
 
   protected _getScalarData() {
     // Return an empty CanvasScalarData object
+    type CanvasScalarData = Uint8ClampedArray & {
+      frameNumber?: number;
+      getRange?: () => [number, number];
+    };
     const emptyData = new Uint8ClampedArray() as CanvasScalarData;
     emptyData.getRange = () => [0, 255];
     emptyData.frameNumber = -1;
