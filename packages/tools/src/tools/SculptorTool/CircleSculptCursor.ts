@@ -334,6 +334,9 @@ class CircleSculptCursor implements ISculptToolShape {
 
     // Adjust points from center backwards to beginning
     for (let i = mean; i >= 0; i--) {
+      if (i >= numPoints - 1 || i < 0) {
+        continue;
+      }
       const nextIndex = i + 1;
       const distanceToNext = point.distanceToPoint(
         points[i],
@@ -362,6 +365,9 @@ class CircleSculptCursor implements ISculptToolShape {
 
     // Adjust points from center forwards to end
     for (let i = mean + 1; i < numPoints; i++) {
+      if (i >= numPoints || i <= 0) {
+        continue;
+      }
       const previousIndex = i - 1;
       const distanceToPrevious = point.distanceToPoint(
         points[i],
