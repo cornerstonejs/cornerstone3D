@@ -1,6 +1,7 @@
 ---
 id: index
 title: Cornerstone Core
+summary: Foundation of the Cornerstone3D library that provides rendering capabilities, data caching, image/volume loading, and metadata management for medical imaging applications
 ---
 
 import DocCardList from '@theme/DocCardList';

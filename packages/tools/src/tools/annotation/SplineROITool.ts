@@ -1296,6 +1296,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
     //   viewport.canvasToWorld(point)
     // );
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
+
     const annotation = {
       annotationUID: options?.annotationUID || utilities.uuidv4(),
       data: {
@@ -1323,7 +1326,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 

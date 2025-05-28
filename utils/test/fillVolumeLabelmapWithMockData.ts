@@ -1,3 +1,4 @@
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 /**
  * Creates a mock ellipsoid volume segmentation.
  * @param options - The options for creating the mock ellipsoid volume segmentation.
@@ -48,4 +49,10 @@ export function fillVolumeLabelmapWithMockData({
       }
     }
   }
+  const values = voxelManager.getCompleteScalarDataArray();
+  const scalarArray = vtkDataArray.newInstance({
+    name: `Pixels`,
+    values,
+  });
+  segmentationVolume.imageData.getPointData().setScalars(scalarArray);
 }

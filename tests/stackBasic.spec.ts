@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from 'playwright-test-coverage';
 import {
   visitExample,
   checkForScreenshot,
@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Basic Stack', async () => {
-  test('should display a single DICOM image in a Stack viewport.', async ({
+  test('should display a single DICOM image in a Stack viewport', async ({
     page,
   }) => {
     const locator = page.locator('.cornerstone-canvas');

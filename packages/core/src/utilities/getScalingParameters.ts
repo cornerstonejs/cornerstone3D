@@ -23,14 +23,20 @@ export default function getScalingParameters(
     modality,
   };
 
-  const suvFactor = metaData.get('scalingModule', imageId) || {};
+  const scalingModules = metaData.get('scalingModule', imageId) || {};
 
   return {
     ...scalingParameters,
     ...(modality === 'PT' && {
-      suvbw: suvFactor.suvbw,
-      suvbsa: suvFactor.suvbsa,
-      suvlbm: suvFactor.suvlbm,
+      suvbw: scalingModules.suvbw,
+      suvbsa: scalingModules.suvbsa,
+      suvlbm: scalingModules.suvlbm,
+    }),
+    ...(modality === 'RTDOSE' && {
+      doseGridScaling: scalingModules.DoseGridScaling,
+      doseSummation: scalingModules.DoseSummation,
+      doseType: scalingModules.DoseType,
+      doseUnit: scalingModules.DoseUnit,
     }),
   };
 }

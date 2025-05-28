@@ -1,15 +1,22 @@
 type PlayClipOptions = {
+  /** Frames per second; negative = play in reverse */
   framesPerSecond?: number;
+  /** Time‑vector and speed  */
   frameTimeVector?: number[];
-  reverse?: boolean;
-  loop?: boolean;
-  dynamicCineEnabled?: boolean;
   frameTimeVectorSpeedMultiplier?: number;
+  /** Play backwards from the start */
+  reverse?: boolean;
+  /** Jump back to the start/end when finished */
+  loop?: boolean;
+  /** Use 4‑D volume cine */
+  dynamicCineEnabled?: boolean;
   // How many CINE frames to wait for a rendered event to occur before
   // trying to display the image after the next one
   // A CINE frame is attempted every 1 / fps seconds
   // The default is 30 tries, or 1.25 seconds at 24 fps
   waitForRendered?: number;
+  /** Ping‑pong */
+  bounce?: boolean;
 };
 
 interface ToolData {
@@ -22,6 +29,7 @@ interface ToolData {
   speed: number;
   reverse: boolean;
   loop: boolean;
+  bounce: boolean;
   dynamicCineEnabled?: boolean;
 }
 

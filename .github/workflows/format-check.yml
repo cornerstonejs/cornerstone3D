@@ -1,10 +1,14 @@
 name: Format Check
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches: [ '*' ]
   push:
-    branches: [ main, beta ]
+    branches: [ beta ]
 
 jobs:
   format-check:

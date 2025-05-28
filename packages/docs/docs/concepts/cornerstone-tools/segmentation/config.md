@@ -1,8 +1,8 @@
 ---
 id: config
 title: Config
+summary: Multi-level styling system for segmentation visualizations, with a hierarchy that ranges from global settings to segment-specific properties like color, outline, and fill
 ---
-
 
 # Configuration
 
@@ -11,6 +11,7 @@ In version 2.x, segmentation configurations are managed through a unified style 
 ## Style System
 
 Styles can be applied at multiple levels:
+
 - Global styles for all segmentations
 - Type-specific styles (e.g., all Labelmaps)
 - Viewport-specific styles
@@ -52,10 +53,10 @@ import { segmentation } from '@cornerstonejs/tools';
 
 // Get style for a specific context
 const style = segmentation.getStyle({
-  viewportId: 'viewport1',            // optional
-  segmentationId: 'segmentation1',    // optional
-  type: Enums.SegmentationRepresentations.Labelmap,  // required
-  segmentIndex: 1                     // optional
+  viewportId: 'viewport1', // optional
+  segmentationId: 'segmentation1', // optional
+  type: Enums.SegmentationRepresentations.Labelmap, // required
+  segmentIndex: 1, // optional
 });
 
 // Set style for a specific context
@@ -63,12 +64,12 @@ segmentation.setStyle(
   {
     viewportId: 'viewport1',
     segmentationId: 'segmentation1',
-    type: Enums.SegmentationRepresentations.Labelmap
+    type: Enums.SegmentationRepresentations.Labelmap,
   },
   {
     renderFill: true,
     renderOutline: true,
-    outlineWidth: 3
+    outlineWidth: 3,
   }
 );
 
@@ -79,7 +80,7 @@ segmentation.resetToGlobalStyle();
 const hasCustomStyle = segmentation.hasCustomStyle({
   viewportId: 'viewport1',
   segmentationId: 'segmentation1',
-  type: Enums.SegmentationRepresentations.Labelmap
+  type: Enums.SegmentationRepresentations.Labelmap,
 });
 ```
 
@@ -120,13 +121,14 @@ segmentation.setSegmentIndexColor(
   'viewport1',
   'segmentation1',
   segmentIndex,
-  [255, 0, 0, 255]  // RGBA color
+  [255, 0, 0, 255] // RGBA color
 );
 ```
 
 ### Style Hierarchy
 
 Styles are applied in the following order of precedence (highest to lowest):
+
 1. Segment-specific style (when segmentIndex is provided)
 2. Viewport-specific style (when viewportId is provided)
 3. Segmentation-specific style (when segmentationId is provided)
@@ -134,6 +136,7 @@ Styles are applied in the following order of precedence (highest to lowest):
 5. Global style
 
 Example:
+
 ```js
 // Set global style for all labelmaps
 segmentation.setStyle(
@@ -145,7 +148,7 @@ segmentation.setStyle(
 segmentation.setStyle(
   {
     viewportId: 'viewport1',
-    type: Enums.SegmentationRepresentations.Labelmap
+    type: Enums.SegmentationRepresentations.Labelmap,
   },
   { renderOutline: false }
 );
@@ -156,7 +159,7 @@ segmentation.setStyle(
     viewportId: 'viewport1',
     segmentationId: 'segmentation1',
     type: Enums.SegmentationRepresentations.Labelmap,
-    segmentIndex: 1
+    segmentIndex: 1,
   },
   { outlineWidth: 5 }
 );

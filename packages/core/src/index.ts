@@ -15,6 +15,7 @@ import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
+import { version } from './version';
 
 import {
   getRenderingEngine,
@@ -165,4 +166,6 @@ export {
   StreamingDynamicImageVolume,
   StreamingImageVolume,
   convertMapperToNotSharedMapper,
+  // Version
+  version,
 };

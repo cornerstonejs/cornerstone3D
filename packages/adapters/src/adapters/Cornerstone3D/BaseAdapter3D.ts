@@ -149,15 +149,14 @@ export default class BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "Probe.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
         const {
             handles: { points = [] }
         } = data;
 
+        // Using image coordinates for 2D points
         const pointsImage = points.map(point => {
             const pointImage = worldToImageCoords(referencedImageId, point);
             return {
@@ -174,5 +173,24 @@ export default class BaseAdapter3D {
         };
 
         return tidArguments;
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, finding, findingSites } = tool;
+        const {
+            handles: { points = [] }
+        } = data;
+
+        // Using world coordinates for 3D points
+        const point = points[0];
+
+        const pointXYZ = { x: point[0], y: point[1], z: point[2] };
+
+        return {
+            points: [pointXYZ],
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            findingSites: findingSites || [],
+            finding
+        };
     }
 }

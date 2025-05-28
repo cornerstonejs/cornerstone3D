@@ -1,3 +1,9 @@
+---
+id: concepts
+title: Core Concepts
+summary: Introduction to the key concepts in Cornerstone3D, covering the rendering engine, viewport management, tools implementation, and synchronization between viewports
+---
+
 ## Rendering
 
 _index.html_

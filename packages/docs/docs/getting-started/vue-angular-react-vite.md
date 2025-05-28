@@ -1,6 +1,7 @@
 ---
 id: vue-angular-react-etc
 title: 'React, Vue, Angular, etc.'
+summary: Guide for integrating Cornerstone3D with popular frontend frameworks, including configuration examples for Vite and Webpack with troubleshooting tips
 ---
 
 Here are some examples of how to use cornerstone3D with React, Vue, Angular, vite-based frameworks, etc.

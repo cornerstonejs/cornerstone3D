@@ -58,6 +58,7 @@ import * as geometricSurfaceUtils from './geometricSurfaceUtils';
 import setAnnotationLabel from './setAnnotationLabel';
 import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
+import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
 
 export {
   math,
@@ -105,6 +106,7 @@ export {
   normalizeViewportPlane,
   IslandRemoval,
   geometricSurfaceUtils,
+  usFanExtraction,
   setAnnotationLabel,
   moveAnnotationToViewPlane,
   getOrCreateImageVolume,

@@ -1,5 +1,7 @@
 ---
 id: playwright-tests
+title: Writing Playwright Tests
+summary: Comprehensive guide for creating end-to-end tests using Playwright, including working with example pages, capturing screenshots for comparisons, and simulating user interactions
 ---
 
 # Writing PlayWright Tests

@@ -1,5 +1,7 @@
 ---
 id: scope
+title: Scope of Project
+summary: Definition of what Cornerstone3D does and doesn't cover, including rendering capabilities, browser support, and the structure of the monorepo
 ---
 
 # Scope of Project

@@ -1,5 +1,7 @@
 ---
 id: basic-stack
+title: Render Stack of Images
+summary: Tutorial demonstrating how to render a stack of medical images using Cornerstone3D's stack viewport functionality
 ---
 
 # Render Stack of Images

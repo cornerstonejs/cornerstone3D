@@ -1,7 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import { CONSTANTS, metaData } from '@cornerstonejs/core';
+import { CONSTANTS, metaData, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { Annotations, Annotation } from '../../types';
+
+const { isEqual } = utilities;
 
 const { EPSILON } = CONSTANTS;
 
@@ -34,6 +36,23 @@ export default function filterAnnotationsWithinSlice(
   const annotationsWithParallelNormals = annotations.filter(
     (td: Annotation) => {
       let annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+
+      if (
+        !td.metadata.referencedImageId &&
+        !annotationViewPlaneNormal &&
+        td.metadata.FrameOfReferenceUID
+      ) {
+        for (const point of td.data.handles.points) {
+          const vector = vec3.sub(vec3.create(), point, camera.focalPoint);
+          const dotProduct = vec3.dot(vector, camera.viewPlaneNormal);
+          if (!isEqual(dotProduct, 0)) {
+            return false;
+          }
+        }
+        td.metadata.viewPlaneNormal = camera.viewPlaneNormal;
+        td.metadata.cameraFocalPoint = camera.focalPoint;
+        return true;
+      }
 
       if (!annotationViewPlaneNormal) {
         // This code is run to set the annotation view plane normal
@@ -84,7 +103,6 @@ export default function filterAnnotationsWithinSlice(
   for (const annotation of annotationsWithParallelNormals) {
     const data = annotation.data;
 
-    // @ts-expect-error
     const point = data.handles.points[0] || data.contour?.polyline[0];
 
     if (!annotation.isVisible) {

@@ -240,7 +240,7 @@ class BidirectionalTool extends AnnotationTool {
     } = this.hydrateBase<BidirectionalTool>(
       BidirectionalTool,
       enabledElement,
-      [],
+      axis[0],
       options
     );
 
@@ -248,6 +248,9 @@ class BidirectionalTool extends AnnotationTool {
     const [major0, major1] = majorAxis;
     const [minor0, minor1] = minorAxis;
     const points = [major0, major1, minor0, minor1];
+
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
 
     const annotation = {
       annotationUID: options?.annotationUID || utilities.uuidv4(),
@@ -278,7 +281,7 @@ class BidirectionalTool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 

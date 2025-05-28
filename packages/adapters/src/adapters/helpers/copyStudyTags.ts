@@ -1,5 +1,3 @@
-import dcmjs from "dcmjs";
-
 export const patientTags = [
     "PatientName",
     "PatientID",

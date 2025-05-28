@@ -1,6 +1,7 @@
 ---
 id: volumes
 title: Volumes
+summary: 3D data arrays with physical dimensions and orientation that represent medical volumetric datasets, providing the foundation for MPR and 3D visualization
 ---
 
 # Volumes

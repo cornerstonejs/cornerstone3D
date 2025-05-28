@@ -1075,6 +1075,9 @@ class CircleROITool extends AnnotationTool {
       options
     );
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
+
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
@@ -1105,7 +1108,7 @@ class CircleROITool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 

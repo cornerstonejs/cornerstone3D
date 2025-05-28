@@ -1,6 +1,7 @@
 ---
 id: renderingEngine
 title: Rendering Engine
+summary: Core rendering component that manages viewports and their HTML elements, utilizing offscreen WebGL canvas for efficient GPU-accelerated rendering of medical images
 ---
 
 # Rendering Engine

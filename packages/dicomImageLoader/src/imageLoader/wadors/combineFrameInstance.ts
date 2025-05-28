@@ -10,15 +10,14 @@ function getFrameInformation(
       ? Object.values(SharedFunctionalGroupsSequence[0])
       : []
   )
-    .map((it) => it[0])
+    .map((it: unknown) => it['Value']?.[0])
     .filter((it) => it !== undefined && typeof it === 'object');
   const perFrame = (
     PerFrameFunctionalGroupsSequence
       ? Object.values(PerFrameFunctionalGroupsSequence[frameNumber - 1])
       : []
   )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .map((it: any) => it.Value[0])
+    .map((it: unknown) => it['Value']?.[0])
     .filter((it) => it !== undefined && typeof it === 'object');
 
   return {

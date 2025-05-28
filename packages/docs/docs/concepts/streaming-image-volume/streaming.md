@@ -1,5 +1,7 @@
 ---
 id: streaming
+title: Streaming of Volume Data
+summary: Progressive loading system that creates volumes from 2D images, with pre-fetching of metadata to optimize performance and memory usage
 ---
 
 # Streaming of Volume data
@@ -15,9 +17,7 @@ Therefore, an initial call to fetch images metadata is required for this loader.
 not only we can pre-allocate and cache a `Volume` in memory, but we also can render the volume
 as the 2D images are being loaded (progressive loading).
 
-
 ![](../../assets/volume-building.png)
-
 
 By pre-fetching the metadata from all images (`imageIds`), we don't need to create
 the [`Image`](../cornerstone-core/images.md) object for each imageId. Instead, we can
@@ -54,7 +54,6 @@ await ctVolume.load();
 Since the volume loader does not need to create the [`Image`](../cornerstone-core/images.md) object for each imageId in
 the `StreamingImageVolume`, it will use the `skipCreateImage` option internally to skip the creation of the image object.
 Otherwise, the volume's image loader is the same as wadors image loader written in `cornerstone-wado-image-loader`.
-
 
 ```js
 const imageIds = ['wadors:imageId1', 'wadors:imageId2'];

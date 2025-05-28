@@ -1,6 +1,7 @@
 ---
 id: polyseg
 title: 'PolySeg'
+summary: Migration guide for PolySeg in Cornerstone3D 3.x, explaining how to use the new standalone polymorphic-segmentation package that was previously in the tools package
 ---
 
 import Tabs from '@theme/Tabs';

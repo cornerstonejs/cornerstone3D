@@ -1,6 +1,7 @@
 ---
 id: tools
 title: Tools
+summary: Collection of interactive components for image manipulation, annotation, and segmentation that operate in 3D space with shared annotations across viewports
 ---
 
 ## Introduction

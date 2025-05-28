@@ -1,6 +1,7 @@
 ---
 id: annotationGroups
 title: Annotation Groups
+summary: System for organizing related annotations together, enabling collective operations like toggling visibility and navigating between grouped annotations
 ---
 
 # Annotation Groups

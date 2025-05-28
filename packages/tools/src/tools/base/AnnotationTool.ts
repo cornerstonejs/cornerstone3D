@@ -436,6 +436,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
     const lineWidth = getStyle('lineWidth') as string;
     const lineDash = getStyle('lineDash') as string;
+    const angleArcLineDash = getStyle('angleArcLineDash') as string;
     const color = getStyle('color') as string;
     const markerSize = getStyle('markerSize') as string;
     const shadow = getStyle('shadow') as boolean;
@@ -453,6 +454,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       shadow,
       textbox: textboxStyle,
       markerSize,
+      angleArcLineDash,
     } as AnnotationStyle;
   }
 

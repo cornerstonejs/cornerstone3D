@@ -419,11 +419,25 @@ class ColorbarTicks {
   }
 
   private _getTopTickInfo({ position, labelMeasure }) {
-    throw new Error('Not implemented');
+    const { height } = this._canvas;
+    const labelY = height - this.tickSize - this._labelMargin;
+    const labelPoint = [position, labelY];
+    const tickPoints = {
+      start: [position, height - this._tickSize],
+      end: [position, height],
+    };
+
+    return { labelPoint, tickPoints };
   }
 
   private _getBottomTickInfo({ position, labelMeasure }) {
-    throw new Error('Not implemented');
+    const labelPoint = [position, this._tickSize + this._labelMargin];
+    const tickPoints = {
+      start: [position, 0],
+      end: [position, this._tickSize],
+    };
+
+    return { labelPoint, tickPoints };
   }
 
   private render() {
@@ -446,7 +460,8 @@ class ColorbarTicks {
 
     canvasContext.clearRect(0, 0, width, height);
     canvasContext.font = this._font;
-    canvasContext.textBaseline = 'middle';
+    canvasContext.textBaseline = isHorizontal ? 'top' : 'middle';
+    canvasContext.textAlign = isHorizontal ? 'center' : 'left';
     canvasContext.fillStyle = this._color;
     canvasContext.strokeStyle = this._color;
     canvasContext.lineWidth = this.tickWidth;

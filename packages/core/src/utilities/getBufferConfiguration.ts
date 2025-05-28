@@ -17,6 +17,8 @@ function getConstructorFromType(
       return Float32Array;
     case 'Uint8Array':
       return Uint8Array;
+    case 'Uint32Array':
+      return Uint32Array;
     case 'Uint16Array':
     case 'Int16Array':
       if (!isVolumeBuffer) {
@@ -30,7 +32,7 @@ function getConstructorFromType(
     default:
       if (bufferType) {
         throw new Error(
-          'TargetBuffer should be Float32Array, Uint8Array, Uint16Array, or Int16Array'
+          'TargetBuffer should be Float32Array, Uint8Array, Uint16Array, Int16Array, or Uint32Array'
         );
       } else {
         return Float32Array;

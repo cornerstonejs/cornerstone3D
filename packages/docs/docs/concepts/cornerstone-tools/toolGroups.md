@@ -1,6 +1,7 @@
 ---
 id: toolGroups
 title: ToolGroups
+summary: System for organizing tools and defining their behavior across viewports, allowing coordinated tool configuration, modes, and shared functionality
 ---
 
 ## Introduction

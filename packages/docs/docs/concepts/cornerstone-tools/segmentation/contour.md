@@ -1,6 +1,7 @@
 ---
 id: segmentation-contour
 title: Contour Representation
+summary: Segmentation representation composed of hierarchical contour sets, where each set contains multiple contours representing distinct anatomical structures
 ---
 
 # Contour Segmentation Representation

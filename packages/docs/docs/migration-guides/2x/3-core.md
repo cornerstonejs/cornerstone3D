@@ -1,12 +1,11 @@
 ---
 id: core
 title: '@cornerstonejs/core'
+summary: Changes to the core package when migrating from Cornerstone3D 1.x to 2.x, including API updates and breaking changes
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-
-
 
 # @cornerstonejs/core
 

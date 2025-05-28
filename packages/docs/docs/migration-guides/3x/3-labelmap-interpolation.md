@@ -1,6 +1,7 @@
 ---
 id: labelmap-interpolation
 title: 'Labelmap Interpolation'
+summary: Migration guide for labelmap interpolation functionality in Cornerstone3D 3.x
 ---
 
 import Tabs from '@theme/Tabs';

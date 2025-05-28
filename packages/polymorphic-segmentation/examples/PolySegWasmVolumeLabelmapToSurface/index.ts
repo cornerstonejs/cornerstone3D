@@ -18,6 +18,7 @@ import {
   addToggleButtonToToolbar,
   createInfoSection,
   addManipulationBindings,
+  addSegmentIndexDropdown,
   addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -174,6 +175,8 @@ addLabelToToolbar({
     paddingLeft: '10px',
   },
 });
+
+addSegmentIndexDropdown(segmentationId);
 
 eventTarget.addEventListener(Enums.Events.WEB_WORKER_PROGRESS, (evt) => {
   const label = document.getElementById('progress');

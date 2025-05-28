@@ -121,6 +121,7 @@ function createImage(
             Uint16Array,
             Int16Array,
             Float32Array,
+            Uint32Array,
           };
 
           if (length !== imageFrame.pixelDataLength) {

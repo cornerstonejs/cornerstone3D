@@ -20,6 +20,7 @@ import addCanvasPointsToArray from './addCanvasPointsToArray';
 import pointCanProjectOnLine from './pointCanProjectOnLine';
 import { isPointInsidePolyline3D } from './isPointInsidePolyline3D';
 import { projectTo2D } from './projectTo2D';
+import convexHull from './convexHull';
 
 export {
   isClosed,
@@ -45,4 +46,5 @@ export {
   subtractPolylines,
   isPointInsidePolyline3D,
   projectTo2D,
+  convexHull,
 };

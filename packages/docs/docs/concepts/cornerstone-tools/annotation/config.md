@@ -1,6 +1,7 @@
 ---
 id: config
 title: Config
+summary: Hierarchical system for configuring annotation styling properties like colors, line styles, and text appearance at different specificity levels
 ---
 
 In this section we will explain various ways you can change the tool styles. This

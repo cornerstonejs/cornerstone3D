@@ -1010,6 +1010,9 @@ class RectangleROITool extends AnnotationTool {
       options
     );
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
+
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
@@ -1030,7 +1033,7 @@ class RectangleROITool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 

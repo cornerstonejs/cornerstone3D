@@ -1,3 +1,9 @@
+---
+id: design-considerations
+title: Design Considerations
+summary: Overview of the fundamental architecture and interfaces in Cornerstone3D, including the rendering system built on vtk.js and the tools library with event handling
+---
+
 ## High level design considerations
 
 These libraries expand upon and update the interfaces `cornerstone.js` provided

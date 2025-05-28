@@ -298,6 +298,11 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.GeometryLoadedFailedEventDetail | GeometryLoadedFailed Event Detail }
    */
   GEOMETRY_LOADED_FAILED = 'GEOMETRY_LOADED_FAILED',
+
+  /**
+   * Triggers on the viewport's element when the actors are changed via set operator
+   */
+  ACTORS_CHANGED = 'CORNERSTONE_ACTORS_CHANGED',
 }
 
 export default Events;

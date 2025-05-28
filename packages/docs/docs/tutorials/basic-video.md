@@ -1,5 +1,7 @@
 ---
 id: basic-video
+title: Render Video
+summary: Tutorial on rendering and annotating videos in Cornerstone3D, including video viewport configuration and time-based annotation capabilities
 ---
 
 # Render Video

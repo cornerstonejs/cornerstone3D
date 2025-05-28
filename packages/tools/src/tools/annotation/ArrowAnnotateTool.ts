@@ -98,6 +98,7 @@ class ArrowAnnotateTool extends AnnotationTool {
     if (!enabledElement) {
       return;
     }
+
     const {
       FrameOfReferenceUID,
       referencedImageId,
@@ -110,6 +111,9 @@ class ArrowAnnotateTool extends AnnotationTool {
       points,
       options
     );
+
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
 
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
@@ -129,7 +133,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
     addAnnotation(annotation, viewport.element);

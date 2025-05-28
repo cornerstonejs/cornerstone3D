@@ -1,6 +1,7 @@
 ---
 id: visibility
 title: Visibility
+summary: API for controlling the visibility of annotations with methods to show/hide individual annotations or show all hidden annotations
 ---
 
 # Visibility
