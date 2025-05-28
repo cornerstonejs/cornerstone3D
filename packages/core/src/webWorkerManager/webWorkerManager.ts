@@ -156,7 +156,10 @@ class CentralizedWorkerManager {
    * @param {Function[]} [options.callbacks=[]] - Callback functions.
    * @returns {Promise} A promise that resolves with the result of the task.
    */
-  executeTask<WorkerFnReturnType = unknown>(
+
+  // Defaults to returning any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  executeTask<WorkerFnReturnType = any>(
     workerName: string,
     methodName: string,
     args = {},
