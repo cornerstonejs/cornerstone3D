@@ -9,8 +9,6 @@ import type {
   CPUIImageData,
   ViewportInput,
   BoundsIJK,
-  CPUImageData,
-  PixelDataTypedArray,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -624,12 +622,13 @@ class WSIViewport extends Viewport {
 
   public getRotation = () => 0;
 
-  protected canvasToIndex = (canvasPos: Point2): Point2 => {
+  protected canvasToIndex = (canvasPos: Point2): Point3 => {
     const transform = this.getTransform();
     transform.invert();
-    return transform.transformPoint(
+    const indexPoint = transform.transformPoint(
       canvasPos.map((it) => it * devicePixelRatio) as Point2
     );
+    return [indexPoint[0], indexPoint[1], 0] as Point3;
   };
 
   protected indexToCanvas = (indexPos: Point2): Point2 => {
