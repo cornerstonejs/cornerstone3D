@@ -227,6 +227,9 @@ class Viewport {
     this.viewportStatus = ViewportStatus.RENDERED;
   }
 
+  /**
+   *  This applies a color transform as an svg filter to the output image.
+   */  
   protected setColorTransform(voiRange, averageWhite) {
     let feFilter = null;
     if (!voiRange && !averageWhite) {
