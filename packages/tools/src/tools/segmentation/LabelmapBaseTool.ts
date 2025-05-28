@@ -5,6 +5,7 @@ import {
   Enums,
   eventTarget,
   BaseVolumeViewport,
+  StackViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -15,11 +16,9 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
-import { getClosestImageIdForStackViewport } from '../../utilities/annotationHydration';
-import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
-import { StrategyCallbacks, Events } from '../../enums';
+import { StrategyCallbacks } from '../../enums';
 import * as LabelmapMemo from '../../utilities/segmentation/createLabelmapMemo';
 import {
   getAllAnnotations,
@@ -270,8 +269,7 @@ export default class LabelmapBaseTool extends BaseTool {
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
 
-      const isStackViewport =
-        viewport instanceof getClosestImageIdForStackViewport;
+      const isStackViewport = viewport instanceof StackViewport;
 
       if (isStackViewport) {
         const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
@@ -410,7 +408,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     let previewColor = null,
       previewSegmentIndex = null;
-    if (this.configuration.preview.enabled) {
+    if (this.configuration.preview?.enabled) {
       previewColor = configColor || lightenColor(...segmentColor);
       previewSegmentIndex = 255;
     }
