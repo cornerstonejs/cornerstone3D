@@ -22,12 +22,6 @@ import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
 
-export type CanvasScalarData = Uint8ClampedArray & {
-  frameNumber?: number;
-  getRange?: () => [number, number];
-};
-
-const WSIUtilFunctions = null;
 const _map = Symbol.for('map');
 const EVENT_POSTRENDER = 'postrender';
 /**
