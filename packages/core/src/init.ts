@@ -28,7 +28,7 @@ let config: Cornerstone3DConfig = {
   rendering: { ...defaultConfig.rendering },
 };
 
-let webWorkerManager = null;
+let webWorkerManager: CentralizedWebWorkerManager | null = null;
 let canUseNorm16Texture = false;
 
 function _getGLContext(): RenderingContext {

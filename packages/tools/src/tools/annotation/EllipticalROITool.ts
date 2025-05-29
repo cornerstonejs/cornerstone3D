@@ -56,6 +56,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import { vec2 } from 'gl-matrix';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -338,22 +339,27 @@ class EllipticalROITool extends AnnotationTool {
       Types.Point2,
       Types.Point2
     ];
-    const canvasCorners = getCanvasEllipseCorners(canvasCoordinates);
 
-    const [canvasPoint1, canvasPoint2] = canvasCorners;
+    const [bottom, top, left, right] = canvasCoordinates;
+
+    const w = Math.hypot(left[0] - right[0], left[1] - right[1]);
+    const h = Math.hypot(top[0] - bottom[0], top[1] - bottom[1]);
+    const angle = Math.atan2(left[1] - right[1], left[0] - right[0]);
+
+    const center = [(left[0] + right[0]) / 2, (top[1] + bottom[1]) / 2];
 
     const minorEllipse = {
-      left: Math.min(canvasPoint1[0], canvasPoint2[0]) + proximity / 2,
-      top: Math.min(canvasPoint1[1], canvasPoint2[1]) + proximity / 2,
-      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) - proximity,
-      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) - proximity,
+      center,
+      xRadius: (w - proximity) / 2,
+      yRadius: (h - proximity) / 2,
+      angle,
     };
 
     const majorEllipse = {
-      left: Math.min(canvasPoint1[0], canvasPoint2[0]) - proximity / 2,
-      top: Math.min(canvasPoint1[1], canvasPoint2[1]) - proximity / 2,
-      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) + proximity,
-      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) + proximity,
+      center,
+      xRadius: (w + proximity) / 2,
+      yRadius: (h + proximity) / 2,
+      angle,
     };
 
     const pointInMinorEllipse = this._pointInEllipseCanvas(
@@ -1168,6 +1174,7 @@ class EllipticalROITool extends AnnotationTool {
         area,
         mean: stats.mean?.value,
         max: stats.max?.value,
+        min: stats.min?.value,
         stdDev: stats.stdDev?.value,
         statsArray: stats.array,
         pointsInShape,
@@ -1205,15 +1212,15 @@ class EllipticalROITool extends AnnotationTool {
    * @returns True if the point is inside the ellipse
    */
   _pointInEllipseCanvas(ellipse, location: Types.Point2): boolean {
-    const xRadius = ellipse.width / 2;
-    const yRadius = ellipse.height / 2;
+    const { xRadius, yRadius, center, angle } = ellipse;
+
+    const rotLocation = vec2.rotate(vec2.create(), location, center, -angle);
 
     if (xRadius <= 0.0 || yRadius <= 0.0) {
       return false;
     }
 
-    const center = [ellipse.left + xRadius, ellipse.top + yRadius];
-    const normalized = [location[0] - center[0], location[1] - center[1]];
+    const normalized = [rotLocation[0] - center[0], rotLocation[1] - center[1]];
 
     const inEllipse =
       (normalized[0] * normalized[0]) / (xRadius * xRadius) +
@@ -1242,7 +1249,7 @@ class EllipticalROITool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit, min } =
     cachedVolumeStats;
 
   const textLines: string[] = [];
@@ -1260,6 +1267,9 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (max) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (min) {
+    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
   }
 
   if (stdDev) {

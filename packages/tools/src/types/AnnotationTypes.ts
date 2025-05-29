@@ -59,7 +59,18 @@ type Annotation = {
     cachedStats?: Record<string, unknown>;
     /** Label of an annotation */
     label?: string;
+    /** contour data */
+    contour?: Contour;
   };
+};
+
+type Contour = {
+  /** world location of the polyline in the space */
+  polyline?: Types.Point3[];
+  /** PointsManager */
+  pointsManager?: Types.IPointsManager<Types.Point3>;
+  /** boolean indicating if the contour is closed */
+  closed?: boolean;
 };
 
 /** Array of annotations */

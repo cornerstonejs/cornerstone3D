@@ -59,7 +59,7 @@ type PolySegAddOn = {
   computeSurfaceData: ComputeRepresentationFn<SurfaceSegmentationData>;
 
   /** Updates different segmentation representation data */
-  updateSurfaceData: ComputeRepresentationFn<SurfaceSegmentationData>;
+  updateSurfaceData: ComputeRepresentationFn<void>;
 
   /** Clips and caches surfaces for a viewport */
   clipAndCacheSurfacesForViewport: (
