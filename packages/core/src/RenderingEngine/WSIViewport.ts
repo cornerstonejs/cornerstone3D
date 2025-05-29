@@ -296,30 +296,7 @@ class WSIViewport extends Viewport {
       },
       scalarData: this.getScalarData(),
       imageData,
-      // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
-      voxelManager: {
-        forEach: (
-          callback: (args: {
-            value: unknown;
-            index: number;
-            pointIJK: Point3;
-            pointLPS: Point3;
-          }) => void,
-          options?: {
-            boundsIJK?: BoundsIJK;
-            isInObject?: (pointLPS, pointIJK) => boolean;
-            returnPoints?: boolean;
-            imageData;
-          }
-        ) => {
-          return pointInShapeCallback(options.imageData, {
-            pointInShapeFn: options.isInObject ?? (() => true),
-            callback: callback,
-            boundsIJK: options.boundsIJK,
-            returnPoints: options.returnPoints ?? false,
-          });
-        },
-      },
+      // voxelManager is not in wsi.
     };
 
     // @ts-expect-error we need to fully migrate the voxelManager to the new system
