@@ -1071,6 +1071,9 @@ function defaultGetTextLines(data, targetId: string): string[] {
   if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
+  if (AnnotationTool.isNumber(min)) {
+    textLines.push(`Max: ${csUtils.roundNumber(min)} ${modalityUnit}`);
+  }
   if (AnnotationTool.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
