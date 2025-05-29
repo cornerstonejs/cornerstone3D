@@ -1081,7 +1081,6 @@ function defaultGetTextLines(data, targetId: string): string[] {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
-
   return textLines;
 }
 
