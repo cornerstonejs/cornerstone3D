@@ -1,5 +1,4 @@
 import { AnnotationTool } from '../base';
-
 import {
   getEnabledElement,
   VolumeViewport,
@@ -1065,19 +1064,19 @@ function defaultGetTextLines(data, targetId: string): string[] {
 
   const textLines: string[] = [];
 
-  if (AnnotationTool.isNumber(area)) {
+  if (csUtils.isNumber(area)) {
     textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
   }
-  if (AnnotationTool.isNumber(mean)) {
+  if (csUtils.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
-  if (AnnotationTool.isNumber(max)) {
+  if (csUtils.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
-  if (AnnotationTool.isNumber(min)) {
+  if (csUtils.isNumber(min)) {
     textLines.push(`Max: ${csUtils.roundNumber(min)} ${modalityUnit}`);
   }
-  if (AnnotationTool.isNumber(stdDev)) {
+  if (csUtils.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 

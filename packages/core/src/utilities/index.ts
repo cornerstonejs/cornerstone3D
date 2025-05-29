@@ -11,7 +11,7 @@ import getRuntimeId from './getRuntimeId';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
-import { isEqual, isEqualAbs, isEqualNegative } from './isEqual';
+import { isEqual, isEqualAbs, isEqualNegative, isNumber } from './isEqual';
 import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
@@ -122,6 +122,7 @@ export {
   getMinMax,
   getRuntimeId,
   isEqual,
+  isNumber,
   isEqualAbs,
   isEqualNegative,
   isOpposite,

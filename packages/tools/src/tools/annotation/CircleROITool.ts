@@ -1137,32 +1137,32 @@ function defaultGetTextLines(data, targetId): string[] {
   } = cachedVolumeStats;
   const textLines: string[] = [];
 
-  if (radius) {
+  if (csUtils.isNumber(radius)) {
     const radiusLine = isEmptyArea
       ? `Radius: Oblique not supported`
       : `Radius: ${csUtils.roundNumber(radius)} ${radiusUnit}`;
     textLines.push(radiusLine);
   }
 
-  if (AnnotationTool.isNumber(area)) {
+  if (csUtils.isNumber(area)) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
       : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
-  if (AnnotationTool.isNumber(mean)) {
+  if (csUtils.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (AnnotationTool.isNumber(max)) {
+  if (csUtils.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
-  if (min) {
+  if (csUtils.isNumber(min)) {
     textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
   }
 
-  if (AnnotationTool.isNumber(stdDev)) {
+  if (csUtils.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
