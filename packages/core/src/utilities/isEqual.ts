@@ -102,7 +102,7 @@ const isEqualAbs = <ValueType>(
  */
 function isNumber(n: number[] | number): boolean {
   if (Array.isArray(n)) {
-    return this.isNumber(n[0]);
+    return isNumber(n[0]);
   }
   return isFinite(n) && !isNaN(n);
 }
