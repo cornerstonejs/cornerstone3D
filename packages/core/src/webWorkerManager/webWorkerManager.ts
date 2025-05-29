@@ -1,12 +1,44 @@
 import * as Comlink from 'comlink';
-import { RequestType } from '../enums/';
+import { RequestType } from '../enums';
 import { RequestPoolManager } from '../requestPool/requestPoolManager';
 
+export type WebWorkerManagerOptions = {
+  /**
+   * The maximum number of worker instances that can be created for a specific worker type.
+   * @default 1
+   */
+  maxWorkerInstances?: number;
+
+  /**
+   * Whether to overwrite the worker if it's already registered.
+   * @default false
+   */
+  overwrite?: boolean;
+
+  /**
+   * Configuration for automatically terminating idle workers.
+   */
+  autoTerminateOnIdle?: {
+    enabled?: boolean;
+    idleTimeThreshold?: number; // in milliseconds
+  };
+};
+
+type WebWorkerProperties = {
+  workerFn: () => Worker;
+  instances: Comlink.Remote<unknown>[];
+  loadCounters: number[];
+  lastActiveTime: (number | null)[];
+  nativeWorkers: Worker[];
+  autoTerminateOnIdle: boolean;
+  idleCheckIntervalId: NodeJS.Timeout | null;
+  idleTimeThreshold: number;
+  processing?: boolean; // Indicates if the worker is currently processing a task
+};
+
 class CentralizedWorkerManager {
-  constructor() {
-    this.workerRegistry = {};
-    this.workerPoolManager = new RequestPoolManager('webworker');
-  }
+  workerRegistry: Record<string, WebWorkerProperties> = {};
+  workerPoolManager = new RequestPoolManager('webworker');
 
   /**
    * Registers a new worker, it doesn't mean that the function will get executed.
@@ -22,7 +54,11 @@ class CentralizedWorkerManager {
    * @param {boolean} [options.autoTerminateOnIdle.enabled=false] - Whether to enable auto-termination.
    * @param {number} [options.autoTerminateOnIdle.idleTimeThreshold=3000] - Idle time threshold in milliseconds.
    */
-  registerWorker(workerName, workerFn, options = {}) {
+  registerWorker(
+    workerName: string,
+    workerFn: () => Worker,
+    options: WebWorkerManagerOptions = {}
+  ) {
     const {
       maxWorkerInstances = 1,
       overwrite = false,
@@ -41,7 +77,7 @@ class CentralizedWorkerManager {
       clearInterval(this.workerRegistry[workerName].idleCheckIntervalId);
     }
 
-    const workerProperties = {
+    const workerProperties: WebWorkerProperties = {
       workerFn: null,
       instances: [],
       loadCounters: [],
@@ -67,7 +103,7 @@ class CentralizedWorkerManager {
     this.workerRegistry[workerName] = workerProperties;
   }
 
-  getNextWorkerAPI(workerName) {
+  getNextWorkerAPI(workerName: string) {
     const workerProperties = this.workerRegistry[workerName];
 
     if (!workerProperties) {
@@ -120,9 +156,12 @@ class CentralizedWorkerManager {
    * @param {Function[]} [options.callbacks=[]] - Callback functions.
    * @returns {Promise} A promise that resolves with the result of the task.
    */
-  executeTask(
-    workerName,
-    methodName,
+
+  // Defaults to returning any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  executeTask<WorkerFnReturnType = any>(
+    workerName: string,
+    methodName: string,
     args = {},
     {
       requestType = RequestType.Compute,
@@ -131,7 +170,7 @@ class CentralizedWorkerManager {
       callbacks = [],
     } = {}
   ) {
-    return new Promise((resolve, reject) => {
+    return new Promise<WorkerFnReturnType>((resolve, reject) => {
       const requestFn = async () => {
         const { api, index } = this.getNextWorkerAPI(workerName);
         if (!api) {
@@ -201,7 +240,7 @@ class CentralizedWorkerManager {
     });
   }
 
-  terminateIdleWorkers(workerName, idleTimeThreshold) {
+  terminateIdleWorkers(workerName: string, idleTimeThreshold: number) {
     const workerProperties = this.workerRegistry[workerName];
 
     if (workerProperties.processing) {
@@ -222,7 +261,7 @@ class CentralizedWorkerManager {
     });
   }
 
-  terminate(workerName) {
+  terminate(workerName: string) {
     const workerProperties = this.workerRegistry[workerName];
     if (!workerProperties) {
       console.error(`Worker type '${workerName}' is not registered.`);

@@ -1013,6 +1013,7 @@ class CircleROITool extends AnnotationTool {
           area,
           mean: stats.mean?.value,
           max: stats.max?.value,
+          min: stats.min?.value,
           pointsInShape,
           stdDev: stats.stdDev?.value,
           statsArray: stats.array,
@@ -1129,6 +1130,7 @@ function defaultGetTextLines(data, targetId): string[] {
     mean,
     stdDev,
     max,
+    min,
     isEmptyArea,
     areaUnit,
     modalityUnit,
@@ -1155,6 +1157,9 @@ function defaultGetTextLines(data, targetId): string[] {
 
   if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (min) {
+    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
   }
 
   if (AnnotationTool.isNumber(stdDev)) {
