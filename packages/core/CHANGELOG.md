@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.17.0...v3.17.1) (2025-05-29)
+
+### Bug Fixes
+
+- ROI tools in WSI ([#2107](https://github.com/cornerstonejs/cornerstone3D/issues/2107)) ([f2aa86e](https://github.com/cornerstonejs/cornerstone3D/commit/f2aa86ef6c75b72963bf315dcd7cb8d48f9a72a8))
+
 # [3.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.5...v3.17.0) (2025-05-28)
 
 **Note:** Version bump only for package @cornerstonejs/core
