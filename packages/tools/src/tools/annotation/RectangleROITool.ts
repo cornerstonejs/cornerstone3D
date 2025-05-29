@@ -935,14 +935,17 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
+        let pointsInShape;
+        if (voxelManager) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
@@ -1059,11 +1062,18 @@ function defaultGetTextLines(data, targetId: string): string[] {
   }
 
   const textLines: string[] = [];
-
-  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  if (AnnotationTool.isNumber(area)) {
+    textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
+  }
+  if (AnnotationTool.isNumber(mean)) {
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
+  }
+  if (AnnotationTool.isNumber(max)) {
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (AnnotationTool.isNumber(stdDev)) {
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  }
 
   return textLines;
 }

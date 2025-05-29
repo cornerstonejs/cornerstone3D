@@ -993,17 +993,19 @@ class CircleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            isInObject: (pointLPS) =>
-              pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
-
+        let pointsInShape;
+        if (voxelManager) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              isInObject: (pointLPS) =>
+                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
@@ -1140,22 +1142,22 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(radiusLine);
   }
 
-  if (area) {
+  if (AnnotationTool.isNumber(area)) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
       : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
-  if (mean) {
+  if (AnnotationTool.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max) {
+  if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
-  if (stdDev) {
+  if (AnnotationTool.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 

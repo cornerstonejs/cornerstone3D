@@ -1,3 +1,4 @@
+import { AnnotationTool } from '../base';
 import {
   CONSTANTS,
   getEnabledElement,
@@ -962,47 +963,50 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let curRow = 0;
     let intersections = [];
     let intersectionCounter = 0;
-    const pointsInShape = voxelManager.forEach(
-      this.configuration.statsCalculator.statsCallback,
-      {
-        imageData,
-        isInObject: (pointLPS, _pointIJK) => {
-          let result = true;
-          const point = viewport.worldToCanvas(pointLPS);
-          if (point[1] != curRow) {
-            intersectionCounter = 0;
-            curRow = point[1];
-            intersections = getLineSegmentIntersectionsCoordinates(
-              canvasCoordinates,
-              point,
-              [canvasPosEnd[0], point[1]]
-            );
-            intersections.sort(
-              (function (index) {
-                return function (a, b) {
-                  return a[index] === b[index]
-                    ? 0
-                    : a[index] < b[index]
-                    ? -1
-                    : 1;
-                };
-              })(0)
-            );
-          }
-          if (intersections.length && point[0] > intersections[0][0]) {
-            intersections.shift();
-            intersectionCounter++;
-          }
-          if (intersectionCounter % 2 === 0) {
-            result = false;
-          }
-          return result;
-        },
-        boundsIJK,
-        returnPoints: this.configuration.storePointData,
-      }
-    );
 
+    let pointsInShape;
+    if (voxelManager) {
+      pointsInShape = voxelManager.forEach(
+        this.configuration.statsCalculator.statsCallback,
+        {
+          imageData,
+          isInObject: (pointLPS, _pointIJK) => {
+            let result = true;
+            const point = viewport.worldToCanvas(pointLPS);
+            if (point[1] != curRow) {
+              intersectionCounter = 0;
+              curRow = point[1];
+              intersections = getLineSegmentIntersectionsCoordinates(
+                canvasCoordinates,
+                point,
+                [canvasPosEnd[0], point[1]]
+              );
+              intersections.sort(
+                (function (index) {
+                  return function (a, b) {
+                    return a[index] === b[index]
+                      ? 0
+                      : a[index] < b[index]
+                      ? -1
+                      : 1;
+                  };
+                })(0)
+              );
+            }
+            if (intersections.length && point[0] > intersections[0][0]) {
+              intersections.shift();
+              intersectionCounter++;
+            }
+            if (intersectionCounter % 2 === 0) {
+              result = false;
+            }
+            return result;
+          },
+          boundsIJK,
+          returnPoints: this.configuration.storePointData,
+        }
+      );
+    }
     const stats = this.configuration.statsCalculator.getStatistics();
 
     cachedStats[targetId] = {
@@ -1123,30 +1127,30 @@ function defaultGetTextLines(data, targetId): string[] {
 
   const textLines: string[] = [];
 
-  if (area) {
+  if (AnnotationTool.isNumber(area)) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
       : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
-  if (mean) {
+  if (AnnotationTool.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (Number.isFinite(max)) {
+  if (AnnotationTool.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
 
-  if (stdDev) {
+  if (AnnotationTool.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
-  if (perimeter) {
+  if (AnnotationTool.isNumber(perimeter)) {
     textLines.push(`Perimeter: ${csUtils.roundNumber(perimeter)} ${unit}`);
   }
 
-  if (length) {
+  if (AnnotationTool.isNumber(length)) {
     // No need to show length prefix as there is just the single value
     textLines.push(`${csUtils.roundNumber(length)} ${unit}`);
   }
