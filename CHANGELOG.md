@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.0...v3.19.1) (2025-05-30)
+
+### Features
+
+- **tools:** Add tool LabelMapEditWithContourTool ([#2110](https://github.com/cornerstonejs/cornerstone3D/issues/2110)) ([b3c6bc3](https://github.com/cornerstonejs/cornerstone3D/commit/b3c6bc379fdccda311853d1126c890650b3027ea))
+
 # [3.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.18.0...v3.19.0) (2025-05-30)
 
 ### Features
