@@ -134,6 +134,8 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    */
   protected cleanUpListeners() {
     LabelMapEditWithContourTool.annotationsToViewportMap.clear();
+    LabelMapEditWithContourTool.viewportIdsChecked = [];
+
     eventTarget.removeEventListener(
       Events.ANNOTATION_MODIFIED,
       this.annotationModified
