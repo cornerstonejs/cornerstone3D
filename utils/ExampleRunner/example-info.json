@@ -427,6 +427,10 @@
         "name": "Labelmap Editing with Contour",
         "description": "Use contour tools to edit the labelmap"
       },
+      "labelmapEditWithContourTool": {
+        "name": "Labelmap Editing with Contour Tool",
+        "description": "Apply contour tool to efficiently modify and refine labelmap regions."
+      },
       "labelmapInterpolation": {
         "name": "Labelmap Interpolation",
         "description": "Interpolate between slices using labelmap"
