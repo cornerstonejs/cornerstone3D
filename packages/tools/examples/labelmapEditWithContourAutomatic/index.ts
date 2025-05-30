@@ -171,12 +171,6 @@ async function run() {
     },
   ]);
 
-  segmentation.addRepresentationData({
-    segmentationId,
-    type: csToolsEnums.SegmentationRepresentations.Contour,
-    data: {},
-  });
-
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -251,9 +245,6 @@ async function run() {
   });
 
   await segmentation.addLabelmapRepresentationToViewportMap(
-    segMap(segmentationId)
-  );
-  await segmentation.addContourRepresentationToViewportMap(
     segMap(segmentationId)
   );
 
