@@ -120,13 +120,17 @@ class Angle extends BaseAdapter3D {
         return state;
     }
 
-    public static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    public static getTID300RepresentationArguments(
+        tool,
+        worldToImageCoords,
+        is3DMeasurement = false
+    ) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
 
-        if (!referencedImageId) {
+        if (is3DMeasurement) {
             return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
