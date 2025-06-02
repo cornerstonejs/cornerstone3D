@@ -11,7 +11,6 @@ import getRuntimeId from './getRuntimeId';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
-import { isEqual, isEqualAbs, isEqualNegative } from './isEqual';
 import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
@@ -105,6 +104,8 @@ import getPixelSpacingInformation from './getPixelSpacingInformation';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 
+export * from './isEqual';
+
 export {
   FrameRange,
   eventListener,
@@ -121,9 +122,6 @@ export {
   uuidv4,
   getMinMax,
   getRuntimeId,
-  isEqual,
-  isEqualAbs,
-  isEqualNegative,
   isOpposite,
   getViewportModality,
   windowLevel,

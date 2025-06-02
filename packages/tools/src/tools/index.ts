@@ -62,6 +62,7 @@ import SegmentBidirectionalTool from './segmentation/SegmentBidirectionalTool';
 
 import * as strategies from './segmentation/strategies';
 import SegmentLabelTool from './segmentation/SegmentLabelTool';
+import LabelMapEditWithContourTool from './segmentation/LabelmapEditWithContour';
 
 export {
   // ~~ BASE
@@ -130,5 +131,6 @@ export {
   LabelmapBaseTool,
   SegmentBidirectionalTool,
   SegmentLabelTool,
+  LabelMapEditWithContourTool,
   strategies,
 };

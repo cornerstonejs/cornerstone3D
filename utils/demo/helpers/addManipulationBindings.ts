@@ -88,7 +88,9 @@ export default function addManipulationBindings(
     maxZoomScale: 4000,
   });
   if (is3DViewport) {
-    toolGroup.addTool(TrackballRotateTool.toolName);
+    toolGroup.addTool(TrackballRotateTool.toolName, {
+      rotateSampleDistanceFactor: 2,
+    });
   } else {
     toolGroup.addTool(StackScrollTool.toolName);
   }
