@@ -203,6 +203,9 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
         type: SegmentationRepresentations.Contour,
         data: {},
       });
+    } else {
+      // if the segmentation already have a contour representation, just add it as checked
+      LabelMapEditWithContourTool.viewportIdsChecked.push(viewportId);
     }
 
     return true;
