@@ -1,11 +1,18 @@
 import { normalizers, data, utilities, derivations } from "dcmjs";
-import { cache } from "@cornerstonejs/core";
+import { cache, type Types as CSTypes } from "@cornerstonejs/core";
+import { Types } from "@cornerstonejs/tools";
 
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
 import { toArray, codeMeaningEquals, copyStudyTags } from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
 import { copySeriesTags } from "../helpers/copySeriesTags";
 import { NO_IMAGE_ID } from "./constants";
+import {
+    imageToWorldCoords,
+    worldToImageCoords
+} from "packages/core/dist/esm/utilities";
+
+type Annotation = Types.Annotation;
 
 const { TID1500, addAccessors } = utilities;
 
@@ -24,27 +31,40 @@ const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
 type SpatialCoordinatesState = {
     description?: string;
     sopInstanceUid?: string;
-    annotation: {
-        annotationUID: string;
-        metadata: {
-            toolName: string;
-            referencedImageId?: string;
-            FrameOfReferenceUID: string;
-            label: string;
-        };
-    };
+    annotation: Annotation;
     finding?: unknown;
     findingSites?: unknown;
 };
 
+type ScoordType = {
+    GraphicData: number[];
+};
+
 type SetupMeasurementData = {
     defaultState: SpatialCoordinatesState;
-    NUMGroup: Record<string, unknown>;
-    SCOORDGroup?: Record<string, unknown>;
+    state?: SpatialCoordinatesState;
+    isMeasurement3d?: boolean;
+    scoord?: ScoordType;
+    worldCoords?: CSTypes.Point3[];
+    scoordArgs?: {
+        imageToWorldCoords: (
+            imageId: string,
+            graphicData: number[]
+        ) => CSTypes.Point3;
+        referencedImageId: string;
+        isMeasurement3d: boolean;
+    };
+    NUMGroup: {
+        MeasuredValueSequence: {
+            NumericValue: number;
+        };
+    };
+    SCOORDGroup?: ScoordType;
     ReferencedSOPSequence?: Record<string, unknown>;
     ReferencedSOPInstanceUID?: string;
+    referencedImageId?: string;
     ReferencedFrameNumber?: string;
-    SCOORD3DGroup?: Record<string, unknown>;
+    SCOORD3DGroup?: ScoordType;
     FrameOfReferenceUID?: string;
 };
 
@@ -95,7 +115,7 @@ export interface MeasurementAdapter {
     getMeasurementData(
         measurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
+        imageToWorldCoords: (imageReferenceId: string, point) => CSTypes.Point3,
         metadata,
         trackingIdentifier: string
     );
@@ -252,7 +272,7 @@ export default class MeasurementReport {
         toolType,
         sopInstanceUIDToImageIdMap,
         metadata
-    }): SpatialCoordinatesData {
+    }) {
         const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
         const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
             ReferencedSOPSequence;
@@ -264,6 +284,7 @@ export default class MeasurementReport {
             referencedImageId
         );
 
+        const annotationUID = DicomMetaDictionary.uid();
         return {
             SCOORDGroup,
             ReferencedSOPSequence,
@@ -273,13 +294,15 @@ export default class MeasurementReport {
                 description: undefined,
                 sopInstanceUid: ReferencedSOPInstanceUID,
                 annotation: {
-                    annotationUID: DicomMetaDictionary.uid(),
+                    data: {
+                        annotationUID
+                    },
+                    annotationUID,
                     metadata: {
                         toolName: toolType,
                         referencedImageId,
                         FrameOfReferenceUID:
-                            imagePlaneModule.frameOfReferenceUID,
-                        label: ""
+                            imagePlaneModule.frameOfReferenceUID
                     }
                 }
             }
@@ -297,11 +320,13 @@ export default class MeasurementReport {
                 description: undefined,
                 annotation: {
                     annotationUID: DicomMetaDictionary.uid(),
+                    data: {
+                        annotationUID: null
+                    },
                     metadata: {
                         toolName: toolType,
                         FrameOfReferenceUID:
-                            SCOORD3DGroup.ReferencedFrameOfReferenceUID,
-                        label: ""
+                            SCOORD3DGroup.ReferencedFrameOfReferenceUID
                     }
                 }
             }
@@ -342,7 +367,7 @@ export default class MeasurementReport {
         findingGroup,
         findingSiteGroups,
         toolType
-    }) {
+    }): SpatialCoordinatesData {
         const {
             state,
             SCOORDGroup,
@@ -375,12 +400,14 @@ export default class MeasurementReport {
             defaultState.description = defaultState.finding.CodeMeaning;
         }
 
-        defaultState.annotation.metadata.label =
+        defaultState.annotation.data.label =
             MeasurementReport.getCornerstoneLabelFromDefaultState(defaultState);
 
         return {
             defaultState,
+            state: defaultState,
             NUMGroup,
+            scoord: SCOORD3DGroup || SCOORDGroup,
             SCOORDGroup,
             ReferencedSOPSequence,
             ReferencedSOPInstanceUID,
@@ -394,7 +421,8 @@ export default class MeasurementReport {
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         metadata,
-        toolType
+        toolType,
+        worldToImageCoords?
     ): SetupMeasurementData {
         const { ContentSequence } = MeasurementGroup;
 
@@ -410,7 +438,7 @@ export default class MeasurementReport {
             group => group.ValueType === "NUM"
         );
 
-        return this.processSpatialCoordinatesGroup({
+        const spatialGroup = this.processSpatialCoordinatesGroup({
             NUMGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
@@ -418,6 +446,17 @@ export default class MeasurementReport {
             findingSiteGroups,
             toolType
         });
+
+        const { referencedImageId } =
+            (spatialGroup.spatialGroup.referencedImageId = referencedImageId);
+        const isMeasurement3d = !!spatialGroup.SCOORD3DGroup;
+        spatialGroup.scoordArgs = {
+            referencedImageId,
+            imageToWorldCoords,
+            isMeasurement3d
+        };
+
+        return spatialGroup;
     }
 
     static generateReferencedSOPSequence({

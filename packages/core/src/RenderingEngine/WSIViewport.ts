@@ -74,6 +74,19 @@ class WSIViewport extends Viewport {
     upper: 255,
   };
 
+  /**
+   * feFilter is an inline string value for the CSS filter on the video
+   * CSS filters can reference SVG filters, so for the typical use case here
+   * the CSS filter is actually an link link to a SVG filter.
+   */
+  private feFilter: string;
+
+  /**
+   * An average white point value, used to color balance the image so that
+   * the given white is mapped to [255,255,255] via multiplication per channel.
+   */
+  private averageWhite: [number, number, number];
+
   constructor(props: ViewportInput) {
     super({
       ...props,
@@ -218,15 +231,54 @@ class WSIViewport extends Viewport {
   }
 
   public setProperties(props: WSIViewportProperties) {
-    // No-op - todo implement this
+    if (props.voiRange) {
+      this.setVOI(props.voiRange);
+    }
   }
 
   public getProperties = (): WSIViewportProperties => {
-    return {};
+    return {
+      voiRange: { ...this.voiRange },
+    };
   };
 
+  /**
+   * resetProperties resets the properties of the viewport to the default
+   * values.  It is called by the resetViewer command in OHIF which is called when using
+   * the reset toolbar button.
+   */
   public resetProperties() {
-    this.setProperties({});
+    this.setProperties({
+      voiRange: {
+        lower: 0,
+        upper: 255,
+      },
+    });
+  }
+
+  /**
+   * setVOI sets the window level and window width for the image.  This is
+   * used to set the contrast and brightness of the image.
+   * feFilter is an inline string value for the CSS filter on the openLayers
+   * CSS filters can reference SVG filters, so for the typical use case here
+   * the CSS filter is actually an link link to a SVG filter.
+   * the WSI viewport has two openlayers canvases; one for the main display and one for
+   * the map overlay on the bottom left corner.
+   */
+  public setVOI(voiRange: VOIRange): void {
+    this.voiRange = voiRange;
+    const feFilter = this.setColorTransform(voiRange, this.averageWhite);
+    const olCanvases = this.map
+      .getViewport()
+      .querySelectorAll('.ol-layers canvas');
+    olCanvases.forEach((canvas) => {
+      canvas.style.filter = feFilter;
+    });
+  }
+
+  public setAverageWhite(averageWhite: [number, number, number]) {
+    this.averageWhite = averageWhite;
+    this.setColorTransform(this.voiRange, averageWhite);
   }
 
   protected getScalarData() {
