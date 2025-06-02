@@ -2,6 +2,7 @@ import { vec3 } from "gl-matrix";
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { scoordToWorld } from "../helpers";
 
 type Point3 = [number, number, number];
 
@@ -21,7 +22,7 @@ class EllipticalROI extends BaseAdapter3D {
         metadata
     ) {
         const {
-            defaultState,
+            state,
             NUMGroup,
             SCOORDGroup,
             SCOORD3DGroup,
@@ -33,58 +34,22 @@ class EllipticalROI extends BaseAdapter3D {
             EllipticalROI.toolType
         );
 
-        if (SCOORDGroup) {
-            return this.getMeasurementDataFromScoord({
-                defaultState,
-                SCOORDGroup,
-                imageToWorldCoords,
-                metadata,
-                NUMGroup,
-                ReferencedFrameNumber
-            });
-        } else if (SCOORD3DGroup) {
-            return this.getMeasurementDataFromScoord3D({
-                defaultState,
-                SCOORD3DGroup
-            });
-        } else {
-            throw new Error(
-                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
-            );
-        }
-    }
+        const isMeasurement3d = !!SCOORD3DGroup;
+        const scoord = isMeasurement3d ? SCOORD3DGroup : SCOORDGroup;
+        const scoordArgs = {
+            isMeasurement3d,
+            tool: state.annotation,
+            imageToWorldCoords
+        };
 
-    static getMeasurementDataFromScoord({
-        defaultState,
-        SCOORDGroup,
-        imageToWorldCoords,
-        metadata,
-        NUMGroup,
-        ReferencedFrameNumber
-    }) {
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
+        const referencedImageId = state.annotation.metadata.referencedImageId;
 
-        const { GraphicData } = SCOORDGroup;
+        const worldCoords = scoordToWorld(scoordArgs, scoord);
 
-        // GraphicData is ordered as [majorAxisStartX, majorAxisStartY, majorAxisEndX, majorAxisEndY, minorAxisStartX, minorAxisStartY, minorAxisEndX, minorAxisEndY]
-        // But Cornerstone3D points are ordered as top, bottom, left, right for the
-        // ellipse so we need to identify if the majorAxis is horizontal or vertical
-        // in the image plane and then choose the correct points to use for the ellipse.
-        const pointsWorld: Point3[] = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const worldPos = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-
-            pointsWorld.push(worldPos);
-        }
-
-        const majorAxisStart = vec3.fromValues(...pointsWorld[0]);
-        const majorAxisEnd = vec3.fromValues(...pointsWorld[1]);
-        const minorAxisStart = vec3.fromValues(...pointsWorld[2]);
-        const minorAxisEnd = vec3.fromValues(...pointsWorld[3]);
+        const majorAxisStart = vec3.fromValues(...worldCoords[0]);
+        const majorAxisEnd = vec3.fromValues(...worldCoords[1]);
+        const minorAxisStart = vec3.fromValues(...worldCoords[2]);
+        const minorAxisEnd = vec3.fromValues(...worldCoords[3]);
 
         const majorAxisVec = vec3.create();
         vec3.sub(majorAxisVec, majorAxisEnd, majorAxisStart);
@@ -128,24 +93,18 @@ class EllipticalROI extends BaseAdapter3D {
 
         let ellipsePoints = [];
         if (Math.abs(absoluteOfMajorDotProduct - 1) < EPSILON) {
-            ellipsePoints = [
-                pointsWorld[0],
-                pointsWorld[1],
-                pointsWorld[2],
-                pointsWorld[3]
-            ];
+            ellipsePoints = scoordToWorld(scoordArgs, pointsWorld);
         } else if (Math.abs(absoluteOfMinorDotProduct - 1) < EPSILON) {
-            ellipsePoints = [
+            ellipsePoints = scoordToWorld(scoordArgs, [
                 pointsWorld[2],
                 pointsWorld[3],
                 pointsWorld[0],
                 pointsWorld[1]
-            ];
+            ]);
         } else {
             console.warn("OBLIQUE ELLIPSE NOT YET SUPPORTED");
+            return null;
         }
-
-        const state = defaultState;
 
         state.annotation.data = {
             handles: {
@@ -163,60 +122,6 @@ class EllipticalROI extends BaseAdapter3D {
                 }
             },
             frameNumber: ReferencedFrameNumber
-        };
-
-        return state;
-    }
-
-    static getMeasurementDataFromScoord3D({ defaultState, SCOORD3DGroup }) {
-        const { GraphicData } = SCOORD3DGroup;
-
-        // GraphicData is ordered as [majorAxisStartX, majorAxisStartY, majorAxisEndX, majorAxisEndY, minorAxisStartX, minorAxisStartY, minorAxisEndX, minorAxisEndY]
-        // But Cornerstone3D points are ordered as top, bottom, left, right for the
-        // ellipse so we need to identify if the majorAxis is horizontal or vertical
-        // in the image plane and then choose the correct points to use for the ellipse.
-        const pointsWorld: Point3[] = [];
-        for (let i = 0; i < GraphicData.length; i += 3) {
-            const worldPos = [
-                GraphicData[i],
-                GraphicData[i + 1],
-                GraphicData[i + 2]
-            ];
-
-            pointsWorld.push(worldPos);
-        }
-
-        const majorAxisStart = vec3.fromValues(...pointsWorld[0]);
-        const majorAxisEnd = vec3.fromValues(...pointsWorld[1]);
-        const minorAxisStart = vec3.fromValues(...pointsWorld[2]);
-        const minorAxisEnd = vec3.fromValues(...pointsWorld[3]);
-
-        const majorAxisVec = vec3.create();
-        vec3.sub(majorAxisVec, majorAxisEnd, majorAxisStart);
-
-        // normalize majorAxisVec to avoid scaling issues
-        vec3.normalize(majorAxisVec, majorAxisVec);
-
-        const minorAxisVec = vec3.create();
-        vec3.sub(minorAxisVec, minorAxisEnd, minorAxisStart);
-        vec3.normalize(minorAxisVec, minorAxisVec);
-
-        const state = defaultState;
-
-        state.annotation.data = {
-            handles: {
-                points: [
-                    majorAxisStart,
-                    majorAxisEnd,
-                    minorAxisStart,
-                    minorAxisEnd
-                ],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
-            },
-            cachedStats: {}
         };
 
         return state;
