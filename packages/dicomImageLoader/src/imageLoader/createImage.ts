@@ -243,7 +243,6 @@ function createImage(
               imageData.data[j++] = arr[i];
               imageData.data[j++] = arr[i + 1];
               imageData.data[j++] = arr[i + 2];
-              imageData.data[j++] = 255;
             }
           }
 
@@ -303,7 +302,6 @@ function createImage(
           getCanvas: undefined,
           numberOfComponents: imageFrame.samplesPerPixel,
         };
-        console.debug('image.imageFrame.pixelData', image.imageFrame.pixelData);
 
         // CPU Rendering
         if (isColorImage) {
@@ -352,7 +350,6 @@ function createImage(
             imageFrame.imageData = imageData;
             ctx.putImageData(imageFrame.imageData, 0, 0);
             lastImageIdDrawn = imageId;
-            console.debug('CPU', imageFrame.pixelData);
             return canvas;
           };
         }
@@ -379,6 +376,14 @@ function createImage(
           // 256/128 for an identity transform.
           image.windowWidth = 256;
           image.windowCenter = 128;
+          if (useRGBA) {
+            // If we are using RGBA, we need to set the number of components to 4
+            image.numberOfComponents = 4;
+          } else {
+            // If we are not using RGBA, we need to set the number of components to 3
+            // as we are using RGB
+            image.numberOfComponents = 3;
+          }
         }
 
         // set the ww/wc to cover the dynamic range of the image if no values are supplied
@@ -392,7 +397,6 @@ function createImage(
           image.windowWidth = maxVoi - minVoi;
           image.windowCenter = (maxVoi + minVoi) / 2;
         }
-        console.debug('GPU', imageFrame.pixelData);
         resolve(image);
       }, reject);
     }
