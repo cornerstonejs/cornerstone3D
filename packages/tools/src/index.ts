@@ -83,6 +83,7 @@ import {
   WholeBodySegmentTool,
   LabelmapBaseTool,
   SegmentLabelTool,
+  LabelMapEditWithContourTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -185,6 +186,7 @@ export {
   RegionSegmentTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
+  LabelMapEditWithContourTool,
   // Spline classes
   splines,
   // Version
