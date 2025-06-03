@@ -1,11 +1,13 @@
 import type { Types } from '@cornerstonejs/core';
-import { Enums, RenderingEngine } from '@cornerstonejs/core';
+import {
+  Enums,
+  getRenderingEngine,
+  RenderingEngine,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
-  addSliderToToolbar,
   addDropdownToToolbar,
-  addToggleButtonToToolbar,
   createImageIdsAndCacheMetaData,
   createInfoSection,
   initDemo,
@@ -13,7 +15,6 @@ import {
   addManipulationBindings,
   contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
-import type { Types as cstTypes } from '@cornerstonejs/tools';
 
 // This is for debugging purposes
 console.warn(
@@ -37,12 +38,13 @@ const segmentationId = `SEGMENTATION_ID`;
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 let activeSegmentIndex = 0;
+const renderingEngineId = 'myRenderingEngine';
 
 // ======== Set up page ======== //
 
 setTitleAndDescription(
-  'Spline Segmentation ROI Tool',
-  'Here we demonstrate how to use spline segmentation ROI tools on a single viewport'
+  'Logical operations',
+  'Here we demonstrate how to use logical operations to combine two segments in a new segment'
 );
 
 const size = '500px';
@@ -62,17 +64,6 @@ element.style.height = size;
 viewportGrid.appendChild(element);
 
 content.appendChild(viewportGrid);
-
-createInfoSection(content, { ordered: true })
-  .addInstruction('Select a segmentation index')
-  .addInstruction('Select a spline curve type')
-  .addInstruction('Draw a spline curve on the viewport')
-  .addInstruction('Repeat the steps 1-3 as many times as you want')
-  .addInstruction(
-    'Notice that each segment index has a different color assigned to it'
-  )
-  .addInstruction('Change the style for the segmentation')
-  .addInstruction('Confirm the style is applied properly');
 
 function updateActiveSegmentIndex(segmentIndex: number): void {
   activeSegmentIndex = segmentIndex;
@@ -156,84 +147,56 @@ addDropdownToToolbar({
   },
 });
 
-addToggleButtonToToolbar({
-  title: 'Show/Hide All Segments',
-  onClick: function (toggle) {
-    const segmentsVisibility = getSegmentsVisibilityState();
+function performLogicalOperation(operation: number = 1) {
+  const activeSeg = segmentation.getActiveSegmentation(viewportId);
+  const renderEngine = getRenderingEngine(renderingEngineId);
+  const viewport = renderEngine.getViewport(viewportId);
 
-    segmentation.config.visibility.setSegmentationRepresentationVisibility(
-      viewportId,
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-      !toggle
-    );
+  if (!activeSeg) {
+    console.log('No active segmentation detected');
+    return;
+  }
 
-    segmentsVisibility.fill(!toggle);
+  if (!activeSeg.representationData.Contour) {
+    console.log('No contour representation found');
+    return;
+  }
+
+  const representationData = activeSeg.representationData.Contour;
+  const { annotationUIDsMap } = representationData;
+
+  const { addition, subtraction } =
+    cornerstoneTools.utilities.contourSegmentation;
+  if (annotationUIDsMap) {
+    const segmentIndexes = Array.from(annotationUIDsMap.keys());
+    if (segmentIndexes.length > 1) {
+      if (operation == 1) {
+        addition(viewport, activeSeg, segmentIndexes[0], segmentIndexes[1], {
+          name: 'Combined Addition',
+          segmentIndex: Math.max(...segmentIndexes) + 1,
+          color: 'rgb(0,0,0)',
+        });
+      } else {
+        subtraction(viewport, activeSeg, segmentIndexes[0], segmentIndexes[1], {
+          name: 'Combined',
+          segmentIndex: Math.max(...segmentIndexes) + 1,
+          color: 'rgb(0,0,0)',
+        });
+      }
+    }
+  }
+}
+addButtonToToolbar({
+  title: 'Combine two segments',
+  onClick: function () {
+    performLogicalOperation(1);
   },
 });
 
 addButtonToToolbar({
-  title: 'Show/Hide Current Segment',
+  title: 'Subtract two segments',
   onClick: function () {
-    const segmentsVisibility = getSegmentsVisibilityState();
-    const visible = !segmentsVisibility[activeSegmentIndex];
-
-    segmentation.config.visibility.setSegmentIndexVisibility(
-      viewportId,
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
-      activeSegmentIndex,
-      visible
-    );
-
-    segmentsVisibility[activeSegmentIndex] = visible;
-  },
-});
-
-addSliderToToolbar({
-  id: 'outlineWidth',
-  title: 'Outline Thickness',
-  range: [0.1, 10],
-  step: 0.1,
-  defaultValue: 1,
-  onSelectedValueChange: (value) => {
-    updateSegmentationConfig({ outlineWidth: Number(value) });
-  },
-});
-
-addSliderToToolbar({
-  id: 'outlineOpacity',
-  title: 'Outline Opacity',
-  range: [0, 1],
-  step: 0.05,
-  defaultValue: 1,
-  onSelectedValueChange: (value) => {
-    updateSegmentationConfig({ outlineOpacity: Number(value) });
-  },
-});
-
-addSliderToToolbar({
-  id: 'fillAlpha',
-  title: 'Fill Alpha',
-  range: [0, 1],
-  step: 0.05,
-  defaultValue: 0.5,
-  onSelectedValueChange: (value) => {
-    updateSegmentationConfig({ fillAlpha: Number(value) });
-  },
-});
-
-addSliderToToolbar({
-  id: 'outlineDash',
-  title: 'Outline Dash',
-  range: [0, 10],
-  step: 1,
-  defaultValue: 0,
-  onSelectedValueChange: (value) => {
-    const outlineDash = value === '0' ? undefined : `${value},${value}`;
-    updateSegmentationConfig({ outlineDash: outlineDash });
+    performLogicalOperation(2);
   },
 });
 
@@ -304,7 +267,6 @@ async function run() {
   });
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports

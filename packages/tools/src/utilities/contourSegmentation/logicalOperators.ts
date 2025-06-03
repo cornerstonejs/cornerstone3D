@@ -81,7 +81,7 @@ export function addition(
   const { polyLinesCanvas1, polyLinesCanvas2 } =
     extractPolylines(viewport, segmentation, segmentIndex1, segmentIndex2) ||
     {};
-  if (!polyLinesCanvas1 || polyLinesCanvas2) {
+  if (!polyLinesCanvas1 || !polyLinesCanvas2) {
     return;
   }
   const polylinesMerged = unifyPolylineSets(polyLinesCanvas1, polyLinesCanvas2);
@@ -115,7 +115,7 @@ export function subtraction(
   const { polyLinesCanvas1, polyLinesCanvas2 } =
     extractPolylines(viewport, segmentation, segmentIndex1, segmentIndex2) ||
     {};
-  if (!polyLinesCanvas1 || polyLinesCanvas2) {
+  if (!polyLinesCanvas1 || !polyLinesCanvas2) {
     return;
   }
   const polylinesMerged = subtractPolylineSets(
