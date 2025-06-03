@@ -117,12 +117,10 @@ function processSequentialIntersections(
     allAnnotationsToRemove.push(targetAnnotation);
   });
 
-  // Determine operation type based on first intersection
+  // Determine operation type based on whether source start point is inside any target polyline
   const sourceStartPoint = sourcePolyline[0];
-  const firstTargetPolyline = mergeOperations[0].targetPolyline;
-  const shouldMerge = math.polyline.containsPoint(
-    firstTargetPolyline,
-    sourceStartPoint
+  const shouldMerge = mergeOperations.some(({ targetPolyline }) =>
+    math.polyline.containsPoint(targetPolyline, sourceStartPoint)
   );
 
   if (shouldMerge) {

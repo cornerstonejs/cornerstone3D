@@ -276,8 +276,12 @@ function mergePolylines(
 
   const mergedPolyline = [startPoint.coordinates];
   let currentPoint = startPoint.next;
+  let iterationCount = 0;
+  const maxIterations = targetPolyline.length + sourcePolyline.length + 1000; // Safety limit
 
-  while (currentPoint !== startPoint) {
+  while (currentPoint !== startPoint && iterationCount < maxIterations) {
+    iterationCount++;
+
     if (
       currentPoint.type === PolylinePointType.Intersection &&
       (<PolylineIntersectionPoint>currentPoint).cloned
@@ -288,6 +292,20 @@ function mergePolylines(
 
     mergedPolyline.push(currentPoint.coordinates);
     currentPoint = currentPoint.next;
+
+    // Additional safety check for null/undefined next pointer
+    if (!currentPoint) {
+      console.warn(
+        'Broken linked list detected in mergePolylines, breaking loop'
+      );
+      break;
+    }
+  }
+
+  if (iterationCount >= maxIterations) {
+    console.warn(
+      'Maximum iterations reached in mergePolylines, possible infinite loop detected'
+    );
   }
 
   return mergedPolyline;
@@ -318,13 +336,27 @@ function subtractPolylines(
   let startPoint: PolylinePoint = null;
   const subtractedPolylines = [];
 
-  while ((startPoint = getUnvisitedOutsidePoint(targetPolylinePoints))) {
+  let outerIterationCount = 0;
+  const maxOuterIterations = targetPolyline.length * 2; // Safety limit for outer loop
+
+  while (
+    (startPoint = getUnvisitedOutsidePoint(targetPolylinePoints)) &&
+    outerIterationCount < maxOuterIterations
+  ) {
+    outerIterationCount++;
     const subtractedPolyline = [startPoint.coordinates];
     let currentPoint = startPoint.next;
+    let innerIterationCount = 0;
+    const maxInnerIterations =
+      targetPolyline.length + sourcePolyline.length + 1000; // Safety limit for inner loop
 
     startPoint.visited = true;
 
-    while (currentPoint !== startPoint) {
+    while (
+      currentPoint !== startPoint &&
+      innerIterationCount < maxInnerIterations
+    ) {
+      innerIterationCount++;
       currentPoint.visited = true;
 
       if (
@@ -337,9 +369,29 @@ function subtractPolylines(
 
       subtractedPolyline.push(currentPoint.coordinates);
       currentPoint = currentPoint.next;
+
+      // Additional safety check for null/undefined next pointer
+      if (!currentPoint) {
+        console.warn(
+          'Broken linked list detected in subtractPolylines, breaking inner loop'
+        );
+        break;
+      }
+    }
+
+    if (innerIterationCount >= maxInnerIterations) {
+      console.warn(
+        'Maximum inner iterations reached in subtractPolylines, possible infinite loop detected'
+      );
     }
 
     subtractedPolylines.push(subtractedPolyline);
+  }
+
+  if (outerIterationCount >= maxOuterIterations) {
+    console.warn(
+      'Maximum outer iterations reached in subtractPolylines, possible infinite loop detected'
+    );
   }
 
   return subtractedPolylines;
