@@ -172,15 +172,15 @@ function performLogicalOperation(operation: number = 1) {
     if (segmentIndexes.length > 1) {
       if (operation == 1) {
         addition(viewport, activeSeg, segmentIndexes[0], segmentIndexes[1], {
-          name: 'Combined Addition',
+          label: 'Combined Addition',
           segmentIndex: Math.max(...segmentIndexes) + 1,
-          color: 'rgb(0,0,0)',
+          color: 'rgb(50, 130, 162)',
         });
       } else {
         subtraction(viewport, activeSeg, segmentIndexes[0], segmentIndexes[1], {
-          name: 'Combined',
+          label: 'Combined',
           segmentIndex: Math.max(...segmentIndexes) + 1,
-          color: 'rgb(0,0,0)',
+          color: 'rgb(239, 220, 9)',
         });
       }
     }

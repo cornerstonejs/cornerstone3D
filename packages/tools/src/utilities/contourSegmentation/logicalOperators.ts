@@ -71,12 +71,28 @@ function extractPolylines(
   return { polyLinesCanvas1, polyLinesCanvas2 };
 }
 
+function addSegmentInSegmentation(
+  segmentation,
+  { segmentIndex, label, color }
+) {
+  if (!segmentation?.segments) {
+    return;
+  }
+  segmentation.segments[segmentIndex] = {
+    active: false,
+    locked: false,
+    label,
+    segmentIndex,
+    cachedStats: {},
+    color,
+  };
+}
 export function addition(
   viewport: Types.IViewport,
   segmentation: Segmentation,
   segmentIndex1: number,
   segmentIndex2: number,
-  { name, segmentIndex, color }
+  { label, segmentIndex, color }
 ) {
   const { polyLinesCanvas1, polyLinesCanvas2 } =
     extractPolylines(viewport, segmentation, segmentIndex1, segmentIndex2) ||
@@ -101,8 +117,8 @@ export function addition(
   if (!annotationUIDsMap) {
     return;
   }
-
   annotationUIDsMap.set(segmentIndex, annotationUIDsMapNew.get(segmentIndex));
+  addSegmentInSegmentation(segmentation, { segmentIndex, color, label });
 }
 
 export function subtraction(
@@ -110,7 +126,7 @@ export function subtraction(
   segmentation: Segmentation,
   segmentIndex1: number,
   segmentIndex2: number,
-  { name, segmentIndex, color }
+  { label, segmentIndex, color }
 ) {
   const { polyLinesCanvas1, polyLinesCanvas2 } =
     extractPolylines(viewport, segmentation, segmentIndex1, segmentIndex2) ||
@@ -141,4 +157,5 @@ export function subtraction(
   }
 
   annotationUIDsMap.set(segmentIndex, annotationUIDsMapNew.get(segmentIndex));
+  addSegmentInSegmentation(segmentation, { segmentIndex, color, label });
 }
