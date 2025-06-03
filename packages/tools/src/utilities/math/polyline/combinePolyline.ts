@@ -2,6 +2,8 @@ import type { Types } from '@cornerstonejs/core';
 import * as mathPoint from '../point';
 import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes';
 import containsPoint from './containsPoint';
+import containsPoints from './containsPoints';
+import intersectPolyline from './intersectPolyline';
 import getNormal2 from './getNormal2';
 import { glMatrix, vec3 } from 'gl-matrix';
 import getLinesIntersection from './getLinesIntersection';
@@ -262,6 +264,18 @@ function mergePolylines(
     sourcePolyline = sourcePolyline.slice().reverse();
   }
 
+  // Check if target polyline is completely surrounded by source polyline
+  const lineSegmentsIntersect = intersectPolyline(
+    sourcePolyline,
+    targetPolyline
+  );
+  const targetContainedInSource =
+    !lineSegmentsIntersect && containsPoints(sourcePolyline, targetPolyline);
+
+  if (targetContainedInSource) {
+    return sourcePolyline.slice();
+  }
+
   const { targetPolylinePoints } = getSourceAndTargetPointsList(
     targetPolyline,
     sourcePolyline
@@ -327,6 +341,18 @@ function subtractPolylines(
   // the same
   if (!glMatrix.equals(-1, dotNormals)) {
     sourcePolyline = sourcePolyline.slice().reverse();
+  }
+
+  // Check if target polyline is completely surrounded by source polyline
+  const lineSegmentsIntersect = intersectPolyline(
+    sourcePolyline,
+    targetPolyline
+  );
+  const targetContainedInSource =
+    !lineSegmentsIntersect && containsPoints(sourcePolyline, targetPolyline);
+
+  if (targetContainedInSource) {
+    return [];
   }
 
   const { targetPolylinePoints } = getSourceAndTargetPointsList(
