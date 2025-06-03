@@ -74,6 +74,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     handleIndex?: number;
     newAnnotation?: boolean;
     hasMoved?: boolean;
+    centerWorld?: Types.Point3; // Ajouté pour _dragDrawCallback hérité
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
@@ -198,10 +199,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
               bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
-          points: [[...worldPos], [...worldPos]] as [
-            Types.Point3, // center
-            Types.Point3 // end
-          ],
+          points: [
+            [...worldPos], // center
+            [...worldPos], // top
+            [...worldPos], // bottom
+            [...worldPos], // left
+            [...worldPos], // right
+          ] as [Types.Point3, Types.Point3, Types.Point3, Types.Point3, Types.Point3],
           activeHandleIndex: null,
         },
         cachedStats: {
@@ -228,6 +232,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     this.editData = {
       annotation,
       viewportIdsToRender,
+      centerWorld: worldPos,
       newAnnotation: true,
       hasMoved: false,
     };
@@ -239,6 +244,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
+    // @ts-ignore - Supposer que le type CircleROIStartEndThresholdAnnotation sera mis à jour
     return annotation;
   };
 
@@ -342,12 +348,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
-      ) as [Types.Point2, Types.Point2];
+      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2, Types.Point2];
       const center = canvasCoordinates[0];
 
-      const radius = getCanvasCircleRadius(canvasCoordinates);
+      const radius = getCanvasCircleRadius([canvasCoordinates[0], canvasCoordinates[1]]);
       const { centerPointRadius } = this.configuration;
-      const canvasCorners = getCanvasCircleCorners(canvasCoordinates);
+      const canvasCorners = getCanvasCircleCorners([canvasCoordinates[0], canvasCoordinates[1]]);
       // range of slices to render based on the start and end slice, like
       // np.arange
 
@@ -433,7 +439,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         isMiddleSlice
       ) {
         // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+        activeHandleCanvasCoords = canvasCoordinates;
       }
 
       if (activeHandleCanvasCoords) {
@@ -534,7 +540,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           textBoxUID,
           textLines,
           textBoxPosition,
-          canvasCoordinates,
+          [canvasCoordinates[0], canvasCoordinates[1]],
           {},
           options
         );
@@ -562,39 +568,18 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { startCoordinate, endCoordinate } = data;
     const { points } = data.handles;
 
-    const startIJK = transformWorldToIndex(imageData, points[0]);
-    const endIJK = transformWorldToIndex(imageData, points[0]);
-
     const handlesToStart = csUtils.deepClone(points) as typeof points;
 
-    const startWorld = vec3.create();
-    imageData.indexToWorldVec3(startIJK, startWorld);
+    const startWorld = vec3.clone(points[0]);
+    const endWorld = vec3.clone(points[0]);
+    const indexOfNormal = this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    const endWorld = vec3.create();
-    imageData.indexToWorldVec3(endIJK, endWorld);
+    startWorld[indexOfNormal] = startCoordinate;
+    endWorld[indexOfNormal] = endCoordinate;
 
-    // substitute the end slice index 2 with startIJK index 2
-
-    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
-      startWorld[2] = startCoordinate;
-      endWorld[2] = endCoordinate;
-      handlesToStart[0][2] = startCoordinate;
-      handlesToStart[1][2] = startCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
-    ) {
-      startWorld[0] = startCoordinate;
-      endWorld[0] = endCoordinate;
-      handlesToStart[0][0] = startCoordinate;
-      handlesToStart[1][0] = startCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
-    ) {
-      startWorld[1] = startCoordinate;
-      endWorld[1] = endCoordinate;
-      handlesToStart[0][1] = startCoordinate;
-      handlesToStart[1][1] = startCoordinate;
-    }
+    handlesToStart.forEach((handlePoint) => {
+      handlePoint[indexOfNormal] = startCoordinate;
+    });
 
     // distance between start and end slice in the world coordinate
     const distance = vec3.distance(startWorld, endWorld);
@@ -602,17 +587,19 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // for each point inside points, navigate in the direction of the viewPlaneNormal
     // with amount of spacingInNormal, and calculate the next slice until we reach the distance
     const newProjectionPoints = [];
-    for (let dist = 0; dist < distance; dist += spacingInNormal) {
+    if (distance >= 0) {
+      newProjectionPoints.push(csUtils.deepClone(handlesToStart).map(p => Array.from(p as vec3)));
+    }
+    for (let dist = spacingInNormal; dist <= distance; dist += spacingInNormal) {
       newProjectionPoints.push(
         handlesToStart.map((point) => {
           const newPoint = vec3.create();
-          //@ts-ignore
+          // @ts-ignore
           vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
           return Array.from(newPoint);
         })
       );
     }
-
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 
@@ -633,25 +620,27 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     const canvasCoordinates = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)
-    );
-    const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
-      getCanvasCircleCorners(canvasCoordinates)
-    );
-    const pos1 = viewport.canvasToWorld(topLeftCanvas);
-    const pos2 = viewport.canvasToWorld(bottomRightCanvas);
+    ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2, Types.Point2];
+
+    // Utiliser le centre et la poignée du haut pour les calculs de dimensions
+    const baseTopLeftCanvas = getCanvasCircleCorners([canvasCoordinates[0], canvasCoordinates[1]])[0];
+    const baseBottomRightCanvas = getCanvasCircleCorners([canvasCoordinates[0], canvasCoordinates[1]])[1];
+
+    const basePos1 = viewport.canvasToWorld(baseTopLeftCanvas);
+    const basePos2 = viewport.canvasToWorld(baseBottomRightCanvas);
 
     const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
       viewPlaneNormal,
       viewUp,
-      pos1,
-      pos2
+      basePos1,
+      basePos2
     );
-    const measureInfo = getCalibratedLengthUnitsAndScale(image, data.handles);
+    const measureInfo = getCalibratedLengthUnitsAndScale(image, data.handles.points);
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
-        (worldWidth / measureInfo.scale / 2) *
-        (worldHeight / aspect / measureInfo.scale / 2)
+      (worldWidth / measureInfo.scale / 2) *
+      (worldHeight / aspect / measureInfo.scale / 2)
     );
 
     const modalityUnitOptions = {
@@ -683,7 +672,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       );
 
       const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
-        getCanvasCircleCorners(canvasCoordinates)
+        getCanvasCircleCorners([canvasCoordinates[0], canvasCoordinates[1]])
       );
 
       const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
@@ -876,6 +865,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const indexOfDirection =
       this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
+    // @ts-ignore - pos peut être un nombre si déjà extrait, ou un tableau de nombres (vec3/Point3)
     return pos[indexOfDirection];
   }
 }
