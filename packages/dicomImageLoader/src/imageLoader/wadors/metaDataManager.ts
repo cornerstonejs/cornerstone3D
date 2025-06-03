@@ -105,9 +105,9 @@ export function isMultiframeIOD(data): boolean | undefined {
       // This is a known multiframe IOD
       return true;
     }
-  }
-  if (conditionalMultiframeIODs[sopClassUid] !== undefined) {
-    // TODO
+    // if (conditionalMultiframeIODs[sopClassUid.trim()] !== undefined) {
+    //   // TODO : let's use fallback legacy mechanism
+    // }
   }
   return undefined;
 }
