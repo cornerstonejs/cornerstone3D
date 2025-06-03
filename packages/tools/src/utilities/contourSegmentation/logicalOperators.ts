@@ -1,7 +1,6 @@
-import type { Types } from '@cornerstonejs/core';
+import { getEnabledElementByViewportId, type Types } from '@cornerstonejs/core';
 import { getAnnotation } from '../../stateManagement';
 import type {
-  Segmentation,
   ContourSegmentationData,
   ContourSegmentationAnnotation,
 } from '../../types';
@@ -9,8 +8,26 @@ import {
   convertContourPolylineToCanvasSpace,
   convertContourPolylineToWorld,
 } from './sharedOperations';
-import { subtractPolylineSets, unifyPolylineSets } from './unifyPolylineSets';
+import {
+  intersectPolylines,
+  subtractPolylineSets,
+  unifyPolylineSets,
+  xorPolylinesSets,
+} from './unifyPolylineSets';
 import addPolylinesToSegmentation from './addPolylinesToSegmentation';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import { getViewportIdsWithSegmentation } from '../../stateManagement/segmentation/getViewportIdsWithSegmentation';
+
+export type SegmentInfo = {
+  segmentationId: string;
+  segmentIndex: number;
+  label?: string;
+  color?: string;
+};
+
+export type OperatorOptions = {
+  resultSegment: SegmentInfo;
+};
 
 function getPolylines(
   contourRepresentationData: ContourSegmentationData,
@@ -18,7 +35,10 @@ function getPolylines(
 ) {
   // loop over all annotations in the segment and flatten their polylines
   const polylines = [];
-  const { annotationUIDsMap } = contourRepresentationData;
+  const { annotationUIDsMap } = contourRepresentationData || {};
+  if (!annotationUIDsMap?.has(segmentIndex)) {
+    return;
+  }
   const annotationUIDs = annotationUIDsMap.get(segmentIndex);
 
   for (const annotationUID of annotationUIDs) {
@@ -30,37 +50,36 @@ function getPolylines(
   return polylines;
 }
 
-function extractPolylines(
+function extractPolylinesInCanvasSpace(
   viewport: Types.IViewport,
-  segmentation: Segmentation,
-  segmentIndex1: number,
-  segmentIndex2: number
+  segment1: SegmentInfo,
+  segment2: SegmentInfo
 ) {
-  if (!segmentation) {
+  const segmentation1 = getSegmentation(segment1.segmentationId);
+  const segmentation2 = getSegmentation(segment2.segmentationId);
+  if (!segmentation1 || !segmentation2) {
     return;
   }
 
-  if (!segmentation.representationData.Contour) {
+  if (
+    !segmentation1.representationData.Contour ||
+    !segmentation2.representationData.Contour
+  ) {
     return;
   }
 
-  const contourRepresentationData = segmentation.representationData
-    .Contour as ContourSegmentationData;
-  const { annotationUIDsMap } = contourRepresentationData;
-  if (!annotationUIDsMap) {
+  const polyLines1 = getPolylines(
+    segmentation1.representationData.Contour,
+    segment1.segmentIndex
+  );
+  const polyLines2 = getPolylines(
+    segmentation2.representationData.Contour,
+    segment2.segmentIndex
+  );
+
+  if (!polyLines1 || !polyLines2) {
     return;
   }
-
-  if (!annotationUIDsMap.get(segmentIndex1)) {
-    return;
-  }
-
-  if (!annotationUIDsMap.get(segmentIndex2)) {
-    return;
-  }
-
-  const polyLines1 = getPolylines(contourRepresentationData, segmentIndex1);
-  const polyLines2 = getPolylines(contourRepresentationData, segmentIndex2);
 
   const polyLinesCanvas1 = polyLines1.map((polyline) =>
     convertContourPolylineToCanvasSpace(polyline, viewport)
@@ -87,23 +106,59 @@ function addSegmentInSegmentation(
     color,
   };
 }
-export function addition(
-  viewport: Types.IViewport,
-  segmentation: Segmentation,
-  segmentIndex1: number,
-  segmentIndex2: number,
-  { label, segmentIndex, color }
+
+function getViewportAssociatedToSegmentation(segmentationId: string) {
+  const viewportIds = getViewportIdsWithSegmentation(segmentationId);
+  if (viewportIds?.length === 0) {
+    return;
+  }
+  const { viewport } = getEnabledElementByViewportId(viewportIds[0]) || {};
+  return viewport;
+}
+
+function applyLogicalOperation(
+  segment1: SegmentInfo,
+  segment2: SegmentInfo,
+  options: OperatorOptions,
+  operation: number = 1
 ) {
+  const viewport = getViewportAssociatedToSegmentation(segment1.segmentationId);
+  if (!viewport) {
+    return;
+  }
+
   const { polyLinesCanvas1, polyLinesCanvas2 } =
-    extractPolylines(viewport, segmentation, segmentIndex1, segmentIndex2) ||
-    {};
+    extractPolylinesInCanvasSpace(viewport, segment1, segment2) || {};
   if (!polyLinesCanvas1 || !polyLinesCanvas2) {
     return;
   }
-  const polylinesMerged = unifyPolylineSets(polyLinesCanvas1, polyLinesCanvas2);
+  let polylinesMerged;
+  switch (operation) {
+    case 1:
+      polylinesMerged = unifyPolylineSets(polyLinesCanvas1, polyLinesCanvas2);
+      break;
+    case 2:
+      polylinesMerged = subtractPolylineSets(
+        polyLinesCanvas1,
+        polyLinesCanvas2
+      );
+      break;
+    case 3:
+      polylinesMerged = intersectPolylines(polyLinesCanvas1, polyLinesCanvas2);
+      break;
+    case 4:
+      polylinesMerged = xorPolylinesSets(polyLinesCanvas1, polyLinesCanvas2);
+      break;
+  }
   const polyLinesWorld = polylinesMerged.map((polyline) =>
     convertContourPolylineToWorld(polyline, viewport)
   );
+
+  const resultSegment = options.resultSegment;
+  const segmentation = getSegmentation(resultSegment.segmentationId);
+  const segmentIndex = resultSegment.segmentIndex;
+  const color = resultSegment.color;
+  const label = resultSegment.label;
   const annotationUIDsMapNew = addPolylinesToSegmentation(
     viewport,
     segmentation.segmentationId,
@@ -119,43 +174,41 @@ export function addition(
   }
   annotationUIDsMap.set(segmentIndex, annotationUIDsMapNew.get(segmentIndex));
   addSegmentInSegmentation(segmentation, { segmentIndex, color, label });
+}
+
+export function add(
+  segment1: SegmentInfo,
+  segment2: SegmentInfo,
+  options: OperatorOptions
+) {
+  applyLogicalOperation(segment1, segment2, options, 1);
 }
 
 export function subtraction(
-  viewport: Types.IViewport,
-  segmentation: Segmentation,
-  segmentIndex1: number,
-  segmentIndex2: number,
-  { label, segmentIndex, color }
+  segment1: SegmentInfo,
+  segment2: SegmentInfo,
+  options: OperatorOptions
 ) {
-  const { polyLinesCanvas1, polyLinesCanvas2 } =
-    extractPolylines(viewport, segmentation, segmentIndex1, segmentIndex2) ||
-    {};
-  if (!polyLinesCanvas1 || !polyLinesCanvas2) {
-    return;
-  }
-  const polylinesMerged = subtractPolylineSets(
-    polyLinesCanvas1,
-    polyLinesCanvas2
-  );
-  const polyLinesWorld = polylinesMerged.map((polyline) =>
-    convertContourPolylineToWorld(polyline, viewport)
-  );
-
-  const annotationUIDsMapNew = addPolylinesToSegmentation(
-    viewport,
-    segmentation.segmentationId,
-    polyLinesWorld,
-    segmentIndex
-  );
-
-  const contourRepresentationData = segmentation.representationData
-    .Contour as ContourSegmentationData;
-  const { annotationUIDsMap } = contourRepresentationData;
-  if (!annotationUIDsMap) {
-    return;
-  }
-
-  annotationUIDsMap.set(segmentIndex, annotationUIDsMapNew.get(segmentIndex));
-  addSegmentInSegmentation(segmentation, { segmentIndex, color, label });
+  applyLogicalOperation(segment1, segment2, options, 2);
 }
+
+export function intersect(
+  segment1: SegmentInfo,
+  segment2: SegmentInfo,
+  options: OperatorOptions
+) {
+  applyLogicalOperation(segment1, segment2, options, 3);
+}
+
+export function xor(
+  segment1: SegmentInfo,
+  segment2: SegmentInfo,
+  options: OperatorOptions
+) {
+  applyLogicalOperation(segment1, segment2, options, 4);
+}
+
+// cornerstoneTools.segmentation.operators.not(
+//   { segmentationId: string, segmentIndex: number },
+//   options?: OperatorOptions
+// )

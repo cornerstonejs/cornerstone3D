@@ -15,6 +15,8 @@ import {
   addManipulationBindings,
   contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
+import { getAnnotation, removeAnnotation } from 'tools/src/stateManagement';
+import { removeContourSegmentationAnnotation } from 'tools/src/utilities/contourSegmentation';
 
 // This is for debugging purposes
 console.warn(
@@ -147,7 +149,10 @@ addDropdownToToolbar({
   },
 });
 
-function performLogicalOperation(operation: number = 1) {
+function performLogicalOperation(
+  operation: number = 1,
+  createNew: boolean = true
+) {
   const activeSeg = segmentation.getActiveSegmentation(viewportId);
   const renderEngine = getRenderingEngine(renderingEngineId);
   const viewport = renderEngine.getViewport(viewportId);
@@ -165,38 +170,139 @@ function performLogicalOperation(operation: number = 1) {
   const representationData = activeSeg.representationData.Contour;
   const { annotationUIDsMap } = representationData;
 
-  const { addition, subtraction } =
-    cornerstoneTools.utilities.contourSegmentation;
+  const {
+    add,
+    subtraction,
+    intersect,
+    xor,
+    removeContourSegmentationAnnotation,
+  } = cornerstoneTools.utilities.contourSegmentation;
   if (annotationUIDsMap) {
     const segmentIndexes = Array.from(annotationUIDsMap.keys());
+    const lastIndex = segmentIndexes.length - 1;
+    let newIndex = 0;
+    if (createNew) {
+      newIndex = Math.max(...segmentIndexes) + 1;
+    } else {
+      newIndex = lastIndex;
+    }
     if (segmentIndexes.length > 1) {
       if (operation == 1) {
-        addition(viewport, activeSeg, segmentIndexes[0], segmentIndexes[1], {
-          label: 'Combined Addition',
-          segmentIndex: Math.max(...segmentIndexes) + 1,
-          color: 'rgb(50, 130, 162)',
-        });
-      } else {
-        subtraction(viewport, activeSeg, segmentIndexes[0], segmentIndexes[1], {
-          label: 'Combined',
-          segmentIndex: Math.max(...segmentIndexes) + 1,
-          color: 'rgb(239, 220, 9)',
+        add(
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex - 1],
+          },
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex],
+          },
+          {
+            resultSegment: {
+              segmentationId: activeSeg.segmentationId,
+              label: 'Combined Addition',
+              segmentIndex: newIndex,
+              color: 'rgb(50, 130, 162)',
+            },
+          }
+        );
+      } else if (operation === 2) {
+        subtraction(
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex - 1],
+          },
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex],
+          },
+          {
+            resultSegment: {
+              segmentationId: activeSeg.segmentationId,
+              label: 'Combined Addition',
+              segmentIndex: newIndex,
+              color: 'rgb(50, 130, 162)',
+            },
+          }
+        );
+      } else if (operation === 3) {
+        intersect(
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex - 1],
+          },
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex],
+          },
+          {
+            resultSegment: {
+              segmentationId: activeSeg.segmentationId,
+              label: 'Combined Addition',
+              segmentIndex: newIndex,
+              color: 'rgb(50, 130, 162)',
+            },
+          }
+        );
+      } else if (operation === 4) {
+        xor(
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex - 1],
+          },
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex],
+          },
+          {
+            resultSegment: {
+              segmentationId: activeSeg.segmentationId,
+              label: 'Combined Addition',
+              segmentIndex: newIndex,
+              color: 'rgb(50, 130, 162)',
+            },
+          }
+        );
+      }
+      if (!createNew) {
+        const annotationUIDList = annotationUIDsMap.get(lastIndex);
+        annotationUIDList.forEach((annotationUID) => {
+          const annotation =
+            cornerstoneTools.annotation.state.getAnnotation(annotationUID);
+          cornerstoneTools.annotation.state.removeAnnotation(annotationUID);
+          removeContourSegmentationAnnotation(
+            annotation as cornerstoneTools.Types.ContourSegmentationAnnotation
+          );
         });
       }
     }
   }
 }
 addButtonToToolbar({
-  title: 'Combine two segments',
+  title: 'Add two segments in a new one',
   onClick: function () {
-    performLogicalOperation(1);
+    performLogicalOperation(1, true);
   },
 });
 
 addButtonToToolbar({
-  title: 'Subtract two segments',
+  title: 'Subtract two segments in a new one',
   onClick: function () {
-    performLogicalOperation(2);
+    performLogicalOperation(2, true);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Intersect two segments in a new one',
+  onClick: function () {
+    performLogicalOperation(3, true);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Xor two segments in a new one',
+  onClick: function () {
+    performLogicalOperation(4, true);
   },
 });
 

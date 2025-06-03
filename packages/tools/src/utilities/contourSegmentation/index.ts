@@ -1,5 +1,5 @@
 import areSameSegment from './areSameSegment';
-import { addition, subtraction } from './logicalOperators';
+import { add, subtraction, intersect, xor } from './logicalOperators';
 export { default as isContourSegmentationAnnotation } from './isContourSegmentationAnnotation';
 export { addContourSegmentationAnnotation } from './addContourSegmentationAnnotation';
 export { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation';
@@ -8,7 +8,7 @@ export { processMultipleIntersections } from './mergeMultipleAnnotations';
 export { contourSegmentationOperation } from './contourSegmentationOperation';
 export * from './sharedOperations';
 
-export { addition, subtraction, areSameSegment };
+export { add, subtraction, intersect, xor, areSameSegment };
 
 export {
   unifyPolylineSets,
