@@ -20,7 +20,7 @@ import {
  * @param contourHoleProcessingEnabled - Whether to allow hole creation (default: true)
  * @returns Promise that resolves when the processing is complete
  */
-export async function processTwoAnnotations(
+export async function contourSegmentationOperation(
   sourceAnnotationOrUID: ContourSegmentationAnnotation | string,
   targetAnnotationOrUID: ContourSegmentationAnnotation | string,
   viewport?: Types.IViewport,

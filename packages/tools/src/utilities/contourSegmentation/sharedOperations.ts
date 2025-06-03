@@ -42,6 +42,23 @@ export function convertContourPolylineToCanvasSpace(
 }
 
 /**
+ * Converts a 2D polyline (in canvas space) to a 3D polyline (in world coordinates)
+ * for a specific viewport.
+ */
+export function convertContourPolylineToWorld(
+  polyline: Types.Point2[],
+  viewport: Types.IViewport
+): Types.Point3[] {
+  const numPoints = polyline.length;
+  const projectedPolyline = new Array(numPoints);
+
+  for (let i = 0; i < numPoints; i++) {
+    projectedPolyline[i] = viewport.canvasToWorld(polyline[i]);
+  }
+
+  return projectedPolyline;
+}
+/**
  * Checks if two polylines intersect and determines the type of intersection
  */
 export function checkIntersection(
