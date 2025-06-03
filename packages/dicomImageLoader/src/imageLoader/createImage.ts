@@ -220,7 +220,10 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
-        if (isColorImage) {
+        if (
+          imageFrame.photometricInterpretation === 'PALETTE COLOR' &&
+          !useRGBA
+        ) {
           // for GPU
           const width = imageFrame.columns;
           const height = imageFrame.rows;
@@ -318,8 +321,8 @@ function createImage(
               return canvas;
             }
 
-            const width = this.columns;
-            const height = this.rows;
+            const width = image.columns;
+            const height = image.rows;
 
             canvas.height = height;
             canvas.width = width;
@@ -376,6 +379,9 @@ function createImage(
           // 256/128 for an identity transform.
           image.windowWidth = 256;
           image.windowCenter = 128;
+        }
+
+        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
           if (useRGBA) {
             // If we are using RGBA, we need to set the number of components to 4
             image.numberOfComponents = 4;

@@ -48,6 +48,16 @@ export default function (
   const rData = imageFrame.redPaletteColorLookupTableData;
   const gData = imageFrame.greenPaletteColorLookupTableData;
   const bData = imageFrame.bluePaletteColorLookupTableData;
+
+  if (!rData || !gData || !bData) {
+    throw new Error(
+      'Missing palette color lookup table data: ' +
+        `${!rData ? 'red ' : ''}${!gData ? 'green ' : ''}${
+          !bData ? 'blue ' : ''
+        }`.trim()
+    );
+  }
+
   const len = rData.length;
   let palIndex = 0;
   let bufferIndex = 0;
