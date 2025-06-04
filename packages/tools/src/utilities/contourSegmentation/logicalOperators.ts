@@ -9,7 +9,7 @@ import {
   convertContourPolylineToWorld,
 } from './sharedOperations';
 import {
-  intersectPolylines,
+  intersectPolylinesSets,
   subtractPolylineSets,
   unifyPolylineSets,
   xorPolylinesSets,
@@ -144,7 +144,10 @@ function applyLogicalOperation(
       );
       break;
     case 3:
-      polylinesMerged = intersectPolylines(polyLinesCanvas1, polyLinesCanvas2);
+      polylinesMerged = intersectPolylinesSets(
+        polyLinesCanvas1,
+        polyLinesCanvas2
+      );
       break;
     case 4:
       polylinesMerged = xorPolylinesSets(polyLinesCanvas1, polyLinesCanvas2);

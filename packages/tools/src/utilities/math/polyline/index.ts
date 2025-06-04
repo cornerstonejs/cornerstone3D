@@ -7,7 +7,11 @@ import getSignedArea from './getSignedArea';
 import getWindingDirection from './getWindingDirection';
 import getNormal3 from './getNormal3';
 import getNormal2 from './getNormal2';
-import { mergePolylines, subtractPolylines } from './combinePolyline';
+import {
+  mergePolylines,
+  subtractPolylines,
+  intersectPolylines,
+} from './combinePolyline';
 import intersectPolyline from './intersectPolyline';
 import decimate from './decimate';
 import getFirstLineSegmentIntersectionIndexes from './getFirstLineSegmentIntersectionIndexes';
@@ -44,6 +48,7 @@ export {
   pointCanProjectOnLine,
   mergePolylines,
   subtractPolylines,
+  intersectPolylines,
   isPointInsidePolyline3D,
   projectTo2D,
   convexHull,

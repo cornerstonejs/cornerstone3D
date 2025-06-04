@@ -1,6 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 import * as math from '../math';
 import { checkIntersection } from './sharedOperations';
+import {
+  mergePolylines,
+  subtractPolylines,
+  intersectPolylines,
+} from '../math/polyline';
 
 /**
  * Unifies two sets of polylines by merging intersecting polylines and keeping non-intersecting ones.
@@ -277,7 +282,7 @@ export function subtractAnnotationPolylines(
  * @param polylinesSetB - Second set of polylines
  * @returns The polylines representing the intersection of both sets
  */
-export function intersectPolylines(
+export function intersectPolylinesSets(
   polylinesSetA: Types.Point2[][],
   polylinesSetB: Types.Point2[][]
 ): Types.Point2[][] {
@@ -295,177 +300,15 @@ export function intersectPolylines(
 
       if (intersection.hasIntersection && !intersection.isContourHole) {
         // Find the actual intersection region using a more direct approach
-        const intersectionRegion = findDirectIntersection(polylineA, polylineB);
-        if (intersectionRegion && intersectionRegion.length >= 3) {
-          result.push(intersectionRegion);
+        const intersectionRegion = intersectPolylines(polylineA, polylineB);
+        if (intersectionRegion && intersectionRegion.length > 0) {
+          result.push(intersectionRegion[0]);
         }
       }
     }
   }
 
   return cleanupPolylines(result);
-}
-
-/**
- * Find the direct intersection between two polylines using a geometric approach
- */
-function findDirectIntersection(
-  polylineA: Types.Point2[],
-  polylineB: Types.Point2[]
-): Types.Point2[] | null {
-  // First, check if one polyline is completely inside the other
-  const aInsideB = math.polyline.containsPoints(polylineB, polylineA);
-  const bInsideA = math.polyline.containsPoints(polylineA, polylineB);
-
-  if (aInsideB) {
-    return [...polylineA]; // A is completely inside B, so A is the intersection
-  }
-
-  if (bInsideA) {
-    return [...polylineB]; // B is completely inside A, so B is the intersection
-  }
-
-  // For partial intersections, use a more practical approach
-  // We'll use the original Union - XOR formula but with better handling
-  try {
-    // Create temporary sets for the calculation
-    const setA = [polylineA];
-    const setB = [polylineB];
-
-    // Calculate union
-    const union = unifyPolylineSets(setA, setB);
-
-    // Calculate XOR
-    const xor = xorPolylinesSets(setA, setB);
-
-    // Calculate intersection = Union - XOR
-    const intersection = subtractPolylineSets(union, xor);
-
-    // If we get multiple fragments, try to merge them into a single polyline
-    if (intersection.length > 1) {
-      // Try to merge all intersection fragments
-      let mergedIntersection = removeDuplicatePoints(intersection[0]);
-      for (let i = 1; i < intersection.length; i++) {
-        try {
-          const cleanedFragment = removeDuplicatePoints(intersection[i]);
-          if (cleanedFragment.length >= 3) {
-            // Check if fragments can be merged
-            const testIntersection = checkIntersection(
-              mergedIntersection,
-              cleanedFragment
-            );
-            if (testIntersection.hasIntersection) {
-              mergedIntersection = math.polyline.mergePolylines(
-                mergedIntersection,
-                cleanedFragment
-              );
-              mergedIntersection = removeDuplicatePoints(mergedIntersection);
-            }
-          }
-        } catch (error) {
-          // If merging fails, keep the fragments separate
-          console.warn('Could not merge intersection fragments:', error);
-        }
-      }
-      return mergedIntersection.length >= 3 ? mergedIntersection : null;
-    } else if (intersection.length === 1) {
-      const cleaned = removeDuplicatePoints(intersection[0]);
-      return cleaned.length >= 3 ? cleaned : null;
-    }
-
-    // If no intersection found through subtraction, try a different approach
-    // Check if there are actual intersection points between the polylines
-    const hasActualIntersections = math.polyline.intersectPolyline(
-      polylineA,
-      polylineB
-    );
-
-    if (hasActualIntersections) {
-      // There are intersections but the subtraction method failed
-      // Fall back to using the merge approach with better area checking
-      const merged = math.polyline.mergePolylines(polylineA, polylineB);
-
-      const areaA = calculatePolylineArea(polylineA);
-      const areaB = calculatePolylineArea(polylineB);
-      const areaMerged = calculatePolylineArea(merged);
-
-      // If merged area is significantly less than sum of areas, there's overlap
-      const expectedUnionArea = areaA + areaB;
-      const overlapRatio =
-        (expectedUnionArea - areaMerged) / Math.min(areaA, areaB);
-
-      if (overlapRatio > 0.1) {
-        // At least 10% overlap
-        // Estimate the intersection area by creating a simplified intersection polygon
-        return createIntersectionFromMerge(polylineA, polylineB, merged);
-      }
-    }
-  } catch (error) {
-    console.warn('Failed to calculate intersection:', error);
-  }
-
-  return null;
-}
-
-/**
- * Create an intersection polyline from merge result when direct methods fail
- */
-function createIntersectionFromMerge(
-  polylineA: Types.Point2[],
-  polylineB: Types.Point2[],
-  merged: Types.Point2[]
-): Types.Point2[] {
-  // This is a simplified approach - find points that are inside both polylines
-  const intersectionPoints: Types.Point2[] = [];
-
-  // Sample points from the merged polyline and check if they're in both original polylines
-  const sampleCount = Math.min(merged.length, 50); // Limit sampling for performance
-  const step = Math.max(1, Math.floor(merged.length / sampleCount));
-
-  for (let i = 0; i < merged.length; i += step) {
-    const point = merged[i];
-    const inA = math.polyline.containsPoint(polylineA, point);
-    const inB = math.polyline.containsPoint(polylineB, point);
-
-    if (inA && inB) {
-      intersectionPoints.push(point);
-    }
-  }
-
-  // If we found intersection points, return them
-  if (intersectionPoints.length >= 3) {
-    return intersectionPoints;
-  }
-
-  // Fallback: return a simplified version of the merged polyline
-  // This isn't perfect but provides a reasonable approximation
-  const simplificationFactor = 0.7; // Take 70% of the merged polyline
-  const targetLength = Math.floor(merged.length * simplificationFactor);
-  const simplifiedPoints: Types.Point2[] = [];
-
-  for (let i = 0; i < targetLength; i++) {
-    const index = Math.floor((i / targetLength) * merged.length);
-    simplifiedPoints.push(merged[index]);
-  }
-
-  return simplifiedPoints.length >= 3 ? simplifiedPoints : merged;
-}
-
-/**
- * Calculate the approximate area of a polyline (assuming it's a closed polygon)
- */
-function calculatePolylineArea(polyline: Types.Point2[]): number {
-  if (polyline.length < 3) {
-    return 0;
-  }
-
-  let area = 0;
-  for (let i = 0; i < polyline.length; i++) {
-    const j = (i + 1) % polyline.length;
-    area += polyline[i][0] * polyline[j][1];
-    area -= polyline[j][0] * polyline[i][1];
-  }
-  return Math.abs(area) / 2;
 }
 
 /**
