@@ -588,7 +588,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // with amount of spacingInNormal, and calculate the next slice until we reach the distance
     const newProjectionPoints = [];
     if (distance >= 0) {
-      newProjectionPoints.push(csUtils.deepClone(handlesToStart).map(p => Array.from(p as vec3)));
+      newProjectionPoints.push(handlesToStart.map(p => Array.from(p as vec3)));
     }
     for (let dist = spacingInNormal; dist <= distance; dist += spacingInNormal) {
       newProjectionPoints.push(
