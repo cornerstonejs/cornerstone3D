@@ -205,7 +205,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
             [...worldPos], // bottom
             [...worldPos], // left
             [...worldPos], // right
-          ] as [Types.Point3, Types.Point3, Types.Point3, Types.Point3, Types.Point3],
+          ] as [
+            Types.Point3,
+            Types.Point3,
+            Types.Point3,
+            Types.Point3,
+            Types.Point3
+          ],
           activeHandleIndex: null,
         },
         cachedStats: {
@@ -348,12 +354,24 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
-      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2, Types.Point2];
+      ) as [
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+        Types.Point2
+      ];
       const center = canvasCoordinates[0];
 
-      const radius = getCanvasCircleRadius([canvasCoordinates[0], canvasCoordinates[1]]);
+      const radius = getCanvasCircleRadius([
+        canvasCoordinates[0],
+        canvasCoordinates[1],
+      ]);
       const { centerPointRadius } = this.configuration;
-      const canvasCorners = getCanvasCircleCorners([canvasCoordinates[0], canvasCoordinates[1]]);
+      const canvasCorners = getCanvasCircleCorners([
+        canvasCoordinates[0],
+        canvasCoordinates[1],
+      ]);
       // range of slices to render based on the start and end slice, like
       // np.arange
 
@@ -572,7 +590,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     const startWorld = vec3.clone(points[0]);
     const endWorld = vec3.clone(points[0]);
-    const indexOfNormal = this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
+    const indexOfNormal =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
     startWorld[indexOfNormal] = startCoordinate;
     endWorld[indexOfNormal] = endCoordinate;
@@ -588,9 +607,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // with amount of spacingInNormal, and calculate the next slice until we reach the distance
     const newProjectionPoints = [];
     if (distance >= 0) {
-      newProjectionPoints.push(handlesToStart.map(p => Array.from(p as vec3)));
+      newProjectionPoints.push(
+        handlesToStart.map((p) => Array.from(p as vec3))
+      );
     }
-    for (let dist = spacingInNormal; dist <= distance; dist += spacingInNormal) {
+    for (
+      let dist = spacingInNormal;
+      dist <= distance;
+      dist += spacingInNormal
+    ) {
       newProjectionPoints.push(
         handlesToStart.map((point) => {
           const newPoint = vec3.create();
@@ -623,8 +648,14 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2, Types.Point2];
 
     // Utiliser le centre et la poignée du haut pour les calculs de dimensions
-    const baseTopLeftCanvas = getCanvasCircleCorners([canvasCoordinates[0], canvasCoordinates[1]])[0];
-    const baseBottomRightCanvas = getCanvasCircleCorners([canvasCoordinates[0], canvasCoordinates[1]])[1];
+    const baseTopLeftCanvas = getCanvasCircleCorners([
+      canvasCoordinates[0],
+      canvasCoordinates[1],
+    ])[0];
+    const baseBottomRightCanvas = getCanvasCircleCorners([
+      canvasCoordinates[0],
+      canvasCoordinates[1],
+    ])[1];
 
     const basePos1 = viewport.canvasToWorld(baseTopLeftCanvas);
     const basePos2 = viewport.canvasToWorld(baseBottomRightCanvas);
@@ -635,12 +666,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       basePos1,
       basePos2
     );
-    const measureInfo = getCalibratedLengthUnitsAndScale(image, data.handles.points);
+    const measureInfo = getCalibratedLengthUnitsAndScale(
+      image,
+      data.handles.points
+    );
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
-      (worldWidth / measureInfo.scale / 2) *
-      (worldHeight / aspect / measureInfo.scale / 2)
+        (worldWidth / measureInfo.scale / 2) *
+        (worldHeight / aspect / measureInfo.scale / 2)
     );
 
     const modalityUnitOptions = {

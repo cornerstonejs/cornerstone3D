@@ -216,7 +216,13 @@ class CircleROITool extends AnnotationTool {
             [...worldPos], // bottom
             [...worldPos], // left
             [...worldPos], // right
-          ] as [Types.Point3, Types.Point3, Types.Point3, Types.Point3, Types.Point3], // Modifié pour 5 points
+          ] as [
+            Types.Point3,
+            Types.Point3,
+            Types.Point3,
+            Types.Point3,
+            Types.Point3
+          ], // Modifié pour 5 points
           activeHandleIndex: null,
         },
         cachedStats: {},
@@ -278,15 +284,12 @@ class CircleROITool extends AnnotationTool {
       Types.Point2, // top
       Types.Point2, // bottom
       Types.Point2, // left
-      Types.Point2  // right
+      Types.Point2 // right
     ];
 
     const canvasCenter = canvasHandles[0];
     const radius = getCanvasCircleRadius([canvasCenter, canvasHandles[1]]); // Rayon basé sur la poignée du haut
-    const radiusPoint = getCanvasCircleRadius([
-      canvasCenter,
-      canvasCoords,
-    ]);
+    const radiusPoint = getCanvasCircleRadius([canvasCenter, canvasCoords]);
 
     if (Math.abs(radiusPoint - radius) < proximity / 2) {
       return true;
@@ -428,21 +431,33 @@ class CircleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { canvasToWorld } = viewport;
 
-    //////
-    const { annotation, viewportIdsToRender, centerWorld, newAnnotation } = this.editData;
+    const { annotation, viewportIdsToRender, centerWorld, newAnnotation } =
+      this.editData;
     this.createMemo(element, annotation, { newAnnotation });
     const { data } = annotation;
-    const centerCanvas = viewport.worldToCanvas(centerWorld as Types.Point3); // Convertir le centre fixe en canvas
+    const centerCanvas = viewport.worldToCanvas(centerWorld as Types.Point3);
 
     // Calculate new radius
     const radiusCanvas = vec2.distance(centerCanvas, currentCanvasPoints);
 
     // Update other handles based on the new radius
-    data.handles.points[0] = [...centerWorld]; // Centre
-    data.handles.points[1] = canvasToWorld([centerCanvas[0], centerCanvas[1] - radiusCanvas]); // Haut (Y diminue vers le haut dans le canvas)
-    data.handles.points[2] = canvasToWorld([centerCanvas[0], centerCanvas[1] + radiusCanvas]); // Bas
-    data.handles.points[3] = canvasToWorld([centerCanvas[0] - radiusCanvas, centerCanvas[1]]); // Gauche
-    data.handles.points[4] = canvasToWorld([centerCanvas[0] + radiusCanvas, centerCanvas[1]]); // Droite
+    data.handles.points[0] = [...centerWorld];
+    data.handles.points[1] = canvasToWorld([
+      centerCanvas[0],
+      centerCanvas[1] - radiusCanvas,
+    ]);
+    data.handles.points[2] = canvasToWorld([
+      centerCanvas[0],
+      centerCanvas[1] + radiusCanvas,
+    ]);
+    data.handles.points[3] = canvasToWorld([
+      centerCanvas[0] - radiusCanvas,
+      centerCanvas[1],
+    ]);
+    data.handles.points[4] = canvasToWorld([
+      centerCanvas[0] + radiusCanvas,
+      centerCanvas[1],
+    ]);
 
     annotation.invalidated = true;
 
@@ -538,10 +553,22 @@ class CircleROITool extends AnnotationTool {
 
       const newRadiusCanvas = vec2.distance(centerCanvas, currentCanvasPoint);
       //Update the handles based on the new radius
-      points[1] = canvasToWorld([centerCanvas[0], centerCanvas[1] - newRadiusCanvas]); // Top
-      points[2] = canvasToWorld([centerCanvas[0], centerCanvas[1] + newRadiusCanvas]); // Bottom
-      points[3] = canvasToWorld([centerCanvas[0] - newRadiusCanvas, centerCanvas[1]]); // Left
-      points[4] = canvasToWorld([centerCanvas[0] + newRadiusCanvas, centerCanvas[1]]); // Right
+      points[1] = canvasToWorld([
+        centerCanvas[0],
+        centerCanvas[1] - newRadiusCanvas,
+      ]); // Top
+      points[2] = canvasToWorld([
+        centerCanvas[0],
+        centerCanvas[1] + newRadiusCanvas,
+      ]); // Bottom
+      points[3] = canvasToWorld([
+        centerCanvas[0] - newRadiusCanvas,
+        centerCanvas[1],
+      ]); // Left
+      points[4] = canvasToWorld([
+        centerCanvas[0] + newRadiusCanvas,
+        centerCanvas[1],
+      ]); // Right
     }
     annotation.invalidated = true;
   };
@@ -677,10 +704,19 @@ class CircleROITool extends AnnotationTool {
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
-      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2, Types.Point2]; // Modifié pour 5 points
+      ) as [
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+        Types.Point2
+      ]; // Modifié pour 5 points
       const center = canvasCoordinates[0];
       const radius = getCanvasCircleRadius([center, canvasCoordinates[1]]);
-      const canvasCorners = getCanvasCircleCorners([center, canvasCoordinates[1]]);
+      const canvasCorners = getCanvasCircleCorners([
+        center,
+        canvasCoordinates[1],
+      ]);
 
       const { centerPointRadius } = this.configuration;
 
@@ -986,8 +1022,8 @@ class CircleROITool extends AnnotationTool {
         const aspect = getCalibratedAspect(image);
         const area = Math.abs(
           Math.PI *
-          (worldWidth / scale / 2) *
-          (worldHeight / aspect / scale / 2)
+            (worldWidth / scale / 2) *
+            (worldHeight / aspect / scale / 2)
         );
 
         const pixelUnitsOptions = {
@@ -1064,7 +1100,13 @@ class CircleROITool extends AnnotationTool {
 
   static hydrate = (
     viewportId: string,
-    points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3, Types.Point3],
+    points: [
+      Types.Point3,
+      Types.Point3,
+      Types.Point3,
+      Types.Point3,
+      Types.Point3
+    ],
     options?: {
       annotationUID?: string;
       toolInstance?: CircleROITool;

@@ -119,7 +119,13 @@ export interface AdvancedMagnifyAnnotation extends Annotation {
 export interface CircleROIAnnotation extends Annotation {
   data: {
     handles: {
-      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3, Types.Point3]; // [center, top, bottom, left, right]
+      points: [
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3
+      ]; // [center, top, bottom, left, right]
       activeHandleIndex: number | null;
       textBox?: {
         hasMoved: boolean;
