@@ -300,9 +300,9 @@ export function intersectPolylinesSets(
 
       if (intersection.hasIntersection && !intersection.isContourHole) {
         // Find the actual intersection region using a more direct approach
-        const intersectionRegion = intersectPolylines(polylineA, polylineB);
-        if (intersectionRegion && intersectionRegion.length > 0) {
-          result.push(intersectionRegion[0]);
+        const intersectionRegions = intersectPolylines(polylineA, polylineB);
+        if (intersectionRegions && intersectionRegions.length > 0) {
+          result.push(...intersectionRegions);
         }
       }
     }
