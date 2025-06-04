@@ -551,10 +551,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     return renderStatus;
   };
 
-//Now works for axial, sagitall and coronal
+  //Now works for axial, sagitall and coronal
   _computeProjectionPoints(
     annotation: CircleROIStartEndThresholdAnnotation,
-    imageVolume: Types.IStreamingImageVolume
+    imageVolume: Types.IImageVolume
   ): void {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;

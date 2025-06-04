@@ -291,7 +291,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   };
 
-  //Now works for non-acquisition planes
+//Now works for axial, sagitall and coronal
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
@@ -300,48 +300,42 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const { viewPlaneNormal, spacingInNormal } = metadata;
     const { imageData } = imageVolume;
     const { startCoordinate, endCoordinate } = data;
-    const { points } = data.handles;
+    const { points: baseHandles } = data.handles;
 
-    const startIJK = transformWorldToIndex(imageData, points[0]);
-    const endIJK = transformWorldToIndex(imageData, points[0]);
-
-    const startWorld = vec3.create();
-    imageData.indexToWorldVec3(startIJK, startWorld);
-
-    const endWorld = vec3.create();
-    imageData.indexToWorldVec3(endIJK, endWorld);
-
-    // substitute the end slice index 2 with startIJK index 2
-
-    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
-      startWorld[2] = startCoordinate;
-      endWorld[2] = endCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
-    ) {
-      startWorld[0] = startCoordinate;
-      endWorld[0] = endCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
-    ) {
-      startWorld[1] = startCoordinate;
-      endWorld[1] = endCoordinate;
-    }
-
-    // distance between start and end slice in the world coordinate
-    const distance = vec3.distance(startWorld, endWorld);
-    // for each point inside points, navigate in the direction of the viewPlaneNormal
-    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
+    const indexOfNormal = this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
     const newProjectionPoints = [];
-    for (let dist = 0; dist < distance; dist += spacingInNormal) {
-      newProjectionPoints.push(
-        points.map((point) => {
-          const newPoint = vec3.create();
-          //@ts-ignore
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
-          return Array.from(newPoint);
-        })
-      );
+
+    // Determine the actual iteration range and direction
+    // Ensure iteration always goes from the smallest to the largest coordinate
+    const actualStartCoord = Math.min(startCoordinate, endCoordinate);
+    const actualEndCoord = Math.max(startCoordinate, endCoordinate);
+
+    // Iterate from the actual start coordinate to the actual end coordinate
+    for (
+      let currentCoord = actualStartCoord;
+      currentCoord <= actualEndCoord + spacingInNormal;
+      currentCoord += spacingInNormal
+    ) {
+      const handlesOnCurrentPlane = csUtils.deepClone(baseHandles) as typeof baseHandles;
+
+      handlesOnCurrentPlane.forEach((handlePt) => {
+        handlePt[indexOfNormal] = currentCoord;
+      });
+      newProjectionPoints.push(handlesOnCurrentPlane.map(p => Array.from(p as vec3)));
+
+      // Special handling to ensure the last slice (actualEndCoord) is included
+      // if it was not reached exactly by spacingInNormal increments,
+      // and if the loop would end just before reaching it.
+      if (currentCoord < actualEndCoord && currentCoord + spacingInNormal > actualEndCoord) {
+         if (Math.abs(currentCoord - actualEndCoord) > Number.EPSILON) {
+            const handlesOnEndPlane = csUtils.deepClone(baseHandles) as typeof baseHandles;
+            handlesOnEndPlane.forEach(handlePt => {
+                handlePt[indexOfNormal] = actualEndCoord;
+            });
+            newProjectionPoints.push(handlesOnEndPlane.map(p => Array.from(p as vec3)));
+         }
+         break;
+      }
     }
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
