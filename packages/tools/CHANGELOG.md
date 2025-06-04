@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.2...v3.19.3) (2025-06-03)
+
+### Bug Fixes
+
+- **contour:** Enhance Contour Segmentation Utilities with Intersection Handling and Annotation Management ([#2112](https://github.com/cornerstonejs/cornerstone3D/issues/2112)) ([cb71755](https://github.com/cornerstonejs/cornerstone3D/commit/cb717552435c64650f6a27d0138d13774443c8e7))
+
 ## [3.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.1...v3.19.2) (2025-06-02)
 
 **Note:** Version bump only for package @cornerstonejs/tools
