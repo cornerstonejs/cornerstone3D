@@ -238,6 +238,20 @@ function getSourceAndTargetPointsList(
  * exists or `undefined` otherwise
  */
 function getUnvisitedOutsidePoint(polylinePoints: PolylinePoint[]) {
+  // First, try to find unvisited vertex points that are outside
+  for (let i = 0, len = polylinePoints.length; i < len; i++) {
+    const point = polylinePoints[i];
+
+    if (
+      !point.visited &&
+      point.position === PolylinePointPosition.Outside &&
+      point.type === PolylinePointType.Vertex
+    ) {
+      return point;
+    }
+  }
+
+  // If no vertex points found, look for intersection points that are outside
   for (let i = 0, len = polylinePoints.length; i < len; i++) {
     const point = polylinePoints[i];
 
@@ -245,6 +259,8 @@ function getUnvisitedOutsidePoint(polylinePoints: PolylinePoint[]) {
       return point;
     }
   }
+
+  return undefined;
 }
 
 /**
@@ -359,11 +375,23 @@ function subtractPolylines(
     targetPolyline,
     sourcePolyline
   );
+
+  // Check if there are any intersections at all
+  const hasIntersections = targetPolylinePoints.some(
+    (point) => point.type === PolylinePointType.Intersection
+  );
+
+  if (!hasIntersections) {
+    // No intersections - either completely inside or completely outside
+    const sourceContainsTarget = containsPoints(sourcePolyline, targetPolyline);
+    return sourceContainsTarget ? [] : [targetPolyline.slice()];
+  }
+
   let startPoint: PolylinePoint = null;
   const subtractedPolylines = [];
 
   let outerIterationCount = 0;
-  const maxOuterIterations = targetPolyline.length * 2; // Safety limit for outer loop
+  const maxOuterIterations = Math.max(10, targetPolylinePoints.length); // More reasonable limit
 
   while (
     (startPoint = getUnvisitedOutsidePoint(targetPolylinePoints)) &&
@@ -373,8 +401,7 @@ function subtractPolylines(
     const subtractedPolyline = [startPoint.coordinates];
     let currentPoint = startPoint.next;
     let innerIterationCount = 0;
-    const maxInnerIterations =
-      targetPolyline.length + sourcePolyline.length + 1000; // Safety limit for inner loop
+    const maxInnerIterations = targetPolylinePoints.length * 3; // More reasonable limit
 
     startPoint.visited = true;
 
@@ -385,15 +412,23 @@ function subtractPolylines(
       innerIterationCount++;
       currentPoint.visited = true;
 
-      if (
-        currentPoint.type === PolylinePointType.Intersection &&
-        (<PolylineIntersectionPoint>currentPoint).cloned
-      ) {
-        currentPoint = currentPoint.next;
-        continue;
+      // Handle intersection points properly
+      if (currentPoint.type === PolylinePointType.Intersection) {
+        const intersectionPoint = currentPoint as PolylineIntersectionPoint;
+
+        // Add the intersection point to the polyline
+        subtractedPolyline.push(currentPoint.coordinates);
+
+        // If this is a cloned intersection point, jump to its pair
+        if (intersectionPoint.cloned && intersectionPoint.next) {
+          currentPoint = intersectionPoint.next;
+          continue;
+        }
+      } else {
+        // Regular vertex point
+        subtractedPolyline.push(currentPoint.coordinates);
       }
 
-      subtractedPolyline.push(currentPoint.coordinates);
       currentPoint = currentPoint.next;
 
       // Additional safety check for null/undefined next pointer
@@ -411,7 +446,10 @@ function subtractPolylines(
       );
     }
 
-    subtractedPolylines.push(subtractedPolyline);
+    // Only add polylines with at least 3 points
+    if (subtractedPolyline.length >= 3) {
+      subtractedPolylines.push(subtractedPolyline);
+    }
   }
 
   if (outerIterationCount >= maxOuterIterations) {

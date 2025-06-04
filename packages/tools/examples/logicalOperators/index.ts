@@ -9,14 +9,12 @@ import {
   addButtonToToolbar,
   addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
-  createInfoSection,
   initDemo,
   setTitleAndDescription,
   addManipulationBindings,
   contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
-import { getAnnotation, removeAnnotation } from 'tools/src/stateManagement';
-import { removeContourSegmentationAnnotation } from 'tools/src/utilities/contourSegmentation';
+import { runAllPolylineTests } from '../../src/utilities/math/polyline/testPolylineOperations';
 
 // This is for debugging purposes
 console.warn(
@@ -435,4 +433,5 @@ async function run() {
   updateActiveSegmentIndex(1);
 }
 
+//runAllPolylineTests();
 run();
