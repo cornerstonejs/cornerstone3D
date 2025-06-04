@@ -58,6 +58,7 @@ import { CatmullRomSpline } from './splines/CatmullRomSpline';
 import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
+import { convertContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -83,10 +84,18 @@ enum SplineToolActions {
   DeleteControlPoint = 'deleteControlPoint',
 }
 
+const splineToolNames = [
+  'CatmullRomSplineROI',
+  'LinearSplineROI',
+  'BSplineROI',
+  'CardinalSplineROI',
+];
+
 class SplineROITool extends ContourSegmentationBaseTool {
   static toolName = 'SplineROI';
   static SplineTypes = SplineTypesEnum;
   static Actions = SplineToolActions;
+  private annotationCompletedBinded;
 
   _throttledCalculateCachedStats: Function;
   editData: {
@@ -114,6 +123,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       configuration: {
         preventHandleOutsideImage: false,
         calculateStats: true,
+        simplifiedSpline: false, // if true, it will convert the annotations to free hand
         getTextLines: defaultGetTextLines,
         /**
          * Specify which modifier key is used to add a hole to a contour. The
@@ -185,6 +195,81 @@ class SplineROITool extends ContourSegmentationBaseTool {
       100,
       { trailing: true }
     );
+    this.annotationCompletedBinded = this.annotationCompleted.bind(this);
+  }
+
+  protected annotationCompleted(evt) {
+    const { annotation } = evt.detail;
+    if (
+      !splineToolNames.includes(annotation?.metadata?.toolName) ||
+      !this.configuration.simplifiedSpline
+    ) {
+      return;
+    }
+    convertContourSegmentationAnnotation(annotation);
+  }
+
+  /**
+   * Initializes event listeners for the SplineROI tool.
+   * This method sets up the necessary event listeners that the tool needs to function properly.
+   * Currently, it listens for annotation completion events to handle post-completion processing
+   * such as converting contour segmentation annotations when simplified spline mode is enabled.
+   *
+   * The listeners are attached to the global eventTarget to ensure they can receive events
+   * from any viewport or rendering engine instance.
+   */
+  protected initializeListeners() {
+    eventTarget.addEventListener(
+      Events.ANNOTATION_COMPLETED,
+      this.annotationCompletedBinded
+    );
+  }
+
+  /**
+   * Removes all event listeners that were previously set up by initializeListeners().
+   * This method is responsible for cleaning up event listeners to prevent memory leaks
+   * and unwanted event handling when the tool is no longer active or enabled.
+   *
+   * It removes the annotation completion event listener that was used for handling
+   * post-completion processing of spline annotations.
+   */
+  protected removeListeners() {
+    eventTarget.removeEventListener(
+      Events.ANNOTATION_COMPLETED,
+      this.annotationCompletedBinded
+    );
+  }
+
+  /**
+   * The method initializes the necessary event listeners to ensure the tool can respond
+   * to relevant events such as annotation completion for processing spline annotations.
+   */
+  onSetToolEnabled(): void {
+    this.initializeListeners();
+  }
+
+  /**
+   * The method ensures that event listeners are properly initialized so the tool can
+   * handle annotation completion events and perform necessary post-processing operations.
+   *
+   * Note: A tool can be enabled but not active. When active, it becomes the primary
+   * tool for handling user interactions in the viewport.
+   */
+  onSetToolActive(): void {
+    this.initializeListeners();
+  }
+
+  /**
+   * The method removes all event listeners to ensure clean shutdown and prevent
+   * memory leaks. This is crucial for proper resource management, especially in
+   * applications where tools are frequently enabled/disabled or when multiple
+   * tool instances exist.
+   *
+   * After this method is called, the tool will no longer process annotation
+   * completion events or perform any background operations.
+   */
+  onSetToolDisabled(): void {
+    this.removeListeners();
   }
 
   /**
