@@ -310,7 +310,7 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
       statistics?: ROICachedStats;
     };
     handles: {
-      points: [Types.Point3, Types.Point3[]]; // [center, end]
+      points: Types.Point3[]; // [center, top, bottom, left, right]
       activeHandleIndex: number | null;
       textBox?: {
         hasMoved: boolean;
