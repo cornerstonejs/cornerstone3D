@@ -249,9 +249,6 @@ function createImage(
             }
           }
 
-          imageFrame.pixelData = imageData.data;
-          imageFrame.pixelDataLength = imageData.data.length;
-
           imageFrame.imageData = imageData;
         }
 
