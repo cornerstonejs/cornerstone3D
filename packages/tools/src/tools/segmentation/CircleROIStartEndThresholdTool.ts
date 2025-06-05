@@ -590,7 +590,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { startCoordinate, endCoordinate } = data;
     const { points } = data.handles;
 
-    const handlesToStart = csUtils.deepClone(points);
+    const handlesToStart : Types.Point3[] = csUtils.deepClone(points);
 
     const startWorld = vec3.clone(points[0]);
     const endWorld = vec3.clone(points[0]);
