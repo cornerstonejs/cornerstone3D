@@ -107,61 +107,6 @@ export function robustSegmentIntersection(
   return null; // No intersection
 }
 
-/**
- * Checks if a point is inside a polygon using the ray casting algorithm.
- */
-export function isPointInPolygon(
-  point: Types.Point2,
-  polygon: Types.Point2[]
-): boolean {
-  if (!polygon || polygon.length < 3) {
-    return false;
-  }
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i][0],
-      yi = polygon[i][1];
-    const xj = polygon[j][0],
-      yj = polygon[j][1];
-
-    // Check if point is on an edge
-    // dist(xi,yi to point) + dist(point to xj,yj) == dist(xi,yi to xj,yj)
-    const d_segment_sq = vec2.squaredDistance(polygon[i], polygon[j]);
-    const d_pi_p_sq = vec2.squaredDistance(polygon[i], point);
-    const d_pj_p_sq = vec2.squaredDistance(polygon[j], point);
-    if (
-      Math.abs(
-        Math.sqrt(d_pi_p_sq) + Math.sqrt(d_pj_p_sq) - Math.sqrt(d_segment_sq)
-      ) < EPSILON
-    ) {
-      return true; // Point is on the boundary
-    }
-
-    const intersect =
-      yi > point[1] !== yj > point[1] &&
-      point[0] < ((xj - xi) * (point[1] - yi)) / (yj - yi) + xi;
-    if (intersect) {
-      inside = !inside;
-    }
-  }
-  return inside;
-}
-
-/**
- * Calculates the 2D normal of a polyline (proportional to area, indicates winding).
- * Sum of (x_i * y_{i+1} - x_{i+1} * y_i) / 2. Sign indicates winding.
- * Positive for CCW, Negative for CW (standard Cartesian).
- */
-export function getPolylineSignedArea(polyline: Types.Point2[]): number {
-  let area = 0;
-  for (let i = 0; i < polyline.length; i++) {
-    const p1 = polyline[i];
-    const p2 = polyline[(i + 1) % polyline.length];
-    area += p1[0] * p2[1] - p2[0] * p1[1];
-  }
-  return area / 2;
-}
-
 // --- Augmented Polyline Node Structure and Helper ---
 export enum PolylineNodeType {
   Vertex,

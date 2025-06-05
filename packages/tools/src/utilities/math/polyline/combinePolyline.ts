@@ -7,20 +7,6 @@ import intersectPolyline from './intersectPolyline';
 import getNormal2 from './getNormal2';
 import { glMatrix, vec3 } from 'gl-matrix';
 import getLinesIntersection from './getLinesIntersection';
-import {
-  distanceSquared,
-  EPSILON,
-  getPolylineSignedArea,
-  IntersectionDirection,
-  isPointInPolygon,
-  pointsAreEqual,
-  PolylineNodeType,
-  robustSegmentIntersection,
-  vec2CrossZ,
-  vec2Subtract,
-  type AugmentedPolyNode,
-  type IntersectionInfo,
-} from './polylineHelper';
 
 enum PolylinePointType {
   Vertex,

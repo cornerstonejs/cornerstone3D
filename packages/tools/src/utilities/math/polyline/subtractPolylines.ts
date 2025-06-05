@@ -1,16 +1,16 @@
 import type { Types } from '@cornerstonejs/core';
 import { vec2 } from 'gl-matrix';
+import getSignedArea from './getSignedArea';
 import {
   EPSILON,
-  getPolylineSignedArea,
   IntersectionDirection,
-  isPointInPolygon,
   pointsAreEqual,
   PolylineNodeType,
   robustSegmentIntersection,
   type AugmentedPolyNode,
   type IntersectionInfo,
-} from './polylineHelper';
+} from './robustSegmentIntersection';
+import containsPoint from './containsPoint';
 
 export default function subtractPolylines(
   targetPolylineCoords: Types.Point2[],
@@ -26,8 +26,8 @@ export default function subtractPolylines(
   const sourcePolylineCoords = sourcePolylineCoordsInput.slice();
 
   // 1. Ensure consistent winding for subtraction (e.g., target CCW, source CW)
-  const targetArea = getPolylineSignedArea(targetPolylineCoords);
-  const sourceArea = getPolylineSignedArea(sourcePolylineCoords);
+  const targetArea = getSignedArea(targetPolylineCoords);
+  const sourceArea = getSignedArea(sourcePolylineCoords);
 
   // Assuming target is primary, source is subtractor.
   // If target is CCW (positive area) and source is also CCW, reverse source.
@@ -238,9 +238,9 @@ export default function subtractPolylines(
         ];
 
         // Use original source coordinates for point-in-polygon test, as sourceAugmented is already reversed.
-        const prevSegMidpointInsideSource = isPointInPolygon(
-          midPrevTargetSeg as Types.Point2,
-          sourcePolylineCoordsInput
+        const prevSegMidpointInsideSource = containsPoint(
+          sourcePolylineCoordsInput,
+          midPrevTargetSeg as Types.Point2
         );
 
         if (prevSegMidpointInsideSource) {
@@ -270,7 +270,7 @@ export default function subtractPolylines(
     }
     // Start only from unvisited TARGET vertices.
     // Check if this startNode of target is outside the original source polygon.
-    if (isPointInPolygon(startNode.coordinates, sourcePolylineCoordsInput)) {
+    if (containsPoint(sourcePolylineCoordsInput, startNode.coordinates)) {
       continue; // Skip if starting point is inside the subtraction area
     }
 

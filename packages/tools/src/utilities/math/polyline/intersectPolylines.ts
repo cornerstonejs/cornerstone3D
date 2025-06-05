@@ -1,16 +1,16 @@
 import type { Types } from '@cornerstonejs/core';
 import { vec2 } from 'gl-matrix';
+import containsPoint from './containsPoint';
+import getSignedArea from './getSignedArea';
 import {
   EPSILON,
-  getPolylineSignedArea,
   IntersectionDirection,
-  isPointInPolygon,
   pointsAreEqual,
   PolylineNodeType,
   robustSegmentIntersection,
   type AugmentedPolyNode,
   type IntersectionInfo,
-} from './polylineHelper';
+} from './robustSegmentIntersection';
 
 /**
  * Calculates all unique intersection points between two polylines.
@@ -31,8 +31,8 @@ export default function intersectPolylines(
   let clipPolyCoords = clipPolyCoordsInput.slice();
 
   // 1. Ensure consistent winding for intersection (e.g., both CCW)
-  const mainArea = getPolylineSignedArea(mainPolyCoords);
-  const clipArea = getPolylineSignedArea(clipPolyCoords);
+  const mainArea = getSignedArea(mainPolyCoords);
+  const clipArea = getSignedArea(clipPolyCoords);
 
   if (Math.abs(mainArea) < EPSILON || Math.abs(clipArea) < EPSILON) {
     return []; // Degenerate polygon(s)
@@ -84,14 +84,14 @@ export default function intersectPolylines(
   if (intersections.length === 0) {
     // Check for full containment
     if (
-      isPointInPolygon(mainPolyCoords[0], currentClipPolyForPIP) &&
-      mainPolyCoords.every((pt) => isPointInPolygon(pt, currentClipPolyForPIP))
+      containsPoint(currentClipPolyForPIP, mainPolyCoords[0]) &&
+      mainPolyCoords.every((pt) => containsPoint(currentClipPolyForPIP, pt))
     ) {
       return [[...mainPolyCoords.map((p) => [...p] as Types.Point2)]]; // Main is inside Clip
     }
     if (
-      isPointInPolygon(clipPolyCoords[0], mainPolyCoords) &&
-      clipPolyCoords.every((pt) => isPointInPolygon(pt, mainPolyCoords))
+      containsPoint(mainPolyCoords, clipPolyCoords[0]) &&
+      clipPolyCoords.every((pt) => containsPoint(mainPolyCoords, pt))
     ) {
       return [[...clipPolyCoords.map((p) => [...p] as Types.Point2)]]; // Clip is inside Main
     }
@@ -292,10 +292,7 @@ export default function intersectPolylines(
             (mainNode.prev.coordinates[1] + mainNode.coordinates[1]) / 2,
           ];
           if (
-            isPointInPolygon(
-              midPrevMainSeg as Types.Point2,
-              currentClipPolyForPIP
-            )
+            containsPoint(currentClipPolyForPIP, midPrevMainSeg as Types.Point2)
           ) {
             // Previous segment was inside clip, so this intersection is an Exit for mainPoly
             mainNode.intersectionDir = IntersectionDirection.Exiting;
@@ -425,7 +422,7 @@ export default function intersectPolylines(
       // Ensure the resulting polygon has the correct winding (e.g., CCW)
       // This is important if multiple disjoint intersection areas are formed.
       // The tracing rule should naturally produce this if inputs are CCW.
-      const resultArea = getPolylineSignedArea(currentPathCoords);
+      const resultArea = getSignedArea(currentPathCoords);
       if (mainArea > 0 && resultArea < 0) {
         // If main was CCW, result should be CCW
         currentPathCoords.reverse();
