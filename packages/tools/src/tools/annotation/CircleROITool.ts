@@ -60,7 +60,7 @@ import {
 } from '../../utilities/math/circle';
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
-import { vec2, vec3 } from 'gl-matrix'; // Importation pour opérations vectorielles
+import { vec2, vec3 } from 'gl-matrix';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -142,6 +142,7 @@ class CircleROITool extends AnnotationTool {
         calculateStats: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
+        simplified: true, // If true, only 2 points are used for the handles, otherwise 5 points are used
       },
     }
   ) {
@@ -170,7 +171,7 @@ class CircleROITool extends AnnotationTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
@@ -185,6 +186,25 @@ class CircleROITool extends AnnotationTool {
     );
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
+    let points;
+    if (this.configuration.simplified) {
+      points = [[...worldPos], [...worldPos]] as [Types.Point3, Types.Point3];
+    } else {
+      points = [
+        [...worldPos],
+        [...worldPos],
+        [...worldPos],
+        [...worldPos],
+        [...worldPos],
+      ] as [
+          Types.Point3,
+          Types.Point3,
+          Types.Point3,
+          Types.Point3,
+          Types.Point3
+        ];
+    }
 
     const annotation = {
       highlighted: true,
@@ -210,19 +230,7 @@ class CircleROITool extends AnnotationTool {
               bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
-          points: [
-            [...worldPos], // center
-            [...worldPos], // top
-            [...worldPos], // bottom
-            [...worldPos], // left
-            [...worldPos], // right
-          ] as [
-            Types.Point3,
-            Types.Point3,
-            Types.Point3,
-            Types.Point3,
-            Types.Point3
-          ], // Modifié pour 5 points
+          points,
           activeHandleIndex: null,
         },
         cachedStats: {},
@@ -274,28 +282,13 @@ class CircleROITool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const { data } = annotation;
-    const { points } = data.handles;
-
-    // For some reason Typescript doesn't understand this, so we need to be
-    // more specific about the type
-    const canvasHandles = points.map((p) => viewport.worldToCanvas(p)) as [
-      Types.Point2, // center
-      Types.Point2, // top
-      Types.Point2, // bottom
-      Types.Point2, // left
-      Types.Point2 // right
-    ];
-
+    const { points } = annotation.data.handles;
+    const canvasHandles = points.map((p) => viewport.worldToCanvas(p));
     const canvasCenter = canvasHandles[0];
-    const radius = getCanvasCircleRadius([canvasCenter, canvasHandles[1]]); // Rayon basé sur la poignée du haut
+    const radius = getCanvasCircleRadius([canvasCenter, canvasHandles[1]]);
     const radiusPoint = getCanvasCircleRadius([canvasCenter, canvasCoords]);
 
-    if (Math.abs(radiusPoint - radius) < proximity / 2) {
-      return true;
-    }
-
-    return false;
+    return Math.abs(radiusPoint - radius) < proximity / 2;
   };
 
   toolSelectedCallback = (
@@ -321,9 +314,6 @@ class CircleROITool extends AnnotationTool {
     hideElementCursor(element);
 
     this._activateModify(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -368,9 +358,6 @@ class CircleROITool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -402,7 +389,6 @@ class CircleROITool extends AnnotationTool {
 
     resetElementCursor(element);
 
-    const { renderingEngine } = getEnabledElement(element);
 
     this.editData = null;
     this.isDrawing = false;
@@ -424,9 +410,8 @@ class CircleROITool extends AnnotationTool {
   _dragDrawCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
-    const { element } = eventDetail;
-    const { currentPoints } = eventDetail;
-    const currentCanvasPoints = currentPoints.canvas;
+    const { element, currentPoints } = eventDetail;
+    const { world: worldPos, canvas: currentCanvasPoints } = currentPoints;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { canvasToWorld } = viewport;
@@ -437,27 +422,30 @@ class CircleROITool extends AnnotationTool {
     const { data } = annotation;
     const centerCanvas = viewport.worldToCanvas(centerWorld as Types.Point3);
 
-    // Calculate new radius
-    const radiusCanvas = vec2.distance(centerCanvas, currentCanvasPoints);
+    if (this.configuration.simplified) {
+      data.handles.points[1] = worldPos;
+    } else {
+      const radiusCanvas = vec2.distance(centerCanvas, currentCanvasPoints);
 
-    // Update other handles based on the new radius
-    data.handles.points[0] = [...centerWorld];
-    data.handles.points[1] = canvasToWorld([
-      centerCanvas[0],
-      centerCanvas[1] - radiusCanvas,
-    ]);
-    data.handles.points[2] = canvasToWorld([
-      centerCanvas[0],
-      centerCanvas[1] + radiusCanvas,
-    ]);
-    data.handles.points[3] = canvasToWorld([
-      centerCanvas[0] - radiusCanvas,
-      centerCanvas[1],
-    ]);
-    data.handles.points[4] = canvasToWorld([
-      centerCanvas[0] + radiusCanvas,
-      centerCanvas[1],
-    ]);
+      // Update other handles based on the new radius
+      data.handles.points[0] = [...centerWorld];
+      data.handles.points[1] = canvasToWorld([
+        centerCanvas[0],
+        centerCanvas[1] - radiusCanvas,
+      ]);
+      data.handles.points[2] = canvasToWorld([
+        centerCanvas[0],
+        centerCanvas[1] + radiusCanvas,
+      ]);
+      data.handles.points[3] = canvasToWorld([
+        centerCanvas[0] - radiusCanvas,
+        centerCanvas[1],
+      ]);
+      data.handles.points[4] = canvasToWorld([
+        centerCanvas[0] + radiusCanvas,
+        centerCanvas[1],
+      ]);
+    }
 
     annotation.invalidated = true;
 
@@ -512,9 +500,6 @@ class CircleROITool extends AnnotationTool {
       this._dragHandle(evt);
       annotation.invalidated = true;
     }
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -574,7 +559,6 @@ class CircleROITool extends AnnotationTool {
   };
 
   cancel = (element: HTMLDivElement) => {
-    // If it is mid-draw or mid-modify
     if (this.isDrawing) {
       this.isDrawing = false;
       this._deactivateDraw(element);
@@ -582,10 +566,8 @@ class CircleROITool extends AnnotationTool {
       resetElementCursor(element);
 
       const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
-      const { data } = annotation;
-
       annotation.highlighted = false;
-      data.handles.activeHandleIndex = null;
+      annotation.data.handles.activeHandleIndex = null;
 
       triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -600,11 +582,9 @@ class CircleROITool extends AnnotationTool {
 
   _activateModify = (element) => {
     state.isInteractingWithTool = true;
-
     element.addEventListener(Events.MOUSE_UP, this._endCallback);
     element.addEventListener(Events.MOUSE_DRAG, this._dragModifyCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
-
     element.addEventListener(Events.TOUCH_END, this._endCallback);
     element.addEventListener(Events.TOUCH_DRAG, this._dragModifyCallback);
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
@@ -612,11 +592,9 @@ class CircleROITool extends AnnotationTool {
 
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
-
     element.removeEventListener(Events.MOUSE_UP, this._endCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this._dragModifyCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
-
     element.removeEventListener(Events.TOUCH_END, this._endCallback);
     element.removeEventListener(Events.TOUCH_DRAG, this._dragModifyCallback);
     element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
@@ -624,12 +602,10 @@ class CircleROITool extends AnnotationTool {
 
   _activateDraw = (element) => {
     state.isInteractingWithTool = true;
-
     element.addEventListener(Events.MOUSE_UP, this._endCallback);
     element.addEventListener(Events.MOUSE_DRAG, this._dragDrawCallback);
     element.addEventListener(Events.MOUSE_MOVE, this._dragDrawCallback);
     element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
-
     element.addEventListener(Events.TOUCH_END, this._endCallback);
     element.addEventListener(Events.TOUCH_DRAG, this._dragDrawCallback);
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
@@ -637,12 +613,10 @@ class CircleROITool extends AnnotationTool {
 
   _deactivateDraw = (element) => {
     state.isInteractingWithTool = false;
-
     element.removeEventListener(Events.MOUSE_UP, this._endCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this._dragDrawCallback);
     element.removeEventListener(Events.MOUSE_MOVE, this._dragDrawCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
-
     element.removeEventListener(Events.TOUCH_END, this._endCallback);
     element.removeEventListener(Events.TOUCH_DRAG, this._dragDrawCallback);
     element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
@@ -702,15 +676,9 @@ class CircleROITool extends AnnotationTool {
         styleSpecifier,
       });
 
-      const canvasCoordinates = points.map((p) =>
+      const canvasCoordinates: Types.Point2[] = points.map((p) =>
         viewport.worldToCanvas(p)
-      ) as [
-        Types.Point2,
-        Types.Point2,
-        Types.Point2,
-        Types.Point2,
-        Types.Point2
-      ]; // Modifié pour 5 points
+      );
       const center = canvasCoordinates[0];
       const radius = getCanvasCircleRadius([center, canvasCoordinates[1]]);
       const canvasCorners = getCanvasCircleCorners([
@@ -798,13 +766,12 @@ class CircleROITool extends AnnotationTool {
         continue;
       }
 
-      if (
-        !isAnnotationLocked(annotationUID) &&
-        !this.editData &&
-        activeHandleIndex !== null
-      ) {
-        // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = canvasCoordinates;
+      if (!isAnnotationLocked(annotation) && !this.editData && activeHandleIndex !== null) {
+        if (this.configuration.simplified) {
+          activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+        } else {
+          activeHandleCanvasCoords = canvasCoordinates;
+        }
       }
 
       if (activeHandleCanvasCoords) {
@@ -1100,13 +1067,7 @@ class CircleROITool extends AnnotationTool {
 
   static hydrate = (
     viewportId: string,
-    points: [
-      Types.Point3,
-      Types.Point3,
-      Types.Point3,
-      Types.Point3,
-      Types.Point3
-    ],
+    points: Types.Point3[],
     options?: {
       annotationUID?: string;
       toolInstance?: CircleROITool;
@@ -1139,7 +1100,7 @@ class CircleROITool extends AnnotationTool {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
         handles: {
-          points, // [center, top, bottom, left, right]
+          points,
           textBox: {
             hasMoved: false,
             worldPosition: <Types.Point3>[0, 0, 0],

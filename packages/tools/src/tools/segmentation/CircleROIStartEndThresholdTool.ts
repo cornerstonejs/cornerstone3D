@@ -176,7 +176,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     if (this.configuration.simplified) {
       points = [[...worldPos], [...worldPos]] as [
         Types.Point3,
-        Types.Point3,
+        Types.Point3
       ];
     } else {
       points = [
@@ -363,7 +363,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      const canvasCoordinates = points.map((p) =>
+      const canvasCoordinates: Types.Point2[] = points.map((p) =>
         viewport.worldToCanvas(p)
       );
       const center = canvasCoordinates[0];
@@ -590,11 +590,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   ): void {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;
-    const { imageData } = imageVolume;
     const { startCoordinate, endCoordinate } = data;
     const { points } = data.handles;
 
-    const handlesToStart = csUtils.deepClone(points) as typeof points;
+    const handlesToStart = csUtils.deepClone(points);
 
     const startWorld = vec3.clone(points[0]);
     const endWorld = vec3.clone(points[0]);
@@ -627,7 +626,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       newProjectionPoints.push(
         handlesToStart.map((point) => {
           const newPoint = vec3.create();
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
+          vec3.scaleAndAdd(newPoint, point as vec3, viewPlaneNormal, dist);
           return Array.from(newPoint);
         })
       );
@@ -652,7 +651,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     const canvasCoordinates = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)
-    ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2, Types.Point2];
+    );
 
     const baseTopLeftCanvas = getCanvasCircleCorners([
       canvasCoordinates[0],
@@ -707,12 +706,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       }
 
       const centerWorld = projectionPoints[i][0];
-      const canvasCoordinates = projectionPoints[i].map((p) =>
+      const currentCanvasCoordinates = projectionPoints[i].map((p) =>
         viewport.worldToCanvas(p)
       );
 
       const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
-        getCanvasCircleCorners([canvasCoordinates[0], canvasCoordinates[1]])
+        getCanvasCircleCorners([currentCanvasCoordinates[0], currentCanvasCoordinates[1]])
       );
 
       const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
