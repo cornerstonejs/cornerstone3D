@@ -183,12 +183,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         [...worldPos], // left
         [...worldPos], // right
       ] as [
-        Types.Point3,
-        Types.Point3,
-        Types.Point3,
-        Types.Point3,
-        Types.Point3
-      ];
+          Types.Point3,
+          Types.Point3,
+          Types.Point3,
+          Types.Point3,
+          Types.Point3
+        ];
     }
 
     const annotation = {
@@ -414,9 +414,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
         roundedCameraCoordinate <
-          Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
+        Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
         roundedCameraCoordinate >
-          Math.max(roundedStartCoordinate, roundedEndCoordinate)
+        Math.max(roundedStartCoordinate, roundedEndCoordinate)
       ) {
         continue;
       }
@@ -590,7 +590,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { startCoordinate, endCoordinate } = data;
     const { points } = data.handles;
 
-    const handlesToStart = csUtils.deepClone(points);
+    const handlesToStart = csUtils.deepClone(points) as Types.Point3[];
 
     const startWorld = vec3.clone(points[0]);
     const endWorld = vec3.clone(points[0]);
@@ -675,8 +675,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
-        (worldWidth / measureInfo.scale / 2) *
-        (worldHeight / aspect / measureInfo.scale / 2)
+      (worldWidth / measureInfo.scale / 2) *
+      (worldHeight / aspect / measureInfo.scale / 2)
     );
 
     const modalityUnitOptions = {
