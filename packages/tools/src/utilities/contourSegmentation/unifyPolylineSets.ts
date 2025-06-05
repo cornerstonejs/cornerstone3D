@@ -1,12 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
 import * as math from '../math';
 import { checkIntersection } from './sharedOperations';
-import {
-  mergePolylines,
-  subtractPolylines,
-  intersectPolylines,
-} from '../math/polyline';
+import { intersectPolylines } from '../math/polyline';
 
+const TOLERANCE = 1e-10; // Very small tolerance for floating point comparison
 /**
  * Unifies two sets of polylines by merging intersecting polylines and keeping non-intersecting ones.
  * If a polyline from set A intersects with a polyline from set B, they are merged.
@@ -359,7 +356,6 @@ function removeDuplicatePoints(polyline: Types.Point2[]): Types.Point2[] {
   }
 
   const cleaned: Types.Point2[] = [polyline[0]]; // Always keep the first point
-  const tolerance = 1e-10; // Very small tolerance for floating point comparison
 
   for (let i = 1; i < polyline.length; i++) {
     const currentPoint = polyline[i];
@@ -369,7 +365,7 @@ function removeDuplicatePoints(polyline: Types.Point2[]): Types.Point2[] {
     const dx = Math.abs(currentPoint[0] - lastPoint[0]);
     const dy = Math.abs(currentPoint[1] - lastPoint[1]);
 
-    if (dx > tolerance || dy > tolerance) {
+    if (dx > TOLERANCE || dy > TOLERANCE) {
       cleaned.push(currentPoint);
     }
   }

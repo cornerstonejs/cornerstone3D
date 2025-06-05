@@ -1,26 +1,13 @@
 import type { Types } from '@cornerstonejs/core';
+import { vec2 } from 'gl-matrix';
+
 // Epsilon for floating point comparisons
 export const EPSILON = 1e-7; // A bit larger than glMatrix.EPSILON for robustness
 
 // --- Basic Vector and Point Math ---
-export function vec2Subtract(
-  out: Types.Point2,
-  a: Types.Point2,
-  b: Types.Point2
-): Types.Point2 {
-  out[0] = a[0] - b[0];
-  out[1] = a[1] - b[1];
-  return out;
-}
 
 export function vec2CrossZ(a: Types.Point2, b: Types.Point2): number {
   return a[0] * b[1] - a[1] * b[0];
-}
-
-export function distanceSquared(p1: Types.Point2, p2: Types.Point2): number {
-  const dx = p1[0] - p2[0];
-  const dy = p1[1] - p2[1];
-  return dx * dx + dy * dy;
 }
 
 export function pointsAreEqual(p1: Types.Point2, p2: Types.Point2): boolean {
@@ -42,10 +29,10 @@ export function robustSegmentIntersection(
   q1: Types.Point2,
   q2: Types.Point2 // Segment 2
 ): Types.Point2 | null {
-  const r = vec2Subtract([0, 0], p2, p1);
-  const s = vec2Subtract([0, 0], q2, q1);
+  const r = vec2.subtract(vec2.create(), p2, p1) as Types.Point2;
+  const s = vec2.subtract(vec2.create(), q2, q1) as Types.Point2;
   const rxs = vec2CrossZ(r, s);
-  const qmp = vec2Subtract([0, 0], q1, p1);
+  const qmp = vec2.subtract(vec2.create(), q1, p1) as Types.Point2;
   const qmpxr = vec2CrossZ(qmp, r);
 
   if (Math.abs(rxs) < EPSILON) {
@@ -59,24 +46,52 @@ export function robustSegmentIntersection(
       const p1OnQ = (t: number) => t >= -EPSILON && t <= 1 + EPSILON;
       const q1OnP = (t: number) => t >= -EPSILON && t <= 1 + EPSILON;
 
-      const t0 = vec2Dot(vec2Subtract([0, 0], q1, p1), r) / vec2Dot(r, r);
-      const t1 = vec2Dot(vec2Subtract([0, 0], q2, p1), r) / vec2Dot(r, r);
-      const u0 = vec2Dot(vec2Subtract([0, 0], p1, q1), s) / vec2Dot(s, s);
-      const u1 = vec2Dot(vec2Subtract([0, 0], p2, q1), s) / vec2Dot(s, s);
+      const t0 =
+        vec2.dot(vec2.subtract(vec2.create(), q1, p1), r) / vec2.dot(r, r);
+      const t1 =
+        vec2.dot(vec2.subtract(vec2.create(), q2, p1), r) / vec2.dot(r, r);
+      const u0 =
+        vec2.dot(vec2.subtract(vec2.create(), p1, q1), s) / vec2.dot(s, s);
+      const u1 =
+        vec2.dot(vec2.subtract(vec2.create(), p2, q1), s) / vec2.dot(s, s);
 
       // This logic is still insufficient for full collinear overlap range.
       // A true clipping algorithm needs to create multiple intersection points
       // for the start and end of any collinear overlap.
-      if (p1OnQ(t0) && pointsAreEqual(q1, p1_t(p1, r, t0))) {
+      if (
+        p1OnQ(t0) &&
+        pointsAreEqual(
+          q1,
+          vec2.scaleAndAdd(vec2.create(), p1, r, t0) as Types.Point2
+        )
+      ) {
         return q1;
       }
-      if (p1OnQ(t1) && pointsAreEqual(q2, p1_t(p1, r, t1))) {
+      if (
+        p1OnQ(t1) &&
+        pointsAreEqual(
+          q2,
+          vec2.scaleAndAdd(vec2.create(), p1, r, t1) as Types.Point2
+        )
+      ) {
         return q2;
       }
-      if (q1OnP(u0) && pointsAreEqual(p1, p1_t(q1, s, u0))) {
+      if (
+        q1OnP(u0) &&
+        pointsAreEqual(
+          p1,
+          vec2.scaleAndAdd(vec2.create(), q1, s, u0) as Types.Point2
+        )
+      ) {
         return p1;
       }
-      if (q1OnP(u1) && pointsAreEqual(p2, p1_t(q1, s, u1))) {
+      if (
+        q1OnP(u1) &&
+        pointsAreEqual(
+          p2,
+          vec2.scaleAndAdd(vec2.create(), q1, s, u1) as Types.Point2
+        )
+      ) {
         return p2;
       }
     }
@@ -90,16 +105,6 @@ export function robustSegmentIntersection(
     return [p1[0] + t * r[0], p1[1] + t * r[1]];
   }
   return null; // No intersection
-}
-export function vec2Dot(a: Types.Point2, b: Types.Point2): number {
-  return a[0] * b[0] + a[1] * b[1];
-}
-export function p1_t(
-  p1: Types.Point2,
-  r: Types.Point2,
-  t: number
-): Types.Point2 {
-  return [p1[0] + t * r[0], p1[1] + t * r[1]];
 }
 
 /**
@@ -121,9 +126,9 @@ export function isPointInPolygon(
 
     // Check if point is on an edge
     // dist(xi,yi to point) + dist(point to xj,yj) == dist(xi,yi to xj,yj)
-    const d_segment_sq = distanceSquared(polygon[i], polygon[j]);
-    const d_pi_p_sq = distanceSquared(polygon[i], point);
-    const d_pj_p_sq = distanceSquared(polygon[j], point);
+    const d_segment_sq = vec2.squaredDistance(polygon[i], polygon[j]);
+    const d_pi_p_sq = vec2.squaredDistance(polygon[i], point);
+    const d_pj_p_sq = vec2.squaredDistance(polygon[j], point);
     if (
       Math.abs(
         Math.sqrt(d_pi_p_sq) + Math.sqrt(d_pj_p_sq) - Math.sqrt(d_segment_sq)

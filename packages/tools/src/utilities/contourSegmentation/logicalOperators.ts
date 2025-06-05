@@ -1,5 +1,5 @@
-import { getEnabledElementByViewportId, type Types } from '@cornerstonejs/core';
-import { getAnnotation } from '../../stateManagement';
+import type { Types } from '@cornerstonejs/core';
+import { getAnnotation, removeAnnotation } from '../../stateManagement';
 import type {
   ContourSegmentationData,
   ContourSegmentationAnnotation,
@@ -16,7 +16,9 @@ import {
 } from './unifyPolylineSets';
 import addPolylinesToSegmentation from './addPolylinesToSegmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
-import { getViewportIdsWithSegmentation } from '../../stateManagement/segmentation/getViewportIdsWithSegmentation';
+import { copyContourSegment } from './copyAnnotation';
+import { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation';
+import { getViewportAssociatedToSegmentation } from './getViewportAssociatedToSegmentation';
 
 export type SegmentInfo = {
   segmentationId: string;
@@ -25,9 +27,15 @@ export type SegmentInfo = {
   color?: string;
 };
 
-export type OperatorOptions = {
-  resultSegment: SegmentInfo;
-};
+export type OperatorOptions = SegmentInfo;
+export enum LogicalOperation {
+  Union,
+  Subtract,
+  Intersect,
+  XOR,
+  Copy,
+  Delete,
+}
 
 function getPolylines(
   contourRepresentationData: ContourSegmentationData,
@@ -107,20 +115,11 @@ function addSegmentInSegmentation(
   };
 }
 
-function getViewportAssociatedToSegmentation(segmentationId: string) {
-  const viewportIds = getViewportIdsWithSegmentation(segmentationId);
-  if (viewportIds?.length === 0) {
-    return;
-  }
-  const { viewport } = getEnabledElementByViewportId(viewportIds[0]) || {};
-  return viewport;
-}
-
 function applyLogicalOperation(
   segment1: SegmentInfo,
   segment2: SegmentInfo,
   options: OperatorOptions,
-  operation: number = 1
+  operation: LogicalOperation
 ) {
   const viewport = getViewportAssociatedToSegmentation(segment1.segmentationId);
   if (!viewport) {
@@ -134,22 +133,22 @@ function applyLogicalOperation(
   }
   let polylinesMerged;
   switch (operation) {
-    case 1:
+    case LogicalOperation.Union:
       polylinesMerged = unifyPolylineSets(polyLinesCanvas1, polyLinesCanvas2);
       break;
-    case 2:
+    case LogicalOperation.Subtract:
       polylinesMerged = subtractPolylineSets(
         polyLinesCanvas1,
         polyLinesCanvas2
       );
       break;
-    case 3:
+    case LogicalOperation.Intersect:
       polylinesMerged = intersectPolylinesSets(
         polyLinesCanvas1,
         polyLinesCanvas2
       );
       break;
-    case 4:
+    case LogicalOperation.XOR:
       polylinesMerged = xorPolylinesSets(polyLinesCanvas1, polyLinesCanvas2);
       break;
   }
@@ -157,7 +156,7 @@ function applyLogicalOperation(
     convertContourPolylineToWorld(polyline, viewport)
   );
 
-  const resultSegment = options.resultSegment;
+  const resultSegment = options;
   const segmentation = getSegmentation(resultSegment.segmentationId);
   const segmentIndex = resultSegment.segmentIndex;
   const color = resultSegment.color;
@@ -184,15 +183,15 @@ export function add(
   segment2: SegmentInfo,
   options: OperatorOptions
 ) {
-  applyLogicalOperation(segment1, segment2, options, 1);
+  applyLogicalOperation(segment1, segment2, options, LogicalOperation.Union);
 }
 
-export function subtraction(
+export function subtract(
   segment1: SegmentInfo,
   segment2: SegmentInfo,
   options: OperatorOptions
 ) {
-  applyLogicalOperation(segment1, segment2, options, 2);
+  applyLogicalOperation(segment1, segment2, options, LogicalOperation.Subtract);
 }
 
 export function intersect(
@@ -200,7 +199,12 @@ export function intersect(
   segment2: SegmentInfo,
   options: OperatorOptions
 ) {
-  applyLogicalOperation(segment1, segment2, options, 3);
+  applyLogicalOperation(
+    segment1,
+    segment2,
+    options,
+    LogicalOperation.Intersect
+  );
 }
 
 export function xor(
@@ -208,7 +212,41 @@ export function xor(
   segment2: SegmentInfo,
   options: OperatorOptions
 ) {
-  applyLogicalOperation(segment1, segment2, options, 4);
+  applyLogicalOperation(segment1, segment2, options, LogicalOperation.XOR);
+}
+
+export function copy(segment: SegmentInfo, options: OperatorOptions) {
+  copyContourSegment(
+    segment.segmentationId,
+    segment.segmentIndex,
+    options.segmentationId,
+    options.segmentIndex
+  );
+}
+
+export function deleteOperation(segment: SegmentInfo) {
+  const segmentation = getSegmentation(segment.segmentationId);
+  if (!segmentation) {
+    console.log('No active segmentation detected');
+    return;
+  }
+
+  if (!segmentation.representationData.Contour) {
+    console.log('No contour representation found');
+    return;
+  }
+
+  const representationData = segmentation.representationData.Contour;
+  const { annotationUIDsMap } = representationData;
+
+  const annotationUIDList = annotationUIDsMap.get(segment.segmentIndex);
+  annotationUIDList.forEach((annotationUID) => {
+    const annotation = getAnnotation(annotationUID);
+    removeAnnotation(annotationUID);
+    removeContourSegmentationAnnotation(
+      annotation as ContourSegmentationAnnotation
+    );
+  });
 }
 
 // cornerstoneTools.segmentation.operators.not(

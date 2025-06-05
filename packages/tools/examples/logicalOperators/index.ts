@@ -1,9 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  Enums,
-  getRenderingEngine,
-  RenderingEngine,
-} from '@cornerstonejs/core';
+import type { Types as csToolTypes } from '@cornerstonejs/tools';
+import { Enums, RenderingEngine, volumeLoader } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
@@ -13,8 +10,19 @@ import {
   setTitleAndDescription,
   addManipulationBindings,
   contourSegmentationToolBindings,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
-import { runAllPolylineTests } from '../../src/utilities/math/polyline/testPolylineOperations';
+import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
+const {
+  add,
+  subtract,
+  intersect,
+  xor,
+  LogicalOperation,
+  copy,
+  deleteOperation,
+  removeContourSegmentationAnnotation,
+} = cornerstoneTools.utilities.contourSegmentation;
 
 // This is for debugging purposes
 console.warn(
@@ -34,11 +42,14 @@ const { ViewportType } = Enums;
 // Define a unique id for the volume
 const toolGroupId = 'STACK_TOOLGROUP_ID';
 
-const segmentationId = `SEGMENTATION_ID`;
-const segmentIndexes = [1, 2, 3, 4, 5];
-const segmentVisibilityMap = new Map();
-let activeSegmentIndex = 0;
+// Define a unique id for the volume
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
+const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
+const segmentationId = `SEGMENTATION_ID`;
+let selectedOperation = LogicalOperation.Union;
 
 // ======== Set up page ======== //
 
@@ -52,44 +63,24 @@ const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
+viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const viewportId = 'CT_STACK_ACQUISITION';
-const element = document.createElement('div');
+const element1 = document.createElement('div');
+const element2 = document.createElement('div');
+const elements = [element1, element2];
 
-element.oncontextmenu = () => false;
-element.style.width = size;
-element.style.height = size;
+elements.forEach((element) => {
+  element.style.width = size;
+  element.style.height = size;
 
-viewportGrid.appendChild(element);
+  // Disable right click context menu so we can have right click tool
+  element.oncontextmenu = (e) => e.preventDefault();
+
+  viewportGrid.appendChild(element);
+});
 
 content.appendChild(viewportGrid);
-
-function updateActiveSegmentIndex(segmentIndex: number): void {
-  activeSegmentIndex = segmentIndex;
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, segmentIndex);
-}
-
-function getSegmentsVisibilityState() {
-  let segmentsVisibility = segmentVisibilityMap.get(segmentationId);
-
-  if (!segmentsVisibility) {
-    segmentsVisibility = new Array(segmentIndexes.length + 1).fill(true);
-    segmentVisibilityMap.set(segmentationId, segmentsVisibility);
-  }
-
-  return segmentsVisibility;
-}
-
-function updateSegmentationConfig(config) {
-  segmentation.config.style.setStyle(
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
-    },
-    config
-  );
-}
 
 // ============================= //
 
@@ -100,10 +91,24 @@ const cancelDrawingEventListener = (evt) => {
   }
 };
 
-element.addEventListener(
+element1.addEventListener(
   csToolsEnums.Events.KEY_DOWN,
   cancelDrawingEventListener
 );
+
+element2.addEventListener(
+  csToolsEnums.Events.KEY_DOWN,
+  cancelDrawingEventListener
+);
+
+const operationNames = [
+  'Add',
+  'Subtract',
+  'Intersect',
+  'XOR',
+  'Copy',
+  'Delete',
+];
 
 const Splines = {
   CatmullRomSplineROI: {
@@ -118,19 +123,14 @@ const Splines = {
 };
 
 const SplineToolNames = Object.keys(Splines);
-const splineToolsNames = [...SplineToolNames];
-let selectedToolName = splineToolsNames[0];
+const contourToolsNames = [
+  ...SplineToolNames,
+  PlanarFreehandContourSegmentationTool.toolName,
+];
+let selectedToolName = contourToolsNames[0];
 
 addDropdownToToolbar({
-  labelText: 'Segment Index',
-  options: { values: segmentIndexes, defaultValue: segmentIndexes[0] },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    updateActiveSegmentIndex(Number(nameAsStringOrNumber));
-  },
-});
-
-addDropdownToToolbar({
-  options: { values: splineToolsNames, defaultValue: selectedToolName },
+  options: { values: contourToolsNames, defaultValue: selectedToolName },
   onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
     const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -147,13 +147,61 @@ addDropdownToToolbar({
   },
 });
 
+addSegmentIndexDropdown(segmentationId);
+
+addDropDownToToolbar({
+  options: { values: operationNames, defaultValue: selectedToolName },
+  onSelectedValueChange: (selectedOperationName) => {
+    const operationName = String(selectedOperationName);
+    switch (operationName) {
+      case 'Add':
+        selectedOperation = LogicalOperation.Union;
+        break;
+      case 'Subtract':
+        selectedOperation = LogicalOperation.Subtract;
+        break;
+      case 'Intersect':
+        selectedOperation = LogicalOperation.Intersect;
+        break;
+      case 'XOR':
+        selectedOperation = LogicalOperation.XOR;
+        break;
+      case 'Copy':
+        selectedOperation = LogicalOperation.Copy;
+        break;
+      case 'Delete':
+        selectedOperation = LogicalOperation.Delete;
+        break;
+    }
+  },
+});
+
+addButtonToToolbar({
+  title: 'Apply operation',
+  onClick: function () {
+    performLogicalOperation(selectedOperation, true);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Delete active segment',
+  onClick: function () {
+    const segmentIndex =
+      cornerstoneTools.segmentation.segmentIndex.getActiveSegmentIndex(
+        segmentationId
+      );
+    deleteOperation({
+      segmentationId,
+      segmentIndex,
+    });
+  },
+});
+
 function performLogicalOperation(
-  operation: number = 1,
+  operation: csToolTypes.LogicalOperation = LogicalOperation.Union,
   createNew: boolean = true
 ) {
-  const activeSeg = segmentation.getActiveSegmentation(viewportId);
-  const renderEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderEngine.getViewport(viewportId);
+  const activeSeg = segmentation.getActiveSegmentation(viewportIds[0]);
 
   if (!activeSeg) {
     console.log('No active segmentation detected');
@@ -168,13 +216,6 @@ function performLogicalOperation(
   const representationData = activeSeg.representationData.Contour;
   const { annotationUIDsMap } = representationData;
 
-  const {
-    add,
-    subtraction,
-    intersect,
-    xor,
-    removeContourSegmentationAnnotation,
-  } = cornerstoneTools.utilities.contourSegmentation;
   if (annotationUIDsMap) {
     const segmentIndexes = Array.from(annotationUIDsMap.keys());
     const lastIndex = segmentIndexes.length - 1;
@@ -184,8 +225,14 @@ function performLogicalOperation(
     } else {
       newIndex = lastIndex;
     }
+    const operatorOptions = {
+      segmentationId: activeSeg.segmentationId,
+      label: 'Combined Addition',
+      segmentIndex: newIndex,
+      color: 'rgb(50, 130, 162)',
+    };
     if (segmentIndexes.length > 1) {
-      if (operation == 1) {
+      if (operation === LogicalOperation.Union) {
         add(
           {
             segmentationId: activeSeg.segmentationId,
@@ -195,17 +242,10 @@ function performLogicalOperation(
             segmentationId: activeSeg.segmentationId,
             segmentIndex: segmentIndexes[lastIndex],
           },
-          {
-            resultSegment: {
-              segmentationId: activeSeg.segmentationId,
-              label: 'Combined Addition',
-              segmentIndex: newIndex,
-              color: 'rgb(50, 130, 162)',
-            },
-          }
+          operatorOptions
         );
-      } else if (operation === 2) {
-        subtraction(
+      } else if (operation === LogicalOperation.Subtract) {
+        subtract(
           {
             segmentationId: activeSeg.segmentationId,
             segmentIndex: segmentIndexes[lastIndex - 1],
@@ -214,16 +254,9 @@ function performLogicalOperation(
             segmentationId: activeSeg.segmentationId,
             segmentIndex: segmentIndexes[lastIndex],
           },
-          {
-            resultSegment: {
-              segmentationId: activeSeg.segmentationId,
-              label: 'Combined Addition',
-              segmentIndex: newIndex,
-              color: 'rgb(50, 130, 162)',
-            },
-          }
+          operatorOptions
         );
-      } else if (operation === 3) {
+      } else if (operation === LogicalOperation.Intersect) {
         intersect(
           {
             segmentationId: activeSeg.segmentationId,
@@ -233,16 +266,9 @@ function performLogicalOperation(
             segmentationId: activeSeg.segmentationId,
             segmentIndex: segmentIndexes[lastIndex],
           },
-          {
-            resultSegment: {
-              segmentationId: activeSeg.segmentationId,
-              label: 'Combined Addition',
-              segmentIndex: newIndex,
-              color: 'rgb(50, 130, 162)',
-            },
-          }
+          operatorOptions
         );
-      } else if (operation === 4) {
+      } else if (operation === LogicalOperation.XOR) {
         xor(
           {
             segmentationId: activeSeg.segmentationId,
@@ -252,57 +278,39 @@ function performLogicalOperation(
             segmentationId: activeSeg.segmentationId,
             segmentIndex: segmentIndexes[lastIndex],
           },
-          {
-            resultSegment: {
-              segmentationId: activeSeg.segmentationId,
-              label: 'Combined Addition',
-              segmentIndex: newIndex,
-              color: 'rgb(50, 130, 162)',
-            },
-          }
+          operatorOptions
         );
       }
-      if (!createNew) {
-        const annotationUIDList = annotationUIDsMap.get(lastIndex);
-        annotationUIDList.forEach((annotationUID) => {
-          const annotation =
-            cornerstoneTools.annotation.state.getAnnotation(annotationUID);
-          cornerstoneTools.annotation.state.removeAnnotation(annotationUID);
-          removeContourSegmentationAnnotation(
-            annotation as cornerstoneTools.Types.ContourSegmentationAnnotation
-          );
+    } else if (segmentIndexes.length > 0) {
+      if (operation === LogicalOperation.Copy) {
+        copy(
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex],
+          },
+          operatorOptions
+        );
+      } else if (operation === LogicalOperation.Delete) {
+        deleteOperation({
+          segmentationId: activeSeg.segmentationId,
+          segmentIndex: segmentIndexes[lastIndex],
         });
       }
     }
+
+    if (!createNew) {
+      const annotationUIDList = annotationUIDsMap.get(lastIndex);
+      annotationUIDList.forEach((annotationUID) => {
+        const annotation =
+          cornerstoneTools.annotation.state.getAnnotation(annotationUID);
+        cornerstoneTools.annotation.state.removeAnnotation(annotationUID);
+        removeContourSegmentationAnnotation(
+          annotation as cornerstoneTools.Types.ContourSegmentationAnnotation
+        );
+      });
+    }
   }
 }
-addButtonToToolbar({
-  title: 'Add two segments in a new one',
-  onClick: function () {
-    performLogicalOperation(1, true);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Subtract two segments in a new one',
-  onClick: function () {
-    performLogicalOperation(2, true);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Intersect two segments in a new one',
-  onClick: function () {
-    performLogicalOperation(3, true);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Xor two segments in a new one',
-  onClick: function () {
-    performLogicalOperation(4, true);
-  },
-});
 
 /**
  * Runs the demo
@@ -352,7 +360,7 @@ async function run() {
     }
   );
 
-  toolGroup.setToolActive(splineToolsNames[0], {
+  toolGroup.setToolActive(contourToolsNames[0], {
     bindings: contourSegmentationToolBindings,
   });
 
@@ -361,8 +369,19 @@ async function run() {
     removeAllBindings: contourSegmentationToolBindings,
   });
 
-  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const stackImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
+
+  // Define a stack containing a single image
+  const smallStackImageIds = [stackImageIds[0], stackImageIds[1]];
+
+  const volumeImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
@@ -373,28 +392,58 @@ async function run() {
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create the viewports
+  // Create a stack and a volume viewport
   const viewportInputArray = [
     {
-      viewportId: viewportId,
+      viewportId: viewportIds[0],
       type: ViewportType.STACK,
-      element: element,
+      element: element1,
       defaultOptions: {
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+    {
+      viewportId: viewportIds[1],
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
-  toolGroup.addViewport(viewportId, renderingEngineId);
 
-  // Get the stack viewport that was created
+  // Set the tool group on the viewport
+  viewportIds.forEach((viewportId) =>
+    toolGroup.addViewport(viewportId, renderingEngineId)
+  );
+
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds: volumeImageIds,
+  });
+
+  // Get the viewports that were just created
   const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
+    renderingEngine.getViewport(viewportIds[0])
+  );
+  const volumeViewport = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportIds[1])
   );
 
   // Set the stack on the viewport
-  stackViewport.setStack(imageIds.slice(0, 10));
+  stackViewport.setStack(smallStackImageIds);
+
+  // Set the volume to load
+  volume.load();
+
+  // Set the volume on the viewport
+  volumeViewport.setVolumes([{ volumeId }]);
+
+  // Render the image
+  renderingEngine.renderViewports(viewportIds);
 
   // Render the image
   renderingEngine.render();
@@ -405,33 +454,25 @@ async function run() {
       segmentationId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
-        data: {
-          // geometryIds may not be used anymore because it will be removed in a
-          // near future but it is still initialized for backward compatibility
-          geometryIds: [],
-        },
       },
     },
   ]);
 
   // Create a segmentation representation associated to the viewportId
-  await segmentation.addSegmentationRepresentations(viewportId, [
+  await segmentation.addSegmentationRepresentations(viewportIds[0], [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
+  await segmentation.addSegmentationRepresentations(viewportIds[1], [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,
     },
   ]);
 
-  // Store the segmentation representation that was just created
-
-  // Make the segmentation created as the active one
-  segmentation.activeSegmentation.setActiveSegmentation(
-    viewportId,
-    segmentationId
-  );
-
-  updateActiveSegmentIndex(1);
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 }
 
-//runAllPolylineTests();
 run();
