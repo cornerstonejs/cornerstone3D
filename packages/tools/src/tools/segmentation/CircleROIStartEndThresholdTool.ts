@@ -84,6 +84,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        //Simplified handles, if false (5 handles : center, top, bottom, left, right)
+        simplified: true,
         // Whether to store point data in the annotation
         storePointData: false,
         numSlicesToPropagate: 10,
@@ -170,6 +172,28 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
+    let points;
+    if (this.configuration.simplified) {
+      points = [[...worldPos], [...worldPos]] as [
+        Types.Point3,
+        Types.Point3,
+      ];
+    } else {
+      points = [
+        [...worldPos], // center
+        [...worldPos], // top
+        [...worldPos], // bottom
+        [...worldPos], // left
+        [...worldPos], // right
+      ] as [
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3
+      ];
+    }
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -199,19 +223,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
               bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
-          points: [
-            [...worldPos], // center
-            [...worldPos], // top
-            [...worldPos], // bottom
-            [...worldPos], // left
-            [...worldPos], // right
-          ] as [
-            Types.Point3,
-            Types.Point3,
-            Types.Point3,
-            Types.Point3,
-            Types.Point3
-          ],
+          points,
           activeHandleIndex: null,
         },
         cachedStats: {
@@ -250,7 +262,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
-    // @ts-ignore - Supposer que le type CircleROIStartEndThresholdAnnotation sera mis à jour
     return annotation;
   };
 
@@ -354,13 +365,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       const canvasCoordinates = points.map((p) =>
         viewport.worldToCanvas(p)
-      ) as [
-        Types.Point2,
-        Types.Point2,
-        Types.Point2,
-        Types.Point2,
-        Types.Point2
-      ];
+      );
       const center = canvasCoordinates[0];
 
       const radius = getCanvasCircleRadius([
@@ -456,8 +461,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         activeHandleIndex !== null &&
         isMiddleSlice
       ) {
-        // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = canvasCoordinates;
+        if (this.configuration.simplified) {
+          activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+        } else {
+          activeHandleCanvasCoords = canvasCoordinates;
+        }
       }
 
       if (activeHandleCanvasCoords) {
@@ -619,7 +627,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       newProjectionPoints.push(
         handlesToStart.map((point) => {
           const newPoint = vec3.create();
-          // @ts-ignore
           vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
           return Array.from(newPoint);
         })
@@ -647,7 +654,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       viewport.worldToCanvas(p)
     ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2, Types.Point2];
 
-    // Utiliser le centre et la poignée du haut pour les calculs de dimensions
     const baseTopLeftCanvas = getCanvasCircleCorners([
       canvasCoordinates[0],
       canvasCoordinates[1],
@@ -898,8 +904,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   ): number | undefined {
     const indexOfDirection =
       this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
-
-    // @ts-ignore - pos peut être un nombre si déjà extrait, ou un tableau de nombres (vec3/Point3)
     return pos[indexOfDirection];
   }
 }
