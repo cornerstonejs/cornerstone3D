@@ -123,7 +123,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       configuration: {
         preventHandleOutsideImage: false,
         calculateStats: true,
-        simplifiedSpline: false, // if true, it will convert the annotations to free hand
+        simplifiedSpline: true, // if true, it will convert the annotations to free hand
         getTextLines: defaultGetTextLines,
         /**
          * Specify which modifier key is used to add a hole to a contour. The
@@ -199,7 +199,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
   }
 
   protected annotationCompleted(evt) {
-    const { annotation } = evt.detail;
+    const { sourceAnnotation: annotation } = evt.detail;
     if (
       !splineToolNames.includes(annotation?.metadata?.toolName) ||
       !this.configuration.simplifiedSpline
@@ -220,7 +220,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
    */
   protected initializeListeners() {
     eventTarget.addEventListener(
-      Events.ANNOTATION_COMPLETED,
+      Events.ANNOTATION_CUT_MERGE_PROCESS_COMPLETED,
       this.annotationCompletedBinded
     );
   }
@@ -235,7 +235,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
    */
   protected removeListeners() {
     eventTarget.removeEventListener(
-      Events.ANNOTATION_COMPLETED,
+      Events.ANNOTATION_CUT_MERGE_PROCESS_COMPLETED,
       this.annotationCompletedBinded
     );
   }
