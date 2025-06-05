@@ -198,12 +198,12 @@ class CircleROITool extends AnnotationTool {
         [...worldPos],
         [...worldPos],
       ] as [
-          Types.Point3,
-          Types.Point3,
-          Types.Point3,
-          Types.Point3,
-          Types.Point3
-        ];
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3
+      ];
     }
 
     const annotation = {
@@ -388,7 +388,6 @@ class CircleROITool extends AnnotationTool {
     this._deactivateDraw(element);
 
     resetElementCursor(element);
-
 
     this.editData = null;
     this.isDrawing = false;
@@ -766,7 +765,11 @@ class CircleROITool extends AnnotationTool {
         continue;
       }
 
-      if (!isAnnotationLocked(annotation) && !this.editData && activeHandleIndex !== null) {
+      if (
+        !isAnnotationLocked(annotation) &&
+        !this.editData &&
+        activeHandleIndex !== null
+      ) {
         if (this.configuration.simplified) {
           activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
         } else {

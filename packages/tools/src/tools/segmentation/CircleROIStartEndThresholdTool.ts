@@ -174,10 +174,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     let points;
     if (this.configuration.simplified) {
-      points = [[...worldPos], [...worldPos]] as [
-        Types.Point3,
-        Types.Point3
-      ];
+      points = [[...worldPos], [...worldPos]] as [Types.Point3, Types.Point3];
     } else {
       points = [
         [...worldPos], // center
@@ -711,7 +708,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       );
 
       const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
-        getCanvasCircleCorners([currentCanvasCoordinates[0], currentCanvasCoordinates[1]])
+        getCanvasCircleCorners([
+          currentCanvasCoordinates[0],
+          currentCanvasCoordinates[1],
+        ])
       );
 
       const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
