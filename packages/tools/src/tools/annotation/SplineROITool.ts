@@ -84,15 +84,15 @@ enum SplineToolActions {
   DeleteControlPoint = 'deleteControlPoint',
 }
 
-const splineToolNames = [
-  'CatmullRomSplineROI',
-  'LinearSplineROI',
-  'BSplineROI',
-  'CardinalSplineROI',
-];
-
 class SplineROITool extends ContourSegmentationBaseTool {
   static toolName = 'SplineROI';
+  protected splineToolNames = [
+    'CatmullRomSplineROI',
+    'LinearSplineROI',
+    'BSplineROI',
+    'CardinalSplineROI',
+  ];
+
   static SplineTypes = SplineTypesEnum;
   static Actions = SplineToolActions;
   private annotationCompletedBinded;
@@ -123,7 +123,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       configuration: {
         preventHandleOutsideImage: false,
         calculateStats: true,
-        simplifiedSpline: true, // if true, it will convert the annotations to free hand
+        simplifiedSpline: false, // if true, it will convert the annotations to free hand
         getTextLines: defaultGetTextLines,
         /**
          * Specify which modifier key is used to add a hole to a contour. The
@@ -201,8 +201,9 @@ class SplineROITool extends ContourSegmentationBaseTool {
   protected annotationCompleted(evt) {
     const { sourceAnnotation: annotation } = evt.detail;
     if (
-      !splineToolNames.includes(annotation?.metadata?.toolName) ||
-      !this.configuration.simplifiedSpline
+      !this.splineToolNames.includes(annotation?.metadata?.toolName) ||
+      !this.configuration.simplifiedSpline ||
+      !this.isContourSegmentationTool() // if contour segmentation we need to wait the cut/merge completion
     ) {
       return;
     }
@@ -220,7 +221,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
    */
   protected initializeListeners() {
     eventTarget.addEventListener(
-      Events.ANNOTATION_CUT_MERGE_PROCESS_COMPLETED,
+      Events.ANNOTATION_COMPLETED,
       this.annotationCompletedBinded
     );
   }
@@ -235,7 +236,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
    */
   protected removeListeners() {
     eventTarget.removeEventListener(
-      Events.ANNOTATION_CUT_MERGE_PROCESS_COMPLETED,
+      Events.ANNOTATION_COMPLETED,
       this.annotationCompletedBinded
     );
   }
