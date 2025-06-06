@@ -220,38 +220,6 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
-        if (
-          imageFrame.photometricInterpretation === 'PALETTE COLOR' &&
-          !useRGBA
-        ) {
-          // for GPU
-          const width = imageFrame.columns;
-          const height = imageFrame.rows;
-          canvas.height = height;
-          canvas.width = width;
-          const ctx = canvas.getContext('2d');
-          const imageData = ctx.createImageData(width, height);
-
-          const arr = imageFrame.pixelData;
-
-          if (arr.length === width * height * 4) {
-            for (let i = 0; i < arr.length; i++) {
-              imageData.data[i] = arr[i];
-            }
-          }
-          // Set pixel data for RGB array
-          else if (arr.length === width * height * 3) {
-            let j = 0;
-            for (let i = 0; i < arr.length; i += 3) {
-              imageData.data[j++] = arr[i];
-              imageData.data[j++] = arr[i + 1];
-              imageData.data[j++] = arr[i + 2];
-            }
-          }
-
-          imageFrame.imageData = imageData;
-        }
-
         const voxelManager = utilities.VoxelManager.createImageVoxelManager({
           scalarData: imageFrame.pixelData,
           width: imageFrame.columns,

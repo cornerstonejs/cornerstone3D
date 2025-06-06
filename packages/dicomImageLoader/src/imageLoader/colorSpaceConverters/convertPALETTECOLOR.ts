@@ -88,22 +88,22 @@ export default function (
       }
 
       return;
-    }
+    } else {
+      for (let i = 0; i < numPixels; ++i) {
+        let value = pixelData[palIndex++];
 
-    for (let i = 0; i < numPixels; ++i) {
-      let value = pixelData[palIndex++];
+        if (value < start) {
+          value = 0;
+        } else if (value > start + len - 1) {
+          value = len - 1;
+        } else {
+          value -= start;
+        }
 
-      if (value < start) {
-        value = 0;
-      } else if (value > start + len - 1) {
-        value = len - 1;
-      } else {
-        value -= start;
+        colorBuffer[bufferIndex++] = rDataCleaned[value];
+        colorBuffer[bufferIndex++] = gDataCleaned[value];
+        colorBuffer[bufferIndex++] = bDataCleaned[value];
       }
-
-      colorBuffer[bufferIndex++] = rDataCleaned[value];
-      colorBuffer[bufferIndex++] = gDataCleaned[value];
-      colorBuffer[bufferIndex++] = bDataCleaned[value];
     }
   });
 }
