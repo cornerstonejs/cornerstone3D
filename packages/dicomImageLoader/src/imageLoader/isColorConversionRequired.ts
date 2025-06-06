@@ -27,8 +27,7 @@ export default function isColorConversionRequired(imageFrame) {
   }
 
   if (photometricInterpretation === 'PALETTE COLOR') {
-    // since it is based on a look up table we don't need to convert
-    return false;
+    return true;
   }
 
   if (photometricInterpretation.endsWith('420')) {
