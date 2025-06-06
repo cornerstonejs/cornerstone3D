@@ -89,6 +89,7 @@ export default function (
 
       return;
     }
+
     for (let i = 0; i < numPixels; ++i) {
       let value = pixelData[palIndex++];
 
