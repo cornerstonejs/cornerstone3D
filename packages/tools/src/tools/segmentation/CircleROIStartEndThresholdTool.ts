@@ -595,7 +595,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         currentCoord < actualEndCoord &&
         currentCoord + spacingInNormal > actualEndCoord
       ) {
-        if (Math.abs(currentCoord - actualEndCoord) > Number.EPSILON) {
           const handlesOnEndPlane = csUtils.deepClone(
             baseHandles
           ) as typeof baseHandles;
@@ -605,7 +604,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           newProjectionPoints.push(
             handlesOnEndPlane.map((p) => Array.from(p as vec3))
           );
-        }
+
         break;
       }
     }

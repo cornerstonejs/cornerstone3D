@@ -335,7 +335,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         currentCoord < actualEndCoord &&
         currentCoord + spacingInNormal > actualEndCoord
       ) {
-        if (Math.abs(currentCoord - actualEndCoord) > Number.EPSILON) {
           const handlesOnEndPlane = csUtils.deepClone(
             baseHandles
           ) as typeof baseHandles;
@@ -345,7 +344,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           newProjectionPoints.push(
             handlesOnEndPlane.map((p) => Array.from(p as vec3))
           );
-        }
         break;
       }
     }
