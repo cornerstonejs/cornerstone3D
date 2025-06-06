@@ -220,11 +220,17 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
+        // Set numberOfComponents based on photometric interpretation
+        let numberOfComponents = imageFrame.samplesPerPixel;
+        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          numberOfComponents = useRGBA ? 4 : 3;
+        }
+
         const voxelManager = utilities.VoxelManager.createImageVoxelManager({
           scalarData: imageFrame.pixelData,
           width: imageFrame.columns,
           height: imageFrame.rows,
-          numberOfComponents: imageFrame.samplesPerPixel,
+          numberOfComponents: numberOfComponents,
         });
 
         const image: DICOMLoaderIImage = {
@@ -268,7 +274,7 @@ function createImage(
           rgba: isColorImage && useRGBA,
           getPixelData: () => imageFrame.pixelData,
           getCanvas: undefined,
-          numberOfComponents: imageFrame.samplesPerPixel,
+          numberOfComponents,
         };
 
         if (image.color) {
@@ -344,17 +350,6 @@ function createImage(
           // 256/128 for an identity transform.
           image.windowWidth = 256;
           image.windowCenter = 128;
-        }
-
-        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
-          if (useRGBA) {
-            // If we are using RGBA, we need to set the number of components to 4
-            image.numberOfComponents = 4;
-          } else {
-            // If we are not using RGBA, we need to set the number of components to 3
-            // as we are using RGB
-            image.numberOfComponents = 3;
-          }
         }
 
         // set the ww/wc to cover the dynamic range of the image if no values are supplied
