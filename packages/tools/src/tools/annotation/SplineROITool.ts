@@ -83,6 +83,13 @@ enum SplineToolActions {
   DeleteControlPoint = 'deleteControlPoint',
 }
 
+const splineToolNames = [
+  'CatmullRomSplineROI',
+  'LinearSplineROI',
+  'BSplineROI',
+  'CardinalSplineROI',
+];
+
 class SplineROITool extends ContourSegmentationBaseTool {
   static toolName = 'SplineROI';
   static SplineTypes = SplineTypesEnum;
@@ -865,6 +872,23 @@ class SplineROITool extends ContourSegmentationBaseTool {
       points.push(polyline[i]);
     }
     points.push(polyline[polyline.length - 1]);
+  }
+
+  public isSplineAnnotation(annotation: ContourAnnotation): boolean {
+    return splineToolNames.includes(annotation?.metadata?.toolName);
+  }
+
+  public createSplineObjectFromType(
+    annotation: ContourAnnotation,
+    splineType: string
+  ) {
+    const splineConfig = this._getSplineConfig(splineType);
+    const spline = new splineConfig.Class();
+    annotation.data.spline = {
+      type: splineConfig.type,
+      instance: spline,
+      resolution: splineConfig.resolution,
+    };
   }
 
   protected createAnnotation(
