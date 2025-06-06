@@ -84,7 +84,7 @@ import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 import type { IBaseTool } from './IBaseTool';
 import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
-import type { LogicalOperation } from 'tools/src/utilities/contourSegmentation';
+import type { LogicalOperation } from '../utilities/contourSegmentation';
 import type {
   LabelmapStyle,
   LabelmapSegmentationData,
