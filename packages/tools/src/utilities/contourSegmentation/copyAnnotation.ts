@@ -111,10 +111,14 @@ export function copyContourSegment(
     if (toolGroup) {
       const instance = toolGroup.getToolInstance(annotation.metadata.toolName);
       if (instance) {
-        if (instance.isSplineAnnotation(annotation)) {
+        // Properly test if the function isSplineAnnotation exists in instance
+        if (
+          typeof instance.isSplineAnnotation === 'function' &&
+          instance.isSplineAnnotation(annotation)
+        ) {
           instance.createSplineObjectFromType(
             newAnnotation,
-            annotation.data.spline.type
+            (annotation.data.spline as { type: string }).type
           );
         }
       }

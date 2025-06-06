@@ -1,6 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 import type { Types as csToolTypes } from '@cornerstonejs/tools';
-import { Enums, RenderingEngine, volumeLoader } from '@cornerstonejs/core';
+import {
+  Enums,
+  getRenderingEngine,
+  RenderingEngine,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
@@ -43,11 +47,8 @@ const { ViewportType } = Enums;
 const toolGroupId = 'STACK_TOOLGROUP_ID';
 
 // Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
-const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
+const viewportIds = ['CT_STACK'];
 const segmentationId = `SEGMENTATION_ID`;
 let selectedOperation = LogicalOperation.Union;
 
@@ -67,8 +68,7 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
 const element1 = document.createElement('div');
-const element2 = document.createElement('div');
-const elements = [element1, element2];
+const elements = [element1];
 
 elements.forEach((element) => {
   element.style.width = size;
@@ -91,15 +91,12 @@ const cancelDrawingEventListener = (evt) => {
   }
 };
 
-element1.addEventListener(
-  csToolsEnums.Events.KEY_DOWN,
-  cancelDrawingEventListener
-);
-
-element2.addEventListener(
-  csToolsEnums.Events.KEY_DOWN,
-  cancelDrawingEventListener
-);
+elements.forEach((element) => {
+  element.addEventListener(
+    csToolsEnums.Events.KEY_DOWN,
+    cancelDrawingEventListener
+  );
+});
 
 const operationNames = [
   'Add',
@@ -180,20 +177,6 @@ addButtonToToolbar({
   title: 'Apply operation',
   onClick: function () {
     performLogicalOperation(selectedOperation, true);
-  },
-});
-
-addButtonToToolbar({
-  title: 'Delete active segment',
-  onClick: function () {
-    const segmentIndex =
-      cornerstoneTools.segmentation.segmentIndex.getActiveSegmentIndex(
-        segmentationId
-      );
-    deleteOperation({
-      segmentationId,
-      segmentIndex,
-    });
   },
 });
 
@@ -310,6 +293,8 @@ function performLogicalOperation(
       });
     }
   }
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  renderingEngine.render();
 }
 
 /**
@@ -381,14 +366,6 @@ async function run() {
   // Define a stack containing a single image
   const smallStackImageIds = [stackImageIds[0], stackImageIds[1]];
 
-  const volumeImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  });
-
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -397,17 +374,8 @@ async function run() {
     {
       viewportId: viewportIds[0],
       type: ViewportType.STACK,
-      element: element1,
+      element: elements[0],
       defaultOptions: {
-        background: <Types.Point3>[0.2, 0, 0.2],
-      },
-    },
-    {
-      viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element2,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
@@ -420,27 +388,13 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId)
   );
 
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds: volumeImageIds,
-  });
-
   // Get the viewports that were just created
   const stackViewport = <Types.IStackViewport>(
     renderingEngine.getViewport(viewportIds[0])
   );
-  const volumeViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportIds[1])
-  );
 
   // Set the stack on the viewport
   stackViewport.setStack(smallStackImageIds);
-
-  // Set the volume to load
-  volume.load();
-
-  // Set the volume on the viewport
-  volumeViewport.setVolumes([{ volumeId }]);
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
@@ -460,12 +414,6 @@ async function run() {
 
   // Create a segmentation representation associated to the viewportId
   await segmentation.addSegmentationRepresentations(viewportIds[0], [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Contour,
-    },
-  ]);
-  await segmentation.addSegmentationRepresentations(viewportIds[1], [
     {
       segmentationId,
       type: csToolsEnums.SegmentationRepresentations.Contour,
