@@ -562,7 +562,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { startCoordinate, endCoordinate } = data;
     const { points: baseHandles } = data.handles;
 
-    const indexOfNormal = this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
+    const indexOfNormal =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
     const newProjectionPoints = [];
 
     // Determine the actual iteration range and direction
@@ -576,25 +577,36 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       currentCoord <= actualEndCoord + spacingInNormal;
       currentCoord += spacingInNormal
     ) {
-      const handlesOnCurrentPlane = csUtils.deepClone(baseHandles) as typeof baseHandles;
+      const handlesOnCurrentPlane = csUtils.deepClone(
+        baseHandles
+      ) as typeof baseHandles;
 
       handlesOnCurrentPlane.forEach((handlePt) => {
         handlePt[indexOfNormal] = currentCoord;
       });
-      newProjectionPoints.push(handlesOnCurrentPlane.map(p => Array.from(p as vec3)));
+      newProjectionPoints.push(
+        handlesOnCurrentPlane.map((p) => Array.from(p as vec3))
+      );
 
       // Special handling to ensure the last slice (actualEndCoord) is included
       // if it was not reached exactly by spacingInNormal increments,
       // and if the loop would end just before reaching it.
-      if (currentCoord < actualEndCoord && currentCoord + spacingInNormal > actualEndCoord) {
-         if (Math.abs(currentCoord - actualEndCoord) > Number.EPSILON) {
-            const handlesOnEndPlane = csUtils.deepClone(baseHandles) as typeof baseHandles;
-            handlesOnEndPlane.forEach(handlePt => {
-                handlePt[indexOfNormal] = actualEndCoord;
-            });
-            newProjectionPoints.push(handlesOnEndPlane.map(p => Array.from(p as vec3)));
-         }
-         break;
+      if (
+        currentCoord < actualEndCoord &&
+        currentCoord + spacingInNormal > actualEndCoord
+      ) {
+        if (Math.abs(currentCoord - actualEndCoord) > Number.EPSILON) {
+          const handlesOnEndPlane = csUtils.deepClone(
+            baseHandles
+          ) as typeof baseHandles;
+          handlesOnEndPlane.forEach((handlePt) => {
+            handlePt[indexOfNormal] = actualEndCoord;
+          });
+          newProjectionPoints.push(
+            handlesOnEndPlane.map((p) => Array.from(p as vec3))
+          );
+        }
+        break;
       }
     }
     data.cachedStats.projectionPoints = newProjectionPoints;
