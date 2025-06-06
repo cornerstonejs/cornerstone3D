@@ -271,7 +271,6 @@ function createImage(
           numberOfComponents: imageFrame.samplesPerPixel,
         };
 
-        // CPU Rendering
         if (image.color) {
           image.getCanvas = function () {
             // the getCanvas function is used in the CPU rendering path
