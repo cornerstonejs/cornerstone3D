@@ -27,7 +27,6 @@ export default function isColorConversionRequired(imageFrame) {
   }
 
   if (photometricInterpretation === 'PALETTE COLOR') {
-    // since it is based on a look up table we don't need to convert
     return true;
   }
 
