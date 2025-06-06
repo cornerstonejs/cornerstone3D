@@ -1,6 +1,7 @@
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { toScoords } from "../helpers";
 
 const { Point: TID300Point } = utilities.TID300;
 
@@ -121,51 +122,28 @@ class Probe extends BaseAdapter3D {
         const { data, metadata } = tool;
         const { finding, findingSites } = tool;
         const { referencedImageId } = metadata;
-
-        if (is3DMeasurement) {
-            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
-        }
+        const scoordProps = {
+            worldToImageCoords,
+            is3DMeasurement,
+            referencedImageId
+        };
 
         const {
             handles: { points = [] }
         } = data;
 
         // Using image coordinates for 2D points
-        const pointsImage = points.map(point => {
-            const pointImage = worldToImageCoords(referencedImageId, point);
-            return {
-                x: pointImage[0],
-                y: pointImage[1]
-            };
-        });
+        const pointsImage = toScoords(scoordProps, points);
 
         return {
             points: pointsImage,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
             finding,
-            use3DSpatialCoordinates: false
-        };
-    }
-
-    static getTID300RepresentationArgumentsSCOORD3D(tool) {
-        const { data, finding, findingSites, metadata } = tool;
-        const {
-            handles: { points = [] }
-        } = data;
-
-        // Using world coordinates for 3D points
-        const point = points[0];
-
-        const pointXYZ = { x: point[0], y: point[1], z: point[2] };
-
-        return {
-            points: [pointXYZ],
-            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
-            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
-            findingSites: findingSites || [],
-            finding,
-            use3DSpatialCoordinates: true
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

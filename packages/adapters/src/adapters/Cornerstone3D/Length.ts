@@ -36,7 +36,17 @@ export default class Length extends BaseAdapter3D {
             imageToWorldCoords
         );
 
+        const cachedStats = referencedImageId
+            ? {
+                  [`imageId:${referencedImageId}`]: {
+                      length: NUMGroup
+                          ? NUMGroup.MeasuredValueSequence.NumericValue
+                          : 0
+                  }
+              }
+            : {};
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
                 points: [worldCoords[0], worldCoords[1]],
                 activeHandleIndex: 0,
@@ -44,17 +54,9 @@ export default class Length extends BaseAdapter3D {
                     hasMoved: false
                 }
             },
+            cachedStats,
             frameNumber: ReferencedFrameNumber
         };
-        if (referencedImageId) {
-            state.annotation.data.cachedStats = {
-                [`imageId:${referencedImageId}`]: {
-                    length: NUMGroup
-                        ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : 0
-                }
-            };
-        }
 
         return state;
     }
@@ -88,6 +90,9 @@ export default class Length extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
             use3DSpatialCoordinates: is3DMeasurement
         };
     }

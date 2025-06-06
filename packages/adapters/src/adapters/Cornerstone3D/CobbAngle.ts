@@ -34,6 +34,7 @@ class CobbAngle extends BaseAdapter3D {
         );
 
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
                 points: [
                     worldCoords[0],
@@ -91,7 +92,10 @@ class CobbAngle extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
-            use3DSpatialCoordinates: false
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

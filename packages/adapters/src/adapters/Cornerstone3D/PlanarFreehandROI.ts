@@ -56,6 +56,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
         }
 
         state.annotation.data = {
+            ...state.annotation.data,
             contour: { polyline: worldCoords, closed: !isOpenContour },
             handles: {
                 points,
@@ -121,6 +122,9 @@ class PlanarFreehandROI extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
             use3DSpatialCoordinates: false
         };
     }

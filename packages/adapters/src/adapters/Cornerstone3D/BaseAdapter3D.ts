@@ -162,7 +162,10 @@ export default class BaseAdapter3D {
             points: pointsImage,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
-            finding
+            finding,
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null
         };
 
         return tidArguments;

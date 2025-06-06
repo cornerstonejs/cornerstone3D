@@ -34,7 +34,17 @@ class Angle extends BaseAdapter3D {
             imageToWorldCoords
         );
 
+        const cachedStats = referencedImageId
+            ? {
+                  [`imageId:${referencedImageId}`]: {
+                      angle: NUMGroup
+                          ? NUMGroup.MeasuredValueSequence.NumericValue
+                          : null
+                  }
+              }
+            : {};
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
                 points: worldCoords,
                 activeHandleIndex: 0,
@@ -42,17 +52,9 @@ class Angle extends BaseAdapter3D {
                     hasMoved: false
                 }
             },
+            cachedStats,
             frameNumber: ReferencedFrameNumber
         };
-        if (referencedImageId) {
-            state.annotation.data.cachedStats = {
-                [`imageId:${referencedImageId}`]: {
-                    angle: NUMGroup
-                        ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : null
-                }
-            };
-        }
 
         return state;
     }
@@ -90,6 +92,9 @@ class Angle extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
             use3DSpatialCoordinates: is3DMeasurement
         };
     }

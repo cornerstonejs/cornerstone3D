@@ -62,6 +62,7 @@ class Bidirectional extends BaseAdapter3D {
         );
 
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
                 points: [
                     worldCoords[0],
@@ -154,6 +155,9 @@ class Bidirectional extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding: finding,
             findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
             use3DSpatialCoordinates: is3DMeasurement
         };
     }

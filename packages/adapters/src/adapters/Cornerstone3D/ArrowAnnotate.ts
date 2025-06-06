@@ -64,6 +64,7 @@ class ArrowAnnotate extends BaseAdapter3D {
         }
 
         state.annotation.data = {
+            ...state.annotation.data,
             text,
             handles: {
                 arrowFirst: true,
@@ -107,6 +108,9 @@ class ArrowAnnotate extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
             finding,
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
             use3DSpatialCoordinates: is3DMeasurement
         };
 

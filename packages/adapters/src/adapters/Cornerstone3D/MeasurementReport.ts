@@ -534,6 +534,9 @@ export default class MeasurementReport {
         const referenceToolData = toolData?.[toolTypes?.[0]]?.data?.[0];
         const volumeId = referenceToolData?.metadata?.volumeId;
         const volume = cache.getVolume(volumeId);
+        if (!volume) {
+            throw new Error(`No volume found for ${volumeId}`);
+        }
         const imageId = volume.imageIds[0];
         return imageId;
     }
@@ -620,6 +623,13 @@ export default class MeasurementReport {
         if (is3DSR) {
             report.dataset.SOPClassUID =
                 DicomMetaDictionary.sopClassUIDsByName.Comprehensive3DSR;
+            if (!report.dataset.SOPClassUID) {
+                throw new Error(
+                    `NO sop class defined for Comprehensive3DSR in ${JSON.stringify(
+                        DicomMetaDictionary.sopClassUIDsByName
+                    )}`
+                );
+            }
         }
 
         return report;
