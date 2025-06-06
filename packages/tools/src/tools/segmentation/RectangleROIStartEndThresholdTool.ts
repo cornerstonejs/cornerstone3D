@@ -335,15 +335,15 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         currentCoord < actualEndCoord &&
         currentCoord + spacingInNormal > actualEndCoord
       ) {
-          const handlesOnEndPlane = csUtils.deepClone(
-            baseHandles
-          ) as typeof baseHandles;
-          handlesOnEndPlane.forEach((handlePt) => {
-            handlePt[indexOfNormal] = actualEndCoord;
-          });
-          newProjectionPoints.push(
-            handlesOnEndPlane.map((p) => Array.from(p as vec3))
-          );
+        const handlesOnEndPlane = csUtils.deepClone(
+          baseHandles
+        ) as typeof baseHandles;
+        handlesOnEndPlane.forEach((handlePt) => {
+          handlePt[indexOfNormal] = actualEndCoord;
+        });
+        newProjectionPoints.push(
+          handlesOnEndPlane.map((p) => Array.from(p as vec3))
+        );
         break;
       }
     }
