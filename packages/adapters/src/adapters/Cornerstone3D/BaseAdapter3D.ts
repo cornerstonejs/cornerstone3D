@@ -3,6 +3,7 @@ import MeasurementReport, {
     type AdapterOptions,
     type MeasurementAdapter
 } from "./MeasurementReport";
+import { toScoords } from "../helpers";
 
 export type Point = {
     x: number;
@@ -145,26 +146,17 @@ export default class BaseAdapter3D {
         worldToImageCoords,
         is3DMeasurement = false
     ): TID300Arguments {
-        const { data, metadata } = tool;
+        const { metadata } = tool;
         const { finding, findingSites } = tool;
         const { referencedImageId } = metadata;
-
-        if (is3DMeasurement) {
-            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
-        }
-
-        const {
-            handles: { points = [] }
-        } = data;
+        const scoordProps = {
+            worldToImageCoords,
+            is3DMeasurement,
+            referencedImageId
+        };
 
         // Using image coordinates for 2D points
-        const pointsImage = points.map(point => {
-            const pointImage = worldToImageCoords(referencedImageId, point);
-            return {
-                x: pointImage[0],
-                y: pointImage[1]
-            };
-        });
+        const pointsImage = toScoords(scoordProps, tool.data.handles.points);
 
         const tidArguments = {
             points: pointsImage,
@@ -174,24 +166,5 @@ export default class BaseAdapter3D {
         };
 
         return tidArguments;
-    }
-
-    static getTID300RepresentationArgumentsSCOORD3D(tool) {
-        const { data, finding, findingSites } = tool;
-        const {
-            handles: { points = [] }
-        } = data;
-
-        // Using world coordinates for 3D points
-        const point = points[0];
-
-        const pointXYZ = { x: point[0], y: point[1], z: point[2] };
-
-        return {
-            points: [pointXYZ],
-            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
-            findingSites: findingSites || [],
-            finding
-        };
     }
 }

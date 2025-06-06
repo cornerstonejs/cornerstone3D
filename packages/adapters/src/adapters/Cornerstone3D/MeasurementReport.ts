@@ -1,16 +1,17 @@
 import { normalizers, data, utilities, derivations } from "dcmjs";
 import { cache, type Types as CSTypes } from "@cornerstonejs/core";
-import { Types } from "@cornerstonejs/tools";
+import type { Types } from "@cornerstonejs/tools";
 
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
-import { toArray, codeMeaningEquals, copyStudyTags } from "../helpers";
+import {
+    toArray,
+    codeMeaningEquals,
+    copyStudyTags,
+    scoordToWorld
+} from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
 import { copySeriesTags } from "../helpers/copySeriesTags";
 import { NO_IMAGE_ID } from "./constants";
-import {
-    imageToWorldCoords,
-    worldToImageCoords
-} from "packages/core/dist/esm/utilities";
 
 type Annotation = Types.Annotation;
 
@@ -367,7 +368,7 @@ export default class MeasurementReport {
         findingGroup,
         findingSiteGroups,
         toolType
-    }): SpatialCoordinatesData {
+    }) {
         const {
             state,
             SCOORDGroup,
@@ -422,7 +423,7 @@ export default class MeasurementReport {
         sopInstanceUIDToImageIdMap,
         metadata,
         toolType,
-        worldToImageCoords?
+        imageToWorldCoords?
     ): SetupMeasurementData {
         const { ContentSequence } = MeasurementGroup;
 
@@ -447,16 +448,26 @@ export default class MeasurementReport {
             toolType
         });
 
-        const { referencedImageId } =
-            (spatialGroup.spatialGroup.referencedImageId = referencedImageId);
+        const { referencedImageId } = metadata;
         const isMeasurement3d = !!spatialGroup.SCOORD3DGroup;
-        spatialGroup.scoordArgs = {
+        const scoordArgs = {
             referencedImageId,
             imageToWorldCoords,
             isMeasurement3d
         };
+        const scoord = spatialGroup.SCOORD3DGroup || spatialGroup.SCOORDGroup;
+        const worldCoords = imageToWorldCoords
+            ? scoordToWorld(scoordArgs, scoord)
+            : null;
 
-        return spatialGroup;
+        return {
+            ...spatialGroup,
+            referencedImageId,
+            isMeasurement3d,
+            scoordArgs,
+            scoord,
+            worldCoords
+        };
     }
 
     static generateReferencedSOPSequence({

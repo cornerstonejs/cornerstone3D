@@ -1,9 +1,7 @@
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
-import { toScoord } from "../helpers/toScoordType";
-import { scoordToWorld } from "../helpers/scoordToWorld";
-
+import { toScoord } from "../helpers";
 const { Length: TID300Length } = utilities.TID300;
 
 const LENGTH = "Length";
@@ -23,9 +21,8 @@ export default class Length extends BaseAdapter3D {
         metadata
     ) {
         const {
-            defaultState: state,
+            state,
             NUMGroup,
-            isMeasurement3d,
             scoord,
             scoordArgs,
             worldCoords,

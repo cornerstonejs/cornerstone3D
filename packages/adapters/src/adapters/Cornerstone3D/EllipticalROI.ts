@@ -2,7 +2,6 @@ import { vec3 } from "gl-matrix";
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
-import { scoordToWorld } from "../helpers";
 
 type Point3 = [number, number, number];
 
@@ -24,32 +23,21 @@ class EllipticalROI extends BaseAdapter3D {
         const {
             state,
             NUMGroup,
-            SCOORDGroup,
-            SCOORD3DGroup,
+            scoord,
+            scoordArgs,
+            worldCoords,
+            referencedImageId,
             ReferencedFrameNumber
         } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            EllipticalROI.toolType
+            EllipticalROI.toolType,
+            imageToWorldCoords
         );
 
-        const isMeasurement3d = !!SCOORD3DGroup;
-        const scoord = isMeasurement3d ? SCOORD3DGroup : SCOORDGroup;
-        const scoordArgs = {
-            isMeasurement3d,
-            tool: state.annotation,
-            imageToWorldCoords
-        };
-
-        const referencedImageId = state.annotation.metadata.referencedImageId;
-
-        const worldCoords = scoordToWorld(scoordArgs, scoord);
-
-        const majorAxisStart = vec3.fromValues(...worldCoords[0]);
-        const majorAxisEnd = vec3.fromValues(...worldCoords[1]);
-        const minorAxisStart = vec3.fromValues(...worldCoords[2]);
-        const minorAxisEnd = vec3.fromValues(...worldCoords[3]);
+        const [majorAxisStart, majorAxisEnd, minorAxisStart, minorAxisEnd] =
+            worldCoords;
 
         const majorAxisVec = vec3.create();
         vec3.sub(majorAxisVec, majorAxisEnd, majorAxisStart);
@@ -93,14 +81,14 @@ class EllipticalROI extends BaseAdapter3D {
 
         let ellipsePoints = [];
         if (Math.abs(absoluteOfMajorDotProduct - 1) < EPSILON) {
-            ellipsePoints = scoordToWorld(scoordArgs, pointsWorld);
+            ellipsePoints = worldCoords;
         } else if (Math.abs(absoluteOfMinorDotProduct - 1) < EPSILON) {
-            ellipsePoints = scoordToWorld(scoordArgs, [
-                pointsWorld[2],
-                pointsWorld[3],
-                pointsWorld[0],
-                pointsWorld[1]
-            ]);
+            ellipsePoints = [
+                worldCoords[2],
+                worldCoords[3],
+                worldCoords[0],
+                worldCoords[1]
+            ];
         } else {
             console.warn("OBLIQUE ELLIPSE NOT YET SUPPORTED");
             return null;
@@ -114,15 +102,17 @@ class EllipticalROI extends BaseAdapter3D {
                     hasMoved: false
                 }
             },
-            cachedStats: {
+            frameNumber: ReferencedFrameNumber
+        };
+        if (referencedImageId) {
+            state.annotation.data.cachedStats = {
                 [`imageId:${referencedImageId}`]: {
                     area: NUMGroup
                         ? NUMGroup.MeasuredValueSequence.NumericValue
                         : 0
                 }
-            },
-            frameNumber: ReferencedFrameNumber
-        };
+            };
+        }
 
         return state;
     }
@@ -137,9 +127,6 @@ class EllipticalROI extends BaseAdapter3D {
         const rotation = data.initialRotation || 0;
         const { referencedImageId } = metadata;
 
-        if (is3DMeasurement) {
-            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
-        }
         let top, bottom, left, right;
 
         // Using image coordinates for 2D points
@@ -157,8 +144,8 @@ class EllipticalROI extends BaseAdapter3D {
         }
 
         // find the major axis and minor axis
-        const topBottomLength = Math.abs(top[1] - bottom[1]);
-        const leftRightLength = Math.abs(left[0] - right[0]);
+        const topBottomLength = Math.abs(top.y - bottom.y);
+        const leftRightLength = Math.abs(left.x - right.x);
 
         const points = [];
         if (topBottomLength > leftRightLength) {
@@ -187,73 +174,7 @@ class EllipticalROI extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
-            use3DSpatialCoordinates: false
-        };
-    }
-
-    static getTID300RepresentationArgumentsSCOORD3D(tool) {
-        const { data, finding, findingSites, metadata } = tool;
-        const { cachedStats, handles } = data;
-        const rotation = data.initialRotation || 0;
-
-        let top, bottom, left, right;
-
-        // Using world coordinates for 3D points
-        // this way when it's restored we can assume the initial rotation is 0.
-        if (rotation == 90 || rotation == 270) {
-            bottom = handles.points[2];
-            top = handles.points[3];
-            left = handles.points[0];
-            right = handles.points[1];
-        } else {
-            top = handles.points[0];
-            bottom = handles.points[1];
-            left = handles.points[2];
-            right = handles.points[3];
-        }
-
-        // find the major axis and minor axis
-        const topBottomLength = Math.sqrt(
-            (top[0] - bottom[0]) ** 2 +
-                (top[1] - bottom[1]) ** 2 +
-                (top[2] - bottom[2]) ** 2
-        );
-        const leftRightLength = Math.sqrt(
-            (left[0] - right[0]) ** 2 +
-                (left[1] - right[1]) ** 2 +
-                (left[2] - right[2]) ** 2
-        );
-
-        const points = [];
-        if (topBottomLength > leftRightLength) {
-            // major axis is bottom to top
-            points.push({ x: top[0], y: top[1], z: top[2] });
-            points.push({ x: bottom[0], y: bottom[1], z: bottom[2] });
-
-            // minor axis is left to right
-            points.push({ x: left[0], y: left[1], z: left[2] });
-            points.push({ x: right[0], y: right[1], z: right[2] });
-        } else {
-            // major axis is left to right
-            points.push({ x: left[0], y: left[1], z: left[2] });
-            points.push({ x: right[0], y: right[1], z: right[2] });
-
-            // minor axis is bottom to top
-            points.push({ x: top[0], y: top[1], z: top[2] });
-            points.push({ x: bottom[0], y: bottom[1], z: bottom[2] });
-        }
-
-        const cachedStatsKeys = Object.keys(cachedStats)[0];
-        const { area } = cachedStatsKeys ? cachedStats[cachedStatsKeys] : {};
-
-        return {
-            area,
-            points,
-            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
-            finding,
-            findingSites: findingSites || [],
-            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
-            use3DSpatialCoordinates: true
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }
