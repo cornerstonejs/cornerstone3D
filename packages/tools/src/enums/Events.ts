@@ -105,6 +105,12 @@ enum Events {
   ANNOTATION_RENDERED = 'CORNERSTONE_TOOLS_ANNOTATION_RENDERED',
 
   /**
+   * Triggers on the eventTarget when an annotation cut merge process is completed.
+   * It starts when the users releases the mouse button in contour segmentation annotations
+   */
+  ANNOTATION_CUT_MERGE_PROCESS_COMPLETED = 'CORNERSTONE_TOOLS_ANNOTATION_CUT_MERGE_PROCESS_COMPLETED',
+
+  /**
    * Triggers on the eventTarget when an annotation interpolation process completed.
    * Make use of {@link EventTypes.AnnotationInterpolationCompletedEventType | Annotation Interpolation process Completed Event Type}
    * for typing your event listeners for this annotation interpolation complete event, and see what

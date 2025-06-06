@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent, type Types } from '@cornerstonejs/core';
 import type { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
 import getViewportsForAnnotation from '../../../utilities/getViewportsForAnnotation';
 import { getAllAnnotations } from '../../../stateManagement/annotation/annotationState';
@@ -19,6 +19,7 @@ import {
   createPolylineHole,
   combinePolylines,
 } from '../../../utilities/contourSegmentation/sharedOperations';
+import { Events } from '../../../enums';
 
 /**
  * Default tool name for contour segmentation operations.
@@ -55,6 +56,11 @@ export default async function contourSegmentationCompletedListener(
 
   // If no other relevant contour segmentations exist, there's nothing to combine or make a hole in.
   if (!contourSegmentationAnnotations.length) {
+    // we trigger the event here as here is the place where the source Annotation is not removed
+    triggerEvent(eventTarget, Events.ANNOTATION_CUT_MERGE_PROCESS_COMPLETED, {
+      element: viewport.element,
+      sourceAnnotation,
+    });
     return;
   }
 
@@ -72,6 +78,12 @@ export default async function contourSegmentationCompletedListener(
 
   // If no intersecting contours are found, do nothing.
   if (!intersectingContours.length) {
+    // we trigger the event here as here is the place where the source Annotation is not removed
+    triggerEvent(eventTarget, Events.ANNOTATION_CUT_MERGE_PROCESS_COMPLETED, {
+      element: viewport.element,
+      sourceAnnotation,
+    });
+
     return;
   }
 
@@ -84,6 +96,7 @@ export default async function contourSegmentationCompletedListener(
       sourcePolyline,
       intersectingContours
     );
+
     return;
   }
 
