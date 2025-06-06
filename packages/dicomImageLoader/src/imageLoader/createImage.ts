@@ -272,7 +272,7 @@ function createImage(
         };
 
         // CPU Rendering
-        if (isColorImage) {
+        if (image.color) {
           image.getCanvas = function () {
             // the getCanvas function is used in the CPU rendering path
             // and it is used to use the canvas api to draw the image
@@ -318,6 +318,7 @@ function createImage(
             imageFrame.imageData = imageData;
             ctx.putImageData(imageFrame.imageData, 0, 0);
             lastImageIdDrawn = imageId;
+
             return canvas;
           };
         }
