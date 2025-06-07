@@ -301,6 +301,16 @@ class Viewport {
     if (this.options?.displayArea) {
       this.setDisplayArea(this.options?.displayArea);
     }
+
+    if (options.background) {
+      const renderingEngine = this.getRenderingEngine();
+
+      const offscreenRenderer =
+        renderingEngine.offscreenMultiRenderWindow.getRenderer(this.id);
+
+      offscreenRenderer.setBackground(options.background);
+    }
+
     if (immediate) {
       this.render();
     }
