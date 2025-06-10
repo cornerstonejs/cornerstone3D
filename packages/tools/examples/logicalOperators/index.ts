@@ -201,7 +201,7 @@ function performLogicalOperation(
 
   if (annotationUIDsMap) {
     const segmentIndexes = Array.from(annotationUIDsMap.keys());
-    const lastIndex = segmentIndexes.length - 1;
+    let lastIndex = segmentIndexes.length - 1;
     let newIndex = 0;
     if (createNew) {
       newIndex = Math.max(...segmentIndexes) + 1;
@@ -214,6 +214,27 @@ function performLogicalOperation(
       segmentIndex: newIndex,
       color: 'rgb(50, 130, 162)',
     };
+
+    if (segmentIndexes.length > 0) {
+      if (operation === LogicalOperation.Copy) {
+        copy(
+          {
+            segmentationId: activeSeg.segmentationId,
+            segmentIndex: segmentIndexes[lastIndex],
+          },
+          operatorOptions
+        );
+      } else if (operation === LogicalOperation.Delete) {
+        lastIndex =
+          segmentation.segmentIndex.getActiveSegmentIndex(
+            activeSeg.segmentationId
+          ) - 1;
+        deleteOperation({
+          segmentationId: activeSeg.segmentationId,
+          segmentIndex: segmentIndexes[lastIndex],
+        });
+      }
+    }
     if (segmentIndexes.length > 1) {
       if (operation === LogicalOperation.Union) {
         add(
@@ -263,21 +284,6 @@ function performLogicalOperation(
           },
           operatorOptions
         );
-      }
-    } else if (segmentIndexes.length > 0) {
-      if (operation === LogicalOperation.Copy) {
-        copy(
-          {
-            segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex],
-          },
-          operatorOptions
-        );
-      } else if (operation === LogicalOperation.Delete) {
-        deleteOperation({
-          segmentationId: activeSeg.segmentationId,
-          segmentIndex: segmentIndexes[lastIndex],
-        });
       }
     }
 

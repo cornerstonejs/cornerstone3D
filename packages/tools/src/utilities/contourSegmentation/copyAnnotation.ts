@@ -96,18 +96,14 @@ export function copyContourSegment(
   if (!viewport) {
     return;
   }
+  const toolGroup = getToolGroupForViewport(viewport.id);
 
-  const newAnnotationsUID = new Set<string>();
-  for (const annotationUID of annotationUIDs) {
-    const annotation = getAnnotation(
-      annotationUID
-    ) as ContourSegmentationAnnotation;
+  const copyContourAnnotation = (annotation: ContourSegmentationAnnotation) => {
     const newAnnotation = copyAnnotation(
       annotation,
       targetSegmentationId,
       targetSegmentIndex
     );
-    const toolGroup = getToolGroupForViewport(viewport.id);
     if (toolGroup) {
       const instance = toolGroup.getToolInstance(annotation.metadata.toolName);
       if (instance) {
@@ -125,6 +121,28 @@ export function copyContourSegment(
     }
     addAnnotation(newAnnotation, viewport.element);
     newAnnotationsUID.add(newAnnotation.annotationUID);
+    return newAnnotation;
+  };
+
+  const newAnnotationsUID = new Set<string>();
+  for (const annotationUID of annotationUIDs) {
+    const annotation = getAnnotation(
+      annotationUID
+    ) as ContourSegmentationAnnotation;
+    const newAnnotation = copyContourAnnotation(annotation);
+    if (annotation?.childAnnotationUIDs) {
+      newAnnotation.childAnnotationUIDs = [];
+      for (const childAnnotationUID of annotation.childAnnotationUIDs) {
+        const childAnnotation = getAnnotation(
+          childAnnotationUID
+        ) as ContourSegmentationAnnotation;
+        const newChildAnnotation = copyContourAnnotation(childAnnotation);
+        newChildAnnotation.parentAnnotationUID = newAnnotation.annotationUID;
+        newAnnotation.childAnnotationUIDs.push(
+          newChildAnnotation.annotationUID
+        );
+      }
+    }
   }
 
   targetAnnotationUIDsMap.set(targetSegmentIndex, newAnnotationsUID);

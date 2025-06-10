@@ -238,6 +238,15 @@ export function deleteOperation(segment: SegmentInfo) {
 
   const representationData = segmentation.representationData.Contour;
   const { annotationUIDsMap } = representationData;
+  if (!annotationUIDsMap) {
+    console.log('No annotation map found');
+    return;
+  }
+
+  if (!annotationUIDsMap.has(segment.segmentIndex)) {
+    console.log('Segmentation index has no annotations');
+    return;
+  }
 
   const annotationUIDList = annotationUIDsMap.get(segment.segmentIndex);
   annotationUIDList.forEach((annotationUID) => {
