@@ -712,7 +712,8 @@ class RectangleROITool extends AnnotationTool {
       if (
         !isAnnotationLocked(annotationUID) &&
         !this.editData &&
-        (activeHandleIndex !== null && activeHandleIndex !== undefined)
+        activeHandleIndex !== null &&
+        activeHandleIndex !== undefined
       ) {
         // Not locked or creating and hovering over handle, so render handle.
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
