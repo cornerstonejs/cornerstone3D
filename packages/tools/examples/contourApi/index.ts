@@ -1,9 +1,18 @@
 import type { Types } from '@cornerstonejs/core';
 import {
+  addTool,
+  PlanarFreehandContourSegmentationTool,
+  PanTool,
+  StackScrollTool,
+  ZoomTool,
+  ToolGroupManager,
+  Enums as csToolsEnums,
+  segmentation,
+} from '@cornerstonejs/tools';
+import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  getRenderingEngine,
   getRenderingEngines,
 } from '@cornerstonejs/core';
 import {
@@ -11,30 +20,17 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  contourSegmentationToolBindings,
   createInfoSection,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
-import * as cornerstoneTools from '@cornerstonejs/tools';
-// Import contour utilities for examples
-const { findContourHoles, supersamplePolyline2D, findIslands } =
-  cornerstoneTools.utilities.contours;
-const { decimate } = cornerstoneTools.utilities.math.polyline;
 
-const { convertContourPolylineToCanvasSpace, convertContourPolylineToWorld } =
-  cornerstoneTools.utilities.contourSegmentation;
+const segmentationId = `SEGMENTATION_ID`;
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
-
-const {
-  PlanarFreehandROITool,
-  PanTool,
-  StackScrollTool,
-  ZoomTool,
-  ToolGroupManager,
-  Enums: csToolsEnums,
-  annotation: csToolsAnnotation,
-} = cornerstoneTools;
 
 function getViewportDisplayingAnnotation(annotation) {
   const getAllViewports = () => {
@@ -50,24 +46,6 @@ function getViewportDisplayingAnnotation(annotation) {
   );
 }
 
-function getAnnotationPolyline(annotation) {
-  if (annotation?.data?.contour?.polyline) {
-    const viewport = getViewportDisplayingAnnotation(annotation);
-    if (!viewport) {
-      return;
-    }
-    const polyline = convertContourPolylineToCanvasSpace(
-      annotation.data.contour.polyline,
-      viewport
-    );
-    if (annotation.data.contour.closed) {
-      polyline.push(polyline[0]);
-    }
-    return polyline;
-  }
-}
-
-let shouldCalculateStats = false;
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
@@ -142,250 +120,44 @@ createInfoSection(content, { title: 'Contour Utilities' })
     'Decimate Polylines: Simplifies polylines by removing points using Ramer-Douglas-Peucker algorithm with epsilon tolerance of 2.0 units. Shows reduction percentage.'
   );
 
+addSegmentIndexDropdown();
 addButtonToToolbar({
-  title: 'Find Contour Holes',
+  title: 'Remove Contour Holes',
   onClick: () => {
-    const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
-
-    if (annotations.length === 0) {
-      console.log('No annotations found. Please draw some contours first.');
-      return;
-    }
-
-    // Collect all polylines from all annotations
-    const allPolylines = [];
-    const annotationPolylineMap = new Map();
-
-    annotations.forEach((annotation, index) => {
-      if (annotation?.data?.contour?.polyline) {
-        const polyline = getAnnotationPolyline(annotation);
-        allPolylines.push(polyline);
-        annotationPolylineMap.set(polyline, annotation);
-        console.log(`Annotation ${index + 1}:`);
-        console.log('Original polyline points:', polyline.length);
-      }
-    });
-
-    if (allPolylines.length === 0) {
-      console.log('No valid polylines found.');
-      return;
-    }
-
-    try {
-      // Find holes in all contours
-      const holesResult = findContourHoles(allPolylines);
-      console.log('Holes found:', holesResult);
-
-      // Check if any holes were found and change annotation color to red
-      if (holesResult && holesResult.length > 0) {
-        console.log('Holes detected! Changing annotation colors to red.');
-        holesResult.forEach((holeResult) => {
-          holeResult.holeIndexes.forEach((holeIndex) => {
-            const polyline = allPolylines[holeIndex];
-            const annotation = annotationPolylineMap.get(polyline);
-            if (annotation) {
-              // Set annotation style to red
-              const styles = {
-                color: 'rgb(255, 0, 0)', // Red color
-              };
-
-              csToolsAnnotation.config.style.setAnnotationStyles(
-                annotation.annotationUID,
-                styles
-              );
-            }
-          });
-          // select the polyline with holes
-          const polyline = allPolylines[holeResult.contourIndex];
-          const annotation = annotationPolylineMap.get(polyline);
-          if (annotation) {
-            csToolsAnnotation.selection.setAnnotationSelected(
-              annotation.annotationUID
-            );
-          }
-        });
-
-        // Re-render to show the color changes
-        const renderingEngine = getRenderingEngine(renderingEngineId);
-        renderingEngine.render();
-      }
-    } catch (error) {
-      console.error('Error finding contour holes:', error);
-    }
-  },
-});
-
-addButtonToToolbar({
-  title: 'Supersample Polylines',
-  onClick: () => {
-    const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
-
-    if (annotations.length === 0) {
-      console.log('No annotations found. Please draw some contours first.');
-      return;
-    }
-
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    annotations.forEach((annotation, index) => {
-      if (annotation?.data?.contour?.polyline) {
-        const viewport = getViewportDisplayingAnnotation(annotation);
-        if (!viewport) {
-          return;
-        }
-        const originalPolyline = convertContourPolylineToCanvasSpace(
-          annotation.data.contour.polyline,
-          viewport
-        );
-
-        console.log(`Annotation ${index + 1}:`);
-        console.log('Original polyline points:', originalPolyline.length);
-
-        try {
-          // Supersample the polyline with target spacing of 1.0
-          const supersampledPolyline = supersamplePolyline2D(
-            originalPolyline,
-            0.1
-          );
-          console.log(
-            'Supersampled polyline points:',
-            supersampledPolyline.length
-          );
-
-          // Update the annotation with the supersampled polyline
-          annotation.data.contour.polyline = convertContourPolylineToWorld(
-            supersampledPolyline,
-            viewport
-          );
-        } catch (error) {
-          console.error('Error supersampling polyline:', error);
-        }
-      }
-    });
-
-    // Re-render to show the updated polylines
-    renderingEngine.renderViewports(viewportIds);
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    segmentation.utilities.removeContourHoles(segmentationId, segmentIndex);
   },
 });
 
 addButtonToToolbar({
   title: 'Remove Small Islands',
   onClick: () => {
-    const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
-
-    if (annotations.length === 0) {
-      console.log('No annotations found. Please draw some contours first.');
-      return;
-    }
-
-    // Collect all polylines
-    const polylines = [];
-    const annotationMap = new Map();
-
-    annotations.forEach((annotation) => {
-      if (annotation?.data?.contour?.polyline) {
-        const polyline = getAnnotationPolyline(annotation);
-        polylines.push(polyline);
-        annotationMap.set(polyline, annotation);
-      }
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    segmentation.utilities.removeContourIslands(segmentationId, segmentIndex, {
+      threshold: 10,
     });
+  },
+});
 
-    if (polylines.length === 0) {
-      console.log('No valid polylines found.');
-      return;
-    }
-
-    console.log('Original polylines count:', polylines.length);
-
-    try {
-      // Remove islands smaller than area threshold of 300
-      const islandPolylines = findIslands(polylines, 300);
-      console.log('Island polylines count:', islandPolylines.length);
-
-      // Remove annotations that were filtered out
-      islandPolylines.forEach((islandIndex) => {
-        const polyline = polylines[islandIndex];
-        const annotation = annotationMap.get(polyline);
-        if (annotation) {
-          csToolsAnnotation.state.removeAnnotation(annotation.annotationUID);
-        }
-      });
-
-      // Re-render to show the updated annotations
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-      renderingEngine.renderViewports(viewportIds);
-    } catch (error) {
-      console.error('Error removing islands:', error);
-    }
+addButtonToToolbar({
+  title: 'Smooth Polylines',
+  onClick: () => {
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    segmentation.utilities.smoothContours(segmentationId, segmentIndex);
   },
 });
 
 addButtonToToolbar({
   title: 'Decimate Polylines',
   onClick: () => {
-    const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
-
-    if (annotations.length === 0) {
-      console.log('No annotations found. Please draw some contours first.');
-      return;
-    }
-
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    annotations.forEach((annotation, index) => {
-      if (annotation?.data?.contour?.polyline) {
-        const viewport = getViewportDisplayingAnnotation(annotation);
-        if (!viewport) {
-          return;
-        }
-        const originalPolyline = convertContourPolylineToCanvasSpace(
-          annotation.data.contour.polyline,
-          viewport
-        );
-        console.log(`Annotation ${index + 1}:`);
-        console.log('Original polyline points:', originalPolyline.length);
-
-        try {
-          // Decimate the polyline with epsilon of 2.0 (tolerance for simplification)
-          const decimatedPolyline = decimate(originalPolyline, 2.0);
-          console.log('Decimated polyline points:', decimatedPolyline.length);
-          console.log(
-            'Reduction:',
-            (
-              ((originalPolyline.length - decimatedPolyline.length) /
-                originalPolyline.length) *
-              100
-            ).toFixed(1) + '%'
-          );
-
-          // Update the annotation with the decimated polyline
-          annotation.data.contour.polyline = convertContourPolylineToWorld(
-            decimatedPolyline,
-            viewport
-          );
-        } catch (error) {
-          console.error('Error decimating polyline:', error);
-        }
-      }
-    });
-
-    // Re-render to show the updated polylines
-    renderingEngine.renderViewports(viewportIds);
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    segmentation.utilities.decimateContours(segmentationId, segmentIndex);
   },
 });
-
-function addToggleCalculateStatsButton(toolGroup) {
-  addButtonToToolbar({
-    title: 'Toggle calculate stats',
-    onClick: () => {
-      shouldCalculateStats = !shouldCalculateStats;
-
-      toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-        calculateStats: shouldCalculateStats,
-      });
-    },
-  });
-}
 // ============================= //
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
@@ -398,29 +170,26 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PlanarFreehandROITool);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(StackScrollTool);
-  cornerstoneTools.addTool(ZoomTool);
+  addTool(PlanarFreehandContourSegmentationTool);
+  addTool(PanTool);
+  addTool(StackScrollTool);
+  addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
 
-  // Set the initial state of the tools.
-  toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
+  toolGroup.setToolActive(PlanarFreehandContourSegmentationTool.toolName, {
+    bindings: contourSegmentationToolBindings,
   });
+
+  // Set the initial state of the tools.
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -439,14 +208,6 @@ async function run() {
   // hook instead of mouse buttons, it does not need to assign any mouse button.
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
-  });
-
-  // set up toggle calculate stats tool button.
-  addToggleCalculateStatsButton(toolGroup);
-
-  toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-    calculateStats: shouldCalculateStats,
-    allowOpenContours: false,
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
@@ -524,6 +285,31 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
+  // Add a segmentation that will contains the contour annotations
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    },
+  ]);
+
+  // Create a segmentation representation associated to the viewportId
+  await segmentation.addSegmentationRepresentations(viewportIds[0], [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
+  await segmentation.addSegmentationRepresentations(viewportIds[1], [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
+
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 }
 
 run();
