@@ -1,4 +1,5 @@
 import areSameSegment from './areSameSegment';
+import convertContourSegmentationAnnotation from './convertContourSegmentation';
 import { copyAnnotation, copyContourSegment } from './copyAnnotation';
 export * from './logicalOperators';
 export { default as isContourSegmentationAnnotation } from './isContourSegmentationAnnotation';
@@ -8,7 +9,13 @@ export { findAllIntersectingContours } from './getIntersectingAnnotations';
 export { processMultipleIntersections } from './mergeMultipleAnnotations';
 export { contourSegmentationOperation } from './contourSegmentationOperation';
 export * from './sharedOperations';
-export { areSameSegment, copyContourSegment, copyAnnotation };
+
+export {
+  areSameSegment,
+  convertContourSegmentationAnnotation,
+  copyContourSegment,
+  copyAnnotation,
+};
 
 export {
   unifyPolylineSets,
