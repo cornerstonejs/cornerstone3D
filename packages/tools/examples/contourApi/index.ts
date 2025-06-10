@@ -14,14 +14,13 @@ import {
   createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import {
-  convertContourPolylineToCanvasSpace,
-  convertContourPolylineToWorld,
-} from '../../src/utilities/contourSegmentation/sharedOperations';
 // Import contour utilities for examples
 const { findContourHoles, supersamplePolyline2D, findIslands } =
   cornerstoneTools.utilities.contours;
 const { decimate } = cornerstoneTools.utilities.math.polyline;
+
+const { convertContourPolylineToCanvasSpace, convertContourPolylineToWorld } =
+  cornerstoneTools.utilities.contourSegmentation;
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'

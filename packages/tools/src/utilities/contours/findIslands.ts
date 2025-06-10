@@ -7,7 +7,7 @@ import { getSignedArea } from '../math/polyline';
  * This function identifies small closed polylines based on their area.
  *
  * @param polylines - Array of polylines to analyze
- * @param threshold - Minimum area threshold for identifying islands
+ * @param threshold - Minimum area threshold for identifying islands in cm2
  * @returns Array of polyline indexes that are islands (closed contours smaller than threshold)
  */
 export default function findIslands(
@@ -37,7 +37,8 @@ export default function findIslands(
 
     if (isClosedPolyline) {
       // Calculate area for closed polylines (use absolute value since we only care about size)
-      const area = Math.abs(getSignedArea(polyline));
+      // Convert from mm² to cm² by dividing by 100 (1 cm² = 100 mm²)
+      const area = Math.abs(getSignedArea(polyline)) / 100;
 
       // Identify closed contours that are smaller than the threshold (islands)
       if (area < threshold) {
