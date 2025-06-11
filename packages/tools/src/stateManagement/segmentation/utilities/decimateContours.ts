@@ -63,7 +63,10 @@ export default function decimateContours(
     }
 
     const polylineCanvas = polylinesCanvasMap.get(annotationUID);
-    console.log('Number of points before decimation: ', polylineCanvas.length);
+    console.log(
+      'Number of points before decimation: ',
+      annotation.data.contour.polyline.length
+    );
 
     // Decimate the polyline
     const decimatedPolyline2D = decimate(polylineCanvas, options.epsilon);
