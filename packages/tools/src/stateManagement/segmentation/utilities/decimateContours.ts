@@ -27,14 +27,19 @@ export default function decimateContours(
 ) {
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
+    console.warn(`Invalid segmentation given ${segmentationId}`);
     return;
   }
   if (!segmentation.representationData.Contour) {
+    console.warn(
+      `No contour representation found for segmentation ${segmentationId}`
+    );
     return;
   }
   const viewport = getViewportAssociatedToSegmentation(segmentationId);
   if (!viewport) {
-    return viewport;
+    console.warn('No viewport associated to the segmentation found');
+    return;
   }
 
   const polylinesCanvasMap = extractSegmentPolylines(
@@ -42,6 +47,9 @@ export default function decimateContours(
     segmentIndex
   );
   if (!polylinesCanvasMap) {
+    console.warn(
+      `Error extracting contour data from segment ${segmentIndex} in segmentation ${segmentationId}`
+    );
     return;
   }
 

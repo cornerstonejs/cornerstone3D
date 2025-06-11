@@ -22,9 +22,13 @@ export default function removeContourIslands(
 ) {
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
+    console.warn(`Invalid segmentation given ${segmentationId}`);
     return;
   }
   if (!segmentation.representationData.Contour) {
+    console.warn(
+      `No contour representation found for segmentation ${segmentationId}`
+    );
     return;
   }
 
@@ -33,6 +37,9 @@ export default function removeContourIslands(
     segmentIndex
   );
   if (!polylinesCanvasMap) {
+    console.warn(
+      `Error extracting contour data from segment ${segmentIndex} in segmentation ${segmentationId}`
+    );
     return;
   }
 

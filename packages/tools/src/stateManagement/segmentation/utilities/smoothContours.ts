@@ -26,9 +26,13 @@ export default function smoothContours(
 ) {
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
+    console.warn(`Invalid segmentation given ${segmentationId}`);
     return;
   }
   if (!segmentation.representationData.Contour) {
+    console.warn(
+      `No contour representation found for segmentation ${segmentationId}`
+    );
     return;
   }
 
@@ -37,10 +41,14 @@ export default function smoothContours(
 
   const { annotationUIDsMap } = contourRepresentationData;
   if (!annotationUIDsMap) {
+    console.warn(`No contours found for segmentation ${segmentationId}`);
     return;
   }
 
   if (!annotationUIDsMap.has(segmentIndex)) {
+    console.warn(
+      `Error extracting contour data from segment ${segmentIndex} in segmentation ${segmentationId}`
+    );
     return;
   }
 
