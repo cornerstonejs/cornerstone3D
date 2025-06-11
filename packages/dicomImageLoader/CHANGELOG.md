@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.0...v3.20.1) (2025-06-11)
+
+### Bug Fixes
+
+- **rendering:** palette color ([#2113](https://github.com/cornerstonejs/cornerstone3D/issues/2113)) ([534e273](https://github.com/cornerstonejs/cornerstone3D/commit/534e273f8afc401ed539b5cff0cefc22901de497))
+
 # [3.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.5...v3.20.0) (2025-06-10)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
