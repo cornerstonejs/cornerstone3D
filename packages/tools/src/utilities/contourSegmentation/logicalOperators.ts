@@ -151,6 +151,9 @@ function applyLogicalOperation(
     case LogicalOperation.XOR:
       polylinesMerged = xorPolylinesSets(polyLinesCanvas1, polyLinesCanvas2);
       break;
+    default:
+      polylinesMerged = unifyPolylineSets(polyLinesCanvas1, polyLinesCanvas2);
+      break;
   }
   const polyLinesWorld = polylinesMerged.map((polyline) =>
     convertContourPolylineToWorld(polyline, viewport)

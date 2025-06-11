@@ -14,14 +14,31 @@ export function pointsAreEqual(p1: Types.Point2, p2: Types.Point2): boolean {
   return Math.abs(p1[0] - p2[0]) < EPSILON && Math.abs(p1[1] - p2[1]) < EPSILON;
 }
 
-// --- Geometric Primitives (Placeholders/Simplified) ---
-
 /**
- * Calculates the intersection point of two line segments.
- * IMPORTANT: This is a simplified version. A robust solution needs to handle
- * collinear overlaps (which might produce two intersection points or an interval),
- * parallel lines, and floating point inaccuracies much more carefully.
- * This function's limitations are a likely source of issues for complex polygons.
+ * Calculates the intersection point of two line segments using a robust algorithm.
+ *
+ * This function uses parametric line equations to find intersections and handles
+ * several edge cases including:
+ * - Parallel segments (returns null)
+ * - Collinear segments with overlap (returns the first valid intersection point)
+ * - Floating-point precision issues (uses EPSILON tolerance)
+ *
+ * The algorithm is based on the line-line intersection method where two segments
+ * are represented as:
+ * - Segment 1: p1 + t * (p2 - p1), where t ∈ [0, 1]
+ * - Segment 2: q1 + u * (q2 - q1), where u ∈ [0, 1]
+ *
+ * For collinear segments, the function attempts to find a single intersection point
+ * by checking if any endpoint of one segment lies on the other segment.
+ *
+ * @param p1 - First point of the first line segment [x, y]
+ * @param p2 - Second point of the first line segment [x, y]
+ * @param q1 - First point of the second line segment [x, y]
+ * @param q2 - Second point of the second line segment [x, y]
+ * @returns The intersection point as [x, y] coordinates, or null if:
+ *          - Segments are parallel and non-intersecting
+ *          - Segments don't intersect within their bounds
+ *          - Collinear segments don't overlap
  */
 export function robustSegmentIntersection(
   p1: Types.Point2,
@@ -35,76 +52,106 @@ export function robustSegmentIntersection(
   const qmp = vec2.subtract(vec2.create(), q1, p1) as Types.Point2;
   const qmpxr = vec2CrossZ(qmp, r);
 
+  // Check if segments are parallel or collinear
   if (Math.abs(rxs) < EPSILON) {
-    // Collinear or parallel
-    // Collinear check: if qmpxr is also zero, they are collinear.
-    // Then, need to check for overlap. This is the hard part not fully handled here.
-    // For true robustness, if collinear and overlapping, you'd return the
-    // two endpoints of the overlap segment. This simple version doesn't.
+    // Check if segments are collinear
     if (Math.abs(qmpxr) < EPSILON) {
-      // Check for overlap for collinear segments
-      const p1OnQ = (t: number) => t >= -EPSILON && t <= 1 + EPSILON;
-      const q1OnP = (t: number) => t >= -EPSILON && t <= 1 + EPSILON;
+      // Segments are collinear - check for overlap
+      // Project all points onto the direction vector of the first segment
+      const rDotR = vec2.dot(r, r);
+      const sDotS = vec2.dot(s, s);
 
-      const t0 =
-        vec2.dot(vec2.subtract(vec2.create(), q1, p1), r) / vec2.dot(r, r);
-      const t1 =
-        vec2.dot(vec2.subtract(vec2.create(), q2, p1), r) / vec2.dot(r, r);
-      const u0 =
-        vec2.dot(vec2.subtract(vec2.create(), p1, q1), s) / vec2.dot(s, s);
-      const u1 =
-        vec2.dot(vec2.subtract(vec2.create(), p2, q1), s) / vec2.dot(s, s);
+      // Avoid division by zero for degenerate segments
+      if (rDotR < EPSILON || sDotS < EPSILON) {
+        // One or both segments are degenerate (points)
+        if (pointsAreEqual(p1, q1) || pointsAreEqual(p1, q2)) {
+          return p1;
+        }
+        if (pointsAreEqual(p2, q1) || pointsAreEqual(p2, q2)) {
+          return p2;
+        }
+        return null;
+      }
 
-      // This logic is still insufficient for full collinear overlap range.
-      // A true clipping algorithm needs to create multiple intersection points
-      // for the start and end of any collinear overlap.
-      if (
-        p1OnQ(t0) &&
-        pointsAreEqual(
-          q1,
-          vec2.scaleAndAdd(vec2.create(), p1, r, t0) as Types.Point2
-        )
-      ) {
-        return q1;
-      }
-      if (
-        p1OnQ(t1) &&
-        pointsAreEqual(
-          q2,
-          vec2.scaleAndAdd(vec2.create(), p1, r, t1) as Types.Point2
-        )
-      ) {
-        return q2;
-      }
-      if (
-        q1OnP(u0) &&
-        pointsAreEqual(
+      // Calculate parameter values for projecting q1 and q2 onto segment p1-p2
+      const t0 = vec2.dot(vec2.subtract(vec2.create(), q1, p1), r) / rDotR;
+      const t1 = vec2.dot(vec2.subtract(vec2.create(), q2, p1), r) / rDotR;
+
+      // Calculate parameter values for projecting p1 and p2 onto segment q1-q2
+      const u0 = vec2.dot(vec2.subtract(vec2.create(), p1, q1), s) / sDotS;
+      const u1 = vec2.dot(vec2.subtract(vec2.create(), p2, q1), s) / sDotS;
+
+      // Check for overlap by testing if any endpoint lies within the other segment
+      const isInRange = (t: number) => t >= -EPSILON && t <= 1 + EPSILON;
+
+      // Check if q1 lies on segment p1-p2
+      if (isInRange(t0)) {
+        const projectedPoint = vec2.scaleAndAdd(
+          vec2.create(),
           p1,
-          vec2.scaleAndAdd(vec2.create(), q1, s, u0) as Types.Point2
-        )
-      ) {
-        return p1;
+          r,
+          t0
+        ) as Types.Point2;
+        if (pointsAreEqual(q1, projectedPoint)) {
+          return q1;
+        }
       }
-      if (
-        q1OnP(u1) &&
-        pointsAreEqual(
-          p2,
-          vec2.scaleAndAdd(vec2.create(), q1, s, u1) as Types.Point2
-        )
-      ) {
-        return p2;
+
+      // Check if q2 lies on segment p1-p2
+      if (isInRange(t1)) {
+        const projectedPoint = vec2.scaleAndAdd(
+          vec2.create(),
+          p1,
+          r,
+          t1
+        ) as Types.Point2;
+        if (pointsAreEqual(q2, projectedPoint)) {
+          return q2;
+        }
+      }
+
+      // Check if p1 lies on segment q1-q2
+      if (isInRange(u0)) {
+        const projectedPoint = vec2.scaleAndAdd(
+          vec2.create(),
+          q1,
+          s,
+          u0
+        ) as Types.Point2;
+        if (pointsAreEqual(p1, projectedPoint)) {
+          return p1;
+        }
+      }
+
+      // Check if p2 lies on segment q1-q2
+      if (isInRange(u1)) {
+        const projectedPoint = vec2.scaleAndAdd(
+          vec2.create(),
+          q1,
+          s,
+          u1
+        ) as Types.Point2;
+        if (pointsAreEqual(p2, projectedPoint)) {
+          return p2;
+        }
       }
     }
-    return null; // Parallel non-intersecting or unhandled collinear
+
+    // Segments are parallel but not collinear, or collinear but don't overlap
+    return null;
   }
 
+  // Calculate intersection parameters
   const t = vec2CrossZ(qmp, s) / rxs;
   const u = qmpxr / rxs;
 
+  // Check if intersection point lies within both segments
   if (t >= -EPSILON && t <= 1 + EPSILON && u >= -EPSILON && u <= 1 + EPSILON) {
+    // Calculate and return the intersection point
     return [p1[0] + t * r[0], p1[1] + t * r[1]];
   }
-  return null; // No intersection
+
+  return null; // No intersection within segment bounds
 }
 
 // --- Augmented Polyline Node Structure and Helper ---

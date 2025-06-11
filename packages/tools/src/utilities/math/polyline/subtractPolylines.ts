@@ -218,10 +218,6 @@ export default function subtractPolylines(
           p_curr
         ) as Types.Point2;
 
-        const crossZ =
-          v_target_arrival[0] * v_source_departure[1] -
-          v_target_arrival[1] * v_source_departure[0];
-
         // This sign depends on:
         // Target winding (assume CCW after normalization if any)
         // Source winding (assume CW after normalization for subtraction)
