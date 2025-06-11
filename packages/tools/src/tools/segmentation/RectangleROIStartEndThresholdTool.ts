@@ -315,7 +315,9 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
     for (
       let dist = startDist;
-      totalDistance >= 0 ? dist <= endDist + Number.EPSILON : dist >= endDist - Number.EPSILON;
+      totalDistance >= 0
+        ? dist <= endDist + Number.EPSILON
+        : dist >= endDist - Number.EPSILON;
       dist += step
     ) {
       const handlesOnCurrentPlane = points.map((point) => {
