@@ -137,7 +137,7 @@ addButtonToToolbar({
     const segmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
     segmentation.utilities.smoothContours(segmentationId, segmentIndex, {
-      knotsRatioPercentage: 70,
+      knotsRatioPercentage: 60,
     });
     const renderingEngine = getRenderingEngine(renderingEngineId);
     renderingEngine.render();
