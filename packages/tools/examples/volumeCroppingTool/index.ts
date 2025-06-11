@@ -12,12 +12,14 @@ import {
   addButtonToToolbar,
   addDropdownToToolbar,
   addManipulationBindings,
+  addSliderToToolbar,
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
-import VolumeCroppingTool from '../../src/tools/VolumeCroppingTool';
+import TrackballRotateTool from '../../src/tools/TrackballRotateTool';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 // This is for debugging purposes
 console.warn(
@@ -40,7 +42,7 @@ const viewportId = '3D_VIEWPORT';
 // ======== Set up page ======== //
 setTitleAndDescription(
   '3D Volume Cropping',
-  'Here we demonstrate how to crop a 3D  volume.'
+  'Here we demonstrate how to crop a 3D  volume along 6 planes controlled by sliders.'
 );
 
 const size = '500px';
@@ -66,36 +68,18 @@ instructions.innerText = 'Click the image to rotate it.';
 
 content.append(instructions);
 
-addButtonToToolbar({
-  title: 'Apply random rotation',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
+function setClippingPlane(planeIndex, newDisplayThreshold, axis, dimensions) {
+  const mapper = viewport.getDefaultActor().actor.getMapper();
+  const clippingPlanes = mapper.getClippingPlanes();
+  const origin = [0, 0, 0];
+  origin[axis] = newDisplayThreshold;
+  // if TrackballRotateTool is in use, rotate the plane.
 
-    // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
-
-    // Apply the rotation to the camera of the viewport
-    viewport.setViewPresentation({ rotation: Math.random() * 360 });
-    viewport.render();
-  },
-});
-
-addDropdownToToolbar({
-  options: {
-    values: CONSTANTS.VIEWPORT_PRESETS.map((preset) => preset.name),
-    defaultValue: 'CT-Bone',
-  },
-  onSelectedValueChange: (presetName) => {
-    viewport.setProperties({ preset: presetName });
-    viewport.render();
-  },
-});
+  clippingPlanes[planeIndex].setOrigin(origin);
+  viewport.render();
+}
 
 // ============================= //
-
 let viewport;
 
 /**
@@ -115,9 +99,9 @@ async function run() {
   addManipulationBindings(toolGroup, {
     is3DViewport: true,
   });
-  cornerstoneTools.addTool(VolumeCroppingTool);
-  toolGroup.addTool(VolumeCroppingTool.toolName);
-  toolGroup.setToolActive(VolumeCroppingTool.toolName);
+  cornerstoneTools.addTool(cornerstoneTools.TrackballRotateTool);
+  toolGroup.addTool(TrackballRotateTool.toolName);
+  toolGroup.setToolActive(TrackballRotateTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -154,6 +138,19 @@ async function run() {
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
+  // Get the vtkImageData from the volume
+  const imageData = volume.imageData;
+  const dimensions = imageData.getDimensions(); // [xDim, yDim, zDim]
+  console.log('Volume dimensions:', dimensions);
+
+  // Log the world dimensions (physical size)
+  const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
+  const worldDimensions = [
+    Math.round(dimensions[0] * spacing[0]),
+    Math.round(dimensions[1] * spacing[1]),
+    Math.round(dimensions[2] * spacing[2]),
+  ];
+  console.log('Volume world dimensions (mm):', worldDimensions);
 
   // Set the volume to load
   volume.load();
@@ -167,6 +164,139 @@ async function run() {
     viewport.setProperties({
       preset: 'CT-Bone',
     });
+    const mapper = viewport.getDefaultActor().actor.getMapper();
+    const xMin = worldDimensions[0] * -0.5;
+    const xMax = worldDimensions[0] * 0.5;
+    const yMin = worldDimensions[1] * -0.5;
+    const yMax = worldDimensions[1] * 0.5;
+    const zMin = -worldDimensions[2];
+    const zMax = 0;
+    const planes: vtkPlane[] = [];
+
+    // X min plane (cuts everything left of xMin)
+    const planeXmin = vtkPlane.newInstance({
+      origin: [xMin, 0, 0],
+      normal: [1, 0, 0],
+    });
+    mapper.addClippingPlane(planeXmin);
+    addSliderToToolbar({
+      title: ' x-min:  ' + xMin,
+      range: [xMin, xMax],
+      defaultValue: xMin,
+      updateLabelOnChange(value, label) {
+        label.innerText = ` x-min: ${value} `;
+      },
+      onSelectedValueChange: (newDisplayThreshold) => {
+        setClippingPlane(0, newDisplayThreshold, 0, dimensions);
+      },
+    });
+    planes.push(planeXmin);
+
+    // X max plane (cuts everything right of xMax)
+    const planeXmax = vtkPlane.newInstance({
+      origin: [xMax, 0, 0],
+      normal: [-1, 0, 0],
+    });
+    mapper.addClippingPlane(planeXmax);
+    addSliderToToolbar({
+      title: ' x-max: ' + xMax,
+      range: [xMin, xMax],
+      defaultValue: xMax,
+      updateLabelOnChange(value, label) {
+        label.innerText = ` x-max: ${value} `;
+      },
+      onSelectedValueChange: (newDisplayThreshold) => {
+        setClippingPlane(1, newDisplayThreshold, 0, dimensions);
+      },
+    });
+    planes.push(planeXmax);
+
+    // Y min plane
+    const planeYmin = vtkPlane.newInstance({
+      origin: [0, yMin, 0],
+      normal: [0, 1, 0],
+    });
+    addSliderToToolbar({
+      title: ' y-min: ' + yMin,
+      range: [yMin, yMax],
+      defaultValue: yMin,
+      updateLabelOnChange(value, label) {
+        label.innerText = ` y-min: ${value} `;
+      },
+      onSelectedValueChange: (newDisplayThreshold) => {
+        setClippingPlane(2, newDisplayThreshold, 1, dimensions);
+      },
+    });
+    mapper.addClippingPlane(planeYmin);
+    planes.push(planeYmin);
+
+    // Y max plane
+    const planeYmax = vtkPlane.newInstance({
+      origin: [0, yMax, 0],
+      normal: [0, -1, 0],
+    });
+    mapper.addClippingPlane(planeYmax);
+    addSliderToToolbar({
+      title: ' y-max: ' + yMax,
+      range: [yMin, yMax],
+      defaultValue: yMax,
+      updateLabelOnChange(value, label) {
+        label.innerText = ` y-max: ${value} `;
+      },
+      onSelectedValueChange: (newDisplayThreshold) => {
+        setClippingPlane(3, newDisplayThreshold, 1, dimensions);
+      },
+    });
+    planes.push(planeYmax);
+
+    // Z min plane
+    const planeZmin = vtkPlane.newInstance({
+      origin: [0, 0, zMin],
+      normal: [0, 0, 1],
+    });
+    mapper.addClippingPlane(planeZmin);
+    addSliderToToolbar({
+      title: ' z-min: ' + zMin,
+      range: [zMin, zMax],
+      defaultValue: zMin,
+      updateLabelOnChange(value, label) {
+        label.innerText = ` z-min: ${value} `;
+      },
+      onSelectedValueChange: (newDisplayThreshold) => {
+        setClippingPlane(4, newDisplayThreshold, 2, dimensions);
+      },
+    });
+    planes.push(planeZmin);
+
+    // Z max plane
+    const planeZmax = vtkPlane.newInstance({
+      origin: [0, 0, zMax],
+      normal: [0, 0, -1],
+    });
+    mapper.addClippingPlane(planeZmax);
+    addSliderToToolbar({
+      title: ' z-max: ' + zMax,
+      range: [zMin, zMax],
+      defaultValue: zMax,
+      updateLabelOnChange(value, label) {
+        label.innerText = ` z-max: ${value} `;
+      },
+      onSelectedValueChange: (newDisplayThreshold) => {
+        setClippingPlane(5, newDisplayThreshold, 2, dimensions);
+      },
+    });
+    planes.push(planeZmax);
+
+    const originalPlanes = planes.map((plane) => ({
+      origin: [...plane.getOrigin()],
+      normal: [...plane.getNormal()],
+    }));
+    const trackballRotateTool = toolGroup.getToolInstance(
+      TrackballRotateTool.toolName
+    );
+    trackballRotateTool.setOriginalClippingPlanes(viewport, originalPlanes);
+
+    console.debug('index planes: ', originalPlanes);
     viewport.render();
   });
 }

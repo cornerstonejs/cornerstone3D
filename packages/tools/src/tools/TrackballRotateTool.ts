@@ -1,4 +1,5 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import { Events } from '../enums';
 import {
   eventTarget,
@@ -20,6 +21,8 @@ class TrackballRotateTool extends BaseTool {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _viewportAddedListener: (evt: any) => void;
   _hasResolutionChanged = false;
+  // Store original (axis-aligned) clipping planes for each viewport
+  _originalClippingPlanes = new Map();
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -34,7 +37,15 @@ class TrackballRotateTool extends BaseTool {
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
+  // Set the original planes for a viewport
+  setOriginalClippingPlanes(viewport, planes) {
+    this._originalClippingPlanes = planes;
+  }
 
+  // Set the original planes for a viewport
+  getOriginalClippingPlanes(viewport) {
+    return this._originalClippingPlanes;
+  }
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -148,6 +159,74 @@ class TrackballRotateTool extends BaseTool {
     }
   };
 
+  // Helper to transform a normal by a 3x3 matrix
+  _transformNormal(normal, mat) {
+    return [
+      mat[0] * normal[0] + mat[3] * normal[1] + mat[6] * normal[2],
+      mat[1] * normal[0] + mat[4] * normal[1] + mat[7] * normal[2],
+      mat[2] * normal[0] + mat[5] * normal[1] + mat[8] * normal[2],
+    ];
+  }
+
+  // Update all clipping planes after rotation
+  _updateClippingPlanes(viewport) {
+    const actorEntry = viewport.getDefaultActor();
+    const actor = actorEntry.actor as Types.VolumeActor;
+    const mapper = actor.getMapper();
+    const matrix = actor.getMatrix();
+    //console.debug('_updateClippingPlanes: ', mapper.getClippingPlanes());
+    // Extract rotation part for normals
+    const rot = [
+      matrix[0],
+      matrix[1],
+      matrix[2],
+      matrix[4],
+      matrix[5],
+      matrix[6],
+      matrix[8],
+      matrix[9],
+      matrix[10],
+    ];
+
+    let originalPlanes = this.getOriginalClippingPlanes(viewport.id);
+    if (!originalPlanes || originalPlanes.length === 0) {
+      originalPlanes = planes.map((plane) => ({
+        origin: [...plane.getOrigin()],
+        normal: [...plane.getNormal()],
+      }));
+
+      //  this.setOriginalClippingPlanes(viewport.id, mapper.getClippingPlanes());
+    }
+
+    console.log('Updating clipping planes for viewport:', viewport.id);
+    mapper.removeAllClippingPlanes();
+    //originalPlanes = this._originalClippingPlanes.get(viewport.id);
+    //originalPlanes = this.getOriginalClippingPlanes(viewport.id);
+    originalPlanes.forEach(({ origin, normal }) => {
+      // Transform origin (full 4x4)
+      const o = [
+        matrix[0] * origin[0] +
+          matrix[4] * origin[1] +
+          matrix[8] * origin[2] +
+          matrix[12],
+        matrix[1] * origin[0] +
+          matrix[5] * origin[1] +
+          matrix[9] * origin[2] +
+          matrix[13],
+        matrix[2] * origin[0] +
+          matrix[6] * origin[1] +
+          matrix[10] * origin[2] +
+          matrix[14],
+      ];
+      // Transform normal (rotation only)
+      const n = this._transformNormal(normal, rot);
+      const plane = vtkPlane.newInstance({ origin: o, normal: n });
+      console.debug('Adding plane:', origin, plane);
+      mapper.addClippingPlane(plane);
+    });
+    const _planesAfter = mapper.getClippingPlanes();
+  }
+
   rotateCamera = (viewport, centerWorld, axis, angle) => {
     const vtkCamera = viewport.getVtkActiveCamera();
     const viewUp = vtkCamera.getViewUp();
@@ -178,6 +257,10 @@ class TrackballRotateTool extends BaseTool {
       viewUp: newViewUp,
       focalPoint: newFocalPoint,
     });
+    console.debug('Rotating camera', viewport);
+
+    // Update clipping planes after rotation
+    this._updateClippingPlanes(viewport);
   };
 
   _dragCallback(evt: EventTypes.InteractionEventType): void {
