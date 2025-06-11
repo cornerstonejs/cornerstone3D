@@ -3,6 +3,104 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.5...v3.20.0) (2025-06-10)
+
+### Features
+
+- Add simplified spline configuration ([#2124](https://github.com/cornerstonejs/cornerstone3D/issues/2124)) ([675e2cf](https://github.com/cornerstonejs/cornerstone3D/commit/675e2cfba6b560e50af790630799057f80492c7c))
+
+## [3.19.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.4...v3.19.5) (2025-06-06)
+
+### Bug Fixes
+
+- **PlanarFreehandROITool:** Include the mm spacing/delta for canvas coordinates in the perimeter calculation. ([#2126](https://github.com/cornerstonejs/cornerstone3D/issues/2126)) ([7dcae70](https://github.com/cornerstonejs/cornerstone3D/commit/7dcae70c896d0ccaeabb4eccbec9b58e3581724d))
+
+## [3.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.3...v3.19.4) (2025-06-06)
+
+### Bug Fixes
+
+- **metaDataManager:** add logic to enforce multi-frame semantic based on DICOM IOD ([#2098](https://github.com/cornerstonejs/cornerstone3D/issues/2098)) ([18a89df](https://github.com/cornerstonejs/cornerstone3D/commit/18a89df416b65300a6db9c16f1e99ca8dc1ef235))
+
+## [3.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.2...v3.19.3) (2025-06-03)
+
+### Bug Fixes
+
+- **contour:** Enhance Contour Segmentation Utilities with Intersection Handling and Annotation Management ([#2112](https://github.com/cornerstonejs/cornerstone3D/issues/2112)) ([cb71755](https://github.com/cornerstonejs/cornerstone3D/commit/cb717552435c64650f6a27d0138d13774443c8e7))
+
+## [3.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.1...v3.19.2) (2025-06-02)
+
+**Note:** Version bump only for package root
+
+## [3.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.0...v3.19.1) (2025-05-30)
+
+### Features
+
+- **tools:** Add tool LabelMapEditWithContourTool ([#2110](https://github.com/cornerstonejs/cornerstone3D/issues/2110)) ([b3c6bc3](https://github.com/cornerstonejs/cornerstone3D/commit/b3c6bc379fdccda311853d1126c890650b3027ea))
+
+# [3.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.18.0...v3.19.0) (2025-05-30)
+
+### Features
+
+- **trackballRotateTool:** rotate resolution configuration ([#2108](https://github.com/cornerstonejs/cornerstone3D/issues/2108)) ([42fd124](https://github.com/cornerstonejs/cornerstone3D/commit/42fd1244e311b08cb93840d80ba915e3f82f5009))
+
+# [3.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.17.1...v3.18.0) (2025-05-29)
+
+### Features
+
+- **WSIViewport:** add support for window level tool ([#2087](https://github.com/cornerstonejs/cornerstone3D/issues/2087)) ([aaeb917](https://github.com/cornerstonejs/cornerstone3D/commit/aaeb91793c197b3700a187a28caa78fe66fdf3ea))
+
+## [3.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.17.0...v3.17.1) (2025-05-29)
+
+### Bug Fixes
+
+- ROI tools in WSI ([#2107](https://github.com/cornerstonejs/cornerstone3D/issues/2107)) ([f2aa86e](https://github.com/cornerstonejs/cornerstone3D/commit/f2aa86ef6c75b72963bf315dcd7cb8d48f9a72a8))
+
+# [3.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.5...v3.17.0) (2025-05-28)
+
+### Features
+
+- **tools:** add min statistics to circle, ellipse, freehand(closed), rectangle ([#2097](https://github.com/cornerstonejs/cornerstone3D/issues/2097)) ([0d5ade4](https://github.com/cornerstonejs/cornerstone3D/commit/0d5ade493bca2c25bda0e2fb3c364db9dada81cd))
+
+## [3.16.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.4...v3.16.5) (2025-05-28)
+
+**Note:** Version bump only for package root
+
+## [3.16.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.3...v3.16.4) (2025-05-28)
+
+**Note:** Version bump only for package root
+
+## [3.16.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.2...v3.16.3) (2025-05-28)
+
+### Bug Fixes
+
+- labelMap edit tool with contour ([#2106](https://github.com/cornerstonejs/cornerstone3D/issues/2106)) ([7801f97](https://github.com/cornerstonejs/cornerstone3D/commit/7801f97b0be9437ea5cce32a7b05c881fde98505))
+
+## [3.16.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.1...v3.16.2) (2025-05-28)
+
+### Bug Fixes
+
+- sculptor tool bug fixes ([#2101](https://github.com/cornerstonejs/cornerstone3D/issues/2101)) ([72fac6f](https://github.com/cornerstonejs/cornerstone3D/commit/72fac6f7164de3f470847c923574519ab720a08d))
+
+## [3.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.0...v3.16.1) (2025-05-27)
+
+**Note:** Version bump only for package root
+
+# [3.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.6...v3.16.0) (2025-05-26)
+
+### Features
+
+- **us annotation tool:** new ultrasound specific plural bline annotation tool ([#2073](https://github.com/cornerstonejs/cornerstone3D/issues/2073)) ([1ccc240](https://github.com/cornerstonejs/cornerstone3D/commit/1ccc240a796d328328ca7137bf5eb2535cecba37))
+
+## [3.15.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.5...v3.15.6) (2025-05-24)
+
+### Bug Fixes
+
+- **ellipse:** EllipticalROITool.isPointNearTool now mimics what drawEllipseByCoordinates for rotated ellipses. ([#2094](https://github.com/cornerstonejs/cornerstone3D/issues/2094)) ([6fc7dd6](https://github.com/cornerstonejs/cornerstone3D/commit/6fc7dd615d8c9bf951da8300e9cf4d7da5f1d1ac))
+
+## [3.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.4...v3.15.5) (2025-05-23)
+
+**Note:** Version bump only for package root
+
 ## [3.15.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.3...v3.15.4) (2025-05-19)
 
 **Note:** Version bump only for package root
