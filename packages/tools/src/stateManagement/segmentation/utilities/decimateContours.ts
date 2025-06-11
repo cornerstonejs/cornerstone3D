@@ -1,4 +1,3 @@
-import type { Types } from '@cornerstonejs/core';
 import type { ContourSegmentationAnnotation } from '../../../types';
 import {
   getAnnotation,
@@ -69,7 +68,7 @@ export default function decimateContours(
     // Decimate the polyline
     const decimatedPolyline2D = decimate(polylineCanvas, options.epsilon);
 
-    // Convert back to 3D points, preserving the Z coordinate from original points
+    // Convert back to 3D points
     annotation.data.contour.polyline = decimatedPolyline2D.map((point2D) =>
       viewport.canvasToWorld(point2D)
     );

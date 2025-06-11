@@ -2,12 +2,10 @@ import type { Types } from '@cornerstonejs/core';
 import type {
   ContourSegmentationAnnotation,
   ContourSegmentationData,
-  ToolSpecificAnnotationTypes,
 } from '../../../types';
 import { getAnnotation } from '../../annotation/annotationState';
 import { getSegmentation } from '../getSegmentation';
 import interpolateSegmentPoints from '../../../utilities/planarFreehandROITool/interpolation/interpolateSegmentPoints';
-import { smoothAnnotation } from '../../../utilities/planarFreehandROITool';
 
 /**
  * Smooths contour polylines for a given segmentation and segment using B-spline interpolation.
@@ -18,6 +16,14 @@ import { smoothAnnotation } from '../../../utilities/planarFreehandROITool';
  * @param segmentIndex - The index of the segment within the segmentation
  * @param options - Configuration options for smoothing
  * @param options.knotsRatioPercentage - The percentage of points to use as knots for interpolation (default: 30)
+ *   This parameter controls the balance between smoothing quality and shape preservation:
+ *   - Higher values (50-70%): Use more original points as control knots, which tends to degrade
+ *     the smoothing effect as the spline follows the original contour more closely. Results in
+ *     less smooth curves but better preservation of original shape details.
+ *   - Lower values (10-20%): Use fewer original points as control knots, creating smoother curves
+ *     but may cause contour deformation, especially when the original contour has few points.
+ *     With insufficient control points, the spline may not accurately represent the intended shape.
+ *   - Optimal range (20-40%): Generally provides good balance between smoothing and shape fidelity.
  */
 export default function smoothContours(
   segmentationId: string,

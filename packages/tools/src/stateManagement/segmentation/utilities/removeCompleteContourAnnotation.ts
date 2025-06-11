@@ -2,7 +2,6 @@ import type { ContourSegmentationAnnotation } from '../../../types';
 import { removeContourSegmentationAnnotation } from '../../../utilities/contourSegmentation';
 import {
   clearParentAnnotation,
-  getAnnotation,
   removeAnnotation,
 } from '../../annotation/annotationState';
 
