@@ -298,55 +298,41 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   ): void {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;
-    const { imageData } = imageVolume;
     const { startCoordinate, endCoordinate } = data;
-    const { points: baseHandles } = data.handles;
+    const { points } = data.handles;
 
+    const newProjectionPoints = [];
     const indexOfNormal =
       this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
-    const newProjectionPoints = [];
 
-    // Determine the actual iteration range and direction
-    // Ensure iteration always goes from the smallest to the largest coordinate
-    const actualStartCoord = Math.min(startCoordinate, endCoordinate);
-    const actualEndCoord = Math.max(startCoordinate, endCoordinate);
+    const handlesTemplate = csUtils.deepClone(points) as Types.Point3[];
 
-    // Iterate from the actual start coordinate to the actual end coordinate
+    const referenceHandle = handlesTemplate[0];
+    const referenceCoordOnNormal = referenceHandle[indexOfNormal];
+    const distanceToStartPlane = startCoordinate - referenceCoordOnNormal;
+
+    handlesTemplate.forEach((handle) => {
+      //we need to project the handlesTemplate on the start plane
+      vec3.scaleAndAdd(handle, handle, viewPlaneNormal, distanceToStartPlane);
+    });
+
+    //Determine the total distance between start and end coordinates + direction
+    const totalDistance = endCoordinate - startCoordinate;
+    const step = totalDistance >= 0 ? spacingInNormal : -spacingInNormal;
+
     for (
-      let currentCoord = actualStartCoord;
-      currentCoord <= actualEndCoord + spacingInNormal;
-      currentCoord += spacingInNormal
+      let dist = 0;
+      Math.abs(dist) <= Math.abs(totalDistance) + Number.EPSILON;
+      dist += step
     ) {
-      const handlesOnCurrentPlane = csUtils.deepClone(
-        baseHandles
-      ) as typeof baseHandles;
-
-      handlesOnCurrentPlane.forEach((handlePt) => {
-        handlePt[indexOfNormal] = currentCoord;
+      const handlesOnCurrentPlane = handlesTemplate.map((handle) => {
+        const newPoint = vec3.create();
+        vec3.scaleAndAdd(newPoint, handle, viewPlaneNormal, dist);
+        return Array.from(newPoint);
       });
-      newProjectionPoints.push(
-        handlesOnCurrentPlane.map((p) => Array.from(p as vec3))
-      );
-
-      // Special handling to ensure the last slice (actualEndCoord) is included
-      // if it was not reached exactly by spacingInNormal increments,
-      // and if the loop would end just before reaching it.
-      if (
-        currentCoord < actualEndCoord &&
-        currentCoord + spacingInNormal > actualEndCoord
-      ) {
-        const handlesOnEndPlane = csUtils.deepClone(
-          baseHandles
-        ) as typeof baseHandles;
-        handlesOnEndPlane.forEach((handlePt) => {
-          handlePt[indexOfNormal] = actualEndCoord;
-        });
-        newProjectionPoints.push(
-          handlesOnEndPlane.map((p) => Array.from(p as vec3))
-        );
-        break;
-      }
+      newProjectionPoints.push(handlesOnCurrentPlane);
     }
+
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 
