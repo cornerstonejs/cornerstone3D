@@ -39,6 +39,15 @@ function getPolylinesMap(
   contourRepresentationData: ContourSegmentationData,
   segmentIndex: number
 ): Map<string, Types.Point3[]> {
+  const getPolyline = (annotation) => {
+    const { polyline, closed } = (annotation as ContourSegmentationAnnotation)
+      .data.contour;
+    const polylineCopy = polyline.map((point) => [...point]);
+    if (closed) {
+      polylineCopy.push(polylineCopy[0]);
+    }
+    return polylineCopy;
+  };
   // loop over all annotations in the segment and flatten their polylines
   const polylines = new Map();
   const { annotationUIDsMap } = contourRepresentationData || {};
@@ -49,9 +58,15 @@ function getPolylinesMap(
 
   for (const annotationUID of annotationUIDs) {
     const annotation = getAnnotation(annotationUID);
-    const { polyline } = (annotation as ContourSegmentationAnnotation).data
-      .contour;
-    polylines.set(annotationUID, polyline);
+    const polylineCopy = getPolyline(annotation);
+    polylines.set(annotationUID, polylineCopy);
+    if (annotation?.childAnnotationUIDs) {
+      annotation.childAnnotationUIDs.forEach((childAnnotationUID) => {
+        const childAnnotation = getAnnotation(childAnnotationUID);
+        const polylineCopy = getPolyline(childAnnotation);
+        polylines.set(childAnnotationUID, polylineCopy);
+      });
+    }
   }
   return polylines;
 }

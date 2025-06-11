@@ -14,6 +14,7 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngines,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -127,6 +128,8 @@ addButtonToToolbar({
     const segmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
     segmentation.utilities.removeContourHoles(segmentationId, segmentIndex);
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
   },
 });
 
@@ -138,6 +141,8 @@ addButtonToToolbar({
     segmentation.utilities.removeContourIslands(segmentationId, segmentIndex, {
       threshold: 10,
     });
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
   },
 });
 
@@ -147,6 +152,8 @@ addButtonToToolbar({
     const segmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
     segmentation.utilities.smoothContours(segmentationId, segmentIndex);
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
   },
 });
 
@@ -156,6 +163,8 @@ addButtonToToolbar({
     const segmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
     segmentation.utilities.decimateContours(segmentationId, segmentIndex);
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
   },
 });
 // ============================= //
