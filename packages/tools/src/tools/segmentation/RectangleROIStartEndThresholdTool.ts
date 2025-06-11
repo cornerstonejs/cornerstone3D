@@ -302,32 +302,25 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const { points } = data.handles;
 
     const newProjectionPoints = [];
+
     const indexOfNormal =
       this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
+    const referenceCoord = points[0][indexOfNormal];
+    const startDist = startCoordinate - referenceCoord;
+    const endDist = endCoordinate - referenceCoord;
 
-    const handlesTemplate = csUtils.deepClone(points) as Types.Point3[];
-
-    const referenceHandle = handlesTemplate[0];
-    const referenceCoordOnNormal = referenceHandle[indexOfNormal];
-    const distanceToStartPlane = startCoordinate - referenceCoordOnNormal;
-
-    handlesTemplate.forEach((handle) => {
-      //we need to project the handlesTemplate on the start plane
-      vec3.scaleAndAdd(handle, handle, viewPlaneNormal, distanceToStartPlane);
-    });
-
-    //Determine the total distance between start and end coordinates + direction
-    const totalDistance = endCoordinate - startCoordinate;
+    // Determine the distance between the start and end coordinates + direction
+    const totalDistance = endDist - startDist;
     const step = totalDistance >= 0 ? spacingInNormal : -spacingInNormal;
 
     for (
-      let dist = 0;
-      Math.abs(dist) <= Math.abs(totalDistance) + Number.EPSILON;
+      let dist = startDist;
+      totalDistance >= 0 ? dist <= endDist + Number.EPSILON : dist >= endDist - Number.EPSILON;
       dist += step
     ) {
-      const handlesOnCurrentPlane = handlesTemplate.map((handle) => {
+      const handlesOnCurrentPlane = points.map((point) => {
         const newPoint = vec3.create();
-        vec3.scaleAndAdd(newPoint, handle, viewPlaneNormal, dist);
+        vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
         return Array.from(newPoint);
       });
       newProjectionPoints.push(handlesOnCurrentPlane);
