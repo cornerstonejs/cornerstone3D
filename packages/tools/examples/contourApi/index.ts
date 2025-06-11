@@ -13,7 +13,6 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  getRenderingEngines,
   getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
@@ -32,20 +31,6 @@ const segmentationId = `SEGMENTATION_ID`;
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
-
-function getViewportDisplayingAnnotation(annotation) {
-  const getAllViewports = () => {
-    const renderingEngine = getRenderingEngines();
-    return renderingEngine.flatMap((renderingEngine) =>
-      renderingEngine.getViewports()
-    );
-  };
-  const viewports = getAllViewports();
-  return viewports.find(
-    (viewport) =>
-      viewport.getCurrentImageId() === annotation?.metadata?.referencedImageId
-  );
-}
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
@@ -112,10 +97,10 @@ createInfoSection(content, { title: 'Contour Utilities' })
     'Find Contour Holes: Analyzes contours to detect holes within them. Results are logged to console.'
   )
   .addInstruction(
-    'Supersample Polylines: Adds interpolated points between existing points to achieve smoother contours with target spacing of 1.0 units.'
+    'Smooth Polylines: Smooth contours by choosing control points in the contour and applying a spline interpolation on them. Note: it alters the contour shape if there is few points'
   )
   .addInstruction(
-    'Remove Small Islands: Filters out closed contours smaller than area threshold (100 square units). Only affects closed contours, preserves open polylines.'
+    'Remove Small Islands: Filters out closed contours smaller than area threshold (3 cm2 units). Only affects closed contours, preserves open polylines.'
   )
   .addInstruction(
     'Decimate Polylines: Simplifies polylines by removing points using Ramer-Douglas-Peucker algorithm with epsilon tolerance of 2.0 units. Shows reduction percentage.'
