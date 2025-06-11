@@ -206,7 +206,7 @@ async function run() {
   toolGroup2D.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary,
+        mouseButton: MouseBindings.Wheel,
       },
     ],
   });
@@ -329,21 +329,6 @@ async function run() {
       renderer.getActiveCamera().elevation(-70);
       viewport3D.setCamera({ parallelScale: 600 });
 
-      // Configure 2D viewports with appropriate presets
-      [viewportIdAxial, viewportIdCoronal, viewportIdSagittal].forEach(
-        (viewportId) => {
-          const viewport = renderingEngine.getViewport(viewportId);
-          const volumeActor = viewport.getDefaultActor()
-            .actor as Types.VolumeActor;
-          utilities.applyPreset(
-            volumeActor,
-            CONSTANTS.VIEWPORT_PRESETS.find(
-              (preset) => preset.name === 'CT-Chest-Contrast-Enhanced'
-            )
-          );
-        }
-      );
-
       // Render all viewports
       renderingEngine.render();
     }
@@ -356,8 +341,7 @@ async function run() {
     },
   ]);
 
-  // Add labelmap representation to 2D viewports
-  await segmentation.addLabelmapRepresentationToViewportMap({
+  await segmentation.addContourRepresentationToViewportMap({
     [viewportIdAxial]: [{ segmentationId }],
     [viewportIdCoronal]: [{ segmentationId }],
     [viewportIdSagittal]: [{ segmentationId }],

@@ -6,7 +6,7 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
-import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
+import vtkCutterCS3D from '../vtkObjects/vtkCutterCS3D';
 
 const {
   math: {
@@ -570,7 +570,7 @@ const polySegConverters = {
     updateCacheCallback
   ) {
     const numberOfPlanes = planesInfo.length;
-    const cutter = vtkCutter.newInstance();
+    const cutter = vtkCutterCS3D.newInstance();
 
     const plane1 = vtkPlane.newInstance();
 
