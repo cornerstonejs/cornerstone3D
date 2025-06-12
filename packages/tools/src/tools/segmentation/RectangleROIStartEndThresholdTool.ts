@@ -298,34 +298,52 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   ): void {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;
+    const { imageData } = imageVolume;
     const { startCoordinate, endCoordinate } = data;
     const { points } = data.handles;
 
+    const startIJK = transformWorldToIndex(imageData, points[0]);
+    const endIJK = transformWorldToIndex(imageData, points[0]);
+
+    const startWorld = vec3.create();
+    imageData.indexToWorldVec3(startIJK, startWorld);
+
+    const endWorld = vec3.create();
+    imageData.indexToWorldVec3(endIJK, endWorld);
+
+    const projectionAxisIndex =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
+
+    if (projectionAxisIndex == 2) {
+      startWorld[2] = startCoordinate;
+      endWorld[2] = endCoordinate;
+    } else if (projectionAxisIndex == 0) {
+      startWorld[0] = startCoordinate;
+      endWorld[0] = endCoordinate;
+    } else if (projectionAxisIndex == 1) {
+      startWorld[1] = startCoordinate;
+      endWorld[1] = endCoordinate;
+    }
+
+    // Calculate the explicit direction vector from start to end
+    const direction = vec3.create();
+    vec3.subtract(direction, endWorld, startWorld);
+
+    const distance = vec3.length(direction);
+
+    // Normalize the direction vector to get a unit vector for scaling.
+    vec3.normalize(direction, direction);
+
     const newProjectionPoints = [];
 
-    const indexOfNormal =
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
-    const referenceCoord = points[0][indexOfNormal];
-    const startDist = startCoordinate - referenceCoord;
-    const endDist = endCoordinate - referenceCoord;
-
-    // Determine the distance between the start and end coordinates + direction
-    const totalDistance = endDist - startDist;
-    const step = totalDistance >= 0 ? spacingInNormal : -spacingInNormal;
-
-    for (
-      let dist = startDist;
-      totalDistance >= 0
-        ? dist <= endDist + Number.EPSILON
-        : dist >= endDist - Number.EPSILON;
-      dist += step
-    ) {
-      const handlesOnCurrentPlane = points.map((point) => {
-        const newPoint = vec3.create();
-        vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
-        return Array.from(newPoint);
-      });
-      newProjectionPoints.push(handlesOnCurrentPlane);
+    for (let dist = 0; dist < distance; dist += spacingInNormal) {
+      newProjectionPoints.push(
+        points.map((point) => {
+          const newPoint = vec3.create();
+          vec3.scaleAndAdd(newPoint, point, direction, dist);
+          return Array.from(newPoint);
+        })
+      );
     }
 
     data.cachedStats.projectionPoints = newProjectionPoints;
