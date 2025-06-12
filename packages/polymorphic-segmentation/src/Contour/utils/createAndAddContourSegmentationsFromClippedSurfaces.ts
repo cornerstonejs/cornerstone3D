@@ -52,7 +52,7 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
           annotationUID: utilities.uuidv4(),
           data: {
             contour: {
-              closed: true,
+              closed: false,
               polyline,
             },
             segmentation: {

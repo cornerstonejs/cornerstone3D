@@ -45,8 +45,9 @@ async function processGeometries(
 export async function createAndCacheGeometriesFromSurfaces(): Promise<
   Map<number, string>
 > {
-  const surfaces = await downloadSurfaces();
-  return processGeometries(surfaces);
+  //const surfaces = await downloadOneSurface();
+  const surface = await downloadOneSurface();
+  return processGeometries([surface]);
 }
 
 export async function createAndCacheGeometriesFromOneSurface(): Promise<

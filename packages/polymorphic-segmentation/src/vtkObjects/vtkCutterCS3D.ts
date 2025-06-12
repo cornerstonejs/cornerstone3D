@@ -72,6 +72,40 @@ function vtkCutterCS3D(publicAPI, model) {
       model.cutScalars[i] = model.cutFunction.evaluateFunction(x, y, z);
     }
 
+    // Global point map to avoid duplicates across cells
+    const globalPointMap = new Map();
+    const globalLineMap = new Set();
+    const tolerance = 1e-3; // More reasonable tolerance for 3D coordinates
+
+    // Helper function to get or create point ID using distance-based deduplication
+    function getOrCreatePointId(point) {
+      // Check if a similar point already exists within tolerance
+      for (let i = 0; i < newPoints.length; i += 3) {
+        const dx = newPoints[i] - point[0];
+        const dy = newPoints[i + 1] - point[1];
+        const dz = newPoints[i + 2] - point[2];
+        const distSq = dx * dx + dy * dy + dz * dz;
+
+        if (distSq < tolerance * tolerance) {
+          return Math.floor(i / 3); // Return existing point ID
+        }
+      }
+
+      // No similar point found, add new point
+      const pointId = newPoints.length / 3;
+      newPoints.push(...point);
+      return pointId;
+    }
+
+    // Helper function to check if line segment already exists
+    function addUniqueLineSegment(id1, id2) {
+      const lineKey1 = `${Math.min(id1, id2)}_${Math.max(id1, id2)}`;
+      if (!globalLineMap.has(lineKey1)) {
+        globalLineMap.add(lineKey1);
+        newLines.push(2, id1, id2);
+      }
+    }
+
     // Process each cell: output only line segments for intersection
     for (const it = initPolyIterator(input); !it.done; it.next()) {
       if (it.cellSize < 2) {
@@ -114,21 +148,31 @@ function vtkCutterCS3D(publicAPI, model) {
       // Sort by edge order
       inters.sort((a, b) => a.edgeIndex - b.edgeIndex);
 
-      // Create a local map to assign new point IDs
-      const localMap = new Map();
-      const ids = [];
-      inters.forEach((I) => {
-        const key = `${I.edgeIndex}`; // unique per intersection
-        if (!localMap.has(key)) {
-          localMap.set(key, newPoints.length / 3);
-          newPoints.push(...I.ip);
-        }
-        ids.push(localMap.get(key));
-      });
+      // Get or create point IDs using global map to avoid duplicates
+      const ids = inters.map((I) => getOrCreatePointId(I.ip));
 
-      // Emit segments between consecutive intersection points
-      for (let k = 1; k < ids.length; k++) {
-        newLines.push(2, ids[k - 1], ids[k]);
+      // Remove consecutive duplicate IDs within this cell
+      const uniqueIds = [];
+      for (let i = 0; i < ids.length; i++) {
+        if (i === 0 || ids[i] !== ids[i - 1]) {
+          uniqueIds.push(ids[i]);
+        }
+      }
+
+      // For surface cutting, we should only connect intersection points that form
+      // a proper contour segment. In most cases, a cell should have exactly 2 intersections
+      // that represent entry and exit points of the cutting plane.
+      if (uniqueIds.length === 2) {
+        // Standard case: cutting plane enters and exits the cell
+        addUniqueLineSegment(uniqueIds[0], uniqueIds[1]);
+      } else if (uniqueIds.length > 2) {
+        // Complex case: multiple intersections - connect pairs to avoid internal lines
+        // Connect first to second, and if there are more, connect them in pairs
+        for (let k = 0; k < uniqueIds.length - 1; k += 2) {
+          if (k + 1 < uniqueIds.length && uniqueIds[k] !== uniqueIds[k + 1]) {
+            addUniqueLineSegment(uniqueIds[k], uniqueIds[k + 1]);
+          }
+        }
       }
     }
 
