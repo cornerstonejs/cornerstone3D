@@ -1,6 +1,7 @@
 ---
 id: imageLoader
 title: Image Loaders
+summary: JavaScript functions that retrieve and prepare medical images for display, supporting various formats and protocols through a pluggable architecture
 ---
 
 # Image Loaders

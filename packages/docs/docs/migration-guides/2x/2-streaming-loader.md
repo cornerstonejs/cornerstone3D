@@ -1,6 +1,7 @@
 ---
 id: streaming-loader
 title: '@cornerstonejs/streaming-image-volume-loader'
+summary: Migration guide for changes to the streaming-image-volume-loader when upgrading from Cornerstone3D 1.x to 2.x
 ---
 
 import Tabs from '@theme/Tabs';

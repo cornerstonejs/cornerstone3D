@@ -10,6 +10,7 @@ import {
 import { state } from './store/state';
 import * as store from './store';
 import * as CONSTANTS from './constants';
+import { version } from './version';
 
 // Name spaces
 import * as synchronizers from './synchronizers';
@@ -63,6 +64,7 @@ import {
   AngleTool,
   CobbAngleTool,
   UltrasoundDirectionalTool,
+  UltrasoundPleuraBLineTool,
   MagnifyTool,
   AdvancedMagnifyTool,
   ReferenceCursors,
@@ -81,6 +83,7 @@ import {
   WholeBodySegmentTool,
   LabelmapBaseTool,
   SegmentLabelTool,
+  LabelMapEditWithContourTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -134,6 +137,7 @@ export {
   AngleTool,
   CobbAngleTool,
   UltrasoundDirectionalTool,
+  UltrasoundPleuraBLineTool,
   KeyImageTool,
   MagnifyTool,
   AdvancedMagnifyTool,
@@ -182,6 +186,9 @@ export {
   RegionSegmentTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
+  LabelMapEditWithContourTool,
   // Spline classes
   splines,
+  // Version
+  version,
 };

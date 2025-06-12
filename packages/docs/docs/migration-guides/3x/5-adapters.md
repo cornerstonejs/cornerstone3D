@@ -1,6 +1,7 @@
 ---
 id: adapters
 title: 'Adapters API'
+summary: Guide for using the new adapters API in Cornerstone3D 3.x
 ---
 
 import Tabs from '@theme/Tabs';

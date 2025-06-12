@@ -1,6 +1,7 @@
 ---
 id: annotationManager
 title: Annotation Manager
+summary: Singleton class that manages annotation storage and retrieval, with the default implementation organizing annotations by Frame of Reference UID
 ---
 
 The Annotation Manager is a singleton class that manages annotations in Cornerstone Tools.

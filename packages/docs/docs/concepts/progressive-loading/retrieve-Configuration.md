@@ -2,6 +2,7 @@
 id: retrieve-configuration
 title: Retrieve Configuration
 toc_max_heading_level: 5
+summary: Comprehensive guide to configuring progressive image loading through stages and options, with details on streaming and byte range request methods
 ---
 
 # Retrieve Configuration

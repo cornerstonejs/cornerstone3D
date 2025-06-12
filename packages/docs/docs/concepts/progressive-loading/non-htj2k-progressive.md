@@ -1,6 +1,7 @@
 ---
 id: non-htj2k-progressive
 title: Progressive Loading for non-HTJ2K
+summary: Techniques for implementing progressive loading with non-HTJ2K formats, using JLS thumbnails and sequential retrieval configurations for improved performance
 ---
 
 # Progressive Loading for non-HTJ2K Progressive Encoded Data

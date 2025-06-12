@@ -1,6 +1,7 @@
 ---
 id: metadataProvider
 title: Metadata Providers
+summary: Functions that retrieve and provide non-pixel metadata associated with medical images, supporting DICOM and custom metadata through a prioritized provider system
 ---
 
 # Metadata Providers

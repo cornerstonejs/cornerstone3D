@@ -31,6 +31,7 @@ const typedArrayConstructors = {
   Uint16Array,
   Int16Array,
   Float32Array,
+  Uint32Array,
 };
 
 function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
@@ -85,13 +86,15 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   // are actually within the range of the type. If not, we need to convert the
   // pixel data to the correct type.
   if (type && options.preScale.enabled && !disableScale) {
-    const { rescaleSlope, rescaleIntercept } =
-      options.preScale.scalingParameters;
-    const minAfterScale = rescaleSlope * minBeforeScale + rescaleIntercept;
-    const maxAfterScale = rescaleSlope * maxBeforeScale + rescaleIntercept;
+    const scalingParameters = options.preScale.scalingParameters;
+    const scaledValues = _calculateScaledMinMax(
+      minBeforeScale,
+      maxBeforeScale,
+      scalingParameters
+    );
     invalidType = !validatePixelDataType(
-      minAfterScale,
-      maxAfterScale,
+      scaledValues.min,
+      scaledValues.max,
       typedArrayConstructors[type]
     );
   }
@@ -125,26 +128,22 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     const scalingParameters = options.preScale.scalingParameters;
     _validateScalingParameters(scalingParameters);
 
-    const { rescaleSlope, rescaleIntercept } = scalingParameters;
-    const isSlopeAndInterceptNumbers =
-      typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+    const isRequiredScaling = _isRequiredScaling(scalingParameters);
 
-    if (isSlopeAndInterceptNumbers) {
+    if (isRequiredScaling) {
       applyModalityLUT(pixelDataArray, scalingParameters);
       imageFrame.preScale = {
         ...options.preScale,
         scaled: true,
       };
 
-      // calculate the min and max after scaling
-      const { rescaleIntercept, rescaleSlope, suvbw } = scalingParameters;
-      minAfterScale = rescaleSlope * minBeforeScale + rescaleIntercept;
-      maxAfterScale = rescaleSlope * maxBeforeScale + rescaleIntercept;
-
-      if (suvbw) {
-        minAfterScale = minAfterScale * suvbw;
-        maxAfterScale = maxAfterScale * suvbw;
-      }
+      const scaledValues = _calculateScaledMinMax(
+        minBeforeScale,
+        maxBeforeScale,
+        scalingParameters
+      );
+      minAfterScale = scaledValues.min;
+      maxAfterScale = scaledValues.max;
     }
   } else if (disableScale) {
     imageFrame.preScale = {
@@ -164,6 +163,19 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   imageFrame.decodeTimeInMS = end - start;
 
   return imageFrame;
+}
+
+function _isRequiredScaling(scalingParameters) {
+  const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
+    scalingParameters;
+
+  const hasRescaleValues =
+    typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+  const isRTDOSEWithScaling =
+    modality === 'RTDOSE' && typeof doseGridScaling === 'number';
+  const isPTWithSUV = modality === 'PT' && typeof suvbw === 'number';
+
+  return hasRescaleValues || isRTDOSEWithScaling || isPTWithSUV;
 }
 
 function _handleTargetBuffer(
@@ -227,19 +239,17 @@ function _handlePreScaleSetup(
   const scalingParameters = options.preScale.scalingParameters;
   _validateScalingParameters(scalingParameters);
 
-  const { rescaleSlope, rescaleIntercept } = scalingParameters;
-  const areSlopeAndInterceptNumbers =
-    typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+  const scaledValues = _calculateScaledMinMax(
+    minBeforeScale,
+    maxBeforeScale,
+    scalingParameters
+  );
 
-  let scaledMin = minBeforeScale;
-  let scaledMax = maxBeforeScale;
-
-  if (areSlopeAndInterceptNumbers) {
-    scaledMin = rescaleSlope * minBeforeScale + rescaleIntercept;
-    scaledMax = rescaleSlope * maxBeforeScale + rescaleIntercept;
-  }
-
-  return _getDefaultPixelDataArray(scaledMin, scaledMax, imageFrame);
+  return _getDefaultPixelDataArray(
+    scaledValues.min,
+    scaledValues.max,
+    imageFrame
+  );
 }
 
 function _getDefaultPixelDataArray(min, max, imageFrame) {
@@ -249,6 +259,40 @@ function _getDefaultPixelDataArray(min, max, imageFrame) {
   typedArray.set(imageFrame.pixelData, 0);
 
   return typedArray;
+}
+
+function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
+  const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
+    scalingParameters;
+
+  if (modality === 'PT' && typeof suvbw === 'number' && !isNaN(suvbw)) {
+    return {
+      min: suvbw * (minValue * rescaleSlope + rescaleIntercept),
+      max: suvbw * (maxValue * rescaleSlope + rescaleIntercept),
+    };
+  } else if (
+    modality === 'RTDOSE' &&
+    typeof doseGridScaling === 'number' &&
+    !isNaN(doseGridScaling)
+  ) {
+    return {
+      min: minValue * doseGridScaling,
+      max: maxValue * doseGridScaling,
+    };
+  } else if (
+    typeof rescaleSlope === 'number' &&
+    typeof rescaleIntercept === 'number'
+  ) {
+    return {
+      min: rescaleSlope * minValue + rescaleIntercept,
+      max: rescaleSlope * maxValue + rescaleIntercept,
+    };
+  } else {
+    return {
+      min: minValue,
+      max: maxValue,
+    };
+  }
 }
 
 function _validateScalingParameters(scalingParameters) {

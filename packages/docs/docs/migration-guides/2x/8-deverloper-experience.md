@@ -1,6 +1,7 @@
 ---
 id: developer-experience
 title: 'Developer Experience'
+summary: Improvements to the developer experience when migrating from Cornerstone3D 1.x to 2.x
 ---
 
 import Tabs from '@theme/Tabs';

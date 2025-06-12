@@ -28,6 +28,7 @@ class TrackballRotateTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         rotateIncrementDegrees: 2,
+        rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
       },
     }
   ) {
@@ -55,7 +56,10 @@ class TrackballRotateTool extends BaseTool {
     const originalSampleDistance = mapper.getSampleDistance();
 
     if (!this._hasResolutionChanged) {
-      mapper.setSampleDistance(originalSampleDistance * 2);
+      const { rotateSampleDistanceFactor } = this.configuration;
+      mapper.setSampleDistance(
+        originalSampleDistance * rotateSampleDistanceFactor
+      );
       this._hasResolutionChanged = true;
 
       if (this.cleanUp !== null) {

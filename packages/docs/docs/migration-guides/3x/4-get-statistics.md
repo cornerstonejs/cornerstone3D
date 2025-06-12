@@ -1,6 +1,7 @@
 ---
 id: statistics
 title: 'Segmentation Statistics API'
+summary: Updates to the segmentation statistics API when migrating to Cornerstone3D 3.x
 ---
 
 import Tabs from '@theme/Tabs';

@@ -1,5 +1,7 @@
 ---
 id: installation
+title: Installation
+summary: Instructions for installing Cornerstone3D packages using npm, yarn, or pnpm, including core, tools, and image loader packages
 ---
 
 # Installation

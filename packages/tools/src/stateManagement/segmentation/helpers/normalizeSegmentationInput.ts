@@ -73,13 +73,16 @@ function normalizeSegments(
 
   if (segmentsConfig) {
     Object.entries(segmentsConfig).forEach(([segmentIndex, segment]) => {
-      normalizedSegments[segmentIndex] = {
+      const { label, locked, cachedStats, active, ...rest } = segment;
+      const normalizedSegment = {
         segmentIndex: Number(segmentIndex),
-        label: segment.label ?? `Segment ${segmentIndex}`,
-        locked: segment.locked ?? false,
-        cachedStats: segment.cachedStats ?? {},
-        active: segment.active ?? false,
+        label: label ?? `Segment ${segmentIndex}`,
+        locked: locked ?? false,
+        cachedStats: cachedStats ?? {},
+        active: active ?? false,
+        ...rest,
       } as Segment;
+      normalizedSegments[segmentIndex] = normalizedSegment;
     });
   } else if (type === SegmentationRepresentations.Surface) {
     normalizeSurfaceSegments(
