@@ -15,6 +15,9 @@ import {
 export function removeCompleteContourAnnotation(
   annotation: ContourSegmentationAnnotation
 ) {
+  if (!annotation) {
+    return;
+  }
   // deleting reference of the child in the parent annotation
   if (annotation.parentAnnotationUID) {
     clearParentAnnotation(annotation);

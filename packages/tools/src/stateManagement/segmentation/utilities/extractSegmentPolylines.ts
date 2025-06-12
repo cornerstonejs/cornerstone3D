@@ -1,9 +1,15 @@
-import type { Types } from '@cornerstonejs/core';
-import type { ContourSegmentationData } from '../../../types';
+import type {
+  ContourSegmentationAnnotation,
+  ContourSegmentationData,
+} from '../../../types';
 import { getSegmentation } from '../getSegmentation';
 import { convertContourPolylineToCanvasSpace } from '../../../utilities/contourSegmentation';
-import { getViewportAssociatedToSegmentation } from './getViewportAssociatedToSegmentation';
+import {
+  getViewportsAssociatedToSegmentation,
+  getViewportWithMatchingViewPlaneNormal,
+} from './getViewportAssociatedToSegmentation';
 import { getPolylinesMap } from './getPolylineMap';
+import { getAnnotation } from '../../annotation/annotationState';
 
 /**
  * Extracts segment polylines from a segmentation and converts them to canvas space coordinates.
@@ -12,20 +18,13 @@ import { getPolylinesMap } from './getPolylineMap';
  *
  * @param segmentationId - The unique identifier of the segmentation
  * @param segmentIndex - The index of the segment within the segmentation
- * @param viewport - Optional viewport to use for coordinate conversion. If not provided, will find the associated viewport
  * @returns A map of annotation UIDs to their canvas space polylines, or undefined if extraction fails
  */
 export function extractSegmentPolylines(
   segmentationId: string,
-  segmentIndex: number,
-  viewport?: Types.IViewport
+  segmentIndex: number
 ) {
-  if (!viewport) {
-    viewport = getViewportAssociatedToSegmentation(segmentationId);
-  }
-  if (!viewport) {
-    return;
-  }
+  const viewports = getViewportsAssociatedToSegmentation(segmentationId);
 
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
@@ -55,6 +54,11 @@ export function extractSegmentPolylines(
   const polylinesCanvasMap = new Map();
 
   for (const key of keys) {
+    const annotation = getAnnotation(key) as ContourSegmentationAnnotation;
+    const viewport = getViewportWithMatchingViewPlaneNormal(
+      viewports,
+      annotation
+    );
     polylinesCanvasMap.set(
       key,
       convertContourPolylineToCanvasSpace(polyLinesMap.get(key), viewport)

@@ -106,7 +106,7 @@ createInfoSection(content, { title: 'Contour Utilities' })
     'Decimate Polylines: Simplifies polylines by removing points using Ramer-Douglas-Peucker algorithm with epsilon tolerance of 2.0 units. Shows reduction percentage.'
   );
 
-addSegmentIndexDropdown();
+addSegmentIndexDropdown(segmentationId);
 addButtonToToolbar({
   title: 'Remove Contour Holes',
   onClick: () => {
@@ -136,9 +136,7 @@ addButtonToToolbar({
   onClick: () => {
     const segmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
-    segmentation.utilities.smoothContours(segmentationId, segmentIndex, {
-      knotsRatioPercentage: 60,
-    });
+    segmentation.utilities.smoothContours(segmentationId, segmentIndex);
     const renderingEngine = getRenderingEngine(renderingEngineId);
     renderingEngine.render();
   },
