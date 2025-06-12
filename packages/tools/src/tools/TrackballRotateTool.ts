@@ -177,12 +177,9 @@ class TrackballRotateTool extends BaseTool {
       matrix[10],
     ];
 
-    let originalPlanes = viewport.getOriginalClippingPlanes();
+    const originalPlanes = viewport.getOriginalClippingPlanes();
     if (!originalPlanes || originalPlanes.length === 0) {
-      originalPlanes = planes.map((plane) => ({
-        origin: [...plane.getOrigin()],
-        normal: [...plane.getNormal()],
-      }));
+      return;
     }
 
     mapper.removeAllClippingPlanes();
@@ -204,6 +201,7 @@ class TrackballRotateTool extends BaseTool {
       ];
       // Transform normal (rotation only)
       const n = this._transformNormal(normal, rot);
+      // const plane = vtkPlane.newInstance({ origin: o, normal: n });
       const plane = vtkPlane.newInstance({ origin: o, normal: n });
       mapper.addClippingPlane(plane);
     });

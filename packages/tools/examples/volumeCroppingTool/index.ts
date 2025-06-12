@@ -18,7 +18,6 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
-import TrackballRotateTool from '../../src/tools/TrackballRotateTool';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 // This is for debugging purposes
@@ -96,9 +95,6 @@ async function run() {
   addManipulationBindings(toolGroup, {
     is3DViewport: true,
   });
-  cornerstoneTools.addTool(cornerstoneTools.TrackballRotateTool);
-  toolGroup.addTool(TrackballRotateTool.toolName);
-  toolGroup.setToolActive(TrackballRotateTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
