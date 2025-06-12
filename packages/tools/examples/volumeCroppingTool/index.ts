@@ -41,8 +41,8 @@ const viewportId = '3D_VIEWPORT';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  '3D Volume Cropping',
-  'Here we demonstrate how to crop a 3D  volume along 6 planes controlled by sliders.'
+  'Volume Cropping',
+  'Here we demonstrate how to crop a 3D  volume along 6 planes.'
 );
 
 const size = '500px';
@@ -68,14 +68,11 @@ instructions.innerText = 'Click the image to rotate it.';
 
 content.append(instructions);
 
-function setClippingPlane(planeIndex, newDisplayThreshold, axis, dimensions) {
+function setClippingPlane(planeIndex, origin) {
   const mapper = viewport.getDefaultActor().actor.getMapper();
   const clippingPlanes = mapper.getClippingPlanes();
-  const origin = [0, 0, 0];
-  origin[axis] = newDisplayThreshold;
-  // if TrackballRotateTool is in use, rotate the plane.
-
   clippingPlanes[planeIndex].setOrigin(origin);
+  viewport.setOriginalClippingPlane(planeIndex, origin);
   viewport.render();
 }
 
@@ -187,7 +184,7 @@ async function run() {
         label.innerText = ` x-min: ${value} `;
       },
       onSelectedValueChange: (newDisplayThreshold) => {
-        setClippingPlane(0, newDisplayThreshold, 0, dimensions);
+        setClippingPlane(0, [newDisplayThreshold, 0, 0]);
       },
     });
     planes.push(planeXmin);
@@ -206,7 +203,7 @@ async function run() {
         label.innerText = ` x-max: ${value} `;
       },
       onSelectedValueChange: (newDisplayThreshold) => {
-        setClippingPlane(1, newDisplayThreshold, 0, dimensions);
+        setClippingPlane(1, [newDisplayThreshold, 0, 0]);
       },
     });
     planes.push(planeXmax);
@@ -224,7 +221,7 @@ async function run() {
         label.innerText = ` y-min: ${value} `;
       },
       onSelectedValueChange: (newDisplayThreshold) => {
-        setClippingPlane(2, newDisplayThreshold, 1, dimensions);
+        setClippingPlane(2, [0, newDisplayThreshold, 0]);
       },
     });
     mapper.addClippingPlane(planeYmin);
@@ -244,7 +241,7 @@ async function run() {
         label.innerText = ` y-max: ${value} `;
       },
       onSelectedValueChange: (newDisplayThreshold) => {
-        setClippingPlane(3, newDisplayThreshold, 1, dimensions);
+        setClippingPlane(3, [0, newDisplayThreshold, 0]);
       },
     });
     planes.push(planeYmax);
@@ -263,7 +260,7 @@ async function run() {
         label.innerText = ` z-min: ${value} `;
       },
       onSelectedValueChange: (newDisplayThreshold) => {
-        setClippingPlane(4, newDisplayThreshold, 2, dimensions);
+        setClippingPlane(4, [0, 0, newDisplayThreshold]);
       },
     });
     planes.push(planeZmin);
@@ -282,7 +279,7 @@ async function run() {
         label.innerText = ` z-max: ${value} `;
       },
       onSelectedValueChange: (newDisplayThreshold) => {
-        setClippingPlane(5, newDisplayThreshold, 2, dimensions);
+        setClippingPlane(5, [0, 0, newDisplayThreshold]);
       },
     });
     planes.push(planeZmax);
@@ -291,12 +288,8 @@ async function run() {
       origin: [...plane.getOrigin()],
       normal: [...plane.getNormal()],
     }));
-    const trackballRotateTool = toolGroup.getToolInstance(
-      TrackballRotateTool.toolName
-    );
-    trackballRotateTool.setOriginalClippingPlanes(viewport, originalPlanes);
 
-    console.debug('index planes: ', originalPlanes);
+    viewport.setOriginalClippingPlanes(originalPlanes);
     viewport.render();
   });
 }
