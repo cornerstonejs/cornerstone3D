@@ -21,8 +21,6 @@ class TrackballRotateTool extends BaseTool {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _viewportAddedListener: (evt: any) => void;
   _hasResolutionChanged = false;
-  // Store original (axis-aligned) clipping planes for each viewport
-  _originalClippingPlanes = new Map();
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -37,15 +35,7 @@ class TrackballRotateTool extends BaseTool {
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
-  // Set the original planes for a viewport
-  setOriginalClippingPlanes(viewport, planes) {
-    this._originalClippingPlanes = planes;
-  }
 
-  // Set the original planes for a viewport
-  getOriginalClippingPlanes(viewport) {
-    return this._originalClippingPlanes;
-  }
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -174,7 +164,6 @@ class TrackballRotateTool extends BaseTool {
     const actor = actorEntry.actor as Types.VolumeActor;
     const mapper = actor.getMapper();
     const matrix = actor.getMatrix();
-    //console.debug('_updateClippingPlanes: ', mapper.getClippingPlanes());
     // Extract rotation part for normals
     const rot = [
       matrix[0],
@@ -188,20 +177,15 @@ class TrackballRotateTool extends BaseTool {
       matrix[10],
     ];
 
-    let originalPlanes = this.getOriginalClippingPlanes(viewport.id);
+    let originalPlanes = viewport.getOriginalClippingPlanes();
     if (!originalPlanes || originalPlanes.length === 0) {
       originalPlanes = planes.map((plane) => ({
         origin: [...plane.getOrigin()],
         normal: [...plane.getNormal()],
       }));
-
-      //  this.setOriginalClippingPlanes(viewport.id, mapper.getClippingPlanes());
     }
 
-    console.log('Updating clipping planes for viewport:', viewport.id);
     mapper.removeAllClippingPlanes();
-    //originalPlanes = this._originalClippingPlanes.get(viewport.id);
-    //originalPlanes = this.getOriginalClippingPlanes(viewport.id);
     originalPlanes.forEach(({ origin, normal }) => {
       // Transform origin (full 4x4)
       const o = [
@@ -221,10 +205,8 @@ class TrackballRotateTool extends BaseTool {
       // Transform normal (rotation only)
       const n = this._transformNormal(normal, rot);
       const plane = vtkPlane.newInstance({ origin: o, normal: n });
-      console.debug('Adding plane:', origin, plane);
       mapper.addClippingPlane(plane);
     });
-    const _planesAfter = mapper.getClippingPlanes();
   }
 
   rotateCamera = (viewport, centerWorld, axis, angle) => {
@@ -257,7 +239,6 @@ class TrackballRotateTool extends BaseTool {
       viewUp: newViewUp,
       focalPoint: newFocalPoint,
     });
-    console.debug('Rotating camera', viewport);
 
     // Update clipping planes after rotation
     this._updateClippingPlanes(viewport);
