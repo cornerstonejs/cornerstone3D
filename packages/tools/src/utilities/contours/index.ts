@@ -3,8 +3,6 @@ import contourFinder from './contourFinder';
 import { getDeduplicatedVTKPolyDataPoints } from './getDeduplicatedVTKPolyDataPoints';
 import detectContourHoles from './detectContourHoles';
 import findContourHoles from './findContourHoles';
-import supersamplePolyline2D from './supersamplePolyline2D';
-import supersamplePolyline3D from './supersamplePolyline3D';
 import { generateContourSetsFromLabelmap } from './generateContourSetsFromLabelmap';
 import AnnotationToPointData from './AnnotationToPointData';
 import getContourHolesDataWorld from './getContourHolesDataWorld';
@@ -21,8 +19,6 @@ export {
   getDeduplicatedVTKPolyDataPoints,
   detectContourHoles,
   findContourHoles,
-  supersamplePolyline2D,
-  supersamplePolyline3D,
   generateContourSetsFromLabelmap,
   AnnotationToPointData,
   getContourHolesDataWorld,

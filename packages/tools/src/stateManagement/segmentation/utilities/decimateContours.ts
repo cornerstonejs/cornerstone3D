@@ -4,11 +4,12 @@ import {
   invalidateAnnotation,
 } from '../../annotation/annotationState';
 import { getSegmentation } from '../getSegmentation';
-import {
-  extractSegmentPolylines,
-  getViewportAssociatedToSegmentation,
-} from './extractSegmentPolylines';
+import { extractSegmentPolylines } from './extractSegmentPolylines';
 import decimate from '../../../utilities/math/polyline/decimate';
+import {
+  getViewportsAssociatedToSegmentation,
+  getViewportWithMatchingViewPlaneNormal,
+} from './getViewportAssociatedToSegmentation';
 
 /**
  * Decimates contour polylines for a given segmentation and segment using the Ramer-Douglas-Peucker algorithm.
@@ -35,8 +36,8 @@ export default function decimateContours(
     );
     return;
   }
-  const viewport = getViewportAssociatedToSegmentation(segmentationId);
-  if (!viewport) {
+  const viewports = getViewportsAssociatedToSegmentation(segmentationId);
+  if (!viewports) {
     console.warn('No viewport associated to the segmentation found');
     return;
   }
@@ -54,31 +55,29 @@ export default function decimateContours(
 
   const keys = Array.from(polylinesCanvasMap?.keys());
 
-  keys.forEach((annotationUID) => {
+  for (const annotationUID of keys) {
     const annotation = getAnnotation(
       annotationUID
     ) as ContourSegmentationAnnotation;
     if (!annotation) {
-      return;
+      continue;
     }
 
     const polylineCanvas = polylinesCanvasMap.get(annotationUID);
-    console.log(
-      'Number of points before decimation: ',
-      annotation.data.contour.polyline.length
-    );
 
     // Decimate the polyline
     const decimatedPolyline2D = decimate(polylineCanvas, options.epsilon);
 
     // Convert back to 3D points
-    annotation.data.contour.polyline = decimatedPolyline2D.map((point2D) =>
-      viewport.canvasToWorld(point2D)
+    const viewport = getViewportWithMatchingViewPlaneNormal(
+      viewports,
+      annotation
     );
-    console.log(
-      'Number of points after decimation: ',
-      annotation.data.contour.polyline.length
-    );
-    invalidateAnnotation(annotation);
-  });
+    if (viewport) {
+      annotation.data.contour.polyline = decimatedPolyline2D.map((point2D) =>
+        viewport.canvasToWorld(point2D)
+      );
+      invalidateAnnotation(annotation);
+    }
+  }
 }
