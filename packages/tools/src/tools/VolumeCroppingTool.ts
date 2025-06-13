@@ -1,5 +1,12 @@
+// https://github.com/Kitware/vtk-js/blob/d15d50f8ba87704865b725be870c3316da2a7078/Sources/Widgets/Widgets3D/ImageCroppingWidget/index.js#L195
+
+import vtkWidgetManager from '@kitware/vtk.js/Widgets/Core/WidgetManager';
+import vtkImageCroppingWidget, {
+  ImageCroppingWidgetState,
+  vtkImageCroppingViewWidget,
+} from '@kitware/vtk.js/Widgets/Widgets3D/ImageCroppingWidget';
+
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import { Events } from '../enums';
 import {
   eventTarget,
@@ -12,7 +19,7 @@ import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
 
-class TrackballRotateTool extends BaseTool {
+class VolumeCroppingTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
@@ -28,7 +35,6 @@ class TrackballRotateTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         rotateIncrementDegrees: 2,
-        rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
       },
     }
   ) {
@@ -46,36 +52,40 @@ class TrackballRotateTool extends BaseTool {
     const actor = actorEntry.actor as Types.VolumeActor;
     const mapper = actor.getMapper();
 
-    const hasSampleDistance =
-      'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
+    if (evt.detail.event.altKey) {
+      // volume cropping
+      const croppingWidget = vtkImageCroppingWidget.newInstance({});
+      return;
+    } else {
+      // 3D rotation
+      const hasSampleDistance =
+        'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
 
-    if (!hasSampleDistance) {
-      return true;
-    }
-
-    const originalSampleDistance = mapper.getSampleDistance();
-
-    if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
-      mapper.setSampleDistance(
-        originalSampleDistance * rotateSampleDistanceFactor
-      );
-      this._hasResolutionChanged = true;
-
-      if (this.cleanUp !== null) {
-        // Clean up previous event listener
-        document.removeEventListener('mouseup', this.cleanUp);
+      if (!hasSampleDistance) {
+        return true;
       }
 
-      this.cleanUp = () => {
-        mapper.setSampleDistance(originalSampleDistance);
-        viewport.render();
-        this._hasResolutionChanged = false;
-      };
+      const originalSampleDistance = mapper.getSampleDistance();
 
-      document.addEventListener('mouseup', this.cleanUp, { once: true });
+      if (!this._hasResolutionChanged) {
+        mapper.setSampleDistance(originalSampleDistance * 4);
+        this._hasResolutionChanged = true;
+
+        if (this.cleanUp !== null) {
+          // Clean up previous event listener
+          document.removeEventListener('mouseup', this.cleanUp);
+        }
+
+        this.cleanUp = () => {
+          mapper.setSampleDistance(originalSampleDistance);
+          viewport.render();
+          this._hasResolutionChanged = false;
+        };
+
+        document.addEventListener('mouseup', this.cleanUp, { once: true });
+      }
+      return true;
     }
-    return true;
   };
 
   _getViewportsInfo = () => {
@@ -153,64 +163,6 @@ class TrackballRotateTool extends BaseTool {
     }
   };
 
-  // Helper to transform a normal by a 3x3 matrix
-  _transformNormal(normal, mat) {
-    return [
-      mat[0] * normal[0] + mat[3] * normal[1] + mat[6] * normal[2],
-      mat[1] * normal[0] + mat[4] * normal[1] + mat[7] * normal[2],
-      mat[2] * normal[0] + mat[5] * normal[1] + mat[8] * normal[2],
-    ];
-  }
-
-  // Update all clipping planes after rotation
-  _updateClippingPlanes(viewport) {
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor as Types.VolumeActor;
-    const mapper = actor.getMapper();
-    const matrix = actor.getMatrix();
-    // Extract rotation part for normals
-    const rot = [
-      matrix[0],
-      matrix[1],
-      matrix[2],
-      matrix[4],
-      matrix[5],
-      matrix[6],
-      matrix[8],
-      matrix[9],
-      matrix[10],
-    ];
-
-    const originalPlanes = viewport.getOriginalClippingPlanes();
-    if (!originalPlanes || originalPlanes.length === 0) {
-      return;
-    }
-
-    mapper.removeAllClippingPlanes();
-    originalPlanes.forEach(({ origin, normal }) => {
-      // Transform origin (full 4x4)
-      const o = [
-        matrix[0] * origin[0] +
-          matrix[4] * origin[1] +
-          matrix[8] * origin[2] +
-          matrix[12],
-        matrix[1] * origin[0] +
-          matrix[5] * origin[1] +
-          matrix[9] * origin[2] +
-          matrix[13],
-        matrix[2] * origin[0] +
-          matrix[6] * origin[1] +
-          matrix[10] * origin[2] +
-          matrix[14],
-      ];
-      // Transform normal (rotation only)
-      const n = this._transformNormal(normal, rot);
-      // const plane = vtkPlane.newInstance({ origin: o, normal: n });
-      const plane = vtkPlane.newInstance({ origin: o, normal: n });
-      mapper.addClippingPlane(plane);
-    });
-  }
-
   rotateCamera = (viewport, centerWorld, axis, angle) => {
     const vtkCamera = viewport.getVtkActiveCamera();
     const viewUp = vtkCamera.getViewUp();
@@ -241,9 +193,6 @@ class TrackballRotateTool extends BaseTool {
       viewUp: newViewUp,
       focalPoint: newFocalPoint,
     });
-
-    // Update clipping planes after rotation
-    this._updateClippingPlanes(viewport);
   };
 
   _dragCallback(evt: EventTypes.InteractionEventType): void {
@@ -321,5 +270,35 @@ class TrackballRotateTool extends BaseTool {
   }
 }
 
-TrackballRotateTool.toolName = 'TrackballRotate';
-export default TrackballRotateTool;
+/*
+function widgetRegistration(e) {
+  const action = e ? e.currentTarget.dataset.action : 'addWidget';
+  const viewWidget = widgetManager[action](widget);
+  if (viewWidget) {
+    viewWidget.setDisplayCallback((coords) => {
+      overlay.style.left = '-100px';
+      if (coords) {
+        const [w, h] = apiRenderWindow.getSize();
+        overlay.style.left = `${Math.round(
+          (coords[0][0] / w) * window.innerWidth -
+            overlaySize * 0.5 -
+            overlayBorder
+        )}px`;
+        overlay.style.top = `${Math.round(
+          ((h - coords[0][1]) / h) * window.innerHeight -
+            overlaySize * 0.5 -
+            overlayBorder
+        )}px`;
+      }
+    });
+
+    renderer.resetCamera();
+    renderer.resetCameraClippingRange();
+  }
+  widgetManager.enablePicking();
+  renderWindow.render();
+}
+*/
+
+VolumeCroppingTool.toolName = 'VolumeCropping';
+export default VolumeCroppingTool;
