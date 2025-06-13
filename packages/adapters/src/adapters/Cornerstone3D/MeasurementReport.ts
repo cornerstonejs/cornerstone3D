@@ -46,6 +46,7 @@ type SetupMeasurementData = {
     ReferencedFrameNumber?: string;
     SCOORD3DGroup?: Record<string, unknown>;
     FrameOfReferenceUID?: string;
+    TextBoxGroup?: Record<string, unknown>;
 };
 
 type SpatialCoordinatesData = Omit<
@@ -336,7 +337,8 @@ export default class MeasurementReport {
         metadata,
         findingGroup,
         findingSiteGroups,
-        toolType
+        toolType,
+        TextBoxGroup
     }) {
         const {
             state,
@@ -380,6 +382,7 @@ export default class MeasurementReport {
             ReferencedSOPSequence,
             ReferencedSOPInstanceUID,
             ReferencedFrameNumber,
+            TextBoxGroup,
             SCOORD3DGroup,
             FrameOfReferenceUID
         };
@@ -405,13 +408,22 @@ export default class MeasurementReport {
             group => group.ValueType === "NUM"
         );
 
+        const TextBoxGroup = contentSequenceArr.find(
+            group =>
+                group.ValueType === "SCOORD" &&
+                group.GraphicType === "POINT" &&
+                group.ConceptNameCodeSequence.CodeMeaning ===
+                    "Annotation Position"
+        );
+
         return this.processSpatialCoordinatesGroup({
             NUMGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
             findingGroup,
             findingSiteGroups,
-            toolType
+            toolType,
+            TextBoxGroup
         });
     }
 

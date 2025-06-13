@@ -21,7 +21,7 @@ class Bidirectional extends BaseAdapter3D {
         imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, ReferencedFrameNumber } =
+        const { defaultState, ReferencedFrameNumber, TextBoxGroup } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
@@ -58,7 +58,8 @@ class Bidirectional extends BaseAdapter3D {
                 referencedImageId,
                 imageToWorldCoords,
                 ReferencedFrameNumber,
-                defaultState
+                defaultState,
+                TextBoxGroup
             });
         } else {
             return this.getMeasurementDataFromScoord3d({
@@ -77,7 +78,8 @@ class Bidirectional extends BaseAdapter3D {
         referencedImageId,
         imageToWorldCoords,
         ReferencedFrameNumber,
-        defaultState
+        defaultState,
+        TextBoxGroup
     }) {
         const worldCoords = [];
 
@@ -116,7 +118,12 @@ class Bidirectional extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     static getMeasurementDataFromScoord3d({
@@ -255,6 +262,11 @@ class Bidirectional extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding: finding,
             findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles,
+                referencedImageId,
+                worldToImageCoords
+            }),
             use3DSpatialCoordinates: false
         };
     }
