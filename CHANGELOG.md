@@ -3,6 +3,40 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.2...v3.21.0) (2025-06-12)
+
+### Features
+
+- **contour:** expose Contour apis for modifications ([#2132](https://github.com/cornerstonejs/cornerstone3D/issues/2132)) ([ac8f8b6](https://github.com/cornerstonejs/cornerstone3D/commit/ac8f8b66a695e320a15aa96a762d9bcee27d434d))
+
+## [3.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.1...v3.20.2) (2025-06-12)
+
+**Note:** Version bump only for package root
+
+## [3.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.0...v3.20.1) (2025-06-11)
+
+### Bug Fixes
+
+- **rendering:** palette color ([#2113](https://github.com/cornerstonejs/cornerstone3D/issues/2113)) ([534e273](https://github.com/cornerstonejs/cornerstone3D/commit/534e273f8afc401ed539b5cff0cefc22901de497))
+
+# [3.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.5...v3.20.0) (2025-06-10)
+
+### Features
+
+- Add simplified spline configuration ([#2124](https://github.com/cornerstonejs/cornerstone3D/issues/2124)) ([675e2cf](https://github.com/cornerstonejs/cornerstone3D/commit/675e2cfba6b560e50af790630799057f80492c7c))
+
+## [3.19.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.4...v3.19.5) (2025-06-06)
+
+### Bug Fixes
+
+- **PlanarFreehandROITool:** Include the mm spacing/delta for canvas coordinates in the perimeter calculation. ([#2126](https://github.com/cornerstonejs/cornerstone3D/issues/2126)) ([7dcae70](https://github.com/cornerstonejs/cornerstone3D/commit/7dcae70c896d0ccaeabb4eccbec9b58e3581724d))
+
+## [3.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.3...v3.19.4) (2025-06-06)
+
+### Bug Fixes
+
+- **metaDataManager:** add logic to enforce multi-frame semantic based on DICOM IOD ([#2098](https://github.com/cornerstonejs/cornerstone3D/issues/2098)) ([18a89df](https://github.com/cornerstonejs/cornerstone3D/commit/18a89df416b65300a6db9c16f1e99ca8dc1ef235))
+
 ## [3.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.2...v3.19.3) (2025-06-03)
 
 ### Bug Fixes

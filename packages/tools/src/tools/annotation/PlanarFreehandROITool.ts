@@ -832,6 +832,22 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         return [topLeftBBIndex, bottomRightBBIndex];
       });
 
+      // Using an arbitrary start point (canvasPoint), calculate the
+      // mm spacing for the canvas in the X and Y directions.
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
       if (closed) {
         this.updateClosedCachedStats({
           targetId,
@@ -843,6 +859,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           cachedStats,
           modalityUnit,
           calibratedScale,
+          deltaInX,
+          deltaInY,
         });
       } else {
         this.updateOpenCachedStats({
@@ -852,6 +870,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           cachedStats,
           modalityUnit,
           calibratedScale,
+          deltaInX,
+          deltaInY,
         });
       }
     }
@@ -881,25 +901,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     modalityUnit,
     canvasCoordinates,
     calibratedScale,
+    deltaInX,
+    deltaInY,
   }) {
     const { scale, areaUnit, unit } = calibratedScale;
 
-    // Using an arbitrary start point (canvasPoint), calculate the
-    // mm spacing for the canvas in the X and Y directions.
     const { voxelManager } = viewport.getImageData();
-    const canvasPoint = canvasCoordinates[0];
-    const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
-    const deltaXPoint = viewport.canvasToWorld([
-      canvasPoint[0] + 1,
-      canvasPoint[1],
-    ]);
-    const deltaYPoint = viewport.canvasToWorld([
-      canvasPoint[0],
-      canvasPoint[1] + 1,
-    ]);
-
-    const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
-    const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
     const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
     worldPosIndex[0] = Math.floor(worldPosIndex[0]);
@@ -938,6 +945,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let area = polyline.getArea(canvasCoordinates) / scale / scale;
     // Convert from canvas_pixels ^2 to mm^2
     area *= deltaInX * deltaInY;
+
+    let perimeter = calculatePerimeter(canvasCoordinates, closed) / scale;
+    perimeter *= Math.sqrt(Math.pow(deltaInX, 2) + Math.pow(deltaInY, 2));
 
     // Expand bounding box
     const iDelta = 0.01 * (iMax - iMin);
@@ -1012,7 +1022,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     cachedStats[targetId] = {
       Modality: metadata.Modality,
       area,
-      perimeter: calculatePerimeter(canvasCoordinates, closed) / scale,
+      perimeter,
       mean: stats.mean?.value,
       max: stats.max?.value,
       min: stats.min?.value,
@@ -1037,12 +1047,17 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     cachedStats,
     modalityUnit,
     calibratedScale,
+    deltaInX,
+    deltaInY,
   }) {
     const { scale, unit } = calibratedScale;
 
+    let length = calculatePerimeter(canvasCoordinates, closed) / scale;
+    length *= Math.sqrt(Math.pow(deltaInX, 2) + Math.pow(deltaInY, 2));
+
     cachedStats[targetId] = {
       Modality: metadata.Modality,
-      length: calculatePerimeter(canvasCoordinates, false) / scale,
+      length,
       modalityUnit,
       unit,
     };

@@ -340,7 +340,7 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   /**
    * Test to load a dicom image TestPattern_Palette_16.dcm
    */
-  test.skip('should load TestPattern_Palette_16.dcm', async ({ page }) => {
+  test('should load TestPattern_Palette_16.dcm', async ({ page }) => {
     await page
       .locator('#imageSelector')
       .selectOption('TestPattern_Palette_16.dcm');
@@ -359,7 +359,7 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   /**
    * Test to load a dicom image TestPattern_Palette.dcm
    */
-  test.skip('should load TestPattern_Palette.dcm', async ({ page }) => {
+  test('should load TestPattern_Palette.dcm', async ({ page }) => {
     await page
       .locator('#imageSelector')
       .selectOption('TestPattern_Palette.dcm');
