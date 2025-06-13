@@ -20,6 +20,16 @@ interface ViewportInputOptions {
    * parallel projection of a stack viewport or volume viewport using viewport input options.
    */
   parallelProjection?: boolean;
+  /**
+   * reset camera for resize behavior settings
+   */
+  resetCameraForResizeOptions?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+    resetToCenter?: boolean;
+    resetRotation?: boolean;
+    suppressEvents?: boolean;
+  };
 }
 
 export type { ViewportInputOptions as default };
