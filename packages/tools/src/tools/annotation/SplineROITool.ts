@@ -866,27 +866,47 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     if (
       drawPreviewEnabled &&
-      spline.numControlPoints > 1 &&
+      spline.numControlPoints >= 1 &&
       this.editData?.lastCanvasPoint &&
       !spline.closed
     ) {
       const { lastCanvasPoint } = this.editData;
-      const previewPolylinePoints = spline.getPreviewPolylinePoints(
-        lastCanvasPoint,
-        SPLINE_CLICK_CLOSE_CURVE_DIST
-      );
 
-      drawPolylineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        'previewSplineChange',
-        previewPolylinePoints,
-        {
-          color: '#9EA0CA',
-          lineDash: lineDash as string,
-          lineWidth: 1,
-        }
-      );
+      // For splines with only 1 control point, draw a straight line to the cursor
+      if (spline.numControlPoints === 1) {
+        const firstPoint = canvasCoordinates[0];
+        const previewPolylinePoints = [firstPoint, lastCanvasPoint];
+
+        drawPolylineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          'previewSplineChange',
+          previewPolylinePoints,
+          {
+            color: '#9EA0CA',
+            lineDash: lineDash as string,
+            lineWidth: 1,
+          }
+        );
+      } else {
+        // For splines with 2 or more control points, use the existing preview logic
+        const previewPolylinePoints = spline.getPreviewPolylinePoints(
+          lastCanvasPoint,
+          SPLINE_CLICK_CLOSE_CURVE_DIST
+        );
+
+        drawPolylineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          'previewSplineChange',
+          previewPolylinePoints,
+          {
+            color: '#9EA0CA',
+            lineDash: lineDash as string,
+            lineWidth: 1,
+          }
+        );
+      }
     }
 
     if (splineConfig.showControlPointsConnectors) {
