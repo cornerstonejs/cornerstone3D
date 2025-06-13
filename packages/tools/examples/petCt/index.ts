@@ -30,6 +30,7 @@ const {
   CrosshairsTool,
   TrackballRotateTool,
   VolumeRotateTool,
+  RectangleROITool
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -88,7 +89,7 @@ setTitleAndDescription(
   'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
 );
 
-const optionsValues = [WindowLevelTool.toolName, CrosshairsTool.toolName];
+const optionsValues = [WindowLevelTool.toolName, CrosshairsTool.toolName, RectangleROITool.toolName];
 
 // ============================= //
 addDropdownToToolbar({
@@ -105,12 +106,20 @@ addDropdownToToolbar({
       if (toolName === WindowLevelTool.toolName) {
         // Set crosshairs passive so they are still interactable
         toolGroup.setToolPassive(CrosshairsTool.toolName);
+        toolGroup.setToolDisabled(RectangleROITool.toolName);
         toolGroup.setToolActive(WindowLevelTool.toolName, {
+          bindings: [{ mouseButton: MouseBindings.Primary }],
+        });
+      } else if (toolName === CrosshairsTool.toolName) {
+        toolGroup.setToolDisabled(WindowLevelTool.toolName);
+        toolGroup.setToolDisabled(RectangleROITool.toolName);
+        toolGroup.setToolActive(CrosshairsTool.toolName, {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         });
       } else {
         toolGroup.setToolDisabled(WindowLevelTool.toolName);
-        toolGroup.setToolActive(CrosshairsTool.toolName, {
+        toolGroup.setToolDisabled(CrosshairsTool.toolName);
+        toolGroup.setToolActive(RectangleROITool.toolName, {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         });
       }
@@ -226,6 +235,9 @@ instructions.innerText = `
   Window Level Tool:
   - Drag to set the window level for the CT and threshold for the PET.
 
+  Rectangle ROI Tool:
+  - Left click and drag to draw a rectangle ROI.
+
   Crosshairs:
   - When the tool is active: Click/Drag anywhere in the viewport to move the center of the crosshairs.
   - Drag a reference line to move it, scrolling the other views.
@@ -329,6 +341,7 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(CrosshairsTool);
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(VolumeRotateTool);
+  cornerstoneTools.addTool(RectangleROITool);
 
   // Define tool groups for the main 9 viewports.
   // Crosshairs currently only supports 3 viewports for a toolgroup due to the
@@ -359,6 +372,7 @@ function setUpToolGroups() {
       getReferenceLineDraggableRotatable,
       getReferenceLineSlabThicknessControlsOn,
     });
+    toolGroup.addTool(RectangleROITool.toolName);
   });
 
   fusionToolGroup.addTool(PanTool.toolName);
@@ -372,6 +386,7 @@ function setUpToolGroups() {
     // Only set CT volume to MIP in the fusion viewport
     filterActorUIDsToSetSlabThickness: [ctVolumeId],
   });
+  fusionToolGroup.addTool(RectangleROITool.toolName);
 
   // Here is the difference in the toolGroups used, that we need to specify the
   // volume to use for the WindowLevelTool for the fusion viewports
