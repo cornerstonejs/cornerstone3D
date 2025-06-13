@@ -291,6 +291,7 @@ export default class MeasurementReport {
             ReferencedSOPSequence,
             ReferencedSOPInstanceUID,
             ReferencedFrameNumber,
+            referencedImageId,
             state: {
                 description: undefined,
                 sopInstanceUid: ReferencedSOPInstanceUID,
@@ -376,7 +377,8 @@ export default class MeasurementReport {
             ReferencedSOPInstanceUID,
             ReferencedFrameNumber,
             SCOORD3DGroup,
-            FrameOfReferenceUID
+            FrameOfReferenceUID,
+            referencedImageId
         } = this.getSpatialCoordinatesState({
             NUMGroup,
             sopInstanceUIDToImageIdMap,
@@ -412,6 +414,7 @@ export default class MeasurementReport {
             SCOORDGroup,
             ReferencedSOPSequence,
             ReferencedSOPInstanceUID,
+            referencedImageId,
             ReferencedFrameNumber,
             SCOORD3DGroup,
             FrameOfReferenceUID
@@ -448,7 +451,7 @@ export default class MeasurementReport {
             toolType
         });
 
-        const { referencedImageId } = metadata;
+        const { referencedImageId } = spatialGroup.state.annotation.metadata;
         const isMeasurement3d = !!spatialGroup.SCOORD3DGroup;
         const scoordArgs = {
             referencedImageId,
@@ -462,7 +465,6 @@ export default class MeasurementReport {
 
         return {
             ...spatialGroup,
-            referencedImageId,
             isMeasurement3d,
             scoordArgs,
             scoord,
