@@ -26,6 +26,7 @@ import * as state from './segmentationState';
 import * as config from './config';
 import * as segmentIndex from './segmentIndex';
 import * as triggerSegmentationEvents from './triggerSegmentationEvents';
+import * as utilities from './utilities';
 import { convertStackToVolumeLabelmap } from './helpers/convertStackToVolumeLabelmap';
 import { computeVolumeLabelmapFromStack } from './helpers/computeVolumeLabelmapFromStack';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
@@ -77,6 +78,7 @@ export {
   config,
   segmentIndex,
   triggerSegmentationEvents,
+  utilities,
   helpers,
   removeSegment,
   getLabelmapImageIds,

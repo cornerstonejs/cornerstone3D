@@ -220,11 +220,17 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
+        // Set numberOfComponents based on photometric interpretation
+        let numberOfComponents = imageFrame.samplesPerPixel;
+        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          numberOfComponents = useRGBA ? 4 : 3;
+        }
+
         const voxelManager = utilities.VoxelManager.createImageVoxelManager({
           scalarData: imageFrame.pixelData,
           width: imageFrame.columns,
           height: imageFrame.rows,
-          numberOfComponents: imageFrame.samplesPerPixel,
+          numberOfComponents: numberOfComponents,
         });
 
         const image: DICOMLoaderIImage = {
@@ -268,7 +274,7 @@ function createImage(
           rgba: isColorImage && useRGBA,
           getPixelData: () => imageFrame.pixelData,
           getCanvas: undefined,
-          numberOfComponents: imageFrame.samplesPerPixel,
+          numberOfComponents: numberOfComponents,
         };
 
         if (image.color) {
