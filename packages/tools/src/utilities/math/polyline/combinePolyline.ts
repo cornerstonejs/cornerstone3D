@@ -2,6 +2,8 @@ import type { Types } from '@cornerstonejs/core';
 import * as mathPoint from '../point';
 import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsIndexes';
 import containsPoint from './containsPoint';
+import containsPoints from './containsPoints';
+import intersectPolyline from './intersectPolyline';
 import getNormal2 from './getNormal2';
 import { glMatrix, vec3 } from 'gl-matrix';
 import getLinesIntersection from './getLinesIntersection';
@@ -236,6 +238,20 @@ function getSourceAndTargetPointsList(
  * exists or `undefined` otherwise
  */
 function getUnvisitedOutsidePoint(polylinePoints: PolylinePoint[]) {
+  // First, try to find unvisited vertex points that are outside
+  for (let i = 0, len = polylinePoints.length; i < len; i++) {
+    const point = polylinePoints[i];
+
+    if (
+      !point.visited &&
+      point.position === PolylinePointPosition.Outside &&
+      point.type === PolylinePointType.Vertex
+    ) {
+      return point;
+    }
+  }
+
+  // If no vertex points found, look for intersection points that are outside
   for (let i = 0, len = polylinePoints.length; i < len; i++) {
     const point = polylinePoints[i];
 
@@ -243,6 +259,8 @@ function getUnvisitedOutsidePoint(polylinePoints: PolylinePoint[]) {
       return point;
     }
   }
+
+  return undefined;
 }
 
 /**
@@ -260,6 +278,18 @@ function mergePolylines(
   // be reversed if theirs orientation are not the same
   if (!glMatrix.equals(1, dotNormals)) {
     sourcePolyline = sourcePolyline.slice().reverse();
+  }
+
+  // Check if target polyline is completely surrounded by source polyline
+  const lineSegmentsIntersect = intersectPolyline(
+    sourcePolyline,
+    targetPolyline
+  );
+  const targetContainedInSource =
+    !lineSegmentsIntersect && containsPoints(sourcePolyline, targetPolyline);
+
+  if (targetContainedInSource) {
+    return sourcePolyline.slice();
   }
 
   const { targetPolylinePoints } = getSourceAndTargetPointsList(
@@ -311,90 +341,4 @@ function mergePolylines(
   return mergedPolyline;
 }
 
-/**
- * Subtract two planar polylines (2D)
- */
-function subtractPolylines(
-  targetPolyline: Types.Point2[],
-  sourcePolyline: Types.Point2[]
-): Types.Point2[][] {
-  const targetNormal = getNormal2(targetPolyline);
-  const sourceNormal = getNormal2(sourcePolyline);
-  const dotNormals = vec3.dot(sourceNormal, targetNormal);
-
-  // The polylines need to have different orientation (CW+CCW or CCW+CW) to be
-  // subtracted and one of them needs to be reversed if theirs orientation are
-  // the same
-  if (!glMatrix.equals(-1, dotNormals)) {
-    sourcePolyline = sourcePolyline.slice().reverse();
-  }
-
-  const { targetPolylinePoints } = getSourceAndTargetPointsList(
-    targetPolyline,
-    sourcePolyline
-  );
-  let startPoint: PolylinePoint = null;
-  const subtractedPolylines = [];
-
-  let outerIterationCount = 0;
-  const maxOuterIterations = targetPolyline.length * 2; // Safety limit for outer loop
-
-  while (
-    (startPoint = getUnvisitedOutsidePoint(targetPolylinePoints)) &&
-    outerIterationCount < maxOuterIterations
-  ) {
-    outerIterationCount++;
-    const subtractedPolyline = [startPoint.coordinates];
-    let currentPoint = startPoint.next;
-    let innerIterationCount = 0;
-    const maxInnerIterations =
-      targetPolyline.length + sourcePolyline.length + 1000; // Safety limit for inner loop
-
-    startPoint.visited = true;
-
-    while (
-      currentPoint !== startPoint &&
-      innerIterationCount < maxInnerIterations
-    ) {
-      innerIterationCount++;
-      currentPoint.visited = true;
-
-      if (
-        currentPoint.type === PolylinePointType.Intersection &&
-        (<PolylineIntersectionPoint>currentPoint).cloned
-      ) {
-        currentPoint = currentPoint.next;
-        continue;
-      }
-
-      subtractedPolyline.push(currentPoint.coordinates);
-      currentPoint = currentPoint.next;
-
-      // Additional safety check for null/undefined next pointer
-      if (!currentPoint) {
-        console.warn(
-          'Broken linked list detected in subtractPolylines, breaking inner loop'
-        );
-        break;
-      }
-    }
-
-    if (innerIterationCount >= maxInnerIterations) {
-      console.warn(
-        'Maximum inner iterations reached in subtractPolylines, possible infinite loop detected'
-      );
-    }
-
-    subtractedPolylines.push(subtractedPolyline);
-  }
-
-  if (outerIterationCount >= maxOuterIterations) {
-    console.warn(
-      'Maximum outer iterations reached in subtractPolylines, possible infinite loop detected'
-    );
-  }
-
-  return subtractedPolylines;
-}
-
-export { mergePolylines, subtractPolylines };
+export { mergePolylines };

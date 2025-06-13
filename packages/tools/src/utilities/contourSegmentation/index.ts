@@ -1,6 +1,7 @@
 import areSameSegment from './areSameSegment';
 import convertContourSegmentationAnnotation from './convertContourSegmentation';
-import { addition, subtraction } from './logicalOperators';
+import { copyAnnotation, copyContourSegment } from './copyAnnotation';
+export * from './logicalOperators';
 export { default as isContourSegmentationAnnotation } from './isContourSegmentationAnnotation';
 export { addContourSegmentationAnnotation } from './addContourSegmentationAnnotation';
 export { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation';
@@ -10,10 +11,10 @@ export { contourSegmentationOperation } from './contourSegmentationOperation';
 export * from './sharedOperations';
 
 export {
-  addition,
-  subtraction,
   areSameSegment,
   convertContourSegmentationAnnotation,
+  copyContourSegment,
+  copyAnnotation,
 };
 
 export {
