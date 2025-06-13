@@ -5,4 +5,7 @@ import { downloadDICOMData } from "./downloadDICOMData";
 export { copyStudyTags } from "./copyStudyTags";
 export { copySeriesTags } from "./copySeriesTags";
 
+export * from "./toScoordType";
+export * from "./scoordToWorld";
+
 export { toArray, codeMeaningEquals, graphicTypeEquals, downloadDICOMData };
