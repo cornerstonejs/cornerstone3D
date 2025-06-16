@@ -4,51 +4,111 @@ import {
   annotation,
 } from '@cornerstonejs/tools';
 import type { RawContourData } from '../contourComputationStrategies';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { vec3 } from 'gl-matrix';
 
-const _p_v1 = vec3.create();
-const _p_v2 = vec3.create();
-const _p_p0 = vec3.create();
-const _p_p1 = vec3.create();
-const _p_p2 = vec3.create();
-const _p_polylineNormal = vec3.create();
-const _p_planeNormal = vec3.create();
+/**
+ * Finds the best contour from a lines array for normal calculation.
+ * Prioritizes contours with more than the specified minimum points for better accuracy.
+ *
+ * @param {number[]} lines - Flat array encoding multiple polylines. Format: [pointCount1, id1, id2, ..., pointCount2, id1, id2, ...].
+ * @param {number} [minPreferredPoints=3] - The minimum number of points to prefer for better normal calculation accuracy.
+ * @returns {{ contourIndex: number, pointCount: number, pointIndices: number[] } | null} - The best contour information or null if no suitable contour is found.
+ */
+function findBestContourForNormalCalculation(
+  lines: number[],
+  minPreferredPoints: number = 3
+): {
+  contourIndex: number;
+  pointCount: number;
+  pointIndices: number[];
+} | null {
+  let bestContourIndex = 0;
+  let bestCount = 0;
+  let currentIndex = 0;
+
+  // Iterate through all contours to find the one with the most points (preferably > minPreferredPoints)
+  while (currentIndex < lines.length) {
+    const count = lines[currentIndex];
+    if (count < 2) {
+      currentIndex += count + 1;
+      continue;
+    }
+
+    // Prefer contours with more than minPreferredPoints, otherwise take the largest available
+    if (count > minPreferredPoints && bestCount <= minPreferredPoints) {
+      bestContourIndex = currentIndex;
+      bestCount = count;
+      break; // Found a good contour with > minPreferredPoints, use it
+    } else if (count > bestCount) {
+      bestContourIndex = currentIndex;
+      bestCount = count;
+    }
+
+    currentIndex += count + 1;
+  }
+
+  if (bestCount < 2) {
+    return null;
+  }
+
+  const pointIndices = lines.slice(
+    bestContourIndex + 1,
+    bestContourIndex + 1 + bestCount
+  );
+
+  return {
+    contourIndex: bestContourIndex,
+    pointCount: bestCount,
+    pointIndices,
+  };
+}
 
 /**
- * Checks if a planar polyline is perpendicular to a given normal vector.
+ * Checks if a planar polyline lies in a plane that is parallel to a reference plane.
  *
  * This function operates under the assumption that the polyline is flat (all its
  * points lie on a single plane).
  *
- * It determines the polyline's own plane and checks if that plane is perpendicular
- * to the one defined by `planeNormal`. This is true if their normal vectors are
- * perpendicular.
+ * When multiple contours are present in the lines array, the function searches for
+ * the best contour to use for normal calculation, prioritizing contours with more
+ * than 3 points for better accuracy in determining the polyline's plane normal.
+ *
+ * It determines the polyline's own plane normal and checks if that normal is parallel
+ * to the given `planeNormal`. When the normals are parallel, the planes are also parallel.
  *
  * If the polyline is collinear (a straight line), it checks if the line's
- * direction is perpendicular to the `planeNormal`.
+ * direction is parallel to the `planeNormal`, meaning the line lies in a plane
+ * parallel to the reference plane.
  *
- * @param {number[]} lines - Flat array encoding a polyline. Format: [pointCount, id1, id2, ...].
+ * @param {number[]} lines - Flat array encoding multiple polylines. Format: [pointCount1, id1, id2, ..., pointCount2, id1, id2, ...].
  * @param {number[]} points - Flat array of 3D point coordinates [x1, y1, z1, ...].
- * @param {vec3} planeNormal - The normal vector to check against.
- * @param {number} [dotProductTolerance=0.99] - The maximum absolute value the dot
- *   product can have for the vectors to be considered perpendicular. A value of 0 is perfect.
- * @returns {boolean} - True if the polyline is perpendicular to the normal.
+ * @param {vec3} planeNormal - The normal vector of the reference plane to check against.
+ * @param {number} [dotProductTolerance=0.99] - The minimum absolute value the dot
+ *   product can have for the normals to be considered parallel. A value of 1.0 indicates perfect parallelism.
+ * @returns {boolean} - True if the polyline lies in a plane parallel to the reference plane.
  */
-function isPolylinePerpendicular(
-  lines,
-  points,
-  planeNormal,
-  dotProductTolerance = 0.99
+function isPolylineParallelToPlane(
+  lines: number[],
+  points: number[],
+  planeNormal: vec3,
+  dotProductTolerance: number = 0.99
 ) {
-  const count = lines[0];
-  if (count < 2) {
+  // Find the best contour for normal calculation (preferably with > 3 points)
+  const bestContour = findBestContourForNormalCalculation(lines);
+
+  if (!bestContour) {
     // Cannot determine direction or plane.
     return false;
   }
-  const ids = lines.slice(1, 1 + count);
+
+  const { pointCount: count, pointIndices: ids } = bestContour;
+  const _p_v1 = vec3.create();
+  const _p_v2 = vec3.create();
+  const _p_p0 = vec3.create();
+  const _p_p1 = vec3.create();
+  const _p_p2 = vec3.create();
+  const _p_polylineNormal = vec3.create();
+  const _p_planeNormal = vec3.create();
 
   // --- Find the normal of the plane containing the polyline ---
 
@@ -105,14 +165,16 @@ function isPolylinePerpendicular(
   vec3.normalize(_p_planeNormal, planeNormal);
 
   if (p2_found) {
-    // CASE 1: The polyline is a plane. Check if its normal is perpendicular to the given normal.
+    // CASE 1: The polyline is a plane. Check if its normal is parallel to the given normal.
+    // When normals are parallel, the planes are also parallel.
     vec3.normalize(_p_polylineNormal, _p_polylineNormal);
     const dot = vec3.dot(_p_polylineNormal, _p_planeNormal);
     return Math.abs(dot) >= dotProductTolerance;
   } else {
     // CASE 2: The polyline is a straight line (collinear).
     // The direction is already in _p_v1 (from P1 - P0).
-    // Check if its direction is perpendicular to the given normal.
+    // Check if its direction is parallel to the given normal.
+    // When the line direction is parallel to the normal, the line lies in a plane parallel to the reference plane.
     vec3.normalize(_p_v1, _p_v1);
     const dot = vec3.dot(_p_v1, _p_planeNormal);
     return Math.abs(dot) >= dotProductTolerance;
@@ -138,7 +200,7 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
   for (const [segmentIndex, contoursData] of rawContourData) {
     for (const contourData of contoursData) {
       const { points, lines } = contourData;
-      if (!isPolylinePerpendicular(lines, points, planeNormal)) {
+      if (!isPolylineParallelToPlane(lines, points, planeNormal)) {
         continue;
       }
 
