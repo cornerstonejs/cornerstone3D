@@ -151,6 +151,7 @@ class VolumeCroppingTool extends AnnotationTool {
           opacity: 0.8,
           handleRadius: 9,
         },
+        initialCropFactor: 0.2,
       },
     }
   ) {
@@ -336,7 +337,7 @@ class VolumeCroppingTool extends AnnotationTool {
     this._computeToolCenter(viewportsInfo);
   };
 
-  addSphere(viewport, point) {
+  addSphere(viewport, point, axis) {
     //   if (!sphereActor) {
     // Generate a random string for the sphere UID
     const randomUID = 'sphere_' + Math.random().toString(36).substring(2, 15);
@@ -348,12 +349,20 @@ class VolumeCroppingTool extends AnnotationTool {
     sphereMapper.setInputConnection(sphereSource.getOutputPort());
     const sphereActor = vtkActor.newInstance();
     sphereActor.setMapper(sphereMapper);
-    sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
+
+    let color = [1.0, 1.0, 0.0]; // Yellow
+    if (axis === 'z') {
+      color = [1.0, 0.0, 0.0];
+    } else if (axis === 'x') {
+      color = [0.0, 1.0, 0.0];
+    }
+    color = [0.0, 0.0, 1.0];
+    sphereActor.getProperty().setColor(...color);
+    //sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
     viewport.addActor({ actor: sphereActor, uid: randomUID });
-    //   } else {
-    //     sphereActor.getMapper().getInputConnection().filter.setCenter(point);
-    //   }
-    //  console.debug('actors:', viewport.getActors());
+
+    console.debug('sphere:', point);
+
     viewport.render();
   }
 
@@ -412,20 +421,21 @@ class VolumeCroppingTool extends AnnotationTool {
     const volumeActors = viewport.getActors();
     const imageData = volumeActors[0].actor.getMapper().getInputData();
     const dimensions = imageData.getDimensions();
+    console.debug('dimensions', dimensions);
     const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
     const worldDimensions = [
       Math.round(dimensions[0] * spacing[0]),
       Math.round(dimensions[1] * spacing[1]),
       Math.round(dimensions[2] * spacing[2]),
     ];
+    //const worldDimensions = dimensions;
     console.debug('worldDimensions', worldDimensions);
-    //const xMin = 1500 * -0.5;
     const xMin = worldDimensions[0] * -0.5;
     const xMax = worldDimensions[0] * 0.5;
     const yMin = worldDimensions[1] * -0.5;
     const yMax = worldDimensions[1] * 0.5;
     const zMin = worldDimensions[2] * -0.5;
-    const zMax = 0;
+    const zMax = worldDimensions[2];
     const planes: vtkPlane[] = [];
     const cropFactor = 0.2;
     // X min plane (cuts everything left of xMin)
@@ -446,11 +456,11 @@ class VolumeCroppingTool extends AnnotationTool {
       normal: [0, -1, 0],
     });
     const planeZmin = vtkPlane.newInstance({
-      origin: [0, 0, zMin + worldDimensions[2] * cropFactor],
+      origin: [0, 0, -zMax],
       normal: [0, 0, 1],
     });
     const planeZmax = vtkPlane.newInstance({
-      origin: [0, 0, zMax - worldDimensions[2] * cropFactor],
+      origin: [0, 0, zMax],
       normal: [0, 0, -1],
     });
 
@@ -460,8 +470,8 @@ class VolumeCroppingTool extends AnnotationTool {
     planes.push(planeXmax);
     planes.push(planeYmin);
     planes.push(planeYmax);
-    //   planes.push(planeZmin);
-    //   planes.push(planeZmax);
+    planes.push(planeZmin);
+    planes.push(planeZmax);
     const originalPlanes = planes.map((plane) => ({
       origin: [...plane.getOrigin()],
       normal: [...plane.getNormal()],
@@ -470,32 +480,38 @@ class VolumeCroppingTool extends AnnotationTool {
     viewport.setOriginalClippingPlanes(originalPlanes);
 
     // this.addSphere(viewport, [xMin + worldDimensions[0] * cropFactor, 0, 0]);
-    this.addSphere(viewport, [
-      xMin + worldDimensions[0] * cropFactor,
-      (yMax + yMin) / 2,
-      (zMax + zMin) / 4,
-    ]);
-    this.addSphere(viewport, [
-      xMax - worldDimensions[0] * cropFactor,
-      (yMax + yMin) / 2,
-      (zMax + zMin) / 2,
-    ]);
-    this.addSphere(viewport, [
-      (xMax + xMin) / 2,
-      yMin + worldDimensions[0] * cropFactor,
-      (zMax + zMin) / 2,
-    ]);
+    this.addSphere(
+      viewport,
+      [xMin + worldDimensions[0] * cropFactor, (yMax + yMin) / 2, -220],
+      'x'
+    );
+    this.addSphere(
+      viewport,
+      [xMax - worldDimensions[0] * cropFactor, (yMax + yMin) / 2, -220],
+      'x'
+    );
+    this.addSphere(
+      viewport,
+      [(xMax + xMin) / 2, yMin + worldDimensions[0] * cropFactor, -220],
+      'y'
+    );
 
-    this.addSphere(viewport, [
-      (xMax + xMin) / 2,
-      yMax - worldDimensions[0] * cropFactor,
-      (zMax + zMin) / 2,
-    ]);
-    this.addSphere(viewport, [
-      (xMax + xMin) / 2,
-      (yMax + yMin) / 2,
-      zMin - worldDimensions[0] * cropFactor,
-    ]);
+    this.addSphere(
+      viewport,
+      [(xMax + xMin) / 2, yMax - worldDimensions[0] * cropFactor, -220],
+      'y'
+    );
+
+    this.addSphere(
+      viewport,
+      [(xMax + xMin) / 2, (yMax + yMin) / 2, -zMax],
+      'z'
+    );
+    this.addSphere(
+      viewport,
+      [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax / 4],
+      'z'
+    );
 
     // this.addSphere(viewport, [0, 0, 0]);
     //   this.addSphere(viewport, [xMin, yMin, zMin]);
@@ -593,42 +609,6 @@ class VolumeCroppingTool extends AnnotationTool {
   cancel = () => {
     console.log('Not implemented yet');
   };
-
-  /**
-   * It checks if the mouse click is near crosshairs handles, if yes
-   * it returns the handle location. If the mouse click is not near any
-   * of the handles, it does not return anything.
-   *
-   * @param element - The element that the tool is attached to.
-   * @param annotation - The annotation object associated with the annotation
-   * @param canvasCoords - The coordinates of the mouse click on canvas
-   * @param proximity - The distance from the mouse cursor to the point
-   * that is considered "near".
-   * @returns The handle that is closest to the cursor, or null if the cursor
-   * is not near any of the handles.
-   */
-  /*
-  getHandleNearImagePoint(
-    element: HTMLDivElement,
-    annotation: Annotation,
-    canvasCoords: Types.Point2,
-    proximity: number
-  ): ToolHandle | undefined {
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
-    const point = this._getRotationHandleNearImagePoint(
-      viewport,
-      annotation,
-      canvasCoords,
-      proximity
-    );
-
-    if (point !== null) {
-      return point;
-    }
-  }
-    */
 
   handleSelectedCallback = (
     evt: EventTypes.InteractionEventType,
@@ -1949,46 +1929,6 @@ class VolumeCroppingTool extends AnnotationTool {
 
     return false;
   };
-
-  _getRotationHandleNearImagePoint(
-    viewport,
-    annotation,
-    canvasCoords,
-    proximity
-  ) {
-    const { data } = annotation;
-    const { rotationPoints } = data.handles;
-
-    for (let i = 0; i < rotationPoints.length; i++) {
-      const point = rotationPoints[i][0];
-      const otherViewport = rotationPoints[i][1];
-      const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.id
-      );
-      if (!viewportControllable) {
-        continue;
-      }
-
-      const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.id);
-      if (!viewportDraggableRotatable) {
-        continue;
-      }
-
-      const annotationCanvasCoordinate = viewport.worldToCanvas(point);
-      if (vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity) {
-        data.handles.activeOperation = OPERATION.ROTATE;
-
-        this.editData = {
-          annotation,
-        };
-
-        return point;
-      }
-    }
-
-    return null;
-  }
 
   _pointNearTool(element, annotation, canvasCoords, proximity) {
     /* const enabledElement = getEnabledElement(element);
