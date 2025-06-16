@@ -73,6 +73,7 @@ import applyPreset from '../utilities/applyPreset';
 import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
+import { getCameraVectors } from './helpers/getCameraVectors';
 
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -1774,6 +1775,10 @@ abstract class BaseVolumeViewport extends Viewport {
     } else if (typeof orientation === 'string') {
       if (orientation === 'acquisition') {
         return this._getAcquisitionPlaneOrientation();
+      } else if (orientation === 'reformat') {
+        return getCameraVectors(this, {
+          useViewportNormal: true,
+        });
       } else if (MPR_CAMERA_VALUES[orientation]) {
         this.viewportProperties.orientation = orientation;
         return MPR_CAMERA_VALUES[orientation];
