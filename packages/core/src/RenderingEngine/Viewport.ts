@@ -718,9 +718,10 @@ class Viewport {
    * Reset the camera to the default viewport camera without firing events
    */
   protected resetCameraNoEvent(): void {
+    const savedValue = this._suppressCameraModifiedEvents; // save the value pf the flag to restore it later
     this._suppressCameraModifiedEvents = true;
     this.resetCamera();
-    this._suppressCameraModifiedEvents = false;
+    this._suppressCameraModifiedEvents = savedValue;
   }
 
   /**
@@ -728,9 +729,10 @@ class Viewport {
    * @param camera - The camera to use for the viewport.
    */
   protected setCameraNoEvent(camera: ICamera): void {
+    const savedValue = this._suppressCameraModifiedEvents; // save the value pf the flag to restore it later
     this._suppressCameraModifiedEvents = true;
     this.setCamera(camera);
-    this._suppressCameraModifiedEvents = false;
+    this._suppressCameraModifiedEvents = savedValue;
   }
 
   /**
