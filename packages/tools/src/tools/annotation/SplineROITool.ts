@@ -163,6 +163,12 @@ class SplineROITool extends ContourSegmentationBaseTool {
           },
           type: SplineTypesEnum.CatmullRom,
           drawPreviewEnabled: true,
+          /**
+           * Enable preview with only two points (one control point + cursor position).
+           * When enabled, shows a straight line preview from the first control point
+           * to the cursor position before the second point is placed.
+           */
+          enableTwoPointPreview: false,
           lastControlPointDeletionKeys: ['Backspace', 'Delete'],
         },
         actions: {
@@ -871,9 +877,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
       !spline.closed
     ) {
       const { lastCanvasPoint } = this.editData;
+      const { enableTwoPointPreview } = this.configuration.spline;
 
       // For splines with only 1 control point, draw a straight line to the cursor
-      if (spline.numControlPoints === 1) {
+      // only if enableTwoPointPreview is true
+      if (spline.numControlPoints === 1 && enableTwoPointPreview) {
         const firstPoint = canvasCoordinates[0];
         const previewPolylinePoints = [firstPoint, lastCanvasPoint];
 
@@ -888,7 +896,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
             lineWidth: 1,
           }
         );
-      } else {
+      } else if (spline.numControlPoints > 1) {
         // For splines with 2 or more control points, use the existing preview logic
         const previewPolylinePoints = spline.getPreviewPolylinePoints(
           lastCanvasPoint,
