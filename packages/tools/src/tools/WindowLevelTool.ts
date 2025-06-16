@@ -180,12 +180,13 @@ class WindowLevelTool extends BaseTool {
       const { voxelManager } = viewport.getImageData();
 
       const middleSlicePixelData = voxelManager.getMiddleSliceData();
-      const calculatedDynamicRange = middleSlicePixelData.reduce(
-        (acc, pixel) => {
-          return [Math.min(acc[0], pixel), Math.max(acc[1], pixel)];
-        },
-        [Infinity, -Infinity]
-      );
+      const calculatedDynamicRange: [number, number] =
+        middleSlicePixelData.reduce(
+          (acc, pixel) => {
+            return [Math.min(acc[0], pixel), Math.max(acc[1], pixel)];
+          },
+          [Infinity, -Infinity]
+        );
 
       const BitsStored = imageVolume?.metadata?.BitsStored;
       const metadataDynamicRange = BitsStored ? 2 ** BitsStored : Infinity;
@@ -194,7 +195,7 @@ class WindowLevelTool extends BaseTool {
       // want in practice. Thus we take the min between the metadata dynamic
       // range and actual middle slice dynamic range.
       imageDynamicRange = Math.min(
-        calculatedDynamicRange,
+        calculatedDynamicRange[1] - calculatedDynamicRange[0],
         metadataDynamicRange
       );
     } else {
