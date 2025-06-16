@@ -1775,7 +1775,10 @@ abstract class BaseVolumeViewport extends Viewport {
     } else if (typeof orientation === 'string') {
       if (orientation === 'acquisition') {
         return this._getAcquisitionPlaneOrientation();
-      } else if (orientation === 'reformat') {
+      } else if (
+        orientation === 'reformat' ||
+        (orientation as string).includes('_acquisition')
+      ) {
         return getCameraVectors(this, {
           useViewportNormal: true,
         });

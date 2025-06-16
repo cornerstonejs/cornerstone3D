@@ -178,7 +178,10 @@ class VolumeViewport extends BaseVolumeViewport {
       if (orientation === OrientationAxis.ACQUISITION) {
         // Acquisition orientation is determined from the volume data
         ({ viewPlaneNormal, viewUp } = super._getAcquisitionPlaneOrientation());
-      } else if (orientation === OrientationAxis.REFORMAT) {
+      } else if (
+        orientation === OrientationAxis.REFORMAT ||
+        (orientation as string).includes('_acquisition')
+      ) {
         ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
           useViewportNormal: true,
         }));

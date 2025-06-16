@@ -66,13 +66,13 @@ export function calculateCameraPosition(
   let referenceCameraValues;
 
   switch (orientation) {
-    case OrientationAxis.AXIAL:
+    case OrientationAxis.AXIAL || OrientationAxis.AXIAL_ACQUISITION:
       referenceCameraValues = MPR_CAMERA_VALUES.axial;
       break;
-    case OrientationAxis.SAGITTAL:
+    case OrientationAxis.SAGITTAL || OrientationAxis.SAGITTAL_ACQUISITION:
       referenceCameraValues = MPR_CAMERA_VALUES.sagittal;
       break;
-    case OrientationAxis.CORONAL:
+    case OrientationAxis.CORONAL || OrientationAxis.CORONAL_ACQUISITION:
       referenceCameraValues = MPR_CAMERA_VALUES.coronal;
       break;
     default:

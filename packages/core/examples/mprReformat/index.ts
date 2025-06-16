@@ -11,10 +11,8 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
-  addDropdownToToolbar,
   addManipulationBindings,
   getLocalUrl,
-  addToggleButtonToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -50,8 +48,8 @@ const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Crosshairs',
-  'Here we demonstrate crosshairs linking three orthogonal views of the same data. You can select the blend mode that will be used if you modify the slab thickness of the crosshairs by dragging the control points.'
+  'MPR reformat',
+  'Here we demonstrate howe to set up the mpr so it aligns with acquisition directions'
 );
 
 const size = '500px';
@@ -95,27 +93,6 @@ instructions.innerText = `
   `;
 
 content.append(instructions);
-
-addButtonToToolbar({
-  title: 'Reset Camera',
-  onClick: () => {
-    const viewport1 = getRenderingEngine(renderingEngineId).getViewport(
-      viewportId1
-    ) as Types.IVolumeViewport;
-    const resetPan = true;
-    const resetZoom = true;
-    const resetToCenter = true;
-    const resetRotation = true;
-    viewport1.resetCamera({
-      resetPan,
-      resetZoom,
-      resetToCenter,
-      resetRotation,
-    });
-
-    viewport1.render();
-  },
-});
 
 addButtonToToolbar({
   title: 'Reformat viewports',
@@ -177,71 +154,6 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
     viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportId);
   return index !== -1;
 }
-
-const blendModeOptions = {
-  MIP: 'Maximum Intensity Projection',
-  MINIP: 'Minimum Intensity Projection',
-  AIP: 'Average Intensity Projection',
-};
-
-addDropdownToToolbar({
-  options: {
-    values: [
-      'Maximum Intensity Projection',
-      'Minimum Intensity Projection',
-      'Average Intensity Projection',
-    ],
-    defaultValue: 'Maximum Intensity Projection',
-  },
-  onSelectedValueChange: (selectedValue) => {
-    let blendModeToUse;
-    switch (selectedValue) {
-      case blendModeOptions.MIP:
-        blendModeToUse = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
-        break;
-      case blendModeOptions.MINIP:
-        blendModeToUse = Enums.BlendModes.MINIMUM_INTENSITY_BLEND;
-        break;
-      case blendModeOptions.AIP:
-        blendModeToUse = Enums.BlendModes.AVERAGE_INTENSITY_BLEND;
-        break;
-      default:
-        throw new Error('undefined orientation option');
-    }
-
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    const crosshairsInstance = toolGroup.getToolInstance(
-      CrosshairsTool.toolName
-    );
-    const oldConfiguration = crosshairsInstance.configuration;
-
-    crosshairsInstance.configuration = {
-      ...oldConfiguration,
-      slabThicknessBlendMode: blendModeToUse,
-    };
-
-    // Update the blendMode for actors to instantly reflect the change
-    toolGroup.viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
-
-      viewport.setBlendMode(blendModeToUse);
-      viewport.render();
-    });
-  },
-});
-
-addToggleButtonToToolbar({
-  id: 'syncSlabThickness',
-  title: 'Sync Slab Thickness',
-  defaultToggle: false,
-  onClick: (toggle) => {
-    synchronizer.setEnabled(toggle);
-  },
-});
 
 function setUpSynchronizers() {
   synchronizer = createSlabThicknessSynchronizer(synchronizerId);
