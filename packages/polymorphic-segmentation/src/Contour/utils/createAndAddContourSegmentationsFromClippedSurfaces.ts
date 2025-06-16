@@ -10,9 +10,9 @@ import { vec3 } from 'gl-matrix';
  * Finds the best contour from a lines array for normal calculation.
  * Prioritizes contours with more than the specified minimum points for better accuracy.
  *
- * @param {number[]} lines - Flat array encoding multiple polylines. Format: [pointCount1, id1, id2, ..., pointCount2, id1, id2, ...].
- * @param {number} [minPreferredPoints=3] - The minimum number of points to prefer for better normal calculation accuracy.
- * @returns {{ contourIndex: number, pointCount: number, pointIndices: number[] } | null} - The best contour information or null if no suitable contour is found.
+ * @param lines - Flat array encoding multiple polylines. Format: [pointCount1, id1, id2, ..., pointCount2, id1, id2, ...].
+ * @param [minPreferredPoints=3] - The minimum number of points to prefer for better normal calculation accuracy.
+ * @returns The best contour information or null if no suitable contour is found.
  */
 function findBestContourForNormalCalculation(
   lines: number[],
@@ -80,12 +80,12 @@ function findBestContourForNormalCalculation(
  * direction is parallel to the `planeNormal`, meaning the line lies in a plane
  * parallel to the reference plane.
  *
- * @param {number[]} lines - Flat array encoding multiple polylines. Format: [pointCount1, id1, id2, ..., pointCount2, id1, id2, ...].
- * @param {number[]} points - Flat array of 3D point coordinates [x1, y1, z1, ...].
- * @param {vec3} planeNormal - The normal vector of the reference plane to check against.
- * @param {number} [dotProductTolerance=0.99] - The minimum absolute value the dot
+ * @param lines - Flat array encoding multiple polylines. Format: [pointCount1, id1, id2, ..., pointCount2, id1, id2, ...].
+ * @param points - Flat array of 3D point coordinates [x1, y1, z1, ...].
+ * @param planeNormal - The normal vector of the reference plane to check against.
+ * @param [dotProductTolerance=0.99] - The minimum absolute value the dot
  *   product can have for the normals to be considered parallel. A value of 1.0 indicates perfect parallelism.
- * @returns {boolean} - True if the polyline lies in a plane parallel to the reference plane.
+ * @returns True if the polyline lies in a plane parallel to the reference plane.
  */
 function isPolylineParallelToPlane(
   lines: number[],
@@ -195,7 +195,17 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
   segmentationId: string
 ) {
   const annotationUIDsMap = new Map<number, Set<string>>();
-  const planeNormal = viewport.getCamera().viewPlaneNormal;
+  if (!viewport) {
+    console.warn('Invalid viewport given');
+    return;
+  }
+
+  const camera = viewport.getCamera();
+  if (!camera) {
+    console.warn('Camera not available in viewport');
+    return;
+  }
+  const planeNormal = camera.viewPlaneNormal;
 
   for (const [segmentIndex, contoursData] of rawContourData) {
     for (const contourData of contoursData) {
