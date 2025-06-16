@@ -1,5 +1,4 @@
-import { test } from '@playwright/test';
-import type { Page, Locator } from '@playwright/test';
+import { test } from 'playwright-test-coverage';
 import {
   checkForScreenshot,
   visitExample,
@@ -341,7 +340,7 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   /**
    * Test to load a dicom image TestPattern_Palette_16.dcm
    */
-  test.skip('should load TestPattern_Palette_16.dcm', async ({ page }) => {
+  test('should load TestPattern_Palette_16.dcm', async ({ page }) => {
     await page
       .locator('#imageSelector')
       .selectOption('TestPattern_Palette_16.dcm');
@@ -360,7 +359,7 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   /**
    * Test to load a dicom image TestPattern_Palette.dcm
    */
-  test.skip('should load TestPattern_Palette.dcm', async ({ page }) => {
+  test('should load TestPattern_Palette.dcm', async ({ page }) => {
     await page
       .locator('#imageSelector')
       .selectOption('TestPattern_Palette.dcm');

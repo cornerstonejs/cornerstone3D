@@ -1,6 +1,7 @@
 ---
 id: synchronizers
 title: Synchronizers
+summary: Mechanism for coordinating actions across multiple viewports, enabling synchronization of camera position, windowing levels, and other visualization parameters
 ---
 
 # Synchronizers

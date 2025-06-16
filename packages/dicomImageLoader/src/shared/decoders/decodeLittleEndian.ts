@@ -32,7 +32,20 @@ async function decodeLittleEndian(
       offset = 0;
     }
 
-    imageFrame.pixelData = new Float32Array(arrayBuffer, offset, length / 4);
+    // @ts-expect-error
+    if (imageFrame.floatPixelData || imageFrame.doubleFloatPixelData) {
+      throw new Error(
+        'Float pixel data is not supported for parsing into ImageFrame'
+      );
+    }
+
+    if (imageFrame.pixelRepresentation === 0) {
+      imageFrame.pixelData = new Uint32Array(arrayBuffer, offset, length / 4);
+    } else if (imageFrame.pixelRepresentation === 1) {
+      imageFrame.pixelData = new Int32Array(arrayBuffer, offset, length / 4);
+    } else {
+      imageFrame.pixelData = new Float32Array(arrayBuffer, offset, length / 4);
+    }
   }
 
   return imageFrame;

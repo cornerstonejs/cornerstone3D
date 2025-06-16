@@ -1,6 +1,7 @@
 ---
 id: index
 title: Segmentations
+summary: Core framework for medical image segmentation that decouples the underlying segmentation data from its visual representations like labelmaps, contours, and surfaces
 ---
 
 import DocCardList from '@theme/DocCardList';

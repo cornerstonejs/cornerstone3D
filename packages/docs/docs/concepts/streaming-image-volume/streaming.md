@@ -1,5 +1,7 @@
 ---
 id: streaming
+title: Streaming of Volume Data
+summary: Progressive loading system that creates volumes from 2D images, with pre-fetching of metadata to optimize performance and memory usage
 ---
 
 # Streaming of Volume data

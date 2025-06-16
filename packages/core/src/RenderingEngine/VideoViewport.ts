@@ -552,6 +552,10 @@ class VideoViewport extends Viewport {
     this.setProperties({
       loop: false,
       muted: true,
+      voiRange: {
+        lower: 0,
+        upper: 255,
+      },
     });
   }
 
@@ -694,45 +698,20 @@ class VideoViewport extends Viewport {
 
   public setVOI(voiRange: VOIRange): void {
     this.voiRange = voiRange;
-    this.setColorTransform();
+    const feFilter = this.setColorTransform(voiRange, this.averageWhite);
+    this.canvas.style.filter = feFilter;
   }
 
   public setWindowLevel(windowWidth = 256, windowCenter = 128) {
     const lower = windowCenter - windowWidth / 2;
     const upper = windowCenter + windowWidth / 2 - 1;
     this.setVOI({ lower, upper });
-    this.setColorTransform();
+    this.setColorTransform({ lower, upper }, this.averageWhite);
   }
 
   public setAverageWhite(averageWhite: [number, number, number]) {
     this.averageWhite = averageWhite;
-    this.setColorTransform();
-  }
-
-  protected setColorTransform() {
-    if (!this.voiRange && !this.averageWhite) {
-      this.feFilter = null;
-      return;
-    }
-    const white = this.averageWhite || [255, 255, 255];
-    const maxWhite = Math.max(...white);
-    const scaleWhite = white.map((c) => maxWhite / c);
-    const { lower = 0, upper = 255 } = this.voiRange || {};
-    const wlScale = (upper - lower + 1) / 255;
-    const wlDelta = lower / 255;
-    this.feFilter = `url('data:image/svg+xml,\
-      <svg xmlns="http://www.w3.org/2000/svg">\
-        <filter id="colour" color-interpolation-filters="linearRGB">\
-        <feColorMatrix type="matrix" \
-        values="\
-          ${scaleWhite[0] * wlScale} 0 0 0 ${wlDelta} \
-          0 ${scaleWhite[1] * wlScale} 0 0 ${wlDelta} \
-          0 0 ${scaleWhite[2] * wlScale} 0 ${wlDelta} \
-          0 0 0 1 0" />\
-        </filter>\
-      </svg>#colour')`;
-
-    this.canvas.style.filter = this.feFilter;
+    this.setColorTransform(this.voiRange, averageWhite);
   }
 
   public setCamera(camera: ICamera): void {

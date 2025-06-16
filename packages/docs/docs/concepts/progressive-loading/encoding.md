@@ -1,6 +1,7 @@
 ---
 id: encoding
 title: Encoding
+summary: Overview of partial resolution image types and techniques for creating them, including lossy encoding, thumbnails, and byte range requests for HTJ2K images
 ---
 
 ## Types of Partial Resolution

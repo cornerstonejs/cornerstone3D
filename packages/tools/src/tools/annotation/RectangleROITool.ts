@@ -1,5 +1,4 @@
 import { AnnotationTool } from '../base';
-
 import {
   getEnabledElement,
   VolumeViewport,
@@ -935,14 +934,17 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
+        let pointsInShape;
+        if (voxelManager) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
@@ -951,6 +953,7 @@ class RectangleROITool extends AnnotationTool {
           mean: stats.mean?.value,
           stdDev: stats.stdDev?.value,
           max: stats.max?.value,
+          min: stats.min?.value,
           statsArray: stats.array,
           pointsInShape: pointsInShape,
           areaUnit,
@@ -1010,6 +1013,9 @@ class RectangleROITool extends AnnotationTool {
       options
     );
 
+    // Exclude toolInstance from the options passed into the metadata
+    const { toolInstance, ...serializableOptions } = options || {};
+
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
@@ -1030,7 +1036,7 @@ class RectangleROITool extends AnnotationTool {
         viewPlaneNormal,
         FrameOfReferenceUID,
         referencedImageId,
-        ...options,
+        ...serializableOptions,
       },
     };
 
@@ -1049,7 +1055,8 @@ class RectangleROITool extends AnnotationTool {
  */
 function defaultGetTextLines(data, targetId: string): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, max, stdDev, areaUnit, modalityUnit, min } =
+    cachedVolumeStats;
 
   if (mean === undefined || mean === null) {
     return;
@@ -1057,10 +1064,21 @@ function defaultGetTextLines(data, targetId: string): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  if (csUtils.isNumber(area)) {
+    textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
+  }
+  if (csUtils.isNumber(mean)) {
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
+  }
+  if (csUtils.isNumber(max)) {
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (csUtils.isNumber(min)) {
+    textLines.push(`Max: ${csUtils.roundNumber(min)} ${modalityUnit}`);
+  }
+  if (csUtils.isNumber(stdDev)) {
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  }
 
   return textLines;
 }

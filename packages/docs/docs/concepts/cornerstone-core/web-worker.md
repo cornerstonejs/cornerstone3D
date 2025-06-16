@@ -1,6 +1,7 @@
 ---
 id: webWorker
 title: Web Workers
+summary: API for offloading computational tasks to background threads, providing priority-based execution and efficient management of worker instances
 ---
 
 WebWorkers provide a way to run scripts in background threads, allowing web applications to perform tasks without interfering with the user interface. They are particularly useful for executing computationally intensive tasks or those that require a lot of processing time.

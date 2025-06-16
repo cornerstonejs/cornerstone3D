@@ -27,6 +27,7 @@ export default function drawLine(
     markerStartId = null,
     markerEndId = null,
     shadow = false,
+    strokeOpacity = 1,
   } = options as {
     color?: string;
     width?: string;
@@ -35,6 +36,7 @@ export default function drawLine(
     markerStartId?: string;
     markerEndId?: string;
     shadow?: boolean;
+    strokeOpacity?: number;
   };
 
   // for supporting both lineWidth and width options
@@ -57,6 +59,7 @@ export default function drawLine(
     'stroke-dasharray': lineDash,
     'marker-start': markerStartId ? `url(#${markerStartId})` : '',
     'marker-end': markerEndId ? `url(#${markerEndId})` : '',
+    'stroke-opacity': strokeOpacity,
   };
 
   if (existingLine) {

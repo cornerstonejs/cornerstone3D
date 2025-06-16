@@ -1,5 +1,7 @@
 ---
 id: pull-request
+title: How to Contribute
+summary: Guidelines for contributing to Cornerstone3D, including reporting bugs, submitting code changes through pull requests, and best practices for contributions
 ---
 
 # How to Contribute

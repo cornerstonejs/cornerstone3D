@@ -40,6 +40,7 @@ import ArrowAnnotateTool from './annotation/ArrowAnnotateTool';
 import AngleTool from './annotation/AngleTool';
 import CobbAngleTool from './annotation/CobbAngleTool';
 import UltrasoundDirectionalTool from './annotation/UltrasoundDirectionalTool';
+import UltrasoundPleuraBLineTool from './annotation/UltrasoundPleuraBLineTool/UltrasoundPleuraBLineTool';
 import KeyImageTool from './annotation/KeyImageTool';
 import AnnotationEraserTool from './AnnotationEraserTool';
 import RegionSegmentTool from './annotation/RegionSegmentTool';
@@ -62,6 +63,7 @@ import SegmentBidirectionalTool from './segmentation/SegmentBidirectionalTool';
 
 import * as strategies from './segmentation/strategies';
 import SegmentLabelTool from './segmentation/SegmentLabelTool';
+import LabelMapEditWithContourTool from './segmentation/LabelmapEditWithContour';
 
 export {
   // ~~ BASE
@@ -103,6 +105,7 @@ export {
   AngleTool,
   CobbAngleTool,
   UltrasoundDirectionalTool,
+  UltrasoundPleuraBLineTool,
   KeyImageTool,
   AnnotationEraserTool as EraserTool,
   // Segmentations Display
@@ -130,5 +133,6 @@ export {
   LabelmapBaseTool,
   SegmentBidirectionalTool,
   SegmentLabelTool,
+  LabelMapEditWithContourTool,
   strategies,
 };
