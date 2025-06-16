@@ -11,6 +11,7 @@ import {
   type IntersectionInfo,
 } from './robustSegmentIntersection';
 import containsPoint from './containsPoint';
+import arePolylinesIdentical from './arePolylinesIdentical';
 
 export default function subtractPolylines(
   targetPolylineCoords: Types.Point2[],
@@ -24,6 +25,11 @@ export default function subtractPolylines(
   }
 
   const sourcePolylineCoords = sourcePolylineCoordsInput.slice();
+
+  // Early detection for identical polylines
+  if (arePolylinesIdentical(targetPolylineCoords, sourcePolylineCoordsInput)) {
+    return []; // Subtracting identical polylines results in empty set
+  }
 
   // 1. Ensure consistent winding for subtraction (e.g., target CCW, source CW)
   const targetArea = getSignedArea(targetPolylineCoords);

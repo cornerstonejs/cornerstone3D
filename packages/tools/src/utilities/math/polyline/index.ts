@@ -23,6 +23,7 @@ import pointCanProjectOnLine from './pointCanProjectOnLine';
 import { isPointInsidePolyline3D } from './isPointInsidePolyline3D';
 import { projectTo2D } from './projectTo2D';
 import convexHull from './convexHull';
+import arePolylinesIdentical from './arePolylinesIdentical';
 
 export {
   isClosed,
@@ -50,4 +51,5 @@ export {
   isPointInsidePolyline3D,
   projectTo2D,
   convexHull,
+  arePolylinesIdentical,
 };

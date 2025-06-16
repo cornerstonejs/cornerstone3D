@@ -2,6 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import * as math from '../math';
 import { checkIntersection } from './sharedOperations';
 import { intersectPolylines } from '../math/polyline';
+import arePolylinesIdentical from '../math/polyline/arePolylinesIdentical';
 
 const TOLERANCE = 1e-10; // Very small tolerance for floating point comparison
 /**
@@ -36,6 +37,16 @@ export function unifyPolylineSets(
       }
 
       const polylineB = polylinesSetB[j];
+
+      // Check if polylines are identical first
+      if (arePolylinesIdentical(polylineA, polylineB)) {
+        // Polylines are identical, just add one copy to result
+        result.push([...polylineA]);
+        processedFromA.add(i);
+        processedFromB.add(j);
+        merged = true;
+        break;
+      }
 
       // Check if polylines intersect
       const intersection = checkIntersection(polylineA, polylineB);
@@ -177,6 +188,13 @@ export function subtractPolylineSets(
 
       // Apply subtraction to all current polylines
       for (const currentPolyline of currentPolylines) {
+        // Check if polylines are identical first
+        if (arePolylinesIdentical(currentPolyline, polylineB)) {
+          // Polylines are identical, subtraction results in empty (no polyline added)
+          wasSubtracted = true;
+          continue;
+        }
+
         // Check if polylines intersect
         const intersection = checkIntersection(currentPolyline, polylineB);
 
@@ -292,6 +310,13 @@ export function intersectPolylinesSets(
   // For each polyline in set A, find its intersection with each polyline in set B
   for (const polylineA of polylinesSetA) {
     for (const polylineB of polylinesSetB) {
+      // Check if polylines are identical first
+      if (arePolylinesIdentical(polylineA, polylineB)) {
+        // Polylines are identical, intersection is the polyline itself
+        result.push([...polylineA]);
+        continue;
+      }
+
       // Check if polylines intersect
       const intersection = checkIntersection(polylineA, polylineB);
 
@@ -331,6 +356,27 @@ export function xorPolylinesSets(
 
   if (!polylinesSetB.length) {
     return polylinesSetA.map((polyline) => [...polyline]);
+  }
+
+  // Early optimization: if sets are identical, XOR result is empty
+  if (polylinesSetA.length === polylinesSetB.length) {
+    let allIdentical = true;
+    for (let i = 0; i < polylinesSetA.length; i++) {
+      let foundMatch = false;
+      for (let j = 0; j < polylinesSetB.length; j++) {
+        if (arePolylinesIdentical(polylinesSetA[i], polylinesSetB[j])) {
+          foundMatch = true;
+          break;
+        }
+      }
+      if (!foundMatch) {
+        allIdentical = false;
+        break;
+      }
+    }
+    if (allIdentical) {
+      return []; // XOR of identical sets is empty
+    }
   }
 
   // XOR = (A ∪ B) - (A ∩ B) = (A - B) ∪ (B - A)

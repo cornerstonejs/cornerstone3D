@@ -13,7 +13,7 @@ import {
   subtractPolylineSets,
   unifyPolylineSets,
   xorPolylinesSets,
-} from './unifyPolylineSets';
+} from './polylineSetsOperations';
 import addPolylinesToSegmentation from './addPolylinesToSegmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { copyContourSegment } from './copyAnnotation';

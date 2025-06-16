@@ -24,4 +24,4 @@ export {
   subtractPolylineSets,
   subtractMultiplePolylineSets,
   subtractAnnotationPolylines,
-} from './unifyPolylineSets';
+} from './polylineSetsOperations';
