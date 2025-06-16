@@ -613,8 +613,9 @@ const polySegConverters = {
             continue;
           }
 
+          // Set up the initial polydata
           surfacePolyData.getPoints().setData(points, 3);
-          surfacePolyData.getPolys().setData(polys, 3);
+          surfacePolyData.getPolys().setData(polys);
           surfacePolyData.modified();
 
           cutter.setInputData(surfacePolyData);
@@ -630,19 +631,41 @@ const polySegConverters = {
 
           const polyData = cutter.getOutputData();
 
+          // Additional validation of cutter output
+          if (
+            !polyData ||
+            !polyData.getPoints() ||
+            polyData.getPoints().getNumberOfPoints() === 0
+          ) {
+            continue;
+          }
+
           const cutterOutput = polyData;
           cutterOutput.buildLinks();
           const loopExtraction = vtkContourLoopExtraction.newInstance();
           loopExtraction.setInputData(cutterOutput);
 
-          const loopOutput = loopExtraction.getOutputData();
-          if (polyData) {
-            polyDataResults.set(segmentIndex, {
-              points: loopOutput.getPoints().getData(),
-              lines: loopOutput.getLines().getData(),
-              numberOfCells: loopOutput.getLines().getNumberOfCells(),
-              segmentIndex,
-            });
+          try {
+            loopExtraction.update();
+            const loopOutput = loopExtraction.getOutputData();
+
+            if (
+              loopOutput &&
+              loopOutput.getPoints() &&
+              loopOutput.getLines() &&
+              loopOutput.getPoints().getNumberOfPoints() > 0 &&
+              loopOutput.getLines().getNumberOfCells() > 0
+            ) {
+              polyDataResults.set(segmentIndex, {
+                points: loopOutput.getPoints().getData(),
+                lines: loopOutput.getLines().getData(),
+                numberOfCells: loopOutput.getLines().getNumberOfCells(),
+                segmentIndex,
+              });
+            }
+          } catch (loopError) {
+            console.warn('Error during loop extraction:', loopError);
+            continue;
           }
         }
 
