@@ -30,6 +30,7 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import ToolGroup from 'tools/src/store/ToolGroupManager/ToolGroup';
 
 // This is for debugging purposes
 console.warn(
@@ -43,6 +44,7 @@ const {
   synchronizers,
   TrackballRotateTool,
   ZoomTool,
+  OrientationMarkerTool,
 } = cornerstoneTools;
 
 const { createSlabThicknessSynchronizer } = synchronizers;
@@ -71,7 +73,7 @@ const newToolGroupId = 'NEW_TOOL_GROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Volume Cropping',
-  'Here we demonstrate how to crop a 3D  volume along 6 clipping planes aligned on the axises.'
+  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes aligned on the x,y and z axes.'
 );
 
 const size = '400px';
@@ -138,24 +140,15 @@ instructions.innerText = `
   Basic controls:
   - Click/Drag anywhere in the viewport to move the center of the crosshairs.
   - Drag a reference line to move it, scrolling the other views.
-
-  Advanced controls: Hover over a line and find the following two handles:
-  - Square (closest to center): Drag these to change the thickness of the MIP slab in that plane.
-  - Circle (further from center): Drag these to rotate the axes.
   `;
 
 content.append(instructions);
 
-addButtonToToolbar({
-  title: 'Reset Camera',
-  onClick: () => {
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    viewportIds.forEach((viewportId) => {
-      const viewport = renderingEngine.getViewport(viewportId);
-      viewport.resetCamera();
-      viewport.render();
-    });
+addToggleButtonToToolbar({
+  title: 'Toggle 3D handles',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    // resetViewports(toggle);
   },
 });
 
@@ -267,79 +260,6 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
   return index !== -1;
 }
 
-const blendModeOptions = {
-  MIP: 'Maximum Intensity Projection',
-  MINIP: 'Minimum Intensity Projection',
-  AIP: 'Average Intensity Projection',
-};
-
-addDropdownToToolbar({
-  options: {
-    values: [
-      'Maximum Intensity Projection',
-      'Minimum Intensity Projection',
-      'Average Intensity Projection',
-    ],
-    defaultValue: 'Maximum Intensity Projection',
-  },
-  onSelectedValueChange: (selectedValue) => {
-    let blendModeToUse;
-    switch (selectedValue) {
-      case blendModeOptions.MIP:
-        blendModeToUse = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
-        break;
-      case blendModeOptions.MINIP:
-        blendModeToUse = Enums.BlendModes.MINIMUM_INTENSITY_BLEND;
-        break;
-      case blendModeOptions.AIP:
-        blendModeToUse = Enums.BlendModes.AVERAGE_INTENSITY_BLEND;
-        break;
-      default:
-        throw new Error('undefined orientation option');
-    }
-
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    const crosshairsInstance = toolGroup.getToolInstance(
-      VolumeCroppingTool.toolName
-    );
-    const oldConfiguration = crosshairsInstance.configuration;
-
-    crosshairsInstance.configuration = {
-      ...oldConfiguration,
-      slabThicknessBlendMode: blendModeToUse,
-    };
-
-    // Update the blendMode for actors to instantly reflect the change
-    toolGroup.viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
-
-      viewport.setBlendMode(blendModeToUse);
-      viewport.render();
-    });
-
-    // Also update the 3D volume viewport
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport3D = renderingEngine.getViewport(
-      viewportId4
-    ) as Types.IVolumeViewport;
-    viewport3D.setBlendMode(blendModeToUse);
-    viewport3D.render();
-  },
-});
-
-addToggleButtonToToolbar({
-  id: 'syncSlabThickness',
-  title: 'Sync Slab Thickness',
-  defaultToggle: false,
-  onClick: (toggle) => {
-    synchronizer.setEnabled(toggle);
-  },
-});
-
 function setUpSynchronizers() {
   synchronizer = createSlabThicknessSynchronizer(synchronizerId);
 
@@ -365,8 +285,16 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(VolumeCroppingTool);
   cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(OrientationMarkerTool);
+
+  /*
   const newToolGroup = ToolGroupManager.createToolGroup(newToolGroupId);
+  newToolGroup.addTool(OrientationMarkerTool.toolName);
+  newToolGroup.addTool(ZoomTool.toolName);
   newToolGroup.addTool(TrackballRotateTool.toolName);
+  newToolGroup.addTool(VolumeCroppingTool.toolName);
+  newToolGroup.setToolActive(OrientationMarkerTool.toolName);
   newToolGroup.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
@@ -377,11 +305,11 @@ async function run() {
   newToolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary, // Left Click
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
-
+*/
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
@@ -461,13 +389,22 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup);
+  toolGroup.addTool(TrackballRotateTool.toolName);
+  toolGroup.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
 
   // For the crosshairs to operate, the viewports must currently be
   // added ahead of setting the tool active. This will be improved in the future.
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
-  newToolGroup.addViewport(viewportId4, renderingEngineId);
+  toolGroup.addViewport(viewportId4, renderingEngineId);
+  //newToolGroup.addViewport(viewportId4, renderingEngineId);
 
   // Manipulation Tools
   // Add Crosshairs tool and configure it to link the three viewports
@@ -587,10 +524,10 @@ async function run() {
         const pickedPoint = pickedPositions[0];
         if (pickedPoint) {
           console.log('Picked point coordinates:', pickedPoint);
-          addSphere(viewport, pickedPoint);
+          //   addSphere(viewport, pickedPoint);
           addTemporaryPickedPositionLabel(x, y, pickedPoint);
           setCrossHairPosition(pickedPoint);
-          setClippingPlane(viewport, 0, [0, 0, -500]);
+          //  setClippingPlane(viewport, 0, [0, 0, -500]);
         }
       }
     }
@@ -606,7 +543,7 @@ eventTarget.addEventListener(
       viewportId4
     ) as VolumeViewport3D;
     if (sphereActor) {
-      addSphere(viewport, toolCenter);
+      // addSphere(viewport, toolCenter);
     }
   }
 );

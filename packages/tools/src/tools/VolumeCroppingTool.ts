@@ -1,11 +1,18 @@
 import { vec2, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
+import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
+//import * as cornerstoneTools from '@cornerstonejs/tools';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { AnnotationTool } from './base';
 
 import type { Types } from '@cornerstonejs/core';
 import {
+  getRenderingEngine,
   getEnabledElementByIds,
   getEnabledElement,
   utilities as csUtils,
@@ -28,7 +35,6 @@ import {
 
 import {
   drawCircle as drawCircleSvg,
-  drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
 } from '../drawingSvg';
 import { state } from '../store/state';
@@ -56,16 +62,19 @@ import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotatio
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
-interface CrosshairsAnnotation extends Annotation {
+//interface VolumeCroppingAnnotation extends Annotation {
+interface VolumeCroppingAnnotation extends Annotation {
   data: {
     handles: {
-      rotationPoints: Types.Point3[]; // rotation handles, used for rotation interactions
-      slabThicknessPoints: Types.Point3[]; // slab thickness handles, used for setting the slab thickness
+      //  rotationPoints: Types.Point3[]; // rotation handles, used for rotation interactions
+      //  slabThicknessPoints: Types.Point3[]; // slab thickness handles, used for setting the slab thickness
       activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
       toolCenter: Types.Point3;
     };
     activeViewportIds: string[]; // a list of the viewport ids connected to the reference lines being translated
     viewportId: string;
+    //   referenceLines: []; // set in renderAnnotation
+    clippingPlanes?: vtkPlane[]; // clipping planes for the viewport
   };
 }
 
@@ -81,10 +90,6 @@ function defaultReferenceLineDraggableRotatable() {
   return true;
 }
 
-function defaultReferenceLineSlabThicknessControlsOn() {
-  return true;
-}
-
 const OPERATION = {
   DRAG: 1,
   ROTATE: 2,
@@ -97,9 +102,6 @@ const EPSILON = 1e-3;
  * VolumeCroppingTool is a tool that provides reference lines between different viewports
  * of a toolGroup. Using crosshairs, you can jump to a specific location in one
  * viewport and the rest of the viewports in the toolGroup will be aligned to that location.
- * Crosshairs have grababble handles that can be used to rotate and translate the
- * reference lines. They can also be used to set the slab thickness of the viewports
- * by modifying the slab thickness handles.
  *
  */
 class VolumeCroppingTool extends AnnotationTool {
@@ -110,7 +112,6 @@ class VolumeCroppingTool extends AnnotationTool {
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
-  _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -144,11 +145,7 @@ class VolumeCroppingTool extends AnnotationTool {
         // the reference lines will not be rendered. This is only used when
         // having 3 viewports in the toolGroup.
         referenceLinesCenterGapRadius: 20,
-        // actorUIDs for slabThickness application, if not defined, the slab thickness
-        // will be applied to all actors of the viewport
-        filterActorUIDsToSetSlabThickness: [],
-        // blend mode for slabThickness modifications
-        slabThicknessBlendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+
         mobile: {
           enabled: false,
           opacity: 0.8,
@@ -168,9 +165,9 @@ class VolumeCroppingTool extends AnnotationTool {
     this._getReferenceLineDraggableRotatable =
       toolProps.configuration?.getReferenceLineDraggableRotatable ||
       defaultReferenceLineDraggableRotatable;
-    this._getReferenceLineSlabThicknessControlsOn =
-      toolProps.configuration?.getReferenceLineSlabThicknessControlsOn ||
-      defaultReferenceLineSlabThicknessControlsOn;
+    //  this._getReferenceLineSlabThicknessControlsOn =
+    //   toolProps.configuration?.getReferenceLineSlabThicknessControlsOn ||
+    //  defaultReferenceLineSlabThicknessControlsOn;
   }
 
   /**
@@ -220,13 +217,14 @@ class VolumeCroppingTool extends AnnotationTool {
       },
       data: {
         handles: {
-          rotationPoints: [], // rotation handles, used for rotation interactions
-          slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
+          //  rotationPoints: [], // rotation handles, used for rotation interactions
+          //  slabThicknessPoints: [], // slab thickness handles, used for setting the slab thickness
           toolCenter: this.toolCenter,
         },
         activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
         activeViewportIds: [], // a list of the viewport ids connected to the reference lines being translated
         viewportId,
+        referenceLines: [], // set in renderAnnotation
       },
     };
 
@@ -338,6 +336,27 @@ class VolumeCroppingTool extends AnnotationTool {
     this._computeToolCenter(viewportsInfo);
   };
 
+  addSphere(viewport, point) {
+    //   if (!sphereActor) {
+    // Generate a random string for the sphere UID
+    const randomUID = 'sphere_' + Math.random().toString(36).substring(2, 15);
+
+    const sphereSource = vtkSphereSource.newInstance();
+    sphereSource.setCenter(point);
+    sphereSource.setRadius(15);
+    const sphereMapper = vtkMapper.newInstance();
+    sphereMapper.setInputConnection(sphereSource.getOutputPort());
+    const sphereActor = vtkActor.newInstance();
+    sphereActor.setMapper(sphereMapper);
+    sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
+    viewport.addActor({ actor: sphereActor, uid: randomUID });
+    //   } else {
+    //     sphereActor.getMapper().getInputConnection().filter.setCenter(point);
+    //   }
+    //  console.debug('actors:', viewport.getActors());
+    viewport.render();
+  }
+
   computeToolCenter = () => {
     const viewportsInfo = this._getViewportsInfo();
     this._computeToolCenter(viewportsInfo);
@@ -353,15 +372,9 @@ class VolumeCroppingTool extends AnnotationTool {
    * @param viewportsInfo Array of viewportInputs which each item containing `{viewportId, renderingEngineId}`
    */
   _computeToolCenter = (viewportsInfo): void => {
-    if (!viewportsInfo.length || viewportsInfo.length === 1) {
-      console.warn(
-        'For crosshairs to operate, at least two viewports must be given.'
-      );
-      return;
-    }
-
     // Todo: handle two same view viewport, or more than 3 viewports
-    const [firstViewport, secondViewport, thirdViewport] = viewportsInfo;
+    const [firstViewport, secondViewport, thirdViewport, viewport3D] =
+      viewportsInfo;
 
     // Initialize first viewport
     const { normal: normal1, point: point1 } =
@@ -393,10 +406,108 @@ class VolumeCroppingTool extends AnnotationTool {
     const secondPlane = csUtils.planar.planeEquation(normal2, point2);
     const thirdPlane = csUtils.planar.planeEquation(normal3, point3);
 
-    // Calculating the intersection of 3 planes
-    // prettier-ignore
+    // add clipping planes
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+    const volumeActors = viewport.getActors();
+    const imageData = volumeActors[0].actor.getMapper().getInputData();
+    const dimensions = imageData.getDimensions();
+    const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
+    const worldDimensions = [
+      Math.round(dimensions[0] * spacing[0]),
+      Math.round(dimensions[1] * spacing[1]),
+      Math.round(dimensions[2] * spacing[2]),
+    ];
+    console.debug('worldDimensions', worldDimensions);
+    //const xMin = 1500 * -0.5;
+    const xMin = worldDimensions[0] * -0.5;
+    const xMax = worldDimensions[0] * 0.5;
+    const yMin = worldDimensions[1] * -0.5;
+    const yMax = worldDimensions[1] * 0.5;
+    const zMin = worldDimensions[2] * -0.5;
+    const zMax = 0;
+    const planes: vtkPlane[] = [];
+    const cropFactor = 0.2;
+    // X min plane (cuts everything left of xMin)
+    const planeXmin = vtkPlane.newInstance({
+      origin: [xMin + worldDimensions[0] * cropFactor, 0, 0],
+      normal: [1, 0, 0],
+    });
+    const planeXmax = vtkPlane.newInstance({
+      origin: [xMax - worldDimensions[0] * cropFactor, 0, 0],
+      normal: [-1, 0, 0],
+    });
+    const planeYmin = vtkPlane.newInstance({
+      origin: [0, yMin + worldDimensions[1] * cropFactor, 0],
+      normal: [0, 1, 0],
+    });
+    const planeYmax = vtkPlane.newInstance({
+      origin: [0, yMax - worldDimensions[1] * cropFactor, 0],
+      normal: [0, -1, 0],
+    });
+    const planeZmin = vtkPlane.newInstance({
+      origin: [0, 0, zMin + worldDimensions[2] * cropFactor],
+      normal: [0, 0, 1],
+    });
+    const planeZmax = vtkPlane.newInstance({
+      origin: [0, 0, zMax - worldDimensions[2] * cropFactor],
+      normal: [0, 0, -1],
+    });
 
-    const toolCenter = csUtils.planar.threePlaneIntersection(firstPlane, secondPlane, thirdPlane);
+    const mapper = viewport.getDefaultActor().actor.getMapper();
+
+    planes.push(planeXmin);
+    planes.push(planeXmax);
+    planes.push(planeYmin);
+    planes.push(planeYmax);
+    //   planes.push(planeZmin);
+    //   planes.push(planeZmax);
+    const originalPlanes = planes.map((plane) => ({
+      origin: [...plane.getOrigin()],
+      normal: [...plane.getNormal()],
+    }));
+
+    viewport.setOriginalClippingPlanes(originalPlanes);
+
+    // this.addSphere(viewport, [xMin + worldDimensions[0] * cropFactor, 0, 0]);
+    this.addSphere(viewport, [
+      xMin + worldDimensions[0] * cropFactor,
+      (yMax + yMin) / 2,
+      (zMax + zMin) / 4,
+    ]);
+    this.addSphere(viewport, [
+      xMax - worldDimensions[0] * cropFactor,
+      (yMax + yMin) / 2,
+      (zMax + zMin) / 2,
+    ]);
+    this.addSphere(viewport, [
+      (xMax + xMin) / 2,
+      yMin + worldDimensions[0] * cropFactor,
+      (zMax + zMin) / 2,
+    ]);
+
+    this.addSphere(viewport, [
+      (xMax + xMin) / 2,
+      yMax - worldDimensions[0] * cropFactor,
+      (zMax + zMin) / 2,
+    ]);
+    this.addSphere(viewport, [
+      (xMax + xMin) / 2,
+      (yMax + yMin) / 2,
+      zMin - worldDimensions[0] * cropFactor,
+    ]);
+
+    // this.addSphere(viewport, [0, 0, 0]);
+    //   this.addSphere(viewport, [xMin, yMin, zMin]);
+    //   this.addSphere(viewport, [xMax, yMax, zMax]);
+    //this.addSphere(viewport, [0, 0, 0]);
+    viewport.render();
+
+    const toolCenter = csUtils.planar.threePlaneIntersection(
+      firstPlane,
+      secondPlane,
+      thirdPlane
+    );
     this.setToolCenter(toolCenter);
   };
 
@@ -425,9 +536,10 @@ class VolumeCroppingTool extends AnnotationTool {
    * @param interactionType - The type of interaction (e.g., mouse, touch, etc.)
    * @returns Crosshairs annotation
    */
+  /*
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
-  ): CrosshairsAnnotation => {
+  ): VolumeCroppingAnnotation => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
@@ -475,8 +587,9 @@ class VolumeCroppingTool extends AnnotationTool {
 
     this._activateModify(element);
     return filteredAnnotations[0];
-  };
 
+  };
+ */
   cancel = () => {
     console.log('Not implemented yet');
   };
@@ -494,6 +607,7 @@ class VolumeCroppingTool extends AnnotationTool {
    * @returns The handle that is closest to the cursor, or null if the cursor
    * is not near any of the handles.
    */
+  /*
   getHandleNearImagePoint(
     element: HTMLDivElement,
     annotation: Annotation,
@@ -503,18 +617,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    let point = this._getRotationHandleNearImagePoint(
-      viewport,
-      annotation,
-      canvasCoords,
-      proximity
-    );
-
-    if (point !== null) {
-      return point;
-    }
-
-    point = this._getSlabThicknessHandleNearImagePoint(
+    const point = this._getRotationHandleNearImagePoint(
       viewport,
       annotation,
       canvasCoords,
@@ -525,6 +628,7 @@ class VolumeCroppingTool extends AnnotationTool {
       return point;
     }
   }
+    */
 
   handleSelectedCallback = (
     evt: EventTypes.InteractionEventType,
@@ -559,7 +663,7 @@ class VolumeCroppingTool extends AnnotationTool {
    */
   isPointNearTool = (
     element: HTMLDivElement,
-    annotation: CrosshairsAnnotation,
+    annotation: VolumeCroppingAnnotation,
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
@@ -598,7 +702,7 @@ class VolumeCroppingTool extends AnnotationTool {
 
     // viewport that the camera modified is originating from
     const viewportAnnotation =
-      filteredToolAnnotations[0] as CrosshairsAnnotation;
+      filteredToolAnnotations[0] as VolumeCroppingAnnotation;
 
     if (!viewportAnnotation) {
       return;
@@ -715,12 +819,15 @@ class VolumeCroppingTool extends AnnotationTool {
     evt: EventTypes.MouseMoveEventType,
     filteredToolAnnotations: Annotations
   ): boolean => {
+    if (!filteredToolAnnotations) {
+      return;
+    }
     const { element, currentPoints } = evt.detail;
     const canvasCoords = currentPoints.canvas;
     let imageNeedsUpdate = false;
 
     for (let i = 0; i < filteredToolAnnotations.length; i++) {
-      const annotation = filteredToolAnnotations[i] as CrosshairsAnnotation;
+      const annotation = filteredToolAnnotations[i] as VolumeCroppingAnnotation;
 
       if (isAnnotationLocked(annotation.annotationUID)) {
         continue;
@@ -739,6 +846,8 @@ class VolumeCroppingTool extends AnnotationTool {
 
       // This init are necessary, because when we move the mouse they are not cleaned by _endCallback
       data.activeViewportIds = [];
+
+      /*
       data.handles.activeOperation = null;
 
       const handleNearImagePoint = this.getHandleNearImagePoint(
@@ -747,26 +856,18 @@ class VolumeCroppingTool extends AnnotationTool {
         canvasCoords,
         6
       );
-
+*/
       let near = false;
-      if (handleNearImagePoint) {
-        near = true;
-      } else {
-        near = this._pointNearTool(element, annotation, canvasCoords, 6);
-      }
+      //     if (handleNearImagePoint) {
+      //      near = true;
+      //    } else {
+      near = this._pointNearTool(element, annotation, canvasCoords, 6);
+      //   }
 
       const nearToolAndNotMarkedActive = near && !highlighted;
       const notNearToolAndMarkedActive = !near && highlighted;
       if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
         annotation.highlighted = !highlighted;
-        imageNeedsUpdate = true;
-      } else if (
-        data.handles.activeOperation !== previousActiveOperation ||
-        !this._areViewportIdArraysEqual(
-          data.activeViewportIds,
-          previousActiveViewportIds
-        )
-      ) {
         imageNeedsUpdate = true;
       }
     }
@@ -857,8 +958,6 @@ class VolumeCroppingTool extends AnnotationTool {
       );
       const otherViewportDraggableRotatable =
         this._getReferenceLineDraggableRotatable(otherViewport.id);
-      const otherViewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
 
       // get coordinates for the reference line
       const { clientWidth, clientHeight } = otherViewport.canvas;
@@ -992,174 +1091,15 @@ class VolumeCroppingTool extends AnnotationTool {
       // the lines goes beyond canvas
       liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox);
       liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox);
-
-      // Computing rotation handle positions
-      const rotHandleOne = vec2.create();
-      vec2.subtract(
-        rotHandleOne,
-        crosshairCenterCanvas,
-        canvasVectorFromCenterMid
-      );
-
-      const rotHandleTwo = vec2.create();
-      vec2.add(rotHandleTwo, crosshairCenterCanvas, canvasVectorFromCenterMid);
-
-      // Computing SlabThickness (st below) position
-
-      // SlabThickness center in canvas
-      let stHandlesCenterCanvas = vec2.clone(crosshairCenterCanvas);
-      if (
-        !otherViewportDraggableRotatable &&
-        otherViewportSlabThicknessControlsOn
-      ) {
-        stHandlesCenterCanvas = vec2.clone(otherViewportCenterCanvas);
-      }
-
-      // SlabThickness center in world
-      let stHandlesCenterWorld: Types.Point3 = [...this.toolCenter];
-      if (
-        !otherViewportDraggableRotatable &&
-        otherViewportSlabThicknessControlsOn
-      ) {
-        stHandlesCenterWorld = [...otherViewportCenterWorld];
-      }
-
-      const worldUnitVectorFromCenter: Types.Point3 = [0, 0, 0];
-      vtkMath.subtract(pointWorld0, pointWorld1, worldUnitVectorFromCenter);
-      vtkMath.normalize(worldUnitVectorFromCenter);
-
-      const { viewPlaneNormal } = camera;
-      // @ts-ignore // Todo: fix after vtk pr merged
-      const { matrix } = vtkMatrixBuilder
-        .buildFromDegree()
-        // @ts-ignore fix after vtk pr merged
-        .rotate(90, viewPlaneNormal);
-
-      const worldUnitOrthoVectorFromCenter: Types.Point3 = [0, 0, 0];
-      vec3.transformMat4(
-        worldUnitOrthoVectorFromCenter,
-        worldUnitVectorFromCenter,
-        matrix
-      );
-
-      const slabThicknessValue = otherViewport.getSlabThickness();
-      const worldOrthoVectorFromCenter: Types.Point3 = [
-        ...worldUnitOrthoVectorFromCenter,
-      ];
-      vtkMath.multiplyScalar(worldOrthoVectorFromCenter, slabThicknessValue);
-
-      const worldVerticalRefPoint: Types.Point3 = [0, 0, 0];
-      vtkMath.add(
-        stHandlesCenterWorld,
-        worldOrthoVectorFromCenter,
-        worldVerticalRefPoint
-      );
-
-      // convert vertical world distances in canvas coordinates
-      const canvasVerticalRefPoint = viewport.worldToCanvas(
-        worldVerticalRefPoint
-      );
-
-      // points for slab thickness lines
-      const canvasOrthoVectorFromCenter = vec2.create();
-      vec2.subtract(
-        canvasOrthoVectorFromCenter,
-        stHandlesCenterCanvas,
-        canvasVerticalRefPoint
-      );
-
-      const stLinePointOne = vec2.create();
-      vec2.subtract(
-        stLinePointOne,
-        stHandlesCenterCanvas,
-        canvasVectorFromCenterLong
-      );
-      vec2.add(stLinePointOne, stLinePointOne, canvasOrthoVectorFromCenter);
-
-      const stLinePointTwo = vec2.create();
-      vec2.add(
-        stLinePointTwo,
-        stHandlesCenterCanvas,
-        canvasVectorFromCenterLong
-      );
-      vec2.add(stLinePointTwo, stLinePointTwo, canvasOrthoVectorFromCenter);
-
-      liangBarksyClip(stLinePointOne, stLinePointTwo, canvasBox);
-
-      const stLinePointThree = vec2.create();
-      vec2.add(
-        stLinePointThree,
-        stHandlesCenterCanvas,
-        canvasVectorFromCenterLong
-      );
-      vec2.subtract(
-        stLinePointThree,
-        stLinePointThree,
-        canvasOrthoVectorFromCenter
-      );
-
-      const stLinePointFour = vec2.create();
-      vec2.subtract(
-        stLinePointFour,
-        stHandlesCenterCanvas,
-        canvasVectorFromCenterLong
-      );
-      vec2.subtract(
-        stLinePointFour,
-        stLinePointFour,
-        canvasOrthoVectorFromCenter
-      );
-
-      liangBarksyClip(stLinePointThree, stLinePointFour, canvasBox);
-
-      // points for slab thickness handles
-      const stHandleOne = vec2.create();
-      const stHandleTwo = vec2.create();
-      const stHandleThree = vec2.create();
-      const stHandleFour = vec2.create();
-
-      vec2.subtract(
-        stHandleOne,
-        stHandlesCenterCanvas,
-        canvasVectorFromCenterShort
-      );
-      vec2.add(stHandleOne, stHandleOne, canvasOrthoVectorFromCenter);
-      vec2.add(stHandleTwo, stHandlesCenterCanvas, canvasVectorFromCenterShort);
-      vec2.add(stHandleTwo, stHandleTwo, canvasOrthoVectorFromCenter);
-      vec2.subtract(
-        stHandleThree,
-        stHandlesCenterCanvas,
-        canvasVectorFromCenterShort
-      );
-      vec2.subtract(stHandleThree, stHandleThree, canvasOrthoVectorFromCenter);
-      vec2.add(
-        stHandleFour,
-        stHandlesCenterCanvas,
-        canvasVectorFromCenterShort
-      );
-      vec2.subtract(stHandleFour, stHandleFour, canvasOrthoVectorFromCenter);
-
       referenceLines.push([
         otherViewport,
         refLinePointOne,
         refLinePointTwo,
         refLinePointThree,
         refLinePointFour,
-        stLinePointOne,
-        stLinePointTwo,
-        stLinePointThree,
-        stLinePointFour,
-        rotHandleOne,
-        rotHandleTwo,
-        stHandleOne,
-        stHandleTwo,
-        stHandleThree,
-        stHandleFour,
       ]);
     });
-
-    const newRtpoints = [];
-    const newStpoints = [];
+    data.referenceLines = referenceLines;
     const viewportColor = this._getReferenceLineColor(viewport.id);
     const color =
       viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
@@ -1174,14 +1114,11 @@ class VolumeCroppingTool extends AnnotationTool {
       const viewportDraggableRotatable =
         this._getReferenceLineDraggableRotatable(otherViewport.id) ||
         this.configuration.mobile?.enabled;
-      const viewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id) ||
-        this.configuration.mobile?.enabled;
       const selectedViewportId = data.activeViewportIds.find(
         (id) => id === otherViewport.id
       );
 
-      let color =
+      const color =
         viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
 
       let lineWidth = 1;
@@ -1239,60 +1176,6 @@ class VolumeCroppingTool extends AnnotationTool {
       if (viewportControllable) {
         color =
           viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
-
-        const rotHandlesActive =
-          data.handles.activeOperation === OPERATION.ROTATE;
-        const rotationHandles = [line[9], line[10]];
-
-        const rotHandleWorldOne = [
-          viewport.canvasToWorld(line[9]),
-          otherViewport,
-          line[1],
-          line[2],
-        ];
-        const rotHandleWorldTwo = [
-          viewport.canvasToWorld(line[10]),
-          otherViewport,
-          line[3],
-          line[4],
-        ];
-        newRtpoints.push(rotHandleWorldOne, rotHandleWorldTwo);
-
-        const slabThicknessHandlesActive =
-          data.handles.activeOperation === OPERATION.SLAB;
-        const slabThicknessHandles = [line[11], line[12], line[13], line[14]];
-
-        const slabThicknessHandleWorldOne = [
-          viewport.canvasToWorld(line[11]),
-          otherViewport,
-          line[5],
-          line[6],
-        ];
-        const slabThicknessHandleWorldTwo = [
-          viewport.canvasToWorld(line[12]),
-          otherViewport,
-          line[5],
-          line[6],
-        ];
-        const slabThicknessHandleWorldThree = [
-          viewport.canvasToWorld(line[13]),
-          otherViewport,
-          line[7],
-          line[8],
-        ];
-        const slabThicknessHandleWorldFour = [
-          viewport.canvasToWorld(line[14]),
-          otherViewport,
-          line[7],
-          line[8],
-        ];
-        newStpoints.push(
-          slabThicknessHandleWorldOne,
-          slabThicknessHandleWorldTwo,
-          slabThicknessHandleWorldThree,
-          slabThicknessHandleWorldFour
-        );
-
         let handleRadius =
           this.configuration.handleRadius *
           (this.configuration.enableHDPIHandles ? window.devicePixelRatio : 1);
@@ -1301,164 +1184,20 @@ class VolumeCroppingTool extends AnnotationTool {
           handleRadius = this.configuration.mobile.handleRadius;
           opacity = this.configuration.mobile.opacity;
         }
-
-        if (
-          (lineActive || this.configuration.mobile?.enabled) &&
-          !rotHandlesActive &&
-          !slabThicknessHandlesActive &&
-          viewportDraggableRotatable &&
-          viewportSlabThicknessControlsOn
-        ) {
-          // draw all handles inactive (rotation and slab thickness)
-          let handleUID = `${lineIndex}One`;
-          drawHandlesSvg(
-            svgDrawingHelper,
-            annotationUID,
-            handleUID,
-            rotationHandles,
-            {
-              color,
-              handleRadius,
-              opacity,
-              type: 'circle',
-            }
-          );
-          handleUID = `${lineIndex}Two`;
-          drawHandlesSvg(
-            svgDrawingHelper,
-            annotationUID,
-            handleUID,
-            slabThicknessHandles,
-            {
-              color,
-              handleRadius,
-              opacity,
-              type: 'rect',
-            }
-          );
-        } else if (
-          lineActive &&
-          !rotHandlesActive &&
-          !slabThicknessHandlesActive &&
-          viewportDraggableRotatable
-        ) {
+        if (lineActive && viewportDraggableRotatable) {
           const handleUID = `${lineIndex}`;
-          // draw rotation handles inactive
-          drawHandlesSvg(
-            svgDrawingHelper,
-            annotationUID,
-            handleUID,
-            rotationHandles,
-            {
-              color,
-              handleRadius,
-              opacity,
-              type: 'circle',
-            }
-          );
-        } else if (
-          selectedViewportId &&
-          !rotHandlesActive &&
-          !slabThicknessHandlesActive &&
-          viewportSlabThicknessControlsOn
-        ) {
-          const handleUID = `${lineIndex}`;
-          // draw slab thickness handles inactive
-          drawHandlesSvg(
-            svgDrawingHelper,
-            annotationUID,
-            handleUID,
-            slabThicknessHandles,
-            {
-              color,
-              handleRadius,
-              opacity,
-              type: 'rect',
-            }
-          );
-        } else if (rotHandlesActive && viewportDraggableRotatable) {
+        } else if (viewportDraggableRotatable) {
           const handleUID = `${lineIndex}`;
           const handleRadius =
             this.configuration.handleRadius *
             (this.configuration.enableHDPIHandles
               ? window.devicePixelRatio
               : 1);
-          // draw all rotation handles as active
-          drawHandlesSvg(
-            svgDrawingHelper,
-            annotationUID,
-            handleUID,
-            rotationHandles,
-            {
-              color,
-              handleRadius,
-              fill: color,
-              type: 'circle',
-            }
-          );
-        } else if (
-          slabThicknessHandlesActive &&
-          selectedViewportId &&
-          viewportSlabThicknessControlsOn
-        ) {
-          const handleRadius =
-            this.configuration.handleRadius *
-            (this.configuration.enableHDPIHandles
-              ? window.devicePixelRatio
-              : 1);
-          // draw only the slab thickness handles for the active viewport as active
-          drawHandlesSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID,
-            slabThicknessHandles,
-            {
-              color,
-              handleRadius,
-              fill: color,
-              type: 'rect',
-            }
-          );
-        }
-        const slabThicknessValue = otherViewport.getSlabThickness();
-        if (slabThicknessValue > 0.5 && viewportSlabThicknessControlsOn) {
-          // draw slab thickness reference lines
-          lineUID = `${lineIndex}STOne`;
-          drawLineSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID,
-            line[5],
-            line[6],
-            {
-              color,
-              width: 1,
-              lineDash: [2, 3],
-            }
-          );
-
-          lineUID = `${lineIndex}STTwo`;
-          drawLineSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID,
-            line[7],
-            line[8],
-            {
-              color,
-              width: line,
-              lineDash: [2, 3],
-            }
-          );
         }
       }
     });
 
     renderStatus = true;
-
-    // Save new handles points in annotation
-    data.handles.rotationPoints = newRtpoints;
-    data.handles.slabThicknessPoints = newStpoints;
 
     if (this.configuration.viewportIndicators) {
       const { viewportIndicatorsConfig } = this.configuration;
@@ -2041,7 +1780,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const { renderingEngine, viewport } = enabledElement;
     const annotations = this._getAnnotations(
       enabledElement
-    ) as CrosshairsAnnotation[];
+    ) as VolumeCroppingAnnotation[];
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 
@@ -2089,305 +1828,8 @@ class VolumeCroppingTool extends AnnotationTool {
         viewportsAnnotationsToUpdate,
         delta
       );
-    } else if (handles.activeOperation === OPERATION.ROTATE) {
-      // ROTATION
-      const otherViewportAnnotations =
-        this._getAnnotationsForViewportsWithDifferentCameras(
-          enabledElement,
-          annotations
-        );
-
-      const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
-        (annotation) => {
-          const { data } = annotation;
-          const otherViewport = renderingEngine.getViewport(data.viewportId);
-          const otherViewportControllable = this._getReferenceLineControllable(
-            otherViewport.id
-          );
-          const otherViewportDraggableRotatable =
-            this._getReferenceLineDraggableRotatable(otherViewport.id);
-
-          return (
-            otherViewportControllable === true &&
-            otherViewportDraggableRotatable === true
-          );
-        }
-      );
-
-      const dir1 = vec2.create();
-      const dir2 = vec2.create();
-
-      const center: Types.Point3 = [
-        this.toolCenter[0],
-        this.toolCenter[1],
-        this.toolCenter[2],
-      ];
-
-      const centerCanvas = viewport.worldToCanvas(center);
-
-      const finalPointCanvas = eventDetail.currentPoints.canvas;
-      const originalPointCanvas = vec2.create();
-      vec2.sub(
-        originalPointCanvas,
-        finalPointCanvas,
-        eventDetail.deltaPoints.canvas
-      );
-      vec2.sub(dir1, originalPointCanvas, <vec2>centerCanvas);
-      vec2.sub(dir2, finalPointCanvas, <vec2>centerCanvas);
-
-      let angle = vec2.angle(dir1, dir2);
-
-      if (
-        this._isClockWise(centerCanvas, originalPointCanvas, finalPointCanvas)
-      ) {
-        angle *= -1;
-      }
-
-      // Rounding the angle to allow rotated handles to be undone
-      // If we don't round and rotate handles clockwise by 0.0131233 radians,
-      // there's no assurance that the counter-clockwise rotation occurs at
-      // precisely -0.0131233, resulting in the drawn annotations being lost.
-      angle = Math.round(angle * 100) / 100;
-
-      const rotationAxis = viewport.getCamera().viewPlaneNormal;
-      // @ts-ignore : vtkjs incorrect typing
-      const { matrix } = vtkMatrixBuilder
-        .buildFromRadian()
-        .translate(center[0], center[1], center[2])
-        // @ts-ignore
-        .rotate(angle, rotationAxis) //todo: why we are passing
-        .translate(-center[0], -center[1], -center[2]);
-
-      const otherViewportsIds = [];
-      // update camera for the other viewports.
-      // NOTE: The lines then are rendered by the onCameraModified
-      viewportsAnnotationsToUpdate.forEach((annotation) => {
-        const { data } = annotation;
-        data.handles.toolCenter = center;
-
-        const otherViewport = renderingEngine.getViewport(data.viewportId);
-        const camera = otherViewport.getCamera();
-        const { viewUp, position, focalPoint } = camera;
-
-        viewUp[0] += position[0];
-        viewUp[1] += position[1];
-        viewUp[2] += position[2];
-
-        vec3.transformMat4(focalPoint, focalPoint, matrix);
-        vec3.transformMat4(position, position, matrix);
-        vec3.transformMat4(viewUp, viewUp, matrix);
-
-        viewUp[0] -= position[0];
-        viewUp[1] -= position[1];
-        viewUp[2] -= position[2];
-
-        otherViewport.setCamera({
-          position,
-          viewUp,
-          focalPoint,
-        });
-        otherViewportsIds.push(otherViewport.id);
-      });
-      renderingEngine.renderViewports(otherViewportsIds);
-    } else if (handles.activeOperation === OPERATION.SLAB) {
-      // SLAB THICKNESS
-      // this should be just the active one under the mouse,
-      const otherViewportAnnotations =
-        this._getAnnotationsForViewportsWithDifferentCameras(
-          enabledElement,
-          annotations
-        );
-
-      const referenceAnnotations = otherViewportAnnotations.filter(
-        (annotation) => {
-          const { data } = annotation;
-          const otherViewport = renderingEngine.getViewport(data.viewportId);
-          const otherViewportControllable = this._getReferenceLineControllable(
-            otherViewport.id
-          );
-          const otherViewportSlabThicknessControlsOn =
-            this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
-
-          return (
-            otherViewportControllable === true &&
-            otherViewportSlabThicknessControlsOn === true &&
-            viewportAnnotation.data.activeViewportIds.find(
-              (id) => id === otherViewport.id
-            )
-          );
-        }
-      );
-
-      if (referenceAnnotations.length === 0) {
-        return;
-      }
-      const viewportsAnnotationsToUpdate =
-        this._filterViewportWithSameOrientation(
-          enabledElement,
-          referenceAnnotations[0],
-          annotations
-        );
-
-      const viewportsIds = [];
-      viewportsIds.push(viewport.id);
-      viewportsAnnotationsToUpdate.forEach(
-        (annotation: CrosshairsAnnotation) => {
-          const { data } = annotation;
-
-          const otherViewport = renderingEngine.getViewport(
-            data.viewportId
-          ) as Types.IVolumeViewport;
-          const camera = otherViewport.getCamera();
-          const normal = camera.viewPlaneNormal;
-
-          const dotProd = vtkMath.dot(delta, normal);
-          const projectedDelta: Types.Point3 = [...normal];
-          vtkMath.multiplyScalar(projectedDelta, dotProd);
-
-          if (
-            Math.abs(projectedDelta[0]) > 1e-3 ||
-            Math.abs(projectedDelta[1]) > 1e-3 ||
-            Math.abs(projectedDelta[2]) > 1e-3
-          ) {
-            const mod = Math.sqrt(
-              projectedDelta[0] * projectedDelta[0] +
-                projectedDelta[1] * projectedDelta[1] +
-                projectedDelta[2] * projectedDelta[2]
-            );
-
-            const currentPoint = eventDetail.lastPoints.world;
-            const direction: Types.Point3 = [0, 0, 0];
-
-            const currentCenter: Types.Point3 = [
-              this.toolCenter[0],
-              this.toolCenter[1],
-              this.toolCenter[2],
-            ];
-
-            // use this.toolCenter only if viewportDraggableRotatable
-            const viewportDraggableRotatable =
-              this._getReferenceLineDraggableRotatable(otherViewport.id);
-            if (!viewportDraggableRotatable) {
-              const { rotationPoints } = this.editData.annotation.data.handles;
-              // Todo: what is a point uid?
-              // @ts-expect-error
-              const otherViewportRotationPoints = rotationPoints.filter(
-                (point) => point[1].uid === otherViewport.id
-              );
-              if (otherViewportRotationPoints.length === 2) {
-                const point1 = viewport.canvasToWorld(
-                  otherViewportRotationPoints[0][3]
-                );
-                const point2 = viewport.canvasToWorld(
-                  otherViewportRotationPoints[1][3]
-                );
-                vtkMath.add(point1, point2, currentCenter);
-                vtkMath.multiplyScalar(<Types.Point3>currentCenter, 0.5);
-              }
-            }
-
-            vtkMath.subtract(currentPoint, currentCenter, direction);
-            const dotProdDirection = vtkMath.dot(direction, normal);
-            const projectedDirection: Types.Point3 = [...normal];
-            vtkMath.multiplyScalar(projectedDirection, dotProdDirection);
-            const normalizedProjectedDirection: Types.Point3 = [
-              projectedDirection[0],
-              projectedDirection[1],
-              projectedDirection[2],
-            ];
-            vec3.normalize(
-              normalizedProjectedDirection,
-              normalizedProjectedDirection
-            );
-            const normalizedProjectedDelta: Types.Point3 = [
-              projectedDelta[0],
-              projectedDelta[1],
-              projectedDelta[2],
-            ];
-            vec3.normalize(normalizedProjectedDelta, normalizedProjectedDelta);
-
-            let slabThicknessValue = otherViewport.getSlabThickness();
-            if (
-              csUtils.isOpposite(
-                normalizedProjectedDirection,
-                normalizedProjectedDelta,
-                1e-3
-              )
-            ) {
-              slabThicknessValue -= mod;
-            } else {
-              slabThicknessValue += mod;
-            }
-
-            slabThicknessValue = Math.abs(slabThicknessValue);
-            slabThicknessValue = Math.max(
-              RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-              slabThicknessValue
-            );
-
-            const near = this._pointNearReferenceLine(
-              viewportAnnotation,
-              canvasCoords,
-              6,
-              otherViewport
-            );
-
-            if (near) {
-              slabThicknessValue = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-            }
-
-            // We want to set the slabThickness for the viewport's actors but
-            // since the crosshairs tool instance has configuration regarding which
-            // actorUIDs (in case of volume -> actorUID = volumeIds) to set the
-            // slabThickness for, we need to delegate the slabThickness setting
-            // to the crosshairs tool instance of the toolGroup since configurations
-            // exist on the toolInstance and each toolGroup has its own crosshairs
-            // tool instance (Otherwise, we would need to set this filterActorUIDsToSetSlabThickness at
-            // the viewport level which makes tool and viewport state convoluted).
-            const toolGroup = getToolGroupForViewport(
-              otherViewport.id,
-              renderingEngine.id
-            );
-            const crosshairsInstance = toolGroup.getToolInstance(
-              this.getToolName()
-            );
-            crosshairsInstance.setSlabThickness(
-              otherViewport,
-              slabThicknessValue
-            );
-
-            viewportsIds.push(otherViewport.id);
-          }
-        }
-      );
-      renderingEngine.renderViewports(viewportsIds);
     }
   };
-
-  setSlabThickness(viewport, slabThickness) {
-    let actorUIDs;
-    const { filterActorUIDsToSetSlabThickness } = this.configuration;
-    if (
-      filterActorUIDsToSetSlabThickness &&
-      filterActorUIDsToSetSlabThickness.length > 0
-    ) {
-      actorUIDs = filterActorUIDsToSetSlabThickness;
-    }
-
-    let blendModeToUse = this.configuration.slabThicknessBlendMode;
-    if (slabThickness === RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS) {
-      blendModeToUse = Enums.BlendModes.COMPOSITE;
-    }
-
-    const immediate = false;
-    viewport.setBlendMode(blendModeToUse, actorUIDs, immediate);
-    viewport.setSlabThickness(slabThickness, actorUIDs);
-  }
-
-  _isClockWise(a, b, c) {
-    // return true if the rotation is clockwise
-    return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) > 0;
-  }
 
   _applyDeltaShiftToSelectedViewportCameras(
     renderingEngine,
@@ -2548,208 +1990,48 @@ class VolumeCroppingTool extends AnnotationTool {
     return null;
   }
 
-  _getSlabThicknessHandleNearImagePoint(
-    viewport,
-    annotation,
-    canvasCoords,
-    proximity
-  ) {
-    const { data } = annotation;
-    const { slabThicknessPoints } = data.handles;
-
-    for (let i = 0; i < slabThicknessPoints.length; i++) {
-      const point = slabThicknessPoints[i][0];
-      const otherViewport = slabThicknessPoints[i][1];
-      const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.id
-      );
-      if (!viewportControllable) {
-        continue;
-      }
-
-      const viewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
-      if (!viewportSlabThicknessControlsOn) {
-        continue;
-      }
-
-      const annotationCanvasCoordinate = viewport.worldToCanvas(point);
-      if (vec2.distance(canvasCoords, annotationCanvasCoordinate) < proximity) {
-        data.handles.activeOperation = OPERATION.SLAB;
-
-        data.activeViewportIds = [otherViewport.id];
-
-        this.editData = {
-          annotation,
-        };
-
-        return point;
-      }
-    }
-
-    return null;
-  }
-
   _pointNearTool(element, annotation, canvasCoords, proximity) {
-    const enabledElement = getEnabledElement(element);
+    /* const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { clientWidth, clientHeight } = viewport.canvas;
     const canvasDiagonalLength = Math.sqrt(
       clientWidth * clientWidth + clientHeight * clientHeight
     );
+    */
     const { data } = annotation;
 
-    const { rotationPoints } = data.handles;
-    const { slabThicknessPoints } = data.handles;
+    // You must have referenceLines available in annotation.data.
+    // If not, you can recompute them here or store them in renderAnnotation.
+    // For this example, let's assume you store them as data.referenceLines.
+    const referenceLines = data.referenceLines;
+
     const viewportIdArray = [];
 
-    for (let i = 0; i < rotationPoints.length - 1; ++i) {
-      const otherViewport = rotationPoints[i][1];
-      const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.id
-      );
-      const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.id);
+    if (referenceLines) {
+      for (let i = 0; i < referenceLines.length; ++i) {
+        // Each line: [otherViewport, refLinePointOne, refLinePointTwo, refLinePointThree, refLinePointFour, ...]
+        const otherViewport = referenceLines[i][0];
+        // First segment
+        const start1 = referenceLines[i][1];
+        const end1 = referenceLines[i][2];
+        // Second segment
+        const start2 = referenceLines[i][3];
+        const end2 = referenceLines[i][4];
 
-      if (!viewportControllable || !viewportDraggableRotatable) {
-        continue;
+        const distance1 = lineSegment.distanceToPoint(start1, end1, [
+          canvasCoords[0],
+          canvasCoords[1],
+        ]);
+        const distance2 = lineSegment.distanceToPoint(start2, end2, [
+          canvasCoords[0],
+          canvasCoords[1],
+        ]);
+
+        if (distance1 <= proximity || distance2 <= proximity) {
+          viewportIdArray.push(otherViewport.id);
+          data.handles.activeOperation = 1; // DRAG
+        }
       }
-
-      const lineSegment1 = {
-        start: {
-          x: rotationPoints[i][2][0],
-          y: rotationPoints[i][2][1],
-        },
-        end: {
-          x: rotationPoints[i][3][0],
-          y: rotationPoints[i][3][1],
-        },
-      };
-
-      const distanceToPoint1 = lineSegment.distanceToPoint(
-        [lineSegment1.start.x, lineSegment1.start.y],
-        [lineSegment1.end.x, lineSegment1.end.y],
-        [canvasCoords[0], canvasCoords[1]]
-      );
-
-      const lineSegment2 = {
-        start: {
-          x: rotationPoints[i + 1][2][0],
-          y: rotationPoints[i + 1][2][1],
-        },
-        end: {
-          x: rotationPoints[i + 1][3][0],
-          y: rotationPoints[i + 1][3][1],
-        },
-      };
-
-      const distanceToPoint2 = lineSegment.distanceToPoint(
-        [lineSegment2.start.x, lineSegment2.start.y],
-        [lineSegment2.end.x, lineSegment2.end.y],
-        [canvasCoords[0], canvasCoords[1]]
-      );
-
-      if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
-        viewportIdArray.push(otherViewport.id);
-        data.handles.activeOperation = OPERATION.DRAG;
-      }
-
-      // rotation handles are two for viewport
-      i++;
-    }
-
-    for (let i = 0; i < slabThicknessPoints.length - 1; ++i) {
-      const otherViewport = slabThicknessPoints[i][1];
-      if (viewportIdArray.find((id) => id === otherViewport.id)) {
-        continue;
-      }
-
-      const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.id
-      );
-      const viewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
-
-      if (!viewportControllable || !viewportSlabThicknessControlsOn) {
-        continue;
-      }
-
-      const stPointLineCanvas1 = slabThicknessPoints[i][2];
-      const stPointLineCanvas2 = slabThicknessPoints[i][3];
-
-      const centerCanvas = vec2.create();
-      vec2.add(centerCanvas, stPointLineCanvas1, stPointLineCanvas2);
-      vec2.scale(centerCanvas, centerCanvas, 0.5);
-
-      const canvasUnitVectorFromCenter = vec2.create();
-      vec2.subtract(
-        canvasUnitVectorFromCenter,
-        stPointLineCanvas1,
-        centerCanvas
-      );
-      vec2.normalize(canvasUnitVectorFromCenter, canvasUnitVectorFromCenter);
-
-      const canvasVectorFromCenterStart = vec2.create();
-      vec2.scale(
-        canvasVectorFromCenterStart,
-        canvasUnitVectorFromCenter,
-        canvasDiagonalLength * 0.05
-      );
-
-      const stPointLineCanvas1Start = vec2.create();
-      const stPointLineCanvas2Start = vec2.create();
-      vec2.add(
-        stPointLineCanvas1Start,
-        centerCanvas,
-        canvasVectorFromCenterStart
-      );
-      vec2.subtract(
-        stPointLineCanvas2Start,
-        centerCanvas,
-        canvasVectorFromCenterStart
-      );
-
-      const lineSegment1 = {
-        start: {
-          x: stPointLineCanvas1Start[0],
-          y: stPointLineCanvas1Start[1],
-        },
-        end: {
-          x: stPointLineCanvas1[0],
-          y: stPointLineCanvas1[1],
-        },
-      };
-
-      const distanceToPoint1 = lineSegment.distanceToPoint(
-        [lineSegment1.start.x, lineSegment1.start.y],
-        [lineSegment1.end.x, lineSegment1.end.y],
-        [canvasCoords[0], canvasCoords[1]]
-      );
-
-      const lineSegment2 = {
-        start: {
-          x: stPointLineCanvas2Start[0],
-          y: stPointLineCanvas2Start[1],
-        },
-        end: {
-          x: stPointLineCanvas2[0],
-          y: stPointLineCanvas2[1],
-        },
-      };
-
-      const distanceToPoint2 = lineSegment.distanceToPoint(
-        [lineSegment2.start.x, lineSegment2.start.y],
-        [lineSegment2.end.x, lineSegment2.end.y],
-        [canvasCoords[0], canvasCoords[1]]
-      );
-
-      if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
-        viewportIdArray.push(otherViewport.id); // we still need this to draw inactive slab thickness handles
-        data.handles.activeOperation = null; // no operation
-      }
-
-      // slab thickness handles are in couples
-      i++;
     }
 
     data.activeViewportIds = [...viewportIdArray];
@@ -2757,10 +2039,10 @@ class VolumeCroppingTool extends AnnotationTool {
     this.editData = {
       annotation,
     };
-
-    return data.handles.activeOperation === OPERATION.DRAG ? true : false;
+    //console.debug(data.handles.activeOperation);
+    return data.handles.activeOperation === 1 ? true : false;
   }
 }
 
-VolumeCroppingTool.toolName = 'Crosshairs';
+VolumeCroppingTool.toolName = 'VolumeCroppingTool';
 export default VolumeCroppingTool;
