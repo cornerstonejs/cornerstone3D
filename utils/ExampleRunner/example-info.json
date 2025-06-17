@@ -471,6 +471,10 @@
         "name": "Crosshairs",
         "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
       },
+      "mprReformat": {
+        "name": "DICOM Reformats in MPR",
+        "description": "Aligns MPR viewports to dicom acquisition orientations"
+      },
       "overlayGrid": {
         "name": "Overlay Grid",
         "description": "Demonstrate overlay grid tool usage with three viewports one for each orientation"

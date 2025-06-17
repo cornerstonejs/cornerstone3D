@@ -3,9 +3,9 @@ enum OrientationAxis {
   CORONAL = 'coronal',
   SAGITTAL = 'sagittal',
   ACQUISITION = 'acquisition',
-  AXIAL_ACQUISITION = 'axial_acquisition',
-  CORONAL_ACQUISITION = 'coronal_acquisition',
-  SAGITTAL_ACQUISITION = 'sagittal_acquisition',
+  AXIAL_REFORMAT = 'axial_reformat',
+  CORONAL_REFORMAT = 'coronal_reformat',
+  SAGITTAL_REFORMAT = 'sagittal_reformat',
   REFORMAT = 'reformat',
 }
 

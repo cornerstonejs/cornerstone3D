@@ -5,6 +5,8 @@ import {
   setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
+  metaData,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -155,21 +157,6 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
   return index !== -1;
 }
 
-function setUpSynchronizers() {
-  synchronizer = createSlabThicknessSynchronizer(synchronizerId);
-
-  // Add viewports to VOI synchronizers
-  [viewportId1, viewportId2, viewportId3].forEach((viewportId) => {
-    synchronizer.add({
-      renderingEngineId,
-      viewportId,
-    });
-  });
-  // Normally this would be left on, but here we are starting the demo in the
-  // default state, which is to not have a synchronizer enabled.
-  synchronizer.setEnabled(false);
-}
-
 /**
  * Runs the demo
  */
@@ -244,7 +231,21 @@ async function run() {
       },
     ],
     [viewportId1, viewportId2, viewportId3]
-  );
+  ).then(() => {
+    const voi = metaData.get('voiLutModule', imageIds[0]);
+    const voiRange = utilities.windowLevel.toLowHighRange(
+      voi.windowWidth,
+      voi.windowCenter,
+      voi.voiLUTFunction
+    );
+    viewportIds.forEach((viewportId) => {
+      const viewport = getRenderingEngine(renderingEngineId).getViewport(
+        viewportId
+      ) as Types.IVolumeViewport;
+      viewport.setProperties({ voiRange });
+    });
+    renderingEngine.render();
+  });
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -278,8 +279,6 @@ async function run() {
   toolGroup.setToolActive(CrosshairsTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
-
-  setUpSynchronizers();
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

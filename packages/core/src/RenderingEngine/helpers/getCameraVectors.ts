@@ -1,8 +1,17 @@
-import { metaData, CONSTANTS, Enums } from '@cornerstonejs/core';
+import * as metaData from '../../metaData';
+import * as CONSTANTS from '../../constants';
+import * as Enums from '../../enums';
+import type * as Types from '../../types';
+
 import { vec3 } from 'gl-matrix';
 
 const { MPR_CAMERA_VALUES } = CONSTANTS;
 const { OrientationAxis } = Enums;
+
+export interface CameraPositionConfig {
+  orientation?: Enums.OrientationAxis;
+  useViewportNormal?: boolean;
+}
 
 /**
  * Calculate camera position values based on DICOM image orientation vectors.
@@ -66,13 +75,13 @@ export function calculateCameraPosition(
   let referenceCameraValues;
 
   switch (orientation) {
-    case OrientationAxis.AXIAL || OrientationAxis.AXIAL_ACQUISITION:
+    case OrientationAxis.AXIAL || OrientationAxis.AXIAL_REFORMAT:
       referenceCameraValues = MPR_CAMERA_VALUES.axial;
       break;
-    case OrientationAxis.SAGITTAL || OrientationAxis.SAGITTAL_ACQUISITION:
+    case OrientationAxis.SAGITTAL || OrientationAxis.SAGITTAL_REFORMAT:
       referenceCameraValues = MPR_CAMERA_VALUES.sagittal;
       break;
-    case OrientationAxis.CORONAL || OrientationAxis.CORONAL_ACQUISITION:
+    case OrientationAxis.CORONAL || OrientationAxis.CORONAL_REFORMAT:
       referenceCameraValues = MPR_CAMERA_VALUES.coronal;
       break;
     default:
@@ -169,11 +178,6 @@ export function calculateCameraPosition(
   };
 }
 
-interface CameraPositionConfig {
-  orientation?: Enums.OrientationAxis;
-  useViewportNormal?: boolean;
-}
-
 /**
  * Calculate camera position values from viewport metadata.
  *
@@ -190,7 +194,7 @@ interface CameraPositionConfig {
  * 5. Auto-detect orientation if not provided
  * 6. Calculate and return camera position values
  *
- * @param viewport - Cornerstone3D viewport instance containing the image data.
+ * @param viewport - Cornerstone3D volume viewport instance containing the image data.
  *                   Must have a valid current image ID with associated DICOM metadata.
  * @param config - Configuration object with orientation and normal source options.
  *                 - orientation: Optional target orientation axis. If not provided, the function
@@ -218,7 +222,13 @@ interface CameraPositionConfig {
  * const viewportCameraValues = getCameraVectors(viewport, { useViewportNormal: true });
  * ```
  */
-export function getCameraVectors(viewport, config?: CameraPositionConfig) {
+export function getCameraVectors(
+  viewport: Types.IBaseVolumeViewport,
+  config?: CameraPositionConfig
+) {
+  if (viewport.type !== Enums.ViewportType.ORTHOGRAPHIC) {
+    console.warn('Viewport should be a volume viewport');
+  }
   let imageId = viewport.getCurrentImageId();
   if (!imageId) {
     imageId = viewport.getImageIds()?.[0];
