@@ -75,6 +75,7 @@ interface VolumeCroppingAnnotation extends Annotation {
     viewportId: string;
     //   referenceLines: []; // set in renderAnnotation
     clippingPlanes?: vtkPlane[]; // clipping planes for the viewport
+    clippingPlaneReferenceLines?: [];
   };
 }
 
@@ -96,8 +97,6 @@ const OPERATION = {
   SLAB: 3,
 };
 
-const EPSILON = 1e-3;
-
 /**
  * VolumeCroppingTool is a tool that provides reference lines between different viewports
  * of a toolGroup. Using crosshairs, you can jump to a specific location in one
@@ -106,7 +105,8 @@ const EPSILON = 1e-3;
  */
 class VolumeCroppingTool extends AnnotationTool {
   static toolName;
-
+  sphereStates: { point: Types.Point3; axis: string; uid: string }[] = [];
+  draggingSphereIndex: number | null = null;
   toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportId: string) => string;
@@ -163,12 +163,6 @@ class VolumeCroppingTool extends AnnotationTool {
     this._getReferenceLineControllable =
       toolProps.configuration?.getReferenceLineControllable ||
       defaultReferenceLineControllable;
-    this._getReferenceLineDraggableRotatable =
-      toolProps.configuration?.getReferenceLineDraggableRotatable ||
-      defaultReferenceLineDraggableRotatable;
-    //  this._getReferenceLineSlabThicknessControlsOn =
-    //   toolProps.configuration?.getReferenceLineSlabThicknessControlsOn ||
-    //  defaultReferenceLineSlabThicknessControlsOn;
   }
 
   /**
@@ -226,6 +220,8 @@ class VolumeCroppingTool extends AnnotationTool {
         activeViewportIds: [], // a list of the viewport ids connected to the reference lines being translated
         viewportId,
         referenceLines: [], // set in renderAnnotation
+        clippingPlanes: [], // clipping planes for the viewport
+        clippingPlaneReferenceLines: [], // clipping planes for the viewport
       },
     };
 
@@ -338,13 +334,36 @@ class VolumeCroppingTool extends AnnotationTool {
   };
 
   addSphere(viewport, point, axis) {
-    //   if (!sphereActor) {
-    // Generate a random string for the sphere UID
-    const randomUID = 'sphere_' + Math.random().toString(36).substring(2, 15);
-
+    // Generate a unique UID for each sphere based on its axis and position
+    const uid = `${axis}_${point.map((v) => Math.round(v)).join('_')}`;
+    const sphereState = this.sphereStates.find((s) => s.uid === uid);
+    //   if (!sphereState) {
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);
     sphereSource.setRadius(15);
+
+    // Store or update the sphere position
+    const idx = this.sphereStates.findIndex((s) => s.uid === uid);
+    if (idx === -1) {
+      this.sphereStates.push({
+        point: point.slice(),
+        axis,
+        uid,
+        sphereSource,
+      });
+    } else {
+      this.sphereStates[idx].point = point.slice();
+      this.sphereStates[idx].sphereSource = sphereSource;
+    }
+    /*
+      // Remove existing actor with this UID if present
+      const existingActors = viewport.getActors();
+      const existing = existingActors.find((a) => a.uid === uid);
+      if (existing) {
+        //return;
+        // viewport.removeActor(uid);
+      }
+*/
     const sphereMapper = vtkMapper.newInstance();
     sphereMapper.setInputConnection(sphereSource.getOutputPort());
     const sphereActor = vtkActor.newInstance();
@@ -357,13 +376,21 @@ class VolumeCroppingTool extends AnnotationTool {
       color = [0.0, 1.0, 0.0];
     }
     color = [0.0, 0.0, 1.0];
-    sphereActor.getProperty().setColor(...color);
-    //sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
-    viewport.addActor({ actor: sphereActor, uid: randomUID });
-
-    console.debug('sphere:', point);
-
+    //  sphereActor.getProperty().setColor(...color);
+    sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
+    viewport.addActor({ actor: sphereActor, uid: uid });
+    console.debug('added sphere: ', uid, viewport.getActors());
     viewport.render();
+    /*  } else {
+      // Only update the position and source, do not create new actor/source
+      sphereState.point = point.slice();
+      if (sphereState.sphereSource) {
+        // sphereState.sphereSource.setCenter(point);
+        console.debug('updated sphere: ', uid);
+        viewport.render();
+      }
+    }
+      */
   }
 
   computeToolCenter = () => {
@@ -513,18 +540,75 @@ class VolumeCroppingTool extends AnnotationTool {
       'z'
     );
 
-    // this.addSphere(viewport, [0, 0, 0]);
-    //   this.addSphere(viewport, [xMin, yMin, zMin]);
-    //   this.addSphere(viewport, [xMax, yMax, zMax]);
-    //this.addSphere(viewport, [0, 0, 0]);
+    const element = viewport.canvas || viewport.element;
+    element.addEventListener('mousedown', this._onMouseDownSphere);
+    element.addEventListener('mousemove', this._onMouseMoveSphere);
+    element.addEventListener('mouseup', this._onMouseUpSphere);
     viewport.render();
-
     const toolCenter = csUtils.planar.threePlaneIntersection(
       firstPlane,
       secondPlane,
       thirdPlane
     );
     this.setToolCenter(toolCenter);
+  };
+
+  _onMouseDownSphere = (evt) => {
+    const element = evt.currentTarget;
+    const viewportsInfo = this._getViewportsInfo();
+    const [firstViewport, secondViewport, thirdViewport, viewport3D] =
+      viewportsInfo;
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+    const mouseCanvas = [evt.offsetX, evt.offsetY];
+    // Find the sphere under the mouse
+    for (let i = 0; i < this.sphereStates.length; ++i) {
+      const sphereCanvas = viewport.worldToCanvas(this.sphereStates[i].point);
+      const dist = Math.sqrt(
+        Math.pow(mouseCanvas[0] - sphereCanvas[0], 2) +
+          Math.pow(mouseCanvas[1] - sphereCanvas[1], 2)
+      );
+      if (dist < 20) {
+        // 20 pixels threshold
+        this.draggingSphereIndex = i;
+        element.style.cursor = 'grabbing';
+        console.debug('grabbing', i);
+        return;
+      }
+    }
+    this.draggingSphereIndex = null;
+  };
+
+  _onMouseMoveSphere = (evt) => {
+    if (this.draggingSphereIndex === null) {
+      return;
+    }
+
+    const element = evt.currentTarget;
+    const viewportsInfo = this._getViewportsInfo();
+    const [firstViewport, secondViewport, thirdViewport, viewport3D] =
+      viewportsInfo;
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+    const mouseCanvas = [evt.offsetX, evt.offsetY];
+
+    this.sphereStates[this.draggingSphereIndex].point =
+      viewport.canvasToWorld(mouseCanvas);
+
+    // Update the sphere position in state
+    const sphereState = this.sphereStates[this.draggingSphereIndex];
+
+    sphereState.point = viewport.canvasToWorld(mouseCanvas);
+    sphereState.sphereSource.setCenter(sphereState.point);
+    //console.debug('3D mouse move');
+    viewport.render();
+  };
+
+  _onMouseUpSphere = (evt) => {
+    if (this.draggingSphereIndex !== null) {
+      evt.currentTarget.style.cursor = '';
+    }
+    this.draggingSphereIndex = null;
   };
 
   setToolCenter(toolCenter: Types.Point3, suppressEvents = false): void {
@@ -552,7 +636,7 @@ class VolumeCroppingTool extends AnnotationTool {
    * @param interactionType - The type of interaction (e.g., mouse, touch, etc.)
    * @returns Crosshairs annotation
    */
-  /*
+
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
   ): VolumeCroppingAnnotation => {
@@ -575,24 +659,23 @@ class VolumeCroppingTool extends AnnotationTool {
     // viewport Annotation
     const { data } = filteredAnnotations[0];
 
-    const { rotationPoints } = data.handles;
     const viewportIdArray = [];
     // put all the draggable reference lines in the viewportIdArray
+    /*
     for (let i = 0; i < rotationPoints.length - 1; ++i) {
       const otherViewport = rotationPoints[i][1];
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.id
       );
-      const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.id);
-      if (!viewportControllable || !viewportDraggableRotatable) {
+
+      if (!viewportControllable) {
         continue;
       }
       viewportIdArray.push(otherViewport.id);
       // rotation handles are two per viewport
       i++;
     }
-
+*/
     data.activeViewportIds = [...viewportIdArray];
     // set translation operation
     data.handles.activeOperation = OPERATION.DRAG;
@@ -603,31 +686,10 @@ class VolumeCroppingTool extends AnnotationTool {
 
     this._activateModify(element);
     return filteredAnnotations[0];
-
   };
- */
+
   cancel = () => {
     console.log('Not implemented yet');
-  };
-
-  handleSelectedCallback = (
-    evt: EventTypes.InteractionEventType,
-    annotation: Annotation
-  ): void => {
-    const eventDetail = evt.detail;
-    const { element } = eventDetail;
-    annotation.highlighted = true;
-
-    // NOTE: handle index or coordinates are not used when dragging.
-    // This because the handle points are actually generated in the renderTool and they are a derivative
-    // from the camera variables of the viewports and of the slab thickness variable.
-    // Remember that the translation and rotation operations operate on the camera
-    // variables and not really on the handles. Similar for the slab thickness.
-    this._activateModify(element);
-
-    hideElementCursor(element);
-
-    evt.preventDefault();
   };
 
   /**
@@ -720,13 +782,10 @@ class VolumeCroppingTool extends AnnotationTool {
     const viewportControllable = this._getReferenceLineControllable(
       viewport.id
     );
-    const viewportDraggableRotatable = this._getReferenceLineDraggableRotatable(
-      viewport.id
-    );
+
     if (
       !csUtils.isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
-      viewportControllable &&
-      viewportDraggableRotatable
+      viewportControllable
     ) {
       // Is camera Modified a TRANSLATION or ROTATION?
       let isRotation = false;
@@ -936,8 +995,6 @@ class VolumeCroppingTool extends AnnotationTool {
       const otherViewportControllable = this._getReferenceLineControllable(
         otherViewport.id
       );
-      const otherViewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.id);
 
       // get coordinates for the reference line
       const { clientWidth, clientHeight } = otherViewport.canvas;
@@ -1050,7 +1107,7 @@ class VolumeCroppingTool extends AnnotationTool {
       const refLinePointFour = vec2.create();
 
       let refLinesCenter = vec2.clone(crosshairCenterCanvas);
-      if (!otherViewportDraggableRotatable || !otherViewportControllable) {
+      if (!otherViewportControllable) {
         refLinesCenter = vec2.clone(otherViewportCenterCanvas);
       }
 
@@ -1091,9 +1148,6 @@ class VolumeCroppingTool extends AnnotationTool {
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.id
       );
-      const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.id) ||
-        this.configuration.mobile?.enabled;
       const selectedViewportId = data.activeViewportIds.find(
         (id) => id === otherViewport.id
       );
@@ -1113,7 +1167,7 @@ class VolumeCroppingTool extends AnnotationTool {
       }
 
       let lineUID = `${lineIndex}`;
-      if (viewportControllable && viewportDraggableRotatable) {
+      if (viewportControllable) {
         lineUID = `${lineIndex}One`;
         drawLineSvg(
           svgDrawingHelper,
@@ -1164,15 +1218,8 @@ class VolumeCroppingTool extends AnnotationTool {
           handleRadius = this.configuration.mobile.handleRadius;
           opacity = this.configuration.mobile.opacity;
         }
-        if (lineActive && viewportDraggableRotatable) {
+        if (lineActive) {
           const handleUID = `${lineIndex}`;
-        } else if (viewportDraggableRotatable) {
-          const handleUID = `${lineIndex}`;
-          const handleRadius =
-            this.configuration.handleRadius *
-            (this.configuration.enableHDPIHandles
-              ? window.devicePixelRatio
-              : 1);
         }
       }
     });
@@ -1723,7 +1770,6 @@ class VolumeCroppingTool extends AnnotationTool {
   _endCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-
     this.editData.annotation.data.handles.activeOperation = null;
     this.editData.annotation.data.activeViewportIds = [];
 
@@ -1775,40 +1821,45 @@ class VolumeCroppingTool extends AnnotationTool {
     const canvasCoords = currentPoints.canvas;
 
     if (handles.activeOperation === OPERATION.DRAG) {
-      // TRANSLATION
-      // get the annotation of the other viewport which are parallel to the delta shift and are of the same scene
-      const otherViewportAnnotations =
-        this._getAnnotationsForViewportsWithDifferentCameras(
-          enabledElement,
-          annotations
-        );
-
-      const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
-        (annotation) => {
-          const { data } = annotation;
-          const otherViewport = renderingEngine.getViewport(data.viewportId);
-          const otherViewportControllable = this._getReferenceLineControllable(
-            otherViewport.id
-          );
-          const otherViewportDraggableRotatable =
-            this._getReferenceLineDraggableRotatable(otherViewport.id);
-
-          return (
-            otherViewportControllable === true &&
-            otherViewportDraggableRotatable === true &&
-            viewportAnnotation.data.activeViewportIds.find(
-              (id) => id === otherViewport.id
-            )
-          );
-        }
-      );
-
-      this._applyDeltaShiftToSelectedViewportCameras(
-        renderingEngine,
-        viewportsAnnotationsToUpdate,
-        delta
+      this.toolCenter[0] += delta[0];
+      this.toolCenter[1] += delta[1];
+      this.toolCenter[2] += delta[2];
+      const viewportsInfo = this._getViewportsInfo();
+      triggerAnnotationRenderForViewportIds(
+        viewportsInfo.map(({ viewportId }) => viewportId)
       );
     }
+
+    // TRANSLATION
+    // get the annotation of the other viewport which are parallel to the delta shift and are of the same scene
+    const otherViewportAnnotations =
+      this._getAnnotationsForViewportsWithDifferentCameras(
+        enabledElement,
+        annotations
+      );
+
+    const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
+      (annotation) => {
+        const { data } = annotation;
+        const otherViewport = renderingEngine.getViewport(data.viewportId);
+        const otherViewportControllable = this._getReferenceLineControllable(
+          otherViewport.id
+        );
+
+        return (
+          otherViewportControllable === true &&
+          viewportAnnotation.data.activeViewportIds.find(
+            (id) => id === otherViewport.id
+          )
+        );
+      }
+    );
+
+    this._applyDeltaShiftToSelectedViewportCameras(
+      renderingEngine,
+      viewportsAnnotationsToUpdate,
+      delta
+    );
   };
 
   _applyDeltaShiftToSelectedViewportCameras(
@@ -1863,81 +1914,7 @@ class VolumeCroppingTool extends AnnotationTool {
     }
   }
 
-  _pointNearReferenceLine = (
-    annotation,
-    canvasCoords,
-    proximity,
-    lineViewport
-  ) => {
-    const { data } = annotation;
-    const { rotationPoints } = data.handles;
-
-    for (let i = 0; i < rotationPoints.length - 1; ++i) {
-      const otherViewport = rotationPoints[i][1];
-      if (otherViewport.id !== lineViewport.id) {
-        continue;
-      }
-
-      const viewportControllable = this._getReferenceLineControllable(
-        otherViewport.id
-      );
-      if (!viewportControllable) {
-        continue;
-      }
-
-      const lineSegment1 = {
-        start: {
-          x: rotationPoints[i][2][0],
-          y: rotationPoints[i][2][1],
-        },
-        end: {
-          x: rotationPoints[i][3][0],
-          y: rotationPoints[i][3][1],
-        },
-      };
-
-      const distanceToPoint1 = lineSegment.distanceToPoint(
-        [lineSegment1.start.x, lineSegment1.start.y],
-        [lineSegment1.end.x, lineSegment1.end.y],
-        [canvasCoords[0], canvasCoords[1]]
-      );
-
-      const lineSegment2 = {
-        start: {
-          x: rotationPoints[i + 1][2][0],
-          y: rotationPoints[i + 1][2][1],
-        },
-        end: {
-          x: rotationPoints[i + 1][3][0],
-          y: rotationPoints[i + 1][3][1],
-        },
-      };
-
-      const distanceToPoint2 = lineSegment.distanceToPoint(
-        [lineSegment2.start.x, lineSegment2.start.y],
-        [lineSegment2.end.x, lineSegment2.end.y],
-        [canvasCoords[0], canvasCoords[1]]
-      );
-
-      if (distanceToPoint1 <= proximity || distanceToPoint2 <= proximity) {
-        return true;
-      }
-
-      // rotation handles are two for viewport
-      i++;
-    }
-
-    return false;
-  };
-
   _pointNearTool(element, annotation, canvasCoords, proximity) {
-    /* const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const { clientWidth, clientHeight } = viewport.canvas;
-    const canvasDiagonalLength = Math.sqrt(
-      clientWidth * clientWidth + clientHeight * clientHeight
-    );
-    */
     const { data } = annotation;
 
     // You must have referenceLines available in annotation.data.
