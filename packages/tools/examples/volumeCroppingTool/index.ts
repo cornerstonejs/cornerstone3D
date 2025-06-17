@@ -249,17 +249,6 @@ function getReferenceLineControllable(viewportId) {
   return index !== -1;
 }
 
-function getReferenceLineDraggableRotatable(viewportId) {
-  const index = viewportReferenceLineDraggableRotatable.indexOf(viewportId);
-  return index !== -1;
-}
-
-function getReferenceLineSlabThicknessControlsOn(viewportId) {
-  const index =
-    viewportReferenceLineSlabThicknessControlsOn.indexOf(viewportId);
-  return index !== -1;
-}
-
 function setUpSynchronizers() {
   synchronizer = createSlabThicknessSynchronizer(synchronizerId);
 
@@ -390,6 +379,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup);
   toolGroup.addTool(TrackballRotateTool.toolName);
+  /*
   toolGroup.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
@@ -397,9 +387,8 @@ async function run() {
       },
     ],
   });
+*/
 
-  // For the crosshairs to operate, the viewports must currently be
-  // added ahead of setting the tool active. This will be improved in the future.
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
@@ -416,8 +405,6 @@ async function run() {
   toolGroup.addTool(VolumeCroppingTool.toolName, {
     getReferenceLineColor,
     getReferenceLineControllable,
-    getReferenceLineDraggableRotatable,
-    getReferenceLineSlabThicknessControlsOn,
     mobile: {
       enabled: isMobile,
       opacity: 0.8,
@@ -461,7 +448,6 @@ async function run() {
       Math.round(dimensions[1] * spacing[1]),
       Math.round(dimensions[2] * spacing[2]),
     ];
-    //const mapper = defaultActor.actor.getMapper();
     const mapper = viewport.getDefaultActor().actor.getMapper();
     const xMin = worldDimensions[0] * -0.5;
     const xMax = worldDimensions[0] * 0.5;
@@ -471,15 +457,11 @@ async function run() {
     const zMax = 0;
     const planes: vtkPlane[] = [];
 
-    // X min plane (cuts everything left of xMin)
     const planeXmin = vtkPlane.newInstance({
       origin: [xMin, 0, 0],
       normal: [1, 0, 0],
     });
-    mapper.addClippingPlane(planeXmin);
-    //planes.push(planeXmin);
-    // addSphere(viewport, [xMin, 0, -(zMax - zMin) / 2]);
-
+    planes.push(planeXmin);
     viewport.render();
   });
 
@@ -488,7 +470,7 @@ async function run() {
     const clippingPlanes = mapper.getClippingPlanes();
     console.debug('clippingPlanes before setOrigin:', clippingPlanes);
     clippingPlanes[planeIndex].setOrigin(origin);
-    //  viewport.setOriginalClippingPlane(planeIndex, origin);
+    viewport.setOriginalClippingPlane(planeIndex, origin);
     viewport.render();
   }
 
@@ -552,7 +534,6 @@ eventTarget.addEventListener(
  * Creates the minimum infrastructure needed to pick a point in the 3D volume
  * with VTK.js
  * @remarks
- * Is this the right place to put this function?
  * @param viewport
  * @returns
  */
