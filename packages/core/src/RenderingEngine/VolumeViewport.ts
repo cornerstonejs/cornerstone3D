@@ -33,7 +33,10 @@ import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
-import { getCameraVectors } from './helpers/getCameraVectors';
+import {
+  calculateCameraPosition,
+  getCameraVectors,
+} from './helpers/getCameraVectors';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -82,7 +85,17 @@ class VolumeViewport extends BaseVolumeViewport {
       );
     }
 
-    if (this._useAcquisitionPlaneForViewPlane) {
+    if (
+      this.options.orientation &&
+      typeof this.options.orientation === 'string'
+    ) {
+      if (this.options.orientation.includes('_reformat')) {
+        this._setViewPlaneToReformatOrientation(
+          this.options.orientation,
+          firstImageVolume
+        );
+      }
+    } else if (this._useAcquisitionPlaneForViewPlane) {
       this._setViewPlaneToAcquisitionPlane(firstImageVolume);
       this._useAcquisitionPlaneForViewPlane = false;
     }
@@ -116,7 +129,17 @@ class VolumeViewport extends BaseVolumeViewport {
       );
     }
 
-    if (this._useAcquisitionPlaneForViewPlane) {
+    if (
+      this.options.orientation &&
+      typeof this.options.orientation === 'string'
+    ) {
+      if (this.options.orientation.includes('_reformat')) {
+        this._setViewPlaneToReformatOrientation(
+          this.options.orientation,
+          firstImageVolume
+        );
+      }
+    } else if (this._useAcquisitionPlaneForViewPlane) {
       this._setViewPlaneToAcquisitionPlane(firstImageVolume);
       this._useAcquisitionPlaneForViewPlane = false;
     }
@@ -231,6 +254,33 @@ class VolumeViewport extends BaseVolumeViewport {
         RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
       );
     }
+  }
+
+  private _setViewPlaneToReformatOrientation(
+    orientation: OrientationAxis,
+    imageVolume: IImageVolume
+  ): void {
+    let viewPlaneNormal, viewUp;
+
+    if (imageVolume) {
+      const { direction } = imageVolume;
+      ({ viewPlaneNormal, viewUp } = calculateCameraPosition(
+        direction.slice(0, 3) as Point3,
+        direction.slice(3, 6) as Point3,
+        direction.slice(6, 9) as Point3,
+        orientation
+      ));
+    } else {
+      ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
+    }
+
+    this.setCamera({
+      viewPlaneNormal,
+      viewUp,
+    });
+
+    this.initialViewUp = viewUp;
+    this.resetCamera();
   }
 
   private _setViewPlaneToAcquisitionPlane(imageVolume: IImageVolume): void {

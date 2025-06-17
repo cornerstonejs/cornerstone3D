@@ -153,7 +153,10 @@ abstract class BaseVolumeViewport extends Viewport {
     resetCamera = true
   ) {
     const { viewPlaneNormal, viewUp } =
-      this._getOrientationVectors(orientation);
+      this._getOrientationVectors(orientation) || {};
+    if (!viewPlaneNormal || !viewUp) {
+      return;
+    }
     const camera = this.getVtkActiveCamera();
     camera.setDirectionOfProjection(
       -viewPlaneNormal[0],
