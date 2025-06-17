@@ -75,13 +75,16 @@ export function calculateCameraPosition(
   let referenceCameraValues;
 
   switch (orientation) {
-    case OrientationAxis.AXIAL || OrientationAxis.AXIAL_REFORMAT:
+    case OrientationAxis.AXIAL:
+    case OrientationAxis.AXIAL_REFORMAT:
       referenceCameraValues = MPR_CAMERA_VALUES.axial;
       break;
-    case OrientationAxis.SAGITTAL || OrientationAxis.SAGITTAL_REFORMAT:
+    case OrientationAxis.SAGITTAL:
+    case OrientationAxis.SAGITTAL_REFORMAT:
       referenceCameraValues = MPR_CAMERA_VALUES.sagittal;
       break;
-    case OrientationAxis.CORONAL || OrientationAxis.CORONAL_REFORMAT:
+    case OrientationAxis.CORONAL:
+    case OrientationAxis.CORONAL_REFORMAT:
       referenceCameraValues = MPR_CAMERA_VALUES.coronal;
       break;
     default:
@@ -226,6 +229,10 @@ export function getCameraVectors(
   viewport: Types.IBaseVolumeViewport,
   config?: CameraPositionConfig
 ) {
+  if (!viewport.getActors()?.length) {
+    return;
+  }
+
   if (viewport.type !== Enums.ViewportType.ORTHOGRAPHIC) {
     console.warn('Viewport should be a volume viewport');
   }
