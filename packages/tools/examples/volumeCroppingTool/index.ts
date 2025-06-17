@@ -24,13 +24,7 @@ import {
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 
-import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import ToolGroup from 'tools/src/store/ToolGroupManager/ToolGroup';
 
 // This is for debugging purposes
 console.warn(
@@ -47,12 +41,10 @@ const {
   OrientationMarkerTool,
 } = cornerstoneTools;
 
-const { createSlabThicknessSynchronizer } = synchronizers;
-
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
-let sphereActor = undefined;
+const sphereActor = undefined;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -65,9 +57,6 @@ const viewportId3 = 'CT_CORONAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 const renderingEngineId = 'myRenderingEngine';
-const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
-///////////////////////////////////////
-const newToolGroupId = 'NEW_TOOL_GROUP_ID';
 
 /////////////////////////////////////////
 // ======== Set up page ======== //
@@ -152,72 +141,12 @@ addToggleButtonToToolbar({
   },
 });
 
-// ============================= //
-function addTemporaryPickedPositionLabel(
-  x: number,
-  y: number,
-  pickedPoint: Types.Point3
-) {
-  // Create a temporary div to show the coordinates
-  const coordDiv = document.createElement('div');
-  coordDiv.style.position = 'absolute';
-  coordDiv.style.top = `${y + 10}px`;
-  coordDiv.style.left = `${x + 10}px`;
-  coordDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-  coordDiv.style.color = 'white';
-  coordDiv.style.padding = '5px';
-  coordDiv.style.borderRadius = '3px';
-  coordDiv.style.zIndex = '1000';
-  coordDiv.style.pointerEvents = 'none';
-  coordDiv.textContent = `X: ${pickedPoint[0].toFixed(
-    2
-  )}, Y: ${pickedPoint[1].toFixed(2)}, Z: ${pickedPoint[2].toFixed(2)}`;
-
-  element4.appendChild(coordDiv);
-
-  // Remove the div after a few seconds
-  setTimeout(() => {
-    if (element4.contains(coordDiv)) {
-      element4.removeChild(coordDiv);
-    }
-  }, 3000);
-}
-
-function setCrossHairPosition(pickedPoint) {
-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-  const crosshairTool = toolGroup.getToolInstance(VolumeCroppingTool.toolName);
-  crosshairTool.setToolCenter(pickedPoint, true);
-}
-
-function addSphere(viewport, point) {
-  if (!sphereActor) {
-    // Generate a random string for the sphere UID
-    const randomUID = 'sphere_' + Math.random().toString(36).substring(2, 15);
-
-    const sphereSource = vtkSphereSource.newInstance();
-    sphereSource.setCenter(point);
-    sphereSource.setRadius(5);
-    const sphereMapper = vtkMapper.newInstance();
-    sphereMapper.setInputConnection(sphereSource.getOutputPort());
-    sphereActor = vtkActor.newInstance();
-    sphereActor.setMapper(sphereMapper);
-    sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
-    viewport.addActor({ actor: sphereActor, uid: randomUID });
-  } else {
-    sphereActor.getMapper().getInputConnection().filter.setCenter(point);
-  }
-  console.debug('actors:', viewport.getActors());
-  viewport.render();
-}
-
 const viewportColors = {
   [viewportId1]: 'rgb(200, 0, 0)',
   [viewportId2]: 'rgb(200, 200, 0)',
   [viewportId3]: 'rgb(0, 200, 0)',
   [viewportId4]: 'rgb(0, 200, 200)',
 };
-
-let synchronizer;
 
 const viewportReferenceLineControllable = [
   viewportId1,
@@ -249,21 +178,6 @@ function getReferenceLineControllable(viewportId) {
   return index !== -1;
 }
 
-function setUpSynchronizers() {
-  synchronizer = createSlabThicknessSynchronizer(synchronizerId);
-
-  // Add viewports to VOI synchronizers
-  [viewportId1, viewportId2, viewportId3, viewportId4].forEach((viewportId) => {
-    synchronizer.add({
-      renderingEngineId,
-      viewportId,
-    });
-  });
-  // Normally this would be left on, but here we are starting the demo in the
-  // default state, which is to not have a synchronizer enabled.
-  synchronizer.setEnabled(false);
-}
-
 /**
  * Runs the demo
  */
@@ -277,28 +191,6 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
 
-  /*
-  const newToolGroup = ToolGroupManager.createToolGroup(newToolGroupId);
-  newToolGroup.addTool(OrientationMarkerTool.toolName);
-  newToolGroup.addTool(ZoomTool.toolName);
-  newToolGroup.addTool(TrackballRotateTool.toolName);
-  newToolGroup.addTool(VolumeCroppingTool.toolName);
-  newToolGroup.setToolActive(OrientationMarkerTool.toolName);
-  newToolGroup.setToolActive(TrackballRotateTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
-  newToolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
-  });
-*/
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
@@ -379,7 +271,7 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup);
   toolGroup.addTool(TrackballRotateTool.toolName);
-  /*
+
   toolGroup.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
@@ -387,13 +279,11 @@ async function run() {
       },
     ],
   });
-*/
 
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
   toolGroup.addViewport(viewportId4, renderingEngineId);
-  //newToolGroup.addViewport(viewportId4, renderingEngineId);
 
   // Manipulation Tools
   // Add Crosshairs tool and configure it to link the three viewports
@@ -416,12 +306,6 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
-  setUpSynchronizers();
-
-  const picker = vtkCellPicker.newInstance({ opacityThreshold: 0.0001 });
-  picker.setPickFromList(1);
-  picker.setTolerance(0);
-  picker.initializePickList();
   // Render the image
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
   renderingEngine.renderViewports(viewportIds);
@@ -433,86 +317,7 @@ async function run() {
     viewport.setProperties({
       preset: 'CT-Bone',
     });
-    const defaultActor = viewport.getDefaultActor();
-    if (defaultActor?.actor) {
-      // Cast to any to avoid type errors with different actor types
-      picker.addPickList(defaultActor.actor as any);
-      prepareImageDataForPicking(viewport);
-    }
-    // Get the vtkImageData from the volume
-    const imageData = volume.imageData;
-    const dimensions = imageData.getDimensions(); // [xDim, yDim, zDim]
-    const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
-    const worldDimensions = [
-      Math.round(dimensions[0] * spacing[0]),
-      Math.round(dimensions[1] * spacing[1]),
-      Math.round(dimensions[2] * spacing[2]),
-    ];
-    const mapper = viewport.getDefaultActor().actor.getMapper();
-    const xMin = worldDimensions[0] * -0.5;
-    const xMax = worldDimensions[0] * 0.5;
-    const yMin = worldDimensions[1] * -0.5;
-    const yMax = worldDimensions[1] * 0.5;
-    const zMin = -worldDimensions[2];
-    const zMax = 0;
-    const planes: vtkPlane[] = [];
-
-    const planeXmin = vtkPlane.newInstance({
-      origin: [xMin, 0, 0],
-      normal: [1, 0, 0],
-    });
-    planes.push(planeXmin);
     viewport.render();
-  });
-
-  function setClippingPlane(viewport, planeIndex, origin) {
-    const mapper = viewport.getDefaultActor().actor.getMapper();
-    const clippingPlanes = mapper.getClippingPlanes();
-    console.debug('clippingPlanes before setOrigin:', clippingPlanes);
-    clippingPlanes[planeIndex].setOrigin(origin);
-    viewport.setOriginalClippingPlane(planeIndex, origin);
-    viewport.render();
-  }
-
-  // Add right-click event handler to element4 for picking coordinates
-  element4.addEventListener('mousedown', (evt) => {
-    // Check if it's a right-click (button 2)
-    if (evt.button === 2) {
-      evt.preventDefault();
-      evt.stopPropagation();
-
-      // Get the rendering engine and viewport
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine.getViewport(
-        viewportId4
-      ) as VolumeViewport3D;
-
-      // Get canvas coordinates relative to the element
-      const rect = element4.getBoundingClientRect();
-      const x = evt.clientX - rect.left;
-      const y = evt.clientY - rect.top;
-
-      const displayCoords = viewport.getVtkDisplayCoords([x, y]);
-      // Use the picker to get the 3D coordinates
-      picker.pick(
-        [displayCoords[0], displayCoords[1], 0],
-        viewport.getRenderer()
-      );
-
-      // Get the picked position
-      const pickedPositions = picker.getPickedPositions();
-      const actors = picker.getActors();
-      if (actors.length > 0) {
-        const pickedPoint = pickedPositions[0];
-        if (pickedPoint) {
-          console.log('Picked point coordinates:', pickedPoint);
-          //   addSphere(viewport, pickedPoint);
-          addTemporaryPickedPositionLabel(x, y, pickedPoint);
-          setCrossHairPosition(pickedPoint);
-          //  setClippingPlane(viewport, 0, [0, 0, -500]);
-        }
-      }
-    }
   });
 }
 
@@ -529,49 +334,5 @@ eventTarget.addEventListener(
     }
   }
 );
-
-/**
- * Creates the minimum infrastructure needed to pick a point in the 3D volume
- * with VTK.js
- * @remarks
- * @param viewport
- * @returns
- */
-function prepareImageDataForPicking(viewport: BaseVolumeViewport) {
-  const volumeActor = viewport.getDefaultActor()?.actor;
-  if (!volumeActor) {
-    return;
-  }
-  // Get the imageData from the volumeActor
-  const imageData = volumeActor.getMapper().getInputData();
-
-  if (!imageData) {
-    console.error('No imageData found in the volumeActor');
-    return null;
-  }
-
-  // Get the voxelManager from the imageData
-  const { voxelManager } = imageData.get('voxelManager');
-
-  if (!voxelManager) {
-    console.error('No voxelManager found in the imageData');
-    return imageData;
-  }
-
-  // Create a fake scalar object to expose the scalar data to VTK.js
-  const fakeScalars = {
-    getData: () => {
-      return voxelManager.getCompleteScalarDataArray();
-    },
-    getNumberOfComponents: () => voxelManager.numberOfComponents,
-    getDataType: () =>
-      voxelManager.getCompleteScalarDataArray().constructor.name,
-  };
-
-  // Set the point data to return the fakeScalars
-  imageData.setPointData({
-    getScalars: () => fakeScalars,
-  });
-}
 
 run();
