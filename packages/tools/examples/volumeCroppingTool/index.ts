@@ -300,6 +300,13 @@ async function run() {
       opacity: 0.8,
       handleRadius: 9,
     },
+    // Add sphere color configuration
+    sphereColors: {
+      x: [0.0, 1.0, 0.0], // Green for X
+      y: [1.0, 1.0, 0.0], // Yellow for Y
+      z: [1.0, 0.0, 0.0], // Red for Z
+      default: [0.0, 0.0, 1.0], // Blue as fallback
+    },
   });
 
   toolGroup.setToolActive(VolumeCroppingTool.toolName, {
@@ -320,7 +327,7 @@ async function run() {
     viewport.render();
   });
 }
-
+/*
 eventTarget.addEventListener(
   toolsEnums.Events.CROSSHAIR_TOOL_CENTER_CHANGED,
   (evt) => {
@@ -334,5 +341,5 @@ eventTarget.addEventListener(
     }
   }
 );
-
+*/
 run();

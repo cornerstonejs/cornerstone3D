@@ -73,7 +73,7 @@ interface VolumeCroppingAnnotation extends Annotation {
     };
     activeViewportIds: string[]; // a list of the viewport ids connected to the reference lines being translated
     viewportId: string;
-    //   referenceLines: []; // set in renderAnnotation
+    referenceLines: []; // set in renderAnnotation
     clippingPlanes?: vtkPlane[]; // clipping planes for the viewport
     clippingPlaneReferenceLines?: [];
   };
@@ -172,7 +172,7 @@ class VolumeCroppingTool extends AnnotationTool {
   }
 
   /**
-   * Gets the camera from the viewport, and adds crosshairs annotation for the viewport
+   * Gets the camera from the viewport, and adds  annotation for the viewport
    * to the annotationManager. If any annotation is found in the annotationManager, it
    * overwrites it.
    * @param viewportInfo - The viewportInfo for the viewport to add the crosshairs
@@ -230,16 +230,18 @@ class VolumeCroppingTool extends AnnotationTool {
         clippingPlaneReferenceLines: [], // clipping planes for the viewport
       },
     };
-
-    addAnnotation(annotation, element);
-
-    return {
-      normal: viewPlaneNormal,
-      point: viewport.canvasToWorld([
-        viewport.canvas.clientWidth / 2,
-        viewport.canvas.clientHeight / 2,
-      ]),
-    };
+    if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+      addAnnotation(annotation, element);
+      return {
+        normal: viewPlaneNormal,
+        point: viewport.canvasToWorld([
+          viewport.canvas.clientWidth / 2,
+          viewport.canvas.clientHeight / 2,
+        ]),
+      };
+    } else {
+      return;
+    }
   };
 
   _getViewportsInfo = () => {
@@ -376,15 +378,23 @@ class VolumeCroppingTool extends AnnotationTool {
       }
 */
 
-    let color = [1.0, 1.0, 0.0]; // Yellow
+    let color = [0.0, 1.0, 0.0];
     if (axis === 'z') {
       color = [1.0, 0.0, 0.0];
     } else if (axis === 'x') {
-      color = [0.0, 1.0, 0.0];
+      color = [1.0, 1.0, 0.0];
     }
-    color = [0.0, 0.0, 1.0];
-    //  sphereActor.getProperty().setColor(...color);
-    sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
+
+    //const color = [0.0, 0.0, 1.0];
+
+    sphereActor.getProperty().setColor(color);
+    //sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
+    /*
+    const sphereColors = this.configuration.sphereColors || {};
+    const color = sphereColors[sphereState.axis] ||
+      sphereColors.default || [0.0, 0.0, 1.0];
+    sphereActor.getProperty().setColor(...color);
+*/
     sphereActor.setPickable(true);
     viewport.addActor({ actor: sphereActor, uid: uid });
     console.debug('added sphere: ', uid, viewport.getActors());
@@ -504,11 +514,17 @@ class VolumeCroppingTool extends AnnotationTool {
     const mapper = viewport.getDefaultActor().actor.getMapper();
 
     planes.push(planeXmin);
+    mapper.addClippingPlane(planeXmin);
     planes.push(planeXmax);
+    mapper.addClippingPlane(planeXmax);
     planes.push(planeYmin);
+    mapper.addClippingPlane(planeYmin);
     planes.push(planeYmax);
+    mapper.addClippingPlane(planeYmax);
     planes.push(planeZmin);
+    mapper.addClippingPlane(planeZmin);
     planes.push(planeZmax);
+    mapper.addClippingPlane(planeZmax);
     const originalPlanes = planes.map((plane) => ({
       origin: [...plane.getOrigin()],
       normal: [...plane.getNormal()],
@@ -557,9 +573,12 @@ class VolumeCroppingTool extends AnnotationTool {
     }
 
     const element = viewport.canvas || viewport.element;
-    //  element.addEventListener('mousedown', this._onMouseDownSphere);
-    //  element.addEventListener('mousemove', this._onMouseMoveSphere);
-    //  element.addEventListener('mouseup', this._onMouseUpSphere);
+    element.addEventListener('mousedown', this._onMouseDownSphere);
+    element.addEventListener('mousemove', this._onMouseMoveSphere);
+    element.addEventListener('mouseup', this._onMouseUpSphere);
+    //  mapper.modified();
+    //  viewport.getDefaultActor().actor.modified();
+
     viewport.render();
     const toolCenter = csUtils.planar.threePlaneIntersection(
       firstPlane,
@@ -644,6 +663,8 @@ class VolumeCroppingTool extends AnnotationTool {
     if (this.draggingSphereIndex === null) {
       return;
     }
+    evt.stopPropagation();
+    evt.preventDefault();
 
     const element = evt.currentTarget;
     const viewportsInfo = this._getViewportsInfo();
@@ -670,6 +691,7 @@ class VolumeCroppingTool extends AnnotationTool {
       const sphereState = this.sphereStates[this.draggingSphereIndex];
       // Restrict movement to the sphere's axis only
       const newPoint = [...sphereState.point];
+
       if (sphereState.axis === 'x') {
         newPoint[0] = pickedPoint[0];
       } else if (sphereState.axis === 'y') {
@@ -679,15 +701,32 @@ class VolumeCroppingTool extends AnnotationTool {
       }
 
       sphereState.point = newPoint;
-      sphereState.sphereSource.setCenter(pickedPoint);
+      sphereState.sphereSource.setCenter(newPoint);
+      sphereState.sphereSource.modified();
+
+      const volumeActor = viewport.getDefaultActor()?.actor;
+      if (!volumeActor) {
+        console.warn('No volume actor found');
+        return;
+      }
+      const mapper = volumeActor.getMapper();
+
+      const clippingPlanes = mapper.getClippingPlanes();
+      //console.debug('clippingPlanes before setOrigin:', clippingPlanes);
+      //clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
+      viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
+      mapper.modified();
+      viewport.getDefaultActor().actor.modified();
       viewport.render();
     }
   };
 
   _onMouseUpSphere = (evt) => {
-    if (this.draggingSphereIndex !== null) {
-      evt.currentTarget.style.cursor = '';
-    }
+    //evt.stopPropagation();
+    // evt.preventDefault();
+    // if (this.draggingSphereIndex !== null) {
+    evt.currentTarget.style.cursor = '';
+    //   }
     this.draggingSphereIndex = null;
   };
 
@@ -1262,6 +1301,7 @@ class VolumeCroppingTool extends AnnotationTool {
         let lineUID = `${lineIndex}`;
         if (viewportControllable) {
           lineUID = `${lineIndex}One`;
+          console.debug(lineUID);
           drawLineSvg(
             svgDrawingHelper,
             annotationUID,
@@ -1590,6 +1630,10 @@ class VolumeCroppingTool extends AnnotationTool {
         const otherViewportControllable = this._getReferenceLineControllable(
           otherViewport.id
         );
+        // Filter out 3D viewports
+        if (otherViewport.type === Enums.ViewportType.VOLUME_3D) {
+          return false;
+        }
 
         return (
           viewport !== otherViewport &&
@@ -1862,6 +1906,7 @@ class VolumeCroppingTool extends AnnotationTool {
 
   _endCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
+    console.debug(eventDetail);
     const { element } = eventDetail;
 
     this.editData.annotation.data.handles.activeOperation = null;
