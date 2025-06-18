@@ -40,6 +40,8 @@ const ONNX_EVENTS = {
   MODEL_COMPONENT_LOADED: 'ONNX_MODEL_COMPONENT_LOADED',
 };
 
+export { ONNX_EVENTS };
+
 export type ModelType = {
   name: string;
   key: string;
