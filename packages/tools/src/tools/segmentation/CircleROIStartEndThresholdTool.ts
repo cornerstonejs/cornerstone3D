@@ -560,7 +560,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { viewPlaneNormal, spacingInNormal } = metadata;
     const { imageData } = imageVolume;
     const { startCoordinate, endCoordinate } = data;
-    const { points } = data.handles;
+    const { points } = data.handles; // `points` is [center, radiusPoint]
 
     const startIJK = transformWorldToIndex(imageData, points[0]);
     const endIJK = transformWorldToIndex(imageData, points[0]);
@@ -573,41 +573,47 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const endWorld = vec3.create();
     imageData.indexToWorldVec3(endIJK, endWorld);
 
-    // substitute the end slice index 2 with startIJK index 2
+    const projectionAxisIndex =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
+    if (projectionAxisIndex == 2) {
       startWorld[2] = startCoordinate;
       endWorld[2] = endCoordinate;
       handlesToStart[0][2] = startCoordinate;
       handlesToStart[1][2] = startCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
-    ) {
+    } else if (projectionAxisIndex == 0) {
       startWorld[0] = startCoordinate;
       endWorld[0] = endCoordinate;
       handlesToStart[0][0] = startCoordinate;
       handlesToStart[1][0] = startCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
-    ) {
+    } else if (projectionAxisIndex == 1) {
       startWorld[1] = startCoordinate;
       endWorld[1] = endCoordinate;
       handlesToStart[0][1] = startCoordinate;
       handlesToStart[1][1] = startCoordinate;
     }
 
-    // distance between start and end slice in the world coordinate
-    const distance = vec3.distance(startWorld, endWorld);
+    // Calculate the explicit direction vector from start to end.
+    const direction = vec3.create();
+    vec3.subtract(direction, endWorld, startWorld);
 
-    // for each point inside points, navigate in the direction of the viewPlaneNormal
-    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
+    const distance = vec3.length(direction);
+
+    // Normalize the direction vector to get a unit vector for scaling.
+    vec3.normalize(direction, direction);
+
     const newProjectionPoints = [];
+
+    // The base points for projection are the original handles [center, radiusPoint].
+    // We project these two points for each slice.
+    const basePoints = points;
+
     for (let dist = 0; dist < distance; dist += spacingInNormal) {
       newProjectionPoints.push(
-        handlesToStart.map((point) => {
+        basePoints.map((point) => {
           const newPoint = vec3.create();
-          //@ts-ignore
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
+          // Project each handle point along the calculated direction.
+          vec3.scaleAndAdd(newPoint, point, direction, dist);
           return Array.from(newPoint);
         })
       );
