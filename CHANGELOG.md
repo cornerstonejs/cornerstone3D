@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.1...v3.22.2) (2025-06-18)
+
+### Bug Fixes
+
+- **dicomImageLoader:** use toWindowLevel from core utilities to calculate window level ([#2146](https://github.com/cornerstonejs/cornerstone3D/issues/2146)) ([b7bb603](https://github.com/cornerstonejs/cornerstone3D/commit/b7bb6034b64c9db2cabea9f08c6071343f8507de))
+
 ## [3.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.0...v3.22.1) (2025-06-16)
 
 ### Bug Fixes
