@@ -13,6 +13,7 @@ import {
   segmentation as cstSegmentation,
   LabelmapBaseTool,
 } from '@cornerstonejs/tools';
+import { Events as aiEvents } from './enums';
 
 const { strategies } = cstSegmentation;
 const { fillInsideCircle } = strategies;
@@ -32,15 +33,6 @@ const { IslandRemoval } = cornerstoneTools.utilities;
 
 const { triggerSegmentationDataModified } =
   segmentation.triggerSegmentationEvents;
-
-// Define custom events for model loading
-const ONNX_EVENTS = {
-  MODEL_LOADING_STARTED: 'ONNX_MODEL_LOADING_STARTED',
-  MODEL_LOADING_COMPLETED: 'ONNX_MODEL_LOADING_COMPLETED',
-  MODEL_COMPONENT_LOADED: 'ONNX_MODEL_COMPONENT_LOADED',
-};
-
-export { ONNX_EVENTS };
 
 export type ModelType = {
   name: string;
@@ -1464,7 +1456,7 @@ export default class ONNXSegmentationController {
       let cachedResponse = await cache.match(url);
       if (cachedResponse == undefined) {
         // Trigger event when model component starts loading from network
-        triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+        triggerEvent(eventTarget, aiEvents.MODEL_COMPONENT_LOADED, {
           name,
           url,
           status: 'loading',
@@ -1476,7 +1468,7 @@ export default class ONNXSegmentationController {
         this.log(Loggers.Log, `${name} (network)`);
       } else {
         // Trigger event when model component is loaded from cache
-        triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+        triggerEvent(eventTarget, aiEvents.MODEL_COMPONENT_LOADED, {
           name,
           url,
           status: 'loaded',
@@ -1491,7 +1483,7 @@ export default class ONNXSegmentationController {
       this.log(Loggers.Log, `${name} (network)`);
 
       // Trigger event when model component has an error
-      triggerEvent(eventTarget, ONNX_EVENTS.MODEL_COMPONENT_LOADED, {
+      triggerEvent(eventTarget, aiEvents.MODEL_COMPONENT_LOADED, {
         name,
         url,
         status: 'error',
@@ -1521,7 +1513,7 @@ export default class ONNXSegmentationController {
     }
 
     // Trigger event for model loading started
-    triggerEvent(eventTarget, ONNX_EVENTS.MODEL_LOADING_STARTED, {
+    triggerEvent(eventTarget, aiEvents.MODEL_LOADING_STARTED, {
       modelConfig: this.config.model,
       totalSize: missing,
       urls,
@@ -1565,7 +1557,7 @@ export default class ONNXSegmentationController {
     const loadTime = stop - start;
 
     // Trigger event for model loading completed
-    triggerEvent(eventTarget, ONNX_EVENTS.MODEL_LOADING_COMPLETED, {
+    triggerEvent(eventTarget, aiEvents.MODEL_LOADING_COMPLETED, {
       modelConfig: this.config.model,
       loadTimeMs: loadTime,
       urls,

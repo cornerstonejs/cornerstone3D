@@ -1,12 +1,11 @@
-import ONNXSegmentationController, {
-  ONNX_EVENTS,
-} from './ONNXSegmentationController';
+import ONNXSegmentationController from './ONNXSegmentationController';
 import LabelmapSlicePropagationTool from './LabelmapSlicePropagationTool';
 import MarkerLabelmapTool from './MarkerLabelmapTool';
+import { Events } from './enums';
 
 export {
   ONNXSegmentationController,
   LabelmapSlicePropagationTool,
   MarkerLabelmapTool,
-  ONNX_EVENTS,
+  Events,
 };
