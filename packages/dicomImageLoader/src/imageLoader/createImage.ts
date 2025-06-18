@@ -357,11 +357,13 @@ function createImage(
           image.windowCenter === undefined ||
           image.windowWidth === undefined
         ) {
-          const minVoi = image.imageFrame.smallestPixelValue;
-          const maxVoi = image.imageFrame.largestPixelValue;
+          const windowLevel = utilities.windowLevel.toWindowLevel(
+            image.imageFrame.smallestPixelValue,
+            image.imageFrame.largestPixelValue
+          );
 
-          image.windowWidth = maxVoi - minVoi;
-          image.windowCenter = (maxVoi + minVoi) / 2;
+          image.windowWidth = windowLevel.windowWidth;
+          image.windowCenter = windowLevel.windowCenter;
         }
         resolve(image);
       }, reject);
