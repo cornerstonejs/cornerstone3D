@@ -1,19 +1,18 @@
 import type { ContourSegmentationAnnotation } from '../../../types';
 import { findContourHoles } from '../../../utilities/contours';
-import { getAnnotation } from '../../annotation/annotationState';
+import {
+  getAnnotation,
+  clearParentAnnotation,
+} from '../../annotation/annotationState';
 import { getSegmentation } from '../getSegmentation';
 import { extractSegmentPolylines } from './extractSegmentPolylines';
-import { removeCompleteContourAnnotation } from './removeCompleteContourAnnotation';
 
 /**
- * Removes contour holes from a segmentation segment by detecting and deleting hole annotations.
- * This function analyzes the polylines in a segment to identify which contours are holes
- * (contours that are inside other contours) and removes them completely.
- *
+ * Discovers contour holes in a segment, clears their parent, and adds their annotationUID to the representationData.annotationUIDsSet.
  * @param segmentationId - The unique identifier of the segmentation
  * @param segmentIndex - The index of the segment within the segmentation
  */
-export default function removeContourHoles(
+export default function convertContourHoles(
   segmentationId: string,
   segmentIndex: number
 ) {
@@ -25,6 +24,19 @@ export default function removeContourHoles(
   if (!segmentation.representationData.Contour) {
     console.warn(
       `No contour representation found for segmentation ${segmentationId}`
+    );
+    return;
+  }
+
+  const { annotationUIDsMap } = segmentation?.representationData.Contour || {};
+  if (!annotationUIDsMap) {
+    console.warn(`No annotation map found for segmentation ${segmentationId}`);
+    return;
+  }
+  const annotationsUIDsSet = annotationUIDsMap?.get(segmentIndex);
+  if (!annotationsUIDsSet) {
+    console.warn(
+      `Segmentation index ${segmentIndex} has no annotations in segmentation ${segmentationId}`
     );
     return;
   }
@@ -50,7 +62,9 @@ export default function removeContourHoles(
         const annotation = getAnnotation(
           keys[index]
         ) as ContourSegmentationAnnotation;
-        removeCompleteContourAnnotation(annotation);
+        clearParentAnnotation(annotation);
+        // Add the annotationUID of the hole to the annotationUIDsSet
+        annotationsUIDsSet.add(annotation.annotationUID);
       });
     });
   }

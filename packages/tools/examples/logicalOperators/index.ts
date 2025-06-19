@@ -180,6 +180,17 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Convert Contour Holes',
+  onClick: () => {
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    segmentation.utilities.convertContourHoles(segmentationId, segmentIndex);
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
+  },
+});
+
 function performLogicalOperation(
   operation: csToolTypes.LogicalOperation = LogicalOperation.Union,
   createNew: boolean = true

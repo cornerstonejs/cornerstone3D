@@ -260,8 +260,3 @@ export function deleteOperation(segment: SegmentInfo) {
     );
   });
 }
-
-// cornerstoneTools.segmentation.operators.not(
-//   { segmentationId: string, segmentIndex: number },
-//   options?: OperatorOptions
-// )
