@@ -35,7 +35,8 @@ const { createImageSliceSynchronizer } = synchronizers;
 const imageSliceSync = 'IMAGE_SLICE_SYNCHRONIZER_ID';
 const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['STACK_VIEWPORT_1', 'STACK_VIEWPORT_2'];
-const toolGroupId = 'TOOL_GROUP_ID';
+const toolGroupId1 = 'TOOL_GROUP_ID_1'; // Tool group for left viewport (with segmentation)
+const toolGroupId2 = 'TOOL_GROUP_ID_2'; // Tool group for right viewport (without segmentation)
 const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
@@ -70,10 +71,9 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 instructions.innerText = `
 Left Viewport: Stack with Segmentation
-- Left Click: Window/Level
+- Left Click: Brush tool for segmentation
 - Middle Click: Pan
 - Right Click: Zoom
-- Ctrl + Left Click: Brush tool for segmentation
 - Mouse Wheel: Scroll through stack
 
 Right Viewport: Stack without Segmentation
@@ -102,51 +102,74 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(BrushTool);
 
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  // Create tool group for left viewport (with segmentation)
+  const toolGroup1 = ToolGroupManager.createToolGroup(toolGroupId1);
 
-  // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addTool(BrushTool.toolName);
+  // Add tools to the first tool group
+  toolGroup1.addTool(PanTool.toolName);
+  toolGroup1.addTool(ZoomTool.toolName);
+  toolGroup1.addTool(StackScrollTool.toolName);
+  toolGroup1.addTool(BrushTool.toolName);
 
-  // Set the initial state of the tools
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
+  // Set tool bindings for first viewport (segmentation viewport)
+  toolGroup1.setToolActive(BrushTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Left Click
+        mouseButton: MouseBindings.Primary, // Left Click for brush
       },
     ],
   });
-  toolGroup.setToolActive(PanTool.toolName, {
+  toolGroup1.setToolActive(PanTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
     ],
   });
-  toolGroup.setToolActive(ZoomTool.toolName, {
+  toolGroup1.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary, // Right Click
       },
     ],
   });
-  // Stack Scroll tool for mouse wheel
-  toolGroup.setToolActive(StackScrollTool.toolName, {
+  toolGroup1.setToolActive(StackScrollTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
-  // Brush tool for segmentation (Ctrl + Left Click)
-  toolGroup.setToolActive(BrushTool.toolName, {
+
+  // Create tool group for right viewport (without segmentation)
+  const toolGroup2 = ToolGroupManager.createToolGroup(toolGroupId2);
+
+  // Add tools to the second tool group
+  toolGroup2.addTool(WindowLevelTool.toolName);
+  toolGroup2.addTool(PanTool.toolName);
+  toolGroup2.addTool(ZoomTool.toolName);
+  toolGroup2.addTool(StackScrollTool.toolName);
+
+  // Set tool bindings for second viewport (no segmentation)
+  toolGroup2.setToolActive(WindowLevelTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: csToolsEnums.KeyboardBindings.Ctrl,
+        mouseButton: MouseBindings.Primary, // Left Click for window/level
       },
     ],
+  });
+  toolGroup2.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
+      },
+    ],
+  });
+  toolGroup2.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary, // Right Click
+      },
+    ],
+  });
+  toolGroup2.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
 
   // Create synchronizers
@@ -186,10 +209,9 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  // Set the tool group on the viewports
-  viewportIds.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineId)
-  );
+  // Set the tool groups on the viewports
+  toolGroup1.addViewport(viewportIds[0], renderingEngineId); // Left viewport with segmentation
+  toolGroup2.addViewport(viewportIds[1], renderingEngineId); // Right viewport without segmentation
 
   // Get the stack viewports
   const stackViewports = renderingEngine.getStackViewports();
