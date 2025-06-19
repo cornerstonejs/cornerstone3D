@@ -51,6 +51,8 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
+
 const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_SAGITTAL';
 const viewportId3 = 'CT_CORONAL';
@@ -269,13 +271,26 @@ async function run() {
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup.addViewport(viewportId3, renderingEngineId);
+  // toolGroup.addTool(CrosshairsTool.toolName);
+
+  // toolGroup.setToolActive(VolumeCroppingTool.toolName, {
+  //    bindings: [{ mouseButton: MouseBindings.Primary }],
+  // });
+
+  const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
+
+  toolGroup.addViewport(viewportId4, renderingEngineId);
+
+  //addManipulationBindings(toolGroup);
   toolGroup.addTool(TrackballRotateTool.toolName);
 
   toolGroup.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Left Click
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
@@ -293,6 +308,7 @@ async function run() {
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
 
   toolGroup.addTool(VolumeCroppingTool.toolName, {
+    toolGroupId,
     getReferenceLineColor,
     getReferenceLineControllable,
     mobile: {
@@ -307,12 +323,14 @@ async function run() {
       z: [1.0, 0.0, 0.0], // Red for Z
       default: [0.0, 0.0, 1.0], // Blue as fallback
     },
+    sphereRadius: 10,
   });
 
   toolGroup.setToolActive(VolumeCroppingTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
+  const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   // Render the image
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
   renderingEngine.renderViewports(viewportIds);
@@ -327,19 +345,5 @@ async function run() {
     viewport.render();
   });
 }
-/*
-eventTarget.addEventListener(
-  toolsEnums.Events.CROSSHAIR_TOOL_CENTER_CHANGED,
-  (evt) => {
-    const { toolCenter } = evt.detail;
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId4
-    ) as VolumeViewport3D;
-    if (sphereActor) {
-      // addSphere(viewport, toolCenter);
-    }
-  }
-);
-*/
+
 run();
