@@ -387,6 +387,10 @@
         "name": "Interpolation of Contours between slices",
         "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
       },
+      "surfaceContourRendering": {
+        "name": "Display surfaces in slices",
+        "description": "Demonstrates how 3D surfaces as displayed in different orientation viewports"
+      },
       "contourSegmentationConfiguration": {
         "name": "Contour Segmentation Configuration",
         "description": "Demonstrates how to set a configuration for contour segmentations"
