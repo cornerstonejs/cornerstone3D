@@ -18,7 +18,6 @@ import {
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
-  addManipulationBindings,
   getLocalUrl,
   addToggleButtonToToolbar,
   addButtonToToolbar,
@@ -35,16 +34,15 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   VolumeCroppingTool,
-  synchronizers,
+  VolumeCroppingControlTool,
   TrackballRotateTool,
   ZoomTool,
+  PanTool,
   OrientationMarkerTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
-
-const sphereActor = undefined;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -147,33 +145,16 @@ const viewportColors = {
   [viewportId1]: 'rgb(200, 0, 0)',
   [viewportId2]: 'rgb(200, 200, 0)',
   [viewportId3]: 'rgb(0, 200, 0)',
-  [viewportId4]: 'rgb(0, 200, 200)',
 };
+
+const getReferenceLineColor = (viewportId) =>
+  viewportColors[viewportId] || 'rgb(0, 200, 0)';
 
 const viewportReferenceLineControllable = [
   viewportId1,
   viewportId2,
   viewportId3,
-  viewportId4,
 ];
-
-const viewportReferenceLineDraggableRotatable = [
-  viewportId1,
-  viewportId2,
-  viewportId3,
-  viewportId4,
-];
-
-const viewportReferenceLineSlabThicknessControlsOn = [
-  viewportId1,
-  viewportId2,
-  viewportId3,
-  viewportId4,
-];
-
-function getReferenceLineColor(viewportId) {
-  return viewportColors[viewportId];
-}
 
 function getReferenceLineControllable(viewportId) {
   const index = viewportReferenceLineControllable.indexOf(viewportId);
@@ -189,8 +170,10 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(VolumeCroppingTool);
+  cornerstoneTools.addTool(VolumeCroppingControlTool);
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
@@ -274,62 +257,50 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
-  // toolGroup.addTool(CrosshairsTool.toolName);
-
-  // toolGroup.setToolActive(VolumeCroppingTool.toolName, {
-  //    bindings: [{ mouseButton: MouseBindings.Primary }],
-  // });
+  toolGroup.addTool(VolumeCroppingControlTool.toolName, {
+    configuration: {
+      getReferenceLineColor,
+    },
+  });
+  toolGroup.setToolActive(VolumeCroppingControlTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+      },
+    ],
+  });
 
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
 
-  toolGroup.addViewport(viewportId4, renderingEngineId);
+  toolGroupVRT.addViewport(viewportId4, renderingEngineId);
 
-  //addManipulationBindings(toolGroup);
-  toolGroup.addTool(TrackballRotateTool.toolName);
+  toolGroupVRT.addTool(VolumeCroppingTool.toolName);
+  toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
 
-  toolGroup.setToolActive(TrackballRotateTool.toolName, {
+  toolGroupVRT.addTool(TrackballRotateTool.toolName);
+  toolGroupVRT.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+      },
+    ],
+  });
+  toolGroupVRT.addTool(ZoomTool.toolName);
+  toolGroupVRT.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary,
       },
     ],
   });
-
-  toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup.addViewport(viewportId2, renderingEngineId);
-  toolGroup.addViewport(viewportId3, renderingEngineId);
-  toolGroup.addViewport(viewportId4, renderingEngineId);
-
-  // Manipulation Tools
-  // Add Crosshairs tool and configure it to link the three viewports
-  // These viewports could use different tool groups. See the PET-CT example
-  // for a more complicated used case.
-
-  const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
-
-  toolGroup.addTool(VolumeCroppingTool.toolName, {
-    toolGroupId,
-    getReferenceLineColor,
-    getReferenceLineControllable,
-    mobile: {
-      enabled: isMobile,
-      opacity: 0.8,
-      handleRadius: 9,
-    },
-    // Add sphere color configuration
-    sphereColors: {
-      x: [0.0, 1.0, 0.0], // Green for X
-      y: [1.0, 1.0, 0.0], // Yellow for Y
-      z: [1.0, 0.0, 0.0], // Red for Z
-      default: [0.0, 0.0, 1.0], // Blue as fallback
-    },
-    sphereRadius: 10,
+  toolGroupVRT.addTool(PanTool.toolName);
+  toolGroupVRT.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
   });
-
-  toolGroup.setToolActive(VolumeCroppingTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
-
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   // Render the image
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;

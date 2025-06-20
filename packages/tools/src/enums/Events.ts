@@ -35,6 +35,8 @@ enum Events {
 
   CROSSHAIR_TOOL_CENTER_CHANGED = 'CORNERSTONE_TOOLS_CROSSHAIR_TOOL_CENTER_CHANGED',
 
+  VOLUMECROPPING_TOOL_CHANGED = 'CORNERSTONE_TOOLS_VOLUMECROPPING_TOOL_CHANGED',
+
   ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////

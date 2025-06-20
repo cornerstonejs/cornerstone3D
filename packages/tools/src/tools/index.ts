@@ -2,6 +2,7 @@ import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
 import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import VolumeCroppingTool from './VolumeCroppingTool';
+import VolumeCroppingControlTool from './VolumeCroppingControlTool';
 import WindowLevelTool from './WindowLevelTool';
 import WindowLevelRegionTool from './WindowLevelRegionTool';
 import StackScrollTool from './StackScrollTool';
@@ -74,6 +75,7 @@ export {
   PanTool,
   TrackballRotateTool,
   VolumeCroppingTool,
+  VolumeCroppingControlTool,
   DragProbeTool,
   WindowLevelTool,
   WindowLevelRegionTool,
