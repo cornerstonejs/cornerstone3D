@@ -263,6 +263,7 @@ async function run() {
   toolGroup.addViewport(viewportId3, renderingEngineId);
   toolGroup.addTool(VolumeCroppingControlTool.toolName, {
     getReferenceLineColor,
+    viewportIndicators: true,
   });
   toolGroup.setToolActive(VolumeCroppingControlTool.toolName, {
     bindings: [
@@ -323,6 +324,8 @@ async function run() {
     toolGroupVRT.addViewport(viewportId4, renderingEngineId);
     toolGroupVRT.addTool(VolumeCroppingTool.toolName);
     toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
+    // Set zoom to 1.5x
+    viewport.setZoom(1.5);
     viewport.render();
   });
 }

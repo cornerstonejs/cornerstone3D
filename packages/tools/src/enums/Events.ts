@@ -37,6 +37,8 @@ enum Events {
 
   VOLUMECROPPING_TOOL_CHANGED = 'CORNERSTONE_TOOLS_VOLUMECROPPING_TOOL_CHANGED',
 
+  VOLUMECROPPING_SPHERE_MOVED = 'CORNERSTONE_TOOLS_VOLUMECROPPING_SPHERE_MOVED',
+
   ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////

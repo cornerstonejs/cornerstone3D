@@ -163,6 +163,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
     this.picker.setTolerance(0);
     this.picker.initializePickList();
     const viewportsInfo = getToolGroup(this.toolGroupId)?.viewportsInfo;
+
+    eventTarget.addEventListener(
+      Events.VOLUMECROPPING_SPHERE_MOVED,
+      this._onSphereMoved
+    );
+
     if (viewportsInfo && viewportsInfo.length > 0) {
       const { viewportId, renderingEngineId } = viewportsInfo[0];
       const enabledElement = getEnabledElementByIds(
@@ -484,7 +490,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return filteredAnnotations[0];
       // here should be the nearPoint checker and update handler
     } else {
-      this._jump(enabledElement, jumpWorld);
+      //this._jump(enabledElement, jumpWorld);
 
       const annotations = this._getAnnotations(enabledElement);
       const filteredAnnotations = this.filterInteractableAnnotationsForElement(
@@ -1047,6 +1053,21 @@ class VolumeCroppingControlTool extends AnnotationTool {
     });
 
     return toolGroupAnnotations;
+  };
+
+  _onSphereMoved = (evt) => {
+    const eventCenter = evt.detail.toolCenter;
+    console.debug('Sphere moved event received', eventCenter);
+    let newCenter = [0, 0, 0];
+    if (evt.detail.axis === 'x') {
+      newCenter = [eventCenter[0], this.toolCenter[1], this.toolCenter[2]];
+    } else if (evt.detail.axis === 'y') {
+      newCenter = [this.toolCenter[0], eventCenter[1], this.toolCenter[2]];
+    } else if (evt.detail.axis === 'z') {
+      newCenter = [this.toolCenter[0], this.toolCenter[1], eventCenter[2]];
+    }
+    this.setToolCenter(newCenter, true);
+    //  this.toolCenter = evt.detail.toolCenter;
   };
 
   _onNewVolume = () => {

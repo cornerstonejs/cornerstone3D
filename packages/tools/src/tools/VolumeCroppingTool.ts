@@ -271,30 +271,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const imageData = volumeActors[0].actor.getMapper().getInputData();
     const dimensions = imageData.getDimensions();
     const origin = imageData.getOrigin();
-    console.debug('initialized 3d', dimensions);
     const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
-    const worldDimensions = [
-      Math.round(dimensions[0] * spacing[0]),
-      Math.round(dimensions[1] * spacing[1]),
-      Math.round(dimensions[2] * spacing[2]),
-    ];
-    //const worldDimensions = dimensions;
-    //console.debug('worldDimensions', worldDimensions, origin);
-    /*
-    const xMin = worldDimensions[0] * -0.5;
-    const xMax = worldDimensions[0] * 0.5;
-    const yMin = worldDimensions[1] * -0.5;
-    const yMax = worldDimensions[1] * 0.5;
-    const zMin = worldDimensions[2] * -0.5;
-    const zMax = worldDimensions[2];
-     */
-
-    /*        this.toolCenter = [
-          origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0],
-          origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1],
-          origin[2] + 0.2 * (dimensions[2] - 1) * spacing[2],
-        ];
-*/
     const xMin = origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0];
     const xMax = origin[0] + 0.8 * (dimensions[0] - 1) * spacing[0];
     const yMin = origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1];
@@ -437,13 +414,39 @@ class VolumeCroppingTool extends AnnotationTool {
         return;
       }
       const mapper = volumeActor.getMapper();
-
       const clippingPlanes = mapper.getClippingPlanes();
-      //console.debug('clippingPlanes before setOrigin:', clippingPlanes);
       clippingPlanes[0].setOrigin(planeXmin.getOrigin());
       clippingPlanes[2].setOrigin(planeYmin.getOrigin());
       clippingPlanes[4].setOrigin(planeZmin.getOrigin());
-      //viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
+
+      const currentPoint = this.sphereStates[0].point;
+      const newPointXMin = [
+        planeXmin.getOrigin()[0],
+        currentPoint[1],
+        currentPoint[2],
+      ];
+      this.sphereStates[0].point = newPointXMin;
+      this.sphereStates[0].sphereSource.setCenter(newPointXMin);
+      this.sphereStates[0].sphereSource.modified();
+      /*
+      const newPointYMin = [
+        currentPoint[0],
+        planeYmin.getOrigin()[1],
+        currentPoint[2],
+      ];
+      this.sphereStates[2].point = newPointYMin;
+      this.sphereStates[2].sphereSource.setCenter(newPointYMin);
+      this.sphereStates[2].sphereSource.modified();
+      const newPointZmin = [
+        currentPoint[0],
+        currentPoint[1],
+        planeZmin.getOrigin()[2],
+      ];
+      this.sphereStates[4].point = newPointZmin;
+      this.sphereStates[4].sphereSource.setCenter(newPointZmin);
+      this.sphereStates[4].sphereSource.modified();
+
+      */
       mapper.modified();
 
       viewport.getDefaultActor().actor.modified();
@@ -574,7 +577,7 @@ class VolumeCroppingTool extends AnnotationTool {
       const mapper = volumeActor.getMapper();
 
       const clippingPlanes = mapper.getClippingPlanes();
-      //console.debug('clippingPlanes before setOrigin:', clippingPlanes);
+
       clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
       viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
       mapper.modified();
@@ -582,6 +585,23 @@ class VolumeCroppingTool extends AnnotationTool {
       viewport.getDefaultActor().actor.modified();
       volumeActor.modified();
       viewport.render();
+      const sphereMoved = newPoint;
+      console.debug(clippingPlanes[0].getOrigin());
+      if (sphereState.axis === 'x') {
+        sphereMoved[0] = pickedPoint[0];
+        sphereMoved[1] = clippingPlanes[0].getOrigin()[1];
+        sphereMoved[2] = clippingPlanes[0].getOrigin()[2];
+      } else if (sphereState.axis === 'y') {
+        sphereMoved[1] = pickedPoint[1];
+      } else if (sphereState.axis === 'z') {
+        sphereMoved[2] = pickedPoint[2];
+      }
+
+      /// Send event with the new point
+      triggerEvent(eventTarget, Events.VOLUMECROPPING_SPHERE_MOVED, {
+        toolCenter: sphereMoved,
+        axis: sphereState.axis,
+      });
     }
   };
 
