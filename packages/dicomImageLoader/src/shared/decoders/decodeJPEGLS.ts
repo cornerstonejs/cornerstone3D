@@ -1,18 +1,23 @@
+// @ts-ignore
+import charlsFactory from '@cornerstonejs/codec-charls/decodewasmjs';
 import type {
   CharlsModule,
   JpegLSDecoder,
 } from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
-// @ts-ignore
-import charlsFactory from '@cornerstonejs/codec-charls/decodewasmjs';
-// @ts-ignore
-// import charlsWasm from '@cornerstonejs/codec-charls/decodewasm';
+import type { Types } from '@cornerstonejs/core';
+import type { ByteArray } from 'dicom-parser';
+import type { WebWorkerDecodeConfig } from '../../types';
+
+/**
+ * Default URL to load the Charls codec from.
+ *
+ * In order for this to be loaded correctly, you will need to configure your
+ * bundler to treat `.wasm` files as an asset/resource.
+ */
 const charlsWasm = new URL(
   '@cornerstonejs/codec-charls/decodewasm',
   import.meta.url
 );
-import type { ByteArray } from 'dicom-parser';
-import type { WebWorkerDecodeConfig } from '../../types';
-import type { Types } from '@cornerstonejs/core';
 
 const local: {
   codec: CharlsModule;
@@ -30,8 +35,16 @@ function getExceptionMessage(exception) {
     : exception;
 }
 
+/**
+ *
+ * @param decodeConfig
+ * @param wasmUrlCodecCharls Optional - a path/url where to load the charls wasm
+ * file from. If not given, it will default to using the default `charlsWasm` URL.
+ * @returns
+ */
 export function initialize(
-  decodeConfig?: WebWorkerDecodeConfig
+  decodeConfig?: WebWorkerDecodeConfig,
+  wasmUrlCodecCharls?: string
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
 
@@ -42,6 +55,9 @@ export function initialize(
   const charlsModule = charlsFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
+        if (wasmUrlCodecCharls) {
+          return wasmUrlCodecCharls;
+        }
         return charlsWasm.toString();
       }
 
@@ -66,10 +82,11 @@ export function initialize(
  */
 async function decodeAsync(
   compressedImageFrame,
-  imageInfo
+  imageInfo,
+  wasmUrlCodecCharls?: string
 ): Promise<Types.IImageFrame> {
   try {
-    await initialize();
+    await initialize(undefined, wasmUrlCodecCharls);
     const decoder = local.decoder;
 
     // get pointer to the source/encoded bit stream buffer in WASM memory
