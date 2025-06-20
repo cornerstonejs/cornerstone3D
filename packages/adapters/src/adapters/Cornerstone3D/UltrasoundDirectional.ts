@@ -39,6 +39,7 @@ class UltrasoundDirectional extends BaseAdapter3D {
         const state = defaultState;
 
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
                 points: [worldCoords[0], worldCoords[1]],
                 activeHandleIndex: 0,
@@ -46,7 +47,6 @@ class UltrasoundDirectional extends BaseAdapter3D {
                     hasMoved: false
                 }
             },
-            cachedStats: {},
             frameNumber: ReferencedFrameNumber
         };
 
