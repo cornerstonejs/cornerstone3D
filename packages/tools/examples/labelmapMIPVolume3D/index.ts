@@ -13,6 +13,7 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
   addButtonToToolbar,
+  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
@@ -48,8 +49,8 @@ const viewportId2 = 'CT_MIP';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Rendering over MIP data',
-  'Here we demonstrate rendering of a mock ellipsoid labelmap over MIP data'
+  'Labelmap Rendering over MIP data on Volume3D viewport',
+  'Here we demonstrate rendering of a labelmap over MIP data, use the brush tool to drawn segmentation',
 );
 
 const size = '500px';
@@ -66,6 +67,14 @@ element1.style.width = size;
 element1.style.height = size;
 element2.style.width = size;
 element2.style.height = size;
+
+const instructions = document.createElement('p');
+instructions.innerText = `
+  Left Click: Use BrushSphere Segmentation Tool.
+  Mouse wheel: Scroll Stack
+  `;
+
+content.append(instructions);
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
@@ -162,7 +171,7 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
-  toolGroup.setToolActive(SegmentSelectTool.toolName);
+  // toolGroup.setToolActive(SegmentSelectTool.toolName);
 
   toolGroup2.setToolActive(VolumeRotateTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
@@ -199,22 +208,13 @@ async function run() {
     volumeId: segmentationId,
   });
 
-  // Add some data to the segmentations
-  fillVolumeLabelmapWithMockData({
-    volumeId: segmentationId,
-    cornerstone,
-    innerRadius: 20,
-    outerRadius: 30,
-    scale: [1, 2, 1],
-  });
-
   segmentation.config.style.setStyle(
     {
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
       viewportId: viewportId1,
     },
     {
-      fillAlpha: 0.0,
+      // fillAlpha: 0.0,
       activeSegmentOutlineWidthDelta: 3,
     }
   );
@@ -225,7 +225,8 @@ async function run() {
       viewportId: viewportId2,
     },
     {
-      activeSegmentOutlineWidthDelta: 3,
+
+      activeSegmentOutlineWidthDelta: 2,
     }
   );
 
@@ -241,6 +242,9 @@ async function run() {
       },
     },
   ]);
+
+  addSegmentIndexDropdown('MY_SEGMENTATION_ID', [1, 2, 3, 4]);
+
 
   await segmentation.addLabelmapRepresentationToViewport(viewportId1, [
     { segmentationId },
