@@ -189,10 +189,12 @@ class VolumeViewport extends BaseVolumeViewport {
    *
    * @param orientation - The orientation to set the camera to.
    * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
+   * @param resetCamera - Whether the 'Camera' should be reset.
    */
   public setOrientation(
     orientation: OrientationAxis | OrientationVectors,
-    immediate = true
+    immediate = true,
+    resetCamera = true
   ): void {
     let viewPlaneNormal, viewUp;
 
@@ -222,10 +224,12 @@ class VolumeViewport extends BaseVolumeViewport {
       });
 
       this.viewportProperties.orientation = orientation;
-      this.resetCamera();
+      if (resetCamera) {
+        this.resetCamera();
+      }
     } else {
       ({ viewPlaneNormal, viewUp } = orientation);
-      this.applyViewOrientation(orientation);
+      this.applyViewOrientation(orientation, resetCamera);
     }
 
     if (immediate) {
@@ -364,11 +368,14 @@ class VolumeViewport extends BaseVolumeViewport {
 
   public resetCameraForResize = (): boolean => {
     return this.resetCamera({
-      resetPan: true,
-      resetZoom: true,
-      resetToCenter: true,
-      resetRotation: false,
-      suppressEvents: true,
+      resetPan: this.options.resetCameraForResizeOptions.resetPan ?? true,
+      resetZoom: this.options.resetCameraForResizeOptions.resetZoom ?? true,
+      resetToCenter:
+        this.options.resetCameraForResizeOptions.resetToCenter ?? true,
+      resetRotation:
+        this.options.resetCameraForResizeOptions.resetToCenter ?? false,
+      suppressEvents:
+        this.options.resetCameraForResizeOptions.suppressEvents ?? true,
     });
   };
 
