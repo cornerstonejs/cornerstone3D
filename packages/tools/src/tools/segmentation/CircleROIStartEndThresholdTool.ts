@@ -74,7 +74,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     handleIndex?: number;
     newAnnotation?: boolean;
     hasMoved?: boolean;
-    centerWorld?: Types.Point3; // Ajouté pour _dragDrawCallback hérité
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
@@ -247,7 +246,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     this.editData = {
       annotation,
       viewportIdsToRender,
-      centerWorld: worldPos,
       newAnnotation: true,
       hasMoved: false,
     };

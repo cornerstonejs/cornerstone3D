@@ -120,7 +120,6 @@ class CircleROITool extends AnnotationTool {
     viewportIdsToRender: Array<string>;
     handleIndex?: number;
     movingTextBox?: boolean;
-    centerWorld?: Types.Point3;
     newAnnotation?: boolean;
     hasMoved?: boolean;
   } | null;
@@ -247,7 +246,6 @@ class CircleROITool extends AnnotationTool {
     this.editData = {
       annotation,
       viewportIdsToRender,
-      centerWorld: worldPos,
       newAnnotation: true,
       hasMoved: false,
     };
@@ -415,10 +413,10 @@ class CircleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { canvasToWorld } = viewport;
 
-    const { annotation, viewportIdsToRender, centerWorld, newAnnotation } =
-      this.editData;
+    const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
     this.createMemo(element, annotation, { newAnnotation });
     const { data } = annotation;
+    const centerWorld = data.handles.points[0];
     const centerCanvas = viewport.worldToCanvas(centerWorld as Types.Point3);
 
     if (this.configuration.simplified) {
