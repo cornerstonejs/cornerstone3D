@@ -189,6 +189,11 @@ const screenShotPaths = {
     'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02': 'TG18-RV-2k-02.png',
     'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03': 'TG18-RV-2k-03.png',
   },
+  mprReformat: {
+    beforeReformat: 'mpr-reformat-before.png',
+    afterReformat: 'mpr-reformat-after.png',
+    afterInteraction: 'mpr-reformat-after-interaction.png',
+  },
 };
 
 export { screenShotPaths };
