@@ -1,7 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 import * as math from '../math';
 import { checkIntersection } from './sharedOperations';
+import { intersectPolylines } from '../math/polyline';
+import arePolylinesIdentical from '../math/polyline/arePolylinesIdentical';
 
+const TOLERANCE = 1e-10; // Very small tolerance for floating point comparison
 /**
  * Unifies two sets of polylines by merging intersecting polylines and keeping non-intersecting ones.
  * If a polyline from set A intersects with a polyline from set B, they are merged.
@@ -34,6 +37,16 @@ export function unifyPolylineSets(
       }
 
       const polylineB = polylinesSetB[j];
+
+      // Check if polylines are identical first
+      if (arePolylinesIdentical(polylineA, polylineB)) {
+        // Polylines are identical, just add one copy to result
+        result.push([...polylineA]);
+        processedFromA.add(i);
+        processedFromB.add(j);
+        merged = true;
+        break;
+      }
 
       // Check if polylines intersect
       const intersection = checkIntersection(polylineA, polylineB);
@@ -175,6 +188,13 @@ export function subtractPolylineSets(
 
       // Apply subtraction to all current polylines
       for (const currentPolyline of currentPolylines) {
+        // Check if polylines are identical first
+        if (arePolylinesIdentical(currentPolyline, polylineB)) {
+          // Polylines are identical, subtraction results in empty (no polyline added)
+          wasSubtracted = true;
+          continue;
+        }
+
         // Check if polylines intersect
         const intersection = checkIntersection(currentPolyline, polylineB);
 
@@ -184,11 +204,21 @@ export function subtractPolylineSets(
             currentPolyline,
             polylineB
           );
-          newPolylines.push(...subtractedPolylines);
+
+          // Clean each subtracted polyline before adding
+          for (const subtractedPolyline of subtractedPolylines) {
+            const cleaned = removeDuplicatePoints(subtractedPolyline);
+            if (cleaned.length >= 3) {
+              newPolylines.push(cleaned);
+            }
+          }
           wasSubtracted = true;
         } else {
-          // No intersection, keep the polyline as-is
-          newPolylines.push(currentPolyline);
+          // No intersection, keep the polyline as-is (but clean it)
+          const cleaned = removeDuplicatePoints(currentPolyline);
+          if (cleaned.length >= 3) {
+            newPolylines.push(cleaned);
+          }
         }
       }
 
@@ -200,7 +230,7 @@ export function subtractPolylineSets(
     processedFromA.add(i);
   }
 
-  return result;
+  return cleanupPolylines(result);
 }
 
 /**
@@ -256,4 +286,179 @@ export function subtractAnnotationPolylines(
   );
 
   return subtractPolylineSets(basePolylines, subtractorPolylines);
+}
+
+/**
+ * Performs the intersection operation on two sets of polylines.
+ * This function returns the polylines that represent the overlapping areas between the two sets.
+ * Uses a direct approach to find intersecting regions.
+ *
+ * @param polylinesSetA - First set of polylines
+ * @param polylinesSetB - Second set of polylines
+ * @returns The polylines representing the intersection of both sets
+ */
+export function intersectPolylinesSets(
+  polylinesSetA: Types.Point2[][],
+  polylinesSetB: Types.Point2[][]
+): Types.Point2[][] {
+  if (!polylinesSetA.length || !polylinesSetB.length) {
+    return [];
+  }
+
+  const result: Types.Point2[][] = [];
+
+  // For each polyline in set A, find its intersection with each polyline in set B
+  for (const polylineA of polylinesSetA) {
+    for (const polylineB of polylinesSetB) {
+      // Check if polylines are identical first
+      if (arePolylinesIdentical(polylineA, polylineB)) {
+        // Polylines are identical, intersection is the polyline itself
+        result.push([...polylineA]);
+        continue;
+      }
+
+      // Check if polylines intersect
+      const intersection = checkIntersection(polylineA, polylineB);
+
+      if (intersection.hasIntersection && !intersection.isContourHole) {
+        // Find the actual intersection region using a more direct approach
+        const intersectionRegions = intersectPolylines(polylineA, polylineB);
+        if (intersectionRegions && intersectionRegions.length > 0) {
+          result.push(...intersectionRegions);
+        }
+      }
+    }
+  }
+
+  return cleanupPolylines(result);
+}
+
+/**
+ * Performs the XOR (exclusive or) operation on two sets of polylines.
+ * This function returns the polylines that represent the areas that are in one set
+ * but not in both sets (subtraction of the intersection from the union).
+ *
+ * @param polylinesSetA - First set of polylines
+ * @param polylinesSetB - Second set of polylines
+ * @returns The polylines representing the XOR of both sets
+ */
+export function xorPolylinesSets(
+  polylinesSetA: Types.Point2[][],
+  polylinesSetB: Types.Point2[][]
+): Types.Point2[][] {
+  if (!polylinesSetA.length && !polylinesSetB.length) {
+    return [];
+  }
+
+  if (!polylinesSetA.length) {
+    return polylinesSetB.map((polyline) => [...polyline]);
+  }
+
+  if (!polylinesSetB.length) {
+    return polylinesSetA.map((polyline) => [...polyline]);
+  }
+
+  // Early optimization: if sets are identical, XOR result is empty
+  if (polylinesSetA.length === polylinesSetB.length) {
+    let allIdentical = true;
+    for (let i = 0; i < polylinesSetA.length; i++) {
+      let foundMatch = false;
+      for (let j = 0; j < polylinesSetB.length; j++) {
+        if (arePolylinesIdentical(polylinesSetA[i], polylinesSetB[j])) {
+          foundMatch = true;
+          break;
+        }
+      }
+      if (!foundMatch) {
+        allIdentical = false;
+        break;
+      }
+    }
+    if (allIdentical) {
+      return []; // XOR of identical sets is empty
+    }
+  }
+
+  // XOR = (A ∪ B) - (A ∩ B) = (A - B) ∪ (B - A)
+  // This is more efficient than computing union and intersection separately
+
+  const aMinusB = subtractPolylineSets(polylinesSetA, polylinesSetB);
+  const bMinusA = subtractPolylineSets(polylinesSetB, polylinesSetA);
+
+  // Combine the results
+  const xorResult = [...aMinusB, ...bMinusA];
+
+  return cleanupPolylines(xorResult);
+}
+
+/**
+ * Remove consecutive duplicate points from a polyline
+ * @param polyline - Polyline to clean
+ * @returns Cleaned polyline without consecutive duplicates
+ */
+function removeDuplicatePoints(polyline: Types.Point2[]): Types.Point2[] {
+  if (!polyline || polyline.length < 2) {
+    return polyline;
+  }
+
+  const cleaned: Types.Point2[] = [polyline[0]]; // Always keep the first point
+
+  for (let i = 1; i < polyline.length; i++) {
+    const currentPoint = polyline[i];
+    const lastPoint = cleaned[cleaned.length - 1];
+
+    // Check if current point is different from the last added point
+    const dx = Math.abs(currentPoint[0] - lastPoint[0]);
+    const dy = Math.abs(currentPoint[1] - lastPoint[1]);
+
+    if (dx > TOLERANCE || dy > TOLERANCE) {
+      cleaned.push(currentPoint);
+    }
+  }
+
+  return cleaned;
+}
+
+/**
+ * Helper function to clean up polylines by removing duplicates and invalid polylines
+ * @param polylines - Array of polylines to clean up
+ * @returns Cleaned array of polylines
+ */
+function cleanupPolylines(polylines: Types.Point2[][]): Types.Point2[][] {
+  const validPolylines: Types.Point2[][] = [];
+  const seenPolylines = new Set<string>();
+
+  for (let polyline of polylines) {
+    // Skip invalid polylines
+    if (!polyline || polyline.length < 3) {
+      continue;
+    }
+
+    // Remove consecutive duplicate points
+    polyline = removeDuplicatePoints(polyline);
+
+    // Skip if after cleanup it's too small
+    if (polyline.length < 3) {
+      continue;
+    }
+
+    // Create a string representation for duplicate detection
+    // Sort points to handle polylines that are the same but start from different points
+    const sortedPoints = [...polyline].sort((a, b) => {
+      if (a[0] !== b[0]) {
+        return a[0] - b[0];
+      }
+      return a[1] - b[1];
+    });
+    const polylineKey = sortedPoints
+      .map((p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`)
+      .join('|');
+
+    if (!seenPolylines.has(polylineKey)) {
+      seenPolylines.add(polylineKey);
+      validPolylines.push(polyline);
+    }
+  }
+
+  return validPolylines;
 }
