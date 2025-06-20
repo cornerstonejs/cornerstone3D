@@ -291,7 +291,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   };
 
-  //Now works for non-acquisition planes
+  //Now works for axial, sagitall and coronal
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
@@ -311,38 +311,41 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const endWorld = vec3.create();
     imageData.indexToWorldVec3(endIJK, endWorld);
 
-    // substitute the end slice index 2 with startIJK index 2
+    const projectionAxisIndex =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
+    if (projectionAxisIndex == 2) {
       startWorld[2] = startCoordinate;
       endWorld[2] = endCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
-    ) {
+    } else if (projectionAxisIndex == 0) {
       startWorld[0] = startCoordinate;
       endWorld[0] = endCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
-    ) {
+    } else if (projectionAxisIndex == 1) {
       startWorld[1] = startCoordinate;
       endWorld[1] = endCoordinate;
     }
 
-    // distance between start and end slice in the world coordinate
-    const distance = vec3.distance(startWorld, endWorld);
-    // for each point inside points, navigate in the direction of the viewPlaneNormal
-    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
+    // Calculate the explicit direction vector from start to end
+    const direction = vec3.create();
+    vec3.subtract(direction, endWorld, startWorld);
+
+    const distance = vec3.length(direction);
+
+    // Normalize the direction vector to get a unit vector for scaling.
+    vec3.normalize(direction, direction);
+
     const newProjectionPoints = [];
+
     for (let dist = 0; dist < distance; dist += spacingInNormal) {
       newProjectionPoints.push(
         points.map((point) => {
           const newPoint = vec3.create();
-          //@ts-ignore
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
+          vec3.scaleAndAdd(newPoint, point, direction, dist);
           return Array.from(newPoint);
         })
       );
     }
+
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 

@@ -379,6 +379,10 @@
         "name": "Stack Labelmap creation/edit for stack viewports",
         "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
       },
+      "stackViewportsWithSegmentationSync": {
+        "name": "Stack Viewports with Segmentation Sync",
+        "description": "Demonstrates how to synchronize two stack viewports with a segmentation on one of them"
+      },
       "splineROITools": {
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
@@ -386,6 +390,10 @@
       "interpolationContourSegmentation": {
         "name": "Interpolation of Contours between slices",
         "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
+      },
+      "surfaceContourRendering": {
+        "name": "Display surfaces in slices",
+        "description": "Demonstrates how 3D surfaces as displayed in different orientation viewports"
       },
       "contourSegmentationConfiguration": {
         "name": "Contour Segmentation Configuration",
@@ -470,6 +478,10 @@
       "crossHairs": {
         "name": "Crosshairs",
         "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
+      },
+      "mprReformat": {
+        "name": "DICOM Reformats in MPR",
+        "description": "Aligns MPR viewports to dicom acquisition orientations"
       },
       "overlayGrid": {
         "name": "Overlay Grid",

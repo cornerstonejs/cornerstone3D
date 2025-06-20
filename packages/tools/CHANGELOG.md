@@ -3,6 +3,42 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.4...v3.23.0) (2025-06-20)
+
+### Features
+
+- **reformat:** align viewports to acquisition direction ([#2149](https://github.com/cornerstonejs/cornerstone3D/issues/2149)) ([1211b3d](https://github.com/cornerstonejs/cornerstone3D/commit/1211b3d86650dd6eb9e8ca7bac7ebd3b3b75ea09))
+
+## [3.22.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.3...v3.22.4) (2025-06-19)
+
+### Bug Fixes
+
+- **segmentation:** stack viewport flicker when there's a segmentation added ([#2154](https://github.com/cornerstonejs/cornerstone3D/issues/2154)) ([fd9acf0](https://github.com/cornerstonejs/cornerstone3D/commit/fd9acf0d4d42818226eb526bbe3e8a6d6ef13f37))
+
+## [3.22.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.2...v3.22.3) (2025-06-18)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.1...v3.22.2) (2025-06-18)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.0...v3.22.1) (2025-06-16)
+
+### Bug Fixes
+
+- **polyseg-contour:** Enhance Contour Processing, Validation, and Ordering ([#2144](https://github.com/cornerstonejs/cornerstone3D/issues/2144)) ([2d42f19](https://github.com/cornerstonejs/cornerstone3D/commit/2d42f195417f8017d01b7311e89a2a3c59df3dc9))
+
+# [3.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.21.1...v3.22.0) (2025-06-16)
+
+### Features
+
+- **spline:** add preview to splines with two points ([#2143](https://github.com/cornerstonejs/cornerstone3D/issues/2143)) ([1c4695f](https://github.com/cornerstonejs/cornerstone3D/commit/1c4695fae4a6dac3cd635413db6f11561336aac6))
+
+## [3.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.21.0...v3.21.1) (2025-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 # [3.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.2...v3.21.0) (2025-06-12)
 
 ### Features

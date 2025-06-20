@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.4...v3.23.0) (2025-06-20)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
+## [3.22.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.3...v3.22.4) (2025-06-19)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
+## [3.22.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.2...v3.22.3) (2025-06-18)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
+## [3.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.1...v3.22.2) (2025-06-18)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
+## [3.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.0...v3.22.1) (2025-06-16)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
+# [3.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.21.1...v3.22.0) (2025-06-16)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
+## [3.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.21.0...v3.21.1) (2025-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
 # [3.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.2...v3.21.0) (2025-06-12)
 
 **Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
