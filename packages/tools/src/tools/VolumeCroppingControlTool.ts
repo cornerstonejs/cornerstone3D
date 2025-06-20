@@ -162,6 +162,30 @@ class VolumeCroppingControlTool extends AnnotationTool {
     this.picker.setPickFromList(1);
     this.picker.setTolerance(0);
     this.picker.initializePickList();
+    const viewportsInfo = getToolGroup(this.toolGroupId)?.viewportsInfo;
+    if (viewportsInfo && viewportsInfo.length > 0) {
+      const { viewportId, renderingEngineId } = viewportsInfo[0];
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+      const viewport = renderingEngine.getViewport(viewportId);
+      const volumeActors = viewport.getActors();
+      const imageData = volumeActors[0].actor.getMapper().getInputData();
+
+      //   const imageData = enabledElement?.viewport?.getImageData?.();
+      if (imageData) {
+        const dimensions = imageData.getDimensions();
+        const spacing = imageData.getSpacing();
+        const origin = imageData.getOrigin();
+        this.toolCenter = [
+          origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0],
+          origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1],
+          origin[2] + 0.2 * (dimensions[2] - 1) * spacing[2],
+        ];
+      }
+    }
   }
 
   /**
@@ -223,10 +247,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     addAnnotation(annotation, element);
     return {
       normal: viewPlaneNormal,
-      point: viewport.canvasToWorld([
-        viewport.canvas.clientWidth / 2,
-        viewport.canvas.clientHeight / 2,
-      ]),
+      point: viewport.canvasToWorld([100, 100]),
     };
   };
 
@@ -381,7 +402,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       secondPlane,
       thirdPlane
     );
-    this.setToolCenter(toolCenter);
+
+    // this.setToolCenter(toolCenter);
   };
 
   setToolCenter(toolCenter: Types.Point3, suppressEvents = false): void {
@@ -398,6 +420,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
       triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
+      });
+      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+        // orientation: viewport.defaultOptions.orientation,
+        toolGroupId: this.toolGroupId,
+        toolCenter: this.toolCenter,
+        //   viewportId: data.viewportId,
       });
     }
   }
@@ -624,7 +652,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
         this.toolCenter[0] += deltaCameraPosition[0];
         this.toolCenter[1] += deltaCameraPosition[1];
         this.toolCenter[2] += deltaCameraPosition[2];
-        triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
+        // triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
+        //   toolGroupId: this.toolGroupId,
+        //    toolCenter: this.toolCenter,
+        //   });
+        triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
           toolGroupId: this.toolGroupId,
           toolCenter: this.toolCenter,
         });
@@ -745,6 +777,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       // No annotations yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
       return renderStatus;
     }
+    //console.debug(viewportAnnotation);
 
     const annotationUID = viewportAnnotation.annotationUID;
 
@@ -760,276 +793,243 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const canvasMinDimensionLength = Math.min(clientWidth, clientHeight);
 
     const data = viewportAnnotation.data;
-    console.debug('annotation data: ', data);
+    //  console.debug('annotation data: ', data.viewportId);
 
-    if (viewport.type === Enums.ViewportType.VOLUME_3D) {
-      //      console.debug('annotation data for 3D: ', data);
-    } else {
-      const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter);
+    const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter);
 
-      const otherViewportAnnotations =
-        this._filterAnnotationsByUniqueViewportOrientations(
-          enabledElement,
-          annotations
-        );
+    const otherViewportAnnotations =
+      this._filterAnnotationsByUniqueViewportOrientations(
+        enabledElement,
+        annotations
+      );
 
-      const referenceLines = [];
+    const referenceLines = [];
 
-      // get canvas information for points and lines (canvas box, canvas horizontal distances)
-      const canvasBox = [0, 0, clientWidth, clientHeight];
+    // get canvas information for points and lines (canvas box, canvas horizontal distances)
+    const canvasBox = [0, 0, clientWidth, clientHeight];
 
-      otherViewportAnnotations.forEach((annotation) => {
-        const { data } = annotation;
+    otherViewportAnnotations.forEach((annotation) => {
+      const { data } = annotation;
 
-        data.handles.toolCenter = this.toolCenter;
+      data.handles.toolCenter = this.toolCenter;
 
-        const otherViewport = renderingEngine.getViewport(
-          data.viewportId
-        ) as Types.IVolumeViewport;
+      const otherViewport = renderingEngine.getViewport(
+        data.viewportId
+      ) as Types.IVolumeViewport;
 
-        const otherCamera = otherViewport.getCamera();
+      const otherCamera = otherViewport.getCamera();
 
-        const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.id
-        );
+      const otherViewportControllable = this._getReferenceLineControllable(
+        otherViewport.id
+      );
 
-        // get coordinates for the reference line
-        const { clientWidth, clientHeight } = otherViewport.canvas;
-        const otherCanvasDiagonalLength = Math.sqrt(
-          clientWidth * clientWidth + clientHeight * clientHeight
-        );
-        const otherCanvasCenter: Types.Point2 = [
-          clientWidth * 0.5,
-          clientHeight * 0.5,
-        ];
-        const otherViewportCenterWorld =
-          otherViewport.canvasToWorld(otherCanvasCenter);
+      // get coordinates for the reference line
+      const { clientWidth, clientHeight } = otherViewport.canvas;
+      const otherCanvasDiagonalLength = Math.sqrt(
+        clientWidth * clientWidth + clientHeight * clientHeight
+      );
+      const otherCanvasCenter: Types.Point2 = [
+        clientWidth * 0.5,
+        clientHeight * 0.5,
+      ];
+      const otherViewportCenterWorld =
+        otherViewport.canvasToWorld(otherCanvasCenter);
 
-        const direction: Types.Point3 = [0, 0, 0];
-        vtkMath.cross(
-          camera.viewPlaneNormal,
-          otherCamera.viewPlaneNormal,
-          direction
-        );
-        vtkMath.normalize(direction);
-        vtkMath.multiplyScalar(
-          <Types.Point3>direction,
-          otherCanvasDiagonalLength
-        );
+      const direction: Types.Point3 = [0, 0, 0];
+      vtkMath.cross(
+        camera.viewPlaneNormal,
+        otherCamera.viewPlaneNormal,
+        direction
+      );
+      vtkMath.normalize(direction);
+      vtkMath.multiplyScalar(
+        <Types.Point3>direction,
+        otherCanvasDiagonalLength
+      );
 
-        const pointWorld0: Types.Point3 = [0, 0, 0];
-        vtkMath.add(otherViewportCenterWorld, direction, pointWorld0);
+      const pointWorld0: Types.Point3 = [0, 0, 0];
+      vtkMath.add(otherViewportCenterWorld, direction, pointWorld0);
 
-        const pointWorld1: Types.Point3 = [0, 0, 0];
-        vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1);
+      const pointWorld1: Types.Point3 = [0, 0, 0];
+      vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1);
 
-        const pointCanvas0 = viewport.worldToCanvas(pointWorld0);
+      const pointCanvas0 = viewport.worldToCanvas(pointWorld0);
 
-        const otherViewportCenterCanvas = viewport.worldToCanvas(
-          otherViewportCenterWorld
-        );
+      const otherViewportCenterCanvas = viewport.worldToCanvas(
+        otherViewportCenterWorld
+      );
 
-        const canvasUnitVectorFromCenter = vec2.create();
-        vec2.subtract(
-          canvasUnitVectorFromCenter,
-          pointCanvas0,
-          otherViewportCenterCanvas
-        );
-        vec2.normalize(canvasUnitVectorFromCenter, canvasUnitVectorFromCenter);
+      const canvasUnitVectorFromCenter = vec2.create();
+      vec2.subtract(
+        canvasUnitVectorFromCenter,
+        pointCanvas0,
+        otherViewportCenterCanvas
+      );
+      vec2.normalize(canvasUnitVectorFromCenter, canvasUnitVectorFromCenter);
 
-        const canvasVectorFromCenterLong = vec2.create();
+      const canvasVectorFromCenterLong = vec2.create();
 
-        vec2.scale(
-          canvasVectorFromCenterLong,
-          canvasUnitVectorFromCenter,
-          canvasDiagonalLength * 100
-        );
-        const canvasVectorFromCenterMid = vec2.create();
-        vec2.scale(
-          canvasVectorFromCenterMid,
-          canvasUnitVectorFromCenter,
-          // to maximize the visibility of the controls, they need to be
-          // placed at most at half the length of the shortest side of the canvas.
-          // Chosen 0.4 to have some margin to the edge.
-          canvasMinDimensionLength * 0.4
-        );
-        const canvasVectorFromCenterShort = vec2.create();
-        vec2.scale(
-          canvasVectorFromCenterShort,
-          canvasUnitVectorFromCenter,
-          // Chosen 0.2 because is half of 0.4.
-          canvasMinDimensionLength * 0.2
-        );
-        const canvasVectorFromCenterStart = vec2.create();
-        const centerGap = this.configuration.referenceLinesCenterGapRadius;
-        vec2.scale(
-          canvasVectorFromCenterStart,
-          canvasUnitVectorFromCenter,
-          // Don't put a gap if the the third view is missing
-          otherViewportAnnotations.length === 2 ? centerGap : 0
-        );
+      vec2.scale(
+        canvasVectorFromCenterLong,
+        canvasUnitVectorFromCenter,
+        canvasDiagonalLength * 100
+      );
+      const canvasVectorFromCenterStart = vec2.create();
+      const centerGap = this.configuration.referenceLinesCenterGapRadius;
+      vec2.scale(
+        canvasVectorFromCenterStart,
+        canvasUnitVectorFromCenter,
+        // Don't put a gap if the the third view is missing
+        otherViewportAnnotations.length === 2 ? centerGap : 0
+      );
 
-        // Computing Reference start and end (4 lines per viewport in case of 3 view MPR)
-        const refLinePointOne = vec2.create();
-        const refLinePointTwo = vec2.create();
-        const refLinePointThree = vec2.create();
-        const refLinePointFour = vec2.create();
+      // Computing Reference start and end (4 lines per viewport in case of 3 view MPR)
+      const refLinePointTwo = vec2.create();
+      const refLinePointFour = vec2.create();
 
-        let refLinesCenter = vec2.clone(crosshairCenterCanvas);
-        if (!otherViewportControllable) {
-          refLinesCenter = vec2.clone(otherViewportCenterCanvas);
-        }
+      let refLinesCenter = vec2.clone(crosshairCenterCanvas);
+      if (!otherViewportControllable) {
+        refLinesCenter = vec2.clone(otherViewportCenterCanvas);
+      }
+      vec2.add(refLinePointTwo, refLinesCenter, canvasVectorFromCenterLong);
+      vec2.subtract(
+        refLinePointFour,
+        refLinesCenter,
+        canvasVectorFromCenterLong
+      );
 
-        vec2.add(refLinePointOne, refLinesCenter, canvasVectorFromCenterStart);
-        vec2.add(refLinePointTwo, refLinesCenter, canvasVectorFromCenterLong);
-        vec2.subtract(
-          refLinePointThree,
-          refLinesCenter,
-          canvasVectorFromCenterStart
-        );
-        vec2.subtract(
-          refLinePointFour,
-          refLinesCenter,
-          canvasVectorFromCenterLong
-        );
+      // Clipping lines to be only included in a box (canvas), we don't want
+      // the lines goes beyond canvas
+      liangBarksyClip(refLinePointTwo, refLinePointFour, canvasBox);
+      referenceLines.push([
+        otherViewport,
+        refLinePointTwo,
+        refLinePointTwo,
+        refLinePointFour,
+        refLinePointFour,
+      ]);
+      //console.debug(refLinePointTwo, refLinePointFour);
+    });
 
-        // Clipping lines to be only included in a box (canvas), we don't want
-        // the lines goes beyond canvas
-        liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox);
-        liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox);
-        referenceLines.push([
-          otherViewport,
-          refLinePointOne,
-          refLinePointTwo,
-          refLinePointThree,
-          refLinePointFour,
-        ]);
-      });
+    ///  create new reference lines here
 
-      ///  create new reference lines here
+    data.referenceLines = referenceLines;
 
-      data.referenceLines = referenceLines;
-      const viewportColor = this._getReferenceLineColor(viewport.id);
+    const viewportColor = this._getReferenceLineColor(viewport.id);
+    const color =
+      viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
+
+    referenceLines.forEach((line, lineIndex) => {
+      // get color for the reference line
+      const otherViewport = line[0];
+      const viewportColor = this._getReferenceLineColor(otherViewport.id);
+      const viewportControllable = this._getReferenceLineControllable(
+        otherViewport.id
+      );
+      const selectedViewportId = data.activeViewportIds.find(
+        (id) => id === otherViewport.id
+      );
+
       const color =
         viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
-      console.debug(color);
-      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
-        referenceLines,
-      });
-      referenceLines.forEach((line, lineIndex) => {
-        // get color for the reference line
-        const otherViewport = line[0];
-        const viewportColor = this._getReferenceLineColor(otherViewport.id);
-        const viewportControllable = this._getReferenceLineControllable(
-          otherViewport.id
-        );
-        const selectedViewportId = data.activeViewportIds.find(
-          (id) => id === otherViewport.id
-        );
 
-        const color =
-          viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
+      let lineWidth = 1;
 
-        let lineWidth = 1;
+      const lineActive =
+        data.handles.activeOperation !== null &&
+        data.handles.activeOperation === OPERATION.DRAG &&
+        selectedViewportId;
 
-        const lineActive =
-          data.handles.activeOperation !== null &&
-          data.handles.activeOperation === OPERATION.DRAG &&
-          selectedViewportId;
-
-        if (lineActive) {
-          lineWidth = 2.5;
-        }
-
-        let lineUID = `${lineIndex}`;
-        if (viewportControllable) {
-          lineUID = `${lineIndex}One`;
-          // console.debug(lineUID);
-          drawLineSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID,
-            line[1],
-            line[2],
-            {
-              color,
-              lineWidth,
-            }
-          );
-
-          lineUID = `${lineIndex}Two`;
-          drawLineSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID,
-            line[3],
-            line[4],
-            {
-              color,
-              lineWidth,
-            }
-          );
-        } else {
-          drawLineSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID,
-            line[2],
-            line[4],
-            {
-              color,
-              lineWidth,
-            }
-          );
-        }
-
-        if (viewportControllable) {
-          color =
-            viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
-          let handleRadius =
-            this.configuration.handleRadius *
-            (this.configuration.enableHDPIHandles
-              ? window.devicePixelRatio
-              : 1);
-          let opacity = 1;
-          if (this.configuration.mobile?.enabled) {
-            handleRadius = this.configuration.mobile.handleRadius;
-            opacity = this.configuration.mobile.opacity;
-          }
-          if (lineActive) {
-            const handleUID = `${lineIndex}`;
-          }
-        }
-      });
-
-      renderStatus = true;
-
-      if (this.configuration.viewportIndicators) {
-        const { viewportIndicatorsConfig } = this.configuration;
-
-        const xOffset = viewportIndicatorsConfig?.xOffset || 0.95;
-        const yOffset = viewportIndicatorsConfig?.yOffset || 0.05;
-        const referenceColorCoordinates = [
-          clientWidth * xOffset,
-          clientHeight * yOffset,
-        ];
-
-        const circleRadius =
-          viewportIndicatorsConfig?.circleRadius || canvasDiagonalLength * 0.01;
-
-        const circleUID = '0';
-        drawCircleSvg(
-          svgDrawingHelper,
-          annotationUID,
-          circleUID,
-          referenceColorCoordinates as Types.Point2,
-          circleRadius,
-          { color, fill: color }
-        );
+      if (lineActive) {
+        lineWidth = 2.5;
       }
 
-      return renderStatus;
+      let lineUID = `${lineIndex}`;
+      if (viewportControllable) {
+        lineUID = `${lineIndex}One`;
+        /*
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          line[1],
+          line[2],
+          {
+            color,
+            lineWidth,
+          }
+        );
+*/
+        lineUID = `${lineIndex}Two`;
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          line[2],
+          line[4],
+          {
+            color,
+            lineWidth,
+          }
+        );
+      } else {
+        /*     drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          line[2],
+          line[4],
+          {
+            color,
+            lineWidth,
+          }
+        ); */
+      }
+
+      if (viewportControllable) {
+        color =
+          viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
+        let handleRadius =
+          this.configuration.handleRadius *
+          (this.configuration.enableHDPIHandles ? window.devicePixelRatio : 1);
+        let opacity = 1;
+        if (this.configuration.mobile?.enabled) {
+          handleRadius = this.configuration.mobile.handleRadius;
+          opacity = this.configuration.mobile.opacity;
+        }
+        if (lineActive) {
+          const handleUID = `${lineIndex}`;
+        }
+      }
+    });
+
+    renderStatus = true;
+
+    if (this.configuration.viewportIndicators) {
+      const { viewportIndicatorsConfig } = this.configuration;
+
+      const xOffset = viewportIndicatorsConfig?.xOffset || 0.95;
+      const yOffset = viewportIndicatorsConfig?.yOffset || 0.05;
+      const referenceColorCoordinates = [
+        clientWidth * xOffset,
+        clientHeight * yOffset,
+      ];
+
+      const circleRadius =
+        viewportIndicatorsConfig?.circleRadius || canvasDiagonalLength * 0.01;
+
+      const circleUID = '0';
+      drawCircleSvg(
+        svgDrawingHelper,
+        annotationUID,
+        circleUID,
+        referenceColorCoordinates as Types.Point2,
+        circleRadius,
+        { color, fill: color }
+      );
     }
+
+    return renderStatus;
   };
 
   _getAnnotations = (enabledElement: Types.IEnabledElement) => {
@@ -1051,6 +1051,32 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
+    if (viewportsInfo && viewportsInfo.length > 0) {
+      const { viewportId, renderingEngineId } = viewportsInfo[0];
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+      const viewport = renderingEngine.getViewport(viewportId);
+      const volumeActors = viewport.getActors();
+      if (volumeActors.length > 0) {
+        const imageData = volumeActors[0].actor.getMapper().getInputData();
+        if (imageData) {
+          const dimensions = imageData.getDimensions();
+          const spacing = imageData.getSpacing();
+          const origin = imageData.getOrigin();
+          this.toolCenter = [
+            origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0],
+            origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1],
+            origin[2] + 0.2 * (dimensions[2] - 1) * spacing[2],
+          ];
+          // Update all annotations' handles.toolCenter
+          const annotations = getAnnotations(this.getToolName()) || [];
+          annotations.forEach((annotation) => {
+            if (annotation.data && annotation.data.handles) {
+              annotation.data.handles.toolCenter = [...this.toolCenter];
+            }
+          });
+        }
+      }
+    }
     this._computeToolCenter(viewportsInfo);
   };
 
@@ -1550,7 +1576,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _endCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
-    console.debug(eventDetail);
+    //   console.debug(eventDetail);
     const { element } = eventDetail;
 
     this.editData.annotation.data.handles.activeOperation = null;

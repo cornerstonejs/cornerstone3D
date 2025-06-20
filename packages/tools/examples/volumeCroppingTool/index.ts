@@ -39,6 +39,7 @@ const {
   ZoomTool,
   PanTool,
   OrientationMarkerTool,
+  StackScrollTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -145,10 +146,12 @@ const viewportColors = {
   [viewportId1]: 'rgb(200, 0, 0)',
   [viewportId2]: 'rgb(200, 200, 0)',
   [viewportId3]: 'rgb(0, 200, 0)',
+  [viewportId4]: 'rgb(0, 200, 200)',
 };
 
-const getReferenceLineColor = (viewportId) =>
-  viewportColors[viewportId] || 'rgb(0, 200, 0)';
+function getReferenceLineColor(viewportId) {
+  return viewportColors[viewportId];
+}
 
 const viewportReferenceLineControllable = [
   viewportId1,
@@ -175,6 +178,7 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -258,9 +262,7 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
   toolGroup.addTool(VolumeCroppingControlTool.toolName, {
-    configuration: {
-      getReferenceLineColor,
-    },
+    getReferenceLineColor,
   });
   toolGroup.setToolActive(VolumeCroppingControlTool.toolName, {
     bindings: [
@@ -269,13 +271,18 @@ async function run() {
       },
     ],
   });
+  toolGroup.addTool(StackScrollTool.toolName, {
+    viewportIndicators: true,
+  });
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
 
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
-
-  toolGroupVRT.addViewport(viewportId4, renderingEngineId);
-
-  toolGroupVRT.addTool(VolumeCroppingTool.toolName);
-  toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
 
   toolGroupVRT.addTool(TrackballRotateTool.toolName);
   toolGroupVRT.setToolActive(TrackballRotateTool.toolName, {
@@ -313,6 +320,9 @@ async function run() {
     viewport.setProperties({
       preset: 'CT-Bone',
     });
+    toolGroupVRT.addViewport(viewportId4, renderingEngineId);
+    toolGroupVRT.addTool(VolumeCroppingTool.toolName);
+    toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
     viewport.render();
   });
 }

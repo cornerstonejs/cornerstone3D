@@ -183,7 +183,7 @@ class VolumeCroppingTool extends AnnotationTool {
 
   onSetToolPassive() {
     const viewportsInfo = this._getViewportsInfo();
-    this._initialize3DViewports(viewportsInfo);
+    //  this._initialize3DViewports(viewportsInfo);
   }
 
   onSetToolEnabled() {
@@ -265,15 +265,13 @@ class VolumeCroppingTool extends AnnotationTool {
 
   _initialize3DViewports = (viewportsInfo): void => {
     const [viewport3D] = viewportsInfo;
-
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
     const volumeActors = viewport.getActors();
     const imageData = volumeActors[0].actor.getMapper().getInputData();
     const dimensions = imageData.getDimensions();
     const origin = imageData.getOrigin();
-    //console.debug('dimensions', dimensions);
+    console.debug('initialized 3d', dimensions);
     const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
     const worldDimensions = [
       Math.round(dimensions[0] * spacing[0]),
@@ -281,58 +279,58 @@ class VolumeCroppingTool extends AnnotationTool {
       Math.round(dimensions[2] * spacing[2]),
     ];
     //const worldDimensions = dimensions;
-    console.debug('worldDimensions', worldDimensions, origin);
-    //   /*
+    //console.debug('worldDimensions', worldDimensions, origin);
+    /*
     const xMin = worldDimensions[0] * -0.5;
     const xMax = worldDimensions[0] * 0.5;
     const yMin = worldDimensions[1] * -0.5;
     const yMax = worldDimensions[1] * 0.5;
     const zMin = worldDimensions[2] * -0.5;
     const zMax = worldDimensions[2];
-    // */
+     */
 
-    /*
-    const xMin = origin[0] - worldDimensions[0] / 2;
-    const xMax = origin[0] + worldDimensions[0] / 2;
-    const yMin = origin[1] - worldDimensions[1] / 2;
-    const yMax = origin[1] + worldDimensions[1] / 2;
-    const zMin = origin[2] - (spacing[2] * (dimensions[2] - 1)) / 2;
-    const zMax = origin[2] + (spacing[2] * (dimensions[2] - 1)) / 2;
+    /*        this.toolCenter = [
+          origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0],
+          origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1],
+          origin[2] + 0.2 * (dimensions[2] - 1) * spacing[2],
+        ];
 */
+    const xMin = origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0];
+    const xMax = origin[0] + 0.8 * (dimensions[0] - 1) * spacing[0];
+    const yMin = origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1];
+    const yMax = origin[1] + 0.8 * (dimensions[1] - 1) * spacing[1];
+    const zMin = origin[2] + 0.2 * (dimensions[2] - 1) * spacing[2];
+    const zMax = origin[2] + 0.8 * (dimensions[2] - 1) * spacing[2];
+
     const planes: vtkPlane[] = [];
     const cropFactor = 0.2;
     // X min plane (cuts everything left of xMin)
     const planeXmin = vtkPlane.newInstance({
-      origin: [xMin + worldDimensions[0] * cropFactor, 0, 0],
+      origin: [xMin, 0, 0],
       normal: [1, 0, 0],
     });
     const planeXmax = vtkPlane.newInstance({
-      origin: [xMax - worldDimensions[0] * cropFactor, 0, 0],
+      origin: [xMax, 0, 0],
       normal: [-1, 0, 0],
     });
     const planeYmin = vtkPlane.newInstance({
-      origin: [0, yMin + worldDimensions[1] * cropFactor, 0],
+      origin: [0, yMin, 0],
       normal: [0, 1, 0],
     });
     const planeYmax = vtkPlane.newInstance({
-      origin: [0, yMax - worldDimensions[1] * cropFactor, 0],
+      origin: [0, yMax, 0],
       normal: [0, -1, 0],
     });
-
-    //     const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, -zMax];
-    //  const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax / 4];
-
     const planeZmin = vtkPlane.newInstance({
-      origin: [0, 0, -zMax],
+      origin: [0, 0, zMin],
       normal: [0, 0, 1],
     });
     const planeZmax = vtkPlane.newInstance({
-      origin: [0, 0, zMax / 4],
+      origin: [0, 0, zMax],
       normal: [0, 0, -1],
     });
 
     const mapper = viewport.getDefaultActor().actor.getMapper();
-
     planes.push(planeXmin);
     mapper.addClippingPlane(planeXmin);
     planes.push(planeXmax);
@@ -352,40 +350,12 @@ class VolumeCroppingTool extends AnnotationTool {
 
     viewport.setOriginalClippingPlanes(originalPlanes);
 
-    const sphereXminPoint = [
-      xMin + worldDimensions[0] * cropFactor,
-      (yMax + yMin) / 2,
-      -220,
-    ];
-    const sphereXmaxPoint = [
-      xMax - worldDimensions[0] * cropFactor,
-      (yMax + yMin) / 2,
-      -220,
-    ];
-    const sphereYminPoint = [
-      (xMax + xMin) / 2,
-      yMin + worldDimensions[1] * cropFactor,
-      -220,
-    ];
-    const sphereYmaxPoint = [
-      (xMax + xMin) / 2,
-      yMax - worldDimensions[1] * cropFactor,
-      -220,
-    ];
-    /*
-    const sphereZminPoint = [
-      (xMax + xMin) / 2,
-      (yMax + yMin) / 2,
-      -300, //zMin + worldDimensions[2] * cropFactor,
-    ];
-    const sphereZmaxPoint = [
-      (xMax + xMin) / 2,
-      (yMax + yMin) / 2,
-      100, //zMax - worldDimensions[2] * cropFactor,
-    ];
-*/
-    const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, -zMax];
-    const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax / 4];
+    const sphereXminPoint = [xMin, (yMax + yMin) / 2, (zMax + zMin) / 2];
+    const sphereXmaxPoint = [xMax, (yMax + yMin) / 2, (zMax + zMin) / 2];
+    const sphereYminPoint = [(xMax + xMin) / 2, yMin, (zMax + zMin) / 2];
+    const sphereYmaxPoint = [(xMax + xMin) / 2, yMax, (zMax + zMin) / 2];
+    const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMin];
+    const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax];
 
     // this.addSphere(viewport, [xMin + worldDimensions[0] * cropFactor, 0, 0]);
     this.addSphere(viewport, sphereXminPoint, 'x');
@@ -405,9 +375,15 @@ class VolumeCroppingTool extends AnnotationTool {
     element.addEventListener('mousedown', this._onMouseDownSphere);
     element.addEventListener('mousemove', this._onMouseMoveSphere);
     element.addEventListener('mouseup', this._onMouseUpSphere);
+
     mapper.modified();
     viewport.getDefaultActor().actor.modified();
-
+    volumeActors.forEach((actorObj) => {
+      if (actorObj.actor && typeof actorObj.actor.modified === 'function') {
+        actorObj.actor.modified();
+      }
+    });
+    viewport.render();
     eventTarget.addEventListener(
       Events.CROSSHAIR_TOOL_CENTER_CHANGED,
       (evt) => {
@@ -428,15 +404,52 @@ class VolumeCroppingTool extends AnnotationTool {
     );
 
     eventTarget.addEventListener(Events.VOLUMECROPPING_TOOL_CHANGED, (evt) => {
-      console.debug('VOLUMECROPPING_TOOL_CHANGED', evt.data);
+      // coronal  is x axis in green
+      // sagittal is y axis in yellow
+      // axial    is z axis in red
+      console.debug('VOLUMECROPPING_TOOL_CHANGED', evt.detail.toolCenter);
+
       viewportsInfo = this._getViewportsInfo();
       const [viewport3D] = viewportsInfo;
 
       const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
       const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-    });
+      const toolMin = evt.detail.toolCenter;
+      const planeXmin = vtkPlane.newInstance({
+        origin: [toolMin[0], 0, 0],
+        normal: [1, 0, 0],
+      });
+      const planeYmin = vtkPlane.newInstance({
+        origin: [0, toolMin[1], 0],
+        normal: [0, 1, 0],
+      });
+      const planeZmin = vtkPlane.newInstance({
+        origin: [0, 0, toolMin[2]],
+        normal: [0, 0, 1],
+      });
+      viewport.setOriginalClippingPlane(0, planeXmin.getOrigin());
+      viewport.setOriginalClippingPlane(2, planeYmin.getOrigin());
+      viewport.setOriginalClippingPlane(4, planeZmin.getOrigin());
 
-    viewport.render();
+      const volumeActor = viewport.getDefaultActor()?.actor;
+      if (!volumeActor) {
+        console.warn('No volume actor found');
+        return;
+      }
+      const mapper = volumeActor.getMapper();
+
+      const clippingPlanes = mapper.getClippingPlanes();
+      //console.debug('clippingPlanes before setOrigin:', clippingPlanes);
+      clippingPlanes[0].setOrigin(planeXmin.getOrigin());
+      clippingPlanes[2].setOrigin(planeYmin.getOrigin());
+      clippingPlanes[4].setOrigin(planeZmin.getOrigin());
+      //viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
+      mapper.modified();
+
+      viewport.getDefaultActor().actor.modified();
+      volumeActor.modified();
+      viewport.render();
+    });
   };
 
   /**
@@ -565,7 +578,9 @@ class VolumeCroppingTool extends AnnotationTool {
       clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
       viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
       mapper.modified();
+
       viewport.getDefaultActor().actor.modified();
+      volumeActor.modified();
       viewport.render();
     }
   };
@@ -673,7 +688,6 @@ class VolumeCroppingTool extends AnnotationTool {
 
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
-    this._initialize3DViewports(viewportsInfo);
 
     const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
@@ -688,6 +702,7 @@ class VolumeCroppingTool extends AnnotationTool {
         camera.position[2] + 1,
       ],
     });
+    this._initialize3DViewports(viewportsInfo);
     viewport.render();
   };
 
