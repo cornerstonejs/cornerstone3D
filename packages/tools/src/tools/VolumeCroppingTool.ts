@@ -199,7 +199,11 @@ class VolumeCroppingTool extends AnnotationTool {
     const sphereState = this.sphereStates.find((s) => s.uid === uid);
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);
-    sphereSource.setRadius(15);
+    const sphereRadius =
+      this.configuration.sphereRadius !== undefined
+        ? this.configuration.sphereRadius
+        : 15;
+    sphereSource.setRadius(sphereRadius);
     const sphereMapper = vtkMapper.newInstance();
     sphereMapper.setInputConnection(sphereSource.getOutputPort());
     const sphereActor = vtkActor.newInstance();
@@ -541,10 +545,43 @@ class VolumeCroppingTool extends AnnotationTool {
       // Restrict movement to the sphere's axis only
       if (sphereState.axis === 'x') {
         newPoint[0] = pickedPoint[0];
+        const otherXSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'x' && i !== this.draggingSphereIndex
+        );
+        const newXCenter = (otherXSphere.point[0] + pickedPoint[0]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (state.axis !== 'x') {
+            state.point[0] = newXCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereSource.modified();
+          }
+        });
       } else if (sphereState.axis === 'y') {
         newPoint[1] = pickedPoint[1];
+        const otherYSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'y' && i !== this.draggingSphereIndex
+        );
+        const newYCenter = (otherYSphere.point[1] + pickedPoint[1]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (state.axis !== 'y') {
+            state.point[1] = newYCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereSource.modified();
+          }
+        });
       } else if (sphereState.axis === 'z') {
         newPoint[2] = pickedPoint[2];
+        const otherZSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'z' && i !== this.draggingSphereIndex
+        );
+        const newZCenter = (otherZSphere.point[2] + pickedPoint[2]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (state.axis !== 'z') {
+            state.point[2] = newZCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereSource.modified();
+          }
+        });
       }
 
       sphereState.point = newPoint;
@@ -564,6 +601,7 @@ class VolumeCroppingTool extends AnnotationTool {
       triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
         toolCenter: newPoint,
         axis: sphereState.axis,
+        draggingSphereIndex: this.draggingSphereIndex,
       });
     }
   };

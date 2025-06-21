@@ -155,7 +155,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const viewportsInfo = getToolGroup(this.toolGroupId)?.viewportsInfo;
 
     eventTarget.addEventListener(
-      Events.VOLUMECROPPING_SPHERE_MOVED,
+      Events.VOLUMECROPPING_TOOL_CHANGED,
       this._onSphereMoved
     );
 
@@ -1020,16 +1020,19 @@ class VolumeCroppingControlTool extends AnnotationTool {
   };
 
   _onSphereMoved = (evt) => {
-    const eventCenter = evt.detail.toolCenter;
-    let newCenter = [0, 0, 0];
-    if (evt.detail.axis === 'x') {
-      newCenter = [eventCenter[0], this.toolCenter[1], this.toolCenter[2]];
-    } else if (evt.detail.axis === 'y') {
-      newCenter = [this.toolCenter[0], eventCenter[1], this.toolCenter[2]];
-    } else if (evt.detail.axis === 'z') {
-      newCenter = [this.toolCenter[0], this.toolCenter[1], eventCenter[2]];
+    if ([0, 2, 4].includes(evt.detail.draggingSphereIndex)) {
+      // only update for min spheres
+      let newCenter = [0, 0, 0];
+      const eventCenter = evt.detail.toolCenter;
+      if (evt.detail.axis === 'x') {
+        newCenter = [eventCenter[0], this.toolCenter[1], this.toolCenter[2]];
+      } else if (evt.detail.axis === 'y') {
+        newCenter = [this.toolCenter[0], eventCenter[1], this.toolCenter[2]];
+      } else if (evt.detail.axis === 'z') {
+        newCenter = [this.toolCenter[0], this.toolCenter[1], eventCenter[2]];
+      }
+      this.setToolCenter(newCenter, true);
     }
-    this.setToolCenter(newCenter, true);
   };
 
   _onNewVolume = () => {

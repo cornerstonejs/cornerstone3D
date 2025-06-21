@@ -328,7 +328,9 @@ async function run() {
       preset: 'CT-Bone',
     });
     toolGroupVRT.addViewport(viewportId4, renderingEngineId);
-    toolGroupVRT.addTool(VolumeCroppingTool.toolName);
+    toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
+      sphereRadius: 10,
+    });
     toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
     // Set zoom to 1.3x
     viewport.setZoom(1.3);
