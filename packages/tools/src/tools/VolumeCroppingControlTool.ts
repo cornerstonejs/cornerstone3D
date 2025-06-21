@@ -417,7 +417,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
       });
-      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+      triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         // orientation: viewport.defaultOptions.orientation,
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
@@ -652,7 +652,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         //   toolGroupId: this.toolGroupId,
         //    toolCenter: this.toolCenter,
         //   });
-        triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+        triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
           toolGroupId: this.toolGroupId,
           toolCenter: this.toolCenter,
         });

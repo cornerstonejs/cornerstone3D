@@ -1,6 +1,4 @@
 import { vec2, vec3 } from 'gl-matrix';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
@@ -369,61 +367,66 @@ class VolumeCroppingTool extends AnnotationTool {
       }
     );
 
-    eventTarget.addEventListener(Events.VOLUMECROPPING_TOOL_CHANGED, (evt) => {
-      // coronal  is x axis in green
-      // sagittal is y axis in yellow
-      // axial    is z axis in red
-      //console.debug('VOLUMECROPPING_TOOL_CHANGED', evt.detail.toolCenter);
+    eventTarget.addEventListener(
+      Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
+      (evt) => {
+        // coronal  is x axis in green
+        // sagittal is y axis in yellow
+        // axial    is z axis in red
+        //console.debug('VOLUMECROPPINGCONTROL_TOOL_CHANGED', evt.detail.toolCenter);
 
-      viewportsInfo = this._getViewportsInfo();
-      const [viewport3D] = viewportsInfo;
+        viewportsInfo = this._getViewportsInfo();
+        const [viewport3D] = viewportsInfo;
 
-      const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-      const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-      const toolMin = evt.detail.toolCenter;
-      const planeXmin = vtkPlane.newInstance({
-        origin: [toolMin[0], 0, 0],
-        normal: [1, 0, 0],
-      });
-      const planeYmin = vtkPlane.newInstance({
-        origin: [0, toolMin[1], 0],
-        normal: [0, 1, 0],
-      });
-      const planeZmin = vtkPlane.newInstance({
-        origin: [0, 0, toolMin[2]],
-        normal: [0, 0, 1],
-      });
-      viewport.setOriginalClippingPlane(0, planeXmin.getOrigin());
-      viewport.setOriginalClippingPlane(2, planeYmin.getOrigin());
-      viewport.setOriginalClippingPlane(4, planeZmin.getOrigin());
+        const renderingEngine = getRenderingEngine(
+          viewport3D.renderingEngineId
+        );
+        const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+        const toolMin = evt.detail.toolCenter;
+        const planeXmin = vtkPlane.newInstance({
+          origin: [toolMin[0], 0, 0],
+          normal: [1, 0, 0],
+        });
+        const planeYmin = vtkPlane.newInstance({
+          origin: [0, toolMin[1], 0],
+          normal: [0, 1, 0],
+        });
+        const planeZmin = vtkPlane.newInstance({
+          origin: [0, 0, toolMin[2]],
+          normal: [0, 0, 1],
+        });
+        viewport.setOriginalClippingPlane(0, planeXmin.getOrigin());
+        viewport.setOriginalClippingPlane(2, planeYmin.getOrigin());
+        viewport.setOriginalClippingPlane(4, planeZmin.getOrigin());
 
-      const volumeActor = viewport.getDefaultActor()?.actor;
-      if (!volumeActor) {
-        console.warn('No volume actor found');
-        return;
+        const volumeActor = viewport.getDefaultActor()?.actor;
+        if (!volumeActor) {
+          console.warn('No volume actor found');
+          return;
+        }
+        const mapper = volumeActor.getMapper();
+        const clippingPlanes = mapper.getClippingPlanes();
+        clippingPlanes[0].setOrigin(planeXmin.getOrigin());
+        this.sphereStates[0].sphereSource.setCenter(
+          planeXmin.getOrigin()[0],
+          this.sphereStates[0].point[1],
+          this.sphereStates[0].point[2]
+        );
+        clippingPlanes[2].setOrigin(planeYmin.getOrigin());
+        this.sphereStates[2].sphereSource.setCenter(
+          this.sphereStates[2].point[0],
+          planeYmin.getOrigin()[1],
+          this.sphereStates[2].point[2]
+        );
+        clippingPlanes[4].setOrigin(planeZmin.getOrigin());
+        this.sphereStates[4].sphereSource.setCenter(
+          this.sphereStates[4].point[0],
+          this.sphereStates[4].point[1],
+          planeZmin.getOrigin()[2]
+        );
+        viewport.render();
       }
-      const mapper = volumeActor.getMapper();
-      const clippingPlanes = mapper.getClippingPlanes();
-      clippingPlanes[0].setOrigin(planeXmin.getOrigin());
-      this.sphereStates[0].sphereSource.setCenter(
-        planeXmin.getOrigin()[0],
-        this.sphereStates[0].point[1],
-        this.sphereStates[0].point[2]
-      );
-      clippingPlanes[2].setOrigin(planeYmin.getOrigin());
-      this.sphereStates[2].sphereSource.setCenter(
-        this.sphereStates[2].point[0],
-        planeYmin.getOrigin()[1],
-        this.sphereStates[2].point[2]
-      );
-      clippingPlanes[4].setOrigin(planeZmin.getOrigin());
-      this.sphereStates[4].sphereSource.setCenter(
-        this.sphereStates[4].point[0],
-        this.sphereStates[4].point[1],
-        planeZmin.getOrigin()[2]
-      );
-      viewport.render();
-    });
+    );
   };
 
   /**
@@ -534,9 +537,8 @@ class VolumeCroppingTool extends AnnotationTool {
     if (pickedPositions.length > 0) {
       const pickedPoint = pickedPositions[0];
       const sphereState = this.sphereStates[this.draggingSphereIndex];
-      // Restrict movement to the sphere's axis only
       const newPoint = [...sphereState.point];
-
+      // Restrict movement to the sphere's axis only
       if (sphereState.axis === 'x') {
         newPoint[0] = pickedPoint[0];
       } else if (sphereState.axis === 'y') {
@@ -548,37 +550,19 @@ class VolumeCroppingTool extends AnnotationTool {
       sphereState.point = newPoint;
       sphereState.sphereSource.setCenter(newPoint);
       sphereState.sphereSource.modified();
-
       const volumeActor = viewport.getDefaultActor()?.actor;
       if (!volumeActor) {
         console.warn('No volume actor found');
         return;
       }
       const mapper = volumeActor.getMapper();
-
       const clippingPlanes = mapper.getClippingPlanes();
-
       clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
       viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
-      mapper.modified();
-
-      viewport.getDefaultActor().actor.modified();
-      volumeActor.modified();
       viewport.render();
-      const sphereMoved = newPoint;
-      if (sphereState.axis === 'x') {
-        sphereMoved[0] = pickedPoint[0];
-        sphereMoved[1] = clippingPlanes[0].getOrigin()[1];
-        sphereMoved[2] = clippingPlanes[0].getOrigin()[2];
-      } else if (sphereState.axis === 'y') {
-        sphereMoved[1] = pickedPoint[1];
-      } else if (sphereState.axis === 'z') {
-        sphereMoved[2] = pickedPoint[2];
-      }
-
       /// Send event with the new point
-      triggerEvent(eventTarget, Events.VOLUMECROPPING_SPHERE_MOVED, {
-        toolCenter: sphereMoved,
+      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+        toolCenter: newPoint,
         axis: sphereState.axis,
       });
     }

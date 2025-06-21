@@ -312,6 +312,9 @@ async function run() {
       },
     ],
   });
+  //toolGroupVRT.addTool(OrientationMarkerTool.toolName);
+  // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
+
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   // Render the image
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
@@ -327,8 +330,8 @@ async function run() {
     toolGroupVRT.addViewport(viewportId4, renderingEngineId);
     toolGroupVRT.addTool(VolumeCroppingTool.toolName);
     toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
-    // Set zoom to 1.5x
-    viewport.setZoom(1.5);
+    // Set zoom to 1.3x
+    viewport.setZoom(1.3);
     viewport.render();
   });
 }
