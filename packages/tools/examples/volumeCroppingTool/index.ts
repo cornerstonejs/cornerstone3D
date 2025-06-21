@@ -280,6 +280,9 @@ async function run() {
       {
         mouseButton: MouseBindings.Wheel,
       },
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
     ],
   });
 

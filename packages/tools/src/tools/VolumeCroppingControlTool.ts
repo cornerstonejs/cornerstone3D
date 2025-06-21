@@ -1,11 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
-import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
-//import * as cornerstoneTools from '@cornerstonejs/tools';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { AnnotationTool } from './base';
@@ -110,7 +104,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
-  picker: vtkCellPicker;
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -158,10 +151,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     this._getReferenceLineControllable =
       toolProps.configuration?.getReferenceLineControllable ||
       defaultReferenceLineControllable;
-    this.picker = vtkCellPicker.newInstance({ opacityThreshold: 0.0001 });
-    this.picker.setPickFromList(1);
-    this.picker.setTolerance(0);
-    this.picker.initializePickList();
+
     const viewportsInfo = getToolGroup(this.toolGroupId)?.viewportsInfo;
 
     eventTarget.addEventListener(
@@ -751,7 +741,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     const enabledElement = getEnabledElement(element);
     const { viewportId } = enabledElement;
-    // console.log(annotations);
     const viewportUIDSpecificCrosshairs = annotations.filter(
       (annotation) => annotation.data.viewportId === viewportId
     );
@@ -953,19 +942,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       let lineUID = `${lineIndex}`;
       if (viewportControllable) {
         lineUID = `${lineIndex}One`;
-        /*
-        drawLineSvg(
-          svgDrawingHelper,
-          annotationUID,
-          lineUID,
-          line[1],
-          line[2],
-          {
-            color,
-            lineWidth,
-          }
-        );
-*/
         lineUID = `${lineIndex}Two`;
         drawLineSvg(
           svgDrawingHelper,
@@ -978,18 +954,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
             lineWidth,
           }
         );
-      } else {
-        /*     drawLineSvg(
-          svgDrawingHelper,
-          annotationUID,
-          lineUID,
-          line[2],
-          line[4],
-          {
-            color,
-            lineWidth,
-          }
-        ); */
       }
 
       if (viewportControllable) {
@@ -1057,7 +1021,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _onSphereMoved = (evt) => {
     const eventCenter = evt.detail.toolCenter;
-    console.debug('Sphere moved event received', eventCenter);
     let newCenter = [0, 0, 0];
     if (evt.detail.axis === 'x') {
       newCenter = [eventCenter[0], this.toolCenter[1], this.toolCenter[2]];
@@ -1067,7 +1030,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       newCenter = [this.toolCenter[0], this.toolCenter[1], eventCenter[2]];
     }
     this.setToolCenter(newCenter, true);
-    //  this.toolCenter = evt.detail.toolCenter;
   };
 
   _onNewVolume = () => {

@@ -2,7 +2,6 @@ import { vec2, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
-//import * as cornerstoneTools from '@cornerstonejs/tools';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
@@ -200,7 +199,6 @@ class VolumeCroppingTool extends AnnotationTool {
     // Generate a unique UID for each sphere based on its axis and position
     const uid = `${axis}_${point.map((v) => Math.round(v)).join('_')}`;
     const sphereState = this.sphereStates.find((s) => s.uid === uid);
-    //  if (!sphereState) {
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);
     sphereSource.setRadius(15);
@@ -238,7 +236,6 @@ class VolumeCroppingTool extends AnnotationTool {
     } else if (axis === 'x') {
       color = [1.0, 1.0, 0.0];
     }
-    //const color = [0.0, 0.0, 1.0];
     sphereActor.getProperty().setColor(color);
 
     /*
@@ -249,18 +246,8 @@ class VolumeCroppingTool extends AnnotationTool {
 */
     sphereActor.setPickable(true);
     viewport.addActor({ actor: sphereActor, uid: uid });
-    console.debug('added sphere: ', uid, viewport.getActors());
+    // console.debug('added sphere: ', uid, viewport.getActors());
     viewport.render();
-    /*   } else {
-      // Only update the position and source, do not create new actor/source
-      sphereState.point = point.slice();
-      if (sphereState.sphereSource) {
-        // sphereState.sphereSource.setCenter(point);
-        console.debug('updated sphere: ', uid);
-        viewport.render();
-      }
-    }
-      */
   }
 
   _initialize3DViewports = (viewportsInfo): void => {
@@ -272,15 +259,18 @@ class VolumeCroppingTool extends AnnotationTool {
     const dimensions = imageData.getDimensions();
     const origin = imageData.getOrigin();
     const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
-    const xMin = origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0];
-    const xMax = origin[0] + 0.8 * (dimensions[0] - 1) * spacing[0];
-    const yMin = origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1];
-    const yMax = origin[1] + 0.8 * (dimensions[1] - 1) * spacing[1];
-    const zMin = origin[2] + 0.2 * (dimensions[2] - 1) * spacing[2];
+    const cropFactor = 0.2;
+    const xMin = origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0];
+    const xMax =
+      origin[0] + (1 - cropFactor) * (dimensions[0] - 1) * spacing[0];
+    const yMin = origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1];
+    const yMax =
+      origin[1] + (1 - cropFactor) * (dimensions[1] - 1) * spacing[1];
+    const zMin = origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2];
     const zMax = origin[2] + 0.8 * (dimensions[2] - 1) * spacing[2];
 
     const planes: vtkPlane[] = [];
-    const cropFactor = 0.2;
+
     // X min plane (cuts everything left of xMin)
     const planeXmin = vtkPlane.newInstance({
       origin: [xMin, 0, 0],
@@ -334,7 +324,6 @@ class VolumeCroppingTool extends AnnotationTool {
     const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMin];
     const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax];
 
-    // this.addSphere(viewport, [xMin + worldDimensions[0] * cropFactor, 0, 0]);
     this.addSphere(viewport, sphereXminPoint, 'x');
     this.addSphere(viewport, sphereXmaxPoint, 'x');
     this.addSphere(viewport, sphereYminPoint, 'y');
@@ -384,7 +373,7 @@ class VolumeCroppingTool extends AnnotationTool {
       // coronal  is x axis in green
       // sagittal is y axis in yellow
       // axial    is z axis in red
-      console.debug('VOLUMECROPPING_TOOL_CHANGED', evt.detail.toolCenter);
+      //console.debug('VOLUMECROPPING_TOOL_CHANGED', evt.detail.toolCenter);
 
       viewportsInfo = this._getViewportsInfo();
       const [viewport3D] = viewportsInfo;
@@ -416,41 +405,23 @@ class VolumeCroppingTool extends AnnotationTool {
       const mapper = volumeActor.getMapper();
       const clippingPlanes = mapper.getClippingPlanes();
       clippingPlanes[0].setOrigin(planeXmin.getOrigin());
-      clippingPlanes[2].setOrigin(planeYmin.getOrigin());
-      clippingPlanes[4].setOrigin(planeZmin.getOrigin());
-
-      const currentPoint = this.sphereStates[0].point;
-      const newPointXMin = [
+      this.sphereStates[0].sphereSource.setCenter(
         planeXmin.getOrigin()[0],
-        currentPoint[1],
-        currentPoint[2],
-      ];
-      this.sphereStates[0].point = newPointXMin;
-      this.sphereStates[0].sphereSource.setCenter(newPointXMin);
-      this.sphereStates[0].sphereSource.modified();
-      /*
-      const newPointYMin = [
-        currentPoint[0],
+        this.sphereStates[0].point[1],
+        this.sphereStates[0].point[2]
+      );
+      clippingPlanes[2].setOrigin(planeYmin.getOrigin());
+      this.sphereStates[2].sphereSource.setCenter(
+        this.sphereStates[2].point[0],
         planeYmin.getOrigin()[1],
-        currentPoint[2],
-      ];
-      this.sphereStates[2].point = newPointYMin;
-      this.sphereStates[2].sphereSource.setCenter(newPointYMin);
-      this.sphereStates[2].sphereSource.modified();
-      const newPointZmin = [
-        currentPoint[0],
-        currentPoint[1],
-        planeZmin.getOrigin()[2],
-      ];
-      this.sphereStates[4].point = newPointZmin;
-      this.sphereStates[4].sphereSource.setCenter(newPointZmin);
-      this.sphereStates[4].sphereSource.modified();
-
-      */
-      mapper.modified();
-
-      viewport.getDefaultActor().actor.modified();
-      volumeActor.modified();
+        this.sphereStates[2].point[2]
+      );
+      clippingPlanes[4].setOrigin(planeZmin.getOrigin());
+      this.sphereStates[4].sphereSource.setCenter(
+        this.sphereStates[4].point[0],
+        this.sphereStates[4].point[1],
+        planeZmin.getOrigin()[2]
+      );
       viewport.render();
     });
   };
@@ -546,10 +517,19 @@ class VolumeCroppingTool extends AnnotationTool {
 
     const displayCoords = viewport.getVtkDisplayCoords([x, y]);
     // Use the picker to get the 3D coordinates
+
+    // --- Remove clipping planes before picking otherwise we cannot back out of the volume
+    const mapper = viewport.getDefaultActor().actor.getMapper();
+    const originalClippingPlanes = mapper.getClippingPlanes().slice();
+    mapper.removeAllClippingPlanes();
     this.picker.pick(
       [displayCoords[0], displayCoords[1], 0],
       viewport.getRenderer()
     );
+    // --- Restore clipping planes after picking ---
+    originalClippingPlanes.forEach((plane) => {
+      mapper.addClippingPlane(plane);
+    });
     const pickedPositions = this.picker.getPickedPositions();
     if (pickedPositions.length > 0) {
       const pickedPoint = pickedPositions[0];
@@ -586,7 +566,6 @@ class VolumeCroppingTool extends AnnotationTool {
       volumeActor.modified();
       viewport.render();
       const sphereMoved = newPoint;
-      console.debug(clippingPlanes[0].getOrigin());
       if (sphereState.axis === 'x') {
         sphereMoved[0] = pickedPoint[0];
         sphereMoved[1] = clippingPlanes[0].getOrigin()[1];
