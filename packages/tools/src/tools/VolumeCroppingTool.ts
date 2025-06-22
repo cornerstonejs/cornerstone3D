@@ -411,23 +411,58 @@ class VolumeCroppingTool extends AnnotationTool {
         const mapper = volumeActor.getMapper();
         const clippingPlanes = mapper.getClippingPlanes();
         clippingPlanes[0].setOrigin(planeXmin.getOrigin());
+        clippingPlanes[2].setOrigin(planeYmin.getOrigin());
+        clippingPlanes[4].setOrigin(planeZmin.getOrigin());
+
         this.sphereStates[0].sphereSource.setCenter(
           planeXmin.getOrigin()[0],
           this.sphereStates[0].point[1],
           this.sphereStates[0].point[2]
         );
-        clippingPlanes[2].setOrigin(planeYmin.getOrigin());
+        const otherXSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'x' && i !== 0
+        );
+        const newXCenter =
+          (otherXSphere.point[0] + planeXmin.getOrigin()[0]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (state.axis !== 'x') {
+            state.point[0] = newXCenter;
+            state.sphereSource.setCenter(state.point);
+          }
+        });
         this.sphereStates[2].sphereSource.setCenter(
           this.sphereStates[2].point[0],
           planeYmin.getOrigin()[1],
           this.sphereStates[2].point[2]
         );
-        clippingPlanes[4].setOrigin(planeZmin.getOrigin());
+        const otherYSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'y' && i !== 2
+        );
+        const newYCenter =
+          (otherYSphere.point[1] + planeYmin.getOrigin()[1]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (state.axis !== 'y') {
+            state.point[1] = newYCenter;
+            state.sphereSource.setCenter(state.point);
+          }
+        });
         this.sphereStates[4].sphereSource.setCenter(
           this.sphereStates[4].point[0],
           this.sphereStates[4].point[1],
           planeZmin.getOrigin()[2]
         );
+        const otherZSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'z' && i !== 4
+        );
+        const newZCenter =
+          (otherZSphere.point[2] + planeZmin.getOrigin()[2]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (state.axis !== 'z') {
+            state.point[2] = newZCenter;
+            state.sphereSource.setCenter(state.point);
+          }
+        });
+
         viewport.render();
       }
     );
@@ -540,6 +575,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const pickedPositions = this.picker.getPickedPositions();
     if (pickedPositions.length > 0) {
       const pickedPoint = pickedPositions[0];
+
       const sphereState = this.sphereStates[this.draggingSphereIndex];
       const newPoint = [...sphereState.point];
       // Restrict movement to the sphere's axis only
@@ -717,11 +753,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const camera = viewport.getCamera();
     viewport.setCamera({
       focalPoint: camera.focalPoint,
-      position: [
-        camera.position[0],
-        camera.position[1],
-        camera.position[2] + 1,
-      ],
+      position: [camera.position[0], camera.position[1], camera.position[2]],
     });
     this._initialize3DViewports(viewportsInfo);
     viewport.render();
