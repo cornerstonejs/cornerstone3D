@@ -249,8 +249,9 @@ class VolumeCroppingTool extends AnnotationTool {
     }
     sphereActor.getProperty().setColor(color);
 
-    /*
     const sphereColors = this.configuration.sphereColors || {};
+    console.debug('sphereColors', sphereColors);
+    /*
     const color = sphereColors[this.sphereStates[idx].axis] ||
       sphereColors.default || [0.0, 0.0, 1.0];
     sphereActor.getProperty().setColor(color);
