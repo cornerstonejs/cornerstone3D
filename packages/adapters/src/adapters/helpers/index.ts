@@ -7,5 +7,6 @@ export { copySeriesTags } from "./copySeriesTags";
 
 export * from "./toScoordType";
 export * from "./scoordToWorld";
+export * from "./toPoint3";
 
 export { toArray, codeMeaningEquals, graphicTypeEquals, downloadDICOMData };

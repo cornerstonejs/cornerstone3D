@@ -1,5 +1,14 @@
-import { normalizers, data, utilities, derivations } from "dcmjs";
-import { cache, type Types as CSTypes } from "@cornerstonejs/core";
+import {
+    normalizers,
+    data,
+    utilities as dcmjsUtilities,
+    derivations
+} from "dcmjs";
+import {
+    cache,
+    utilities as csUtilities,
+    type Types as CSTypes
+} from "@cornerstonejs/core";
 import type { Types } from "@cornerstonejs/tools";
 
 import CORNERSTONE_3D_TAG from "./cornerstone3DTag";
@@ -11,11 +20,12 @@ import {
 } from "../helpers";
 import Cornerstone3DCodingScheme from "./CodingScheme";
 import { copySeriesTags } from "../helpers/copySeriesTags";
+import { toPoint3 } from "../helpers/toPoint3";
 import { NO_IMAGE_ID } from "./constants";
 
 type Annotation = Types.Annotation;
 
-const { TID1500, addAccessors } = utilities;
+const { TID1500, addAccessors } = dcmjsUtilities;
 
 const { StructuredReport } = derivations;
 
@@ -315,7 +325,7 @@ export default class MeasurementReport {
         SCOORD3DGroup,
         toolType
     }): SpatialCoordinatesData {
-        return {
+        const toolData = {
             SCOORD3DGroup,
             FrameOfReferenceUID: SCOORD3DGroup.ReferencedFrameOfReferenceUID,
             state: {
@@ -333,6 +343,13 @@ export default class MeasurementReport {
                 }
             }
         };
+        console.warn("SCOORD3DGroup=", SCOORD3DGroup);
+        csUtilities.updateReferencedPlane(
+            toPoint3(SCOORD3DGroup.GraphicData),
+            toolData.state.metadata
+        );
+
+        return toolData;
     }
 
     public static getSpatialCoordinatesState({
