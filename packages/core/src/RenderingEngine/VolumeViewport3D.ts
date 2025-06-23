@@ -25,7 +25,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
   constructor(props: ViewportInput) {
     super(props);
-
+    const _originalClippingPlanes = [];
     const { parallelProjection, orientation } = this.options;
 
     const activeCamera = this.getVtkActiveCamera();
@@ -50,7 +50,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
     this._originalClippingPlanes[index].origin = origin;
     //this._originalClippingPlanes[index].setOrigin(origin);
     //  console.debug('Updated original clipping plane', this._originalClippingPlanes[index]);
-    // this.render();
+    //this.render();
   }
 
   // Set the original planes for a viewport
