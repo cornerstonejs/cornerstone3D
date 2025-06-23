@@ -79,6 +79,15 @@ const OPERATION = {
   SLAB: 3,
 };
 
+const PLANEINDEX = {
+  XMIN: 0,
+  XMAX: 1,
+  YMIN: 2,
+  YMAX: 3,
+  ZMIN: 4,
+  ZMAX: 5,
+};
+
 /**
  * VolumeCroppingTool is a tool that provides reference lines between different viewports
  * of a toolGroup. Using crosshairs, you can jump to a specific location in one
@@ -246,9 +255,9 @@ class VolumeCroppingTool extends AnnotationTool {
       sphereColors.default || [0.0, 0.0, 1.0];
     sphereActor.getProperty().setColor(color);
 */
+
     sphereActor.setPickable(true);
     viewport.addActor({ actor: sphereActor, uid: uid });
-    // console.debug('added sphere: ', uid, viewport.getActors());
     viewport.render();
   }
 
@@ -425,11 +434,16 @@ class VolumeCroppingTool extends AnnotationTool {
         const newXCenter =
           (otherXSphere.point[0] + planeXmin.getOrigin()[0]) / 2;
         this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'x') {
+          if (
+            state.axis !== 'x' &&
+            !evt.detail.viewportOrientation.includes('sagittal')
+          ) {
             state.point[0] = newXCenter;
             state.sphereSource.setCenter(state.point);
           }
         });
+
+        // y
         this.sphereStates[2].sphereSource.setCenter(
           this.sphereStates[2].point[0],
           planeYmin.getOrigin()[1],
@@ -441,11 +455,15 @@ class VolumeCroppingTool extends AnnotationTool {
         const newYCenter =
           (otherYSphere.point[1] + planeYmin.getOrigin()[1]) / 2;
         this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'y') {
+          if (
+            state.axis !== 'y' &&
+            !evt.detail.viewportOrientation.includes('coronal')
+          ) {
             state.point[1] = newYCenter;
             state.sphereSource.setCenter(state.point);
           }
         });
+        // z
         this.sphereStates[4].sphereSource.setCenter(
           this.sphereStates[4].point[0],
           this.sphereStates[4].point[1],
@@ -457,7 +475,10 @@ class VolumeCroppingTool extends AnnotationTool {
         const newZCenter =
           (otherZSphere.point[2] + planeZmin.getOrigin()[2]) / 2;
         this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'z') {
+          if (
+            state.axis !== 'z' &&
+            !evt.detail.viewportOrientation.includes('axial')
+          ) {
             state.point[2] = newZCenter;
             state.sphereSource.setCenter(state.point);
           }

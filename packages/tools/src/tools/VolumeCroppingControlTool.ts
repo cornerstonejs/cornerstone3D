@@ -652,9 +652,14 @@ class VolumeCroppingControlTool extends AnnotationTool {
         //   toolGroupId: this.toolGroupId,
         //    toolCenter: this.toolCenter,
         //   });
+
         triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
           toolGroupId: this.toolGroupId,
           toolCenter: this.toolCenter,
+          viewportOrientation: [
+            viewportAnnotation.data.referenceLines[0][0].options.orientation,
+            viewportAnnotation.data.referenceLines[1][0].options.orientation,
+          ],
         });
       }
     }
