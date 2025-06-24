@@ -117,17 +117,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
           x: null,
           y: null,
         },
-        // Auto pan is a configuration which will update pan
-        // other viewports in the toolGroup if the center of the crosshairs
-        // is outside of the viewport. This might be useful for the case
-        // when the user is scrolling through an image (usually in the zoomed view)
-        // and the crosshairs will eventually get outside of the viewport for
-        // the other viewports.
-        autoPan: {
-          enabled: false,
-          panSize: 10,
-        },
-        handleRadius: 3,
         // Enable HDPI rendering for handles using devicePixelRatio
         enableHDPIHandles: false,
         // radius of the area around the intersection of the planes, in which
@@ -138,7 +127,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         mobile: {
           enabled: false,
           opacity: 0.8,
-          handleRadius: 9,
         },
       },
     }
@@ -421,26 +409,25 @@ class VolumeCroppingControlTool extends AnnotationTool {
         // orientation: viewport.defaultOptions.orientation,
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
+        toolMin: this.toolCenter,
         //   viewportId: data.viewportId,
       });
     }
   }
 
   /**
-   * addNewAnnotation acts as jump for the crosshairs tool. It is called when
-   * the user clicks on the image. It does not store the annotation in the stateManager though.
+   * addNewAnnotation is called when the user clicks on the image.
+   * It does not store the annotation in the stateManager though.
    *
    * @param evt - The mouse event
    * @param interactionType - The type of interaction (e.g., mouse, touch, etc.)
-   * @returns Crosshairs annotation
+   * @returns  annotation
    */
 
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
   ): VolumeCroppingAnnotation => {
     const eventDetail = evt.detail;
-
-    //  check if we are close to a sphere
 
     console.debug('addNewAnnotation: ', eventDetail);
     const { element } = eventDetail;
@@ -450,74 +437,44 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    if (viewport.type === Enums.ViewportType.VOLUME_3D) {
-      const annotations = this._getAnnotations(enabledElement);
-      const filteredAnnotations = this.filterInteractableAnnotationsForElement(
-        viewport.element,
-        annotations
+
+    //this._jump(enabledElement, jumpWorld);
+
+    const annotations = this._getAnnotations(enabledElement);
+    const filteredAnnotations = this.filterInteractableAnnotationsForElement(
+      viewport.element,
+      annotations
+    );
+
+    const { data } = filteredAnnotations[0];
+
+    const viewportIdArray = [];
+    // put all the draggable reference lines in the viewportIdArray
+
+    const referenceLines = data.referenceLines || [];
+    for (let i = 0; i < referenceLines.length; ++i) {
+      const otherViewport = referenceLines[i][0];
+      const viewportControllable = this._getReferenceLineControllable(
+        otherViewport.id
       );
 
-      if (!filteredAnnotations.length) {
-        this.initializeViewport({
-          renderingEngineId: viewport.renderingEngineId,
-          viewportId: viewport.id,
-        });
-        // Re-fetch after creation
-        annotations = this._getAnnotations(enabledElement);
-        filteredAnnotations = this.filterInteractableAnnotationsForElement(
-          viewport.element,
-          annotations
-        );
-        if (!filteredAnnotations.length) {
-          return;
-        }
+      if (!viewportControllable) {
+        continue;
       }
-
-      const { data } = filteredAnnotations[0];
-      data.handles.activeOperation = OPERATION.DRAG;
-      //    console.debug('addanotation', filteredAnnotations);
-
-      return filteredAnnotations[0];
-      // here should be the nearPoint checker and update handler
-    } else {
-      //this._jump(enabledElement, jumpWorld);
-
-      const annotations = this._getAnnotations(enabledElement);
-      const filteredAnnotations = this.filterInteractableAnnotationsForElement(
-        viewport.element,
-        annotations
-      );
-
-      const { data } = filteredAnnotations[0];
-
-      const viewportIdArray = [];
-      // put all the draggable reference lines in the viewportIdArray
-
-      const referenceLines = data.referenceLines || [];
-      for (let i = 0; i < referenceLines.length; ++i) {
-        const otherViewport = referenceLines[i][0];
-        const viewportControllable = this._getReferenceLineControllable(
-          otherViewport.id
-        );
-
-        if (!viewportControllable) {
-          continue;
-        }
-        viewportIdArray.push(otherViewport.id);
-        i++;
-      }
-
-      data.activeViewportIds = [...viewportIdArray];
-      // set translation operation
-      data.handles.activeOperation = OPERATION.DRAG;
-
-      evt.preventDefault();
-
-      hideElementCursor(element);
-
-      this._activateModify(element);
-      return filteredAnnotations[0];
+      viewportIdArray.push(otherViewport.id);
+      i++;
     }
+
+    data.activeViewportIds = [...viewportIdArray];
+    // set translation operation
+    data.handles.activeOperation = OPERATION.DRAG;
+
+    evt.preventDefault();
+
+    hideElementCursor(element);
+
+    this._activateModify(element);
+    return filteredAnnotations[0];
   };
 
   cancel = () => {
@@ -652,16 +609,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
         //   toolGroupId: this.toolGroupId,
         //    toolCenter: this.toolCenter,
         //   });
-
-        triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
-          toolGroupId: this.toolGroupId,
-          toolCenter: this.toolCenter,
-          viewportOrientation: [
-            viewportAnnotation.data.referenceLines[0][0].options.orientation,
-            viewportAnnotation.data.referenceLines[1][0].options.orientation,
-          ],
-        });
       }
+      triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
+        toolGroupId: this.toolGroupId,
+        toolCenter: this.toolCenter,
+        viewportOrientation: [
+          viewportAnnotation.data.referenceLines[0][0].options.orientation,
+          viewportAnnotation.data.referenceLines[1][0].options.orientation,
+        ],
+      });
     }
 
     // AutoPan modification
@@ -964,14 +920,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (viewportControllable) {
         color =
           viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
-        let handleRadius =
-          this.configuration.handleRadius *
-          (this.configuration.enableHDPIHandles ? window.devicePixelRatio : 1);
-        let opacity = 1;
-        if (this.configuration.mobile?.enabled) {
-          handleRadius = this.configuration.mobile.handleRadius;
-          opacity = this.configuration.mobile.opacity;
-        }
         if (lineActive) {
           const handleUID = `${lineIndex}`;
         }
@@ -982,7 +930,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     if (this.configuration.viewportIndicators) {
       const { viewportIndicatorsConfig } = this.configuration;
-
       const xOffset = viewportIndicatorsConfig?.xOffset || 0.95;
       const yOffset = viewportIndicatorsConfig?.yOffset || 0.05;
       const referenceColorCoordinates = [
@@ -1112,10 +1059,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const { clientWidth, clientHeight } = viewport.canvas;
 
     const toolCenterCanvas = viewport.worldToCanvas(this.toolCenter);
-
-    // pan the viewport to fit the toolCenter in the direction
-    // that is out of bounds
-    const pan = this.configuration.autoPan.panSize;
 
     const visiblePointCanvas = <Types.Point2>[
       toolCenterCanvas[0],

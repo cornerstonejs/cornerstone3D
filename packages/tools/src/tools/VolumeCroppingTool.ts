@@ -202,10 +202,13 @@ class VolumeCroppingTool extends AnnotationTool {
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
   }
 
-  addSphere(viewport, point, axis) {
+  addSphere(viewport, point, axis, position) {
     // Generate a unique UID for each sphere based on its axis and position
-    const uid = `${axis}_${point.map((v) => Math.round(v)).join('_')}`;
+    const uid = `${axis}_${position}`;
     const sphereState = this.sphereStates.find((s) => s.uid === uid);
+    if (sphereState) {
+      return;
+    }
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);
     const sphereRadius =
@@ -336,12 +339,12 @@ class VolumeCroppingTool extends AnnotationTool {
     const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMin];
     const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax];
 
-    this.addSphere(viewport, sphereXminPoint, 'x');
-    this.addSphere(viewport, sphereXmaxPoint, 'x');
-    this.addSphere(viewport, sphereYminPoint, 'y');
-    this.addSphere(viewport, sphereYmaxPoint, 'y');
-    this.addSphere(viewport, sphereZminPoint, 'z');
-    this.addSphere(viewport, sphereZmaxPoint, 'z');
+    this.addSphere(viewport, sphereXminPoint, 'x', 'min');
+    this.addSphere(viewport, sphereXmaxPoint, 'x', 'max');
+    this.addSphere(viewport, sphereYminPoint, 'y', 'min');
+    this.addSphere(viewport, sphereYmaxPoint, 'y', 'max');
+    this.addSphere(viewport, sphereZminPoint, 'z', 'min');
+    this.addSphere(viewport, sphereZmaxPoint, 'z', 'max');
     const defaultActor = viewport.getDefaultActor();
     if (defaultActor?.actor) {
       // Cast to any to avoid type errors with different actor types
@@ -387,11 +390,8 @@ class VolumeCroppingTool extends AnnotationTool {
         // coronal  is x axis in green
         // sagittal is y axis in yellow
         // axial    is z axis in red
-        //console.debug('VOLUMECROPPINGCONTROL_TOOL_CHANGED', evt.detail.toolCenter);
-
         viewportsInfo = this._getViewportsInfo();
         const [viewport3D] = viewportsInfo;
-
         const renderingEngine = getRenderingEngine(
           viewport3D.renderingEngineId
         );
@@ -409,9 +409,18 @@ class VolumeCroppingTool extends AnnotationTool {
           origin: [0, 0, toolMin[2]],
           normal: [0, 0, 1],
         });
-        viewport.setOriginalClippingPlane(0, planeXmin.getOrigin());
-        viewport.setOriginalClippingPlane(2, planeYmin.getOrigin());
-        viewport.setOriginalClippingPlane(4, planeZmin.getOrigin());
+        viewport.setOriginalClippingPlane(
+          PLANEINDEX.XMIN,
+          planeXmin.getOrigin()
+        );
+        viewport.setOriginalClippingPlane(
+          PLANEINDEX.YMIN,
+          planeYmin.getOrigin()
+        );
+        viewport.setOriginalClippingPlane(
+          PLANEINDEX.ZMIN,
+          planeZmin.getOrigin()
+        );
 
         const volumeActor = viewport.getDefaultActor()?.actor;
         if (!volumeActor) {
@@ -420,14 +429,19 @@ class VolumeCroppingTool extends AnnotationTool {
         }
         const mapper = volumeActor.getMapper();
         const clippingPlanes = mapper.getClippingPlanes();
-        clippingPlanes[0].setOrigin(planeXmin.getOrigin());
-        clippingPlanes[2].setOrigin(planeYmin.getOrigin());
-        clippingPlanes[4].setOrigin(planeZmin.getOrigin());
+        clippingPlanes[PLANEINDEX.XMIN].setOrigin(planeXmin.getOrigin());
+        clippingPlanes[PLANEINDEX.YMIN].setOrigin(planeYmin.getOrigin());
+        clippingPlanes[PLANEINDEX.ZMIN].setOrigin(planeZmin.getOrigin());
 
         this.sphereStates[0].sphereSource.setCenter(
           planeXmin.getOrigin()[0],
           this.sphereStates[0].point[1],
           this.sphereStates[0].point[2]
+        );
+        console.debug(
+          'update xmin with : ',
+          planeXmin.getOrigin()[0],
+          toolMin[0]
         );
         const otherXSphere = this.sphereStates.find(
           (s, i) => s.axis === 'x' && i !== 0
@@ -437,7 +451,7 @@ class VolumeCroppingTool extends AnnotationTool {
         this.sphereStates.forEach((state, idx) => {
           if (
             state.axis !== 'x' &&
-            !evt.detail.viewportOrientation.includes('sagittal')
+            !evt.detail.viewportOrientation.includes('sagittal') // sagittal is y axis in yellow
           ) {
             state.point[0] = newXCenter;
             state.sphereSource.setCenter(state.point);
@@ -450,6 +464,11 @@ class VolumeCroppingTool extends AnnotationTool {
           planeYmin.getOrigin()[1],
           this.sphereStates[2].point[2]
         );
+        console.debug(
+          'update ymin with : ',
+          planeYmin.getOrigin()[1],
+          toolMin[1]
+        );
         const otherYSphere = this.sphereStates.find(
           (s, i) => s.axis === 'y' && i !== 2
         );
@@ -458,10 +477,11 @@ class VolumeCroppingTool extends AnnotationTool {
         this.sphereStates.forEach((state, idx) => {
           if (
             state.axis !== 'y' &&
-            !evt.detail.viewportOrientation.includes('coronal')
+            !evt.detail.viewportOrientation.includes('coronal') // coronal  is x axis in green
           ) {
             state.point[1] = newYCenter;
             state.sphereSource.setCenter(state.point);
+            console.debug('updating for y change: ', state);
           }
         });
         // z
@@ -478,7 +498,7 @@ class VolumeCroppingTool extends AnnotationTool {
         this.sphereStates.forEach((state, idx) => {
           if (
             state.axis !== 'z' &&
-            !evt.detail.viewportOrientation.includes('axial')
+            !evt.detail.viewportOrientation.includes('axial') // axial    is z axis in red
           ) {
             state.point[2] = newZCenter;
             state.sphereSource.setCenter(state.point);
@@ -773,11 +793,12 @@ class VolumeCroppingTool extends AnnotationTool {
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
 
     const camera = viewport.getCamera();
+
+    this._initialize3DViewports(viewportsInfo);
     viewport.setCamera({
       focalPoint: camera.focalPoint,
       position: [camera.position[0], camera.position[1], camera.position[2]],
     });
-    this._initialize3DViewports(viewportsInfo);
     viewport.render();
   };
 

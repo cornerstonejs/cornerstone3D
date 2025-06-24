@@ -40,6 +40,7 @@ const {
   PanTool,
   OrientationMarkerTool,
   StackScrollTool,
+  CrosshairsTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -179,6 +180,7 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
   cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(CrosshairsTool);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -261,6 +263,16 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
+  /*
+  toolGroup.addTool(CrosshairsTool.toolName);
+  toolGroup.setToolActive(CrosshairsTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+  */
   toolGroup.addTool(VolumeCroppingControlTool.toolName, {
     getReferenceLineColor,
     viewportIndicators: true,
@@ -312,8 +324,10 @@ async function run() {
       },
     ],
   });
-  //toolGroupVRT.addTool(OrientationMarkerTool.toolName);
-  // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
+  toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
+    overlayMarkerType: OrientationMarkerTool.OVERLAY_MARKER_TYPES.AXES,
+  });
+  toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   // Render the image
