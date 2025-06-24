@@ -117,13 +117,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
           x: null,
           y: null,
         },
-        // Enable HDPI rendering for handles using devicePixelRatio
-        enableHDPIHandles: false,
-        // radius of the area around the intersection of the planes, in which
-        // the reference lines will not be rendered. This is only used when
-        // having 3 viewports in the toolGroup.
         referenceLinesCenterGapRadius: 20,
-
+        initialCropFactor: 0.2,
         mobile: {
           enabled: false,
           opacity: 0.8,
@@ -164,9 +159,18 @@ class VolumeCroppingControlTool extends AnnotationTool {
         const spacing = imageData.getSpacing();
         const origin = imageData.getOrigin();
         this.toolCenter = [
-          origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0],
-          origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1],
-          origin[2] + 0.2 * (dimensions[2] - 1) * spacing[2],
+          origin[0] +
+            this.configuration.initialCropFactor *
+              (dimensions[0] - 1) *
+              spacing[0],
+          origin[1] +
+            this.configuration.initialCropFactor *
+              (dimensions[1] - 1) *
+              spacing[1],
+          origin[2] +
+            this.configuration.initialCropFactor *
+              (dimensions[2] - 1) *
+              spacing[2],
         ];
       }
     }
@@ -860,9 +864,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
       referenceLines.push([
         otherViewport,
         refLinePointTwo,
-        refLinePointTwo,
+        //   refLinePointTwo,
         refLinePointFour,
-        refLinePointFour,
+        //    refLinePointFour,
       ]);
       //console.debug(refLinePointTwo, refLinePointFour);
     });
@@ -908,8 +912,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
           svgDrawingHelper,
           annotationUID,
           lineUID,
+          line[1],
           line[2],
-          line[4],
           {
             color,
             lineWidth,
@@ -1001,9 +1005,18 @@ class VolumeCroppingControlTool extends AnnotationTool {
           const spacing = imageData.getSpacing();
           const origin = imageData.getOrigin();
           this.toolCenter = [
-            origin[0] + 0.2 * (dimensions[0] - 1) * spacing[0],
-            origin[1] + 0.2 * (dimensions[1] - 1) * spacing[1],
-            origin[2] + 0.2 * (dimensions[2] - 1) * spacing[2],
+            origin[0] +
+              this.configuration.initialCropFactor *
+                (dimensions[0] - 1) *
+                spacing[0],
+            origin[1] +
+              this.configuration.initialCropFactor *
+                (dimensions[1] - 1) *
+                spacing[1],
+            origin[2] +
+              this.configuration.initialCropFactor *
+                (dimensions[2] - 1) *
+                spacing[2],
           ];
           // Update all annotations' handles.toolCenter
           const annotations = getAnnotations(this.getToolName()) || [];
@@ -1672,25 +1685,18 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     if (referenceLines) {
       for (let i = 0; i < referenceLines.length; ++i) {
-        // Each line: [otherViewport, refLinePointOne, refLinePointTwo, refLinePointThree, refLinePointFour, ...]
+        // Each line: [otherViewport, refLinePointOne, refLinePointTwo, ...]
         const otherViewport = referenceLines[i][0];
         // First segment
         const start1 = referenceLines[i][1];
         const end1 = referenceLines[i][2];
-        // Second segment
-        const start2 = referenceLines[i][3];
-        const end2 = referenceLines[i][4];
 
         const distance1 = lineSegment.distanceToPoint(start1, end1, [
           canvasCoords[0],
           canvasCoords[1],
         ]);
-        const distance2 = lineSegment.distanceToPoint(start2, end2, [
-          canvasCoords[0],
-          canvasCoords[1],
-        ]);
 
-        if (distance1 <= proximity || distance2 <= proximity) {
+        if (distance1 <= proximity) {
           viewportIdArray.push(otherViewport.id);
           data.handles.activeOperation = 1; // DRAG
         }
