@@ -7606,10 +7606,10 @@ dcmjs@^0.29.8:
     ndarray "^1.0.19"
     pako "^2.0.4"
 
-dcmjs@^0.40.0:
-  version "0.40.0"
-  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.40.0.tgz#04218d221b4b197d36580301ce7e8110cd99aa50"
-  integrity sha512-FId8dPpDg45ynIjpWF1mXlA77YcQBcE/eQGgkQpJqB0k9NF4simMYbSm9pJ5ORizYdDzOzjZpVNVym/vnFQJzQ==
+dcmjs@^0.41.0:
+  version "0.41.0"
+  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.41.0.tgz#4804099980ab769f8902a948ad330abdf3b577d2"
+  integrity sha512-kr46REomItFeWz+0ck4Wif4uS5VVDWVlwdh5GGaCtTYHWfNQmrcCSiQOkrShc7Dc5zP8vNKrHEdORlZXenlg3w==
   dependencies:
     "@babel/runtime-corejs3" "^7.22.5"
     adm-zip "^0.5.10"
