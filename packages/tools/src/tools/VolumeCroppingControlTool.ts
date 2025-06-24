@@ -61,6 +61,8 @@ interface VolumeCroppingAnnotation extends Annotation {
     handles: {
       activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
       toolCenter: Types.Point3;
+      toolCenterMin: Types.Point3;
+      toolCenterMax: Types.Point3;
     };
     activeViewportIds: string[]; // a list of the viewport ids connected to the reference lines being translated
     viewportId: string;
@@ -101,6 +103,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }[] = [];
   draggingSphereIndex: number | null = null;
   toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
+  toolCenterMin: Types.Point3 = [0, 0, 0];
+  toolCenterMax: Types.Point3 = [0, 0, 0];
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
@@ -158,19 +162,22 @@ class VolumeCroppingControlTool extends AnnotationTool {
         const dimensions = imageData.getDimensions();
         const spacing = imageData.getSpacing();
         const origin = imageData.getOrigin();
+        const cropFactor = this.configuration.initialCropFactor ?? 0.2;
         this.toolCenter = [
-          origin[0] +
-            this.configuration.initialCropFactor *
-              (dimensions[0] - 1) *
-              spacing[0],
-          origin[1] +
-            this.configuration.initialCropFactor *
-              (dimensions[1] - 1) *
-              spacing[1],
-          origin[2] +
-            this.configuration.initialCropFactor *
-              (dimensions[2] - 1) *
-              spacing[2],
+          origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
+          origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1],
+          origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2],
+        ];
+        const maxCropFactor = 1 - cropFactor;
+        this.toolCenterMin = [
+          origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
+          origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1],
+          origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2],
+        ];
+        this.toolCenterMax = [
+          origin[0] + maxCropFactor * (dimensions[0] - 1) * spacing[0],
+          origin[1] + maxCropFactor * (dimensions[1] - 1) * spacing[1],
+          origin[2] + maxCropFactor * (dimensions[2] - 1) * spacing[2],
         ];
       }
     }
@@ -224,6 +231,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       data: {
         handles: {
           toolCenter: this.toolCenter,
+          toolCenterMin: this.toolCenterMin,
+          toolCenterMax: this.toolCenterMax,
         },
         activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
         activeViewportIds: [], // a list of the viewport ids connected to the reference lines being translated
@@ -614,6 +623,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         //    toolCenter: this.toolCenter,
         //   });
       }
+
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
@@ -834,41 +844,29 @@ class VolumeCroppingControlTool extends AnnotationTool {
         canvasUnitVectorFromCenter,
         canvasDiagonalLength * 100
       );
-      const canvasVectorFromCenterStart = vec2.create();
-      const centerGap = this.configuration.referenceLinesCenterGapRadius;
-      vec2.scale(
-        canvasVectorFromCenterStart,
-        canvasUnitVectorFromCenter,
-        // Don't put a gap if the the third view is missing
-        otherViewportAnnotations.length === 2 ? centerGap : 0
-      );
 
-      // Computing Reference start and end (4 lines per viewport in case of 3 view MPR)
-      const refLinePointTwo = vec2.create();
-      const refLinePointFour = vec2.create();
+      const refLinePointMinOne = vec2.create();
+      const refLinePointMinTwo = vec2.create();
 
       let refLinesCenter = vec2.clone(crosshairCenterCanvas);
       if (!otherViewportControllable) {
         refLinesCenter = vec2.clone(otherViewportCenterCanvas);
       }
-      vec2.add(refLinePointTwo, refLinesCenter, canvasVectorFromCenterLong);
+      vec2.add(refLinePointMinOne, refLinesCenter, canvasVectorFromCenterLong);
       vec2.subtract(
-        refLinePointFour,
+        refLinePointMinTwo,
         refLinesCenter,
         canvasVectorFromCenterLong
       );
 
       // Clipping lines to be only included in a box (canvas), we don't want
       // the lines goes beyond canvas
-      liangBarksyClip(refLinePointTwo, refLinePointFour, canvasBox);
+      liangBarksyClip(refLinePointMinOne, refLinePointMinTwo, canvasBox);
       referenceLines.push([
         otherViewport,
-        refLinePointTwo,
-        //   refLinePointTwo,
-        refLinePointFour,
-        //    refLinePointFour,
+        refLinePointMinOne,
+        refLinePointMinTwo,
       ]);
-      //console.debug(refLinePointTwo, refLinePointFour);
     });
 
     ///  create new reference lines here
@@ -978,7 +976,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   _onSphereMoved = (evt) => {
     if ([0, 2, 4].includes(evt.detail.draggingSphereIndex)) {
       // only update for min spheres
-      let newCenter = [0, 0, 0];
+      let newCenter = [0, 0, 0] as Types.Point3;
       const eventCenter = evt.detail.toolCenter;
       if (evt.detail.axis === 'x') {
         newCenter = [eventCenter[0], this.toolCenter[1], this.toolCenter[2]];
@@ -1004,19 +1002,23 @@ class VolumeCroppingControlTool extends AnnotationTool {
           const dimensions = imageData.getDimensions();
           const spacing = imageData.getSpacing();
           const origin = imageData.getOrigin();
+          const cropFactor = this.configuration.initialCropFactor ?? 0.2;
+
           this.toolCenter = [
-            origin[0] +
-              this.configuration.initialCropFactor *
-                (dimensions[0] - 1) *
-                spacing[0],
-            origin[1] +
-              this.configuration.initialCropFactor *
-                (dimensions[1] - 1) *
-                spacing[1],
-            origin[2] +
-              this.configuration.initialCropFactor *
-                (dimensions[2] - 1) *
-                spacing[2],
+            origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
+            origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1],
+            origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2],
+          ];
+          const maxCropFactor = 1 - cropFactor;
+          this.toolCenterMin = [
+            origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
+            origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1],
+            origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2],
+          ];
+          this.toolCenterMax = [
+            origin[0] + maxCropFactor * (dimensions[0] - 1) * spacing[0],
+            origin[1] + maxCropFactor * (dimensions[1] - 1) * spacing[1],
+            origin[2] + maxCropFactor * (dimensions[2] - 1) * spacing[2],
           ];
           // Update all annotations' handles.toolCenter
           const annotations = getAnnotations(this.getToolName()) || [];
@@ -1685,7 +1687,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     if (referenceLines) {
       for (let i = 0; i < referenceLines.length; ++i) {
-        // Each line: [otherViewport, refLinePointOne, refLinePointTwo, ...]
+        // Each line: [otherViewport, refLinePointOne, refLinePointMinOne, ...]
         const otherViewport = referenceLines[i][0];
         // First segment
         const start1 = referenceLines[i][1];
