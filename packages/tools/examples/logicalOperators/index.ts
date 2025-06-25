@@ -24,7 +24,6 @@ const {
   LogicalOperation,
   copy,
   deleteOperation,
-  removeContourSegmentationAnnotation,
 } = cornerstoneTools.utilities.contourSegmentation;
 
 // This is for debugging purposes
@@ -123,7 +122,7 @@ let sourceSegmentIndex = segmentIndices[0];
 let targetSegmentIndex = segmentIndices[1];
 
 addDropDownToToolbar({
-  labelText: 'Active segment for drawing',
+  labelText: 'Active segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[0] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const segmentIndex = Number(nameAsStringOrNumber);
@@ -153,7 +152,7 @@ addDropdownToToolbar({
 });
 
 addDropDownToToolbar({
-  labelText: 'Source segment Index',
+  labelText: 'Source segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[0] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     sourceSegmentIndex = Number(nameAsStringOrNumber);
@@ -188,7 +187,7 @@ addDropDownToToolbar({
 });
 
 addDropDownToToolbar({
-  labelText: 'Target segment Index',
+  labelText: 'Target segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[1] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     targetSegmentIndex = Number(nameAsStringOrNumber);
