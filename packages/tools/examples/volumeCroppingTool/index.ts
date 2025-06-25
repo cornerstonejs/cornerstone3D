@@ -86,7 +86,7 @@ const element4 = document.createElement('div'); // 3D Volume
 const rightViewportsContainer = document.createElement('div');
 rightViewportsContainer.style.display = 'flex';
 rightViewportsContainer.style.flexDirection = 'column';
-rightViewportsContainer.style.width = '50%';
+rightViewportsContainer.style.width = '20%';
 rightViewportsContainer.style.height = '100%';
 
 // Set styles for the 2D viewports (stacked vertically on the right)
@@ -145,8 +145,8 @@ addToggleButtonToToolbar({
 
 const viewportColors = {
   [viewportId1]: 'rgb(200, 0, 0)',
-  [viewportId2]: 'rgb(200, 200, 0)',
-  [viewportId3]: 'rgb(0, 200, 0)',
+  [viewportId2]: 'rgb(0, 200, 0)',
+  [viewportId3]: 'rgb(200, 200, 0)',
   [viewportId4]: 'rgb(0, 200, 200)',
 };
 
@@ -217,7 +217,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
+        orientation: Enums.OrientationAxis.CORONAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
@@ -226,7 +226,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
@@ -325,7 +325,8 @@ async function run() {
     ],
   });
   toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
-    overlayMarkerType: OrientationMarkerTool.OVERLAY_MARKER_TYPES.AXES,
+    overlayMarkerType:
+      OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
   });
   toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
@@ -352,7 +353,6 @@ async function run() {
       },
     });
     toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
-    // Set zoom to 1.3x
     viewport.setZoom(1.3);
     viewport.render();
   });

@@ -773,6 +773,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
         annotations
       );
 
+    const crosshairCenterCanvasMin = viewport.worldToCanvas(this.toolCenterMin);
+    const crosshairCenterCanvasMax = viewport.worldToCanvas(this.toolCenterMax);
+
     const referenceLines = [];
 
     // get canvas information for points and lines (canvas box, canvas horizontal distances)
@@ -866,6 +869,54 @@ class VolumeCroppingControlTool extends AnnotationTool {
         otherViewport,
         refLinePointMinOne,
         refLinePointMinTwo,
+      ]);
+
+      // For min center
+      const refLinesCenterMin = otherViewportControllable
+        ? vec2.clone(crosshairCenterCanvasMin)
+        : vec2.clone(otherViewportCenterCanvas);
+      const refLinePointMinOne = vec2.create();
+      const refLinePointMinTwo = vec2.create();
+      vec2.add(
+        refLinePointMinOne,
+        refLinesCenterMin,
+        canvasVectorFromCenterLong
+      );
+      vec2.subtract(
+        refLinePointMinTwo,
+        refLinesCenterMin,
+        canvasVectorFromCenterLong
+      );
+      liangBarksyClip(refLinePointMinOne, refLinePointMinTwo, canvasBox);
+      referenceLines.push([
+        otherViewport,
+        refLinePointMinOne,
+        refLinePointMinTwo,
+        'min',
+      ]);
+
+      // For max center
+      const refLinesCenterMax = otherViewportControllable
+        ? vec2.clone(crosshairCenterCanvasMax)
+        : vec2.clone(otherViewportCenterCanvas);
+      const refLinePointMaxOne = vec2.create();
+      const refLinePointMaxTwo = vec2.create();
+      vec2.add(
+        refLinePointMaxOne,
+        refLinesCenterMax,
+        canvasVectorFromCenterLong
+      );
+      vec2.subtract(
+        refLinePointMaxTwo,
+        refLinesCenterMax,
+        canvasVectorFromCenterLong
+      );
+      liangBarksyClip(refLinePointMaxOne, refLinePointMaxTwo, canvasBox);
+      referenceLines.push([
+        otherViewport,
+        refLinePointMaxOne,
+        refLinePointMaxTwo,
+        'max',
       ]);
     });
 

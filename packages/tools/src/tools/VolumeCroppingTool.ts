@@ -148,8 +148,8 @@ class VolumeCroppingTool extends AnnotationTool {
         },
         initialCropFactor: 0.2,
         sphereColors: {
-          x: [0.0, 1.0, 0.0], // Green for X
-          y: [1.0, 1.0, 0.0], // Yellow for Y
+          x: [1.0, 1.0, 0.0], //  Yellow for X
+          y: [0.0, 1.0, 0.0], // Green for Y
           z: [1.0, 0.0, 0.0], // Red for Z
           default: [0.0, 0.0, 1.0], // Blue as fallback
         },
