@@ -452,7 +452,7 @@ export function insertPixelDataPlanar({
                     PerFrameFunctionalGroups.PlaneOrientationSequence
                         .ImageOrientationPatient;
                 // Use slice to get the correct frame (TypedArray)
-                const view = pixelDataChunks.slice(
+                const view = pixelDataChunks.subarray(
                     i * sliceLength,
                     (i + 1) * sliceLength
                 );
@@ -498,7 +498,6 @@ export function insertPixelDataPlanar({
                 const labelmapImage = labelMapImages[imageIdIndex];
                 const labelmap2DView = labelmapImage.getPixelData(); // TypedArray
                 const data = alignedPixelDataI.data;
-                const indexCache = [];
                 let segmentsOnFrameArr = segmentsOnFrame[imageIdIndex];
                 if (!segmentsOnFrameArr) {
                     segmentsOnFrameArr = [];
@@ -510,7 +509,6 @@ export function insertPixelDataPlanar({
                     const segIdx = data[k];
                     if (segIdx !== 0) {
                         labelmap2DView[k] = segIdx;
-                        indexCache.push(k);
                         if (!segSet.has(segIdx)) {
                             segmentsOnFrameArr.push(segIdx);
                             segSet.add(segIdx);
@@ -518,10 +516,12 @@ export function insertPixelDataPlanar({
                         if (!segmentsPixelIndices.has(segIdx)) {
                             segmentsPixelIndices.set(segIdx, {});
                         }
-                        const segmentIndexObject =
+                        const segmentPixelInfo =
                             segmentsPixelIndices.get(segIdx);
-                        segmentIndexObject[imageIdIndex] = indexCache;
-                        segmentsPixelIndices.set(segIdx, segmentIndexObject);
+                        if (!segmentPixelInfo[imageIdIndex]) {
+                            segmentPixelInfo[imageIdIndex] = [];
+                        }
+                        segmentPixelInfo[imageIdIndex].push(k);
                     }
                 }
             }
