@@ -105,7 +105,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
   toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   toolCenterMin: Types.Point3 = [0, 0, 0];
   toolCenterMax: Types.Point3 = [0, 0, 0];
-  // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   constructor(
@@ -250,7 +249,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
-
     return viewports;
   };
 
@@ -393,13 +391,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const secondPlane = csUtils.planar.planeEquation(normal2, point2);
     const thirdPlane = csUtils.planar.planeEquation(normal3, point3);
 
-    //viewport.render();
     const toolCenter = csUtils.planar.threePlaneIntersection(
       firstPlane,
       secondPlane,
       thirdPlane
     );
-
+    //viewport.render();
     // this.setToolCenter(toolCenter);
   };
 
@@ -433,11 +430,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
         toolCenter: this.toolCenter,
         toolMin: this.toolCenterMin,
         toolMax: this.toolCenterMax,
-        handleType: this.editData?.annotation?.data?.handles?.activeType, // Pass activeType here
+        handleType: handleType, // Pass activeType here
         viewportOrientation: [
           viewportAnnotation.data.referenceLines[0][0].options.orientation,
           viewportAnnotation.data.referenceLines[1][0].options.orientation,
-        ], //   viewportId: data.viewportId,
+        ],
       });
     }
   }
@@ -864,30 +861,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         canvasUnitVectorFromCenter,
         canvasDiagonalLength * 100
       );
-      /*
-      const refLinePointMinOne = vec2.create();
-      const refLinePointMinTwo = vec2.create();
-
-      let refLinesCenter = vec2.clone(crosshairCenterCanvas);
-      if (!otherViewportControllable) {
-        refLinesCenter = vec2.clone(otherViewportCenterCanvas);
-      }
-      vec2.add(refLinePointMinOne, refLinesCenter, canvasVectorFromCenterLong);
-      vec2.subtract(
-        refLinePointMinTwo,
-        refLinesCenter,
-        canvasVectorFromCenterLong
-      );
-
-      // Clipping lines to be only included in a box (canvas), we don't want
-      // the lines goes beyond canvas
-      liangBarksyClip(refLinePointMinOne, refLinePointMinTwo, canvasBox);
-      referenceLines.push([
-        otherViewport,
-        refLinePointMinOne,
-        refLinePointMinTwo,
-      ]);
-*/
       // For min center
       const refLinesCenterMin = otherViewportControllable
         ? vec2.clone(crosshairCenterCanvasMin)
@@ -970,10 +943,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
         lineWidth = 2.5;
       }
 
-      let lineUID = `${lineIndex}`;
+      const lineUID = `${lineIndex}`;
       if (viewportControllable) {
-        lineUID = `${lineIndex}One`;
-        lineUID = `${lineIndex}Two`;
+        //  lineUID = `${lineIndex}One`;
+        //  lineUID = `${lineIndex}Two`;
         drawLineSvg(
           svgDrawingHelper,
           annotationUID,

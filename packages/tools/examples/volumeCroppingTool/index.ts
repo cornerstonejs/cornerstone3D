@@ -103,7 +103,7 @@ element3.style.height = '33.33%';
 element3.style.minHeight = '200px';
 
 // Set styles for the 3D viewport (on the left)
-element4.style.width = '100%';
+element4.style.width = '75%';
 element4.style.height = '100%';
 element4.style.minHeight = '600px';
 element4.style.position = 'relative';

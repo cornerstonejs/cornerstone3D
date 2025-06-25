@@ -465,13 +465,6 @@ class VolumeCroppingTool extends AnnotationTool {
           this.sphereStates[2].sphereSource.setCenter(
             this.sphereStates[2].point
           );
-          /*
-          this.sphereStates[2].sphereSource.setCenter(
-            this.sphereStates[2].point[0],
-            planeYmin.getOrigin()[1],
-            this.sphereStates[2].point[2]
-          );
-          */
           this.sphereStates[2].sphereSource.modified();
           console.debug(
             'update ymin with : ',
@@ -490,6 +483,7 @@ class VolumeCroppingTool extends AnnotationTool {
             ) {
               state.point[1] = newYCenter;
               state.sphereSource.setCenter(state.point);
+              state.sphereSource.modified();
               console.debug('updating for y change: ', state);
             }
           });
@@ -780,8 +774,16 @@ class VolumeCroppingTool extends AnnotationTool {
         });
       }
 
-      sphereState.point = newPoint;
-      sphereState.sphereSource.setCenter(newPoint);
+      sphereState.point = [
+        newPoint[0],
+        newPoint[1],
+        newPoint[2],
+      ] as Types.Point3;
+      sphereState.sphereSource.setCenter([
+        newPoint[0],
+        newPoint[1],
+        newPoint[2],
+      ]);
       sphereState.sphereSource.modified();
       const volumeActor = viewport.getDefaultActor()?.actor;
       if (!volumeActor) {
