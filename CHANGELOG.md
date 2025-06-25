@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.0...v3.23.1) (2025-06-24)
+
+### Bug Fixes
+
+- **acquisition:** fix bug in acquisition mode ([#2155](https://github.com/cornerstonejs/cornerstone3D/issues/2155)) ([af82325](https://github.com/cornerstonejs/cornerstone3D/commit/af823256dd46b5ea07ae1dede14c99ba15ec52e2))
+
+# [3.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.4...v3.23.0) (2025-06-20)
+
+### Features
+
+- **reformat:** align viewports to acquisition direction ([#2149](https://github.com/cornerstonejs/cornerstone3D/issues/2149)) ([1211b3d](https://github.com/cornerstonejs/cornerstone3D/commit/1211b3d86650dd6eb9e8ca7bac7ebd3b3b75ea09))
+
+## [3.22.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.3...v3.22.4) (2025-06-19)
+
+### Bug Fixes
+
+- **segmentation:** stack viewport flicker when there's a segmentation added ([#2154](https://github.com/cornerstonejs/cornerstone3D/issues/2154)) ([fd9acf0](https://github.com/cornerstonejs/cornerstone3D/commit/fd9acf0d4d42818226eb526bbe3e8a6d6ef13f37))
+
 ## [3.22.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.2...v3.22.3) (2025-06-18)
 
 ### Bug Fixes

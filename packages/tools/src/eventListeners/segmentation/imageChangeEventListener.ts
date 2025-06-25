@@ -34,7 +34,7 @@ const enable = function (element: HTMLDivElement): void {
   }
 
   element.addEventListener(
-    Enums.Events.STACK_NEW_IMAGE,
+    Enums.Events.PRE_STACK_NEW_IMAGE,
     _imageChangeEventListener as EventListener
   );
   // this listener handles the segmentation modifications
@@ -48,7 +48,7 @@ const enable = function (element: HTMLDivElement): void {
 
 const disable = function (element: HTMLDivElement): void {
   element.removeEventListener(
-    Enums.Events.STACK_NEW_IMAGE,
+    Enums.Events.PRE_STACK_NEW_IMAGE,
     _imageChangeEventListener as EventListener
   );
   element.removeEventListener(

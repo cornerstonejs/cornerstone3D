@@ -33,6 +33,10 @@ import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import {
+  calculateCameraPosition,
+  getCameraVectors,
+} from './helpers/getCameraVectors';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -84,6 +88,16 @@ class VolumeViewport extends BaseVolumeViewport {
     if (this._useAcquisitionPlaneForViewPlane) {
       this._setViewPlaneToAcquisitionPlane(firstImageVolume);
       this._useAcquisitionPlaneForViewPlane = false;
+    } else if (
+      this.options.orientation &&
+      typeof this.options.orientation === 'string'
+    ) {
+      if (this.options.orientation.includes('_reformat')) {
+        this._setViewPlaneToReformatOrientation(
+          this.options.orientation,
+          firstImageVolume
+        );
+      }
     }
 
     return super.setVolumes(volumeInputArray, immediate, suppressEvents);
@@ -118,8 +132,17 @@ class VolumeViewport extends BaseVolumeViewport {
     if (this._useAcquisitionPlaneForViewPlane) {
       this._setViewPlaneToAcquisitionPlane(firstImageVolume);
       this._useAcquisitionPlaneForViewPlane = false;
+    } else if (
+      this.options.orientation &&
+      typeof this.options.orientation === 'string'
+    ) {
+      if (this.options.orientation.includes('_reformat')) {
+        this._setViewPlaneToReformatOrientation(
+          this.options.orientation,
+          firstImageVolume
+        );
+      }
     }
-
     return super.addVolumes(volumeInputArray, immediate, suppressEvents);
   }
 
@@ -177,6 +200,13 @@ class VolumeViewport extends BaseVolumeViewport {
       if (orientation === OrientationAxis.ACQUISITION) {
         // Acquisition orientation is determined from the volume data
         ({ viewPlaneNormal, viewUp } = super._getAcquisitionPlaneOrientation());
+      } else if (
+        orientation === OrientationAxis.REFORMAT ||
+        (orientation as string).includes('_reformat')
+      ) {
+        ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
+          useViewportNormal: true,
+        }));
       } else if (MPR_CAMERA_VALUES[orientation]) {
         ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
       } else {
@@ -223,6 +253,33 @@ class VolumeViewport extends BaseVolumeViewport {
         RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
       );
     }
+  }
+
+  private _setViewPlaneToReformatOrientation(
+    orientation: OrientationAxis,
+    imageVolume: IImageVolume
+  ): void {
+    let viewPlaneNormal, viewUp;
+
+    if (imageVolume) {
+      const { direction } = imageVolume;
+      ({ viewPlaneNormal, viewUp } = calculateCameraPosition(
+        direction.slice(0, 3) as Point3,
+        direction.slice(3, 6) as Point3,
+        direction.slice(6, 9) as Point3,
+        orientation
+      ));
+    } else {
+      ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
+    }
+
+    this.setCamera({
+      viewPlaneNormal,
+      viewUp,
+    });
+
+    this.initialViewUp = viewUp;
+    this.resetCamera();
   }
 
   private _setViewPlaneToAcquisitionPlane(imageVolume: IImageVolume): void {
