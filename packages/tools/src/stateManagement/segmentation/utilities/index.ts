@@ -1,7 +1,10 @@
+import { getAnnotationsUIDMapFromSegmentation } from './getAnnotationsUIDMapFromSegmentation';
+
 export {
   getViewportAssociatedToSegmentation,
   getViewportWithMatchingViewPlaneNormal,
 } from './getViewportAssociatedToSegmentation';
+export { getAnnotationsUIDMapFromSegmentation } from './getAnnotationsUIDMapFromSegmentation';
 export { getAnnotationMapFromSegmentation } from './getAnnotationMapFromSegmentation';
 export { default as decimateContours } from './decimateContours';
 export { extractSegmentPolylines } from './extractSegmentPolylines';

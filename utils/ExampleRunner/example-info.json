@@ -427,6 +427,10 @@
         "name": "sculptorTool Tool",
         "description": "Demonstrates how to have similar brush tool effects on the contour"
       },
+      "logicalOperators": {
+        "name": "Logical operators for contour segmentations",
+        "description": "Demonstrates the logical operations that can be performed on contour segmentations, such as union, intersection, and subtraction."
+      },
       "labelmapEditWithContour": {
         "name": "Labelmap Editing with Contour",
         "description": "Use contour tools to edit the labelmap"

@@ -17,11 +17,7 @@ export {
   copyAnnotation,
 };
 
-export {
-  unifyPolylineSets,
-  unifyMultiplePolylineSets,
-  unifyAnnotationPolylines,
-  subtractPolylineSets,
-  subtractMultiplePolylineSets,
-  subtractAnnotationPolylines,
-} from './polylineSetsOperations';
+export * from './polylineUnify';
+export * from './polylineSubtract';
+export * from './polylineIntersect';
+export * from './polylineXor';

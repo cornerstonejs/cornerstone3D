@@ -8,17 +8,15 @@ import {
   convertContourPolylineToCanvasSpace,
   convertContourPolylineToWorld,
 } from './sharedOperations';
-import {
-  intersectPolylinesSets,
-  subtractPolylineSets,
-  unifyPolylineSets,
-  xorPolylinesSets,
-} from './polylineSetsOperations';
 import addPolylinesToSegmentation from './addPolylinesToSegmentation';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { copyContourSegment } from './copyAnnotation';
 import { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation';
-import { getViewportAssociatedToSegmentation } from './getViewportAssociatedToSegmentation';
+import { getViewportAssociatedToSegmentation } from '../../stateManagement/segmentation/utilities/getViewportAssociatedToSegmentation';
+import { unifyPolylineSets } from './polylineUnify';
+import { subtractPolylineSets } from './polylineSubtract';
+import { intersectPolylinesSets } from './polylineIntersect';
+import { xorPolylinesSets } from './polylineXor';
 
 export type SegmentInfo = {
   segmentationId: string;

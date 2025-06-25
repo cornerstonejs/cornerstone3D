@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { utilities, type Types } from '@cornerstonejs/core';
 import { vec2 } from 'gl-matrix';
 
 // Epsilon for floating point comparisons
@@ -11,7 +11,7 @@ export function vec2CrossZ(a: Types.Point2, b: Types.Point2): number {
 }
 
 export function pointsAreEqual(p1: Types.Point2, p2: Types.Point2): boolean {
-  return Math.abs(p1[0] - p2[0]) < EPSILON && Math.abs(p1[1] - p2[1]) < EPSILON;
+  return utilities.isEqual(p1, p2, EPSILON);
 }
 
 /**

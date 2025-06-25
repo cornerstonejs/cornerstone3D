@@ -1,13 +1,19 @@
 import { utilities } from '@cornerstonejs/core';
-import type {
-  ContourSegmentationAnnotation,
-  ContourSegmentationData,
-} from '../../types';
-import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import type { ContourSegmentationAnnotation } from '../../types';
 import { addAnnotation, getAnnotation } from '../../stateManagement';
-import { getViewportAssociatedToSegmentation } from './getViewportAssociatedToSegmentation';
+import { getViewportAssociatedToSegmentation } from '../../stateManagement/segmentation/utilities/getViewportAssociatedToSegmentation';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
+import { getAnnotationsUIDMapFromSegmentation } from '../../stateManagement/segmentation/utilities/getAnnotationsUIDMapFromSegmentation';
 
+/**
+ * Creates a deep copy of a contour segmentation annotation, assigning it to a new segmentation and segment index.
+ * Copies polyline and handle points, and generates a new annotation UID.
+ *
+ * @param annotation - The annotation to copy
+ * @param segmentationId - The target segmentation ID
+ * @param segmentIndex - The target segment index
+ * @returns A new ContourSegmentationAnnotation object
+ */
 export function copyAnnotation(
   annotation: ContourSegmentationAnnotation,
   segmentationId: string,
@@ -54,34 +60,25 @@ export function copyAnnotation(
   return newAnnotation;
 }
 
-function getAnnotationsMap(segmentationId: string) {
-  const segmentation = getSegmentation(segmentationId);
-  if (!segmentation) {
-    return;
-  }
-
-  const contourRepresentationData = segmentation.representationData
-    ?.Contour as ContourSegmentationData;
-
-  if (!contourRepresentationData) {
-    return;
-  }
-
-  const { annotationUIDsMap } = contourRepresentationData;
-  if (!annotationUIDsMap) {
-    return;
-  }
-  return annotationUIDsMap;
-}
-
+/**
+ * Copies all contour annotations from a segment in one segmentation to a segment in another segmentation.
+ * Handles copying of child annotations and spline objects if present.
+ *
+ * @param segmentationId - Source segmentation ID
+ * @param segmentIndex - Source segment index
+ * @param targetSegmentationId - Target segmentation ID
+ * @param targetSegmentIndex - Target segment index
+ */
 export function copyContourSegment(
   segmentationId: string,
   segmentIndex: number,
   targetSegmentationId: string,
   targetSegmentIndex: number
 ) {
-  const annotationUIDsMap = getAnnotationsMap(segmentationId);
-  const targetAnnotationUIDsMap = getAnnotationsMap(targetSegmentationId);
+  const annotationUIDsMap =
+    getAnnotationsUIDMapFromSegmentation(segmentationId);
+  const targetAnnotationUIDsMap =
+    getAnnotationsUIDMapFromSegmentation(targetSegmentationId);
   if (!annotationUIDsMap || !targetAnnotationUIDsMap) {
     return;
   }
