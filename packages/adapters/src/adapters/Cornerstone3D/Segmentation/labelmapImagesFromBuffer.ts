@@ -287,8 +287,7 @@ export function insertPixelDataPlanar({
     // if the segmentation is large. We also use a promise to allow the caller to
     // wait for the processing to finish.
     return new Promise(resolve => {
-        const percentImagesPerChunk =
-            multiframe.SegmentationType === "LABELMAP" ? 0.5 : 0.1;
+        const percentImagesPerChunk = 0.1;
         const imagesPerChunk = Math.ceil(groupsLen * percentImagesPerChunk);
         const processChunk = firstIndex => {
             for (
@@ -441,11 +440,6 @@ export function insertPixelDataPlanar({
             const sharedPlaneOrientation =
                 multiframe.SharedFunctionalGroupsSequence
                     .PlaneOrientationSequence?.ImageOrientationPatient;
-            const groupsLen = pfSeq.length;
-            const imagesPerChunk = Math.ceil(
-                groupsLen *
-                    (multiframe.SegmentationType === "LABELMAP" ? 1 : 0.1)
-            );
 
             for (
                 let i = firstIndex;
