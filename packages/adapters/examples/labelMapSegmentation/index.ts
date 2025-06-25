@@ -8,15 +8,12 @@ import {
 } from "@cornerstonejs/core";
 import {
     segmentation as csToolsSegmentation,
-    ToolGroupManager,
-    addTool,
-    Enums as csToolsEnums
+    ToolGroupManager
 } from "@cornerstonejs/tools";
 
 import {
     addButtonToToolbar,
     addManipulationBindings,
-    addUploadToToolbar,
     createImageIdsAndCacheMetaData,
     initDemo,
     labelmapTools,
@@ -29,7 +26,7 @@ console.warn(
 );
 
 import {
-    readSegmentation,
+    loadSegmentation,
     handleFileSelect,
     handleDragOver,
     restart
@@ -207,26 +204,36 @@ addButtonToToolbar({
     container: group1
 });
 
-addUploadToToolbar({
-    id: "IMPORT_SEGMENTATION",
-    title: "Import SEG",
-    onChange: async (files: FileList) => {
-        if (!state.volumeId) {
-            return;
-        }
+addButtonToToolbar({
+    id: "LOAD_SEG",
+    title: "Load Segmentation",
+    onClick: async () => {
+        await downloadAndLoadSegmentation();
+    },
+    container: group1
+});
 
-        const start = performance.now();
-        for (const file of files) {
-            await readSegmentation(file, state);
+// Utility function to fetch a file as ArrayBuffer and load as segmentation
+export async function downloadAndLoadSegmentation() {
+    const url =
+        "https://corsproxy.io/?https://github.com/dcmjs-org/data/releases/download/labelmap-seg/totalSegmentator.dcm";
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to download file: ${response.statusText}`);
         }
+        const arrayBuffer = await response.arrayBuffer();
+        const start = performance.now();
+        await loadSegmentation(arrayBuffer, state);
+        console.log("Segmentation loaded successfully.");
         const end = performance.now();
         console.log(`Segmentation load time: ${(end - start).toFixed(2)} ms`);
-
         createSegmentationRepresentation();
         updateSegmentationDropdown();
-    },
-    container: group2
-});
+    } catch (error) {
+        console.error("Error loading segmentation:", error);
+    }
+}
 
 function updateSegmentationDropdown() {
     // remove the previous dropdown
