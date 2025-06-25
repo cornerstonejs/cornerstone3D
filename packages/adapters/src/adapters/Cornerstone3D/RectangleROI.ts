@@ -20,8 +20,9 @@ class RectangleROI extends BaseAdapter3D {
             defaultState,
             NUMGroup,
             SCOORDGroup,
-            SCOORD3DGroup,
-            ReferencedFrameNumber
+            ReferencedFrameNumber,
+            TextBoxGroup,
+            SCOORD3DGroup
         } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
@@ -35,7 +36,8 @@ class RectangleROI extends BaseAdapter3D {
                 SCOORDGroup,
                 imageToWorldCoords,
                 NUMGroup,
-                ReferencedFrameNumber
+                ReferencedFrameNumber,
+                TextBoxGroup
             });
         } else if (SCOORD3DGroup) {
             return this.getMeasurementDataFromScoord3D({
@@ -54,7 +56,8 @@ class RectangleROI extends BaseAdapter3D {
         SCOORDGroup,
         imageToWorldCoords,
         NUMGroup,
-        ReferencedFrameNumber
+        ReferencedFrameNumber,
+        TextBoxGroup
     }) {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -94,7 +97,12 @@ class RectangleROI extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     static getMeasurementDataFromScoord3D({ SCOORD3DGroup, defaultState }) {
@@ -160,6 +168,11 @@ class RectangleROI extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles,
+                referencedImageId,
+                worldToImageCoords
+            }),
             use3DSpatialCoordinates: false
         };
     }
