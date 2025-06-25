@@ -1308,7 +1308,7 @@ export function unpackPixelData(multiframe, options) {
     if (segType === "LABELMAP") {
         // For LABELMAP, we can return the data as is, since it is already in a
         // format that Cornerstone can handle. Also here we are returning the
-        // whole data at once, since the storage is more efficent the BINARY mode
+        // whole data at once, since the storage is more efficent than BINARY mode
         if (multiframe.BitsStored === 8) {
             return new Uint8Array(data);
         } else if (multiframe.BitsStored === 16) {
