@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.24.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.1...v3.24.0) (2025-06-25)
+
+### Features
+
+- **labelmap:** labelmap seg implementation ([#2156](https://github.com/cornerstonejs/cornerstone3D/issues/2156)) ([72e55df](https://github.com/cornerstonejs/cornerstone3D/commit/72e55df74e627b76a7313c0aff5c167d84634bee))
+
 ## [3.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.0...v3.23.1) (2025-06-24)
 
 **Note:** Version bump only for package @cornerstonejs/ai
