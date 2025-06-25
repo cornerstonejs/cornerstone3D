@@ -403,9 +403,18 @@ class VolumeCroppingControlTool extends AnnotationTool {
     // this.setToolCenter(toolCenter);
   };
 
-  setToolCenter(toolCenter: Types.Point3, suppressEvents = false): void {
+  setToolCenter(
+    toolCenter: Types.Point3,
+    suppressEvents = false,
+    handleType
+  ): void {
     // prettier-ignore
-    this.toolCenter = toolCenter;
+
+    if (handleType==='min') {
+      this.toolCenterMin = toolCenter;
+    } else if (handleType==='max') {
+      this.toolCenterMax = toolCenter;
+    }
     const viewportsInfo = this._getViewportsInfo();
 
     // assuming all viewports are in the same rendering engine
@@ -413,17 +422,22 @@ class VolumeCroppingControlTool extends AnnotationTool {
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
     if (!suppressEvents) {
-      console.log('event sent: ', Events.CROSSHAIR_TOOL_CENTER_CHANGED);
-      triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
-        toolGroupId: this.toolGroupId,
-        toolCenter: this.toolCenter,
-      });
+      //     console.log('event sent: ', Events.CROSSHAIR_TOOL_CENTER_CHANGED);
+      //    triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
+      //      toolGroupId: this.toolGroupId,
+      //     toolCenter: this.toolCenter,
+      //     });
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         // orientation: viewport.defaultOptions.orientation,
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
-        toolMin: this.toolCenter,
-        //   viewportId: data.viewportId,
+        toolMin: this.toolCenterMin,
+        toolMax: this.toolCenterMax,
+        handleType: this.editData?.annotation?.data?.handles?.activeType, // Pass activeType here
+        viewportOrientation: [
+          viewportAnnotation.data.referenceLines[0][0].options.orientation,
+          viewportAnnotation.data.referenceLines[1][0].options.orientation,
+        ], //   viewportId: data.viewportId,
       });
     }
   }
@@ -627,6 +641,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
+        toolCenterMin: this.toolCenterMin,
+        toolCenterMax: this.toolCenterMax,
+        handleType: this.editData?.annotation?.data?.handles?.activeType, // Pass activeType here
         viewportOrientation: [
           viewportAnnotation.data.referenceLines[0][0].options.orientation,
           viewportAnnotation.data.referenceLines[1][0].options.orientation,
@@ -847,7 +864,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         canvasUnitVectorFromCenter,
         canvasDiagonalLength * 100
       );
-
+      /*
       const refLinePointMinOne = vec2.create();
       const refLinePointMinTwo = vec2.create();
 
@@ -870,7 +887,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         refLinePointMinOne,
         refLinePointMinTwo,
       ]);
-
+*/
       // For min center
       const refLinesCenterMin = otherViewportControllable
         ? vec2.clone(crosshairCenterCanvasMin)
@@ -1025,6 +1042,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   };
 
   _onSphereMoved = (evt) => {
+    // console.debug;
     if ([0, 2, 4].includes(evt.detail.draggingSphereIndex)) {
       // only update for min spheres
       let newCenter = [0, 0, 0] as Types.Point3;
@@ -1036,7 +1054,19 @@ class VolumeCroppingControlTool extends AnnotationTool {
       } else if (evt.detail.axis === 'z') {
         newCenter = [this.toolCenter[0], this.toolCenter[1], eventCenter[2]];
       }
-      this.setToolCenter(newCenter, true);
+      this.setToolCenter(newCenter, true, 'min');
+    } else {
+      // only update for max spheres
+      let newCenter = [0, 0, 0] as Types.Point3;
+      const eventCenter = evt.detail.toolCenter;
+      if (evt.detail.axis === 'x') {
+        newCenter = [eventCenter[0], this.toolCenter[1], this.toolCenter[2]];
+      } else if (evt.detail.axis === 'y') {
+        newCenter = [this.toolCenter[0], eventCenter[1], this.toolCenter[2]];
+      } else if (evt.detail.axis === 'z') {
+        newCenter = [this.toolCenter[0], this.toolCenter[1], eventCenter[2]];
+      }
+      this.setToolCenter(newCenter, true, 'max');
     }
   };
 
@@ -1633,9 +1663,19 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const canvasCoords = currentPoints.canvas;
 
     if (handles.activeOperation === OPERATION.DRAG) {
-      this.toolCenter[0] += delta[0];
-      this.toolCenter[1] += delta[1];
-      this.toolCenter[2] += delta[2];
+      if (handles.activeType === 'min') {
+        this.toolCenterMin[0] += delta[0];
+        this.toolCenterMin[1] += delta[1];
+        this.toolCenterMin[2] += delta[2];
+      } else if (handles.activeType === 'max') {
+        this.toolCenterMax[0] += delta[0];
+        this.toolCenterMax[1] += delta[1];
+        this.toolCenterMax[2] += delta[2];
+      } else {
+        this.toolCenter[0] += delta[0];
+        this.toolCenter[1] += delta[1];
+        this.toolCenter[2] += delta[2];
+      }
       const viewportsInfo = this._getViewportsInfo();
       triggerAnnotationRenderForViewportIds(
         viewportsInfo.map(({ viewportId }) => viewportId)
@@ -1743,6 +1783,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         // First segment
         const start1 = referenceLines[i][1];
         const end1 = referenceLines[i][2];
+        const type = referenceLines[i][3]; // 'min' or 'max'
 
         const distance1 = lineSegment.distanceToPoint(start1, end1, [
           canvasCoords[0],
@@ -1752,6 +1793,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         if (distance1 <= proximity) {
           viewportIdArray.push(otherViewport.id);
           data.handles.activeOperation = 1; // DRAG
+          data.handles.activeType = type;
         }
       }
     }
