@@ -14,7 +14,6 @@ import {
   setTitleAndDescription,
   addManipulationBindings,
   contourSegmentationToolBindings,
-  addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
 const {
@@ -98,14 +97,7 @@ elements.forEach((element) => {
   );
 });
 
-const operationNames = [
-  'Add',
-  'Subtract',
-  'Intersect',
-  'XOR',
-  'Copy',
-  'Delete',
-];
+const operationNames = ['Add', 'Subtract', 'Intersect', 'XOR'];
 
 const Splines = {
   CatmullRomSplineROI: {
@@ -126,6 +118,22 @@ const contourToolsNames = [
 ];
 let selectedToolName = contourToolsNames[0];
 
+const segmentIndices = [1, 2, 3, 4, 5];
+let sourceSegmentIndex = segmentIndices[0];
+let targetSegmentIndex = segmentIndices[1];
+
+addDropDownToToolbar({
+  labelText: 'Active segment for drawing',
+  options: { values: segmentIndices, defaultValue: segmentIndices[0] },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    const segmentIndex = Number(nameAsStringOrNumber);
+    segmentation.segmentIndex.setActiveSegmentIndex(
+      segmentationId,
+      segmentIndex
+    );
+  },
+});
+
 addDropdownToToolbar({
   options: { values: contourToolsNames, defaultValue: selectedToolName },
   onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
@@ -144,7 +152,13 @@ addDropdownToToolbar({
   },
 });
 
-addSegmentIndexDropdown(segmentationId);
+addDropDownToToolbar({
+  labelText: 'Source segment Index',
+  options: { values: segmentIndices, defaultValue: segmentIndices[0] },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    sourceSegmentIndex = Number(nameAsStringOrNumber);
+  },
+});
 
 addDropDownToToolbar({
   options: { values: operationNames, defaultValue: selectedToolName },
@@ -173,21 +187,25 @@ addDropDownToToolbar({
   },
 });
 
-addButtonToToolbar({
-  title: 'Apply operation',
-  onClick: function () {
-    performLogicalOperation(selectedOperation, true);
+addDropDownToToolbar({
+  labelText: 'Target segment Index',
+  options: { values: segmentIndices, defaultValue: segmentIndices[1] },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    targetSegmentIndex = Number(nameAsStringOrNumber);
   },
 });
 
 addButtonToToolbar({
-  title: 'Convert Contour Holes',
-  onClick: () => {
-    const segmentIndex =
-      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
-    segmentation.utilities.convertContourHoles(segmentationId, segmentIndex);
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    renderingEngine.render();
+  title: 'Apply operation to target segment',
+  onClick: function () {
+    performLogicalOperation(selectedOperation, false);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Apply operation and create new segment',
+  onClick: function () {
+    performLogicalOperation(selectedOperation, true);
   },
 });
 
@@ -212,12 +230,11 @@ function performLogicalOperation(
 
   if (annotationUIDsMap) {
     const segmentIndexes = Array.from(annotationUIDsMap.keys());
-    let lastIndex = segmentIndexes.length - 1;
     let newIndex = 0;
     if (createNew) {
       newIndex = Math.max(...segmentIndexes) + 1;
     } else {
-      newIndex = lastIndex;
+      newIndex = targetSegmentIndex;
     }
     const operatorOptions = {
       segmentationId: activeSeg.segmentationId,
@@ -231,18 +248,14 @@ function performLogicalOperation(
         copy(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex],
+            segmentIndex: sourceSegmentIndex,
           },
           operatorOptions
         );
       } else if (operation === LogicalOperation.Delete) {
-        lastIndex =
-          segmentation.segmentIndex.getActiveSegmentIndex(
-            activeSeg.segmentationId
-          ) - 1;
         deleteOperation({
           segmentationId: activeSeg.segmentationId,
-          segmentIndex: segmentIndexes[lastIndex],
+          segmentIndex: sourceSegmentIndex,
         });
       }
     }
@@ -251,11 +264,11 @@ function performLogicalOperation(
         add(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex - 1],
+            segmentIndex: sourceSegmentIndex,
           },
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex],
+            segmentIndex: targetSegmentIndex,
           },
           operatorOptions
         );
@@ -263,11 +276,11 @@ function performLogicalOperation(
         subtract(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex - 1],
+            segmentIndex: sourceSegmentIndex,
           },
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex],
+            segmentIndex: targetSegmentIndex,
           },
           operatorOptions
         );
@@ -275,11 +288,11 @@ function performLogicalOperation(
         intersect(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex - 1],
+            segmentIndex: sourceSegmentIndex,
           },
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex],
+            segmentIndex: targetSegmentIndex,
           },
           operatorOptions
         );
@@ -287,27 +300,15 @@ function performLogicalOperation(
         xor(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex - 1],
+            segmentIndex: sourceSegmentIndex,
           },
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: segmentIndexes[lastIndex],
+            segmentIndex: targetSegmentIndex,
           },
           operatorOptions
         );
       }
-    }
-
-    if (!createNew) {
-      const annotationUIDList = annotationUIDsMap.get(lastIndex);
-      annotationUIDList.forEach((annotationUID) => {
-        const annotation =
-          cornerstoneTools.annotation.state.getAnnotation(annotationUID);
-        cornerstoneTools.annotation.state.removeAnnotation(annotationUID);
-        removeContourSegmentationAnnotation(
-          annotation as cornerstoneTools.Types.ContourSegmentationAnnotation
-        );
-      });
     }
   }
   const renderingEngine = getRenderingEngine(renderingEngineId);
