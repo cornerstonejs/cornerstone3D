@@ -15,7 +15,6 @@ import {
   addManipulationBindings,
   contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
-import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
 const {
   add,
   subtract,
@@ -96,7 +95,14 @@ elements.forEach((element) => {
   );
 });
 
-const operationNames = ['Add', 'Subtract', 'Intersect', 'XOR'];
+const operationNames = [
+  'Add',
+  'Subtract',
+  'Intersect',
+  'XOR',
+  'Copy',
+  'Delete',
+];
 
 const Splines = {
   CatmullRomSplineROI: {
@@ -121,7 +127,7 @@ const segmentIndices = [1, 2, 3, 4, 5];
 let sourceSegmentIndex = segmentIndices[0];
 let targetSegmentIndex = segmentIndices[1];
 
-addDropDownToToolbar({
+addDropdownToToolbar({
   labelText: 'Active segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[0] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
@@ -151,7 +157,7 @@ addDropdownToToolbar({
   },
 });
 
-addDropDownToToolbar({
+addDropdownToToolbar({
   labelText: 'Source segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[0] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
@@ -159,7 +165,7 @@ addDropDownToToolbar({
   },
 });
 
-addDropDownToToolbar({
+addDropdownToToolbar({
   options: { values: operationNames, defaultValue: selectedToolName },
   onSelectedValueChange: (selectedOperationName) => {
     const operationName = String(selectedOperationName);
@@ -183,10 +189,36 @@ addDropDownToToolbar({
         selectedOperation = LogicalOperation.Delete;
         break;
     }
+    // Enable/disable the target segment dropdown based on operation
+    const targetDropdown = document.getElementById(
+      'targetSegmentIndex'
+    ) as HTMLSelectElement | null;
+    if (targetDropdown) {
+      if (
+        selectedOperation === LogicalOperation.Copy ||
+        selectedOperation === LogicalOperation.Delete
+      ) {
+        targetDropdown.disabled = true;
+      } else {
+        targetDropdown.disabled = false;
+      }
+    }
+    // Enable/disable the "Apply operation and create new segment" button for Copy/Delete
+    const applyAndCreateNewSegmentBtn = document.getElementById(
+      'applyAndCreateNewSegment'
+    ) as HTMLButtonElement | null;
+    if (applyAndCreateNewSegmentBtn) {
+      if (selectedOperation === LogicalOperation.Delete) {
+        applyAndCreateNewSegmentBtn.disabled = true;
+      } else {
+        applyAndCreateNewSegmentBtn.disabled = false;
+      }
+    }
   },
 });
 
-addDropDownToToolbar({
+addDropdownToToolbar({
+  id: 'targetSegmentIndex',
   labelText: 'Target segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[1] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
@@ -195,13 +227,14 @@ addDropDownToToolbar({
 });
 
 addButtonToToolbar({
-  title: 'Apply operation to target segment',
+  title: 'Apply operation',
   onClick: function () {
     performLogicalOperation(selectedOperation, false);
   },
 });
 
 addButtonToToolbar({
+  id: 'applyAndCreateNewSegment',
   title: 'Apply operation and create new segment',
   onClick: function () {
     performLogicalOperation(selectedOperation, true);
