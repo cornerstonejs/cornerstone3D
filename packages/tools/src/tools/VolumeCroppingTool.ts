@@ -311,25 +311,17 @@ class VolumeCroppingTool extends AnnotationTool {
       origin: [0, 0, zMax],
       normal: [0, 0, -1],
     });
-
     const mapper = viewport.getDefaultActor().actor.getMapper();
     planes.push(planeXmin);
-    mapper.addClippingPlane(planeXmin);
     planes.push(planeXmax);
-    mapper.addClippingPlane(planeXmax);
     planes.push(planeYmin);
-    mapper.addClippingPlane(planeYmin);
     planes.push(planeYmax);
-    mapper.addClippingPlane(planeYmax);
     planes.push(planeZmin);
-    mapper.addClippingPlane(planeZmin);
     planes.push(planeZmax);
-    mapper.addClippingPlane(planeZmax);
     const originalPlanes = planes.map((plane) => ({
       origin: [...plane.getOrigin()],
       normal: [...plane.getNormal()],
     }));
-
     viewport.setOriginalClippingPlanes(originalPlanes);
 
     const sphereXminPoint = [xMin, (yMax + yMin) / 2, (zMax + zMin) / 2];
@@ -364,7 +356,6 @@ class VolumeCroppingTool extends AnnotationTool {
         actorObj.actor.modified();
       }
     });
-    viewport.render();
     eventTarget.addEventListener(
       Events.CROSSHAIR_TOOL_CENTER_CHANGED,
       (evt) => {
@@ -457,10 +448,18 @@ class VolumeCroppingTool extends AnnotationTool {
           });
 
           // y
-          this.sphereStates[2].point[1] = planeYmin.getOrigin()[1];
+          //  this.sphereStates[2].point[1] = planeYmin.getOrigin()[1];
+
           this.sphereStates[2].sphereSource.setCenter(
-            this.sphereStates[2].point
+            this.sphereStates[2].point[0],
+            planeYmin.getOrigin()[1],
+            this.sphereStates[2].point[2]
           );
+
+          // this.sphereStates[2].sphereSource.setCenter(
+          //   this.sphereStates[2].point
+          // );
+
           this.sphereStates[2].sphereSource.modified();
           console.debug(
             'update ymin with : ',
@@ -615,6 +614,13 @@ class VolumeCroppingTool extends AnnotationTool {
         viewport.render();
       }
     );
+
+    mapper.addClippingPlane(planeXmin);
+    mapper.addClippingPlane(planeXmax);
+    mapper.addClippingPlane(planeYmin);
+    mapper.addClippingPlane(planeYmax);
+    mapper.addClippingPlane(planeZmin);
+    mapper.addClippingPlane(planeZmax);
   };
 
   /**
@@ -910,11 +916,18 @@ class VolumeCroppingTool extends AnnotationTool {
     const camera = viewport.getCamera();
 
     this._initialize3DViewports(viewportsInfo);
-    viewport.setCamera({
-      focalPoint: camera.focalPoint,
-      position: [camera.position[0], camera.position[1], camera.position[2]],
-    });
+    //  viewport.setCamera({
+    //   focalPoint: camera.focalPoint,
+    //   position: [camera.position[0], camera.position[1], camera.position[2]],
+    // });
+
     viewport.render();
+    const originalPlanes = viewport.getOriginalClippingPlanes();
+    const mapper = viewport.getDefaultActor().actor.getMapper();
+    mapper.removeAllClippingPlanes();
+    originalPlanes.forEach((plane) => {
+      mapper.addClippingPlane(plane);
+    });
   };
 
   _unsubscribeToViewportNewVolumeSet(viewportsInfo) {
