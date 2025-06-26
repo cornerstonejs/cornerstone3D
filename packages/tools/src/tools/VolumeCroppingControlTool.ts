@@ -408,6 +408,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     // prettier-ignore
 
     if (handleType==='min') {
+
       this.toolCenterMin = toolCenter;
     } else if (handleType==='max') {
       this.toolCenterMax = toolCenter;
@@ -453,7 +454,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   ): VolumeCroppingAnnotation => {
     const eventDetail = evt.detail;
 
-    console.debug('addNewAnnotation: ', eventDetail);
+    // console.debug('addNewAnnotation: ', eventDetail);
     const { element } = eventDetail;
 
     const { currentPoints } = eventDetail;
@@ -634,7 +635,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         //    toolCenter: this.toolCenter,
         //   });
       }
-
+      console.debug('sending ', this.toolCenterMin);
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
@@ -910,8 +911,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       ]);
     });
 
-    ///  create new reference lines here
-
     data.referenceLines = referenceLines;
 
     const viewportColor = this._getReferenceLineColor(viewport.id);
@@ -1013,36 +1012,33 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     return toolGroupAnnotations;
   };
-
   _onSphereMoved = (evt) => {
-    // console.debug;
     if ([0, 2, 4].includes(evt.detail.draggingSphereIndex)) {
       // only update for min spheres
-      let newCenter = [0, 0, 0] as Types.Point3;
+      const newCenter = [...this.toolCenterMin];
       const eventCenter = evt.detail.toolCenter;
       if (evt.detail.axis === 'x') {
-        newCenter = [eventCenter[0], this.toolCenter[1], this.toolCenter[2]];
+        newCenter[0] = eventCenter[0];
       } else if (evt.detail.axis === 'y') {
-        newCenter = [this.toolCenter[0], eventCenter[1], this.toolCenter[2]];
+        newCenter[1] = eventCenter[1];
       } else if (evt.detail.axis === 'z') {
-        newCenter = [this.toolCenter[0], this.toolCenter[1], eventCenter[2]];
+        newCenter[2] = eventCenter[2];
       }
       this.setToolCenter(newCenter, true, 'min');
-    } else {
+    } else if ([1, 3, 5].includes(evt.detail.draggingSphereIndex)) {
       // only update for max spheres
-      let newCenter = [0, 0, 0] as Types.Point3;
+      const newCenter = [...this.toolCenterMax];
       const eventCenter = evt.detail.toolCenter;
       if (evt.detail.axis === 'x') {
-        newCenter = [eventCenter[0], this.toolCenter[1], this.toolCenter[2]];
+        newCenter[0] = eventCenter[0];
       } else if (evt.detail.axis === 'y') {
-        newCenter = [this.toolCenter[0], eventCenter[1], this.toolCenter[2]];
+        newCenter[1] = eventCenter[1];
       } else if (evt.detail.axis === 'z') {
-        newCenter = [this.toolCenter[0], this.toolCenter[1], eventCenter[2]];
+        newCenter[2] = eventCenter[2];
       }
       this.setToolCenter(newCenter, true, 'max');
     }
   };
-
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
     if (viewportsInfo && viewportsInfo.length > 0) {

@@ -440,11 +440,7 @@ class VolumeCroppingTool extends AnnotationTool {
             this.sphereStates[0].point[1],
             this.sphereStates[0].point[2]
           );
-          console.debug(
-            'update xmin with : ',
-            planeXmin.getOrigin()[0],
-            toolMin[0]
-          );
+
           const otherXSphere = this.sphereStates.find(
             (s, i) => s.axis === 'x' && i !== 0
           );
@@ -484,7 +480,6 @@ class VolumeCroppingTool extends AnnotationTool {
               state.point[1] = newYCenter;
               state.sphereSource.setCenter(state.point);
               state.sphereSource.modified();
-              console.debug('updating for y change: ', state);
             }
           });
           // z
