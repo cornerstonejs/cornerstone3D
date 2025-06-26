@@ -124,11 +124,12 @@ const contourToolsNames = [
 let selectedToolName = contourToolsNames[0];
 
 const segmentIndices = [1, 2, 3, 4, 5];
-let sourceSegmentIndex = segmentIndices[0];
-let targetSegmentIndex = segmentIndices[1];
+let firstSegmentIndex = segmentIndices[0];
+let secondSegmentIndex = segmentIndices[1];
+let outputSegmentIndex = segmentIndices[0];
 
 addDropdownToToolbar({
-  labelText: 'Active segment',
+  labelText: 'Drawing segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[0] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const segmentIndex = Number(nameAsStringOrNumber);
@@ -158,10 +159,10 @@ addDropdownToToolbar({
 });
 
 addDropdownToToolbar({
-  labelText: 'Source segment',
+  labelText: 'First segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[0] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
-    sourceSegmentIndex = Number(nameAsStringOrNumber);
+    firstSegmentIndex = Number(nameAsStringOrNumber);
   },
 });
 
@@ -189,40 +190,50 @@ addDropdownToToolbar({
         selectedOperation = LogicalOperation.Delete;
         break;
     }
-    // Enable/disable the target segment dropdown based on operation
-    const targetDropdown = document.getElementById(
-      'targetSegmentIndex'
+    // Enable/disable the second segment dropdown based on operation
+    const secondDropdown = document.getElementById(
+      'secondSegmentIndex'
     ) as HTMLSelectElement | null;
-    if (targetDropdown) {
+    if (secondDropdown) {
       if (
         selectedOperation === LogicalOperation.Copy ||
         selectedOperation === LogicalOperation.Delete
       ) {
-        targetDropdown.disabled = true;
+        secondDropdown.disabled = true;
       } else {
-        targetDropdown.disabled = false;
+        secondDropdown.disabled = false;
       }
     }
-    // Enable/disable the "Apply operation and create new segment" button for Copy/Delete
-    const applyAndCreateNewSegmentBtn = document.getElementById(
-      'applyAndCreateNewSegment'
-    ) as HTMLButtonElement | null;
-    if (applyAndCreateNewSegmentBtn) {
+
+    // Enable/disable the output segment dropdown based on operation
+    const outputDropDown = document.getElementById(
+      'outputSegmentIndex'
+    ) as HTMLSelectElement | null;
+    if (outputDropDown) {
       if (selectedOperation === LogicalOperation.Delete) {
-        applyAndCreateNewSegmentBtn.disabled = true;
+        outputDropDown.disabled = true;
       } else {
-        applyAndCreateNewSegmentBtn.disabled = false;
+        outputDropDown.disabled = false;
       }
     }
   },
 });
 
 addDropdownToToolbar({
-  id: 'targetSegmentIndex',
-  labelText: 'Target segment',
+  id: 'secondSegmentIndex',
+  labelText: 'Second segment',
   options: { values: segmentIndices, defaultValue: segmentIndices[1] },
   onSelectedValueChange: (nameAsStringOrNumber) => {
-    targetSegmentIndex = Number(nameAsStringOrNumber);
+    secondSegmentIndex = Number(nameAsStringOrNumber);
+  },
+});
+
+addDropdownToToolbar({
+  id: 'outputSegmentIndex',
+  labelText: '= Output segment',
+  options: { values: segmentIndices, defaultValue: segmentIndices[0] },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    outputSegmentIndex = Number(nameAsStringOrNumber);
   },
 });
 
@@ -230,14 +241,6 @@ addButtonToToolbar({
   title: 'Apply operation',
   onClick: function () {
     performLogicalOperation(selectedOperation, false);
-  },
-});
-
-addButtonToToolbar({
-  id: 'applyAndCreateNewSegment',
-  title: 'Apply operation and create new segment',
-  onClick: function () {
-    performLogicalOperation(selectedOperation, true);
   },
 });
 
@@ -262,16 +265,9 @@ function performLogicalOperation(
 
   if (annotationUIDsMap) {
     const segmentIndexes = Array.from(annotationUIDsMap.keys());
-    let newIndex = 0;
-    if (createNew) {
-      newIndex = Math.max(...segmentIndexes) + 1;
-    } else {
-      newIndex = targetSegmentIndex;
-    }
     const operatorOptions = {
       segmentationId: activeSeg.segmentationId,
-      label: 'Combined Addition',
-      segmentIndex: newIndex,
+      segmentIndex: outputSegmentIndex,
       color: 'rgb(50, 130, 162)',
     };
 
@@ -280,14 +276,14 @@ function performLogicalOperation(
         copy(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: sourceSegmentIndex,
+            segmentIndex: firstSegmentIndex,
           },
           operatorOptions
         );
       } else if (operation === LogicalOperation.Delete) {
         deleteOperation({
           segmentationId: activeSeg.segmentationId,
-          segmentIndex: sourceSegmentIndex,
+          segmentIndex: firstSegmentIndex,
         });
       }
     }
@@ -296,11 +292,11 @@ function performLogicalOperation(
         add(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: sourceSegmentIndex,
+            segmentIndex: firstSegmentIndex,
           },
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: targetSegmentIndex,
+            segmentIndex: secondSegmentIndex,
           },
           operatorOptions
         );
@@ -308,11 +304,11 @@ function performLogicalOperation(
         subtract(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: sourceSegmentIndex,
+            segmentIndex: firstSegmentIndex,
           },
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: targetSegmentIndex,
+            segmentIndex: secondSegmentIndex,
           },
           operatorOptions
         );
@@ -320,11 +316,11 @@ function performLogicalOperation(
         intersect(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: sourceSegmentIndex,
+            segmentIndex: firstSegmentIndex,
           },
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: targetSegmentIndex,
+            segmentIndex: secondSegmentIndex,
           },
           operatorOptions
         );
@@ -332,11 +328,11 @@ function performLogicalOperation(
         xor(
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: sourceSegmentIndex,
+            segmentIndex: firstSegmentIndex,
           },
           {
             segmentationId: activeSeg.segmentationId,
-            segmentIndex: targetSegmentIndex,
+            segmentIndex: secondSegmentIndex,
           },
           operatorOptions
         );

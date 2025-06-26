@@ -20,7 +20,6 @@
  * - applyLogicalOperation: Internal function to apply a logical operation and update the segmentation
  *
  * Helper Functions:
- * - getViewReferenceFromAnnotation: Extracts view reference from annotation metadata
  * - getPolylinesInfoWorld: Gets world-space polylines and view references for a segment
  * - extractPolylinesInCanvasSpace: Converts world-space polylines to canvas space for two segments
  * - addSegmentInSegmentation: Adds a new segment to the segmentation object
@@ -176,6 +175,25 @@ function addSegmentInSegmentation(
 }
 
 /**
+ * Removes all annotations for a given segment index from the segmentation.
+ * This function iterates through the provided annotationUIDList,
+ * retrieves each annotation, removes it from the state management,
+ * and also removes the corresponding contour segmentation annotation.
+ * After processing, it clears the annotationUIDList to avoid memory leaks or unintended reuse.
+ * @param annotationUIDList
+ */
+function removeAnnotations(annotationUIDList: Set<string>) {
+  annotationUIDList.forEach((annotationUID) => {
+    const annotation = getAnnotation(annotationUID);
+    removeAnnotation(annotationUID);
+    removeContourSegmentationAnnotation(
+      annotation as ContourSegmentationAnnotation
+    );
+  });
+  annotationUIDList.clear(); // Clear the set after removal
+}
+
+/**
  * Applies a logical operation (union, subtract, intersect, xor) between two segments,
  * converts the result back to world space, and updates the segmentation.
  * @param segment1 The first segment info
@@ -251,6 +269,18 @@ function applyLogicalOperation(
   const { annotationUIDsMap } = contourRepresentationData;
   if (!annotationUIDsMap) {
     return;
+  }
+  if (
+    segment1.segmentationId === resultSegment.segmentationId &&
+    segment1.segmentIndex === segmentIndex
+  ) {
+    // If the segment being modified is the same as the result segment,
+    // we need to remove the existing annotations for that segment
+    // index before adding new ones.
+    const existingAnnotationUIDs = annotationUIDsMap.get(segmentIndex);
+    if (existingAnnotationUIDs) {
+      removeAnnotations(existingAnnotationUIDs);
+    }
   }
   // Add polylines to segmentation, passing viewReference for each
   addPolylinesToSegmentation(
@@ -367,11 +397,5 @@ export function deleteOperation(segment: SegmentInfo) {
   }
 
   const annotationUIDList = annotationUIDsMap.get(segment.segmentIndex);
-  annotationUIDList.forEach((annotationUID) => {
-    const annotation = getAnnotation(annotationUID);
-    removeAnnotation(annotationUID);
-    removeContourSegmentationAnnotation(
-      annotation as ContourSegmentationAnnotation
-    );
-  });
+  removeAnnotations(annotationUIDList);
 }

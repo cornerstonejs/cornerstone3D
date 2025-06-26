@@ -37,12 +37,14 @@ export function subtractPolylineSets(
             polylineB.viewReference
           )
         ) {
-          continue; // Skip if view references are not equal
+          // If viewReference does not match, keep the polyline for further checks
+          newPolylines.push(currentPolyline);
+          continue;
         }
-
         if (
           arePolylinesIdentical(currentPolyline.polyline, polylineB.polyline)
         ) {
+          // Polyline is identical, so it is subtracted (not added to newPolylines)
           continue;
         }
         const intersection = checkIntersection(
@@ -66,15 +68,10 @@ export function subtractPolylineSets(
             }
           }
         } else {
-          const cleaned = removeDuplicatePoints(
-            cleanupPolylines([currentPolyline.polyline])[0]
-          );
-          if (cleaned.length >= 3) {
-            newPolylines.push({
-              polyline: cleaned,
-              viewReference: currentPolyline.viewReference,
-            });
-          }
+          newPolylines.push({
+            polyline: currentPolyline.polyline,
+            viewReference: currentPolyline.viewReference,
+          });
         }
       }
       currentPolylines = newPolylines;
