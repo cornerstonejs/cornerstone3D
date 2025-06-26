@@ -1,17 +1,33 @@
+/**
+ * Adds polylines as contour segmentation annotations to a segmentation.
+ *
+ * Each polyline is associated with a view reference and is added as a new annotation
+ * for the specified segment index. The function updates the annotationUIDsMap to include
+ * the new annotation UIDs for the segment.
+ *
+ * @param viewport The Cornerstone3D viewport where the annotation will be added
+ * @param annotationUIDsMap Map from segment index to set of annotation UIDs
+ * @param segmentationId The ID of the segmentation
+ * @param polylinesInfo Array of PolylineInfoWorld ({ polyline, viewReference }) to add
+ * @param segmentIndex The segment index to which the polylines belong
+ * @returns The updated annotationUIDsMap
+ */
+
 import type { Types } from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/core';
 import { addAnnotation } from '../../stateManagement';
+import type { PolylineInfoWorld } from './polylineInfoTypes';
 
 const DEFAULT_CONTOUR_SEG_TOOLNAME = 'PlanarFreehandContourSegmentationTool';
 
 export default function addPolylinesToSegmentation(
   viewport: Types.IViewport,
+  annotationUIDsMap: Map<number, Set<string>>,
   segmentationId: string,
-  polylines: Types.Point3[][],
+  polylinesInfo: PolylineInfoWorld[],
   segmentIndex: number
 ) {
-  const annotationUIDsMap = new Map<number, Set<string>>();
-  polylines.forEach((polyline) => {
+  polylinesInfo.forEach(({ polyline, viewReference }) => {
     if (polyline.length < 3) {
       return;
     }
@@ -37,7 +53,7 @@ export default function addPolylinesToSegmentation(
       isVisible: true,
       metadata: {
         toolName: DEFAULT_CONTOUR_SEG_TOOLNAME,
-        ...viewport.getViewReference(),
+        ...viewReference,
       },
     };
 

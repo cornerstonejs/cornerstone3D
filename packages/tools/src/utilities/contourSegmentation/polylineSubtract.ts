@@ -7,58 +7,81 @@ import {
   removeDuplicatePoints,
 } from './sharedOperations';
 import arePolylinesIdentical from '../math/polyline/arePolylinesIdentical';
+import type { PolylineInfoCanvas } from './polylineInfoTypes';
+import type { ContourSegmentationAnnotation } from '../../types';
+import { getViewReferenceFromAnnotation } from './getViewReferenceFromAnnotation';
+import { areViewReferencesEqual } from './areViewReferencesEqual';
 
 /**
- * Subtracts intersecting polylines from set A using polylines from set B, keeping non-intersecting ones.
- * If a polyline from set A intersects with a polyline from set B, set B polyline is subtracted from set A.
- * If no intersection is found, the polylines are added as-is to the result.
+ * Subtracts polylines in set2 from set1, returning only those in set1 that are not present in set2.
+ * Comparison is done by polyline and viewReference.
+ *
+ * @param polylinesSetA The minuend set of PolylineInfoCanvas
+ * @param polylinesSetB The subtrahend set of PolylineInfoCanvas
+ * @returns Array of PolylineInfoCanvas in set1 but not in set2
  */
 export function subtractPolylineSets(
-  polylinesSetA: Types.Point2[][],
-  polylinesSetB: Types.Point2[][]
-): Types.Point2[][] {
-  const result: Types.Point2[][] = [];
-  const processedFromA = new Set<number>();
+  polylinesSetA: PolylineInfoCanvas[],
+  polylinesSetB: PolylineInfoCanvas[]
+): PolylineInfoCanvas[] {
+  const result: PolylineInfoCanvas[] = [];
   for (let i = 0; i < polylinesSetA.length; i++) {
-    if (processedFromA.has(i)) {
-      continue;
-    }
     let currentPolylines = [polylinesSetA[i]];
-    let wasSubtracted = false;
     for (let j = 0; j < polylinesSetB.length; j++) {
       const polylineB = polylinesSetB[j];
-      const newPolylines: Types.Point2[][] = [];
+      const newPolylines: PolylineInfoCanvas[] = [];
       for (const currentPolyline of currentPolylines) {
-        if (arePolylinesIdentical(currentPolyline, polylineB)) {
-          wasSubtracted = true;
+        if (
+          !areViewReferencesEqual(
+            currentPolyline.viewReference,
+            polylineB.viewReference
+          )
+        ) {
+          continue; // Skip if view references are not equal
+        }
+
+        if (
+          arePolylinesIdentical(currentPolyline.polyline, polylineB.polyline)
+        ) {
           continue;
         }
-        const intersection = checkIntersection(currentPolyline, polylineB);
+        const intersection = checkIntersection(
+          currentPolyline.polyline,
+          polylineB.polyline
+        );
         if (intersection.hasIntersection && !intersection.isContourHole) {
-          const subtractedPolylines = math.polyline.subtractPolylines(
-            currentPolyline,
-            polylineB
+          const subtractedPolylines = cleanupPolylines(
+            math.polyline.subtractPolylines(
+              currentPolyline.polyline,
+              polylineB.polyline
+            )
           );
           for (const subtractedPolyline of subtractedPolylines) {
             const cleaned = removeDuplicatePoints(subtractedPolyline);
             if (cleaned.length >= 3) {
-              newPolylines.push(cleaned);
+              newPolylines.push({
+                polyline: cleaned,
+                viewReference: currentPolyline.viewReference,
+              });
             }
           }
-          wasSubtracted = true;
         } else {
-          const cleaned = removeDuplicatePoints(currentPolyline);
+          const cleaned = removeDuplicatePoints(
+            cleanupPolylines([currentPolyline.polyline])[0]
+          );
           if (cleaned.length >= 3) {
-            newPolylines.push(cleaned);
+            newPolylines.push({
+              polyline: cleaned,
+              viewReference: currentPolyline.viewReference,
+            });
           }
         }
       }
       currentPolylines = newPolylines;
     }
     result.push(...currentPolylines);
-    processedFromA.add(i);
   }
-  return cleanupPolylines(result);
+  return result;
 }
 
 /**
@@ -66,13 +89,13 @@ export function subtractPolylineSets(
  * Each set is subtracted from the accumulated result from previous operations.
  */
 export function subtractMultiplePolylineSets(
-  basePolylineSet: Types.Point2[][],
-  subtractorSets: Types.Point2[][][]
-): Types.Point2[][] {
+  basePolylineSet: PolylineInfoCanvas[],
+  subtractorSets: PolylineInfoCanvas[][]
+): PolylineInfoCanvas[] {
   if (subtractorSets.length === 0) {
-    return basePolylineSet.map((polyline) => [...polyline]);
+    return [...basePolylineSet];
   }
-  let result = basePolylineSet.map((polyline) => [...polyline]);
+  let result = [...basePolylineSet];
   for (let i = 0; i < subtractorSets.length; i++) {
     result = subtractPolylineSets(result, subtractorSets[i]);
   }
@@ -84,23 +107,23 @@ export function subtractMultiplePolylineSets(
  * This is a convenience function that works directly with annotation data.
  */
 export function subtractAnnotationPolylines(
-  baseAnnotations: Array<{ data: { contour: { polyline: Types.Point3[] } } }>,
-  subtractorAnnotations: Array<{
-    data: { contour: { polyline: Types.Point3[] } };
-  }>,
+  baseAnnotations: ContourSegmentationAnnotation[],
+  subtractorAnnotations: ContourSegmentationAnnotation[],
   viewport: Types.IViewport
-): Types.Point2[][] {
-  const basePolylines = baseAnnotations.map((annotation) =>
-    convertContourPolylineToCanvasSpace(
+): PolylineInfoCanvas[] {
+  const basePolylines = baseAnnotations.map((annotation) => ({
+    polyline: convertContourPolylineToCanvasSpace(
       annotation.data.contour.polyline,
       viewport
-    )
-  );
-  const subtractorPolylines = subtractorAnnotations.map((annotation) =>
-    convertContourPolylineToCanvasSpace(
+    ),
+    viewReference: getViewReferenceFromAnnotation(annotation),
+  }));
+  const subtractorPolylines = subtractorAnnotations.map((annotation) => ({
+    polyline: convertContourPolylineToCanvasSpace(
       annotation.data.contour.polyline,
       viewport
-    )
-  );
+    ),
+    viewReference: getViewReferenceFromAnnotation(annotation),
+  }));
   return subtractPolylineSets(basePolylines, subtractorPolylines);
 }

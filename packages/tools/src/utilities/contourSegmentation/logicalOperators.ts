@@ -1,3 +1,31 @@
+/**
+ * Logical and set operations for polylines in Cornerstone3D's contour segmentation utilities.
+ *
+ * This module provides functions to perform union, subtraction, intersection, and XOR operations
+ * on sets of polylines, where each polyline is associated with a view reference (PolylineInfoCanvas).
+ * The logical operator pipeline is designed to propagate view references through all operations,
+ * ensuring that annotations are placed in the correct view. UI responsiveness and controls are also
+ * managed based on the selected operation.
+ *
+ * Key Types:
+ * - SegmentInfo: Information about a segment (segmentationId, segmentIndex, label, color)
+ * - OperatorOptions: Alias for SegmentInfo, used for operation options
+ * - LogicalOperation: Enum for supported logical operations
+ * - PolylineInfoWorld: { polyline: Point3[], viewReference }
+ * - PolylineInfoCanvas: { polyline: Point2[], viewReference }
+ *
+ * Main Functions:
+ * - add, subtract, intersect, xor: Perform the respective logical operation between two segments
+ * - copy, deleteOperation: Copy or delete a segment
+ * - applyLogicalOperation: Internal function to apply a logical operation and update the segmentation
+ *
+ * Helper Functions:
+ * - getViewReferenceFromAnnotation: Extracts view reference from annotation metadata
+ * - getPolylinesInfoWorld: Gets world-space polylines and view references for a segment
+ * - extractPolylinesInCanvasSpace: Converts world-space polylines to canvas space for two segments
+ * - addSegmentInSegmentation: Adds a new segment to the segmentation object
+ */
+
 import type { Types } from '@cornerstonejs/core';
 import { getAnnotation, removeAnnotation } from '../../stateManagement';
 import type {
@@ -17,6 +45,8 @@ import { unifyPolylineSets } from './polylineUnify';
 import { subtractPolylineSets } from './polylineSubtract';
 import { intersectPolylinesSets } from './polylineIntersect';
 import { xorPolylinesSets } from './polylineXor';
+import type { PolylineInfoWorld } from './polylineInfoTypes';
+import { getViewReferenceFromAnnotation } from './getViewReferenceFromAnnotation';
 
 export type SegmentInfo = {
   segmentationId: string;
@@ -35,12 +65,18 @@ export enum LogicalOperation {
   Delete,
 }
 
-function getPolylines(
+/**
+ * Retrieves all polylines (in world space) and their view references for a given segment.
+ * @param contourRepresentationData The contour segmentation data
+ * @param segmentIndex The segment index
+ * @returns Array of PolylineInfoWorld or undefined
+ */
+function getPolylinesInfoWorld(
   contourRepresentationData: ContourSegmentationData,
   segmentIndex: number
-) {
+): PolylineInfoWorld[] | undefined {
   // loop over all annotations in the segment and flatten their polylines
-  const polylines = [];
+  const polylinesInfo = [];
   const { annotationUIDsMap } = contourRepresentationData || {};
   if (!annotationUIDsMap?.has(segmentIndex)) {
     return;
@@ -48,14 +84,25 @@ function getPolylines(
   const annotationUIDs = annotationUIDsMap.get(segmentIndex);
 
   for (const annotationUID of annotationUIDs) {
-    const annotation = getAnnotation(annotationUID);
-    const { polyline } = (annotation as ContourSegmentationAnnotation).data
-      .contour;
-    polylines.push(polyline);
+    const annotation = getAnnotation(
+      annotationUID
+    ) as ContourSegmentationAnnotation;
+    const { polyline } = annotation.data.contour;
+    polylinesInfo.push({
+      polyline,
+      viewReference: getViewReferenceFromAnnotation(annotation),
+    });
   }
-  return polylines;
+  return polylinesInfo;
 }
 
+/**
+ * Converts all polylines for two segments from world space to canvas space for a given viewport.
+ * @param viewport The viewport to use for conversion
+ * @param segment1 The first segment info
+ * @param segment2 The second segment info
+ * @returns Object with polyLinesInfoCanvas1 and polyLinesInfoCanvas2 arrays
+ */
 function extractPolylinesInCanvasSpace(
   viewport: Types.IViewport,
   segment1: SegmentInfo,
@@ -74,28 +121,43 @@ function extractPolylinesInCanvasSpace(
     return;
   }
 
-  const polyLines1 = getPolylines(
+  const polyLinesInfoWorld1 = getPolylinesInfoWorld(
     segmentation1.representationData.Contour,
     segment1.segmentIndex
   );
-  const polyLines2 = getPolylines(
+  const polyLinesInfoWorld2 = getPolylinesInfoWorld(
     segmentation2.representationData.Contour,
     segment2.segmentIndex
   );
 
-  if (!polyLines1 || !polyLines2) {
+  if (!polyLinesInfoWorld1 || !polyLinesInfoWorld2) {
     return;
   }
 
-  const polyLinesCanvas1 = polyLines1.map((polyline) =>
-    convertContourPolylineToCanvasSpace(polyline, viewport)
+  const polyLinesInfoCanvas1 = polyLinesInfoWorld1.map(
+    ({ polyline, viewReference }) => {
+      return {
+        polyline: convertContourPolylineToCanvasSpace(polyline, viewport),
+        viewReference,
+      };
+    }
   );
-  const polyLinesCanvas2 = polyLines2.map((polyline) =>
-    convertContourPolylineToCanvasSpace(polyline, viewport)
+  const polyLinesInfoCanvas2 = polyLinesInfoWorld2.map(
+    ({ polyline, viewReference }) => {
+      return {
+        polyline: convertContourPolylineToCanvasSpace(polyline, viewport),
+        viewReference,
+      };
+    }
   );
-  return { polyLinesCanvas1, polyLinesCanvas2 };
+  return { polyLinesInfoCanvas1, polyLinesInfoCanvas2 };
 }
 
+/**
+ * Adds a new segment entry to the segmentation object.
+ * @param segmentation The segmentation object
+ * @param param1 Object with segmentIndex, label, and color
+ */
 function addSegmentInSegmentation(
   segmentation,
   { segmentIndex, label, color }
@@ -113,6 +175,14 @@ function addSegmentInSegmentation(
   };
 }
 
+/**
+ * Applies a logical operation (union, subtract, intersect, xor) between two segments,
+ * converts the result back to world space, and updates the segmentation.
+ * @param segment1 The first segment info
+ * @param segment2 The second segment info
+ * @param options Operator options (target segment info)
+ * @param operation The logical operation to perform
+ */
 function applyLogicalOperation(
   segment1: SegmentInfo,
   segment2: SegmentInfo,
@@ -124,50 +194,57 @@ function applyLogicalOperation(
     return;
   }
 
-  const { polyLinesCanvas1, polyLinesCanvas2 } =
+  const { polyLinesInfoCanvas1, polyLinesInfoCanvas2 } =
     extractPolylinesInCanvasSpace(viewport, segment1, segment2) || {};
-  if (!polyLinesCanvas1 || !polyLinesCanvas2) {
+  if (!polyLinesInfoCanvas1 || !polyLinesInfoCanvas2) {
     return;
   }
   let polylinesMerged;
   switch (operation) {
     case LogicalOperation.Union:
-      polylinesMerged = unifyPolylineSets(polyLinesCanvas1, polyLinesCanvas2);
+      polylinesMerged = unifyPolylineSets(
+        polyLinesInfoCanvas1,
+        polyLinesInfoCanvas2
+      );
       break;
     case LogicalOperation.Subtract:
       polylinesMerged = subtractPolylineSets(
-        polyLinesCanvas1,
-        polyLinesCanvas2
+        polyLinesInfoCanvas1,
+        polyLinesInfoCanvas2
       );
       break;
     case LogicalOperation.Intersect:
       polylinesMerged = intersectPolylinesSets(
-        polyLinesCanvas1,
-        polyLinesCanvas2
+        polyLinesInfoCanvas1,
+        polyLinesInfoCanvas2
       );
       break;
     case LogicalOperation.XOR:
-      polylinesMerged = xorPolylinesSets(polyLinesCanvas1, polyLinesCanvas2);
+      polylinesMerged = xorPolylinesSets(
+        polyLinesInfoCanvas1,
+        polyLinesInfoCanvas2
+      );
       break;
     default:
-      polylinesMerged = unifyPolylineSets(polyLinesCanvas1, polyLinesCanvas2);
+      polylinesMerged = unifyPolylineSets(
+        polyLinesInfoCanvas1,
+        polyLinesInfoCanvas2
+      );
       break;
   }
-  const polyLinesWorld = polylinesMerged.map((polyline) =>
-    convertContourPolylineToWorld(polyline, viewport)
-  );
+  // Convert merged polylines back to world space using their associated viewReference
+  const polyLinesWorld = polylinesMerged.map(({ polyline, viewReference }) => {
+    return {
+      polyline: convertContourPolylineToWorld(polyline, viewport),
+      viewReference,
+    };
+  });
 
   const resultSegment = options;
   const segmentation = getSegmentation(resultSegment.segmentationId);
   const segmentIndex = resultSegment.segmentIndex;
   const color = resultSegment.color;
   const label = resultSegment.label;
-  const annotationUIDsMapNew = addPolylinesToSegmentation(
-    viewport,
-    segmentation.segmentationId,
-    polyLinesWorld,
-    segmentIndex
-  );
 
   const contourRepresentationData = segmentation.representationData
     .Contour as ContourSegmentationData;
@@ -175,10 +252,23 @@ function applyLogicalOperation(
   if (!annotationUIDsMap) {
     return;
   }
-  annotationUIDsMap.set(segmentIndex, annotationUIDsMapNew.get(segmentIndex));
+  // Add polylines to segmentation, passing viewReference for each
+  addPolylinesToSegmentation(
+    viewport,
+    annotationUIDsMap,
+    segmentation.segmentationId,
+    polyLinesWorld,
+    segmentIndex
+  );
   addSegmentInSegmentation(segmentation, { segmentIndex, color, label });
 }
 
+/**
+ * Performs a union (add) operation between two segments.
+ * @param segment1 The first segment info
+ * @param segment2 The second segment info
+ * @param options Operator options (target segment info)
+ */
 export function add(
   segment1: SegmentInfo,
   segment2: SegmentInfo,
@@ -187,6 +277,12 @@ export function add(
   applyLogicalOperation(segment1, segment2, options, LogicalOperation.Union);
 }
 
+/**
+ * Performs a subtraction operation between two segments.
+ * @param segment1 The first segment info
+ * @param segment2 The second segment info
+ * @param options Operator options (target segment info)
+ */
 export function subtract(
   segment1: SegmentInfo,
   segment2: SegmentInfo,
@@ -195,6 +291,12 @@ export function subtract(
   applyLogicalOperation(segment1, segment2, options, LogicalOperation.Subtract);
 }
 
+/**
+ * Performs an intersection operation between two segments.
+ * @param segment1 The first segment info
+ * @param segment2 The second segment info
+ * @param options Operator options (target segment info)
+ */
 export function intersect(
   segment1: SegmentInfo,
   segment2: SegmentInfo,
@@ -208,6 +310,12 @@ export function intersect(
   );
 }
 
+/**
+ * Performs an XOR operation between two segments.
+ * @param segment1 The first segment info
+ * @param segment2 The second segment info
+ * @param options Operator options (target segment info)
+ */
 export function xor(
   segment1: SegmentInfo,
   segment2: SegmentInfo,
@@ -216,6 +324,11 @@ export function xor(
   applyLogicalOperation(segment1, segment2, options, LogicalOperation.XOR);
 }
 
+/**
+ * Copies a segment to a new segment index or segmentation.
+ * @param segment The source segment info
+ * @param options The target segment info
+ */
 export function copy(segment: SegmentInfo, options: OperatorOptions) {
   copyContourSegment(
     segment.segmentationId,
@@ -225,6 +338,10 @@ export function copy(segment: SegmentInfo, options: OperatorOptions) {
   );
 }
 
+/**
+ * Deletes all annotations for a given segment from the segmentation.
+ * @param segment The segment info
+ */
 export function deleteOperation(segment: SegmentInfo) {
   const segmentation = getSegmentation(segment.segmentationId);
   if (!segmentation) {

@@ -1,35 +1,50 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PolylineInfoCanvas } from './polylineInfoTypes';
 import { checkIntersection, cleanupPolylines } from './sharedOperations';
 import { intersectPolylines } from '../math/polyline';
 import arePolylinesIdentical from '../math/polyline/arePolylinesIdentical';
+import { areViewReferencesEqual } from './areViewReferencesEqual';
 
 /**
  * Performs the intersection operation on two sets of polylines.
- * This function returns the polylines that represent the overlapping areas between the two sets.
- * Uses a direct approach to find intersecting regions.
+ * Returns polylines that are present in both sets (by polyline and viewReference),
+ * or the intersected regions if the polylines overlap.
+ *
+ * @param set1 The first set of PolylineInfoCanvas
+ * @param set2 The second set of PolylineInfoCanvas
+ * @returns Array of PolylineInfoCanvas representing the intersection
  */
 export function intersectPolylinesSets(
-  polylinesSetA: Types.Point2[][],
-  polylinesSetB: Types.Point2[][]
-): Types.Point2[][] {
-  if (!polylinesSetA.length || !polylinesSetB.length) {
+  set1: PolylineInfoCanvas[],
+  set2: PolylineInfoCanvas[]
+): PolylineInfoCanvas[] {
+  if (!set1.length || !set2.length) {
     return [];
   }
-  const result: Types.Point2[][] = [];
-  for (const polylineA of polylinesSetA) {
-    for (const polylineB of polylinesSetB) {
-      if (arePolylinesIdentical(polylineA, polylineB)) {
-        result.push([...polylineA]);
+  const result: PolylineInfoCanvas[] = [];
+  for (const polyA of set1) {
+    for (const polyB of set2) {
+      if (!areViewReferencesEqual(polyA.viewReference, polyB.viewReference)) {
+        continue; // Skip if view references are not equal
+      }
+      if (arePolylinesIdentical(polyA.polyline, polyB.polyline)) {
+        result.push({ ...polyA });
         continue;
       }
-      const intersection = checkIntersection(polylineA, polylineB);
+      const intersection = checkIntersection(polyA.polyline, polyB.polyline);
       if (intersection.hasIntersection && !intersection.isContourHole) {
-        const intersectionRegions = intersectPolylines(polylineA, polylineB);
+        const intersectionRegions = cleanupPolylines(
+          intersectPolylines(polyA.polyline, polyB.polyline)
+        );
         if (intersectionRegions && intersectionRegions.length > 0) {
-          result.push(...intersectionRegions);
+          intersectionRegions.forEach((region) => {
+            result.push({
+              polyline: region,
+              viewReference: polyA.viewReference,
+            });
+          });
         }
       }
     }
   }
-  return cleanupPolylines(result);
+  return result;
 }
