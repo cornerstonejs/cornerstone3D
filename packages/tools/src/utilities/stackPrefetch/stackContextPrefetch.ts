@@ -4,6 +4,8 @@ import {
   eventTarget,
   imageLoadPoolManager,
   cache,
+  metaData,
+  utilities,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
@@ -13,6 +15,8 @@ import {
   clearFromImageIds,
   getPromiseRemovedHandler,
 } from './stackPrefetchUtils';
+
+const { imageRetrieveMetadataProvider } = utilities;
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
@@ -216,10 +220,17 @@ function prefetch(element) {
     }
   }
 
-  const requestFn = (imageId, options) =>
-    imageLoader
-      .loadAndCacheImage(imageId, options)
-      .then(() => doneCallback(imageId));
+  const requestFn = (imageId, options) => {
+    const { retrieveOptions = {} } = metaData.get(
+      imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+      imageId,
+      'stack'
+    );
+    return imageLoader.loadAndCacheImage(imageId, {
+      ...options,
+      retrieveOptions: retrieveOptions?.default || {},
+    });
+  };
 
   stackPrefetch.indicesToRequest.forEach((imageIdIndex) => {
     const imageId = stack.imageIds[imageIdIndex];
