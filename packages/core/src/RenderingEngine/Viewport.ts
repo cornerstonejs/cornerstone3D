@@ -275,7 +275,7 @@ class Viewport {
       throw new Error('Rendering engine has been destroyed');
     }
 
-    return renderingEngine.offscreenMultiRenderWindow?.getRenderer(this.id);
+    return renderingEngine.getRenderer(this.id);
   }
 
   /**
