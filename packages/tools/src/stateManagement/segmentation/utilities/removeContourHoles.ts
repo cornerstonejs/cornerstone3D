@@ -1,7 +1,6 @@
 import type { ContourSegmentationAnnotation } from '../../../types';
 import { findContourHoles } from '../../../utilities/contours';
 import { getAnnotation } from '../../annotation/annotationState';
-import { triggerAnnotationRemoved } from '../../annotation/helpers/state';
 import { getSegmentation } from '../getSegmentation';
 import { extractSegmentPolylines } from './extractSegmentPolylines';
 import { removeCompleteContourAnnotation } from './removeCompleteContourAnnotation';
