@@ -228,7 +228,8 @@ function prefetch(element) {
     );
     return imageLoader.loadAndCacheImage(imageId, {
       ...options,
-      retrieveOptions: retrieveOptions?.default || {},
+      retrieveOptions:
+        retrieveOptions?.default || Object.values(retrieveOptions)?.[0] || {},
     });
   };
 
