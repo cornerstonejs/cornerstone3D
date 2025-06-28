@@ -253,12 +253,6 @@ class VolumeCroppingTool extends AnnotationTool {
     sphereActor.getProperty().setColor(color);
 
     const sphereColors = this.configuration.sphereColors || {};
-    console.debug('sphereColors', sphereColors);
-    /*
-    const color = sphereColors[this.sphereStates[idx].axis] ||
-      sphereColors.default || [0.0, 0.0, 1.0];
-    sphereActor.getProperty().setColor(color);
-*/
 
     sphereActor.setPickable(true);
     viewport.addActor({ actor: sphereActor, uid: uid });
@@ -356,6 +350,7 @@ class VolumeCroppingTool extends AnnotationTool {
         actorObj.actor.modified();
       }
     });
+    /*
     eventTarget.addEventListener(
       Events.CROSSHAIR_TOOL_CENTER_CHANGED,
       (evt) => {
@@ -374,7 +369,7 @@ class VolumeCroppingTool extends AnnotationTool {
         });
       }
     );
-
+*/
     eventTarget.addEventListener(
       Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
       (evt) => {
@@ -414,18 +409,7 @@ class VolumeCroppingTool extends AnnotationTool {
             PLANEINDEX.ZMIN,
             planeZmin.getOrigin()
           );
-
-          const volumeActor = viewport.getDefaultActor()?.actor;
-          if (!volumeActor) {
-            console.warn('No volume actor found');
-            return;
-          }
-          const mapper = volumeActor.getMapper();
-          const clippingPlanes = mapper.getClippingPlanes();
-          clippingPlanes[PLANEINDEX.XMIN].setOrigin(planeXmin.getOrigin());
-          clippingPlanes[PLANEINDEX.YMIN].setOrigin(planeYmin.getOrigin());
-          clippingPlanes[PLANEINDEX.ZMIN].setOrigin(planeZmin.getOrigin());
-
+          this.sphereStates[0].point[0] = planeXmin.getOrigin()[0];
           this.sphereStates[0].sphereSource.setCenter(
             planeXmin.getOrigin()[0],
             this.sphereStates[0].point[1],
@@ -448,24 +432,11 @@ class VolumeCroppingTool extends AnnotationTool {
           });
 
           // y
-          //  this.sphereStates[2].point[1] = planeYmin.getOrigin()[1];
-
+          this.sphereStates[2].point[1] = planeYmin.getOrigin()[1];
           this.sphereStates[2].sphereSource.setCenter(
-            this.sphereStates[2].point[0],
-            planeYmin.getOrigin()[1],
-            this.sphereStates[2].point[2]
+            this.sphereStates[2].point
           );
-
-          // this.sphereStates[2].sphereSource.setCenter(
-          //   this.sphereStates[2].point
-          // );
-
           this.sphereStates[2].sphereSource.modified();
-          console.debug(
-            'update ymin with : ',
-            planeYmin.getOrigin()[1],
-            toolMin[1]
-          );
           const otherYSphere = this.sphereStates.find(
             (s, i) => s.axis === 'y' && i !== 2
           );
@@ -501,6 +472,16 @@ class VolumeCroppingTool extends AnnotationTool {
               state.sphereSource.setCenter(state.point);
             }
           });
+          const volumeActor = viewport.getDefaultActor()?.actor;
+          if (!volumeActor) {
+            console.warn('No volume actor found');
+            return;
+          }
+          const mapper = volumeActor.getMapper();
+          const clippingPlanes = mapper.getClippingPlanes();
+          clippingPlanes[PLANEINDEX.XMIN].setOrigin(planeXmin.getOrigin());
+          clippingPlanes[PLANEINDEX.YMIN].setOrigin(planeYmin.getOrigin());
+          clippingPlanes[PLANEINDEX.ZMIN].setOrigin(planeZmin.getOrigin());
         } else if (evt.detail.handleType === 'max') {
           const toolMax = evt.detail.toolCenterMax;
           const planeXmax = vtkPlane.newInstance({

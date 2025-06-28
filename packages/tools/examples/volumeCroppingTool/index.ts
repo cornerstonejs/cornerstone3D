@@ -129,8 +129,9 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 instructions.innerText = `
   Basic controls:
-  - Click/Drag anywhere in the viewport to move the center of the crosshairs.
-  - Drag a reference line to move it, scrolling the other views.
+  - Click/Drag the spheres in VRT or reference lines in the orthographic viewports.
+  - Rotate , pan or zoom the 3D viewport using the mouse.
+  - Use the scroll wheel to scroll through the slices in the orthographic viewports.
   `;
 
 content.append(instructions);
@@ -287,14 +288,15 @@ async function run() {
   toolGroup.addTool(StackScrollTool.toolName, {
     viewportIndicators: true,
   });
+
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Wheel,
       },
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
+      //    {
+      //     mouseButton: MouseBindings.Secondary,
+      //   },
     ],
   });
 
@@ -353,7 +355,7 @@ async function run() {
       },
     });
     toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
-    viewport.setZoom(1.3);
+    viewport.setZoom(1.2);
     viewport.render();
   });
 }

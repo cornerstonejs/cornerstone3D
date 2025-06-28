@@ -405,13 +405,22 @@ class VolumeCroppingControlTool extends AnnotationTool {
     suppressEvents = false,
     handleType
   ): void {
-    // prettier-ignore
+    /*
 
     if (handleType==='min') {
-
       this.toolCenterMin = toolCenter;
     } else if (handleType==='max') {
       this.toolCenterMax = toolCenter;
+    }
+*/
+    if (handleType === 'min') {
+      this.toolCenterMin[0] = toolCenter[0];
+      this.toolCenterMin[1] = toolCenter[1];
+      this.toolCenterMin[2] = toolCenter[2];
+    } else if (handleType === 'max') {
+      this.toolCenterMax[0] = toolCenter[0];
+      this.toolCenterMax[1] = toolCenter[1];
+      this.toolCenterMax[2] = toolCenter[2];
     }
     const viewportsInfo = this._getViewportsInfo();
 
@@ -630,12 +639,36 @@ class VolumeCroppingControlTool extends AnnotationTool {
         this.toolCenter[0] += deltaCameraPosition[0];
         this.toolCenter[1] += deltaCameraPosition[1];
         this.toolCenter[2] += deltaCameraPosition[2];
+        // Update toolCenterMin as well (keep min cropping plane in sync)
+        const activeType = this.editData?.annotation?.data?.handles?.activeType;
+        if (activeType === 'min') {
+          this.toolCenterMin[0] += deltaCameraPosition[0];
+          this.toolCenterMin[1] += deltaCameraPosition[1];
+          this.toolCenterMin[2] += deltaCameraPosition[2];
+        } else if (activeType === 'max') {
+          this.toolCenterMax[0] += deltaCameraPosition[0];
+          this.toolCenterMax[1] += deltaCameraPosition[1];
+          this.toolCenterMax[2] += deltaCameraPosition[2];
+        } else {
+          // No annotation selected: update both min and max
+          this.toolCenterMin[0] += deltaCameraPosition[0];
+          this.toolCenterMin[1] += deltaCameraPosition[1];
+          this.toolCenterMin[2] += deltaCameraPosition[2];
+          this.toolCenterMax[0] += deltaCameraPosition[0];
+          this.toolCenterMax[1] += deltaCameraPosition[1];
+          this.toolCenterMax[2] += deltaCameraPosition[2];
+        }
+
         // triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
         //   toolGroupId: this.toolGroupId,
         //    toolCenter: this.toolCenter,
         //   });
       }
-      console.debug('sending ', this.toolCenterMin);
+
+      const viewportAnnotation = filteredToolAnnotations[0];
+      if (!viewportAnnotation) {
+        return;
+      }
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
         toolCenter: this.toolCenter,
@@ -671,7 +704,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       this.getToolName(),
       requireSameOrientation
     );
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
