@@ -396,23 +396,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
       secondPlane,
       thirdPlane
     );
-    //viewport.render();
-    // this.setToolCenter(toolCenter);
   };
 
-  setToolCenter(
-    toolCenter: Types.Point3,
-    suppressEvents = false,
-    handleType
-  ): void {
-    /*
-
-    if (handleType==='min') {
-      this.toolCenterMin = toolCenter;
-    } else if (handleType==='max') {
-      this.toolCenterMax = toolCenter;
-    }
-*/
+  setToolCenter(toolCenter: Types.Point3, handleType): void {
     if (handleType === 'min') {
       this.toolCenterMin[0] = toolCenter[0];
       this.toolCenterMin[1] = toolCenter[1];
@@ -428,25 +414,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
-    if (!suppressEvents) {
-      //     console.log('event sent: ', Events.CROSSHAIR_TOOL_CENTER_CHANGED);
-      //    triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
-      //      toolGroupId: this.toolGroupId,
-      //     toolCenter: this.toolCenter,
-      //     });
-      triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
-        // orientation: viewport.defaultOptions.orientation,
-        toolGroupId: this.toolGroupId,
-        toolCenter: this.toolCenter,
-        toolMin: this.toolCenterMin,
-        toolMax: this.toolCenterMax,
-        handleType: handleType, // Pass activeType here
-        viewportOrientation: [
-          viewportAnnotation.data.referenceLines[0][0].options.orientation,
-          viewportAnnotation.data.referenceLines[1][0].options.orientation,
-        ],
-      });
-    }
   }
 
   /**
@@ -640,16 +607,27 @@ class VolumeCroppingControlTool extends AnnotationTool {
         this.toolCenter[1] += deltaCameraPosition[1];
         this.toolCenter[2] += deltaCameraPosition[2];
         // Update toolCenterMin as well (keep min cropping plane in sync)
-        const activeType = this.editData?.annotation?.data?.handles?.activeType;
-        if (activeType === 'min') {
-          this.toolCenterMin[0] += deltaCameraPosition[0];
-          this.toolCenterMin[1] += deltaCameraPosition[1];
-          this.toolCenterMin[2] += deltaCameraPosition[2];
-        } else if (activeType === 'max') {
-          this.toolCenterMax[0] += deltaCameraPosition[0];
-          this.toolCenterMax[1] += deltaCameraPosition[1];
-          this.toolCenterMax[2] += deltaCameraPosition[2];
-        } else {
+        const allAnnotations = this._getAnnotations(enabledElement);
+        const selectedAnnotations = allAnnotations.filter(
+          (a) => a.data.handles.activeOperation === 1 // OPERATION.DRAG
+        );
+
+        if (selectedAnnotations.length > 1) {
+          //   console.debug('More than one annotation is being dragged/selected');
+        }
+        if (this.editData && this.editData.annotation) {
+          const activeType =
+            this.editData?.annotation?.data?.handles?.activeType;
+          if (activeType === 'min') {
+            this.toolCenterMin[0] += deltaCameraPosition[0];
+            this.toolCenterMin[1] += deltaCameraPosition[1];
+            this.toolCenterMin[2] += deltaCameraPosition[2];
+          } else if (activeType === 'max') {
+            this.toolCenterMax[0] += deltaCameraPosition[0];
+            this.toolCenterMax[1] += deltaCameraPosition[1];
+            this.toolCenterMax[2] += deltaCameraPosition[2];
+          }
+        } else if (selectedAnnotations.length > 1) {
           // No annotation selected: update both min and max
           this.toolCenterMin[0] += deltaCameraPosition[0];
           this.toolCenterMin[1] += deltaCameraPosition[1];
@@ -1044,6 +1022,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     return toolGroupAnnotations;
   };
+
   _onSphereMoved = (evt) => {
     if ([0, 2, 4].includes(evt.detail.draggingSphereIndex)) {
       // only update for min spheres
@@ -1056,7 +1035,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       } else if (evt.detail.axis === 'z') {
         newCenter[2] = eventCenter[2];
       }
-      this.setToolCenter(newCenter, true, 'min');
+      this.setToolCenter(newCenter, 'min');
     } else if ([1, 3, 5].includes(evt.detail.draggingSphereIndex)) {
       // only update for max spheres
       const newCenter = [...this.toolCenterMax];
@@ -1068,9 +1047,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
       } else if (evt.detail.axis === 'z') {
         newCenter[2] = eventCenter[2];
       }
-      this.setToolCenter(newCenter, true, 'max');
+      this.setToolCenter(newCenter, 'max');
     }
   };
+
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
     if (viewportsInfo && viewportsInfo.length > 0) {
@@ -1143,73 +1123,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         this._onNewVolume
       );
     });
-  }
-
-  _autoPanViewportIfNecessary(
-    viewportId: string,
-    renderingEngine: Types.IRenderingEngine
-  ): void {
-    // 1. Check if the toolCenter is outside the viewport
-    // 2. If it is outside, pan the viewport to fit in the toolCenter
-
-    const viewport = renderingEngine.getViewport(viewportId);
-    const { clientWidth, clientHeight } = viewport.canvas;
-
-    const toolCenterCanvas = viewport.worldToCanvas(this.toolCenter);
-
-    const visiblePointCanvas = <Types.Point2>[
-      toolCenterCanvas[0],
-      toolCenterCanvas[1],
-    ];
-
-    if (toolCenterCanvas[0] < 0) {
-      visiblePointCanvas[0] = pan;
-    } else if (toolCenterCanvas[0] > clientWidth) {
-      visiblePointCanvas[0] = clientWidth - pan;
-    }
-
-    if (toolCenterCanvas[1] < 0) {
-      visiblePointCanvas[1] = pan;
-    } else if (toolCenterCanvas[1] > clientHeight) {
-      visiblePointCanvas[1] = clientHeight - pan;
-    }
-
-    if (
-      visiblePointCanvas[0] === toolCenterCanvas[0] &&
-      visiblePointCanvas[1] === toolCenterCanvas[1]
-    ) {
-      return;
-    }
-
-    const visiblePointWorld = viewport.canvasToWorld(visiblePointCanvas);
-
-    const deltaPointsWorld = [
-      visiblePointWorld[0] - this.toolCenter[0],
-      visiblePointWorld[1] - this.toolCenter[1],
-      visiblePointWorld[2] - this.toolCenter[2],
-    ];
-
-    const camera = viewport.getCamera();
-    const { focalPoint, position } = camera;
-
-    const updatedPosition = <Types.Point3>[
-      position[0] - deltaPointsWorld[0],
-      position[1] - deltaPointsWorld[1],
-      position[2] - deltaPointsWorld[2],
-    ];
-
-    const updatedFocalPoint = <Types.Point3>[
-      focalPoint[0] - deltaPointsWorld[0],
-      focalPoint[1] - deltaPointsWorld[1],
-      focalPoint[2] - deltaPointsWorld[2],
-    ];
-
-    viewport.setCamera({
-      focalPoint: updatedFocalPoint,
-      position: updatedPosition,
-    });
-
-    viewport.render();
   }
 
   _areViewportIdArraysEqual = (viewportIdArrayOne, viewportIdArrayTwo) => {
