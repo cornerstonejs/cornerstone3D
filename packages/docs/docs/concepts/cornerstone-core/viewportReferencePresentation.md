@@ -1,6 +1,7 @@
 ---
 id: viewportReferencePresentation
 title: Viewport Image Selection Reference and Presentation
+summary: System for specifying which image a viewport displays and how it is presented, enabling transfer of views between viewports and navigation to specific images
 ---
 
 # Viewport Image Selection Reference and Presentation

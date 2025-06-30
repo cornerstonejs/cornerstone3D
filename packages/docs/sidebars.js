@@ -294,5 +294,6 @@ module.exports = {
     'faq',
     'help',
     'examples',
+    'test-coverage',
   ],
 };

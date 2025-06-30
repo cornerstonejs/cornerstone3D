@@ -138,6 +138,18 @@ async function run() {
   ]);
 
   console.log('Version set using lerna');
+
+  for (const pkg of packages) {
+    await execa('node', ['./scripts/generate-version.js', pkg]);
+  }
+
+  await execa('git', ['add', '.']);
+  await execa('git', [
+    'commit',
+    '-m',
+    'chore: update generated version file [skip ci]',
+  ]);
+  await execa('git', ['push', 'origin', branchName]);
 }
 
 async function unlinkFile(filePath) {

@@ -201,7 +201,7 @@ export const getImageReferenceInfo = (segVolumeId, segImageIds) => {
   const scalingModule = metaData.get('scalingModule', refImageId);
 
   const modalityUnitOptions = {
-    isPreScaled: Boolean(refImage.preScale?.scaled),
+    isPreScaled: Boolean(refImage?.preScale?.scaled),
     isSuvScaled: typeof scalingModule?.suvbw === 'number',
   };
 

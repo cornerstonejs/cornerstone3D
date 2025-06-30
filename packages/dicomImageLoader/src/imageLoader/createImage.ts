@@ -121,6 +121,7 @@ function createImage(
             Uint16Array,
             Int16Array,
             Float32Array,
+            Uint32Array,
           };
 
           if (length !== imageFrame.pixelDataLength) {
@@ -219,11 +220,17 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
+        // Set numberOfComponents based on photometric interpretation
+        let numberOfComponents = imageFrame.samplesPerPixel;
+        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          numberOfComponents = useRGBA ? 4 : 3;
+        }
+
         const voxelManager = utilities.VoxelManager.createImageVoxelManager({
           scalarData: imageFrame.pixelData,
           width: imageFrame.columns,
           height: imageFrame.rows,
-          numberOfComponents: imageFrame.samplesPerPixel,
+          numberOfComponents: numberOfComponents,
         });
 
         const image: DICOMLoaderIImage = {
@@ -267,7 +274,7 @@ function createImage(
           rgba: isColorImage && useRGBA,
           getPixelData: () => imageFrame.pixelData,
           getCanvas: undefined,
-          numberOfComponents: imageFrame.samplesPerPixel,
+          numberOfComponents: numberOfComponents,
         };
 
         if (image.color) {
@@ -350,11 +357,13 @@ function createImage(
           image.windowCenter === undefined ||
           image.windowWidth === undefined
         ) {
-          const minVoi = image.imageFrame.smallestPixelValue;
-          const maxVoi = image.imageFrame.largestPixelValue;
+          const windowLevel = utilities.windowLevel.toWindowLevel(
+            image.imageFrame.smallestPixelValue,
+            image.imageFrame.largestPixelValue
+          );
 
-          image.windowWidth = maxVoi - minVoi;
-          image.windowCenter = (maxVoi + minVoi) / 2;
+          image.windowWidth = windowLevel.windowWidth;
+          image.windowCenter = windowLevel.windowCenter;
         }
         resolve(image);
       }, reject);

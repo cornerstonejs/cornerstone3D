@@ -1,6 +1,7 @@
 ---
 id: tools
 title: '@cornerstonejs/tools'
+summary: Updates to the tools package when migrating from Cornerstone3D 1.x to 2.x, including API changes and new functionality
 ---
 
 import Tabs from '@theme/Tabs';

@@ -19,19 +19,89 @@ class ArrowAnnotate extends BaseAdapter3D {
         metadata,
         _trackingIdentifier
     ) {
-        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                ArrowAnnotate.toolType
-            );
+        const {
+            defaultState,
+            SCOORDGroup,
+            SCOORD3DGroup,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            ArrowAnnotate.toolType
+        );
 
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
 
         const text = defaultState.annotation.metadata.label;
 
+        if (SCOORDGroup) {
+            return this.getMeasurementDataFromScoord({
+                SCOORDGroup,
+                referencedImageId,
+                metadata,
+                imageToWorldCoords,
+                defaultState,
+                text,
+                ReferencedFrameNumber
+            });
+        } else if (SCOORD3DGroup) {
+            return this.getMeasurementDataFromScoord3D({
+                SCOORD3DGroup,
+                defaultState,
+                text
+            });
+        } else {
+            throw new Error(
+                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
+            );
+        }
+    }
+
+    static getMeasurementDataFromScoord3D({
+        SCOORD3DGroup,
+        defaultState,
+        text
+    }) {
+        const { GraphicData } = SCOORD3DGroup;
+
+        const worldCoords = [];
+        for (let i = 0; i < GraphicData.length; i += 3) {
+            const point = [
+                GraphicData[i],
+                GraphicData[i + 1],
+                GraphicData[i + 2]
+            ];
+            worldCoords.push(point);
+        }
+
+        const state = defaultState;
+
+        state.annotation.data = {
+            text,
+            handles: {
+                arrowFirst: true,
+                points: [worldCoords[0], worldCoords[1]],
+                activeHandleIndex: 0,
+                textBox: {
+                    hasMoved: false
+                }
+            }
+        };
+
+        return state;
+    }
+
+    static getMeasurementDataFromScoord({
+        SCOORDGroup,
+        referencedImageId,
+        metadata,
+        imageToWorldCoords,
+        defaultState,
+        text,
+        ReferencedFrameNumber
+    }) {
         const { GraphicData } = SCOORDGroup;
 
         const worldCoords = [];
@@ -92,9 +162,7 @@ class ArrowAnnotate extends BaseAdapter3D {
         const { referencedImageId } = metadata;
 
         if (!referencedImageId) {
-            throw new Error(
-                "ArrowAnnotate.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
+            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
         }
 
         const { points, arrowFirst } = data.handles;
@@ -110,6 +178,7 @@ class ArrowAnnotate extends BaseAdapter3D {
             point2 = points[0];
         }
 
+        // Using image coordinates for 2D points
         const pointImage = worldToImageCoords(referencedImageId, point);
         const pointImage2 = worldToImageCoords(referencedImageId, point2);
 
@@ -126,7 +195,61 @@ class ArrowAnnotate extends BaseAdapter3D {
             ],
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
-            finding
+            finding,
+            use3DSpatialCoordinates: false
+        };
+
+        // If freetext finding isn't present, add it from the tool text.
+        if (!finding || finding.CodeValue !== codeValues.CORNERSTONEFREETEXT) {
+            finding = {
+                CodeValue: codeValues.CORNERSTONEFREETEXT,
+                CodingSchemeDesignator: CodingScheme.CodingSchemeDesignator,
+                CodeMeaning: data.text
+            };
+        }
+
+        return TID300RepresentationArguments;
+    }
+
+    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+        const { data, findingSites, metadata } = tool;
+        let { finding } = tool;
+
+        const { points, arrowFirst } = data.handles;
+
+        let point;
+        let point2;
+
+        if (arrowFirst) {
+            point = points[0];
+            point2 = points[1];
+        } else {
+            point = points[1];
+            point2 = points[0];
+        }
+
+        // Using world coordinates for 3D points
+        const pointImage = point;
+        const pointImage2 = point2;
+
+        const TID300RepresentationArguments = {
+            points: [
+                {
+                    x: pointImage[0],
+                    y: pointImage[1],
+                    z: pointImage[2]
+                },
+                {
+                    x: pointImage2[0],
+                    y: pointImage2[1],
+                    z: pointImage2[2]
+                }
+            ],
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            findingSites: findingSites || [],
+            finding,
+            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
+            use3DSpatialCoordinates: true
         };
 
         // If freetext finding isn't present, add it from the tool text.

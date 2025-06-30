@@ -20,6 +20,7 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
+import debounce from '../../utilities/debounce';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
 
@@ -86,20 +87,28 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         // Whether to store point data in the annotation
         storePointData: false,
         numSlicesToPropagate: 10,
-        computePointsInsideVolume: false,
+        calculatePointsInsideVolume: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         showTextBox: false,
+        throttleTimeout: 100,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
 
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStatsTool,
-      100,
-      { trailing: true }
-    );
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._throttledCalculateCachedStats = throttle(
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout,
+        { trailing: true }
+      );
+    } else {
+      this._throttledCalculateCachedStats = debounce(
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout
+      );
+    }
   }
 
   /**
@@ -266,23 +275,23 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        targetId,
-        imageVolume,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      targetId,
+      imageVolume,
+      enabledElement
+    );
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
+    } else {
+      triggerAnnotationModified(annotation, element);
     }
   };
 
-  //Now works for non-acquisition planes
+  //Now works for axial, sagitall and coronal
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
@@ -302,38 +311,41 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const endWorld = vec3.create();
     imageData.indexToWorldVec3(endIJK, endWorld);
 
-    // substitute the end slice index 2 with startIJK index 2
+    const projectionAxisIndex =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
+    if (projectionAxisIndex == 2) {
       startWorld[2] = startCoordinate;
       endWorld[2] = endCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
-    ) {
+    } else if (projectionAxisIndex == 0) {
       startWorld[0] = startCoordinate;
       endWorld[0] = endCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
-    ) {
+    } else if (projectionAxisIndex == 1) {
       startWorld[1] = startCoordinate;
       endWorld[1] = endCoordinate;
     }
 
-    // distance between start and end slice in the world coordinate
-    const distance = vec3.distance(startWorld, endWorld);
-    // for each point inside points, navigate in the direction of the viewPlaneNormal
-    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
+    // Calculate the explicit direction vector from start to end
+    const direction = vec3.create();
+    vec3.subtract(direction, endWorld, startWorld);
+
+    const distance = vec3.length(direction);
+
+    // Normalize the direction vector to get a unit vector for scaling.
+    vec3.normalize(direction, direction);
+
     const newProjectionPoints = [];
+
     for (let dist = 0; dist < distance; dist += spacingInNormal) {
       newProjectionPoints.push(
         points.map((point) => {
           const newPoint = vec3.create();
-          //@ts-ignore
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
+          vec3.scaleAndAdd(newPoint, point, direction, dist);
           return Array.from(newPoint);
         })
       );
     }
+
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 
@@ -481,23 +493,12 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        targetId,
-        imageVolume,
-        enabledElement
-      );
-    }
-
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        targetId,
-        imageVolume,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      targetId,
+      imageVolume,
+      enabledElement
+    );
 
     annotation.invalidated = false;
 
@@ -599,7 +600,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       }
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-
       if (annotation.invalidated) {
         this._throttledCalculateCachedStats(annotation, enabledElement);
       }
@@ -672,10 +672,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
       renderStatus = true;
 
-      if (
-        this.configuration.showTextBox &&
-        this.configuration.calculatePointsInsideVolume
-      ) {
+      if (this.configuration.showTextBox) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
           data.handles.textBox = {

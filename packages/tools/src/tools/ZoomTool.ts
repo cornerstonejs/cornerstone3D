@@ -1,9 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import type { Types } from '@cornerstonejs/core';
-import { getEnabledElement } from '@cornerstonejs/core';
+import { Enums, getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
+import { Events } from '../enums';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -44,6 +45,10 @@ class ZoomTool extends BaseTool {
       this.touchDragCallback = this._dragCallback.bind(this);
     }
     this.mouseDragCallback = this._dragCallback.bind(this);
+  }
+
+  mouseWheelCallback(evt: EventTypes.MouseWheelEventType) {
+    this._zoom(evt);
   }
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
@@ -188,24 +193,50 @@ class ZoomTool extends BaseTool {
     // Added spacing preset in case there is no imageData on viewport
     const imageData = viewport.getImageData();
     let spacing = [1, 1, 1];
-    if (imageData) {
-      spacing = imageData.spacing;
-    }
-
-    const { minZoomScale, maxZoomScale } = this.configuration;
-
-    const t = element.clientHeight * spacing[1] * 0.5;
-    const scale = t / parallelScaleToSet;
-
     let cappedParallelScale = parallelScaleToSet;
     let thresholdExceeded = false;
 
     if (imageData) {
-      if (scale < minZoomScale) {
-        cappedParallelScale = t / minZoomScale;
+      spacing = imageData.spacing;
+
+      const { dimensions } = imageData;
+      const imageWidth = dimensions[0] * spacing[0];
+      const imageHeight = dimensions[1] * spacing[1];
+
+      const canvasAspect = size[0] / size[1];
+
+      // Get display area, if available
+      const displayArea = viewport.options?.displayArea;
+      const imageAreaScaleX = displayArea?.imageArea?.[0] ?? 1.1;
+      const imageAreaScaleY = displayArea?.imageArea?.[1] ?? 1.1;
+
+      // Adjust image dimensions by display area scale
+      const scaledImageWidth = imageWidth * imageAreaScaleX;
+      const scaledImageHeight = imageHeight * imageAreaScaleY;
+      const scaledImageAspect = scaledImageWidth / scaledImageHeight;
+
+      // Determine the minimum parallel scale required to fully fit the image
+      let minParallelScaleRequired;
+      if (scaledImageAspect > canvasAspect) {
+        // Wider image, limit by width
+        minParallelScaleRequired = (scaledImageWidth / canvasAspect) * 0.5;
+      } else {
+        // Taller image, limit by height
+        minParallelScaleRequired = scaledImageHeight * 0.5;
+      }
+
+      const { minZoomScale, maxZoomScale } = this.configuration;
+
+      // Translate zoom scale limits to world-space scale
+      const minScaleInWorld = minParallelScaleRequired / maxZoomScale;
+      const maxScaleInWorld = minParallelScaleRequired / minZoomScale;
+
+      // Clamp zoom within allowed limits
+      if (parallelScaleToSet < minScaleInWorld) {
+        cappedParallelScale = minScaleInWorld;
         thresholdExceeded = true;
-      } else if (scale >= maxZoomScale) {
-        cappedParallelScale = t / maxZoomScale;
+      } else if (parallelScaleToSet > maxScaleInWorld) {
+        cappedParallelScale = maxScaleInWorld;
         thresholdExceeded = true;
       }
     }
@@ -258,6 +289,42 @@ class ZoomTool extends BaseTool {
 
     viewport.setCamera({ position, focalPoint });
   };
+
+  _zoom(evt: EventTypes.MouseWheelEventType): void {
+    const { element, points } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const camera = viewport.getCamera();
+    const wheelData = evt.detail.wheel;
+    const direction = wheelData.direction;
+
+    // Fake event to simulate a drag event
+    const eventDetails = {
+      detail: {
+        element,
+        eventName: Events.MOUSE_WHEEL,
+        renderingEngineId: enabledElement.renderingEngineId,
+        viewportId: viewport.id,
+        camera: {},
+        deltaPoints: {
+          page: points.page as Types.Point2,
+          client: points.client as Types.Point2,
+          world: points.world as Types.Point3,
+          canvas: [0, -direction * 5] as Types.Point2, // Simulate a drag of 5 pixels up or down
+        },
+        startPoints: points,
+        lastPoints: points,
+        currentPoints: points,
+      },
+    } as EventTypes.InteractionEventType;
+
+    if (viewport.type === Enums.ViewportType.STACK) {
+      this.preMouseDownCallback(eventDetails);
+    }
+
+    this._dragCallback(eventDetails);
+  }
 
   _panCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;

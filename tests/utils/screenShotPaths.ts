@@ -14,6 +14,9 @@ const screenShotPaths = {
   stackBasic: {
     viewport: 'viewport.png',
   },
+  stackToVolumeFusion: {
+    viewport: 'viewport.png',
+  },
   stackAPI: {
     flipBoth: 'flipBoth.png',
     setVoiRange: 'setVoiRange.png',
@@ -28,6 +31,7 @@ const screenShotPaths = {
     // randomZoomAndPan: 'randomZoomAndPan.png',
     colormap: 'colormap.png',
     resetViewport: 'resetViewport.png',
+    rotate30FlipBothNext: 'rotate30FlipBothNext.png',
   },
   stackManipulationTools: {
     planarRotate: 'planarRotate.png',
@@ -184,6 +188,11 @@ const screenShotPaths = {
     'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01': 'TG18-RV-2k-01.png',
     'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02': 'TG18-RV-2k-02.png',
     'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03': 'TG18-RV-2k-03.png',
+  },
+  mprReformat: {
+    beforeReformat: 'mpr-reformat-before.png',
+    afterReformat: 'mpr-reformat-after.png',
+    afterInteraction: 'mpr-reformat-after-interaction.png',
   },
 };
 

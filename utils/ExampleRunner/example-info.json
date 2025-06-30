@@ -379,6 +379,10 @@
         "name": "Stack Labelmap creation/edit for stack viewports",
         "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
       },
+      "stackViewportsWithSegmentationSync": {
+        "name": "Stack Viewports with Segmentation Sync",
+        "description": "Demonstrates how to synchronize two stack viewports with a segmentation on one of them"
+      },
       "splineROITools": {
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
@@ -386,6 +390,10 @@
       "interpolationContourSegmentation": {
         "name": "Interpolation of Contours between slices",
         "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
+      },
+      "surfaceContourRendering": {
+        "name": "Display surfaces in slices",
+        "description": "Demonstrates how 3D surfaces as displayed in different orientation viewports"
       },
       "contourSegmentationConfiguration": {
         "name": "Contour Segmentation Configuration",
@@ -398,6 +406,10 @@
       "segmentSelect": {
         "name": "Segment Select Tool",
         "description": "Demonstrates the segmentSelectTool capabilities which you can use to switch active segment by only hovering over them."
+      },
+      "segmentLabel": {
+        "name": "Segment Label Tool",
+        "description": "Demonstrates the segmentLabelTool capabilities which you can use to see the labels of segments by only hovering over them."
       },
       "splineContourSegmentationTools": {
         "name": "Spline Segmentation Tools",
@@ -419,9 +431,17 @@
         "name": "sculptorTool Tool",
         "description": "Demonstrates how to have similar brush tool effects on the contour"
       },
+      "logicalOperators": {
+        "name": "Logical operators for contour segmentations",
+        "description": "Demonstrates the logical operations that can be performed on contour segmentations, such as union, intersection, and subtraction."
+      },
       "labelmapEditWithContour": {
         "name": "Labelmap Editing with Contour",
         "description": "Use contour tools to edit the labelmap"
+      },
+      "labelmapEditWithContourAutomatic": {
+        "name": "Automatic Labelmap editing with contour Tool",
+        "description": "Apply contour tool automatic to efficiently modify and refine labelmap regions."
       },
       "labelmapInterpolation": {
         "name": "Labelmap Interpolation",
@@ -462,6 +482,10 @@
       "crossHairs": {
         "name": "Crosshairs",
         "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
+      },
+      "mprReformat": {
+        "name": "DICOM Reformats in MPR",
+        "description": "Aligns MPR viewports to dicom acquisition orientations"
       },
       "overlayGrid": {
         "name": "Overlay Grid",

@@ -96,4 +96,15 @@ const isEqualAbs = <ValueType>(
   tolerance = undefined
 ) => isEqual(abs(v1), abs(v2) as unknown as ValueType, tolerance);
 
-export { isEqualNegative, isEqual, isEqualAbs };
+/**
+ * @param n - array of numbers or a simple number
+ * @returns True if n or the first element of n is finite and not NaN
+ */
+function isNumber(n: number[] | number): boolean {
+  if (Array.isArray(n)) {
+    return isNumber(n[0]);
+  }
+  return isFinite(n) && !isNaN(n);
+}
+
+export { isEqualNegative, isEqual, isEqualAbs, isNumber };

@@ -3,7 +3,6 @@ import { Enums, segmentation, utilities } from '@cornerstonejs/tools';
 
 type RepresentationsData = ToolsTypes.RepresentationsData;
 
-const { SegmentationRepresentations } = Enums;
 const { getSegmentation } = segmentation.state;
 const { validateLabelmap } = utilities.segmentation;
 
@@ -11,22 +10,22 @@ const { validateLabelmap } = utilities.segmentation;
 // You should read it as "source" -> "targets"
 const conversionPaths = new Map([
   [
-    SegmentationRepresentations.Labelmap,
+    Enums.SegmentationRepresentations.Labelmap,
     new Set([
-      SegmentationRepresentations.Surface,
-      SegmentationRepresentations.Contour,
+      Enums.SegmentationRepresentations.Surface,
+      Enums.SegmentationRepresentations.Contour,
     ]),
   ],
   [
-    SegmentationRepresentations.Contour,
+    Enums.SegmentationRepresentations.Contour,
     new Set([
-      SegmentationRepresentations.Labelmap,
-      SegmentationRepresentations.Surface,
+      Enums.SegmentationRepresentations.Labelmap,
+      Enums.SegmentationRepresentations.Surface,
     ]),
   ],
   [
-    SegmentationRepresentations.Surface,
-    new Set([SegmentationRepresentations.Labelmap]),
+    Enums.SegmentationRepresentations.Surface,
+    new Set([Enums.SegmentationRepresentations.Labelmap]),
   ],
 ]);
 
@@ -44,7 +43,7 @@ const conversionPaths = new Map([
  */
 function canComputeRequestedRepresentation(
   segmentationId: string,
-  type: typeof SegmentationRepresentations
+  representationType: Enums.SegmentationRepresentations
 ): boolean {
   const { representationData } = getSegmentation(segmentationId);
 
@@ -52,7 +51,7 @@ function canComputeRequestedRepresentation(
     getExistingRepresentationTypes(representationData);
 
   return existingRepresentationTypes.some((existingRepresentationType) =>
-    canConvertFromTo(existingRepresentationType, type)
+    canConvertFromTo(existingRepresentationType, representationType)
   );
 }
 
@@ -73,7 +72,7 @@ function getExistingRepresentationTypes(
 
     let validateFn;
     switch (representationType) {
-      case SegmentationRepresentations.Labelmap:
+      case Enums.SegmentationRepresentations.Labelmap:
         validateFn = validateLabelmap.validate;
         break;
       // Todo: add validation for other representation types

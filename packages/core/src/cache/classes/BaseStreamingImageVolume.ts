@@ -334,13 +334,14 @@ export default class BaseStreamingImageVolume
       rescaleIntercept: modalityLutModule.rescaleIntercept,
       modality: generalSeriesModule.modality,
     };
+    const modality = scalingParameters.modality;
 
-    if (scalingParameters.modality === 'PT') {
-      const suvFactor = metaData.get('scalingModule', imageId);
+    if (modality === 'PT' || modality === 'RTDOSE') {
+      const scalingFactor = metaData.get('scalingModule', imageId);
 
-      if (suvFactor) {
-        this._addScalingToVolume(suvFactor);
-        scalingParameters.suvbw = suvFactor.suvbw;
+      if (scalingFactor) {
+        this._addScalingToVolume(scalingFactor);
+        Object.assign(scalingParameters, scalingFactor);
       }
     }
 

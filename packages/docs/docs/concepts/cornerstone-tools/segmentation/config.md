@@ -1,6 +1,7 @@
 ---
 id: config
 title: Config
+summary: Multi-level styling system for segmentation visualizations, with a hierarchy that ranges from global settings to segment-specific properties like color, outline, and fill
 ---
 
 

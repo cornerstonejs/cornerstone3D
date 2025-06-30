@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/polymorphic-segmentation",
-  "version": "3.9.5",
+  "version": "3.25.0",
   "description": "Polymorphic Segmentation utility for Cornerstone3D",
   "files": [
     "dist"
@@ -14,12 +14,18 @@
     ".": {
       "import": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
+    },
+    "./version": {
+      "node": "./dist/esm/version.js",
+      "import": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
     "build": "yarn run build:esm",
@@ -48,8 +54,8 @@
     "@icr/polyseg-wasm": "0.4.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.9.5",
-    "@cornerstonejs/tools": "^3.9.5",
+    "@cornerstonejs/core": "^3.25.0",
+    "@cornerstonejs/tools": "^3.25.0",
     "@kitware/vtk.js": "32.12.1"
   }
 }

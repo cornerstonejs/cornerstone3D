@@ -1,6 +1,7 @@
 ---
 id: usage
 title: Usage
+summary: Guide to implementing progressive loading in Cornerstone3D applications through the imageRetrieveMetadataProvider for both stack and volume viewports
 ---
 
 Now that we have learned about the retrieve configuration, let's see how we can use it in Cornerstone3D.

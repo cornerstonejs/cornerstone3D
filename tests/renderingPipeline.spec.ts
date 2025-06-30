@@ -1,5 +1,5 @@
 import type { Page, Locator } from '@playwright/test';
-import { test, expect } from '@playwright/test';
+import { test, expect } from 'playwright-test-coverage';
 import {
   checkForScreenshot,
   visitExample,

@@ -81,6 +81,7 @@ function metaDataProvider(type, imageId) {
     return {
       modality: getValue<string>(metaData['00080060']),
       seriesInstanceUID: getValue<string>(metaData['0020000E']),
+      seriesDescription: getValue<string>(metaData['0008103E']),
       seriesNumber: getNumberValue(metaData['00200011']),
       studyInstanceUID: getValue<string>(metaData['0020000D']),
       seriesDate: dicomParser.parseDA(getValue<string>(metaData['00080021'])),

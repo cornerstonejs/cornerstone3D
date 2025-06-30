@@ -1,6 +1,7 @@
 ---
 id: geometryLoader
 title: Geometry Loaders
+summary: Infrastructure for loading and caching 3D geometry data such as meshes with support for various formats including PLY, OBJ, STL and VTP
 ---
 
 # Geometry Loaders

@@ -95,7 +95,7 @@ export default function smoothAnnotation(
     interpolateSegmentPoints(
       canvasPoints,
       0,
-      canvasPoints.length,
+      canvasPoints.length - 1,
       options?.knotsRatioPercentage || 30
     )
   );
@@ -112,7 +112,7 @@ export default function smoothAnnotation(
       interpolateSegmentPoints(
         interpolatedCanvasPoints,
         0,
-        canvasPoints.length,
+        interpolatedCanvasPoints.length - 1,
         options?.knotsRatioPercentage || 30
       )
     );
