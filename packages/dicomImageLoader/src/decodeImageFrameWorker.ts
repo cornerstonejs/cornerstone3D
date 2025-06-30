@@ -12,7 +12,6 @@ import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
 import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit-js';
 import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
 import decodeJPEGLS from './shared/decoders/decodeJPEGLS';
-// Note that the scaling is pixel value scaling, which is applying a modality LUT
 import type { Types as CoreTypes } from '@cornerstonejs/core';
 import type { ByteArray } from 'dicom-parser';
 import getMinMax from './shared/getMinMax';
@@ -20,6 +19,7 @@ import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
 } from './shared/getPixelDataTypeFromMinMax';
 import isColorImage from './shared/isColorImage';
+// Note that the scaling is pixel value scaling, which is applying a modality LUT
 import applyModalityLUT from './shared/scaling/scaleArray';
 import type { DICOMLoaderImageOptions, LoaderDecodeOptions } from './types';
 
