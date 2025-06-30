@@ -1,26 +1,27 @@
-// @ts-check
 /* eslint-disable complexity */
+import { expose } from 'comlink';
+import decodeBigEndian from './shared/decoders/decodeBigEndian';
+import decodeJPEGBaseline8Bit from './shared/decoders/decodeJPEGBaseline8Bit';
+import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
+import decodeRLE from './shared/decoders/decodeRLE';
 import bilinear from './shared/scaling/bilinear';
 import replicate from './shared/scaling/replicate';
-import { expose } from 'comlink';
-
-import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
-import decodeBigEndian from './shared/decoders/decodeBigEndian';
-import decodeRLE from './shared/decoders/decodeRLE';
-import decodeJPEGBaseline8Bit from './shared/decoders/decodeJPEGBaseline8Bit';
 // import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit';
+import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
+import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
 import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit-js';
 import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
 import decodeJPEGLS from './shared/decoders/decodeJPEGLS';
-import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
-import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
-import applyModalityLUT from './shared/scaling/scaleArray';
+import type { Types as CoreTypes } from '@cornerstonejs/core';
+import type { ByteArray } from 'dicom-parser';
 import getMinMax from './shared/getMinMax';
 import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
 } from './shared/getPixelDataTypeFromMinMax';
 import isColorImage from './shared/isColorImage';
+import applyModalityLUT from './shared/scaling/scaleArray';
+import type { DICOMLoaderImageOptions, LoaderDecodeOptions } from './types';
 
 const imageUtils = {
   bilinear,
@@ -34,16 +35,14 @@ const typedArrayConstructors = {
   Float32Array,
   Uint32Array,
 };
+type TypedArrayConstructorsMap = typeof typedArrayConstructors;
 
-/**
- *
- * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @param {import("./types").DICOMLoaderImageOptions} options
- * @param {number} start
- * @param {import('./types').LoaderDecodeOptions} decodeConfig
- * @returns {import("@cornerstonejs/core").Types.IImageFrame}
- */
-function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
+function postProcessDecodedPixels(
+  imageFrame: CoreTypes.IImageFrame,
+  options: DICOMLoaderImageOptions,
+  start: number,
+  decodeConfig: LoaderDecodeOptions
+): CoreTypes.IImageFrame {
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;
@@ -174,12 +173,9 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   return imageFrame;
 }
 
-/**
- *
- * @param {import("@cornerstonejs/core").Types.ScalingParameters} scalingParameters
- * @returns {boolean}
- */
-function _isRequiredScaling(scalingParameters) {
+function _isRequiredScaling(
+  scalingParameters: CoreTypes.ScalingParameters
+): boolean {
   // @ts-expect-error ScalingParameters type does not include `doseGridScaling`
   const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
     scalingParameters;
@@ -193,20 +189,12 @@ function _isRequiredScaling(scalingParameters) {
   return hasRescaleValues || isRTDOSEWithScaling || isPTWithSUV;
 }
 
-/**
- *
- * @param {*} options
- * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @param {*} typedArrayConstructors
- * @param {import("@cornerstonejs/core").Types.PixelDataTypedArray} pixelDataArray
- * @returns {import("@cornerstonejs/core").Types.PixelDataTypedArray}
- */
 function _handleTargetBuffer(
-  options,
-  imageFrame,
-  typedArrayConstructors,
-  pixelDataArray
-) {
+  options: DICOMLoaderImageOptions,
+  imageFrame: CoreTypes.IImageFrame,
+  typedArrayConstructors: TypedArrayConstructorsMap,
+  pixelDataArray: CoreTypes.PixelDataTypedArray
+): CoreTypes.PixelDataTypedArray {
   const {
     arrayBuffer,
     type,
@@ -253,19 +241,11 @@ function _handleTargetBuffer(
   return pixelDataArray;
 }
 
-/**
- *
- * @param {import("./types").DICOMLoaderImageOptions} options
- * @param {number} minBeforeScale
- * @param {number} maxBeforeScale
- * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @returns
- */
 function _handlePreScaleSetup(
-  options,
-  minBeforeScale,
-  maxBeforeScale,
-  imageFrame
+  options: DICOMLoaderImageOptions,
+  minBeforeScale: number,
+  maxBeforeScale: number,
+  imageFrame: CoreTypes.IImageFrame
 ) {
   const scalingParameters = options.preScale.scalingParameters;
   _validateScalingParameters(scalingParameters);
@@ -283,14 +263,11 @@ function _handlePreScaleSetup(
   );
 }
 
-/**
- *
- * @param {number} min
- * @param {number} max
- * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @returns {import("@cornerstonejs/core").Types.PixelDataTypedArray}
- */
-function _getDefaultPixelDataArray(min, max, imageFrame) {
+function _getDefaultPixelDataArray(
+  min: number,
+  max: number,
+  imageFrame: CoreTypes.IImageFrame
+): CoreTypes.PixelDataTypedArray {
   const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
   // @ts-ignore
   const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
@@ -299,14 +276,11 @@ function _getDefaultPixelDataArray(min, max, imageFrame) {
   return typedArray;
 }
 
-/**
- *
- * @param {number} minValue
- * @param {number} maxValue
- * @param {import("@cornerstonejs/core").Types.ScalingParameters} scalingParameters
- * @returns {{ min: number, max: number }}
- */
-function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
+function _calculateScaledMinMax(
+  minValue: number,
+  maxValue: number,
+  scalingParameters: CoreTypes.ScalingParameters
+): { min: number; max: number } {
   // @ts-expect-error ScalingParameters type does not include `doseGridScaling`
   const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
     scalingParameters;
@@ -341,7 +315,9 @@ function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
   }
 }
 
-function _validateScalingParameters(scalingParameters) {
+function _validateScalingParameters(
+  scalingParameters: CoreTypes.ScalingParameters
+) {
   if (!scalingParameters) {
     throw new Error(
       'options.preScale.scalingParameters must be defined if preScale.enabled is true, and scalingParameters cannot be derived from the metadata providers.'
@@ -349,17 +325,10 @@ function _validateScalingParameters(scalingParameters) {
   }
 }
 
-/**
- *
- * @param {*} imageFrame  - The type probably should be import("@cornerstonejs/core").Types.IImageFrame but this causes build errors
- * @param {*} targetBuffer
- * @param {*} TypedArrayConstructor
- * @returns
- */
 function createDestinationImage(
-  imageFrame,
-  targetBuffer,
-  TypedArrayConstructor
+  imageFrame: any,
+  targetBuffer: DICOMLoaderImageOptions['targetBuffer'],
+  TypedArrayConstructor: new (size: number) => CoreTypes.PixelDataTypedArray
 ) {
   const { samplesPerPixel } = imageFrame;
   const { rows, columns } = targetBuffer;
@@ -384,16 +353,11 @@ function createDestinationImage(
   };
 }
 
-/**
- *
- * @description Scales the image frame, updating the frame in place with a new
- * scaled version of it (in place modification)
- * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @param {*} targetBuffer
- * @param {*} TypedArrayConstructor
- * @returns
- */
-function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
+function scaleImageFrame(
+  imageFrame: CoreTypes.IImageFrame,
+  targetBuffer: DICOMLoaderImageOptions['targetBuffer'],
+  TypedArrayConstructor: new (size: number) => CoreTypes.PixelDataTypedArray
+) {
   const dest = createDestinationImage(
     imageFrame,
     targetBuffer,
@@ -411,29 +375,17 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
  * This is an async function return the result, or you can provide an optional
  * callbackFn that is called with the results.
  */
-/**
- *
- * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @param {string} transferSyntax
- * @param {import('dicom-parser').ByteArray} pixelData
- * @param {import('./types').LoaderDecodeOptions} decodeConfig
- * @param {import("./types").DICOMLoaderImageOptions} options
- * @param {(image: import("@cornerstonejs/core").Types.IImageFrame) => void} callbackFn - (Deprecated) Optional callback function for handling
- * the decoded frame.
- * @returns {Promise<import("@cornerstonejs/core").Types.IImageFrame>} - The decoded image frame.
- */
 export async function decodeImageFrame(
-  imageFrame,
-  transferSyntax,
-  pixelData,
-  decodeConfig,
-  options,
-  callbackFn
-) {
+  imageFrame: CoreTypes.IImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
+  decodeConfig: LoaderDecodeOptions,
+  options: DICOMLoaderImageOptions,
+  callbackFn?: (image: CoreTypes.IImageFrame) => void
+): Promise<CoreTypes.IImageFrame> {
   const start = new Date().getTime();
 
-  /** @type {Promise<import("@cornerstonejs/core").Types.IImageFrame> | null} */
-  let decodePromise = null;
+  let decodePromise: Promise<CoreTypes.IImageFrame> | null = null;
 
   let opts;
 
