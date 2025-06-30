@@ -326,7 +326,7 @@ function _validateScalingParameters(
 }
 
 function createDestinationImage(
-  imageFrame: any,
+  imageFrame: CoreTypes.IImageFrame,
   targetBuffer: DICOMLoaderImageOptions['targetBuffer'],
   TypedArrayConstructor: new (size: number) => CoreTypes.PixelDataTypedArray
 ) {
@@ -340,11 +340,13 @@ function createDestinationImage(
     rows,
     columns,
     frameInfo: {
+      // @ts-expect-error frameInfo is not defined in IImageFrame
       ...imageFrame.frameInfo,
       rows,
       columns,
     },
     imageInfo: {
+      // @ts-expect-error imageInfo is not defined in IImageFrame
       ...imageFrame.imageInfo,
       rows,
       columns,
