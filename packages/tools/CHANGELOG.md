@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.25.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.24.0...v3.25.0) (2025-06-27)
+
+### Features
+
+- **contouring:** enable logical operators for contours ([#2117](https://github.com/cornerstonejs/cornerstone3D/issues/2117)) ([4186790](https://github.com/cornerstonejs/cornerstone3D/commit/4186790b190eb2cbb58ad89117c415e05f5f64fb))
+
+# [3.24.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.1...v3.24.0) (2025-06-25)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.0...v3.23.1) (2025-06-24)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 # [3.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.4...v3.23.0) (2025-06-20)
 
 ### Features

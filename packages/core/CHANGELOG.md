@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.25.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.24.0...v3.25.0) (2025-06-27)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [3.24.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.1...v3.24.0) (2025-06-25)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.0...v3.23.1) (2025-06-24)
+
+### Bug Fixes
+
+- **acquisition:** fix bug in acquisition mode ([#2155](https://github.com/cornerstonejs/cornerstone3D/issues/2155)) ([af82325](https://github.com/cornerstonejs/cornerstone3D/commit/af823256dd46b5ea07ae1dede14c99ba15ec52e2))
+
 # [3.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.4...v3.23.0) (2025-06-20)
 
 ### Features

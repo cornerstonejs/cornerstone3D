@@ -85,7 +85,10 @@ class VolumeViewport extends BaseVolumeViewport {
       );
     }
 
-    if (
+    if (this._useAcquisitionPlaneForViewPlane) {
+      this._setViewPlaneToAcquisitionPlane(firstImageVolume);
+      this._useAcquisitionPlaneForViewPlane = false;
+    } else if (
       this.options.orientation &&
       typeof this.options.orientation === 'string'
     ) {
@@ -95,9 +98,6 @@ class VolumeViewport extends BaseVolumeViewport {
           firstImageVolume
         );
       }
-    } else if (this._useAcquisitionPlaneForViewPlane) {
-      this._setViewPlaneToAcquisitionPlane(firstImageVolume);
-      this._useAcquisitionPlaneForViewPlane = false;
     }
 
     return super.setVolumes(volumeInputArray, immediate, suppressEvents);
@@ -129,7 +129,10 @@ class VolumeViewport extends BaseVolumeViewport {
       );
     }
 
-    if (
+    if (this._useAcquisitionPlaneForViewPlane) {
+      this._setViewPlaneToAcquisitionPlane(firstImageVolume);
+      this._useAcquisitionPlaneForViewPlane = false;
+    } else if (
       this.options.orientation &&
       typeof this.options.orientation === 'string'
     ) {
@@ -139,11 +142,7 @@ class VolumeViewport extends BaseVolumeViewport {
           firstImageVolume
         );
       }
-    } else if (this._useAcquisitionPlaneForViewPlane) {
-      this._setViewPlaneToAcquisitionPlane(firstImageVolume);
-      this._useAcquisitionPlaneForViewPlane = false;
     }
-
     return super.addVolumes(volumeInputArray, immediate, suppressEvents);
   }
 

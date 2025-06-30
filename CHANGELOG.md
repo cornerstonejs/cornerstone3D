@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.25.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.24.0...v3.25.0) (2025-06-27)
+
+### Features
+
+- **contouring:** enable logical operators for contours ([#2117](https://github.com/cornerstonejs/cornerstone3D/issues/2117)) ([4186790](https://github.com/cornerstonejs/cornerstone3D/commit/4186790b190eb2cbb58ad89117c415e05f5f64fb))
+
+# [3.24.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.1...v3.24.0) (2025-06-25)
+
+### Features
+
+- **labelmap:** labelmap seg implementation ([#2156](https://github.com/cornerstonejs/cornerstone3D/issues/2156)) ([72e55df](https://github.com/cornerstonejs/cornerstone3D/commit/72e55df74e627b76a7313c0aff5c167d84634bee))
+
+## [3.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.0...v3.23.1) (2025-06-24)
+
+### Bug Fixes
+
+- **acquisition:** fix bug in acquisition mode ([#2155](https://github.com/cornerstonejs/cornerstone3D/issues/2155)) ([af82325](https://github.com/cornerstonejs/cornerstone3D/commit/af823256dd46b5ea07ae1dede14c99ba15ec52e2))
+
 # [3.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.4...v3.23.0) (2025-06-20)
 
 ### Features
