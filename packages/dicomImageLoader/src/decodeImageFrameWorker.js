@@ -32,15 +32,16 @@ const typedArrayConstructors = {
   Uint16Array,
   Int16Array,
   Float32Array,
+  Uint32Array,
 };
 
 /**
  *
  * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @param {*} options
+ * @param {import("./types").DICOMLoaderImageOptions} options
  * @param {number} start
  * @param {import('./types').LoaderDecodeOptions} decodeConfig
- * @returns
+ * @returns {import("@cornerstonejs/core").Types.IImageFrame}
  */
 function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   const shouldShift =
@@ -94,13 +95,15 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   // are actually within the range of the type. If not, we need to convert the
   // pixel data to the correct type.
   if (type && options.preScale.enabled && !disableScale) {
-    const { rescaleSlope, rescaleIntercept } =
-      options.preScale.scalingParameters;
-    const minAfterScale = rescaleSlope * minBeforeScale + rescaleIntercept;
-    const maxAfterScale = rescaleSlope * maxBeforeScale + rescaleIntercept;
+    const scalingParameters = options.preScale.scalingParameters;
+    const scaledValues = _calculateScaledMinMax(
+      minBeforeScale,
+      maxBeforeScale,
+      scalingParameters
+    );
     invalidType = !validatePixelDataType(
-      minAfterScale,
-      maxAfterScale,
+      scaledValues.min,
+      scaledValues.max,
       typedArrayConstructors[type]
     );
   }
@@ -134,26 +137,22 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
     const scalingParameters = options.preScale.scalingParameters;
     _validateScalingParameters(scalingParameters);
 
-    const { rescaleSlope, rescaleIntercept } = scalingParameters;
-    const isSlopeAndInterceptNumbers =
-      typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+    const isRequiredScaling = _isRequiredScaling(scalingParameters);
 
-    if (isSlopeAndInterceptNumbers) {
+    if (isRequiredScaling) {
       applyModalityLUT(pixelDataArray, scalingParameters);
       imageFrame.preScale = {
         ...options.preScale,
         scaled: true,
       };
 
-      // calculate the min and max after scaling
-      const { rescaleIntercept, rescaleSlope, suvbw } = scalingParameters;
-      minAfterScale = rescaleSlope * minBeforeScale + rescaleIntercept;
-      maxAfterScale = rescaleSlope * maxBeforeScale + rescaleIntercept;
-
-      if (suvbw) {
-        minAfterScale = minAfterScale * suvbw;
-        maxAfterScale = maxAfterScale * suvbw;
-      }
+      const scaledValues = _calculateScaledMinMax(
+        minBeforeScale,
+        maxBeforeScale,
+        scalingParameters
+      );
+      minAfterScale = scaledValues.min;
+      maxAfterScale = scaledValues.max;
     }
   } else if (disableScale) {
     imageFrame.preScale = {
@@ -177,11 +176,30 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
 
 /**
  *
+ * @param {import("@cornerstonejs/core").Types.ScalingParameters} scalingParameters
+ * @returns {boolean}
+ */
+function _isRequiredScaling(scalingParameters) {
+  // @ts-expect-error ScalingParameters type does not include `doseGridScaling`
+  const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
+    scalingParameters;
+
+  const hasRescaleValues =
+    typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+  const isRTDOSEWithScaling =
+    modality === 'RTDOSE' && typeof doseGridScaling === 'number';
+  const isPTWithSUV = modality === 'PT' && typeof suvbw === 'number';
+
+  return hasRescaleValues || isRTDOSEWithScaling || isPTWithSUV;
+}
+
+/**
+ *
  * @param {*} options
  * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
  * @param {*} typedArrayConstructors
  * @param {import("@cornerstonejs/core").Types.PixelDataTypedArray} pixelDataArray
- * @returns
+ * @returns {import("@cornerstonejs/core").Types.PixelDataTypedArray}
  */
 function _handleTargetBuffer(
   options,
@@ -237,7 +255,7 @@ function _handleTargetBuffer(
 
 /**
  *
- * @param {*} options
+ * @param {import("./types").DICOMLoaderImageOptions} options
  * @param {number} minBeforeScale
  * @param {number} maxBeforeScale
  * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
@@ -252,19 +270,17 @@ function _handlePreScaleSetup(
   const scalingParameters = options.preScale.scalingParameters;
   _validateScalingParameters(scalingParameters);
 
-  const { rescaleSlope, rescaleIntercept } = scalingParameters;
-  const areSlopeAndInterceptNumbers =
-    typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number';
+  const scaledValues = _calculateScaledMinMax(
+    minBeforeScale,
+    maxBeforeScale,
+    scalingParameters
+  );
 
-  let scaledMin = minBeforeScale;
-  let scaledMax = maxBeforeScale;
-
-  if (areSlopeAndInterceptNumbers) {
-    scaledMin = rescaleSlope * minBeforeScale + rescaleIntercept;
-    scaledMax = rescaleSlope * maxBeforeScale + rescaleIntercept;
-  }
-
-  return _getDefaultPixelDataArray(scaledMin, scaledMax, imageFrame);
+  return _getDefaultPixelDataArray(
+    scaledValues.min,
+    scaledValues.max,
+    imageFrame
+  );
 }
 
 /**
@@ -272,7 +288,7 @@ function _handlePreScaleSetup(
  * @param {number} min
  * @param {number} max
  * @param {import("@cornerstonejs/core").Types.IImageFrame} imageFrame
- * @returns
+ * @returns {import("@cornerstonejs/core").Types.PixelDataTypedArray}
  */
 function _getDefaultPixelDataArray(min, max, imageFrame) {
   const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
@@ -281,6 +297,48 @@ function _getDefaultPixelDataArray(min, max, imageFrame) {
   typedArray.set(imageFrame.pixelData, 0);
 
   return typedArray;
+}
+
+/**
+ *
+ * @param {number} minValue
+ * @param {number} maxValue
+ * @param {import("@cornerstonejs/core").Types.ScalingParameters} scalingParameters
+ * @returns {{ min: number, max: number }}
+ */
+function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
+  // @ts-expect-error ScalingParameters type does not include `doseGridScaling`
+  const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
+    scalingParameters;
+
+  if (modality === 'PT' && typeof suvbw === 'number' && !isNaN(suvbw)) {
+    return {
+      min: suvbw * (minValue * rescaleSlope + rescaleIntercept),
+      max: suvbw * (maxValue * rescaleSlope + rescaleIntercept),
+    };
+  } else if (
+    modality === 'RTDOSE' &&
+    typeof doseGridScaling === 'number' &&
+    !isNaN(doseGridScaling)
+  ) {
+    return {
+      min: minValue * doseGridScaling,
+      max: maxValue * doseGridScaling,
+    };
+  } else if (
+    typeof rescaleSlope === 'number' &&
+    typeof rescaleIntercept === 'number'
+  ) {
+    return {
+      min: rescaleSlope * minValue + rescaleIntercept,
+      max: rescaleSlope * maxValue + rescaleIntercept,
+    };
+  } else {
+    return {
+      min: minValue,
+      max: maxValue,
+    };
+  }
 }
 
 function _validateScalingParameters(scalingParameters) {
