@@ -530,6 +530,10 @@
       "toolHistory": {
         "name": "Tool History",
         "description": "Demonstrates how to use the tool history to undo and redo tool actions"
+      },
+      "toolHistoryGrouping": {
+        "name": "Tool History Grouping",
+        "description": "Demonstrates how to use the tool history grouping to undo and redo batched tool actions that are related to one another"
       }
     },
     "polymorph-segmentation": {
