@@ -461,13 +461,13 @@ export default class SegmentationStateManager {
   ): string | undefined {
     const referenceImageId = viewport.getCurrentImageId();
 
-    // get always an array of labelmapImageIds
-    const imageIdsList = Array.isArray(labelmapImageIds[0])
+    // Always work with an array of arrays for uniformity
+    const imageIdsGroups = Array.isArray(labelmapImageIds[0])
       ? labelmapImageIds
       : [labelmapImageIds];
     let viewableLabelmapImageIdFound = false;
-    for (labelmapImageIds of imageIdsList) {
-      for (const labelmapImageId of labelmapImageIds) {
+    for (const group of imageIdsGroups) {
+      for (const labelmapImageId of group) {
         const viewableImageId = viewport.isReferenceViewable(
           { referencedImageId: labelmapImageId },
           { asOverlay: true }
@@ -562,12 +562,13 @@ export default class SegmentationStateManager {
       labelmapImageIds,
       (stackViewport, segmentationId, labelmapImageIds) => {
         const imageIds = stackViewport.getImageIds();
+        // Always work with an array of arrays for uniformity
+        const imageIdsGroups = Array.isArray(labelmapImageIds[0])
+          ? labelmapImageIds
+          : [labelmapImageIds];
         imageIds.forEach((referenceImageId, index) => {
-          const imageIdsList = Array.isArray(labelmapImageIds[0])
-            ? labelmapImageIds
-            : [labelmapImageIds];
-          for (labelmapImageIds of imageIdsList) {
-            for (const labelmapImageId of labelmapImageIds) {
+          for (const group of imageIdsGroups) {
+            for (const labelmapImageId of group) {
               const viewableImageId = stackViewport.isReferenceViewable(
                 { referencedImageId: labelmapImageId, sliceIndex: index },
                 { asOverlay: true, withNavigation: true }
