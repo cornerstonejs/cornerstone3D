@@ -54,6 +54,10 @@ export const getSegmentationDataForWorker = (
   const segVolumeId = getPrimaryVolumeId(
     Labelmap as LabelmapSegmentationDataVolume
   );
+  if (!segVolumeId) {
+    console.debug('No primary volumeId found for segmentation', segmentationId);
+    return null;
+  }
   const segImageIdsArray = (Labelmap as LabelmapSegmentationDataStack).imageIds;
   if (!segImageIdsArray || segImageIdsArray.length === 0) {
     console.debug('No imageIds found for segmentation', segmentationId);
