@@ -28,7 +28,8 @@ async function generateContourSetsFromLabelmap({ segmentations }) {
 
   if (!segVolumeId) {
     const segVolume = getOrCreateSegmentationVolume(segmentationId);
-    // TODO ADD SUPPORT FOR MULTIPLE SEGMENTATION VOLUMES
+    // TODO ADD support for extracting contours from multiple volumes
+    // For now, we only handle the first volume
     if (segVolume) {
       segVolumeId = Array.isArray(segVolume)
         ? segVolume[0].volumeId

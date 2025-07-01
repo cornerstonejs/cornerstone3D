@@ -55,6 +55,10 @@ export const getSegmentationDataForWorker = (
     Labelmap as LabelmapSegmentationDataVolume
   );
   const segImageIdsArray = (Labelmap as LabelmapSegmentationDataStack).imageIds;
+  if (!segImageIdsArray || segImageIdsArray.length === 0) {
+    console.debug('No imageIds found for segmentation', segmentationId);
+    return null;
+  }
   const segImageIds = Array.isArray(segImageIdsArray[0])
     ? segImageIdsArray[0] // Handle case where imageIds is an array of arrays
     : segImageIdsArray; // Fallback to single array if not

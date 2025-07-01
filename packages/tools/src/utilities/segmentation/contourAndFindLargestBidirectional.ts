@@ -47,7 +47,7 @@ export default async function contourAndFindLargestBidirectional(segmentation) {
   segments[segmentIndex].segmentIndex = segmentIndex;
 
   // Loop over all volumes and return the largest bidirectional (by area)
-  let largest = null;
+  let largest = undefined;
   let largestArea = -Infinity;
   for (const vol of volumes) {
     const result = findLargestBidirectional(

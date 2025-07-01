@@ -12,6 +12,10 @@ import isEqual from './isEqual';
  */
 
 function isValidVolume(imageIds: string[] | string[][]): boolean {
+  // Return false if imageIds is empty
+  if (!imageIds || imageIds.length === 0) {
+    return false;
+  }
   // If imageIds is a 2D array (multi-volume), check each group independently
   const groups = Array.isArray(imageIds[0])
     ? (imageIds as string[][])
