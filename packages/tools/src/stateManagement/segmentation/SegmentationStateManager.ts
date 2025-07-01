@@ -1197,7 +1197,7 @@ async function internalComputeVolumeLabelmapFromStack({
         i * options.numberOfImages,
         (i + 1) * options.numberOfImages
       );
-      const volumeId = options.volumeId || csUtils.uuidv4();
+      const volumeId = csUtils.uuidv4(); // create a volumeId for each volume
       await volumeLoader.createAndCacheVolumeFromImages(volumeId, ids);
       volumeIds.push(volumeId);
     }
