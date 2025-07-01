@@ -18,6 +18,8 @@ import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderFor
 import { getViewportIdsWithToolToRender } from '../viewportFilters';
 import { hasToolByName } from '../../store/addTool';
 
+const TOLERANCE = 1e-10; // Very small tolerance for floating point comparison
+
 /**
  * Default tool name for contour segmentation operations.
  */
@@ -367,4 +369,80 @@ export function updateViewportsForAnnotations(
       triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     }
   }
+}
+
+/**
+ * Remove consecutive duplicate points from a polyline
+ * @param polyline - Polyline to clean
+ * @returns Cleaned polyline without consecutive duplicates
+ */
+export function removeDuplicatePoints(
+  polyline: Types.Point2[]
+): Types.Point2[] {
+  if (!polyline || polyline.length < 2) {
+    return polyline;
+  }
+
+  const cleaned: Types.Point2[] = [polyline[0]]; // Always keep the first point
+
+  for (let i = 1; i < polyline.length; i++) {
+    const currentPoint = polyline[i];
+    const lastPoint = cleaned[cleaned.length - 1];
+
+    // Check if current point is different from the last added point
+    const dx = Math.abs(currentPoint[0] - lastPoint[0]);
+    const dy = Math.abs(currentPoint[1] - lastPoint[1]);
+
+    if (dx > TOLERANCE || dy > TOLERANCE) {
+      cleaned.push(currentPoint);
+    }
+  }
+
+  return cleaned;
+}
+
+/**
+ * Helper function to clean up polylines by removing duplicates and invalid polylines
+ * @param polylines - Array of polylines to clean up
+ * @returns Cleaned array of polylines
+ */
+export function cleanupPolylines(
+  polylines: Types.Point2[][]
+): Types.Point2[][] {
+  const validPolylines: Types.Point2[][] = [];
+  const seenPolylines = new Set<string>();
+
+  for (let polyline of polylines) {
+    // Skip invalid polylines
+    if (!polyline || polyline.length < 3) {
+      continue;
+    }
+
+    // Remove consecutive duplicate points
+    polyline = removeDuplicatePoints(polyline);
+
+    // Skip if after cleanup it's too small
+    if (polyline.length < 3) {
+      continue;
+    }
+
+    // Create a string representation for duplicate detection
+    // Sort points to handle polylines that are the same but start from different points
+    const sortedPoints = [...polyline].sort((a, b) => {
+      if (a[0] !== b[0]) {
+        return a[0] - b[0];
+      }
+      return a[1] - b[1];
+    });
+    const polylineKey = sortedPoints
+      .map((p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`)
+      .join('|');
+
+    if (!seenPolylines.has(polylineKey)) {
+      seenPolylines.add(polylineKey);
+      validPolylines.push(polyline);
+    }
+  }
+
+  return validPolylines;
 }
