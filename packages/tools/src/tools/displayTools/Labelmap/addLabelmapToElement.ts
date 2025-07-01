@@ -32,7 +32,7 @@ const { uuidv4 } = utilities;
  * NOTE: This function should not be called directly.
  *
  * @param element - The element that will be rendered.
- * @param labelMapData - The labelmap segmentation data. Supports both single and multi-volume segmentations (imageIds can be string[] or string[][]).
+ * @param labelMapData - The labelmap segmentation data. Supports both single and multi-volume segmentations (imageIds is always a flat string[]; use numberOfImages to determine volumes).
  * @param segmentationId - The segmentation id of the labelmap.
  * @param config - The labelmap rendering configuration.
  * @returns A promise that resolves to void or an object with uid and actor.
@@ -188,7 +188,7 @@ function _ensureVolumeHasVolumeId(
 /**
  * Ensures that a volume (or volumes) exist for the given labelmap data, creating them if necessary.
  * Supports both single and multi-volume segmentations.
- * @param labelMapData - The labelmap segmentation data, which may contain imageIds as string[] or string[][].
+ * @param labelMapData - The labelmap segmentation data, which contains imageIds as a flat string[] and numberOfImages.
  * @returns The created volume (single) or an array of volumes (multi-volume).
  */
 async function _handleMissingVolume(
@@ -205,10 +205,20 @@ async function _handleMissingVolume(
     );
   }
 
-  if (Array.isArray(stackData.imageIds[0])) {
-    // Multi-volume: string[][]
+  if (
+    stackData.numberOfImages &&
+    stackData.imageIds.length > stackData.numberOfImages
+  ) {
+    // Multi-volume: split flat array
+    const numVolumes = Math.floor(
+      stackData.imageIds.length / stackData.numberOfImages
+    );
     const volumes = [];
-    for (const ids of stackData.imageIds as string[][]) {
+    for (let i = 0; i < numVolumes; i++) {
+      const ids = stackData.imageIds.slice(
+        i * stackData.numberOfImages,
+        (i + 1) * stackData.numberOfImages
+      );
       const volumeId = uuidv4();
       const volume = await volumeLoader.createAndCacheVolumeFromImages(
         volumeId,

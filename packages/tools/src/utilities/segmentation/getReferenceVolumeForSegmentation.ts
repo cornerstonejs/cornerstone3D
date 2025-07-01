@@ -25,10 +25,8 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
   // Case 1: Labelmap with imageIds (stack-based)
   if ('imageIds' in labelmap) {
     const { imageIds } = labelmap;
-
-    const firstImage = Array.isArray(imageIds[0])
-      ? cache.getImage(imageIds[0][0])
-      : cache.getImage(imageIds[0]);
+    // Always treat imageIds as flat array. Use getImageIdsForVolume if needed.
+    const firstImage = cache.getImage(imageIds[0]);
     const volumeInfo = cache.getVolumeContainingImageId(
       firstImage.referencedImageId
     );

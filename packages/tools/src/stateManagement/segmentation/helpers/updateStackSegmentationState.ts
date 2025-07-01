@@ -40,6 +40,7 @@ export async function updateStackSegmentationState({
     }
 
     segmentation.representationData.Labelmap = {
+      numberOfImages: segmentation.representationData.Labelmap.numberOfImages,
       imageIds,
     };
   } else {

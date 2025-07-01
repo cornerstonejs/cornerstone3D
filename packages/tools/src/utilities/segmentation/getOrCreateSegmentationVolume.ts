@@ -76,10 +76,24 @@ function getOrCreateSegmentationVolume(
   const { imageIds: labelmapImageIds } =
     representationData.Labelmap as LabelmapSegmentationDataStack;
 
-  if (Array.isArray(labelmapImageIds[0])) {
+  // Multi-volume support: use numberOfImages to split flat array
+  const stackData =
+    representationData.Labelmap as LabelmapSegmentationDataStack;
+  if (
+    stackData &&
+    stackData.numberOfImages &&
+    stackData.imageIds.length > stackData.numberOfImages
+  ) {
+    const numVolumes = Math.floor(
+      stackData.imageIds.length / stackData.numberOfImages
+    );
     const volumes = [];
     const newVolumeIds = [];
-    for (const ids of labelmapImageIds as string[][]) {
+    for (let i = 0; i < numVolumes; i++) {
+      const ids = stackData.imageIds.slice(
+        i * stackData.numberOfImages,
+        (i + 1) * stackData.numberOfImages
+      );
       const vol = getOrCreateSingleSegmentationVolume(ids);
       if (vol) {
         volumes.push(vol);

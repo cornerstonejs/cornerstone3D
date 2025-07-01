@@ -49,16 +49,38 @@ export type LabelmapSegmentationDataVolume = {
    */
   volumeIds?: string[];
   referencedVolumeId?: string;
+  numberOfImages: number;
 };
 
 export type LabelmapSegmentationDataStack = {
   /**
-   * array of imageIds that are associated with this segmentation
-   * for each slice or for each volume (if multiple volumes)
-   * Can be a flat array (single volume) or an array of arrays (multi-volume).
+   * Flat array of imageIds associated with this segmentation.
+   * For single volume: imageIds.length === numberOfImages.
+   * For multi-volume: imageIds.length = numberOfVolumes * numberOfImages.
+   * The images for each volume are contiguous in the array.
+   * Use getImageIdsForVolume to extract per-volume imageIds.
    */
-  imageIds: string[] | string[][];
+  imageIds: string[];
+  /**
+   * Number of images per volume. For multi-volume, total volumes = imageIds.length / numberOfImages.
+   */
+  numberOfImages: number;
 };
+/**
+ * Utility to get the imageIds for a specific volume from a flat imageIds array.
+ * @param imageIds - Flat array of imageIds (all volumes concatenated)
+ * @param numberOfImages - Number of images per volume
+ * @param volumeIndex - Index of the volume to extract (0-based)
+ * @returns string[] - The imageIds for the specified volume
+ */
+export function getImageIdsForVolume(
+  imageIds: string[],
+  numberOfImages: number,
+  volumeIndex: number
+): string[] {
+  const start = volumeIndex * numberOfImages;
+  return imageIds.slice(start, start + numberOfImages);
+}
 
 export type LabelmapSegmentationData =
   | LabelmapSegmentationDataVolume
@@ -68,7 +90,8 @@ export type LabelmapSegmentationData =
       volumeId?: string;
       referencedVolumeId?: string;
       referencedImageIds?: string[];
-      imageIds?: string[] | string[][];
+      imageIds?: string[];
+      numberOfImages: number;
     };
 
 /**

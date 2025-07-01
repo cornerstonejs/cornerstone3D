@@ -1178,16 +1178,26 @@ async function internalComputeVolumeLabelmapFromStack({
   imageIds,
   options,
 }: {
-  imageIds: string[] | string[][];
+  imageIds: string[];
   options?: {
     volumeId?: string;
+    numberOfImages?: number; // For multi-volume support
   };
 }): Promise<{ volumeId?: string; volumeIds?: string[] }> {
-  if (Array.isArray(imageIds[0])) {
-    // Multi-volume: string[][]
+  // Multi-volume support: use numberOfImages to split flat array
+  if (
+    options?.numberOfImages &&
+    Array.isArray(imageIds) &&
+    imageIds.length > options.numberOfImages
+  ) {
+    const numVolumes = Math.floor(imageIds.length / options.numberOfImages);
     const volumeIds: string[] = [];
-    for (const ids of imageIds as string[][]) {
-      const volumeId = options?.volumeId || csUtils.uuidv4();
+    for (let i = 0; i < numVolumes; i++) {
+      const ids = imageIds.slice(
+        i * options.numberOfImages,
+        (i + 1) * options.numberOfImages
+      );
+      const volumeId = options.volumeId || csUtils.uuidv4();
       await volumeLoader.createAndCacheVolumeFromImages(volumeId, ids);
       volumeIds.push(volumeId);
     }

@@ -51,7 +51,7 @@ let polySegConversionInProgress = false;
  * @param segmentationId - The id of the segmentation.
  * @param renderImmediate - If true, there will be a render call after the labelmap is removed.
  *
- * Supports both single and multi-volume segmentations (imageIds can be string[] or string[][]).
+ * Supports both single and multi-volume segmentations (imageIds is always a flat string[]; use numberOfImages to determine volumes).
  */
 function removeRepresentation(
   viewportId: string,
@@ -89,7 +89,7 @@ function removeRepresentation(
  * @param segmentationId - The id of the segmentation to be rendered.
  * @param configuration - The configuration object for the labelmap.
  *
- * Supports both single and multi-volume segmentations (imageIds can be string[] or string[][]).
+ * Supports both single and multi-volume segmentations (imageIds is always a flat string[]; use numberOfImages to determine volumes).
  */
 async function render(
   viewport: Types.IStackViewport | Types.IVolumeViewport,

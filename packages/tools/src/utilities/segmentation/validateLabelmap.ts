@@ -59,10 +59,10 @@ function validateRepresentationData(
     }
   } else if ('imageIds' in segmentationRepresentationData) {
     // Stack segmentation: check imageIds
-    segmentationRepresentationData =
+    const segmentationRepresentationDataStack =
       segmentationRepresentationData as LabelmapSegmentationDataStack;
 
-    if (!segmentationRepresentationData.imageIds) {
+    if (!segmentationRepresentationDataStack.imageIds) {
       throw new Error(
         'The segmentationInput.representationData.imageIds is undefined, please provide a valid representationData.imageIds for stack data'
       );
