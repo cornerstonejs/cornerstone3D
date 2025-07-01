@@ -6,6 +6,7 @@ import {
 
 import type {
   LabelmapSegmentationData,
+  LabelmapSegmentationDataVolume,
   LabelmapStyle,
 } from '../../../types/LabelmapTypes';
 import type {
@@ -32,6 +33,7 @@ import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
+import { getVolumeIds } from '../../../types/LabelmapTypes';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -41,12 +43,15 @@ const labelMapConfigCache = new Map();
 let polySegConversionInProgress = false;
 
 /**
- * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
+ * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element.
  * Initializes the global and viewport specific state for the segmentation in the
  * SegmentationStateManager.
- * @param toolGroup - the tool group that contains the viewports
- * @param segmentationId - The id of the segmentation
- * @param renderImmediate - If true, there will be a render call after the labelmap is removed
+ *
+ * @param toolGroup - The tool group that contains the viewports.
+ * @param segmentationId - The id of the segmentation.
+ * @param renderImmediate - If true, there will be a render call after the labelmap is removed.
+ *
+ * Supports both single and multi-volume segmentations (imageIds can be string[] or string[][]).
  */
 function removeRepresentation(
   viewportId: string,
@@ -78,11 +83,13 @@ function removeRepresentation(
 }
 
 /**
- * It takes the enabled element, the segmentation Id, and the configuration, and
- * it sets the segmentation for the enabled element as a labelmap
- * @param enabledElement - The cornerstone enabled element
+ * Sets the segmentation for the enabled element as a labelmap.
+ *
+ * @param enabledElement - The cornerstone enabled element.
  * @param segmentationId - The id of the segmentation to be rendered.
  * @param configuration - The configuration object for the labelmap.
+ *
+ * Supports both single and multi-volume segmentations (imageIds can be string[] or string[][]).
  */
 async function render(
   viewport: Types.IStackViewport | Types.IVolumeViewport,
@@ -158,16 +165,22 @@ async function render(
   }
 
   if (viewport instanceof VolumeViewport) {
+    // For multiple volumeIds, ensure all associated labelmap actors are added
+    const volumeIds = getVolumeIds(
+      labelmapData as LabelmapSegmentationDataVolume
+    );
     if (!labelmapActorEntries?.length) {
-      // only add the labelmap to ToolGroup viewports if it is not already added
-      await _addLabelmapToViewport(
-        viewport,
-        labelmapData,
-        segmentationId,
-        config
-      );
+      // Add labelmap actors for all associated volumes
+      for (const volumeId of volumeIds) {
+        await _addLabelmapToViewport(
+          viewport,
+          { ...labelmapData, volumeId },
+          segmentationId,
+          config
+        );
+      }
     }
-
+    // Refresh actor entries after adding
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   } else {
     // stack segmentation
@@ -312,7 +325,7 @@ function _setLabelmapColorAndOpacity(
   }
 
   ofun.setClamping(false);
-  const labelmapActor = labelmapActorEntry.actor as vtkVolume;
+  const labelmapActor = labelmapActorEntry.actor as unknown as vtkVolume;
 
   // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };

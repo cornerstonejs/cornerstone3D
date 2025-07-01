@@ -11,6 +11,7 @@ import { getSegmentation } from '../../stateManagement/segmentation/getSegmentat
 import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
 import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
 import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
+import { getPrimaryVolumeId } from '../../types/LabelmapTypes';
 import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
@@ -48,8 +49,15 @@ export const getSegmentationDataForWorker = (
     return null;
   }
 
-  const segVolumeId = (Labelmap as LabelmapSegmentationDataVolume).volumeId;
-  const segImageIds = (Labelmap as LabelmapSegmentationDataStack).imageIds;
+  //TODO: Handle multi-volume segmentations if needed
+  // For now, we get only the first segmentation volume
+  const segVolumeId = getPrimaryVolumeId(
+    Labelmap as LabelmapSegmentationDataVolume
+  );
+  const segImageIdsArray = (Labelmap as LabelmapSegmentationDataStack).imageIds;
+  const segImageIds = Array.isArray(segImageIdsArray[0])
+    ? segImageIdsArray[0] // Handle case where imageIds is an array of arrays
+    : segImageIdsArray; // Fallback to single array if not
 
   // Create a minimal operationData object
   const operationData = {

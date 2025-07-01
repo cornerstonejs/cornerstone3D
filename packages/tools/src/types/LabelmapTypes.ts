@@ -39,16 +39,25 @@ export type InactiveLabelmapStyle = {
 export type LabelmapStyle = BaseLabelmapStyle & InactiveLabelmapStyle;
 
 export type LabelmapSegmentationDataVolume = {
-  volumeId: string;
+  /**
+   * Single volumeId for backward compatibility. If multiple segmentations overlap,
+   * use volumeIds instead. If both are present, volumeIds takes precedence.
+   */
+  volumeId?: string;
+  /**
+   * Array of volumeIds for overlapping segmentations. If present, use this instead of volumeId.
+   */
+  volumeIds?: string[];
   referencedVolumeId?: string;
 };
 
 export type LabelmapSegmentationDataStack = {
   /**
    * array of imageIds that are associated with this segmentation
-   * for each slice
+   * for each slice or for each volume (if multiple volumes)
+   * Can be a flat array (single volume) or an array of arrays (multi-volume).
    */
-  imageIds: string[];
+  imageIds: string[] | string[][];
 };
 
 export type LabelmapSegmentationData =
@@ -59,5 +68,32 @@ export type LabelmapSegmentationData =
       volumeId?: string;
       referencedVolumeId?: string;
       referencedImageIds?: string[];
-      imageIds?: string[];
+      imageIds?: string[] | string[][];
     };
+
+/**
+ * Utility to get all volumeIds from a LabelmapSegmentationDataVolume, supporting both legacy and new format.
+ */
+export function getVolumeIds(
+  labelmap: LabelmapSegmentationDataVolume
+): string[] {
+  if (Array.isArray(labelmap.volumeIds) && labelmap.volumeIds.length > 0) {
+    return labelmap.volumeIds;
+  }
+  if (labelmap.volumeId) {
+    return [labelmap.volumeId];
+  }
+  return [];
+}
+
+/**
+ * Utility to get the primary volumeId from a LabelmapSegmentationDataVolume, supporting both legacy and new format.
+ */
+export function getPrimaryVolumeId(
+  labelmap: LabelmapSegmentationDataVolume
+): string | undefined {
+  if (Array.isArray(labelmap.volumeIds) && labelmap.volumeIds.length > 0) {
+    return labelmap.volumeIds[0];
+  }
+  return labelmap.volumeId;
+}

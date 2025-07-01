@@ -17,11 +17,13 @@ export default {
       throw new Error('Volume is not reconstructable for sphere manipulation');
     }
 
-    const segVolume = getOrCreateSegmentationVolume(segmentationId);
+    const segVolumes = getOrCreateSegmentationVolume(segmentationId);
 
-    if (!segVolume) {
+    if (!segVolumes) {
       return;
     }
+
+    const segVolume = Array.isArray(segVolumes) ? segVolumes[0] : segVolumes;
 
     operationData.segmentationVoxelManager = segVolume.voxelManager;
     operationData.segmentationImageData = segVolume.imageData;

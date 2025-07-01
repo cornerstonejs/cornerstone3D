@@ -357,7 +357,9 @@ class GrowCutBaseTool extends BaseTool {
         labelmapVolumeId = fakeLabelmapVolume.volumeId;
       } else {
         const segVolume = getOrCreateSegmentationVolume(segmentationId);
-        labelmapVolumeId = segVolume.volumeId;
+        labelmapVolumeId = Array.isArray(segVolume)
+          ? segVolume[0].volumeId
+          : segVolume.volumeId;
       }
     }
 

@@ -1,4 +1,5 @@
 import { cache } from '@cornerstonejs/core';
+import { getPrimaryVolumeId } from '../../../types/LabelmapTypes';
 
 import type { SegmentationRepresentations } from '../../../enums';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
@@ -16,7 +17,9 @@ export function performVolumeLabelmapUpdate({
   type: SegmentationRepresentations;
 }): void {
   const segmentationVolume = cache.getVolume(
-    (representationData[type] as LabelmapSegmentationDataVolume).volumeId
+    getPrimaryVolumeId(
+      representationData[type] as LabelmapSegmentationDataVolume
+    )
   );
 
   if (!segmentationVolume) {

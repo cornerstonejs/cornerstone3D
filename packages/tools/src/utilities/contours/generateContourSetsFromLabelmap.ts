@@ -28,8 +28,11 @@ async function generateContourSetsFromLabelmap({ segmentations }) {
 
   if (!segVolumeId) {
     const segVolume = getOrCreateSegmentationVolume(segmentationId);
+    // TODO ADD SUPPORT FOR MULTIPLE SEGMENTATION VOLUMES
     if (segVolume) {
-      segVolumeId = segVolume.volumeId;
+      segVolumeId = Array.isArray(segVolume)
+        ? segVolume[0].volumeId
+        : segVolume.volumeId;
     }
   }
 

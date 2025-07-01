@@ -1,9 +1,5 @@
 import { cache } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
-import type {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types';
 import getOrCreateImageVolume from './getOrCreateImageVolume';
 
 /**
@@ -30,7 +26,9 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
   if ('imageIds' in labelmap) {
     const { imageIds } = labelmap;
 
-    const firstImage = cache.getImage(imageIds[0]);
+    const firstImage = Array.isArray(imageIds[0])
+      ? cache.getImage(imageIds[0][0])
+      : cache.getImage(imageIds[0]);
     const volumeInfo = cache.getVolumeContainingImageId(
       firstImage.referencedImageId
     );

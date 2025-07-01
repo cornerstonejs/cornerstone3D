@@ -9,10 +9,11 @@ import {
   volumeLoader,
   utilities,
 } from '@cornerstonejs/core';
-import type {
-  LabelmapSegmentationData,
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
+import {
+  getPrimaryVolumeId,
+  type LabelmapSegmentationData,
+  type LabelmapSegmentationDataStack,
+  type LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
@@ -27,12 +28,14 @@ import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTy
 const { uuidv4 } = utilities;
 
 /**
- * It adds a labelmap segmentation representation of the viewport's HTML Element.
+ * Adds a labelmap segmentation representation to the viewport's HTML Element.
  * NOTE: This function should not be called directly.
  *
  * @param element - The element that will be rendered.
- * @param labelMapData - The labelmap segmentation data.
+ * @param labelMapData - The labelmap segmentation data. Supports both single and multi-volume segmentations (imageIds can be string[] or string[][]).
  * @param segmentationId - The segmentation id of the labelmap.
+ * @param config - The labelmap rendering configuration.
+ * @returns A promise that resolves to void or an object with uid and actor.
  *
  * @internal
  */
@@ -182,11 +185,19 @@ function _ensureVolumeHasVolumeId(
   return volumeId;
 }
 
-async function _handleMissingVolume(labelMapData: LabelmapSegmentationData) {
+/**
+ * Ensures that a volume (or volumes) exist for the given labelmap data, creating them if necessary.
+ * Supports both single and multi-volume segmentations.
+ * @param labelMapData - The labelmap segmentation data, which may contain imageIds as string[] or string[][].
+ * @returns The created volume (single) or an array of volumes (multi-volume).
+ */
+async function _handleMissingVolume(
+  labelMapData: LabelmapSegmentationData
+): Promise<Types.IImageVolume | Types.IImageVolume[]> {
   // since this is a labelmap which we don't have volume data for yet, we need
   // to see if there is imageIds and create one for it
   const stackData = labelMapData as LabelmapSegmentationDataStack;
-  const hasImageIds = stackData.imageIds.length > 0;
+  const hasImageIds = stackData.imageIds && stackData.imageIds.length > 0;
 
   if (!hasImageIds) {
     throw new Error(
@@ -194,12 +205,31 @@ async function _handleMissingVolume(labelMapData: LabelmapSegmentationData) {
     );
   }
 
-  const volume = await volumeLoader.createAndCacheVolumeFromImages(
-    (labelMapData as LabelmapSegmentationDataVolume).volumeId || uuidv4(),
-    stackData.imageIds
-  );
+  if (Array.isArray(stackData.imageIds[0])) {
+    // Multi-volume: string[][]
+    const volumes = [];
+    for (const ids of stackData.imageIds as string[][]) {
+      const volumeId = uuidv4();
+      const volume = await volumeLoader.createAndCacheVolumeFromImages(
+        volumeId,
+        ids
+      );
+      volumes.push(volume);
+    }
+    return volumes;
+  } else {
+    // Single volume: string[]
+    const volumeId =
+      getPrimaryVolumeId(labelMapData as LabelmapSegmentationDataVolume) ||
+      uuidv4();
 
-  return volume;
+    const volume = await volumeLoader.createAndCacheVolumeFromImages(
+      volumeId,
+      stackData.imageIds as string[]
+    );
+
+    return volume;
+  }
 }
 
 export default addLabelmapToElement;

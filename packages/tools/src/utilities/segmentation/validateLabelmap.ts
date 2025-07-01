@@ -1,3 +1,15 @@
+/**
+ * Utility functions for validating labelmap segmentation data structures.
+ *
+ * Supports validation for single-volume, multi-volume, and stack-based segmentations.
+ * Throws descriptive errors if the segmentation data is invalid or if referenced volumes/images are not found in cache.
+ *
+ * - Single volume: `volumeId: string`
+ * - Multi-volume: `volumeIds: string[]`
+ * - Stack: `imageIds: string[]`
+ *
+ * Used internally to ensure segmentation data is well-formed before use.
+ */
 import { cache } from '@cornerstonejs/core';
 import type { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
 import type {
@@ -6,10 +18,33 @@ import type {
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 
+/**
+ * Validates the given labelmap segmentation representation data.
+ *
+ * Checks that all referenced volumes (for single or multi-volume segmentations) or imageIds (for stack segmentations) exist in the cache.
+ * Throws an error if any required data is missing or not cached.
+ *
+ * @param segmentationRepresentationData - The labelmap segmentation representation data to validate.
+ * @throws Error if a referenced volume or image is not found in cache, or if required fields are missing.
+ */
 function validateRepresentationData(
   segmentationRepresentationData: LabelmapSegmentationData
 ): void {
-  if ('volumeId' in segmentationRepresentationData) {
+  if (
+    'volumeIds' in segmentationRepresentationData &&
+    Array.isArray(segmentationRepresentationData.volumeIds)
+  ) {
+    // Multi-volume segmentation: check all volumeIds
+    for (const volumeId of segmentationRepresentationData.volumeIds) {
+      const cachedVolume = cache.getVolume(volumeId);
+      if (!cachedVolume) {
+        throw new Error(
+          `volumeId of ${volumeId} not found in cache, you should load and cache volume before adding segmentation`
+        );
+      }
+    }
+  } else if ('volumeId' in segmentationRepresentationData) {
+    // Single-volume segmentation: check volumeId
     segmentationRepresentationData =
       segmentationRepresentationData as LabelmapSegmentationDataVolume;
 
@@ -23,6 +58,7 @@ function validateRepresentationData(
       );
     }
   } else if ('imageIds' in segmentationRepresentationData) {
+    // Stack segmentation: check imageIds
     segmentationRepresentationData =
       segmentationRepresentationData as LabelmapSegmentationDataStack;
 
@@ -39,10 +75,12 @@ function validateRepresentationData(
 }
 
 /**
- * Validates the public segmentation input.
- * Throws an error if the segmentation input is invalid.
+ * Validates the public segmentation input for labelmap segmentations.
+ *
+ * Throws an error if the segmentation input or its representation data is invalid or missing.
  *
  * @param segmentationInput - The segmentation input to validate.
+ * @throws Error if the segmentation input or its representation data is invalid.
  */
 export function validatePublic(
   segmentationInput: SegmentationPublicInput
@@ -60,9 +98,12 @@ export function validatePublic(
 }
 
 /**
- * Validates the given segmentation representation data.
+ * Validates the given labelmap segmentation representation data.
  *
- * @param segmentationRepresentationData The segmentation representation data to validate.
+ * Throws an error if the representation data is invalid or references missing volumes/images.
+ *
+ * @param segmentationRepresentationData - The labelmap segmentation representation data to validate.
+ * @throws Error if the representation data is invalid or references missing data.
  */
 export function validate(
   segmentationRepresentationData: LabelmapSegmentationData

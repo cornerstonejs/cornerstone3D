@@ -30,6 +30,7 @@ import type {
   ActorEntry,
   ImageActor,
   ICanvasActor,
+  ViewportActor,
 } from './IActor';
 import type {
   IImageLoadObject,
@@ -208,6 +209,7 @@ export type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ViewportActor,
   ImageActor,
   ICanvasActor,
   IImageLoadObject,

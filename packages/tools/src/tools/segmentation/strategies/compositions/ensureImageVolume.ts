@@ -19,10 +19,13 @@ export default {
       }
     } else {
       const segmentation = getSegmentation(operationData.segmentationId);
-      const imageIds = (
+      const imageIdsArray = (
         segmentation.representationData
           .Labelmap as LabelmapSegmentationDataStack
       ).imageIds;
+      const imageIds = Array.isArray(imageIdsArray[0])
+        ? imageIdsArray[0] // Handle case where imageIds is an array of arrays
+        : imageIdsArray; // Fallback to single array if not
 
       referencedImageIds = imageIds.map((imageId) => {
         const image = cache.getImage(imageId);
