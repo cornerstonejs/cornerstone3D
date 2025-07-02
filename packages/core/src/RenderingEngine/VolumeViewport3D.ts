@@ -10,7 +10,7 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
 import type { ImageActor } from '../types/IActor';
 import BaseVolumeViewport from './BaseVolumeViewport';
-
+import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 /**
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render
  * 3D volumes in their entirety, and not just load a single slice at a time.
@@ -19,9 +19,13 @@ import BaseVolumeViewport from './BaseVolumeViewport';
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport3D extends BaseVolumeViewport {
+  // Store original (axis-aligned) clipping planes for each viewport
+  // _originalClippingPlanes: vtkPlane[] = [];
+  _originalClippingPlanes: vtkPlane[] = [];
+
   constructor(props: ViewportInput) {
     super(props);
-
+    const _originalClippingPlanes = [];
     const { parallelProjection, orientation } = this.options;
 
     const activeCamera = this.getVtkActiveCamera();
@@ -33,6 +37,24 @@ class VolumeViewport3D extends BaseVolumeViewport {
     if (orientation && orientation !== OrientationAxis.ACQUISITION) {
       this.applyViewOrientation(orientation);
     }
+  }
+
+  // Set the original planes for a viewport
+  public setOriginalClippingPlanes(planes) {
+    this._originalClippingPlanes = planes;
+    // this.render();
+  }
+
+  // Set the original planes for a viewport
+  public setOriginalClippingPlane(index, origin) {
+    if (this._originalClippingPlanes[index]) {
+      this._originalClippingPlanes[index].origin = origin;
+    }
+  }
+
+  // Set the original planes for a viewport
+  public getOriginalClippingPlanes() {
+    return this._originalClippingPlanes;
   }
 
   public getNumberOfSlices = (): number => {
