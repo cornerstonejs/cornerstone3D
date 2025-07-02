@@ -1,6 +1,8 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import { config as segmentationConfig } from '../../stateManagement/segmentation';
+
 import { BaseTool } from '../base';
 import type {
   PublicToolProps,
@@ -140,6 +142,11 @@ class SegmentLabelTool extends BaseTool {
       }
     );
     const segment = activeSegmentation.segments[hoveredSegmentIndex];
+    const color = segmentationConfig.color.getSegmentIndexColor(
+      viewport.id,
+      segmentationId,
+      hoveredSegmentIndex
+    );
     const label = segment?.label;
     const canvasCoordinates = viewport.worldToCanvas(worldPoint);
     this._editData = {
@@ -147,6 +154,7 @@ class SegmentLabelTool extends BaseTool {
       hoveredSegmentLabel: label,
       canvasCoordinates,
       worldPoint,
+      color,
     };
 
     // No need to select background
@@ -177,6 +185,7 @@ class SegmentLabelTool extends BaseTool {
       hoveredSegmentLabel,
       canvasCoordinates,
       worldPoint,
+      color,
     } = this._editData;
 
     if (!hoveredSegmentIndex) {
@@ -193,7 +202,9 @@ class SegmentLabelTool extends BaseTool {
       textBoxPosition,
       [canvasCoordinates],
       {},
-      {}
+      {
+        color: `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`,
+      }
     );
 
     const left = canvasCoordinates[0];
