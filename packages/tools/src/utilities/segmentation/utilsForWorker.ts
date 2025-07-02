@@ -16,6 +16,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
+import { splitImageIdsArray } from '../../stateManagement/segmentation/utilities/splitImageIdsArray';
 
 /**
  * Trigger worker progress event
@@ -54,18 +55,25 @@ export const getSegmentationDataForWorker = (
   const segVolumeId = getPrimaryVolumeId(
     Labelmap as LabelmapSegmentationDataVolume
   );
-  if (!segVolumeId) {
-    console.debug('No primary volumeId found for segmentation', segmentationId);
-    return null;
+  let segImageIds = null;
+  if (segVolumeId) {
+    const segmentationVolume = cache.getVolume(segVolumeId);
+    if (!segmentationVolume) {
+      console.debug('No segmentation volume found for ID', segVolumeId);
+      return null;
+    }
+    segImageIds = segmentationVolume.imageIds;
+  } else {
+    const { imageIds, numberOfImages } =
+      Labelmap as LabelmapSegmentationDataStack;
+
+    const segImageIdsArray = splitImageIdsArray(imageIds, numberOfImages);
+    if (!segImageIdsArray || segImageIdsArray.length === 0) {
+      console.debug('No imageIds found for segmentation', segmentationId);
+      return null;
+    }
+    segImageIds = segImageIdsArray[0]; // Use the first imageIds array for processing
   }
-  const segImageIdsArray = (Labelmap as LabelmapSegmentationDataStack).imageIds;
-  if (!segImageIdsArray || segImageIdsArray.length === 0) {
-    console.debug('No imageIds found for segmentation', segmentationId);
-    return null;
-  }
-  const segImageIds = Array.isArray(segImageIdsArray[0])
-    ? segImageIdsArray[0] // Handle case where imageIds is an array of arrays
-    : segImageIdsArray; // Fallback to single array if not
 
   // Create a minimal operationData object
   const operationData = {

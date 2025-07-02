@@ -23,9 +23,29 @@ export default {
         segmentation.representationData
           .Labelmap as LabelmapSegmentationDataStack
       ).imageIds;
-      const imageIds = Array.isArray(imageIdsArray[0])
-        ? imageIdsArray[0] // Handle case where imageIds is an array of arrays
-        : imageIdsArray; // Fallback to single array if not
+      if (!imageIdsArray || imageIdsArray.length === 0) {
+        throw new Error(
+          'No imageIds found in segmentation representation data'
+        );
+      }
+      const numberOfImages = (
+        segmentation.representationData
+          .Labelmap as LabelmapSegmentationDataStack
+      ).numberOfImages;
+
+      let imageIds;
+      if (imageIdsArray.length > numberOfImages) {
+        // Handle case where imageIds is a flatten array of arrays
+        imageIds = imageIdsArray.slice(0, numberOfImages);
+      }
+      // If imageIdsArray is a single array, use it directly
+      else if (imageIdsArray.length === numberOfImages) {
+        imageIds = imageIdsArray;
+      } else {
+        throw new Error(
+          `Mismatch between number of images (${numberOfImages}) and imageIds length (${imageIdsArray.length})`
+        );
+      }
 
       referencedImageIds = imageIds.map((imageId) => {
         const image = cache.getImage(imageId);

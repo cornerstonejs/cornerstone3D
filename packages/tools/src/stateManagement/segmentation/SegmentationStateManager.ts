@@ -32,6 +32,7 @@ import {
 } from './triggerSegmentationEvents';
 import { segmentationStyle } from './SegmentationStyle';
 import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
+import { splitImageIdsArray } from './utilities/splitImageIdsArray';
 
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
@@ -449,22 +450,21 @@ export default class SegmentationStateManager {
    * Helper function to update labelmap segmentation image references.
    * @param {string} segmentationId - The ID of the segmentation representation.
    * @param {Types.IViewport} viewport - The viewport.
-   * @param {string[] | string[][]} labelmapImageIds - The labelmap image IDs (single or multi-volume).
+   * @param {string[]} labelmapImageIds - The labelmap image IDs (single or multi-volume).
    * @param {Function} updateCallback - A callback to update the reference map.
    * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
    */
   _updateLabelmapSegmentationReferences(
-    segmentationId,
+    segmentationId: string,
     viewport,
-    labelmapImageIds,
+    labelmapImageIds: string[],
     updateCallback
   ): string | undefined {
     const referenceImageId = viewport.getCurrentImageId();
+    const numberOfImages = viewport.getImageIds()?.length || 0;
+    const imageIdsGroups = splitImageIdsArray(labelmapImageIds, numberOfImages);
 
     // Always work with an array of arrays for uniformity
-    const imageIdsGroups = Array.isArray(labelmapImageIds[0])
-      ? labelmapImageIds
-      : [labelmapImageIds];
     let viewableLabelmapImageIdFound = false;
     for (const group of imageIdsGroups) {
       for (const labelmapImageId of group) {
@@ -563,9 +563,10 @@ export default class SegmentationStateManager {
       (stackViewport, segmentationId, labelmapImageIds) => {
         const imageIds = stackViewport.getImageIds();
         // Always work with an array of arrays for uniformity
-        const imageIdsGroups = Array.isArray(labelmapImageIds[0])
-          ? labelmapImageIds
-          : [labelmapImageIds];
+        const imageIdsGroups = splitImageIdsArray(
+          labelmapImageIds,
+          imageIds.length
+        );
         imageIds.forEach((referenceImageId, index) => {
           for (const group of imageIdsGroups) {
             for (const labelmapImageId of group) {
