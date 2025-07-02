@@ -22,8 +22,9 @@ class ArrowAnnotate extends BaseAdapter3D {
         const {
             defaultState,
             SCOORDGroup,
-            SCOORD3DGroup,
-            ReferencedFrameNumber
+            ReferencedFrameNumber,
+            TextBoxGroup,
+            SCOORD3DGroup
         } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
@@ -44,7 +45,8 @@ class ArrowAnnotate extends BaseAdapter3D {
                 imageToWorldCoords,
                 defaultState,
                 text,
-                ReferencedFrameNumber
+                ReferencedFrameNumber,
+                TextBoxGroup
             });
         } else if (SCOORD3DGroup) {
             return this.getMeasurementDataFromScoord3D({
@@ -100,7 +102,8 @@ class ArrowAnnotate extends BaseAdapter3D {
         imageToWorldCoords,
         defaultState,
         text,
-        ReferencedFrameNumber
+        ReferencedFrameNumber,
+        TextBoxGroup
     }) {
         const { GraphicData } = SCOORDGroup;
 
@@ -153,7 +156,12 @@ class ArrowAnnotate extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return this.addTextBoxDataToState({
+            state,
+            referencedImageId,
+            imageToWorldCoords,
+            TextBoxGroup
+        });
     }
 
     static getTID300RepresentationArguments(tool, worldToImageCoords) {
@@ -196,6 +204,11 @@ class ArrowAnnotate extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
             finding,
+            textBoxPoint: this.getTextBoxPoint({
+                handles: data.handles,
+                referencedImageId,
+                worldToImageCoords
+            }),
             use3DSpatialCoordinates: false
         };
 

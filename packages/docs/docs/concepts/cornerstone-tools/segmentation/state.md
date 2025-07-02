@@ -70,10 +70,10 @@ segmentation.addSegmentations([
     representation: {
       type: Enums.SegmentationRepresentations.Labelmap,
       data: {
-        imageIds: segmentationImageIds
-      }
-    }
-  }
+        imageIds: segmentationImageIds,
+      },
+    },
+  },
 ]);
 ```
 
@@ -93,11 +93,10 @@ import { segmentation, Enums } from '@cornerstonejs/tools';
 await segmentation.addSegmentationRepresentations(viewportId, [
   {
     segmentationId,
-    type: Enums.SegmentationRepresentations.Labelmap
-  }
+    type: Enums.SegmentationRepresentations.Labelmap,
+  },
 ]);
 ```
-
 
 ### Representation-Specific Methods
 
@@ -137,15 +136,15 @@ const viewportInputMap = {
   viewport1: [
     {
       segmentationId: 'seg1',
-      type: Enums.SegmentationRepresentations.Labelmap
-    }
+      type: Enums.SegmentationRepresentations.Labelmap,
+    },
   ],
   viewport2: [
     {
       segmentationId: 'seg1',
-      type: Enums.SegmentationRepresentations.Labelmap
-    }
-  ]
+      type: Enums.SegmentationRepresentations.Labelmap,
+    },
+  ],
 };
 
 await segmentation.addLabelmapRepresentationToViewportMap(viewportInputMap);

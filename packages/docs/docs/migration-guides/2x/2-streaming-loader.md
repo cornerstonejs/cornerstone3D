@@ -7,7 +7,6 @@ summary: Migration guide for changes to the streaming-image-volume-loader when u
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-
 # @cornerstonejs/streaming-image-volume-loader
 
 After years of development on Cornerstone3D, we recognized that volume loading should be treated as a first-class feature rather than a separate library. As a result, we have merged all functionality related to streaming image loading into the core library.

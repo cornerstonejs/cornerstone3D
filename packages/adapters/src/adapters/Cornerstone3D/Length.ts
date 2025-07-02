@@ -18,7 +18,8 @@ export default class Length extends BaseAdapter3D {
         NUMGroup,
         SCOORDGroup,
         ReferencedFrameNumber,
-        imageToWorldCoords
+        imageToWorldCoords,
+        TextBoxGroup
     }) {
         const referencedImageId =
             defaultState.annotation.metadata.referencedImageId;
@@ -53,7 +54,12 @@ export default class Length extends BaseAdapter3D {
             frameNumber: ReferencedFrameNumber
         };
 
-        return state;
+        return super.addTextBoxDataToState({
+            state,
+            TextBoxGroup,
+            imageToWorldCoords,
+            referencedImageId
+        });
     }
 
     static getMeasurementDataFromScoord3d({ defaultState, SCOORD3DGroup }) {
@@ -88,7 +94,8 @@ export default class Length extends BaseAdapter3D {
             NUMGroup,
             SCOORDGroup,
             SCOORD3DGroup,
-            ReferencedFrameNumber
+            ReferencedFrameNumber,
+            TextBoxGroup
         } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
@@ -102,7 +109,8 @@ export default class Length extends BaseAdapter3D {
                 NUMGroup,
                 SCOORDGroup,
                 ReferencedFrameNumber,
-                imageToWorldCoords
+                imageToWorldCoords,
+                TextBoxGroup
             });
         } else if (SCOORD3DGroup) {
             return this.getMeasurementDataFromScoord3d({
@@ -143,6 +151,11 @@ export default class Length extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
+            textBoxPoint: this.getTextBoxPoint({
+                handles,
+                referencedImageId,
+                worldToImageCoords
+            }),
             use3DSpatialCoordinates: false
         };
     }
