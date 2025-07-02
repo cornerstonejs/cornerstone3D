@@ -91,6 +91,7 @@ export async function convertContourToVolumeLabelmap(
 
   return {
     volumeId: segmentationVolume.volumeId,
+    numberOfImages: imageIds.length,
   };
 }
 
@@ -236,5 +237,6 @@ export async function convertContourToStackLabelmap(
 
   return {
     imageIds: segImageIds,
+    numberOfImages: imageIds.length,
   };
 }

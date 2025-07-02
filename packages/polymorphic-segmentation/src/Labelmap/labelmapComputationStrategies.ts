@@ -1,5 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { volumeLoader, imageLoader, VolumeViewport } from '@cornerstonejs/core';
+import {
+  volumeLoader,
+  imageLoader,
+  VolumeViewport,
+  cache,
+} from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
@@ -139,12 +144,16 @@ async function computeLabelmapFromSurfaceSegmentation(
   }
 
   let segmentationVolume;
+  let numberOfImages = 0;
   if (isVolume) {
     const volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
+    const volume = cache.getVolume(volumeId);
+    numberOfImages = volume.imageIds.length;
     segmentationVolume =
       volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId);
   } else {
     const imageIds = (options.viewport as Types.IStackViewport).getImageIds();
+    numberOfImages = imageIds.length;
     const segImages = imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
     const segImageIds = segImages.map((image) => image.imageId);
@@ -161,7 +170,10 @@ async function computeLabelmapFromSurfaceSegmentation(
   );
 
   if (isVolume) {
-    return result;
+    return {
+      volumeId: result.volumeId,
+      numberOfImages,
+    };
   }
 
   // we need to convert the volume labelmap to a stack labelmap
@@ -169,7 +181,10 @@ async function computeLabelmapFromSurfaceSegmentation(
     volumeId: segmentationVolume.volumeId,
   })) as ToolsTypes.LabelmapSegmentationDataStack;
 
-  return stackData;
+  return {
+    imageIds: stackData.imageIds,
+    numberOfImages,
+  };
 }
 
 export { computeLabelmapFromContourSegmentation };
