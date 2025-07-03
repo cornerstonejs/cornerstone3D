@@ -48,8 +48,6 @@ test('Stack Segmentation - Sphere Brush Tool', async ({
     }
   });
 
-  await page.waitForTimeout(1000);
-
   await checkForScreenshot(
     page,
     secondViewport,

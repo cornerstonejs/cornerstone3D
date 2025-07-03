@@ -19,8 +19,6 @@ test.describe('Stack to Volume Fusion', async () => {
     // click on button that says 'Stack to Volume'
     await page.click('button:has-text("Stack to Volume")');
 
-    await page.waitForTimeout(2000);
-
     // Now take the screenshot
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(

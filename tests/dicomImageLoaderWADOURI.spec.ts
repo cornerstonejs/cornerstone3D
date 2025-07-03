@@ -5,7 +5,6 @@ import {
   screenShotPaths,
 } from './utils/index';
 
-const TIME_OUT = 3000;
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'dicomImageLoaderWADOURI');
 });
@@ -24,8 +23,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       );
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -50,8 +47,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -74,8 +69,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       );
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -100,8 +93,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -124,8 +115,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       );
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -150,8 +139,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -174,8 +161,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       );
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -200,8 +185,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -225,8 +208,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(3000);
-
     await checkForScreenshot(
       page,
       locator,
@@ -243,8 +224,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TestPattern_JPEG-Baseline_YBR422.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -267,8 +246,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -288,8 +265,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -307,8 +282,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -325,8 +298,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TestPattern_JPEG-LS-NearLossless.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -347,8 +318,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -366,8 +335,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -382,8 +349,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
     await page.locator('#imageSelector').selectOption('TestPattern_RGB.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -403,8 +368,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -427,8 +390,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -449,8 +410,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -473,8 +432,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -495,8 +452,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -519,8 +474,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -541,8 +494,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -565,8 +516,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -587,8 +536,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -611,8 +558,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -633,8 +578,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-multi-1K/TG18-BR/TG18-BR-1k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -657,8 +600,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -679,8 +620,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -703,8 +642,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -725,8 +662,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-noise-1k/TG18-NS/TG18-NS-1k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -749,8 +684,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -771,8 +704,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-noise-1k/TG18-NS/TG18-NS-1k-03.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -795,8 +726,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -817,8 +746,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(3000);
 
     await checkForScreenshot(
       page,
@@ -841,8 +768,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -863,8 +788,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -887,8 +810,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -909,8 +830,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -933,8 +852,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -955,8 +872,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -979,8 +894,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -1001,8 +914,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
@@ -1025,8 +936,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
 
     const locator = page.locator('.cornerstone-canvas');
 
-    await page.waitForTimeout(TIME_OUT);
-
     await checkForScreenshot(
       page,
       locator,
@@ -1047,8 +956,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
       .selectOption('TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03.dcm');
 
     const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
 
     await checkForScreenshot(
       page,
