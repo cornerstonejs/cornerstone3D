@@ -750,20 +750,60 @@ class VolumeCroppingTool extends AnnotationTool {
         return;
       }
       const mapper = volumeActor.getMapper();
-
       if (sphereState.isCorner) {
-        // Move the corner sphere
-        sphereState.point = newPoint;
-        sphereState.sphereSource.setCenter(newPoint);
+        // Save the old position
+        const oldX = sphereState.point[0];
+        const oldY = sphereState.point[1];
+        const oldZ = sphereState.point[2];
+
+        // Move the dragged corner sphere to the picked point
+        sphereState.point[0] = pickedPoint[0];
+        sphereState.point[1] = pickedPoint[1];
+        sphereState.point[2] = pickedPoint[2];
+        sphereState.sphereSource.setCenter(
+          pickedPoint[0],
+          pickedPoint[1],
+          pickedPoint[2]
+        );
         sphereState.sphereSource.modified();
 
-        // --- Update the three adjacent face spheres and their clipping planes ---
-        // Find which faces this corner belongs to by its index
-        // (Assumes SPHEREINDEX order: XMIN_YMIN_ZMIN, XMIN_YMIN_ZMAX, ...)
-        // You may want to generalize this if your SPHEREINDEX changes
+        // Update all other spheres (face and corner) that shared any min/max coordinate with the old corner position
+        this.sphereStates.forEach((state, idx) => {
+          if (idx === this.draggingSphereIndex) {
+            return;
+          } // already updated
 
-        // Map from corner index to which faces it touches
-        // Each entry: [X face, Y face, Z face]
+          let updated = false;
+          // X
+          if (Math.abs(state.point[0] - oldX) < 1e-6) {
+            state.point[0] = pickedPoint[0];
+            updated = true;
+          }
+          // Y
+          if (Math.abs(state.point[1] - oldY) < 1e-6) {
+            state.point[1] = pickedPoint[1];
+            updated = true;
+          }
+          // Z
+          if (Math.abs(state.point[2] - oldZ) < 1e-6) {
+            state.point[2] = pickedPoint[2];
+            updated = true;
+          }
+          if (updated) {
+            state.sphereSource.setCenter(
+              state.point[0],
+              state.point[1],
+              state.point[2]
+            );
+            state.sphereSource.modified();
+            if (state.sphereActor && state.color) {
+              state.sphereActor.getProperty().setColor(state.color);
+            }
+          }
+        });
+
+        // Update face spheres' positions to always be at the center of their faces
+        // (between their two corresponding corners)
         const cornerToFace = [
           [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMIN_YMIN_ZMIN
           [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMIN_YMIN_ZMAX
@@ -777,54 +817,120 @@ class VolumeCroppingTool extends AnnotationTool {
         const cornerIdx = this.draggingSphereIndex - SPHEREINDEX.XMIN_YMIN_ZMIN;
         const faces = cornerToFace[cornerIdx];
 
-        // Update each face sphere and its clipping plane
         faces.forEach((faceIdx) => {
           const faceState = this.sphereStates[faceIdx];
           if (!faceState) {
             return;
           }
-          // Only update the coordinate relevant to the face
-          if (faceState.axis === 'x') {
-            faceState.point[POINTINDEX.X] = newPoint[POINTINDEX.X];
-          } else if (faceState.axis === 'y') {
-            faceState.point[POINTINDEX.Y] = newPoint[POINTINDEX.Y];
-          } else if (faceState.axis === 'z') {
-            faceState.point[POINTINDEX.Z] = newPoint[POINTINDEX.Z];
-          }
-          faceState.sphereSource.setCenter(faceState.point);
+
+          // Find the two corners that define this face
+          const faceAxis = faceState.axis;
+          const isCorner = (s) => s.isCorner;
+          const cornersOnFace = this.sphereStates.filter((s) => {
+            if (!isCorner(s)) {
+              return false;
+            }
+            if (faceAxis === 'x') {
+              return (
+                Math.abs(s.point[1] - faceState.point[1]) < 1e-6 &&
+                Math.abs(s.point[2] - faceState.point[2]) < 1e-6
+              );
+            }
+            if (faceAxis === 'y') {
+              return (
+                Math.abs(s.point[0] - faceState.point[0]) < 1e-6 &&
+                Math.abs(s.point[2] - faceState.point[2]) < 1e-6
+              );
+            }
+            if (faceAxis === 'z') {
+              return (
+                Math.abs(s.point[0] - faceState.point[0]) < 1e-6 &&
+                Math.abs(s.point[1] - faceState.point[1]) < 1e-6
+              );
+            }
+            return false;
+          });
+
+          if (cornersOnFace.length !== 2) {
+            return;
+          } // Defensive
+
+          // Compute center between the two corners
+          const center = [
+            (cornersOnFace[0].point[0] + cornersOnFace[1].point[0]) / 2,
+            (cornersOnFace[0].point[1] + cornersOnFace[1].point[1]) / 2,
+            (cornersOnFace[0].point[2] + cornersOnFace[1].point[2]) / 2,
+          ];
+
+          faceState.point[0] = center[0];
+          faceState.point[1] = center[1];
+          faceState.point[2] = center[2];
+          faceState.sphereSource.setCenter(center[0], center[1], center[2]);
           faceState.sphereSource.modified();
 
           // Update the clipping plane for this face
           const clippingPlanes = mapper.getClippingPlanes();
           if (clippingPlanes && clippingPlanes[faceIdx]) {
-            // Set the origin for the relevant axis, keep other coords unchanged
             const origin = [...clippingPlanes[faceIdx].getOrigin()];
-            if (faceState.axis === 'x') {
-              origin[POINTINDEX.X] = newPoint[POINTINDEX.X];
-            } else if (faceState.axis === 'y') {
-              origin[POINTINDEX.Y] = newPoint[POINTINDEX.Y];
-            } else if (faceState.axis === 'z') {
-              origin[POINTINDEX.Z] = newPoint[POINTINDEX.Z];
-            }
+            origin[POINTINDEX.X] = center[0];
+            origin[POINTINDEX.Y] = center[1];
+            origin[POINTINDEX.Z] = center[2];
             clippingPlanes[faceIdx].setOrigin(origin);
             viewport.setOriginalClippingPlane(faceIdx, origin);
           }
         });
+        // After updating all spheres and before viewport.render()
 
-        // Update the box edge lines after moving a corner
-        //   this._updateCornerBoxEdges3D(viewport);
+        // Determine which planes are connected to this corner
+        // Use the draggingSphereIndex to get the corner type
+        const cornerPlaneIndices = [];
+        const idx = this.draggingSphereIndex;
+        if (
+          idx >= SPHEREINDEX.XMIN_YMIN_ZMIN &&
+          idx <= SPHEREINDEX.XMAX_YMAX_ZMAX
+        ) {
+          // Map corner index to plane indices
+          // [XMIN, XMAX], [YMIN, YMAX], [ZMIN, ZMAX]
+          const cornerMap = [
+            [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN], // XMIN_YMIN_ZMIN
+            [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMAX], // XMIN_YMIN_ZMAX
+            [PLANEINDEX.XMIN, PLANEINDEX.YMAX, PLANEINDEX.ZMIN], // XMIN_YMAX_ZMIN
+            [PLANEINDEX.XMIN, PLANEINDEX.YMAX, PLANEINDEX.ZMAX], // XMIN_YMAX_ZMAX
+            [PLANEINDEX.XMAX, PLANEINDEX.YMIN, PLANEINDEX.ZMIN], // XMAX_YMIN_ZMIN
+            [PLANEINDEX.XMAX, PLANEINDEX.YMIN, PLANEINDEX.ZMAX], // XMAX_YMIN_ZMAX
+            [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMIN], // XMAX_YMAX_ZMIN
+            [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMAX], // XMAX_YMAX_ZMAX
+          ];
+          const cornerIdx = idx - SPHEREINDEX.XMIN_YMIN_ZMIN;
+          cornerPlaneIndices.push(...cornerMap[cornerIdx]);
+        }
 
+        const clippingPlanes = mapper.getClippingPlanes();
+        cornerPlaneIndices.forEach((planeIdx) => {
+          if (clippingPlanes && clippingPlanes[planeIdx]) {
+            // Set the origin of the plane to the new corner position
+            clippingPlanes[planeIdx].setOrigin(
+              sphereState.point[0],
+              sphereState.point[1],
+              sphereState.point[2]
+            );
+            viewport.setOriginalClippingPlane(planeIdx, [
+              sphereState.point[0],
+              sphereState.point[1],
+              sphereState.point[2],
+            ]);
+          }
+        });
         viewport.render();
 
         // Optionally: trigger an event if you want to notify others
         triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
-          toolCenter: newPoint,
+          toolCenter: pickedPoint,
           axis: 'corner',
           draggingSphereIndex: this.draggingSphereIndex,
         });
         return;
       }
-
       // Restrict movement to the sphere's axis only
       if (sphereState.axis === 'x') {
         newPoint[POINTINDEX.X] = pickedPoint[POINTINDEX.X];
