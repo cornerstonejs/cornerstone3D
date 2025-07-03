@@ -4,6 +4,10 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
+import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
+//import vtkPolyDataMapper from '@kitware/vtk.js/Rendering/Core/PolyDataMapper';
 
 import { AnnotationTool } from './base';
 
@@ -88,12 +92,22 @@ const PLANEINDEX = {
   ZMAX: 5,
 };
 const SPHEREINDEX = {
+  // cube faces
   XMIN: 0,
   XMAX: 1,
   YMIN: 2,
   YMAX: 3,
   ZMIN: 4,
   ZMAX: 5,
+  // cube corners
+  XMIN_YMIN_ZMIN: 6,
+  XMIN_YMIN_ZMAX: 7,
+  XMIN_YMAX_ZMIN: 8,
+  XMIN_YMAX_ZMAX: 9,
+  XMAX_YMIN_ZMIN: 10,
+  XMAX_YMIN_ZMAX: 11,
+  XMAX_YMAX_ZMIN: 12,
+  XMAX_YMAX_ZMAX: 13,
 };
 const POINTINDEX = {
   X: 0,
@@ -102,9 +116,7 @@ const POINTINDEX = {
 };
 /**
  * VolumeCroppingTool is a tool that provides reference lines between different viewports
- * of a toolGroup. Using crosshairs, you can jump to a specific location in one
- * viewport and the rest of the viewports in the toolGroup will be aligned to that location.
- *
+ * of a toolGroup.  *
  */
 class VolumeCroppingTool extends AnnotationTool {
   static toolName;
@@ -114,6 +126,8 @@ class VolumeCroppingTool extends AnnotationTool {
     uid: string;
     sphereSource;
     sphereActor;
+    isCorner: boolean;
+    color: number[]; // [r, g, b] color for the sphere
   }[] = [];
   draggingSphereIndex: number | null = null;
   toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
@@ -122,48 +136,23 @@ class VolumeCroppingTool extends AnnotationTool {
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
   picker: vtkCellPicker;
+
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse'],
       configuration: {
-        // renders a colored circle on top right of the viewports whose color
-        // matches the color of the reference line
-        viewportIndicators: false,
-        viewportIndicatorsConfig: {
-          radius: 5,
-          x: null,
-          y: null,
-        },
-        // Auto pan is a configuration which will update pan
-        // other viewports in the toolGroup if the center of the crosshairs
-        // is outside of the viewport. This might be useful for the case
-        // when the user is scrolling through an image (usually in the zoomed view)
-        // and the crosshairs will eventually get outside of the viewport for
-        // the other viewports.
-        autoPan: {
-          enabled: false,
-          panSize: 10,
-        },
-        handleRadius: 3,
-        // Enable HDPI rendering for handles using devicePixelRatio
-        enableHDPIHandles: false,
-        // radius of the area around the intersection of the planes, in which
-        // the reference lines will not be rendered. This is only used when
-        // having 3 viewports in the toolGroup.
-        referenceLinesCenterGapRadius: 20,
-
+        showCornerSpheres: true,
         mobile: {
           enabled: false,
           opacity: 0.8,
-          handleRadius: 9,
         },
         initialCropFactor: 0.2,
         sphereColors: {
           x: [1.0, 1.0, 0.0], //  Yellow for X
           y: [0.0, 1.0, 0.0], // Green for Y
           z: [1.0, 0.0, 0.0], // Red for Z
-          default: [0.0, 0.0, 1.0], // Blue as fallback
+          corners: [0.0, 0.0, 1.0], // Blue for corners
         },
         sphereRadius: 10,
       },
@@ -210,9 +199,10 @@ class VolumeCroppingTool extends AnnotationTool {
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
   }
 
-  addSphere(viewport, point, axis, position) {
+  addSphere(viewport, point, axis, position, cornerKey = null) {
     // Generate a unique UID for each sphere based on its axis and position
-    const uid = `${axis}_${position}`;
+    // Use cornerKey for corners, otherwise axis+position for faces
+    const uid = cornerKey ? `corner_${cornerKey}` : `${axis}_${position}`;
     const sphereState = this.sphereStates.find((s) => s.uid === uid);
     if (sphereState) {
       return;
@@ -228,7 +218,18 @@ class VolumeCroppingTool extends AnnotationTool {
     sphereMapper.setInputConnection(sphereSource.getOutputPort());
     const sphereActor = vtkActor.newInstance();
     sphereActor.setMapper(sphereMapper);
+    let color = [0.0, 1.0, 0.0]; // Default green
+    const sphereColors = this.configuration.sphereColors || {};
 
+    if (cornerKey) {
+      color = sphereColors.corners || [0.0, 0.0, 1.0]; // Use corners color from config, fallback to blue
+    } else if (axis === 'z') {
+      color = sphereColors.z || [1.0, 0.0, 0.0];
+    } else if (axis === 'x') {
+      color = sphereColors.x || [1.0, 1.0, 0.0];
+    } else if (axis === 'y') {
+      color = sphereColors.y || [0.0, 1.0, 0.0];
+    }
     // Store or update the sphere position
     const idx = this.sphereStates.findIndex((s) => s.uid === uid);
     if (idx === -1) {
@@ -238,6 +239,8 @@ class VolumeCroppingTool extends AnnotationTool {
         uid,
         sphereSource,
         sphereActor,
+        isCorner: !!cornerKey,
+        color,
       });
     } else {
       this.sphereStates[idx].point = point.slice();
@@ -252,19 +255,13 @@ class VolumeCroppingTool extends AnnotationTool {
       return;
     }
 
-    let color = [0.0, 1.0, 0.0];
-    if (axis === 'z') {
-      color = [1.0, 0.0, 0.0];
-    } else if (axis === 'x') {
-      color = [1.0, 1.0, 0.0];
-    }
     sphereActor.getProperty().setColor(color);
 
-    const sphereColors = this.configuration.sphereColors || {};
+    // const sphereColors = this.configuration.sphereColors || {};
 
     sphereActor.setPickable(true);
     viewport.addActor({ actor: sphereActor, uid: uid });
-    viewport.render();
+    //  viewport.render();
   }
 
   _initialize3DViewports = (viewportsInfo): void => {
@@ -320,6 +317,7 @@ class VolumeCroppingTool extends AnnotationTool {
     planes.push(planeYmax);
     planes.push(planeZmin);
     planes.push(planeZmax);
+
     const originalPlanes = planes.map((plane) => ({
       origin: [...plane.getOrigin()],
       normal: [...plane.getNormal()],
@@ -339,6 +337,37 @@ class VolumeCroppingTool extends AnnotationTool {
     this.addSphere(viewport, sphereYmaxPoint, 'y', 'max');
     this.addSphere(viewport, sphereZminPoint, 'z', 'min');
     this.addSphere(viewport, sphereZmaxPoint, 'z', 'max');
+    if (this.configuration.showCornerSpheres) {
+      const corners = [
+        [xMin, yMin, zMin], // XMIN_YMIN_ZMIN
+        [xMin, yMin, zMax], // XMIN_YMIN_ZMAX
+        [xMin, yMax, zMin], // XMIN_YMAX_ZMIN
+        [xMin, yMax, zMax], // XMIN_YMAX_ZMAX
+        [xMax, yMin, zMin], // XMAX_YMIN_ZMIN
+        [xMax, yMin, zMax], // XMAX_YMIN_ZMAX
+        [xMax, yMax, zMin], // XMAX_YMAX_ZMIN
+        [xMax, yMax, zMax], // XMAX_YMAX_ZMAX
+      ];
+
+      const cornerKeys = [
+        'XMIN_YMIN_ZMIN',
+        'XMIN_YMIN_ZMAX',
+        'XMIN_YMAX_ZMIN',
+        'XMIN_YMAX_ZMAX',
+        'XMAX_YMIN_ZMIN',
+        'XMAX_YMIN_ZMAX',
+        'XMAX_YMAX_ZMIN',
+        'XMAX_YMAX_ZMAX',
+      ];
+
+      for (let i = 0; i < corners.length; i++) {
+        this.addSphere(viewport, corners[i], 'corner', null, cornerKeys[i]);
+      }
+    }
+
+    // draw the lines between corners
+    //  this._updateCornerBoxEdges3D(viewport);
+
     const defaultActor = viewport.getDefaultActor();
     if (defaultActor?.actor) {
       // Cast to any to avoid type errors with different actor types
@@ -431,11 +460,13 @@ class VolumeCroppingTool extends AnnotationTool {
       const newXCenter = (otherXSphere.point[0] + planeXmin.getOrigin()[0]) / 2;
       this.sphereStates.forEach((state, idx) => {
         if (
+          !state.isCorner &&
           state.axis !== 'x' &&
           !evt.detail.viewportOrientation.includes('sagittal') // sagittal is y axis in yellow
         ) {
           state.point[0] = newXCenter;
           state.sphereSource.setCenter(state.point);
+          state.sphereActor.getProperty().setColor(state.color);
         }
       });
 
@@ -451,15 +482,18 @@ class VolumeCroppingTool extends AnnotationTool {
       const newYCenter = (otherYSphere.point[1] + planeYmin.getOrigin()[1]) / 2;
       this.sphereStates.forEach((state, idx) => {
         if (
+          !state.isCorner &&
           state.axis !== 'y' &&
           !evt.detail.viewportOrientation.includes('coronal') // coronal  is x axis in green
         ) {
           state.point[1] = newYCenter;
           state.sphereSource.setCenter(state.point);
+          state.sphereActor.getProperty().setColor(state.color);
           state.sphereSource.modified();
         }
       });
       // z
+      this.sphereStates[SPHEREINDEX.ZMIN].point[2] = planeZmin.getOrigin()[2];
       this.sphereStates[SPHEREINDEX.ZMIN].sphereSource.setCenter(
         this.sphereStates[SPHEREINDEX.ZMIN].point[0],
         this.sphereStates[SPHEREINDEX.ZMIN].point[1],
@@ -471,11 +505,13 @@ class VolumeCroppingTool extends AnnotationTool {
       const newZCenter = (otherZSphere.point[2] + planeZmin.getOrigin()[2]) / 2;
       this.sphereStates.forEach((state, idx) => {
         if (
+          !state.isCorner &&
           state.axis !== 'z' &&
           !evt.detail.viewportOrientation.includes('axial') // axial    is z axis in red
         ) {
           state.point[2] = newZCenter;
           state.sphereSource.setCenter(state.point);
+          state.sphereActor.getProperty().setColor(state.color);
         }
       });
       const volumeActor = viewport.getDefaultActor()?.actor;
@@ -506,12 +542,6 @@ class VolumeCroppingTool extends AnnotationTool {
       viewport.setOriginalClippingPlane(PLANEINDEX.YMAX, planeYmax.getOrigin());
       viewport.setOriginalClippingPlane(PLANEINDEX.ZMAX, planeZmax.getOrigin());
 
-      const volumeActor = viewport.getDefaultActor()?.actor;
-      if (!volumeActor) {
-        console.warn('No volume actor found');
-        return;
-      }
-
       // x
       this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.X] =
         planeXmax.getOrigin()[POINTINDEX.X];
@@ -530,11 +560,13 @@ class VolumeCroppingTool extends AnnotationTool {
         2;
       this.sphereStates.forEach((state, idx) => {
         if (
+          !state.isCorner &&
           state.axis !== 'x' &&
           !evt.detail.viewportOrientation.includes('sagittal')
         ) {
           state.point[POINTINDEX.X] = newXCenter;
           state.sphereSource.setCenter(state.point);
+          state.sphereActor.getProperty().setColor(state.color);
           state.sphereSource.modified();
         }
       });
@@ -547,6 +579,9 @@ class VolumeCroppingTool extends AnnotationTool {
         this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Y],
         this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Z]
       );
+      //    this.sphereStates[SPHEREINDEX.YMAX].sphereSource.sphereActor
+      //     .getProperty()
+      //     .setColor(this.sphereStates[SPHEREINDEX.YMAX].color);
       this.sphereStates[SPHEREINDEX.YMAX].sphereSource.modified();
       const otherYSphere = this.sphereStates.find(
         (s, i) => s.axis === 'y' && i !== SPHEREINDEX.YMAX
@@ -557,11 +592,13 @@ class VolumeCroppingTool extends AnnotationTool {
         2;
       this.sphereStates.forEach((state, idx) => {
         if (
+          !state.isCorner &&
           state.axis !== 'y' &&
           !evt.detail.viewportOrientation.includes('coronal')
         ) {
           state.point[POINTINDEX.Y] = newYCenter;
           state.sphereSource.setCenter(state.point);
+          state.sphereActor.getProperty().setColor(state.color);
           state.sphereSource.modified();
         }
       });
@@ -584,21 +621,24 @@ class VolumeCroppingTool extends AnnotationTool {
         2;
       this.sphereStates.forEach((state, idx) => {
         if (
+          !state.isCorner &&
           state.axis !== 'z' &&
           !evt.detail.viewportOrientation.includes('axial')
         ) {
           state.point[POINTINDEX.Z] = newZCenter;
           state.sphereSource.setCenter(state.point);
+          state.sphereActor.getProperty().setColor(state.color);
           state.sphereSource.modified();
         }
       });
-
+      const volumeActor = viewport.getDefaultActor()?.actor;
       const mapper = volumeActor.getMapper();
       const clippingPlanes = mapper.getClippingPlanes();
       clippingPlanes[PLANEINDEX.XMAX].setOrigin(planeXmax.getOrigin());
       clippingPlanes[PLANEINDEX.YMAX].setOrigin(planeYmax.getOrigin());
       clippingPlanes[PLANEINDEX.ZMAX].setOrigin(planeZmax.getOrigin());
     }
+    this._updateCornerSpheres(viewport);
     viewport.render();
   };
 
@@ -704,6 +744,87 @@ class VolumeCroppingTool extends AnnotationTool {
 
       const sphereState = this.sphereStates[this.draggingSphereIndex];
       const newPoint = [...sphereState.point];
+      const volumeActor = viewport.getDefaultActor()?.actor;
+      if (!volumeActor) {
+        console.warn('No volume actor found');
+        return;
+      }
+      const mapper = volumeActor.getMapper();
+
+      if (sphereState.isCorner) {
+        // Move the corner sphere
+        sphereState.point = newPoint;
+        sphereState.sphereSource.setCenter(newPoint);
+        sphereState.sphereSource.modified();
+
+        // --- Update the three adjacent face spheres and their clipping planes ---
+        // Find which faces this corner belongs to by its index
+        // (Assumes SPHEREINDEX order: XMIN_YMIN_ZMIN, XMIN_YMIN_ZMAX, ...)
+        // You may want to generalize this if your SPHEREINDEX changes
+
+        // Map from corner index to which faces it touches
+        // Each entry: [X face, Y face, Z face]
+        const cornerToFace = [
+          [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMIN_YMIN_ZMIN
+          [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMIN_YMIN_ZMAX
+          [SPHEREINDEX.XMIN, SPHEREINDEX.YMAX, SPHEREINDEX.ZMIN], // XMIN_YMAX_ZMIN
+          [SPHEREINDEX.XMIN, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX], // XMIN_YMAX_ZMAX
+          [SPHEREINDEX.XMAX, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMAX_YMIN_ZMIN
+          [SPHEREINDEX.XMAX, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMAX_YMIN_ZMAX
+          [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMIN], // XMAX_YMAX_ZMIN
+          [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX], // XMAX_YMAX_ZMAX
+        ];
+        const cornerIdx = this.draggingSphereIndex - SPHEREINDEX.XMIN_YMIN_ZMIN;
+        const faces = cornerToFace[cornerIdx];
+
+        // Update each face sphere and its clipping plane
+        faces.forEach((faceIdx) => {
+          const faceState = this.sphereStates[faceIdx];
+          if (!faceState) {
+            return;
+          }
+          // Only update the coordinate relevant to the face
+          if (faceState.axis === 'x') {
+            faceState.point[POINTINDEX.X] = newPoint[POINTINDEX.X];
+          } else if (faceState.axis === 'y') {
+            faceState.point[POINTINDEX.Y] = newPoint[POINTINDEX.Y];
+          } else if (faceState.axis === 'z') {
+            faceState.point[POINTINDEX.Z] = newPoint[POINTINDEX.Z];
+          }
+          faceState.sphereSource.setCenter(faceState.point);
+          faceState.sphereSource.modified();
+
+          // Update the clipping plane for this face
+          const clippingPlanes = mapper.getClippingPlanes();
+          if (clippingPlanes && clippingPlanes[faceIdx]) {
+            // Set the origin for the relevant axis, keep other coords unchanged
+            const origin = [...clippingPlanes[faceIdx].getOrigin()];
+            if (faceState.axis === 'x') {
+              origin[POINTINDEX.X] = newPoint[POINTINDEX.X];
+            } else if (faceState.axis === 'y') {
+              origin[POINTINDEX.Y] = newPoint[POINTINDEX.Y];
+            } else if (faceState.axis === 'z') {
+              origin[POINTINDEX.Z] = newPoint[POINTINDEX.Z];
+            }
+            clippingPlanes[faceIdx].setOrigin(origin);
+            viewport.setOriginalClippingPlane(faceIdx, origin);
+          }
+        });
+
+        // Update the box edge lines after moving a corner
+        //   this._updateCornerBoxEdges3D(viewport);
+
+        viewport.render();
+
+        // Optionally: trigger an event if you want to notify others
+        triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+          toolCenter: newPoint,
+          axis: 'corner',
+          draggingSphereIndex: this.draggingSphereIndex,
+        });
+        return;
+      }
+
       // Restrict movement to the sphere's axis only
       if (sphereState.axis === 'x') {
         newPoint[POINTINDEX.X] = pickedPoint[POINTINDEX.X];
@@ -713,9 +834,14 @@ class VolumeCroppingTool extends AnnotationTool {
         const newXCenter =
           (otherXSphere.point[POINTINDEX.X] + pickedPoint[POINTINDEX.X]) / 2;
         this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'x') {
+          if (state.axis !== 'x' && !state.isCorner) {
             state.point[POINTINDEX.X] = newXCenter;
-            state.sphereSource.setCenter(state.point);
+            state.sphereSource.setCenter(
+              state.point[0],
+              state.point[1],
+              state.point[2]
+            );
+            state.sphereActor.getProperty().setColor(state.color);
             state.sphereSource.modified();
           }
         });
@@ -727,9 +853,14 @@ class VolumeCroppingTool extends AnnotationTool {
         const newYCenter =
           (otherYSphere.point[POINTINDEX.Y] + pickedPoint[POINTINDEX.Y]) / 2;
         this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'y') {
+          if (state.axis !== 'y' && !state.isCorner) {
             state.point[POINTINDEX.Y] = newYCenter;
-            state.sphereSource.setCenter(state.point);
+            state.sphereSource.setCenter(
+              state.point[0],
+              state.point[1],
+              state.point[2]
+            );
+            state.sphereActor.getProperty().setColor(state.color);
             state.sphereSource.modified();
           }
         });
@@ -741,31 +872,29 @@ class VolumeCroppingTool extends AnnotationTool {
         const newZCenter =
           (otherZSphere.point[POINTINDEX.Z] + pickedPoint[POINTINDEX.Z]) / 2;
         this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'z') {
-            state.point[POINTINDEX.Z] = newZCenter;
-            state.sphereSource.setCenter(state.point);
+          if (state.axis !== 'z' && !state.isCorner) {
+            //   state.point[POINTINDEX.Z] = newZCenter;
+            this.sphereStates[idx].point[POINTINDEX.Z] = newZCenter;
+            this.sphereStates[idx].sphereSource.setCenter(
+              state.point[0],
+              state.point[1],
+              state.point[2]
+            );
+            // state.sphereActor.getProperty().setColor(state.color);
             state.sphereSource.modified();
           }
         });
       }
 
-      sphereState.point = [
-        newPoint[POINTINDEX.X],
-        newPoint[POINTINDEX.Y],
-        newPoint[POINTINDEX.Z],
-      ] as Types.Point3;
-      sphereState.sphereSource.setCenter([
-        newPoint[POINTINDEX.X],
-        newPoint[POINTINDEX.Y],
-        newPoint[POINTINDEX.Z],
-      ]);
+      //  sphereState.point = newPoint as Types.Point3;
+      this.sphereStates[this.draggingSphereIndex].point[0] = newPoint[0];
+      this.sphereStates[this.draggingSphereIndex].point[1] = newPoint[1];
+      this.sphereStates[this.draggingSphereIndex].point[2] = newPoint[2];
+
+      sphereState.sphereSource.setCenter(newPoint[0], newPoint[1], newPoint[2]);
       sphereState.sphereSource.modified();
-      const volumeActor = viewport.getDefaultActor()?.actor;
-      if (!volumeActor) {
-        console.warn('No volume actor found');
-        return;
-      }
-      const mapper = volumeActor.getMapper();
+
+      this._updateCornerSpheres(viewport);
       const clippingPlanes = mapper.getClippingPlanes();
       clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
       viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
@@ -779,6 +908,57 @@ class VolumeCroppingTool extends AnnotationTool {
     }
   };
 
+  _updateCornerSpheres(viewport) {
+    // Get current face sphere positions
+    const xMin =
+      this.sphereStates.find((s) => s.axis === 'x' && s.point[0] <= s.point[1])
+        ?.point[0] ?? this.sphereStates[SPHEREINDEX.XMIN].point[0];
+    const xMax =
+      this.sphereStates.find((s) => s.axis === 'x' && s.point[0] > s.point[1])
+        ?.point[0] ?? this.sphereStates[SPHEREINDEX.XMAX].point[0];
+    const yMin =
+      this.sphereStates.find((s) => s.axis === 'y' && s.point[1] <= s.point[0])
+        ?.point[1] ?? this.sphereStates[SPHEREINDEX.YMIN].point[1];
+    const yMax =
+      this.sphereStates.find((s) => s.axis === 'y' && s.point[1] > s.point[0])
+        ?.point[1] ?? this.sphereStates[SPHEREINDEX.YMAX].point[1];
+    const zMin =
+      this.sphereStates.find((s) => s.axis === 'z' && s.point[2] <= s.point[0])
+        ?.point[2] ?? this.sphereStates[SPHEREINDEX.ZMIN].point[2];
+    const zMax =
+      this.sphereStates.find((s) => s.axis === 'z' && s.point[2] > s.point[0])
+        ?.point[2] ?? this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+
+    // All 8 corners, with their keys
+    const corners = [
+      { key: 'XMIN_YMIN_ZMIN', pos: [xMin, yMin, zMin] },
+      { key: 'XMIN_YMIN_ZMAX', pos: [xMin, yMin, zMax] },
+      { key: 'XMIN_YMAX_ZMIN', pos: [xMin, yMax, zMin] },
+      { key: 'XMIN_YMAX_ZMAX', pos: [xMin, yMax, zMax] },
+      { key: 'XMAX_YMIN_ZMIN', pos: [xMax, yMin, zMin] },
+      { key: 'XMAX_YMIN_ZMAX', pos: [xMax, yMin, zMax] },
+      { key: 'XMAX_YMAX_ZMIN', pos: [xMax, yMax, zMin] },
+      { key: 'XMAX_YMAX_ZMAX', pos: [xMax, yMax, zMax] },
+    ];
+
+    for (const corner of corners) {
+      const state = this.sphereStates.find(
+        (s) => s.uid === `corner_${corner.key}`
+      );
+      if (state) {
+        // Update the sphere position and color
+        state.point[0] = corner.pos[0];
+        state.point[1] = corner.pos[1];
+        state.point[2] = corner.pos[2];
+        state.sphereSource.setCenter(
+          state.point[0],
+          state.point[1],
+          state.point[2]
+        );
+        state.sphereSource.modified();
+      }
+    }
+  }
   _onMouseUpSphere = (evt) => {
     //evt.stopPropagation();
     // evt.preventDefault();
@@ -817,15 +997,6 @@ class VolumeCroppingTool extends AnnotationTool {
       ? { element: evt.currentTarget }
       : evt.detail;
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const volumeActor = viewport.getDefaultActor()?.actor;
-    if (!volumeActor) {
-      console.warn('No volume actor found');
-      return;
-    }
-    const mapper = volumeActor.getMapper();
-
-    const clippingPlanes = mapper.getClippingPlanes();
     enabledElement.viewport.render();
   };
 
@@ -1006,7 +1177,6 @@ class VolumeCroppingTool extends AnnotationTool {
       triggerAnnotationRenderForViewportIds(
         viewportsInfo.map(({ viewportId }) => viewportId)
       );
-      viewport.render;
     }
 
     // TRANSLATION
@@ -1033,12 +1203,13 @@ class VolumeCroppingTool extends AnnotationTool {
         );
       }
     );
-
+    /*
     this._applyDeltaShiftToSelectedViewportCameras(
       renderingEngine,
       viewportsAnnotationsToUpdate,
       delta
     );
+    */
   };
 
   _pointNearTool(element, annotation, canvasCoords, proximity) {

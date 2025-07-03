@@ -347,12 +347,14 @@ async function run() {
     toolGroupVRT.addViewport(viewportId4, renderingEngineId);
     toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
       sphereRadius: 10,
-      sphereColor: {
-        x: [1, 0, 0], // Red for X axis
-        y: [0, 1, 0], // Green for Y axis
-        z: [0, 0, 1], // Blue for Z axis
-        corner: [1, 1, 0], // Yellow for others (optional)
+      sphereColors: {
+        x: [1, 1, 0], // yellow for X axis
+        y: [0, 1, 0], // green for Y axis
+        z: [1, 0, 0], // red for Z axis
+        corners: [0, 0, 1], // Blue for corners (optional)
       },
+      showCornerSpheres: true,
+      initialCropFactor: 0.2,
     });
     toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
     viewport.setZoom(1.2);
