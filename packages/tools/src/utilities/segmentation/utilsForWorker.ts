@@ -11,10 +11,12 @@ import { getSegmentation } from '../../stateManagement/segmentation/getSegmentat
 import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
 import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
 import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
+import { getPrimaryVolumeId } from '../../types/LabelmapTypes';
 import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
+import { splitImageIdsArray } from '../../stateManagement/segmentation/utilities/splitImageIdsArray';
 
 /**
  * Trigger worker progress event
@@ -48,8 +50,29 @@ export const getSegmentationDataForWorker = (
     return null;
   }
 
-  const segVolumeId = (Labelmap as LabelmapSegmentationDataVolume).volumeId;
-  const segImageIds = (Labelmap as LabelmapSegmentationDataStack).imageIds;
+  //TODO: Handle multi-volume segmentations if needed
+  // For now, we get only the first segmentation volume
+  const segVolumeId = getPrimaryVolumeId(
+    Labelmap as LabelmapSegmentationDataVolume
+  );
+  let segImageIds = null;
+  if (segVolumeId) {
+    const segmentationVolume = cache.getVolume(segVolumeId);
+    if (!segmentationVolume) {
+      console.debug('No segmentation volume found for ID', segVolumeId);
+      return null;
+    }
+    segImageIds = segmentationVolume.imageIds;
+  } else {
+    const { imageIds } = Labelmap as LabelmapSegmentationDataStack;
+
+    const segImageIdsArray = splitImageIdsArray(imageIds);
+    if (!segImageIdsArray || segImageIdsArray.length === 0) {
+      console.debug('No imageIds found for segmentation', segmentationId);
+      return null;
+    }
+    segImageIds = segImageIdsArray[0]; // Use the first imageIds array for processing
+  }
 
   // Create a minimal operationData object
   const operationData = {

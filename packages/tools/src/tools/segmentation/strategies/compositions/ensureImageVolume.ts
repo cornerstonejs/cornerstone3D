@@ -1,4 +1,4 @@
-import { cache, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
 import type { LabelmapSegmentationDataStack } from '../../../../types';
@@ -19,15 +19,12 @@ export default {
       }
     } else {
       const segmentation = getSegmentation(operationData.segmentationId);
-      const imageIds = (
-        segmentation.representationData
-          .Labelmap as LabelmapSegmentationDataStack
-      ).imageIds;
-
-      referencedImageIds = imageIds.map((imageId) => {
-        const image = cache.getImage(imageId);
-        return image.referencedImageId;
-      });
+      referencedImageIds = csUtils.getReferenceImageIds(
+        (
+          segmentation.representationData
+            .Labelmap as LabelmapSegmentationDataStack
+        ).imageIds
+      );
     }
 
     const imageVolume = getOrCreateImageVolume(referencedImageIds);

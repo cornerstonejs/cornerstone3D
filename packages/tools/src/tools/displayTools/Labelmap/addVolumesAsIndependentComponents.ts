@@ -12,6 +12,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { getVolumeIds } from '../../../types/LabelmapTypes';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 
 const internalCache = new Map() as Map<
@@ -49,15 +50,16 @@ export async function addVolumesAsIndependentComponents({
   // need to remove the old actor/mapper and convert it to a new one
   // which the segmentation data is added as a second component to the volume data
   const defaultActor = viewport.getDefaultActor();
-  const { actor } = defaultActor as { actor: vtkVolume };
+  const { actor: volumeActor } = defaultActor;
   const { uid, callback } = defaultActor;
+  const actor = volumeActor as unknown as vtkVolume;
 
   const referenceVolumeId = viewport.getVolumeId();
 
   if (internalCache.get(uid)?.added) {
     return {
       uid,
-      actor,
+      actor: actor as unknown as Types.ViewportActor,
     };
   }
   const volumeInputArray = volumeInputs;
@@ -122,7 +124,7 @@ export async function addVolumesAsIndependentComponents({
   actor.getProperty().setIndependentComponents(true);
 
   viewport.addActor({
-    actor,
+    actor: actor as unknown as Types.ViewportActor,
     uid,
     callback,
     referencedId: referenceVolumeId,
@@ -143,14 +145,14 @@ export async function addVolumesAsIndependentComponents({
     // update the second component of the array with the new segmentation data
     const { segmentationId } = evt.detail;
     const { representationData } = getSegmentation(segmentationId);
-    const { volumeId: segVolumeId } =
-      representationData.Labelmap as LabelmapSegmentationDataVolume;
-
-    if (segVolumeId !== segImageVolume.volumeId) {
+    const volumeIds = getVolumeIds(
+      representationData.Labelmap as LabelmapSegmentationDataVolume
+    );
+    // Support multiple volumeIds, but update only if segImageVolume is among them
+    if (!volumeIds.includes(segImageVolume.volumeId)) {
       return;
     }
-
-    const segmentationVolume = cache.getVolume(segVolumeId);
+    const segmentationVolume = cache.getVolume(segImageVolume.volumeId);
     const segVoxelManager = segmentationVolume.voxelManager;
 
     const imageData = mapper.getInputData();

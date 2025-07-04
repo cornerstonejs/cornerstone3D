@@ -1,5 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { volumeLoader, imageLoader, VolumeViewport } from '@cornerstonejs/core';
+import {
+  volumeLoader,
+  imageLoader,
+  VolumeViewport,
+  cache,
+} from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
@@ -161,7 +166,9 @@ async function computeLabelmapFromSurfaceSegmentation(
   );
 
   if (isVolume) {
-    return result;
+    return {
+      volumeIds: [result.volumeId],
+    };
   }
 
   // we need to convert the volume labelmap to a stack labelmap
@@ -169,7 +176,9 @@ async function computeLabelmapFromSurfaceSegmentation(
     volumeId: segmentationVolume.volumeId,
   })) as ToolsTypes.LabelmapSegmentationDataStack;
 
-  return stackData;
+  return {
+    imageIds: stackData.imageIds,
+  };
 }
 
 export { computeLabelmapFromContourSegmentation };

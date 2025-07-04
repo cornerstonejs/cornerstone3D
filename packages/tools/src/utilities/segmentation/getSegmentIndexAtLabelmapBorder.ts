@@ -5,7 +5,10 @@ import {
   getSegmentation,
   getCurrentLabelmapImageIdForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import {
+  getVolumeIds,
+  type LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helpers';
 
 type Options = {
@@ -16,12 +19,17 @@ type Options = {
 /**
  * Retrieves the segment index at the border of a labelmap in a segmentation.
  *
+ * For volume segmentations, supports both single and multi-volume segmentations (volumeId or volumeIds).
+ * The function loops through all available volumes and returns the first segment index found at the border.
+ *
+ * For stack segmentations, the behavior is unchanged.
+ *
  * @param segmentationId - The ID of the segmentation.
  * @param worldPoint - The world coordinates of the point.
  * @param options - Additional options.
  * @param options.viewport - The viewport to use.
  * @param options.searchRadius - The search radius to use.
- * @returns The segment index at the labelmap border, or undefined if not found.
+ * @returns The segment index at the labelmap border, or undefined if not found in any volume.
  */
 export function getSegmentIndexAtLabelmapBorder(
   segmentationId: string,
@@ -33,33 +41,42 @@ export function getSegmentIndexAtLabelmapBorder(
   const labelmapData = segmentation.representationData.Labelmap;
 
   if (viewport instanceof BaseVolumeViewport) {
-    const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-    const segmentationVolume = cache.getVolume(volumeId);
-
-    if (!segmentationVolume) {
-      return;
-    }
-
-    const voxelManager = segmentationVolume.voxelManager;
-    const imageData = segmentationVolume.imageData;
-    const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
-    const segmentIndex = voxelManager.getAtIJK(
-      indexIJK[0],
-      indexIJK[1],
-      indexIJK[2]
-    ) as number;
-
-    const canvasPoint = viewport.worldToCanvas(worldPoint);
-
-    const onEdge = isSegmentOnEdgeCanvas(
-      canvasPoint as Types.Point2,
-      segmentIndex,
-      viewport,
-      imageData,
-      searchRadius
+    // Support both single and multi-volume segmentations
+    const volumeIds = getVolumeIds(
+      labelmapData as LabelmapSegmentationDataVolume
     );
+    for (const vid of volumeIds) {
+      if (!vid) {
+        continue;
+      }
+      const segmentationVolume = cache.getVolume(vid);
+      if (!segmentationVolume) {
+        continue;
+      }
+      const voxelManager = segmentationVolume.voxelManager;
+      const imageData = segmentationVolume.imageData;
+      const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
+      const segmentIndex = voxelManager.getAtIJK(
+        indexIJK[0],
+        indexIJK[1],
+        indexIJK[2]
+      ) as number;
 
-    return onEdge ? segmentIndex : undefined;
+      const canvasPoint = viewport.worldToCanvas(worldPoint);
+
+      const onEdge = isSegmentOnEdgeCanvas(
+        canvasPoint as Types.Point2,
+        segmentIndex,
+        viewport,
+        imageData,
+        searchRadius
+      );
+
+      if (onEdge) {
+        return segmentIndex;
+      }
+    }
+    return undefined;
   }
 
   // stack segmentation case

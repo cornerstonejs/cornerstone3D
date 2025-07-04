@@ -1,10 +1,11 @@
 import { cache } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
-import type {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
-} from '../../types';
 import getOrCreateImageVolume from './getOrCreateImageVolume';
+import {
+  getPrimaryVolumeId,
+  getReferencedVolumeId,
+  type LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 
 /**
  * Retrieves the reference volume associated with a segmentation volume.
@@ -29,7 +30,7 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
   // Case 1: Labelmap with imageIds (stack-based)
   if ('imageIds' in labelmap) {
     const { imageIds } = labelmap;
-
+    // Always treat imageIds as flat array. Use getImageIdsForVolume if needed.
     const firstImage = cache.getImage(imageIds[0]);
     const volumeInfo = cache.getVolumeContainingImageId(
       firstImage.referencedImageId
@@ -44,8 +45,10 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
     );
   }
   // Case 2: Labelmap with volumeId (volume-based)
-  else if ('volumeId' in labelmap) {
-    const { volumeId, referencedVolumeId } = labelmap;
+  else {
+    const referencedVolumeId = getReferencedVolumeId(
+      labelmap as LabelmapSegmentationDataVolume
+    );
 
     // Try to get directly referenced volume
     if (referencedVolumeId) {
@@ -53,13 +56,16 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
       if (refVolume) {
         return refVolume;
       }
-    }
-
-    const segVolume = cache.getVolume(volumeId);
-    if (segVolume) {
-      referenceImageIds = segVolume.imageIds.map(
-        (imageId) => cache.getImage(imageId).referencedImageId
+    } else {
+      const volumeId = getPrimaryVolumeId(
+        labelmap as LabelmapSegmentationDataVolume
       );
+      const segVolume = cache.getVolume(volumeId);
+      if (segVolume) {
+        referenceImageIds = segVolume.imageIds.map(
+          (imageId) => cache.getImage(imageId).referencedImageId
+        );
+      }
     }
   }
 

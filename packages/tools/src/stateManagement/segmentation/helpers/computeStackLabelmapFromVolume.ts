@@ -2,7 +2,10 @@ import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
 import { getSegmentation } from '../getSegmentation';
 import { updateStackSegmentationState } from '../helpers/updateStackSegmentationState';
-import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
+import {
+  getPrimaryVolumeId,
+  type LabelmapSegmentationDataVolume,
+} from '../../../types/LabelmapTypes';
 
 // This function is responsible for the conversion calculations
 export async function computeStackLabelmapFromVolume({
@@ -33,8 +36,9 @@ export function convertVolumeToStackLabelmap({
     return;
   }
 
-  const { volumeId } = segmentation.representationData
-    .Labelmap as LabelmapSegmentationDataVolume;
+  const volumeId = getPrimaryVolumeId(
+    segmentation.representationData.Labelmap as LabelmapSegmentationDataVolume
+  );
   const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
   return updateStackSegmentationState({

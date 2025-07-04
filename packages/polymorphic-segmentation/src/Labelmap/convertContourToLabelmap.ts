@@ -90,8 +90,8 @@ export async function convertContourToVolumeLabelmap(
   segmentationVolume.modified();
 
   return {
-    volumeId: segmentationVolume.volumeId,
-  };
+    volumeIds: [segmentationVolume.volumeId],
+  } as ToolsTypes.LabelmapSegmentationDataVolume;
 }
 
 export async function convertContourToStackLabelmap(
