@@ -136,7 +136,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "3.23.1",
+      "version": "3.26.0",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -151,7 +151,7 @@
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "3.23.1",
+      "version": "3.26.0",
       "dependencies": {
         "@babel/runtime-corejs2": "^7.17.8",
         "buffer": "^6.0.3",
@@ -169,9 +169,9 @@
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "3.23.1",
+      "version": "3.26.0",
       "dependencies": {
-        "@kitware/vtk.js": "32.12.1",
+        "@kitware/vtk.js": "33.3.2",
         "comlink": "^4.4.1",
         "gl-matrix": "^3.4.3",
         "loglevel": "^1.9.2",
@@ -179,7 +179,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "3.23.1",
+      "version": "3.26.0",
       "dependencies": {
         "@cornerstonejs/codec-charls": "^1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
@@ -198,20 +198,20 @@
     },
     "packages/labelmap-interpolation": {
       "name": "@cornerstonejs/labelmap-interpolation",
-      "version": "3.23.1",
+      "version": "3.26.0",
       "dependencies": {
         "@itk-wasm/morphological-contour-interpolation": "1.1.0",
         "itk-wasm": "1.0.0-b.165",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.7.6",
-        "@cornerstonejs/tools": "^3.7.6",
-        "@kitware/vtk.js": "32.12.1",
+        "@cornerstonejs/core": "^3.26.0",
+        "@cornerstonejs/tools": "^3.26.0",
+        "@kitware/vtk.js": "33.3.2",
       },
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "3.23.1",
+      "version": "3.26.0",
       "dependencies": {
         "nifti-reader-js": "^0.6.8",
       },
@@ -221,19 +221,19 @@
     },
     "packages/polymorphic-segmentation": {
       "name": "@cornerstonejs/polymorphic-segmentation",
-      "version": "3.23.1",
+      "version": "3.26.0",
       "dependencies": {
         "@icr/polyseg-wasm": "0.4.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.7.6",
-        "@cornerstonejs/tools": "^3.7.6",
-        "@kitware/vtk.js": "32.12.1",
+        "@cornerstonejs/core": "^3.26.0",
+        "@cornerstonejs/tools": "^3.26.0",
+        "@kitware/vtk.js": "33.3.2",
       },
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "3.23.1",
+      "version": "3.26.0",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "^4.4.1",
@@ -243,8 +243,8 @@
         "canvas": "^3.1.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "^3.23.1",
-        "@kitware/vtk.js": "32.12.1",
+        "@cornerstonejs/core": "^3.26.0",
+        "@kitware/vtk.js": "33.3.2",
         "@types/d3-array": "^3.0.4",
         "@types/d3-interpolate": "^3.0.1",
         "d3-array": "^3.2.3",
@@ -773,7 +773,7 @@
 
     "@jsonjoy.com/util": ["@jsonjoy.com/util@1.5.0", "", { "peerDependencies": { "tslib": "2" } }, "sha512-ojoNsrIuPI9g6o8UxhraZQSyF2ByJanAY4cTFbc8Mf2AXEF4aQRGY1dJxyJpuyav8r9FGflEt/Ff3u5Nt6YMPA=="],
 
-    "@kitware/vtk.js": ["@kitware/vtk.js@32.12.1", "", { "dependencies": { "@babel/runtime": "7.22.11", "@types/webxr": "^0.5.5", "commander": "9.2.0", "d3-scale": "4.0.2", "fast-deep-equal": "^3.1.3", "fflate": "0.7.3", "gl-matrix": "3.4.3", "globalthis": "1.0.3", "seedrandom": "3.0.5", "shader-loader": "1.3.1", "shelljs": "0.8.5", "spark-md5": "3.0.2", "stream-browserify": "3.0.0", "utif": "3.1.0", "webworker-promise": "0.5.0", "worker-loader": "3.0.8", "xmlbuilder2": "3.0.2" }, "peerDependencies": { "@babel/preset-env": "^7.17.10", "autoprefixer": "^10.4.7", "wslink": ">=1.1.0 || ^2.0.0" }, "bin": { "vtkDataConverter": "Utilities/DataGenerator/convert-cli.js", "xml2json": "Utilities/XMLConverter/xml2json-cli.js" } }, "sha512-IF8WK7WDu84035ws3HZXz8wys8O81mmeFayYFbdBEfKjgZ4k0EGCK25YCGc6Q47Zxq1iutjs3Zs2xAgGjTgGQg=="],
+    "@kitware/vtk.js": ["@kitware/vtk.js@33.3.2", "", { "dependencies": { "@babel/runtime": "7.22.11", "@types/webxr": "^0.5.5", "commander": "9.2.0", "d3-scale": "4.0.2", "fast-deep-equal": "^3.1.3", "fflate": "0.7.3", "gl-matrix": "3.4.3", "globalthis": "1.0.3", "seedrandom": "3.0.5", "shader-loader": "1.3.1", "shelljs": "0.8.5", "spark-md5": "3.0.2", "stream-browserify": "3.0.0", "utif": "3.1.0", "webworker-promise": "0.5.0", "worker-loader": "3.0.8", "xmlbuilder2": "3.0.2" }, "peerDependencies": { "@babel/preset-env": "^7.17.10", "autoprefixer": "^10.4.7", "wslink": ">=1.1.0 || ^2.0.0" }, "bin": { "xml2json": "Utilities/XMLConverter/xml2json-cli.js", "vtkDataConverter": "Utilities/DataGenerator/convert-cli.js" } }, "sha512-NHgRo9oElWGGy5zxTEanRpfKgQDoNOFNRDax1MFNiG8q3UnGYDzhltB3Qfm0RUYdnHSnxNtd1WFfGJcQRe00TQ=="],
 
     "@leichtgewicht/ip-codec": ["@leichtgewicht/ip-codec@2.0.5", "", {}, "sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw=="],
 
