@@ -26,6 +26,8 @@ import type {
 import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 
+const FIXED_OFFSCREEN_SIZE = { width: 15000, height: 15000 };
+
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
   syStartDisplayCoords: number;
@@ -102,6 +104,8 @@ class RenderingEngine {
       this.offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
       this.offScreenCanvasContainer = document.createElement('div');
+      this.offScreenCanvasContainer.style.width = `${FIXED_OFFSCREEN_SIZE.width}px`;
+      this.offScreenCanvasContainer.style.height = `${FIXED_OFFSCREEN_SIZE.height}px`;
       this.offscreenMultiRenderWindow.setContainer(
         this.offScreenCanvasContainer
       );
@@ -959,28 +963,17 @@ class RenderingEngine {
   } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
 
-    // 1. Calculated the height of the offScreen canvas to be the maximum height
-    // between canvases
-    const offScreenCanvasHeight = Math.max(
-      ...canvasesDrivenByVtkJs.map((canvas) => canvas.height)
-    );
-
-    // 2. Calculating the width of the offScreen canvas to be the sum of all
-    let offScreenCanvasWidth = 0;
-
-    canvasesDrivenByVtkJs.forEach((canvas) => {
-      offScreenCanvasWidth += canvas.width;
-    });
-
     // @ts-expect-error
-    offScreenCanvasContainer.width = offScreenCanvasWidth;
+    offScreenCanvasContainer.width = FIXED_OFFSCREEN_SIZE.width;
     // @ts-expect-error
-    offScreenCanvasContainer.height = offScreenCanvasHeight;
+    offScreenCanvasContainer.height = FIXED_OFFSCREEN_SIZE.height;
 
-    // 3. Resize command
     offscreenMultiRenderWindow.resize();
 
-    return { offScreenCanvasWidth, offScreenCanvasHeight };
+    return {
+      offScreenCanvasWidth: FIXED_OFFSCREEN_SIZE.width,
+      offScreenCanvasHeight: FIXED_OFFSCREEN_SIZE.height,
+    };
   }
 
   /**
