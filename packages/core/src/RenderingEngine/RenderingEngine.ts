@@ -11,6 +11,7 @@ import StackViewport from './StackViewport';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
+import { calculateViewportOffsets } from './helpers/rectanglePacking';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
@@ -39,6 +40,10 @@ interface ViewportDisplayCoords {
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 const VIEWPORT_MIN_SIZE = 2;
+
+// Maximum size of the offscreen canvas
+const MAX_WIDTH = 16384;
+const MAX_HEIGHT = 16384;
 
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
@@ -681,7 +686,7 @@ class RenderingEngine {
 
     // 2.d Re-position previous viewports on the offScreen Canvas based on the new
     // offScreen canvas size
-    const xOffset = this._resize(
+    this._resize(
       viewportsDrivenByVtkJs as (IStackViewport | IVolumeViewport)[],
       offScreenCanvasWidth,
       offScreenCanvasHeight
@@ -689,11 +694,35 @@ class RenderingEngine {
 
     const internalViewportEntry = { ...viewportInputEntry, canvas };
 
+    // Calculate the position for the new viewport using packing
+    const allCanvases = [...canvasesDrivenByVtkJs];
+    const viewportInputs = allCanvases.map((c, index) => ({
+      id:
+        index === allCanvases.length - 1
+          ? viewportInputEntry.viewportId
+          : `viewport-${index}`,
+      canvas: {
+        width: c.width,
+        height: c.height,
+      },
+    }));
+
+    const packedOffsets = calculateViewportOffsets(
+      viewportInputs,
+      MAX_WIDTH,
+      MAX_HEIGHT
+    );
+
+    const newViewportOffset = packedOffsets.find(
+      (offset) => offset.id === viewportInputEntry.viewportId
+    ) || { xOffset: 0, yOffset: 0 };
+
     // 3 Add the requested viewport to rendering Engine
     this.addVtkjsDrivenViewport(internalViewportEntry, {
       offScreenCanvasWidth,
       offScreenCanvasHeight,
-      xOffset,
+      xOffset: newViewportOffset.xOffset,
+      yOffset: newViewportOffset.yOffset,
     });
   }
 
@@ -734,6 +763,7 @@ class RenderingEngine {
       offScreenCanvasWidth: number;
       offScreenCanvasHeight: number;
       xOffset: number;
+      yOffset?: number;
     }
   ): void {
     const { element, canvas, viewportId, type, defaultOptions } =
@@ -742,8 +772,12 @@ class RenderingEngine {
     // Make the element not focusable, we use this for modifier keys to work
     element.tabIndex = -1;
 
-    const { offScreenCanvasWidth, offScreenCanvasHeight, xOffset } =
-      offscreenCanvasProperties;
+    const {
+      offScreenCanvasWidth,
+      offScreenCanvasHeight,
+      xOffset,
+      yOffset = 0,
+    } = offscreenCanvasProperties;
 
     // 1. Calculate the size of location of the viewport on the offScreen canvas
     const {
@@ -759,7 +793,8 @@ class RenderingEngine {
       viewportInputEntry,
       offScreenCanvasWidth,
       offScreenCanvasHeight,
-      xOffset
+      xOffset,
+      yOffset
     );
     // 2. Add a renderer to the offScreenMultiRenderWindow
     this.offscreenMultiRenderWindow.addRenderer({
@@ -925,8 +960,30 @@ class RenderingEngine {
           }*/
 
       // 3. Adding the viewports based on the viewportInputEntry definition to the
-      // rendering engine.
-      let xOffset = 0;
+      // rendering engine using rectangle packing
+      const viewportInputs = vtkDrivenCanvases.map((canvas, index) => ({
+        id: viewportInputEntries[index].viewportId,
+        canvas: {
+          width: canvas.width,
+          height: canvas.height,
+        },
+      }));
+
+      const packedOffsets = calculateViewportOffsets(
+        viewportInputs,
+        MAX_WIDTH,
+        MAX_HEIGHT
+      );
+
+      // Create a map for quick lookup
+      const offsetMap = new Map<string, { xOffset: number; yOffset: number }>();
+      packedOffsets.forEach((offset) => {
+        offsetMap.set(offset.id, {
+          xOffset: offset.xOffset,
+          yOffset: offset.yOffset,
+        });
+      });
+
       for (let i = 0; i < viewportInputEntries.length; i++) {
         const vtkDrivenViewportInputEntry = viewportInputEntries[i];
         const canvas = vtkDrivenCanvases[i];
@@ -935,15 +992,19 @@ class RenderingEngine {
           canvas,
         };
 
+        const offsets = offsetMap.get(
+          vtkDrivenViewportInputEntry.viewportId
+        ) || {
+          xOffset: 0,
+          yOffset: 0,
+        };
+
         this.addVtkjsDrivenViewport(internalViewportEntry, {
           offScreenCanvasWidth,
           offScreenCanvasHeight,
-          xOffset,
+          xOffset: offsets.xOffset,
+          yOffset: offsets.yOffset,
         });
-
-        // Incrementing the xOffset which provides the horizontal location of each
-        // viewport on the offScreen canvas
-        xOffset += canvas.width;
       }
     }
   }
@@ -959,18 +1020,39 @@ class RenderingEngine {
   } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
 
-    // 1. Calculated the height of the offScreen canvas to be the maximum height
-    // between canvases
-    const offScreenCanvasHeight = Math.max(
-      ...canvasesDrivenByVtkJs.map((canvas) => canvas.height)
+    // Use rectangle packing to calculate optimal canvas dimensions
+    const viewportInputs = canvasesDrivenByVtkJs.map((canvas, index) => ({
+      id: `viewport-${index}`,
+      canvas: {
+        width: canvas.width,
+        height: canvas.height,
+      },
+    }));
+
+    const packedOffsets = calculateViewportOffsets(
+      viewportInputs,
+      MAX_WIDTH,
+      MAX_HEIGHT
     );
 
-    // 2. Calculating the width of the offScreen canvas to be the sum of all
+    // Calculate total dimensions from packed rectangles
     let offScreenCanvasWidth = 0;
+    let offScreenCanvasHeight = 0;
 
-    canvasesDrivenByVtkJs.forEach((canvas) => {
-      offScreenCanvasWidth += canvas.width;
+    packedOffsets.forEach((offset) => {
+      offScreenCanvasWidth = Math.max(
+        offScreenCanvasWidth,
+        offset.xOffset + offset.width
+      );
+      offScreenCanvasHeight = Math.max(
+        offScreenCanvasHeight,
+        offset.yOffset + offset.height
+      );
     });
+
+    // Ensure minimum dimensions
+    offScreenCanvasWidth = Math.max(offScreenCanvasWidth, 1);
+    offScreenCanvasHeight = Math.max(offScreenCanvasHeight, 1);
 
     // @ts-expect-error
     offScreenCanvasContainer.width = offScreenCanvasWidth;
@@ -996,12 +1078,36 @@ class RenderingEngine {
     viewportsDrivenByVtkJs: (IStackViewport | IVolumeViewport)[],
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number
-  ): number {
-    // Redefine viewport properties
-    let _xOffset = 0;
+  ): void {
+    // Use rectangle packing to calculate viewport positions
+    const viewportInputs = viewportsDrivenByVtkJs.map((viewport) => ({
+      id: viewport.id,
+      canvas: {
+        width: viewport.canvas.width,
+        height: viewport.canvas.height,
+      },
+    }));
 
+    const packedOffsets = calculateViewportOffsets(
+      viewportInputs,
+      MAX_WIDTH,
+      MAX_HEIGHT
+    );
+
+    // Create a map for quick lookup
+    const offsetMap = new Map<string, { xOffset: number; yOffset: number }>();
+    packedOffsets.forEach((offset) => {
+      offsetMap.set(offset.id, {
+        xOffset: offset.xOffset,
+        yOffset: offset.yOffset,
+      });
+    });
+
+    // Update viewport positions using packed offsets
     for (let i = 0; i < viewportsDrivenByVtkJs.length; i++) {
       const viewport = viewportsDrivenByVtkJs[i];
+      const offsets = offsetMap.get(viewport.id) || { xOffset: 0, yOffset: 0 };
+
       const {
         sxStartDisplayCoords,
         syStartDisplayCoords,
@@ -1015,10 +1121,9 @@ class RenderingEngine {
         viewport as IViewport,
         offScreenCanvasWidth,
         offScreenCanvasHeight,
-        _xOffset
+        offsets.xOffset,
+        offsets.yOffset
       );
-
-      _xOffset += viewport.canvas.width;
 
       viewport.sx = sx;
       viewport.sy = sy;
@@ -1034,9 +1139,6 @@ class RenderingEngine {
         syEndDisplayCoords,
       ]);
     }
-
-    // Returns the final xOffset
-    return _xOffset;
   }
 
   /**
@@ -1051,20 +1153,21 @@ class RenderingEngine {
     viewport: InternalViewportInput | IViewport,
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number,
-    _xOffset: number
+    _xOffset: number,
+    _yOffset: number = 0
   ): ViewportDisplayCoords {
     const { canvas } = viewport;
     const { width: sWidth, height: sHeight } = canvas;
 
     // Update the canvas drawImage offsets.
     const sx = _xOffset;
-    const sy = 0;
+    const sy = _yOffset;
 
     const sxStartDisplayCoords = sx / offScreenCanvasWidth;
 
-    // Need to offset y if it not max height
-    const syStartDisplayCoords =
-      sy + (offScreenCanvasHeight - sHeight) / offScreenCanvasHeight;
+    // VTK uses bottom-left origin, while canvas uses top-left
+    // We need to invert the Y coordinate for VTK
+    const syStartDisplayCoords = 1 - (sy + sHeight) / offScreenCanvasHeight;
 
     const sWidthDisplayCoords = sWidth / offScreenCanvasWidth;
     const sHeightDisplayCoords = sHeight / offScreenCanvasHeight;
