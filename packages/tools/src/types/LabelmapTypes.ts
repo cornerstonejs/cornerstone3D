@@ -44,6 +44,9 @@ export type LabelmapSegmentationDataVolume = {
    * Array of volumeIds for overlapping segmentations. If present, use this instead of volumeId.
    */
   volumeIds?: string[];
+  /**
+   * @deprecated Use volumeIds instead. This property will be removed in a future release.
+   */
   volumeId?: string[];
   referencedVolumeId?: string;
 };
