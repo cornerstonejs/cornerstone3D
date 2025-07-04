@@ -4,9 +4,12 @@ import isEqual from './isEqual';
 
 /**
  * Checks if the given imageIds form valid volume(s). Accepts a single array of imageIds (for single or multi-volume segmentations).
+ *
  * The function determines the number of images per volume by creating a set of reference image IDs for the given imageIds.
  * For each imageId, it uses cache.getImage(imageId).referencedImageId if available, otherwise falls back to the imageId itself.
+ * If cache.getImage(imageId) returns undefined, that imageId is skipped.
  * The number of unique reference image IDs is used to split the input into groups (volumes), and each group is validated independently.
+ *
  * A volume is considered valid if all imageIds in the group have the same series instance UID, modality, columns,
  * rows, image orientation patient, and pixel spacing.
  *

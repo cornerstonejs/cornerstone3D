@@ -1,7 +1,9 @@
 import cache from '../cache/cache';
 /**
  * Returns the number of unique reference image IDs from a list of image IDs.
- * If an image ID has a referencedImageId, it will count that instead.
+ * For each imageId, if the cached image has a referencedImageId, it will use that;
+ * otherwise, it will use the image's own imageId. If cache.getImage(imageId) returns undefined,
+ * that imageId is skipped. The function returns the count of unique reference image IDs found.
  *
  * @param {string[]} imageIds - An array of image IDs to check.
  * @returns {number} The number of unique reference image IDs.
@@ -13,7 +15,9 @@ export function getNumberOfReferenceImageIds(imageIds: string[]): number {
 
 /**
  * Returns an array of unique reference image IDs from a list of image IDs.
- * If an image ID has a referencedImageId, it will return that instead.
+ * For each imageId, if the cached image has a referencedImageId, it will return that;
+ * otherwise, it will return the image's own imageId. If cache.getImage(imageId) returns undefined,
+ * that imageId is skipped. The returned array contains only unique reference image IDs.
  *
  * @param {string[]} imageIds - An array of image IDs to check.
  * @returns {string[]} An array of unique reference image IDs.
