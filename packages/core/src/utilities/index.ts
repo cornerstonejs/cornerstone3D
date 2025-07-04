@@ -100,6 +100,10 @@ import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
+import {
+  getNumberOfReferenceImageIds,
+  getReferenceImageIds,
+} from './getNumberOfReferenceImageIds';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -203,4 +207,6 @@ export {
   buildMetadata,
   calculateNeighborhoodStats,
   getPixelSpacingInformation,
+  getNumberOfReferenceImageIds,
+  getReferenceImageIds,
 };

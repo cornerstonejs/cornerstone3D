@@ -18,6 +18,7 @@ import type {
   SegmentationState,
 } from '../../types/SegmentationStateTypes';
 import {
+  addVolumeId,
   getPrimaryVolumeId,
   type LabelmapSegmentationDataStack,
   type LabelmapSegmentationDataVolume,
@@ -461,8 +462,7 @@ export default class SegmentationStateManager {
     updateCallback
   ): string | undefined {
     const referenceImageId = viewport.getCurrentImageId();
-    const numberOfImages = viewport.getImageIds()?.length || 0;
-    const imageIdsGroups = splitImageIdsArray(labelmapImageIds, numberOfImages);
+    const imageIdsGroups = splitImageIdsArray(labelmapImageIds);
 
     // Always work with an array of arrays for uniformity
     let viewableLabelmapImageIdFound = false;
@@ -563,10 +563,7 @@ export default class SegmentationStateManager {
       (stackViewport, segmentationId, labelmapImageIds) => {
         const imageIds = stackViewport.getImageIds();
         // Always work with an array of arrays for uniformity
-        const imageIdsGroups = splitImageIdsArray(
-          labelmapImageIds,
-          imageIds.length
-        );
+        const imageIdsGroups = splitImageIdsArray(labelmapImageIds);
         imageIds.forEach((referenceImageId, index) => {
           for (const group of imageIdsGroups) {
             for (const labelmapImageId of group) {
@@ -1182,22 +1179,19 @@ async function internalComputeVolumeLabelmapFromStack({
   imageIds: string[];
   options?: {
     volumeId?: string;
-    numberOfImages?: number; // For multi-volume support
   };
 }): Promise<{ volumeId?: string; volumeIds?: string[] }> {
   // Multi-volume support: use numberOfImages to split flat array
+  const numberOfImages = csUtils.getNumberOfReferenceImageIds(imageIds);
   if (
-    options?.numberOfImages &&
+    numberOfImages &&
     Array.isArray(imageIds) &&
-    imageIds.length > options.numberOfImages
+    imageIds.length > numberOfImages
   ) {
-    const numVolumes = Math.floor(imageIds.length / options.numberOfImages);
+    const numVolumes = Math.floor(imageIds.length / numberOfImages);
     const volumeIds: string[] = [];
     for (let i = 0; i < numVolumes; i++) {
-      const ids = imageIds.slice(
-        i * options.numberOfImages,
-        (i + 1) * options.numberOfImages
-      );
+      const ids = imageIds.slice(i * numberOfImages, (i + 1) * numberOfImages);
       const volumeId = csUtils.uuidv4(); // create a volumeId for each volume
       await volumeLoader.createAndCacheVolumeFromImages(volumeId, ids);
       volumeIds.push(volumeId);
@@ -1237,9 +1231,10 @@ async function internalConvertStackToVolumeLabelmap({
     options,
   });
 
-  (
-    segmentation.representationData.Labelmap as LabelmapSegmentationDataVolume
-  ).volumeId = volumeId;
+  addVolumeId(
+    segmentation.representationData.Labelmap as LabelmapSegmentationDataVolume,
+    volumeId
+  );
 }
 
 function getDefaultRenderingConfig(type: string): RenderingConfig {

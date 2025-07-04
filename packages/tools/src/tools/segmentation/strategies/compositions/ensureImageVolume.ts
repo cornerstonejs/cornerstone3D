@@ -1,4 +1,4 @@
-import { cache, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
 import type { LabelmapSegmentationDataStack } from '../../../../types';
@@ -19,38 +19,12 @@ export default {
       }
     } else {
       const segmentation = getSegmentation(operationData.segmentationId);
-      const imageIdsArray = (
-        segmentation.representationData
-          .Labelmap as LabelmapSegmentationDataStack
-      ).imageIds;
-      if (!imageIdsArray || imageIdsArray.length === 0) {
-        throw new Error(
-          'No imageIds found in segmentation representation data'
-        );
-      }
-      const numberOfImages = (
-        segmentation.representationData
-          .Labelmap as LabelmapSegmentationDataStack
-      ).numberOfImages;
-
-      let imageIds;
-      if (imageIdsArray.length > numberOfImages) {
-        // Handle case where imageIds is a flatten array of arrays
-        imageIds = imageIdsArray.slice(0, numberOfImages);
-      }
-      // If imageIdsArray is a single array, use it directly
-      else if (imageIdsArray.length === numberOfImages) {
-        imageIds = imageIdsArray;
-      } else {
-        throw new Error(
-          `Mismatch between number of images (${numberOfImages}) and imageIds length (${imageIdsArray.length})`
-        );
-      }
-
-      referencedImageIds = imageIds.map((imageId) => {
-        const image = cache.getImage(imageId);
-        return image.referencedImageId;
-      });
+      referencedImageIds = csUtils.getReferenceImageIds(
+        (
+          segmentation.representationData
+            .Labelmap as LabelmapSegmentationDataStack
+        ).imageIds
+      );
     }
 
     const imageVolume = getOrCreateImageVolume(referencedImageIds);

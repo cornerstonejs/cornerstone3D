@@ -11,6 +11,7 @@ import {
 } from '@cornerstonejs/core';
 import {
   getPrimaryVolumeId,
+  getVolumeIds,
   type LabelmapSegmentationData,
   type LabelmapSegmentationDataStack,
   type LabelmapSegmentationDataVolume,
@@ -24,6 +25,7 @@ import {
 import { SegmentationRepresentations } from '../../../enums';
 import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTypes';
+import { addVolumeId } from '../../../types/LabelmapTypes';
 
 const { uuidv4 } = utilities;
 
@@ -57,53 +59,61 @@ async function addLabelmapToElement(
   const suppressEvents = true;
   if (viewport instanceof BaseVolumeViewport) {
     const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
-    const volumeId = _ensureVolumeHasVolumeId(
-      volumeLabelMapData,
-      segmentationId
+    _ensurelabelMapDataVolumeHasVolumeId(volumeLabelMapData, segmentationId);
+    const volumeInputs: Types.IVolumeInput[] = [];
+
+    const volumeIds = getVolumeIds(
+      volumeLabelMapData as LabelmapSegmentationDataVolume
     );
 
-    if (!cache.getVolume(volumeId)) {
-      await _handleMissingVolume(labelMapData);
-    }
-
-    let blendMode =
-      config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
-
-    let useIndependentComponents =
-      blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND;
-
-    // Add dimension check before deciding to use independent components
-    if (useIndependentComponents) {
-      const referenceVolumeId = viewport.getVolumeId();
-      const baseVolume = cache.getVolume(referenceVolumeId);
-      const segVolume = cache.getVolume(volumeId);
-
-      const segDims = segVolume.dimensions;
-      const refDims = baseVolume.dimensions;
-
-      if (
-        segDims[0] !== refDims[0] ||
-        segDims[1] !== refDims[1] ||
-        segDims[2] !== refDims[2]
-      ) {
-        // If dimensions don't match, fallback to regular volume addition
-        useIndependentComponents = false;
-        blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
-        console.debug(
-          'Dimensions mismatch - falling back to regular volume addition'
+    // Refactored: process all volumeIds sequentially to ensure volumeInputs is fully populated before use
+    for (const volumeId of volumeIds) {
+      if (!volumeId) {
+        throw new Error(
+          'Labelmap segmentation data must have a volumeId or volumeIds defined.'
         );
       }
-    }
+      if (!cache.getVolume(volumeId)) {
+        await _handleMissingVolume(labelMapData);
+      }
 
-    const volumeInputs: Types.IVolumeInput[] = [
-      {
+      let blendMode =
+        config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+
+      let useIndependentComponents =
+        blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND;
+
+      // Add dimension check before deciding to use independent components
+      if (useIndependentComponents) {
+        const referenceVolumeId = viewport.getVolumeId();
+        const baseVolume = cache.getVolume(referenceVolumeId);
+        const segVolume = cache.getVolume(volumeId);
+
+        const segDims = segVolume.dimensions;
+        const refDims = baseVolume.dimensions;
+
+        if (
+          segDims[0] !== refDims[0] ||
+          segDims[1] !== refDims[1] ||
+          segDims[2] !== refDims[2]
+        ) {
+          // If dimensions don't match, fallback to regular volume addition
+          useIndependentComponents = false;
+          blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+          console.debug(
+            'Dimensions mismatch - falling back to regular volume addition'
+          );
+        }
+      }
+
+      volumeInputs.push({
         volumeId,
         visibility,
         representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
         useIndependentComponents,
         blendMode,
-      },
-    ];
+      });
+    }
 
     /*
      * Having independent components for the segmentation data means that we are
@@ -160,26 +170,27 @@ async function addLabelmapToElement(
 }
 
 /**
- * Ensures that the volume has a volumeId, generating one if necessary.
+ * Ensures that the labelMapData has a volumeId, generating one if necessary.
  * @param labelMapData - The labelmap segmentation data.
  * @param segmentationId - The segmentation id.
  * @returns The ensured volumeId.
  */
-function _ensureVolumeHasVolumeId(
+function _ensurelabelMapDataVolumeHasVolumeId(
   labelMapData: LabelmapSegmentationDataVolume,
   segmentationId: string
 ): string {
-  let { volumeId } = labelMapData;
+  let volumeId = getPrimaryVolumeId(labelMapData);
   if (!volumeId) {
     volumeId = uuidv4();
 
     const segmentation = getSegmentation(segmentationId);
-    segmentation.representationData.Labelmap = {
-      ...segmentation.representationData.Labelmap,
-      volumeId,
-    };
+    addVolumeId(
+      segmentation.representationData
+        .Labelmap as LabelmapSegmentationDataVolume,
+      volumeId
+    );
 
-    labelMapData.volumeId = volumeId;
+    addVolumeId(labelMapData, volumeId);
     triggerSegmentationModified(segmentationId);
   }
   return volumeId;
@@ -205,19 +216,17 @@ async function _handleMissingVolume(
     );
   }
 
-  if (
-    stackData.numberOfImages &&
-    stackData.imageIds.length > stackData.numberOfImages
-  ) {
+  const numberOfImages = utilities.getNumberOfReferenceImageIds(
+    stackData.imageIds
+  );
+  if (numberOfImages && stackData.imageIds.length > numberOfImages) {
     // Multi-volume: split flat array
-    const numVolumes = Math.floor(
-      stackData.imageIds.length / stackData.numberOfImages
-    );
+    const numVolumes = Math.floor(stackData.imageIds.length / numberOfImages);
     const volumes = [];
     for (let i = 0; i < numVolumes; i++) {
       const ids = stackData.imageIds.slice(
-        i * stackData.numberOfImages,
-        (i + 1) * stackData.numberOfImages
+        i * numberOfImages,
+        (i + 1) * numberOfImages
       );
       const volumeId = uuidv4();
       const volume = await volumeLoader.createAndCacheVolumeFromImages(

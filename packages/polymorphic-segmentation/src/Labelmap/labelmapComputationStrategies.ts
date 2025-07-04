@@ -144,16 +144,12 @@ async function computeLabelmapFromSurfaceSegmentation(
   }
 
   let segmentationVolume;
-  let numberOfImages = 0;
   if (isVolume) {
     const volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
-    const volume = cache.getVolume(volumeId);
-    numberOfImages = volume.imageIds.length;
     segmentationVolume =
       volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId);
   } else {
     const imageIds = (options.viewport as Types.IStackViewport).getImageIds();
-    numberOfImages = imageIds.length;
     const segImages = imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
     const segImageIds = segImages.map((image) => image.imageId);
@@ -171,8 +167,7 @@ async function computeLabelmapFromSurfaceSegmentation(
 
   if (isVolume) {
     return {
-      volumeId: result.volumeId,
-      numberOfImages,
+      volumeIds: [result.volumeId],
     };
   }
 
@@ -183,7 +178,6 @@ async function computeLabelmapFromSurfaceSegmentation(
 
   return {
     imageIds: stackData.imageIds,
-    numberOfImages,
   };
 }
 

@@ -27,6 +27,7 @@ import {
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import { getPrimaryVolumeId } from '../../types/LabelmapTypes';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -99,9 +100,11 @@ class PaintFillTool extends BaseTool {
     this.doneEditMemo();
 
     if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = representationData[
-        SegmentationRepresentations.Labelmap
-      ] as LabelmapSegmentationDataVolume;
+      const volumeId = getPrimaryVolumeId(
+        representationData[
+          SegmentationRepresentations.Labelmap
+        ] as LabelmapSegmentationDataVolume
+      );
 
       const segmentation = cache.getVolume(volumeId);
       ({ dimensions, direction } = segmentation);

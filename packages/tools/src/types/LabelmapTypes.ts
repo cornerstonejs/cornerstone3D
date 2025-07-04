@@ -1,3 +1,4 @@
+import { utilities } from '@cornerstonejs/core';
 /**
  * Active labelmap style properties
  */
@@ -40,16 +41,11 @@ export type LabelmapStyle = BaseLabelmapStyle & InactiveLabelmapStyle;
 
 export type LabelmapSegmentationDataVolume = {
   /**
-   * Single volumeId for backward compatibility. If multiple segmentations overlap,
-   * use volumeIds instead. If both are present, volumeIds takes precedence.
-   */
-  volumeId?: string;
-  /**
    * Array of volumeIds for overlapping segmentations. If present, use this instead of volumeId.
    */
   volumeIds?: string[];
+  volumeId?: string[];
   referencedVolumeId?: string;
-  numberOfImages: number;
 };
 
 export type LabelmapSegmentationDataStack = {
@@ -64,20 +60,18 @@ export type LabelmapSegmentationDataStack = {
   /**
    * Number of images per volume. For multi-volume, total volumes = imageIds.length / numberOfImages.
    */
-  numberOfImages: number;
 };
 /**
  * Utility to get the imageIds for a specific volume from a flat imageIds array.
  * @param imageIds - Flat array of imageIds (all volumes concatenated)
- * @param numberOfImages - Number of images per volume
  * @param volumeIndex - Index of the volume to extract (0-based)
  * @returns string[] - The imageIds for the specified volume
  */
 export function getImageIdsForVolume(
   imageIds: string[],
-  numberOfImages: number,
   volumeIndex: number
 ): string[] {
+  const numberOfImages = utilities.getNumberOfReferenceImageIds(imageIds);
   const start = volumeIndex * numberOfImages;
   return imageIds.slice(start, start + numberOfImages);
 }
@@ -87,11 +81,9 @@ export type LabelmapSegmentationData =
   | LabelmapSegmentationDataStack
   // PolySeg version that has both
   | {
-      volumeId?: string;
       referencedVolumeId?: string;
       referencedImageIds?: string[];
       imageIds?: string[];
-      numberOfImages: number;
     };
 
 /**
@@ -102,9 +94,6 @@ export function getVolumeIds(
 ): string[] {
   if (Array.isArray(labelmap.volumeIds) && labelmap.volumeIds.length > 0) {
     return labelmap.volumeIds;
-  }
-  if (labelmap.volumeId) {
-    return [labelmap.volumeId];
   }
   return [];
 }
@@ -118,5 +107,59 @@ export function getPrimaryVolumeId(
   if (Array.isArray(labelmap.volumeIds) && labelmap.volumeIds.length > 0) {
     return labelmap.volumeIds[0];
   }
-  return labelmap.volumeId;
+}
+
+/**
+ * Utility to get the referenced volumeId from a LabelmapSegmentationDataVolume, if it exists.
+ * This is used for cases where the segmentation references another volume.
+ * Returns undefined if no referencedVolumeId is set.
+ * @param labelmap - The labelmap segmentation data to check.
+ * @returns string | undefined - The referenced volumeId or undefined if not set.
+ */
+export function getReferencedVolumeId(
+  labelmap: LabelmapSegmentationDataVolume
+): string | undefined {
+  return labelmap.referencedVolumeId ? labelmap.referencedVolumeId : undefined;
+}
+
+/**
+ * Adds a volumeId to the labelmap segmentation data, ensuring it is unique.
+ * If volumeIds array does not exist, it will be created.
+ * @param labelmap - The labelmap segmentation data to modify.
+ * @param volumeId - The volumeId to add.
+ */
+export function addVolumeId(
+  labelmap: LabelmapSegmentationDataVolume,
+  volumeId: string
+) {
+  if (!volumeId) {
+    console.log('VolumeId cannot be null or undefined');
+    return;
+  }
+  if (!labelmap.volumeIds) {
+    labelmap.volumeIds = [];
+  }
+  if (!labelmap.volumeIds.includes(volumeId)) {
+    labelmap.volumeIds.push(volumeId);
+  }
+}
+
+/**
+ * Replaces an existing volumeId in the labelmap segmentation data with a new one.
+ * If the oldVolumeId does not exist, no changes are made.
+ * @param labelmap - The labelmap segmentation data to modify.
+ * @param oldVolumeId - The volumeId to replace.
+ * @param newVolumeId - The new volumeId to set.
+ */
+export function replaceVolumeId(
+  labelmap: LabelmapSegmentationDataVolume,
+  oldVolumeId: string,
+  newVolumeId: string
+) {
+  if (Array.isArray(labelmap.volumeIds)) {
+    const index = labelmap.volumeIds.indexOf(oldVolumeId);
+    if (index !== -1) {
+      labelmap.volumeIds[index] = newVolumeId;
+    }
+  }
 }

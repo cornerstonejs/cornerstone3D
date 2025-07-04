@@ -6,7 +6,6 @@ import {
 
 import type {
   LabelmapSegmentationData,
-  LabelmapSegmentationDataVolume,
   LabelmapStyle,
 } from '../../../types/LabelmapTypes';
 import type {
@@ -165,20 +164,14 @@ async function render(
   }
 
   if (viewport instanceof VolumeViewport) {
-    // For multiple volumeIds, ensure all associated labelmap actors are added
-    const volumeIds = getVolumeIds(
-      labelmapData as LabelmapSegmentationDataVolume
-    );
     if (!labelmapActorEntries?.length) {
       // Add labelmap actors for all associated volumes
-      for (const volumeId of volumeIds) {
-        await _addLabelmapToViewport(
-          viewport,
-          { ...labelmapData, volumeId },
-          segmentationId,
-          config
-        );
-      }
+      await _addLabelmapToViewport(
+        viewport,
+        labelmapData,
+        segmentationId,
+        config
+      );
     }
     // Refresh actor entries after adding
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);

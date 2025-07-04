@@ -87,9 +87,9 @@ export function getSegmentIndexAtWorldForLabelmap(
 
   if (viewport instanceof BaseVolumeViewport) {
     // Support both single and multi-volume segmentations
-    const { volumeId, volumeIds } =
-      labelmapData as LabelmapSegmentationDataVolume;
-    const allVolumeIds = getVolumeIds(labelmapData);
+    const allVolumeIds = getVolumeIds(
+      labelmapData as LabelmapSegmentationDataVolume
+    );
     for (const vid of allVolumeIds) {
       if (!vid) {
         continue;

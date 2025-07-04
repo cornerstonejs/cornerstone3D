@@ -1,6 +1,11 @@
 import { cache } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import getOrCreateImageVolume from './getOrCreateImageVolume';
+import {
+  getPrimaryVolumeId,
+  getReferencedVolumeId,
+  type LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 
 /**
  * Retrieves the reference volume associated with a segmentation volume.
@@ -40,8 +45,10 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
     );
   }
   // Case 2: Labelmap with volumeId (volume-based)
-  else if ('volumeId' in labelmap) {
-    const { volumeId, referencedVolumeId } = labelmap;
+  else {
+    const referencedVolumeId = getReferencedVolumeId(
+      labelmap as LabelmapSegmentationDataVolume
+    );
 
     // Try to get directly referenced volume
     if (referencedVolumeId) {
@@ -49,13 +56,16 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
       if (refVolume) {
         return refVolume;
       }
-    }
-
-    const segVolume = cache.getVolume(volumeId);
-    if (segVolume) {
-      referenceImageIds = segVolume.imageIds.map(
-        (imageId) => cache.getImage(imageId).referencedImageId
+    } else {
+      const volumeId = getPrimaryVolumeId(
+        labelmap as LabelmapSegmentationDataVolume
       );
+      const segVolume = cache.getVolume(volumeId);
+      if (segVolume) {
+        referenceImageIds = segVolume.imageIds.map(
+          (imageId) => cache.getImage(imageId).referencedImageId
+        );
+      }
     }
   }
 

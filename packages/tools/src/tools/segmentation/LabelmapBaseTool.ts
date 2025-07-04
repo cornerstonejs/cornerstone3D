@@ -10,7 +10,10 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import {
+  getPrimaryVolumeId,
+  type LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
@@ -265,9 +268,11 @@ export default class LabelmapBaseTool extends BaseTool {
     segmentationId,
   }): EditDataReturnType {
     if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = representationData[
-        SegmentationRepresentations.Labelmap
-      ] as LabelmapSegmentationDataVolume;
+      const volumeId = getPrimaryVolumeId(
+        representationData[
+          SegmentationRepresentations.Labelmap
+        ] as LabelmapSegmentationDataVolume
+      );
       const actors = viewport.getActors();
 
       const isStackViewport = viewport instanceof StackViewport;

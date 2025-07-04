@@ -64,10 +64,9 @@ export const getSegmentationDataForWorker = (
     }
     segImageIds = segmentationVolume.imageIds;
   } else {
-    const { imageIds, numberOfImages } =
-      Labelmap as LabelmapSegmentationDataStack;
+    const { imageIds } = Labelmap as LabelmapSegmentationDataStack;
 
-    const segImageIdsArray = splitImageIdsArray(imageIds, numberOfImages);
+    const segImageIdsArray = splitImageIdsArray(imageIds);
     if (!segImageIdsArray || segImageIdsArray.length === 0) {
       console.debug('No imageIds found for segmentation', segmentationId);
       return null;

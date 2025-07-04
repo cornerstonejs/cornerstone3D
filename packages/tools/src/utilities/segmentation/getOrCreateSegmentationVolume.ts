@@ -5,9 +5,11 @@ import {
   type Types,
 } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
-import type {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
+import {
+  addVolumeId,
+  getVolumeIds,
+  type LabelmapSegmentationDataStack,
+  type LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 
 /**
@@ -50,27 +52,16 @@ function getOrCreateSegmentationVolume(
   segmentationId
 ): Types.IImageVolume | Types.IImageVolume[] | undefined {
   const { representationData } = getSegmentation(segmentationId);
-  const { volumeId, volumeIds } =
-    representationData.Labelmap as LabelmapSegmentationDataVolume;
+  const volumeIds = getVolumeIds(
+    representationData.Labelmap as LabelmapSegmentationDataVolume
+  );
 
-  let segVolume;
-  // Check for single volumeId
-  if (volumeId) {
-    segVolume = cache.getVolume(volumeId);
-    if (segVolume) {
-      return segVolume;
-    }
-  }
   // Check for multiple volumeIds
-  if (Array.isArray(volumeIds) && volumeIds.length > 0) {
+  if (volumeIds && Array.isArray(volumeIds) && volumeIds.length > 0) {
     const segVolumes = volumeIds
       .map((id) => cache.getVolume(id))
       .filter(Boolean);
-    if (segVolumes.length === 1) {
-      return segVolumes[0];
-    } else if (segVolumes.length > 1) {
-      return segVolumes;
-    }
+    return segVolumes;
   }
 
   const { imageIds: labelmapImageIds } =
@@ -79,56 +70,33 @@ function getOrCreateSegmentationVolume(
   // Multi-volume support: use numberOfImages to split flat array
   const stackData =
     representationData.Labelmap as LabelmapSegmentationDataStack;
+  const numberOfImages = utilities.getNumberOfReferenceImageIds(
+    stackData.imageIds
+  );
   if (
     stackData &&
-    stackData.numberOfImages &&
-    stackData.imageIds.length > stackData.numberOfImages
+    numberOfImages &&
+    stackData.imageIds.length > numberOfImages
   ) {
-    const numVolumes = Math.floor(
-      stackData.imageIds.length / stackData.numberOfImages
-    );
+    const numVolumes = Math.floor(stackData.imageIds.length / numberOfImages);
     const volumes = [];
     const newVolumeIds = [];
     for (let i = 0; i < numVolumes; i++) {
       const ids = stackData.imageIds.slice(
-        i * stackData.numberOfImages,
-        (i + 1) * stackData.numberOfImages
+        i * numberOfImages,
+        (i + 1) * numberOfImages
       );
       const vol = getOrCreateSingleSegmentationVolume(ids);
       if (vol) {
         volumes.push(vol);
         newVolumeIds.push(vol.volumeId);
+        addVolumeId(
+          representationData.Labelmap as LabelmapSegmentationDataVolume,
+          vol.volumeId
+        );
       }
     }
-    // Assign volumeIds if not present
-    if ((!volumeIds || volumeIds.length === 0) && newVolumeIds.length > 0) {
-      (
-        representationData.Labelmap as LabelmapSegmentationDataVolume
-      ).volumeIds = newVolumeIds;
-    }
-    if (volumes.length === 1) {
-      // Also assign volumeId for backward compatibility
-      (representationData.Labelmap as LabelmapSegmentationDataVolume).volumeId =
-        newVolumeIds[0];
-      return volumes[0];
-    } else if (volumes.length > 1) {
-      return volumes;
-    } else {
-      return undefined;
-    }
-  }
-
-  // Single volume case
-  const singleVol = getOrCreateSingleSegmentationVolume(
-    labelmapImageIds as string[]
-  );
-  if (singleVol) {
-    // Assign volumeId if not present
-    if (!volumeId) {
-      (representationData.Labelmap as LabelmapSegmentationDataVolume).volumeId =
-        singleVol.volumeId;
-    }
-    return singleVol;
+    return volumes;
   }
   return undefined;
 }

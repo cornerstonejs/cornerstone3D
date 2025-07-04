@@ -191,7 +191,9 @@ class RectangleScissorsTool extends LabelmapBaseTool {
     };
 
     if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
+      const volumeId = getPrimaryVolumeId(
+        labelmapData as LabelmapSegmentationDataVolume
+      );
       const segmentation = cache.getVolume(volumeId);
 
       this.editData = {
