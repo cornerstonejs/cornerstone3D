@@ -11,6 +11,10 @@ import '@kitware/vtk.js/Common/DataModel/PolyData';
 import '@kitware/vtk.js/Rendering/Core/Actor';
 import '@kitware/vtk.js/Rendering/Core/Mapper';
 
+// Maximum size of the offscreen canvas
+const MAX_WIDTH = 16384;
+const MAX_HEIGHT = 16384;
+
 /**
  * vtkOffscreenMultiRenderWindow - A class to deal with offscreen rendering with multiple renderers.
  *
@@ -38,6 +42,13 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
   // OpenGLRenderWindow
   model.openGLRenderWindow = vtkStreamingOpenGLRenderWindow.newInstance();
   model.renderWindow.addView(model.openGLRenderWindow);
+
+  // Create offscreen canvas and set it immediately
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.width = MAX_WIDTH;
+  offscreenCanvas.height = MAX_HEIGHT;
+  model.openGLRenderWindow.setCanvas(offscreenCanvas);
+  model.openGLRenderWindow.setSize(MAX_WIDTH, MAX_HEIGHT);
 
   // Interactor
   model.interactor = vtkRenderWindowInteractor.newInstance();

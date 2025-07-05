@@ -503,6 +503,10 @@
         "name": "PET-CT Fusion + MIPLayout",
         "description": "PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold"
       },
+      "petCTMultiMonitor": {
+        "name": "PET-CT Fusion + MIPLayout For 3 Studies",
+        "description": "PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold"
+      },
       "sharedToolState": {
         "name": "Shared Tool State",
         "description": "Demonstrates that annotations are stored on frame of reference, and can therefore be shared between Stack and Volume Viewports."
