@@ -39,6 +39,13 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
   model.openGLRenderWindow = vtkStreamingOpenGLRenderWindow.newInstance();
   model.renderWindow.addView(model.openGLRenderWindow);
 
+  // Create offscreen canvas and set it immediately
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.width = 16384;
+  offscreenCanvas.height = 16384;
+  model.openGLRenderWindow.setCanvas(offscreenCanvas);
+  model.openGLRenderWindow.setSize(16384, 16384);
+
   // Interactor
   model.interactor = vtkRenderWindowInteractor.newInstance();
   model.interactor.setView(model.openGLRenderWindow);
