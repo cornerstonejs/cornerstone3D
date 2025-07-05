@@ -107,6 +107,8 @@ class RenderingEngine {
       this.offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
       this.offScreenCanvasContainer = document.createElement('div');
+      this.offScreenCanvasContainer.style.width = `${MAX_WIDTH}px`;
+      this.offScreenCanvasContainer.style.height = `${MAX_HEIGHT}px`;
       this.offscreenMultiRenderWindow.setContainer(
         this.offScreenCanvasContainer
       );
@@ -1020,49 +1022,18 @@ class RenderingEngine {
   } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
 
-    // Use rectangle packing to calculate optimal canvas dimensions
-    const viewportInputs = canvasesDrivenByVtkJs.map((canvas, index) => ({
-      id: `viewport-${index}`,
-      canvas: {
-        width: canvas.width,
-        height: canvas.height,
-      },
-    }));
-
-    const packedOffsets = calculateViewportOffsets(
-      viewportInputs,
-      MAX_WIDTH,
-      MAX_HEIGHT
-    );
-
-    // Calculate total dimensions from packed rectangles
-    let offScreenCanvasWidth = 0;
-    let offScreenCanvasHeight = 0;
-
-    packedOffsets.forEach((offset) => {
-      offScreenCanvasWidth = Math.max(
-        offScreenCanvasWidth,
-        offset.xOffset + offset.width
-      );
-      offScreenCanvasHeight = Math.max(
-        offScreenCanvasHeight,
-        offset.yOffset + offset.height
-      );
-    });
-
-    // Ensure minimum dimensions
-    offScreenCanvasWidth = Math.max(offScreenCanvasWidth, 1);
-    offScreenCanvasHeight = Math.max(offScreenCanvasHeight, 1);
-
     // @ts-expect-error
-    offScreenCanvasContainer.width = offScreenCanvasWidth;
+    offScreenCanvasContainer.width = MAX_WIDTH;
     // @ts-expect-error
-    offScreenCanvasContainer.height = offScreenCanvasHeight;
+    offScreenCanvasContainer.height = MAX_HEIGHT;
 
     // 3. Resize command
     offscreenMultiRenderWindow.resize();
 
-    return { offScreenCanvasWidth, offScreenCanvasHeight };
+    return {
+      offScreenCanvasWidth: MAX_WIDTH,
+      offScreenCanvasHeight: MAX_HEIGHT,
+    };
   }
 
   /**
