@@ -26,7 +26,7 @@ import type {
 import { OrientationAxis } from '../enums';
 import VolumeViewport3D from './VolumeViewport3D';
 
-const FIXED_OFFSCREEN_SIZE = { width: 15000, height: 15000 };
+const FIXED_OFFSCREEN_SIZE = { width: 16384, height: 16384 };
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
