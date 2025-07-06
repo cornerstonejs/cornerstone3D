@@ -872,7 +872,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         canvasUnitVectorFromCenter,
         canvasDiagonalLength * 100
       );
-      // For min center
+      // For min
       const refLinesCenterMin = otherViewportControllable
         ? vec2.clone(crosshairCenterCanvasMin)
         : vec2.clone(otherViewportCenterCanvas);
@@ -956,6 +956,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (viewportControllable) {
         //  lineUID = `${lineIndex}One`;
         //  lineUID = `${lineIndex}Two`;
+        console.debug(lineUID, color, line[1], line[2]);
         drawLineSvg(
           svgDrawingHelper,
           annotationUID,

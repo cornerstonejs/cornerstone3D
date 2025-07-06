@@ -4,10 +4,7 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
-import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-//import vtkPolyDataMapper from '@kitware/vtk.js/Rendering/Core/PolyDataMapper';
+import vtkCylinderSource from '@kitware/vtk.js/Filters/Sources/CylinderSource';
 
 import { AnnotationTool } from './base';
 
@@ -114,6 +111,48 @@ const POINTINDEX = {
   Y: 1,
   Z: 2,
 };
+
+function addCylinderBetweenPoints(
+  viewport,
+  point1,
+  point2,
+  radius = 2,
+  color = [0.5, 0.5, 0.5],
+  uid = ''
+) {
+  const cylinderSource = vtkCylinderSource.newInstance();
+  // Compute direction and length
+  const direction = [
+    point2[0] - point1[0],
+    point2[1] - point1[1],
+    point2[2] - point1[2],
+  ];
+  const length = Math.sqrt(
+    direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
+  );
+  // Midpoint
+  const center = [
+    (point1[0] + point2[0]) / 2,
+    (point1[1] + point2[1]) / 2,
+    (point1[2] + point2[2]) / 2,
+  ];
+  // Default cylinder is aligned with Y axis, so compute rotation
+  cylinderSource.setCenter(center);
+  cylinderSource.setRadius(radius);
+  cylinderSource.setHeight(length);
+  // Set direction (align cylinder axis with direction vector)
+  cylinderSource.setDirection(direction);
+
+  const cylinderMapper = vtkMapper.newInstance();
+  cylinderMapper.setInputConnection(cylinderSource.getOutputPort());
+  const cylinderActor = vtkActor.newInstance();
+  cylinderActor.setMapper(cylinderMapper);
+  cylinderActor.getProperty().setColor(color);
+
+  viewport.addActor({ actor: cylinderActor, uid: uid });
+  return { actor: cylinderActor, source: cylinderSource };
+}
+
 /**
  * VolumeCroppingTool is a tool that provides reference lines between different viewports
  * of a toolGroup.  *
@@ -135,6 +174,14 @@ class VolumeCroppingTool extends AnnotationTool {
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   picker: vtkCellPicker;
+  edgeCylinders: {
+    [uid: string]: {
+      actor: vtkActor;
+      source: vtkCylinderSource;
+      key1: string;
+      key2: string;
+    };
+  } = {};
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -362,9 +409,49 @@ class VolumeCroppingTool extends AnnotationTool {
       for (let i = 0; i < corners.length; i++) {
         this.addSphere(viewport, corners[i], 'corner', null, cornerKeys[i]);
       }
+
+      // draw the lines between corners
+      // All 12 edges as pairs of corner keys
+      const edgeCornerPairs = [
+        // X edges
+        ['XMIN_YMIN_ZMIN', 'XMAX_YMIN_ZMIN'],
+        ['XMIN_YMIN_ZMAX', 'XMAX_YMIN_ZMAX'],
+        ['XMIN_YMAX_ZMIN', 'XMAX_YMAX_ZMIN'],
+        ['XMIN_YMAX_ZMAX', 'XMAX_YMAX_ZMAX'],
+        // Y edges
+        ['XMIN_YMIN_ZMIN', 'XMIN_YMAX_ZMIN'],
+        ['XMIN_YMIN_ZMAX', 'XMIN_YMAX_ZMAX'],
+        ['XMAX_YMIN_ZMIN', 'XMAX_YMAX_ZMIN'],
+        ['XMAX_YMIN_ZMAX', 'XMAX_YMAX_ZMAX'],
+        // Z edges
+        ['XMIN_YMIN_ZMIN', 'XMIN_YMIN_ZMAX'],
+        ['XMIN_YMAX_ZMIN', 'XMIN_YMAX_ZMAX'],
+        ['XMAX_YMIN_ZMIN', 'XMAX_YMIN_ZMAX'],
+        ['XMAX_YMAX_ZMIN', 'XMAX_YMAX_ZMAX'],
+      ];
+
+      edgeCornerPairs.forEach(([key1, key2], i) => {
+        const state1 = this.sphereStates.find(
+          (s) => s.uid === `corner_${key1}`
+        );
+        const state2 = this.sphereStates.find(
+          (s) => s.uid === `corner_${key2}`
+        );
+        if (state1 && state2) {
+          const uid = `edge_${key1}_${key2}`;
+          const { actor, source } = addCylinderBetweenPoints(
+            viewport,
+            state1.point,
+            state2.point,
+            2, // radius
+            [0.7, 0.7, 0.7], // color
+            uid
+          );
+          this.edgeCylinders[uid] = { actor, source, key1, key2 };
+        }
+      });
     }
 
-    // draw the lines between corners
     //  this._updateCornerBoxEdges3D(viewport);
 
     const defaultActor = viewport.getDefaultActor();
@@ -920,6 +1007,8 @@ class VolumeCroppingTool extends AnnotationTool {
           }
           // update the face sphere position after the clipping plane change
         });
+        this._updateCornerSpheres(viewport);
+
         viewport.render();
 
         // Optionally: trigger an event if you want to notify others
@@ -1069,6 +1158,35 @@ class VolumeCroppingTool extends AnnotationTool {
         state.sphereSource.modified();
       }
     }
+    // ...existing code for updating corners...
+
+    // Update edge cylinders
+    Object.values(this.edgeCylinders).forEach(({ source, key1, key2 }) => {
+      const state1 = this.sphereStates.find((s) => s.uid === `corner_${key1}`);
+      const state2 = this.sphereStates.find((s) => s.uid === `corner_${key2}`);
+      if (state1 && state2) {
+        const point1 = state1.point;
+        const point2 = state2.point;
+        // Compute new direction and length
+        const direction = [
+          point2[0] - point1[0],
+          point2[1] - point1[1],
+          point2[2] - point1[2],
+        ];
+        const length = Math.sqrt(
+          direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
+        );
+        const center = [
+          (point1[0] + point2[0]) / 2,
+          (point1[1] + point2[1]) / 2,
+          (point1[2] + point2[2]) / 2,
+        ];
+        source.setCenter(center);
+        source.setHeight(length);
+        source.setDirection(direction);
+        source.modified();
+      }
+    });
   }
   _onMouseUpSphere = (evt) => {
     //evt.stopPropagation();
