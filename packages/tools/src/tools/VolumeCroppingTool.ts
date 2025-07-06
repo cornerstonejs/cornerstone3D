@@ -134,7 +134,6 @@ class VolumeCroppingTool extends AnnotationTool {
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
-  _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
   picker: vtkCellPicker;
 
   constructor(
@@ -718,7 +717,6 @@ class VolumeCroppingTool extends AnnotationTool {
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
 
     // Use vtkCellPicker to get world coordinates
-
     const rect = element.getBoundingClientRect();
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
@@ -802,83 +800,83 @@ class VolumeCroppingTool extends AnnotationTool {
           }
         });
 
-        // Update face spheres' positions to always be at the center of their faces
-        // (between their two corresponding corners)
-        const cornerToFace = [
-          [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMIN_YMIN_ZMIN
-          [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMIN_YMIN_ZMAX
-          [SPHEREINDEX.XMIN, SPHEREINDEX.YMAX, SPHEREINDEX.ZMIN], // XMIN_YMAX_ZMIN
-          [SPHEREINDEX.XMIN, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX], // XMIN_YMAX_ZMAX
-          [SPHEREINDEX.XMAX, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMAX_YMIN_ZMIN
-          [SPHEREINDEX.XMAX, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMAX_YMIN_ZMAX
-          [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMIN], // XMAX_YMAX_ZMIN
-          [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX], // XMAX_YMAX_ZMAX
-        ];
-        const cornerIdx = this.draggingSphereIndex - SPHEREINDEX.XMIN_YMIN_ZMIN;
-        const faces = cornerToFace[cornerIdx];
+        // // Update face spheres' positions to always be at the center of their faces
+        // // (between their two corresponding corners)
+        // const cornerToFace = [
+        //   [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMIN_YMIN_ZMIN
+        //   [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMIN_YMIN_ZMAX
+        //   [SPHEREINDEX.XMIN, SPHEREINDEX.YMAX, SPHEREINDEX.ZMIN], // XMIN_YMAX_ZMIN
+        //   [SPHEREINDEX.XMIN, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX], // XMIN_YMAX_ZMAX
+        //   [SPHEREINDEX.XMAX, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMAX_YMIN_ZMIN
+        //   [SPHEREINDEX.XMAX, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMAX_YMIN_ZMAX
+        //   [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMIN], // XMAX_YMAX_ZMIN
+        //   [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX], // XMAX_YMAX_ZMAX
+        // ];
+        // const cornerIdx = this.draggingSphereIndex - SPHEREINDEX.XMIN_YMIN_ZMIN;
+        // const faces = cornerToFace[cornerIdx];
 
-        faces.forEach((faceIdx) => {
-          const faceState = this.sphereStates[faceIdx];
-          if (!faceState) {
-            return;
-          }
+        // faces.forEach((faceIdx) => {
+        //   const faceState = this.sphereStates[faceIdx];
+        //   if (!faceState) {
+        //     return;
+        //   }
 
-          // Find the two corners that define this face
-          const faceAxis = faceState.axis;
-          const isCorner = (s) => s.isCorner;
-          const cornersOnFace = this.sphereStates.filter((s) => {
-            if (!isCorner(s)) {
-              return false;
-            }
-            if (faceAxis === 'x') {
-              return (
-                Math.abs(s.point[1] - faceState.point[1]) < 1e-6 &&
-                Math.abs(s.point[2] - faceState.point[2]) < 1e-6
-              );
-            }
-            if (faceAxis === 'y') {
-              return (
-                Math.abs(s.point[0] - faceState.point[0]) < 1e-6 &&
-                Math.abs(s.point[2] - faceState.point[2]) < 1e-6
-              );
-            }
-            if (faceAxis === 'z') {
-              return (
-                Math.abs(s.point[0] - faceState.point[0]) < 1e-6 &&
-                Math.abs(s.point[1] - faceState.point[1]) < 1e-6
-              );
-            }
-            return false;
-          });
+        //   // Find the two corners that define this face
+        //   const faceAxis = faceState.axis;
+        //   const isCorner = (s) => s.isCorner;
+        //   const cornersOnFace = this.sphereStates.filter((s) => {
+        //     if (!isCorner(s)) {
+        //       return false;
+        //     }
+        //     if (faceAxis === 'x') {
+        //       return (
+        //         Math.abs(s.point[1] - faceState.point[1]) < 1e-6 &&
+        //         Math.abs(s.point[2] - faceState.point[2]) < 1e-6
+        //       );
+        //     }
+        //     if (faceAxis === 'y') {
+        //       return (
+        //         Math.abs(s.point[0] - faceState.point[0]) < 1e-6 &&
+        //         Math.abs(s.point[2] - faceState.point[2]) < 1e-6
+        //       );
+        //     }
+        //     if (faceAxis === 'z') {
+        //       return (
+        //         Math.abs(s.point[0] - faceState.point[0]) < 1e-6 &&
+        //         Math.abs(s.point[1] - faceState.point[1]) < 1e-6
+        //       );
+        //     }
+        //     return false;
+        //   });
 
-          if (cornersOnFace.length !== 2) {
-            return;
-          } // Defensive
+        //   if (cornersOnFace.length !== 2) {
+        //     return;
+        //   } // Defensive
 
-          // Compute center between the two corners
-          const center = [
-            (cornersOnFace[0].point[0] + cornersOnFace[1].point[0]) / 2,
-            (cornersOnFace[0].point[1] + cornersOnFace[1].point[1]) / 2,
-            (cornersOnFace[0].point[2] + cornersOnFace[1].point[2]) / 2,
-          ];
+        //   // Compute center between the two corners
+        //   const center = [
+        //     (cornersOnFace[0].point[0] + cornersOnFace[1].point[0]) / 2,
+        //     (cornersOnFace[0].point[1] + cornersOnFace[1].point[1]) / 2,
+        //     (cornersOnFace[0].point[2] + cornersOnFace[1].point[2]) / 2,
+        //   ];
 
-          faceState.point[0] = center[0];
-          faceState.point[1] = center[1];
-          faceState.point[2] = center[2];
-          faceState.sphereSource.setCenter(center[0], center[1], center[2]);
-          faceState.sphereSource.modified();
+        //   faceState.point[0] = center[0];
+        //   faceState.point[1] = center[1];
+        //   faceState.point[2] = center[2];
+        //   faceState.sphereSource.setCenter(center[0], center[1], center[2]);
+        //   faceState.sphereSource.modified();
 
-          // Update the clipping plane for this face
-          const clippingPlanes = mapper.getClippingPlanes();
-          if (clippingPlanes && clippingPlanes[faceIdx]) {
-            const origin = [...clippingPlanes[faceIdx].getOrigin()];
-            origin[POINTINDEX.X] = center[0];
-            origin[POINTINDEX.Y] = center[1];
-            origin[POINTINDEX.Z] = center[2];
-            clippingPlanes[faceIdx].setOrigin(origin);
-            viewport.setOriginalClippingPlane(faceIdx, origin);
-          }
-        });
+        //   // Update the clipping plane for this face
+        //   const clippingPlanes = mapper.getClippingPlanes();
+        //   if (clippingPlanes && clippingPlanes[faceIdx]) {
+        //     const origin = [...clippingPlanes[faceIdx].getOrigin()];
+        //     origin[POINTINDEX.X] = center[0];
+        //     origin[POINTINDEX.Y] = center[1];
+        //     origin[POINTINDEX.Z] = center[2];
+        //     clippingPlanes[faceIdx].setOrigin(origin);
+        //     viewport.setOriginalClippingPlane(faceIdx, origin);
+        //   }
+        // });
         // After updating all spheres and before viewport.render()
 
         // Determine which planes are connected to this corner
@@ -920,6 +918,7 @@ class VolumeCroppingTool extends AnnotationTool {
               sphereState.point[2],
             ]);
           }
+          // update the face sphere position after the clipping plane change
         });
         viewport.render();
 
@@ -930,87 +929,93 @@ class VolumeCroppingTool extends AnnotationTool {
           draggingSphereIndex: this.draggingSphereIndex,
         });
         return;
+      } else {
+        // face sphere movement
+        // Restrict movement to the sphere's axis only
+        if (sphereState.axis === 'x') {
+          newPoint[POINTINDEX.X] = pickedPoint[POINTINDEX.X];
+          const otherXSphere = this.sphereStates.find(
+            (s, i) => s.axis === 'x' && i !== this.draggingSphereIndex
+          );
+          const newXCenter =
+            (otherXSphere.point[POINTINDEX.X] + pickedPoint[POINTINDEX.X]) / 2;
+          this.sphereStates.forEach((state, idx) => {
+            if (state.axis !== 'x' && !state.isCorner) {
+              state.point[POINTINDEX.X] = newXCenter;
+              state.sphereSource.setCenter(
+                state.point[0],
+                state.point[1],
+                state.point[2]
+              );
+              state.sphereActor.getProperty().setColor(state.color);
+              state.sphereSource.modified();
+            }
+          });
+        } else if (sphereState.axis === 'y') {
+          newPoint[POINTINDEX.Y] = pickedPoint[POINTINDEX.Y];
+          const otherYSphere = this.sphereStates.find(
+            (s, i) => s.axis === 'y' && i !== this.draggingSphereIndex
+          );
+          const newYCenter =
+            (otherYSphere.point[POINTINDEX.Y] + pickedPoint[POINTINDEX.Y]) / 2;
+          this.sphereStates.forEach((state, idx) => {
+            if (state.axis !== 'y' && !state.isCorner) {
+              state.point[POINTINDEX.Y] = newYCenter;
+              state.sphereSource.setCenter(
+                state.point[0],
+                state.point[1],
+                state.point[2]
+              );
+              state.sphereActor.getProperty().setColor(state.color);
+              state.sphereSource.modified();
+            }
+          });
+        } else if (sphereState.axis === 'z') {
+          newPoint[POINTINDEX.Z] = pickedPoint[POINTINDEX.Z];
+          const otherZSphere = this.sphereStates.find(
+            (s, i) => s.axis === 'z' && i !== this.draggingSphereIndex
+          );
+          const newZCenter =
+            (otherZSphere.point[POINTINDEX.Z] + pickedPoint[POINTINDEX.Z]) / 2;
+          this.sphereStates.forEach((state, idx) => {
+            if (state.axis !== 'z' && !state.isCorner) {
+              //   state.point[POINTINDEX.Z] = newZCenter;
+              this.sphereStates[idx].point[POINTINDEX.Z] = newZCenter;
+              this.sphereStates[idx].sphereSource.setCenter(
+                state.point[0],
+                state.point[1],
+                state.point[2]
+              );
+              // state.sphereActor.getProperty().setColor(state.color);
+              state.sphereSource.modified();
+            }
+          });
+        }
+
+        //  sphereState.point = newPoint as Types.Point3;
+        this.sphereStates[this.draggingSphereIndex].point[0] = newPoint[0];
+        this.sphereStates[this.draggingSphereIndex].point[1] = newPoint[1];
+        this.sphereStates[this.draggingSphereIndex].point[2] = newPoint[2];
+
+        sphereState.sphereSource.setCenter(
+          newPoint[0],
+          newPoint[1],
+          newPoint[2]
+        );
+        sphereState.sphereSource.modified();
+
+        this._updateCornerSpheres(viewport);
+        const clippingPlanes = mapper.getClippingPlanes();
+        clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
+        viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
+        viewport.render();
+        /// Send event with the new point
+        triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+          toolCenter: newPoint,
+          axis: sphereState.axis,
+          draggingSphereIndex: this.draggingSphereIndex,
+        });
       }
-      // Restrict movement to the sphere's axis only
-      if (sphereState.axis === 'x') {
-        newPoint[POINTINDEX.X] = pickedPoint[POINTINDEX.X];
-        const otherXSphere = this.sphereStates.find(
-          (s, i) => s.axis === 'x' && i !== this.draggingSphereIndex
-        );
-        const newXCenter =
-          (otherXSphere.point[POINTINDEX.X] + pickedPoint[POINTINDEX.X]) / 2;
-        this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'x' && !state.isCorner) {
-            state.point[POINTINDEX.X] = newXCenter;
-            state.sphereSource.setCenter(
-              state.point[0],
-              state.point[1],
-              state.point[2]
-            );
-            state.sphereActor.getProperty().setColor(state.color);
-            state.sphereSource.modified();
-          }
-        });
-      } else if (sphereState.axis === 'y') {
-        newPoint[POINTINDEX.Y] = pickedPoint[POINTINDEX.Y];
-        const otherYSphere = this.sphereStates.find(
-          (s, i) => s.axis === 'y' && i !== this.draggingSphereIndex
-        );
-        const newYCenter =
-          (otherYSphere.point[POINTINDEX.Y] + pickedPoint[POINTINDEX.Y]) / 2;
-        this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'y' && !state.isCorner) {
-            state.point[POINTINDEX.Y] = newYCenter;
-            state.sphereSource.setCenter(
-              state.point[0],
-              state.point[1],
-              state.point[2]
-            );
-            state.sphereActor.getProperty().setColor(state.color);
-            state.sphereSource.modified();
-          }
-        });
-      } else if (sphereState.axis === 'z') {
-        newPoint[POINTINDEX.Z] = pickedPoint[POINTINDEX.Z];
-        const otherZSphere = this.sphereStates.find(
-          (s, i) => s.axis === 'z' && i !== this.draggingSphereIndex
-        );
-        const newZCenter =
-          (otherZSphere.point[POINTINDEX.Z] + pickedPoint[POINTINDEX.Z]) / 2;
-        this.sphereStates.forEach((state, idx) => {
-          if (state.axis !== 'z' && !state.isCorner) {
-            //   state.point[POINTINDEX.Z] = newZCenter;
-            this.sphereStates[idx].point[POINTINDEX.Z] = newZCenter;
-            this.sphereStates[idx].sphereSource.setCenter(
-              state.point[0],
-              state.point[1],
-              state.point[2]
-            );
-            // state.sphereActor.getProperty().setColor(state.color);
-            state.sphereSource.modified();
-          }
-        });
-      }
-
-      //  sphereState.point = newPoint as Types.Point3;
-      this.sphereStates[this.draggingSphereIndex].point[0] = newPoint[0];
-      this.sphereStates[this.draggingSphereIndex].point[1] = newPoint[1];
-      this.sphereStates[this.draggingSphereIndex].point[2] = newPoint[2];
-
-      sphereState.sphereSource.setCenter(newPoint[0], newPoint[1], newPoint[2]);
-      sphereState.sphereSource.modified();
-
-      this._updateCornerSpheres(viewport);
-      const clippingPlanes = mapper.getClippingPlanes();
-      clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
-      viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
-      viewport.render();
-      /// Send event with the new point
-      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
-        toolCenter: newPoint,
-        axis: sphereState.axis,
-        draggingSphereIndex: this.draggingSphereIndex,
-      });
     }
   };
 

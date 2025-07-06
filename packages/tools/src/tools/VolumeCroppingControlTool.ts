@@ -1048,6 +1048,42 @@ class VolumeCroppingControlTool extends AnnotationTool {
         newCenter[2] = eventCenter[2];
       }
       this.setToolCenter(newCenter, 'max');
+    } else {
+      // corner sphere moved, update both min and max
+      const eventCenter = evt.detail.toolCenter;
+      // For each axis, check if the moved corner is at min or max for that axis
+      const minIdx = [0, 2, 4]; // XMIN, YMIN, ZMIN
+      const maxIdx = [1, 3, 5]; // XMAX, YMAX, ZMAX
+
+      // Copy current min and max
+      const newMin = [...this.toolCenterMin];
+      const newMax = [...this.toolCenterMax];
+
+      // For each axis, update min or max depending on the corner index
+      // draggingSphereIndex: 6 = XMIN_YMIN_ZMIN, 7 = XMIN_YMIN_ZMAX, ... up to 13 = XMAX_YMAX_ZMAX
+      const idx = evt.detail.draggingSphereIndex;
+      // Determine for each axis if this corner is at min or max
+      // X axis
+      if ([6, 7, 8, 9].includes(idx)) {
+        newMin[0] = eventCenter[0];
+      } else {
+        newMax[0] = eventCenter[0];
+      }
+      // Y axis
+      if ([6, 7, 10, 11].includes(idx)) {
+        newMin[1] = eventCenter[1];
+      } else {
+        newMax[1] = eventCenter[1];
+      }
+      // Z axis
+      if ([6, 8, 10, 12].includes(idx)) {
+        newMin[2] = eventCenter[2];
+      } else {
+        newMax[2] = eventCenter[2];
+      }
+
+      this.setToolCenter(newMin, 'min');
+      this.setToolCenter(newMax, 'max');
     }
   };
 
