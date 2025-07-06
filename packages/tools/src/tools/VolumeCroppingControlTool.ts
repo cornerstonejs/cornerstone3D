@@ -758,6 +758,23 @@ class VolumeCroppingControlTool extends AnnotationTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
+    function lineIntersection2D(p1, p2, q1, q2) {
+      const s1_x = p2[0] - p1[0];
+      const s1_y = p2[1] - p1[1];
+      const s2_x = q2[0] - q1[0];
+      const s2_y = q2[1] - q1[1];
+      const denom = -s2_x * s1_y + s1_x * s2_y;
+      if (Math.abs(denom) < 1e-8) {
+        return null;
+      } // Parallel
+      const s = (-s1_y * (p1[0] - q1[0]) + s1_x * (p1[1] - q1[1])) / denom;
+      const t = (s2_x * (p1[1] - q1[1]) - s2_y * (p1[0] - q1[0])) / denom;
+      if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+        return [p1[0] + t * s1_x, p1[1] + t * s1_y];
+      }
+      return null;
+    }
+
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
@@ -928,6 +945,31 @@ class VolumeCroppingControlTool extends AnnotationTool {
       viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
 
     referenceLines.forEach((line, lineIndex) => {
+      // Calculate intersections with other lines in this viewport
+      const intersections = [];
+      for (let j = 0; j < referenceLines.length; ++j) {
+        if (j === lineIndex) {
+          continue;
+        }
+        const otherLine = referenceLines[j];
+        const intersection = lineIntersection2D(
+          line[1],
+          line[2],
+          otherLine[1],
+          otherLine[2]
+        );
+        if (intersection) {
+          intersections.push({
+            with: otherLine[3], // 'min' or 'max'
+            point: intersection,
+          });
+        }
+      }
+      console.log(
+        `Reference line ${lineIndex} (${line[3]}) intersects at:`,
+        intersections
+      );
+
       // get color for the reference line
       const otherViewport = line[0];
       const viewportColor = this._getReferenceLineColor(otherViewport.id);
@@ -956,16 +998,20 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (viewportControllable) {
         //  lineUID = `${lineIndex}One`;
         //  lineUID = `${lineIndex}Two`;
-        // console.debug(lineUID, color, line[1], line[2]);
+        console.debug(lineUID, color, line[1], line[2]);
+
         drawLineSvg(
           svgDrawingHelper,
           annotationUID,
           lineUID,
-          line[1],
-          line[2],
+          intersections[0].point,
+          intersections[1].point,
+          //   line[1],
+          //  line[2],
           {
             color,
             lineWidth,
+            //   lineDash: [4, 4],
           }
         );
       }
