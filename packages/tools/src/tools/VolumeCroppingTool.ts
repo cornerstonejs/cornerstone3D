@@ -887,85 +887,76 @@ class VolumeCroppingTool extends AnnotationTool {
           }
         });
 
-        // // Update face spheres' positions to always be at the center of their faces
-        // // (between their two corresponding corners)
-        // const cornerToFace = [
-        //   [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMIN_YMIN_ZMIN
-        //   [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMIN_YMIN_ZMAX
-        //   [SPHEREINDEX.XMIN, SPHEREINDEX.YMAX, SPHEREINDEX.ZMIN], // XMIN_YMAX_ZMIN
-        //   [SPHEREINDEX.XMIN, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX], // XMIN_YMAX_ZMAX
-        //   [SPHEREINDEX.XMAX, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN], // XMAX_YMIN_ZMIN
-        //   [SPHEREINDEX.XMAX, SPHEREINDEX.YMIN, SPHEREINDEX.ZMAX], // XMAX_YMIN_ZMAX
-        //   [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMIN], // XMAX_YMAX_ZMIN
-        //   [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX], // XMAX_YMAX_ZMAX
-        // ];
-        // const cornerIdx = this.draggingSphereIndex - SPHEREINDEX.XMIN_YMIN_ZMIN;
-        // const faces = cornerToFace[cornerIdx];
+        // After moving the corner sphere, update all face spheres to the center between their corners
 
-        // faces.forEach((faceIdx) => {
-        //   const faceState = this.sphereStates[faceIdx];
-        //   if (!faceState) {
-        //     return;
-        //   }
+        // 1. Get all corner points
+        const cornerStates = [
+          this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMIN],
+          this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMAX],
+          this.sphereStates[SPHEREINDEX.XMIN_YMAX_ZMIN],
+          this.sphereStates[SPHEREINDEX.XMIN_YMAX_ZMAX],
+          this.sphereStates[SPHEREINDEX.XMAX_YMIN_ZMIN],
+          this.sphereStates[SPHEREINDEX.XMAX_YMIN_ZMAX],
+          this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMIN],
+          this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMAX],
+        ];
 
-        //   // Find the two corners that define this face
-        //   const faceAxis = faceState.axis;
-        //   const isCorner = (s) => s.isCorner;
-        //   const cornersOnFace = this.sphereStates.filter((s) => {
-        //     if (!isCorner(s)) {
-        //       return false;
-        //     }
-        //     if (faceAxis === 'x') {
-        //       return (
-        //         Math.abs(s.point[1] - faceState.point[1]) < 1e-6 &&
-        //         Math.abs(s.point[2] - faceState.point[2]) < 1e-6
-        //       );
-        //     }
-        //     if (faceAxis === 'y') {
-        //       return (
-        //         Math.abs(s.point[0] - faceState.point[0]) < 1e-6 &&
-        //         Math.abs(s.point[2] - faceState.point[2]) < 1e-6
-        //       );
-        //     }
-        //     if (faceAxis === 'z') {
-        //       return (
-        //         Math.abs(s.point[0] - faceState.point[0]) < 1e-6 &&
-        //         Math.abs(s.point[1] - faceState.point[1]) < 1e-6
-        //       );
-        //     }
-        //     return false;
-        //   });
+        const xs = cornerStates.map((s) => s.point[0]);
+        const ys = cornerStates.map((s) => s.point[1]);
+        const zs = cornerStates.map((s) => s.point[2]);
 
-        //   if (cornersOnFace.length !== 2) {
-        //     return;
-        //   } // Defensive
+        const xMin = Math.min(...xs);
+        const xMax = Math.max(...xs);
+        const yMin = Math.min(...ys);
+        const yMax = Math.max(...ys);
+        const zMin = Math.min(...zs);
+        const zMax = Math.max(...zs);
 
-        //   // Compute center between the two corners
-        //   const center = [
-        //     (cornersOnFace[0].point[0] + cornersOnFace[1].point[0]) / 2,
-        //     (cornersOnFace[0].point[1] + cornersOnFace[1].point[1]) / 2,
-        //     (cornersOnFace[0].point[2] + cornersOnFace[1].point[2]) / 2,
-        //   ];
+        // 2. Set face spheres to the center between their two corners
+        this.sphereStates[SPHEREINDEX.XMIN].point = [
+          xMin,
+          (yMin + yMax) / 2,
+          (zMin + zMax) / 2,
+        ];
+        this.sphereStates[SPHEREINDEX.XMAX].point = [
+          xMax,
+          (yMin + yMax) / 2,
+          (zMin + zMax) / 2,
+        ];
+        this.sphereStates[SPHEREINDEX.YMIN].point = [
+          (xMin + xMax) / 2,
+          yMin,
+          (zMin + zMax) / 2,
+        ];
+        this.sphereStates[SPHEREINDEX.YMAX].point = [
+          (xMin + xMax) / 2,
+          yMax,
+          (zMin + zMax) / 2,
+        ];
+        this.sphereStates[SPHEREINDEX.ZMIN].point = [
+          (xMin + xMax) / 2,
+          (yMin + yMax) / 2,
+          zMin,
+        ];
+        this.sphereStates[SPHEREINDEX.ZMAX].point = [
+          (xMin + xMax) / 2,
+          (yMin + yMax) / 2,
+          zMax,
+        ];
 
-        //   faceState.point[0] = center[0];
-        //   faceState.point[1] = center[1];
-        //   faceState.point[2] = center[2];
-        //   faceState.sphereSource.setCenter(center[0], center[1], center[2]);
-        //   faceState.sphereSource.modified();
-
-        //   // Update the clipping plane for this face
-        //   const clippingPlanes = mapper.getClippingPlanes();
-        //   if (clippingPlanes && clippingPlanes[faceIdx]) {
-        //     const origin = [...clippingPlanes[faceIdx].getOrigin()];
-        //     origin[POINTINDEX.X] = center[0];
-        //     origin[POINTINDEX.Y] = center[1];
-        //     origin[POINTINDEX.Z] = center[2];
-        //     clippingPlanes[faceIdx].setOrigin(origin);
-        //     viewport.setOriginalClippingPlane(faceIdx, origin);
-        //   }
-        // });
-        // After updating all spheres and before viewport.render()
-
+        // 3. Update sphere sources
+        [
+          SPHEREINDEX.XMIN,
+          SPHEREINDEX.XMAX,
+          SPHEREINDEX.YMIN,
+          SPHEREINDEX.YMAX,
+          SPHEREINDEX.ZMIN,
+          SPHEREINDEX.ZMAX,
+        ].forEach((idx) => {
+          const s = this.sphereStates[idx];
+          s.sphereSource.setCenter(s.point[0], s.point[1], s.point[2]);
+          s.sphereSource.modified();
+        });
         // Determine which planes are connected to this corner
         // Use the draggingSphereIndex to get the corner type
         const cornerPlaneIndices = [];
@@ -1188,6 +1179,7 @@ class VolumeCroppingTool extends AnnotationTool {
       }
     });
   }
+
   _onMouseUpSphere = (evt) => {
     //evt.stopPropagation();
     // evt.preventDefault();

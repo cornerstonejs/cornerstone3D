@@ -956,7 +956,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (viewportControllable) {
         //  lineUID = `${lineIndex}One`;
         //  lineUID = `${lineIndex}Two`;
-        console.debug(lineUID, color, line[1], line[2]);
+        // console.debug(lineUID, color, line[1], line[2]);
         drawLineSvg(
           svgDrawingHelper,
           annotationUID,
