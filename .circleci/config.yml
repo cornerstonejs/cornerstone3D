@@ -131,6 +131,6 @@ workflows:
             - BUILD
       - NPM_PUBLISH:
           requires:
-            - BUILD
+            - HOLD_FOR_APPROVAL
 
 # VS Code Extension Version: 1.5.1
