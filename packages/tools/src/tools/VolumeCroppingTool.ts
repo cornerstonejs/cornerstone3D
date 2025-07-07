@@ -116,7 +116,7 @@ function addCylinderBetweenPoints(
   viewport,
   point1,
   point2,
-  radius = 2,
+  radius = 0.5,
   color = [0.5, 0.5, 0.5],
   uid = ''
 ) {
@@ -148,6 +148,10 @@ function addCylinderBetweenPoints(
   const cylinderActor = vtkActor.newInstance();
   cylinderActor.setMapper(cylinderMapper);
   cylinderActor.getProperty().setColor(color);
+  cylinderActor.getProperty().setInterpolationToFlat();
+  cylinderActor.getProperty().setAmbient(1.0); // Full ambient
+  cylinderActor.getProperty().setDiffuse(0.0); // No diffuse
+  cylinderActor.getProperty().setSpecular(0.0);
 
   viewport.addActor({ actor: cylinderActor, uid: uid });
   return { actor: cylinderActor, source: cylinderSource };

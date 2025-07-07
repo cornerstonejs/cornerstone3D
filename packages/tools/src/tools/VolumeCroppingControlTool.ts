@@ -983,7 +983,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const color =
         viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
 
-      let lineWidth = 1;
+      let lineWidth = 2.5;
 
       const lineActive =
         data.handles.activeOperation !== null &&
@@ -991,29 +991,31 @@ class VolumeCroppingControlTool extends AnnotationTool {
         selectedViewportId;
 
       if (lineActive) {
-        lineWidth = 2.5;
+        lineWidth = 4.5;
       }
 
       const lineUID = `${lineIndex}`;
       if (viewportControllable) {
-        //  lineUID = `${lineIndex}One`;
-        //  lineUID = `${lineIndex}Two`;
-        console.debug(lineUID, color, line[1], line[2]);
+        if (intersections.length === 2) {
+          //  lineUID = `${lineIndex}One`;
+          //  lineUID = `${lineIndex}Two`;
+          //  console.debug(lineUID, color, line[1], line[2]);
 
-        drawLineSvg(
-          svgDrawingHelper,
-          annotationUID,
-          lineUID,
-          intersections[0].point,
-          intersections[1].point,
-          //   line[1],
-          //  line[2],
-          {
-            color,
-            lineWidth,
-            //   lineDash: [4, 4],
-          }
-        );
+          drawLineSvg(
+            svgDrawingHelper,
+            annotationUID,
+            lineUID,
+            intersections[0].point,
+            intersections[1].point,
+            //   line[1],
+            //  line[2],
+            {
+              color,
+              lineWidth,
+              //   lineDash: [4, 4],
+            }
+          );
+        }
       }
 
       if (viewportControllable) {
