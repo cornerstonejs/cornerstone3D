@@ -824,7 +824,7 @@ class CircleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      if(this.configuration.calculateStats){
+      if (this.configuration.calculateStats) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
           data.handles.textBox = {
