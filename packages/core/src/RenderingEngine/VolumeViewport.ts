@@ -77,12 +77,11 @@ class VolumeViewport extends BaseVolumeViewport {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
+    const volumeId = volumeInputArray[0].volumeId;
+    const firstImageVolume = cache.getVolume(volumeId);
 
     if (!firstImageVolume) {
-      throw new Error(
-        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
-      );
+      throw new Error(`imageVolume with id: ${volumeId} does not exist`);
     }
 
     if (this._useAcquisitionPlaneForViewPlane) {

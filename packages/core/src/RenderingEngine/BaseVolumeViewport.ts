@@ -1171,11 +1171,12 @@ abstract class BaseVolumeViewport extends Viewport {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
+    const volumeId = volumeInputArray[0].volumeId;
+    const firstImageVolume = cache.getVolume(volumeId);
 
     if (!firstImageVolume) {
       throw new Error(
-        `imageVolume with id: ${firstImageVolume.volumeId} does not exist, you need to create/allocate the volume first`
+        `imageVolume with id: ${volumeId} does not exist, you need to create/allocate the volume first`
       );
     }
 
