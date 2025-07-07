@@ -41,11 +41,6 @@ interface ViewportDisplayCoords {
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 const VIEWPORT_MIN_SIZE = 2;
 
-// Maximum size of the offscreen canvas
-// Dynamic sizing - no longer using fixed limits
-// export const MAX_WIDTH = 8192;
-// export const MAX_HEIGHT = 8192;
-
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
  * them on a large offscreen canvas and transmitting this data back to the screen. This allows us
