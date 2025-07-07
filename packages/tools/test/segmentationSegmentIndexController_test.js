@@ -172,7 +172,7 @@ describe('Segmentation Index Controller:', () => {
                   representation: {
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
                     data: {
-                      volumeId: segmentationId,
+                      volumeIds: [segmentationId],
                     },
                   },
                 },

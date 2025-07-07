@@ -107,13 +107,10 @@ describe('Segmentation State:', () => {
     eventTarget.addEventListener(
       Events.SEGMENTATION_REPRESENTATION_MODIFIED,
       (evt) => {
-        const stateManager =
-          segmentation.state.getDefaultSegmentationStateManager(segVolumeId);
-
-        const state = stateManager.getState();
+        const state = segmentation.state.getSegmentation(segVolumeId);
 
         expect(state).toBeDefined();
-        expect(state.representations).toBeDefined();
+        expect(state.representationData).toBeDefined();
 
         const toolGroupSegRepresentations =
           segmentation.state.getSegmentationRepresentations(viewportId);
@@ -122,7 +119,6 @@ describe('Segmentation State:', () => {
 
         expect(segRepresentation.segmentationId).toBe(segVolumeId);
         expect(segRepresentation.type).toBe(Labelmap);
-        expect(segRepresentation.rendering).toBeDefined();
       }
     );
 
@@ -148,7 +144,7 @@ describe('Segmentation State:', () => {
               representation: {
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
                 data: {
-                  volumeId: segVolumeId,
+                  volumeIds: [segVolumeId],
                 },
               },
             },
@@ -229,7 +225,7 @@ describe('Segmentation State:', () => {
               representation: {
                 type: csToolsEnums.SegmentationRepresentations.Labelmap,
                 data: {
-                  volumeId: segVolumeId,
+                  volumeIds: [segVolumeId],
                 },
               },
             },
