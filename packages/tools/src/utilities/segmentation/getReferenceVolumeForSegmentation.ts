@@ -2,7 +2,6 @@ import { cache } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import getOrCreateImageVolume from './getOrCreateImageVolume';
 import {
-  getPrimaryVolumeId,
   getReferencedVolumeId,
   type LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
@@ -57,9 +56,10 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
         return refVolume;
       }
     } else {
-      const volumeId = getPrimaryVolumeId(
-        labelmap as LabelmapSegmentationDataVolume
-      );
+      const volumeIds =
+        (labelmap as LabelmapSegmentationDataVolume).volumeIds || [];
+      const volumeId = volumeIds?.[0] || undefined;
+
       const segVolume = cache.getVolume(volumeId);
       if (segVolume) {
         referenceImageIds = segVolume.imageIds.map(

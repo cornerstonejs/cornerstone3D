@@ -12,7 +12,6 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
-import { getVolumeIds } from '../../../types/LabelmapTypes';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 
 const internalCache = new Map() as Map<
@@ -145,9 +144,9 @@ export async function addVolumesAsIndependentComponents({
     // update the second component of the array with the new segmentation data
     const { segmentationId } = evt.detail;
     const { representationData } = getSegmentation(segmentationId);
-    const volumeIds = getVolumeIds(
-      representationData.Labelmap as LabelmapSegmentationDataVolume
-    );
+    const volumeIds =
+      (representationData.Labelmap as LabelmapSegmentationDataVolume)
+        .volumeIds || [];
     // Support multiple volumeIds, but update only if segImageVolume is among them
     if (!volumeIds.includes(segImageVolume.volumeId)) {
       return;

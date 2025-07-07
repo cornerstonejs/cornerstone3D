@@ -27,7 +27,6 @@ import type {
   LabelmapSegmentationDataVolume,
   LabelmapSegmentationData,
 } from '../../types/LabelmapTypes';
-import { getPrimaryVolumeId } from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
@@ -191,9 +190,10 @@ class RectangleScissorsTool extends LabelmapBaseTool {
     };
 
     if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = getPrimaryVolumeId(
-        labelmapData as LabelmapSegmentationDataVolume
-      );
+      const volumeIds =
+        (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+
+      const volumeId = volumeIds?.[0] || undefined;
       const segmentation = cache.getVolume(volumeId);
 
       this.editData = {
@@ -202,10 +202,9 @@ class RectangleScissorsTool extends LabelmapBaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      // Use new utility for volumeId/volumeIds
-      const primaryVolumeId = getPrimaryVolumeId(
-        labelmapData as LabelmapSegmentationDataVolume
-      );
+      const volumeIds =
+        (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+      const primaryVolumeId = volumeIds?.[0] || undefined;
       const segmentation = cache.getVolume(primaryVolumeId);
 
       this.editData = {

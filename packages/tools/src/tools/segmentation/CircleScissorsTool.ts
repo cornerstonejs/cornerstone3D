@@ -36,7 +36,6 @@ import {
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import { getPrimaryVolumeId } from '../../types/LabelmapTypes';
 import LabelmapBaseTool from './LabelmapBaseTool';
 import type { LabelmapMemo } from '../../utilities/segmentation/createLabelmapMemo';
 
@@ -194,9 +193,10 @@ class CircleScissorsTool extends LabelmapBaseTool {
     };
 
     if (viewport instanceof BaseVolumeViewport) {
-      const primaryVolumeId = getPrimaryVolumeId(
-        labelmapData as LabelmapSegmentationDataVolume
-      );
+      const volumeIds =
+        (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+
+      const primaryVolumeId = volumeIds?.[0] || undefined;
       const segmentation = cache.getVolume(primaryVolumeId);
 
       this.editData = {

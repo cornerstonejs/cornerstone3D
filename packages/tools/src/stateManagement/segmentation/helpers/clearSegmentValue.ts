@@ -1,10 +1,7 @@
 import { cache } from '@cornerstonejs/core';
 import { getSegmentation } from '../getSegmentation';
 import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
-import {
-  getVolumeIds,
-  type LabelmapSegmentationDataVolume,
-} from '../../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 
 /**
  * Clears the specified segment value from a segmentation.
@@ -29,13 +26,13 @@ export function clearSegmentValue(
     const { representationData } = segmentation;
     const labelmapData = representationData.Labelmap;
 
-    if ('imageIds' in labelmapData || 'volumeId' in labelmapData) {
+    if ('imageIds' in labelmapData || 'volumeIds' in labelmapData) {
+      const volumeIds =
+        (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
       const items =
         'imageIds' in labelmapData
           ? labelmapData.imageIds.map((imageId) => cache.getImage(imageId))
-          : getVolumeIds(labelmapData as LabelmapSegmentationDataVolume).map(
-              (volumeId) => cache.getVolume(volumeId)
-            );
+          : volumeIds.map((volumeId) => cache.getVolume(volumeId));
 
       items.forEach((item) => {
         if (!item) {

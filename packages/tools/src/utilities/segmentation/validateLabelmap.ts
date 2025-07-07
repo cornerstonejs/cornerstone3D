@@ -12,11 +12,9 @@
  */
 import { cache } from '@cornerstonejs/core';
 import type { SegmentationPublicInput } from '../../types/SegmentationStateTypes';
-import {
-  getPrimaryVolumeId,
-  type LabelmapSegmentationData,
-  type LabelmapSegmentationDataStack,
-  type LabelmapSegmentationDataVolume,
+import type {
+  LabelmapSegmentationData,
+  LabelmapSegmentationDataStack,
 } from '../../types/LabelmapTypes';
 
 /**
@@ -43,19 +41,6 @@ function validateRepresentationData(
           `volumeId of ${volumeId} not found in cache, you should load and cache volume before adding segmentation`
         );
       }
-    }
-  } else if ('volumeId' in segmentationRepresentationData) {
-    // Single-volume segmentation: check volumeId
-    segmentationRepresentationData =
-      segmentationRepresentationData as LabelmapSegmentationDataVolume;
-
-    const volumeId = getPrimaryVolumeId(segmentationRepresentationData);
-    const cachedVolume = cache.getVolume(volumeId);
-
-    if (!cachedVolume) {
-      throw new Error(
-        `volumeId of ${volumeId} not found in cache, you should load and cache volume before adding segmentation`
-      );
     }
   } else if ('imageIds' in segmentationRepresentationData) {
     // Stack segmentation: check imageIds

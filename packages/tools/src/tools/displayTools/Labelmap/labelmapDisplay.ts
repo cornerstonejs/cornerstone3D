@@ -32,7 +32,6 @@ import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
-import { getVolumeIds } from '../../../types/LabelmapTypes';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.

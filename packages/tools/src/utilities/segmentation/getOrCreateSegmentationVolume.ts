@@ -7,7 +7,6 @@ import {
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import {
   addVolumeId,
-  getVolumeIds,
   type LabelmapSegmentationDataStack,
   type LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
@@ -52,9 +51,9 @@ function getOrCreateSegmentationVolume(
   segmentationId
 ): Types.IImageVolume | Types.IImageVolume[] | undefined {
   const { representationData } = getSegmentation(segmentationId);
-  const volumeIds = getVolumeIds(
-    representationData.Labelmap as LabelmapSegmentationDataVolume
-  );
+  const volumeIds =
+    (representationData.Labelmap as LabelmapSegmentationDataVolume).volumeIds ||
+    [];
 
   // Check for multiple volumeIds
   if (volumeIds && Array.isArray(volumeIds) && volumeIds.length > 0) {

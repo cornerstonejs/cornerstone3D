@@ -10,11 +10,10 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 import {
-  getPrimaryVolumeId,
-  getVolumeIds,
   type LabelmapSegmentationData,
   type LabelmapSegmentationDataStack,
   type LabelmapSegmentationDataVolume,
+  addVolumeId,
 } from '../../../types/LabelmapTypes';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
@@ -25,7 +24,7 @@ import {
 import { SegmentationRepresentations } from '../../../enums';
 import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTypes';
-import { addVolumeId } from '../../../types/LabelmapTypes';
+import { segmentation } from '@cornerstonejs/tools';
 
 const { uuidv4 } = utilities;
 
@@ -62,9 +61,8 @@ async function addLabelmapToElement(
     _ensurelabelMapDataVolumeHasVolumeId(volumeLabelMapData, segmentationId);
     const volumeInputs: Types.IVolumeInput[] = [];
 
-    const volumeIds = getVolumeIds(
-      volumeLabelMapData as LabelmapSegmentationDataVolume
-    );
+    const volumeIds =
+      (volumeLabelMapData as LabelmapSegmentationDataVolume).volumeIds || [];
 
     // Refactored: process all volumeIds sequentially to ensure volumeInputs is fully populated before use
     for (const volumeId of volumeIds) {
@@ -173,27 +171,18 @@ async function addLabelmapToElement(
  * Ensures that the labelMapData has a volumeId, generating one if necessary.
  * @param labelMapData - The labelmap segmentation data.
  * @param segmentationId - The segmentation id.
- * @returns The ensured volumeId.
  */
 function _ensurelabelMapDataVolumeHasVolumeId(
   labelMapData: LabelmapSegmentationDataVolume,
   segmentationId: string
-): string {
-  let volumeId = getPrimaryVolumeId(labelMapData);
-  if (!volumeId) {
-    volumeId = uuidv4();
-
-    const segmentation = getSegmentation(segmentationId);
-    addVolumeId(
-      segmentation.representationData
-        .Labelmap as LabelmapSegmentationDataVolume,
-      volumeId
-    );
+) {
+  const volumeIds = labelMapData.volumeIds;
+  if (!volumeIds || volumeIds.length === 0) {
+    const volumeId = uuidv4();
 
     addVolumeId(labelMapData, volumeId);
     triggerSegmentationModified(segmentationId);
   }
-  return volumeId;
 }
 
 /**
@@ -204,7 +193,7 @@ function _ensurelabelMapDataVolumeHasVolumeId(
  */
 async function _handleMissingVolume(
   labelMapData: LabelmapSegmentationData
-): Promise<Types.IImageVolume | Types.IImageVolume[]> {
+): Promise<Types.IImageVolume[]> {
   // since this is a labelmap which we don't have volume data for yet, we need
   // to see if there is imageIds and create one for it
   const stackData = labelMapData as LabelmapSegmentationDataStack;
@@ -219,8 +208,7 @@ async function _handleMissingVolume(
   const numberOfImages = utilities.getNumberOfReferenceImageIds(
     stackData.imageIds
   );
-  if (numberOfImages && stackData.imageIds.length > numberOfImages) {
-    // Multi-volume: split flat array
+  if (numberOfImages && stackData.imageIds.length >= numberOfImages) {
     const numVolumes = Math.floor(stackData.imageIds.length / numberOfImages);
     const volumes = [];
     for (let i = 0; i < numVolumes; i++) {
@@ -236,18 +224,6 @@ async function _handleMissingVolume(
       volumes.push(volume);
     }
     return volumes;
-  } else {
-    // Single volume: string[]
-    const volumeId =
-      getPrimaryVolumeId(labelMapData as LabelmapSegmentationDataVolume) ||
-      uuidv4();
-
-    const volume = await volumeLoader.createAndCacheVolumeFromImages(
-      volumeId,
-      stackData.imageIds as string[]
-    );
-
-    return volume;
   }
 }
 

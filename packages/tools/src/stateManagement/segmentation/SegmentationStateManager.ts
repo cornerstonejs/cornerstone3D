@@ -19,7 +19,6 @@ import type {
 } from '../../types/SegmentationStateTypes';
 import {
   addVolumeId,
-  getPrimaryVolumeId,
   type LabelmapSegmentationDataStack,
   type LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
@@ -602,9 +601,9 @@ export default class SegmentationStateManager {
       labelmapImageIds = (labelmapData as LabelmapSegmentationDataStack)
         .imageIds;
     } else if (!labelmapImageIds) {
-      const volumeId = getPrimaryVolumeId(
-        labelmapData as LabelmapSegmentationDataVolume
-      );
+      const volumeIds =
+        (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+      const volumeId = volumeIds.length > 0 ? volumeIds[0] : undefined;
       if (volumeId) {
         const volume = cache.getVolume(volumeId) as Types.IImageVolume;
         labelmapImageIds = volume?.imageIds;
@@ -1180,13 +1179,13 @@ async function internalComputeVolumeLabelmapFromStack({
   options?: {
     volumeId?: string;
   };
-}): Promise<{ volumeId?: string; volumeIds?: string[] }> {
+}): Promise<{ volumeIds?: string[] }> {
   // Multi-volume support: use numberOfImages to split flat array
   const numberOfImages = csUtils.getNumberOfReferenceImageIds(imageIds);
   if (
     numberOfImages &&
     Array.isArray(imageIds) &&
-    imageIds.length > numberOfImages
+    imageIds.length >= numberOfImages
   ) {
     const numVolumes = Math.floor(imageIds.length / numberOfImages);
     const volumeIds: string[] = [];
@@ -1197,15 +1196,6 @@ async function internalComputeVolumeLabelmapFromStack({
       volumeIds.push(volumeId);
     }
     return { volumeIds };
-  } else {
-    // Single volume: string[]
-    const segmentationImageIds = imageIds as string[];
-    const volumeId = options?.volumeId || csUtils.uuidv4();
-    await volumeLoader.createAndCacheVolumeFromImages(
-      volumeId,
-      segmentationImageIds
-    );
-    return { volumeId };
   }
 }
 
@@ -1223,18 +1213,28 @@ async function internalConvertStackToVolumeLabelmap({
   const segmentation =
     defaultSegmentationStateManager.getSegmentation(segmentationId);
 
-  const data = segmentation.representationData
-    .Labelmap as LabelmapSegmentationDataStack;
+  const data = segmentation.representationData.Labelmap;
+  const volumeIds = (data as LabelmapSegmentationDataVolume).volumeIds || [];
+  if (volumeIds.length > 0) {
+    console.warn(
+      'Labelmap segmentation already has volumeIds, skipping conversion'
+    );
+    return;
+  }
 
-  const { volumeId } = await internalComputeVolumeLabelmapFromStack({
-    imageIds: data.imageIds,
-    options,
+  const { volumeIds: computedVolumeIds } =
+    await internalComputeVolumeLabelmapFromStack({
+      imageIds: (data as LabelmapSegmentationDataStack).imageIds,
+      options,
+    });
+
+  computedVolumeIds.forEach((volumeId) => {
+    addVolumeId(
+      segmentation.representationData
+        .Labelmap as LabelmapSegmentationDataVolume,
+      volumeId
+    );
   });
-
-  addVolumeId(
-    segmentation.representationData.Labelmap as LabelmapSegmentationDataVolume,
-    volumeId
-  );
 }
 
 function getDefaultRenderingConfig(type: string): RenderingConfig {

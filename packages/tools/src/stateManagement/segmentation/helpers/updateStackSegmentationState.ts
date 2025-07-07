@@ -1,10 +1,7 @@
 import { cache, eventTarget } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../../enums';
 import { getSegmentation } from '../getSegmentation';
-import {
-  getVolumeIds,
-  type LabelmapSegmentationDataVolume,
-} from '../../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
 import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
 import { addSegmentationRepresentations } from '../addSegmentationRepresentationsToViewport';
 
@@ -38,7 +35,7 @@ export async function updateStackSegmentationState({
   if (options?.removeOriginal) {
     const data = segmentation.representationData
       .Labelmap as LabelmapSegmentationDataVolume;
-    const volumeIds = getVolumeIds(data);
+    const volumeIds = data.volumeIds || [];
     volumeIds.forEach((volumeId) => {
       if (cache.getVolume(volumeId)) {
         cache.removeVolumeLoadObject(volumeId);

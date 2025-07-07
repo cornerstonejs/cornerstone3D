@@ -5,10 +5,7 @@ import {
   getSegmentation,
   getCurrentLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
-import {
-  getVolumeIds,
-  type LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
@@ -87,9 +84,8 @@ export function getSegmentIndexAtWorldForLabelmap(
 
   if (viewport instanceof BaseVolumeViewport) {
     // Support both single and multi-volume segmentations
-    const allVolumeIds = getVolumeIds(
-      labelmapData as LabelmapSegmentationDataVolume
-    );
+    const allVolumeIds =
+      (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
     for (const vid of allVolumeIds) {
       if (!vid) {
         continue;

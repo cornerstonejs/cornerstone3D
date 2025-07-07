@@ -41,13 +41,9 @@ export type LabelmapStyle = BaseLabelmapStyle & InactiveLabelmapStyle;
 
 export type LabelmapSegmentationDataVolume = {
   /**
-   * Array of volumeIds for overlapping segmentations. If present, use this instead of volumeId.
+   * Array of volumeIds for overlapping segmentations.
    */
   volumeIds?: string[];
-  /**
-   * @deprecated Use volumeIds instead. This property will be removed in a future release.
-   */
-  volumeId?: string[];
   referencedVolumeId?: string;
 };
 
@@ -88,29 +84,6 @@ export type LabelmapSegmentationData =
       referencedImageIds?: string[];
       imageIds?: string[];
     };
-
-/**
- * Utility to get all volumeIds from a LabelmapSegmentationDataVolume, supporting both legacy and new format.
- */
-export function getVolumeIds(
-  labelmap: LabelmapSegmentationDataVolume
-): string[] {
-  if (Array.isArray(labelmap.volumeIds) && labelmap.volumeIds.length > 0) {
-    return labelmap.volumeIds;
-  }
-  return [];
-}
-
-/**
- * Utility to get the primary volumeId from a LabelmapSegmentationDataVolume, supporting both legacy and new format.
- */
-export function getPrimaryVolumeId(
-  labelmap: LabelmapSegmentationDataVolume
-): string | undefined {
-  if (Array.isArray(labelmap.volumeIds) && labelmap.volumeIds.length > 0) {
-    return labelmap.volumeIds[0];
-  }
-}
 
 /**
  * Utility to get the referenced volumeId from a LabelmapSegmentationDataVolume, if it exists.

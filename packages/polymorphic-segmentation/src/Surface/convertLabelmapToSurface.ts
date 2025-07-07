@@ -37,21 +37,23 @@ export async function convertLabelmapToSurface(
   segmentIndex: number
 ): Promise<Types.SurfaceData> {
   let volumeId;
-
-  if (
+  const volumeIds =
     (labelmapRepresentationData as ToolsTypes.LabelmapSegmentationDataVolume)
-      .volumeId
-  ) {
-    volumeId = (
-      labelmapRepresentationData as ToolsTypes.LabelmapSegmentationDataVolume
-    ).volumeId;
+      .volumeIds || [];
+
+  if (volumeIds.length > 0) {
+    volumeId = volumeIds[0];
   } else {
     const { imageIds } =
       labelmapRepresentationData as ToolsTypes.LabelmapSegmentationDataStack;
 
-    ({ volumeId } = await computeVolumeLabelmapFromStack({
-      imageIds,
-    }));
+    const { volumeIds: computedVolumeIds } =
+      await computeVolumeLabelmapFromStack({
+        imageIds,
+      });
+    if (computedVolumeIds.length > 0) {
+      volumeId = computedVolumeIds[0];
+    }
   }
 
   const volume = cache.getVolume(volumeId);

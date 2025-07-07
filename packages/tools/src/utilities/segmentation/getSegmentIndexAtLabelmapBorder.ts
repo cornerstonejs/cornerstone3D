@@ -5,10 +5,7 @@ import {
   getSegmentation,
   getCurrentLabelmapImageIdForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
-import {
-  getVolumeIds,
-  type LabelmapSegmentationDataVolume,
-} from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helpers';
 
 type Options = {
@@ -42,9 +39,8 @@ export function getSegmentIndexAtLabelmapBorder(
 
   if (viewport instanceof BaseVolumeViewport) {
     // Support both single and multi-volume segmentations
-    const volumeIds = getVolumeIds(
-      labelmapData as LabelmapSegmentationDataVolume
-    );
+    const volumeIds =
+      (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
     for (const vid of volumeIds) {
       if (!vid) {
         continue;

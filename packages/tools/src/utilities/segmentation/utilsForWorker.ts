@@ -11,7 +11,6 @@ import { getSegmentation } from '../../stateManagement/segmentation/getSegmentat
 import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
 import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
 import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
-import { getPrimaryVolumeId } from '../../types/LabelmapTypes';
 import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
@@ -52,9 +51,9 @@ export const getSegmentationDataForWorker = (
 
   //TODO: Handle multi-volume segmentations if needed
   // For now, we get only the first segmentation volume
-  const segVolumeId = getPrimaryVolumeId(
-    Labelmap as LabelmapSegmentationDataVolume
-  );
+  const volumeIds =
+    (Labelmap as LabelmapSegmentationDataVolume).volumeIds || [];
+  const segVolumeId = volumeIds?.[0] || undefined;
   let segImageIds = null;
   if (segVolumeId) {
     const segmentationVolume = cache.getVolume(segVolumeId);

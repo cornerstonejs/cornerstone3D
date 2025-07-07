@@ -23,8 +23,6 @@ import {
 } from '../../utilities/segmentation/growCut/constants';
 
 import {
-  addVolumeId,
-  getPrimaryVolumeId,
   replaceVolumeId,
   type LabelmapSegmentationDataStack,
   type LabelmapSegmentationDataVolume,
@@ -321,9 +319,10 @@ class GrowCutBaseTool extends BaseTool {
       segmentationState.getSegmentation(segmentationId);
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-    const labelmapVolumeId = getPrimaryVolumeId(
-      labelmapData as LabelmapSegmentationDataVolume
-    );
+
+    const volumeIds =
+      (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+    const labelmapVolumeId = volumeIds.length > 0 ? volumeIds[0] : undefined;
     let newLabelMapVolumeId;
     let { referencedVolumeId } = labelmapData as LabelmapSegmentationDataVolume;
 
