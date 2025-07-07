@@ -21,7 +21,8 @@ import {
 function getOrCreateSingleSegmentationVolume(
   imageIds: string[]
 ): Types.IImageVolume | undefined {
-  if (!imageIds || imageIds.length === 1) {
+  if (!imageIds || imageIds.length < 2) {
+    // Must have at least 2 images to form a volume
     return;
   }
   const isValid = utilities.isValidVolume(imageIds);
@@ -48,27 +49,29 @@ function getOrCreateSingleSegmentationVolume(
  * @returns The cached or newly created IImageVolume, an array of IImageVolume (for multi-volume), or undefined.
  */
 function getOrCreateSegmentationVolume(
-  segmentationId
-): Types.IImageVolume | Types.IImageVolume[] | undefined {
-  const { representationData } = getSegmentation(segmentationId);
+  segmentationId: string
+): Types.IImageVolume[] | undefined {
+  const segmentation = getSegmentation(segmentationId);
+  if (!segmentation?.representationData?.Labelmap) {
+    return undefined;
+  }
+  const { representationData } = segmentation;
+  const labelmap = representationData.Labelmap;
   const volumeIds =
-    (representationData.Labelmap as LabelmapSegmentationDataVolume).volumeIds ||
-    [];
+    (labelmap as LabelmapSegmentationDataVolume).volumeIds || [];
 
   // Check for multiple volumeIds
   if (volumeIds && Array.isArray(volumeIds) && volumeIds.length > 0) {
     const segVolumes = volumeIds
       .map((id) => cache.getVolume(id))
       .filter(Boolean);
-    return segVolumes;
+    return segVolumes.length > 0 ? segVolumes : undefined;
   }
 
-  const { imageIds: labelmapImageIds } =
-    representationData.Labelmap as LabelmapSegmentationDataStack;
-
-  // Multi-volume support: use numberOfImages to split flat array
-  const stackData =
-    representationData.Labelmap as LabelmapSegmentationDataStack;
+  const stackData = labelmap as LabelmapSegmentationDataStack;
+  if (!stackData?.imageIds || stackData.imageIds.length < 2) {
+    return undefined;
+  }
   const numberOfImages = utilities.getNumberOfReferenceImageIds(
     stackData.imageIds
   );
@@ -78,8 +81,8 @@ function getOrCreateSegmentationVolume(
     stackData.imageIds.length > numberOfImages
   ) {
     const numVolumes = Math.floor(stackData.imageIds.length / numberOfImages);
-    const volumes = [];
-    const newVolumeIds = [];
+    const volumes: Types.IImageVolume[] = [];
+    const newVolumeIds: string[] = [];
     for (let i = 0; i < numVolumes; i++) {
       const ids = stackData.imageIds.slice(
         i * numberOfImages,
@@ -89,13 +92,10 @@ function getOrCreateSegmentationVolume(
       if (vol) {
         volumes.push(vol);
         newVolumeIds.push(vol.volumeId);
-        addVolumeId(
-          representationData.Labelmap as LabelmapSegmentationDataVolume,
-          vol.volumeId
-        );
+        addVolumeId(labelmap as LabelmapSegmentationDataVolume, vol.volumeId);
       }
     }
-    return volumes;
+    return volumes.length > 0 ? volumes : undefined;
   }
   return undefined;
 }

@@ -9,8 +9,12 @@ import cache from '../cache/cache';
  * @returns {number} The number of unique reference image IDs.
  */
 export function getNumberOfReferenceImageIds(imageIds: string[]): number {
+  if (!imageIds || imageIds.length === 0) {
+    return 0;
+  }
+
   const uniqueReferenceImageIds = getReferenceImageIds(imageIds);
-  return uniqueReferenceImageIds?.length;
+  return uniqueReferenceImageIds.length;
 }
 
 /**
@@ -26,15 +30,28 @@ export function getReferenceImageIds(imageIds: string[]): string[] {
   if (!imageIds || imageIds.length === 0) {
     return [];
   }
+
   const referenceImageIds = imageIds
     .map((imageId) => {
-      const image = cache.getImage(imageId);
-      if (!image) {
-        return null; // Skip if image is undefined
+      if (!imageId || typeof imageId !== 'string') {
+        return null; // Skip invalid imageIds
       }
-      return image.referencedImageId ? image.referencedImageId : image.imageId;
+
+      try {
+        const image = cache.getImage(imageId);
+        if (!image) {
+          return null; // Skip if image is undefined
+        }
+        return image.referencedImageId
+          ? image.referencedImageId
+          : image.imageId;
+      } catch (error) {
+        console.warn(`Failed to get image for imageId: ${imageId}`, error);
+        return null; // Skip if cache.getImage throws an error
+      }
     })
-    .filter((id): id is string => !!id); // Filter out nulls
+    .filter((id): id is string => !!id); // Filter out nulls and falsy values
+
   const uniqueReferenceImageIds = new Set(referenceImageIds);
   return Array.from(uniqueReferenceImageIds);
 }

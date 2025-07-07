@@ -2,6 +2,19 @@ import { generateContourSetsFromLabelmap } from '../contours';
 import findLargestBidirectional from './findLargestBidirectional';
 import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
 
+// Types for clarity and safety
+interface Segment {
+  label: string;
+  color?: [number, number, number] | string | null;
+  containedSegmentIndices?: number[] | null;
+  segmentIndex?: number;
+}
+interface Segmentation {
+  segments: (Segment | null)[];
+  segmentationId: string;
+  // ...other properties as needed
+}
+
 /**
  * Generates a contour object over the segment, and then uses the contouring to
  * find the largest bidirectional object (by area: maxMajor * maxMinor) that can be applied
@@ -11,13 +24,11 @@ import getOrCreateSegmentationVolume from './getOrCreateSegmentationVolume';
  * across all volumes is returned.
  *
  * @param segmentation - The segmentation object containing segments and metadata.
- * @param segmentation.segments - A list of segments to apply the contour to.
- * @param segmentation.segments.containedSegmentIndices - A set of segment indexes equivalent to the primary segment.
- * @param segmentation.segments.label - The label for the segment.
- * @param segmentation.segments.color - The color to use for the segment label.
  * @returns The largest bidirectional object found (by area) for the first non-null segment, or undefined if none found.
  */
-export default async function contourAndFindLargestBidirectional(segmentation) {
+export default async function contourAndFindLargestBidirectional(
+  segmentation: Segmentation
+): Promise<ReturnType<typeof findLargestBidirectional> | undefined> {
   const contours = await generateContourSetsFromLabelmap({
     segmentations: segmentation,
   });
@@ -33,29 +44,36 @@ export default async function contourAndFindLargestBidirectional(segmentation) {
     ],
   } = segmentation;
 
-  const vol = getOrCreateSegmentationVolume(segmentation.segmentationId);
-  if (!vol) {
+  const volumes = getOrCreateSegmentationVolume(segmentation.segmentationId);
+  if (!volumes) {
     return;
   }
-  const volumes = Array.isArray(vol) ? vol : [vol];
 
   // Pick the first non-null segment as before
   const segmentIndex = segments.findIndex((it) => !!it);
   if (segmentIndex === -1) {
     return;
   }
-  segments[segmentIndex].segmentIndex = segmentIndex;
+  // Mutate segment to record its index for downstream logic
+  if (segments[segmentIndex]) {
+    segments[segmentIndex]!.segmentIndex = segmentIndex;
+  }
 
   // Loop over all volumes and return the largest bidirectional (by area)
-  let largest = undefined;
+  let largest: ReturnType<typeof findLargestBidirectional> | undefined =
+    undefined;
   let largestArea = -Infinity;
   for (const vol of volumes) {
     const result = findLargestBidirectional(
       contours[0],
       vol.volumeId,
-      segments[segmentIndex]
+      segments[segmentIndex]!
     );
-    if (result) {
+    if (
+      result &&
+      typeof result.maxMajor === 'number' &&
+      typeof result.maxMinor === 'number'
+    ) {
       const area = result.maxMajor * result.maxMinor;
       if (area > largestArea) {
         largest = result;

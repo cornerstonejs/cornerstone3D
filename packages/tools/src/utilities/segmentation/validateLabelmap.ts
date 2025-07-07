@@ -85,13 +85,29 @@ export function validatePublic(
 /**
  * Validates the given labelmap segmentation representation data.
  *
- * Throws an error if the representation data is invalid or references missing volumes/images.
+ * Throws an error if the representation data is invalid, missing, or references missing volumes/images.
  *
  * @param segmentationRepresentationData - The labelmap segmentation representation data to validate.
- * @throws Error if the representation data is invalid or references missing data.
+ * @throws Error if the representation data is invalid, missing, or references missing data.
+ */
+/**
+ * Validates the given labelmap segmentation representation data.
+ *
+ * Throws an error if the representation data is invalid, missing, or references missing volumes/images.
+ * Returns true if validation passes (for testability).
+ *
+ * @param segmentationRepresentationData - The labelmap segmentation representation data to validate.
+ * @returns {boolean} True if validation passes.
+ * @throws Error if the representation data is invalid, missing, or references missing data.
  */
 export function validate(
-  segmentationRepresentationData: LabelmapSegmentationData
-) {
+  segmentationRepresentationData: LabelmapSegmentationData | undefined | null
+): boolean {
+  if (!segmentationRepresentationData) {
+    throw new Error(
+      'The segmentationRepresentationData is null or undefined. Please provide a valid labelmap segmentation representation data object.'
+    );
+  }
   validateRepresentationData(segmentationRepresentationData);
+  return true;
 }

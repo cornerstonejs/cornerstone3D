@@ -49,9 +49,8 @@ async function interpolateLabelmap({
 
   triggerWorkerProgress(eventTarget, 0);
 
-  const segVolume = getOrCreateSegmentationVolume(segmentationId);
+  const segVolumes = getOrCreateSegmentationVolume(segmentationId);
   // If segVolume is an array, process each; otherwise, process as single volume
-  const segVolumes = Array.isArray(segVolume) ? segVolume : [segVolume];
   const totalVolumes = segVolumes.length;
   let failed = false;
 

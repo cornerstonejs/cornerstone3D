@@ -21,7 +21,11 @@ type OperationData = LabelmapToolOperationData & {
 };
 
 const initializeRectangle = {
-  [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
+  [StrategyCallbacks.Initialize]: (
+    operationData: InitializedOperationData & {
+      points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
+    }
+  ) => {
     const {
       points, // bottom, top, left, right
       imageVoxelManager,
@@ -30,11 +34,13 @@ const initializeRectangle = {
       segmentationVoxelManager,
     } = operationData;
 
-    // Happens on a preview setup
-    if (!points) {
-      return;
+    // Validate points
+    if (!points || points.length !== 4 || points.some((pt) => !pt)) {
+      throw new Error(
+        'Rectangle initialization requires exactly 4 valid points'
+      );
     }
-    // Average the points to get the center of the ellipse
+    // Average the points to get the center of the rectangle
     const center = vec3.fromValues(0, 0, 0);
     points.forEach((point) => {
       vec3.add(center, center, point);
@@ -47,16 +53,7 @@ const initializeRectangle = {
       center as Types.Point3
     );
 
-    // 2. Find the extent of the ellipse (circle) in IJK index space of the image
-
-    // const { boundsIJK, pointInShapeFn } = createPointInRectangle(
-    //   viewport,
-    //   points,
-    //   segmentationImageData
-    // );
-    // segmentationVoxelManager.boundsIJK = boundsIJK;
-    // imageVoxelManager.isInObject = pointInShapeFn;
-
+    // Find the extent of the rectangle in IJK index space of the image
     const { boundsIJK, pointInShapeFn } = createPointInRectangle(
       viewport as BaseVolumeViewport,
       points,
@@ -64,15 +61,22 @@ const initializeRectangle = {
     );
 
     operationData.isInObject = pointInShapeFn;
-    operationData.isInObjectBoundsIJK = boundsIJK;
+    operationData.isInObjectBoundsIJK = boundsIJK as Types.BoundsIJK;
   },
 } as Composition;
 
+/**
+ * Returns the IJK bounds and a function to test if a point is inside the rectangle.
+ * If the rectangle is not axis-aligned, uses a bounding box with EPS tolerance.
+ */
 function createPointInRectangle(
   viewport: BaseVolumeViewport,
   points: Types.Point3[],
   segmentationImageData: vtkImageData
-) {
+): {
+  boundsIJK: number[][];
+  pointInShapeFn: (pointLPS: Types.Point3) => boolean;
+} {
   let rectangleCornersIJK = points.map((world) => {
     return transformWorldToIndex(segmentationImageData, world);
   });
@@ -99,9 +103,7 @@ function createPointInRectangle(
   const spacing = segmentationImageData.getSpacing();
   const { viewPlaneNormal } = viewport.getCamera();
 
-  // In case that we are working on oblique, our EPS is really the spacing in the
-  // normal direction, since we can't really test each voxel against a 2D rectangle
-  // we need some tolerance in the normal direction.
+  // For oblique rectangles, use spacing in the normal direction as tolerance (EPS)
   const EPS = csUtils.getSpacingInNormalDirection(
     {
       direction,
@@ -121,14 +123,15 @@ function createPointInRectangle(
   zMin -= EPS;
   zMax += EPS;
 
+  // If axis-aligned, all points in bounds are considered inside
+  // Otherwise, use bounding box with EPS tolerance
   const pointInShapeFn = isAligned
     ? () => true
-    : (pointLPS) => {
+    : (pointLPS: Types.Point3) => {
         const [x, y, z] = pointLPS;
         const xInside = x >= xMin && x <= xMax;
         const yInside = y >= yMin && y <= yMax;
         const zInside = z >= zMin && z <= zMax;
-
         return xInside && yInside && zInside;
       };
 

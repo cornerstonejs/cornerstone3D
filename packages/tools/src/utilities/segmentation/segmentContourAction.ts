@@ -10,13 +10,12 @@ import createBidirectionalToolData from './createBidirectionalToolData';
 import BidirectionalTool from '../../tools/annotation/BidirectionalTool';
 import { getSegmentations } from '../../stateManagement/segmentation/getSegmentations';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
+import type { Segment } from '../../types';
 
-export type Segment = {
-  segmentationId: string;
-  segmentIndex: number;
-  label: string;
-  style?: Record<string, unknown>;
-  containedSegmentIndices?: (number) => boolean;
+type SegmentInfo = Segment & {
+  segmentationId?: string;
+  containedSegmentIndices?: number[] | null;
+  color?: [number, number, number] | string | null;
 };
 
 export type SegmentContourActionConfiguration = {
@@ -61,7 +60,7 @@ export default async function segmentContourAction(
   const existingLargestBidirectionals = bidirectionals.filter(
     (existingBidirectionalItem) => {
       const segment = existingBidirectionalItem.data.segment as
-        | Segment
+        | SegmentInfo
         | undefined;
       if (!segment) {
         return false;
@@ -87,9 +86,9 @@ export default async function segmentContourAction(
   let newBidirectional;
   existingLargestBidirectionals.forEach(
     async (existingLargestBidirectional) => {
-      const segments: Segment[] = [];
+      const segments: SegmentInfo[] = [];
       const updateSegment = existingLargestBidirectional.data
-        .segment as Segment;
+        .segment as SegmentInfo;
       const { segmentIndex, segmentationId } = updateSegment;
       segments[segmentIndex] = updateSegment;
       annotationState.removeAnnotation(
@@ -150,7 +149,7 @@ export default async function segmentContourAction(
 export function defaultGetSegment(
   enabledElement: Types.IEnabledElement,
   configuration: SegmentContourActionConfiguration
-): Segment {
+): SegmentInfo {
   const segmentationsList = getSegmentations();
   if (!segmentationsList.length) {
     return;
