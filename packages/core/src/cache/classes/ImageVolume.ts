@@ -86,6 +86,7 @@ export class ImageVolume {
   // @deprecated
   numTimePoints? = null as number;
   numFrames = null as number;
+  suppressWarnings: boolean;
 
   constructor(props: ImageVolumeProps) {
     const {
@@ -113,6 +114,7 @@ export class ImageVolume {
 
     let { imageData } = props;
 
+    this.suppressWarnings = true;
     this.imageIds = imageIds;
     this.volumeId = volumeId;
     this.metadata = metadata;
@@ -144,16 +146,22 @@ export class ImageVolume {
       imageData.setOrigin(origin);
     }
 
-    imageData.set({
-      dataType: dataType,
-      voxelManager: this.voxelManager,
-      id: volumeId,
-      numberOfComponents: numberOfComponents || 1,
-    });
+    imageData.set(
+      {
+        dataType: dataType,
+        voxelManager: this.voxelManager,
+        id: volumeId,
+        numberOfComponents: numberOfComponents || 1,
+      },
+      this.suppressWarnings
+    );
 
-    imageData.set({
-      hasScalarVolume: false,
-    });
+    imageData.set(
+      {
+        hasScalarVolume: false,
+      },
+      this.suppressWarnings
+    );
 
     this.imageData = imageData;
 
