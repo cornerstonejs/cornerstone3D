@@ -42,8 +42,8 @@ interface ViewportDisplayCoords {
 const VIEWPORT_MIN_SIZE = 2;
 
 // Maximum size of the offscreen canvas
-const MAX_WIDTH = 16384;
-const MAX_HEIGHT = 16384;
+export const MAX_WIDTH = 8192;
+export const MAX_HEIGHT = 8192;
 
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
