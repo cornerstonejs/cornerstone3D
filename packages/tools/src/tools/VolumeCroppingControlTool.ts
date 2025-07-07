@@ -965,10 +965,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
           });
         }
       }
-      console.log(
-        `Reference line ${lineIndex} (${line[3]}) intersects at:`,
-        intersections
-      );
 
       // get color for the reference line
       const otherViewport = line[0];

@@ -140,7 +140,15 @@ addToggleButtonToToolbar({
   title: 'Toggle 3D handles',
   defaultToggle: false,
   onClick: (toggle) => {
-    // resetViewports(toggle);
+    // Get the tool group for the 3D viewport
+    const toolGroupVRT =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+    // Get the VolumeCroppingTool instance from the tool group
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCroppingTool');
+    // Call setHandlesVisible on the tool instance
+    if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
+      croppingTool.setHandlesVisible(!croppingTool.getHandlesVisible());
+    }
   },
 });
 

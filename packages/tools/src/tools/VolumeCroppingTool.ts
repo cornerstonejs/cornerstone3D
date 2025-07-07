@@ -193,6 +193,7 @@ class VolumeCroppingTool extends AnnotationTool {
       supportedInteractionTypes: ['Mouse'],
       configuration: {
         showCornerSpheres: true,
+        showHandles: true,
         mobile: {
           enabled: false,
           opacity: 0.8,
@@ -222,6 +223,37 @@ class VolumeCroppingTool extends AnnotationTool {
     this.picker.initializePickList();
   }
 
+  setHandlesVisible(visible: boolean) {
+    this.configuration.showHandles = visible;
+    // Remove or show actors accordingly
+    this._updateHandlesVisibility();
+  }
+  getHandlesVisible() {
+    return this.configuration.showHandles;
+  }
+  _updateHandlesVisibility() {
+    const viewportsInfo = this._getViewportsInfo();
+    viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      // Spheres
+      this.sphereStates.forEach((state) => {
+        if (state.sphereActor) {
+          state.sphereActor.setVisibility(this.configuration.showHandles);
+        }
+      });
+
+      // Edge cylinders
+      Object.values(this.edgeCylinders).forEach(({ actor }) => {
+        if (actor) {
+          actor.setVisibility(this.configuration.showHandles);
+        }
+      });
+
+      viewport.render();
+    });
+  }
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
     return viewports;
@@ -250,6 +282,9 @@ class VolumeCroppingTool extends AnnotationTool {
   }
 
   addSphere(viewport, point, axis, position, cornerKey = null) {
+    if (!this.configuration.showHandles) {
+      return;
+    }
     // Generate a unique UID for each sphere based on its axis and position
     // Use cornerKey for corners, otherwise axis+position for faces
     const uid = cornerKey ? `corner_${cornerKey}` : `${axis}_${position}`;
@@ -387,7 +422,10 @@ class VolumeCroppingTool extends AnnotationTool {
     this.addSphere(viewport, sphereYmaxPoint, 'y', 'max');
     this.addSphere(viewport, sphereZminPoint, 'z', 'min');
     this.addSphere(viewport, sphereZmaxPoint, 'z', 'max');
-    if (this.configuration.showCornerSpheres) {
+    if (
+      this.configuration.showCornerSpheres &&
+      this.configuration.showHandles
+    ) {
       const corners = [
         [xMin, yMin, zMin], // XMIN_YMIN_ZMIN
         [xMin, yMin, zMax], // XMIN_YMIN_ZMAX
@@ -456,8 +494,6 @@ class VolumeCroppingTool extends AnnotationTool {
       });
     }
 
-    //  this._updateCornerBoxEdges3D(viewport);
-
     const defaultActor = viewport.getDefaultActor();
     if (defaultActor?.actor) {
       // Cast to any to avoid type errors with different actor types
@@ -484,26 +520,6 @@ class VolumeCroppingTool extends AnnotationTool {
     mapper.addClippingPlane(planeZmin);
     mapper.addClippingPlane(planeZmax);
 
-    /*
-    eventTarget.addEventListener(
-      Events.CROSSHAIR_TOOL_CENTER_CHANGED,
-      (evt) => {
-        console.debug('CROSSHAIR_TOOL_CENTER_CHANGED', evt);
-        viewportsInfo = this._getViewportsInfo();
-        const [viewport3D] = viewportsInfo;
-
-        const renderingEngine = getRenderingEngine(
-          viewport3D.renderingEngineId
-        );
-        const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
-        const { toolCenter } = evt.detail;
-        viewport.setCamera({
-          focalPoint: toolCenter,
-        });
-      }
-    );
-*/
     eventTarget.addEventListener(
       Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
       (evt) => {
@@ -537,73 +553,79 @@ class VolumeCroppingTool extends AnnotationTool {
       viewport.setOriginalClippingPlane(PLANEINDEX.XMIN, planeXmin.getOrigin());
       viewport.setOriginalClippingPlane(PLANEINDEX.YMIN, planeYmin.getOrigin());
       viewport.setOriginalClippingPlane(PLANEINDEX.ZMIN, planeZmin.getOrigin());
-      this.sphereStates[SPHEREINDEX.XMIN].point[0] = planeXmin.getOrigin()[0];
-      this.sphereStates[SPHEREINDEX.XMIN].sphereSource.setCenter(
-        planeXmin.getOrigin()[0],
-        this.sphereStates[0].point[1],
-        this.sphereStates[0].point[2]
-      );
 
-      const otherXSphere = this.sphereStates.find(
-        (s, i) => s.axis === 'x' && i !== 0
-      );
-      const newXCenter = (otherXSphere.point[0] + planeXmin.getOrigin()[0]) / 2;
-      this.sphereStates.forEach((state, idx) => {
-        if (
-          !state.isCorner &&
-          state.axis !== 'x' &&
-          !evt.detail.viewportOrientation.includes('sagittal') // sagittal is y axis in yellow
-        ) {
-          state.point[0] = newXCenter;
-          state.sphereSource.setCenter(state.point);
-          state.sphereActor.getProperty().setColor(state.color);
-        }
-      });
+      if (this.configuration.showHandles) {
+        this.sphereStates[SPHEREINDEX.XMIN].point[0] = planeXmin.getOrigin()[0];
+        this.sphereStates[SPHEREINDEX.XMIN].sphereSource.setCenter(
+          planeXmin.getOrigin()[0],
+          this.sphereStates[0].point[1],
+          this.sphereStates[0].point[2]
+        );
 
-      // y
-      this.sphereStates[SPHEREINDEX.YMIN].point[1] = planeYmin.getOrigin()[1];
-      this.sphereStates[SPHEREINDEX.YMIN].sphereSource.setCenter(
-        this.sphereStates[SPHEREINDEX.YMIN].point
-      );
-      this.sphereStates[SPHEREINDEX.YMIN].sphereSource.modified();
-      const otherYSphere = this.sphereStates.find(
-        (s, i) => s.axis === 'y' && i !== SPHEREINDEX.YMIN
-      );
-      const newYCenter = (otherYSphere.point[1] + planeYmin.getOrigin()[1]) / 2;
-      this.sphereStates.forEach((state, idx) => {
-        if (
-          !state.isCorner &&
-          state.axis !== 'y' &&
-          !evt.detail.viewportOrientation.includes('coronal') // coronal  is x axis in green
-        ) {
-          state.point[1] = newYCenter;
-          state.sphereSource.setCenter(state.point);
-          state.sphereActor.getProperty().setColor(state.color);
-          state.sphereSource.modified();
-        }
-      });
-      // z
-      this.sphereStates[SPHEREINDEX.ZMIN].point[2] = planeZmin.getOrigin()[2];
-      this.sphereStates[SPHEREINDEX.ZMIN].sphereSource.setCenter(
-        this.sphereStates[SPHEREINDEX.ZMIN].point[0],
-        this.sphereStates[SPHEREINDEX.ZMIN].point[1],
-        planeZmin.getOrigin()[2]
-      );
-      const otherZSphere = this.sphereStates.find(
-        (s, i) => s.axis === 'z' && i !== SPHEREINDEX.ZMIN
-      );
-      const newZCenter = (otherZSphere.point[2] + planeZmin.getOrigin()[2]) / 2;
-      this.sphereStates.forEach((state, idx) => {
-        if (
-          !state.isCorner &&
-          state.axis !== 'z' &&
-          !evt.detail.viewportOrientation.includes('axial') // axial    is z axis in red
-        ) {
-          state.point[2] = newZCenter;
-          state.sphereSource.setCenter(state.point);
-          state.sphereActor.getProperty().setColor(state.color);
-        }
-      });
+        const otherXSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'x' && i !== 0
+        );
+        const newXCenter =
+          (otherXSphere.point[0] + planeXmin.getOrigin()[0]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (
+            !state.isCorner &&
+            state.axis !== 'x' &&
+            !evt.detail.viewportOrientation.includes('sagittal') // sagittal is y axis in yellow
+          ) {
+            state.point[0] = newXCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereActor.getProperty().setColor(state.color);
+          }
+        });
+
+        // y
+        this.sphereStates[SPHEREINDEX.YMIN].point[1] = planeYmin.getOrigin()[1];
+        this.sphereStates[SPHEREINDEX.YMIN].sphereSource.setCenter(
+          this.sphereStates[SPHEREINDEX.YMIN].point
+        );
+        this.sphereStates[SPHEREINDEX.YMIN].sphereSource.modified();
+        const otherYSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'y' && i !== SPHEREINDEX.YMIN
+        );
+        const newYCenter =
+          (otherYSphere.point[1] + planeYmin.getOrigin()[1]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (
+            !state.isCorner &&
+            state.axis !== 'y' &&
+            !evt.detail.viewportOrientation.includes('coronal') // coronal  is x axis in green
+          ) {
+            state.point[1] = newYCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereActor.getProperty().setColor(state.color);
+            state.sphereSource.modified();
+          }
+        });
+        // z
+        this.sphereStates[SPHEREINDEX.ZMIN].point[2] = planeZmin.getOrigin()[2];
+        this.sphereStates[SPHEREINDEX.ZMIN].sphereSource.setCenter(
+          this.sphereStates[SPHEREINDEX.ZMIN].point[0],
+          this.sphereStates[SPHEREINDEX.ZMIN].point[1],
+          planeZmin.getOrigin()[2]
+        );
+        const otherZSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'z' && i !== SPHEREINDEX.ZMIN
+        );
+        const newZCenter =
+          (otherZSphere.point[2] + planeZmin.getOrigin()[2]) / 2;
+        this.sphereStates.forEach((state, idx) => {
+          if (
+            !state.isCorner &&
+            state.axis !== 'z' &&
+            !evt.detail.viewportOrientation.includes('axial') // axial    is z axis in red
+          ) {
+            state.point[2] = newZCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereActor.getProperty().setColor(state.color);
+          }
+        });
+      }
       const volumeActor = viewport.getDefaultActor()?.actor;
       if (!volumeActor) {
         console.warn('No volume actor found');
@@ -631,96 +653,97 @@ class VolumeCroppingTool extends AnnotationTool {
       viewport.setOriginalClippingPlane(PLANEINDEX.XMAX, planeXmax.getOrigin());
       viewport.setOriginalClippingPlane(PLANEINDEX.YMAX, planeYmax.getOrigin());
       viewport.setOriginalClippingPlane(PLANEINDEX.ZMAX, planeZmax.getOrigin());
+      if (this.configuration.showHandles) {
+        // x
+        this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.X] =
+          planeXmax.getOrigin()[POINTINDEX.X];
+        this.sphereStates[SPHEREINDEX.XMAX].sphereSource.setCenter(
+          this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.X],
+          this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.Y],
+          this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.Z]
+        );
+        this.sphereStates[SPHEREINDEX.XMAX].sphereSource.modified();
+        const otherXSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'x' && i !== SPHEREINDEX.XMAX
+        );
+        const newXCenter =
+          (otherXSphere.point[POINTINDEX.X] +
+            planeXmax.getOrigin()[POINTINDEX.X]) /
+          2;
+        this.sphereStates.forEach((state, idx) => {
+          if (
+            !state.isCorner &&
+            state.axis !== 'x' &&
+            !evt.detail.viewportOrientation.includes('sagittal')
+          ) {
+            state.point[POINTINDEX.X] = newXCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereActor.getProperty().setColor(state.color);
+            state.sphereSource.modified();
+          }
+        });
 
-      // x
-      this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.X] =
-        planeXmax.getOrigin()[POINTINDEX.X];
-      this.sphereStates[SPHEREINDEX.XMAX].sphereSource.setCenter(
-        this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.X],
-        this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.Y],
-        this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.Z]
-      );
-      this.sphereStates[SPHEREINDEX.XMAX].sphereSource.modified();
-      const otherXSphere = this.sphereStates.find(
-        (s, i) => s.axis === 'x' && i !== SPHEREINDEX.XMAX
-      );
-      const newXCenter =
-        (otherXSphere.point[POINTINDEX.X] +
-          planeXmax.getOrigin()[POINTINDEX.X]) /
-        2;
-      this.sphereStates.forEach((state, idx) => {
-        if (
-          !state.isCorner &&
-          state.axis !== 'x' &&
-          !evt.detail.viewportOrientation.includes('sagittal')
-        ) {
-          state.point[POINTINDEX.X] = newXCenter;
-          state.sphereSource.setCenter(state.point);
-          state.sphereActor.getProperty().setColor(state.color);
-          state.sphereSource.modified();
-        }
-      });
+        // y
+        this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Y] =
+          planeYmax.getOrigin()[POINTINDEX.Y];
+        this.sphereStates[SPHEREINDEX.YMAX].sphereSource.setCenter(
+          this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.X],
+          this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Y],
+          this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Z]
+        );
+        //    this.sphereStates[SPHEREINDEX.YMAX].sphereSource.sphereActor
+        //     .getProperty()
+        //     .setColor(this.sphereStates[SPHEREINDEX.YMAX].color);
+        this.sphereStates[SPHEREINDEX.YMAX].sphereSource.modified();
+        const otherYSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'y' && i !== SPHEREINDEX.YMAX
+        );
+        const newYCenter =
+          (otherYSphere.point[POINTINDEX.Y] +
+            planeYmax.getOrigin()[POINTINDEX.Y]) /
+          2;
+        this.sphereStates.forEach((state, idx) => {
+          if (
+            !state.isCorner &&
+            state.axis !== 'y' &&
+            !evt.detail.viewportOrientation.includes('coronal')
+          ) {
+            state.point[POINTINDEX.Y] = newYCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereActor.getProperty().setColor(state.color);
+            state.sphereSource.modified();
+          }
+        });
 
-      // y
-      this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Y] =
-        planeYmax.getOrigin()[POINTINDEX.Y];
-      this.sphereStates[SPHEREINDEX.YMAX].sphereSource.setCenter(
-        this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.X],
-        this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Y],
-        this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Z]
-      );
-      //    this.sphereStates[SPHEREINDEX.YMAX].sphereSource.sphereActor
-      //     .getProperty()
-      //     .setColor(this.sphereStates[SPHEREINDEX.YMAX].color);
-      this.sphereStates[SPHEREINDEX.YMAX].sphereSource.modified();
-      const otherYSphere = this.sphereStates.find(
-        (s, i) => s.axis === 'y' && i !== SPHEREINDEX.YMAX
-      );
-      const newYCenter =
-        (otherYSphere.point[POINTINDEX.Y] +
-          planeYmax.getOrigin()[POINTINDEX.Y]) /
-        2;
-      this.sphereStates.forEach((state, idx) => {
-        if (
-          !state.isCorner &&
-          state.axis !== 'y' &&
-          !evt.detail.viewportOrientation.includes('coronal')
-        ) {
-          state.point[POINTINDEX.Y] = newYCenter;
-          state.sphereSource.setCenter(state.point);
-          state.sphereActor.getProperty().setColor(state.color);
-          state.sphereSource.modified();
-        }
-      });
-
-      // z
-      this.sphereStates[SPHEREINDEX.ZMAX].point[POINTINDEX.Z] =
-        planeZmax.getOrigin()[POINTINDEX.Z];
-      this.sphereStates[SPHEREINDEX.ZMAX].sphereSource.setCenter(
-        this.sphereStates[SPHEREINDEX.ZMAX].point[POINTINDEX.X],
-        this.sphereStates[SPHEREINDEX.ZMAX].point[POINTINDEX.Y],
-        this.sphereStates[SPHEREINDEX.ZMAX].point[POINTINDEX.Z]
-      );
-      this.sphereStates[SPHEREINDEX.ZMAX].sphereSource.modified();
-      const otherZSphere = this.sphereStates.find(
-        (s, i) => s.axis === 'z' && i !== SPHEREINDEX.ZMAX
-      );
-      const newZCenter =
-        (otherZSphere.point[POINTINDEX.Z] +
-          planeZmax.getOrigin()[POINTINDEX.Z]) /
-        2;
-      this.sphereStates.forEach((state, idx) => {
-        if (
-          !state.isCorner &&
-          state.axis !== 'z' &&
-          !evt.detail.viewportOrientation.includes('axial')
-        ) {
-          state.point[POINTINDEX.Z] = newZCenter;
-          state.sphereSource.setCenter(state.point);
-          state.sphereActor.getProperty().setColor(state.color);
-          state.sphereSource.modified();
-        }
-      });
+        // z
+        this.sphereStates[SPHEREINDEX.ZMAX].point[POINTINDEX.Z] =
+          planeZmax.getOrigin()[POINTINDEX.Z];
+        this.sphereStates[SPHEREINDEX.ZMAX].sphereSource.setCenter(
+          this.sphereStates[SPHEREINDEX.ZMAX].point[POINTINDEX.X],
+          this.sphereStates[SPHEREINDEX.ZMAX].point[POINTINDEX.Y],
+          this.sphereStates[SPHEREINDEX.ZMAX].point[POINTINDEX.Z]
+        );
+        this.sphereStates[SPHEREINDEX.ZMAX].sphereSource.modified();
+        const otherZSphere = this.sphereStates.find(
+          (s, i) => s.axis === 'z' && i !== SPHEREINDEX.ZMAX
+        );
+        const newZCenter =
+          (otherZSphere.point[POINTINDEX.Z] +
+            planeZmax.getOrigin()[POINTINDEX.Z]) /
+          2;
+        this.sphereStates.forEach((state, idx) => {
+          if (
+            !state.isCorner &&
+            state.axis !== 'z' &&
+            !evt.detail.viewportOrientation.includes('axial')
+          ) {
+            state.point[POINTINDEX.Z] = newZCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereActor.getProperty().setColor(state.color);
+            state.sphereSource.modified();
+          }
+        });
+      }
       const volumeActor = viewport.getDefaultActor()?.actor;
       const mapper = volumeActor.getMapper();
       const clippingPlanes = mapper.getClippingPlanes();
@@ -728,7 +751,13 @@ class VolumeCroppingTool extends AnnotationTool {
       clippingPlanes[PLANEINDEX.YMAX].setOrigin(planeYmax.getOrigin());
       clippingPlanes[PLANEINDEX.ZMAX].setOrigin(planeZmax.getOrigin());
     }
-    this._updateCornerSpheres(viewport);
+    if (
+      this.configuration.showHandles &&
+      this.configuration.showCornerSpheres
+    ) {
+      this._updateCornerSpheres(viewport);
+    }
+    // this._updateCornerSpheres(viewport);
     viewport.render();
   };
 
