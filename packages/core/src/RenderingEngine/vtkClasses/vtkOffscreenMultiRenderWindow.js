@@ -3,8 +3,6 @@ import vtkStreamingOpenGLRenderWindow from './vtkStreamingOpenGLRenderWindow';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow';
 import vtkRenderWindowInteractor from '@kitware/vtk.js/Rendering/Core/RenderWindowInteractor';
-import { MAX_WIDTH, MAX_HEIGHT } from '../RenderingEngine';
-
 // Load basic classes for vtk() factory
 import '@kitware/vtk.js/Common/Core/Points';
 import '@kitware/vtk.js/Common/Core/DataArray';
@@ -39,13 +37,6 @@ function vtkOffscreenMultiRenderWindow(publicAPI, model) {
   // OpenGLRenderWindow
   model.openGLRenderWindow = vtkStreamingOpenGLRenderWindow.newInstance();
   model.renderWindow.addView(model.openGLRenderWindow);
-
-  // Create offscreen canvas and set it immediately
-  const offscreenCanvas = document.createElement('canvas');
-  offscreenCanvas.width = MAX_WIDTH;
-  offscreenCanvas.height = MAX_HEIGHT;
-  model.openGLRenderWindow.setCanvas(offscreenCanvas);
-  model.openGLRenderWindow.setSize(MAX_WIDTH, MAX_HEIGHT);
 
   // Interactor
   model.interactor = vtkRenderWindowInteractor.newInstance();

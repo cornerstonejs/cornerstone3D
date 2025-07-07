@@ -11,7 +11,7 @@ import StackViewport from './StackViewport';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
-import { calculateViewportOffsets } from './helpers/rectanglePacking';
+import { calculateOptimalViewportOffsets } from './helpers/rectanglePacking';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
@@ -42,8 +42,9 @@ interface ViewportDisplayCoords {
 const VIEWPORT_MIN_SIZE = 2;
 
 // Maximum size of the offscreen canvas
-export const MAX_WIDTH = 8192;
-export const MAX_HEIGHT = 8192;
+// Dynamic sizing - no longer using fixed limits
+// export const MAX_WIDTH = 8192;
+// export const MAX_HEIGHT = 8192;
 
 /**
  * A RenderingEngine takes care of the full pipeline of creating viewports and rendering
@@ -107,8 +108,6 @@ class RenderingEngine {
       this.offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
       this.offScreenCanvasContainer = document.createElement('div');
-      this.offScreenCanvasContainer.style.width = `${MAX_WIDTH}px`;
-      this.offScreenCanvasContainer.style.height = `${MAX_HEIGHT}px`;
       this.offscreenMultiRenderWindow.setContainer(
         this.offScreenCanvasContainer
       );
@@ -696,7 +695,7 @@ class RenderingEngine {
 
     const internalViewportEntry = { ...viewportInputEntry, canvas };
 
-    // Calculate the position for the new viewport using packing
+    // Calculate the position for the new viewport using optimal packing
     const allCanvases = [...canvasesDrivenByVtkJs];
     const viewportInputs = allCanvases.map((c, index) => ({
       id:
@@ -709,13 +708,9 @@ class RenderingEngine {
       },
     }));
 
-    const packedOffsets = calculateViewportOffsets(
-      viewportInputs,
-      MAX_WIDTH,
-      MAX_HEIGHT
-    );
+    const { viewportOffsets } = calculateOptimalViewportOffsets(viewportInputs);
 
-    const newViewportOffset = packedOffsets.find(
+    const newViewportOffset = viewportOffsets.find(
       (offset) => offset.id === viewportInputEntry.viewportId
     ) || { xOffset: 0, yOffset: 0 };
 
@@ -971,15 +966,12 @@ class RenderingEngine {
         },
       }));
 
-      const packedOffsets = calculateViewportOffsets(
-        viewportInputs,
-        MAX_WIDTH,
-        MAX_HEIGHT
-      );
+      const { viewportOffsets } =
+        calculateOptimalViewportOffsets(viewportInputs);
 
       // Create a map for quick lookup
       const offsetMap = new Map<string, { xOffset: number; yOffset: number }>();
-      packedOffsets.forEach((offset) => {
+      viewportOffsets.forEach((offset) => {
         offsetMap.set(offset.id, {
           xOffset: offset.xOffset,
           yOffset: offset.yOffset,
@@ -1022,17 +1014,32 @@ class RenderingEngine {
   } {
     const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
 
+    // Calculate optimal dimensions based on viewport canvases
+    const viewportInputs = canvasesDrivenByVtkJs.map((canvas, index) => ({
+      id: `canvas-${index}`,
+      canvas: {
+        width: canvas.width,
+        height: canvas.height,
+      },
+    }));
+
+    const { canvasWidth, canvasHeight } =
+      calculateOptimalViewportOffsets(viewportInputs);
+
+    // Update the offscreen canvas dimensions
     // @ts-expect-error
-    offScreenCanvasContainer.width = MAX_WIDTH;
+    offScreenCanvasContainer.width = canvasWidth;
     // @ts-expect-error
-    offScreenCanvasContainer.height = MAX_HEIGHT;
+    offScreenCanvasContainer.height = canvasHeight;
+    offScreenCanvasContainer.style.width = `${canvasWidth}px`;
+    offScreenCanvasContainer.style.height = `${canvasHeight}px`;
 
     // 3. Resize command
     offscreenMultiRenderWindow.resize();
 
     return {
-      offScreenCanvasWidth: MAX_WIDTH,
-      offScreenCanvasHeight: MAX_HEIGHT,
+      offScreenCanvasWidth: canvasWidth,
+      offScreenCanvasHeight: canvasHeight,
     };
   }
 
@@ -1059,15 +1066,11 @@ class RenderingEngine {
       },
     }));
 
-    const packedOffsets = calculateViewportOffsets(
-      viewportInputs,
-      MAX_WIDTH,
-      MAX_HEIGHT
-    );
+    const { viewportOffsets } = calculateOptimalViewportOffsets(viewportInputs);
 
     // Create a map for quick lookup
     const offsetMap = new Map<string, { xOffset: number; yOffset: number }>();
-    packedOffsets.forEach((offset) => {
+    viewportOffsets.forEach((offset) => {
       offsetMap.set(offset.id, {
         xOffset: offset.xOffset,
         yOffset: offset.yOffset,
