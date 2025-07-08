@@ -2,6 +2,7 @@ import * as Enums from './enums';
 import * as CONSTANTS from './constants';
 import { Events } from './enums';
 import RenderingEngine from './RenderingEngine';
+import RenderingEngineSequential from './RenderingEngine/RenderingEngineSequential';
 import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
   convertMapperToNotSharedMapper,
@@ -120,6 +121,7 @@ export {
   VideoViewport,
   WSIViewport,
   RenderingEngine,
+  RenderingEngineSequential,
   ImageVolume,
   Surface,
   // Helpers

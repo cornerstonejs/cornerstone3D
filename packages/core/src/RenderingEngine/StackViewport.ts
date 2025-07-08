@@ -97,6 +97,7 @@ import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
+import { isRenderingEngineSequential } from './helpers/isRenderingEngineSequential';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -234,6 +235,9 @@ class StackViewport extends Viewport {
   };
 
   private _configureRenderingPipeline(value?: boolean) {
+    const renderingEngine = this.getRenderingEngine();
+    const isSequential = isRenderingEngineSequential(renderingEngine);
+
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
     for (const key in this.renderingPipelineFunctions) {
@@ -244,7 +248,21 @@ class StackViewport extends Viewport {
         )
       ) {
         const functions = this.renderingPipelineFunctions[key];
-        this[key] = this.useCPURendering ? functions.cpu : functions.gpu;
+        if (this.useCPURendering) {
+          this[key] = functions.cpu;
+        } else {
+          if (
+            typeof functions.gpu === 'object' &&
+            functions.gpu.sequential &&
+            functions.gpu.default
+          ) {
+            this[key] = isSequential
+              ? functions.gpu.sequential
+              : functions.gpu.default;
+          } else {
+            this[key] = functions.gpu;
+          }
+        }
       }
     }
 
@@ -2826,7 +2844,7 @@ class StackViewport extends Viewport {
     return canvasPoint;
   };
 
-  private canvasToWorldGPU = (canvasPos: Point2): Point3 => {
+  private canvasToWorldGPUSequential = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2880,7 +2898,53 @@ class StackViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
-  private worldToCanvasGPU = (worldPos: Point3): Point2 => {
+  private canvasToWorldGPU = (canvasPos: Point2): Point3 => {
+    const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
+    const offscreenMultiRenderWindow =
+      this.getRenderingEngine().offscreenMultiRenderWindow;
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow();
+    const size = openGLRenderWindow.getSize();
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+    const displayCoord = [
+      canvasPosWithDPR[0] + this.sx,
+      canvasPosWithDPR[1] + this.sy,
+    ];
+
+    // The y axis display coordinates are inverted with respect to canvas coords
+    displayCoord[1] = size[1] - displayCoord[1];
+
+    const worldCoord = openGLRenderWindow.displayToWorld(
+      displayCoord[0],
+      displayCoord[1],
+      0,
+      renderer
+    );
+
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
+  };
+
+  private worldToCanvasGPUSequential = (worldPos: Point3): Point2 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2927,6 +2991,49 @@ class StackViewport extends Viewport {
     const canvasCoordWithDPR = [
       canvasX / devicePixelRatio,
       canvasY / devicePixelRatio,
+    ] as Point2;
+
+    return canvasCoordWithDPR;
+  };
+
+  private worldToCanvasGPU = (worldPos: Point3): Point2 => {
+    const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
+    const offscreenMultiRenderWindow =
+      this.getRenderingEngine().offscreenMultiRenderWindow;
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow();
+    const size = openGLRenderWindow.getSize();
+    const displayCoord = openGLRenderWindow.worldToDisplay(
+      ...worldPos,
+      renderer
+    );
+
+    // The y axis display coordinates are inverted with respect to canvas coords
+    displayCoord[1] = size[1] - displayCoord[1];
+
+    const canvasCoord = [
+      displayCoord[0] - this.sx,
+      displayCoord[1] - this.sy,
+    ] as Point2;
+
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasCoordWithDPR = [
+      canvasCoord[0] / devicePixelRatio,
+      canvasCoord[1] / devicePixelRatio,
     ] as Point2;
 
     return canvasCoordWithDPR;
@@ -3400,11 +3507,17 @@ class StackViewport extends Viewport {
     },
     canvasToWorld: {
       cpu: this.canvasToWorldCPU,
-      gpu: this.canvasToWorldGPU,
+      gpu: {
+        sequential: this.canvasToWorldGPUSequential,
+        default: this.canvasToWorldGPU,
+      },
     },
     worldToCanvas: {
       cpu: this.worldToCanvasCPU,
-      gpu: this.worldToCanvasGPU,
+      gpu: {
+        sequential: this.worldToCanvasGPUSequential,
+        default: this.worldToCanvasGPU,
+      },
     },
     getRenderer: {
       cpu: () => this.getCPUFallbackError('getRenderer'),
