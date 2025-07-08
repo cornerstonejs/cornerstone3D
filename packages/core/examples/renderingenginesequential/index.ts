@@ -21,48 +21,65 @@ setTitleAndDescription(
 
 const renderingEngineId = 'myRenderingEngineSequential';
 let renderingEngine: RenderingEngineSequential;
+let resizeTimeout: number;
+
+// Debounced resize handler
+const handleResize = () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = window.setTimeout(() => {
+    renderingEngine = getRenderingEngine(
+      renderingEngineId
+    ) as RenderingEngineSequential;
+
+    if (renderingEngine) {
+      renderingEngine.resize(true, false);
+    }
+  }, 50); // 50ms debounce
+};
 
 // Set up ResizeObserver for dynamic resizing
-const resizeObserver = new ResizeObserver(() => {
-  renderingEngine = getRenderingEngine(
-    renderingEngineId
-  ) as RenderingEngineSequential;
-
-  if (renderingEngine) {
-    renderingEngine.resize(true, false);
-  }
-});
+const resizeObserver = new ResizeObserver(handleResize);
 
 const content = document.getElementById('content');
 
-// Create viewport grid
-const viewportGrid = document.createElement('div');
-viewportGrid.style.display = 'grid';
-viewportGrid.style.gridTemplateRows = 'repeat(6, 1fr)';
-viewportGrid.style.gridTemplateColumns = 'repeat(6, 1fr)';
-viewportGrid.style.width = '95vw';
-viewportGrid.style.height = '90vh';
-viewportGrid.style.gap = '2px';
-viewportGrid.style.backgroundColor = '#000';
+// Create viewport container using flexbox
+const viewportContainer = document.createElement('div');
+viewportContainer.style.display = 'flex';
+viewportContainer.style.flexDirection = 'column';
+viewportContainer.style.width = '95vw';
+viewportContainer.style.height = '90vh';
+viewportContainer.style.backgroundColor = 'darkred';
+viewportContainer.style.gap = '2px';
 
-content.appendChild(viewportGrid);
+content.appendChild(viewportContainer);
 
 // Create 36 viewport elements
 const elements: HTMLDivElement[] = [];
 const viewportIds: string[] = [];
 
+// Create rows and columns
 for (let row = 0; row < 6; row++) {
+  const rowContainer = document.createElement('div');
+  rowContainer.style.display = 'flex';
+  rowContainer.style.flexDirection = 'row';
+  rowContainer.style.flex = '1';
+  rowContainer.style.width = '100%';
+  rowContainer.style.gap = '2px';
+
   for (let col = 0; col < 6; col++) {
     const element = document.createElement('div');
-    element.style.width = '100%';
-    element.style.height = '100%';
+    element.style.flex = '1';
+    element.style.position = 'relative';
+    element.style.overflow = 'hidden';
     element.style.background = '#1a1a1a';
+    element.style.minWidth = '0';
+    element.style.minHeight = '0';
 
     // Disable right click context menu
     element.oncontextmenu = (e) => e.preventDefault();
 
-    // Add to grid
-    viewportGrid.appendChild(element);
+    // Add to row
+    rowContainer.appendChild(element);
 
     // Store element and create viewport ID
     elements.push(element);
@@ -71,6 +88,8 @@ for (let row = 0; row < 6; row++) {
     // Observe element for resizing
     resizeObserver.observe(element);
   }
+
+  viewportContainer.appendChild(rowContainer);
 }
 
 /**
