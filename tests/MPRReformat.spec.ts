@@ -24,6 +24,9 @@ test.describe('MPR Reformat Visual Tests', () => {
     // Click the reformat button
     await page.click('button:has-text("Reformat viewports")');
 
+    // Wait for reformat to complete
+    await page.waitForTimeout(2000);
+
     // Take screenshot after reformat
     await checkForScreenshot(
       page,
@@ -38,6 +41,9 @@ test.describe('MPR Reformat Visual Tests', () => {
 
     // Click the reformat button
     await page.click('button:has-text("Reformat viewports")');
+
+    // Wait for reformat to complete
+    await page.waitForTimeout(2000);
 
     // Take screenshot after reformat
     await checkForScreenshot(
@@ -60,13 +66,18 @@ test.describe('MPR Reformat Visual Tests', () => {
             { x: 200, y: 200 },
           ],
         });
+
+        // Wait for interaction to complete
+        await page.waitForTimeout(1000);
       } catch (error) {
         // If canvas interaction fails, just wait and continue
         console.log('Canvas interaction failed, continuing with test');
+        await page.waitForTimeout(1000);
       }
     } else {
       // On mobile, just wait without interaction
       console.log('Skipping canvas interaction on mobile browser');
+      await page.waitForTimeout(1000);
     }
 
     // Verify the reformat is maintained after interaction

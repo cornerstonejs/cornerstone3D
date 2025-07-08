@@ -22,6 +22,9 @@ test.skip('Rendering Pipelines for GPU', async () => {
     }) => {
       await selectRenderingOption(page, option.name);
 
+      // Wait 5 seconds for rendering to complete
+      await page.waitForTimeout(5000);
+
       const canvases = await getCanvases(page);
 
       for (let i = 0; i < canvases.length; i++) {
@@ -57,6 +60,7 @@ test.skip('Stack Viewport with CPU Rendering', () => {
   }) => {
     // Switch to CPU rendering
     await selectRenderingOption(page, 'CPU Rendering');
+    await page.waitForTimeout(1000); // Wait for re-rendering
 
     // Check CPU rendering
     await checkCPURendering(page);
