@@ -984,6 +984,35 @@ class RenderingEngine {
   }
 
   /**
+   * Resizes the offscreen canvas to match a single viewport's dimensions.
+   * This is used for sequential rendering to avoid WeblGL & Browser Limits.
+   *
+   * @param currentViewport - The viewport's canvas to size the offscreen canvas to
+   */
+  private _resizeOffScreenCanvasForSingleViewport(
+    currentViewport: HTMLCanvasElement
+  ): {
+    offScreenCanvasWidth: number;
+    offScreenCanvasHeight: number;
+  } {
+    const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
+
+    // Size to current viewport;
+    const offScreenCanvasWidth = currentViewport.width;
+    const offScreenCanvasHeight = currentViewport.height;
+
+    // @ts-expect-error
+    offScreenCanvasContainer.width = offScreenCanvasWidth;
+    // @ts-expect-error
+    offScreenCanvasContainer.height = offScreenCanvasHeight;
+
+    // Resize command
+    offscreenMultiRenderWindow.resize();
+
+    return { offScreenCanvasWidth, offScreenCanvasHeight };
+  }
+
+  /**
    * Recalculates and updates the viewports location on the offScreen canvas upon its resize
    *
    * @param viewports - An array of viewports
@@ -1122,10 +1151,6 @@ class RenderingEngine {
   private _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
 
-    if (!this.useCPURendering) {
-      this.performVtkDrawCall();
-    }
-
     const viewports = this._getViewportsAsArray();
     const eventDetailArray = [];
 
@@ -1161,41 +1186,6 @@ class RenderingEngine {
   };
 
   /**
-   * Performs the single `vtk.js` draw call which is used to render the offscreen
-   * canvas for vtk.js. This is a bulk rendering step for all Volume and Stack
-   * viewports when GPU rendering is available.
-   */
-  private performVtkDrawCall() {
-    // Render all viewports under vtk.js' control.
-    const { offscreenMultiRenderWindow } = this;
-    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
-
-    const renderers = offscreenMultiRenderWindow.getRenderers();
-
-    if (!renderers.length) {
-      return;
-    }
-
-    for (let i = 0; i < renderers.length; i++) {
-      const { renderer, id } = renderers[i];
-
-      // Requesting viewports that need rendering to be rendered only
-      if (this._needsRender.has(id)) {
-        renderer.setDraw(true);
-      } else {
-        renderer.setDraw(false);
-      }
-    }
-
-    renderWindow.render();
-
-    // After redraw we set all renderers to not render until necessary
-    for (let i = 0; i < renderers.length; i++) {
-      renderers[i].renderer.setDraw(false);
-    }
-  }
-
-  /**
    * Renders the given viewport
    * using its proffered method.
    *
@@ -1225,7 +1215,31 @@ class RenderingEngine {
         );
       }
 
+      // Sequential rendering
       const { offscreenMultiRenderWindow } = this;
+      const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
+      // Resize canvas to match viewport
+      this._resizeOffScreenCanvasForSingleViewport(viewport.canvas);
+
+      // Configure renderer for single viewport at (0,0)
+      const renderer = offscreenMultiRenderWindow.getRenderer(viewport.id);
+
+      // Set normalized viewport coordinates (0 to 1) for full canvas
+      renderer.setViewport([0, 0, 1, 1]);
+
+      // Enable only this renderer
+      const allRenderers = offscreenMultiRenderWindow.getRenderers();
+      allRenderers.forEach(({ renderer: r, id }) => {
+        r.setDraw(id === viewport.id);
+      });
+
+      // Render
+      renderWindow.render();
+
+      // Disable all renderers after rendering
+      allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
+
+      // Get the offscreen canvas and copy to onscreen
       const openGLRenderWindow =
         offscreenMultiRenderWindow.getOpenGLRenderWindow();
       const context = openGLRenderWindow.get3DContext();
@@ -1252,10 +1266,6 @@ class RenderingEngine {
     const {
       element,
       canvas,
-      sx,
-      sy,
-      sWidth,
-      sHeight,
       id: viewportId,
       renderingEngineId,
       suppressEvents,
@@ -1267,12 +1277,12 @@ class RenderingEngine {
 
     onScreenContext.drawImage(
       offScreenCanvas,
-      sx,
-      sy,
-      sWidth,
-      sHeight,
-      0, //dx
-      0, // dy
+      0,
+      0,
+      dWidth,
+      dHeight,
+      0,
+      0,
       dWidth,
       dHeight
     );
