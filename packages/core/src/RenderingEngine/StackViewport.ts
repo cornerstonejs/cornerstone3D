@@ -2851,8 +2851,8 @@ class StackViewport extends Viewport {
 
     // Normalize to [0,1] range
     const normalizedDisplay = [
-      canvasPosWithDPR[0] / (width * devicePixelRatio),
-      1 - canvasPosWithDPR[1] / (height * devicePixelRatio), // Flip Y axis
+      canvasPosWithDPR[0] / width,
+      1 - canvasPosWithDPR[1] / height, // Flip Y axis
       0,
     ];
 
