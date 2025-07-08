@@ -1628,16 +1628,39 @@ abstract class BaseVolumeViewport extends Viewport {
     vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
-    const displayCoords = this.getVtkDisplayCoords(canvasPos);
-    const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const worldCoord = openGLRenderWindow.displayToWorld(
-      displayCoords[0],
-      displayCoords[1],
-      displayCoords[2],
-      renderer
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Convert canvas coordinates to normalized display coordinates
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+
+    // Normalize to [0,1] range
+    const normalizedDisplay = [
+      canvasPosWithDPR[0] / width,
+      1 - canvasPosWithDPR[1] / height, // Flip Y axis
+      0,
+    ];
+
+    // Transform from normalized display to world coordinates
+    const projCoords = renderer.normalizedDisplayToProjection(
+      normalizedDisplay[0],
+      normalizedDisplay[1],
+      normalizedDisplay[2]
+    );
+    const viewCoords = renderer.projectionToView(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2],
+      aspectRatio
+    );
+    const worldCoord = renderer.viewToWorld(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2]
     );
 
     vtkCamera.setIsPerformingCoordinateTransformation?.(false);
@@ -1658,18 +1681,16 @@ abstract class BaseVolumeViewport extends Viewport {
       canvasPos[0] * devicePixelRatio,
       canvasPos[1] * devicePixelRatio,
     ];
-    const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const size = openGLRenderWindow.getSize();
+
+    const { height } = this.canvas;
+
+    // Canvas coordinates with origin at top-left
+    // VTK display coordinates have origin at bottom-left
     const displayCoord = [
-      canvasPosWithDPR[0] + this.sx,
-      canvasPosWithDPR[1] + this.sy,
+      canvasPosWithDPR[0],
+      height * devicePixelRatio - canvasPosWithDPR[1],
     ];
 
-    // The y axis display coordinates are inverted with respect to canvas coords
-    displayCoord[1] = size[1] - displayCoord[1];
     return [displayCoord[0], displayCoord[1], 0];
   };
   /**
@@ -1708,28 +1729,39 @@ abstract class BaseVolumeViewport extends Viewport {
     vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
-    const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const size = openGLRenderWindow.getSize();
-    const displayCoord = openGLRenderWindow.worldToDisplay(
-      ...worldPos,
-      renderer
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Transform from world to view coordinates
+    const viewCoords = renderer.worldToView(
+      worldPos[0],
+      worldPos[1],
+      worldPos[2]
     );
 
-    // The y axis display coordinates are inverted with respect to canvas coords
-    displayCoord[1] = size[1] - displayCoord[1];
+    // Transform from view to projection coordinates
+    const projCoords = renderer.viewToProjection(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2],
+      aspectRatio
+    );
 
-    const canvasCoord = [
-      displayCoord[0] - this.sx,
-      displayCoord[1] - this.sy,
-    ] as Point2;
+    // Transform from projection to normalized display coordinates
+    const normalizedDisplay = renderer.projectionToNormalizedDisplay(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2]
+    );
+
+    // Convert normalized display [0,1] to canvas pixels
+    const canvasX = normalizedDisplay[0] * width;
+    const canvasY = (1 - normalizedDisplay[1]) * height; // Flip Y axis
 
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasCoordWithDPR = [
-      canvasCoord[0] / devicePixelRatio,
-      canvasCoord[1] / devicePixelRatio,
+      canvasX / devicePixelRatio,
+      canvasY / devicePixelRatio,
     ] as Point2;
 
     vtkCamera.setIsPerformingCoordinateTransformation(false);

@@ -2839,30 +2839,39 @@ class StackViewport extends Viewport {
 
     vtkCamera.setClippingRange(distance, distance + 0.1);
 
-    const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const size = openGLRenderWindow.getSize();
-
     const devicePixelRatio = window.devicePixelRatio || 1;
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Convert canvas coordinates to normalized display coordinates
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
       canvasPos[1] * devicePixelRatio,
     ];
-    const displayCoord = [
-      canvasPosWithDPR[0] + this.sx,
-      canvasPosWithDPR[1] + this.sy,
+
+    // Normalize to [0,1] range
+    const normalizedDisplay = [
+      canvasPosWithDPR[0] / (width * devicePixelRatio),
+      1 - canvasPosWithDPR[1] / (height * devicePixelRatio), // Flip Y axis
+      0,
     ];
 
-    // The y axis display coordinates are inverted with respect to canvas coords
-    displayCoord[1] = size[1] - displayCoord[1];
-
-    const worldCoord = openGLRenderWindow.displayToWorld(
-      displayCoord[0],
-      displayCoord[1],
-      0,
-      renderer
+    // Transform from normalized display to world coordinates
+    const projCoords = renderer.normalizedDisplayToProjection(
+      normalizedDisplay[0],
+      normalizedDisplay[1],
+      normalizedDisplay[2]
+    );
+    const viewCoords = renderer.projectionToView(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2],
+      aspectRatio
+    );
+    const worldCoord = renderer.viewToWorld(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2]
     );
 
     // set clipping range back to original to be able
@@ -2884,31 +2893,40 @@ class StackViewport extends Viewport {
 
     vtkCamera.setClippingRange(distance, distance + 0.1);
 
-    const offscreenMultiRenderWindow =
-      this.getRenderingEngine().offscreenMultiRenderWindow;
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const size = openGLRenderWindow.getSize();
-    const displayCoord = openGLRenderWindow.worldToDisplay(
-      ...worldPos,
-      renderer
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    const { width, height } = this.canvas;
+
+    const aspectRatio = width / height;
+
+    const viewCoords = renderer.worldToView(
+      worldPos[0],
+      worldPos[1],
+      worldPos[2]
     );
 
-    // The y axis display coordinates are inverted with respect to canvas coords
-    displayCoord[1] = size[1] - displayCoord[1];
+    const projCoords = renderer.viewToProjection(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2],
+      aspectRatio
+    );
 
-    const canvasCoord = [
-      displayCoord[0] - this.sx,
-      displayCoord[1] - this.sy,
-    ] as Point2;
+    const normalizedDisplay = renderer.projectionToNormalizedDisplay(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2]
+    );
+
+    const canvasX = normalizedDisplay[0] * width;
+    const canvasY = (1 - normalizedDisplay[1]) * height;
 
     // set clipping range back to original to be able
     vtkCamera.setClippingRange(crange[0], crange[1]);
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasCoordWithDPR = [
-      canvasCoord[0] / devicePixelRatio,
-      canvasCoord[1] / devicePixelRatio,
+      canvasX / devicePixelRatio,
+      canvasY / devicePixelRatio,
     ] as Point2;
 
     return canvasCoordWithDPR;
