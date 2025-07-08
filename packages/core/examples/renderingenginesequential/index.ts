@@ -148,7 +148,7 @@ async function run() {
     <p>36 viewports (6x6 grid)</p>
     <p>Using RenderingEngineSequential for better performance with large viewport counts</p>
     <p>Resize the window to test resize observer</p>
-    <p style="color: #4CAF50;">Sequential rendering reduces GPU memory pressure</p>
+    <p style="color: #4CAF50;">Avoids WebGL, browser and OS limits</p>
   `;
   content.appendChild(info);
 }
