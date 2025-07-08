@@ -152,6 +152,14 @@
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
+      },
+      "renderingengine": {
+        "name": "6x6 Grid with RenderingEngine",
+        "description": "Displays a 6x6 grid of viewports using standard RenderingEngine with resize observer"
+      },
+      "renderingenginesequential": {
+        "name": "6x6 Grid with RenderingEngineSequential",
+        "description": "Displays a 6x6 grid of viewports using RenderingEngineSequential for better performance with large viewport counts"
       }
     },
     "tools-basic": {
