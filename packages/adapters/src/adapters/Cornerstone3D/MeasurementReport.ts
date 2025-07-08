@@ -32,6 +32,7 @@ type SpatialCoordinatesState = {
             FrameOfReferenceUID: string;
             label: string;
         };
+        data?: unknown;
     };
     finding?: unknown;
     findingSites?: unknown;

@@ -177,7 +177,7 @@ class EllipticalROI extends BaseAdapter3D {
         // in the image plane and then choose the correct points to use for the ellipse.
         const pointsWorld: Point3[] = [];
         for (let i = 0; i < GraphicData.length; i += 3) {
-            const worldPos = [
+            const worldPos: Point3 = [
                 GraphicData[i],
                 GraphicData[i + 1],
                 GraphicData[i + 2]
@@ -335,7 +335,9 @@ class EllipticalROI extends BaseAdapter3D {
         }
 
         const cachedStatsKeys = Object.keys(cachedStats)[0];
-        const { area } = cachedStatsKeys ? cachedStats[cachedStatsKeys] : {};
+        const { area = undefined } = cachedStatsKeys
+            ? cachedStats[cachedStatsKeys]
+            : {};
 
         return {
             area,
