@@ -1,4 +1,5 @@
 import eventTarget from '../../eventTarget';
+import { asArray } from '../asArray';
 
 // Define Events from tools package
 // Note: We can't directly import from tools package due to circular dependency
@@ -87,14 +88,10 @@ export class HistoryMemo {
   public undo(items = 1) {
     while (items > 0 && this.undoAvailable > 0) {
       const item = this.ring[this.position];
-      if (Array.isArray(item)) {
-        for (const subitem of item) {
-          subitem.restoreMemo(true);
-          this.dispatchHistoryEvent({ item: subitem, isUndo: true });
-        }
-      } else {
-        item.restoreMemo(true);
-        this.dispatchHistoryEvent({ item, isUndo: true });
+
+      for (const subitem of asArray(item)) {
+        subitem.restoreMemo(true);
+        this.dispatchHistoryEvent({ item: subitem, isUndo: true });
       }
 
       items--;
@@ -146,14 +143,9 @@ export class HistoryMemo {
       const newPosition = (this.position + 1) % this.size;
       const item = this.ring[newPosition];
 
-      if (Array.isArray(item)) {
-        for (const subitem of item) {
-          subitem.restoreMemo(false);
-          this.dispatchHistoryEvent({ item: subitem, isUndo: false });
-        }
-      } else {
-        item.restoreMemo(false);
-        this.dispatchHistoryEvent({ item, isUndo: false });
+      for (const subitem of asArray(item)) {
+        subitem.restoreMemo(false);
+        this.dispatchHistoryEvent({ item: subitem, isUndo: false });
       }
 
       items--;
