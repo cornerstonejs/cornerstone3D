@@ -3026,7 +3026,7 @@ class StackViewport extends Viewport {
       return false;
     }
 
-    if (viewRef.volumeId) {
+    if (viewRef.volumeId || viewRef.FrameOfReferenceUID) {
       return options.asVolume;
     }
 

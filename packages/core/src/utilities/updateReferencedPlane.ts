@@ -1,4 +1,4 @@
-import type { Point3, type ViewReference } from '../types';
+import type { Point3, ViewReference } from '../types';
 import { isEqual } from '../utilities/isEqual';
 import { vec3 } from 'gl-matrix';
 

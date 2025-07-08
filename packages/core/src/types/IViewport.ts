@@ -154,8 +154,8 @@ export type ReferencedPlane = {
  * to it later, as well as determining whether specific views should show annotations
  * or other overlay information.
  *
- * This is an interface as it is intended to allow extension with additional behaviour/view
- * types.
+ * Note this is an interface as it is designed to allow extension/customization
+ * by additional Viewport modules.
  */
 export interface ViewReference {
   /**
