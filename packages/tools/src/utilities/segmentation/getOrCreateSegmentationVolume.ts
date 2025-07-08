@@ -78,7 +78,7 @@ function getOrCreateSegmentationVolume(
   if (
     stackData &&
     numberOfImages &&
-    stackData.imageIds.length > numberOfImages
+    stackData.imageIds.length >= numberOfImages
   ) {
     const numVolumes = Math.floor(stackData.imageIds.length / numberOfImages);
     const volumes: Types.IImageVolume[] = [];

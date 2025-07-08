@@ -117,7 +117,7 @@ function isValidVolume(imageIds: string[]): boolean {
   let groups: string[][] = [imageIds];
   const numberOfImages = getNumberOfReferenceImageIds(imageIds);
   // If numberOfImages is defined, split the imageIds into groups of that size.
-  if (numberOfImages && imageIds.length > numberOfImages) {
+  if (numberOfImages && imageIds.length >= numberOfImages) {
     const numVolumes = Math.floor(imageIds.length / numberOfImages);
     groups = [];
     for (let i = 0; i < numVolumes; i++) {
