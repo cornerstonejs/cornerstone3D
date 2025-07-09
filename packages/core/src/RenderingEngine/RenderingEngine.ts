@@ -18,7 +18,7 @@ class RenderingEngine {
 
   constructor(id?: string) {
     const config = getConfiguration();
-    const renderingEngineMode = config.renderingEngineMode;
+    const renderingEngineMode = config?.rendering?.renderingEngineMode;
 
     switch (renderingEngineMode) {
       case RenderingEngineModeEnum.Standard:
@@ -28,9 +28,11 @@ class RenderingEngine {
         this._implementation = new SequentialRenderingEngine(id);
         break;
       default:
-        throw new Error(
-          `Unsupported rendering engine mode: ${renderingEngineMode}. Supported modes are 'standard' and 'next'.`
+        console.warn(
+          `RenderingEngine: Unknown rendering engine mode "${renderingEngineMode}". Defaulting to Next rendering engine.`
         );
+        this._implementation = new SequentialRenderingEngine(id);
+        break;
     }
   }
 
