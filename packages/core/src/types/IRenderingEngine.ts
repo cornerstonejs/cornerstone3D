@@ -1,6 +1,5 @@
-import type RenderingEngine from '../RenderingEngine/RenderingEngine';
-import type SequentialRenderingEngine from '../RenderingEngine/SequentialRenderingEngine';
+import type BaseRenderingEngine from '../RenderingEngine/BaseRenderingEngine';
 
-type IRenderingEngine = RenderingEngine | SequentialRenderingEngine;
+type IRenderingEngine = BaseRenderingEngine;
 
 export type { IRenderingEngine as default };

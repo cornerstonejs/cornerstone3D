@@ -1,23 +1,23 @@
+import BaseRenderingEngine, { VIEWPORT_MIN_SIZE } from './BaseRenderingEngine';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
+import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
-import BaseRenderingEngine from './BaseRenderingEngine';
+import type IStackViewport from '../types/IStackViewport';
+import type IVolumeViewport from '../types/IVolumeViewport';
 import VolumeViewport3D from './VolumeViewport3D';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
   ViewportInput,
-  PublicViewportInput,
   InternalViewportInput,
   NormalizedViewportInput,
   IViewport,
 } from '../types/IViewport';
-import type IStackViewport from '../types/IStackViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
@@ -61,108 +61,6 @@ interface ViewportDisplayCoords {
  */
 class RenderingEngine extends BaseRenderingEngine {
   /**
-   * Resizes the offscreen viewport and recalculates translations to on screen canvases.
-   * It is up to the parent app to call the resize of the on-screen canvas changes.
-   * This is left as an app level concern as one might want to debounce the changes, or the like.
-   *
-   * @param immediate - Whether all of the viewports should be rendered immediately.
-   * @param keepCamera - Whether to keep the camera for other viewports while resizing the offscreen canvas
-   */
-  public resize(immediate = true, keepCamera = true): void {
-    this._throwIfDestroyed();
-    // 1. Get the viewports' canvases
-    const viewports = this._getViewportsAsArray();
-
-    const vtkDrivenViewports = [];
-    const customRenderingViewports = [];
-
-    viewports.forEach((vpie) => {
-      if (vpie.type === ViewportType.STACK && this.useCPURendering) {
-        customRenderingViewports.push(vpie);
-      } else if (!vpie.customRenderViewportToCanvas) {
-        vtkDrivenViewports.push(vpie);
-      } else {
-        customRenderingViewports.push(vpie);
-      }
-    });
-
-    if (vtkDrivenViewports.length) {
-      this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
-    }
-
-    if (customRenderingViewports.length) {
-      this._resizeUsingCustomResizeHandler(
-        customRenderingViewports,
-        keepCamera,
-        immediate
-      );
-    }
-  }
-
-  protected _resizeVTKViewports(
-    vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
-    keepCamera = true,
-    immediate = true
-  ) {
-    // Ensure all the canvases are ready for rendering
-    const canvasesDrivenByVtkJs = vtkDrivenViewports.map(
-      (vp: IStackViewport | IVolumeViewport) => {
-        return getOrCreateCanvas(vp.element);
-      }
-    );
-
-    // reset the canvas size to the client size
-    canvasesDrivenByVtkJs.forEach((canvas) => {
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      canvas.width = canvas.clientWidth * devicePixelRatio;
-      canvas.height = canvas.clientHeight * devicePixelRatio;
-    });
-
-    if (canvasesDrivenByVtkJs.length) {
-      // 1. Recalculate and resize the offscreen canvas size
-      const { offScreenCanvasWidth, offScreenCanvasHeight } =
-        this._resizeOffScreenCanvas(canvasesDrivenByVtkJs);
-
-      // 2. Recalculate the viewports location on the off screen canvas
-      this._resize(
-        vtkDrivenViewports,
-        offScreenCanvasWidth,
-        offScreenCanvasHeight
-      );
-    }
-
-    // 3. Reset viewport cameras
-    vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
-      const prevCamera = vp.getCamera();
-      const rotation = vp.getRotation();
-      const { flipHorizontal } = prevCamera;
-      vp.resetCameraForResize();
-
-      const displayArea = vp.getDisplayArea();
-
-      // TODO - make this use get/set Presentation or in some way preserve the
-      // basic presentation info on this viewport, rather than preserving camera
-      if (keepCamera) {
-        if (displayArea) {
-          if (flipHorizontal) {
-            vp.setCamera({ flipHorizontal });
-          }
-          if (rotation) {
-            vp.setViewPresentation({ rotation });
-          }
-        } else {
-          vp.setCamera(prevCamera);
-        }
-      }
-    });
-
-    // 4. If render is immediate: Render all
-    if (immediate) {
-      this.render();
-    }
-  }
-
-  /**
    * Enables a viewport to be driven by the offscreen vtk.js rendering engine.
    *
    * @param viewportInputEntry - Information object used to
@@ -173,9 +71,7 @@ class RenderingEngine extends BaseRenderingEngine {
   ) {
     const viewports = this._getViewportsAsArray();
     const viewportsDrivenByVtkJs = viewports.filter(
-      (vp) =>
-        !vp.customRenderViewportToCanvas &&
-        !(vp.type === ViewportType.STACK && this.useCPURendering)
+      (vp) => viewportTypeUsesCustomRenderingPipeline(vp.type) === false
     );
 
     const canvasesDrivenByVtkJs = viewportsDrivenByVtkJs.map((vp) => vp.canvas);
@@ -276,7 +172,7 @@ class RenderingEngine extends BaseRenderingEngine {
     } as ViewportInput;
 
     // 4. Create a proper viewport based on the type of the viewport
-    let viewport;
+    let viewport: IViewport;
     if (type === ViewportType.STACK) {
       // 4.a Create stack viewport
       viewport = new StackViewport(viewportInput);
@@ -364,6 +260,242 @@ class RenderingEngine extends BaseRenderingEngine {
         xOffset += canvas.width;
       }
     }
+  }
+
+  /**
+   * Resizes viewports that use VTK.js for rendering.
+   */
+  protected _resizeVTKViewports(
+    vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
+    keepCamera = true,
+    immediate = true
+  ) {
+    // Ensure all the canvases are ready for rendering
+    const canvasesDrivenByVtkJs = vtkDrivenViewports.map(
+      (vp: IStackViewport | IVolumeViewport) => {
+        return getOrCreateCanvas(vp.element);
+      }
+    );
+
+    // reset the canvas size to the client size
+    canvasesDrivenByVtkJs.forEach((canvas) => {
+      const devicePixelRatio = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * devicePixelRatio;
+      canvas.height = canvas.clientHeight * devicePixelRatio;
+    });
+
+    if (canvasesDrivenByVtkJs.length) {
+      // 1. Recalculate and resize the offscreen canvas size
+      const { offScreenCanvasWidth, offScreenCanvasHeight } =
+        this._resizeOffScreenCanvas(canvasesDrivenByVtkJs);
+
+      // 2. Recalculate the viewports location on the off screen canvas
+      this._resize(
+        vtkDrivenViewports,
+        offScreenCanvasWidth,
+        offScreenCanvasHeight
+      );
+    }
+
+    // 3. Reset viewport cameras
+    vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
+      const prevCamera = vp.getCamera();
+      const rotation = vp.getRotation();
+      const { flipHorizontal } = prevCamera;
+      vp.resetCameraForResize();
+
+      const displayArea = vp.getDisplayArea();
+
+      // TODO - make this use get/set Presentation or in some way preserve the
+      // basic presentation info on this viewport, rather than preserving camera
+      if (keepCamera) {
+        if (displayArea) {
+          if (flipHorizontal) {
+            vp.setCamera({ flipHorizontal });
+          }
+          if (rotation) {
+            vp.setViewPresentation({ rotation });
+          }
+        } else {
+          vp.setCamera(prevCamera);
+        }
+      }
+    });
+
+    // 4. If render is immediate: Render all
+    if (immediate) {
+      this.render();
+    }
+  }
+
+  /**
+   * Renders all viewports.
+   */
+  protected _renderFlaggedViewports = () => {
+    this._throwIfDestroyed();
+
+    if (!this.useCPURendering) {
+      this.performVtkDrawCall();
+    }
+
+    const viewports = this._getViewportsAsArray();
+    const eventDetailArray = [];
+
+    for (let i = 0; i < viewports.length; i++) {
+      const viewport = viewports[i];
+      if (this._needsRender.has(viewport.id)) {
+        const eventDetail =
+          this.renderViewportUsingCustomOrVtkPipeline(viewport);
+        eventDetailArray.push(eventDetail);
+        viewport.setRendered();
+
+        // This viewport has been rendered, we can remove it from the set
+        this._needsRender.delete(viewport.id);
+
+        // If there is nothing left that is flagged for rendering, stop the loop
+        if (this._needsRender.size === 0) {
+          break;
+        }
+      }
+    }
+
+    // allow RAF to be called again
+    this._animationFrameSet = false;
+    this._animationFrameHandle = null;
+
+    eventDetailArray.forEach((eventDetail) => {
+      // Very small viewports won't have an element
+      if (!eventDetail?.element) {
+        return;
+      }
+      triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
+    });
+  };
+
+  /**
+   * Performs the single `vtk.js` draw call which is used to render the offscreen
+   * canvas for vtk.js. This is a bulk rendering step for all Volume and Stack
+   * viewports when GPU rendering is available.
+   */
+  private performVtkDrawCall() {
+    // Render all viewports under vtk.js' control.
+    const { offscreenMultiRenderWindow } = this;
+    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
+
+    const renderers = offscreenMultiRenderWindow.getRenderers();
+
+    if (!renderers.length) {
+      return;
+    }
+
+    for (let i = 0; i < renderers.length; i++) {
+      const { renderer, id } = renderers[i];
+
+      // Requesting viewports that need rendering to be rendered only
+      if (this._needsRender.has(id)) {
+        renderer.setDraw(true);
+      } else {
+        renderer.setDraw(false);
+      }
+    }
+
+    renderWindow.render();
+
+    // After redraw we set all renderers to not render until necessary
+    for (let i = 0; i < renderers.length; i++) {
+      renderers[i].renderer.setDraw(false);
+    }
+  }
+
+  /**
+   * Renders the given viewport
+   * using its proffered method.
+   *
+   * @param viewport - The viewport to render
+   */
+  protected renderViewportUsingCustomOrVtkPipeline(
+    viewport: IViewport
+  ): EventTypes.ImageRenderedEventDetail {
+    let eventDetail: EventTypes.ImageRenderedEventDetail;
+
+    // Rendering engines start having issues without at least two pixels
+    // in each direction
+    if (
+      viewport.sWidth < VIEWPORT_MIN_SIZE ||
+      viewport.sHeight < VIEWPORT_MIN_SIZE
+    ) {
+      console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      return;
+    }
+    if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
+      eventDetail =
+        viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
+    } else {
+      if (this.useCPURendering) {
+        throw new Error(
+          'GPU not available, and using a viewport with no custom render pipeline.'
+        );
+      }
+
+      const { offscreenMultiRenderWindow } = this;
+      const openGLRenderWindow =
+        offscreenMultiRenderWindow.getOpenGLRenderWindow();
+      const context = openGLRenderWindow.get3DContext();
+      const offScreenCanvas = context.canvas;
+
+      eventDetail = this._renderViewportFromVtkCanvasToOnscreenCanvas(
+        viewport,
+        offScreenCanvas
+      );
+    }
+
+    return eventDetail;
+  }
+
+  /**
+   * Renders a particular `Viewport`'s on screen canvas.
+   * @param viewport - The `Viewport` to render.
+   * @param offScreenCanvas - The offscreen canvas to render from.
+   */
+  protected _renderViewportFromVtkCanvasToOnscreenCanvas(
+    viewport: IViewport,
+    offScreenCanvas: HTMLCanvasElement
+  ): EventTypes.ImageRenderedEventDetail {
+    const {
+      element,
+      canvas,
+      sx,
+      sy,
+      sWidth,
+      sHeight,
+      id: viewportId,
+      renderingEngineId,
+      suppressEvents,
+    } = viewport;
+
+    const { width: dWidth, height: dHeight } = canvas;
+
+    const onScreenContext = canvas.getContext('2d');
+
+    onScreenContext.drawImage(
+      offScreenCanvas,
+      sx,
+      sy,
+      sWidth,
+      sHeight,
+      0, //dx
+      0, // dy
+      dWidth,
+      dHeight
+    );
+
+    return {
+      element,
+      suppressEvents,
+      viewportId,
+      renderingEngineId,
+      viewportStatus: viewport.viewportStatus,
+    };
   }
 
   /**
@@ -498,133 +630,6 @@ class RenderingEngine extends BaseRenderingEngine {
       sHeight,
     };
   }
-
-  /**
-   * Performs the actual render - implemented differently for standard vs sequential
-   */
-  protected _performRender(): void {
-    if (!this.useCPURendering) {
-      this.performVtkDrawCall();
-    }
-  }
-
-  /**
-   * Performs the single `vtk.js` draw call which is used to render the offscreen
-   * canvas for vtk.js. This is a bulk rendering step for all Volume and Stack
-   * viewports when GPU rendering is available.
-   */
-  private performVtkDrawCall() {
-    // Render all viewports under vtk.js' control.
-    const { offscreenMultiRenderWindow } = this;
-    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
-
-    const renderers = offscreenMultiRenderWindow.getRenderers();
-
-    if (!renderers.length) {
-      return;
-    }
-
-    for (let i = 0; i < renderers.length; i++) {
-      const { renderer, id } = renderers[i];
-
-      // Requesting viewports that need rendering to be rendered only
-      if (this._needsRender.has(id)) {
-        renderer.setDraw(true);
-      } else {
-        renderer.setDraw(false);
-      }
-    }
-
-    renderWindow.render();
-
-    // After redraw we set all renderers to not render until necessary
-    for (let i = 0; i < renderers.length; i++) {
-      renderers[i].renderer.setDraw(false);
-    }
-  }
-
-  /**
-   * Renders VTK viewport - standard rendering engine draws from offscreen canvas
-   */
-  protected _renderVtkViewport(
-    viewport: IViewport
-  ): EventTypes.ImageRenderedEventDetail {
-    const { offscreenMultiRenderWindow } = this;
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const context = openGLRenderWindow.get3DContext();
-    const offScreenCanvas = context.canvas;
-
-    return this._renderViewportFromVtkCanvasToOnscreenCanvas(
-      viewport,
-      offScreenCanvas,
-      viewport.sx,
-      viewport.sy,
-      viewport.sWidth,
-      viewport.sHeight
-    );
-  }
-
-  // debugging utils for offScreen canvas
-  _downloadOffScreenCanvas() {
-    const dataURL = this._debugRender();
-    _TEMPDownloadURI(dataURL);
-  }
-
-  // debugging utils for offScreen canvas
-  _debugRender(): void {
-    const { offscreenMultiRenderWindow } = this;
-    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
-
-    const renderers = offscreenMultiRenderWindow.getRenderers();
-
-    for (let i = 0; i < renderers.length; i++) {
-      renderers[i].renderer.setDraw(true);
-    }
-
-    renderWindow.render();
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const context = openGLRenderWindow.get3DContext();
-
-    const offScreenCanvas = context.canvas;
-    const dataURL = offScreenCanvas.toDataURL();
-
-    this._getViewportsAsArray().forEach((viewport) => {
-      const { sx, sy, sWidth, sHeight } = viewport;
-
-      const canvas = viewport.canvas;
-      const { width: dWidth, height: dHeight } = canvas;
-
-      const onScreenContext = canvas.getContext('2d');
-
-      //sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight
-      onScreenContext.drawImage(
-        offScreenCanvas,
-        sx,
-        sy,
-        sWidth,
-        sHeight,
-        0, //dx
-        0, // dy
-        dWidth,
-        dHeight
-      );
-    });
-
-    return dataURL;
-  }
 }
 
 export default RenderingEngine;
-
-// debugging utils for offScreen canvas
-function _TEMPDownloadURI(uri) {
-  const link = document.createElement('a');
-
-  link.download = 'viewport.png';
-  link.href = uri;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
