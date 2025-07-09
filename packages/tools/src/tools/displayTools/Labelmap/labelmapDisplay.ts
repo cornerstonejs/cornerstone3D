@@ -206,6 +206,9 @@ async function render(
   for (const labelmapActorEntry of labelmapActorEntries) {
     const uid = labelmapActorEntry.uid;
     const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
+    if (!labelmapActor || labelmapActor.isDeleted()) {
+      continue;
+    }
 
     // Register onModified handler only once per actor UID
     if (!onModifiedRegistered.has(uid)) {
