@@ -173,8 +173,7 @@ class VolumeCroppingTool extends AnnotationTool {
     color: number[]; // [r, g, b] color for the sphere
   }[] = [];
   draggingSphereIndex: number | null = null;
-  toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
-  // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
+  toolCenter: Types.Point3 = [0, 0, 0];
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   picker: vtkCellPicker;

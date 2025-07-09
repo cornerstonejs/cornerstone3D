@@ -87,9 +87,9 @@ const OPERATION = {
 };
 
 /**
- * VolumeCroppingControlTool is a tool that provides reference lines between different viewports
- * of a toolGroup. Using crosshairs, you can jump to a specific location in one
- * viewport and the rest of the viewports in the toolGroup will be aligned to that location.
+ * VolumeCroppingControlTool is a tool that provides reference lines to modify the cropping planes
+ * of the VolumeCroppingTool.  It has no use on it's own, and is used in conjunction with
+ * the VolumeCroppingTool to allow for more precise adjustments to the cropping planes.
  *
  */
 class VolumeCroppingControlTool extends AnnotationTool {
@@ -102,7 +102,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     sphereActor;
   }[] = [];
   draggingSphereIndex: number | null = null;
-  toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
+  toolCenter: Types.Point3 = [0, 0, 0];
   toolCenterMin: Types.Point3 = [0, 0, 0];
   toolCenterMax: Types.Point3 = [0, 0, 0];
   _getReferenceLineColor?: (viewportId: string) => string;
@@ -186,7 +186,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
    * Gets the camera from the viewport, and adds  annotation for the viewport
    * to the annotationManager. If any annotation is found in the annotationManager, it
    * overwrites it.
-   * @param viewportInfo - The viewportInfo for the viewport to add the crosshairs
+   * @param viewportInfo - The viewportInfo for the viewport
    * @returns viewPlaneNormal and center of viewport canvas in world space
    */
   initializeViewport = ({
@@ -255,7 +255,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
   onSetToolActive() {
     const viewportsInfo = this._getViewportsInfo();
 
-    // Upon new setVolumes on viewports we need to update the crosshairs
     // reference points in the new space, so we subscribe to the event
     // and update the reference points accordingly.
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
@@ -348,15 +347,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     this._computeToolCenter(viewportsInfo);
   };
 
-  /**
-   * When activated, it initializes the crosshairs. It begins by computing
-   * the intersection of viewports associated with the crosshairs instance.
-   * When all three views are accessible, the intersection (e.g., crosshairs tool centre)
-   * will be an exact point in space; however, with two viewports, because the
-   * intersection of two planes is a line, it assumes the last view is between the centre
-   * of the two rendering viewports.
-   * @param viewportsInfo Array of viewportInputs which each item containing `{viewportId, renderingEngineId}`
-   */
   _computeToolCenter = (viewportsInfo): void => {
     // Todo: handle two same view viewport, or more than 3 viewports
     const [firstViewport, secondViewport, thirdViewport] = viewportsInfo;
@@ -377,7 +367,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       ({ normal: normal3, point: point3 } =
         this.initializeViewport(thirdViewport));
     } else {
-      // If there are only two views (viewport) associated with the crosshairs:
+      // If there are only two views (viewport) associated with the volumecropping
       // In this situation, we don't have a third information to find the
       // exact intersection, and we "assume" the third view is looking at
       // a location in between the first and second view centers
@@ -483,7 +473,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   };
 
   /**
-   * It returns if the canvas point is near the provided crosshairs annotation in the
+   * It returns if the canvas point is near the provided volume cropping annotation in the
    * provided element or not. A proximity is passed to the function to determine the
    * proximity of the point to the annotation in number of pixels.
    *
@@ -542,10 +532,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     // -- Update the camera of other linked viewports containing the same volumeId that
     //    have the same camera in case of translation
-    // -- Update the crosshair center in world coordinates in annotation.
     // This is necessary because other tools can modify the position of the slices,
     // e.g. stackScroll tool at wheel scroll. So we update the coordinates of the center always here.
-    // NOTE: rotation and slab thickness handles are created/updated in renderTool.
     const currentCamera = viewport.getCamera();
     const oldCameraPosition = viewportAnnotation.metadata.cameraPosition;
     const deltaCameraPosition: Types.Point3 = [0, 0, 0];
@@ -582,7 +570,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
       // This is guaranteed to be the same diff for both position and focal point
       // if the camera is modified by pan, zoom, or scroll BUT for rotation of
-      // crosshairs handles it will be different.
+      // volume cropping handles it will be different.
       const cameraModifiedSameForPosAndFocalPoint = csUtils.isEqual(
         deltaCameraPosition,
         deltaCameraFocalPoint,
@@ -600,8 +588,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         ) < 1e-2;
 
       // TRANSLATION
-      // NOTE1: if the camera modified is a result of a pan or zoom don't update the crosshair center
-      // NOTE2: rotation handles are updates in renderTool
+      // NOTE1: if the camera modified is a result of a pan or zoom don't update the volume cropping center
       if (!isRotation && !cameraModifiedInPlane) {
         this.toolCenter[0] += deltaCameraPosition[0];
         this.toolCenter[1] += deltaCameraPosition[1];
@@ -802,21 +789,20 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const canvasDiagonalLength = Math.sqrt(
       clientWidth * clientWidth + clientHeight * clientHeight
     );
-    const canvasMinDimensionLength = Math.min(clientWidth, clientHeight);
 
     const data = viewportAnnotation.data;
-    //  console.debug('annotation data: ', data.viewportId);
-
-    const crosshairCenterCanvas = viewport.worldToCanvas(this.toolCenter);
-
     const otherViewportAnnotations =
       this._filterAnnotationsByUniqueViewportOrientations(
         enabledElement,
         annotations
       );
 
-    const crosshairCenterCanvasMin = viewport.worldToCanvas(this.toolCenterMin);
-    const crosshairCenterCanvasMax = viewport.worldToCanvas(this.toolCenterMax);
+    const volumeCroppingCenterCanvasMin = viewport.worldToCanvas(
+      this.toolCenterMin
+    );
+    const volumeCroppingCenterCanvasMax = viewport.worldToCanvas(
+      this.toolCenterMax
+    );
 
     const referenceLines = [];
 
@@ -891,7 +877,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       );
       // For min
       const refLinesCenterMin = otherViewportControllable
-        ? vec2.clone(crosshairCenterCanvasMin)
+        ? vec2.clone(volumeCroppingCenterCanvasMin)
         : vec2.clone(otherViewportCenterCanvas);
       const refLinePointMinOne = vec2.create();
       const refLinePointMinTwo = vec2.create();
@@ -915,7 +901,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
       // For max center
       const refLinesCenterMax = otherViewportControllable
-        ? vec2.clone(crosshairCenterCanvasMax)
+        ? vec2.clone(volumeCroppingCenterCanvasMax)
         : vec2.clone(otherViewportCenterCanvas);
       const refLinePointMaxOne = vec2.create();
       const refLinePointMaxTwo = vec2.create();
@@ -993,10 +979,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const lineUID = `${lineIndex}`;
       if (viewportControllable) {
         if (intersections.length === 2) {
-          //  lineUID = `${lineIndex}One`;
-          //  lineUID = `${lineIndex}Two`;
-          //  console.debug(lineUID, color, line[1], line[2]);
-
           drawLineSvg(
             svgDrawingHelper,
             annotationUID,
@@ -1008,7 +990,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
             {
               color,
               lineWidth,
-              //   lineDash: [4, 4],
             }
           );
         }
@@ -1227,8 +1208,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     return true;
   };
 
-  // It filters the viewports with crosshairs and only return viewports
-  // that have different camera.
   _getAnnotationsForViewportsWithDifferentCameras = (
     enabledElement,
     annotations
