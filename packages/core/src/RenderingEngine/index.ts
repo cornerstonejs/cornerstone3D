@@ -1,4 +1,4 @@
-import RenderingEngine from './RenderingEngine';
+import RenderingEngine from './StandardRenderingEngine';
 import SequentialRenderingEngine from './SequentialRenderingEngine';
 import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
