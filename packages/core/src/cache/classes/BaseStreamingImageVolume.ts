@@ -405,6 +405,7 @@ export default class BaseStreamingImageVolume
         imageIdIndex,
         volumeId: this.volumeId,
       },
+      retrieveOptions: undefined,
     };
   }
 
@@ -470,6 +471,19 @@ export default class BaseStreamingImageVolume
       const requestType = requestTypeDefault;
       const priority = priorityDefault;
       const options = this.getLoaderImageOptions(imageId);
+
+      const { retrieveOptions = {} } =
+        metaData.get(
+          imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+          imageId,
+          'volume'
+        ) || {};
+      options.retrieveOptions = {
+        ...options.retrieveOptions,
+        ...(retrieveOptions?.default ||
+          Object.values(retrieveOptions)?.[0] ||
+          {}),
+      };
 
       return {
         callLoadImage: this.callLoadImage.bind(this),
