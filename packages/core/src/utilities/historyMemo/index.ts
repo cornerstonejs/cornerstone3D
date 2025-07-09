@@ -89,7 +89,7 @@ export class HistoryMemo {
     while (items > 0 && this.undoAvailable > 0) {
       const item = this.ring[this.position];
 
-      for (const subitem of asArray(item)) {
+      for (const subitem of asArray(item).reverse()) {
         subitem.restoreMemo(true);
         this.dispatchHistoryEvent({ item: subitem, isUndo: true });
       }
@@ -143,7 +143,7 @@ export class HistoryMemo {
       const newPosition = (this.position + 1) % this.size;
       const item = this.ring[newPosition];
 
-      for (const subitem of asArray(item)) {
+      for (const subitem of asArray(item).reverse()) {
         subitem.restoreMemo(false);
         this.dispatchHistoryEvent({ item: subitem, isUndo: false });
       }
