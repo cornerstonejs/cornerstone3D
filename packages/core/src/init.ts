@@ -4,6 +4,7 @@ import deepMerge from './utilities/deepMerge';
 import type { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getSupportedTextureFormats } from './utilities/textureSupport';
+import { RenderingEngineModeEnum } from './enums';
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -15,7 +16,13 @@ const defaultConfig: Cornerstone3DConfig = {
     preferSizeOverAccuracy: false,
     strictZSpacingForVolumeViewport: true,
   },
-  renderingEngineMode: 'next',
+
+  /**
+   * The rendering engine mode to use.
+   * 'next' is the new rendering engine that uses sequential rendering and has enhanced support/performance for multi-monitor and high resolution displays.
+   * 'standard' is the old rendering engine implementation, which we will eventually move away from.
+   */
+  renderingEngineMode: RenderingEngineModeEnum.Next,
   /**
    * Imports peer modules.
    * This may just fallback to the default import, but many packaging

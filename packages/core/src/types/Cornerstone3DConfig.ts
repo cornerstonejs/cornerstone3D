@@ -1,3 +1,5 @@
+import type { RenderingEngineModeType } from '../types';
+
 interface Cornerstone3DConfig {
   gpuTier: { tier: number };
   /**
@@ -37,7 +39,7 @@ interface Cornerstone3DConfig {
    * 'next' is the new rendering engine that uses sequential rendering and has enhanced support/performance for multi-monitor and high resolution displays.
    * 'standard' is the old rendering engine implementation, which we will eventually move away from.
    */
-  renderingEngineMode: 'next' | 'standard';
+  renderingEngineMode: RenderingEngineModeType;
 
   /**
    * This function returns an imported module for the given module id.

@@ -8,6 +8,7 @@ import type {
   IViewport,
   PublicViewportInput,
 } from '../types';
+import { RenderingEngineModeEnum } from '../enums';
 
 class RenderingEngine {
   public hasBeenDestroyed: boolean;
@@ -20,10 +21,10 @@ class RenderingEngine {
     const renderingEngineMode = config.renderingEngineMode;
 
     switch (renderingEngineMode) {
-      case 'standard':
+      case RenderingEngineModeEnum.Standard:
         this._implementation = new StandardRenderingEngine(id);
         break;
-      case 'next':
+      case RenderingEngineModeEnum.Next:
         this._implementation = new SequentialRenderingEngine(id);
         break;
       default:
