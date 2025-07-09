@@ -1,10 +1,11 @@
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkCylinderSource from '@kitware/vtk.js/Filters/Sources/CylinderSource';
+import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import { AnnotationTool } from './base';
 
@@ -19,7 +20,6 @@ import {
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
-import { Enums as toolsEnums } from '@cornerstonejs/tools';
 
 import {
   getToolGroup,
@@ -33,6 +33,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../cursors/elementCursor';
+import { getAnnotations } from '../stateManagement/annotation/annotationState'; // <-- Add this import
 
 import * as lineSegment from '../utilities/math/line';
 import type {
@@ -48,13 +49,21 @@ import type {
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
-const { RENDERING_DEFAULTS } = CONSTANTS;
-
+//const { RENDERING_DEFAULTS } = CONSTANTS;
+declare module '@cornerstonejs/core' {
+  interface IViewport {
+    /**
+     * Converts canvas coordinates [x, y] to VTK display coordinates [x, y].
+     * VTK display coordinates have their origin at the bottom-left of the renderer.
+     * @param {number[]} canvasCoords - The [x, y] canvas coordinates.
+     * @returns {[number, number]} The VTK display coordinates.
+     */
+    getVtkDisplayCoords(canvasCoords: [number, number]): [number, number];
+  }
+}
 interface VolumeCroppingAnnotation extends Annotation {
   data: {
     handles: {
-      //  rotationPoints: Types.Point3[]; // rotation handles, used for rotation interactions
-      //  slabThicknessPoints: Types.Point3[]; // slab thickness handles, used for setting the slab thickness
       activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
       toolCenter: Types.Point3;
     };
@@ -144,6 +153,7 @@ function addCylinderBetweenPoints(
   cylinderSource.setDirection(direction[0], direction[1], direction[2]);
 
   const cylinderMapper = vtkMapper.newInstance();
+  //const cylinderMapper = vtkVolumeMapper.newInstance();
   cylinderMapper.setInputConnection(cylinderSource.getOutputPort());
   const cylinderActor = vtkActor.newInstance();
   cylinderActor.setMapper(cylinderMapper);
@@ -158,8 +168,7 @@ function addCylinderBetweenPoints(
 }
 
 /**
- * VolumeCroppingTool is a tool that provides reference lines between different viewports
- * of a toolGroup.  *
+ * VolumeCroppingTool is a tool that provides clipping planes to crop a volume
  */
 class VolumeCroppingTool extends AnnotationTool {
   static toolName;
@@ -426,7 +435,9 @@ class VolumeCroppingTool extends AnnotationTool {
       origin: [0, 0, zMax],
       normal: [0, 0, -1],
     });
-    const mapper = viewport.getDefaultActor().actor.getMapper();
+    const mapper = viewport
+      .getDefaultActor()
+      .actor.getMapper() as vtkVolumeMapper;
     planes.push(planeXmin);
     planes.push(planeXmax);
     planes.push(planeYmin);
@@ -438,8 +449,7 @@ class VolumeCroppingTool extends AnnotationTool {
       origin: [...plane.getOrigin()],
       normal: [...plane.getNormal()],
     }));
-    //  viewport.setOriginalClippingPlanes(originalPlanes);
-    //  viewport.originalClippingPlanes = originalPlanes;
+
     this.originalClippingPlanes = originalPlanes;
     const sphereXminPoint = [xMin, (yMax + yMin) / 2, (zMax + zMin) / 2];
     const sphereXmaxPoint = [xMax, (yMax + yMin) / 2, (zMax + zMin) / 2];
@@ -527,7 +537,7 @@ class VolumeCroppingTool extends AnnotationTool {
     }
 
     const defaultActor = viewport.getDefaultActor();
-    const actor = defaultActor.actor;
+    const actor = defaultActor.actor as vtkActor | vtkVolume;
     if (actor && (actor.isA?.('vtkActor') || actor.isA?.('vtkVolume'))) {
       this.picker.addPickList(actor);
       this._prepareImageDataForPicking(viewport);
@@ -663,7 +673,7 @@ class VolumeCroppingTool extends AnnotationTool {
         console.warn('No volume actor found');
         return;
       }
-      const mapper = volumeActor.getMapper();
+      const mapper = volumeActor.getMapper() as vtkVolumeMapper;
       const clippingPlanes = mapper.getClippingPlanes();
       clippingPlanes[PLANEINDEX.XMIN].setOrigin(planeXmin.getOrigin());
       clippingPlanes[PLANEINDEX.YMIN].setOrigin(planeYmin.getOrigin());
@@ -781,7 +791,7 @@ class VolumeCroppingTool extends AnnotationTool {
         });
       }
       const volumeActor = viewport.getDefaultActor()?.actor;
-      const mapper = volumeActor.getMapper();
+      const mapper = volumeActor.getMapper() as vtkVolumeMapper;
       const clippingPlanes = mapper.getClippingPlanes();
       clippingPlanes[PLANEINDEX.XMAX].setOrigin(planeXmax.getOrigin());
       clippingPlanes[PLANEINDEX.YMAX].setOrigin(planeYmax.getOrigin());
@@ -876,15 +886,13 @@ class VolumeCroppingTool extends AnnotationTool {
     const rect = element.getBoundingClientRect();
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
-
     const displayCoords = viewport.getVtkDisplayCoords([x, y]);
-    // Use the picker to get the 3D coordinates
 
     // --- Remove clipping planes before picking otherwise we cannot back out of the volume
-    const mapper = viewport.getDefaultActor().actor.getMapper();
-    const originalClippingPlanes = (mapper as vtkMapper)
-      .getClippingPlanes()
-      .slice();
+    const mapper = viewport
+      .getDefaultActor()
+      .actor.getMapper() as vtkVolumeMapper;
+    const originalClippingPlanes = mapper.getClippingPlanes().slice();
     mapper.removeAllClippingPlanes();
     this.picker.pick(
       [displayCoords[0], displayCoords[1], 0],
@@ -905,7 +913,7 @@ class VolumeCroppingTool extends AnnotationTool {
         console.warn('No volume actor found');
         return;
       }
-      const mapper = volumeActor.getMapper();
+      const mapper = volumeActor.getMapper() as vtkVolumeMapper;
       if (sphereState.isCorner) {
         // Save the old position
         const oldX = sphereState.point[0];
@@ -1156,9 +1164,12 @@ class VolumeCroppingTool extends AnnotationTool {
         sphereState.sphereSource.modified();
 
         this._updateCornerSpheres(viewport);
-        const clippingPlanes = (mapper as vtkMapper).getClippingPlanes();
-        clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
-        // viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
+        const clippingPlanes = mapper.getClippingPlanes();
+        clippingPlanes[this.draggingSphereIndex].setOrigin(
+          newPoint[0],
+          newPoint[1],
+          newPoint[2]
+        );
         this.originalClippingPlanes[this.draggingSphereIndex].origin = [
           newPoint[0],
           newPoint[1],
