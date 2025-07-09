@@ -15,6 +15,7 @@ const defaultConfig: Cornerstone3DConfig = {
     preferSizeOverAccuracy: false,
     strictZSpacingForVolumeViewport: true,
   },
+  renderingEngineMode: 'next',
   /**
    * Imports peer modules.
    * This may just fallback to the default import, but many packaging

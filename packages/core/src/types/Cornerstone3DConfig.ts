@@ -33,6 +33,13 @@ interface Cornerstone3DConfig {
   };
 
   /**
+   * The rendering engine mode to use.
+   * 'next' is the new rendering engine that uses sequential rendering and has enhanced support/performance for multi-monitor and high resolution displays.
+   * 'standard' is the old rendering engine implementation, which we will eventually move away from.
+   */
+  renderingEngineMode: 'next' | 'standard';
+
+  /**
    * This function returns an imported module for the given module id.
    * It allows replacing broken packing system imports with external importers
    * that perform lazy imports.

@@ -1,3 +1,6 @@
+import { getConfiguration } from '../../init';
+
 export function isSequentialRenderingEngine(renderingEngine): boolean {
-  return renderingEngine?.constructor?.name === 'SequentialRenderingEngine';
+  const config = getConfiguration();
+  return config.renderingEngineMode === 'next';
 }

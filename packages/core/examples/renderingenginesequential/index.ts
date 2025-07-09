@@ -1,9 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import {
-  Enums,
-  getRenderingEngine,
-  SequentialRenderingEngine,
-} from '@cornerstonejs/core';
+import type { Types, RenderingEngine } from '@cornerstonejs/core';
+import { Enums, getRenderingEngine } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -20,16 +16,14 @@ setTitleAndDescription(
 );
 
 const renderingEngineId = 'mySequentialRenderingEngine';
-let renderingEngine: SequentialRenderingEngine;
+let renderingEngine: RenderingEngine;
 let resizeTimeout: number;
 
 // Debounced resize handler
 const handleResize = () => {
   clearTimeout(resizeTimeout);
   resizeTimeout = window.setTimeout(() => {
-    renderingEngine = getRenderingEngine(
-      renderingEngineId
-    ) as SequentialRenderingEngine;
+    renderingEngine = getRenderingEngine(renderingEngineId);
 
     if (renderingEngine) {
       renderingEngine.resize(true, false);
@@ -109,7 +103,7 @@ async function run() {
   });
 
   // Instantiate a SequentialRenderingEngine
-  renderingEngine = new SequentialRenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create viewport input array for all 36 viewports
   const viewportInputArray: Types.PublicViewportInput[] = [];
