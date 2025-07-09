@@ -10,6 +10,7 @@ import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import VolumeViewport3D from './VolumeViewport3D';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -274,8 +275,15 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
       renderer.setViewport([0, 0, 1, 1]);
 
       const allRenderers = offscreenMultiRenderWindow.getRenderers();
+
       allRenderers.forEach(({ renderer: r, id }) => {
         r.setDraw(id === viewport.id);
+      });
+
+      const widgetRenderers = this.getWidgetRenderers();
+
+      widgetRenderers.forEach((viewportId, renderer) => {
+        renderer.setDraw(viewportId === viewport.id);
       });
 
       renderWindow.render();
@@ -371,6 +379,30 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
       const renderer = this.offscreenMultiRenderWindow.getRenderer(viewport.id);
       renderer.setViewport([0, 0, 1, 1]);
     }
+  }
+
+  /**
+   *
+   * @returns A map of widget renderers and their associated viewport IDs.
+   * This method iterates through all viewports, retrieves their widgets,
+   * and maps each widget's renderer to the viewport ID.
+   */
+  private getWidgetRenderers(): Map<vtkRenderer, string> {
+    const allViewports = this._getViewportsAsArray();
+
+    const widgetRenderers = new Map();
+
+    allViewports.forEach((vp) => {
+      const widgets = vp.getWidgets ? vp.getWidgets() : [];
+      widgets.forEach((widget) => {
+        const renderer = widget.getRenderer ? widget.getRenderer() : null;
+        if (renderer) {
+          widgetRenderers.set(renderer, vp.id);
+        }
+      });
+    });
+
+    return widgetRenderers;
   }
 }
 
