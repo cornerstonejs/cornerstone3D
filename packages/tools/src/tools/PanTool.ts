@@ -26,7 +26,7 @@ class PanTool extends BaseTool {
   mouseDragCallback(evt: EventTypes.InteractionEventType) {
     this._dragCallback(evt);
   }
-  _transformNormal(normal, mat) {
+  _transformNormal(normal: Types.Point3, mat: number[]): Types.Point3 {
     return [
       mat[0] * normal[0] + mat[3] * normal[1] + mat[6] * normal[2],
       mat[1] * normal[0] + mat[4] * normal[1] + mat[7] * normal[2],
@@ -60,9 +60,18 @@ class PanTool extends BaseTool {
     }
 
     mapper.removeAllClippingPlanes();
-    originalPlanes.forEach(({ origin, normal }) => {
+    originalPlanes.forEach((plane) => {
+      const origin =
+        typeof plane.getOrigin === 'function'
+          ? plane.getOrigin()
+          : plane.origin;
+      const normal =
+        typeof plane.getNormal === 'function'
+          ? plane.getNormal()
+          : plane.normal;
+
       // Transform origin (full 4x4)
-      const o = [
+      const o: Types.Point3 = [
         matrix[0] * origin[0] +
           matrix[4] * origin[1] +
           matrix[8] * origin[2] +
@@ -77,9 +86,9 @@ class PanTool extends BaseTool {
           matrix[14],
       ];
       // Transform normal (rotation only)
-      const n = this._transformNormal(normal, rot);
-      const plane = vtkPlane.newInstance({ origin: o, normal: n });
-      mapper.addClippingPlane(plane);
+      const n: Types.Point3 = this._transformNormal(normal, rot);
+      const planeInstance = vtkPlane.newInstance({ origin: o, normal: n });
+      mapper.addClippingPlane(planeInstance);
     });
   }
 

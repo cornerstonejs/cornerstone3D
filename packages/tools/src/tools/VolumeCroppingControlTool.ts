@@ -657,10 +657,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const otherViewportIds = toolGroup
         .getViewportIds()
         .filter((id) => id !== viewport.id);
-
-      otherViewportIds.forEach((viewportId) => {
-        this._autoPanViewportIfNecessary(viewportId, renderingEngine);
-      });
     }
 
     const requireSameOrientation = false;
@@ -962,7 +958,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         (id) => id === otherViewport.id
       );
 
-      const color =
+      let color =
         viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
 
       let lineWidth = 2.5;
@@ -1052,7 +1048,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   _onSphereMoved = (evt) => {
     if ([0, 2, 4].includes(evt.detail.draggingSphereIndex)) {
       // only update for min spheres
-      const newCenter = [...this.toolCenterMin];
+      const newCenter: Types.Point3 = [...this.toolCenterMin];
       const eventCenter = evt.detail.toolCenter;
       if (evt.detail.axis === 'x') {
         newCenter[0] = eventCenter[0];
@@ -1064,7 +1060,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       this.setToolCenter(newCenter, 'min');
     } else if ([1, 3, 5].includes(evt.detail.draggingSphereIndex)) {
       // only update for max spheres
-      const newCenter = [...this.toolCenterMax];
+      const newCenter: Types.Point3 = [...this.toolCenterMax];
       const eventCenter = evt.detail.toolCenter;
       if (evt.detail.axis === 'x') {
         newCenter[0] = eventCenter[0];
@@ -1082,8 +1078,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const maxIdx = [1, 3, 5]; // XMAX, YMAX, ZMAX
 
       // Copy current min and max
-      const newMin = [...this.toolCenterMin];
-      const newMax = [...this.toolCenterMax];
+      const newMin: Types.Point3 = [...this.toolCenterMin];
+      const newMax: Types.Point3 = [...this.toolCenterMax];
 
       // For each axis, update min or max depending on the corner index
       // draggingSphereIndex: 6 = XMIN_YMIN_ZMIN, 7 = XMIN_YMIN_ZMAX, ... up to 13 = XMAX_YMAX_ZMAX

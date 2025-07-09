@@ -1,6 +1,8 @@
 import { vec2, vec3 } from 'gl-matrix';
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
@@ -117,7 +119,7 @@ function addCylinderBetweenPoints(
   point1,
   point2,
   radius = 0.5,
-  color = [0.5, 0.5, 0.5],
+  color: [number, number, number] = [0.5, 0.5, 0.5],
   uid = ''
 ) {
   const cylinderSource = vtkCylinderSource.newInstance();
@@ -131,17 +133,17 @@ function addCylinderBetweenPoints(
     direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
   );
   // Midpoint
-  const center = [
+  const center: Types.Point3 = [
     (point1[0] + point2[0]) / 2,
     (point1[1] + point2[1]) / 2,
     (point1[2] + point2[2]) / 2,
   ];
   // Default cylinder is aligned with Y axis, so compute rotation
-  cylinderSource.setCenter(center);
+  cylinderSource.setCenter(center[0], center[1], center[2]);
   cylinderSource.setRadius(radius);
   cylinderSource.setHeight(length);
   // Set direction (align cylinder axis with direction vector)
-  cylinderSource.setDirection(direction);
+  cylinderSource.setDirection(direction[0], direction[1], direction[2]);
 
   const cylinderMapper = vtkMapper.newInstance();
   cylinderMapper.setInputConnection(cylinderSource.getOutputPort());
@@ -217,7 +219,7 @@ class VolumeCroppingTool extends AnnotationTool {
       toolProps.configuration?.getReferenceLineControllable ||
       defaultReferenceLineControllable;
     this.picker = vtkCellPicker.newInstance({ opacityThreshold: 0.0001 });
-    this.picker.setPickFromList(1);
+    this.picker.setPickFromList(true);
     this.picker.setTolerance(0);
     this.picker.initializePickList();
   }
@@ -302,7 +304,7 @@ class VolumeCroppingTool extends AnnotationTool {
     sphereMapper.setInputConnection(sphereSource.getOutputPort());
     const sphereActor = vtkActor.newInstance();
     sphereActor.setMapper(sphereMapper);
-    let color = [0.0, 1.0, 0.0]; // Default green
+    let color: [number, number, number] = [0.0, 1.0, 0.0]; // Default green
     const sphereColors = this.configuration.sphereColors || {};
 
     if (cornerKey) {
@@ -494,9 +496,9 @@ class VolumeCroppingTool extends AnnotationTool {
     }
 
     const defaultActor = viewport.getDefaultActor();
-    if (defaultActor?.actor) {
-      // Cast to any to avoid type errors with different actor types
-      this.picker.addPickList(defaultActor.actor);
+    const actor = defaultActor.actor;
+    if (actor && (actor.isA?.('vtkActor') || actor.isA?.('vtkVolume'))) {
+      this.picker.addPickList(actor);
       this._prepareImageDataForPicking(viewport);
     }
 
@@ -505,13 +507,6 @@ class VolumeCroppingTool extends AnnotationTool {
     element.addEventListener('mousemove', this._onMouseMoveSphere);
     element.addEventListener('mouseup', this._onMouseUpSphere);
 
-    mapper.modified();
-    viewport.getDefaultActor().actor.modified();
-    volumeActors.forEach((actorObj) => {
-      if (actorObj.actor && typeof actorObj.actor.modified === 'function') {
-        actorObj.actor.modified();
-      }
-    });
     mapper.addClippingPlane(planeXmin);
     mapper.addClippingPlane(planeXmax);
     mapper.addClippingPlane(planeYmin);
@@ -1204,9 +1199,9 @@ class VolumeCroppingTool extends AnnotationTool {
           (point1[1] + point2[1]) / 2,
           (point1[2] + point2[2]) / 2,
         ];
-        source.setCenter(center);
+        source.setCenter(center[0], center[1], center[2]);
         source.setHeight(length);
-        source.setDirection(direction);
+        source.setDirection(direction[0], direction[1], direction[2]);
         source.modified();
       }
     });
