@@ -3,6 +3,9 @@
     "core-basic": {
       "description": "Basic usage"
     },
+    "core-multi-monitor-high-res": {
+      "description": "Multi-monitor and high resolution usage"
+    },
     "tools-basic": {
       "description": "Tools library"
     },
@@ -152,7 +155,9 @@
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
-      },
+      }
+    },
+    "core-multi-monitor-high-res": {
       "renderingengine": {
         "name": "6x6 Grid with RenderingEngine",
         "description": "Displays a 6x6 grid of viewports using standard RenderingEngine with resize observer"
@@ -163,9 +168,9 @@
       },
       "ptctmultimonitor": {
         "name": "PET-CT Multi-Monitor Layout",
-        "description": "Demonstrates how to create a multi-monitor layout with PET-CT fusion using the RenderingEngine"
+        "description": "Demonstrates how to create a multi-monitor layout with PET-CT fusion using the Sequential RenderingEngine"
       }
-    },
+     },
     "tools-basic": {
       "etdrsGrid": {
         "name": "ETDRS Grid Tool",

@@ -3,6 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  init,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -19,8 +20,12 @@ setTitleAndDescription(
   'Displays a 6x6 grid of viewports using standard RenderingEngine with resize observer'
 );
 
+init({
+  renderingEngineMode: 'standard',
+});
+
 const renderingEngineId = 'myRenderingEngine';
-let renderingEngine: RenderingEngine;
+let renderingEngine: Types.IRenderingEngine;
 let resizeTimeout: number;
 
 // Debounced resize handler

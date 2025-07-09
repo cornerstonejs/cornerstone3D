@@ -59,7 +59,7 @@ interface ViewportDisplayCoords {
  *
  * @public
  */
-class RenderingEngine extends BaseRenderingEngine {
+class StandardRenderingEngine extends BaseRenderingEngine {
   /**
    * Enables a viewport to be driven by the offscreen vtk.js rendering engine.
    *
@@ -632,4 +632,4 @@ class RenderingEngine extends BaseRenderingEngine {
   }
 }
 
-export default RenderingEngine;
+export default StandardRenderingEngine;

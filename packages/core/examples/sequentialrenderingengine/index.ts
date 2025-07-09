@@ -1,5 +1,9 @@
-import type { Types, RenderingEngine } from '@cornerstonejs/core';
-import { Enums, getRenderingEngine } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import {
+  Enums,
+  getRenderingEngine,
+  RenderingEngine,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -38,6 +42,7 @@ const content = document.getElementById('content');
 
 // Create viewport container using flexbox
 const viewportContainer = document.createElement('div');
+viewportContainer.id = 'viewportContainer';
 viewportContainer.style.display = 'flex';
 viewportContainer.style.flexDirection = 'column';
 viewportContainer.style.width = '95vw';
@@ -148,22 +153,24 @@ async function run() {
   renderingEngine.render();
 
   // Add performance info
-  const info = document.createElement('div');
-  info.style.position = 'absolute';
-  info.style.top = '10px';
-  info.style.right = '10px';
-  info.style.color = 'white';
-  info.style.backgroundColor = 'rgba(0,0,0,0.7)';
-  info.style.padding = '10px';
-  info.style.borderRadius = '5px';
-  info.innerHTML = `
+  if (!window.IS_PLAYWRIGHT) {
+    const info = document.createElement('div');
+    info.style.position = 'absolute';
+    info.style.top = '10px';
+    info.style.right = '10px';
+    info.style.color = 'white';
+    info.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    info.style.padding = '10px';
+    info.style.borderRadius = '5px';
+    info.innerHTML = `
     <h3>SequentialRenderingEngine Example</h3>
     <p>36 viewports (6x6 grid)</p>
     <p>Using SequentialRenderingEngine for better performance with large viewport counts</p>
     <p>Resize the window to test resize observer</p>
     <p style="color: #4CAF50;">Avoids WebGL, browser and OS limits</p>
   `;
-  content.appendChild(info);
+    content.appendChild(info);
+  }
 }
 
 run();
