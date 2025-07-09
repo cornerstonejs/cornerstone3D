@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.28.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.0...v3.28.1) (2025-07-09)
+
+### Bug Fixes
+
+- **WindowLevelTool:** fix calculation of image dynamic range ([#2147](https://github.com/cornerstonejs/cornerstone3D/issues/2147)) ([94fefd3](https://github.com/cornerstonejs/cornerstone3D/commit/94fefd34b9f359fd7eeaf246f163a1d765a1d4b6))
+
 # [3.28.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.27.0...v3.28.0) (2025-07-08)
 
 ### Features
