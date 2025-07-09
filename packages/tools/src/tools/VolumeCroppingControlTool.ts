@@ -280,7 +280,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
 
-    // Crosshairs annotations in the state
     // has no value when the tool is disabled
     // since viewports can change (zoom, pan, scroll)
     // between disabled and enabled/active states.
@@ -375,17 +374,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       vec3.scale(point3, point3, 0.5);
       vec3.cross(normal3, normal1, normal2);
     }
-
-    // Planes of each viewport
-    const firstPlane = csUtils.planar.planeEquation(normal1, point1);
-    const secondPlane = csUtils.planar.planeEquation(normal2, point2);
-    const thirdPlane = csUtils.planar.planeEquation(normal3, point3);
-
-    const toolCenter = csUtils.planar.threePlaneIntersection(
-      firstPlane,
-      secondPlane,
-      thirdPlane
-    );
   };
 
   setToolCenter(toolCenter: Types.Point3, handleType): void {
@@ -419,18 +407,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
     evt: EventTypes.InteractionEventType
   ): VolumeCroppingAnnotation {
     const eventDetail = evt.detail;
-
-    // console.debug('addNewAnnotation: ', eventDetail);
     const { element } = eventDetail;
-
-    const { currentPoints } = eventDetail;
-    const jumpWorld = currentPoints.world;
-
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-
-    //this._jump(enabledElement, jumpWorld);
-
     const annotations = this._getAnnotations(enabledElement);
     const filteredAnnotations = this.filterInteractableAnnotationsForElement(
       viewport.element,
@@ -1703,7 +1682,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
   ) {
     // update camera for the other viewports.
     // NOTE1: The lines then are rendered by the onCameraModified
-    // NOTE2: crosshair center are automatically updated in the onCameraModified event
     viewportsAnnotationsToUpdate.forEach((annotation) => {
       this._applyDeltaShiftToViewportCamera(renderingEngine, annotation, delta);
     });

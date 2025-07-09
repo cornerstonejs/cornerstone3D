@@ -867,8 +867,6 @@ class VolumeCroppingTool extends AnnotationTool {
     const rect = element.getBoundingClientRect();
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
-    //  const displayCoords = viewport.getVtkDisplayCoords([x, y]);
-    //const displayCoords = (viewport as any).getVtkDisplayCoords([x, y]);
     const displayCoords = (
       viewport as unknown as {
         getVtkDisplayCoords: (coords: [number, number]) => [number, number];
@@ -1132,13 +1130,11 @@ class VolumeCroppingTool extends AnnotationTool {
                 state.point[1],
                 state.point[2]
               );
-              // state.sphereActor.getProperty().setColor(state.color);
               state.sphereSource.modified();
             }
           });
         }
 
-        //  sphereState.point = newPoint as Types.Point3;
         this.sphereStates[this.draggingSphereIndex].point[0] = newPoint[0];
         this.sphereStates[this.draggingSphereIndex].point[1] = newPoint[1];
         this.sphereStates[this.draggingSphereIndex].point[2] = newPoint[2];
@@ -1255,16 +1251,12 @@ class VolumeCroppingTool extends AnnotationTool {
   }
 
   _onMouseUpSphere = (evt) => {
-    //evt.stopPropagation();
-    // evt.preventDefault();
-    // if (this.draggingSphereIndex !== null) {
     evt.currentTarget.style.cursor = '';
-    //   }
     this.draggingSphereIndex = null;
   };
 
   /**
-   * It returns if the canvas point is near the provided crosshairs annotation in the
+   * It returns if the canvas point is near the provided reference line annotation in the
    * provided element or not. A proximity is passed to the function to determine the
    * proximity of the point to the annotation in number of pixels.
    *
@@ -1461,7 +1453,7 @@ class VolumeCroppingTool extends AnnotationTool {
 
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
     if (viewport.type === Enums.ViewportType.VOLUME_3D) {
       return;
     }
