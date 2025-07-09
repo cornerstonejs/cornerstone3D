@@ -16,23 +16,16 @@ import {
   getEnabledElement,
   utilities as csUtils,
   Enums,
-  CONSTANTS,
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
 
-import {
-  getToolGroup,
-  getToolGroupForViewport,
-} from '../store/ToolGroupManager';
+import { getToolGroup } from '../store/ToolGroupManager';
 
 import { state } from '../store/state';
 import { Events } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
-import {
-  resetElementCursor,
-  hideElementCursor,
-} from '../cursors/elementCursor';
+import { resetElementCursor } from '../cursors/elementCursor';
 import { getAnnotations } from '../stateManagement/annotation/annotationState'; // <-- Add this import
 
 import * as lineSegment from '../utilities/math/line';
@@ -49,18 +42,6 @@ import type {
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
-//const { RENDERING_DEFAULTS } = CONSTANTS;
-declare module '@cornerstonejs/core' {
-  interface IViewport {
-    /**
-     * Converts canvas coordinates [x, y] to VTK display coordinates [x, y].
-     * VTK display coordinates have their origin at the bottom-left of the renderer.
-     * @param {number[]} canvasCoords - The [x, y] canvas coordinates.
-     * @returns {[number, number]} The VTK display coordinates.
-     */
-    getVtkDisplayCoords(canvasCoords: [number, number]): [number, number];
-  }
-}
 interface VolumeCroppingAnnotation extends Annotation {
   data: {
     handles: {
@@ -886,7 +867,13 @@ class VolumeCroppingTool extends AnnotationTool {
     const rect = element.getBoundingClientRect();
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
-    const displayCoords = viewport.getVtkDisplayCoords([x, y]);
+    //  const displayCoords = viewport.getVtkDisplayCoords([x, y]);
+    //const displayCoords = (viewport as any).getVtkDisplayCoords([x, y]);
+    const displayCoords = (
+      viewport as unknown as {
+        getVtkDisplayCoords: (coords: [number, number]) => [number, number];
+      }
+    ).getVtkDisplayCoords([x, y]);
 
     // --- Remove clipping planes before picking otherwise we cannot back out of the volume
     const mapper = viewport
