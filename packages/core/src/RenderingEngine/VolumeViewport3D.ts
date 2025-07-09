@@ -10,6 +10,7 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
 import type { ImageActor } from '../types/IActor';
 import BaseVolumeViewport from './BaseVolumeViewport';
+
 /**
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render
  * 3D volumes in their entirety, and not just load a single slice at a time.
@@ -20,6 +21,7 @@ import BaseVolumeViewport from './BaseVolumeViewport';
 class VolumeViewport3D extends BaseVolumeViewport {
   constructor(props: ViewportInput) {
     super(props);
+
     const { parallelProjection, orientation } = this.options;
 
     const activeCamera = this.getVtkActiveCamera();
