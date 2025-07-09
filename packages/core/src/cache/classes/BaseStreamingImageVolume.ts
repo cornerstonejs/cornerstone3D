@@ -480,7 +480,7 @@ export default class BaseStreamingImageVolume
         ) || {};
       options.retrieveOptions = {
         ...options.retrieveOptions,
-        ...(retrieveOptions?.default ||
+        ...(retrieveOptions.default ||
           Object.values(retrieveOptions)?.[0] ||
           {}),
       };
