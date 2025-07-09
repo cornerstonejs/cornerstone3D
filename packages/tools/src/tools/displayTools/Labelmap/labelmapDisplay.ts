@@ -32,6 +32,7 @@ import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
+import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -39,6 +40,9 @@ export const MAX_NUMBER_COLORS = 255;
 const labelMapConfigCache = new Map();
 
 let polySegConversionInProgress = false;
+
+// File-global map to track if onModified handler is already registered for each actor UID
+const onModifiedRegistered = new Map<string, Function>();
 
 /**
  * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
@@ -200,6 +204,24 @@ async function render(
   }
 
   for (const labelmapActorEntry of labelmapActorEntries) {
+    const uid = labelmapActorEntry.uid;
+    const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
+
+    // Register onModified handler only once per actor UID
+    if (!onModifiedRegistered.has(uid)) {
+      const handler = () => {
+        _setLabelmapColorAndOpacity(
+          viewport.id,
+          labelmapActorEntry,
+          representation
+        );
+      };
+      if (typeof labelmapActor.onModified === 'function') {
+        labelmapActor.onModified(handler);
+        onModifiedRegistered.set(uid, handler);
+      }
+    }
+    // call the function to set the color and opacity
     _setLabelmapColorAndOpacity(
       viewport.id,
       labelmapActorEntry,
@@ -312,7 +334,7 @@ function _setLabelmapColorAndOpacity(
   }
 
   ofun.setClamping(false);
-  const labelmapActor = labelmapActorEntry.actor as vtkVolume;
+  const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
 
   // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
@@ -358,10 +380,6 @@ function _setLabelmapColorAndOpacity(
     }
 
     labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
-
-    labelmapActor.modified();
-    labelmapActor.getProperty().modified();
-    labelmapActor.getMapper().modified();
   } else {
     // reset outline width to 0
     labelmapActor
