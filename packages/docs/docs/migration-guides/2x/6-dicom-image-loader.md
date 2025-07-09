@@ -4,11 +4,8 @@ title: '@cornerstonejs/dicom-image-loader'
 summary: Changes to the DICOM image loader package when upgrading from Cornerstone3D 1.x to 2.x
 ---
 
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
-
-
 
 # @cornerstonejs/dicom-image-loader
 
