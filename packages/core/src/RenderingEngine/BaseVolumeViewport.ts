@@ -1755,10 +1755,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
     // Canvas coordinates with origin at top-left
     // VTK display coordinates have origin at bottom-left
-    const displayCoord = [
-      canvasPosWithDPR[0],
-      height * devicePixelRatio - canvasPosWithDPR[1],
-    ];
+    const displayCoord = [canvasPosWithDPR[0], height - canvasPosWithDPR[1]];
 
     return [displayCoord[0], displayCoord[1], 0];
   };
