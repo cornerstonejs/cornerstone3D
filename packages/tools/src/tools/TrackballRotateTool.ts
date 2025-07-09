@@ -182,7 +182,11 @@ class TrackballRotateTool extends BaseTool {
       matrix[10],
     ];
 
-    const originalPlanes = viewport.getOriginalClippingPlanes();
+    // --- Get the VolumeCroppingTool instance for this viewport ---
+    const toolGroup = getToolGroup(this.toolGroupId);
+    const croppingTool = toolGroup?.getToolInstance?.('VolumeCroppingTool');
+    // Use the tool's originalClippingPlanes property
+    const originalPlanes = croppingTool?.originalClippingPlanes;
     if (!originalPlanes || originalPlanes.length === 0) {
       return;
     }

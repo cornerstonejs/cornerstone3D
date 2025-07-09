@@ -6,6 +6,7 @@ import { Enums, getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { Events } from '../enums';
+import { getToolGroup } from '../store/ToolGroupManager';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -76,8 +77,10 @@ class ZoomTool extends BaseTool {
       matrix[10],
     ];
 
-    // Get original planes from the viewport (VolumeViewport3D)
-    const originalPlanes = viewport.getOriginalClippingPlanes?.();
+    const toolGroup = getToolGroup(this.toolGroupId);
+    const croppingTool = toolGroup?.getToolInstance?.('VolumeCroppingTool');
+    // Use the tool's originalClippingPlanes property
+    const originalPlanes = croppingTool?.originalClippingPlanes;
     if (!originalPlanes || !originalPlanes.length) {
       return;
     }

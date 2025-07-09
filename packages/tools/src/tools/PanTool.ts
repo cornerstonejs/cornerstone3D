@@ -4,7 +4,7 @@ import type { Types } from '@cornerstonejs/core';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
-
+import { getToolGroup } from '../store/ToolGroupManager';
 /**
  * Tool that pans the camera in the plane defined by the viewPlaneNormal and the viewUp.
  */
@@ -53,8 +53,11 @@ class PanTool extends BaseTool {
       matrix[10],
     ];
 
-    // Get original planes from the viewport (VolumeViewport3D)
-    const originalPlanes = viewport.getOriginalClippingPlanes?.();
+    // --- Get the VolumeCroppingTool instance for this viewport ---
+    const toolGroup = getToolGroup(this.toolGroupId);
+    const croppingTool = toolGroup?.getToolInstance?.('VolumeCroppingTool');
+    // Use the tool's originalClippingPlanes property
+    const originalPlanes = croppingTool?.originalClippingPlanes;
     if (!originalPlanes || !originalPlanes.length) {
       return;
     }

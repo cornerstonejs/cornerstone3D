@@ -19,10 +19,6 @@ import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport3D extends BaseVolumeViewport {
-  // Store original (axis-aligned) clipping planes for each viewport
-
-  _originalClippingPlanes: vtkPlane[] = [];
-
   constructor(props: ViewportInput) {
     super(props);
     const _originalClippingPlanes = [];
@@ -37,24 +33,6 @@ class VolumeViewport3D extends BaseVolumeViewport {
     if (orientation && orientation !== OrientationAxis.ACQUISITION) {
       this.applyViewOrientation(orientation);
     }
-  }
-
-  // Set the original planes for a viewport
-  public setOriginalClippingPlanes(planes) {
-    this._originalClippingPlanes = planes;
-    // this.render();
-  }
-
-  // Set the original planes for a viewport
-  public setOriginalClippingPlane(index, origin) {
-    if (this._originalClippingPlanes[index]) {
-      this._originalClippingPlanes[index].origin = origin;
-    }
-  }
-
-  // Set the original planes for a viewport
-  public getOriginalClippingPlanes() {
-    return this._originalClippingPlanes;
   }
 
   public getNumberOfSlices = (): number => {

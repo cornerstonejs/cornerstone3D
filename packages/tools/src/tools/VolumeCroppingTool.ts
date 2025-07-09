@@ -1,7 +1,5 @@
-import { vec2, vec3 } from 'gl-matrix';
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
@@ -52,7 +50,6 @@ import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotatio
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
-//interface VolumeCroppingAnnotation extends Annotation {
 interface VolumeCroppingAnnotation extends Annotation {
   data: {
     handles: {
@@ -166,6 +163,8 @@ function addCylinderBetweenPoints(
  */
 class VolumeCroppingTool extends AnnotationTool {
   static toolName;
+  originalClippingPlanes: { origin: number[]; normal: number[] }[] = [];
+
   sphereStates: {
     point: Types.Point3;
     axis: string;
@@ -306,7 +305,6 @@ class VolumeCroppingTool extends AnnotationTool {
 
   onSetToolPassive() {
     const viewportsInfo = this._getViewportsInfo();
-    //  this._initialize3DViewports(viewportsInfo);
   }
 
   onSetToolEnabled() {
@@ -377,14 +375,9 @@ class VolumeCroppingTool extends AnnotationTool {
       //viewport.removeActor(uid);
       return;
     }
-
     sphereActor.getProperty().setColor(color);
-
-    // const sphereColors = this.configuration.sphereColors || {};
-
     sphereActor.setPickable(true);
     viewport.addActor({ actor: sphereActor, uid: uid });
-    //  viewport.render();
   }
 
   _initialize3DViewports = (viewportsInfo): void => {
@@ -445,8 +438,9 @@ class VolumeCroppingTool extends AnnotationTool {
       origin: [...plane.getOrigin()],
       normal: [...plane.getNormal()],
     }));
-    viewport.setOriginalClippingPlanes(originalPlanes);
-
+    //  viewport.setOriginalClippingPlanes(originalPlanes);
+    //  viewport.originalClippingPlanes = originalPlanes;
+    this.originalClippingPlanes = originalPlanes;
     const sphereXminPoint = [xMin, (yMax + yMin) / 2, (zMax + zMin) / 2];
     const sphereXmaxPoint = [xMax, (yMax + yMin) / 2, (zMax + zMin) / 2];
     const sphereYminPoint = [(xMax + xMin) / 2, yMin, (zMax + zMin) / 2];
@@ -544,12 +538,17 @@ class VolumeCroppingTool extends AnnotationTool {
     element.addEventListener('mousemove', this._onMouseMoveSphere);
     element.addEventListener('mouseup', this._onMouseUpSphere);
 
-    mapper.addClippingPlane(planeXmin);
-    mapper.addClippingPlane(planeXmax);
-    mapper.addClippingPlane(planeYmin);
-    mapper.addClippingPlane(planeYmax);
-    mapper.addClippingPlane(planeZmin);
-    mapper.addClippingPlane(planeZmax);
+    if (
+      typeof mapper.addClippingPlane === 'function' &&
+      typeof mapper.removeAllClippingPlanes === 'function'
+    ) {
+      mapper.addClippingPlane(planeXmin);
+      mapper.addClippingPlane(planeXmax);
+      mapper.addClippingPlane(planeYmin);
+      mapper.addClippingPlane(planeYmax);
+      mapper.addClippingPlane(planeZmin);
+      mapper.addClippingPlane(planeZmax);
+    }
 
     eventTarget.addEventListener(
       Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
@@ -581,10 +580,12 @@ class VolumeCroppingTool extends AnnotationTool {
         origin: [0, 0, toolMin[2]],
         normal: [0, 0, 1],
       });
-      viewport.setOriginalClippingPlane(PLANEINDEX.XMIN, planeXmin.getOrigin());
-      viewport.setOriginalClippingPlane(PLANEINDEX.YMIN, planeYmin.getOrigin());
-      viewport.setOriginalClippingPlane(PLANEINDEX.ZMIN, planeZmin.getOrigin());
-
+      this.originalClippingPlanes[PLANEINDEX.XMIN].origin =
+        planeXmin.getOrigin();
+      this.originalClippingPlanes[PLANEINDEX.YMIN].origin =
+        planeYmin.getOrigin();
+      this.originalClippingPlanes[PLANEINDEX.ZMIN].origin =
+        planeZmin.getOrigin();
       if (this.configuration.showHandles) {
         this.sphereStates[SPHEREINDEX.XMIN].point[0] = planeXmin.getOrigin()[0];
         this.sphereStates[SPHEREINDEX.XMIN].sphereSource.setCenter(
@@ -681,9 +682,15 @@ class VolumeCroppingTool extends AnnotationTool {
         origin: [0, 0, toolMax[2]],
         normal: [0, 0, -1],
       });
-      viewport.setOriginalClippingPlane(PLANEINDEX.XMAX, planeXmax.getOrigin());
-      viewport.setOriginalClippingPlane(PLANEINDEX.YMAX, planeYmax.getOrigin());
-      viewport.setOriginalClippingPlane(PLANEINDEX.ZMAX, planeZmax.getOrigin());
+      // viewport.setOriginalClippingPlane(PLANEINDEX.XMAX, planeXmax.getOrigin());
+      // viewport.setOriginalClippingPlane(PLANEINDEX.YMAX, planeYmax.getOrigin());
+      // viewport.setOriginalClippingPlane(PLANEINDEX.ZMAX, planeZmax.getOrigin());
+      this.originalClippingPlanes[PLANEINDEX.XMAX].origin =
+        planeXmax.getOrigin();
+      this.originalClippingPlanes[PLANEINDEX.YMAX].origin =
+        planeYmax.getOrigin();
+      this.originalClippingPlanes[PLANEINDEX.ZMAX].origin =
+        planeZmax.getOrigin();
       if (this.configuration.showHandles) {
         // x
         this.sphereStates[SPHEREINDEX.XMAX].point[POINTINDEX.X] =
@@ -722,9 +729,7 @@ class VolumeCroppingTool extends AnnotationTool {
           this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Y],
           this.sphereStates[SPHEREINDEX.YMAX].point[POINTINDEX.Z]
         );
-        //    this.sphereStates[SPHEREINDEX.YMAX].sphereSource.sphereActor
-        //     .getProperty()
-        //     .setColor(this.sphereStates[SPHEREINDEX.YMAX].color);
+
         this.sphereStates[SPHEREINDEX.YMAX].sphereSource.modified();
         const otherYSphere = this.sphereStates.find(
           (s, i) => s.axis === 'y' && i !== SPHEREINDEX.YMAX
@@ -877,7 +882,9 @@ class VolumeCroppingTool extends AnnotationTool {
 
     // --- Remove clipping planes before picking otherwise we cannot back out of the volume
     const mapper = viewport.getDefaultActor().actor.getMapper();
-    const originalClippingPlanes = mapper.getClippingPlanes().slice();
+    const originalClippingPlanes = (mapper as vtkMapper)
+      .getClippingPlanes()
+      .slice();
     mapper.removeAllClippingPlanes();
     this.picker.pick(
       [displayCoords[0], displayCoords[1], 0],
@@ -1054,11 +1061,11 @@ class VolumeCroppingTool extends AnnotationTool {
               sphereState.point[1],
               sphereState.point[2]
             );
-            viewport.setOriginalClippingPlane(planeIdx, [
+            this.originalClippingPlanes[planeIdx].origin = [
               sphereState.point[0],
               sphereState.point[1],
               sphereState.point[2],
-            ]);
+            ];
           }
           // update the face sphere position after the clipping plane change
         });
@@ -1149,9 +1156,14 @@ class VolumeCroppingTool extends AnnotationTool {
         sphereState.sphereSource.modified();
 
         this._updateCornerSpheres(viewport);
-        const clippingPlanes = mapper.getClippingPlanes();
+        const clippingPlanes = (mapper as vtkMapper).getClippingPlanes();
         clippingPlanes[this.draggingSphereIndex].setOrigin(newPoint);
-        viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
+        // viewport.setOriginalClippingPlane(this.draggingSphereIndex, newPoint);
+        this.originalClippingPlanes[this.draggingSphereIndex].origin = [
+          newPoint[0],
+          newPoint[1],
+          newPoint[2],
+        ];
         viewport.render();
         /// Send event with the new point
         triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
@@ -1287,6 +1299,23 @@ class VolumeCroppingTool extends AnnotationTool {
 
   onResetCamera = (evt) => {
     console.debug('on reset camera');
+  };
+
+  _getAnnotations = (enabledElement: Types.IEnabledElement) => {
+    const { viewport } = enabledElement;
+    const annotations =
+      getAnnotations(this.getToolName(), viewport.element) || [];
+    const viewportIds = this._getViewportsInfo().map(
+      ({ viewportId }) => viewportId
+    );
+
+    // filter the annotations to only keep that are for this toolGroup
+    const toolGroupAnnotations = annotations.filter((annotation) => {
+      const { data } = annotation;
+      return viewportIds.includes(data.viewportId);
+    });
+
+    return toolGroupAnnotations;
   };
 
   mouseMoveCallback = (
@@ -1463,14 +1492,6 @@ class VolumeCroppingTool extends AnnotationTool {
         viewportsInfo.map(({ viewportId }) => viewportId)
       );
     }
-
-    // TRANSLATION
-    // get the annotation of the other viewport which are parallel to the delta shift and are of the same scene
-    const otherViewportAnnotations =
-      this._getAnnotationsForViewportsWithDifferentCameras(
-        enabledElement,
-        annotations
-      );
   };
 
   _pointNearTool(element, annotation, canvasCoords, proximity) {
