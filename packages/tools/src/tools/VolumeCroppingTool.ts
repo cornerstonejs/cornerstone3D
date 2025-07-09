@@ -45,6 +45,7 @@ import type {
   PublicToolProps,
   ToolProps,
   InteractionTypes,
+  SVGDrawingHelper,
 } from '../types';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
@@ -222,6 +223,42 @@ class VolumeCroppingTool extends AnnotationTool {
     this.picker.setPickFromList(true);
     this.picker.setTolerance(0);
     this.picker.initializePickList();
+  }
+
+  addNewAnnotation(
+    evt: EventTypes.InteractionEventType
+  ): Annotation | undefined {
+    // Implement your logic here if needed
+    return undefined;
+  }
+
+  cancel(): void {
+    // Implement your logic here if needed
+  }
+
+  handleSelectedCallback(
+    evt: EventTypes.InteractionEventType,
+    annotation: Annotation,
+    handle: ToolHandle,
+    interactionType: InteractionTypes
+  ): void {
+    // Implement your logic here if needed
+  }
+
+  toolSelectedCallback(
+    evt: EventTypes.InteractionEventType,
+    annotation: Annotation,
+    interactionType: InteractionTypes
+  ): void {
+    // Implement your logic here if needed
+  }
+
+  renderAnnotation(
+    enabledElement: Types.IEnabledElement,
+    svgDrawingHelper: SVGDrawingHelper
+  ): boolean {
+    // Implement your logic here if needed
+    return false;
   }
 
   setHandlesVisible(visible: boolean) {
@@ -1434,30 +1471,6 @@ class VolumeCroppingTool extends AnnotationTool {
         enabledElement,
         annotations
       );
-
-    const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
-      (annotation) => {
-        const { data } = annotation;
-        const otherViewport = renderingEngine.getViewport(data.viewportId);
-        const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.id
-        );
-
-        return (
-          otherViewportControllable === true &&
-          viewportAnnotation.data.activeViewportIds.find(
-            (id) => id === otherViewport.id
-          )
-        );
-      }
-    );
-    /*
-    this._applyDeltaShiftToSelectedViewportCameras(
-      renderingEngine,
-      viewportsAnnotationsToUpdate,
-      delta
-    );
-    */
   };
 
   _pointNearTool(element, annotation, canvasCoords, proximity) {

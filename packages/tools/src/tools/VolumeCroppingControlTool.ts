@@ -415,9 +415,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
    * @returns  annotation
    */
 
-  addNewAnnotation = (
+  addNewAnnotation(
     evt: EventTypes.InteractionEventType
-  ): VolumeCroppingAnnotation => {
+  ): VolumeCroppingAnnotation {
     const eventDetail = evt.detail;
 
     // console.debug('addNewAnnotation: ', eventDetail);
@@ -466,7 +466,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     this._activateModify(element);
     return filteredAnnotations[0];
-  };
+  }
 
   cancel = () => {
     console.log('Not implemented yet');
@@ -510,6 +510,17 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     evt.preventDefault();
   };
+
+  handleSelectedCallback(
+    evt: EventTypes.InteractionEventType,
+    annotation: Annotation,
+    handle: ToolHandle,
+    interactionType: InteractionTypes
+  ): void {
+    // You can customize this logic as needed
+    // For now, just call toolSelectedCallback if you want default behavior
+    this.toolSelectedCallback(evt, annotation, interactionType);
+  }
 
   onCameraModified = (evt) => {
     const eventDetail = evt.detail;
@@ -1141,7 +1152,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
             origin[2] + maxCropFactor * (dimensions[2] - 1) * spacing[2],
           ];
           // Update all annotations' handles.toolCenter
-          const annotations = getAnnotations(this.getToolName()) || [];
+          const annotations =
+            getAnnotations(this.getToolName(), viewportId) || [];
           annotations.forEach((annotation) => {
             if (annotation.data && annotation.data.handles) {
               annotation.data.handles.toolCenter = [...this.toolCenter];
