@@ -74,7 +74,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
 import { getCameraVectors } from './helpers/getCameraVectors';
-import { isRenderingEngineSequential } from './helpers/isRenderingEngineSequential';
+import { isSequentialRenderingEngine } from './helpers/isSequentialRenderingEngine';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -2141,7 +2141,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
   private _configureRenderingPipeline() {
     const renderingEngine = this.getRenderingEngine();
-    const isSequential = isRenderingEngineSequential(renderingEngine);
+    const isSequential = isSequentialRenderingEngine(renderingEngine);
 
     for (const key in this.renderingPipelineFunctions) {
       if (

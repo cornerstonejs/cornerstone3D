@@ -1,5 +1,5 @@
 import RenderingEngine from './RenderingEngine';
-import RenderingEngineSequential from './RenderingEngineSequential';
+import SequentialRenderingEngine from './SequentialRenderingEngine';
 import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
@@ -9,7 +9,7 @@ export * from './helpers';
 export {
   getRenderingEngine,
   RenderingEngine,
-  RenderingEngineSequential,
+  SequentialRenderingEngine,
   VolumeViewport,
   VolumeViewport3D,
   StackViewport,

@@ -1,8 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  RenderingEngineSequential,
   Enums,
   getRenderingEngine,
+  SequentialRenderingEngine,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -15,12 +15,12 @@ const { ViewportType } = Enums;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  '6x6 Grid with RenderingEngineSequential',
-  'Displays a 6x6 grid of viewports using RenderingEngineSequential with resize observer'
+  '6x6 Grid with SequentialRenderingEngine',
+  'Displays a 6x6 grid of viewports using SequentialRenderingEngine with resize observer'
 );
 
-const renderingEngineId = 'myRenderingEngineSequential';
-let renderingEngine: RenderingEngineSequential;
+const renderingEngineId = 'mySequentialRenderingEngine';
+let renderingEngine: SequentialRenderingEngine;
 let resizeTimeout: number;
 
 // Debounced resize handler
@@ -29,7 +29,7 @@ const handleResize = () => {
   resizeTimeout = window.setTimeout(() => {
     renderingEngine = getRenderingEngine(
       renderingEngineId
-    ) as RenderingEngineSequential;
+    ) as SequentialRenderingEngine;
 
     if (renderingEngine) {
       renderingEngine.resize(true, false);
@@ -108,8 +108,8 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Instantiate a RenderingEngineSequential
-  renderingEngine = new RenderingEngineSequential(renderingEngineId);
+  // Instantiate a SequentialRenderingEngine
+  renderingEngine = new SequentialRenderingEngine(renderingEngineId);
 
   // Create viewport input array for all 36 viewports
   const viewportInputArray: Types.PublicViewportInput[] = [];
@@ -163,9 +163,9 @@ async function run() {
   info.style.padding = '10px';
   info.style.borderRadius = '5px';
   info.innerHTML = `
-    <h3>RenderingEngineSequential Example</h3>
+    <h3>SequentialRenderingEngine Example</h3>
     <p>36 viewports (6x6 grid)</p>
-    <p>Using RenderingEngineSequential for better performance with large viewport counts</p>
+    <p>Using SequentialRenderingEngine for better performance with large viewport counts</p>
     <p>Resize the window to test resize observer</p>
     <p style="color: #4CAF50;">Avoids WebGL, browser and OS limits</p>
   `;

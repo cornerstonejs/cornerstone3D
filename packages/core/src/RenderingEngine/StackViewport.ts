@@ -97,7 +97,7 @@ import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
-import { isRenderingEngineSequential } from './helpers/isRenderingEngineSequential';
+import { isSequentialRenderingEngine } from './helpers/isSequentialRenderingEngine';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -236,7 +236,7 @@ class StackViewport extends Viewport {
 
   private _configureRenderingPipeline(value?: boolean) {
     const renderingEngine = this.getRenderingEngine();
-    const isSequential = isRenderingEngineSequential(renderingEngine);
+    const isSequential = isSequentialRenderingEngine(renderingEngine);
 
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
