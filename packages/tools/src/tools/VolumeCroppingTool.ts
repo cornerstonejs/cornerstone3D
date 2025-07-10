@@ -375,7 +375,17 @@ class VolumeCroppingTool extends AnnotationTool {
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
     const volumeActors = viewport.getActors();
+    if (!volumeActors || volumeActors.length === 0) {
+      console.warn(
+        'VolumeCroppingTool: No volume actors found in the viewport.'
+      );
+      return;
+    }
     const imageData = volumeActors[0].actor.getMapper().getInputData();
+    if (!imageData) {
+      console.warn('VolumeCroppingTool: No image data found for volume actor.');
+      return;
+    }
     const dimensions = imageData.getDimensions();
     const origin = imageData.getOrigin();
     const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
