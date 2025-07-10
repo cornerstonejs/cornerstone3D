@@ -74,7 +74,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
 import { getCameraVectors } from './helpers/getCameraVectors';
-
+import { isSequentialRenderingEngine } from './helpers/isSequentialRenderingEngine';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -110,6 +110,8 @@ abstract class BaseVolumeViewport extends Viewport {
         'VolumeViewports cannot be used whilst CPU Fallback Rendering is enabled.'
       );
     }
+
+    this._configureRenderingPipeline();
 
     const renderer = this.getRenderer();
 
@@ -1600,6 +1602,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns The corresponding world coordinates.
    * @public
    */
+
   public canvasToWorld = (canvasPos: Point2): Point3 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
@@ -1645,6 +1648,74 @@ abstract class BaseVolumeViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
+  public canvasToWorldSequential = (canvasPos: Point2): Point3 => {
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
+
+    /**
+     * NOTE: this is necessary because we want the coordinate transformation
+     * respect to the view plane (plane orthogonal to the camera and passing to
+     * the focal point).
+     *
+     * When vtk.js computes the coordinate transformations, it simply uses the
+     * camera matrix (no ray casting).
+     *
+     * However for the volume viewport the clipping range is set to be
+     * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
+     * The clipping range is used in the camera method getProjectionMatrix().
+     * The projection matrix is used then for viewToWorld/worldToView methods of
+     * the renderer. This means that vkt.js will not return the coordinates of
+     * the point on the view plane (i.e. the depth coordinate will correspond
+     * to the focal point).
+     *
+     * Therefore the clipping range has to be set to (distance, distance + 0.01),
+     * where now distance is the distance between the camera position and focal
+     * point. This is done internally, in our camera customization when the flag
+     * isPerformingCoordinateTransformation is set to true.
+     */
+
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
+
+    const renderer = this.getRenderer();
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Convert canvas coordinates to normalized display coordinates
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+
+    // Normalize to [0,1] range
+    const normalizedDisplay = [
+      canvasPosWithDPR[0] / width,
+      1 - canvasPosWithDPR[1] / height, // Flip Y axis
+      0,
+    ];
+
+    // Transform from normalized display to world coordinates
+    const projCoords = renderer.normalizedDisplayToProjection(
+      normalizedDisplay[0],
+      normalizedDisplay[1],
+      normalizedDisplay[2]
+    );
+    const viewCoords = renderer.projectionToView(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2],
+      aspectRatio
+    );
+    const worldCoord = renderer.viewToWorld(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2]
+    );
+
+    vtkCamera.setIsPerformingCoordinateTransformation?.(false);
+
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
+  };
+
   /**
    * Returns the VTK.js display coordinates of the given `canvasPos` projected onto the
    * `Viewport`'s `vtkCamera`'s focal point and the direction of projection.
@@ -1672,6 +1743,23 @@ abstract class BaseVolumeViewport extends Viewport {
     displayCoord[1] = size[1] - displayCoord[1];
     return [displayCoord[0], displayCoord[1], 0];
   };
+
+  public getVtkDisplayCoordsSequential = (canvasPos: Point2): Point3 => {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+
+    const { height } = this.canvas;
+
+    // Canvas coordinates with origin at top-left
+    // VTK display coordinates have origin at bottom-left
+    const displayCoord = [canvasPosWithDPR[0], height - canvasPosWithDPR[1]];
+
+    return [displayCoord[0], displayCoord[1], 0];
+  };
+
   /**
    * Returns the canvas coordinates of the given `worldPos`
    * projected onto the `Viewport`'s `canvas`.
@@ -1730,6 +1818,74 @@ abstract class BaseVolumeViewport extends Viewport {
     const canvasCoordWithDPR = [
       canvasCoord[0] / devicePixelRatio,
       canvasCoord[1] / devicePixelRatio,
+    ] as Point2;
+
+    vtkCamera.setIsPerformingCoordinateTransformation(false);
+
+    return canvasCoordWithDPR;
+  };
+
+  public worldToCanvasSequential = (worldPos: Point3): Point2 => {
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
+
+    /**
+     * NOTE: this is necessary because we want the coordinate transformation
+     * respect to the view plane (plane orthogonal to the camera and passing to
+     * the focal point).
+     *
+     * When vtk.js computes the coordinate transformations, it simply uses the
+     * camera matrix (no ray casting).
+     *
+     * However for the volume viewport the clipping range is set to be
+     * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
+     * The clipping range is used in the camera method getProjectionMatrix().
+     * The projection matrix is used then for viewToWorld/worldToView methods of
+     * the renderer. This means that vkt.js will not return the coordinates of
+     * the point on the view plane (i.e. the depth coordinate will corresponded
+     * to the focal point).
+     *
+     * Therefore the clipping range has to be set to (distance, distance + 0.01),
+     * where now distance is the distance between the camera position and focal
+     * point. This is done internally, in our camera customization when the flag
+     * isPerformingCoordinateTransformation is set to true.
+     */
+
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
+
+    const renderer = this.getRenderer();
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Transform from world to view coordinates
+    const viewCoords = renderer.worldToView(
+      worldPos[0],
+      worldPos[1],
+      worldPos[2]
+    );
+
+    // Transform from view to projection coordinates
+    const projCoords = renderer.viewToProjection(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2],
+      aspectRatio
+    );
+
+    // Transform from projection to normalized display coordinates
+    const normalizedDisplay = renderer.projectionToNormalizedDisplay(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2]
+    );
+
+    // Convert normalized display [0,1] to canvas pixels
+    const canvasX = normalizedDisplay[0] * width;
+    const canvasY = (1 - normalizedDisplay[1]) * height; // Flip Y axis
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasCoordWithDPR = [
+      canvasX / devicePixelRatio,
+      canvasY / devicePixelRatio,
     ] as Point2;
 
     vtkCamera.setIsPerformingCoordinateTransformation(false);
@@ -1979,6 +2135,39 @@ abstract class BaseVolumeViewport extends Viewport {
   public getAllVolumeIds(): string[] {
     return Array.from(this.volumeIds);
   }
+
+  private _configureRenderingPipeline() {
+    const renderingEngine = this.getRenderingEngine();
+    const isSequential = isSequentialRenderingEngine(renderingEngine);
+
+    for (const key in this.renderingPipelineFunctions) {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          this.renderingPipelineFunctions,
+          key
+        )
+      ) {
+        const functions = this.renderingPipelineFunctions[key];
+
+        this[key] = isSequential ? functions.sequential : functions.default;
+      }
+    }
+  }
+
+  protected renderingPipelineFunctions = {
+    worldToCanvas: {
+      default: this.worldToCanvas,
+      sequential: this.worldToCanvasSequential,
+    },
+    canvasToWorld: {
+      default: this.canvasToWorld,
+      sequential: this.canvasToWorldSequential,
+    },
+    getVtkDisplayCoords: {
+      default: this.getVtkDisplayCoords,
+      sequential: this.getVtkDisplayCoordsSequential,
+    },
+  };
 }
 
 export default BaseVolumeViewport;

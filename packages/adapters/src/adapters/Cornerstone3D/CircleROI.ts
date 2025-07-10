@@ -183,7 +183,7 @@ class CircleROI extends BaseAdapter3D {
         points.push({ x: end[0], y: end[1], z: center[2] });
 
         const cachedStatsKeys = Object.keys(cachedStats)[0];
-        const { area, radius } = cachedStatsKeys
+        const { area = undefined, radius = 0 } = cachedStatsKeys
             ? cachedStats[cachedStatsKeys]
             : {};
         const perimeter = 2 * Math.PI * radius;

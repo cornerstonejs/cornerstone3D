@@ -1,11 +1,13 @@
+import type { RenderingEngineModeType } from '../types';
+
 interface Cornerstone3DConfig {
-  gpuTier: { tier: number };
+  gpuTier?: { tier?: number };
   /**
    * Whether the device is mobile or not.
    */
-  isMobile: boolean;
+  isMobile?: boolean;
 
-  rendering: {
+  rendering?: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
     // However, if the client has norm16 textures (it can be seen by visiting
     // the webGl report at https://webglreport.com/?v=2), vtk will be default
@@ -18,8 +20,8 @@ interface Cornerstone3DConfig {
     // Read more in the following Pull Request:
     // 1. HalfFloat: https://github.com/Kitware/vtk-js/pull/2046
     // 2. Norm16: https://github.com/Kitware/vtk-js/pull/2058
-    preferSizeOverAccuracy: boolean;
-    useCPURendering: boolean;
+    preferSizeOverAccuracy?: boolean;
+    useCPURendering?: boolean;
     /**
      * flag to control whether to use fallback behavior for z-spacing calculation in
      * volume viewports when the necessary metadata is missing. If enabled,
@@ -29,7 +31,14 @@ interface Cornerstone3DConfig {
      * in scenarios where the metadata is incomplete or missing, but
      * it might be wrong assumption in certain scenarios.
      */
-    strictZSpacingForVolumeViewport: boolean;
+    strictZSpacingForVolumeViewport?: boolean;
+
+    /**
+     * The rendering engine mode to use.
+     * 'next' is the new rendering engine that uses sequential rendering and has enhanced support/performance for multi-monitor and high resolution displays.
+     * 'standard' is the old rendering engine implementation, which we will eventually move away from.
+     */
+    renderingEngineMode?: RenderingEngineModeType;
   };
 
   /**

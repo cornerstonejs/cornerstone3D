@@ -175,7 +175,7 @@ export default class BaseAdapter3D {
         return tidArguments;
     }
 
-    static getTID300RepresentationArgumentsSCOORD3D(tool) {
+    static getTID300RepresentationArgumentsSCOORD3D(tool): TID300Arguments {
         const { data, finding, findingSites } = tool;
         const {
             handles: { points = [] }

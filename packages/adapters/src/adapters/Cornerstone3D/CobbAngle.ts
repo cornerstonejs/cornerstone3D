@@ -184,7 +184,9 @@ class CobbAngle extends BaseAdapter3D {
         const point4 = { x: end2[0], y: end2[1], z: end2[2] };
 
         const cachedStatsKeys = Object.keys(cachedStats)[0];
-        const { angle } = cachedStatsKeys ? cachedStats[cachedStatsKeys] : {};
+        const { angle = undefined } = cachedStatsKeys
+            ? cachedStats[cachedStatsKeys]
+            : {};
 
         return {
             point1,

@@ -161,6 +161,8 @@ import type JumpToSliceOptions from './JumpToSliceOptions';
 
 import type GeometryLoaderFn from './GeometryLoaderFn';
 
+import type { RenderingEngineModeType } from './RenderingEngineMode';
+
 export type {
   // config
   Cornerstone3DConfig,
@@ -313,4 +315,5 @@ export type {
   HistoryMemo,
   VoxelManager,
   RLEVoxelMap,
+  RenderingEngineModeType,
 };
