@@ -17,8 +17,8 @@ const defaultConfig: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
     /**
      * The rendering engine mode to use.
-     * 'next' is the new rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
-     * 'standard' is the old rendering engine implementation, which we will eventually move away from.
+     * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
+     * 'tiled' is a rendering engine that uses tiled rendering.
      */
     renderingEngineMode: RenderingEngineModeEnum.ContextPool,
 
