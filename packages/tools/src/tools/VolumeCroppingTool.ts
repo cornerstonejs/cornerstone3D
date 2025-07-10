@@ -530,27 +530,20 @@ class VolumeCroppingTool extends AnnotationTool {
 
     const defaultActor = viewport.getDefaultActor();
     const actor = defaultActor.actor as vtkActor | vtkVolume;
-    if (actor && (actor.isA?.('vtkActor') || actor.isA?.('vtkVolume'))) {
-      this.picker.addPickList(actor);
-      this._prepareImageDataForPicking(viewport);
-    }
+    this.picker.addPickList(actor);
+    this._prepareImageDataForPicking(viewport);
 
     const element = viewport.canvas || viewport.element;
     element.addEventListener('mousedown', this._onMouseDownSphere);
     element.addEventListener('mousemove', this._onMouseMoveSphere);
     element.addEventListener('mouseup', this._onMouseUpSphere);
 
-    if (
-      typeof mapper.addClippingPlane === 'function' &&
-      typeof mapper.removeAllClippingPlanes === 'function'
-    ) {
-      mapper.addClippingPlane(planeXmin);
-      mapper.addClippingPlane(planeXmax);
-      mapper.addClippingPlane(planeYmin);
-      mapper.addClippingPlane(planeYmax);
-      mapper.addClippingPlane(planeZmin);
-      mapper.addClippingPlane(planeZmax);
-    }
+    mapper.addClippingPlane(planeXmin);
+    mapper.addClippingPlane(planeXmax);
+    mapper.addClippingPlane(planeYmin);
+    mapper.addClippingPlane(planeYmax);
+    mapper.addClippingPlane(planeZmin);
+    mapper.addClippingPlane(planeZmax);
 
     eventTarget.addEventListener(
       Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
