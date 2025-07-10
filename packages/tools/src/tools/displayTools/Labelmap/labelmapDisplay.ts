@@ -41,9 +41,6 @@ const labelMapConfigCache = new Map();
 
 let polySegConversionInProgress = false;
 
-// File-global map to track if onModified handler is already registered for each actor UID
-const onModifiedRegistered = new Map<string, Function>();
-
 /**
  * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
  * Initializes the global and viewport specific state for the segmentation in the
@@ -204,26 +201,6 @@ async function render(
   }
 
   for (const labelmapActorEntry of labelmapActorEntries) {
-    const uid = labelmapActorEntry.uid;
-    const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
-    if (!labelmapActor || labelmapActor.isDeleted()) {
-      continue;
-    }
-
-    // Register onModified handler only once per actor UID
-    if (!onModifiedRegistered.has(uid)) {
-      const handler = () => {
-        _setLabelmapColorAndOpacity(
-          viewport.id,
-          labelmapActorEntry,
-          representation
-        );
-      };
-      if (typeof labelmapActor.onModified === 'function') {
-        labelmapActor.getMapper().onModified(handler);
-        onModifiedRegistered.set(uid, handler);
-      }
-    }
     // call the function to set the color and opacity
     _setLabelmapColorAndOpacity(
       viewport.id,
