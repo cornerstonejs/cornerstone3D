@@ -597,14 +597,16 @@ class VolumeCroppingTool extends AnnotationTool {
 
     mapper.removeAllClippingPlanes();
     originalPlanes.forEach((plane) => {
-      const origin =
-        typeof plane.getOrigin === 'function'
-          ? plane.getOrigin()
-          : plane.origin;
-      const normal =
-        typeof plane.getNormal === 'function'
-          ? plane.getNormal()
-          : plane.normal;
+      const origin: Types.Point3 = [
+        plane.origin[0],
+        plane.origin[1],
+        plane.origin[2],
+      ];
+      const normal: Types.Point3 = [
+        plane.normal[0],
+        plane.normal[1],
+        plane.normal[2],
+      ];
       // Transform origin (full 4x4)
       const o: Types.Point3 = [
         matrix[0] * origin[0] +
@@ -621,7 +623,7 @@ class VolumeCroppingTool extends AnnotationTool {
           matrix[14],
       ];
       // Transform normal (rotation only)
-      const n: Types.Point3 = this._transformNormal(normal, rot);
+      const n = this._transformNormal(normal, rot);
       const planeInstance = vtkPlane.newInstance({ origin: o, normal: n });
       mapper.addClippingPlane(planeInstance);
     });

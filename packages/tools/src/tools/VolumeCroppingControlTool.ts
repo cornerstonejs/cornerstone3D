@@ -617,11 +617,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
           this.toolCenterMax[1] += deltaCameraPosition[1];
           this.toolCenterMax[2] += deltaCameraPosition[2];
         }
-
-        // triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
-        //   toolGroupId: this.toolGroupId,
-        //    toolCenter: this.toolCenter,
-        //   });
       }
 
       const viewportAnnotation = filteredToolAnnotations[0];
