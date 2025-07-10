@@ -22,10 +22,10 @@ class RenderingEngine {
     const renderingEngineMode = config?.rendering?.renderingEngineMode;
 
     switch (renderingEngineMode) {
-      case RenderingEngineModeEnum.Standard:
+      case RenderingEngineModeEnum.Tiled:
         this._implementation = new TiledRenderingEngine(id);
         break;
-      case RenderingEngineModeEnum.Next:
+      case RenderingEngineModeEnum.ContextPool:
         this._implementation = new ContextPoolRenderingEngine(id);
         break;
       default:

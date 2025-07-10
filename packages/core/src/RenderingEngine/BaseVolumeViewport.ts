@@ -1632,7 +1632,7 @@ abstract class BaseVolumeViewport extends Viewport {
     vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
-    const displayCoords = this.getVtkDisplayCoords(canvasPos);
+    const displayCoords = this.getVtkDisplayCoordsTiled(canvasPos);
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
     const openGLRenderWindow =
