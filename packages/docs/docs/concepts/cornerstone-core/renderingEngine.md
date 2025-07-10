@@ -30,6 +30,78 @@ canvas get updated, and at render time, we copy from offscreen to onscreen for e
 
 For instance for PET-CT fusion which has 3x3 layout which includes CT (Axial, Sagittal, Coronal), PET (Axial, Sagittal, Coronal) and Fusion (Axial, Sagittal, Coronal), we create two volume mappers for CT and PET individually, and for the Fusion viewports we re-use both created textures instead of re-creating a new one.
 
+## Rendering Engine Implementations
+
+Cornerstone3D provides two rendering engine implementations to handle different use cases and overcome technical limitations:
+
+### StandardRenderingEngine
+
+The `StandardRenderingEngine` is the original implementation that uses a single, large offscreen canvas for all viewports. This approach:
+
+- Creates one massive offscreen canvas that grows horizontally as viewports are added
+- Renders all viewports to specific coordinates on this single offscreen canvas
+- Copies pixel data from the offscreen canvas to individual onscreen viewports
+
+**Limitations of StandardRenderingEngine:**
+
+- **Canvas Size Limits**: Browsers impose maximum canvas dimensions (e.g., 16,384px in Chrome). When the combined width of all viewports exceeds this limit, the offscreen canvas is silently cropped, causing severe visual artifacts, misaligned viewports, and blank viewports
+- **Performance Degradation**: As the offscreen canvas approaches size limits, performance degrades significantly, especially on high-resolution displays or layouts with many viewports
+- **Multi-Monitor Issues**: Practically impossible to use across multiple high-resolution monitors due to canvas size limitations
+- **Memory Consumption**: Allocates a huge, memory-intensive offscreen canvas regardless of actual viewport usage
+
+### NextRenderingEngine (SequentialRenderingEngine)
+
+The `NextRenderingEngine` (internally called `SequentialRenderingEngine`) fundamentally solves the limitations of the standard approach by using a different rendering strategy:
+
+- Renders each viewport individually to a viewport-sized offscreen canvas
+- Copies the result to the corresponding onscreen canvas
+- Proceeds sequentially to the next viewport, reusing the same offscreen canvas
+- Utilizes WebGL context pooling to render in batches (e.g., batches of 8 for 8 WebGL contexts)
+
+**Advantages of NextRenderingEngine:**
+
+- **No Canvas Size Limits**: The browser's maximum canvas size now applies to individual viewports, not the combined width
+- **Improved Performance**: Consistent performance regardless of the number of viewports or display resolution
+- **Better Memory Usage**: Avoids allocating massive offscreen canvases
+- **Multi-Monitor Support**: Enables smooth performance across multiple high-resolution monitors
+- **Enhanced Stability**: Reduces WebGL context loss associated with huge canvas surfaces
+
+### Configuring the Rendering Engine
+
+The `NextRenderingEngine` is now the default in Cornerstone3D. If you need to use the legacy `StandardRenderingEngine`, you can configure it during initialization:
+
+```js
+import { init } from '@cornerstonejs/core';
+
+// To use the legacy StandardRenderingEngine
+init({
+  rendering: {
+    renderingEngineMode: 'standard',
+  },
+});
+
+// The NextRenderingEngine is used by default, or you can explicitly set it
+init({
+  rendering: {
+    renderingEngineMode: 'next',
+  },
+});
+```
+
+For `NextRenderingEngine` you can also configure the number of WebGL contexts to use for batch rendering:
+
+```js
+import { init } from '@cornerstonejs/core';
+
+// To use the NextRenderingEngine with a specific number of WebGL contexts
+init({
+  rendering: {
+    renderingEngineMode: 'next',
+    webGLContextCount: 7, // Default is 7, can be adjusted based on your needs
+  },
+});
+```
+
 ## General usage
 
 After creating a renderingEngine, we can assign viewports to it for rendering. There are two main approach for creating `Stack` or `Volume` viewports which we will discuss now.
