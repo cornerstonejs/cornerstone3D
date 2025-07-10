@@ -63,7 +63,7 @@ const resizeObserver = new ResizeObserver(handleResize);
 setTitleAndDescription(
   'WebGL Context Pooling - 8x8 Grid',
   `Demonstrates an 8x8 grid of synchronized stack viewports with configurable WebGL context pooling, use left click to scroll through the stack in all viewports. The current number of WebGL contexts is set to ${
-    localStorage.getItem('webglContextCount') || 7
+    localStorage.getItem('webglContextCount') || 1
   }.`
 );
 
@@ -84,11 +84,11 @@ contextCountLabel.style.marginRight = '10px';
 const contextCountDropdown = document.createElement('select');
 const contextOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
-// Get stored value or default to 7
+// Get stored value or default to 1
 const storedContextCount = localStorage.getItem('webglContextCount');
 const currentContextCount = storedContextCount
   ? parseInt(storedContextCount)
-  : 7;
+  : 1;
 
 contextOptions.forEach((value) => {
   const option = document.createElement('option');
