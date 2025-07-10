@@ -97,6 +97,7 @@ import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
+import { isSequentialRenderingEngine } from './helpers/isSequentialRenderingEngine';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -234,6 +235,9 @@ class StackViewport extends Viewport {
   };
 
   private _configureRenderingPipeline(value?: boolean) {
+    const renderingEngine = this.getRenderingEngine();
+    const isSequential = isSequentialRenderingEngine(renderingEngine);
+
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
     for (const key in this.renderingPipelineFunctions) {
@@ -244,7 +248,21 @@ class StackViewport extends Viewport {
         )
       ) {
         const functions = this.renderingPipelineFunctions[key];
-        this[key] = this.useCPURendering ? functions.cpu : functions.gpu;
+        if (this.useCPURendering) {
+          this[key] = functions.cpu;
+        } else {
+          if (
+            typeof functions.gpu === 'object' &&
+            functions.gpu.sequential &&
+            functions.gpu.default
+          ) {
+            this[key] = isSequential
+              ? functions.gpu.sequential
+              : functions.gpu.default;
+          } else {
+            this[key] = functions.gpu;
+          }
+        }
       }
     }
 
@@ -2826,6 +2844,60 @@ class StackViewport extends Viewport {
     return canvasPoint;
   };
 
+  private canvasToWorldGPUSequential = (canvasPos: Point2): Point3 => {
+    const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Convert canvas coordinates to normalized display coordinates
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+
+    // Normalize to [0,1] range
+    const normalizedDisplay = [
+      canvasPosWithDPR[0] / width,
+      1 - canvasPosWithDPR[1] / height, // Flip Y axis
+      0,
+    ];
+
+    // Transform from normalized display to world coordinates
+    const projCoords = renderer.normalizedDisplayToProjection(
+      normalizedDisplay[0],
+      normalizedDisplay[1],
+      normalizedDisplay[2]
+    );
+    const viewCoords = renderer.projectionToView(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2],
+      aspectRatio
+    );
+    const worldCoord = renderer.viewToWorld(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2]
+    );
+
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
+  };
+
   private canvasToWorldGPU = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer();
 
@@ -2846,6 +2918,7 @@ class StackViewport extends Viewport {
     const size = openGLRenderWindow.getSize();
 
     const devicePixelRatio = window.devicePixelRatio || 1;
+
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
       canvasPos[1] * devicePixelRatio,
@@ -2869,6 +2942,58 @@ class StackViewport extends Viewport {
     vtkCamera.setClippingRange(crange[0], crange[1]);
 
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
+  };
+
+  private worldToCanvasGPUSequential = (worldPos: Point3): Point2 => {
+    const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    const { width, height } = this.canvas;
+
+    const aspectRatio = width / height;
+
+    const viewCoords = renderer.worldToView(
+      worldPos[0],
+      worldPos[1],
+      worldPos[2]
+    );
+
+    const projCoords = renderer.viewToProjection(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2],
+      aspectRatio
+    );
+
+    const normalizedDisplay = renderer.projectionToNormalizedDisplay(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2]
+    );
+
+    const canvasX = normalizedDisplay[0] * width;
+    const canvasY = (1 - normalizedDisplay[1]) * height;
+
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
+    const canvasCoordWithDPR = [
+      canvasX / devicePixelRatio,
+      canvasY / devicePixelRatio,
+    ] as Point2;
+
+    return canvasCoordWithDPR;
   };
 
   private worldToCanvasGPU = (worldPos: Point3): Point2 => {
@@ -3382,11 +3507,17 @@ class StackViewport extends Viewport {
     },
     canvasToWorld: {
       cpu: this.canvasToWorldCPU,
-      gpu: this.canvasToWorldGPU,
+      gpu: {
+        sequential: this.canvasToWorldGPUSequential,
+        default: this.canvasToWorldGPU,
+      },
     },
     worldToCanvas: {
       cpu: this.worldToCanvasCPU,
-      gpu: this.worldToCanvasGPU,
+      gpu: {
+        sequential: this.worldToCanvasGPUSequential,
+        default: this.worldToCanvasGPU,
+      },
     },
     getRenderer: {
       cpu: () => this.getCPUFallbackError('getRenderer'),

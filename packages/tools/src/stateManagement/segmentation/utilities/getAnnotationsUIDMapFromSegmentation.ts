@@ -5,7 +5,7 @@ import { getSegmentation } from '../getSegmentation';
  * Retrieves the annotationUIDsMap for a given segmentation ID, if available.
  *
  * @param segmentationId - The segmentation ID
- * @returns The annotationUIDsMap (Map<segmentIndex, Set<annotationUID>>) or undefined
+ * @returns The annotationUIDsMap (Map of segmentIndex or Set of annotationUID) or undefined
  */
 export function getAnnotationsUIDMapFromSegmentation(segmentationId: string) {
   const segmentation = getSegmentation(segmentationId);

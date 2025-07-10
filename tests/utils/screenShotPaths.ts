@@ -194,6 +194,9 @@ const screenShotPaths = {
     afterReformat: 'mpr-reformat-after.png',
     afterInteraction: 'mpr-reformat-after-interaction.png',
   },
+  sequentialRenderingEngine: {
+    viewport: 'viewport.png',
+  },
 };
 
 export { screenShotPaths };

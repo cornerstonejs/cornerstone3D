@@ -104,6 +104,7 @@ import {
   getNumberOfReferenceImageIds,
   getReferenceImageIds,
 } from './getNumberOfReferenceImageIds';
+import { asArray } from './asArray';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -209,4 +210,5 @@ export {
   getPixelSpacingInformation,
   getNumberOfReferenceImageIds,
   getReferenceImageIds,
+  asArray,
 };

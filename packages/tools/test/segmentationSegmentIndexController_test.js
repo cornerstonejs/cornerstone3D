@@ -134,6 +134,11 @@ describe('Segmentation Index Controller:', () => {
     };
 
     const compareImageCallback = () => {
+      // Remove the event listener to prevent multiple done() calls
+      eventTarget.removeEventListener(
+        Events.SEGMENTATION_RENDERED,
+        compareImageCallback
+      );
       const canvas1 = vp1.getCanvas();
       const image1 = canvas1.toDataURL('image/png');
 

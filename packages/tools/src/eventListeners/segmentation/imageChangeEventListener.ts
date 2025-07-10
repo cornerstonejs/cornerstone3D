@@ -139,6 +139,7 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
+    let shouldTriggerSegmentationRender = false;
     const updateSegmentationActor = (derivedImageId) => {
       const derivedImage = cache.getImage(derivedImageId);
 
@@ -210,7 +211,7 @@ function _imageChangeEventListener(evt) {
           },
         ]);
 
-        triggerSegmentationRender(viewportId);
+        shouldTriggerSegmentationRender = true;
         return;
       } else {
         // if actor found
@@ -234,6 +235,11 @@ function _imageChangeEventListener(evt) {
     };
 
     derivedImageIds.forEach(updateSegmentationActor);
+    // if one or more actors were added to the viewport
+    // we need to trigger a segmentation render
+    if (shouldTriggerSegmentationRender) {
+      triggerSegmentationRender(viewportId);
+    }
 
     viewport.render();
 

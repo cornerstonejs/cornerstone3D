@@ -3,6 +3,40 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.29.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.3...v3.29.4) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.29.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.2...v3.29.3) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.29.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.1...v3.29.2) (2025-07-10)
+
+### Bug Fixes
+
+- **rendering:** Introduce SequentialRenderingEngine to resolve canvas size limitation, performance degradation on high res monitors and enhance multi-monitor support ([#2181](https://github.com/cornerstonejs/cornerstone3D/issues/2181)) ([6ee565b](https://github.com/cornerstonejs/cornerstone3D/commit/6ee565be36e22a98070ce2a0536f3d821979cac4))
+
+## [3.29.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.0...v3.29.1) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [3.29.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.3...v3.29.0) (2025-07-10)
+
+### Features
+
+- enable historyMemo action grouping ([#2160](https://github.com/cornerstonejs/cornerstone3D/issues/2160)) ([963a35f](https://github.com/cornerstonejs/cornerstone3D/commit/963a35f7e95577a87473fb0e972491f2c0175c30))
+
+## [3.28.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.2...v3.28.3) (2025-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.28.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.1...v3.28.2) (2025-07-09)
+
+### Bug Fixes
+
+- prefetch issues with retrieve options ([#2186](https://github.com/cornerstonejs/cornerstone3D/issues/2186)) ([23db01c](https://github.com/cornerstonejs/cornerstone3D/commit/23db01c5f548509e32ce6811eacd33c49ef807c1))
+
 ## [3.28.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.0...v3.28.1) (2025-07-09)
 
 **Note:** Version bump only for package @cornerstonejs/core

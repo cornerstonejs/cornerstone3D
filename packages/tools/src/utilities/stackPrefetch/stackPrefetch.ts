@@ -168,16 +168,19 @@ function prefetch(element) {
   }
 
   const requestFn = (imageId, options) => {
-    const { retrieveOptions = {} } = metaData.get(
-      imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
-      imageId,
-      'stack'
-    );
-    return imageLoader.loadAndCacheImage(imageId, {
-      ...options,
-      retrieveOptions:
-        retrieveOptions?.default || Object.values(retrieveOptions)?.[0] || {},
-    });
+    const { retrieveOptions = {} } =
+      metaData.get(
+        imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+        imageId,
+        'stack'
+      ) || {};
+    options.retrieveOptions = {
+      ...options.retrieveOptions,
+      ...(retrieveOptions.default || Object.values(retrieveOptions)?.[0] || {}),
+    };
+    return imageLoader
+      .loadAndCacheImage(imageId, options)
+      .then(() => doneCallback(imageId));
   };
 
   imageIdsToPrefetch.forEach((imageId) => {

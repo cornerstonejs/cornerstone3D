@@ -233,8 +233,15 @@ class PlanarFreehandROI extends BaseAdapter3D {
         }
 
         const cachedStatsKeys = Object.keys(data.cachedStats)[0];
-        const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
-            cachedStatsKeys ? data.cachedStats[cachedStatsKeys] : {};
+        const {
+            area = undefined,
+            areaUnit = undefined,
+            modalityUnit = undefined,
+            perimeter = undefined,
+            mean = undefined,
+            max = undefined,
+            stdDev = undefined
+        } = cachedStatsKeys ? data.cachedStats[cachedStatsKeys] : {};
 
         return {
             /** From cachedStats */

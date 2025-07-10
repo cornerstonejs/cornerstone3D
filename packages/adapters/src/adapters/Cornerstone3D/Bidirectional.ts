@@ -274,7 +274,7 @@ class Bidirectional extends BaseAdapter3D {
         const shortAxisEnd = longAxisPoints[1];
 
         const cachedStatsKeys = Object.keys(cachedStats)[0];
-        const { length, width } = cachedStatsKeys
+        const { length = undefined, width = undefined } = cachedStatsKeys
             ? cachedStats[cachedStatsKeys]
             : {};
 

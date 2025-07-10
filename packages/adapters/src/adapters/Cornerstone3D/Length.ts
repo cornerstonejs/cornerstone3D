@@ -159,7 +159,7 @@ export default class Length extends BaseAdapter3D {
         const point2 = { x: end[0], y: end[1], z: end[2] };
 
         const cachedStatsKeys = Object.keys(cachedStats)[0];
-        const { length: distance } = cachedStatsKeys
+        const { length: distance = undefined } = cachedStatsKeys
             ? cachedStats[cachedStatsKeys]
             : {};
 

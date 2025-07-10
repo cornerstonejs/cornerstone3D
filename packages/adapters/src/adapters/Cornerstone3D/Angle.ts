@@ -171,7 +171,9 @@ class Angle extends BaseAdapter3D {
         const point4 = { x: end[0], y: end[1], z: end[2] };
 
         const cachedStatsKeys = Object.keys(cachedStats)[0];
-        const { angle } = cachedStatsKeys ? cachedStats[cachedStatsKeys] : {};
+        const { angle = undefined } = cachedStatsKeys
+            ? cachedStats[cachedStatsKeys]
+            : {};
 
         return {
             point1,
