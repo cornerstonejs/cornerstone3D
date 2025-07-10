@@ -220,7 +220,7 @@ async function render(
         );
       };
       if (typeof labelmapActor.onModified === 'function') {
-        labelmapActor.onModified(handler);
+        labelmapActor.getMapper().onModified(handler);
         onModifiedRegistered.set(uid, handler);
       }
     }
@@ -353,7 +353,6 @@ function _setLabelmapColorAndOpacity(
   if (renderOutline) {
     // @ts-ignore - fix type in vtk
     labelmapActor.getProperty().setUseLabelOutline(renderOutline);
-
     // @ts-ignore - fix type in vtk
     labelmapActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
 
