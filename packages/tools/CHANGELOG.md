@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.29.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.0...v3.29.1) (2025-07-10)
+
+### Bug Fixes
+
+- use correct range value to calculate voi multiplier ([#2189](https://github.com/cornerstonejs/cornerstone3D/issues/2189)) ([a6f3970](https://github.com/cornerstonejs/cornerstone3D/commit/a6f3970f92f886407cbd3938be0ae8c346eaa519))
+
 # [3.29.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.3...v3.29.0) (2025-07-10)
 
 ### Features
