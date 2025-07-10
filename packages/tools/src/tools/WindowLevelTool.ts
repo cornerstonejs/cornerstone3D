@@ -193,7 +193,7 @@ class WindowLevelTool extends BaseTool {
       // Burned in Pixels often use pixel values above the BitsStored.
       // This results in a multiplier which is way higher than what you would
       // want in practice. Thus we take the min between the metadata dynamic
-      // range and actual middle slice dynamic range.
+      // range upper value and actual middle slice dynamic range.
       imageDynamicRange = Math.min(
         calculatedDynamicRange[1] - calculatedDynamicRange[0],
         metadataDynamicRange
