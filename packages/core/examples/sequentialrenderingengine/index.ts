@@ -14,9 +14,13 @@ import {
 const { ViewportType } = Enums;
 
 // ======== Set up page ======== //
+const rows = 12;
+const columns = 22;
+const count = rows * columns;
+
 setTitleAndDescription(
-  '6x6 Grid with SequentialRenderingEngine',
-  'Displays a 6x6 grid of viewports using SequentialRenderingEngine with resize observer'
+  `${columns}x${rows} Grid with SequentialRenderingEngine`,
+  `Displays a ${columns}x${rows} grid of viewports using SequentialRenderingEngine with resize observer`
 );
 
 const renderingEngineId = 'mySequentialRenderingEngine';
@@ -52,12 +56,12 @@ viewportContainer.style.gap = '2px';
 
 content.appendChild(viewportContainer);
 
-// Create 36 viewport elements
+// Create rows*columns viewport elements
 const elements: HTMLDivElement[] = [];
 const viewportIds: string[] = [];
 
 // Create rows and columns
-for (let row = 0; row < 6; row++) {
+for (let row = 0; row < rows; row++) {
   const rowContainer = document.createElement('div');
   rowContainer.style.display = 'flex';
   rowContainer.style.flexDirection = 'row';
@@ -65,7 +69,7 @@ for (let row = 0; row < 6; row++) {
   rowContainer.style.width = '100%';
   rowContainer.style.gap = '2px';
 
-  for (let col = 0; col < 6; col++) {
+  for (let col = 0; col < columns; col++) {
     const element = document.createElement('div');
     element.style.flex = '1';
     element.style.position = 'relative';
@@ -113,7 +117,7 @@ async function run() {
   // Create viewport input array for all 36 viewports
   const viewportInputArray: Types.PublicViewportInput[] = [];
 
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < count; i++) {
     viewportInputArray.push({
       viewportId: viewportIds[i],
       type: ViewportType.STACK,
@@ -130,10 +134,10 @@ async function run() {
   // Prepare stacks for each viewport
   // We'll display different images from the series in each viewport
   const numImages = imageIds.length;
-  const imagesPerViewport = Math.max(1, Math.floor(numImages / 36));
+  const imagesPerViewport = Math.max(1, Math.floor(numImages / count));
 
   // Set stack and render for each viewport
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < count; i++) {
     const viewport = renderingEngine.getViewport(
       viewportIds[i]
     ) as Types.IStackViewport;
@@ -164,7 +168,7 @@ async function run() {
     info.style.borderRadius = '5px';
     info.innerHTML = `
     <h3>SequentialRenderingEngine Example</h3>
-    <p>36 viewports (6x6 grid)</p>
+    <p>${count} viewports (${columns}x${rows} grid)</p>
     <p>Using SequentialRenderingEngine for better performance with large viewport counts</p>
     <p>Resize the window to test resize observer</p>
     <p style="color: #4CAF50;">Avoids WebGL, browser and OS limits</p>
