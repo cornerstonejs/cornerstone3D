@@ -49,6 +49,11 @@ The `StandardRenderingEngine` is the original implementation that uses a single,
 - **Multi-Monitor Issues**: Practically impossible to use across multiple high-resolution monitors due to canvas size limitations
 - **Memory Consumption**: Allocates a huge, memory-intensive offscreen canvas regardless of actual viewport usage
 
+**Advantages of StandardRenderingEngine:**
+
+- **Simplicity**: Straightforward implementation that works well for small numbers of viewports
+- **Track Record**: Proven reliability for 5 years, and for most basic use cases, it performs adequately
+
 ### NextRenderingEngine (SequentialRenderingEngine)
 
 The `NextRenderingEngine` (internally called `SequentialRenderingEngine`) fundamentally solves the limitations of the standard approach by using a different rendering strategy:
