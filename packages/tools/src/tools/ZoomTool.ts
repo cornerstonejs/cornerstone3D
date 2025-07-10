@@ -2,7 +2,12 @@ import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type { Types } from '@cornerstonejs/core';
-import { Enums, getEnabledElement } from '@cornerstonejs/core';
+import {
+  Enums,
+  getEnabledElement,
+  triggerEvent,
+  eventTarget,
+} from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { Events } from '../enums';
@@ -47,74 +52,6 @@ class ZoomTool extends BaseTool {
       this.touchDragCallback = this._dragCallback.bind(this);
     }
     this.mouseDragCallback = this._dragCallback.bind(this);
-  }
-  // Helper to transform a normal by a 3x3 matrix
-  _transformNormal(normal: Types.Point3, mat: number[]): Types.Point3 {
-    return [
-      mat[0] * normal[0] + mat[3] * normal[1] + mat[6] * normal[2],
-      mat[1] * normal[0] + mat[4] * normal[1] + mat[7] * normal[2],
-      mat[2] * normal[0] + mat[5] * normal[1] + mat[8] * normal[2],
-    ];
-  }
-
-  _updateClippingPlanes(viewport) {
-    // Get the actor and transformation matrix
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor;
-    const mapper = actor.getMapper();
-    const matrix = actor.getMatrix();
-
-    // Extract rotation part for normals
-    const rot = [
-      matrix[0],
-      matrix[1],
-      matrix[2],
-      matrix[4],
-      matrix[5],
-      matrix[6],
-      matrix[8],
-      matrix[9],
-      matrix[10],
-    ];
-
-    const toolGroup = getToolGroup(this.toolGroupId);
-    const croppingTool = toolGroup?.getToolInstance?.('VolumeCroppingTool');
-    // Use the tool's originalClippingPlanes property
-    const originalPlanes = croppingTool?.originalClippingPlanes;
-    if (!originalPlanes || !originalPlanes.length) {
-      return;
-    }
-
-    mapper.removeAllClippingPlanes();
-    originalPlanes.forEach((plane) => {
-      const origin =
-        typeof plane.getOrigin === 'function'
-          ? plane.getOrigin()
-          : plane.origin;
-      const normal =
-        typeof plane.getNormal === 'function'
-          ? plane.getNormal()
-          : plane.normal;
-      // Transform origin (full 4x4)
-      const o: Types.Point3 = [
-        matrix[0] * origin[0] +
-          matrix[4] * origin[1] +
-          matrix[8] * origin[2] +
-          matrix[12],
-        matrix[1] * origin[0] +
-          matrix[5] * origin[1] +
-          matrix[9] * origin[2] +
-          matrix[13],
-        matrix[2] * origin[0] +
-          matrix[6] * origin[1] +
-          matrix[10] * origin[2] +
-          matrix[14],
-      ];
-      // Transform normal (rotation only)
-      const n: Types.Point3 = this._transformNormal(normal, rot);
-      const planeInstance = vtkPlane.newInstance({ origin: o, normal: n });
-      mapper.addClippingPlane(planeInstance);
-    });
   }
 
   mouseWheelCallback(evt: EventTypes.MouseWheelEventType) {
@@ -185,9 +122,10 @@ class ZoomTool extends BaseTool {
       } else {
         this._dragPerspectiveProjection(evt, viewport, camera, true);
       }
-      // Update clipping planes after zoom
-      this._updateClippingPlanes(viewport);
 
+      triggerEvent(eventTarget, Events.ZOOM_TOOL_CHANGED, {
+        viewport: viewport,
+      });
       viewport.render();
     }
 
@@ -209,9 +147,10 @@ class ZoomTool extends BaseTool {
     } else {
       this._dragPerspectiveProjection(evt, viewport, camera);
     }
-    // Update clipping planes after zoom
-    this._updateClippingPlanes(viewport);
 
+    triggerEvent(eventTarget, Events.ZOOM_TOOL_CHANGED, {
+      viewport: viewport,
+    });
     viewport.render();
   }
 
