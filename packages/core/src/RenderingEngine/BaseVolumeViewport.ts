@@ -2172,7 +2172,7 @@ abstract class BaseVolumeViewport extends Viewport {
       ) {
         const functions = this.renderingPipelineFunctions[key];
 
-        this[key] = isContextPool ? functions.tiled : functions.contextPool;
+        this[key] = isContextPool ? functions.contextPool : functions.tiled;
       }
     }
   }
