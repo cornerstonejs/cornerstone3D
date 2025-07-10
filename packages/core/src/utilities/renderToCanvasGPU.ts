@@ -15,7 +15,7 @@ import type {
 } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import type RenderingEngine from '../RenderingEngine';
-import StandardRenderingEngine from '../RenderingEngine/StandardRenderingEngine';
+import TiledRenderingEngine from '../RenderingEngine/TiledRenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import type { CanvasLoadPosition } from './loadImageToCanvas';
 
@@ -89,7 +89,7 @@ export default function renderToCanvasGPU(
   const temporaryCanvas = getOrCreateCanvas(element);
   const renderingEngine =
     (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
-    new StandardRenderingEngine(renderingEngineId);
+    new TiledRenderingEngine(renderingEngineId);
 
   let viewport = renderingEngine.getViewport(viewportId);
 

@@ -60,7 +60,7 @@ interface ViewportDisplayCoords {
  *
  * @public
  */
-class StandardRenderingEngine extends BaseRenderingEngine {
+class TiledRenderingEngine extends BaseRenderingEngine {
   constructor(id?: string) {
     super(id);
 
@@ -645,4 +645,4 @@ class StandardRenderingEngine extends BaseRenderingEngine {
   }
 }
 
-export default StandardRenderingEngine;
+export default TiledRenderingEngine;

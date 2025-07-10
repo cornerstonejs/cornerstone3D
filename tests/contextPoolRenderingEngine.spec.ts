@@ -7,16 +7,16 @@ import {
 
 test.beforeEach(async ({ page, context }) => {
   await context.addInitScript(() => (window.IS_PLAYWRIGHT = true));
-  await visitExample(page, 'nextRenderingEngine');
+  await visitExample(page, 'contextPoolRenderingEngine');
 });
 
-test.describe('Next Rendering Engine', async () => {
-  test('should display next rendering engine example', async ({ page }) => {
+test.describe('Context Pool Rendering Engine', async () => {
+  test('should display context pool rendering engine example', async ({ page }) => {
     const locator = page.locator('#viewportContainer');
     await checkForScreenshot(
       page,
       locator,
-      screenShotPaths.nextRenderingEngine.viewport
+      screenShotPaths.contextPoolRenderingEngine.viewport
     );
   });
 });

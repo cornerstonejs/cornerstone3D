@@ -1,6 +1,6 @@
 import { getConfiguration } from '../init';
-import StandardRenderingEngine from './StandardRenderingEngine';
-import NextRenderingEngine from './NextRenderingEngine';
+import TiledRenderingEngine from './TiledRenderingEngine';
+import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
 import type BaseRenderingEngine from './BaseRenderingEngine';
 import type {
   IStackViewport,
@@ -23,16 +23,16 @@ class RenderingEngine {
 
     switch (renderingEngineMode) {
       case RenderingEngineModeEnum.Standard:
-        this._implementation = new StandardRenderingEngine(id);
+        this._implementation = new TiledRenderingEngine(id);
         break;
       case RenderingEngineModeEnum.Next:
-        this._implementation = new NextRenderingEngine(id);
+        this._implementation = new ContextPoolRenderingEngine(id);
         break;
       default:
         console.warn(
           `RenderingEngine: Unknown rendering engine mode "${renderingEngineMode}". Defaulting to Next rendering engine.`
         );
-        this._implementation = new NextRenderingEngine(id);
+        this._implementation = new ContextPoolRenderingEngine(id);
         break;
     }
   }

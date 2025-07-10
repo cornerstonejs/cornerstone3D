@@ -74,7 +74,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
 import { getCameraVectors } from './helpers/getCameraVectors';
-import { isNextRenderingEngine } from './helpers/isNextRenderingEngine';
+import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -1604,7 +1604,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @public
    */
 
-  public canvasToWorld = (canvasPos: Point2): Point3 => {
+  public canvasToWorldTiled = (canvasPos: Point2): Point3 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
@@ -1649,7 +1649,7 @@ abstract class BaseVolumeViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
-  public canvasToWorldNext = (canvasPos: Point2): Point3 => {
+  public canvasToWorldContextPool = (canvasPos: Point2): Point3 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
@@ -1724,7 +1724,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns The corresponding display coordinates.
    *
    */
-  public getVtkDisplayCoords = (canvasPos: Point2): Point3 => {
+  public getVtkDisplayCoordsTiled = (canvasPos: Point2): Point3 => {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
@@ -1745,7 +1745,7 @@ abstract class BaseVolumeViewport extends Viewport {
     return [displayCoord[0], displayCoord[1], 0];
   };
 
-  public getVtkDisplayCoordsNext = (canvasPos: Point2): Point3 => {
+  public getVtkDisplayCoordsContextPool = (canvasPos: Point2): Point3 => {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
@@ -1769,7 +1769,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns The corresponding canvas coordinates.
    * @public
    */
-  public worldToCanvas = (worldPos: Point3): Point2 => {
+  public worldToCanvasTiled = (worldPos: Point3): Point2 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
@@ -1826,7 +1826,7 @@ abstract class BaseVolumeViewport extends Viewport {
     return canvasCoordWithDPR;
   };
 
-  public worldToCanvasNext = (worldPos: Point3): Point2 => {
+  public worldToCanvasContextPool = (worldPos: Point3): Point2 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
@@ -1895,9 +1895,9 @@ abstract class BaseVolumeViewport extends Viewport {
   };
 
   /**
-   * Get the renderer for this viewport - handles NextRenderingEngine
+   * Get the renderer for this viewport - handles ContextPoolRenderingEngine
    */
-  public getRendererNext(): vtkRenderer {
+  public getRendererContextPool(): vtkRenderer {
     const renderingEngine = this.getRenderingEngine();
     return renderingEngine.getRenderer(this.id);
   }
@@ -1907,7 +1907,7 @@ abstract class BaseVolumeViewport extends Viewport {
    *
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  public getRenderer(): vtkRenderer {
+  public getRendererTiled(): vtkRenderer {
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
@@ -2161,7 +2161,7 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   private _configureRenderingPipeline() {
-    const isNext = isNextRenderingEngine();
+    const isContextPool = isContextPoolRenderingEngine();
 
     for (const key in this.renderingPipelineFunctions) {
       if (
@@ -2172,27 +2172,27 @@ abstract class BaseVolumeViewport extends Viewport {
       ) {
         const functions = this.renderingPipelineFunctions[key];
 
-        this[key] = isNext ? functions.next : functions.default;
+        this[key] = isContextPool ? functions.tiled : functions.contextPool;
       }
     }
   }
 
   protected renderingPipelineFunctions = {
     worldToCanvas: {
-      default: this.worldToCanvas,
-      next: this.worldToCanvasNext,
+      tiled: this.worldToCanvasTiled,
+      contextPool: this.worldToCanvasContextPool,
     },
     canvasToWorld: {
-      default: this.canvasToWorld,
-      next: this.canvasToWorldNext,
+      tiled: this.canvasToWorldTiled,
+      contextPool: this.canvasToWorldContextPool,
     },
     getVtkDisplayCoords: {
-      default: this.getVtkDisplayCoords,
-      next: this.getVtkDisplayCoordsNext,
+      tiled: this.getVtkDisplayCoordsTiled,
+      contextPool: this.getVtkDisplayCoordsContextPool,
     },
     getRenderer: {
-      default: this.getRenderer,
-      next: this.getRendererNext,
+      tiled: this.getRendererTiled,
+      contextPool: this.getRendererContextPool,
     },
   };
 }

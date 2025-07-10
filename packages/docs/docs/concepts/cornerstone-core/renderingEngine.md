@@ -34,36 +34,36 @@ For instance for PET-CT fusion which has 3x3 layout which includes CT (Axial, Sa
 
 Cornerstone3D provides two rendering engine implementations to handle different use cases and overcome technical limitations:
 
-### StandardRenderingEngine
+### TiledRenderingEngine
 
-The `StandardRenderingEngine` is the original implementation that uses a single, large offscreen canvas for all viewports. This approach:
+The `TiledRenderingEngine` is the original implementation that uses a single, large offscreen canvas for all viewports. This approach:
 
 - Creates one massive offscreen canvas that grows horizontally as viewports are added
 - Renders all viewports to specific coordinates on this single offscreen canvas
 - Copies pixel data from the offscreen canvas to individual onscreen viewports
 
-**Limitations of StandardRenderingEngine:**
+**Limitations of TiledRenderingEngine:**
 
 - **Canvas Size Limits**: Browsers impose maximum canvas dimensions (e.g., 16,384px in Chrome). When the combined width of all viewports exceeds this limit, the offscreen canvas is silently cropped, causing severe visual artifacts, misaligned viewports, and blank viewports
 - **Performance Degradation**: As the offscreen canvas approaches size limits, performance degrades significantly, especially on high-resolution displays or layouts with many viewports
 - **Multi-Monitor Issues**: Practically impossible to use across multiple high-resolution monitors due to canvas size limitations
 - **Memory Consumption**: Allocates a huge, memory-intensive offscreen canvas regardless of actual viewport usage
 
-**Advantages of StandardRenderingEngine:**
+**Advantages of TiledRenderingEngine:**
 
 - **Simplicity**: Straightforward implementation that works well for small numbers of viewports
 - **Track Record**: Proven reliability for 5 years, and for most basic use cases, it performs adequately
 
-### NextRenderingEngine (SequentialRenderingEngine)
+### ContextPoolRenderingEngine (SequentialRenderingEngine)
 
-The `NextRenderingEngine` (internally called `SequentialRenderingEngine`) fundamentally solves the limitations of the standard approach by using a different rendering strategy:
+The `ContextPoolRenderingEngine` (internally called `SequentialRenderingEngine`) fundamentally solves the limitations of the tiled approach by using a different rendering strategy:
 
 - Renders each viewport individually to a viewport-sized offscreen canvas
 - Copies the result to the corresponding onscreen canvas
 - Proceeds sequentially to the next viewport, reusing the same offscreen canvas
 - Utilizes WebGL context pooling to render in batches (e.g., batches of 8 for 8 WebGL contexts)
 
-**Advantages of NextRenderingEngine:**
+**Advantages of ContextPoolRenderingEngine:**
 
 - **No Canvas Size Limits**: The browser's maximum canvas size now applies to individual viewports, not the combined width
 - **Improved Performance**: Consistent performance regardless of the number of viewports or display resolution
@@ -73,19 +73,19 @@ The `NextRenderingEngine` (internally called `SequentialRenderingEngine`) fundam
 
 ### Configuring the Rendering Engine
 
-The `NextRenderingEngine` is now the default in Cornerstone3D. If you need to use the legacy `StandardRenderingEngine`, you can configure it during initialization:
+The `ContextPoolRenderingEngine` is now the default in Cornerstone3D. If you need to use the legacy `TiledRenderingEngine`, you can configure it during initialization:
 
 ```js
 import { init } from '@cornerstonejs/core';
 
-// To use the legacy StandardRenderingEngine
+// To use the legacy TiledRenderingEngine
 init({
   rendering: {
     renderingEngineMode: 'standard',
   },
 });
 
-// The NextRenderingEngine is used by default, or you can explicitly set it
+// The ContextPoolRenderingEngine is used by default, or you can explicitly set it
 init({
   rendering: {
     renderingEngineMode: 'next',
@@ -93,12 +93,12 @@ init({
 });
 ```
 
-For `NextRenderingEngine` you can also configure the number of WebGL contexts to use for batch rendering:
+For `ContextPoolRenderingEngine` you can also configure the number of WebGL contexts to use for batch rendering:
 
 ```js
 import { init } from '@cornerstonejs/core';
 
-// To use the NextRenderingEngine with a specific number of WebGL contexts
+// To use the ContextPoolRenderingEngine with a specific number of WebGL contexts
 init({
   rendering: {
     renderingEngineMode: 'next',

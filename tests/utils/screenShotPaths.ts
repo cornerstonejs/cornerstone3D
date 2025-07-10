@@ -194,7 +194,7 @@ const screenShotPaths = {
     afterReformat: 'mpr-reformat-after.png',
     afterInteraction: 'mpr-reformat-after-interaction.png',
   },
-  nextRenderingEngine: {
+  contextPoolRenderingEngine: {
     viewport: 'viewport.png',
   },
 };

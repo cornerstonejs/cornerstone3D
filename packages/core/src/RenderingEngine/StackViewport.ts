@@ -97,7 +97,7 @@ import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
-import { isNextRenderingEngine } from './helpers/isNextRenderingEngine';
+import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -235,7 +235,7 @@ class StackViewport extends Viewport {
   };
 
   private _configureRenderingPipeline(value?: boolean) {
-    const isNext = isNextRenderingEngine();
+    const isContextPool = isContextPoolRenderingEngine();
 
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
@@ -252,10 +252,12 @@ class StackViewport extends Viewport {
         } else {
           if (
             typeof functions.gpu === 'object' &&
-            functions.gpu.next &&
-            functions.gpu.default
+            functions.gpu.tiled &&
+            functions.gpu.contextPool
           ) {
-            this[key] = isNext ? functions.gpu.next : functions.gpu.default;
+            this[key] = isContextPool
+              ? functions.gpu.contextPool
+              : functions.gpu.tiled;
           } else {
             this[key] = functions.gpu;
           }
@@ -2834,7 +2836,7 @@ class StackViewport extends Viewport {
     return canvasPoint;
   };
 
-  private canvasToWorldGPUNext = (canvasPos: Point2): Point3 => {
+  private canvasToWorldGPUContextPool = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2888,7 +2890,7 @@ class StackViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
-  private canvasToWorldGPU = (canvasPos: Point2): Point3 => {
+  private canvasToWorldGPUTiled = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2934,7 +2936,7 @@ class StackViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
-  private worldToCanvasGPUNext = (worldPos: Point3): Point2 => {
+  private worldToCanvasGPUContextPool = (worldPos: Point3): Point2 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2986,7 +2988,7 @@ class StackViewport extends Viewport {
     return canvasCoordWithDPR;
   };
 
-  private worldToCanvasGPU = (worldPos: Point3): Point2 => {
+  private worldToCanvasGPUTiled = (worldPos: Point3): Point2 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -3030,9 +3032,9 @@ class StackViewport extends Viewport {
   };
 
   /**
-   * Get the renderer for this viewport - handles NextRenderingEngine
+   * Get the renderer for this viewport - handles ContextPoolRenderingEngine
    */
-  public getRendererNext(): vtkRenderer {
+  public getRendererContextPool(): vtkRenderer {
     const renderingEngine = this.getRenderingEngine();
     return renderingEngine.getRenderer(this.id);
   }
@@ -3042,7 +3044,7 @@ class StackViewport extends Viewport {
    *
    * @returns The `vtkRenderer` for the `Viewport`.
    */
-  public getRenderer(): vtkRenderer {
+  public getRendererTiled(): vtkRenderer {
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
@@ -3521,22 +3523,22 @@ class StackViewport extends Viewport {
     canvasToWorld: {
       cpu: this.canvasToWorldCPU,
       gpu: {
-        next: this.canvasToWorldGPUNext,
-        default: this.canvasToWorldGPU,
+        tiled: this.canvasToWorldGPUTiled,
+        contextPool: this.canvasToWorldGPUContextPool,
       },
     },
     worldToCanvas: {
       cpu: this.worldToCanvasCPU,
       gpu: {
-        next: this.worldToCanvasGPUNext,
-        default: this.worldToCanvasGPU,
+        tiled: this.worldToCanvasGPUTiled,
+        contextPool: this.worldToCanvasGPUContextPool,
       },
     },
     getRenderer: {
       cpu: () => this.getCPUFallbackError('getRenderer'),
       gpu: {
-        next: this.getRendererNext,
-        default: this.getRenderer,
+        tiled: this.getRendererTiled,
+        contextPool: this.getRendererContextPool,
       },
     },
     getDefaultActor: {

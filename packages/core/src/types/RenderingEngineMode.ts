@@ -1,3 +1,3 @@
-type RenderingEngineModeType = 'standard' | 'next';
+type RenderingEngineModeType = 'tiled' | 'contextPool';
 
 export type { RenderingEngineModeType };

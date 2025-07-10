@@ -24,12 +24,12 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
 
 /**
- * NextRenderingEngine extends BaseRenderingEngine to provide parallel rendering
+ * ContextPoolRenderingEngine extends BaseRenderingEngine to provide parallel rendering
  * capabilities using multiple WebGL contexts for improved performance.
  *
  * @public
  */
-class NextRenderingEngine extends BaseRenderingEngine {
+class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private contextPool: WebGLContextPool;
 
   constructor(id?: string) {
@@ -524,4 +524,4 @@ class NextRenderingEngine extends BaseRenderingEngine {
   }
 }
 
-export default NextRenderingEngine;
+export default ContextPoolRenderingEngine;

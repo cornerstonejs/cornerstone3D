@@ -168,7 +168,7 @@ abstract class BaseRenderingEngine {
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
       !this.useCPURendering
     ) {
-      // Only remove renderer if offscreenMultiRenderWindow exists (not in NextRenderingEngine)
+      // Only remove renderer if offscreenMultiRenderWindow exists (not in ContextPoolRenderingEngine)
       if (this.offscreenMultiRenderWindow) {
         this.offscreenMultiRenderWindow.removeRenderer(viewportId);
       }

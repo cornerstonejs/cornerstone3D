@@ -20,7 +20,7 @@ const defaultConfig: Cornerstone3DConfig = {
      * 'next' is the new rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
      * 'standard' is the old rendering engine implementation, which we will eventually move away from.
      */
-    renderingEngineMode: RenderingEngineModeEnum.Next,
+    renderingEngineMode: RenderingEngineModeEnum.ContextPool,
 
     /**
      * The number of WebGL contexts to create. This is used for parallel rendering.

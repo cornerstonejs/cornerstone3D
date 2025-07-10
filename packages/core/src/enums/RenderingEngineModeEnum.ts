@@ -1,6 +1,6 @@
 enum RenderingEngineModeEnum {
-  Standard = 'standard',
-  Next = 'next',
+  Tiled = 'tiled',
+  ContextPool = 'contextPool',
 }
 
 export default RenderingEngineModeEnum;
