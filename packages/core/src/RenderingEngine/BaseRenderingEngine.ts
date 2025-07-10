@@ -3,7 +3,6 @@ import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
 import uuidv4 from '../utilities/uuidv4';
 import triggerEvent from '../utilities/triggerEvent';
-import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import ViewportType from '../enums/ViewportType';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import StackViewport from './StackViewport';
@@ -22,6 +21,7 @@ import type {
   IViewport,
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
+import type { VtkOffscreenMultiRenderWindow } from '../types';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 export const VIEWPORT_MIN_SIZE = 2;
@@ -39,8 +39,9 @@ abstract class BaseRenderingEngine {
   /** A flag which tells if the renderingEngine has been destroyed or not */
   public hasBeenDestroyed: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public offscreenMultiRenderWindow: any;
-  readonly offScreenCanvasContainer: HTMLDivElement;
+  public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
+  public offScreenCanvasContainer: HTMLDivElement;
+  public rendersThumbnails: boolean;
   protected _viewports: Map<string, IViewport>;
   protected _needsRender = new Set<string>();
   protected _animationFrameSet = false;
@@ -50,7 +51,7 @@ abstract class BaseRenderingEngine {
   /**
    * @param uid - Unique identifier for RenderingEngine
    */
-  constructor(id?: string) {
+  constructor(id?: string, rendersThumbnails = false) {
     this.id = id ? id : uuidv4();
     this.useCPURendering = getShouldUseCPURendering();
 
@@ -62,17 +63,9 @@ abstract class BaseRenderingEngine {
       );
     }
 
-    if (!this.useCPURendering) {
-      this.offscreenMultiRenderWindow =
-        vtkOffscreenMultiRenderWindow.newInstance();
-      this.offScreenCanvasContainer = document.createElement('div');
-      this.offscreenMultiRenderWindow.setContainer(
-        this.offScreenCanvasContainer
-      );
-    }
-
     this._viewports = new Map();
     this.hasBeenDestroyed = false;
+    this.rendersThumbnails = rendersThumbnails;
   }
 
   /**
@@ -177,7 +170,10 @@ abstract class BaseRenderingEngine {
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
       !this.useCPURendering
     ) {
-      this.offscreenMultiRenderWindow.removeRenderer(viewportId);
+      // Only remove renderer if offscreenMultiRenderWindow exists (not in NextRenderingEngine)
+      if (this.offscreenMultiRenderWindow) {
+        this.offscreenMultiRenderWindow.removeRenderer(viewportId);
+      }
     }
 
     // 5. Remove the requested viewport from the rendering engine
@@ -445,11 +441,15 @@ abstract class BaseRenderingEngine {
     if (!this.useCPURendering) {
       const viewports = this._getViewportsAsArray();
       viewports.forEach((vp) => {
-        this.offscreenMultiRenderWindow.removeRenderer(vp.id);
+        if (this.offscreenMultiRenderWindow) {
+          this.offscreenMultiRenderWindow.removeRenderer(vp.id);
+        }
       });
 
       // Free up WebGL resources
-      this.offscreenMultiRenderWindow.delete();
+      if (this.offscreenMultiRenderWindow) {
+        this.offscreenMultiRenderWindow.delete();
+      }
 
       // Make sure all references go stale and are garbage collected.
       delete this.offscreenMultiRenderWindow;
@@ -635,6 +635,15 @@ abstract class BaseRenderingEngine {
   }
 
   /**
+   * Returns the renderer for a given viewportId.
+   * @param viewportId - The Id of the viewport.
+   * @returns The renderer for the viewport.
+   */
+  public getRenderer(viewportId) {
+    return this.offscreenMultiRenderWindow.getRenderer(viewportId);
+  }
+
+  /**
    * Sets multiple viewports using custom rendering
    * pipelines to the `RenderingEngine`.
    *
@@ -803,17 +812,6 @@ abstract class BaseRenderingEngine {
   protected abstract setVtkjsDrivenViewports(
     viewportInputEntries: NormalizedViewportInput[]
   ): void;
-
-  /**
-   * Renders the given viewport using its preferred method.
-   * This method must be implemented by subclasses to define their specific
-   * rendering approach.
-   *
-   * @param viewport - The viewport to render
-   */
-  protected abstract renderViewportUsingCustomOrVtkPipeline(
-    viewport: IViewport
-  ): EventTypes.ImageRenderedEventDetail;
 
   /**
    * Renders a particular `Viewport`'s on screen canvas.

@@ -4,7 +4,7 @@ import { Events } from './enums';
 import RenderingEngine, {
   BaseRenderingEngine,
   StandardRenderingEngine,
-  SequentialRenderingEngine,
+  NextRenderingEngine,
 } from './RenderingEngine';
 import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
@@ -126,7 +126,7 @@ export {
   RenderingEngine,
   BaseRenderingEngine,
   StandardRenderingEngine,
-  SequentialRenderingEngine,
+  NextRenderingEngine,
   ImageVolume,
   Surface,
   // Helpers

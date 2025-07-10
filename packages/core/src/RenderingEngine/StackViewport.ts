@@ -97,7 +97,7 @@ import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
-import { isSequentialRenderingEngine } from './helpers/isSequentialRenderingEngine';
+import { isNextRenderingEngine } from './helpers/isNextRenderingEngine';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -235,8 +235,7 @@ class StackViewport extends Viewport {
   };
 
   private _configureRenderingPipeline(value?: boolean) {
-    const renderingEngine = this.getRenderingEngine();
-    const isSequential = isSequentialRenderingEngine(renderingEngine);
+    const isNext = isNextRenderingEngine();
 
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
@@ -253,12 +252,10 @@ class StackViewport extends Viewport {
         } else {
           if (
             typeof functions.gpu === 'object' &&
-            functions.gpu.sequential &&
+            functions.gpu.next &&
             functions.gpu.default
           ) {
-            this[key] = isSequential
-              ? functions.gpu.sequential
-              : functions.gpu.default;
+            this[key] = isNext ? functions.gpu.next : functions.gpu.default;
           } else {
             this[key] = functions.gpu;
           }
@@ -368,13 +365,6 @@ class StackViewport extends Viewport {
    * @public
    */
   public worldToCanvas: (worldPos: Point3) => Point2;
-
-  /**
-   * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
-   *
-   * @returns The `vtkRenderer` for the `Viewport`.
-   */
-  public getRenderer: () => vtkRenderer;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, return the default
@@ -2844,7 +2834,7 @@ class StackViewport extends Viewport {
     return canvasPoint;
   };
 
-  private canvasToWorldGPUSequential = (canvasPos: Point2): Point3 => {
+  private canvasToWorldGPUNext = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2944,7 +2934,7 @@ class StackViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
-  private worldToCanvasGPUSequential = (worldPos: Point3): Point2 => {
+  private worldToCanvasGPUNext = (worldPos: Point3): Point2 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -3038,6 +3028,29 @@ class StackViewport extends Viewport {
 
     return canvasCoordWithDPR;
   };
+
+  /**
+   * Get the renderer for this viewport - handles NextRenderingEngine
+   */
+  public getRendererNext(): vtkRenderer {
+    const renderingEngine = this.getRenderingEngine();
+    return renderingEngine.getRenderer(this.id);
+  }
+
+  /**
+   * Returns the `vtkRenderer` responsible for rendering the `Viewport`.
+   *
+   * @returns The `vtkRenderer` for the `Viewport`.
+   */
+  public getRenderer(): vtkRenderer {
+    const renderingEngine = this.getRenderingEngine();
+
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      throw new Error('Rendering engine has been destroyed');
+    }
+
+    return renderingEngine.offscreenMultiRenderWindow?.getRenderer(this.id);
+  }
 
   private _getVOIRangeForCurrentImage() {
     const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
@@ -3508,20 +3521,23 @@ class StackViewport extends Viewport {
     canvasToWorld: {
       cpu: this.canvasToWorldCPU,
       gpu: {
-        sequential: this.canvasToWorldGPUSequential,
+        next: this.canvasToWorldGPUNext,
         default: this.canvasToWorldGPU,
       },
     },
     worldToCanvas: {
       cpu: this.worldToCanvasCPU,
       gpu: {
-        sequential: this.worldToCanvasGPUSequential,
+        next: this.worldToCanvasGPUNext,
         default: this.worldToCanvasGPU,
       },
     },
     getRenderer: {
       cpu: () => this.getCPUFallbackError('getRenderer'),
-      gpu: super.getRenderer,
+      gpu: {
+        next: this.getRendererNext,
+        default: this.getRenderer,
+      },
     },
     getDefaultActor: {
       cpu: () => this.getCPUFallbackError('getDefaultActor'),

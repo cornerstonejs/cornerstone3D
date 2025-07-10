@@ -88,7 +88,7 @@ export default function renderToCanvasGPU(
   const temporaryCanvas = getOrCreateCanvas(element);
   const renderingEngine =
     (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
-    new RenderingEngine(renderingEngineId);
+    new RenderingEngine(renderingEngineId, true);
 
   let viewport = renderingEngine.getViewport(viewportId);
 

@@ -1,16 +1,17 @@
 import BaseRenderingEngine, { VIEWPORT_MIN_SIZE } from './BaseRenderingEngine';
+import WebGLContextPool from './WebGLContextPool';
+import { getConfiguration } from '../init';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
+import VolumeViewport3D from './VolumeViewport3D';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import VolumeViewport3D from './VolumeViewport3D';
-import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -19,16 +20,30 @@ import type {
   NormalizedViewportInput,
   IViewport,
 } from '../types/IViewport';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import type { VtkOffscreenMultiRenderWindow } from '../types';
 
 /**
- * SequentialRenderingEngine extends BaseRenderingEngine to provide a different
- * rendering strategy where viewports are rendered sequentially one at a time on the offscreen,
- * rather than all at once.
- *
+ * NextRenderingEngine extends BaseRenderingEngine to provide parallel rendering
+ * capabilities using multiple WebGL contexts for improved performance.
  *
  * @public
  */
-class SequentialRenderingEngine extends BaseRenderingEngine {
+class NextRenderingEngine extends BaseRenderingEngine {
+  private contextPool: WebGLContextPool;
+
+  constructor(id?: string, rendersThumbnails = false) {
+    super(id, rendersThumbnails);
+    const { rendering } = getConfiguration();
+    const { webGlContextCount } = rendering;
+
+    if (!this.useCPURendering) {
+      this.contextPool = new WebGLContextPool(
+        this.rendersThumbnails ? 1 : webGlContextCount
+      );
+    }
+  }
+
   /**
    * Enables a viewport to be driven by the offscreen vtk.js rendering engine.
    *
@@ -66,7 +81,20 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
 
     element.tabIndex = -1;
 
-    this.offscreenMultiRenderWindow.addRenderer({
+    // Assign viewport to a context
+    // Stack viewports get distributed across contexts, all others use context 0
+    let contextIndex = 0;
+    if (type === ViewportType.STACK) {
+      const contexts = this.contextPool.getAllContexts();
+      contextIndex = this._viewports.size % contexts.length;
+    }
+    this.contextPool.assignViewportToContext(viewportId, contextIndex);
+
+    // Get the context and add the renderer
+    const contextData = this.contextPool.getContextByIndex(contextIndex);
+
+    const { context: offscreenMultiRenderWindow } = contextData;
+    offscreenMultiRenderWindow.addRenderer({
       viewport: [0, 0, 1, 1],
       id: viewportId,
       background: defaultOptions.background
@@ -204,50 +232,67 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
   /**
    * Renders all viewports.
    */
-  protected _renderFlaggedViewports = () => {
+  protected _renderFlaggedViewports = async (): Promise<void> => {
     this._throwIfDestroyed();
 
     const viewports = this._getViewportsAsArray();
-    const eventDetailArray = [];
+    const viewportsToRender = viewports.filter((vp) =>
+      this._needsRender.has(vp.id)
+    );
 
-    for (let i = 0; i < viewports.length; i++) {
-      const viewport = viewports[i];
-      if (this._needsRender.has(viewport.id)) {
-        const eventDetail =
-          this.renderViewportUsingCustomOrVtkPipeline(viewport);
-        eventDetailArray.push(eventDetail);
-        viewport.setRendered();
-
-        this._needsRender.delete(viewport.id);
-
-        if (this._needsRender.size === 0) {
-          break;
-        }
-      }
+    if (viewportsToRender.length === 0) {
+      this._animationFrameSet = false;
+      this._animationFrameHandle = null;
+      return;
     }
+
+    // Render all viewports in parallel - each will grab an available context
+    const renderPromises = viewportsToRender.map((viewport) =>
+      this._renderViewportAsync(viewport)
+    );
+
+    const eventDetails = await Promise.all(renderPromises);
+
+    // Trigger all events after rendering is complete
+    eventDetails.forEach((eventDetail) => {
+      if (eventDetail?.element) {
+        triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
+      }
+    });
 
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
-
-    eventDetailArray.forEach((eventDetail) => {
-      if (!eventDetail?.element) {
-        return;
-      }
-      triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
-    });
   };
 
-  /**
-   * Renders the given viewport
-   * using its proffered method.
-   *
-   * @param viewport - The viewport to render
-   */
-  protected renderViewportUsingCustomOrVtkPipeline(
+  private async _renderViewportAsync(
     viewport: IViewport
-  ): EventTypes.ImageRenderedEventDetail {
-    let eventDetail: EventTypes.ImageRenderedEventDetail;
+  ): Promise<EventTypes.ImageRenderedEventDetail> {
+    // Get the context assigned to this viewport
+    const assignedContextIndex = this.contextPool.getContextIndexForViewport(
+      viewport.id
+    );
 
+    const contextData =
+      this.contextPool.getContextByIndex(assignedContextIndex);
+
+    const { context, container } = contextData;
+
+    const eventDetail = this._renderViewportWithContext(
+      viewport,
+      context,
+      container
+    );
+    viewport.setRendered();
+    this._needsRender.delete(viewport.id);
+    return eventDetail;
+  }
+
+  private _renderViewportWithContext(
+    viewport: IViewport,
+    offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow,
+    offScreenCanvasContainer: HTMLDivElement
+  ): EventTypes.ImageRenderedEventDetail {
+    // Check viewport size
     if (
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
       viewport.sHeight < VIEWPORT_MIN_SIZE
@@ -255,53 +300,59 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
       console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
       return;
     }
-    if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
-      eventDetail =
-        viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
-    } else {
-      if (this.useCPURendering) {
-        throw new Error(
-          'GPU not available, and using a viewport with no custom render pipeline.'
-        );
-      }
 
-      const { offscreenMultiRenderWindow } = this;
-      const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
+    if (viewportTypeUsesCustomRenderingPipeline(viewport.type)) {
+      return viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
+    }
 
-      this._resizeOffScreenCanvasForSingleViewport(viewport.canvas);
-
-      const renderer = offscreenMultiRenderWindow.getRenderer(viewport.id);
-
-      renderer.setViewport([0, 0, 1, 1]);
-
-      const allRenderers = offscreenMultiRenderWindow.getRenderers();
-
-      allRenderers.forEach(({ renderer: r, id }) => {
-        r.setDraw(id === viewport.id);
-      });
-
-      const widgetRenderers = this.getWidgetRenderers();
-
-      widgetRenderers.forEach((viewportId, renderer) => {
-        renderer.setDraw(viewportId === viewport.id);
-      });
-
-      renderWindow.render();
-
-      allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
-
-      const openGLRenderWindow =
-        offscreenMultiRenderWindow.getOpenGLRenderWindow();
-      const context = openGLRenderWindow.get3DContext();
-      const offScreenCanvas = context.canvas;
-
-      eventDetail = this._renderViewportFromVtkCanvasToOnscreenCanvas(
-        viewport,
-        offScreenCanvas
+    if (this.useCPURendering) {
+      throw new Error(
+        'GPU not available, and using a viewport with no custom render pipeline.'
       );
     }
 
-    return eventDetail;
+    // Add renderer if not already present
+    if (!offscreenMultiRenderWindow.getRenderer(viewport.id)) {
+      offscreenMultiRenderWindow.addRenderer({
+        viewport: [0, 0, 1, 1],
+        id: viewport.id,
+        background: viewport.defaultOptions?.background || [0, 0, 0],
+      });
+    }
+
+    const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
+
+    this._resizeOffScreenCanvasForViewport(
+      viewport.canvas,
+      offScreenCanvasContainer,
+      offscreenMultiRenderWindow
+    );
+
+    const renderer = offscreenMultiRenderWindow.getRenderer(viewport.id);
+    renderer.setViewport(0, 0, 1, 1);
+
+    // Set only this renderer to draw
+    const allRenderers = offscreenMultiRenderWindow.getRenderers();
+    allRenderers.forEach(({ renderer: r, id }) => {
+      r.setDraw(id === viewport.id);
+    });
+
+    // Handle widget renderers
+    const widgetRenderers = this.getWidgetRenderers();
+    widgetRenderers.forEach((viewportId, renderer) => {
+      renderer.setDraw(viewportId === viewport.id);
+    });
+
+    renderWindow.render();
+
+    allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
+
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow();
+    const context = openGLRenderWindow.get3DContext();
+    const offScreenCanvas = context.canvas;
+
+    return this._copyToOnscreenCanvas(viewport, offScreenCanvas);
   }
 
   /**
@@ -313,6 +364,29 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
     viewport: IViewport,
     offScreenCanvas: HTMLCanvasElement
   ): EventTypes.ImageRenderedEventDetail {
+    return this._copyToOnscreenCanvas(viewport, offScreenCanvas);
+  }
+
+  private _resizeOffScreenCanvasForViewport(
+    viewportCanvas: HTMLCanvasElement,
+    offScreenCanvasContainer: HTMLDivElement,
+    offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
+  ): void {
+    const offScreenCanvasWidth = viewportCanvas.width;
+    const offScreenCanvasHeight = viewportCanvas.height;
+
+    // @ts-expect-error
+    offScreenCanvasContainer.width = offScreenCanvasWidth;
+    // @ts-expect-error
+    offScreenCanvasContainer.height = offScreenCanvasHeight;
+
+    offscreenMultiRenderWindow.resize();
+  }
+
+  private _copyToOnscreenCanvas(
+    viewport: IViewport,
+    offScreenCanvas: HTMLCanvasElement
+  ): EventTypes.ImageRenderedEventDetail {
     const {
       element,
       canvas,
@@ -320,11 +394,9 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
       renderingEngineId,
       suppressEvents,
     } = viewport;
-
     const { width: dWidth, height: dHeight } = canvas;
 
     const onScreenContext = canvas.getContext('2d');
-
     onScreenContext.drawImage(
       offScreenCanvas,
       0,
@@ -346,27 +418,6 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
     };
   }
 
-  private _resizeOffScreenCanvasForSingleViewport(
-    currentViewport: HTMLCanvasElement
-  ): {
-    offScreenCanvasWidth: number;
-    offScreenCanvasHeight: number;
-  } {
-    const { offScreenCanvasContainer, offscreenMultiRenderWindow } = this;
-
-    const offScreenCanvasWidth = currentViewport.width;
-    const offScreenCanvasHeight = currentViewport.height;
-
-    // @ts-expect-error
-    offScreenCanvasContainer.width = offScreenCanvasWidth;
-    // @ts-expect-error
-    offScreenCanvasContainer.height = offScreenCanvasHeight;
-
-    offscreenMultiRenderWindow.resize();
-
-    return { offScreenCanvasWidth, offScreenCanvasHeight };
-  }
-
   private _resize(
     viewportsDrivenByVtkJs: (IStackViewport | IVolumeViewport)[]
   ): void {
@@ -376,20 +427,21 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
       viewport.sWidth = viewport.canvas.width;
       viewport.sHeight = viewport.canvas.height;
 
-      const renderer = this.offscreenMultiRenderWindow.getRenderer(viewport.id);
-      renderer.setViewport([0, 0, 1, 1]);
+      // Get the context assigned to this viewport
+      const contextIndex = this.contextPool.getContextIndexForViewport(
+        viewport.id
+      );
+
+      const contextData = this.contextPool.getContextByIndex(contextIndex);
+      const { context: offscreenMultiRenderWindow } = contextData;
+      const renderer = offscreenMultiRenderWindow.getRenderer(viewport.id);
+
+      renderer.setViewport(0, 0, 1, 1);
     }
   }
 
-  /**
-   *
-   * @returns A map of widget renderers and their associated viewport IDs.
-   * This method iterates through all viewports, retrieves their widgets,
-   * and maps each widget's renderer to the viewport ID.
-   */
   private getWidgetRenderers(): Map<vtkRenderer, string> {
     const allViewports = this._getViewportsAsArray();
-
     const widgetRenderers = new Map();
 
     allViewports.forEach((vp) => {
@@ -404,6 +456,59 @@ class SequentialRenderingEngine extends BaseRenderingEngine {
 
     return widgetRenderers;
   }
+
+  /**
+   * Get the renderer for a specific viewport
+   * @param viewportId - The ID of the viewport
+   * @returns The vtkRenderer instance or undefined
+   */
+  public getRenderer(viewportId: string): vtkRenderer | undefined {
+    const contextIndex =
+      this.contextPool?.getContextIndexForViewport(viewportId);
+
+    const contextData = this.contextPool.getContextByIndex(contextIndex);
+
+    const { context: offscreenMultiRenderWindow } = contextData;
+    return offscreenMultiRenderWindow.getRenderer(viewportId);
+  }
+
+  /**
+   * Disables the requested viewportId from the rendering engine.
+   * Calls the base implementation and then handles context-specific cleanup.
+   *
+   * @param viewportId - viewport Id
+   */
+  public disableElement(viewportId: string): void {
+    const viewport = this.getViewport(viewportId);
+    if (!viewport) {
+      return;
+    }
+    super.disableElement(viewportId);
+
+    if (
+      !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
+      !this.useCPURendering
+    ) {
+      const contextIndex =
+        this.contextPool.getContextIndexForViewport(viewportId);
+
+      if (contextIndex !== undefined) {
+        const contextData = this.contextPool.getContextByIndex(contextIndex);
+
+        if (contextData) {
+          const { context: offscreenMultiRenderWindow } = contextData;
+          offscreenMultiRenderWindow.removeRenderer(viewportId);
+        }
+      }
+    }
+  }
+
+  public destroy(): void {
+    if (this.contextPool) {
+      this.contextPool.destroy();
+    }
+    super.destroy();
+  }
 }
 
-export default SequentialRenderingEngine;
+export default NextRenderingEngine;

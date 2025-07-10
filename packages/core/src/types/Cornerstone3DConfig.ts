@@ -39,6 +39,12 @@ interface Cornerstone3DConfig {
      * 'standard' is the old rendering engine implementation, which we will eventually move away from.
      */
     renderingEngineMode?: RenderingEngineModeType;
+
+    /**
+     * The number of WebGL contexts to create. This is used for parallel rendering.
+     * The default value is 8, which is suitable for mobile/desktop.
+     */
+    webGlContextCount?: number;
   };
 
   /**

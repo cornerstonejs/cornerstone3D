@@ -74,7 +74,8 @@ import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
 import { getCameraVectors } from './helpers/getCameraVectors';
-import { isSequentialRenderingEngine } from './helpers/isSequentialRenderingEngine';
+import { isNextRenderingEngine } from './helpers/isNextRenderingEngine';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -1648,7 +1649,7 @@ abstract class BaseVolumeViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
-  public canvasToWorldSequential = (canvasPos: Point2): Point3 => {
+  public canvasToWorldNext = (canvasPos: Point2): Point3 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
@@ -1744,7 +1745,7 @@ abstract class BaseVolumeViewport extends Viewport {
     return [displayCoord[0], displayCoord[1], 0];
   };
 
-  public getVtkDisplayCoordsSequential = (canvasPos: Point2): Point3 => {
+  public getVtkDisplayCoordsNext = (canvasPos: Point2): Point3 => {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
@@ -1825,7 +1826,7 @@ abstract class BaseVolumeViewport extends Viewport {
     return canvasCoordWithDPR;
   };
 
-  public worldToCanvasSequential = (worldPos: Point3): Point2 => {
+  public worldToCanvasNext = (worldPos: Point3): Point2 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
@@ -1892,6 +1893,29 @@ abstract class BaseVolumeViewport extends Viewport {
 
     return canvasCoordWithDPR;
   };
+
+  /**
+   * Get the renderer for this viewport - handles NextRenderingEngine
+   */
+  public getRendererNext(): vtkRenderer {
+    const renderingEngine = this.getRenderingEngine();
+    return renderingEngine.getRenderer(this.id);
+  }
+
+  /**
+   * Returns the `vtkRenderer` responsible for rendering the `Viewport`.
+   *
+   * @returns The `vtkRenderer` for the `Viewport`.
+   */
+  public getRenderer(): vtkRenderer {
+    const renderingEngine = this.getRenderingEngine();
+
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      throw new Error('Rendering engine has been destroyed');
+    }
+
+    return renderingEngine.offscreenMultiRenderWindow?.getRenderer(this.id);
+  }
 
   /*
    * Checking if the imageURI is in the volumes that are being
@@ -2137,8 +2161,7 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   private _configureRenderingPipeline() {
-    const renderingEngine = this.getRenderingEngine();
-    const isSequential = isSequentialRenderingEngine(renderingEngine);
+    const isNext = isNextRenderingEngine();
 
     for (const key in this.renderingPipelineFunctions) {
       if (
@@ -2149,7 +2172,7 @@ abstract class BaseVolumeViewport extends Viewport {
       ) {
         const functions = this.renderingPipelineFunctions[key];
 
-        this[key] = isSequential ? functions.sequential : functions.default;
+        this[key] = isNext ? functions.next : functions.default;
       }
     }
   }
@@ -2157,15 +2180,19 @@ abstract class BaseVolumeViewport extends Viewport {
   protected renderingPipelineFunctions = {
     worldToCanvas: {
       default: this.worldToCanvas,
-      sequential: this.worldToCanvasSequential,
+      next: this.worldToCanvasNext,
     },
     canvasToWorld: {
       default: this.canvasToWorld,
-      sequential: this.canvasToWorldSequential,
+      next: this.canvasToWorldNext,
     },
     getVtkDisplayCoords: {
       default: this.getVtkDisplayCoords,
-      sequential: this.getVtkDisplayCoordsSequential,
+      next: this.getVtkDisplayCoordsNext,
+    },
+    getRenderer: {
+      default: this.getRenderer,
+      next: this.getRendererNext,
     },
   };
 }

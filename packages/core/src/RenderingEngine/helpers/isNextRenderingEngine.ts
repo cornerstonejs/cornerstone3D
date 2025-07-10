@@ -1,7 +1,7 @@
 import { getConfiguration } from '../../init';
 import { RenderingEngineModeEnum } from '../../enums';
 
-export function isSequentialRenderingEngine(renderingEngine): boolean {
+export function isNextRenderingEngine(): boolean {
   const config = getConfiguration();
   return (
     config?.rendering?.renderingEngineMode === RenderingEngineModeEnum.Next

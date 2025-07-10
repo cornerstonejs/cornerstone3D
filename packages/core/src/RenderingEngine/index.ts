@@ -1,7 +1,7 @@
 import RenderingEngine from './RenderingEngine';
 import BaseRenderingEngine from './BaseRenderingEngine';
 import StandardRenderingEngine from './StandardRenderingEngine';
-import SequentialRenderingEngine from './SequentialRenderingEngine';
+import NextRenderingEngine from './NextRenderingEngine';
 import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
@@ -13,7 +13,7 @@ export {
   RenderingEngine,
   BaseRenderingEngine,
   StandardRenderingEngine,
-  SequentialRenderingEngine,
+  NextRenderingEngine,
   VolumeViewport,
   VolumeViewport3D,
   StackViewport,
