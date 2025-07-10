@@ -144,6 +144,14 @@ class CrosshairsTool extends AnnotationTool {
         // the reference lines will not be rendered. This is only used when
         // having 3 viewports in the toolGroup.
         referenceLinesCenterGapRadius: 20,
+        // The ratio is a fraction of the minimum canvas dimension (width or height).
+        // For example, if referenceLinesCenterGapRatio is set to 0.05, the gap will be 5% of the smallest side of the canvas.
+        // If set to 1, the gap will be equal to the minimum canvas dimension (which would likely hide the crosshairs).
+        // referenceLinesCenterGapRatio: null|undefined → gap is referenceLinesCenterGapRadius (default: 20 pixels)
+        // referenceLinesCenterGapRatio: 0.05 → gap is 5% of the canvas min dimension
+        // referenceLinesCenterGapRatio: 0.1 → gap is 10% of the canvas min dimension
+        // referenceLinesCenterGapRatio: 1 → gap is 100% (not recommended)
+        referenceLinesCenterGapRatio: null,
         // actorUIDs for slabThickness application, if not defined, the slab thickness
         // will be applied to all actors of the viewport
         filterActorUIDsToSetSlabThickness: [],
@@ -153,6 +161,7 @@ class CrosshairsTool extends AnnotationTool {
           enabled: false,
           opacity: 0.8,
           handleRadius: 9,
+          referenceLinesCenterGapRatio: 0.05,
         },
       },
     }
@@ -956,7 +965,17 @@ class CrosshairsTool extends AnnotationTool {
         canvasMinDimensionLength * 0.2
       );
       const canvasVectorFromCenterStart = vec2.create();
-      const centerGap = this.configuration.referenceLinesCenterGapRadius;
+      // Calculate center gap using ratio if provided, else fallback to pixel value
+      const mobileConfig = this.configuration.mobile;
+      const { referenceLinesCenterGapRatio } = mobileConfig?.enabled
+        ? mobileConfig
+        : this.configuration;
+
+      const centerGap =
+        referenceLinesCenterGapRatio > 0
+          ? canvasMinDimensionLength * referenceLinesCenterGapRatio
+          : this.configuration.referenceLinesCenterGapRadius;
+
       vec2.scale(
         canvasVectorFromCenterStart,
         canvasUnitVectorFromCenter,
