@@ -16,6 +16,7 @@ import {
   getLocalUrl,
   addToggleButtonToToolbar,
   addButtonToToolbar,
+  contourSegmentationToolBindings,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -25,10 +26,14 @@ console.warn(
 );
 
 const {
+  SplineContourSegmentationTool,
+  PlanarFreehandContourSegmentationTool,
+
   ToolGroupManager,
   Enums: csToolsEnums,
   CrosshairsTool,
   synchronizers,
+  segmentation,
 } = cornerstoneTools;
 
 const { createSlabThicknessSynchronizer } = synchronizers;
@@ -47,6 +52,7 @@ const viewportId3 = 'CT_CORONAL';
 const viewportIds = [viewportId1, viewportId2, viewportId3];
 const renderingEngineId = 'myRenderingEngine';
 const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
+const segmentationId = `SEGMENTATION_ID`;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -254,15 +260,16 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(CrosshairsTool);
+  cornerstoneTools.addTool(SplineContourSegmentationTool);
+  cornerstoneTools.addTool(PlanarFreehandContourSegmentationTool);
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '2.16.840.1.114362.1.11972228.22789312658.616067305.306.2',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot:
-      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+      '2.16.840.1.114362.1.11972228.22789312658.616067305.306.3',
+    wadoRsRoot: getLocalUrl() || 'http://localhost:5000/dicomweb',
   });
 
   // Define a volume in memory
@@ -323,13 +330,54 @@ async function run() {
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup);
 
   // For the crosshairs to operate, the viewports must currently be
   // added ahead of setting the tool active. This will be improved in the future.
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
+
+  toolGroup.addTool(SplineContourSegmentationTool.toolName);
+  toolGroup.addTool(PlanarFreehandContourSegmentationTool.toolName);
+
+  toolGroup.addToolInstance(
+    'CatmullRomSplineROI',
+    SplineContourSegmentationTool.toolName,
+    {
+      spline: {
+        type: SplineContourSegmentationTool.SplineTypes.CatmullRom,
+      },
+    }
+  );
+
+  toolGroup.addToolInstance(
+    'LinearSplineROI',
+    SplineContourSegmentationTool.toolName,
+    {
+      spline: {
+        type: SplineContourSegmentationTool.SplineTypes.Linear,
+      },
+    }
+  );
+
+  toolGroup.addToolInstance(
+    'BSplineROI',
+    SplineContourSegmentationTool.toolName,
+    {
+      spline: {
+        type: SplineContourSegmentationTool.SplineTypes.BSpline,
+      },
+    }
+  );
+
+  toolGroup.setToolActive('CatmullRomSplineROI', {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+
+  // Spline curves may be converted into freehand contours when they overlaps (append/remove)
+  toolGroup.setToolPassive(PlanarFreehandContourSegmentationTool.toolName, {
+    removeAllBindings: contourSegmentationToolBindings,
+  });
 
   // Manipulation Tools
   // Add Crosshairs tool and configure it to link the three viewports
@@ -354,10 +402,33 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
+  //addManipulationBindings(toolGroup);
+
   setUpSynchronizers();
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
+  // Add a segmentation that will contains the contour annotations
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    },
+  ]);
+
+  // Create a segmentation representation associated to the viewportId
+  viewportIds.forEach(async (viewportId) => {
+    await segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
+  });
+
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 }
 
 run();
