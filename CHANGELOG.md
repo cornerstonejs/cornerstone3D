@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.29.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.2...v3.29.3) (2025-07-10)
+
+### Bug Fixes
+
+- typo in cursor crosshair example description ([#2184](https://github.com/cornerstonejs/cornerstone3D/issues/2184)) ([5442e73](https://github.com/cornerstonejs/cornerstone3D/commit/5442e731ad6b6165bc150407f27523728fb1c7b9))
+
+### Features
+
+- **CrosshairsTool:** add support for center gap ratio in reference lines ([#2180](https://github.com/cornerstonejs/cornerstone3D/issues/2180)) ([5c7273f](https://github.com/cornerstonejs/cornerstone3D/commit/5c7273f0da8cf1a06d53d97041517f28f3af5a7e))
+
 ## [3.29.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.1...v3.29.2) (2025-07-10)
 
 ### Bug Fixes
