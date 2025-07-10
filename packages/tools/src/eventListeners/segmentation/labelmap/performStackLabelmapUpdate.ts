@@ -1,8 +1,8 @@
 import {
   cache,
   utilities as csUtils,
-  VolumeViewport,
   getEnabledElementByViewportId,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 
 import { SegmentationRepresentations } from '../../../enums';
@@ -43,7 +43,7 @@ export function performStackLabelmapUpdate({
 
       const { viewport } = enabledElement;
 
-      if (viewport instanceof VolumeViewport) {
+      if (viewport instanceof BaseVolumeViewport) {
         return;
       }
 

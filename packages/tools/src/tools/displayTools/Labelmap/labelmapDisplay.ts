@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import {
+  BaseVolumeViewport,
   getEnabledElementByViewportId,
-  VolumeViewport,
 } from '@cornerstonejs/core';
 
 import type {
@@ -157,7 +157,7 @@ async function render(
     return;
   }
 
-  if (viewport instanceof VolumeViewport) {
+  if (viewport instanceof BaseVolumeViewport) {
     if (!labelmapActorEntries?.length) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(
