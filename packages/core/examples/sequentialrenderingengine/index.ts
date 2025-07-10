@@ -14,8 +14,10 @@ import {
 const { ViewportType } = Enums;
 
 // ======== Set up page ======== //
-const rows = 12;
-const columns = 22;
+const params = new URLSearchParams(window.location.search);
+
+const rows = parseInt(params.get('rows')) || 6;
+const columns = parseInt(params.get('columns')) || 6;
 const count = rows * columns;
 
 setTitleAndDescription(
