@@ -267,6 +267,22 @@ class NextRenderingEngine extends BaseRenderingEngine {
   private async _renderViewportAsync(
     viewport: IViewport
   ): Promise<EventTypes.ImageRenderedEventDetail> {
+    // Handle custom rendering pipeline viewports
+    if (viewportTypeUsesCustomRenderingPipeline(viewport.type)) {
+      const eventDetail =
+        viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
+      viewport.setRendered();
+      this._needsRender.delete(viewport.id);
+      return eventDetail;
+    }
+
+    // If using CPU rendering, throw error
+    if (this.useCPURendering) {
+      throw new Error(
+        'GPU not available, and using a viewport with no custom render pipeline.'
+      );
+    }
+
     // Get the context assigned to this viewport
     const assignedContextIndex = this.contextPool.getContextIndexForViewport(
       viewport.id
