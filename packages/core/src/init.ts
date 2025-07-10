@@ -24,9 +24,9 @@ const defaultConfig: Cornerstone3DConfig = {
 
     /**
      * The number of WebGL contexts to create. This is used for parallel rendering.
-     * The default value is 8, which is suitable for mobile/desktop.
+     * The default value is 7, which is suitable for mobile/desktop.
      */
-    webGlContextCount: 8,
+    webGlContextCount: 7,
   },
 
   /**
