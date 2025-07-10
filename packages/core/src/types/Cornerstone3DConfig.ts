@@ -35,7 +35,7 @@ interface Cornerstone3DConfig {
 
     /**
      * The rendering engine mode to use.
-     * 'next' is the new rendering engine that uses sequential rendering and has enhanced support/performance for multi-monitor and high resolution displays.
+     * 'next' is the new rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
      * 'standard' is the old rendering engine implementation, which we will eventually move away from.
      */
     renderingEngineMode?: RenderingEngineModeType;

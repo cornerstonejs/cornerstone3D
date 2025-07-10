@@ -153,13 +153,17 @@
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
       },
-      "sequentialrenderingengine": {
-        "name": "6x6 Grid with SequentialRenderingEngine",
-        "description": "Displays a 6x6 grid of viewports using SequentialRenderingEngine for better performance with large viewport counts"
+      "nextrenderingengine": {
+        "name": "6x6 Grid with NextRenderingEngine",
+        "description": "Displays a 6x6 grid of viewports using NextRenderingEngine for better performance with large viewport counts"
       },
       "ptctmultimonitor": {
         "name": "PET-CT Multi-Monitor Layout",
-        "description": "Demonstrates how to create a multi-monitor layout with PET-CT fusion using the Sequential RenderingEngine"
+        "description": "Demonstrates how to create a multi-monitor layout with PET-CT fusion using the NextRenderingEngine"
+      },
+      "webGLContextPooling": {
+        "name": "WebGL Context Pooling",
+        "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync"
       }
     },
     "tools-basic": {
