@@ -1,5 +1,4 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import { Events } from '../enums';
 import {
   eventTarget,

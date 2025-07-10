@@ -7,9 +7,7 @@ import {
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { Events } from '../enums';
 import type { Types } from '@cornerstonejs/core';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
-import { getToolGroup } from '../store/ToolGroupManager';
 /**
  * Tool that pans the camera in the plane defined by the viewPlaneNormal and the viewUp.
  */
