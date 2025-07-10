@@ -598,7 +598,9 @@ class VolumeCroppingTool extends AnnotationTool {
           if (
             !state.isCorner &&
             state.axis !== 'x' &&
-            !evt.detail.viewportOrientation.includes('sagittal') // sagittal is y axis in yellow
+            !evt.detail.viewportOrientation.includes(
+              Enums.OrientationAxis.SAGITTAL
+            ) // sagittal is y axis in yellow
           ) {
             state.point[0] = newXCenter;
             state.sphereSource.setCenter(state.point);
@@ -621,7 +623,9 @@ class VolumeCroppingTool extends AnnotationTool {
           if (
             !state.isCorner &&
             state.axis !== 'y' &&
-            !evt.detail.viewportOrientation.includes('coronal') // coronal  is x axis in green
+            !evt.detail.viewportOrientation.includes(
+              Enums.OrientationAxis.CORONAL
+            ) // coronal  is x axis in green
           ) {
             state.point[1] = newYCenter;
             state.sphereSource.setCenter(state.point);
@@ -645,7 +649,9 @@ class VolumeCroppingTool extends AnnotationTool {
           if (
             !state.isCorner &&
             state.axis !== 'z' &&
-            !evt.detail.viewportOrientation.includes('axial') // axial    is z axis in red
+            !evt.detail.viewportOrientation.includes(
+              Enums.OrientationAxis.AXIAL
+            ) // axial    is z axis in red
           ) {
             state.point[2] = newZCenter;
             state.sphereSource.setCenter(state.point);
@@ -677,9 +683,6 @@ class VolumeCroppingTool extends AnnotationTool {
         origin: [0, 0, toolMax[2]],
         normal: [0, 0, -1],
       });
-      // viewport.setOriginalClippingPlane(PLANEINDEX.XMAX, planeXmax.getOrigin());
-      // viewport.setOriginalClippingPlane(PLANEINDEX.YMAX, planeYmax.getOrigin());
-      // viewport.setOriginalClippingPlane(PLANEINDEX.ZMAX, planeZmax.getOrigin());
       this.originalClippingPlanes[PLANEINDEX.XMAX].origin =
         planeXmax.getOrigin();
       this.originalClippingPlanes[PLANEINDEX.YMAX].origin =
@@ -707,7 +710,9 @@ class VolumeCroppingTool extends AnnotationTool {
           if (
             !state.isCorner &&
             state.axis !== 'x' &&
-            !evt.detail.viewportOrientation.includes('sagittal')
+            !evt.detail.viewportOrientation.includes(
+              Enums.OrientationAxis.SAGITTAL
+            )
           ) {
             state.point[POINTINDEX.X] = newXCenter;
             state.sphereSource.setCenter(state.point);
@@ -737,7 +742,9 @@ class VolumeCroppingTool extends AnnotationTool {
           if (
             !state.isCorner &&
             state.axis !== 'y' &&
-            !evt.detail.viewportOrientation.includes('coronal')
+            !evt.detail.viewportOrientation.includes(
+              Enums.OrientationAxis.CORONAL
+            )
           ) {
             state.point[POINTINDEX.Y] = newYCenter;
             state.sphereSource.setCenter(state.point);
@@ -766,7 +773,9 @@ class VolumeCroppingTool extends AnnotationTool {
           if (
             !state.isCorner &&
             state.axis !== 'z' &&
-            !evt.detail.viewportOrientation.includes('axial')
+            !evt.detail.viewportOrientation.includes(
+              Enums.OrientationAxis.AXIAL
+            ) // axial is z axis in red
           ) {
             state.point[POINTINDEX.Z] = newZCenter;
             state.sphereSource.setCenter(state.point);
@@ -788,7 +797,6 @@ class VolumeCroppingTool extends AnnotationTool {
     ) {
       this._updateCornerSpheres(viewport);
     }
-    // this._updateCornerSpheres(viewport);
     viewport.render();
   };
 

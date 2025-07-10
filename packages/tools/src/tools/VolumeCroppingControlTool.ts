@@ -154,9 +154,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const renderingEngine = getRenderingEngine(renderingEngineId);
       const viewport = renderingEngine.getViewport(viewportId);
       const volumeActors = viewport.getActors();
+      if (!volumeActors || !volumeActors.length) {
+        console.warn(
+          `VolumeCroppingControlTool: No volume actors found in viewport ${viewportId}.`
+        );
+        return;
+      }
       const imageData = volumeActors[0].actor.getMapper().getInputData();
-
-      //   const imageData = enabledElement?.viewport?.getImageData?.();
       if (imageData) {
         const dimensions = imageData.getDimensions();
         const spacing = imageData.getSpacing();
