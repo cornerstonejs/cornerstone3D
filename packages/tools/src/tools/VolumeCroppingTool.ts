@@ -379,7 +379,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const dimensions = imageData.getDimensions();
     const origin = imageData.getOrigin();
     const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
-    const cropFactor = 0.2;
+    const cropFactor = this.configuration.initialCropFactor || 0.2;
     const xMin = origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0];
     const xMax =
       origin[0] + (1 - cropFactor) * (dimensions[0] - 1) * spacing[0];
@@ -387,7 +387,8 @@ class VolumeCroppingTool extends AnnotationTool {
     const yMax =
       origin[1] + (1 - cropFactor) * (dimensions[1] - 1) * spacing[1];
     const zMin = origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2];
-    const zMax = origin[2] + 0.8 * (dimensions[2] - 1) * spacing[2];
+    const zMax =
+      origin[2] + (1 - cropFactor) * (dimensions[2] - 1) * spacing[2];
 
     const planes: vtkPlane[] = [];
 
