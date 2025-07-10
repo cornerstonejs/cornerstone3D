@@ -232,7 +232,7 @@ class NextRenderingEngine extends BaseRenderingEngine {
   /**
    * Renders all viewports.
    */
-  protected _renderFlaggedViewports = async (): Promise<void> => {
+  protected _renderFlaggedViewports = (): void => {
     this._throwIfDestroyed();
 
     const viewports = this._getViewportsAsArray();
@@ -246,12 +246,16 @@ class NextRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
-    // Render all viewports in parallel - each will grab an available context
-    const renderPromises = viewportsToRender.map((viewport) =>
-      this._renderViewportAsync(viewport)
-    );
+    // Render all viewports synchronously
+    const eventDetails = viewportsToRender.map((viewport) => {
+      const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
+      viewport.setRendered();
+      this._needsRender.delete(viewport.id);
+      return eventDetail;
+    });
 
-    const eventDetails = await Promise.all(renderPromises);
+    this._animationFrameSet = false;
+    this._animationFrameHandle = null;
 
     // Trigger all events after rendering is complete
     eventDetails.forEach((eventDetail) => {
@@ -259,20 +263,15 @@ class NextRenderingEngine extends BaseRenderingEngine {
         triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
       }
     });
-
-    this._animationFrameSet = false;
-    this._animationFrameHandle = null;
   };
 
-  private async _renderViewportAsync(
+  private renderViewportUsingCustomOrVtkPipeline(
     viewport: IViewport
-  ): Promise<EventTypes.ImageRenderedEventDetail> {
+  ): EventTypes.ImageRenderedEventDetail {
     // Handle custom rendering pipeline viewports
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type)) {
       const eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
-      viewport.setRendered();
-      this._needsRender.delete(viewport.id);
       return eventDetail;
     }
 
@@ -298,8 +297,6 @@ class NextRenderingEngine extends BaseRenderingEngine {
       context,
       container
     );
-    viewport.setRendered();
-    this._needsRender.delete(viewport.id);
     return eventDetail;
   }
 
@@ -368,7 +365,9 @@ class NextRenderingEngine extends BaseRenderingEngine {
     const context = openGLRenderWindow.get3DContext();
     const offScreenCanvas = context.canvas;
 
-    return this._copyToOnscreenCanvas(viewport, offScreenCanvas);
+    const eventDetail = this._copyToOnscreenCanvas(viewport, offScreenCanvas);
+
+    return eventDetail;
   }
 
   /**
