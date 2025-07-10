@@ -14,7 +14,8 @@ import type {
   Point3,
 } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
-import RenderingEngine from '../RenderingEngine';
+import type RenderingEngine from '../RenderingEngine';
+import StandardRenderingEngine from '../RenderingEngine/StandardRenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import type { CanvasLoadPosition } from './loadImageToCanvas';
 
@@ -88,7 +89,7 @@ export default function renderToCanvasGPU(
   const temporaryCanvas = getOrCreateCanvas(element);
   const renderingEngine =
     (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
-    new RenderingEngine(renderingEngineId, true);
+    new StandardRenderingEngine(renderingEngineId);
 
   let viewport = renderingEngine.getViewport(viewportId);
 

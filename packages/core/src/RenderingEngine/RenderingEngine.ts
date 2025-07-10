@@ -17,25 +17,22 @@ class RenderingEngine {
   public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
   private _implementation?: BaseRenderingEngine;
 
-  constructor(id?: string, rendersThumbnails = false) {
+  constructor(id?: string) {
     const config = getConfiguration();
     const renderingEngineMode = config?.rendering?.renderingEngineMode;
 
     switch (renderingEngineMode) {
       case RenderingEngineModeEnum.Standard:
-        this._implementation = new StandardRenderingEngine(
-          id,
-          rendersThumbnails
-        );
+        this._implementation = new StandardRenderingEngine(id);
         break;
       case RenderingEngineModeEnum.Next:
-        this._implementation = new NextRenderingEngine(id, rendersThumbnails);
+        this._implementation = new NextRenderingEngine(id);
         break;
       default:
         console.warn(
           `RenderingEngine: Unknown rendering engine mode "${renderingEngineMode}". Defaulting to Next rendering engine.`
         );
-        this._implementation = new NextRenderingEngine(id, rendersThumbnails);
+        this._implementation = new NextRenderingEngine(id);
         break;
     }
   }

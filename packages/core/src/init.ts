@@ -111,6 +111,11 @@ function init(configuration = config): boolean {
   // merge configs
   config = deepMerge(defaultConfig, configuration);
 
+  // mobile safe
+  if (config.isMobile) {
+    config.rendering.webGlContextCount = 1;
+  }
+
   if (isIOS()) {
     if (configuration.rendering?.preferSizeOverAccuracy) {
       config.rendering.preferSizeOverAccuracy = true;

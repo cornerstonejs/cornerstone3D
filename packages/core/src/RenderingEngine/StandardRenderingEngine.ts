@@ -61,8 +61,8 @@ interface ViewportDisplayCoords {
  * @public
  */
 class StandardRenderingEngine extends BaseRenderingEngine {
-  constructor(id?: string, rendersThumbnails: boolean = false) {
-    super(id, rendersThumbnails);
+  constructor(id?: string) {
+    super(id);
 
     if (!this.useCPURendering) {
       this.offscreenMultiRenderWindow =

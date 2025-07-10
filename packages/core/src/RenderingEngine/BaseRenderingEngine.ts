@@ -41,7 +41,6 @@ abstract class BaseRenderingEngine {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
   public offScreenCanvasContainer: HTMLDivElement;
-  public rendersThumbnails: boolean;
   protected _viewports: Map<string, IViewport>;
   protected _needsRender = new Set<string>();
   protected _animationFrameSet = false;
@@ -51,7 +50,7 @@ abstract class BaseRenderingEngine {
   /**
    * @param uid - Unique identifier for RenderingEngine
    */
-  constructor(id?: string, rendersThumbnails = false) {
+  constructor(id?: string) {
     this.id = id ? id : uuidv4();
     this.useCPURendering = getShouldUseCPURendering();
 
@@ -65,7 +64,6 @@ abstract class BaseRenderingEngine {
 
     this._viewports = new Map();
     this.hasBeenDestroyed = false;
-    this.rendersThumbnails = rendersThumbnails;
   }
 
   /**

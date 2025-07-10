@@ -32,15 +32,13 @@ import type { VtkOffscreenMultiRenderWindow } from '../types';
 class NextRenderingEngine extends BaseRenderingEngine {
   private contextPool: WebGLContextPool;
 
-  constructor(id?: string, rendersThumbnails = false) {
-    super(id, rendersThumbnails);
+  constructor(id?: string) {
+    super(id);
     const { rendering } = getConfiguration();
     const { webGlContextCount } = rendering;
 
     if (!this.useCPURendering) {
-      this.contextPool = new WebGLContextPool(
-        this.rendersThumbnails ? 1 : webGlContextCount
-      );
+      this.contextPool = new WebGLContextPool(webGlContextCount);
     }
   }
 
