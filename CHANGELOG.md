@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.30.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.1...v3.30.2) (2025-07-11)
+
+### Bug Fixes
+
+- **cursor:** skip reset when useCursors is disabled ([#2158](https://github.com/cornerstonejs/cornerstone3D/issues/2158)) ([98c4d0f](https://github.com/cornerstonejs/cornerstone3D/commit/98c4d0f96f84ce04f1288b96d179f2ac9592c2b3))
+
+## [3.30.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.0...v3.30.1) (2025-07-11)
+
+### Bug Fixes
+
+- US flipping bug ([#2194](https://github.com/cornerstonejs/cornerstone3D/issues/2194)) ([e5d1027](https://github.com/cornerstonejs/cornerstone3D/commit/e5d102762506a2afd686f3dd3ffb8a84447992ec))
+
 # [3.30.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.5...v3.30.0) (2025-07-11)
 
 ### Features
