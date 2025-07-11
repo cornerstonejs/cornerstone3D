@@ -346,7 +346,7 @@ export default class MeasurementReport {
         console.warn("SCOORD3DGroup=", SCOORD3DGroup);
         csUtilities.updateReferencedPlane(
             toPoint3(SCOORD3DGroup.GraphicData),
-            toolData.state.metadata
+            toolData.state.annotation.metadata
         );
 
         return toolData;
