@@ -14,6 +14,9 @@ const screenShotPaths = {
   stackBasic: {
     viewport: 'viewport.png',
   },
+  stackBasicTiled: {
+    viewport: 'viewport.png',
+  },
   stackToVolumeFusion: {
     viewport: 'viewport.png',
   },
@@ -48,6 +51,9 @@ const screenShotPaths = {
     resetMetadata: 'resetMetadata.png',
   },
   volumeBasic: {
+    viewport: 'viewport.png',
+  },
+  volumeBasicTiled: {
     viewport: 'viewport.png',
   },
   ultrasoundColors: {
@@ -116,7 +122,15 @@ const screenShotPaths = {
     coronal: 'coronal.png',
     sagittal: 'sagittal.png',
   },
+  labelmapRenderingTiled: {
+    axial: 'axial.png',
+    coronal: 'coronal.png',
+    sagittal: 'sagittal.png',
+  },
   contourRendering: {
+    viewport: 'viewport.png',
+  },
+  contourRenderingTiled: {
     viewport: 'viewport.png',
   },
   labelmapGlobalConfiguration: {
@@ -196,6 +210,18 @@ const screenShotPaths = {
   },
   contextPoolRenderingEngine: {
     viewport: 'viewport.png',
+  },
+  volumeAnnotation: {
+    lengthTool: 'lengthTool.png',
+  },
+  volumeAnnotationTiled: {
+    lengthTool: 'lengthTool.png',
+  },
+  stackAnnotation: {
+    lengthTool: 'lengthTool.png',
+  },
+  stackAnnotationTiled: {
+    lengthTool: 'lengthTool.png',
   },
 };
 
