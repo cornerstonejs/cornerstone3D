@@ -1,4 +1,4 @@
-import { type Types } from "@cornerstonejs/core";
+import type { Types } from "@cornerstonejs/core";
 
 export function scoordToWorld(
     { isMeasurement3d, referencedImageId, imageToWorldCoords },
