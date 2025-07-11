@@ -224,7 +224,7 @@ export default class ToolGroup {
 
     // Handle the newly added viewport's mouse cursor
     const toolName = this.getActivePrimaryMouseButtonTool();
-    
+
     this.setViewportsCursorByToolName(toolName);
 
     const eventDetail = {
@@ -404,8 +404,7 @@ export default class ToolGroup {
         const cursor = MouseCursor.getDefinedCursor('default');
         this._setCursorForViewports(cursor);
       }
-    }
-    else {
+    } else {
       // reset the mouse cursor if tool has left click binding
       this.setViewportsCursorByToolName(toolName);
     }
@@ -660,9 +659,9 @@ export default class ToolGroup {
   _setCursorForViewports(cursor: MouseCursor): void {
     const runtimeSettings = Settings.getRuntimeSettings();
     if (!runtimeSettings.get('useCursors')) {
-      return
+      return;
     }
-    
+
     this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
       const enabledElement = getEnabledElementByIds(
         viewportId,
