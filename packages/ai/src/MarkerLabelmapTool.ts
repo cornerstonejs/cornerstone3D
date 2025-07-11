@@ -61,6 +61,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     const MARKER_TOOLS = [
       ONNXSegmentationController.MarkerInclude,
       ONNXSegmentationController.MarkerExclude,
+      ONNXSegmentationController.BoxPrompt,
     ];
     const toolGroup = this._getToolGroupId();
     if (!toolGroup) {
@@ -68,12 +69,15 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
       return;
     }
 
-    return MARKER_TOOLS.some((markerToolName) => {
-      if (toolGroup.hasTool(markerToolName)) {
-        const instance = toolGroup.getToolInstance(markerToolName);
-        return instance.mode === 'Active' || instance.mode === 'Enabled';
-      }
-    });
+    return (
+      this.hasPreviewData() &&
+      MARKER_TOOLS.some((markerToolName) => {
+        if (toolGroup.hasTool(markerToolName)) {
+          const instance = toolGroup.getToolInstance(markerToolName);
+          return instance.mode === 'Active' || instance.mode === 'Enabled';
+        }
+      })
+    );
   }
 
   _init = async () => {

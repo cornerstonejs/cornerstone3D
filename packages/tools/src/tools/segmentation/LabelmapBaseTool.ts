@@ -188,13 +188,24 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
+   * Checks if the tool has a preview data associated.
+   * @returns True if the tool has preview data, false otherwise.
+   */
+  public hasPreviewData() {
+    return !!this._previewData.preview;
+  }
+
+  /**
    * Checks if the tool should resolve preview requests.
    * This is used to determine if the tool is in a state where it can handle
    * preview requests.
    * @returns True if the tool should resolve preview requests, false otherwise.
    */
   public shouldResolvePreviewRequests() {
-    return this.mode === 'Active' || this.mode === 'Enabled';
+    return (
+      (this.mode === 'Active' || this.mode === 'Enabled') &&
+      this.hasPreviewData()
+    );
   }
 
   /**
@@ -465,6 +476,11 @@ export default class LabelmapBaseTool extends BaseTool {
       StrategyCallbacks.AddPreview
     );
     _previewData.isDrag = true;
+    // If the results are modified, we store it as preview data
+    if (results?.modified) {
+      _previewData.preview = results;
+      _previewData.element = element;
+    }
     return results;
   }
 
