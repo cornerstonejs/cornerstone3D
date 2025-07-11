@@ -1274,11 +1274,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           return false;
         }
 
-        return (
-          viewport !== otherViewport &&
-          // scene === otherScene &&
-          otherViewportControllable === true
-        );
+        return viewport !== otherViewport && otherViewportControllable === true;
       }
     );
 
@@ -1486,7 +1482,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _endCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
-    //   console.debug(eventDetail);
     const { element } = eventDetail;
 
     this.editData.annotation.data.handles.activeOperation = null;

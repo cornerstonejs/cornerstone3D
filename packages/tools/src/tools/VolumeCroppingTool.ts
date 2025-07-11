@@ -1,3 +1,5 @@
+import { vec3 } from 'gl-matrix';
+
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
@@ -618,7 +620,12 @@ class VolumeCroppingTool extends AnnotationTool {
           matrix[14],
       ];
       // Transform normal (rotation only)
-      const n = this._transformNormal(normal, rot);
+      //  const n = this._transformNormal(normal, rot);
+      const n: Types.Point3 = vec3.transformMat3(
+        [0, 0, 0],
+        normal,
+        rot as unknown as number[]
+      );
       const planeInstance = vtkPlane.newInstance({ origin: o, normal: n });
       mapper.addClippingPlane(planeInstance);
     });
