@@ -1,5 +1,5 @@
 import type { ContourSegmentationAnnotation } from '../../../types';
-import { findContourHoles } from '../../../utilities/contours';
+import { findContourHoles } from '../../../utilities/contours/findContourHoles';
 import { getAnnotation } from '../../annotation/annotationState';
 import { getSegmentation } from '../getSegmentation';
 import { extractSegmentPolylines } from './extractSegmentPolylines';

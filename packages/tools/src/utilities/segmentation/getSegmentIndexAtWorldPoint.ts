@@ -61,12 +61,19 @@ export function getSegmentIndexAtWorldPoint(
 }
 
 /**
- * Retrieves the segment index at a given world point for a labelmap.
+ * Retrieves the segment index at a given world point for a labelmap segmentation.
  *
- * @param labelmapData - The labelmap segmentation data.
+ * Supports both single and multi-volume segmentations. Handles the following cases:
+ * - Single volume: `volumeId: string`
+ * - Multi-volume: `volumeIds: string[]` or `volumeIdGroups: string[][]`
+ *
+ * Loops through all volumes (or groups of volumes) and returns the first valid, non-background segment index found at the world point.
+ * For stack segmentations, loops through all imageIds and returns the first valid segment index found.
+ *
+ * @param segmentation - The segmentation object containing labelmap data.
  * @param worldPoint - The world point to retrieve the segment at.
- *
- * @returns The segment index at the given world point, or undefined if not found.
+ * @param options - Options including the viewport.
+ * @returns The segment index at the given world point, or undefined if not found in any volume or stack.
  */
 export function getSegmentIndexAtWorldForLabelmap(
   segmentation: Segmentation,
@@ -76,17 +83,24 @@ export function getSegmentIndexAtWorldForLabelmap(
   const labelmapData = segmentation.representationData.Labelmap;
 
   if (viewport instanceof BaseVolumeViewport) {
-    const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-    const segmentationVolume = cache.getVolume(volumeId);
-
-    if (!segmentationVolume) {
-      return;
+    // Support both single and multi-volume segmentations
+    const allVolumeIds =
+      (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+    for (const vid of allVolumeIds) {
+      if (!vid) {
+        continue;
+      }
+      const segmentationVolume = cache.getVolume(vid);
+      if (!segmentationVolume) {
+        continue;
+      }
+      const segmentIndex =
+        segmentationVolume.imageData.getScalarValueFromWorld(worldPoint);
+      if (segmentIndex !== undefined && segmentIndex !== null) {
+        return segmentIndex;
+      }
     }
-
-    const segmentIndex =
-      segmentationVolume.imageData.getScalarValueFromWorld(worldPoint);
-
-    return segmentIndex;
+    return;
   }
 
   // stack segmentation case
@@ -132,10 +146,12 @@ export function getSegmentIndexAtWorldForLabelmap(
 /**
  * Retrieves the segment index at a given world point for contour segmentation.
  *
- * @param segmentation - The segmentation data.
+ * Loops through all contour segments and their annotations, returning the first segment index for which the world point is inside the contour on the current view plane.
+ *
+ * @param segmentation - The segmentation object containing contour data.
  * @param worldPoint - The world point to check.
- * @param options - The options for segmentation.
- * @returns The segment index at the given world point, or undefined if not found.
+ * @param options - The options for segmentation, including the viewport.
+ * @returns The segment index at the given world point, or undefined if not found in any contour.
  */
 export function getSegmentIndexAtWorldForContour(
   segmentation: Segmentation,

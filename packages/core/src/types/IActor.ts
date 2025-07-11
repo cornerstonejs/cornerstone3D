@@ -9,7 +9,7 @@ export type VolumeActor = vtkVolume;
 export type ImageActor = vtkImageSlice;
 
 export type ICanvasActor = CanvasActor;
-
+export type ViewportActor = Actor | VolumeActor | ImageActor | ICanvasActor;
 /**
  * Cornerstone Actor Entry including actor uid, actual Actor, and
  * slabThickness for the actor. ActorEntry is the object that
@@ -19,7 +19,7 @@ export interface ActorEntry {
   /** actor UID */
   uid: string;
   /** actual actor object */
-  actor: Actor | VolumeActor | ImageActor | ICanvasActor;
+  actor: ViewportActor;
   /** the id of the referenced object (e.g., volume) from which this actor is derived or created*/
   referencedId?: string;
   /** slab thickness for the actor */

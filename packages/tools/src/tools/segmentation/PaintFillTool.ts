@@ -99,9 +99,13 @@ class PaintFillTool extends BaseTool {
     this.doneEditMemo();
 
     if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = representationData[
-        SegmentationRepresentations.Labelmap
-      ] as LabelmapSegmentationDataVolume;
+      const volumeIds =
+        (
+          representationData[
+            SegmentationRepresentations.Labelmap
+          ] as LabelmapSegmentationDataVolume
+        ).volumeIds || [];
+      const volumeId = volumeIds?.[0] || undefined;
 
       const segmentation = cache.getVolume(volumeId);
       ({ dimensions, direction } = segmentation);
