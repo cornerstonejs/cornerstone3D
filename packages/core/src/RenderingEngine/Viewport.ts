@@ -1850,12 +1850,20 @@ class Viewport {
     return target;
   }
 
-  public isPlaneViewable(referencedPlane: ReferencedPlane): boolean {
+  public isPlaneViewable(
+    referencedPlane: ReferencedPlane,
+    options?: ReferenceCompatibleOptions
+  ): boolean {
     if (referencedPlane.FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
       return false;
     }
     const { focalPoint, viewPlaneNormal } = this.getCamera();
     const { point, inPlaneVector1, inPlaneVector2 } = referencedPlane;
+    if (options?.asVolume) {
+      // Don't need to check the normal or the navigation if asking as a volume
+      // since those can both be updated
+      return true;
+    }
     if (
       inPlaneVector1 &&
       !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector1))
@@ -1867,6 +1875,9 @@ class Viewport {
       !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector2))
     ) {
       return false;
+    }
+    if (options?.withNavigation) {
+      return true;
     }
     const pointVector = vec3.sub(vec3.create(), point, focalPoint);
     return isEqual(0, vec3.dot(pointVector, viewPlaneNormal));
@@ -1883,7 +1894,7 @@ class Viewport {
     options?: ReferenceCompatibleOptions
   ): boolean {
     if (viewRef.referencedPlane) {
-      return this.isPlaneViewable(viewRef.referencedPlane);
+      return this.isPlaneViewable(viewRef.referencedPlane, options);
     }
     if (
       viewRef.FrameOfReferenceUID &&
@@ -1902,11 +1913,9 @@ class Viewport {
         viewPlaneNormal
       )
     ) {
-      console.warn('Different orientation');
       // Could navigate as a volume to the reference with an orientation change
       return options?.withOrientation;
     }
-    console.warn('Same orientation');
     return true;
   }
 
