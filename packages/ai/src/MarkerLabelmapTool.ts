@@ -66,7 +66,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     const toolGroup = this._getToolGroupId();
     if (!toolGroup) {
       console.debug(`Tool group not found`);
-      return;
+      return false;
     }
 
     return (
