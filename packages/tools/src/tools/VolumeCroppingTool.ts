@@ -114,14 +114,18 @@ function addCylinderBetweenPoints(
 ) {
   const cylinderSource = vtkCylinderSource.newInstance();
   // Compute direction and length
-  const direction = [
+  const direction = new Float32Array([
     point2[0] - point1[0],
     point2[1] - point1[1],
     point2[2] - point1[2],
-  ];
+  ]);
   const length = Math.sqrt(
     direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
   );
+  // Normalize direction vector
+  const normDirection = new Float32Array([0, 0, 0]);
+  vec3.normalize(normDirection, direction);
+
   // Midpoint
   const center: Types.Point3 = [
     (point1[0] + point2[0]) / 2,
@@ -133,10 +137,13 @@ function addCylinderBetweenPoints(
   cylinderSource.setRadius(radius);
   cylinderSource.setHeight(length);
   // Set direction (align cylinder axis with direction vector)
-  cylinderSource.setDirection(direction[0], direction[1], direction[2]);
+  cylinderSource.setDirection(
+    normDirection[0],
+    normDirection[1],
+    normDirection[2]
+  );
 
   const cylinderMapper = vtkMapper.newInstance();
-  //const cylinderMapper = vtkVolumeMapper.newInstance();
   cylinderMapper.setInputConnection(cylinderSource.getOutputPort());
   const cylinderActor = vtkActor.newInstance();
   cylinderActor.setMapper(cylinderMapper);
@@ -1300,6 +1307,9 @@ class VolumeCroppingTool extends AnnotationTool {
         const length = Math.sqrt(
           direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
         );
+        // Normalize direction vector
+        const normDirection: [number, number, number] = [0, 0, 0];
+        vec3.normalize(normDirection, direction);
         const center = [
           (point1[0] + point2[0]) / 2,
           (point1[1] + point2[1]) / 2,
@@ -1307,7 +1317,12 @@ class VolumeCroppingTool extends AnnotationTool {
         ];
         source.setCenter(center[0], center[1], center[2]);
         source.setHeight(length);
-        source.setDirection(direction[0], direction[1], direction[2]);
+
+        source.setDirection(
+          normDirection[0],
+          normDirection[1],
+          normDirection[2]
+        );
         source.modified();
       }
     });
