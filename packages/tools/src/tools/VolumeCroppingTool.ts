@@ -569,12 +569,15 @@ class VolumeCroppingTool extends AnnotationTool {
     // Extract rotation part for normals
     const rot: mat3 = mat3.create();
     mat3.fromMat4(rot, matrix);
-
+    // Compute inverse transpose for normal transformation
+    const normalMatrix: mat3 = mat3.create();
+    mat3.invert(normalMatrix, rot);
+    mat3.transpose(normalMatrix, normalMatrix);
+    // Remove existing clipping planes
     const originalPlanes = this.originalClippingPlanes;
     if (!originalPlanes || !originalPlanes.length) {
       return;
     }
-
     mapper.removeAllClippingPlanes();
     originalPlanes.forEach((plane) => {
       const origin: Types.Point3 = [
@@ -592,8 +595,7 @@ class VolumeCroppingTool extends AnnotationTool {
       const o: Types.Point3 = [0, 0, 0];
       vec3.transformMat4(o, origin, matrix);
 
-      // Transform normal (rotation only)
-      const n = vec3.transformMat3([0, 0, 0], normal, rot);
+      const n = vec3.transformMat3([0, 0, 0], normal, normalMatrix);
       const planeInstance = vtkPlane.newInstance({
         origin: o,
         normal: [n[0], n[1], n[2]],
