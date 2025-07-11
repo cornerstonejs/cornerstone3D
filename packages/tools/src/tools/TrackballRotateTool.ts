@@ -5,7 +5,6 @@ import {
   triggerEvent,
   getEnabledElement,
   getEnabledElementByIds,
-  Enums,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
@@ -197,10 +196,6 @@ class TrackballRotateTool extends BaseTool {
     const { rotateIncrementDegrees } = this.configuration;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
-      // Only allow rotation for VOLUME_3D viewports
-      return;
-    }
     const camera = viewport.getCamera();
     const width = element.clientWidth;
     const height = element.clientHeight;
