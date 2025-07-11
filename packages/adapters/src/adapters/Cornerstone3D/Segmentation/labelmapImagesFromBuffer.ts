@@ -434,8 +434,118 @@ export function insertPixelDataPlanar({
                 });
             }
         };
+        const processLabelmapChunk = firstIndex => {
+            // Cache properties and lengths outside loops for performance
+            const pfSeq = multiframe.PerFrameFunctionalGroupsSequence;
+            const sharedPlaneOrientation =
+                multiframe.SharedFunctionalGroupsSequence
+                    .PlaneOrientationSequence?.ImageOrientationPatient;
 
-        processChunk(0);
+            for (
+                let i = firstIndex;
+                i < firstIndex + imagesPerChunk && i < groupsLen;
+                i++
+            ) {
+                const PerFrameFunctionalGroups = pfSeq[i];
+                const ImageOrientationPatientI =
+                    sharedPlaneOrientation ||
+                    PerFrameFunctionalGroups.PlaneOrientationSequence
+                        .ImageOrientationPatient;
+                // Use slice to get the correct frame (TypedArray)
+                const view = pixelDataChunks.subarray(
+                    i * sliceLength,
+                    (i + 1) * sliceLength
+                );
+                const pixelDataI2D = ndarray(view, [Rows, Columns]);
+                const alignedPixelDataI = alignPixelDataWithSourceData(
+                    pixelDataI2D,
+                    ImageOrientationPatientI,
+                    validOrientations,
+                    tolerance
+                );
+                if (!alignedPixelDataI) {
+                    throw new Error(
+                        "Individual Labelmap SEG frames are out of plane with respect to the first SEG frame. " +
+                            "This is not yet supported. Aborting segmentation loading."
+                    );
+                }
+                const imageId = findReferenceSourceImageId(
+                    multiframe,
+                    i,
+                    referencedImageIds,
+                    metadataProvider,
+                    tolerance,
+                    sopUIDImageIdIndexMap
+                );
+                if (!imageId) {
+                    console.warn(
+                        `Image not present in stack, can't import frame : ${i}.`
+                    );
+                    continue;
+                }
+                const sourceImageMetadata = imageIdMaps.metadata[imageId];
+                if (
+                    Rows !== sourceImageMetadata.Rows ||
+                    Columns !== sourceImageMetadata.Columns
+                ) {
+                    throw new Error(
+                        "Individual Labelmap SEG frames have different geometry dimensions (Rows and Columns) " +
+                            "respect to the source image reference frame. This is not yet supported. " +
+                            "Aborting segmentation loading. "
+                    );
+                }
+                const imageIdIndex = imageIdMaps.indices[imageId];
+                const labelmapImage = labelMapImages[imageIdIndex];
+                const labelmap2DView = labelmapImage.getPixelData(); // TypedArray
+                const data = alignedPixelDataI.data;
+                let segmentsOnFrameArr = segmentsOnFrame[imageIdIndex];
+                if (!segmentsOnFrameArr) {
+                    segmentsOnFrameArr = [];
+                    segmentsOnFrame[imageIdIndex] = segmentsOnFrameArr;
+                }
+                // Use a local Set to avoid .includes() in tight loop
+                const segSet = new Set(segmentsOnFrameArr);
+                for (let k = 0, len = data.length; k < len; ++k) {
+                    const segIdx = data[k];
+                    if (segIdx !== 0) {
+                        labelmap2DView[k] = segIdx;
+                        if (!segSet.has(segIdx)) {
+                            segmentsOnFrameArr.push(segIdx);
+                            segSet.add(segIdx);
+                        }
+                        if (!segmentsPixelIndices.has(segIdx)) {
+                            segmentsPixelIndices.set(segIdx, {});
+                        }
+                        const segmentPixelInfo =
+                            segmentsPixelIndices.get(segIdx);
+                        if (!segmentPixelInfo[imageIdIndex]) {
+                            segmentPixelInfo[imageIdIndex] = [];
+                        }
+                        segmentPixelInfo[imageIdIndex].push(k);
+                    }
+                }
+            }
+            const percentComplete = Math.round((firstIndex / groupsLen) * 100);
+            throttledTriggerLoadProgressEvent(percentComplete);
+            if (firstIndex < groupsLen) {
+                setTimeout(
+                    () => processLabelmapChunk(firstIndex + imagesPerChunk),
+                    0
+                );
+            } else {
+                resolve({
+                    hasOverlappingSegments: false,
+                    arrayOfLabelMapImages: [labelMapImages]
+                });
+            }
+        };
+
+        if (multiframe.SegmentationType === "LABELMAP") {
+            // If the segmentation is a labelmap, we can process it in chunks
+            processLabelmapChunk(0);
+        } else {
+            processChunk(0);
+        }
     });
 }
 

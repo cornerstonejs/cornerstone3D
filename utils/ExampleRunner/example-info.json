@@ -152,6 +152,18 @@
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
+      },
+      "contextpoolrenderingengine": {
+        "name": "6x6 Grid with ContextPoolRenderingEngine",
+        "description": "Displays a 6x6 grid of viewports using ContextPoolRenderingEngine for better performance with large viewport counts"
+      },
+      "ptctmultimonitor": {
+        "name": "PET-CT Multi-Monitor Layout",
+        "description": "Demonstrates how to create a multi-monitor layout with PET-CT fusion using the ContextPoolRenderingEngine"
+      },
+      "webGLContextPooling": {
+        "name": "WebGL Context Pooling",
+        "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync using ContextPoolRenderingEngine"
       }
     },
     "tools-basic": {
@@ -379,6 +391,10 @@
         "name": "Stack Labelmap creation/edit for stack viewports",
         "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
       },
+      "stackViewportsWithSegmentationSync": {
+        "name": "Stack Viewports with Segmentation Sync",
+        "description": "Demonstrates how to synchronize two stack viewports with a segmentation on one of them"
+      },
       "splineROITools": {
         "name": "Spline ROI Tools",
         "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
@@ -386,6 +402,10 @@
       "interpolationContourSegmentation": {
         "name": "Interpolation of Contours between slices",
         "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
+      },
+      "surfaceContourRendering": {
+        "name": "Display surfaces in slices",
+        "description": "Demonstrates how 3D surfaces as displayed in different orientation viewports"
       },
       "contourSegmentationConfiguration": {
         "name": "Contour Segmentation Configuration",
@@ -422,6 +442,10 @@
       "sculptorTool": {
         "name": "sculptorTool Tool",
         "description": "Demonstrates how to have similar brush tool effects on the contour"
+      },
+      "logicalOperators": {
+        "name": "Logical operators for contour segmentations",
+        "description": "Demonstrates the logical operations that can be performed on contour segmentations, such as union, intersection, and subtraction."
       },
       "labelmapEditWithContour": {
         "name": "Labelmap Editing with Contour",
@@ -471,6 +495,10 @@
         "name": "Crosshairs",
         "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
       },
+      "mprReformat": {
+        "name": "DICOM Reformats in MPR",
+        "description": "Aligns MPR viewports to dicom acquisition orientations"
+      },
       "overlayGrid": {
         "name": "Overlay Grid",
         "description": "Demonstrate overlay grid tool usage with three viewports one for each orientation"
@@ -518,6 +546,10 @@
       "toolHistory": {
         "name": "Tool History",
         "description": "Demonstrates how to use the tool history to undo and redo tool actions"
+      },
+      "toolHistoryGrouping": {
+        "name": "Tool History Grouping",
+        "description": "Demonstrates how to use the tool history grouping to undo and redo batched tool actions that are related to one another"
       }
     },
     "polymorph-segmentation": {

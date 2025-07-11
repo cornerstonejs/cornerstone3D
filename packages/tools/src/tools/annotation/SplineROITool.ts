@@ -84,6 +84,13 @@ enum SplineToolActions {
   DeleteControlPoint = 'deleteControlPoint',
 }
 
+const splineToolNames = [
+  'CatmullRomSplineROI',
+  'LinearSplineROI',
+  'BSplineROI',
+  'CardinalSplineROI',
+];
+
 class SplineROITool extends ContourSegmentationBaseTool {
   static toolName = 'SplineROI';
   protected splineToolNames = [
@@ -163,6 +170,12 @@ class SplineROITool extends ContourSegmentationBaseTool {
           },
           type: SplineTypesEnum.CatmullRom,
           drawPreviewEnabled: true,
+          /**
+           * Enable preview with only two points (one control point + cursor position).
+           * When enabled, shows a straight line preview from the first control point
+           * to the cursor position before the second point is placed.
+           */
+          enableTwoPointPreview: false,
           lastControlPointDeletionKeys: ['Backspace', 'Delete'],
         },
         actions: {
@@ -866,27 +879,49 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     if (
       drawPreviewEnabled &&
-      spline.numControlPoints > 1 &&
+      spline.numControlPoints >= 1 &&
       this.editData?.lastCanvasPoint &&
       !spline.closed
     ) {
       const { lastCanvasPoint } = this.editData;
-      const previewPolylinePoints = spline.getPreviewPolylinePoints(
-        lastCanvasPoint,
-        SPLINE_CLICK_CLOSE_CURVE_DIST
-      );
+      const { enableTwoPointPreview } = this.configuration.spline;
 
-      drawPolylineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        'previewSplineChange',
-        previewPolylinePoints,
-        {
-          color: '#9EA0CA',
-          lineDash: lineDash as string,
-          lineWidth: 1,
-        }
-      );
+      // For splines with only 1 control point, draw a straight line to the cursor
+      // only if enableTwoPointPreview is true
+      if (spline.numControlPoints === 1 && enableTwoPointPreview) {
+        const firstPoint = canvasCoordinates[0];
+        const previewPolylinePoints = [firstPoint, lastCanvasPoint];
+
+        drawPolylineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          'previewSplineChange',
+          previewPolylinePoints,
+          {
+            color: '#9EA0CA',
+            lineDash: lineDash as string,
+            lineWidth: 1,
+          }
+        );
+      } else if (spline.numControlPoints > 1) {
+        // For splines with 2 or more control points, use the existing preview logic
+        const previewPolylinePoints = spline.getPreviewPolylinePoints(
+          lastCanvasPoint,
+          SPLINE_CLICK_CLOSE_CURVE_DIST
+        );
+
+        drawPolylineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          'previewSplineChange',
+          previewPolylinePoints,
+          {
+            color: '#9EA0CA',
+            lineDash: lineDash as string,
+            lineWidth: 1,
+          }
+        );
+      }
     }
 
     if (splineConfig.showControlPointsConnectors) {
@@ -951,6 +986,23 @@ class SplineROITool extends ContourSegmentationBaseTool {
       points.push(polyline[i]);
     }
     points.push(polyline[polyline.length - 1]);
+  }
+
+  public isSplineAnnotation(annotation: ContourAnnotation): boolean {
+    return splineToolNames.includes(annotation?.metadata?.toolName);
+  }
+
+  public createSplineObjectFromType(
+    annotation: ContourAnnotation,
+    splineType: string
+  ) {
+    const splineConfig = this._getSplineConfig(splineType);
+    const spline = new splineConfig.Class();
+    annotation.data.spline = {
+      type: splineConfig.type,
+      instance: spline,
+      resolution: splineConfig.resolution,
+    };
   }
 
   protected createAnnotation(

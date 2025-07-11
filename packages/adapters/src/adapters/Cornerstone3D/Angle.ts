@@ -80,7 +80,7 @@ class Angle extends BaseAdapter3D {
         const point3 = toScoord(scoordProps, handles.points[1]);
         const point4 = toScoord(scoordProps, handles.points[2]);
 
-        const { angle } = cachedStats[`imageId:${referencedImageId}`] || {};
+        const angle = cachedStats[`imageId:${referencedImageId}`]?.angle;
 
         // Represented as a cobb angle
         return {

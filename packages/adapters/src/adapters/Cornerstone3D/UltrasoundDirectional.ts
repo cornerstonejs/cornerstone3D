@@ -28,7 +28,7 @@ class UltrasoundDirectional extends BaseAdapter3D {
 
         const { GraphicData } = SCOORDGroup;
         const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
+        for (let i = 0; i < (GraphicData as number[]).length; i += 2) {
             const point = imageToWorldCoords(referencedImageId, [
                 GraphicData[i],
                 GraphicData[i + 1]
