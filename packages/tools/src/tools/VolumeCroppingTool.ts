@@ -603,6 +603,7 @@ class VolumeCroppingTool extends AnnotationTool {
       vec3.transformMat4(o, origin, matrix);
 
       const n = vec3.transformMat3([0, 0, 0], normal, normalMatrix);
+      vec3.normalize(n, n);
       const planeInstance = vtkPlane.newInstance({
         origin: o,
         normal: [n[0], n[1], n[2]],
