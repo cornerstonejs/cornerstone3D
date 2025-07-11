@@ -106,6 +106,12 @@ class RenderingEngine {
   public destroy(): void {
     return this._implementation.destroy();
   }
+
+  public getOffscreenMultiRenderWindow(
+    viewportId?: string
+  ): VtkOffscreenMultiRenderWindow {
+    return this._implementation.getOffscreenMultiRenderWindow(viewportId);
+  }
 }
 
 export default RenderingEngine;

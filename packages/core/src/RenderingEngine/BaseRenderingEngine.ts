@@ -642,6 +642,20 @@ abstract class BaseRenderingEngine {
   }
 
   /**
+   * Returns the offscreen multi-render window used for rendering.
+   */
+  public getOffscreenMultiRenderWindow(
+    viewportId?: string
+  ): VtkOffscreenMultiRenderWindow {
+    if (this.useCPURendering) {
+      throw new Error(
+        'Offscreen multi render window is not available when using CPU rendering.'
+      );
+    }
+    return this.offscreenMultiRenderWindow;
+  }
+
+  /**
    * Sets multiple viewports using custom rendering
    * pipelines to the `RenderingEngine`.
    *

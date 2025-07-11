@@ -522,6 +522,23 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
     super.destroy();
   }
+
+  public getOffscreenMultiRenderWindow(
+    viewportId: string
+  ): VtkOffscreenMultiRenderWindow {
+    if (this.useCPURendering) {
+      throw new Error(
+        'Offscreen multi render window is not available when using CPU rendering.'
+      );
+    }
+
+    const contextIndex =
+      this.contextPool.getContextIndexForViewport(viewportId);
+
+    const contextData = this.contextPool.getContextByIndex(contextIndex);
+
+    return contextData.context;
+  }
 }
 
 export default ContextPoolRenderingEngine;
