@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { mat3, vec3 } from 'gl-matrix';
 
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -559,14 +559,6 @@ class VolumeCroppingTool extends AnnotationTool {
     element.addEventListener('mouseup', this._onMouseUpSphere);
   };
 
-  _transformNormal(normal: Types.Point3, mat: number[]): Types.Point3 {
-    return [
-      mat[0] * normal[0] + mat[3] * normal[1] + mat[6] * normal[2],
-      mat[1] * normal[0] + mat[4] * normal[1] + mat[7] * normal[2],
-      mat[2] * normal[0] + mat[5] * normal[1] + mat[8] * normal[2],
-    ];
-  }
-
   _updateClippingPlanes(viewport) {
     // Get the actor and transformation matrix
     const actorEntry = viewport.getDefaultActor();
@@ -575,17 +567,8 @@ class VolumeCroppingTool extends AnnotationTool {
     const matrix = actor.getMatrix();
 
     // Extract rotation part for normals
-    const rot = [
-      matrix[0],
-      matrix[1],
-      matrix[2],
-      matrix[4],
-      matrix[5],
-      matrix[6],
-      matrix[8],
-      matrix[9],
-      matrix[10],
-    ];
+    const rot: mat3 = mat3.create();
+    mat3.fromMat4(rot, matrix);
 
     const originalPlanes = this.originalClippingPlanes;
     if (!originalPlanes || !originalPlanes.length) {
@@ -604,29 +587,17 @@ class VolumeCroppingTool extends AnnotationTool {
         plane.normal[1],
         plane.normal[2],
       ];
+
       // Transform origin (full 4x4)
-      const o: Types.Point3 = [
-        matrix[0] * origin[0] +
-          matrix[4] * origin[1] +
-          matrix[8] * origin[2] +
-          matrix[12],
-        matrix[1] * origin[0] +
-          matrix[5] * origin[1] +
-          matrix[9] * origin[2] +
-          matrix[13],
-        matrix[2] * origin[0] +
-          matrix[6] * origin[1] +
-          matrix[10] * origin[2] +
-          matrix[14],
-      ];
+      const o: Types.Point3 = [0, 0, 0];
+      vec3.transformMat4(o, origin, matrix);
+
       // Transform normal (rotation only)
-      //  const n = this._transformNormal(normal, rot);
-      const n: Types.Point3 = vec3.transformMat3(
-        [0, 0, 0],
-        normal,
-        rot as unknown as number[]
-      );
-      const planeInstance = vtkPlane.newInstance({ origin: o, normal: n });
+      const n = vec3.transformMat3([0, 0, 0], normal, rot);
+      const planeInstance = vtkPlane.newInstance({
+        origin: o,
+        normal: [n[0], n[1], n[2]],
+      });
       mapper.addClippingPlane(planeInstance);
     });
   }
