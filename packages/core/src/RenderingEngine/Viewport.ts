@@ -38,6 +38,7 @@ import type {
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
   DataSetOptions,
+  ReferencedPlane,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import type IImageCalibration from '../types/IImageCalibration';
@@ -47,6 +48,7 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
+import { updateReferencedPlane } from '../utilities/updateReferencedPlane';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -1823,14 +1825,62 @@ class Viewport {
       viewPlaneNormal,
       viewUp,
     } = this.getCamera();
+    const FrameOfReferenceUID = this.getFrameOfReferenceUID();
     const target: ViewReference = {
-      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      FrameOfReferenceUID,
       cameraFocalPoint,
       viewPlaneNormal,
       viewUp,
       sliceIndex: viewRefSpecifier?.sliceIndex ?? this.getSliceIndex(),
+      /** The referenced plane is the canonical specifier for whether
+       * this view reference is visible or not.
+       */
+      referencedPlane: {
+        FrameOfReferenceUID,
+        point: viewRefSpecifier?.points?.[0] || cameraFocalPoint,
+        inPlaneVector1: viewUp,
+        inPlaneVector2: <Point3>(
+          vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
+        ),
+      },
     };
+    if (viewRefSpecifier?.points) {
+      updateReferencedPlane(viewRefSpecifier.points, target.referencedPlane);
+    }
     return target;
+  }
+
+  public isPlaneViewable(
+    referencedPlane: ReferencedPlane,
+    options?: ReferenceCompatibleOptions
+  ): boolean {
+    if (referencedPlane.FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
+      return false;
+    }
+    const { focalPoint, viewPlaneNormal } = this.getCamera();
+    const { point, inPlaneVector1, inPlaneVector2 } = referencedPlane;
+    if (options?.asVolume) {
+      // Don't need to check the normal or the navigation if asking as a volume
+      // since those can both be updated
+      return true;
+    }
+    if (
+      inPlaneVector1 &&
+      !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector1))
+    ) {
+      return false;
+    }
+    if (
+      inPlaneVector2 &&
+      !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector2))
+    ) {
+      return false;
+    }
+    if (options?.withNavigation) {
+      return true;
+    }
+    const pointVector = vec3.sub(vec3.create(), point, focalPoint);
+    return isEqual(0, vec3.dot(pointVector, viewPlaneNormal));
   }
 
   /**
@@ -1843,6 +1893,9 @@ class Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
+    if (viewRef.referencedPlane) {
+      return this.isPlaneViewable(viewRef.referencedPlane, options);
+    }
     if (
       viewRef.FrameOfReferenceUID &&
       viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
