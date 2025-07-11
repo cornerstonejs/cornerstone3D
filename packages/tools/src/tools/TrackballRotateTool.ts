@@ -185,7 +185,7 @@ class TrackballRotateTool extends BaseTool {
       focalPoint: newFocalPoint,
     });
 
-    triggerEvent(eventTarget, Events.PAN_TOOL_CHANGED, {
+    triggerEvent(eventTarget, 'CORNERSTONE_CAMERA_MODIFIED', {
       viewport: viewport,
     });
   };

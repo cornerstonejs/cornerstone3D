@@ -533,11 +533,6 @@ class VolumeCroppingTool extends AnnotationTool {
     this.picker.addPickList(actor);
     this._prepareImageDataForPicking(viewport);
 
-    const element = viewport.canvas || viewport.element;
-    element.addEventListener('mousedown', this._onMouseDownSphere);
-    element.addEventListener('mousemove', this._onMouseMoveSphere);
-    element.addEventListener('mouseup', this._onMouseUpSphere);
-
     mapper.addClippingPlane(planeXmin);
     mapper.addClippingPlane(planeXmax);
     mapper.addClippingPlane(planeYmin);
@@ -551,15 +546,15 @@ class VolumeCroppingTool extends AnnotationTool {
         this._onControlToolChange(evt);
       }
     );
-    eventTarget.addEventListener(Events.ZOOM_TOOL_CHANGED, (evt) => {
+
+    eventTarget.addEventListener('CORNERSTONE_CAMERA_MODIFIED', (evt) => {
       this._updateClippingPlanes(evt.detail.viewport);
     });
-    eventTarget.addEventListener(Events.PAN_TOOL_CHANGED, (evt) => {
-      this._updateClippingPlanes(evt.detail.viewport);
-    });
-    eventTarget.addEventListener(Events.TRACKBALLROTATE_TOOL_CHANGED, (evt) => {
-      this._updateClippingPlanes(evt.detail.viewport);
-    });
+
+    const element = viewport.canvas || viewport.element;
+    element.addEventListener('mousedown', this._onMouseDownSphere);
+    element.addEventListener('mousemove', this._onMouseMoveSphere);
+    element.addEventListener('mouseup', this._onMouseUpSphere);
   };
 
   _transformNormal(normal: Types.Point3, mat: number[]): Types.Point3 {

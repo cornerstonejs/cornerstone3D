@@ -3,9 +3,10 @@ import {
   getEnabledElement,
   triggerEvent,
   eventTarget,
+  Enums,
 } from '@cornerstonejs/core';
+const { Events } = Enums;
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { Events } from '../enums';
 import type { Types } from '@cornerstonejs/core';
 
 /**
@@ -62,7 +63,7 @@ class PanTool extends BaseTool {
       focalPoint: updatedFocalPoint,
       position: updatedPosition,
     });
-    triggerEvent(eventTarget, Events.PAN_TOOL_CHANGED, {
+    triggerEvent(eventTarget, Events.CAMERA_MODIFIED, {
       viewport: enabledElement.viewport,
     });
     enabledElement.viewport.render();

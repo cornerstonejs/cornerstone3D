@@ -7,9 +7,9 @@ import {
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
+const { Events } = Enums;
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { Events } from '../enums';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -121,7 +121,7 @@ class ZoomTool extends BaseTool {
         this._dragPerspectiveProjection(evt, viewport, camera, true);
       }
 
-      triggerEvent(eventTarget, Events.ZOOM_TOOL_CHANGED, {
+      triggerEvent(eventTarget, Events.CAMERA_MODIFIED, {
         viewport: viewport,
       });
       viewport.render();
@@ -146,7 +146,7 @@ class ZoomTool extends BaseTool {
       this._dragPerspectiveProjection(evt, viewport, camera);
     }
 
-    triggerEvent(eventTarget, Events.ZOOM_TOOL_CHANGED, {
+    triggerEvent(eventTarget, Events.CAMERA_MODIFIED, {
       viewport: viewport,
     });
     viewport.render();
