@@ -188,6 +188,16 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
+   * Checks if the tool should resolve preview requests.
+   * This is used to determine if the tool is in a state where it can handle
+   * preview requests.
+   * @returns True if the tool should resolve preview requests, false otherwise.
+   */
+  public shouldResolvePreviewRequests() {
+    return this.mode === 'Active' || this.mode === 'Enabled';
+  }
+
+  /**
    * Creates a labelmap memo instance, which stores the changes made to the
    * labelmap rather than the initial state.
    */

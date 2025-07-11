@@ -2,10 +2,8 @@ import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import {
   LabelmapBaseTool,
   ToolGroupManager,
-  Enums,
   annotation,
   ProbeTool,
-  RectangleROITool,
   addTool,
 } from '@cornerstonejs/tools';
 import ONNXSegmentationController from './ONNXSegmentationController';
@@ -51,6 +49,31 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+  }
+
+  /**
+   * Checks if the tool should resolve preview requests.
+   * This is used to determine if the tool is in a state where it can handle
+   * preview requests.
+   * @returns True if the tool should resolve preview requests, false otherwise.
+   */
+  public shouldResolvePreviewRequests() {
+    const MARKER_TOOLS = [
+      ONNXSegmentationController.MarkerInclude,
+      ONNXSegmentationController.MarkerExclude,
+    ];
+    const toolGroup = this._getToolGroupId();
+    if (!toolGroup) {
+      console.debug(`Tool group not found`);
+      return;
+    }
+
+    return MARKER_TOOLS.some((markerToolName) => {
+      if (toolGroup.hasTool(markerToolName)) {
+        const instance = toolGroup.getToolInstance(markerToolName);
+        return instance.mode === 'Active' || instance.mode === 'Enabled';
+      }
+    });
   }
 
   _init = async () => {
