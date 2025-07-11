@@ -17,10 +17,16 @@ const defaultConfig: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
     /**
      * The rendering engine mode to use.
-     * 'next' is the new rendering engine that uses sequential rendering and has enhanced support/performance for multi-monitor and high resolution displays.
-     * 'standard' is the old rendering engine implementation, which we will eventually move away from.
+     * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
+     * 'tiled' is a rendering engine that uses tiled rendering.
      */
-    renderingEngineMode: RenderingEngineModeEnum.Next,
+    renderingEngineMode: RenderingEngineModeEnum.ContextPool,
+
+    /**
+     * The number of WebGL contexts to create. This is used for parallel rendering.
+     * The default value is 7, which is suitable for mobile/desktop.
+     */
+    webGlContextCount: 7,
   },
 
   /**
@@ -104,6 +110,11 @@ function init(configuration = config): boolean {
 
   // merge configs
   config = deepMerge(defaultConfig, configuration);
+
+  // mobile safe
+  if (config.isMobile) {
+    config.rendering.webGlContextCount = 1;
+  }
 
   if (isIOS()) {
     if (configuration.rendering?.preferSizeOverAccuracy) {

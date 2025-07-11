@@ -10,6 +10,7 @@ import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import VolumeViewport3D from './VolumeViewport3D';
+import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -59,7 +60,19 @@ interface ViewportDisplayCoords {
  *
  * @public
  */
-class StandardRenderingEngine extends BaseRenderingEngine {
+class TiledRenderingEngine extends BaseRenderingEngine {
+  constructor(id?: string) {
+    super(id);
+
+    if (!this.useCPURendering) {
+      this.offscreenMultiRenderWindow =
+        vtkOffscreenMultiRenderWindow.newInstance();
+      this.offScreenCanvasContainer = document.createElement('div');
+      this.offscreenMultiRenderWindow.setContainer(
+        this.offScreenCanvasContainer
+      );
+    }
+  }
   /**
    * Enables a viewport to be driven by the offscreen vtk.js rendering engine.
    *
@@ -577,12 +590,12 @@ class StandardRenderingEngine extends BaseRenderingEngine {
 
       // Updating the renderer for the viewport
       const renderer = this.offscreenMultiRenderWindow.getRenderer(viewport.id);
-      renderer.setViewport([
+      renderer.setViewport(
         sxStartDisplayCoords,
         syStartDisplayCoords,
         sxEndDisplayCoords,
-        syEndDisplayCoords,
-      ]);
+        syEndDisplayCoords
+      );
     }
 
     // Returns the final xOffset
@@ -632,4 +645,4 @@ class StandardRenderingEngine extends BaseRenderingEngine {
   }
 }
 
-export default StandardRenderingEngine;
+export default TiledRenderingEngine;

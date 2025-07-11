@@ -163,6 +163,7 @@ import type JumpToSliceOptions from './JumpToSliceOptions';
 import type GeometryLoaderFn from './GeometryLoaderFn';
 
 import type { RenderingEngineModeType } from './RenderingEngineMode';
+import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
 
 export type {
   // config
@@ -318,4 +319,5 @@ export type {
   VoxelManager,
   RLEVoxelMap,
   RenderingEngineModeType,
+  VtkOffscreenMultiRenderWindow,
 };

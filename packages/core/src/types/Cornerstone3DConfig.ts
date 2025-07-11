@@ -35,10 +35,16 @@ interface Cornerstone3DConfig {
 
     /**
      * The rendering engine mode to use.
-     * 'next' is the new rendering engine that uses sequential rendering and has enhanced support/performance for multi-monitor and high resolution displays.
-     * 'standard' is the old rendering engine implementation, which we will eventually move away from.
+     * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
+     * 'tiled' is a rendering engine that uses tiled rendering.
      */
     renderingEngineMode?: RenderingEngineModeType;
+
+    /**
+     * The number of WebGL contexts to create. This is used for parallel rendering.
+     * The default value is 7, which is suitable for mobile/desktop.
+     */
+    webGlContextCount?: number;
   };
 
   /**

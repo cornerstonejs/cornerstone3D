@@ -79,7 +79,10 @@ content.append(instructions);
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  const config = (window as any).IS_TILED
+    ? { core: { renderingEngineMode: 'tiled' } }
+    : {};
+  await initDemo(config);
 
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 

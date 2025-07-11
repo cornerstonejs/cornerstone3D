@@ -21,11 +21,11 @@ const columns = parseInt(params.get('columns')) || 6;
 const count = rows * columns;
 
 setTitleAndDescription(
-  `${columns}x${rows} Grid with SequentialRenderingEngine`,
-  `Displays a ${columns}x${rows} grid of viewports using SequentialRenderingEngine with resize observer`
+  `${columns}x${rows} Grid with ContextPoolRenderingEngine`,
+  `Displays a ${columns}x${rows} grid of viewports using ContextPoolRenderingEngine with resize observer`
 );
 
-const renderingEngineId = 'mySequentialRenderingEngine';
+const renderingEngineId = 'myContextPoolRenderingEngine';
 let renderingEngine: RenderingEngine;
 let resizeTimeout: number;
 
@@ -113,7 +113,7 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Instantiate a SequentialRenderingEngine
+  // Instantiate a ContextPoolRenderingEngine
   renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create viewport input array for all 36 viewports
@@ -169,9 +169,9 @@ async function run() {
     info.style.padding = '10px';
     info.style.borderRadius = '5px';
     info.innerHTML = `
-    <h3>SequentialRenderingEngine Example</h3>
+    <h3>ContextPoolRenderingEngine Example</h3>
     <p>${count} viewports (${columns}x${rows} grid)</p>
-    <p>Using SequentialRenderingEngine for better performance with large viewport counts</p>
+    <p>Using ContextPoolRenderingEngine for better performance with large viewport counts</p>
     <p>Resize the window to test resize observer</p>
     <p style="color: #4CAF50;">Avoids WebGL, browser and OS limits</p>
   `;
