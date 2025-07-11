@@ -165,7 +165,7 @@
       },
       "volumeCroppingTool": {
         "name": "3D Volume Cropping",
-        "description": "Demonstrates how to use the VTK.js vtkImageCroppingWidget."
+        "description": "Demonstrates how to use the VolumeCropping  and VolumeCroppingControl tools."
       },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",

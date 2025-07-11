@@ -1173,27 +1173,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     });
   }
 
-  _areViewportIdArraysEqual = (viewportIdArrayOne, viewportIdArrayTwo) => {
-    if (viewportIdArrayOne.length !== viewportIdArrayTwo.length) {
-      return false;
-    }
-
-    viewportIdArrayOne.forEach((id) => {
-      let itemFound = false;
-      for (let i = 0; i < viewportIdArrayTwo.length; ++i) {
-        if (id === viewportIdArrayTwo[i]) {
-          itemFound = true;
-          break;
-        }
-      }
-      if (itemFound === false) {
-        return false;
-      }
-    });
-
-    return true;
-  };
-
   _getAnnotationsForViewportsWithDifferentCameras = (
     enabledElement,
     annotations
@@ -1476,65 +1455,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     return otherViewportsAnnotationsWithUniqueCameras;
-  };
-
-  _checkIfViewportsRenderingSameScene = (viewport, otherViewport) => {
-    const volumeIds = viewport.getAllVolumeIds();
-    const otherVolumeIds = otherViewport.getAllVolumeIds();
-
-    return (
-      volumeIds.length === otherVolumeIds.length &&
-      volumeIds.every((id) => otherVolumeIds.includes(id))
-    );
-  };
-
-  _jump = (enabledElement, jumpWorld) => {
-    state.isInteractingWithTool = true;
-    const { viewport, renderingEngine } = enabledElement;
-
-    const annotations = this._getAnnotations(enabledElement);
-
-    const delta: Types.Point3 = [0, 0, 0];
-    vtkMath.subtract(jumpWorld, this.toolCenter, delta);
-
-    // TRANSLATION
-    // get the annotation of the other viewport which are parallel to the delta shift and are of the same scene
-    const otherViewportAnnotations =
-      this._getAnnotationsForViewportsWithDifferentCameras(
-        enabledElement,
-        annotations
-      );
-
-    const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
-      (annotation) => {
-        const { data } = annotation;
-        const otherViewport = renderingEngine.getViewport(data.viewportId);
-
-        const sameScene = this._checkIfViewportsRenderingSameScene(
-          viewport,
-          otherViewport
-        );
-
-        return (
-          this._getReferenceLineControllable(otherViewport.id) && sameScene
-        );
-      }
-    );
-
-    if (viewportsAnnotationsToUpdate.length === 0) {
-      state.isInteractingWithTool = false;
-      return false;
-    }
-
-    this._applyDeltaShiftToSelectedViewportCameras(
-      renderingEngine,
-      viewportsAnnotationsToUpdate,
-      delta
-    );
-
-    state.isInteractingWithTool = false;
-
-    return true;
   };
 
   _activateModify = (element) => {
