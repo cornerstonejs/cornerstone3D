@@ -1,19 +1,20 @@
 import { getConfiguration } from '../init';
-import StandardRenderingEngine from './StandardRenderingEngine';
-import SequentialRenderingEngine from './SequentialRenderingEngine';
+import TiledRenderingEngine from './TiledRenderingEngine';
+import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
 import type BaseRenderingEngine from './BaseRenderingEngine';
 import type {
   IStackViewport,
   IVolumeViewport,
   IViewport,
   PublicViewportInput,
+  VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { RenderingEngineModeEnum } from '../enums';
 
 class RenderingEngine {
   public hasBeenDestroyed: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public offscreenMultiRenderWindow: any;
+  public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
   private _implementation?: BaseRenderingEngine;
 
   constructor(id?: string) {
@@ -21,17 +22,17 @@ class RenderingEngine {
     const renderingEngineMode = config?.rendering?.renderingEngineMode;
 
     switch (renderingEngineMode) {
-      case RenderingEngineModeEnum.Standard:
-        this._implementation = new StandardRenderingEngine(id);
+      case RenderingEngineModeEnum.Tiled:
+        this._implementation = new TiledRenderingEngine(id);
         break;
-      case RenderingEngineModeEnum.Next:
-        this._implementation = new SequentialRenderingEngine(id);
+      case RenderingEngineModeEnum.ContextPool:
+        this._implementation = new ContextPoolRenderingEngine(id);
         break;
       default:
         console.warn(
           `RenderingEngine: Unknown rendering engine mode "${renderingEngineMode}". Defaulting to Next rendering engine.`
         );
-        this._implementation = new SequentialRenderingEngine(id);
+        this._implementation = new ContextPoolRenderingEngine(id);
         break;
     }
   }
@@ -75,6 +76,11 @@ class RenderingEngine {
   public getVolumeViewports(): IVolumeViewport[] {
     return this._implementation.getVolumeViewports();
   }
+
+  public getRenderer(viewportId: string) {
+    return this._implementation.getRenderer(viewportId);
+  }
+
   public fillCanvasWithBackgroundColor(
     canvas: HTMLCanvasElement,
     backgroundColor: [number, number, number]
@@ -99,6 +105,12 @@ class RenderingEngine {
 
   public destroy(): void {
     return this._implementation.destroy();
+  }
+
+  public getOffscreenMultiRenderWindow(
+    viewportId?: string
+  ): VtkOffscreenMultiRenderWindow {
+    return this._implementation.getOffscreenMultiRenderWindow(viewportId);
   }
 }
 

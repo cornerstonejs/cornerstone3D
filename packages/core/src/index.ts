@@ -3,8 +3,8 @@ import * as CONSTANTS from './constants';
 import { Events } from './enums';
 import RenderingEngine, {
   BaseRenderingEngine,
-  StandardRenderingEngine,
-  SequentialRenderingEngine,
+  TiledRenderingEngine,
+  ContextPoolRenderingEngine,
 } from './RenderingEngine';
 import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
@@ -125,8 +125,8 @@ export {
   WSIViewport,
   RenderingEngine,
   BaseRenderingEngine,
-  StandardRenderingEngine,
-  SequentialRenderingEngine,
+  TiledRenderingEngine,
+  ContextPoolRenderingEngine,
   ImageVolume,
   Surface,
   // Helpers
