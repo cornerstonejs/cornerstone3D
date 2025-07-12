@@ -112,6 +112,14 @@ function addCylinderBetweenPoints(
   color: [number, number, number] = [0.5, 0.5, 0.5],
   uid = ''
 ) {
+  // Avoid creating a cylinder if the points are the same
+  if (
+    point1[0] === point2[0] &&
+    point1[1] === point2[1] &&
+    point1[2] === point2[2]
+  ) {
+    return { actor: null, source: null };
+  }
   const cylinderSource = vtkCylinderSource.newInstance();
   // Compute direction and length
   const direction = new Float32Array([
