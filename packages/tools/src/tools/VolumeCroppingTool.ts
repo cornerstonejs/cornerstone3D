@@ -929,324 +929,324 @@ class VolumeCroppingTool extends AnnotationTool {
     this.draggingSphereIndex = null;
   };
 
-  _onMouseMoveSphere = (evt) => {
-    if (this.draggingSphereIndex === null) {
-      return;
-    }
-    evt.stopPropagation();
-    evt.preventDefault();
+  // _onMouseMoveSphere = (evt) => {
+  //   if (this.draggingSphereIndex === null) {
+  //     return;
+  //   }
+  //   evt.stopPropagation();
+  //   evt.preventDefault();
 
-    const element = evt.currentTarget;
-    const viewportsInfo = this._getViewportsInfo();
-    const [viewport3D] = viewportsInfo;
-    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+  //   const element = evt.currentTarget;
+  //   const viewportsInfo = this._getViewportsInfo();
+  //   const [viewport3D] = viewportsInfo;
+  //   const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+  //   const viewport = renderingEngine.getViewport(viewport3D.viewportId);
 
-    // Use vtkCellPicker to get world coordinates
-    const rect = element.getBoundingClientRect();
-    const x = evt.clientX - rect.left;
-    const y = evt.clientY - rect.top;
-    const displayCoords = (
-      viewport as unknown as {
-        getVtkDisplayCoords: (coords: [number, number]) => [number, number];
-      }
-    ).getVtkDisplayCoords([x, y]);
+  //   // Use vtkCellPicker to get world coordinates
+  //   const rect = element.getBoundingClientRect();
+  //   const x = evt.clientX - rect.left;
+  //   const y = evt.clientY - rect.top;
+  //   const displayCoords = (
+  //     viewport as unknown as {
+  //       getVtkDisplayCoords: (coords: [number, number]) => [number, number];
+  //     }
+  //   ).getVtkDisplayCoords([x, y]);
 
-    // --- Remove clipping planes before picking otherwise we cannot back out of the volume
-    const mapper = viewport
-      .getDefaultActor()
-      .actor.getMapper() as vtkVolumeMapper;
-    const originalClippingPlanes = mapper.getClippingPlanes().slice();
-    mapper.removeAllClippingPlanes();
-    this.picker.pick(
-      [displayCoords[0], displayCoords[1], 0],
-      viewport.getRenderer()
-    );
-    // --- Restore clipping planes after picking ---
-    originalClippingPlanes.forEach((plane) => {
-      mapper.addClippingPlane(plane);
-    });
-    const pickedPositions = this.picker.getPickedPositions();
-    if (pickedPositions.length > 0) {
-      const pickedPoint = pickedPositions[0];
+  //   // --- Remove clipping planes before picking otherwise we cannot back out of the volume
+  //   const mapper = viewport
+  //     .getDefaultActor()
+  //     .actor.getMapper() as vtkVolumeMapper;
+  //   const originalClippingPlanes = mapper.getClippingPlanes().slice();
+  //   mapper.removeAllClippingPlanes();
+  //   this.picker.pick(
+  //     [displayCoords[0], displayCoords[1], 0],
+  //     viewport.getRenderer()
+  //   );
+  //   // --- Restore clipping planes after picking ---
+  //   originalClippingPlanes.forEach((plane) => {
+  //     mapper.addClippingPlane(plane);
+  //   });
+  //   const pickedPositions = this.picker.getPickedPositions();
+  //   if (pickedPositions.length > 0) {
+  //     const pickedPoint = pickedPositions[0];
 
-      const sphereState = this.sphereStates[this.draggingSphereIndex];
-      const newPoint = [...sphereState.point];
-      const volumeActor = viewport.getDefaultActor()?.actor;
-      if (!volumeActor) {
-        console.warn('No volume actor found');
-        return;
-      }
-      const mapper = volumeActor.getMapper() as vtkVolumeMapper;
-      if (sphereState.isCorner) {
-        // Save the old position
-        const oldX = sphereState.point[0];
-        const oldY = sphereState.point[1];
-        const oldZ = sphereState.point[2];
+  //     const sphereState = this.sphereStates[this.draggingSphereIndex];
+  //     const newPoint = [...sphereState.point];
+  //     const volumeActor = viewport.getDefaultActor()?.actor;
+  //     if (!volumeActor) {
+  //       console.warn('No volume actor found');
+  //       return;
+  //     }
+  //     const mapper = volumeActor.getMapper() as vtkVolumeMapper;
+  //     if (sphereState.isCorner) {
+  //       // Save the old position
+  //       const oldX = sphereState.point[0];
+  //       const oldY = sphereState.point[1];
+  //       const oldZ = sphereState.point[2];
 
-        // Move the dragged corner sphere to the picked point
-        sphereState.point[0] = pickedPoint[0];
-        sphereState.point[1] = pickedPoint[1];
-        sphereState.point[2] = pickedPoint[2];
-        sphereState.sphereSource.setCenter(
-          pickedPoint[0],
-          pickedPoint[1],
-          pickedPoint[2]
-        );
-        sphereState.sphereSource.modified();
+  //       // Move the dragged corner sphere to the picked point
+  //       sphereState.point[0] = pickedPoint[0];
+  //       sphereState.point[1] = pickedPoint[1];
+  //       sphereState.point[2] = pickedPoint[2];
+  //       sphereState.sphereSource.setCenter(
+  //         pickedPoint[0],
+  //         pickedPoint[1],
+  //         pickedPoint[2]
+  //       );
+  //       sphereState.sphereSource.modified();
 
-        // Update all other spheres (face and corner) that shared any min/max coordinate with the old corner position
-        this.sphereStates.forEach((state, idx) => {
-          if (idx === this.draggingSphereIndex) {
-            return;
-          } // already updated
+  //       // Update all other spheres (face and corner) that shared any min/max coordinate with the old corner position
+  //       this.sphereStates.forEach((state, idx) => {
+  //         if (idx === this.draggingSphereIndex) {
+  //           return;
+  //         } // already updated
 
-          let updated = false;
-          // X
-          if (Math.abs(state.point[0] - oldX) < 1e-6) {
-            state.point[0] = pickedPoint[0];
-            updated = true;
-          }
-          // Y
-          if (Math.abs(state.point[1] - oldY) < 1e-6) {
-            state.point[1] = pickedPoint[1];
-            updated = true;
-          }
-          // Z
-          if (Math.abs(state.point[2] - oldZ) < 1e-6) {
-            state.point[2] = pickedPoint[2];
-            updated = true;
-          }
-          if (updated) {
-            state.sphereSource.setCenter(
-              state.point[0],
-              state.point[1],
-              state.point[2]
-            );
-            state.sphereSource.modified();
-            if (state.sphereActor && state.color) {
-              state.sphereActor.getProperty().setColor(state.color);
-            }
-          }
-        });
+  //         let updated = false;
+  //         // X
+  //         if (Math.abs(state.point[0] - oldX) < 1e-6) {
+  //           state.point[0] = pickedPoint[0];
+  //           updated = true;
+  //         }
+  //         // Y
+  //         if (Math.abs(state.point[1] - oldY) < 1e-6) {
+  //           state.point[1] = pickedPoint[1];
+  //           updated = true;
+  //         }
+  //         // Z
+  //         if (Math.abs(state.point[2] - oldZ) < 1e-6) {
+  //           state.point[2] = pickedPoint[2];
+  //           updated = true;
+  //         }
+  //         if (updated) {
+  //           state.sphereSource.setCenter(
+  //             state.point[0],
+  //             state.point[1],
+  //             state.point[2]
+  //           );
+  //           state.sphereSource.modified();
+  //           if (state.sphereActor && state.color) {
+  //             state.sphereActor.getProperty().setColor(state.color);
+  //           }
+  //         }
+  //       });
 
-        // After moving the corner sphere, update all face spheres to the center between their corners
+  //       // After moving the corner sphere, update all face spheres to the center between their corners
 
-        // 1. Get all corner points
-        const cornerStates = [
-          this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMIN],
-          this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMAX],
-          this.sphereStates[SPHEREINDEX.XMIN_YMAX_ZMIN],
-          this.sphereStates[SPHEREINDEX.XMIN_YMAX_ZMAX],
-          this.sphereStates[SPHEREINDEX.XMAX_YMIN_ZMIN],
-          this.sphereStates[SPHEREINDEX.XMAX_YMIN_ZMAX],
-          this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMIN],
-          this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMAX],
-        ];
+  //       // 1. Get all corner points
+  //       const cornerStates = [
+  //         this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMIN],
+  //         this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMAX],
+  //         this.sphereStates[SPHEREINDEX.XMIN_YMAX_ZMIN],
+  //         this.sphereStates[SPHEREINDEX.XMIN_YMAX_ZMAX],
+  //         this.sphereStates[SPHEREINDEX.XMAX_YMIN_ZMIN],
+  //         this.sphereStates[SPHEREINDEX.XMAX_YMIN_ZMAX],
+  //         this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMIN],
+  //         this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMAX],
+  //       ];
 
-        const xs = cornerStates.map((s) => s.point[0]);
-        const ys = cornerStates.map((s) => s.point[1]);
-        const zs = cornerStates.map((s) => s.point[2]);
+  //       const xs = cornerStates.map((s) => s.point[0]);
+  //       const ys = cornerStates.map((s) => s.point[1]);
+  //       const zs = cornerStates.map((s) => s.point[2]);
 
-        const xMin = Math.min(...xs);
-        const xMax = Math.max(...xs);
-        const yMin = Math.min(...ys);
-        const yMax = Math.max(...ys);
-        const zMin = Math.min(...zs);
-        const zMax = Math.max(...zs);
+  //       const xMin = Math.min(...xs);
+  //       const xMax = Math.max(...xs);
+  //       const yMin = Math.min(...ys);
+  //       const yMax = Math.max(...ys);
+  //       const zMin = Math.min(...zs);
+  //       const zMax = Math.max(...zs);
 
-        // 2. Set face spheres to the center between their two corners
-        this.sphereStates[SPHEREINDEX.XMIN].point = [
-          xMin,
-          (yMin + yMax) / 2,
-          (zMin + zMax) / 2,
-        ];
-        this.sphereStates[SPHEREINDEX.XMAX].point = [
-          xMax,
-          (yMin + yMax) / 2,
-          (zMin + zMax) / 2,
-        ];
-        this.sphereStates[SPHEREINDEX.YMIN].point = [
-          (xMin + xMax) / 2,
-          yMin,
-          (zMin + zMax) / 2,
-        ];
-        this.sphereStates[SPHEREINDEX.YMAX].point = [
-          (xMin + xMax) / 2,
-          yMax,
-          (zMin + zMax) / 2,
-        ];
-        this.sphereStates[SPHEREINDEX.ZMIN].point = [
-          (xMin + xMax) / 2,
-          (yMin + yMax) / 2,
-          zMin,
-        ];
-        this.sphereStates[SPHEREINDEX.ZMAX].point = [
-          (xMin + xMax) / 2,
-          (yMin + yMax) / 2,
-          zMax,
-        ];
+  //       // 2. Set face spheres to the center between their two corners
+  //       this.sphereStates[SPHEREINDEX.XMIN].point = [
+  //         xMin,
+  //         (yMin + yMax) / 2,
+  //         (zMin + zMax) / 2,
+  //       ];
+  //       this.sphereStates[SPHEREINDEX.XMAX].point = [
+  //         xMax,
+  //         (yMin + yMax) / 2,
+  //         (zMin + zMax) / 2,
+  //       ];
+  //       this.sphereStates[SPHEREINDEX.YMIN].point = [
+  //         (xMin + xMax) / 2,
+  //         yMin,
+  //         (zMin + zMax) / 2,
+  //       ];
+  //       this.sphereStates[SPHEREINDEX.YMAX].point = [
+  //         (xMin + xMax) / 2,
+  //         yMax,
+  //         (zMin + zMax) / 2,
+  //       ];
+  //       this.sphereStates[SPHEREINDEX.ZMIN].point = [
+  //         (xMin + xMax) / 2,
+  //         (yMin + yMax) / 2,
+  //         zMin,
+  //       ];
+  //       this.sphereStates[SPHEREINDEX.ZMAX].point = [
+  //         (xMin + xMax) / 2,
+  //         (yMin + yMax) / 2,
+  //         zMax,
+  //       ];
 
-        // 3. Update sphere sources
-        [
-          SPHEREINDEX.XMIN,
-          SPHEREINDEX.XMAX,
-          SPHEREINDEX.YMIN,
-          SPHEREINDEX.YMAX,
-          SPHEREINDEX.ZMIN,
-          SPHEREINDEX.ZMAX,
-        ].forEach((idx) => {
-          const s = this.sphereStates[idx];
-          s.sphereSource.setCenter(s.point[0], s.point[1], s.point[2]);
-          s.sphereSource.modified();
-        });
-        // Determine which planes are connected to this corner
-        // Use the draggingSphereIndex to get the corner type
-        const cornerPlaneIndices = [];
-        const idx = this.draggingSphereIndex;
-        if (
-          idx >= SPHEREINDEX.XMIN_YMIN_ZMIN &&
-          idx <= SPHEREINDEX.XMAX_YMAX_ZMAX
-        ) {
-          // Map corner index to plane indices
-          // [XMIN, XMAX], [YMIN, YMAX], [ZMIN, ZMAX]
-          const cornerMap = [
-            [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN], // XMIN_YMIN_ZMIN
-            [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMAX], // XMIN_YMIN_ZMAX
-            [PLANEINDEX.XMIN, PLANEINDEX.YMAX, PLANEINDEX.ZMIN], // XMIN_YMAX_ZMIN
-            [PLANEINDEX.XMIN, PLANEINDEX.YMAX, PLANEINDEX.ZMAX], // XMIN_YMAX_ZMAX
-            [PLANEINDEX.XMAX, PLANEINDEX.YMIN, PLANEINDEX.ZMIN], // XMAX_YMIN_ZMIN
-            [PLANEINDEX.XMAX, PLANEINDEX.YMIN, PLANEINDEX.ZMAX], // XMAX_YMIN_ZMAX
-            [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMIN], // XMAX_YMAX_ZMIN
-            [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMAX], // XMAX_YMAX_ZMAX
-          ];
-          const cornerIdx = idx - SPHEREINDEX.XMIN_YMIN_ZMIN;
-          cornerPlaneIndices.push(...cornerMap[cornerIdx]);
-        }
+  //       // 3. Update sphere sources
+  //       [
+  //         SPHEREINDEX.XMIN,
+  //         SPHEREINDEX.XMAX,
+  //         SPHEREINDEX.YMIN,
+  //         SPHEREINDEX.YMAX,
+  //         SPHEREINDEX.ZMIN,
+  //         SPHEREINDEX.ZMAX,
+  //       ].forEach((idx) => {
+  //         const s = this.sphereStates[idx];
+  //         s.sphereSource.setCenter(s.point[0], s.point[1], s.point[2]);
+  //         s.sphereSource.modified();
+  //       });
+  //       // Determine which planes are connected to this corner
+  //       // Use the draggingSphereIndex to get the corner type
+  //       const cornerPlaneIndices = [];
+  //       const idx = this.draggingSphereIndex;
+  //       if (
+  //         idx >= SPHEREINDEX.XMIN_YMIN_ZMIN &&
+  //         idx <= SPHEREINDEX.XMAX_YMAX_ZMAX
+  //       ) {
+  //         // Map corner index to plane indices
+  //         // [XMIN, XMAX], [YMIN, YMAX], [ZMIN, ZMAX]
+  //         const cornerMap = [
+  //           [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN], // XMIN_YMIN_ZMIN
+  //           [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMAX], // XMIN_YMIN_ZMAX
+  //           [PLANEINDEX.XMIN, PLANEINDEX.YMAX, PLANEINDEX.ZMIN], // XMIN_YMAX_ZMIN
+  //           [PLANEINDEX.XMIN, PLANEINDEX.YMAX, PLANEINDEX.ZMAX], // XMIN_YMAX_ZMAX
+  //           [PLANEINDEX.XMAX, PLANEINDEX.YMIN, PLANEINDEX.ZMIN], // XMAX_YMIN_ZMIN
+  //           [PLANEINDEX.XMAX, PLANEINDEX.YMIN, PLANEINDEX.ZMAX], // XMAX_YMIN_ZMAX
+  //           [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMIN], // XMAX_YMAX_ZMIN
+  //           [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMAX], // XMAX_YMAX_ZMAX
+  //         ];
+  //         const cornerIdx = idx - SPHEREINDEX.XMIN_YMIN_ZMIN;
+  //         cornerPlaneIndices.push(...cornerMap[cornerIdx]);
+  //       }
 
-        const clippingPlanes = mapper.getClippingPlanes();
-        cornerPlaneIndices.forEach((planeIdx) => {
-          if (clippingPlanes && clippingPlanes[planeIdx]) {
-            // Set the origin of the plane to the new corner position
-            clippingPlanes[planeIdx].setOrigin(
-              sphereState.point[0],
-              sphereState.point[1],
-              sphereState.point[2]
-            );
-            this.originalClippingPlanes[planeIdx].origin = [
-              sphereState.point[0],
-              sphereState.point[1],
-              sphereState.point[2],
-            ];
-          }
-          // update the face sphere position after the clipping plane change
-        });
-        this._updateCornerSpheres(viewport);
+  //       const clippingPlanes = mapper.getClippingPlanes();
+  //       cornerPlaneIndices.forEach((planeIdx) => {
+  //         if (clippingPlanes && clippingPlanes[planeIdx]) {
+  //           // Set the origin of the plane to the new corner position
+  //           clippingPlanes[planeIdx].setOrigin(
+  //             sphereState.point[0],
+  //             sphereState.point[1],
+  //             sphereState.point[2]
+  //           );
+  //           this.originalClippingPlanes[planeIdx].origin = [
+  //             sphereState.point[0],
+  //             sphereState.point[1],
+  //             sphereState.point[2],
+  //           ];
+  //         }
+  //         // update the face sphere position after the clipping plane change
+  //       });
+  //       this._updateCornerSpheres(viewport);
 
-        viewport.render();
+  //       viewport.render();
 
-        // Optionally: trigger an event if you want to notify others
-        triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
-          toolCenter: pickedPoint,
-          axis: 'corner',
-          draggingSphereIndex: this.draggingSphereIndex,
-        });
-        return;
-      } else {
-        // face sphere movement
-        // Restrict movement to the sphere's axis only
-        if (sphereState.axis === 'x') {
-          newPoint[POINTINDEX.X] = pickedPoint[POINTINDEX.X];
-          const otherXSphere = this.sphereStates.find(
-            (s, i) => s.axis === 'x' && i !== this.draggingSphereIndex
-          );
-          const newXCenter =
-            (otherXSphere.point[POINTINDEX.X] + pickedPoint[POINTINDEX.X]) / 2;
-          this.sphereStates.forEach((state, idx) => {
-            if (state.axis !== 'x' && !state.isCorner) {
-              state.point[POINTINDEX.X] = newXCenter;
-              state.sphereSource.setCenter(
-                state.point[0],
-                state.point[1],
-                state.point[2]
-              );
-              state.sphereActor.getProperty().setColor(state.color);
-              state.sphereSource.modified();
-            }
-          });
-        } else if (sphereState.axis === 'y') {
-          newPoint[POINTINDEX.Y] = pickedPoint[POINTINDEX.Y];
-          const otherYSphere = this.sphereStates.find(
-            (s, i) => s.axis === 'y' && i !== this.draggingSphereIndex
-          );
-          const newYCenter =
-            (otherYSphere.point[POINTINDEX.Y] + pickedPoint[POINTINDEX.Y]) / 2;
-          this.sphereStates.forEach((state, idx) => {
-            if (state.axis !== 'y' && !state.isCorner) {
-              state.point[POINTINDEX.Y] = newYCenter;
-              state.sphereSource.setCenter(
-                state.point[0],
-                state.point[1],
-                state.point[2]
-              );
-              state.sphereActor.getProperty().setColor(state.color);
-              state.sphereSource.modified();
-            }
-          });
-        } else if (sphereState.axis === 'z') {
-          newPoint[POINTINDEX.Z] = pickedPoint[POINTINDEX.Z];
-          const otherZSphere = this.sphereStates.find(
-            (s, i) => s.axis === 'z' && i !== this.draggingSphereIndex
-          );
-          const newZCenter =
-            (otherZSphere.point[POINTINDEX.Z] + pickedPoint[POINTINDEX.Z]) / 2;
-          this.sphereStates.forEach((state, idx) => {
-            if (state.axis !== 'z' && !state.isCorner) {
-              //   state.point[POINTINDEX.Z] = newZCenter;
-              this.sphereStates[idx].point[POINTINDEX.Z] = newZCenter;
-              this.sphereStates[idx].sphereSource.setCenter(
-                state.point[0],
-                state.point[1],
-                state.point[2]
-              );
-              state.sphereSource.modified();
-            }
-          });
-        }
+  //       // Optionally: trigger an event if you want to notify others
+  //       triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+  //         toolCenter: pickedPoint,
+  //         axis: 'corner',
+  //         draggingSphereIndex: this.draggingSphereIndex,
+  //       });
+  //       return;
+  //     } else {
+  //       // face sphere movement
+  //       // Restrict movement to the sphere's axis only
+  //       if (sphereState.axis === 'x') {
+  //         newPoint[POINTINDEX.X] = pickedPoint[POINTINDEX.X];
+  //         const otherXSphere = this.sphereStates.find(
+  //           (s, i) => s.axis === 'x' && i !== this.draggingSphereIndex
+  //         );
+  //         const newXCenter =
+  //           (otherXSphere.point[POINTINDEX.X] + pickedPoint[POINTINDEX.X]) / 2;
+  //         this.sphereStates.forEach((state, idx) => {
+  //           if (state.axis !== 'x' && !state.isCorner) {
+  //             state.point[POINTINDEX.X] = newXCenter;
+  //             state.sphereSource.setCenter(
+  //               state.point[0],
+  //               state.point[1],
+  //               state.point[2]
+  //             );
+  //             state.sphereActor.getProperty().setColor(state.color);
+  //             state.sphereSource.modified();
+  //           }
+  //         });
+  //       } else if (sphereState.axis === 'y') {
+  //         newPoint[POINTINDEX.Y] = pickedPoint[POINTINDEX.Y];
+  //         const otherYSphere = this.sphereStates.find(
+  //           (s, i) => s.axis === 'y' && i !== this.draggingSphereIndex
+  //         );
+  //         const newYCenter =
+  //           (otherYSphere.point[POINTINDEX.Y] + pickedPoint[POINTINDEX.Y]) / 2;
+  //         this.sphereStates.forEach((state, idx) => {
+  //           if (state.axis !== 'y' && !state.isCorner) {
+  //             state.point[POINTINDEX.Y] = newYCenter;
+  //             state.sphereSource.setCenter(
+  //               state.point[0],
+  //               state.point[1],
+  //               state.point[2]
+  //             );
+  //             state.sphereActor.getProperty().setColor(state.color);
+  //             state.sphereSource.modified();
+  //           }
+  //         });
+  //       } else if (sphereState.axis === 'z') {
+  //         newPoint[POINTINDEX.Z] = pickedPoint[POINTINDEX.Z];
+  //         const otherZSphere = this.sphereStates.find(
+  //           (s, i) => s.axis === 'z' && i !== this.draggingSphereIndex
+  //         );
+  //         const newZCenter =
+  //           (otherZSphere.point[POINTINDEX.Z] + pickedPoint[POINTINDEX.Z]) / 2;
+  //         this.sphereStates.forEach((state, idx) => {
+  //           if (state.axis !== 'z' && !state.isCorner) {
+  //             //   state.point[POINTINDEX.Z] = newZCenter;
+  //             this.sphereStates[idx].point[POINTINDEX.Z] = newZCenter;
+  //             this.sphereStates[idx].sphereSource.setCenter(
+  //               state.point[0],
+  //               state.point[1],
+  //               state.point[2]
+  //             );
+  //             state.sphereSource.modified();
+  //           }
+  //         });
+  //       }
 
-        this.sphereStates[this.draggingSphereIndex].point[0] = newPoint[0];
-        this.sphereStates[this.draggingSphereIndex].point[1] = newPoint[1];
-        this.sphereStates[this.draggingSphereIndex].point[2] = newPoint[2];
+  //       this.sphereStates[this.draggingSphereIndex].point[0] = newPoint[0];
+  //       this.sphereStates[this.draggingSphereIndex].point[1] = newPoint[1];
+  //       this.sphereStates[this.draggingSphereIndex].point[2] = newPoint[2];
 
-        sphereState.sphereSource.setCenter(
-          newPoint[0],
-          newPoint[1],
-          newPoint[2]
-        );
-        sphereState.sphereSource.modified();
+  //       sphereState.sphereSource.setCenter(
+  //         newPoint[0],
+  //         newPoint[1],
+  //         newPoint[2]
+  //       );
+  //       sphereState.sphereSource.modified();
 
-        this._updateCornerSpheres(viewport);
-        const clippingPlanes = mapper.getClippingPlanes();
-        clippingPlanes[this.draggingSphereIndex].setOrigin(
-          newPoint[0],
-          newPoint[1],
-          newPoint[2]
-        );
-        this.originalClippingPlanes[this.draggingSphereIndex].origin = [
-          newPoint[0],
-          newPoint[1],
-          newPoint[2],
-        ];
-        viewport.render();
-        /// Send event with the new point
-        triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
-          toolCenter: newPoint,
-          axis: sphereState.axis,
-          draggingSphereIndex: this.draggingSphereIndex,
-        });
-      }
-    }
-  };
+  //       this._updateCornerSpheres(viewport);
+  //       const clippingPlanes = mapper.getClippingPlanes();
+  //       clippingPlanes[this.draggingSphereIndex].setOrigin(
+  //         newPoint[0],
+  //         newPoint[1],
+  //         newPoint[2]
+  //       );
+  //       this.originalClippingPlanes[this.draggingSphereIndex].origin = [
+  //         newPoint[0],
+  //         newPoint[1],
+  //         newPoint[2],
+  //       ];
+  //       viewport.render();
+  //       /// Send event with the new point
+  //       triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+  //         toolCenter: newPoint,
+  //         axis: sphereState.axis,
+  //         draggingSphereIndex: this.draggingSphereIndex,
+  //       });
+  //     }
+  //   }
+  // };
 
   // _updateCornerSpheres(viewport) {
   //   // Get current face sphere positions
@@ -1336,6 +1336,280 @@ class VolumeCroppingTool extends AnnotationTool {
   //     }
   //   });
   // }
+
+  _onMouseMoveSphere = (evt) => {
+    if (this.draggingSphereIndex === null) {
+      return;
+    }
+    evt.stopPropagation();
+    evt.preventDefault();
+
+    const element = evt.currentTarget;
+    const [viewport3D] = this._getViewportsInfo();
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+
+    // Get 2D mouse position in canvas coordinates
+    const rect = element.getBoundingClientRect();
+    const x = evt.clientX - rect.left;
+    const y = evt.clientY - rect.top;
+
+    // Convert canvas to world coordinates
+    const world = viewport.canvasToWorld([x, y]);
+
+    const sphereState = this.sphereStates[this.draggingSphereIndex];
+    if (!sphereState) {
+      return;
+    }
+
+    if (sphereState.isCorner) {
+      // Move the dragged corner sphere
+      const newCorner = [...world];
+      sphereState.point = newCorner;
+      sphereState.sphereSource.setCenter(...newCorner);
+      sphereState.sphereSource.modified();
+
+      // Determine which axes are min/max for this corner
+      // Example: XMIN_YMAX_ZMIN => x=min, y=max, z=min
+      const cornerKey = sphereState.uid.replace('corner_', '');
+      const isXMin = cornerKey.includes('XMIN');
+      const isXMax = cornerKey.includes('XMAX');
+      const isYMin = cornerKey.includes('YMIN');
+      const isYMax = cornerKey.includes('YMAX');
+      const isZMin = cornerKey.includes('ZMIN');
+      const isZMax = cornerKey.includes('ZMAX');
+
+      // Update all corners that share any min/max coordinate with this corner
+      this.sphereStates.forEach((state) => {
+        if (!state.isCorner || state === sphereState) {
+          return;
+        }
+        const key = state.uid.replace('corner_', '');
+        if (
+          (isXMin && key.includes('XMIN')) ||
+          (isXMax && key.includes('XMAX')) ||
+          (isYMin && key.includes('YMIN')) ||
+          (isYMax && key.includes('YMAX')) ||
+          (isZMin && key.includes('ZMIN')) ||
+          (isZMax && key.includes('ZMAX'))
+        ) {
+          // For each axis that matches, update that coordinate
+          if (isXMin && key.includes('XMIN')) {
+            state.point[0] = newCorner[0];
+          }
+          if (isXMax && key.includes('XMAX')) {
+            state.point[0] = newCorner[0];
+          }
+          if (isYMin && key.includes('YMIN')) {
+            state.point[1] = newCorner[1];
+          }
+          if (isYMax && key.includes('YMAX')) {
+            state.point[1] = newCorner[1];
+          }
+          if (isZMin && key.includes('ZMIN')) {
+            state.point[2] = newCorner[2];
+          }
+          if (isZMax && key.includes('ZMAX')) {
+            state.point[2] = newCorner[2];
+          }
+          state.sphereSource.setCenter(...state.point);
+          state.sphereSource.modified();
+        }
+      });
+
+      // After updating corners, update face spheres and edge cylinders
+      this._updateFaceSpheresFromCorners();
+      this._updateCornerSpheres(viewport);
+      this._updateClippingPlanesFromFaceSpheres(viewport);
+    } else {
+      // For face spheres: only update the coordinate along the face's axis
+      const axis = sphereState.axis;
+      const axisIdx = { x: 0, y: 1, z: 2 }[axis];
+
+      // Get min/max for each axis from all face spheres
+      const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
+      const xMax = this.sphereStates[SPHEREINDEX.XMAX].point[0];
+      const yMin = this.sphereStates[SPHEREINDEX.YMIN].point[1];
+      const yMax = this.sphereStates[SPHEREINDEX.YMAX].point[1];
+      const zMin = this.sphereStates[SPHEREINDEX.ZMIN].point[2];
+      const zMax = this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+
+      // Project mouse world position onto the axis
+      let newValue;
+      if (axis === 'x') {
+        newValue = world[0];
+        if (this.draggingSphereIndex === SPHEREINDEX.XMIN) {
+          this.sphereStates[SPHEREINDEX.XMIN].point[0] = newValue;
+        } else {
+          this.sphereStates[SPHEREINDEX.XMAX].point[0] = newValue;
+        }
+      } else if (axis === 'y') {
+        newValue = world[1];
+        if (this.draggingSphereIndex === SPHEREINDEX.YMIN) {
+          this.sphereStates[SPHEREINDEX.YMIN].point[1] = newValue;
+        } else {
+          this.sphereStates[SPHEREINDEX.YMAX].point[1] = newValue;
+        }
+      } else if (axis === 'z') {
+        newValue = world[2];
+        if (this.draggingSphereIndex === SPHEREINDEX.ZMIN) {
+          this.sphereStates[SPHEREINDEX.ZMIN].point[2] = newValue;
+        } else {
+          this.sphereStates[SPHEREINDEX.ZMAX].point[2] = newValue;
+        }
+      }
+
+      // After updating the face sphere, update all corners from faces
+      this._updateCornerSpheresFromFaces();
+      this._updateFaceSpheresFromCorners();
+      this._updateCornerSpheres(viewport);
+      this._updateClippingPlanesFromFaceSpheres(viewport);
+    }
+
+    viewport.render();
+
+    triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+      toolCenter: sphereState.point,
+      axis: sphereState.isCorner ? 'corner' : sphereState.axis,
+      draggingSphereIndex: this.draggingSphereIndex,
+    });
+  };
+
+  _updateClippingPlanesFromFaceSpheres(viewport) {
+    const mapper = viewport.getDefaultActor().actor.getMapper();
+    // Update origins in originalClippingPlanes
+    this.originalClippingPlanes[0].origin = [
+      ...this.sphereStates[SPHEREINDEX.XMIN].point,
+    ];
+    this.originalClippingPlanes[1].origin = [
+      ...this.sphereStates[SPHEREINDEX.XMAX].point,
+    ];
+    this.originalClippingPlanes[2].origin = [
+      ...this.sphereStates[SPHEREINDEX.YMIN].point,
+    ];
+    this.originalClippingPlanes[3].origin = [
+      ...this.sphereStates[SPHEREINDEX.YMAX].point,
+    ];
+    this.originalClippingPlanes[4].origin = [
+      ...this.sphereStates[SPHEREINDEX.ZMIN].point,
+    ];
+    this.originalClippingPlanes[5].origin = [
+      ...this.sphereStates[SPHEREINDEX.ZMAX].point,
+    ];
+
+    mapper.removeAllClippingPlanes();
+    for (let i = 0; i < 6; ++i) {
+      const plane = vtkPlane.newInstance({
+        origin: this.originalClippingPlanes[i].origin,
+        normal: this.originalClippingPlanes[i].normal,
+      });
+      mapper.addClippingPlane(plane);
+    }
+  }
+
+  _updateCornerSpheresFromFaces() {
+    // Get face sphere positions
+    const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
+    const xMax = this.sphereStates[SPHEREINDEX.XMAX].point[0];
+    const yMin = this.sphereStates[SPHEREINDEX.YMIN].point[1];
+    const yMax = this.sphereStates[SPHEREINDEX.YMAX].point[1];
+    const zMin = this.sphereStates[SPHEREINDEX.ZMIN].point[2];
+    const zMax = this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+
+    const corners = [
+      { key: 'XMIN_YMIN_ZMIN', pos: [xMin, yMin, zMin] },
+      { key: 'XMIN_YMIN_ZMAX', pos: [xMin, yMin, zMax] },
+      { key: 'XMIN_YMAX_ZMIN', pos: [xMin, yMax, zMin] },
+      { key: 'XMIN_YMAX_ZMAX', pos: [xMin, yMax, zMax] },
+      { key: 'XMAX_YMIN_ZMIN', pos: [xMax, yMin, zMin] },
+      { key: 'XMAX_YMIN_ZMAX', pos: [xMax, yMin, zMax] },
+      { key: 'XMAX_YMAX_ZMIN', pos: [xMax, yMax, zMin] },
+      { key: 'XMAX_YMAX_ZMAX', pos: [xMax, yMax, zMax] },
+    ];
+
+    for (const corner of corners) {
+      const state = this.sphereStates.find(
+        (s) => s.uid === `corner_${corner.key}`
+      );
+      if (state) {
+        state.point[0] = corner.pos[0];
+        state.point[1] = corner.pos[1];
+        state.point[2] = corner.pos[2];
+        state.sphereSource.setCenter(...state.point);
+        state.sphereSource.modified();
+      }
+    }
+  }
+  _updateFaceSpheresFromCorners() {
+    // Get all corner points
+    const corners = [
+      this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMIN].point,
+      this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMAX].point,
+      this.sphereStates[SPHEREINDEX.XMIN_YMAX_ZMIN].point,
+      this.sphereStates[SPHEREINDEX.XMIN_YMAX_ZMAX].point,
+      this.sphereStates[SPHEREINDEX.XMAX_YMIN_ZMIN].point,
+      this.sphereStates[SPHEREINDEX.XMAX_YMIN_ZMAX].point,
+      this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMIN].point,
+      this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMAX].point,
+    ];
+
+    const xs = corners.map((p) => p[0]);
+    const ys = corners.map((p) => p[1]);
+    const zs = corners.map((p) => p[2]);
+
+    const xMin = Math.min(...xs),
+      xMax = Math.max(...xs);
+    const yMin = Math.min(...ys),
+      yMax = Math.max(...ys);
+    const zMin = Math.min(...zs),
+      zMax = Math.max(...zs);
+
+    // Face spheres should always be at the center of their face
+    this.sphereStates[SPHEREINDEX.XMIN].point = [
+      xMin,
+      (yMin + yMax) / 2,
+      (zMin + zMax) / 2,
+    ];
+    this.sphereStates[SPHEREINDEX.XMAX].point = [
+      xMax,
+      (yMin + yMax) / 2,
+      (zMin + zMax) / 2,
+    ];
+    this.sphereStates[SPHEREINDEX.YMIN].point = [
+      (xMin + xMax) / 2,
+      yMin,
+      (zMin + zMax) / 2,
+    ];
+    this.sphereStates[SPHEREINDEX.YMAX].point = [
+      (xMin + xMax) / 2,
+      yMax,
+      (zMin + zMax) / 2,
+    ];
+    this.sphereStates[SPHEREINDEX.ZMIN].point = [
+      (xMin + xMax) / 2,
+      (yMin + yMax) / 2,
+      zMin,
+    ];
+    this.sphereStates[SPHEREINDEX.ZMAX].point = [
+      (xMin + xMax) / 2,
+      (yMin + yMax) / 2,
+      zMax,
+    ];
+
+    [
+      SPHEREINDEX.XMIN,
+      SPHEREINDEX.XMAX,
+      SPHEREINDEX.YMIN,
+      SPHEREINDEX.YMAX,
+      SPHEREINDEX.ZMIN,
+      SPHEREINDEX.ZMAX,
+    ].forEach((idx) => {
+      const s = this.sphereStates[idx];
+      s.sphereSource.setCenter(...s.point);
+      s.sphereSource.modified();
+    });
+  }
+
   _updateCornerSpheres(viewport) {
     // Get face sphere positions
     const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
@@ -1407,6 +1681,18 @@ class VolumeCroppingTool extends AnnotationTool {
 
   _onMouseUpSphere = (evt) => {
     evt.currentTarget.style.cursor = '';
+    if (this.draggingSphereIndex !== null) {
+      const sphereState = this.sphereStates[this.draggingSphereIndex];
+      const [viewport3D] = this._getViewportsInfo();
+      const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+      const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+
+      if (sphereState.isCorner) {
+        this._updateFaceSpheresFromCorners();
+        this._updateCornerSpheres(viewport);
+        this._updateClippingPlanesFromFaceSpheres(viewport);
+      }
+    }
     this.draggingSphereIndex = null;
   };
 
