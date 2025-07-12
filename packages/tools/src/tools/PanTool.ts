@@ -1,8 +1,13 @@
 import { BaseTool } from './base';
-import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
-
+import {
+  getEnabledElement,
+  triggerEvent,
+  eventTarget,
+  Enums,
+} from '@cornerstonejs/core';
+const { Events } = Enums;
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
+import type { Types } from '@cornerstonejs/core';
 
 /**
  * Tool that pans the camera in the plane defined by the viewPlaneNormal and the viewUp.
@@ -57,6 +62,9 @@ class PanTool extends BaseTool {
     enabledElement.viewport.setCamera({
       focalPoint: updatedFocalPoint,
       position: updatedPosition,
+    });
+    triggerEvent(eventTarget, Events.CAMERA_MODIFIED, {
+      viewport: enabledElement.viewport,
     });
     enabledElement.viewport.render();
   }

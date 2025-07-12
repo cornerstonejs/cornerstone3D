@@ -2,6 +2,7 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { Events } from '../enums';
 import {
   eventTarget,
+  triggerEvent,
   getEnabledElement,
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
@@ -182,6 +183,10 @@ class TrackballRotateTool extends BaseTool {
       viewUp: newViewUp,
       focalPoint: newFocalPoint,
     });
+
+    triggerEvent(eventTarget, 'CORNERSTONE_CAMERA_MODIFIED', {
+      viewport: viewport,
+    });
   };
 
   _dragCallback(evt: EventTypes.InteractionEventType): void {
@@ -191,7 +196,6 @@ class TrackballRotateTool extends BaseTool {
     const { rotateIncrementDegrees } = this.configuration;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-
     const camera = viewport.getCamera();
     const width = element.clientWidth;
     const height = element.clientHeight;
