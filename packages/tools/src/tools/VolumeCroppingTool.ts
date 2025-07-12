@@ -1248,28 +1248,104 @@ class VolumeCroppingTool extends AnnotationTool {
     }
   };
 
-  _updateCornerSpheres(viewport) {
-    // Get current face sphere positions
-    const xMin =
-      this.sphereStates.find((s) => s.axis === 'x' && s.point[0] <= s.point[1])
-        ?.point[0] ?? this.sphereStates[SPHEREINDEX.XMIN].point[0];
-    const xMax =
-      this.sphereStates.find((s) => s.axis === 'x' && s.point[0] > s.point[1])
-        ?.point[0] ?? this.sphereStates[SPHEREINDEX.XMAX].point[0];
-    const yMin =
-      this.sphereStates.find((s) => s.axis === 'y' && s.point[1] <= s.point[0])
-        ?.point[1] ?? this.sphereStates[SPHEREINDEX.YMIN].point[1];
-    const yMax =
-      this.sphereStates.find((s) => s.axis === 'y' && s.point[1] > s.point[0])
-        ?.point[1] ?? this.sphereStates[SPHEREINDEX.YMAX].point[1];
-    const zMin =
-      this.sphereStates.find((s) => s.axis === 'z' && s.point[2] <= s.point[0])
-        ?.point[2] ?? this.sphereStates[SPHEREINDEX.ZMIN].point[2];
-    const zMax =
-      this.sphereStates.find((s) => s.axis === 'z' && s.point[2] > s.point[0])
-        ?.point[2] ?? this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+  // _updateCornerSpheres(viewport) {
+  //   // Get current face sphere positions
+  //   const xMin =
+  //     this.sphereStates.find((s) => s.axis === 'x' && s.point[0] <= s.point[1])
+  //       ?.point[0] ?? this.sphereStates[SPHEREINDEX.XMIN].point[0];
+  //   const xMax =
+  //     this.sphereStates.find((s) => s.axis === 'x' && s.point[0] > s.point[1])
+  //       ?.point[0] ?? this.sphereStates[SPHEREINDEX.XMAX].point[0];
+  //   const yMin =
+  //     this.sphereStates.find((s) => s.axis === 'y' && s.point[1] <= s.point[0])
+  //       ?.point[1] ?? this.sphereStates[SPHEREINDEX.YMIN].point[1];
+  //   const yMax =
+  //     this.sphereStates.find((s) => s.axis === 'y' && s.point[1] > s.point[0])
+  //       ?.point[1] ?? this.sphereStates[SPHEREINDEX.YMAX].point[1];
+  //   const zMin =
+  //     this.sphereStates.find((s) => s.axis === 'z' && s.point[2] <= s.point[0])
+  //       ?.point[2] ?? this.sphereStates[SPHEREINDEX.ZMIN].point[2];
+  //   const zMax =
+  //     this.sphereStates.find((s) => s.axis === 'z' && s.point[2] > s.point[0])
+  //       ?.point[2] ?? this.sphereStates[SPHEREINDEX.ZMAX].point[2];
 
-    // All 8 corners, with their keys
+  //   // All 8 corners, with their keys
+  //   const corners = [
+  //     { key: 'XMIN_YMIN_ZMIN', pos: [xMin, yMin, zMin] },
+  //     { key: 'XMIN_YMIN_ZMAX', pos: [xMin, yMin, zMax] },
+  //     { key: 'XMIN_YMAX_ZMIN', pos: [xMin, yMax, zMin] },
+  //     { key: 'XMIN_YMAX_ZMAX', pos: [xMin, yMax, zMax] },
+  //     { key: 'XMAX_YMIN_ZMIN', pos: [xMax, yMin, zMin] },
+  //     { key: 'XMAX_YMIN_ZMAX', pos: [xMax, yMin, zMax] },
+  //     { key: 'XMAX_YMAX_ZMIN', pos: [xMax, yMax, zMin] },
+  //     { key: 'XMAX_YMAX_ZMAX', pos: [xMax, yMax, zMax] },
+  //   ];
+
+  //   for (const corner of corners) {
+  //     const state = this.sphereStates.find(
+  //       (s) => s.uid === `corner_${corner.key}`
+  //     );
+  //     if (state) {
+  //       // Update the sphere position and color
+  //       state.point[0] = corner.pos[0];
+  //       state.point[1] = corner.pos[1];
+  //       state.point[2] = corner.pos[2];
+  //       state.sphereSource.setCenter(
+  //         state.point[0],
+  //         state.point[1],
+  //         state.point[2]
+  //       );
+  //       state.sphereSource.modified();
+  //     }
+  //   }
+  //   // ...existing code for updating corners...
+
+  //   // Update edge cylinders
+  //   Object.values(this.edgeCylinders).forEach(({ source, key1, key2 }) => {
+  //     const state1 = this.sphereStates.find((s) => s.uid === `corner_${key1}`);
+  //     const state2 = this.sphereStates.find((s) => s.uid === `corner_${key2}`);
+  //     if (state1 && state2) {
+  //       const point1 = state1.point;
+  //       const point2 = state2.point;
+  //       // Compute new direction and length
+  //       const direction = [
+  //         point2[0] - point1[0],
+  //         point2[1] - point1[1],
+  //         point2[2] - point1[2],
+  //       ];
+  //       const length = Math.sqrt(
+  //         direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
+  //       );
+  //       // Normalize direction vector
+  //       const normDirection: [number, number, number] = [0, 0, 0];
+  //       vec3.normalize(normDirection, direction);
+  //       const center = [
+  //         (point1[0] + point2[0]) / 2,
+  //         (point1[1] + point2[1]) / 2,
+  //         (point1[2] + point2[2]) / 2,
+  //       ];
+  //       source.setCenter(center[0], center[1], center[2]);
+  //       source.setHeight(length);
+
+  //       source.setDirection(
+  //         normDirection[0],
+  //         normDirection[1],
+  //         normDirection[2]
+  //       );
+  //       source.modified();
+  //     }
+  //   });
+  // }
+  _updateCornerSpheres(viewport) {
+    // Get face sphere positions
+    const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
+    const xMax = this.sphereStates[SPHEREINDEX.XMAX].point[0];
+    const yMin = this.sphereStates[SPHEREINDEX.YMIN].point[1];
+    const yMax = this.sphereStates[SPHEREINDEX.YMAX].point[1];
+    const zMin = this.sphereStates[SPHEREINDEX.ZMIN].point[2];
+    const zMax = this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+
+    // Define all 8 corners from face sphere positions
     const corners = [
       { key: 'XMIN_YMIN_ZMIN', pos: [xMin, yMin, zMin] },
       { key: 'XMIN_YMIN_ZMAX', pos: [xMin, yMin, zMax] },
@@ -1281,33 +1357,27 @@ class VolumeCroppingTool extends AnnotationTool {
       { key: 'XMAX_YMAX_ZMAX', pos: [xMax, yMax, zMax] },
     ];
 
+    // Update corner spheres
     for (const corner of corners) {
       const state = this.sphereStates.find(
         (s) => s.uid === `corner_${corner.key}`
       );
       if (state) {
-        // Update the sphere position and color
         state.point[0] = corner.pos[0];
         state.point[1] = corner.pos[1];
         state.point[2] = corner.pos[2];
-        state.sphereSource.setCenter(
-          state.point[0],
-          state.point[1],
-          state.point[2]
-        );
+        state.sphereSource.setCenter(...state.point);
         state.sphereSource.modified();
       }
     }
-    // ...existing code for updating corners...
 
-    // Update edge cylinders
+    // Update edge cylinders as before
     Object.values(this.edgeCylinders).forEach(({ source, key1, key2 }) => {
       const state1 = this.sphereStates.find((s) => s.uid === `corner_${key1}`);
       const state2 = this.sphereStates.find((s) => s.uid === `corner_${key2}`);
       if (state1 && state2) {
         const point1 = state1.point;
         const point2 = state2.point;
-        // Compute new direction and length
         const direction = [
           point2[0] - point1[0],
           point2[1] - point1[1],
@@ -1316,8 +1386,7 @@ class VolumeCroppingTool extends AnnotationTool {
         const length = Math.sqrt(
           direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
         );
-        // Normalize direction vector
-        const normDirection: [number, number, number] = [0, 0, 0];
+        const normDirection = [0, 0, 0];
         vec3.normalize(normDirection, direction);
         const center = [
           (point1[0] + point2[0]) / 2,
@@ -1326,7 +1395,6 @@ class VolumeCroppingTool extends AnnotationTool {
         ];
         source.setCenter(center[0], center[1], center[2]);
         source.setHeight(length);
-
         source.setDirection(
           normDirection[0],
           normDirection[1],
