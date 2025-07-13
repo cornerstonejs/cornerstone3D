@@ -20,13 +20,25 @@ import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
 
-export default async function initDemo(config = {}) {
+export default async function initDemo(config: any = {}) {
   initProviders();
   cornerstoneDICOMImageLoader.init();
   initVolumeLoader();
   await csRenderInit({
     peerImport,
-    ...(config?.core ? config.core : {}),
+    ...(config?.core
+      ? {
+          ...config.core,
+          rendering: {
+            ...config.core.rendering,
+            statsOverlay: true,
+          },
+        }
+      : {
+          rendering: {
+            statsOverlay: true,
+          },
+        }),
   });
   await csToolsInit({
     addons: {
