@@ -6,7 +6,6 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkCylinderSource from '@kitware/vtk.js/Filters/Sources/CylinderSource';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import { AnnotationTool } from './base';
 
@@ -187,13 +186,14 @@ class VolumeCroppingTool extends AnnotationTool {
       key2: string;
     };
   } = {};
+  cornerDragOffset: [number, number, number] | null = null;
 
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse'],
       configuration: {
-        showCornerSpheres: true,
+        showCornerSpheres: false,
         showHandles: true,
         mobile: {
           enabled: false,
@@ -261,33 +261,39 @@ class VolumeCroppingTool extends AnnotationTool {
     this.configuration.showHandles = visible;
     // Remove or show actors accordingly
     this._updateHandlesVisibility();
+    const viewportsInfo = this._getViewportsInfo();
+    const [viewport3D] = viewportsInfo;
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+    if (visible) {
+      this._updateFaceSpheresFromCorners();
+      this._updateCornerSpheres(viewport);
+      this._updateClippingPlanesFromFaceSpheres(viewport);
+      //   this._updateClippingPlanes(viewport);
+    }
+    viewport.render();
   }
+
   getHandlesVisible() {
     return this.configuration.showHandles;
   }
+
   _updateHandlesVisibility() {
-    const viewportsInfo = this._getViewportsInfo();
-    viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine.getViewport(viewportId);
+    // Spheres
+    this.sphereStates.forEach((state) => {
+      if (state.sphereActor) {
+        state.sphereActor.setVisibility(this.configuration.showHandles);
+      }
+    });
 
-      // Spheres
-      this.sphereStates.forEach((state) => {
-        if (state.sphereActor) {
-          state.sphereActor.setVisibility(this.configuration.showHandles);
-        }
-      });
-
-      // Edge cylinders
-      Object.values(this.edgeCylinders).forEach(({ actor }) => {
-        if (actor) {
-          actor.setVisibility(this.configuration.showHandles);
-        }
-      });
-
-      viewport.render();
+    // Edge cylinders
+    Object.values(this.edgeCylinders).forEach(({ actor }) => {
+      if (actor) {
+        actor.setVisibility(this.configuration.showHandles);
+      }
     });
   }
+
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
     return viewports;
@@ -697,7 +703,6 @@ class VolumeCroppingTool extends AnnotationTool {
     const element = evt.currentTarget;
     const viewportsInfo = this._getViewportsInfo();
     const [viewport3D] = viewportsInfo;
-
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
     const mouseCanvas = [evt.offsetX, evt.offsetY];
@@ -711,10 +716,24 @@ class VolumeCroppingTool extends AnnotationTool {
       if (dist < this.configuration.grabSpherePixelDistance) {
         this.draggingSphereIndex = i;
         element.style.cursor = 'grabbing';
+
+        // --- Store offset for corners ---
+        const sphereState = this.sphereStates[i];
+        if (sphereState.isCorner) {
+          const mouseWorld = viewport.canvasToWorld(mouseCanvas);
+          this.cornerDragOffset = [
+            sphereState.point[0] - mouseWorld[0],
+            sphereState.point[1] - mouseWorld[1],
+            sphereState.point[2] - mouseWorld[2],
+          ];
+        } else {
+          this.cornerDragOffset = null;
+        }
         return;
       }
     }
     this.draggingSphereIndex = null;
+    this.cornerDragOffset = null;
   };
 
   _onMouseMoveSphere = (evt) => {
@@ -733,7 +752,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const rect = element.getBoundingClientRect();
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
-
+    console.debug(`Dragging sphere at (${x}, ${y})`);
     // Convert canvas to world coordinates
     const world = viewport.canvasToWorld([x, y]);
 
@@ -744,7 +763,14 @@ class VolumeCroppingTool extends AnnotationTool {
 
     if (sphereState.isCorner) {
       // Move the dragged corner sphere
-      const newCorner = [...world];
+      let newCorner = [...world];
+      if (this.cornerDragOffset) {
+        newCorner = [
+          world[0] + this.cornerDragOffset[0],
+          world[1] + this.cornerDragOffset[1],
+          world[2] + this.cornerDragOffset[2],
+        ];
+      }
       sphereState.point = newCorner;
       sphereState.sphereSource.setCenter(...newCorner);
       sphereState.sphereSource.modified();
@@ -1065,6 +1091,7 @@ class VolumeCroppingTool extends AnnotationTool {
       }
     }
     this.draggingSphereIndex = null;
+    this.cornerDragOffset = null;
   };
 
   /**
