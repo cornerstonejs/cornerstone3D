@@ -106,7 +106,7 @@ async function run() {
   // Init Cornerstone and related libraries
   await csRenderInit({
     rendering: {
-      statsOverlay: true, // Enable stats overlay for debugging
+      statsOverlay: true,
     },
   });
   await csToolsInit();

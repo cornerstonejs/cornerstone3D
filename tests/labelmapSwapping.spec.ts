@@ -13,7 +13,7 @@ test.describe('Swapping labelmap segmentations on a viewport', async () => {
   test('should load the default segmentation with two segments (circles)', async ({
     page,
   }) => {
-    const canvas = await page.locator('canvas');
+    const canvas = await page.locator('canvas.cornerstone-canvas');
 
     await checkForScreenshot(
       page,
@@ -25,7 +25,7 @@ test.describe('Swapping labelmap segmentations on a viewport', async () => {
   test('should swap the segmentation after clicking on "Swap Segmentation" button', async ({
     page,
   }) => {
-    const canvas = await page.locator('canvas');
+    const canvas = await page.locator('canvas.cornerstone-canvas');
 
     await page.getByRole('button', { name: 'Swap Segmentation' }).click();
     await checkForScreenshot(
