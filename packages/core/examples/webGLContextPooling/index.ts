@@ -190,6 +190,7 @@ async function run() {
   await csRenderInit({
     rendering: {
       webGlContextCount: currentContextCount,
+      statsOverlay: true,
     },
   });
 

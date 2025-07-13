@@ -1,7 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  init as csRenderInit,
+} from '@cornerstonejs/core';
 import { setTitleAndDescription } from '../../../../utils/demo/helpers';
-import { init as csRenderInit } from '@cornerstonejs/core';
 import { init as csToolsInit } from '@cornerstonejs/tools';
 
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -65,7 +68,11 @@ function getSphereActor({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await csRenderInit();
+  await csRenderInit({
+    rendering: {
+      statsOverlay: true,
+    },
+  });
   await csToolsInit();
 
   // Instantiate a rendering engine

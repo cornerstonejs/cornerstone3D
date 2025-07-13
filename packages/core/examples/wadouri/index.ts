@@ -74,7 +74,11 @@ addButtonToToolbar({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await csRenderInit();
+  await csRenderInit({
+    rendering: {
+      statsOverlay: true, // Enable stats overlay for debugging
+    },
+  });
   await initLoader();
 
   const renderingEngine = new RenderingEngine(renderingEngineId);
