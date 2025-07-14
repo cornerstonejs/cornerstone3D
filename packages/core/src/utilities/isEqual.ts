@@ -50,7 +50,7 @@ function isNumberArrayLike(value: unknown): value is ArrayLike<number> {
  *
  * @returns True if the two values are within the tolerance levels.
  */
-export default function isEqual<ValueType>(
+export function isEqual<ValueType>(
   v1: ValueType,
   v2: ValueType,
   tolerance = 1e-5
@@ -80,7 +80,7 @@ const abs = (v) =>
 /**
  *  Compare negative values of both single numbers and vectors
  */
-const isEqualNegative = <ValueType>(
+export const isEqualNegative = <ValueType>(
   v1: ValueType,
   v2: ValueType,
   tolerance = undefined
@@ -90,10 +90,21 @@ const isEqualNegative = <ValueType>(
  * Compare absolute values for single numbers and vectors.
  * Not recommended for large vectors as this creates a copy
  */
-const isEqualAbs = <ValueType>(
+export const isEqualAbs = <ValueType>(
   v1: ValueType,
   v2: ValueType,
   tolerance = undefined
 ) => isEqual(abs(v1), abs(v2) as unknown as ValueType, tolerance);
 
-export { isEqualNegative, isEqual, isEqualAbs };
+/**
+ * @param n - array of numbers or a simple number
+ * @returns True if n or the first element of n is finite and not NaN
+ */
+export function isNumber(n: number[] | number): boolean {
+  if (Array.isArray(n)) {
+    return isNumber(n[0]);
+  }
+  return isFinite(n) && !isNaN(n);
+}
+
+export default isEqual;

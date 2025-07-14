@@ -97,6 +97,10 @@ function setSegmentIndexVisibility(
   }
 
   representations.forEach((representation) => {
+    // If the representation does not have segments, we cannot set visibility
+    if (!representation.segments || !representation.segments[segmentIndex]) {
+      return;
+    }
     representation.segments[segmentIndex].visible = visibility;
   });
 

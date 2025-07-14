@@ -38,6 +38,9 @@ export async function convertContourToSurface(
   const polylines = [];
   const numPointsArray = [];
   const annotationUIDs = annotationUIDsMap.get(segmentIndex);
+  if (!annotationUIDs) {
+    return;
+  }
 
   for (const annotationUID of annotationUIDs) {
     const annotation = getAnnotation(annotationUID);

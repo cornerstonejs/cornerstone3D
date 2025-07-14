@@ -1157,23 +1157,26 @@ class EllipticalROITool extends AnnotationTool {
         pixelUnitsOptions
       );
 
-      const pointsInShape = voxelManager.forEach(
-        this.configuration.statsCalculator.statsCallback,
-        {
-          boundsIJK,
-          imageData,
-          isInObject: (pointLPS) =>
-            pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-          returnPoints: this.configuration.storePointData,
-        }
-      );
-
+      let pointsInShape;
+      if (voxelManager) {
+        const pointsInShape = voxelManager.forEach(
+          this.configuration.statsCalculator.statsCallback,
+          {
+            boundsIJK,
+            imageData,
+            isInObject: (pointLPS) =>
+              pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+            returnPoints: this.configuration.storePointData,
+          }
+        );
+      }
       const stats = this.configuration.statsCalculator.getStatistics();
       cachedStats[targetId] = {
         Modality: metadata.Modality,
         area,
         mean: stats.mean?.value,
         max: stats.max?.value,
+        min: stats.min?.value,
         stdDev: stats.stdDev?.value,
         statsArray: stats.array,
         pointsInShape,
@@ -1248,27 +1251,30 @@ class EllipticalROITool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit } =
+  const { area, mean, stdDev, max, isEmptyArea, areaUnit, modalityUnit, min } =
     cachedVolumeStats;
 
   const textLines: string[] = [];
 
-  if (area) {
+  if (csUtils.isNumber(area)) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
       : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
-  if (mean) {
+  if (csUtils.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (max) {
+  if (csUtils.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
+  if (csUtils.isNumber(min)) {
+    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
+  }
 
-  if (stdDev) {
+  if (csUtils.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 

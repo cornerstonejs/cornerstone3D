@@ -38,16 +38,17 @@ import type {
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
   DataSetOptions,
+  ReferencedPlane,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import type IImageCalibration from '../types/IImageCalibration';
 import { InterpolationType } from '../enums';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import type vtkProp from '@kitware/vtk.js/Rendering/Core/Prop';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
+import { updateReferencedPlane } from '../utilities/updateReferencedPlane';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -225,6 +226,34 @@ class Viewport {
       return;
     }
     this.viewportStatus = ViewportStatus.RENDERED;
+  }
+
+  /**
+   *  This applies a color transform as an svg filter to the output image.
+   */
+  protected setColorTransform(voiRange, averageWhite) {
+    let feFilter = null;
+    if (!voiRange && !averageWhite) {
+      return;
+    }
+    const white = averageWhite || [255, 255, 255];
+    const maxWhite = Math.max(...white);
+    const scaleWhite = white.map((c) => maxWhite / c);
+    const { lower = 0, upper = 255 } = voiRange || {};
+    const wlScale = (upper - lower + 1) / 255;
+    const wlDelta = lower / 255;
+    feFilter = `url('data:image/svg+xml,\
+      <svg xmlns="http://www.w3.org/2000/svg">\
+        <filter id="colour" color-interpolation-filters="linearRGB">\
+        <feColorMatrix type="matrix" \
+        values="\
+          ${scaleWhite[0] * wlScale} 0 0 0 ${wlDelta} \
+          0 ${scaleWhite[1] * wlScale} 0 0 ${wlDelta} \
+          0 0 ${scaleWhite[2] * wlScale} 0 ${wlDelta} \
+          0 0 0 1 0" />\
+        </filter>\
+      </svg>#colour')`;
+    return feFilter;
   }
 
   /**
@@ -691,9 +720,10 @@ class Viewport {
    * Reset the camera to the default viewport camera without firing events
    */
   protected resetCameraNoEvent(): void {
+    const savedValue = this._suppressCameraModifiedEvents; // save the value pf the flag to restore it later
     this._suppressCameraModifiedEvents = true;
     this.resetCamera();
-    this._suppressCameraModifiedEvents = false;
+    this._suppressCameraModifiedEvents = savedValue;
   }
 
   /**
@@ -701,9 +731,10 @@ class Viewport {
    * @param camera - The camera to use for the viewport.
    */
   protected setCameraNoEvent(camera: ICamera): void {
+    const savedValue = this._suppressCameraModifiedEvents; // save the value pf the flag to restore it later
     this._suppressCameraModifiedEvents = true;
     this.setCamera(camera);
-    this._suppressCameraModifiedEvents = false;
+    this._suppressCameraModifiedEvents = savedValue;
   }
 
   /**
@@ -1794,14 +1825,62 @@ class Viewport {
       viewPlaneNormal,
       viewUp,
     } = this.getCamera();
+    const FrameOfReferenceUID = this.getFrameOfReferenceUID();
     const target: ViewReference = {
-      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      FrameOfReferenceUID,
       cameraFocalPoint,
       viewPlaneNormal,
       viewUp,
       sliceIndex: viewRefSpecifier?.sliceIndex ?? this.getSliceIndex(),
+      /** The referenced plane is the canonical specifier for whether
+       * this view reference is visible or not.
+       */
+      referencedPlane: {
+        FrameOfReferenceUID,
+        point: viewRefSpecifier?.points?.[0] || cameraFocalPoint,
+        inPlaneVector1: viewUp,
+        inPlaneVector2: <Point3>(
+          vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
+        ),
+      },
     };
+    if (viewRefSpecifier?.points) {
+      updateReferencedPlane(viewRefSpecifier.points, target.referencedPlane);
+    }
     return target;
+  }
+
+  public isPlaneViewable(
+    referencedPlane: ReferencedPlane,
+    options?: ReferenceCompatibleOptions
+  ): boolean {
+    if (referencedPlane.FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
+      return false;
+    }
+    const { focalPoint, viewPlaneNormal } = this.getCamera();
+    const { point, inPlaneVector1, inPlaneVector2 } = referencedPlane;
+    if (options?.asVolume) {
+      // Don't need to check the normal or the navigation if asking as a volume
+      // since those can both be updated
+      return true;
+    }
+    if (
+      inPlaneVector1 &&
+      !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector1))
+    ) {
+      return false;
+    }
+    if (
+      inPlaneVector2 &&
+      !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector2))
+    ) {
+      return false;
+    }
+    if (options?.withNavigation) {
+      return true;
+    }
+    const pointVector = vec3.sub(vec3.create(), point, focalPoint);
+    return isEqual(0, vec3.dot(pointVector, viewPlaneNormal));
   }
 
   /**
@@ -1814,6 +1893,9 @@ class Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
+    if (viewRef.referencedPlane) {
+      return this.isPlaneViewable(viewRef.referencedPlane, options);
+    }
     if (
       viewRef.FrameOfReferenceUID &&
       viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
