@@ -45,7 +45,9 @@ interface Cornerstone3DConfig {
      * The default value is 7, which is suitable for mobile/desktop.
      */
     webGlContextCount?: number;
+  };
 
+  debug: {
     /**
      * Wether or not to show the stats overlay for debugging purposes, stats include:
      * - FPS Frames rendered in the last second. The higher the number the better.

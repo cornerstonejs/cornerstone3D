@@ -29,13 +29,12 @@ export default async function initDemo(config: any = {}) {
     ...(config?.core
       ? {
           ...config.core,
-          rendering: {
-            ...config.core.rendering,
+          debug: {
             statsOverlay: true,
           },
         }
       : {
-          rendering: {
+          debug: {
             statsOverlay: true,
           },
         }),

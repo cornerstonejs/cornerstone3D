@@ -26,7 +26,7 @@ import type {
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
-import { cleanStatsOverlay, setupStatsOverlay } from './helpers/stats';
+import { StatsOverlay } from './helpers/stats';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 export const VIEWPORT_MIN_SIZE = 2;
@@ -72,8 +72,8 @@ abstract class BaseRenderingEngine {
 
     const config = getConfiguration();
 
-    if (config.rendering?.statsOverlay) {
-      setupStatsOverlay();
+    if (config?.debug?.statsOverlay) {
+      StatsOverlay.setup();
     }
   }
 
@@ -446,7 +446,7 @@ abstract class BaseRenderingEngine {
       return;
     }
 
-    cleanStatsOverlay();
+    StatsOverlay.cleanup();
 
     // remove vtk rendered first before resetting the viewport
     if (!this.useCPURendering) {

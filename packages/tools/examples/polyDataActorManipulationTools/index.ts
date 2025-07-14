@@ -105,7 +105,7 @@ function getSphereActor({
 async function run() {
   // Init Cornerstone and related libraries
   await csRenderInit({
-    rendering: {
+    debug: {
       statsOverlay: true,
     },
   });
