@@ -120,6 +120,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           x: null,
           y: null,
         },
+        extendReferenceLines: true,
         referenceLinesCenterGapRadius: 20,
         initialCropFactor: 0.2,
         mobile: {
@@ -970,13 +971,26 @@ class VolumeCroppingControlTool extends AnnotationTool {
             lineUID,
             intersections[0].point,
             intersections[1].point,
-            //   line[1],
-            //  line[2],
             {
               color,
               lineWidth,
             }
           );
+          if (this.configuration.extendReferenceLines) {
+            const dashLineUID = lineUID + '_dashed';
+            drawLineSvg(
+              svgDrawingHelper,
+              annotationUID,
+              dashLineUID,
+              line[1],
+              line[2],
+              {
+                color,
+                lineWidth,
+                lineDash: [4, 4],
+              }
+            );
+          }
         }
       }
 
