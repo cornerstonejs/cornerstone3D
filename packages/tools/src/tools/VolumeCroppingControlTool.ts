@@ -521,10 +521,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
 
-    // -- Update the camera of other linked viewports containing the same volumeId that
-    //    have the same camera in case of translation
-    // This is necessary because other tools can modify the position of the slices,
-    // e.g. stackScroll tool at wheel scroll. So we update the coordinates of the center always here.
     const currentCamera = viewport.getCamera();
     const oldCameraPosition = viewportAnnotation.metadata.cameraPosition;
     const deltaCameraPosition: Types.Point3 = [0, 0, 0];
@@ -568,19 +564,21 @@ class VolumeCroppingControlTool extends AnnotationTool {
         1e-3
       );
 
-      // NOTE: it is a translation if the the focal point and camera position shifts are the same
       if (!cameraModifiedSameForPosAndFocalPoint) {
         isRotation = true;
       }
 
-      const cameraModifiedInPlane =
-        Math.abs(
-          vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
-        ) < 1e-2;
+      // Only update cropping reference lines if the camera movement is NOT a stack scroll.
+      // Stack scroll: camera moves along viewPlaneNormal (dot product large).
+      // Pan/zoom: camera moves perpendicular to viewPlaneNormal (dot product small).
+      const dot = Math.abs(
+        vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
+      );
+      const isStackScroll = dot > 1e-2;
 
       // TRANSLATION
-      // NOTE1: if the camera modified is a result of a pan or zoom don't update the volume cropping center
-      if (!isRotation && !cameraModifiedInPlane) {
+      // Only update cropping reference lines for pan/zoom, not stack scroll
+      if (!isRotation && !isStackScroll) {
         this.toolCenter[0] += deltaCameraPosition[0];
         this.toolCenter[1] += deltaCameraPosition[1];
         this.toolCenter[2] += deltaCameraPosition[2];
@@ -1601,38 +1599,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
       triggerAnnotationRenderForViewportIds(
         viewportsInfo.map(({ viewportId }) => viewportId)
       );
+      triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
+        toolGroupId: this.toolGroupId,
+        toolCenter: this.toolCenter,
+        toolCenterMin: this.toolCenterMin,
+        toolCenterMax: this.toolCenterMax,
+        handleType: handles.activeType,
+        viewportOrientation: [], // You can fill this if needed
+      });
     }
-
-    // TRANSLATION
-    // get the annotation of the other viewport which are parallel to the delta shift and are of the same scene
-    const otherViewportAnnotations =
-      this._getAnnotationsForViewportsWithDifferentCameras(
-        enabledElement,
-        annotations
-      );
-
-    const viewportsAnnotationsToUpdate = otherViewportAnnotations.filter(
-      (annotation) => {
-        const { data } = annotation;
-        const otherViewport = renderingEngine.getViewport(data.viewportId);
-        const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.id
-        );
-
-        return (
-          otherViewportControllable === true &&
-          viewportAnnotation.data.activeViewportIds.find(
-            (id) => id === otherViewport.id
-          )
-        );
-      }
-    );
-
-    this._applyDeltaShiftToSelectedViewportCameras(
-      renderingEngine,
-      viewportsAnnotationsToUpdate,
-      delta
-    );
   };
 
   _applyDeltaShiftToSelectedViewportCameras(
