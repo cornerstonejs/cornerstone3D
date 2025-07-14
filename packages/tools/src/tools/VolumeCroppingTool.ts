@@ -724,7 +724,7 @@ class VolumeCroppingTool extends AnnotationTool {
       this.configuration.showHandles &&
       this.configuration.showCornerSpheres
     ) {
-      this._updateCornerSpheres(viewport);
+      this._updateCornerSpheres();
     }
     viewport.render();
   };
@@ -861,7 +861,7 @@ class VolumeCroppingTool extends AnnotationTool {
 
       // After updating corners, update face spheres and edge cylinders
       this._updateFaceSpheresFromCorners();
-      this._updateCornerSpheres(viewport);
+      this._updateCornerSpheres();
       this._updateClippingPlanesFromFaceSpheres(viewport);
     } else {
       // For face spheres: only update the coordinate along the face's axis
@@ -881,7 +881,7 @@ class VolumeCroppingTool extends AnnotationTool {
       // After updating the face sphere, update all corners from faces
       this._updateCornerSpheresFromFaces();
       this._updateFaceSpheresFromCorners();
-      this._updateCornerSpheres(viewport);
+      this._updateCornerSpheres();
       this._updateClippingPlanesFromFaceSpheres(viewport);
     }
 

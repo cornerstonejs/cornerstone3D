@@ -383,13 +383,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   setToolCenter(toolCenter: Types.Point3, handleType): void {
     if (handleType === 'min') {
-      this.toolCenterMin[0] = toolCenter[0];
-      this.toolCenterMin[1] = toolCenter[1];
-      this.toolCenterMin[2] = toolCenter[2];
+      this.toolCenterMin = [...toolCenter];
     } else if (handleType === 'max') {
-      this.toolCenterMax[0] = toolCenter[0];
-      this.toolCenterMax[1] = toolCenter[1];
-      this.toolCenterMax[2] = toolCenter[2];
+      this.toolCenterMax = [...toolCenter];
     }
     const viewportsInfo = this._getViewportsInfo();
 
@@ -594,9 +590,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
           (a) => a.data.handles.activeOperation === 1 // OPERATION.DRAG
         );
 
-        if (selectedAnnotations.length > 1) {
-          //   console.debug('More than one annotation is being dragged/selected');
-        }
         if (this.editData && this.editData.annotation) {
           const activeType =
             this.editData?.annotation?.data?.handles?.activeType;
@@ -976,21 +969,21 @@ class VolumeCroppingControlTool extends AnnotationTool {
               lineWidth,
             }
           );
-          if (this.configuration.extendReferenceLines) {
-            const dashLineUID = lineUID + '_dashed';
-            drawLineSvg(
-              svgDrawingHelper,
-              annotationUID,
-              dashLineUID,
-              line[1],
-              line[2],
-              {
-                color,
-                lineWidth,
-                lineDash: [4, 4],
-              }
-            );
-          }
+        }
+        if (this.configuration.extendReferenceLines) {
+          const dashLineUID = lineUID + '_dashed';
+          drawLineSvg(
+            svgDrawingHelper,
+            annotationUID,
+            dashLineUID,
+            line[1],
+            line[2],
+            {
+              color,
+              lineWidth,
+              lineDash: [4, 4],
+            }
+          );
         }
       }
 
@@ -1048,72 +1041,109 @@ class VolumeCroppingControlTool extends AnnotationTool {
     return toolGroupAnnotations;
   };
 
+  // _onSphereMoved = (evt) => {
+  //   const { draggingSphereIndex, toolCenter } = evt.detail;
+  //   // Use enums for clarity
+  //   const SPHEREINDEX = {
+  //     XMIN: 0,
+  //     XMAX: 1,
+  //     YMIN: 2,
+  //     YMAX: 3,
+  //     ZMIN: 4,
+  //     ZMAX: 5,
+  //     // Corner indices: 6-13 (if needed)
+  //   };
+
+  //   // Helper to update min/max
+  //   const updateAxis = (arr, axis, value) => {
+  //     arr[axis] = value;
+  //   };
+
+  //   // Copy current min/max
+  //   const newMin: [number, number, number] = [...this.toolCenterMin];
+  //   const newMax: [number, number, number] = [...this.toolCenterMax];
+
+  //   // Face spheres
+  //   if (draggingSphereIndex >= 0 && draggingSphereIndex <= 5) {
+  //     const axis = Math.floor(draggingSphereIndex / 2); // 0:x, 1:y, 2:z
+  //     const isMin = draggingSphereIndex % 2 === 0;
+  //     if (isMin) {
+  //       updateAxis(newMin, axis, toolCenter[axis]);
+  //     } else {
+  //       updateAxis(newMax, axis, toolCenter[axis]);
+  //     }
+  //     this.setToolCenter(newMin, 'min');
+  //     this.setToolCenter(newMax, 'max');
+  //     return;
+  //   }
+
+  //   // Corner spheres (indices 6-13)
+  //   if (draggingSphereIndex >= 6 && draggingSphereIndex <= 13) {
+  //     // For each axis, update min or max depending on the corner index bits
+  //     // X: 6-9 = min, 10-13 = max
+  //     // Y: 6,7,10,11 = min, 8,9,12,13 = max
+  //     // Z: even = min, odd = max
+  //     const idx = draggingSphereIndex;
+  //     // X
+  //     if (idx < 10) {
+  //       newMin[0] = toolCenter[0];
+  //     } else {
+  //       newMax[0] = toolCenter[0];
+  //     }
+  //     // Y
+  //     if ([6, 7, 10, 11].includes(idx)) {
+  //       newMin[1] = toolCenter[1];
+  //     } else {
+  //       newMax[1] = toolCenter[1];
+  //     }
+  //     // Z
+  //     if (idx % 2 === 0) {
+  //       newMin[2] = toolCenter[2];
+  //     } else {
+  //       newMax[2] = toolCenter[2];
+  //     }
+
+  //     this.setToolCenter(newMin, 'min');
+  //     this.setToolCenter(newMax, 'max');
+  //   }
+  // };
+
   _onSphereMoved = (evt) => {
     const { draggingSphereIndex, toolCenter } = evt.detail;
-    // Use enums for clarity
-    const SPHEREINDEX = {
-      XMIN: 0,
-      XMAX: 1,
-      YMIN: 2,
-      YMAX: 3,
-      ZMIN: 4,
-      ZMAX: 5,
-      // Corner indices: 6-13 (if needed)
-    };
-
-    // Helper to update min/max
-    const updateAxis = (arr, axis, value) => {
-      arr[axis] = value;
-    };
-
-    // Copy current min/max
     const newMin: [number, number, number] = [...this.toolCenterMin];
     const newMax: [number, number, number] = [...this.toolCenterMax];
-
-    // Face spheres
+    // face spheres
     if (draggingSphereIndex >= 0 && draggingSphereIndex <= 5) {
-      const axis = Math.floor(draggingSphereIndex / 2); // 0:x, 1:y, 2:z
+      const axis = Math.floor(draggingSphereIndex / 2);
       const isMin = draggingSphereIndex % 2 === 0;
-      if (isMin) {
-        updateAxis(newMin, axis, toolCenter[axis]);
-      } else {
-        updateAxis(newMax, axis, toolCenter[axis]);
-      }
+      (isMin ? newMin : newMax)[axis] = toolCenter[axis];
       this.setToolCenter(newMin, 'min');
       this.setToolCenter(newMax, 'max');
       return;
     }
-
-    // Corner spheres (indices 6-13)
+    // corner spheres
     if (draggingSphereIndex >= 6 && draggingSphereIndex <= 13) {
-      // For each axis, update min or max depending on the corner index bits
-      // X: 6-9 = min, 10-13 = max
-      // Y: 6,7,10,11 = min, 8,9,12,13 = max
-      // Z: even = min, odd = max
       const idx = draggingSphereIndex;
-      // X
       if (idx < 10) {
         newMin[0] = toolCenter[0];
       } else {
         newMax[0] = toolCenter[0];
       }
-      // Y
       if ([6, 7, 10, 11].includes(idx)) {
         newMin[1] = toolCenter[1];
       } else {
         newMax[1] = toolCenter[1];
       }
-      // Z
       if (idx % 2 === 0) {
         newMin[2] = toolCenter[2];
       } else {
         newMax[2] = toolCenter[2];
       }
-
       this.setToolCenter(newMin, 'min');
       this.setToolCenter(newMax, 'max');
     }
   };
+
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
     if (viewportsInfo && viewportsInfo.length > 0) {
