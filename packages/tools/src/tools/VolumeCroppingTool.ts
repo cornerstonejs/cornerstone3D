@@ -257,24 +257,57 @@ class VolumeCroppingTool extends AnnotationTool {
     // Implement your logic here if needed
     return false;
   }
-
   setHandlesVisible(visible: boolean) {
     this.configuration.showHandles = visible;
-    // Remove or show actors accordingly
+    // Before showing, update sphere positions to match clipping planes
+    if (visible) {
+      const viewportsInfo = this._getViewportsInfo();
+      const [viewport3D] = viewportsInfo;
+      const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+      const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+
+      // Update face spheres from the current clipping planes
+      this.sphereStates[SPHEREINDEX.XMIN].point[0] =
+        this.originalClippingPlanes[PLANEINDEX.XMIN].origin[0];
+      this.sphereStates[SPHEREINDEX.XMAX].point[0] =
+        this.originalClippingPlanes[PLANEINDEX.XMAX].origin[0];
+      this.sphereStates[SPHEREINDEX.YMIN].point[1] =
+        this.originalClippingPlanes[PLANEINDEX.YMIN].origin[1];
+      this.sphereStates[SPHEREINDEX.YMAX].point[1] =
+        this.originalClippingPlanes[PLANEINDEX.YMAX].origin[1];
+      this.sphereStates[SPHEREINDEX.ZMIN].point[2] =
+        this.originalClippingPlanes[PLANEINDEX.ZMIN].origin[2];
+      this.sphereStates[SPHEREINDEX.ZMAX].point[2] =
+        this.originalClippingPlanes[PLANEINDEX.ZMAX].origin[2];
+
+      // Update all sphere actors' positions
+      [
+        SPHEREINDEX.XMIN,
+        SPHEREINDEX.XMAX,
+        SPHEREINDEX.YMIN,
+        SPHEREINDEX.YMAX,
+        SPHEREINDEX.ZMIN,
+        SPHEREINDEX.ZMAX,
+      ].forEach((idx) => {
+        const s = this.sphereStates[idx];
+        s.sphereSource.setCenter(...s.point);
+        s.sphereSource.modified();
+      });
+
+      // Update corners and edges as well
+      this._updateCornerSpheres(viewport);
+    }
+
+    // Show/hide actors
     this._updateHandlesVisibility();
+
+    // Render
     const viewportsInfo = this._getViewportsInfo();
     const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-    if (visible) {
-      this._updateFaceSpheresFromCorners();
-      this._updateCornerSpheres(viewport);
-      this._updateClippingPlanesFromFaceSpheres(viewport);
-      //   this._updateClippingPlanes(viewport);
-    }
     viewport.render();
   }
-
   getHandlesVisible() {
     return this.configuration.showHandles;
   }
@@ -1115,7 +1148,6 @@ class VolumeCroppingTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     this._updateClippingPlanes(enabledElement.viewport);
     enabledElement.viewport.render();
-    console.debug('VolumeCroppingTool: Camera modified', evt);
   };
 
   onResetCamera = (evt) => {
