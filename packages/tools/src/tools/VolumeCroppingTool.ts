@@ -187,6 +187,7 @@ class VolumeCroppingTool extends AnnotationTool {
     };
   } = {};
   cornerDragOffset: [number, number, number] | null = null;
+  faceDragOffset: number | null = null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -719,14 +720,19 @@ class VolumeCroppingTool extends AnnotationTool {
 
         // --- Store offset for corners ---
         const sphereState = this.sphereStates[i];
+        const mouseWorld = viewport.canvasToWorld(mouseCanvas);
         if (sphereState.isCorner) {
-          const mouseWorld = viewport.canvasToWorld(mouseCanvas);
           this.cornerDragOffset = [
             sphereState.point[0] - mouseWorld[0],
             sphereState.point[1] - mouseWorld[1],
             sphereState.point[2] - mouseWorld[2],
           ];
+          this.faceDragOffset = null;
         } else {
+          // For face spheres, only store the offset along the axis of movement
+          const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
+          this.faceDragOffset =
+            sphereState.point[axisIdx] - mouseWorld[axisIdx];
           this.cornerDragOffset = null;
         }
         return;
@@ -734,6 +740,7 @@ class VolumeCroppingTool extends AnnotationTool {
     }
     this.draggingSphereIndex = null;
     this.cornerDragOffset = null;
+    this.faceDragOffset = null;
   };
 
   _onMouseMoveSphere = (evt) => {
@@ -752,7 +759,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const rect = element.getBoundingClientRect();
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
-    console.debug(`Dragging sphere at (${x}, ${y})`);
+
     // Convert canvas to world coordinates
     const world = viewport.canvasToWorld([x, y]);
 
@@ -830,9 +837,11 @@ class VolumeCroppingTool extends AnnotationTool {
     } else {
       // For face spheres: only update the coordinate along the face's axis
       const axis = sphereState.axis;
-
-      // Project mouse world position onto the axis
-      let newValue;
+      const axisIdx = { x: 0, y: 1, z: 2 }[axis];
+      let newValue = world[axisIdx];
+      if (this.faceDragOffset !== null) {
+        newValue += this.faceDragOffset;
+      }
       if (axis === 'x') {
         newValue = world[0];
         if (this.draggingSphereIndex === SPHEREINDEX.XMIN) {
@@ -1092,6 +1101,7 @@ class VolumeCroppingTool extends AnnotationTool {
     }
     this.draggingSphereIndex = null;
     this.cornerDragOffset = null;
+    this.faceDragOffset = null;
   };
 
   /**
