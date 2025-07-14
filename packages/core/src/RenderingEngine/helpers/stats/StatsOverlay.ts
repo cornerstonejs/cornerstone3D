@@ -1,5 +1,7 @@
 import { StatsPanel } from './StatsPanel';
-import type { Panel, StatsInstance } from './types';
+import type { Panel, StatsInstance, PerformanceWithMemory } from './types';
+import { PanelType } from './enums';
+import { STATS_CONFIG, PANEL_CONFIGS, CONVERSION } from './constants';
 
 /**
  * Singleton class for managing the stats overlay.
@@ -9,41 +11,21 @@ export class StatsOverlay implements StatsInstance {
   private static instance: StatsOverlay | null = null;
 
   public dom: HTMLDivElement;
-  private mode = 0;
-  private beginTime: number;
-  private prevTime: number;
-  private frames = 0;
-  private fpsPanel: Panel;
-  private msPanel: Panel;
-  private memPanel?: Panel;
-  private panels: Panel[] = [];
+  private currentMode = 0;
+  private startTime: number;
+  private lastUpdateTime: number;
+  private frameCount = 0;
+  private panels: Map<PanelType, Panel> = new Map();
   private animationFrameId: number | null = null;
   private isSetup = false;
 
   private constructor() {
-    this.dom = document.createElement('div');
-    this.dom.style.cssText =
-      'position:fixed;top:0;left:0;cursor:pointer;opacity:0.9;z-index:10000';
-    this.dom.addEventListener(
-      'click',
-      (event) => {
-        event.preventDefault();
-        this.showPanel(++this.mode % this.dom.children.length);
-      },
-      false
-    );
+    this.dom = this.createOverlayElement();
+    this.startTime = performance.now();
+    this.lastUpdateTime = this.startTime;
 
-    this.beginTime = performance.now();
-    this.prevTime = this.beginTime;
-
-    this.fpsPanel = this.addPanel(new StatsPanel('FPS', '#0ff', '#002'));
-    this.msPanel = this.addPanel(new StatsPanel('MS', '#0f0', '#020'));
-
-    if (performance.memory) {
-      this.memPanel = this.addPanel(new StatsPanel('MB', '#f08', '#201'));
-    }
-
-    this.showPanel(0);
+    this.initializePanels();
+    this.showPanel(PanelType.FPS);
   }
 
   /**
@@ -60,22 +42,13 @@ export class StatsOverlay implements StatsInstance {
    * Sets up the stats overlay and starts the animation loop.
    */
   public setup(): void {
-    // If already setup, don't do anything
     if (this.isSetup) {
       return;
     }
 
     try {
-      const statsElement = this.dom;
-      statsElement.style.position = 'fixed';
-      statsElement.style.top = '0px';
-      statsElement.style.right = '0px';
-      statsElement.style.left = 'auto';
-      statsElement.style.zIndex = '9999';
-
-      document.body.appendChild(statsElement);
-
-      // Start the animation loop
+      this.applyOverlayStyles();
+      document.body.appendChild(this.dom);
       this.startLoop();
       this.isSetup = true;
     } catch (error) {
@@ -89,11 +62,100 @@ export class StatsOverlay implements StatsInstance {
   public cleanup(): void {
     this.stopLoop();
 
-    if (this.dom && this.dom.parentNode) {
+    if (this.dom.parentNode) {
       this.dom.parentNode.removeChild(this.dom);
     }
 
     this.isSetup = false;
+  }
+
+  /**
+   * Shows a specific panel by its type.
+   */
+  public showPanel(panelType: number): void {
+    const children = Array.from(this.dom.children) as HTMLElement[];
+    children.forEach((child, index) => {
+      child.style.display = index === panelType ? 'block' : 'none';
+    });
+    this.currentMode = panelType;
+  }
+
+  /**
+   * Updates the stats display.
+   */
+  public update(): void {
+    this.startTime = this.updateStats();
+  }
+
+  /**
+   * Creates the overlay DOM element.
+   */
+  private createOverlayElement(): HTMLDivElement {
+    const element = document.createElement('div');
+    element.addEventListener('click', this.handleClick.bind(this), false);
+    return element;
+  }
+
+  /**
+   * Applies styles to the overlay element.
+   */
+  private applyOverlayStyles(): void {
+    Object.assign(this.dom.style, STATS_CONFIG.OVERLAY_STYLES);
+  }
+
+  /**
+   * Handles click events on the overlay.
+   */
+  private handleClick(event: MouseEvent): void {
+    event.preventDefault();
+    const panelCount = this.dom.children.length;
+    this.showPanel((this.currentMode + 1) % panelCount);
+  }
+
+  /**
+   * Initializes all panels.
+   */
+  private initializePanels(): void {
+    // Always create FPS and MS panels
+    const fpsPanel = new StatsPanel(
+      PANEL_CONFIGS[PanelType.FPS].name,
+      PANEL_CONFIGS[PanelType.FPS].foregroundColor,
+      PANEL_CONFIGS[PanelType.FPS].backgroundColor
+    );
+    this.addPanel(PanelType.FPS, fpsPanel);
+
+    const msPanel = new StatsPanel(
+      PANEL_CONFIGS[PanelType.MS].name,
+      PANEL_CONFIGS[PanelType.MS].foregroundColor,
+      PANEL_CONFIGS[PanelType.MS].backgroundColor
+    );
+    this.addPanel(PanelType.MS, msPanel);
+
+    // Only create memory panel if available
+    if (this.isMemoryAvailable()) {
+      const memPanel = new StatsPanel(
+        PANEL_CONFIGS[PanelType.MEMORY].name,
+        PANEL_CONFIGS[PanelType.MEMORY].foregroundColor,
+        PANEL_CONFIGS[PanelType.MEMORY].backgroundColor
+      );
+      this.addPanel(PanelType.MEMORY, memPanel);
+    }
+  }
+
+  /**
+   * Checks if memory monitoring is available.
+   */
+  private isMemoryAvailable(): boolean {
+    const perf = performance as PerformanceWithMemory;
+    return perf.memory !== undefined;
+  }
+
+  /**
+   * Adds a panel to the overlay.
+   */
+  private addPanel(type: PanelType, panel: Panel): void {
+    this.dom.appendChild(panel.dom);
+    this.panels.set(type, panel);
   }
 
   /**
@@ -117,49 +179,55 @@ export class StatsOverlay implements StatsInstance {
     }
   }
 
-  private addPanel(panel: Panel): Panel {
-    this.dom.appendChild(panel.dom);
-    this.panels.push(panel);
-    return panel;
-  }
+  /**
+   * Updates all stats panels.
+   */
+  private updateStats(): number {
+    this.frameCount++;
+    const currentTime = performance.now();
+    const deltaTime = currentTime - this.startTime;
 
-  public showPanel(id: number): void {
-    for (let i = 0; i < this.dom.children.length; i++) {
-      (this.dom.children[i] as HTMLElement).style.display =
-        i === id ? 'block' : 'none';
+    // Update MS panel
+    const msPanel = this.panels.get(PanelType.MS);
+    if (msPanel) {
+      msPanel.update(deltaTime, STATS_CONFIG.MAX_MS_VALUE);
     }
-    this.mode = id;
-  }
 
-  public update(): void {
-    this.beginTime = this.end();
-  }
+    // Update FPS panel every second
+    if (currentTime >= this.lastUpdateTime + STATS_CONFIG.UPDATE_INTERVAL) {
+      const fps =
+        (this.frameCount * CONVERSION.MS_PER_SECOND) /
+        (currentTime - this.lastUpdateTime);
 
-  private end(): number {
-    this.frames++;
-
-    const time = performance.now();
-
-    this.msPanel.update(time - this.beginTime, 200);
-
-    if (time >= this.prevTime + 1000) {
-      this.fpsPanel.update((this.frames * 1000) / (time - this.prevTime), 100);
-
-      this.prevTime = time;
-      this.frames = 0;
-
-      if (this.memPanel && performance.memory) {
-        const memory = performance.memory as {
-          usedJSHeapSize: number;
-          jsHeapSizeLimit: number;
-        };
-        this.memPanel.update(
-          memory.usedJSHeapSize / 1048576,
-          memory.jsHeapSizeLimit / 1048576
-        );
+      const fpsPanel = this.panels.get(PanelType.FPS);
+      if (fpsPanel) {
+        fpsPanel.update(fps, STATS_CONFIG.MAX_FPS_VALUE);
       }
+
+      this.lastUpdateTime = currentTime;
+      this.frameCount = 0;
+
+      // Update memory panel if available
+      this.updateMemoryPanel();
     }
 
-    return time;
+    return currentTime;
+  }
+
+  /**
+   * Updates the memory panel if available.
+   */
+  private updateMemoryPanel(): void {
+    const memPanel = this.panels.get(PanelType.MEMORY);
+    if (!memPanel) {
+      return;
+    }
+
+    const perf = performance as PerformanceWithMemory;
+    if (perf.memory) {
+      const memoryMB = perf.memory.usedJSHeapSize / CONVERSION.BYTES_TO_MB;
+      const maxMemoryMB = perf.memory.jsHeapSizeLimit / CONVERSION.BYTES_TO_MB;
+      memPanel.update(memoryMB, maxMemoryMB);
+    }
   }
 }
