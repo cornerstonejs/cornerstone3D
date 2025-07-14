@@ -20,7 +20,7 @@ const PANEL_CONFIG = {
 const STATS_CONFIG = {
   UPDATE_INTERVAL: 1000, // ms
   MAX_MS_VALUE: 200,
-  MAX_FPS_VALUE: 100,
+  MAX_FPS_VALUE: 300, // don't use 60 since no one has a 60hz monitor anynmore
   OVERLAY_STYLES: {
     position: 'fixed',
     top: '0px',
