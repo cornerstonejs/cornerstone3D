@@ -555,10 +555,6 @@ class VolumeCroppingTool extends AnnotationTool {
       }
     );
 
-    eventTarget.addEventListener('CORNERSTONE_CAMERA_MODIFIED', (evt) => {
-      this._updateClippingPlanes(evt.detail.viewport);
-    });
-
     const element = viewport.canvas || viewport.element;
     element.addEventListener('mousedown', this._onMouseDownSphere);
     element.addEventListener('mousemove', this._onMouseMoveSphere);
@@ -842,28 +838,12 @@ class VolumeCroppingTool extends AnnotationTool {
       if (this.faceDragOffset !== null) {
         newValue += this.faceDragOffset;
       }
-      if (axis === 'x') {
-        newValue = world[0];
-        if (this.draggingSphereIndex === SPHEREINDEX.XMIN) {
-          this.sphereStates[SPHEREINDEX.XMIN].point[0] = newValue;
-        } else {
-          this.sphereStates[SPHEREINDEX.XMAX].point[0] = newValue;
-        }
-      } else if (axis === 'y') {
-        newValue = world[1];
-        if (this.draggingSphereIndex === SPHEREINDEX.YMIN) {
-          this.sphereStates[SPHEREINDEX.YMIN].point[1] = newValue;
-        } else {
-          this.sphereStates[SPHEREINDEX.YMAX].point[1] = newValue;
-        }
-      } else if (axis === 'z') {
-        newValue = world[2];
-        if (this.draggingSphereIndex === SPHEREINDEX.ZMIN) {
-          this.sphereStates[SPHEREINDEX.ZMIN].point[2] = newValue;
-        } else {
-          this.sphereStates[SPHEREINDEX.ZMAX].point[2] = newValue;
-        }
-      }
+      // Only update the correct axis for the correct sphere
+      this.sphereStates[this.draggingSphereIndex].point[axisIdx] = newValue;
+      this.sphereStates[this.draggingSphereIndex].sphereSource.setCenter(
+        ...this.sphereStates[this.draggingSphereIndex].point
+      );
+      this.sphereStates[this.draggingSphereIndex].sphereSource.modified();
 
       // After updating the face sphere, update all corners from faces
       this._updateCornerSpheresFromFaces();
@@ -1133,7 +1113,9 @@ class VolumeCroppingTool extends AnnotationTool {
       ? { element: evt.currentTarget }
       : evt.detail;
     const enabledElement = getEnabledElement(element);
+    this._updateClippingPlanes(enabledElement.viewport);
     enabledElement.viewport.render();
+    console.debug('VolumeCroppingTool: Camera modified', evt);
   };
 
   onResetCamera = (evt) => {

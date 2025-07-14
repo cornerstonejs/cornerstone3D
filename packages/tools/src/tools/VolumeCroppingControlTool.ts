@@ -1049,69 +1049,71 @@ class VolumeCroppingControlTool extends AnnotationTool {
   };
 
   _onSphereMoved = (evt) => {
-    if ([0, 2, 4].includes(evt.detail.draggingSphereIndex)) {
-      // only update for min spheres
-      const newCenter: Types.Point3 = [...this.toolCenterMin];
-      const eventCenter = evt.detail.toolCenter;
-      if (evt.detail.axis === 'x') {
-        newCenter[0] = eventCenter[0];
-      } else if (evt.detail.axis === 'y') {
-        newCenter[1] = eventCenter[1];
-      } else if (evt.detail.axis === 'z') {
-        newCenter[2] = eventCenter[2];
-      }
-      this.setToolCenter(newCenter, 'min');
-    } else if ([1, 3, 5].includes(evt.detail.draggingSphereIndex)) {
-      // only update for max spheres
-      const newCenter: Types.Point3 = [...this.toolCenterMax];
-      const eventCenter = evt.detail.toolCenter;
-      if (evt.detail.axis === 'x') {
-        newCenter[0] = eventCenter[0];
-      } else if (evt.detail.axis === 'y') {
-        newCenter[1] = eventCenter[1];
-      } else if (evt.detail.axis === 'z') {
-        newCenter[2] = eventCenter[2];
-      }
-      this.setToolCenter(newCenter, 'max');
-    } else {
-      // corner sphere moved, update both min and max
-      const eventCenter = evt.detail.toolCenter;
-      // For each axis, check if the moved corner is at min or max for that axis
-      const minIdx = [0, 2, 4]; // XMIN, YMIN, ZMIN
-      const maxIdx = [1, 3, 5]; // XMAX, YMAX, ZMAX
+    const { draggingSphereIndex, toolCenter } = evt.detail;
+    // Use enums for clarity
+    const SPHEREINDEX = {
+      XMIN: 0,
+      XMAX: 1,
+      YMIN: 2,
+      YMAX: 3,
+      ZMIN: 4,
+      ZMAX: 5,
+      // Corner indices: 6-13 (if needed)
+    };
 
-      // Copy current min and max
-      const newMin: Types.Point3 = [...this.toolCenterMin];
-      const newMax: Types.Point3 = [...this.toolCenterMax];
+    // Helper to update min/max
+    const updateAxis = (arr, axis, value) => {
+      arr[axis] = value;
+    };
 
-      // For each axis, update min or max depending on the corner index
-      // draggingSphereIndex: 6 = XMIN_YMIN_ZMIN, 7 = XMIN_YMIN_ZMAX, ... up to 13 = XMAX_YMAX_ZMAX
-      const idx = evt.detail.draggingSphereIndex;
-      // Determine for each axis if this corner is at min or max
-      // X axis
-      if ([6, 7, 8, 9].includes(idx)) {
-        newMin[0] = eventCenter[0];
+    // Copy current min/max
+    const newMin = [...this.toolCenterMin];
+    const newMax = [...this.toolCenterMax];
+
+    // Face spheres
+    if (draggingSphereIndex >= 0 && draggingSphereIndex <= 5) {
+      const axis = Math.floor(draggingSphereIndex / 2); // 0:x, 1:y, 2:z
+      const isMin = draggingSphereIndex % 2 === 0;
+      if (isMin) {
+        updateAxis(newMin, axis, toolCenter[axis]);
       } else {
-        newMax[0] = eventCenter[0];
+        updateAxis(newMax, axis, toolCenter[axis]);
       }
-      // Y axis
+      this.setToolCenter(newMin, 'min');
+      this.setToolCenter(newMax, 'max');
+      return;
+    }
+
+    // Corner spheres (indices 6-13)
+    if (draggingSphereIndex >= 6 && draggingSphereIndex <= 13) {
+      // For each axis, update min or max depending on the corner index bits
+      // X: 6-9 = min, 10-13 = max
+      // Y: 6,7,10,11 = min, 8,9,12,13 = max
+      // Z: even = min, odd = max
+      const idx = draggingSphereIndex;
+      // X
+      if (idx < 10) {
+        newMin[0] = toolCenter[0];
+      } else {
+        newMax[0] = toolCenter[0];
+      }
+      // Y
       if ([6, 7, 10, 11].includes(idx)) {
-        newMin[1] = eventCenter[1];
+        newMin[1] = toolCenter[1];
       } else {
-        newMax[1] = eventCenter[1];
+        newMax[1] = toolCenter[1];
       }
-      // Z axis
-      if ([6, 8, 10, 12].includes(idx)) {
-        newMin[2] = eventCenter[2];
+      // Z
+      if (idx % 2 === 0) {
+        newMin[2] = toolCenter[2];
       } else {
-        newMax[2] = eventCenter[2];
+        newMax[2] = toolCenter[2];
       }
 
       this.setToolCenter(newMin, 'min');
       this.setToolCenter(newMax, 'max');
     }
   };
-
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
     if (viewportsInfo && viewportsInfo.length > 0) {
