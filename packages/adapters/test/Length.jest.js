@@ -57,8 +57,9 @@ describe("Length", () => {
             worldToImageCoords,
             false
         );
-        expect(tidArgs.point1).toEqual([0, 1]);
-        expect(tidArgs.point2).toEqual([10, 5]);
+        // Either x,y or [x,y] is allowed
+        expect(tidArgs.point1).toEqual({ x: 0, y: 1 });
+        expect(tidArgs.point2).toEqual({ x: 10, y: 5 });
     });
 
     it("Must use scoord3d for mpr points", () => {
@@ -67,8 +68,8 @@ describe("Length", () => {
             worldToImageCoords,
             true
         );
-        expect(tidArgs.point1).toEqual([0, 1, 2]);
-        expect(tidArgs.point2).toEqual([10, 5, 11]);
+        expect(tidArgs.point1).toEqual({ x: 0, y: 1, z: 2 });
+        expect(tidArgs.point2).toEqual({ x: 10, y: 5, z: 11 });
     });
 
     it("Must convert tid1501 to tool data scoord", () => {});
