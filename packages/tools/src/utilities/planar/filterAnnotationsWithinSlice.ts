@@ -35,7 +35,25 @@ export default function filterAnnotationsWithinSlice(
   // logic down below.
   const annotationsWithParallelNormals = annotations.filter(
     (td: Annotation) => {
-      let annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+      const { referencedPlane, referencedImageId } = td.metadata;
+      let { viewPlaneNormal: annotationViewPlaneNormal } = td.metadata;
+
+      if (referencedPlane) {
+        const { inPlaneVector1, inPlaneVector2 } = referencedPlane;
+        if (
+          inPlaneVector1 &&
+          !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector1))
+        ) {
+          return false;
+        }
+        if (
+          inPlaneVector2 &&
+          !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector2))
+        ) {
+          return false;
+        }
+        return true;
+      }
 
       if (
         !td.metadata.referencedImageId &&
@@ -44,20 +62,19 @@ export default function filterAnnotationsWithinSlice(
       ) {
         for (const point of td.data.handles.points) {
           const vector = vec3.sub(vec3.create(), point, camera.focalPoint);
-          const dotProduct = vec3.dot(vector, camera.viewPlaneNormal);
+          const dotProduct = vec3.dot(vector, viewPlaneNormal);
           if (!isEqual(dotProduct, 0)) {
             return false;
           }
         }
-        td.metadata.viewPlaneNormal = camera.viewPlaneNormal;
+        td.metadata.viewPlaneNormal = viewPlaneNormal;
         td.metadata.cameraFocalPoint = camera.focalPoint;
         return true;
       }
 
-      if (!annotationViewPlaneNormal) {
+      if (!annotationViewPlaneNormal && referencedImageId) {
         // This code is run to set the annotation view plane normal
         // for historical data which was saved without the normal.
-        const { referencedImageId } = td.metadata;
         const { imageOrientationPatient } = metaData.get(
           'imagePlaneModule',
           referencedImageId
@@ -79,6 +96,7 @@ export default function filterAnnotationsWithinSlice(
         vec3.cross(annotationViewPlaneNormal, rowCosineVec, colCosineVec);
         td.metadata.viewPlaneNormal = annotationViewPlaneNormal;
       }
+
       const isParallel =
         Math.abs(vec3.dot(viewPlaneNormal, annotationViewPlaneNormal)) >
         PARALLEL_THRESHOLD;

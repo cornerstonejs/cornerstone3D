@@ -325,15 +325,16 @@ export default class MeasurementReport {
         SCOORD3DGroup,
         toolType
     }): SpatialCoordinatesData {
+        const annotationUID = DicomMetaDictionary.uid();
         const toolData = {
             SCOORD3DGroup,
             FrameOfReferenceUID: SCOORD3DGroup.ReferencedFrameOfReferenceUID,
             state: {
                 description: undefined,
                 annotation: {
-                    annotationUID: DicomMetaDictionary.uid(),
+                    annotationUID,
                     data: {
-                        annotationUID: null
+                        annotationUID
                     },
                     metadata: {
                         toolName: toolType,
@@ -343,7 +344,6 @@ export default class MeasurementReport {
                 }
             }
         };
-        console.warn("SCOORD3DGroup=", SCOORD3DGroup);
         csUtilities.updateReferencedPlane(
             toPoint3(SCOORD3DGroup.GraphicData),
             toolData.state.annotation.metadata
