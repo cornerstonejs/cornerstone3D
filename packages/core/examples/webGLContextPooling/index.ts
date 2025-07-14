@@ -192,7 +192,7 @@ async function run() {
       webGlContextCount: currentContextCount,
     },
     debug: {
-      statsOverlay: true, // Enable stats overlay for debugging
+      statsOverlay: process.env.CI ? false : true,
     },
   });
 

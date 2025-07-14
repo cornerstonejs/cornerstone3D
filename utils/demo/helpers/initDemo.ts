@@ -30,12 +30,12 @@ export default async function initDemo(config: any = {}) {
       ? {
           ...config.core,
           debug: {
-            statsOverlay: true,
+            statsOverlay: process.env.CI ? false : true,
           },
         }
       : {
           debug: {
-            statsOverlay: true,
+            statsOverlay: process.env.CI ? false : true,
           },
         }),
   });
