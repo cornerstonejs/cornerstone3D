@@ -676,11 +676,11 @@ class VolumeCroppingTool extends AnnotationTool {
 
     // Update planes and spheres for each axis
     for (let i = 0; i < 3; ++i) {
-      const origin = [0, 0, 0];
+      const origin: [number, number, number] = [0, 0, 0];
       origin[i] = toolCenter[i];
       const plane = vtkPlane.newInstance({
         origin,
-        normal: normals[i],
+        normal: normals[i] as [number, number, number],
       });
       this.originalClippingPlanes[planeIndices[i]].origin = plane.getOrigin();
 
@@ -714,7 +714,7 @@ class VolumeCroppingTool extends AnnotationTool {
       // Update vtk clipping plane origin
       const volumeActor = viewport.getDefaultActor()?.actor;
       if (volumeActor) {
-        const mapper = volumeActor.getMapper();
+        const mapper = volumeActor.getMapper() as vtkVolumeMapper;
         const clippingPlanes = mapper.getClippingPlanes();
         clippingPlanes[planeIndices[i]].setOrigin(plane.getOrigin());
       }
@@ -735,7 +735,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-    const mouseCanvas = [evt.offsetX, evt.offsetY];
+    const mouseCanvas: [number, number] = [evt.offsetX, evt.offsetY];
     // Find the sphere under the mouse
     for (let i = 0; i < this.sphereStates.length; ++i) {
       const sphereCanvas = viewport.worldToCanvas(this.sphereStates[i].point);
@@ -799,7 +799,7 @@ class VolumeCroppingTool extends AnnotationTool {
 
     if (sphereState.isCorner) {
       // Move the dragged corner sphere
-      let newCorner = [...world];
+      let newCorner: [number, number, number] = [world[0], world[1], world[2]];
       if (this.cornerDragOffset) {
         newCorner = [
           world[0] + this.cornerDragOffset[0],
@@ -918,9 +918,19 @@ class VolumeCroppingTool extends AnnotationTool {
 
     mapper.removeAllClippingPlanes();
     for (let i = 0; i < 6; ++i) {
+      const origin = this.originalClippingPlanes[i].origin as [
+        number,
+        number,
+        number
+      ];
+      const normal = this.originalClippingPlanes[i].normal as [
+        number,
+        number,
+        number
+      ];
       const plane = vtkPlane.newInstance({
-        origin: this.originalClippingPlanes[i].origin,
-        normal: this.originalClippingPlanes[i].normal,
+        origin,
+        normal,
       });
       mapper.addClippingPlane(plane);
     }
@@ -1071,21 +1081,21 @@ class VolumeCroppingTool extends AnnotationTool {
       if (state1 && state2) {
         const point1 = state1.point;
         const point2 = state2.point;
-        const direction = [
+        const direction = new Float32Array([
           point2[0] - point1[0],
           point2[1] - point1[1],
           point2[2] - point1[2],
-        ];
+        ]);
         const length = Math.sqrt(
           direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
         );
-        const normDirection = [0, 0, 0];
+        const normDirection = new Float32Array([0, 0, 0]);
         vec3.normalize(normDirection, direction);
-        const center = [
+        const center = new Float32Array([
           (point1[0] + point2[0]) / 2,
           (point1[1] + point2[1]) / 2,
           (point1[2] + point2[2]) / 2,
-        ];
+        ]);
         source.setCenter(center[0], center[1], center[2]);
         source.setHeight(length);
         source.setDirection(

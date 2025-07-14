@@ -1067,8 +1067,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
     };
 
     // Copy current min/max
-    const newMin = [...this.toolCenterMin];
-    const newMax = [...this.toolCenterMax];
+    const newMin: [number, number, number] = [...this.toolCenterMin];
+    const newMax: [number, number, number] = [...this.toolCenterMax];
 
     // Face spheres
     if (draggingSphereIndex >= 0 && draggingSphereIndex <= 5) {
