@@ -71,6 +71,7 @@ type SetupMeasurementData = {
         };
     };
     SCOORDGroup?: ScoordType;
+    textBoxPosition?: ScoordType;
     ReferencedSOPSequence?: Record<string, unknown>;
     ReferencedSOPInstanceUID?: string;
     referencedImageId?: string;
@@ -358,25 +359,31 @@ export default class MeasurementReport {
         metadata,
         toolType
     }): SpatialCoordinatesData {
-        const SCOORDGroup = toArray(NUMGroup.ContentSequence).find(
+        const contentSequenceArr = toArray(NUMGroup.ContentSequence);
+        const SCOORDGroup = contentSequenceArr.find(
             group => group.ValueType === "SCOORD"
         );
-        const SCOORD3DGroup = toArray(NUMGroup.ContentSequence).find(
+        const SCOORD3DGroup = contentSequenceArr.find(
             group => group.ValueType === "SCOORD3D"
         );
+        const textBoxPosition = contentSequenceArr.find(
+            group =>
+                group.ValueType === "SCOORD" &&
+                group.GraphicType === "POINT" &&
+                group.ConceptNameCodeSequence.CodeMeaning ===
+                    "Annotation Position"
+        );
 
-        if (SCOORDGroup) {
-            return this.processSCOORDGroup({
-                SCOORDGroup,
-                toolType,
-                metadata,
-                sopInstanceUIDToImageIdMap
-            });
-        } else if (SCOORD3DGroup) {
-            return this.processSCOORD3DGroup({ SCOORD3DGroup, toolType });
-        } else {
-            throw new Error("No spatial coordinates group found.");
-        }
+        const spatialState = SCOORD3DGroup
+            ? this.processSCOORD3DGroup({ SCOORD3DGroup, toolType })
+            : this.processSCOORDGroup({
+                  SCOORDGroup,
+                  toolType,
+                  metadata,
+                  sopInstanceUIDToImageIdMap
+              });
+        spatialState.textBoxPosition = textBoxPosition;
+        return spatialState;
     }
 
     public static processSpatialCoordinatesGroup({
@@ -395,7 +402,8 @@ export default class MeasurementReport {
             ReferencedFrameNumber,
             SCOORD3DGroup,
             FrameOfReferenceUID,
-            referencedImageId
+            referencedImageId,
+            textBoxPosition
         } = this.getSpatialCoordinatesState({
             NUMGroup,
             sopInstanceUIDToImageIdMap,
@@ -434,7 +442,8 @@ export default class MeasurementReport {
             referencedImageId,
             ReferencedFrameNumber,
             SCOORD3DGroup,
-            FrameOfReferenceUID
+            FrameOfReferenceUID,
+            textBoxPosition
         };
     }
 
