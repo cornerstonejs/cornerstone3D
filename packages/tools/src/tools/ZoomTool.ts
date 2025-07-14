@@ -136,6 +136,7 @@ class ZoomTool extends BaseTool {
     } else {
       this._dragPerspectiveProjection(evt, viewport, camera);
     }
+
     viewport.render();
   }
 
