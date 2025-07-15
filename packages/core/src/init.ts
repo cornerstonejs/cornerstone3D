@@ -29,6 +29,16 @@ const defaultConfig: Cornerstone3DConfig = {
     webGlContextCount: 7,
   },
 
+  debug: {
+    /**
+     * Wether or not to show the stats overlay for debugging purposes, stats include:
+     * - FPS Frames rendered in the last second. The higher the number the better.
+     * - MS Milliseconds needed to render a frame. The lower the number the better.
+     * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
+     */
+    statsOverlay: false,
+  },
+
   /**
    * Imports peer modules.
    * This may just fallback to the default import, but many packaging
