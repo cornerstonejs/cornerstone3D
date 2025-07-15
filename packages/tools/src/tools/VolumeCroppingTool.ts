@@ -194,7 +194,7 @@ class VolumeCroppingTool extends AnnotationTool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse'],
       configuration: {
-        showCornerSpheres: false,
+        showCornerSpheres: true,
         showHandles: true,
         mobile: {
           enabled: false,
@@ -207,7 +207,7 @@ class VolumeCroppingTool extends AnnotationTool {
           z: [1.0, 0.0, 0.0], // Red for Z
           corners: [0.0, 0.0, 1.0], // Blue for corners
         },
-        sphereRadius: 10,
+        sphereRadius: 8,
         grabSpherePixelDistance: 20, //pixels threshold for closeness to the sphere being grabbed
       },
     }
@@ -334,6 +334,7 @@ class VolumeCroppingTool extends AnnotationTool {
   };
 
   onSetToolActive() {
+    console.debug('VolumeCroppingTool: onSetToolActive');
     const viewportsInfo = this._getViewportsInfo();
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
     this._subscribeToViewportNewVolumeSet(viewportsInfo);
@@ -342,14 +343,17 @@ class VolumeCroppingTool extends AnnotationTool {
 
   onSetToolPassive() {
     const viewportsInfo = this._getViewportsInfo();
+    console.debug('VolumeCroppingTool: onSetToolPassive');
   }
 
   onSetToolEnabled() {
+    console.debug('VolumeCroppingTool: onSetToolEnabled');
     const viewportsInfo = this._getViewportsInfo();
     this._initialize3DViewports(viewportsInfo);
   }
 
   onSetToolDisabled() {
+    console.debug('VolumeCroppingTool: onSetToolDisabled');
     const viewportsInfo = this._getViewportsInfo();
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
   }
@@ -418,6 +422,13 @@ class VolumeCroppingTool extends AnnotationTool {
   }
 
   _initialize3DViewports = (viewportsInfo): void => {
+    console.debug('VolumeCroppingTool: starting.');
+    if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
+      console.warn(
+        'VolumeCroppingTool: No viewportsInfo available for initialization of volumecroppingtool.'
+      );
+      return;
+    }
     const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
@@ -1265,6 +1276,7 @@ class VolumeCroppingTool extends AnnotationTool {
     // mobile sometimes has lingering interaction even when touchEnd triggers
     // this check allows for multiple handles to be active which doesn't affect
     // tool usage.
+    console.debug('Activating VolumeCroppingTool');
     state.isInteractingWithTool = !this.configuration.mobile?.enabled;
 
     element.addEventListener(Events.MOUSE_UP, this._endCallback);
@@ -1278,7 +1290,7 @@ class VolumeCroppingTool extends AnnotationTool {
 
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
-
+    console.debug('Deactivating VolumeCroppingTool');
     element.removeEventListener(Events.MOUSE_UP, this._endCallback);
     element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
@@ -1403,5 +1415,5 @@ class VolumeCroppingTool extends AnnotationTool {
   }
 }
 
-VolumeCroppingTool.toolName = 'VolumeCroppingTool';
+VolumeCroppingTool.toolName = 'VolumeCropping';
 export default VolumeCroppingTool;

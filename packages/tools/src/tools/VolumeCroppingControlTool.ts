@@ -201,6 +201,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
     normal: Types.Point3;
     point: Types.Point3;
   } => {
+    if (!renderingEngineId || !viewportId) {
+      console.warn(
+        'VolumeCroppingControlTool: Missing renderingEngineId or viewportId'
+      );
+      return;
+    }
     const enabledElement = getEnabledElementByIds(
       viewportId,
       renderingEngineId
@@ -352,6 +358,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
   };
 
   _computeToolCenter = (viewportsInfo): void => {
+    if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
+      console.warn(
+        'VolumeCroppingControlTool: No valid viewportsInfo for computeToolCenter.'
+      );
+      return;
+    }
     // Todo: handle two same view viewport, or more than 3 viewports
     const [firstViewport, secondViewport, thirdViewport] = viewportsInfo;
 
@@ -1635,5 +1647,5 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }
 }
 
-VolumeCroppingControlTool.toolName = 'VolumeCroppingControlTool';
+VolumeCroppingControlTool.toolName = 'VolumeCroppingControl';
 export default VolumeCroppingControlTool;
