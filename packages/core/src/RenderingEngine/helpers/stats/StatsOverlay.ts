@@ -6,6 +6,7 @@ import { STATS_CONFIG, PANEL_CONFIGS, CONVERSION } from './constants';
 /**
  * Singleton class for managing the stats overlay.
  * Provides FPS, MS, and memory usage monitoring.
+ * Credits: https://github.com/mrdoob/stats.js/blob/master/LICENSE
  */
 export class StatsOverlay implements StatsInstance {
   private static instance: StatsOverlay | null = null;

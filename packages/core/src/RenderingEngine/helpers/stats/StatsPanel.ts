@@ -3,6 +3,7 @@ import { PANEL_CONFIG } from './constants';
 
 /**
  * Individual panel for displaying stats (FPS, MS, MB).
+ * Credits: https://github.com/mrdoob/stats.js/blob/master/LICENSE
  */
 export class StatsPanel implements Panel {
   public dom: HTMLCanvasElement;
