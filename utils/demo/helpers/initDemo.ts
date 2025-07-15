@@ -24,18 +24,22 @@ export default async function initDemo(config: any = {}) {
   initProviders();
   cornerstoneDICOMImageLoader.init();
   initVolumeLoader();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugEnabled = urlParams.get('debug') === 'true';
+
   await csRenderInit({
     peerImport,
     ...(config?.core
       ? {
           ...config.core,
           debug: {
-            statsOverlay: process.env.CI ? false : true,
+            statsOverlay: debugEnabled,
           },
         }
       : {
           debug: {
-            statsOverlay: process.env.CI ? false : true,
+            statsOverlay: debugEnabled,
           },
         }),
   });

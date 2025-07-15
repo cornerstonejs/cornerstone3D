@@ -68,11 +68,7 @@ function getSphereActor({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await csRenderInit({
-    debug: {
-      statsOverlay: process.env.CI ? false : true,
-    },
-  });
+  await csRenderInit();
   await csToolsInit();
 
   // Instantiate a rendering engine

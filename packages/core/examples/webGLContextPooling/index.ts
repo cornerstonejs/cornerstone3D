@@ -191,9 +191,6 @@ async function run() {
     rendering: {
       webGlContextCount: currentContextCount,
     },
-    debug: {
-      statsOverlay: process.env.CI ? false : true,
-    },
   });
 
   // Initialize cornerstone tools
