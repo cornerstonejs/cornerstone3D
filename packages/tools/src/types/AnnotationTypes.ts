@@ -47,6 +47,11 @@ type Annotation = {
      * The viewUp for the view position
      */
     viewUp?: Types.Point3;
+
+    /**
+     * Optional custom metadata for the annotation.
+     */
+    [key: string]: unknown;
   };
   /**
    * Data for annotation, Derivatives need to define their own data types.
@@ -54,6 +59,9 @@ type Annotation = {
   data: {
     /** Annotation handles that are grabbable for manipulation */
     handles?: Handles;
+    /**
+     * Optional custom data for the annotation.
+     */
     [key: string]: unknown;
     /** Cached Annotation statistics which is specific to the tool */
     cachedStats?: Record<string, unknown>;
