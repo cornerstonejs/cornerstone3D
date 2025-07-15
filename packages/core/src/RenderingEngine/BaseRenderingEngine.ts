@@ -8,7 +8,11 @@ import BaseVolumeViewport from './BaseVolumeViewport';
 import StackViewport from './StackViewport';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
-import { getShouldUseCPURendering, isCornerstoneInitialized } from '../init';
+import {
+  getShouldUseCPURendering,
+  isCornerstoneInitialized,
+  getConfiguration,
+} from '../init';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
@@ -22,6 +26,7 @@ import type {
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
+import { StatsOverlay } from './helpers/stats';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 export const VIEWPORT_MIN_SIZE = 2;
@@ -64,6 +69,12 @@ abstract class BaseRenderingEngine {
 
     this._viewports = new Map();
     this.hasBeenDestroyed = false;
+
+    const config = getConfiguration();
+
+    if (config?.debug?.statsOverlay) {
+      StatsOverlay.setup();
+    }
   }
 
   /**
@@ -434,6 +445,8 @@ abstract class BaseRenderingEngine {
     if (this.hasBeenDestroyed) {
       return;
     }
+
+    StatsOverlay.cleanup();
 
     // remove vtk rendered first before resetting the viewport
     if (!this.useCPURendering) {
