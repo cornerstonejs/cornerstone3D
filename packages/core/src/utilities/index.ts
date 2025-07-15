@@ -101,6 +101,7 @@ export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
 import { asArray } from './asArray';
+export { updateReferencedPlane } from './updateReferencedPlane';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
