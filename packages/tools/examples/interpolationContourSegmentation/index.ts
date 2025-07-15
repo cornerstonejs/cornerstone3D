@@ -420,6 +420,8 @@ async function run() {
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
     ]);
+
+    updateActiveSegmentIndex(1);
   }
 
   frameOfReferenceUID = volumeViewport.getFrameOfReferenceUID();

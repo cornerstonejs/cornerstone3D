@@ -225,6 +225,7 @@ async function run() {
     }
   );
 
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
   renderingEngine.render();
 }
 
