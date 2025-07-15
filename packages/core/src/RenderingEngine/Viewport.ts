@@ -1859,7 +1859,7 @@ class Viewport {
     }
     const { focalPoint, viewPlaneNormal } = this.getCamera();
     const { point, inPlaneVector1, inPlaneVector2 } = referencedPlane;
-    if (options?.asVolume) {
+    if (options?.withOrientation) {
       // Don't need to check the normal or the navigation if asking as a volume
       // since those can both be updated
       return true;
