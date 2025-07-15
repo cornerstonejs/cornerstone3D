@@ -35,11 +35,11 @@ export default function filterAnnotationsWithinSlice(
   // logic down below.
   const annotationsWithParallelNormals = annotations.filter(
     (td: Annotation) => {
-      const { referencedPlane, referencedImageId } = td.metadata;
+      const { planeRestriction, referencedImageId } = td.metadata;
       let { viewPlaneNormal: annotationViewPlaneNormal } = td.metadata;
 
-      if (referencedPlane) {
-        const { inPlaneVector1, inPlaneVector2 } = referencedPlane;
+      if (planeRestriction) {
+        const { inPlaneVector1, inPlaneVector2 } = planeRestriction;
         if (
           inPlaneVector1 &&
           !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector1))

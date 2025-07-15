@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { Cornerstone3DSR } from "../src/adapters/Cornerstone3D";
+import { utilities } from "@cornerstonejs/core";
 
 const { Length } = Cornerstone3DSR;
 

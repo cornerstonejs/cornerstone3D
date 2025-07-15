@@ -40,7 +40,7 @@ import type {
   ICamera,
 } from '../types';
 import type { VoiModifiedEventDetail } from '../types/EventTypes';
-import type { ReferencedPlane, ViewportInput } from '../types/IViewport';
+import type { PlaneRestriction, ViewportInput } from '../types/IViewport';
 import triggerEvent from '../utilities/triggerEvent';
 import * as colormapUtils from '../utilities/colormap';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
@@ -723,9 +723,9 @@ abstract class BaseVolumeViewport extends Viewport {
    * a new view plane normal as the referenced plane normal, or else the
    * cross product of the existing view plane normal and the inPlaneVector1
    */
-  public setViewPlane(referencedPlane: ReferencedPlane, viewPlaneNormal) {
+  public setViewPlane(planeRestriction: PlaneRestriction, viewPlaneNormal) {
     const { point, inPlaneVector1, inPlaneVector2, FrameOfReferenceUID } =
-      referencedPlane;
+      planeRestriction;
 
     if (!inPlaneVector1) {
       return this.setViewReference({
@@ -780,7 +780,7 @@ abstract class BaseVolumeViewport extends Viewport {
       FrameOfReferenceUID: refFrameOfReference,
       cameraFocalPoint,
       referencedImageId,
-      referencedPlane,
+      planeRestriction,
       viewPlaneNormal: refViewPlaneNormal,
       viewUp,
     } = viewRef;
@@ -788,8 +788,8 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const { focalPoint, viewPlaneNormal, position } = this.getCamera();
 
-    if (referencedPlane?.inPlaneVector1 && !refViewPlaneNormal) {
-      return this.setViewPlane(referencedPlane, viewPlaneNormal);
+    if (planeRestriction?.inPlaneVector1 && !refViewPlaneNormal) {
+      return this.setViewPlane(planeRestriction, viewPlaneNormal);
     }
 
     const isNegativeNormal = isEqualNegative(

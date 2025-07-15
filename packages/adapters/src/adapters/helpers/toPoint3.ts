@@ -1,5 +1,11 @@
 import type { Types } from "@cornerstonejs/core";
 
+/**
+ * Converts a set of flat points, represented as just a flat list of
+ * `[x1,y1,z1,x2,y2,z2,....]`
+ * into the equivalent Point3 array
+ * `[[x1,y1,z1], [x2,y2,z2],...]`
+ */
 export function toPoint3(flatPoints: number[]): Types.Point3[] {
     const points = [];
     if (!flatPoints?.length) {

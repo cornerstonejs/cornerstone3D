@@ -54,7 +54,7 @@ type ScoordType = {
 type SetupMeasurementData = {
     defaultState: SpatialCoordinatesState;
     state?: SpatialCoordinatesState;
-    isMeasurement3d?: boolean;
+    is3DMeasurement?: boolean;
     scoord?: ScoordType;
     worldCoords?: CSTypes.Point3[];
     scoordArgs?: {
@@ -63,7 +63,7 @@ type SetupMeasurementData = {
             graphicData: number[]
         ) => CSTypes.Point3;
         referencedImageId: string;
-        isMeasurement3d: boolean;
+        is3DMeasurement: boolean;
     };
     NUMGroup: {
         MeasuredValueSequence: {
@@ -344,7 +344,7 @@ export default class MeasurementReport {
                 }
             }
         };
-        csUtilities.updateReferencedPlane(
+        csUtilities.updatePlaneRestriction(
             toPoint3(SCOORD3DGroup.GraphicData),
             toolData.state.annotation.metadata
         );
@@ -410,22 +410,21 @@ export default class MeasurementReport {
             return addAccessors(fsg.ConceptCodeSequence);
         });
 
-        const defaultState = {
-            ...state,
-            finding,
-            findingSites
-        };
+        state.finding = finding;
+        state.findingSites = findingSites;
 
-        if (defaultState.finding) {
-            defaultState.description = defaultState.finding.CodeMeaning;
+        if (finding) {
+            state.description = finding.CodeMeaning;
         }
 
-        defaultState.annotation.data.label =
-            MeasurementReport.getCornerstoneLabelFromDefaultState(defaultState);
+        state.annotation.data.label =
+            MeasurementReport.getCornerstoneLabelFromDefaultState(state);
 
         return {
-            defaultState,
-            state: defaultState,
+            // Deprecating the defaultState in favour of state, but there are lots
+            // of adapters still using defaultState
+            defaultState: state,
+            state,
             NUMGroup,
             scoord: SCOORD3DGroup || SCOORDGroup,
             SCOORDGroup,
@@ -469,11 +468,11 @@ export default class MeasurementReport {
         });
 
         const { referencedImageId } = spatialGroup.state.annotation.metadata;
-        const isMeasurement3d = !!spatialGroup.SCOORD3DGroup;
+        const is3DMeasurement = !!spatialGroup.SCOORD3DGroup;
         const scoordArgs = {
             referencedImageId,
             imageToWorldCoords,
-            isMeasurement3d
+            is3DMeasurement
         };
         const scoord = spatialGroup.SCOORD3DGroup || spatialGroup.SCOORDGroup;
         const worldCoords = imageToWorldCoords
@@ -482,7 +481,7 @@ export default class MeasurementReport {
 
         return {
             ...spatialGroup,
-            isMeasurement3d,
+            is3DMeasurement,
             scoordArgs,
             scoord,
             worldCoords

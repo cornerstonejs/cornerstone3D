@@ -32,7 +32,9 @@ export type ViewReferenceSpecifier = {
    */
   rangeEndSliceIndex?: number;
 
-  /** The frame number for a multiframe */
+  /**
+   * The frame number for a multiframe
+   */
   frameNumber?: number;
 
   /**
@@ -42,9 +44,13 @@ export type ViewReferenceSpecifier = {
    * reference UID.
    */
   forFrameOfReference?: boolean;
-  /** Set of points to get a reference for, in world space */
+  /**
+   * Set of points to get a reference for, in world space
+   */
   points?: Point3[];
-  /** The volumeId to reference */
+  /**
+   * The volumeId to reference
+   */
   volumeId?: string;
 };
 
@@ -111,37 +117,34 @@ export type ReferencedImageRange = ViewReference & {
 };
 
 /**
- *  A referenced plane specifies a planar coordinate system
- * The most degenerate case has a single point, and includes all planes
- * which pass through that point.  For this case, if a view plane normal
- * is required to display the point, the current view plane normal of the
- * viewport is recommended, or the acquisition plane if there is no view plane
- * normal.
+ * A plane restriction is an object that restricts which camera views are
+ * compatible with the restriction.  Currently the restriction only
+ * allows being specified via the frame of reference and a point in the
+ * view and up to two in plane vectors.
  *
- * A colinear plane restricts the set of all planes containing point to those
- * which are around the line from point to point+inPlaneVector1
- * If a view plane normal is required to display the line, the current view up
- * cross product with the inPlaneVector1 is recommended if these are not colinear.
- * Otherwise, the cross product of inPlaneVector1 and the current view plane normal
- * is recommended.
+ * If only the FOR and a point is specified, any camera view containing that point
+ * is viewable.
  *
- * A specific plane reference further restricts the colinear planes to those
- * which also include point+inPlaneVector2
- * The view plane normal to display this point is required to be the cross product
- * of the two inPlaneVector values.
+ * If a inPlaneVector(s) are specified, they must also be orthogonal to the view plane normal.
+ *
+ * Other types of plane restrictions may be defined at a later point.
  */
-export type ReferencedPlane = {
+export type PlaneRestriction = {
   FrameOfReferenceUID: string;
 
-  /** A single point within the reference plane is required for all references */
+  /**
+   * A single point within the reference plane is required for all references
+   */
   point: Point3;
 
-  /** An inPlaneVector1 is required for all colinear referenced planes.
+  /**
+   * An inPlaneVector1 is required for all colinear referenced planes.
    * Shall not be undefined if inPlaneVector2 is defined.
    */
   inPlaneVector1?: Point3;
 
-  /** An inPlaneVector2 is required for all full planar definitions.
+  /**
+   * An inPlaneVector2 is required for all full planar definitions.
    * Shall have a non-zero dot product with inPlaneVector1, that is, shall be
    * non-colinear with inPlaneVector1.
    */
@@ -178,7 +181,7 @@ export interface ViewReference {
    * determining whether a view can be seen in a variety of conditions.  It does not
    * allow recovering the original view reference.
    */
-  referencedPlane?: ReferencedPlane;
+  planeRestriction?: PlaneRestriction;
 
   /**
    * An optional property used to specify the particular image that this view includes.

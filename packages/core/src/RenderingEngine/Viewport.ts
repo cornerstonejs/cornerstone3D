@@ -38,7 +38,7 @@ import type {
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
   DataSetOptions,
-  ReferencedPlane,
+  PlaneRestriction,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import type IImageCalibration from '../types/IImageCalibration';
@@ -48,7 +48,7 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
-import { updateReferencedPlane } from '../utilities/updateReferencedPlane';
+import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -1835,7 +1835,7 @@ class Viewport {
       /** The referenced plane is the canonical specifier for whether
        * this view reference is visible or not.
        */
-      referencedPlane: {
+      planeRestriction: {
         FrameOfReferenceUID,
         point: viewRefSpecifier?.points?.[0] || cameraFocalPoint,
         inPlaneVector1: viewUp,
@@ -1845,20 +1845,22 @@ class Viewport {
       },
     };
     if (viewRefSpecifier?.points) {
-      updateReferencedPlane(viewRefSpecifier.points, target.referencedPlane);
+      updatePlaneRestriction(viewRefSpecifier.points, target.planeRestriction);
     }
     return target;
   }
 
   public isPlaneViewable(
-    referencedPlane: ReferencedPlane,
+    planeRestriction: PlaneRestriction,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    if (referencedPlane.FrameOfReferenceUID !== this.getFrameOfReferenceUID()) {
+    if (
+      planeRestriction.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
+    ) {
       return false;
     }
     const { focalPoint, viewPlaneNormal } = this.getCamera();
-    const { point, inPlaneVector1, inPlaneVector2 } = referencedPlane;
+    const { point, inPlaneVector1, inPlaneVector2 } = planeRestriction;
     if (options?.withOrientation) {
       // Don't need to check the normal or the navigation if asking as a volume
       // since those can both be updated
@@ -1893,8 +1895,8 @@ class Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    if (viewRef.referencedPlane) {
-      return this.isPlaneViewable(viewRef.referencedPlane, options);
+    if (viewRef.planeRestriction) {
+      return this.isPlaneViewable(viewRef.planeRestriction, options);
     }
     if (
       viewRef.FrameOfReferenceUID &&
