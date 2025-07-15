@@ -14,13 +14,26 @@ import removeContourFromElement from './removeContourFromElement';
 import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { getUniqueSegmentIndices } from '../../../utilities/segmentation/getUniqueSegmentIndices';
+import { clearCachedSegmentIndices } from '../../../utilities/segmentation/utilities';
 import { getAnnotation } from '../../../stateManagement/annotation/annotationState';
 import { vec3 } from 'gl-matrix';
 
 const polySegConversionInProgressForViewportId = new Map<string, boolean>();
 
 const processedViewportSegmentations = new Map<string, Set<string>>();
-
+/**
+ * This clear the contour display cache, that is isued when convert from contour to surface.
+ * Include: processedViewportSegmentations, polySegConversionInProgressForViewportId,
+ * CachedSegmentIndices in segmentation and
+ * polyDataCache & surfacesAABBCache in clipAndCacheSurfacesForViewport
+ */
+function clearContourDisplayCache() {
+  processedViewportSegmentations.clear();
+  polySegConversionInProgressForViewportId.clear();
+  clearCachedSegmentIndices();
+  const polyseg = getPolySeg();
+  polyseg.clearCache();
+}
 /**
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
@@ -276,4 +289,5 @@ function _checkContourNormalsMatchViewport(
 export default {
   render,
   removeRepresentation,
+  clearContourDisplayCache,
 };
