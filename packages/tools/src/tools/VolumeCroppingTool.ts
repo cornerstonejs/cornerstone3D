@@ -295,7 +295,7 @@ class VolumeCroppingTool extends AnnotationTool {
       });
 
       // Update corners and edges as well
-      this._updateCornerSpheres(viewport);
+      this._updateCornerSpheres();
     }
 
     // Show/hide actors
@@ -1039,7 +1039,7 @@ class VolumeCroppingTool extends AnnotationTool {
     });
   }
 
-  _updateCornerSpheres(viewport) {
+  _updateCornerSpheres() {
     // Get face sphere positions
     const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
     const xMax = this.sphereStates[SPHEREINDEX.XMAX].point[0];
@@ -1118,7 +1118,7 @@ class VolumeCroppingTool extends AnnotationTool {
 
       if (sphereState.isCorner) {
         this._updateFaceSpheresFromCorners();
-        this._updateCornerSpheres(viewport);
+        this._updateCornerSpheres();
         this._updateClippingPlanesFromFaceSpheres(viewport);
       }
     }
