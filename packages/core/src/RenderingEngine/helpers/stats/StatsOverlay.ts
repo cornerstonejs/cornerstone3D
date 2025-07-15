@@ -10,23 +10,16 @@ import { STATS_CONFIG, PANEL_CONFIGS, CONVERSION } from './constants';
 export class StatsOverlay implements StatsInstance {
   private static instance: StatsOverlay | null = null;
 
-  public dom: HTMLDivElement;
+  public dom: HTMLDivElement | null = null;
   private currentMode = 0;
-  private startTime: number;
-  private lastUpdateTime: number;
+  private startTime: number = 0;
+  private lastUpdateTime: number = 0;
   private frameCount = 0;
   private panels: Map<PanelType, Panel> = new Map();
   private animationFrameId: number | null = null;
   private isSetup = false;
 
-  private constructor() {
-    this.dom = this.createOverlayElement();
-    this.startTime = performance.now();
-    this.lastUpdateTime = this.startTime;
-
-    this.initializePanels();
-    this.showPanel(PanelType.FPS);
-  }
+  private constructor() {}
 
   /**
    * Gets the singleton instance of StatsOverlay.
@@ -47,6 +40,16 @@ export class StatsOverlay implements StatsInstance {
     }
 
     try {
+      // Initialize DOM and timing
+      this.dom = this.createOverlayElement();
+      this.startTime = performance.now();
+      this.lastUpdateTime = this.startTime;
+
+      // Initialize panels and show default
+      this.initializePanels();
+      this.showPanel(PanelType.FPS);
+
+      // Apply styles and add to DOM
       this.applyOverlayStyles();
       document.body.appendChild(this.dom);
       this.startLoop();
@@ -62,10 +65,12 @@ export class StatsOverlay implements StatsInstance {
   public cleanup(): void {
     this.stopLoop();
 
-    if (this.dom.parentNode) {
+    if (this.dom && this.dom.parentNode) {
       this.dom.parentNode.removeChild(this.dom);
     }
 
+    this.dom = null;
+    this.panels.clear();
     this.isSetup = false;
   }
 
