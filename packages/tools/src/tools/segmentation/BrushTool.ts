@@ -37,6 +37,7 @@ import { getStrategyData } from './strategies/utils/getStrategyData';
  */
 class BrushTool extends LabelmapBaseTool {
   static toolName;
+  private _lastDragPoint: Types.Point2 | null = null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -180,7 +181,7 @@ class BrushTool extends LabelmapBaseTool {
     evt: EventTypes.MouseDownActivateEventType
   ): boolean => {
     const eventData = evt.detail;
-    const { element } = eventData;
+    const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
 
     // @ts-expect-error
@@ -194,6 +195,7 @@ class BrushTool extends LabelmapBaseTool {
     // This might be a mouse down
     this._previewData.isDrag = false;
     this._previewData.timerStart = Date.now();
+    this._lastDragPoint = currentPoints.canvas;
 
     const hoverData = this._hoverData || this.createHoverData(element);
 
@@ -371,10 +373,38 @@ class BrushTool extends LabelmapBaseTool {
       this._previewData.timer = null;
     }
 
-    this._previewData.preview = this.applyActiveStrategy(
-      enabledElement,
-      this.getOperationData(element)
-    );
+    const lastPoint = this._lastDragPoint || this._previewData.startPoint;
+    const currentPoint = currentPoints.canvas;
+
+    const distance = vec2.distance(lastPoint, currentPoint);
+
+    if (distance > 1) {
+      const steps = Math.ceil(distance / 2);
+
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const interpolatedCanvas = [
+          lastPoint[0] + (currentPoint[0] - lastPoint[0]) * t,
+          lastPoint[1] + (currentPoint[1] - lastPoint[1]) * t,
+        ];
+
+        this._hoverData = this.createHoverData(element, interpolatedCanvas);
+
+        this._calculateCursor(element, interpolatedCanvas);
+
+        this._previewData.preview = this.applyActiveStrategy(
+          enabledElement,
+          this.getOperationData(element)
+        );
+      }
+    } else {
+      this._previewData.preview = this.applyActiveStrategy(
+        enabledElement,
+        this.getOperationData(element)
+      );
+    }
+
+    this._lastDragPoint = currentPoint;
     this._previewData.element = element;
     // Add a bit of time to the timer start so small accidental movements dont
     // cause issues on clicking
@@ -483,6 +513,8 @@ class BrushTool extends LabelmapBaseTool {
     this.updateCursor(evt);
 
     this._editData = null;
+
+    this._lastDragPoint = null;
 
     this.applyActiveStrategyCallback(
       enabledElement,
