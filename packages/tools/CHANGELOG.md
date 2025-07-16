@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.2...v3.31.3) (2025-07-16)
+
+### Bug Fixes
+
+- improve tool styles ([#2207](https://github.com/cornerstonejs/cornerstone3D/issues/2207)) ([b7d0c47](https://github.com/cornerstonejs/cornerstone3D/commit/b7d0c47a402805594a4d21cceaa7a1be573b33c8))
+
 ## [3.31.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.1...v3.31.2) (2025-07-16)
 
 **Note:** Version bump only for package @cornerstonejs/tools
