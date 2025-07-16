@@ -290,7 +290,6 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   onSetToolActive() {
-    console.debug('VolumeCroppingTool: onSetToolActive');
     const viewportsInfo = this._getViewportsInfo();
     const subscribeToElementResize = () => {
       viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
@@ -348,19 +347,21 @@ class VolumeCroppingTool extends BaseTool {
     this._initialize3DViewports(viewportsInfo);
   }
 
-  onSetToolPassive() {
-    const viewportsInfo = this._getViewportsInfo();
-    console.debug('VolumeCroppingTool: onSetToolPassive');
-  }
-
-  onSetToolEnabled() {
-    console.debug('VolumeCroppingTool: onSetToolEnabled');
-    const viewportsInfo = this._getViewportsInfo();
-    this._initialize3DViewports(viewportsInfo);
-  }
-
   onSetToolDisabled() {
-    console.debug('VolumeCroppingTool: onSetToolDisabled');
+    // Disconnect all resize observers
+    this._resizeObservers.forEach((resizeObserver, viewportId) => {
+      resizeObserver.disconnect();
+      this._resizeObservers.delete(viewportId);
+    });
+
+    if (this._viewportAddedListener) {
+      eventTarget.removeEventListener(
+        Events.TOOLGROUP_VIEWPORT_ADDED,
+        this._viewportAddedListener
+      );
+      this._viewportAddedListener = null; // Clear the reference to the listener
+    }
+
     const viewportsInfo = this._getViewportsInfo();
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
   }
@@ -429,7 +430,6 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _initialize3DViewports = (viewportsInfo): void => {
-    console.debug('VolumeCroppingTool: starting.');
     if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
       console.warn(
         'VolumeCroppingTool: No viewportsInfo available for initialization of volumecroppingtool.'
@@ -742,51 +742,6 @@ class VolumeCroppingTool extends BaseTool {
       this._updateCornerSpheres();
     }
     viewport.render();
-  };
-
-  _onMouseDownSphere = (evt) => {
-    const element = evt.currentTarget;
-    console.debug('VolumeCroppingTool: _onMouseDownSphere', evt);
-    // Prevent default behavior
-    const viewportsInfo = this._getViewportsInfo();
-    const [viewport3D] = viewportsInfo;
-    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-    const mouseCanvas: [number, number] = [evt.offsetX, evt.offsetY];
-    // Find the sphere under the mouse
-    for (let i = 0; i < this.sphereStates.length; ++i) {
-      const sphereCanvas = viewport.worldToCanvas(this.sphereStates[i].point);
-      const dist = Math.sqrt(
-        Math.pow(mouseCanvas[0] - sphereCanvas[0], 2) +
-          Math.pow(mouseCanvas[1] - sphereCanvas[1], 2)
-      );
-      if (dist < this.configuration.grabSpherePixelDistance) {
-        this.draggingSphereIndex = i;
-        element.style.cursor = 'grabbing';
-
-        // --- Store offset for corners ---
-        const sphereState = this.sphereStates[i];
-        const mouseWorld = viewport.canvasToWorld(mouseCanvas);
-        if (sphereState.isCorner) {
-          this.cornerDragOffset = [
-            sphereState.point[0] - mouseWorld[0],
-            sphereState.point[1] - mouseWorld[1],
-            sphereState.point[2] - mouseWorld[2],
-          ];
-          this.faceDragOffset = null;
-        } else {
-          // For face spheres, only store the offset along the axis of movement
-          const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
-          this.faceDragOffset =
-            sphereState.point[axisIdx] - mouseWorld[axisIdx];
-          this.cornerDragOffset = null;
-        }
-        return;
-      }
-    }
-    this.draggingSphereIndex = null;
-    this.cornerDragOffset = null;
-    this.faceDragOffset = null;
   };
 
   _onMouseMoveSphere = (evt) => {
@@ -1130,26 +1085,6 @@ class VolumeCroppingTool extends BaseTool {
     });
   }
 
-  _onMouseUpSphere = (evt) => {
-    console.debug('VolumeCroppingTool: _onMouseUpSphere', evt);
-    evt.currentTarget.style.cursor = '';
-    if (this.draggingSphereIndex !== null) {
-      const sphereState = this.sphereStates[this.draggingSphereIndex];
-      const [viewport3D] = this._getViewportsInfo();
-      const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-      const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
-      if (sphereState.isCorner) {
-        this._updateFaceSpheresFromCorners();
-        this._updateCornerSpheres();
-        this._updateClippingPlanesFromFaceSpheres(viewport);
-      }
-    }
-    this.draggingSphereIndex = null;
-    this.cornerDragOffset = null;
-    this.faceDragOffset = null;
-  };
-
   onCameraModified = (evt) => {
     const { element } = evt.currentTarget
       ? { element: evt.currentTarget }
@@ -1157,10 +1092,6 @@ class VolumeCroppingTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     this._updateClippingPlanes(enabledElement.viewport);
     enabledElement.viewport.render();
-  };
-
-  onResetCamera = (evt) => {
-    console.debug('on reset camera');
   };
 
   _onNewVolume = () => {
@@ -1242,11 +1173,7 @@ class VolumeCroppingTool extends BaseTool {
             sphereState.point[axisIdx] - mouseWorld[axisIdx];
           this.cornerDragOffset = null;
         }
-        console.debug('preMouseDownCallback: VolumeCroppingTool ', {
-          draggingSphereIndex: this.draggingSphereIndex,
-          cornerDragOffset: this.cornerDragOffset,
-          faceDragOffset: this.faceDragOffset,
-        });
+
         return true;
       }
     }
@@ -1274,7 +1201,7 @@ class VolumeCroppingTool extends BaseTool {
 
       this.cleanUp = () => {
         mapper.setSampleDistance(originalSampleDistance);
-        console.debug('VolumeCroppingTool: Clean up after mouse up');
+
         // Reset cursor style
         (evt.target as HTMLElement).style.cursor = '';
         if (this.draggingSphereIndex !== null) {
@@ -1303,23 +1230,6 @@ class VolumeCroppingTool extends BaseTool {
     }
 
     return true;
-  };
-
-  _activateModify = (element) => {
-    // mobile sometimes has lingering interaction even when touchEnd triggers
-    // this check allows for multiple handles to be active which doesn't affect
-    // tool usage.
-    console.debug('Activating VolumeCroppingTool');
-    state.isInteractingWithTool = !this.configuration.mobile?.enabled;
-  };
-
-  _deactivateModify = (element) => {
-    state.isInteractingWithTool = false;
-    console.debug('Deactivating VolumeCroppingTool');
-  };
-
-  _endCallback = (evt: EventTypes.InteractionEventType) => {
-    this._onMouseUpSphere(evt);
   };
 
   rotateCamera = (viewport, centerWorld, axis, angle) => {
@@ -1358,8 +1268,10 @@ class VolumeCroppingTool extends BaseTool {
     const { element, currentPoints, lastPoints } = evt.detail;
 
     if (this.draggingSphereIndex !== null) {
+      // crop handles
       this._onMouseMoveSphere(evt);
     } else {
+      // rotate
       const currentPointsCanvas = currentPoints.canvas;
       const lastPointsCanvas = lastPoints.canvas;
       const { rotateIncrementDegrees } = this.configuration;
