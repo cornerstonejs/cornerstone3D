@@ -30,8 +30,7 @@ class Angle extends BaseAdapter3D {
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            this.toolType,
-            imageToWorldCoords
+            this.toolType
         );
 
         const cachedStats = referencedImageId
@@ -61,7 +60,6 @@ class Angle extends BaseAdapter3D {
 
     public static getTID300RepresentationArguments(
         tool,
-        worldToImageCoords,
         is3DMeasurement = false
     ) {
         const { data, finding, findingSites, metadata } = tool;
@@ -69,7 +67,6 @@ class Angle extends BaseAdapter3D {
 
         const { referencedImageId } = metadata;
         const scoordProps = {
-            worldToImageCoords,
             is3DMeasurement,
             referencedImageId
         };

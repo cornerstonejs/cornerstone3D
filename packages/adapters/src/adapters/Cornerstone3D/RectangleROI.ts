@@ -1,8 +1,10 @@
 import { utilities } from "dcmjs";
+import { utilities as csUtilities } from "@cornerstonejs/core";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
+const { worldToImageCoords } = csUtilities;
 
 class RectangleROI extends BaseAdapter3D {
     static {
@@ -130,11 +132,7 @@ class RectangleROI extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(
-        tool,
-        worldToImageCoords,
-        is3DMeasurement = false
-    ) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 

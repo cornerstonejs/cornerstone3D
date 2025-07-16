@@ -18,7 +18,6 @@ export default class Length extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
         const {
@@ -33,8 +32,7 @@ export default class Length extends BaseAdapter3D {
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            this.toolType,
-            imageToWorldCoords
+            this.toolType
         );
 
         const cachedStats = referencedImageId
@@ -62,18 +60,13 @@ export default class Length extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(
-        tool,
-        worldToImageCoords,
-        is3DMeasurement = false
-    ) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
         const scoordProps = {
             is3DMeasurement,
-            worldToImageCoords,
             referencedImageId
         };
 

@@ -31,8 +31,7 @@ class ArrowAnnotate extends BaseAdapter3D {
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            this.toolType,
-            imageToWorldCoords
+            this.toolType
         );
 
         const text = state.annotation.data.label;
@@ -80,16 +79,11 @@ class ArrowAnnotate extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(
-        tool,
-        worldToImageCoords,
-        is3DMeasurement = false
-    ) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, metadata, findingSites } = tool;
         let { finding } = tool;
         const { referencedImageId } = metadata;
         const scoordProps = {
-            worldToImageCoords,
             is3DMeasurement,
             referencedImageId
         };

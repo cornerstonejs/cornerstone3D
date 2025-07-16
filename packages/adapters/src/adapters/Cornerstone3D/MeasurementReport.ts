@@ -58,10 +58,6 @@ type SetupMeasurementData = {
     scoord?: ScoordType;
     worldCoords?: CSTypes.Point3[];
     scoordArgs?: {
-        imageToWorldCoords: (
-            imageId: string,
-            graphicData: number[]
-        ) => CSTypes.Point3;
         referencedImageId: string;
         is3DMeasurement: boolean;
     };
@@ -126,7 +122,6 @@ export interface MeasurementAdapter {
     getMeasurementData(
         measurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords: (imageReferenceId: string, point) => CSTypes.Point3,
         metadata,
         trackingIdentifier: string
     );
@@ -135,7 +130,6 @@ export interface MeasurementAdapter {
 
     getTID300RepresentationArguments(
         tool,
-        worldToImageCoords,
         is3DMeasurement
     ): Record<string, unknown>;
 }
@@ -159,12 +153,10 @@ export default class MeasurementReport {
         tool,
         ReferencedSOPSequence,
         toolClass,
-        worldToImageCoords,
         is3DMeasurement
     ) {
         const args = toolClass.getTID300RepresentationArguments(
             tool,
-            worldToImageCoords,
             is3DMeasurement
         );
         args.ReferencedSOPSequence = ReferencedSOPSequence;
@@ -192,7 +184,6 @@ export default class MeasurementReport {
         toolType,
         toolData,
         ReferencedSOPSequence,
-        worldToImageCoords,
         is3DMeasurement
     ) {
         const toolTypeData = toolData[toolType];
@@ -213,7 +204,6 @@ export default class MeasurementReport {
                 tool,
                 ReferencedSOPSequence,
                 toolClass,
-                worldToImageCoords,
                 is3DMeasurement
             );
         });
@@ -441,8 +431,7 @@ export default class MeasurementReport {
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         metadata,
-        toolType,
-        imageToWorldCoords?
+        toolType
     ): SetupMeasurementData {
         const { ContentSequence } = MeasurementGroup;
 
@@ -471,13 +460,10 @@ export default class MeasurementReport {
         const is3DMeasurement = !!spatialGroup.SCOORD3DGroup;
         const scoordArgs = {
             referencedImageId,
-            imageToWorldCoords,
             is3DMeasurement
         };
         const scoord = spatialGroup.SCOORD3DGroup || spatialGroup.SCOORDGroup;
-        const worldCoords = imageToWorldCoords
-            ? scoordToWorld(scoordArgs, scoord)
-            : null;
+        const worldCoords = scoordToWorld(scoordArgs, scoord);
 
         return {
             ...spatialGroup,
@@ -559,12 +545,7 @@ export default class MeasurementReport {
         return imageId;
     }
 
-    static generateReport(
-        toolState,
-        metadataProvider,
-        worldToImageCoords,
-        options
-    ) {
+    static generateReport(toolState, metadataProvider, options) {
         // ToolState for array of imageIDs to a Report
         // Assume Cornerstone metadata provider has access to Study / Series / Sop Instance UID
         let allMeasurementGroups = [];
@@ -609,7 +590,6 @@ export default class MeasurementReport {
                     toolType,
                     toolData,
                     ReferencedSOPSequence,
-                    worldToImageCoords,
                     is3DMeasurement
                 );
                 if (group) {
@@ -659,7 +639,6 @@ export default class MeasurementReport {
     static generateToolState(
         dataset,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata,
         hooks
     ) {
@@ -728,7 +707,6 @@ export default class MeasurementReport {
                     const measurement = toolAdapter.getMeasurementData(
                         measurementGroup,
                         sopInstanceUIDToImageIdMap,
-                        imageToWorldCoords,
                         metadata,
                         trackingIdentifierValue
                     );

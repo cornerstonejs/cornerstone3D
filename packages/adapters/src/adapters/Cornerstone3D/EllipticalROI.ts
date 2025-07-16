@@ -1,11 +1,13 @@
 import { vec3 } from "gl-matrix";
 import { utilities } from "dcmjs";
+import { utilities as csUtilities } from "@cornerstonejs/core";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 
 type Point3 = [number, number, number];
 
 const { Ellipse: TID300Ellipse } = utilities.TID300;
+const { worldToImageCoords } = csUtilities;
 
 const EPSILON = 1e-4;
 
@@ -32,8 +34,7 @@ class EllipticalROI extends BaseAdapter3D {
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            EllipticalROI.toolType,
-            imageToWorldCoords
+            EllipticalROI.toolType
         );
 
         const [majorAxisStart, majorAxisEnd, minorAxisStart, minorAxisEnd] =
@@ -118,11 +119,7 @@ class EllipticalROI extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(
-        tool,
-        worldToImageCoords,
-        is3DMeasurement = false
-    ) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
         const rotation = data.initialRotation || 0;

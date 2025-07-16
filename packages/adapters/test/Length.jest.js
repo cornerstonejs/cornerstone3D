@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from "@jest/globals";
-import { Cornerstone3DSR } from "../src/adapters/Cornerstone3D";
 import { utilities } from "@cornerstonejs/core";
+import { Cornerstone3DSR } from "../src/adapters/Cornerstone3D";
+import { setWorldToImageCoords } from "../src/adapters/helpers";
+
+const { worldToImageCoords: globalWorldToImageCoords } = utilities;
 
 const { Length } = Cornerstone3DSR;
 
@@ -45,7 +48,12 @@ const tool3d = {
 
 describe("Length", () => {
     beforeEach(() => {
+        setWorldToImageCoords(worldToImageCoords);
         // Setup adapters
+    });
+
+    afterEach(() => {
+        setWorldToImageCoords(globalWorldToImageCoords);
     });
 
     it("Must define tool type", () => {
@@ -53,22 +61,14 @@ describe("Length", () => {
     });
 
     it("Must use scoord for planar", () => {
-        const tidArgs = Length.getTID300RepresentationArguments(
-            tool2d,
-            worldToImageCoords,
-            false
-        );
+        const tidArgs = Length.getTID300RepresentationArguments(tool2d, false);
         // Either x,y or [x,y] is allowed
         expect(tidArgs.point1).toEqual({ x: 0, y: 1 });
         expect(tidArgs.point2).toEqual({ x: 10, y: 5 });
     });
 
     it("Must use scoord3d for mpr points", () => {
-        const tidArgs = Length.getTID300RepresentationArguments(
-            tool3d,
-            worldToImageCoords,
-            true
-        );
+        const tidArgs = Length.getTID300RepresentationArguments(tool3d, true);
         expect(tidArgs.point1).toEqual({ x: 0, y: 1, z: 2 });
         expect(tidArgs.point2).toEqual({ x: 10, y: 5, z: 11 });
     });

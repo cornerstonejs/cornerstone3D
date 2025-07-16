@@ -15,7 +15,6 @@ class CircleROI extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
         const {
@@ -30,8 +29,7 @@ class CircleROI extends BaseAdapter3D {
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            this.toolType,
-            imageToWorldCoords
+            this.toolType
         );
 
         state.annotation.data = {
@@ -67,17 +65,12 @@ class CircleROI extends BaseAdapter3D {
      * @param {Object} tool
      * @returns
      */
-    static getTID300RepresentationArguments(
-        tool,
-        worldToImageCoords,
-        is3DMeasurement = false
-    ) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
         const scoordProps = {
-            worldToImageCoords,
             is3DMeasurement,
             referencedImageId
         };

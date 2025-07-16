@@ -16,7 +16,6 @@ class PlanarFreehandROI extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
         const {
@@ -31,8 +30,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            this.toolType,
-            imageToWorldCoords
+            this.toolType
         );
 
         const distanceBetweenFirstAndLastPoint = vec3.distance(
@@ -80,11 +78,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(
-        tool,
-        worldToImageCoords,
-        is3DMeasurement = false
-    ) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
 
         const { polyline, closed } = data.contour;
@@ -92,7 +86,6 @@ class PlanarFreehandROI extends BaseAdapter3D {
 
         const { referencedImageId } = metadata;
         const scoordProps = {
-            worldToImageCoords,
             is3DMeasurement,
             referencedImageId
         };

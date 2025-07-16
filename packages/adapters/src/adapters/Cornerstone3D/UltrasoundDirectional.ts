@@ -1,8 +1,10 @@
 import { utilities } from "dcmjs";
+import { utilities as csUtilities } from "@cornerstonejs/core";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Length: TID300Length } = utilities.TID300;
+const { worldToImageCoords } = csUtilities;
 
 class UltrasoundDirectional extends BaseAdapter3D {
     static {
@@ -53,7 +55,7 @@ class UltrasoundDirectional extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement) {
         const { data, finding, findingSites, metadata } = tool;
         const { handles } = data;
 

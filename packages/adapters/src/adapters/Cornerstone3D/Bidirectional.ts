@@ -17,7 +17,6 @@ class Bidirectional extends BaseAdapter3D {
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
         const { state, scoordArgs, referencedImageId, ReferencedFrameNumber } =
@@ -25,8 +24,7 @@ class Bidirectional extends BaseAdapter3D {
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
                 metadata,
-                Bidirectional.toolType,
-                imageToWorldCoords
+                Bidirectional.toolType
             );
 
         const { ContentSequence } = MeasurementGroup;
@@ -90,17 +88,12 @@ class Bidirectional extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(
-        tool,
-        worldToImageCoords,
-        is3DMeasurement = false
-    ) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
         const scoordProps = {
-            worldToImageCoords,
             is3DMeasurement,
             referencedImageId
         };

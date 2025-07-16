@@ -16,7 +16,6 @@ class CobbAngle extends BaseAdapter3D {
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
         const {
@@ -29,8 +28,7 @@ class CobbAngle extends BaseAdapter3D {
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
             metadata,
-            CobbAngle.toolType,
-            imageToWorldCoords
+            CobbAngle.toolType
         );
 
         state.annotation.data = {
@@ -64,7 +62,6 @@ class CobbAngle extends BaseAdapter3D {
 
     public static getTID300RepresentationArguments(
         tool,
-        worldToImageCoords,
         is3DMeasurement = false
     ) {
         const { data, finding, findingSites, metadata } = tool;
@@ -72,7 +69,6 @@ class CobbAngle extends BaseAdapter3D {
 
         const { referencedImageId } = metadata;
         const scoordProps = {
-            worldToImageCoords,
             is3DMeasurement,
             referencedImageId
         };

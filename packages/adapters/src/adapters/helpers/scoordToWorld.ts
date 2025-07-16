@@ -1,4 +1,6 @@
-import type { Types } from "@cornerstonejs/core";
+import { type Types, utilities } from "@cornerstonejs/core";
+
+const { imageToWorldCoords } = utilities;
 
 /**
  * Converts flat listed 2d or 3d coordinates into Point3 world coordinates.
@@ -6,7 +8,7 @@ import type { Types } from "@cornerstonejs/core";
  * 2d points, it will convert image to to world coords.
  */
 export function scoordToWorld(
-    { is3DMeasurement, referencedImageId, imageToWorldCoords },
+    { is3DMeasurement, referencedImageId },
     scoord
 ): Types.Point3[] {
     const worldCoords = [];
