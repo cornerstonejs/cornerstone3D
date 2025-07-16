@@ -91,8 +91,8 @@ function _createSvgAnnotationLayer(viewportId: string): SVGElement {
   //
   feOffset.setAttribute('result', 'offOut');
   feOffset.setAttribute('in', 'SourceGraphic');
-  feOffset.setAttribute('dx', '0.5');
-  feOffset.setAttribute('dy', '0.5');
+  feOffset.setAttribute('dx', '1');
+  feOffset.setAttribute('dy', '1');
 
   //
   feColorMatrix.setAttribute('result', 'matrixOut');
