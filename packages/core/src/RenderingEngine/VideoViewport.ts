@@ -765,7 +765,7 @@ class VideoViewport extends Viewport {
    * @returns an imageID for video
    */
   public getCurrentImageId(index = this.getCurrentImageIdIndex()) {
-    const current = this.imageId.replace('/frames/1', `/frames/${index + 1}`);
+    const current = this.imageId?.replace('/frames/1', `/frames/${index + 1}`);
     return current;
   }
 

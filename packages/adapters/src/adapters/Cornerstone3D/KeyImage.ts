@@ -30,11 +30,8 @@ export default class KeyImage extends Probe {
         return baseData;
     }
 
-    public static getTID300RepresentationArguments(tool, worldToImageCoords) {
-        const tid300Arguments = super.getTID300RepresentationArguments(
-            tool,
-            worldToImageCoords
-        );
+    public static getTID300RepresentationArguments(tool) {
+        const tid300Arguments = super.getTID300RepresentationArguments(tool);
         const { data } = tool;
         if (data.isPoint) {
             if (data.seriesLevel) {
