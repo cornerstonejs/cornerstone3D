@@ -1,5 +1,5 @@
-import { mat3, vec3 } from 'gl-matrix';
-
+import { mat3, mat4, vec3 } from 'gl-matrix';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
@@ -7,7 +7,7 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkCylinderSource from '@kitware/vtk.js/Filters/Sources/CylinderSource';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
-import { AnnotationTool } from './base';
+import { BaseTool } from './base';
 
 import type { Types } from '@cornerstonejs/core';
 import {
@@ -24,8 +24,6 @@ import { getToolGroup } from '../store/ToolGroupManager';
 
 import { state } from '../store/state';
 import { Events } from '../enums';
-import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
-import { resetElementCursor } from '../cursors/elementCursor';
 import { getAnnotations } from '../stateManagement/annotation/annotationState'; // <-- Add this import
 
 import * as lineSegment from '../utilities/math/line';
@@ -39,22 +37,6 @@ import type {
   InteractionTypes,
   SVGDrawingHelper,
 } from '../types';
-import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-
-interface VolumeCroppingAnnotation extends Annotation {
-  data: {
-    handles: {
-      activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
-      toolCenter: Types.Point3;
-    };
-    activeViewportIds: string[]; // a list of the viewport ids connected to the reference lines being translated
-    viewportId: string;
-    referenceLines: []; // set in renderAnnotation
-    clippingPlanes?: vtkPlane[]; // clipping planes for the viewport
-    clippingPlaneReferenceLines?: [];
-  };
-}
 
 function defaultReferenceLineColor() {
   return 'rgb(0, 200, 0)';
@@ -63,39 +45,6 @@ function defaultReferenceLineColor() {
 function defaultReferenceLineControllable() {
   return true;
 }
-
-const OPERATION = {
-  DRAG: 1,
-  ROTATE: 2,
-  SLAB: 3,
-};
-
-const PLANEINDEX = {
-  XMIN: 0,
-  XMAX: 1,
-  YMIN: 2,
-  YMAX: 3,
-  ZMIN: 4,
-  ZMAX: 5,
-};
-const SPHEREINDEX = {
-  // cube faces
-  XMIN: 0,
-  XMAX: 1,
-  YMIN: 2,
-  YMAX: 3,
-  ZMIN: 4,
-  ZMAX: 5,
-  // cube corners
-  XMIN_YMIN_ZMIN: 6,
-  XMIN_YMIN_ZMAX: 7,
-  XMIN_YMAX_ZMIN: 8,
-  XMIN_YMAX_ZMAX: 9,
-  XMAX_YMIN_ZMIN: 10,
-  XMAX_YMIN_ZMAX: 11,
-  XMAX_YMAX_ZMIN: 12,
-  XMAX_YMAX_ZMAX: 13,
-};
 
 function addCylinderBetweenPoints(
   viewport,
@@ -157,14 +106,52 @@ function addCylinderBetweenPoints(
   viewport.addActor({ actor: cylinderActor, uid: uid });
   return { actor: cylinderActor, source: cylinderSource };
 }
+const OPERATION = {
+  DRAG: 1,
+  ROTATE: 2,
+  SLAB: 3,
+};
+
+const PLANEINDEX = {
+  XMIN: 0,
+  XMAX: 1,
+  YMIN: 2,
+  YMAX: 3,
+  ZMIN: 4,
+  ZMAX: 5,
+};
+const SPHEREINDEX = {
+  // cube faces
+  XMIN: 0,
+  XMAX: 1,
+  YMIN: 2,
+  YMAX: 3,
+  ZMIN: 4,
+  ZMAX: 5,
+  // cube corners
+  XMIN_YMIN_ZMIN: 6,
+  XMIN_YMIN_ZMAX: 7,
+  XMIN_YMAX_ZMIN: 8,
+  XMIN_YMAX_ZMAX: 9,
+  XMAX_YMIN_ZMIN: 10,
+  XMAX_YMIN_ZMAX: 11,
+  XMAX_YMAX_ZMIN: 12,
+  XMAX_YMAX_ZMAX: 13,
+};
 
 /**
  * VolumeCroppingTool is a tool that provides clipping planes to crop a volume
  */
-class VolumeCroppingTool extends AnnotationTool {
+class VolumeCroppingTool extends BaseTool {
   static toolName;
+  touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
+  mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
+  cleanUp: () => void;
+  _resizeObservers = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _viewportAddedListener: (evt: any) => void;
+  _hasResolutionChanged = false;
   originalClippingPlanes: { origin: number[]; normal: number[] }[] = [];
-
   sphereStates: {
     point: Types.Point3;
     axis: string;
@@ -192,7 +179,7 @@ class VolumeCroppingTool extends AnnotationTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      supportedInteractionTypes: ['Mouse'],
+      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         showCornerSpheres: true,
         showHandles: true,
@@ -209,11 +196,14 @@ class VolumeCroppingTool extends AnnotationTool {
         },
         sphereRadius: 8,
         grabSpherePixelDistance: 20, //pixels threshold for closeness to the sphere being grabbed
+        rotateIncrementDegrees: 2,
+        rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
       },
     }
   ) {
     super(toolProps, defaultToolProps);
-
+    this.touchDragCallback = this._dragCallback.bind(this);
+    this.mouseDragCallback = this._dragCallback.bind(this);
     this._getReferenceLineColor =
       toolProps.configuration?.getReferenceLineColor ||
       defaultReferenceLineColor;
@@ -222,41 +212,6 @@ class VolumeCroppingTool extends AnnotationTool {
       defaultReferenceLineControllable;
   }
 
-  addNewAnnotation(
-    evt: EventTypes.InteractionEventType
-  ): Annotation | undefined {
-    // Implement your logic here if needed
-    return undefined;
-  }
-
-  cancel(): void {
-    // Implement your logic here if needed
-  }
-
-  handleSelectedCallback(
-    evt: EventTypes.InteractionEventType,
-    annotation: Annotation,
-    handle: ToolHandle,
-    interactionType: InteractionTypes
-  ): void {
-    // Implement your logic here if needed
-  }
-
-  toolSelectedCallback(
-    evt: EventTypes.InteractionEventType,
-    annotation: Annotation,
-    interactionType: InteractionTypes
-  ): void {
-    // Implement your logic here if needed
-  }
-
-  renderAnnotation(
-    enabledElement: Types.IEnabledElement,
-    svgDrawingHelper: SVGDrawingHelper
-  ): boolean {
-    // Implement your logic here if needed
-    return false;
-  }
   setHandlesVisible(visible: boolean) {
     this.configuration.showHandles = visible;
     // Before showing, update sphere positions to match clipping planes
@@ -308,6 +263,7 @@ class VolumeCroppingTool extends AnnotationTool {
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
     viewport.render();
   }
+
   getHandlesVisible() {
     return this.configuration.showHandles;
   }
@@ -336,6 +292,57 @@ class VolumeCroppingTool extends AnnotationTool {
   onSetToolActive() {
     console.debug('VolumeCroppingTool: onSetToolActive');
     const viewportsInfo = this._getViewportsInfo();
+    const subscribeToElementResize = () => {
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        if (!this._resizeObservers.has(viewportId)) {
+          const { viewport } = getEnabledElementByIds(
+            viewportId,
+            renderingEngineId
+          ) || { viewport: null };
+
+          if (!viewport) {
+            return;
+          }
+
+          const { element } = viewport;
+
+          const resizeObserver = new ResizeObserver(() => {
+            const element = getEnabledElementByIds(
+              viewportId,
+              renderingEngineId
+            );
+            if (!element) {
+              return;
+            }
+            const { viewport } = element;
+
+            const viewPresentation = viewport.getViewPresentation();
+
+            viewport.resetCamera();
+
+            viewport.setViewPresentation(viewPresentation);
+            viewport.render();
+          });
+
+          resizeObserver.observe(element);
+          this._resizeObservers.set(viewportId, resizeObserver);
+        }
+      });
+    };
+
+    subscribeToElementResize();
+
+    this._viewportAddedListener = (evt) => {
+      if (evt.detail.toolGroupId === this.toolGroupId) {
+        subscribeToElementResize();
+      }
+    };
+
+    eventTarget.addEventListener(
+      Events.TOOLGROUP_VIEWPORT_ADDED,
+      this._viewportAddedListener
+    );
+
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
     this._subscribeToViewportNewVolumeSet(viewportsInfo);
     this._initialize3DViewports(viewportsInfo);
@@ -600,9 +607,6 @@ class VolumeCroppingTool extends AnnotationTool {
     );
 
     const element = viewport.canvas || viewport.element;
-    element.addEventListener('mousedown', this._onMouseDownSphere);
-    element.addEventListener('mousemove', this._onMouseMoveSphere);
-    element.addEventListener('mouseup', this._onMouseUpSphere);
   };
 
   _updateClippingPlanes(viewport) {
@@ -742,6 +746,8 @@ class VolumeCroppingTool extends AnnotationTool {
 
   _onMouseDownSphere = (evt) => {
     const element = evt.currentTarget;
+    console.debug('VolumeCroppingTool: _onMouseDownSphere', evt);
+    // Prevent default behavior
     const viewportsInfo = this._getViewportsInfo();
     const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
@@ -787,18 +793,21 @@ class VolumeCroppingTool extends AnnotationTool {
     if (this.draggingSphereIndex === null) {
       return;
     }
-    evt.stopPropagation();
-    evt.preventDefault();
 
-    const element = evt.currentTarget;
+    //evt.stopPropagation();
+    //evt.preventDefault();
+
+    const element = evt.detail.element || evt.currentTarget;
     const [viewport3D] = this._getViewportsInfo();
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
 
     // Get 2D mouse position in canvas coordinates
     const rect = element.getBoundingClientRect();
-    const x = evt.clientX - rect.left;
-    const y = evt.clientY - rect.top;
+    // const x = evt.clientX - rect.left;
+    // const y = evt.clientY - rect.top;
+    const x = evt.detail.currentPoints.canvas[0];
+    const y = evt.detail.currentPoints.canvas[1];
 
     // Convert canvas to world coordinates
     const world = viewport.canvasToWorld([x, y]);
@@ -903,6 +912,8 @@ class VolumeCroppingTool extends AnnotationTool {
       axis: sphereState.isCorner ? 'corner' : sphereState.axis,
       draggingSphereIndex: this.draggingSphereIndex,
     });
+
+    return true;
   };
 
   _updateClippingPlanesFromFaceSpheres(viewport) {
@@ -1120,6 +1131,7 @@ class VolumeCroppingTool extends AnnotationTool {
   }
 
   _onMouseUpSphere = (evt) => {
+    console.debug('VolumeCroppingTool: _onMouseUpSphere', evt);
     evt.currentTarget.style.cursor = '';
     if (this.draggingSphereIndex !== null) {
       const sphereState = this.sphereStates[this.draggingSphereIndex];
@@ -1138,30 +1150,6 @@ class VolumeCroppingTool extends AnnotationTool {
     this.faceDragOffset = null;
   };
 
-  /**
-   * It returns if the canvas point is near the provided reference line annotation in the
-   * provided element or not. A proximity is passed to the function to determine the
-   * proximity of the point to the annotation in number of pixels.
-   *
-   * @param element - HTML Element
-   * @param annotation - Annotation
-   * @param canvasCoords - Canvas coordinates
-   * @param proximity - Proximity to tool to consider
-   * @returns Boolean, whether the canvas point is near tool
-   */
-  isPointNearTool = (
-    element: HTMLDivElement,
-    annotation: VolumeCroppingAnnotation,
-    canvasCoords: Types.Point2,
-    proximity: number
-  ): boolean => {
-    if (this._pointNearTool(element, annotation, canvasCoords, 6)) {
-      return true;
-    }
-
-    return false;
-  };
-
   onCameraModified = (evt) => {
     const { element } = evt.currentTarget
       ? { element: evt.currentTarget }
@@ -1173,68 +1161,6 @@ class VolumeCroppingTool extends AnnotationTool {
 
   onResetCamera = (evt) => {
     console.debug('on reset camera');
-  };
-
-  _getAnnotations = (enabledElement: Types.IEnabledElement) => {
-    const { viewport } = enabledElement;
-    const annotations =
-      getAnnotations(this.getToolName(), viewport.element) || [];
-    const viewportIds = this._getViewportsInfo().map(
-      ({ viewportId }) => viewportId
-    );
-
-    // filter the annotations to only keep that are for this toolGroup
-    const toolGroupAnnotations = annotations.filter((annotation) => {
-      const { data } = annotation;
-      return viewportIds.includes(data.viewportId);
-    });
-
-    return toolGroupAnnotations;
-  };
-
-  mouseMoveCallback = (
-    evt: EventTypes.MouseMoveEventType,
-    filteredToolAnnotations: Annotations
-  ): boolean => {
-    if (!filteredToolAnnotations) {
-      return;
-    }
-    const { element, currentPoints } = evt.detail;
-    const canvasCoords = currentPoints.canvas;
-    let imageNeedsUpdate = false;
-
-    for (let i = 0; i < filteredToolAnnotations.length; i++) {
-      const annotation = filteredToolAnnotations[i] as VolumeCroppingAnnotation;
-
-      if (isAnnotationLocked(annotation.annotationUID)) {
-        continue;
-      }
-
-      const { data, highlighted } = annotation;
-      if (!data.handles) {
-        continue;
-      }
-
-      const previousActiveOperation = data.handles.activeOperation;
-      const previousActiveViewportIds =
-        data.activeViewportIds && data.activeViewportIds.length > 0
-          ? [...data.activeViewportIds]
-          : [];
-
-      // This init are necessary, because when we move the mouse they are not cleaned by _endCallback
-      data.activeViewportIds = [];
-      let near = false;
-      near = this._pointNearTool(element, annotation, canvasCoords, 6);
-
-      const nearToolAndNotMarkedActive = near && !highlighted;
-      const notNearToolAndMarkedActive = !near && highlighted;
-      if (nearToolAndNotMarkedActive || notNearToolAndMarkedActive) {
-        annotation.highlighted = !highlighted;
-        imageNeedsUpdate = true;
-      }
-    }
-
-    return imageNeedsUpdate;
   };
 
   _onNewVolume = () => {
@@ -1272,146 +1198,239 @@ class VolumeCroppingTool extends AnnotationTool {
     });
   }
 
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    const actorEntry = viewport.getDefaultActor();
+    const actor = actorEntry.actor as Types.VolumeActor;
+    const mapper = actor.getMapper();
+
+    const mouseCanvas: [number, number] = [
+      evt.detail.currentPoints.canvas[0],
+      evt.detail.currentPoints.canvas[1],
+    ];
+    // Find the sphere under the mouse
+    this.draggingSphereIndex = null;
+    this.cornerDragOffset = null;
+    this.faceDragOffset = null;
+    for (let i = 0; i < this.sphereStates.length; ++i) {
+      const sphereCanvas = viewport.worldToCanvas(this.sphereStates[i].point);
+      const dist = Math.sqrt(
+        Math.pow(mouseCanvas[0] - sphereCanvas[0], 2) +
+          Math.pow(mouseCanvas[1] - sphereCanvas[1], 2)
+      );
+      if (dist < this.configuration.grabSpherePixelDistance) {
+        this.draggingSphereIndex = i;
+        element.style.cursor = 'grabbing';
+
+        // --- Store offset for corners ---
+        const sphereState = this.sphereStates[i];
+        const mouseWorld = viewport.canvasToWorld(mouseCanvas);
+        if (sphereState.isCorner) {
+          this.cornerDragOffset = [
+            sphereState.point[0] - mouseWorld[0],
+            sphereState.point[1] - mouseWorld[1],
+            sphereState.point[2] - mouseWorld[2],
+          ];
+          this.faceDragOffset = null;
+        } else {
+          // For face spheres, only store the offset along the axis of movement
+          const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
+          this.faceDragOffset =
+            sphereState.point[axisIdx] - mouseWorld[axisIdx];
+          this.cornerDragOffset = null;
+        }
+        console.debug('preMouseDownCallback: VolumeCroppingTool ', {
+          draggingSphereIndex: this.draggingSphereIndex,
+          cornerDragOffset: this.cornerDragOffset,
+          faceDragOffset: this.faceDragOffset,
+        });
+        return true;
+      }
+    }
+
+    const hasSampleDistance =
+      'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
+
+    if (!hasSampleDistance) {
+      return true;
+    }
+
+    const originalSampleDistance = mapper.getSampleDistance();
+
+    if (!this._hasResolutionChanged) {
+      const { rotateSampleDistanceFactor } = this.configuration;
+      mapper.setSampleDistance(
+        originalSampleDistance * rotateSampleDistanceFactor
+      );
+      this._hasResolutionChanged = true;
+
+      if (this.cleanUp !== null) {
+        // Clean up previous event listener
+        document.removeEventListener('mouseup', this.cleanUp);
+      }
+
+      this.cleanUp = () => {
+        mapper.setSampleDistance(originalSampleDistance);
+        console.debug('VolumeCroppingTool: Clean up after mouse up');
+        // Reset cursor style
+        (evt.target as HTMLElement).style.cursor = '';
+        if (this.draggingSphereIndex !== null) {
+          const sphereState = this.sphereStates[this.draggingSphereIndex];
+          const [viewport3D] = this._getViewportsInfo();
+          const renderingEngine = getRenderingEngine(
+            viewport3D.renderingEngineId
+          );
+          const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+
+          if (sphereState.isCorner) {
+            this._updateFaceSpheresFromCorners();
+            this._updateCornerSpheres();
+            this._updateClippingPlanesFromFaceSpheres(viewport);
+          }
+        }
+        this.draggingSphereIndex = null;
+        this.cornerDragOffset = null;
+        this.faceDragOffset = null;
+
+        viewport.render();
+        this._hasResolutionChanged = false;
+      };
+
+      document.addEventListener('mouseup', this.cleanUp, { once: true });
+    }
+
+    return true;
+  };
+
   _activateModify = (element) => {
     // mobile sometimes has lingering interaction even when touchEnd triggers
     // this check allows for multiple handles to be active which doesn't affect
     // tool usage.
     console.debug('Activating VolumeCroppingTool');
     state.isInteractingWithTool = !this.configuration.mobile?.enabled;
-
-    element.addEventListener(Events.MOUSE_UP, this._endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.addEventListener(Events.TOUCH_END, this._endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
     console.debug('Deactivating VolumeCroppingTool');
-    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.removeEventListener(Events.TOUCH_END, this._endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   _endCallback = (evt: EventTypes.InteractionEventType) => {
-    const eventDetail = evt.detail;
-    console.debug(eventDetail);
-    const { element } = eventDetail;
-
-    this.editData.annotation.data.handles.activeOperation = null;
-    this.editData.annotation.data.activeViewportIds = [];
-
-    this._deactivateModify(element);
-
-    resetElementCursor(element);
-
-    this.editData = null;
-
-    const requireSameOrientation = false;
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName(),
-      requireSameOrientation
-    );
-
-    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    this._onMouseUpSphere(evt);
   };
 
-  _dragCallback = (evt: EventTypes.InteractionEventType) => {
-    const eventDetail = evt.detail;
-    const delta = eventDetail.deltaPoints.world;
+  rotateCamera = (viewport, centerWorld, axis, angle) => {
+    const vtkCamera = viewport.getVtkActiveCamera();
+    const viewUp = vtkCamera.getViewUp();
+    const focalPoint = vtkCamera.getFocalPoint();
+    const position = vtkCamera.getPosition();
 
-    if (
-      Math.abs(delta[0]) < 1e-3 &&
-      Math.abs(delta[1]) < 1e-3 &&
-      Math.abs(delta[2]) < 1e-3
-    ) {
-      return;
-    }
+    const newPosition: Types.Point3 = [0, 0, 0];
+    const newFocalPoint: Types.Point3 = [0, 0, 0];
+    const newViewUp: Types.Point3 = [0, 0, 0];
 
-    const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    if (viewport.type === Enums.ViewportType.VOLUME_3D) {
-      return;
-    }
-    const annotations = this._getAnnotations(
-      enabledElement
-    ) as VolumeCroppingAnnotation[];
-    const filteredToolAnnotations =
-      this.filterInteractableAnnotationsForElement(element, annotations);
+    const transform = mat4.identity(new Float32Array(16));
+    mat4.translate(transform, transform, centerWorld);
+    mat4.rotate(transform, transform, angle, axis);
+    mat4.translate(transform, transform, [
+      -centerWorld[0],
+      -centerWorld[1],
+      -centerWorld[2],
+    ]);
+    vec3.transformMat4(newPosition, position, transform);
+    vec3.transformMat4(newFocalPoint, focalPoint, transform);
 
-    // viewport Annotation
-    const viewportAnnotation = filteredToolAnnotations[0];
-    if (!viewportAnnotation) {
-      return;
-    }
+    mat4.identity(transform);
+    mat4.rotate(transform, transform, angle, axis);
+    vec3.transformMat4(newViewUp, viewUp, transform);
 
-    const { handles } = viewportAnnotation.data;
-    const { currentPoints } = evt.detail;
-    const canvasCoords = currentPoints.canvas;
-
-    if (handles.activeOperation === OPERATION.DRAG) {
-      this.toolCenter[0] += delta[0];
-      this.toolCenter[1] += delta[1];
-      this.toolCenter[2] += delta[2];
-      const viewportsInfo = this._getViewportsInfo();
-      triggerAnnotationRenderForViewportIds(
-        viewportsInfo.map(({ viewportId }) => viewportId)
-      );
-    }
+    viewport.setCamera({
+      position: newPosition,
+      viewUp: newViewUp,
+      focalPoint: newFocalPoint,
+    });
   };
 
-  _pointNearTool(element, annotation, canvasCoords, proximity) {
-    const { data } = annotation;
+  _dragCallback(evt: EventTypes.InteractionEventType): void {
+    const { element, currentPoints, lastPoints } = evt.detail;
 
-    // You must have referenceLines available in annotation.data.
-    // If not, you can recompute them here or store them in renderAnnotation.
-    // For this example, let's assume you store them as data.referenceLines.
-    const referenceLines = data.referenceLines;
+    if (this.draggingSphereIndex !== null) {
+      this._onMouseMoveSphere(evt);
+    } else {
+      const currentPointsCanvas = currentPoints.canvas;
+      const lastPointsCanvas = lastPoints.canvas;
+      const { rotateIncrementDegrees } = this.configuration;
+      const enabledElement = getEnabledElement(element);
+      const { viewport } = enabledElement;
 
-    const viewportIdArray = [];
+      const camera = viewport.getCamera();
+      const width = element.clientWidth;
+      const height = element.clientHeight;
 
-    if (referenceLines) {
-      for (let i = 0; i < referenceLines.length; ++i) {
-        // Each line: [otherViewport, refLinePointOne, refLinePointTwo, refLinePointThree, refLinePointFour, ...]
-        const otherViewport = referenceLines[i][0];
-        // First segment
-        const start1 = referenceLines[i][1];
-        const end1 = referenceLines[i][2];
-        // Second segment
-        const start2 = referenceLines[i][3];
-        const end2 = referenceLines[i][4];
+      const normalizedPosition = [
+        currentPointsCanvas[0] / width,
+        currentPointsCanvas[1] / height,
+      ];
 
-        const distance1 = lineSegment.distanceToPoint(start1, end1, [
-          canvasCoords[0],
-          canvasCoords[1],
-        ]);
-        const distance2 = lineSegment.distanceToPoint(start2, end2, [
-          canvasCoords[0],
-          canvasCoords[1],
-        ]);
+      const normalizedPreviousPosition = [
+        lastPointsCanvas[0] / width,
+        lastPointsCanvas[1] / height,
+      ];
 
-        if (distance1 <= proximity || distance2 <= proximity) {
-          viewportIdArray.push(otherViewport.id);
-          data.handles.activeOperation = 1; // DRAG
-        }
+      const center: Types.Point2 = [width * 0.5, height * 0.5];
+      // NOTE: centerWorld corresponds to the focal point in cornerstone3D
+      const centerWorld = viewport.canvasToWorld(center);
+      const normalizedCenter = [0.5, 0.5];
+
+      const radsq = (1.0 + Math.abs(normalizedCenter[0])) ** 2.0;
+      const op = [normalizedPreviousPosition[0], 0, 0];
+      const oe = [normalizedPosition[0], 0, 0];
+
+      const opsq = op[0] ** 2;
+      const oesq = oe[0] ** 2;
+
+      const lop = opsq > radsq ? 0 : Math.sqrt(radsq - opsq);
+      const loe = oesq > radsq ? 0 : Math.sqrt(radsq - oesq);
+
+      const nop: Types.Point3 = [op[0], 0, lop];
+      vtkMath.normalize(nop);
+      const noe: Types.Point3 = [oe[0], 0, loe];
+      vtkMath.normalize(noe);
+
+      const dot = vtkMath.dot(nop, noe);
+      if (Math.abs(dot) > 0.0001) {
+        const angleX =
+          -2 *
+          Math.acos(vtkMath.clampValue(dot, -1.0, 1.0)) *
+          Math.sign(normalizedPosition[0] - normalizedPreviousPosition[0]) *
+          rotateIncrementDegrees;
+
+        const upVec = camera.viewUp;
+        const atV = camera.viewPlaneNormal;
+        const rightV: Types.Point3 = [0, 0, 0];
+        const forwardV: Types.Point3 = [0, 0, 0];
+
+        vtkMath.cross(upVec, atV, rightV);
+        vtkMath.normalize(rightV);
+
+        vtkMath.cross(atV, rightV, forwardV);
+        vtkMath.normalize(forwardV);
+        vtkMath.normalize(upVec);
+
+        this.rotateCamera(viewport, centerWorld, forwardV, angleX);
+
+        const angleY =
+          (normalizedPreviousPosition[1] - normalizedPosition[1]) *
+          rotateIncrementDegrees;
+
+        this.rotateCamera(viewport, centerWorld, rightV, angleY);
       }
+
+      viewport.render();
     }
-
-    data.activeViewportIds = [...viewportIdArray];
-
-    this.editData = {
-      annotation,
-    };
-    return data.handles.activeOperation === 1 ? true : false;
   }
 }
 
