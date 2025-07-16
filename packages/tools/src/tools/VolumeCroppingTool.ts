@@ -1,10 +1,13 @@
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
+import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import { mat3, mat4, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkCylinderSource from '@kitware/vtk.js/Filters/Sources/CylinderSource';
+import type vtkCylinderSource from '@kitware/vtk.js/Filters/Sources/CylinderSource';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 import { BaseTool } from './base';
@@ -24,14 +27,9 @@ import { getToolGroup } from '../store/ToolGroupManager';
 
 import { state } from '../store/state';
 import { Events } from '../enums';
-import { getAnnotations } from '../stateManagement/annotation/annotationState'; // <-- Add this import
 
-import * as lineSegment from '../utilities/math/line';
 import type {
-  Annotation,
-  Annotations,
   EventTypes,
-  ToolHandle,
   PublicToolProps,
   ToolProps,
   InteractionTypes,
@@ -45,72 +43,6 @@ function defaultReferenceLineColor() {
 function defaultReferenceLineControllable() {
   return true;
 }
-
-function addCylinderBetweenPoints(
-  viewport,
-  point1,
-  point2,
-  radius = 0.5,
-  color: [number, number, number] = [0.5, 0.5, 0.5],
-  uid = ''
-) {
-  // Avoid creating a cylinder if the points are the same
-  if (
-    point1[0] === point2[0] &&
-    point1[1] === point2[1] &&
-    point1[2] === point2[2]
-  ) {
-    return { actor: null, source: null };
-  }
-  const cylinderSource = vtkCylinderSource.newInstance();
-  // Compute direction and length
-  const direction = new Float32Array([
-    point2[0] - point1[0],
-    point2[1] - point1[1],
-    point2[2] - point1[2],
-  ]);
-  const length = Math.sqrt(
-    direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
-  );
-  // Normalize direction vector
-  const normDirection = new Float32Array([0, 0, 0]);
-  vec3.normalize(normDirection, direction);
-
-  // Midpoint
-  const center: Types.Point3 = [
-    (point1[0] + point2[0]) / 2,
-    (point1[1] + point2[1]) / 2,
-    (point1[2] + point2[2]) / 2,
-  ];
-  // Default cylinder is aligned with Y axis, so compute rotation
-  cylinderSource.setCenter(center[0], center[1], center[2]);
-  cylinderSource.setRadius(radius);
-  cylinderSource.setHeight(length);
-  // Set direction (align cylinder axis with direction vector)
-  cylinderSource.setDirection(
-    normDirection[0],
-    normDirection[1],
-    normDirection[2]
-  );
-
-  const cylinderMapper = vtkMapper.newInstance();
-  cylinderMapper.setInputConnection(cylinderSource.getOutputPort());
-  const cylinderActor = vtkActor.newInstance();
-  cylinderActor.setMapper(cylinderMapper);
-  cylinderActor.getProperty().setColor(color);
-  cylinderActor.getProperty().setInterpolationToFlat();
-  cylinderActor.getProperty().setAmbient(1.0); // Full ambient
-  cylinderActor.getProperty().setDiffuse(0.0); // No diffuse
-  cylinderActor.getProperty().setSpecular(0.0);
-
-  viewport.addActor({ actor: cylinderActor, uid: uid });
-  return { actor: cylinderActor, source: cylinderSource };
-}
-const OPERATION = {
-  DRAG: 1,
-  ROTATE: 2,
-  SLAB: 3,
-};
 
 const PLANEINDEX = {
   XMIN: 0,
@@ -143,6 +75,57 @@ const SPHEREINDEX = {
  * VolumeCroppingTool is a tool that provides clipping planes to crop a volume
  */
 class VolumeCroppingTool extends BaseTool {
+  // Store 2D edge lines between corner spheres
+  edgeLines: {
+    [uid: string]: {
+      actor: vtkActor;
+      source: vtkPolyData;
+      key1: string;
+      key2: string;
+    };
+  } = {};
+
+  // Helper to add a 3D line between two points using vtkActor
+  addLine3DBetweenPoints(
+    viewport,
+    point1,
+    point2,
+    color: [number, number, number] = [0.7, 0.7, 0.7],
+    uid = ''
+  ) {
+    // Avoid creating a line if the points are the same
+    if (
+      point1[0] === point2[0] &&
+      point1[1] === point2[1] &&
+      point1[2] === point2[2]
+    ) {
+      return { actor: null, source: null };
+    }
+    const points = vtkPoints.newInstance();
+    points.setNumberOfPoints(2);
+    points.setPoint(0, point1[0], point1[1], point1[2]);
+    points.setPoint(1, point2[0], point2[1], point2[2]);
+
+    const lines = vtkCellArray.newInstance({ values: [2, 0, 1] });
+    const polyData = vtkPolyData.newInstance();
+    polyData.setPoints(points);
+    polyData.setLines(lines);
+
+    const mapper = vtkMapper.newInstance();
+    mapper.setInputData(polyData);
+    const actor = vtkActor.newInstance();
+    actor.setMapper(mapper);
+    actor.getProperty().setColor(...color);
+    actor.getProperty().setLineWidth(2); // Thinner line
+    actor.getProperty().setOpacity(1.0);
+    actor.getProperty().setInterpolationToFlat(); // No shading
+    actor.getProperty().setAmbient(1.0); // Full ambient
+    actor.getProperty().setDiffuse(0.0); // No diffuse
+    actor.getProperty().setSpecular(0.0); // No specular
+    actor.setVisibility(true);
+    viewport.addActor({ actor, uid });
+    return { actor, source: polyData };
+  }
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
@@ -165,14 +148,6 @@ class VolumeCroppingTool extends BaseTool {
   toolCenter: Types.Point3 = [0, 0, 0];
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
-  edgeCylinders: {
-    [uid: string]: {
-      actor: vtkActor;
-      source: vtkCylinderSource;
-      key1: string;
-      key2: string;
-    };
-  } = {};
   cornerDragOffset: [number, number, number] | null = null;
   faceDragOffset: number | null = null;
 
@@ -295,8 +270,8 @@ class VolumeCroppingTool extends BaseTool {
       }
     });
 
-    // Edge cylinders
-    Object.values(this.edgeCylinders).forEach(({ actor }) => {
+    // Edge lines (box edges)
+    Object.values(this.edgeLines).forEach(({ actor }) => {
       if (actor) {
         actor.setVisibility(this.configuration.showHandles);
       }
@@ -599,15 +574,14 @@ class VolumeCroppingTool extends BaseTool {
         );
         if (state1 && state2) {
           const uid = `edge_${key1}_${key2}`;
-          const { actor, source } = addCylinderBetweenPoints(
+          const { actor, source } = this.addLine3DBetweenPoints(
             viewport,
             state1.point,
             state2.point,
-            2, // radius
-            [0.7, 0.7, 0.7], // color
+            [0.7, 0.7, 0.7],
             uid
           );
-          this.edgeCylinders[uid] = { actor, source, key1, key2 };
+          this.edgeLines[uid] = { actor, source, key1, key2 };
         }
       });
     }
@@ -770,9 +744,6 @@ class VolumeCroppingTool extends BaseTool {
       return;
     }
 
-    //evt.stopPropagation();
-    //evt.preventDefault();
-
     const element = evt.detail.element || evt.currentTarget;
     const [viewport3D] = this._getViewportsInfo();
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
@@ -780,8 +751,6 @@ class VolumeCroppingTool extends BaseTool {
 
     // Get 2D mouse position in canvas coordinates
     const rect = element.getBoundingClientRect();
-    // const x = evt.clientX - rect.left;
-    // const y = evt.clientY - rect.top;
     const x = evt.detail.currentPoints.canvas[0];
     const y = evt.detail.currentPoints.canvas[1];
 
@@ -1072,35 +1041,15 @@ class VolumeCroppingTool extends BaseTool {
       }
     }
 
-    // Update edge cylinders as before
-    Object.values(this.edgeCylinders).forEach(({ source, key1, key2 }) => {
+    // Update edge lines to follow the corner spheres
+    Object.values(this.edgeLines).forEach(({ source, key1, key2 }) => {
       const state1 = this.sphereStates.find((s) => s.uid === `corner_${key1}`);
       const state2 = this.sphereStates.find((s) => s.uid === `corner_${key2}`);
       if (state1 && state2) {
-        const point1 = state1.point;
-        const point2 = state2.point;
-        const direction = new Float32Array([
-          point2[0] - point1[0],
-          point2[1] - point1[1],
-          point2[2] - point1[2],
-        ]);
-        const length = Math.sqrt(
-          direction[0] ** 2 + direction[1] ** 2 + direction[2] ** 2
-        );
-        const normDirection = new Float32Array([0, 0, 0]);
-        vec3.normalize(normDirection, direction);
-        const center = new Float32Array([
-          (point1[0] + point2[0]) / 2,
-          (point1[1] + point2[1]) / 2,
-          (point1[2] + point2[2]) / 2,
-        ]);
-        source.setCenter(center[0], center[1], center[2]);
-        source.setHeight(length);
-        source.setDirection(
-          normDirection[0],
-          normDirection[1],
-          normDirection[2]
-        );
+        const points = source.getPoints();
+        points.setPoint(0, state1.point[0], state1.point[1], state1.point[2]);
+        points.setPoint(1, state2.point[0], state2.point[1], state2.point[2]);
+        points.modified();
         source.modified();
       }
     });

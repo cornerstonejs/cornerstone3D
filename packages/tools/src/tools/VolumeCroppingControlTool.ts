@@ -258,6 +258,17 @@ class VolumeCroppingControlTool extends AnnotationTool {
     };
   };
 
+  initializeReferenceLines(enabledElement) {
+    const annotations = this._getAnnotations(enabledElement);
+    if (!annotations.length) {
+      // Optionally, create a default annotation here
+      return;
+    }
+    // Force a render to compute reference lines
+    triggerAnnotationRenderForViewportIds(
+      this._getViewportsInfo().map(({ viewportId }) => viewportId)
+    );
+  }
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
     return viewports;
@@ -360,7 +371,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   _computeToolCenter = (viewportsInfo): void => {
     if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
       console.warn(
-        'VolumeCroppingControlTool: No valid viewportsInfo for computeToolCenter.'
+        '  _computeToolCenter : No valid viewportsInfo for computeToolCenter.'
       );
       return;
     }
@@ -390,6 +401,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
       vec3.add(point3, point1, point2);
       vec3.scale(point3, point3, 0.5);
       vec3.cross(normal3, normal1, normal2);
+    }
+
+    if (viewportsInfo && viewportsInfo.length) {
+      triggerAnnotationRenderForViewportIds(
+        viewportsInfo.map(({ viewportId }) => viewportId)
+      );
     }
   };
 
