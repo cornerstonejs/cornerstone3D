@@ -339,12 +339,16 @@ class StackViewport extends Viewport {
    * @param options - Optional configuration for the reset operation
    * @param options.resetPan - Whether to reset the pan (default: true)
    * @param options.resetZoom - Whether to reset the zoom (default: true)
+   * @param options.resetToCenter - Whether to reset the camera to the center (default: true)
+   * @param options.storeAsInitialCamera - If true, reset camera is stored as the initial camera (to allow differences to
+   *   be detected for pan/zoom values)
    * @returns boolean - True if the camera was reset successfully, false otherwise
    */
   public resetCamera: (options?: {
     resetPan?: boolean;
     resetZoom?: boolean;
     resetToCenter?: boolean;
+    storeAsInitialCamera?: boolean;
     suppressEvents?: boolean;
   }) => boolean;
 
