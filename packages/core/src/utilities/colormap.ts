@@ -102,7 +102,8 @@ function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
 
   const result = {
     name: matchedColormap.Name,
-    ...(opacity.length > 0 && { opacity }),
+    ...(Array.isArray(opacity) && opacity.length > 0 && { opacity }),
+    ...(typeof opacity === 'number' && { opacity }),
   };
 
   return result;
