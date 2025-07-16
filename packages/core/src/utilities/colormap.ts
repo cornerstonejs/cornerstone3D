@@ -100,14 +100,12 @@ function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
     }
   }
 
-  return opacity.length > 0
-    ? {
-        name: matchedColormap.Name,
-        opacity,
-      }
-    : {
-        name: matchedColormap.Name,
-      };
+  const result = {
+    name: matchedColormap.Name,
+    ...(opacity.length > 0 && { opacity }),
+  };
+
+  return result;
 }
 
 export function setColorMapTransferFunctionForVolumeActor(volumeInfo) {
