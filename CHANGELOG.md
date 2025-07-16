@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.1...v3.31.2) (2025-07-16)
+
+### Bug Fixes
+
+- **colormap:** do not return empty opacity arrays ([#2208](https://github.com/cornerstonejs/cornerstone3D/issues/2208)) ([7f64908](https://github.com/cornerstonejs/cornerstone3D/commit/7f6490833f92d212f2aabac45cc914f2ddb8e744))
+
 ## [3.31.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.0...v3.31.1) (2025-07-16)
 
 ### Bug Fixes
