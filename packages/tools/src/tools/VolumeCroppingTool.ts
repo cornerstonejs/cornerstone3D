@@ -183,6 +183,7 @@ class VolumeCroppingTool extends BaseTool {
       configuration: {
         showCornerSpheres: true,
         showHandles: true,
+        showClippingPlanes: true,
         mobile: {
           enabled: false,
           opacity: 0.8,
@@ -266,6 +267,24 @@ class VolumeCroppingTool extends BaseTool {
 
   getHandlesVisible() {
     return this.configuration.showHandles;
+  }
+
+  getClippingPlanesVisible() {
+    return this.configuration.showClippingPlanes;
+  }
+
+  setClippingPlanesVisible(visible: boolean) {
+    this.configuration.showClippingPlanes = visible;
+    // Show/hide actors
+    // this._updateHandlesVisibility();
+
+    // Render
+    const viewportsInfo = this._getViewportsInfo();
+    const [viewport3D] = viewportsInfo;
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+    this._updateClippingPlanes(viewport);
+    viewport.render();
   }
 
   _updateHandlesVisibility() {
@@ -651,7 +670,9 @@ class VolumeCroppingTool extends BaseTool {
         origin: o,
         normal: [n[0], n[1], n[2]],
       });
-      mapper.addClippingPlane(planeInstance);
+      if (this.configuration.showClippingPlanes) {
+        mapper.addClippingPlane(planeInstance);
+      }
     });
   }
 

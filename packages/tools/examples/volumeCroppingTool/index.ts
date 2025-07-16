@@ -144,10 +144,31 @@ addToggleButtonToToolbar({
     const toolGroupVRT =
       cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
     // Get the VolumeCroppingTool instance from the tool group
-    const croppingTool = toolGroupVRT.getToolInstance('VolumeCroppingTool');
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
     // Call setHandlesVisible on the tool instance
     if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
       croppingTool.setHandlesVisible(!croppingTool.getHandlesVisible());
+    }
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Toggle Cropping Planes',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    // Get the tool group for the 3D viewport
+    const toolGroupVRT =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+    // Get the VolumeCroppingTool instance from the tool group
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+    // Call setClippingPlanesVisible on the tool instance
+    if (
+      croppingTool &&
+      typeof croppingTool.setClippingPlanesVisible === 'function'
+    ) {
+      croppingTool.setClippingPlanesVisible(
+        !croppingTool.getClippingPlanesVisible()
+      );
     }
   },
 });
@@ -205,7 +226,6 @@ async function run() {
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
-  volume.load();
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -272,6 +292,7 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
+
   /*
   toolGroup.addTool(CrosshairsTool.toolName);
   toolGroup.setToolActive(CrosshairsTool.toolName, {
@@ -310,14 +331,14 @@ async function run() {
 
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
 
-  toolGroupVRT.addTool(TrackballRotateTool.toolName);
-  toolGroupVRT.setToolActive(TrackballRotateTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary,
-      },
-    ],
-  });
+  // toolGroupVRT.addTool(TrackballRotateTool.toolName);
+  // toolGroupVRT.setToolActive(TrackballRotateTool.toolName, {
+  //   bindings: [
+  //     {
+  //       mouseButton: MouseBindings.Secondary,
+  //     },
+  //   ],
+  // });
   toolGroupVRT.addTool(ZoomTool.toolName);
   toolGroupVRT.setToolActive(ZoomTool.toolName, {
     bindings: [
@@ -359,12 +380,18 @@ async function run() {
         x: [1, 1, 0], // yellow for X axis
         y: [0, 1, 0], // green for Y axis
         z: [1, 0, 0], // red for Z axis
-        corners: [0, 0, 1], // Blue for corners (optional)
+        corners: [0, 0, 1], // Blue for corners (optional) [0.7, 0.7, 0.7], //
       },
       showCornerSpheres: true,
       initialCropFactor: 0.2,
     });
-    toolGroupVRT.setToolActive(VolumeCroppingTool.toolName);
+    toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+        },
+      ],
+    });
     viewport.setZoom(1.2);
     viewport.render();
   });
