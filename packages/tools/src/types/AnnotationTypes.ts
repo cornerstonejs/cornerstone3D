@@ -19,16 +19,26 @@ export type AnnotationMetadata = Types.ViewReference & {
 };
 
 export type AnnotationData = {
-  /** Annotation handles that are grabbable for manipulation */
+  /**
+   * Annotation handles that are grabbable for manipulation
+   */
   handles?: Handles;
-  /** Cached Annotation statistics which is specific to the tool */
+  /**
+   * Cached Annotation statistics which is specific to the tool
+   */
   cachedStats?: Record<string, unknown>;
-  /** Label of an annotation */
+  /**
+   * Label of an annotation
+   */
   label?: string;
-  /** contour data */
+  /**
+   * contour data
+   */
   contour?: Contour;
 
-  /** Other data/keys */
+  /**
+   * Other data/keys
+   */
   [key: string]: unknown;
 };
 
