@@ -243,7 +243,6 @@ async function run() {
     throttleTimeout: 100,
     /* Simplified handles */
     simplified: true,
-
   });
 
   toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
