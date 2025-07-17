@@ -323,22 +323,13 @@ async function run() {
       {
         mouseButton: MouseBindings.Wheel,
       },
-      //    {
-      //     mouseButton: MouseBindings.Secondary,
-      //   },
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
     ],
   });
 
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
-
-  // toolGroupVRT.addTool(TrackballRotateTool.toolName);
-  // toolGroupVRT.setToolActive(TrackballRotateTool.toolName, {
-  //   bindings: [
-  //     {
-  //       mouseButton: MouseBindings.Secondary,
-  //     },
-  //   ],
-  // });
   toolGroupVRT.addTool(ZoomTool.toolName);
   toolGroupVRT.setToolActive(ZoomTool.toolName, {
     bindings: [
@@ -375,7 +366,7 @@ async function run() {
     });
     toolGroupVRT.addViewport(viewportId4, renderingEngineId);
     toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
-      sphereRadius: 10,
+      sphereRadius: 7,
       sphereColors: {
         x: [1, 1, 0], // yellow for X axis
         y: [0, 1, 0], // green for Y axis
