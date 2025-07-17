@@ -14,101 +14,44 @@ class Probe extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata,
         trackingIdentifier
     ) {
-        const state = super.getMeasurementData(
+        const {
+            state,
+            NUMGroup,
+            scoord,
+            scoordArgs,
+            worldCoords,
+            referencedImageId,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
-            imageToWorldCoords,
             metadata,
-            trackingIdentifier
+            this.toolType
         );
 
-        const { defaultState, SCOORDGroup, SCOORD3DGroup } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                Probe.toolType
-            );
-
-        if (SCOORDGroup) {
-            return this.getMeasurementDataFromScoord({
-                state,
-                defaultState,
-                SCOORDGroup,
-                imageToWorldCoords
-            });
-        } else if (SCOORD3DGroup) {
-            return this.getMeasurementDataFromScoord3D({
-                state,
-                SCOORD3DGroup
-            });
-        } else {
-            throw new Error(
-                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
-            );
-        }
-    }
-
-    static getMeasurementDataFromScoord({
-        state,
-        defaultState,
-        SCOORDGroup,
-        imageToWorldCoords
-    }) {
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const { GraphicData } = SCOORDGroup;
-
-        const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
-
+        const cachedStats = referencedImageId
+            ? {
+                  [`imageId:${referencedImageId}`]: {
+                      length: NUMGroup
+                          ? NUMGroup.MeasuredValueSequence.NumericValue
+                          : 0
+                  }
+              }
+            : {};
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
                 points: worldCoords,
-                activeHandleIndex: null,
+                activeHandleIndex: 0,
                 textBox: {
                     hasMoved: false
                 }
-            }
-        };
-
-        return state;
-    }
-
-    static getMeasurementDataFromScoord3D({ state, SCOORD3DGroup }) {
-        const { GraphicData } = SCOORD3DGroup;
-
-        const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 3) {
-            const point = [
-                GraphicData[i],
-                GraphicData[i + 1],
-                GraphicData[i + 2]
-            ];
-            worldCoords.push(point);
-        }
-
-        state.annotation.data = {
-            ...state.annotation.data,
-            handles: {
-                points: worldCoords,
-                activeHandleIndex: null,
-                textBox: {
-                    hasMoved: false
-                }
-            }
+            },
+            cachedStats,
+            frameNumber: ReferencedFrameNumber
         };
 
         return state;

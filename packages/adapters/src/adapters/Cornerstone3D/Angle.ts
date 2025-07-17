@@ -15,14 +15,11 @@ class Angle extends BaseAdapter3D {
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
         const {
             state,
             NUMGroup,
-            scoord,
-            scoordArgs,
             worldCoords,
             referencedImageId,
             ReferencedFrameNumber

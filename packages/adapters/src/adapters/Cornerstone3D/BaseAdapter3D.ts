@@ -120,7 +120,6 @@ export default class BaseAdapter3D {
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        _imageToWorldCoords,
         metadata,
         trackingIdentifier?: string
     ) {

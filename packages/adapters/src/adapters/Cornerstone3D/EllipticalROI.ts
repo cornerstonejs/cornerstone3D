@@ -19,14 +19,11 @@ class EllipticalROI extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
         const {
             state,
             NUMGroup,
-            scoord,
-            scoordArgs,
             worldCoords,
             referencedImageId,
             ReferencedFrameNumber
