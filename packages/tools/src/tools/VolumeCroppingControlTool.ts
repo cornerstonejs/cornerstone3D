@@ -531,152 +531,152 @@ class VolumeCroppingControlTool extends AnnotationTool {
     this.toolSelectedCallback(evt, annotation, interactionType);
   }
 
-  onCameraModified = (evt) => {
-    const eventDetail = evt.detail;
-    const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-    const viewport = enabledElement.viewport as Types.IVolumeViewport;
+  // onCameraModified = (evt) => {
+  //   const eventDetail = evt.detail;
+  //   const { element } = eventDetail;
+  //   const enabledElement = getEnabledElement(element);
+  //   const { renderingEngine } = enabledElement;
+  //   const viewport = enabledElement.viewport as Types.IVolumeViewport;
 
-    const annotations = this._getAnnotations(enabledElement);
-    const filteredToolAnnotations =
-      this.filterInteractableAnnotationsForElement(element, annotations);
+  //   const annotations = this._getAnnotations(enabledElement);
+  //   const filteredToolAnnotations =
+  //     this.filterInteractableAnnotationsForElement(element, annotations);
 
-    // viewport that the camera modified is originating from
-    const viewportAnnotation =
-      filteredToolAnnotations[0] as VolumeCroppingAnnotation;
+  //   // viewport that the camera modified is originating from
+  //   const viewportAnnotation =
+  //     filteredToolAnnotations[0] as VolumeCroppingAnnotation;
 
-    if (!viewportAnnotation) {
-      return;
-    }
+  //   if (!viewportAnnotation) {
+  //     return;
+  //   }
 
-    const currentCamera = viewport.getCamera();
-    const oldCameraPosition = viewportAnnotation.metadata.cameraPosition;
-    const deltaCameraPosition: Types.Point3 = [0, 0, 0];
-    vtkMath.subtract(
-      currentCamera.position,
-      oldCameraPosition,
-      deltaCameraPosition
-    );
+  //   const currentCamera = viewport.getCamera();
+  //   const oldCameraPosition = viewportAnnotation.metadata.cameraPosition;
+  //   const deltaCameraPosition: Types.Point3 = [0, 0, 0];
+  //   vtkMath.subtract(
+  //     currentCamera.position,
+  //     oldCameraPosition,
+  //     deltaCameraPosition
+  //   );
 
-    const oldCameraFocalPoint = viewportAnnotation.metadata.cameraFocalPoint;
-    const deltaCameraFocalPoint: Types.Point3 = [0, 0, 0];
-    vtkMath.subtract(
-      currentCamera.focalPoint,
-      oldCameraFocalPoint,
-      deltaCameraFocalPoint
-    );
+  //   const oldCameraFocalPoint = viewportAnnotation.metadata.cameraFocalPoint;
+  //   const deltaCameraFocalPoint: Types.Point3 = [0, 0, 0];
+  //   vtkMath.subtract(
+  //     currentCamera.focalPoint,
+  //     oldCameraFocalPoint,
+  //     deltaCameraFocalPoint
+  //   );
 
-    // updated cached "previous" camera position and focal point
-    viewportAnnotation.metadata.cameraPosition = [...currentCamera.position];
-    viewportAnnotation.metadata.cameraFocalPoint = [
-      ...currentCamera.focalPoint,
-    ];
+  //   // updated cached "previous" camera position and focal point
+  //   viewportAnnotation.metadata.cameraPosition = [...currentCamera.position];
+  //   viewportAnnotation.metadata.cameraFocalPoint = [
+  //     ...currentCamera.focalPoint,
+  //   ];
 
-    const viewportControllable = this._getReferenceLineControllable(
-      viewport.id
-    );
+  //   const viewportControllable = this._getReferenceLineControllable(
+  //     viewport.id
+  //   );
 
-    if (
-      !csUtils.isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
-      viewportControllable
-    ) {
-      // Is camera Modified a TRANSLATION or ROTATION?
-      let isRotation = false;
+  //   if (
+  //     !csUtils.isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
+  //     viewportControllable
+  //   ) {
+  //     // Is camera Modified a TRANSLATION or ROTATION?
+  //     let isRotation = false;
 
-      // This is guaranteed to be the same diff for both position and focal point
-      // if the camera is modified by pan, zoom, or scroll BUT for rotation of
-      // volume cropping handles it will be different.
-      const cameraModifiedSameForPosAndFocalPoint = csUtils.isEqual(
-        deltaCameraPosition,
-        deltaCameraFocalPoint,
-        1e-3
-      );
+  //     // This is guaranteed to be the same diff for both position and focal point
+  //     // if the camera is modified by pan, zoom, or scroll BUT for rotation of
+  //     // volume cropping handles it will be different.
+  //     const cameraModifiedSameForPosAndFocalPoint = csUtils.isEqual(
+  //       deltaCameraPosition,
+  //       deltaCameraFocalPoint,
+  //       1e-3
+  //     );
 
-      if (!cameraModifiedSameForPosAndFocalPoint) {
-        isRotation = true;
-      }
+  //     if (!cameraModifiedSameForPosAndFocalPoint) {
+  //       isRotation = true;
+  //     }
 
-      // Only update cropping reference lines if the camera movement is NOT a stack scroll.
-      // Stack scroll: camera moves along viewPlaneNormal (dot product large).
-      // Pan/zoom: camera moves perpendicular to viewPlaneNormal (dot product small).
-      const dot = Math.abs(
-        vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
-      );
-      const isStackScroll = dot > 1e-2;
+  //     // Only update cropping reference lines if the camera movement is NOT a stack scroll.
+  //     // Stack scroll: camera moves along viewPlaneNormal (dot product large).
+  //     // Pan/zoom: camera moves perpendicular to viewPlaneNormal (dot product small).
+  //     const dot = Math.abs(
+  //       vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
+  //     );
+  //     const isStackScroll = dot > 1e-2;
 
-      // TRANSLATION
-      // Only update cropping reference lines for pan/zoom, not stack scroll
-      if (!isRotation && !isStackScroll) {
-        this.toolCenter[0] += deltaCameraPosition[0];
-        this.toolCenter[1] += deltaCameraPosition[1];
-        this.toolCenter[2] += deltaCameraPosition[2];
-        // Update toolCenterMin as well (keep min cropping plane in sync)
-        const allAnnotations = this._getAnnotations(enabledElement);
-        const selectedAnnotations = allAnnotations.filter(
-          (a) => a.data.handles.activeOperation === 1 // OPERATION.DRAG
-        );
+  //     // TRANSLATION
+  //     // Only update cropping reference lines for pan/zoom, not stack scroll
+  //     if (!isRotation && !isStackScroll) {
+  //       this.toolCenter[0] += deltaCameraPosition[0];
+  //       this.toolCenter[1] += deltaCameraPosition[1];
+  //       this.toolCenter[2] += deltaCameraPosition[2];
+  //       // Update toolCenterMin as well (keep min cropping plane in sync)
+  //       const allAnnotations = this._getAnnotations(enabledElement);
+  //       const selectedAnnotations = allAnnotations.filter(
+  //         (a) => a.data.handles.activeOperation === 1 // OPERATION.DRAG
+  //       );
 
-        if (this.editData && this.editData.annotation) {
-          const activeType =
-            this.editData?.annotation?.data?.handles?.activeType;
-          if (activeType === 'min') {
-            this.toolCenterMin[0] += deltaCameraPosition[0];
-            this.toolCenterMin[1] += deltaCameraPosition[1];
-            this.toolCenterMin[2] += deltaCameraPosition[2];
-          } else if (activeType === 'max') {
-            this.toolCenterMax[0] += deltaCameraPosition[0];
-            this.toolCenterMax[1] += deltaCameraPosition[1];
-            this.toolCenterMax[2] += deltaCameraPosition[2];
-          }
-        } else if (selectedAnnotations.length > 1) {
-          // No annotation selected: update both min and max
-          this.toolCenterMin[0] += deltaCameraPosition[0];
-          this.toolCenterMin[1] += deltaCameraPosition[1];
-          this.toolCenterMin[2] += deltaCameraPosition[2];
-          this.toolCenterMax[0] += deltaCameraPosition[0];
-          this.toolCenterMax[1] += deltaCameraPosition[1];
-          this.toolCenterMax[2] += deltaCameraPosition[2];
-        }
-      }
+  //       if (this.editData && this.editData.annotation) {
+  //         const activeType =
+  //           this.editData?.annotation?.data?.handles?.activeType;
+  //         if (activeType === 'min') {
+  //           this.toolCenterMin[0] += deltaCameraPosition[0];
+  //           this.toolCenterMin[1] += deltaCameraPosition[1];
+  //           this.toolCenterMin[2] += deltaCameraPosition[2];
+  //         } else if (activeType === 'max') {
+  //           this.toolCenterMax[0] += deltaCameraPosition[0];
+  //           this.toolCenterMax[1] += deltaCameraPosition[1];
+  //           this.toolCenterMax[2] += deltaCameraPosition[2];
+  //         }
+  //       } else if (selectedAnnotations.length > 1) {
+  //         // No annotation selected: update both min and max
+  //         this.toolCenterMin[0] += deltaCameraPosition[0];
+  //         this.toolCenterMin[1] += deltaCameraPosition[1];
+  //         this.toolCenterMin[2] += deltaCameraPosition[2];
+  //         this.toolCenterMax[0] += deltaCameraPosition[0];
+  //         this.toolCenterMax[1] += deltaCameraPosition[1];
+  //         this.toolCenterMax[2] += deltaCameraPosition[2];
+  //       }
+  //     }
 
-      const viewportAnnotation = filteredToolAnnotations[0];
-      if (!viewportAnnotation) {
-        return;
-      }
-      triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
-        toolGroupId: this.toolGroupId,
-        toolCenter: this.toolCenter,
-        toolCenterMin: this.toolCenterMin,
-        toolCenterMax: this.toolCenterMax,
-        handleType: this.editData?.annotation?.data?.handles?.activeType, // Pass activeType here
-        viewportOrientation: [
-          viewportAnnotation.data.referenceLines[0][0].options.orientation,
-          viewportAnnotation.data.referenceLines[1][0].options.orientation,
-        ],
-      });
-    }
+  //     const viewportAnnotation = filteredToolAnnotations[0];
+  //     if (!viewportAnnotation) {
+  //       return;
+  //     }
+  //     triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
+  //       toolGroupId: this.toolGroupId,
+  //       toolCenter: this.toolCenter,
+  //       toolCenterMin: this.toolCenterMin,
+  //       toolCenterMax: this.toolCenterMax,
+  //       handleType: this.editData?.annotation?.data?.handles?.activeType, // Pass activeType here
+  //       viewportOrientation: [
+  //         viewportAnnotation.data.referenceLines[0][0].options.orientation,
+  //         viewportAnnotation.data.referenceLines[1][0].options.orientation,
+  //       ],
+  //     });
+  //   }
 
-    // AutoPan modification
-    if (this.configuration.autoPan?.enabled) {
-      const toolGroup = getToolGroupForViewport(
-        viewport.id,
-        renderingEngine.id
-      );
+  //   // AutoPan modification
+  //   if (this.configuration.autoPan?.enabled) {
+  //     const toolGroup = getToolGroupForViewport(
+  //       viewport.id,
+  //       renderingEngine.id
+  //     );
 
-      const otherViewportIds = toolGroup
-        .getViewportIds()
-        .filter((id) => id !== viewport.id);
-    }
+  //     const otherViewportIds = toolGroup
+  //       .getViewportIds()
+  //       .filter((id) => id !== viewport.id);
+  //   }
 
-    const requireSameOrientation = false;
-    const viewportIdsToRender = getViewportIdsWithToolToRender(
-      element,
-      this.getToolName(),
-      requireSameOrientation
-    );
-    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-  };
+  //   const requireSameOrientation = false;
+  //   const viewportIdsToRender = getViewportIdsWithToolToRender(
+  //     element,
+  //     this.getToolName(),
+  //     requireSameOrientation
+  //   );
+  //   triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+  // };
 
   onResetCamera = (evt) => {
     this.resetCrosshairs();

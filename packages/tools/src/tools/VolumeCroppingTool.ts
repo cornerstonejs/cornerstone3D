@@ -116,7 +116,7 @@ class VolumeCroppingTool extends BaseTool {
     const actor = vtkActor.newInstance();
     actor.setMapper(mapper);
     actor.getProperty().setColor(...color);
-    actor.getProperty().setLineWidth(2); // Thinner line
+    actor.getProperty().setLineWidth(0.5); // Thinner line
     actor.getProperty().setOpacity(1.0);
     actor.getProperty().setInterpolationToFlat(); // No shading
     actor.getProperty().setAmbient(1.0); // Full ambient
@@ -163,7 +163,7 @@ class VolumeCroppingTool extends BaseTool {
           enabled: false,
           opacity: 0.8,
         },
-        initialCropFactor: 0.2,
+        initialCropFactor: 0.08,
         sphereColors: {
           x: [1.0, 1.0, 0.0], //  Yellow for X
           y: [0.0, 1.0, 0.0], // Green for Y
@@ -285,6 +285,7 @@ class VolumeCroppingTool extends BaseTool {
 
   onSetToolActive() {
     const viewportsInfo = this._getViewportsInfo();
+    console.debug('VolumeCroppingTool: onSetToolActive', viewportsInfo);
     const subscribeToElementResize = () => {
       viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
         if (!this._resizeObservers.has(viewportId)) {
@@ -448,7 +449,7 @@ class VolumeCroppingTool extends BaseTool {
     const dimensions = imageData.getDimensions();
     const origin = imageData.getOrigin();
     const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
-    const cropFactor = this.configuration.initialCropFactor || 0.2;
+    const cropFactor = this.configuration.initialCropFactor || 0.1;
     const xMin = origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0];
     const xMax =
       origin[0] + (1 - cropFactor) * (dimensions[0] - 1) * spacing[0];
