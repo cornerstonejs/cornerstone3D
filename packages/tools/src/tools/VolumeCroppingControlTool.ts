@@ -187,6 +187,40 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
   }
 
+  _updateToolCentersFromViewport(viewport) {
+    const volumeActors = viewport.getActors();
+    if (!volumeActors || !volumeActors.length) {
+      return;
+    }
+    const imageData = volumeActors[0].actor.getMapper().getInputData();
+    if (!imageData) {
+      return;
+    }
+    const dimensions = imageData.getDimensions();
+    const spacing = imageData.getSpacing();
+    const origin = imageData.getOrigin();
+    const cropFactor = this.configuration.initialCropFactor ?? 0.2;
+    const cropStart = cropFactor / 2;
+    const cropEnd = 1 - cropFactor / 2;
+    this.toolCenter = [
+      origin[0] +
+        ((cropStart + cropEnd) / 2) * (dimensions[0] - 1) * spacing[0],
+      origin[1] +
+        ((cropStart + cropEnd) / 2) * (dimensions[1] - 1) * spacing[1],
+      origin[2] +
+        ((cropStart + cropEnd) / 2) * (dimensions[2] - 1) * spacing[2],
+    ];
+    this.toolCenterMin = [
+      origin[0] + cropStart * (dimensions[0] - 1) * spacing[0],
+      origin[1] + cropStart * (dimensions[1] - 1) * spacing[1],
+      origin[2] + cropStart * (dimensions[2] - 1) * spacing[2],
+    ];
+    this.toolCenterMax = [
+      origin[0] + cropEnd * (dimensions[0] - 1) * spacing[0],
+      origin[1] + cropEnd * (dimensions[1] - 1) * spacing[1],
+      origin[2] + cropEnd * (dimensions[2] - 1) * spacing[2],
+    ];
+  }
   /**
    * Gets the camera from the viewport, and adds  annotation for the viewport
    * to the annotationManager. If any annotation is found in the annotationManager, it
@@ -214,7 +248,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (!enabledElement) {
       return;
     }
+
     const { FrameOfReferenceUID, viewport } = enabledElement;
+    this._updateToolCentersFromViewport(viewport);
     const { element } = viewport;
     const { position, focalPoint, viewPlaneNormal } = viewport.getCamera();
 
@@ -274,8 +310,19 @@ class VolumeCroppingControlTool extends AnnotationTool {
     return viewports;
   };
 
+  _initializeAnnotationsForAllViewports() {
+    const viewportsInfo = this._getViewportsInfo();
+    if (!viewportsInfo || viewportsInfo.length < 3) {
+      return;
+    }
+    viewportsInfo.forEach((viewportInfo) => {
+      this.initializeViewport(viewportInfo);
+    });
+  }
+
   onSetToolActive() {
     const viewportsInfo = this._getViewportsInfo();
+    this._initializeAnnotationsForAllViewports();
 
     // reference points in the new space, so we subscribe to the event
     // and update the reference points accordingly.
@@ -287,13 +334,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   onSetToolPassive() {
     const viewportsInfo = this._getViewportsInfo();
-
+    this._initializeAnnotationsForAllViewports();
     this._computeToolCenter(viewportsInfo);
   }
 
   onSetToolEnabled() {
     const viewportsInfo = this._getViewportsInfo();
-
+    this._initializeAnnotationsForAllViewports();
     this._computeToolCenter(viewportsInfo);
   }
 
@@ -369,7 +416,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   };
 
   _computeToolCenter = (viewportsInfo): void => {
-    if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
+    if (!viewportsInfo || viewportsInfo.length < 3 || !viewportsInfo[0]) {
       console.warn(
         '  _computeToolCenter : No valid viewportsInfo for computeToolCenter.'
       );
@@ -531,153 +578,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     this.toolSelectedCallback(evt, annotation, interactionType);
   }
 
-  // onCameraModified = (evt) => {
-  //   const eventDetail = evt.detail;
-  //   const { element } = eventDetail;
-  //   const enabledElement = getEnabledElement(element);
-  //   const { renderingEngine } = enabledElement;
-  //   const viewport = enabledElement.viewport as Types.IVolumeViewport;
-
-  //   const annotations = this._getAnnotations(enabledElement);
-  //   const filteredToolAnnotations =
-  //     this.filterInteractableAnnotationsForElement(element, annotations);
-
-  //   // viewport that the camera modified is originating from
-  //   const viewportAnnotation =
-  //     filteredToolAnnotations[0] as VolumeCroppingAnnotation;
-
-  //   if (!viewportAnnotation) {
-  //     return;
-  //   }
-
-  //   const currentCamera = viewport.getCamera();
-  //   const oldCameraPosition = viewportAnnotation.metadata.cameraPosition;
-  //   const deltaCameraPosition: Types.Point3 = [0, 0, 0];
-  //   vtkMath.subtract(
-  //     currentCamera.position,
-  //     oldCameraPosition,
-  //     deltaCameraPosition
-  //   );
-
-  //   const oldCameraFocalPoint = viewportAnnotation.metadata.cameraFocalPoint;
-  //   const deltaCameraFocalPoint: Types.Point3 = [0, 0, 0];
-  //   vtkMath.subtract(
-  //     currentCamera.focalPoint,
-  //     oldCameraFocalPoint,
-  //     deltaCameraFocalPoint
-  //   );
-
-  //   // updated cached "previous" camera position and focal point
-  //   viewportAnnotation.metadata.cameraPosition = [...currentCamera.position];
-  //   viewportAnnotation.metadata.cameraFocalPoint = [
-  //     ...currentCamera.focalPoint,
-  //   ];
-
-  //   const viewportControllable = this._getReferenceLineControllable(
-  //     viewport.id
-  //   );
-
-  //   if (
-  //     !csUtils.isEqual(currentCamera.position, oldCameraPosition, 1e-3) &&
-  //     viewportControllable
-  //   ) {
-  //     // Is camera Modified a TRANSLATION or ROTATION?
-  //     let isRotation = false;
-
-  //     // This is guaranteed to be the same diff for both position and focal point
-  //     // if the camera is modified by pan, zoom, or scroll BUT for rotation of
-  //     // volume cropping handles it will be different.
-  //     const cameraModifiedSameForPosAndFocalPoint = csUtils.isEqual(
-  //       deltaCameraPosition,
-  //       deltaCameraFocalPoint,
-  //       1e-3
-  //     );
-
-  //     if (!cameraModifiedSameForPosAndFocalPoint) {
-  //       isRotation = true;
-  //     }
-
-  //     // Only update cropping reference lines if the camera movement is NOT a stack scroll.
-  //     // Stack scroll: camera moves along viewPlaneNormal (dot product large).
-  //     // Pan/zoom: camera moves perpendicular to viewPlaneNormal (dot product small).
-  //     const dot = Math.abs(
-  //       vtkMath.dot(deltaCameraPosition, currentCamera.viewPlaneNormal)
-  //     );
-  //     const isStackScroll = dot > 1e-2;
-
-  //     // TRANSLATION
-  //     // Only update cropping reference lines for pan/zoom, not stack scroll
-  //     if (!isRotation && !isStackScroll) {
-  //       this.toolCenter[0] += deltaCameraPosition[0];
-  //       this.toolCenter[1] += deltaCameraPosition[1];
-  //       this.toolCenter[2] += deltaCameraPosition[2];
-  //       // Update toolCenterMin as well (keep min cropping plane in sync)
-  //       const allAnnotations = this._getAnnotations(enabledElement);
-  //       const selectedAnnotations = allAnnotations.filter(
-  //         (a) => a.data.handles.activeOperation === 1 // OPERATION.DRAG
-  //       );
-
-  //       if (this.editData && this.editData.annotation) {
-  //         const activeType =
-  //           this.editData?.annotation?.data?.handles?.activeType;
-  //         if (activeType === 'min') {
-  //           this.toolCenterMin[0] += deltaCameraPosition[0];
-  //           this.toolCenterMin[1] += deltaCameraPosition[1];
-  //           this.toolCenterMin[2] += deltaCameraPosition[2];
-  //         } else if (activeType === 'max') {
-  //           this.toolCenterMax[0] += deltaCameraPosition[0];
-  //           this.toolCenterMax[1] += deltaCameraPosition[1];
-  //           this.toolCenterMax[2] += deltaCameraPosition[2];
-  //         }
-  //       } else if (selectedAnnotations.length > 1) {
-  //         // No annotation selected: update both min and max
-  //         this.toolCenterMin[0] += deltaCameraPosition[0];
-  //         this.toolCenterMin[1] += deltaCameraPosition[1];
-  //         this.toolCenterMin[2] += deltaCameraPosition[2];
-  //         this.toolCenterMax[0] += deltaCameraPosition[0];
-  //         this.toolCenterMax[1] += deltaCameraPosition[1];
-  //         this.toolCenterMax[2] += deltaCameraPosition[2];
-  //       }
-  //     }
-
-  //     const viewportAnnotation = filteredToolAnnotations[0];
-  //     if (!viewportAnnotation) {
-  //       return;
-  //     }
-  //     triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
-  //       toolGroupId: this.toolGroupId,
-  //       toolCenter: this.toolCenter,
-  //       toolCenterMin: this.toolCenterMin,
-  //       toolCenterMax: this.toolCenterMax,
-  //       handleType: this.editData?.annotation?.data?.handles?.activeType, // Pass activeType here
-  //       viewportOrientation: [
-  //         viewportAnnotation.data.referenceLines[0][0].options.orientation,
-  //         viewportAnnotation.data.referenceLines[1][0].options.orientation,
-  //       ],
-  //     });
-  //   }
-
-  //   // AutoPan modification
-  //   if (this.configuration.autoPan?.enabled) {
-  //     const toolGroup = getToolGroupForViewport(
-  //       viewport.id,
-  //       renderingEngine.id
-  //     );
-
-  //     const otherViewportIds = toolGroup
-  //       .getViewportIds()
-  //       .filter((id) => id !== viewport.id);
-  //   }
-
-  //   const requireSameOrientation = false;
-  //   const viewportIdsToRender = getViewportIdsWithToolToRender(
-  //     element,
-  //     this.getToolName(),
-  //     requireSameOrientation
-  //   );
-  //   triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-  // };
-
   onResetCamera = (evt) => {
     this.resetCrosshairs();
   };
@@ -767,7 +667,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
       return null;
     }
-
+    const viewportsInfo = this._getViewportsInfo();
+    if (!viewportsInfo || viewportsInfo.length < 3) {
+      // Not enough viewports for reference lines
+      return false;
+    }
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
@@ -1114,27 +1018,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (volumeActors.length > 0) {
         const imageData = volumeActors[0].actor.getMapper().getInputData();
         if (imageData) {
-          const dimensions = imageData.getDimensions();
-          const spacing = imageData.getSpacing();
-          const origin = imageData.getOrigin();
-          const cropFactor = this.configuration.initialCropFactor ?? 0.2;
-
-          this.toolCenter = [
-            origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
-            origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1],
-            origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2],
-          ];
-          const maxCropFactor = 1 - cropFactor;
-          this.toolCenterMin = [
-            origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
-            origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1],
-            origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2],
-          ];
-          this.toolCenterMax = [
-            origin[0] + maxCropFactor * (dimensions[0] - 1) * spacing[0],
-            origin[1] + maxCropFactor * (dimensions[1] - 1) * spacing[1],
-            origin[2] + maxCropFactor * (dimensions[2] - 1) * spacing[2],
-          ];
+          this._updateToolCentersFromViewport(viewport);
           // Update all annotations' handles.toolCenter
           const annotations =
             getAnnotations(this.getToolName(), viewportId) || [];
