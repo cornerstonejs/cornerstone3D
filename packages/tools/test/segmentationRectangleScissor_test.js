@@ -112,7 +112,7 @@ describe('Segmentation Tools:', () => {
                   representation: {
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
                     data: {
-                      volumeId: segmentationId,
+                      volumeIds: [segmentationId],
                     },
                   },
                 },
@@ -251,7 +251,7 @@ describe('Segmentation Tools:', () => {
                   representation: {
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
                     data: {
-                      volumeId: segmentationId,
+                      volumeIds: [segmentationId],
                     },
                   },
                 },
@@ -430,7 +430,7 @@ describe('Segmentation Tools:', () => {
                   representation: {
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
                     data: {
-                      volumeId: segmentationId,
+                      volumeIds: [segmentationId],
                     },
                   },
                 },

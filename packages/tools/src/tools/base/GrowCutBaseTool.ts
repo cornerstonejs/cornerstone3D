@@ -22,15 +22,17 @@ import {
   DEFAULT_NEGATIVE_SEED_MARGIN,
 } from '../../utilities/segmentation/growCut/constants';
 
-import type {
-  LabelmapSegmentationDataStack,
-  LabelmapSegmentationDataVolume,
+import {
+  replaceVolumeId,
+  type LabelmapSegmentationDataStack,
+  type LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
 import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 import { getOrCreateSegmentationVolume } from '../../utilities/segmentation';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import type { GrowCutOneClickOptions } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
+import { add } from '../../utilities/contourSegmentation';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
 
@@ -317,8 +319,12 @@ class GrowCutBaseTool extends BaseTool {
       segmentationState.getSegmentation(segmentationId);
     const labelmapData =
       representationData[SegmentationRepresentations.Labelmap];
-    let { volumeId: labelmapVolumeId, referencedVolumeId } =
-      labelmapData as LabelmapSegmentationDataVolume;
+
+    const volumeIds =
+      (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+    const labelmapVolumeId = volumeIds.length > 0 ? volumeIds[0] : undefined;
+    let newLabelMapVolumeId;
+    let { referencedVolumeId } = labelmapData as LabelmapSegmentationDataVolume;
 
     if (!labelmapVolumeId) {
       const referencedImageIds = (
@@ -354,10 +360,10 @@ class GrowCutBaseTool extends BaseTool {
           fakeDerivedImage.imageId,
         ]);
 
-        labelmapVolumeId = fakeLabelmapVolume.volumeId;
+        newLabelMapVolumeId = fakeLabelmapVolume.volumeId;
       } else {
-        const segVolume = getOrCreateSegmentationVolume(segmentationId);
-        labelmapVolumeId = segVolume.volumeId;
+        const segVolumes = getOrCreateSegmentationVolume(segmentationId);
+        newLabelMapVolumeId = segVolumes[0].volumeId;
       }
     }
 
@@ -380,6 +386,13 @@ class GrowCutBaseTool extends BaseTool {
           ).volumeId;
     }
 
+    if (newLabelMapVolumeId) {
+      replaceVolumeId(
+        labelmapData as LabelmapSegmentationDataVolume,
+        labelmapVolumeId,
+        newLabelMapVolumeId
+      );
+    }
     return {
       segmentationId,
       segmentIndex,

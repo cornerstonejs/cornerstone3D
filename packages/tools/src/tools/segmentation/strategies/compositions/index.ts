@@ -7,10 +7,13 @@ import regionFill from './regionFill';
 import setValue from './setValue';
 import threshold from './threshold';
 import labelmapStatistics from './labelmapStatistics';
+
 import ensureSegmentationVolumeFor3DManipulation from './ensureSegmentationVolume';
 import ensureImageVolumeFor3DManipulation from './ensureImageVolume';
+import type { EnsureImageVolumeData } from './ensureImageVolume';
+import type { EnsureSegmentationVolumeData } from './ensureSegmentationVolume';
 
-export default {
+const compositions = {
   determineSegmentIndex,
   dynamicThreshold,
   erase,
@@ -23,3 +26,7 @@ export default {
   ensureSegmentationVolumeFor3DManipulation,
   ensureImageVolumeFor3DManipulation,
 };
+
+export default compositions;
+
+export type { EnsureImageVolumeData, EnsureSegmentationVolumeData };
