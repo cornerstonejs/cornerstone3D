@@ -9,13 +9,23 @@ class Probe extends BaseAdapter3D {
     static {
         this.init("Probe", TID300Point);
         this.registerLegacy();
+        this.registerType("DCM:111030", "POINT", 1);
+        this.registerType("DCM:111030", "POINT", 2);
+    }
+
+    public static isValidMeasurement(measurement) {
+        const graphicItem = this.getGraphicItem(measurement);
+        return (
+            this.getGraphicType(graphicItem) === "POINT" &&
+            this.getPointsCount(graphicItem) <= 2
+        );
     }
 
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
         metadata,
-        trackingIdentifier
+        _trackingIdentifier
     ) {
         const {
             state,
