@@ -6,9 +6,13 @@ import BrushStrategy from './BrushStrategy';
 import type { InitializedOperationData, Composition } from './BrushStrategy';
 import compositions from './compositions';
 import StrategyCallbacks from '../../../enums/StrategyCallbacks';
-import { createEllipseInPoint } from './fillCircle';
+import {
+  createEllipseInPoint,
+  getEllipseCornersFromCanvasCoordinates,
+} from './fillCircle';
 const { transformWorldToIndex } = csUtils;
 import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
+import type { CanvasCoordinates } from '../../../types';
 
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
@@ -18,12 +22,16 @@ const sphereComposition = {
     if (!points) {
       return;
     }
-    // Average the points to get the center of the ellipse
-    const center = vec3.fromValues(0, 0, 0);
-    points.forEach((point) => {
-      vec3.add(center, center, point);
-    });
-    vec3.scale(center, center, 1 / points.length);
+    // Calculate the center as the midpoint between the first two points
+    // That calculation servers both for orthogonal and oblique planes
+    const center = vec3.create();
+    if (points.length >= 2) {
+      vec3.add(center, points[0], points[1]);
+      vec3.scale(center, center, 0.5);
+    } else {
+      // Fallback to the first point if less than 2 points are provided
+      vec3.copy(center, points[0]);
+    }
 
     operationData.centerWorld = center as Types.Point3;
     operationData.centerIJK = transformWorldToIndex(
@@ -31,22 +39,23 @@ const sphereComposition = {
       center as Types.Point3
     );
 
-    const {
-      boundsIJK: newBoundsIJK,
-      topLeftWorld,
-      bottomRightWorld,
-    } = getSphereBoundsInfoFromViewport(
+    const { boundsIJK: newBoundsIJK } = getSphereBoundsInfoFromViewport(
       points.slice(0, 2) as [Types.Point3, Types.Point3],
       segmentationImageData,
       viewport
     );
+    const canvasCoordinates = points.map((p) =>
+      viewport.worldToCanvas(p)
+    ) as CanvasCoordinates;
+
+    // 1. From the drawn tool: Get the ellipse (circle) corners in canvas coordinates
+    const corners = getEllipseCornersFromCanvasCoordinates(canvasCoordinates);
+    const cornersInWorld = corners.map((corner) =>
+      viewport.canvasToWorld(corner)
+    );
 
     operationData.isInObjectBoundsIJK = newBoundsIJK;
-    operationData.isInObject = createEllipseInPoint({
-      topLeftWorld,
-      bottomRightWorld,
-      center,
-    });
+    operationData.isInObject = createEllipseInPoint(cornersInWorld);
     // }
   },
 } as Composition;
