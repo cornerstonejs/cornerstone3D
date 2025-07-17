@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.3...v3.31.4) (2025-07-17)
+
+### Bug Fixes
+
+- **rendering:** do not do unnecessary resize operations ([#2209](https://github.com/cornerstonejs/cornerstone3D/issues/2209)) ([eabaff6](https://github.com/cornerstonejs/cornerstone3D/commit/eabaff6c9288c6122573e0f8347dd8391ebc04ee))
+
 ## [3.31.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.2...v3.31.3) (2025-07-16)
 
 ### Bug Fixes
