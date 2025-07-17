@@ -274,6 +274,8 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2]);
+
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 }
 
 run();

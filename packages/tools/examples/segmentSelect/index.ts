@@ -369,6 +369,8 @@ async function _handleStackViewports(stackImageIds: string[]) {
     },
   ]);
 
+  segmentation.segmentIndex.setActiveSegmentIndex(stackSegContourId, 1);
+
   addMockContourSegmentation({
     segmentationId: stackSegContourId,
     viewport: renderingEngine.getViewport(viewportId3),
