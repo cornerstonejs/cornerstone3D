@@ -41,6 +41,56 @@ export default class BaseAdapter3D {
      */
     public static parentType: string;
 
+    public static registerType(code = "", type = "", count = 0) {
+        let key = code;
+        if (type) {
+            key = `${key}${key.length ? "-" : ""}${type}`;
+        }
+        if (count) {
+            key = `${key}${key.length ? "-" : ""}${count}`;
+        }
+        MeasurementReport.registerAdapterTypes(this, key);
+    }
+
+    public static getPointsCount(graphicItem) {
+        const is3DMeasurement = graphicItem.ValueType === "SCOORD3D";
+        const pointSize = is3DMeasurement ? 3 : 2;
+        return graphicItem.GraphicData.length / pointSize;
+    }
+
+    public static getGraphicItems(measurementGroup, filter) {
+        const items = measurementGroup.ContentSequence.filter(
+            group =>
+                group.ValueType === "SCOORD" || group.ValueType === "SCOORD3D"
+        );
+        return filter ? items.filter(filter) : items;
+    }
+
+    public static getGraphicItem(measurementGroup, offset = 0, type = null) {
+        const items = this.getGraphicItems(
+            measurementGroup,
+            type && (group => group.ValueType === type)
+        );
+        return items[offset];
+    }
+
+    public static getGraphicCode(graphicItem) {
+        const { ConceptNameCodeSequence: conceptNameItem } = graphicItem;
+        const {
+            CodeValue: graphicValue,
+            CodingSchemeDesignator: graphicDesignator
+        } = conceptNameItem;
+        return `${graphicDesignator}:${graphicValue}`;
+    }
+
+    public static getGraphicType(graphicItem) {
+        return graphicItem.GraphicType;
+    }
+
+    public static isValidMeasurement(_measurementGroup) {
+        return false;
+    }
+
     public static init(
         toolType: string,
         representation,
@@ -120,7 +170,6 @@ export default class BaseAdapter3D {
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        _imageToWorldCoords,
         metadata,
         trackingIdentifier?: string
     ) {
