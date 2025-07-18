@@ -10,6 +10,7 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
 import type { ImageActor } from '../types/IActor';
 import BaseVolumeViewport from './BaseVolumeViewport';
+import type { ICamera } from '../types';
 
 /**
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render
@@ -43,12 +44,26 @@ class VolumeViewport3D extends BaseVolumeViewport {
     return false;
   }
 
-  public resetCamera({
-    resetPan = true,
-    resetZoom = true,
-    resetToCenter = true,
-  } = {}): boolean {
-    super.resetCamera({ resetPan, resetZoom, resetToCenter });
+  public resetCamera(options?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+    resetToCenter?: boolean;
+    storeAsInitialCamera?: boolean;
+  }): boolean {
+    const {
+      resetPan = true,
+      resetZoom = true,
+      resetToCenter = true,
+      storeAsInitialCamera = true,
+    } = options || {};
+
+    super.resetCamera({
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      storeAsInitialCamera,
+    });
+
     const activeCamera = this.getVtkActiveCamera();
 
     if (activeCamera.getParallelProjection()) {
@@ -154,8 +169,11 @@ class VolumeViewport3D extends BaseVolumeViewport {
     return null;
   }
 
-  public setCamera(props) {
-    super.setCamera(props);
+  public setCamera(
+    cameraInterface: ICamera,
+    storeAsInitialCamera?: boolean
+  ): void {
+    super.setCamera(cameraInterface, storeAsInitialCamera);
     this.getRenderer().resetCameraClippingRange();
     this.render();
   }
