@@ -154,3 +154,8 @@ export const setCachedSegmentIndices = (
 ) => {
   segmentIndicesCache.set(segmentationId, { indices, isDirty: false });
 };
+
+// Clear the cachedSegmentIndices
+export const clearCachedSegmentIndices = () => {
+  segmentIndicesCache.clear();
+};
