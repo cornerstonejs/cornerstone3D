@@ -90,7 +90,7 @@
         "ndarray": "^1.0.19"
     },
     "peerDependencies": {
-        "@cornerstonejs/core": "^3.31.4",
-        "@cornerstonejs/tools": "^3.31.4"
+        "@cornerstonejs/core": "^3.31.5",
+        "@cornerstonejs/tools": "^3.31.5"
     }
 }
