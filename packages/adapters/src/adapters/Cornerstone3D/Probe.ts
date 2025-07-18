@@ -45,9 +45,7 @@ class Probe extends BaseAdapter3D {
         const cachedStats = referencedImageId
             ? {
                   [`imageId:${referencedImageId}`]: {
-                      length: NUMGroup
-                          ? NUMGroup.MeasuredValueSequence.NumericValue
-                          : 0
+                      length: NUMGroup?.MeasuredValueSequence?.NumericValue || 0
                   }
               }
             : {};
