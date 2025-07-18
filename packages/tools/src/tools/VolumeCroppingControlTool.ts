@@ -93,6 +93,8 @@ const OPERATION = {
  *
  */
 class VolumeCroppingControlTool extends AnnotationTool {
+  // Store virtual annotations (e.g., for missing orientations like CT_CORONAL)
+  _virtualAnnotations: Annotation[] = [];
   static toolName;
   sphereStates: {
     point: Types.Point3;
@@ -322,6 +324,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }
 
   onSetToolPassive() {
+    const viewportsInfo = this._getViewportsInfo();
     this._computeToolCenter(viewportsInfo);
   }
 
@@ -409,32 +412,64 @@ class VolumeCroppingControlTool extends AnnotationTool {
       );
       return;
     }
-    // Todo: handle two same view viewport, or more than 3 viewports
-    const [firstViewport, secondViewport, thirdViewport] = viewportsInfo;
+    // Support any missing orientation (CT_AXIAL, CT_CORONAL, CT_SAGITTAL)
+    const orientationIds = ['CT_AXIAL', 'CT_CORONAL', 'CT_SAGITTAL'];
+    const presentViewports = viewportsInfo.map((vp) => vp.viewportId);
 
-    // Initialize first viewport
-    const { normal: normal1, point: point1 } =
-      this.initializeViewport(firstViewport);
+    const missingOrientation = orientationIds.find(
+      (id) => !presentViewports.includes(id)
+    );
 
-    // Initialize second viewport
-    const { normal: normal2, point: point2 } =
-      this.initializeViewport(secondViewport);
+    // Initialize present viewports
 
-    let normal3 = <Types.Point3>[0, 0, 0];
-    let point3 = vec3.create();
+    const presentNormals: Types.Point3[] = [];
+    const presentCenters: Types.Point3[] = [];
+    const presentViewportInfos = viewportsInfo.filter((vp) =>
+      orientationIds.includes(vp.viewportId)
+    );
+    presentViewportInfos.forEach((vpInfo) => {
+      const { normal, point } = this.initializeViewport(vpInfo);
+      presentNormals.push(normal);
+      presentCenters.push(point);
+    });
 
-    // If there are three viewports
-    if (thirdViewport) {
-      ({ normal: normal3, point: point3 } =
-        this.initializeViewport(thirdViewport));
-    } else {
-      // If there are only two views (viewport) associated with the volumecropping
-      // In this situation, we don't have a third information to find the
-      // exact intersection, and we "assume" the third view is looking at
-      // a location in between the first and second view centers
-      vec3.add(point3, point1, point2);
-      vec3.scale(point3, point3, 0.5);
-      vec3.cross(normal3, normal1, normal2);
+    // If all three orientations are present, nothing to synthesize
+    if (presentViewportInfos.length === 3) {
+      // ...existing code...
+    } else if (presentViewportInfos.length === 2 && missingOrientation) {
+      // Synthesize virtual annotation for the missing orientation
+      // Use cross product of the two present normals
+      const virtualNormal: Types.Point3 = [0, 0, 0];
+      vec3.cross(virtualNormal, presentNormals[0], presentNormals[1]);
+      vec3.normalize(virtualNormal, virtualNormal);
+      // Use average of the two present centers
+      const virtualCenter: Types.Point3 = [
+        (presentCenters[0][0] + presentCenters[1][0]) / 2,
+        (presentCenters[0][1] + presentCenters[1][1]) / 2,
+        (presentCenters[0][2] + presentCenters[1][2]) / 2,
+      ];
+      const virtualAnnotation = {
+        highlighted: false,
+        metadata: {
+          cameraPosition: <Types.Point3>[...virtualCenter],
+          cameraFocalPoint: <Types.Point3>[...virtualCenter],
+          toolName: this.getToolName(),
+        },
+        data: {
+          handles: {
+            toolCenter: this.toolCenter,
+            toolCenterMin: this.toolCenterMin,
+            toolCenterMax: this.toolCenterMax,
+          },
+          activeOperation: null,
+          activeViewportIds: [],
+          viewportId: missingOrientation,
+          referenceLines: [],
+        },
+        // Mark as virtual so renderAnnotation can handle it
+        isVirtual: true,
+      };
+      this._virtualAnnotations = [virtualAnnotation];
     }
 
     if (viewportsInfo && viewportsInfo.length) {
@@ -662,15 +697,25 @@ class VolumeCroppingControlTool extends AnnotationTool {
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
-    const annotations = this._getAnnotations(enabledElement);
+    let annotations = this._getAnnotations(enabledElement);
+    // If we have virtual annotations (like CT_CORONAL), always include them
+    if (this._virtualAnnotations && this._virtualAnnotations.length) {
+      // Only add if not already present
+      const hasCoronal = annotations.some(
+        (a) => a.data.viewportId === 'CT_CORONAL'
+      );
+      if (!hasCoronal) {
+        annotations = annotations.concat(this._virtualAnnotations);
+      }
+    }
     const camera = viewport.getCamera();
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 
-    // viewport Annotation
+    // viewport Annotation: use the first annotation for the current viewport
     const viewportAnnotation = filteredToolAnnotations[0];
-    if (!annotations?.length || !viewportAnnotation?.data) {
-      // No annotations yet, and didn't just create it as we likely don't have a FrameOfReference/any data loaded yet.
+    if (!viewportAnnotation || !viewportAnnotation.data) {
+      // No annotation for this viewport
       return renderStatus;
     }
     //console.debug(viewportAnnotation);
@@ -688,11 +733,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
     );
 
     const data = viewportAnnotation.data;
-    const otherViewportAnnotations =
-      this._filterAnnotationsByUniqueViewportOrientations(
-        enabledElement,
-        annotations
-      );
+    // Get all other annotations except the current viewport's
+    const otherViewportAnnotations = annotations;
 
     const volumeCroppingCenterCanvasMin = viewport.worldToCanvas(
       this.toolCenterMin
@@ -707,55 +749,104 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const canvasBox = [0, 0, clientWidth, clientHeight];
 
     otherViewportAnnotations.forEach((annotation) => {
-      const { data } = annotation;
-
+      const data = annotation.data;
+      // Type guard for isVirtual property
+      const isVirtual =
+        'isVirtual' in annotation &&
+        (annotation as { isVirtual?: boolean }).isVirtual === true;
       data.handles.toolCenter = this.toolCenter;
-
-      const otherViewport = renderingEngine.getViewport(
-        data.viewportId
-      ) as Types.IVolumeViewport;
-
-      const otherCamera = otherViewport.getCamera();
+      let otherViewport,
+        otherCamera,
+        clientWidth,
+        clientHeight,
+        otherCanvasDiagonalLength,
+        otherCanvasCenter,
+        otherViewportCenterWorld;
+      if (isVirtual && data.viewportId === 'CT_CORONAL') {
+        // Synthesize a virtual viewport/camera for CT_CORONAL
+        // Use the cross product of the two real viewports' normals
+        const realViewports = viewportsInfo.filter(
+          (vp) => vp.viewportId !== 'CT_CORONAL'
+        );
+        if (realViewports.length === 2) {
+          const vp1 = renderingEngine.getViewport(realViewports[0].viewportId);
+          const vp2 = renderingEngine.getViewport(realViewports[1].viewportId);
+          const normal1 = vp1.getCamera().viewPlaneNormal;
+          const normal2 = vp2.getCamera().viewPlaneNormal;
+          const coronalNormal = vec3.create();
+          vec3.cross(coronalNormal, normal1, normal2);
+          vec3.normalize(coronalNormal, coronalNormal);
+          otherCamera = {
+            viewPlaneNormal: coronalNormal,
+            position: data.handles.toolCenter,
+            focalPoint: data.handles.toolCenter,
+            viewUp: [0, 1, 0],
+          };
+          // Synthesize canvas size and center
+          clientWidth = viewport.canvas.clientWidth;
+          clientHeight = viewport.canvas.clientHeight;
+          otherCanvasDiagonalLength = Math.sqrt(
+            clientWidth * clientWidth + clientHeight * clientHeight
+          );
+          otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
+          otherViewportCenterWorld = data.handles.toolCenter;
+          otherViewport = {
+            id: 'CT_CORONAL',
+            canvas: viewport.canvas,
+            canvasToWorld: () => data.handles.toolCenter,
+          };
+        } else {
+          // Fallback: skip rendering this virtual annotation
+          return;
+        }
+      } else {
+        otherViewport = renderingEngine.getViewport(data.viewportId as string);
+        otherCamera = otherViewport.getCamera();
+        clientWidth = otherViewport.canvas.clientWidth;
+        clientHeight = otherViewport.canvas.clientHeight;
+        otherCanvasDiagonalLength = Math.sqrt(
+          clientWidth * clientWidth + clientHeight * clientHeight
+        );
+        otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
+        otherViewportCenterWorld =
+          otherViewport.canvasToWorld(otherCanvasCenter);
+      }
 
       const otherViewportControllable = this._getReferenceLineControllable(
         otherViewport.id
       );
 
-      // get coordinates for the reference line
-      const { clientWidth, clientHeight } = otherViewport.canvas;
-      const otherCanvasDiagonalLength = Math.sqrt(
-        clientWidth * clientWidth + clientHeight * clientHeight
-      );
-      const otherCanvasCenter: Types.Point2 = [
-        clientWidth * 0.5,
-        clientHeight * 0.5,
-      ];
-      const otherViewportCenterWorld =
-        otherViewport.canvasToWorld(otherCanvasCenter);
-
-      const direction: Types.Point3 = [0, 0, 0];
+      const direction = [0, 0, 0];
       vtkMath.cross(
-        camera.viewPlaneNormal,
-        otherCamera.viewPlaneNormal,
-        direction
+        camera.viewPlaneNormal as [number, number, number],
+        otherCamera.viewPlaneNormal as [number, number, number],
+        direction as [number, number, number]
       );
-      vtkMath.normalize(direction);
+      vtkMath.normalize(direction as [number, number, number]);
       vtkMath.multiplyScalar(
-        <Types.Point3>direction,
+        direction as [number, number, number],
         otherCanvasDiagonalLength
       );
 
-      const pointWorld0: Types.Point3 = [0, 0, 0];
-      vtkMath.add(otherViewportCenterWorld, direction, pointWorld0);
-
-      const pointWorld1: Types.Point3 = [0, 0, 0];
-      vtkMath.subtract(otherViewportCenterWorld, direction, pointWorld1);
-
-      const pointCanvas0 = viewport.worldToCanvas(pointWorld0);
-
-      const otherViewportCenterCanvas = viewport.worldToCanvas(
-        otherViewportCenterWorld
+      const pointWorld0: [number, number, number] = [0, 0, 0];
+      vtkMath.add(
+        otherViewportCenterWorld as [number, number, number],
+        direction as [number, number, number],
+        pointWorld0
       );
+      const pointWorld1: [number, number, number] = [0, 0, 0];
+      vtkMath.subtract(
+        otherViewportCenterWorld as [number, number, number],
+        direction as [number, number, number],
+        pointWorld1
+      );
+
+      const pointCanvas0 = viewport.worldToCanvas(pointWorld0 as Types.Point3);
+      const otherViewportCenterCanvas = viewport.worldToCanvas([
+        otherViewportCenterWorld[0] ?? 0,
+        otherViewportCenterWorld[1] ?? 0,
+        otherViewportCenterWorld[2] ?? 0,
+      ] as [number, number, number] as Types.Point3);
 
       const canvasUnitVectorFromCenter = vec2.create();
       vec2.subtract(
@@ -766,12 +857,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
       vec2.normalize(canvasUnitVectorFromCenter, canvasUnitVectorFromCenter);
 
       const canvasVectorFromCenterLong = vec2.create();
-
       vec2.scale(
         canvasVectorFromCenterLong,
         canvasUnitVectorFromCenter,
         canvasDiagonalLength * 100
       );
+
       // For min
       const refLinesCenterMin = otherViewportControllable
         ? vec2.clone(volumeCroppingCenterCanvasMin)
@@ -851,7 +942,19 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
       // get color for the reference line
       const otherViewport = line[0];
-      const viewportColor = this._getReferenceLineColor(otherViewport.id);
+      let color;
+      // If the reference line is for the virtual CT_CORONAL annotation, use yellow
+      if (
+        annotationUID &&
+        data.viewportId !== 'CT_CORONAL' &&
+        otherViewport.id === 'CT_CORONAL'
+      ) {
+        color = 'yellow';
+      } else {
+        const viewportColor = this._getReferenceLineColor(otherViewport.id);
+        color =
+          viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
+      }
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.id
       );
@@ -859,16 +962,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
         (id) => id === otherViewport.id
       );
 
-      let color =
-        viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
-
       let lineWidth = 2.5;
-
       const lineActive =
         data.handles.activeOperation !== null &&
         data.handles.activeOperation === OPERATION.DRAG &&
         selectedViewportId;
-
       if (lineActive) {
         lineWidth = 4.5;
       }
@@ -902,14 +1000,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
               lineDash: [4, 4],
             }
           );
-        }
-      }
-
-      if (viewportControllable) {
-        color =
-          viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
-        if (lineActive) {
-          const handleUID = `${lineIndex}`;
         }
       }
     });
@@ -1128,206 +1218,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       });
 
     return otherViewportsAnnotationsWithSameCameraDirection;
-  };
-
-  _filterAnnotationsByUniqueViewportOrientations = (
-    enabledElement,
-    annotations
-  ) => {
-    const { renderingEngine, viewport } = enabledElement;
-    const camera = viewport.getCamera();
-    const viewPlaneNormal = camera.viewPlaneNormal;
-    vtkMath.normalize(viewPlaneNormal);
-
-    const otherLinkedViewportAnnotationsFromSameScene = annotations.filter(
-      (annotation) => {
-        const { data } = annotation;
-        const otherViewport = renderingEngine.getViewport(data.viewportId);
-        const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.id
-        );
-        // Filter out 3D viewports
-        if (otherViewport.type === Enums.ViewportType.VOLUME_3D) {
-          return false;
-        }
-
-        return viewport !== otherViewport && otherViewportControllable === true;
-      }
-    );
-
-    const otherViewportsAnnotationsWithUniqueCameras = [];
-    // Iterate first on other viewport from the same scene linked
-    for (
-      let i = 0;
-      i < otherLinkedViewportAnnotationsFromSameScene.length;
-      ++i
-    ) {
-      const annotation = otherLinkedViewportAnnotationsFromSameScene[i];
-      const { viewportId } = annotation.data;
-      const otherViewport = renderingEngine.getViewport(viewportId);
-      const otherCamera = otherViewport.getCamera();
-      const otherViewPlaneNormal = otherCamera.viewPlaneNormal;
-      vtkMath.normalize(otherViewPlaneNormal);
-
-      if (
-        csUtils.isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
-        csUtils.isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
-      ) {
-        continue;
-      }
-
-      let cameraFound = false;
-      for (
-        let jj = 0;
-        jj < otherViewportsAnnotationsWithUniqueCameras.length;
-        ++jj
-      ) {
-        const annotation = otherViewportsAnnotationsWithUniqueCameras[jj];
-        const { viewportId } = annotation.data;
-        const stockedViewport = renderingEngine.getViewport(viewportId);
-        const cameraOfStocked = stockedViewport.getCamera();
-
-        if (
-          csUtils.isEqual(
-            cameraOfStocked.viewPlaneNormal,
-            otherCamera.viewPlaneNormal,
-            1e-2
-          ) &&
-          csUtils.isEqual(cameraOfStocked.position, otherCamera.position, 1)
-        ) {
-          cameraFound = true;
-        }
-      }
-
-      if (!cameraFound) {
-        otherViewportsAnnotationsWithUniqueCameras.push(annotation);
-      }
-    }
-
-    const otherNonLinkedViewportAnnotationsFromSameScene = annotations.filter(
-      (annotation) => {
-        const { data } = annotation;
-        const otherViewport = renderingEngine.getViewport(data.viewportId);
-        const otherViewportControllable = this._getReferenceLineControllable(
-          otherViewport.id
-        );
-
-        return (
-          viewport !== otherViewport &&
-          // scene === otherScene &&
-          otherViewportControllable !== true
-        );
-      }
-    );
-
-    // Iterate second on other viewport from the same scene non linked
-    for (
-      let i = 0;
-      i < otherNonLinkedViewportAnnotationsFromSameScene.length;
-      ++i
-    ) {
-      const annotation = otherNonLinkedViewportAnnotationsFromSameScene[i];
-      const { viewportId } = annotation.data;
-      const otherViewport = renderingEngine.getViewport(viewportId);
-
-      const otherCamera = otherViewport.getCamera();
-      const otherViewPlaneNormal = otherCamera.viewPlaneNormal;
-      vtkMath.normalize(otherViewPlaneNormal);
-
-      if (
-        csUtils.isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
-        csUtils.isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
-      ) {
-        continue;
-      }
-
-      let cameraFound = false;
-      for (
-        let jj = 0;
-        jj < otherViewportsAnnotationsWithUniqueCameras.length;
-        ++jj
-      ) {
-        const annotation = otherViewportsAnnotationsWithUniqueCameras[jj];
-        const { viewportId } = annotation.data;
-        const stockedViewport = renderingEngine.getViewport(viewportId);
-        const cameraOfStocked = stockedViewport.getCamera();
-
-        if (
-          csUtils.isEqual(
-            cameraOfStocked.viewPlaneNormal,
-            otherCamera.viewPlaneNormal,
-            1e-2
-          ) &&
-          csUtils.isEqual(cameraOfStocked.position, otherCamera.position, 1)
-        ) {
-          cameraFound = true;
-        }
-      }
-
-      if (!cameraFound) {
-        otherViewportsAnnotationsWithUniqueCameras.push(annotation);
-      }
-    }
-
-    // Iterate on all the viewport
-    const otherViewportAnnotations =
-      this._getAnnotationsForViewportsWithDifferentCameras(
-        enabledElement,
-        annotations
-      );
-
-    for (let i = 0; i < otherViewportAnnotations.length; ++i) {
-      const annotation = otherViewportAnnotations[i];
-      if (
-        otherViewportsAnnotationsWithUniqueCameras.some(
-          (element) => element === annotation
-        )
-      ) {
-        continue;
-      }
-
-      const { viewportId } = annotation.data;
-      const otherViewport = renderingEngine.getViewport(viewportId);
-      const otherCamera = otherViewport.getCamera();
-      const otherViewPlaneNormal = otherCamera.viewPlaneNormal;
-      vtkMath.normalize(otherViewPlaneNormal);
-
-      if (
-        csUtils.isEqual(viewPlaneNormal, otherViewPlaneNormal, 1e-2) ||
-        csUtils.isOpposite(viewPlaneNormal, otherViewPlaneNormal, 1e-2)
-      ) {
-        continue;
-      }
-
-      let cameraFound = false;
-      for (
-        let jj = 0;
-        jj < otherViewportsAnnotationsWithUniqueCameras.length;
-        ++jj
-      ) {
-        const annotation = otherViewportsAnnotationsWithUniqueCameras[jj];
-        const { viewportId } = annotation.data;
-        const stockedViewport = renderingEngine.getViewport(viewportId);
-        const cameraOfStocked = stockedViewport.getCamera();
-
-        if (
-          csUtils.isEqual(
-            cameraOfStocked.viewPlaneNormal,
-            otherCamera.viewPlaneNormal,
-            1e-2
-          ) &&
-          csUtils.isEqual(cameraOfStocked.position, otherCamera.position, 1)
-        ) {
-          cameraFound = true;
-        }
-      }
-
-      if (!cameraFound) {
-        otherViewportsAnnotationsWithUniqueCameras.push(annotation);
-      }
-    }
-
-    return otherViewportsAnnotationsWithUniqueCameras;
   };
 
   _activateModify = (element) => {
