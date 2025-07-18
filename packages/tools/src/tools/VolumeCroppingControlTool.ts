@@ -698,15 +698,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
     let annotations = this._getAnnotations(enabledElement);
-    // If we have virtual annotations (like CT_CORONAL), always include them
+    // If we have virtual annotations , always include them
     if (this._virtualAnnotations && this._virtualAnnotations.length) {
-      // Only add if not already present
-      const hasCoronal = annotations.some(
-        (a) => a.data.viewportId === 'CT_CORONAL'
-      );
-      if (!hasCoronal) {
-        annotations = annotations.concat(this._virtualAnnotations);
-      }
+      annotations = annotations.concat(this._virtualAnnotations);
     }
     const camera = viewport.getCamera();
     const filteredToolAnnotations =
@@ -762,22 +756,21 @@ class VolumeCroppingControlTool extends AnnotationTool {
         otherCanvasDiagonalLength,
         otherCanvasCenter,
         otherViewportCenterWorld;
-      if (isVirtual && data.viewportId === 'CT_CORONAL') {
-        // Synthesize a virtual viewport/camera for CT_CORONAL
-        // Use the cross product of the two real viewports' normals
+      if (isVirtual) {
+        // Synthesize a virtual viewport/camera for any missing orientation
         const realViewports = viewportsInfo.filter(
-          (vp) => vp.viewportId !== 'CT_CORONAL'
+          (vp) => vp.viewportId !== data.viewportId
         );
         if (realViewports.length === 2) {
           const vp1 = renderingEngine.getViewport(realViewports[0].viewportId);
           const vp2 = renderingEngine.getViewport(realViewports[1].viewportId);
           const normal1 = vp1.getCamera().viewPlaneNormal;
           const normal2 = vp2.getCamera().viewPlaneNormal;
-          const coronalNormal = vec3.create();
-          vec3.cross(coronalNormal, normal1, normal2);
-          vec3.normalize(coronalNormal, coronalNormal);
+          const virtualNormal = vec3.create();
+          vec3.cross(virtualNormal, normal1, normal2);
+          vec3.normalize(virtualNormal, virtualNormal);
           otherCamera = {
-            viewPlaneNormal: coronalNormal,
+            viewPlaneNormal: virtualNormal,
             position: data.handles.toolCenter,
             focalPoint: data.handles.toolCenter,
             viewUp: [0, 1, 0],
@@ -791,7 +784,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
           otherViewportCenterWorld = data.handles.toolCenter;
           otherViewport = {
-            id: 'CT_CORONAL',
+            id: data.viewportId,
             canvas: viewport.canvas,
             canvasToWorld: () => data.handles.toolCenter,
           };
@@ -942,19 +935,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
       // get color for the reference line
       const otherViewport = line[0];
-      let color;
-      // If the reference line is for the virtual CT_CORONAL annotation, use yellow
-      if (
-        annotationUID &&
-        data.viewportId !== 'CT_CORONAL' &&
-        otherViewport.id === 'CT_CORONAL'
-      ) {
-        color = 'yellow';
-      } else {
-        const viewportColor = this._getReferenceLineColor(otherViewport.id);
-        color =
-          viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
-      }
+
+      const viewportColor = this._getReferenceLineColor(otherViewport.id);
+      const color =
+        viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
+
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.id
       );
