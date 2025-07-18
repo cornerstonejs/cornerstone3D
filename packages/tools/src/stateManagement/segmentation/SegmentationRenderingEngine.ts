@@ -50,12 +50,23 @@ class SegmentationRenderingEngine {
    * some sort of segmentation representation.
    *
    * @param viewportId - The ID of the viewport to render the segmentations on. If not provided, segmentations will be rendered on all viewports.
+   * @param immediate - If true, renders immediately without using requestAnimationFrame
    */
-  public renderSegmentationsForViewport(viewportId?: string): void {
+  public renderSegmentationsForViewport(
+    viewportId?: string,
+    immediate = false
+  ): void {
     const viewportIds = viewportId
       ? [viewportId]
       : this._getViewportIdsForSegmentation();
-    this._setViewportsToBeRenderedNextFrame(viewportIds);
+
+    if (immediate) {
+      viewportIds.forEach((viewportId) => {
+        this._triggerRender(viewportId);
+      });
+    } else {
+      this._setViewportsToBeRenderedNextFrame(viewportIds);
+    }
   }
 
   /**
@@ -171,7 +182,7 @@ class SegmentationRenderingEngine {
     }
   };
 
-  _triggerRender(viewportId?: string) {
+  _triggerRender(viewportId?: string, immediate = false) {
     const segmentationRepresentations =
       getSegmentationRepresentations(viewportId);
 
@@ -211,6 +222,28 @@ class SegmentationRenderingEngine {
         });
       }
     );
+
+    // If immediate rendering is requested, skip the async event handling
+    if (immediate) {
+      Promise.allSettled(segmentationRenderList).then((results) => {
+        const segmentationDetails = results
+          .filter((r) => r.status === 'fulfilled')
+          .map((r) => r.value);
+
+        segmentationDetails.forEach((detail) => {
+          const eventDetail: SegmentationRenderedEventDetail = {
+            viewportId,
+            segmentationId: detail.segmentationId,
+            type: detail.type,
+          };
+
+          triggerEvent(eventTarget, csToolsEvents.SEGMENTATION_RENDERED, {
+            ...eventDetail,
+          });
+        });
+      });
+      return;
+    }
 
     Promise.allSettled(segmentationRenderList).then((results) => {
       const segmentationDetails = results
@@ -268,8 +301,14 @@ class SegmentationRenderingEngine {
 /**
  * It triggers segmentation render for the given viewportIds
  */
-function triggerSegmentationRender(viewportId?: string): void {
-  segmentationRenderingEngine.renderSegmentationsForViewport(viewportId);
+function triggerSegmentationRender(
+  viewportId?: string,
+  immediate = false
+): void {
+  segmentationRenderingEngine.renderSegmentationsForViewport(
+    viewportId,
+    immediate
+  );
 }
 
 /**
