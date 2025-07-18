@@ -2,10 +2,6 @@ import { vec3 } from 'gl-matrix';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import {
-  getCanvasEllipseCorners,
-  precalculatePointInEllipse,
-} from '../../../utilities/math/ellipse';
 import { getBoundingBoxAroundShapeIJK } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
@@ -15,6 +11,24 @@ import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 
 const { transformWorldToIndex, isEqual } = csUtils;
+
+/**
+ * Returns the corners of an ellipse in canvas coordinates.
+ * The corners are returned in the order: topLeft, bottomRight, bottomLeft, topRight.
+ *
+ * @param canvasCoordinates - The coordinates of the ellipse in the canvas.
+ * @returns An array of four points representing the corners of the ellipse.
+ */
+export function getEllipseCornersFromCanvasCoordinates(
+  canvasCoordinates: CanvasCoordinates
+): Array<Types.Point2> {
+  const [bottom, top, left, right] = canvasCoordinates;
+  const topLeft = <Types.Point2>[left[0], top[1]];
+  const bottomRight = <Types.Point2>[right[0], bottom[1]];
+  const bottomLeft = <Types.Point2>[left[0], bottom[1]];
+  const topRight = <Types.Point2>[right[0], top[1]];
+  return [topLeft, bottomRight, bottomLeft, topRight];
+}
 
 const initializeCircle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
@@ -28,12 +42,17 @@ const initializeCircle = {
     if (!points) {
       return;
     }
-    // Average the points to get the center of the ellipse
-    const center = vec3.fromValues(0, 0, 0);
-    points.forEach((point) => {
-      vec3.add(center, center, point);
-    });
-    vec3.scale(center, center, 1 / points.length);
+
+    // Calculate the center as the midpoint between the first two points
+    // That calculation servers both for orthogonal and oblique planes
+    const center = vec3.create();
+    if (points.length >= 2) {
+      vec3.add(center, points[0], points[1]);
+      vec3.scale(center, center, 0.5);
+    } else {
+      // Fallback to the first point if less than 2 points are provided
+      vec3.copy(center, points[0]);
+    }
 
     operationData.centerWorld = center as Types.Point3;
     operationData.centerIJK = transformWorldToIndex(
@@ -45,15 +64,12 @@ const initializeCircle = {
       viewport.worldToCanvas(p)
     ) as CanvasCoordinates;
 
-    // 1. From the drawn tool: Get the ellipse (circle) topLeft and bottomRight
-    // corners in canvas coordinates
-    const [topLeftCanvas, bottomRightCanvas] =
-      getCanvasEllipseCorners(canvasCoordinates);
-
+    // 1. From the drawn tool: Get the ellipse (circle) corners in canvas coordinates
+    const corners = getEllipseCornersFromCanvasCoordinates(canvasCoordinates);
+    const cornersInWorld = corners.map((corner) =>
+      viewport.canvasToWorld(corner)
+    );
     // 2. Find the extent of the ellipse (circle) in IJK index space of the image
-    const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
-    const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
-
     const circleCornersIJK = points.map((world) => {
       return transformWorldToIndex(segmentationImageData, world);
     });
@@ -65,11 +81,8 @@ const initializeCircle = {
       segmentationImageData.getDimensions()
     );
 
-    operationData.isInObject = createPointInEllipse({
-      topLeftWorld,
-      bottomRightWorld,
-      center,
-    });
+    // 3. Derives the ellipse function from the corners
+    operationData.isInObject = createPointInEllipse(cornersInWorld);
 
     operationData.isInObjectBoundsIJK = boundsIJK;
   },
@@ -83,23 +96,37 @@ const initializeCircle = {
  * sphere shape (same radius in two or three dimensions), or an elliptical shape
  * if they differ.
  */
-function createPointInEllipse(worldInfo: {
-  topLeftWorld: Types.Point3;
-  bottomRightWorld: Types.Point3;
-  center: Types.Point3 | vec3;
-}) {
-  const { topLeftWorld, bottomRightWorld, center } = worldInfo;
+function createPointInEllipse(cornersInWorld: Types.Point3[] = []) {
+  if (!cornersInWorld || cornersInWorld.length !== 4) {
+    throw new Error('createPointInEllipse: cornersInWorld must have 4 points');
+  }
+  const [topLeft, bottomRight, bottomLeft, topRight] = cornersInWorld;
 
-  const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
-  const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
-  const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
+  // Center is the midpoint of the diagonal
+  const center = vec3.create();
+  vec3.add(center, topLeft, bottomRight);
+  vec3.scale(center, center, 0.5);
 
-  const radius = Math.max(xRadius, yRadius, zRadius);
-  if (
-    isEqual(xRadius, radius) &&
-    isEqual(yRadius, radius) &&
-    isEqual(zRadius, radius)
-  ) {
+  // Major axis: from topLeft to topRight
+  const majorAxisVec = vec3.create();
+  vec3.subtract(majorAxisVec, topRight, topLeft);
+  const xRadius = vec3.length(majorAxisVec) / 2;
+  vec3.normalize(majorAxisVec, majorAxisVec);
+
+  // Minor axis: from topLeft to bottomLeft
+  const minorAxisVec = vec3.create();
+  vec3.subtract(minorAxisVec, bottomLeft, topLeft);
+  const yRadius = vec3.length(minorAxisVec) / 2;
+  vec3.normalize(minorAxisVec, minorAxisVec);
+
+  // Plane normal
+  const normal = vec3.create();
+  vec3.cross(normal, majorAxisVec, minorAxisVec);
+  vec3.normalize(normal, normal);
+
+  // If radii are equal, treat as sphere
+  if (isEqual(xRadius, yRadius)) {
+    const radius = xRadius;
     const sphereObj = {
       center,
       radius,
@@ -107,16 +134,31 @@ function createPointInEllipse(worldInfo: {
     };
     return (pointLPS) => pointInSphere(sphereObj, pointLPS);
   }
-  // using circle as a form of ellipse
-  const ellipseObj = {
-    center: center as Types.Point3,
-    xRadius,
-    yRadius,
-    zRadius,
-  };
 
-  const { precalculated } = precalculatePointInEllipse(ellipseObj, {});
-  return precalculated;
+  // Otherwise, treat as ellipse in oblique plane
+  return (pointLPS: Types.Point3) => {
+    // Project point onto the plane
+    const pointVec = vec3.create();
+    vec3.subtract(pointVec, pointLPS, center);
+    // Remove component along normal
+    const distToPlane = vec3.dot(pointVec, normal);
+    const proj = vec3.create();
+    vec3.scaleAndAdd(proj, pointVec, normal, -distToPlane);
+
+    // Express proj in (majorAxis, minorAxis) coordinates
+    // Project from center, so shift origin to topLeft
+    const fromTopLeft = vec3.create();
+    vec3.subtract(
+      fromTopLeft,
+      proj,
+      vec3.subtract(vec3.create(), center, topLeft)
+    );
+    const x = vec3.dot(fromTopLeft, majorAxisVec);
+    const y = vec3.dot(fromTopLeft, minorAxisVec);
+
+    // Ellipse equation: (x/xRadius)^2 + (y/yRadius)^2 <= 1
+    return (x * x) / (xRadius * xRadius) + (y * y) / (yRadius * yRadius) <= 1;
+  };
 }
 
 const CIRCLE_STRATEGY = new BrushStrategy(
