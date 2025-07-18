@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.5...v3.31.6) (2025-07-18)
+
+### Bug Fixes
+
+- **probe:** rehydrate ([#2214](https://github.com/cornerstonejs/cornerstone3D/issues/2214)) ([4ac725e](https://github.com/cornerstonejs/cornerstone3D/commit/4ac725e94729f12ed21f471a6bffe30fea0b5296))
+
 ## [3.31.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.4...v3.31.5) (2025-07-18)
 
 ### Bug Fixes
