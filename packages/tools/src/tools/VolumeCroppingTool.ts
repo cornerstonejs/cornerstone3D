@@ -7,7 +7,6 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import type vtkCylinderSource from '@kitware/vtk.js/Filters/Sources/CylinderSource';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 import { BaseTool } from './base';

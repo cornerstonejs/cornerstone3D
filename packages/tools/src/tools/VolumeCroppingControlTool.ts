@@ -310,19 +310,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
     return viewports;
   };
 
-  _initializeAnnotationsForAllViewports() {
-    const viewportsInfo = this._getViewportsInfo();
-    if (!viewportsInfo || viewportsInfo.length < 3) {
-      return;
-    }
-    viewportsInfo.forEach((viewportInfo) => {
-      this.initializeViewport(viewportInfo);
-    });
-  }
-
   onSetToolActive() {
     const viewportsInfo = this._getViewportsInfo();
-    this._initializeAnnotationsForAllViewports();
 
     // reference points in the new space, so we subscribe to the event
     // and update the reference points accordingly.
@@ -333,14 +322,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }
 
   onSetToolPassive() {
-    const viewportsInfo = this._getViewportsInfo();
-    this._initializeAnnotationsForAllViewports();
     this._computeToolCenter(viewportsInfo);
   }
 
   onSetToolEnabled() {
     const viewportsInfo = this._getViewportsInfo();
-    this._initializeAnnotationsForAllViewports();
+
     this._computeToolCenter(viewportsInfo);
   }
 
@@ -416,7 +403,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   };
 
   _computeToolCenter = (viewportsInfo): void => {
-    if (!viewportsInfo || viewportsInfo.length < 3 || !viewportsInfo[0]) {
+    if (!viewportsInfo || !viewportsInfo[0]) {
       console.warn(
         '  _computeToolCenter : No valid viewportsInfo for computeToolCenter.'
       );
@@ -668,8 +655,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return null;
     }
     const viewportsInfo = this._getViewportsInfo();
-    if (!viewportsInfo || viewportsInfo.length < 3) {
-      // Not enough viewports for reference lines
+    if (!viewportsInfo || viewportsInfo.length === 0) {
+      // No viewports available
       return false;
     }
     let renderStatus = false;
