@@ -70,6 +70,8 @@ interface VolumeCroppingAnnotation extends Annotation {
     clippingPlanes?: vtkPlane[]; // clipping planes for the viewport
     clippingPlaneReferenceLines?: [];
   };
+  isVirtual?: boolean;
+  virtualNormal?: Types.Point3;
 }
 
 function defaultReferenceLineColor() {
@@ -94,7 +96,7 @@ const OPERATION = {
  */
 class VolumeCroppingControlTool extends AnnotationTool {
   // Store virtual annotations (e.g., for missing orientations like CT_CORONAL)
-  _virtualAnnotations: Annotation[] = [];
+  _virtualAnnotations: VolumeCroppingAnnotation[] = [];
   static toolName;
   sphereStates: {
     point: Types.Point3;
@@ -821,7 +823,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
           };
         } else {
           // Only one real viewport: use canonical normal from virtual annotation
-          const virtualNormal = annotation.virtualNormal ?? [0, 0, 1];
+          const virtualNormal = (annotation as VolumeCroppingAnnotation)
+            .virtualNormal ?? [0, 0, 1];
           otherCamera = {
             viewPlaneNormal: virtualNormal,
             position: data.handles.toolCenter,
