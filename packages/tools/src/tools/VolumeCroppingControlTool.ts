@@ -172,11 +172,16 @@ class VolumeCroppingControlTool extends AnnotationTool {
           y: null,
         },
         extendReferenceLines: true,
-        referenceLinesCenterGapRadius: 20,
         initialCropFactor: 0.2,
         mobile: {
           enabled: false,
           opacity: 0.8,
+        },
+        lineColors: {
+          AXIAL: [1.0, 0.0, 0.0], //  Red for axial
+          CORONAL: [0.0, 1.0, 0.0], // Green for coronal
+          SAGITTAL: [1.0, 1.0, 0.0], // Yellow for sagittal
+          UNKNOWN: [0.0, 0.0, 1.0], // Blue for unknown
         },
       },
     }
@@ -1115,12 +1120,39 @@ class VolumeCroppingControlTool extends AnnotationTool {
         }
       }
 
-      // get color for the reference line
+      // get color for the reference line using orientation
       const otherViewport = line[0];
-
-      const viewportColor = this._getReferenceLineColor(otherViewport.id);
-      const color =
-        viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
+      let orientation = null;
+      // Try to get orientation from annotation data or viewportId
+      if (otherViewport && otherViewport.id) {
+        // Try to get from annotation if available
+        const annotationForViewport = annotations.find(
+          (a) => a.data.viewportId === otherViewport.id
+        );
+        if (annotationForViewport && annotationForViewport.data.orientation) {
+          orientation = String(
+            annotationForViewport.data.orientation
+          ).toUpperCase();
+        } else {
+          // Fallback: try to infer from viewportId
+          const idUpper = otherViewport.id.toUpperCase();
+          if (idUpper.includes('AXIAL')) {
+            orientation = 'AXIAL';
+          } else if (idUpper.includes('CORONAL')) {
+            orientation = 'CORONAL';
+          } else if (idUpper.includes('SAGITTAL')) {
+            orientation = 'SAGITTAL';
+          }
+        }
+      }
+      // Use lineColors from configuration
+      const lineColors = this.configuration.lineColors || {};
+      const colorArr = lineColors[orientation] ||
+        lineColors.unknown || [1.0, 0.0, 0.0]; // fallback to red
+      // Convert [r,g,b] to rgb string if needed
+      const color = Array.isArray(colorArr)
+        ? `rgb(${colorArr.map((v) => Math.round(v * 255)).join(',')})`
+        : colorArr;
 
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.id

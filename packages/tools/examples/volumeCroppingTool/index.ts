@@ -293,6 +293,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     }
   });
 
+  // Always set viewport4 (3D viewport) orientation to CORONAL
   const viewportInputArray = [
     ...orthographicViewports,
     {
