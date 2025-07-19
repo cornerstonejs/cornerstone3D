@@ -318,15 +318,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     // Determine orientation from camera normal, fallback to viewportId string
-    let orientation = getOrientationFromNormal(
+    const orientation = getOrientationFromNormal(
       viewport.getCamera().viewPlaneNormal
     );
-    if (!orientation && typeof viewportId === 'string') {
-      const orientationMatch = viewportId.match(/CT_(AXIAL|CORONAL|SAGITTAL)/);
-      if (orientationMatch) {
-        orientation = orientationMatch[1];
-      }
-    }
 
     const annotation = {
       highlighted: false,
@@ -472,7 +466,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       );
       return;
     }
-    // Support any missing orientation (CT_AXIAL, CT_CORONAL, CT_SAGITTAL)
+    // Support any missing orientation
     const orientationIds = ['AXIAL', 'CORONAL', 'SAGITTAL'];
     // Get present orientations from viewportsInfo
     const presentOrientations = viewportsInfo
@@ -532,16 +526,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         (presentCenters[0][1] + presentCenters[1][1]) / 2,
         (presentCenters[0][2] + presentCenters[1][2]) / 2,
       ];
-      // Extract orientation string from missingOrientation (AXIAL, CORONAL, SAGITTAL)
-      let orientation = null;
-      if (typeof missingOrientation === 'string') {
-        const orientationMatch = missingOrientation.match(
-          /CT_(AXIAL|CORONAL|SAGITTAL)/
-        );
-        if (orientationMatch) {
-          orientation = orientationMatch[1];
-        }
-      }
+      const orientation = null;
       const virtualAnnotation: VolumeCroppingAnnotation = {
         highlighted: false,
         metadata: {
@@ -821,15 +806,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       orientation = getOrientationFromNormal(
         enabledElement.viewport.getCamera().viewPlaneNormal
       );
-    }
-    // Fallback: try to extract from viewportId string
-    if (!orientation && typeof enabledElement.viewportId === 'string') {
-      const orientationMatch = enabledElement.viewportId.match(
-        /CT_(AXIAL|CORONAL|SAGITTAL)/
-      );
-      if (orientationMatch) {
-        orientation = orientationMatch[1];
-      }
     }
 
     // Filter annotations for this orientation, including virtual annotations
