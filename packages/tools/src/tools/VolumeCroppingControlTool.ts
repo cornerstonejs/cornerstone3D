@@ -316,7 +316,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
         orientation = orientationMatch[1];
       }
     }
-    console.debug('  _computeToolCenter :', orientation);
+    console.debug('[VolumeCroppingControlTool] initializeViewport:', {
+      viewportId,
+      orientation,
+      cameraNormal: viewport.getCamera().viewPlaneNormal,
+    });
     const annotation = {
       highlighted: false,
       metadata: {
@@ -404,7 +408,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
 
       const annotations = this._getAnnotations(enabledElement);
-
+      console.debug(
+        'VolumeCroppingControlTool: Annotations found:',
+        annotations
+      );
       if (annotations?.length) {
         annotations.forEach((annotation) => {
           removeAnnotation(annotation.annotationUID);
@@ -463,21 +470,48 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
     // Support any missing orientation (CT_AXIAL, CT_CORONAL, CT_SAGITTAL)
-    const orientationIds = ['CT_AXIAL', 'CT_CORONAL', 'CT_SAGITTAL'];
-    const presentViewports = viewportsInfo.map((vp) => vp.viewportId);
+    const orientationIds = ['AXIAL', 'CORONAL', 'SAGITTAL'];
+    // Get present orientations from viewportsInfo
+    const presentOrientations = viewportsInfo
+      .map((vp) => {
+        if (vp.renderingEngineId) {
+          const renderingEngine = getRenderingEngine(vp.renderingEngineId);
+          const viewport = renderingEngine.getViewport(vp.viewportId);
+          if (viewport && viewport.getCamera) {
+            const orientation = getOrientationFromNormal(
+              viewport.getCamera().viewPlaneNormal
+            );
+            if (orientation) {
+              return orientation;
+            }
+          }
+        }
+        return null;
+      })
+      .filter(Boolean);
 
     const missingOrientation = orientationIds.find(
-      (id) => !presentViewports.includes(id)
+      (id) => !presentOrientations.includes(id)
     );
 
-    console.debug('  _computeToolCenter : presentViewports:', presentViewports);
     // Initialize present viewports
 
     const presentNormals: Types.Point3[] = [];
     const presentCenters: Types.Point3[] = [];
-    const presentViewportInfos = viewportsInfo.filter((vp) =>
-      orientationIds.includes(vp.viewportId)
-    );
+    // Find present viewport infos by matching orientation, not viewportId
+    const presentViewportInfos = viewportsInfo.filter((vp) => {
+      let orientation = null;
+      if (vp.renderingEngineId) {
+        const renderingEngine = getRenderingEngine(vp.renderingEngineId);
+        const viewport = renderingEngine.getViewport(vp.viewportId);
+        if (viewport && viewport.getCamera) {
+          orientation = getOrientationFromNormal(
+            viewport.getCamera().viewPlaneNormal
+          );
+        }
+      }
+      return orientation && orientationIds.includes(orientation);
+    });
     presentViewportInfos.forEach((vpInfo) => {
       const { normal, point } = this.initializeViewport(vpInfo);
       presentNormals.push(normal);
@@ -527,6 +561,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
         isVirtual: true,
         virtualNormal,
       };
+      console.debug(
+        '[VolumeCroppingControlTool] _computeToolCenter synthesized virtualAnnotation:',
+        {
+          viewportId: missingOrientation,
+          orientation,
+          virtualNormal,
+          virtualCenter,
+        }
+      );
       this._virtualAnnotations = [virtualAnnotation];
     } else if (presentViewportInfos.length === 1) {
       // Synthesize two virtual annotations for the two missing orientations
@@ -555,7 +598,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           const normal = orientation
             ? canonicalNormals[orientation]
             : [0, 0, 1];
-          return {
+          const virtualAnnotation = {
             highlighted: false,
             metadata: {
               cameraPosition: <Types.Point3>[...presentCenter],
@@ -577,6 +620,16 @@ class VolumeCroppingControlTool extends AnnotationTool {
             isVirtual: true,
             virtualNormal: normal,
           };
+          console.debug(
+            '[VolumeCroppingControlTool] _computeToolCenter synthesized virtualAnnotation:',
+            {
+              viewportId: missingId,
+              orientation,
+              virtualNormal: normal,
+              presentCenter,
+            }
+          );
+          return virtualAnnotation;
         }
       );
       this._virtualAnnotations = virtualAnnotations;
@@ -774,41 +827,58 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     const enabledElement = getEnabledElement(element);
-    const { viewportId } = enabledElement;
-
-    // Normalize viewportId for OHIF (strip numeric suffixes, handle orientation)
-    let normalizedViewportId = viewportId;
-    if (typeof viewportId === 'string') {
-      const orientationMatch = viewportId.match(/CT_(AXIAL|CORONAL|SAGITTAL)/);
+    // Use orientation property for matching
+    let orientation = null;
+    if (enabledElement.viewport && enabledElement.viewport.getCamera) {
+      orientation = getOrientationFromNormal(
+        enabledElement.viewport.getCamera().viewPlaneNormal
+      );
+    }
+    // Fallback: try to extract from viewportId string
+    if (!orientation && typeof enabledElement.viewportId === 'string') {
+      const orientationMatch = enabledElement.viewportId.match(
+        /CT_(AXIAL|CORONAL|SAGITTAL)/
+      );
       if (orientationMatch) {
-        normalizedViewportId = orientationMatch[0];
+        orientation = orientationMatch[1];
       }
     }
-
-    // Filter annotations for this viewportId, including virtual annotations
+    // Debug log: orientation being matched and annotation orientations
+    console.debug(
+      '[VolumeCroppingControlTool] filterInteractableAnnotationsForElement:',
+      {
+        elementViewportId: enabledElement.viewportId,
+        orientationToMatch: orientation,
+        annotationOrientations: annotations.map((a) => ({
+          annotationUID: a.annotationUID,
+          isVirtual: a.isVirtual,
+          orientation: a.data.orientation,
+          viewportId: a.data.viewportId,
+        })),
+      }
+    );
+    // Filter annotations for this orientation, including virtual annotations
     const filtered = annotations.filter((annotation) => {
       // Always include virtual annotations for reference line rendering
       if (annotation.isVirtual) {
         return true;
       }
-      // Normalize annotation viewportId
-      const annotationViewportId = annotation.data.viewportId;
-      let normalizedAnnotationViewportId = annotationViewportId;
-      if (typeof annotationViewportId === 'string') {
-        const orientationMatch = annotationViewportId.match(
-          /CT_(AXIAL|CORONAL|SAGITTAL)/
-        );
-        if (orientationMatch) {
-          normalizedAnnotationViewportId = orientationMatch[0];
-        }
-      }
-      // Match normalized viewportId
-      if (normalizedAnnotationViewportId === normalizedViewportId) {
+      // Match by orientation property
+      if (
+        annotation.data.orientation &&
+        orientation &&
+        annotation.data.orientation === orientation
+      ) {
         return true;
       }
       return false;
     });
-
+    console.debug(
+      '[VolumeCroppingControlTool] filterInteractableAnnotationsForElement result:',
+      {
+        filteredAnnotationUIDs: filtered.map((a) => a.annotationUID),
+      }
+    );
     return filtered;
   };
 

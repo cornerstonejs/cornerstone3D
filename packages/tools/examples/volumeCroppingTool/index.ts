@@ -54,8 +54,8 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
 
 const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
-const viewportId3 = 'CT_CORONAL';
+const viewportId2 = 'CT_CORONAL';
+const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 const renderingEngineId = 'myRenderingEngine';
