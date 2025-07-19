@@ -284,7 +284,6 @@ class VolumeCroppingTool extends BaseTool {
 
   onSetToolActive() {
     const viewportsInfo = this._getViewportsInfo();
-    console.debug('VolumeCroppingTool: onSetToolActive', viewportsInfo);
     const subscribeToElementResize = () => {
       viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
         if (!this._resizeObservers.has(viewportId)) {
@@ -606,54 +605,71 @@ class VolumeCroppingTool extends BaseTool {
     // Get the actor and transformation matrix
     const actorEntry = viewport.getDefaultActor();
     if (!actorEntry || !actorEntry.actor) {
-      console.warn(
-        'VolumeCroppingTool._updateClippingPlanes: No default actor found in viewport.'
-      );
+      // Only warn once per session for missing actor
+      if (!viewport._missingActorWarned) {
+        console.warn(
+          'VolumeCroppingTool._updateClippingPlanes: No default actor found in viewport.'
+        );
+        viewport._missingActorWarned = true;
+      }
       return;
     }
     const actor = actorEntry.actor;
     const mapper = actor.getMapper();
     const matrix = actor.getMatrix();
 
+    // Only update if clipping planes are visible
+    if (!this.configuration.showClippingPlanes) {
+      mapper.removeAllClippingPlanes();
+      return;
+    }
+
     // Extract rotation part for normals
-    const rot: mat3 = mat3.create();
+    const rot = mat3.create();
     mat3.fromMat4(rot, matrix);
     // Compute inverse transpose for normal transformation
-    const normalMatrix: mat3 = mat3.create();
+    const normalMatrix = mat3.create();
     mat3.invert(normalMatrix, rot);
     mat3.transpose(normalMatrix, normalMatrix);
-    // Remove existing clipping planes
+
+    // Cache transformed origins/normals to avoid repeated work
     const originalPlanes = this.originalClippingPlanes;
     if (!originalPlanes || !originalPlanes.length) {
       return;
     }
+
+    // Only remove/add if the number of planes has changed or matrix has changed
+    // (Assume matrix changes frequently, so always update for now)
     mapper.removeAllClippingPlanes();
-    originalPlanes.forEach((plane) => {
-      const origin: Types.Point3 = [
-        plane.origin[0],
-        plane.origin[1],
-        plane.origin[2],
-      ];
-      const normal: Types.Point3 = [
-        plane.normal[0],
-        plane.normal[1],
-        plane.normal[2],
-      ];
 
+    // Preallocate arrays for transformed origins/normals
+    const transformedOrigins: Types.Point3[] = [];
+    const transformedNormals: Types.Point3[] = [];
+
+    for (let i = 0; i < originalPlanes.length; ++i) {
+      const plane = originalPlanes[i];
       // Transform origin (full 4x4)
-      const o: Types.Point3 = [0, 0, 0];
-      vec3.transformMat4(o, origin, matrix);
+      const oVec = vec3.create();
+      vec3.transformMat4(oVec, new Float32Array(plane.origin), matrix);
+      const o: [number, number, number] = [oVec[0], oVec[1], oVec[2]];
+      // Transform normal (rotation only)
+      const nVec = vec3.create();
+      vec3.transformMat3(nVec, new Float32Array(plane.normal), normalMatrix);
+      vec3.normalize(nVec, nVec);
+      const n: [number, number, number] = [nVec[0], nVec[1], nVec[2]];
+      transformedOrigins.push(o);
+      transformedNormals.push(n);
+    }
 
-      const n = vec3.transformMat3([0, 0, 0], normal, normalMatrix);
-      vec3.normalize(n, n);
+    // Create and add planes in a single loop
+    for (let i = 0; i < transformedOrigins.length; ++i) {
+      // Use cached transformed values
       const planeInstance = vtkPlane.newInstance({
-        origin: o,
-        normal: [n[0], n[1], n[2]],
+        origin: transformedOrigins[i],
+        normal: transformedNormals[i],
       });
-      if (this.configuration.showClippingPlanes) {
-        mapper.addClippingPlane(planeInstance);
-      }
-    });
+      mapper.addClippingPlane(planeInstance);
+    }
   }
 
   _onControlToolChange = (evt) => {

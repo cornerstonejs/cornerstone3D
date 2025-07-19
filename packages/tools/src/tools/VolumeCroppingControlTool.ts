@@ -422,6 +422,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       (id) => !presentViewports.includes(id)
     );
 
+    console.debug('  _computeToolCenter : presentViewports:', presentViewports);
     // Initialize present viewports
 
     const presentNormals: Types.Point3[] = [];
@@ -436,9 +437,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     });
 
     // If all three orientations are present, nothing to synthesize
-    if (presentViewportInfos.length === 3) {
-      // ...existing code...
-    } else if (presentViewportInfos.length === 2 && missingOrientation) {
+    if (presentViewportInfos.length === 2 && missingOrientation) {
       // Synthesize virtual annotation for the missing orientation
       const virtualNormal: Types.Point3 = [0, 0, 0];
       vec3.cross(virtualNormal, presentNormals[0], presentNormals[1]);
@@ -550,6 +549,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
       viewport.element,
       annotations
     );
+
+    // Guard clause: if no interactable annotation, return null
+    if (
+      !filteredAnnotations ||
+      filteredAnnotations.length === 0 ||
+      !filteredAnnotations[0]
+    ) {
+      return null;
+    }
 
     const { data } = filteredAnnotations[0];
 
@@ -692,11 +700,41 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     const enabledElement = getEnabledElement(element);
     const { viewportId } = enabledElement;
-    const viewportUIDSpecificCrosshairs = annotations.filter(
-      (annotation) => annotation.data.viewportId === viewportId
-    );
 
-    return viewportUIDSpecificCrosshairs;
+    // Normalize viewportId for OHIF (strip numeric suffixes, handle orientation)
+    let normalizedViewportId = viewportId;
+    if (typeof viewportId === 'string') {
+      const orientationMatch = viewportId.match(/CT_(AXIAL|CORONAL|SAGITTAL)/);
+      if (orientationMatch) {
+        normalizedViewportId = orientationMatch[0];
+      }
+    }
+
+    // Filter annotations for this viewportId, including virtual annotations
+    const filtered = annotations.filter((annotation) => {
+      // Always include virtual annotations for reference line rendering
+      if (annotation.isVirtual) {
+        return true;
+      }
+      // Normalize annotation viewportId
+      const annotationViewportId = annotation.data.viewportId;
+      let normalizedAnnotationViewportId = annotationViewportId;
+      if (typeof annotationViewportId === 'string') {
+        const orientationMatch = annotationViewportId.match(
+          /CT_(AXIAL|CORONAL|SAGITTAL)/
+        );
+        if (orientationMatch) {
+          normalizedAnnotationViewportId = orientationMatch[0];
+        }
+      }
+      // Match normalized viewportId
+      if (normalizedAnnotationViewportId === normalizedViewportId) {
+        return true;
+      }
+      return false;
+    });
+
+    return filtered;
   };
 
   /**
@@ -730,6 +768,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
       // No viewports available
       return false;
     }
+    console.debug(
+      `VolumeCroppingControlTool.renderAnnotation: Rendering for viewports: ${viewportsInfo
+        .map((vp) => vp.viewportId)
+        .join(', ')}`
+    );
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
@@ -748,7 +791,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       // No annotation for this viewport
       return renderStatus;
     }
-    //console.debug(viewportAnnotation);
 
     const annotationUID = viewportAnnotation.annotationUID;
 
@@ -1367,7 +1409,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         toolCenterMin: this.toolCenterMin,
         toolCenterMax: this.toolCenterMax,
         handleType: handles.activeType,
-        viewportOrientation: [], // You can fill this if needed
+        viewportOrientation: [],
       });
     }
   };
@@ -1389,9 +1431,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     annotation,
     delta
   ) {
-    // update camera for the other viewports.
-    // NOTE1: The lines then are rendered by the onCameraModified
-    // NOTE2: crosshair center are automatically updated in the onCameraModified event
     const { data } = annotation;
 
     const viewport = renderingEngine.getViewport(data.viewportId);
