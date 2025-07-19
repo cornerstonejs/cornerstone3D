@@ -448,7 +448,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         (presentCenters[0][1] + presentCenters[1][1]) / 2,
         (presentCenters[0][2] + presentCenters[1][2]) / 2,
       ];
-      const virtualAnnotation = {
+      const virtualAnnotation: VolumeCroppingAnnotation = {
         highlighted: false,
         metadata: {
           cameraPosition: <Types.Point3>[...virtualCenter],
@@ -457,11 +457,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
         },
         data: {
           handles: {
+            activeOperation: null,
             toolCenter: this.toolCenter,
             toolCenterMin: this.toolCenterMin,
             toolCenterMax: this.toolCenterMax,
           },
-          activeOperation: null,
           activeViewportIds: [],
           viewportId: missingOrientation,
           referenceLines: [],
@@ -480,29 +480,31 @@ class VolumeCroppingControlTool extends AnnotationTool {
         CT_SAGITTAL: [1, 0, 0],
       };
       const missingIds = orientationIds.filter((id) => id !== presentId);
-      const virtualAnnotations = missingIds.map((missingId) => {
-        return {
-          highlighted: false,
-          metadata: {
-            cameraPosition: <Types.Point3>[...presentCenter],
-            cameraFocalPoint: <Types.Point3>[...presentCenter],
-            toolName: this.getToolName(),
-          },
-          data: {
-            handles: {
-              toolCenter: this.toolCenter,
-              toolCenterMin: this.toolCenterMin,
-              toolCenterMax: this.toolCenterMax,
+      const virtualAnnotations: VolumeCroppingAnnotation[] = missingIds.map(
+        (missingId) => {
+          return {
+            highlighted: false,
+            metadata: {
+              cameraPosition: <Types.Point3>[...presentCenter],
+              cameraFocalPoint: <Types.Point3>[...presentCenter],
+              toolName: this.getToolName(),
             },
-            activeOperation: null,
-            activeViewportIds: [],
-            viewportId: missingId,
-            referenceLines: [],
-          },
-          isVirtual: true,
-          virtualNormal: canonicalNormals[missingId],
-        };
-      });
+            data: {
+              handles: {
+                activeOperation: null,
+                toolCenter: this.toolCenter,
+                toolCenterMin: this.toolCenterMin,
+                toolCenterMax: this.toolCenterMax,
+              },
+              activeViewportIds: [],
+              viewportId: missingId,
+              referenceLines: [],
+            },
+            isVirtual: true,
+            virtualNormal: canonicalNormals[missingId],
+          };
+        }
+      );
       this._virtualAnnotations = virtualAnnotations;
     }
 
