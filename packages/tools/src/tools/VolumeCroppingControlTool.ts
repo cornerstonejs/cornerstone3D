@@ -1,3 +1,38 @@
+/**
+ * Utility function to map a camera normal to an orientation string.
+ * Returns 'AXIAL', 'CORONAL', 'SAGITTAL', or null if not matched.
+ */
+function getOrientationFromNormal(normal: Types.Point3): string | null {
+  if (!normal) {
+    return null;
+  }
+  // Canonical normals
+  const canonical = {
+    AXIAL: [0, 0, 1],
+    CORONAL: [0, 1, 0],
+    SAGITTAL: [1, 0, 0],
+  };
+  // Use a tolerance for floating point comparison
+  const tol = 1e-2;
+  for (const [key, value] of Object.entries(canonical)) {
+    if (
+      Math.abs(normal[0] - value[0]) < tol &&
+      Math.abs(normal[1] - value[1]) < tol &&
+      Math.abs(normal[2] - value[2]) < tol
+    ) {
+      return key;
+    }
+    // Also check negative direction
+    if (
+      Math.abs(normal[0] + value[0]) < tol &&
+      Math.abs(normal[1] + value[1]) < tol &&
+      Math.abs(normal[2] + value[2]) < tol
+    ) {
+      return key;
+    }
+  }
+  return null;
+}
 import { vec2, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
@@ -69,6 +104,7 @@ interface VolumeCroppingAnnotation extends Annotation {
     referenceLines: []; // set in renderAnnotation
     clippingPlanes?: vtkPlane[]; // clipping planes for the viewport
     clippingPlaneReferenceLines?: [];
+    orientation?: string; // AXIAL, CORONAL, SAGITTAL
   };
   isVirtual?: boolean;
   virtualNormal?: Types.Point3;
@@ -270,6 +306,17 @@ class VolumeCroppingControlTool extends AnnotationTool {
       removeAnnotation(annotations[0].annotationUID);
     }
 
+    // Determine orientation from camera normal, fallback to viewportId string
+    let orientation = getOrientationFromNormal(
+      viewport.getCamera().viewPlaneNormal
+    );
+    if (!orientation && typeof viewportId === 'string') {
+      const orientationMatch = viewportId.match(/CT_(AXIAL|CORONAL|SAGITTAL)/);
+      if (orientationMatch) {
+        orientation = orientationMatch[1];
+      }
+    }
+    console.debug('  _computeToolCenter :', orientation);
     const annotation = {
       highlighted: false,
       metadata: {
@@ -288,6 +335,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         activeViewportIds: [], // a list of the viewport ids connected to the reference lines being translated
         viewportId,
         referenceLines: [], // set in renderAnnotation
+        orientation,
       },
     };
 
@@ -447,6 +495,16 @@ class VolumeCroppingControlTool extends AnnotationTool {
         (presentCenters[0][1] + presentCenters[1][1]) / 2,
         (presentCenters[0][2] + presentCenters[1][2]) / 2,
       ];
+      // Extract orientation string from missingOrientation (AXIAL, CORONAL, SAGITTAL)
+      let orientation = null;
+      if (typeof missingOrientation === 'string') {
+        const orientationMatch = missingOrientation.match(
+          /CT_(AXIAL|CORONAL|SAGITTAL)/
+        );
+        if (orientationMatch) {
+          orientation = orientationMatch[1];
+        }
+      }
       const virtualAnnotation: VolumeCroppingAnnotation = {
         highlighted: false,
         metadata: {
@@ -464,6 +522,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           activeViewportIds: [],
           viewportId: missingOrientation,
           referenceLines: [],
+          orientation,
         },
         isVirtual: true,
         virtualNormal,
@@ -473,14 +532,29 @@ class VolumeCroppingControlTool extends AnnotationTool {
       // Synthesize two virtual annotations for the two missing orientations
       const presentId = presentViewportInfos[0].viewportId;
       const presentCenter = presentCenters[0];
+      // Map canonical normals to orientation strings
       const canonicalNormals = {
-        CT_AXIAL: [0, 0, 1],
-        CT_CORONAL: [0, 1, 0],
-        CT_SAGITTAL: [1, 0, 0],
+        AXIAL: [0, 0, 1],
+        CORONAL: [0, 1, 0],
+        SAGITTAL: [1, 0, 0],
       };
+      // missingIds: CT_AXIAL, CT_CORONAL, CT_SAGITTAL
       const missingIds = orientationIds.filter((id) => id !== presentId);
       const virtualAnnotations: VolumeCroppingAnnotation[] = missingIds.map(
         (missingId) => {
+          let orientation = null;
+          if (typeof missingId === 'string') {
+            const orientationMatch = missingId.match(
+              /CT_(AXIAL|CORONAL|SAGITTAL)/
+            );
+            if (orientationMatch) {
+              orientation = orientationMatch[1];
+            }
+          }
+          // Use orientation string to get canonical normal
+          const normal = orientation
+            ? canonicalNormals[orientation]
+            : [0, 0, 1];
           return {
             highlighted: false,
             metadata: {
@@ -498,9 +572,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
               activeViewportIds: [],
               viewportId: missingId,
               referenceLines: [],
+              orientation,
             },
             isVirtual: true,
-            virtualNormal: canonicalNormals[missingId],
+            virtualNormal: normal,
           };
         }
       );
