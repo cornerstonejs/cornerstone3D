@@ -91,6 +91,17 @@ import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotatio
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
+type ReferenceLine = [
+  viewport: {
+    id: string;
+    canvas?: HTMLCanvasElement;
+    canvasToWorld?: (...args: unknown[]) => Types.Point3;
+  },
+  startPoint: Types.Point2,
+  endPoint: Types.Point2,
+  type: 'min' | 'max'
+];
+
 interface VolumeCroppingAnnotation extends Annotation {
   data: {
     handles: {
@@ -101,9 +112,9 @@ interface VolumeCroppingAnnotation extends Annotation {
     };
     activeViewportIds: string[]; // a list of the viewport ids connected to the reference lines being translated
     viewportId: string;
-    referenceLines: []; // set in renderAnnotation
+    referenceLines: ReferenceLine[]; // set in renderAnnotation
     clippingPlanes?: vtkPlane[]; // clipping planes for the viewport
-    clippingPlaneReferenceLines?: [];
+    clippingPlaneReferenceLines?: ReferenceLine[];
     orientation?: string; // AXIAL, CORONAL, SAGITTAL
   };
   isVirtual?: boolean;
@@ -897,11 +908,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       // No viewports available
       return false;
     }
-    console.debug(
-      `VolumeCroppingControlTool.renderAnnotation: Rendering for viewports: ${viewportsInfo
-        .map((vp) => vp.viewportId)
-        .join(', ')}`
-    );
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
