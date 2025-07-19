@@ -58,6 +58,20 @@ const viewportId2 = 'CT_CORONAL';
 const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
+
+// Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
+addDropdownToToolbar({
+  labelText: 'Number of Orthographic Viewports',
+  options: {
+    values: [1, 2, 3],
+    defaultValue: getNumViewportsFromUrl(),
+  },
+  onSelectedValueChange: (selectedValue) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('numViewports', selectedValue);
+    window.location.href = url.toString();
+  },
+});
 const renderingEngineId = 'myRenderingEngine';
 
 /////////////////////////////////////////
@@ -196,13 +210,24 @@ function getReferenceLineControllable(viewportId) {
 }
 
 /**
- * Runs the demo
+ * Get the number of orthographic viewports from the URL (?numViewports=1|2|3)
  */
-async function run() {
-  // Init Cornerstone and related libraries
+function getNumViewportsFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('numViewports');
+  const num = Number(value);
+  if ([1, 2, 3].includes(num)) {
+    return num;
+  }
+  return 3; // default
+}
+
+/**
+ * Runs the demo with a configurable number of orthographic viewports
+ */
+async function run(numViewports = getNumViewportsFromUrl()) {
   await initDemo();
 
-  // Add tools to Cornerstone3D
   cornerstoneTools.addTool(VolumeCroppingTool);
   cornerstoneTools.addTool(VolumeCroppingControlTool);
   cornerstoneTools.addTool(TrackballRotateTool);
@@ -212,7 +237,6 @@ async function run() {
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(CrosshairsTool);
 
-  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
@@ -222,16 +246,14 @@ async function run() {
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
 
-  // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create the viewports
-  const viewportInputArray = [
+  // Only include the requested number of orthographic viewports
+  const orthographicViewports = [
     {
       viewportId: viewportId1,
       type: ViewportType.ORTHOGRAPHIC,
@@ -259,6 +281,20 @@ async function run() {
         background: <Types.Point3>[0, 0, 0],
       },
     },
+  ].slice(0, numViewports);
+
+  // Show/hide orthographic viewport elements based on numViewports
+  [element1, element2, element3].forEach((el, idx) => {
+    if (idx < numViewports) {
+      el.style.display = 'block';
+      el.style.height = `${100 / numViewports}%`;
+    } else {
+      el.style.display = 'none';
+    }
+  });
+
+  const viewportInputArray = [
+    ...orthographicViewports,
     {
       viewportId: viewportId4,
       type: ViewportType.VOLUME_3D,
@@ -272,10 +308,13 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  // Set the volume to load
   volume.load();
 
-  // Set volumes on the viewports
+  // Only set volumes for the active viewport IDs
+  const activeViewportIds = [
+    ...orthographicViewports.map((vp) => vp.viewportId),
+    viewportId4,
+  ];
   await setVolumesForViewports(
     renderingEngine,
     [
@@ -284,25 +323,15 @@ async function run() {
         callback: setCtTransferFunctionForVolumeActor,
       },
     ],
-    viewportIds
+    activeViewportIds
   );
 
-  // Define tool groups to add the segmentation display tool to
+  // Tool group for orthographic viewports
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup.addViewport(viewportId2, renderingEngineId);
-  toolGroup.addViewport(viewportId3, renderingEngineId);
-
-  /*
-  toolGroup.addTool(CrosshairsTool.toolName);
-  toolGroup.setToolActive(CrosshairsTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary,
-      },
-    ],
+  orthographicViewports.forEach((vp) => {
+    toolGroup.addViewport(vp.viewportId, renderingEngineId);
   });
-  */
+
   toolGroup.addTool(VolumeCroppingControlTool.toolName, {
     getReferenceLineColor,
     viewportIndicators: true,
@@ -317,7 +346,6 @@ async function run() {
   toolGroup.addTool(StackScrollTool.toolName, {
     viewportIndicators: true,
   });
-
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
@@ -329,6 +357,7 @@ async function run() {
     ],
   });
 
+  // Tool group for 3D viewport
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
   toolGroupVRT.addTool(ZoomTool.toolName);
   toolGroupVRT.setToolActive(ZoomTool.toolName, {
@@ -353,9 +382,8 @@ async function run() {
   // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
-  // Render the image
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
-  renderingEngine.renderViewports(viewportIds);
+  renderingEngine.renderViewports(activeViewportIds);
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
@@ -368,10 +396,10 @@ async function run() {
     toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
       sphereRadius: 7,
       sphereColors: {
-        x: [1, 1, 0], // yellow for X axis
-        y: [0, 1, 0], // green for Y axis
-        z: [1, 0, 0], // red for Z axis
-        corners: [0, 0, 1], // Blue for corners (optional) [0.7, 0.7, 0.7], //
+        x: [1, 1, 0],
+        y: [0, 1, 0],
+        z: [1, 0, 0],
+        corners: [0, 0, 1],
       },
       showCornerSpheres: true,
       initialCropFactor: 0.2,
