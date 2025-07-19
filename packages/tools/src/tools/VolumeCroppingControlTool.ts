@@ -573,7 +573,18 @@ class VolumeCroppingControlTool extends AnnotationTool {
       this._virtualAnnotations = [virtualAnnotation];
     } else if (presentViewportInfos.length === 1) {
       // Synthesize two virtual annotations for the two missing orientations
-      const presentId = presentViewportInfos[0].viewportId;
+      // Get present orientation from camera normal
+      let presentOrientation = null;
+      const vpInfo = presentViewportInfos[0];
+      if (vpInfo.renderingEngineId) {
+        const renderingEngine = getRenderingEngine(vpInfo.renderingEngineId);
+        const viewport = renderingEngine.getViewport(vpInfo.viewportId);
+        if (viewport && viewport.getCamera) {
+          presentOrientation = getOrientationFromNormal(
+            viewport.getCamera().viewPlaneNormal
+          );
+        }
+      }
       const presentCenter = presentCenters[0];
       // Map canonical normals to orientation strings
       const canonicalNormals = {
@@ -581,23 +592,14 @@ class VolumeCroppingControlTool extends AnnotationTool {
         CORONAL: [0, 1, 0],
         SAGITTAL: [1, 0, 0],
       };
-      // missingIds: CT_AXIAL, CT_CORONAL, CT_SAGITTAL
-      const missingIds = orientationIds.filter((id) => id !== presentId);
+      // missingIds: AXIAL, CORONAL, SAGITTAL
+      const missingIds = orientationIds.filter(
+        (id) => id !== presentOrientation
+      );
       const virtualAnnotations: VolumeCroppingAnnotation[] = missingIds.map(
-        (missingId) => {
-          let orientation = null;
-          if (typeof missingId === 'string') {
-            const orientationMatch = missingId.match(
-              /CT_(AXIAL|CORONAL|SAGITTAL)/
-            );
-            if (orientationMatch) {
-              orientation = orientationMatch[1];
-            }
-          }
+        (orientation) => {
           // Use orientation string to get canonical normal
-          const normal = orientation
-            ? canonicalNormals[orientation]
-            : [0, 0, 1];
+          const normal = canonicalNormals[orientation];
           const virtualAnnotation = {
             highlighted: false,
             metadata: {
@@ -613,7 +615,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
                 toolCenterMax: this.toolCenterMax,
               },
               activeViewportIds: [],
-              viewportId: missingId,
+              viewportId: orientation, // Use orientation string for virtual annotation
               referenceLines: [],
               orientation,
             },
@@ -623,7 +625,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           console.debug(
             '[VolumeCroppingControlTool] _computeToolCenter synthesized virtualAnnotation:',
             {
-              viewportId: missingId,
+              viewportId: orientation,
               orientation,
               virtualNormal: normal,
               presentCenter,
@@ -843,20 +845,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         orientation = orientationMatch[1];
       }
     }
-    // Debug log: orientation being matched and annotation orientations
-    console.debug(
-      '[VolumeCroppingControlTool] filterInteractableAnnotationsForElement:',
-      {
-        elementViewportId: enabledElement.viewportId,
-        orientationToMatch: orientation,
-        annotationOrientations: annotations.map((a) => ({
-          annotationUID: a.annotationUID,
-          isVirtual: a.isVirtual,
-          orientation: a.data.orientation,
-          viewportId: a.data.viewportId,
-        })),
-      }
-    );
+
     // Filter annotations for this orientation, including virtual annotations
     const filtered = annotations.filter((annotation) => {
       // Always include virtual annotations for reference line rendering
@@ -873,12 +862,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
       return false;
     });
-    console.debug(
-      '[VolumeCroppingControlTool] filterInteractableAnnotationsForElement result:',
-      {
-        filteredAnnotationUIDs: filtered.map((a) => a.annotationUID),
-      }
-    );
+
     return filtered;
   };
 
