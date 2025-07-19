@@ -327,11 +327,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         orientation = orientationMatch[1];
       }
     }
-    console.debug('[VolumeCroppingControlTool] initializeViewport:', {
-      viewportId,
-      orientation,
-      cameraNormal: viewport.getCamera().viewPlaneNormal,
-    });
+
     const annotation = {
       highlighted: false,
       metadata: {
@@ -419,10 +415,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
 
       const annotations = this._getAnnotations(enabledElement);
-      console.debug(
-        'VolumeCroppingControlTool: Annotations found:',
-        annotations
-      );
       if (annotations?.length) {
         annotations.forEach((annotation) => {
           removeAnnotation(annotation.annotationUID);
@@ -572,15 +564,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         isVirtual: true,
         virtualNormal,
       };
-      console.debug(
-        '[VolumeCroppingControlTool] _computeToolCenter synthesized virtualAnnotation:',
-        {
-          viewportId: missingOrientation,
-          orientation,
-          virtualNormal,
-          virtualCenter,
-        }
-      );
       this._virtualAnnotations = [virtualAnnotation];
     } else if (presentViewportInfos.length === 1) {
       // Synthesize two virtual annotations for the two missing orientations
@@ -633,15 +616,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
             isVirtual: true,
             virtualNormal: normal,
           };
-          console.debug(
-            '[VolumeCroppingControlTool] _computeToolCenter synthesized virtualAnnotation:',
-            {
-              viewportId: orientation,
-              orientation,
-              virtualNormal: normal,
-              presentCenter,
-            }
-          );
+
           return virtualAnnotation;
         }
       );
