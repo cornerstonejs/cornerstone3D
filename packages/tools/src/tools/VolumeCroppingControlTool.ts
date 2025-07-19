@@ -438,11 +438,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
       // ...existing code...
     } else if (presentViewportInfos.length === 2 && missingOrientation) {
       // Synthesize virtual annotation for the missing orientation
-      // Use cross product of the two present normals
       const virtualNormal: Types.Point3 = [0, 0, 0];
       vec3.cross(virtualNormal, presentNormals[0], presentNormals[1]);
       vec3.normalize(virtualNormal, virtualNormal);
-      // Use average of the two present centers
       const virtualCenter: Types.Point3 = [
         (presentCenters[0][0] + presentCenters[1][0]) / 2,
         (presentCenters[0][1] + presentCenters[1][1]) / 2,
@@ -466,10 +464,44 @@ class VolumeCroppingControlTool extends AnnotationTool {
           viewportId: missingOrientation,
           referenceLines: [],
         },
-        // Mark as virtual so renderAnnotation can handle it
         isVirtual: true,
+        virtualNormal,
       };
       this._virtualAnnotations = [virtualAnnotation];
+    } else if (presentViewportInfos.length === 1) {
+      // Synthesize two virtual annotations for the two missing orientations
+      const presentId = presentViewportInfos[0].viewportId;
+      const presentCenter = presentCenters[0];
+      const canonicalNormals = {
+        CT_AXIAL: [0, 0, 1],
+        CT_CORONAL: [0, 1, 0],
+        CT_SAGITTAL: [1, 0, 0],
+      };
+      const missingIds = orientationIds.filter((id) => id !== presentId);
+      const virtualAnnotations = missingIds.map((missingId) => {
+        return {
+          highlighted: false,
+          metadata: {
+            cameraPosition: <Types.Point3>[...presentCenter],
+            cameraFocalPoint: <Types.Point3>[...presentCenter],
+            toolName: this.getToolName(),
+          },
+          data: {
+            handles: {
+              toolCenter: this.toolCenter,
+              toolCenterMin: this.toolCenterMin,
+              toolCenterMax: this.toolCenterMax,
+            },
+            activeOperation: null,
+            activeViewportIds: [],
+            viewportId: missingId,
+            referenceLines: [],
+          },
+          isVirtual: true,
+          virtualNormal: canonicalNormals[missingId],
+        };
+      });
+      this._virtualAnnotations = virtualAnnotations;
     }
 
     if (viewportsInfo && viewportsInfo.length) {
@@ -775,7 +807,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
             focalPoint: data.handles.toolCenter,
             viewUp: [0, 1, 0],
           };
-          // Synthesize canvas size and center
           clientWidth = viewport.canvas.clientWidth;
           clientHeight = viewport.canvas.clientHeight;
           otherCanvasDiagonalLength = Math.sqrt(
@@ -789,8 +820,26 @@ class VolumeCroppingControlTool extends AnnotationTool {
             canvasToWorld: () => data.handles.toolCenter,
           };
         } else {
-          // Fallback: skip rendering this virtual annotation
-          return;
+          // Only one real viewport: use canonical normal from virtual annotation
+          const virtualNormal = annotation.virtualNormal ?? [0, 0, 1];
+          otherCamera = {
+            viewPlaneNormal: virtualNormal,
+            position: data.handles.toolCenter,
+            focalPoint: data.handles.toolCenter,
+            viewUp: [0, 1, 0],
+          };
+          clientWidth = viewport.canvas.clientWidth;
+          clientHeight = viewport.canvas.clientHeight;
+          otherCanvasDiagonalLength = Math.sqrt(
+            clientWidth * clientWidth + clientHeight * clientHeight
+          );
+          otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
+          otherViewportCenterWorld = data.handles.toolCenter;
+          otherViewport = {
+            id: data.viewportId,
+            canvas: viewport.canvas,
+            canvasToWorld: () => data.handles.toolCenter,
+          };
         }
       } else {
         otherViewport = renderingEngine.getViewport(data.viewportId as string);
