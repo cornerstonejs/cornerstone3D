@@ -378,23 +378,31 @@ class VolumeCroppingControlTool extends AnnotationTool {
   onSetToolActive() {
     const viewportsInfo = this._getViewportsInfo();
 
-    // reference points in the new space, so we subscribe to the event
-    // and update the reference points accordingly.
-    this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
-    this._subscribeToViewportNewVolumeSet(viewportsInfo);
+    // Check if any annotation exists before proceeding
+    let anyAnnotationExists = false;
+    for (const vpInfo of viewportsInfo) {
+      const enabledElement = getEnabledElementByIds(
+        vpInfo.viewportId,
+        vpInfo.renderingEngineId
+      );
+      const annotations = this._getAnnotations(enabledElement);
+      if (annotations && annotations.length > 0) {
+        anyAnnotationExists = true;
+        break;
+      }
+    }
+    if (!anyAnnotationExists) {
+      this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+      this._subscribeToViewportNewVolumeSet(viewportsInfo);
 
-    this._computeToolCenter(viewportsInfo);
-  }
-
-  onSetToolPassive() {
-    const viewportsInfo = this._getViewportsInfo();
-    this._computeToolCenter(viewportsInfo);
+      this._computeToolCenter(viewportsInfo);
+    }
   }
 
   onSetToolEnabled() {
     const viewportsInfo = this._getViewportsInfo();
 
-    this._computeToolCenter(viewportsInfo);
+    //this._computeToolCenter(viewportsInfo);
   }
 
   onSetToolDisabled() {
