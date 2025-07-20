@@ -249,6 +249,7 @@ function createImage(
           slope: modalityLutModule.rescaleSlope
             ? modalityLutModule.rescaleSlope
             : 1,
+          // Note: We set invert flag but actual inversion should happen after VOI/windowing
           invert: imageFrame.photometricInterpretation === 'MONOCHROME1',
           minPixelValue: imageFrame.smallestPixelValue,
           maxPixelValue: imageFrame.largestPixelValue,

@@ -1269,34 +1269,23 @@ class StackViewport extends Viewport {
   private setInvertColorGPU(invert: boolean): void {
     const defaultActor = this.getDefaultActor();
 
-    if (!defaultActor) {
+    if (!defaultActor || !isImageActor(defaultActor)) {
       return;
     }
 
-    if (!isImageActor(defaultActor)) {
-      return;
-    }
+    // Store the invert state
+    this.invert = invert;
 
-    // Duplicated logic to make sure typescript stops complaining
-    // about vtkActor not having the correct property
-    if (actorIsA(defaultActor, 'vtkVolume')) {
-      const volumeActor = defaultActor.actor as VolumeActor;
-      const tfunc = volumeActor.getProperty().getRGBTransferFunction(0);
+    // For MONOCHROME1 images, we need to apply inversion as a post-processing step
+    // after VOI/windowing has been applied. We achieve this by recreating the
+    // transfer function with the proper mapping.
+    const voiRange = this.voiRange;
 
-      if ((!this.invert && invert) || (this.invert && !invert)) {
-        invertRgbTransferFunction(tfunc);
-      }
-      this.invert = invert;
-    } else if (actorIsA(defaultActor, 'vtkImageSlice')) {
-      const imageSliceActor = defaultActor.actor as vtkImageSlice;
-      const tfunc = imageSliceActor.getProperty().getRGBTransferFunction(0);
-
-      if ((!this.invert && invert) || (this.invert && !invert)) {
-        invertRgbTransferFunction(tfunc);
-      }
-
-      this.invert = invert;
-    }
+    // Force recreation of transfer function with proper inversion
+    this.setVOI(voiRange, {
+      forceRecreateLUTFunction: true,
+      suppressEvents: true,
+    });
   }
 
   private setVOICPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
@@ -1370,6 +1359,29 @@ class StackViewport extends Viewport {
     return imageActor.getProperty().getRGBTransferFunction(0);
   }
 
+  /**
+   * Applies the correct RGB mapping for MONOCHROME1 inversion.
+   * For MONOCHROME1, after VOI/windowing, we need to invert the display
+   * so that low values appear white and high values appear black.
+   */
+  private applyInversionToTransferFunction(
+    transferFunction: vtkColorTransferFunction,
+    voiRange: VOIRange,
+    invert: boolean
+  ): void {
+    transferFunction.removeAllPoints();
+
+    if (invert) {
+      // MONOCHROME1: low values (dark) -> white, high values (bright) -> black
+      transferFunction.addRGBPoint(voiRange.lower, 1.0, 1.0, 1.0);
+      transferFunction.addRGBPoint(voiRange.upper, 0.0, 0.0, 0.0);
+    } else {
+      // MONOCHROME2 or normal: low values -> black, high values -> white
+      transferFunction.addRGBPoint(voiRange.lower, 0.0, 0.0, 0.0);
+      transferFunction.addRGBPoint(voiRange.upper, 1.0, 1.0, 1.0);
+    }
+  }
+
   private setVOIGPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
     const {
       suppressEvents = false,
@@ -1426,18 +1438,31 @@ class StackViewport extends Viewport {
         voiRangeToUse
       ) as vtkColorTransferFunction;
 
+      // Apply inversion for MONOCHROME1 images
       if (this.invert) {
-        invertRgbTransferFunction(transferFunction);
+        if (isSigmoidTFun) {
+          invertRgbTransferFunction(transferFunction);
+        } else {
+          // For linear functions, apply proper MONOCHROME1 inversion
+          this.applyInversionToTransferFunction(
+            transferFunction,
+            voiRangeToUse,
+            true
+          );
+        }
       }
 
       imageActor.getProperty().setRGBTransferFunction(0, transferFunction);
       this.initialTransferFunctionNodes =
         getTransferFunctionNodes(transferFunction);
-    }
-
-    if (!isSigmoidTFun) {
-      // @ts-ignore vtk type error
+    } else if (!isSigmoidTFun) {
+      // For existing linear transfer function, update the range and apply inversion
       transferFunction.setRange(voiRangeToUse.lower, voiRangeToUse.upper);
+      this.applyInversionToTransferFunction(
+        transferFunction,
+        voiRangeToUse,
+        this.invert
+      );
     }
 
     this.voiRange = voiRangeToUse;
