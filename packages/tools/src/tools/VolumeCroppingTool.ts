@@ -283,64 +283,81 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   onSetToolActive() {
-    const viewportsInfo = this._getViewportsInfo();
-    const subscribeToElementResize = () => {
-      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-        if (!this._resizeObservers.has(viewportId)) {
-          const { viewport } = getEnabledElementByIds(
-            viewportId,
-            renderingEngineId
-          ) || { viewport: null };
+    console.debug('Setting tool active: volumeCropping');
 
-          if (!viewport) {
-            return;
-          }
-
-          const { element } = viewport;
-
-          const resizeObserver = new ResizeObserver(() => {
-            const element = getEnabledElementByIds(
+    if (this.sphereStates && this.sphereStates.length > 0) {
+      this.setHandlesVisible(!this.configuration.showHandles);
+      this.setClippingPlanesVisible(!this.configuration.showClippingPlanes);
+    } else {
+      const viewportsInfo = this._getViewportsInfo();
+      const subscribeToElementResize = () => {
+        viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+          if (!this._resizeObservers.has(viewportId)) {
+            const { viewport } = getEnabledElementByIds(
               viewportId,
               renderingEngineId
-            );
-            if (!element) {
+            ) || { viewport: null };
+
+            if (!viewport) {
               return;
             }
-            const { viewport } = element;
 
-            const viewPresentation = viewport.getViewPresentation();
+            const { element } = viewport;
 
-            viewport.resetCamera();
+            const resizeObserver = new ResizeObserver(() => {
+              const element = getEnabledElementByIds(
+                viewportId,
+                renderingEngineId
+              );
+              if (!element) {
+                return;
+              }
+              const { viewport } = element;
 
-            viewport.setViewPresentation(viewPresentation);
-            viewport.render();
-          });
+              const viewPresentation = viewport.getViewPresentation();
 
-          resizeObserver.observe(element);
-          this._resizeObservers.set(viewportId, resizeObserver);
+              viewport.resetCamera();
+
+              viewport.setViewPresentation(viewPresentation);
+              viewport.render();
+            });
+
+            resizeObserver.observe(element);
+            this._resizeObservers.set(viewportId, resizeObserver);
+          }
+        });
+      };
+
+      subscribeToElementResize();
+
+      this._viewportAddedListener = (evt) => {
+        if (evt.detail.toolGroupId === this.toolGroupId) {
+          subscribeToElementResize();
         }
-      });
-    };
+      };
 
-    subscribeToElementResize();
+      eventTarget.addEventListener(
+        Events.TOOLGROUP_VIEWPORT_ADDED,
+        this._viewportAddedListener
+      );
 
-    this._viewportAddedListener = (evt) => {
-      if (evt.detail.toolGroupId === this.toolGroupId) {
-        subscribeToElementResize();
-      }
-    };
-
-    eventTarget.addEventListener(
-      Events.TOOLGROUP_VIEWPORT_ADDED,
-      this._viewportAddedListener
-    );
-
-    this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
-    this._subscribeToViewportNewVolumeSet(viewportsInfo);
-    this._initialize3DViewports(viewportsInfo);
+      this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+      this._subscribeToViewportNewVolumeSet(viewportsInfo);
+      this._initialize3DViewports(viewportsInfo);
+    }
   }
 
+  onSetToolConfiguration = (): void => {
+    console.debug('Setting tool settoolconfiguration init: volumeCropping');
+    //this._init();
+  };
+
+  onSetToolEnabled = (): void => {
+    console.debug('Setting tool enabled: volumeCropping');
+  };
+
   onSetToolDisabled() {
+    console.debug('Setting tool disabled: volumeCropping');
     // Disconnect all resize observers
     this._resizeObservers.forEach((resizeObserver, viewportId) => {
       resizeObserver.disconnect();
@@ -519,14 +536,14 @@ class VolumeCroppingTool extends BaseTool {
       this.configuration.showHandles
     ) {
       const corners = [
-        [xMin, yMin, zMin], // XMIN_YMIN_ZMIN
-        [xMin, yMin, zMax], // XMIN_YMIN_ZMAX
-        [xMin, yMax, zMin], // XMIN_YMAX_ZMIN
-        [xMin, yMax, zMax], // XMIN_YMAX_ZMAX
-        [xMax, yMin, zMin], // XMAX_YMIN_ZMIN
-        [xMax, yMin, zMax], // XMAX_YMIN_ZMAX
-        [xMax, yMax, zMin], // XMAX_YMAX_ZMIN
-        [xMax, yMax, zMax], // XMAX_YMAX_ZMAX
+        [xMin, yMin, zMin],
+        [xMin, yMin, zMax],
+        [xMin, yMax, zMin],
+        [xMin, yMax, zMax],
+        [xMax, yMin, zMin],
+        [xMax, yMin, zMax],
+        [xMax, yMax, zMin],
+        [xMax, yMax, zMax],
       ];
 
       const cornerKeys = [
@@ -873,7 +890,7 @@ class VolumeCroppingTool extends BaseTool {
     }
 
     viewport.render();
-
+    //setTimeout(() => viewport.render(), 0);
     triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
       toolCenter: sphereState.point,
       axis: sphereState.isCorner ? 'corner' : sphereState.axis,

@@ -183,6 +183,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
           SAGITTAL: [1.0, 1.0, 0.0], // Yellow for sagittal
           UNKNOWN: [0.0, 0.0, 1.0], // Blue for unknown
         },
+        lineWidth: 1.5,
+        lineWidthActive: 2.5,
       },
     }
   ) {
@@ -1161,13 +1163,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
         (id) => id === otherViewport.id
       );
 
-      let lineWidth = 2.5;
+      let lineWidth = this.configuration.lineWidth ?? 1.5;
       const lineActive =
         data.handles.activeOperation !== null &&
         data.handles.activeOperation === OPERATION.DRAG &&
         selectedViewportId;
       if (lineActive) {
-        lineWidth = 4.5;
+        lineWidth = this.configuration.activeLineWidth ?? 2.5;
       }
 
       const lineUID = `${lineIndex}`;
