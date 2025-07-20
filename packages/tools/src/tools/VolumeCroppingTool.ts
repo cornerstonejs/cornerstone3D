@@ -283,7 +283,7 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   onSetToolActive() {
-    console.debug('Setting tool active: volumeCropping');
+    //console.debug('Setting tool active: volumeCropping');
 
     if (this.sphereStates && this.sphereStates.length > 0) {
       this.setHandlesVisible(!this.configuration.showHandles);
@@ -348,7 +348,7 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   onSetToolConfiguration = (): void => {
-    console.debug('Setting tool settoolconfiguration init: volumeCropping');
+    //console.debug('Setting tool settoolconfiguration init: volumeCropping');
     //this._init();
   };
 
@@ -357,7 +357,7 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   onSetToolDisabled() {
-    console.debug('Setting tool disabled: volumeCropping');
+    // console.debug('Setting tool disabled: volumeCropping');
     // Disconnect all resize observers
     this._resizeObservers.forEach((resizeObserver, viewportId) => {
       resizeObserver.disconnect();

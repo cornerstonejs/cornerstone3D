@@ -1,38 +1,3 @@
-/**
- * Utility function to map a camera normal to an orientation string.
- * Returns 'AXIAL', 'CORONAL', 'SAGITTAL', or null if not matched.
- */
-function getOrientationFromNormal(normal: Types.Point3): string | null {
-  if (!normal) {
-    return null;
-  }
-  // Canonical normals
-  const canonical = {
-    AXIAL: [0, 0, 1],
-    CORONAL: [0, 1, 0],
-    SAGITTAL: [1, 0, 0],
-  };
-  // Use a tolerance for floating point comparison
-  const tol = 1e-2;
-  for (const [key, value] of Object.entries(canonical)) {
-    if (
-      Math.abs(normal[0] - value[0]) < tol &&
-      Math.abs(normal[1] - value[1]) < tol &&
-      Math.abs(normal[2] - value[2]) < tol
-    ) {
-      return key;
-    }
-    // Also check negative direction
-    if (
-      Math.abs(normal[0] + value[0]) < tol &&
-      Math.abs(normal[1] + value[1]) < tol &&
-      Math.abs(normal[2] + value[2]) < tol
-    ) {
-      return key;
-    }
-  }
-  return null;
-}
 import { vec2, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
@@ -127,6 +92,42 @@ function defaultReferenceLineColor() {
 
 function defaultReferenceLineControllable() {
   return true;
+}
+
+/**
+ * Utility function to map a camera normal to an orientation string.
+ * Returns 'AXIAL', 'CORONAL', 'SAGITTAL', or null if not matched.
+ */
+function getOrientationFromNormal(normal: Types.Point3): string | null {
+  if (!normal) {
+    return null;
+  }
+  // Canonical normals
+  const canonical = {
+    AXIAL: [0, 0, 1],
+    CORONAL: [0, 1, 0],
+    SAGITTAL: [1, 0, 0],
+  };
+  // Use a tolerance for floating point comparison
+  const tol = 1e-2;
+  for (const [key, value] of Object.entries(canonical)) {
+    if (
+      Math.abs(normal[0] - value[0]) < tol &&
+      Math.abs(normal[1] - value[1]) < tol &&
+      Math.abs(normal[2] - value[2]) < tol
+    ) {
+      return key;
+    }
+    // Also check negative direction
+    if (
+      Math.abs(normal[0] + value[0]) < tol &&
+      Math.abs(normal[1] + value[1]) < tol &&
+      Math.abs(normal[2] + value[2]) < tol
+    ) {
+      return key;
+    }
+  }
+  return null;
 }
 
 const OPERATION = {
@@ -1187,13 +1188,28 @@ class VolumeCroppingControlTool extends AnnotationTool {
             }
           );
         }
-        if (this.configuration.extendReferenceLines) {
-          const dashLineUID = lineUID + '_dashed';
+        if (
+          this.configuration.extendReferenceLines &&
+          intersections.length === 2
+        ) {
           drawLineSvg(
             svgDrawingHelper,
             annotationUID,
-            dashLineUID,
+            lineUID + '_dashed_before',
             line[1],
+            intersections[0].point,
+            {
+              color,
+              lineWidth,
+              lineDash: [4, 4],
+            }
+          );
+          // Dashed line from second intersection to end
+          drawLineSvg(
+            svgDrawingHelper,
+            annotationUID,
+            lineUID + '_dashed_after',
+            intersections[1].point,
             line[2],
             {
               color,
