@@ -260,7 +260,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
+    const { metadata } = annotation;
+    const { enabledElement } = metadata;
 
     this.editData = null;
     this.isDrawing = false;
@@ -545,6 +546,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       const { annotationUID, data, metadata } = annotation;
       const { startCoordinate, endCoordinate } = data;
       const { points, activeHandleIndex } = data.handles;
+      const { enabledElement: annotationEnabledElement } = metadata;
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
@@ -600,8 +602,12 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       }
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(annotation, enabledElement);
+      const iteratorVolumeIDs = annotationEnabledElement.viewport?.volumeIds.values();
+
+      for (const volumeId of iteratorVolumeIDs) {
+        if (annotation.invalidated && annotation.metadata.volumeId === volumeId) {
+          this._throttledCalculateCachedStats(annotation, annotationEnabledElement);
+        }
       }
 
       // if it is inside the start/end slice, but not exactly the first or

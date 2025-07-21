@@ -182,12 +182,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         [...worldPos], // left
         [...worldPos], // right
       ] as [
-        Types.Point3,
-        Types.Point3,
-        Types.Point3,
-        Types.Point3,
-        Types.Point3
-      ];
+          Types.Point3,
+          Types.Point3,
+          Types.Point3,
+          Types.Point3,
+          Types.Point3
+        ];
     }
 
     const annotation = {
@@ -284,7 +284,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
+    const { metadata } = annotation;
+    const { enabledElement } = metadata;
 
     this.editData = null;
     this.isDrawing = false;
@@ -299,6 +300,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
+    console.debug(targetId)
     this._computePointsInsideVolume(
       annotation,
       imageVolume,
@@ -348,9 +350,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as CircleROIStartEndThresholdAnnotation;
+
       const { annotationUID, data, metadata } = annotation;
       const { startCoordinate, endCoordinate } = data;
       const { points, activeHandleIndex } = data.handles;
+      const { enabledElement: annotationEnabledElement } = metadata;
 
       styleSpecifier.annotationUID = annotationUID;
 
@@ -412,9 +416,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       // if the focalpoint is outside the start/end coordinates, we don't render
       if (
         roundedCameraCoordinate <
-          Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
+        Math.min(roundedStartCoordinate, roundedEndCoordinate) ||
         roundedCameraCoordinate >
-          Math.max(roundedStartCoordinate, roundedEndCoordinate)
+        Math.max(roundedStartCoordinate, roundedEndCoordinate)
       ) {
         continue;
       }
@@ -434,10 +438,16 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ] = middleCoordinate;
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
+      const iteratorVolumeIDs = annotationEnabledElement.viewport?.volumeIds.values();
 
-      if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(annotation, enabledElement);
+      for (const volumeId of iteratorVolumeIDs) {
+        if (annotation.invalidated && annotation.metadata.volumeId === volumeId) {
+
+
+          this._throttledCalculateCachedStats(annotation, annotationEnabledElement);
+        }
       }
+
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
@@ -635,6 +645,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     targetId,
     enabledElement
   ) {
+
     const { data, metadata } = annotation;
     const { viewPlaneNormal, viewUp } = metadata;
     const { viewport } = enabledElement;
@@ -673,8 +684,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
-        (worldWidth / measureInfo.scale / 2) *
-        (worldHeight / aspect / measureInfo.scale / 2)
+      (worldWidth / measureInfo.scale / 2) *
+      (worldHeight / aspect / measureInfo.scale / 2)
     );
 
     const modalityUnitOptions = {
@@ -692,6 +703,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       modalityUnitOptions
     );
 
+    // console.debug(projectionPoints)
     for (let i = 0; i < projectionPoints.length; i++) {
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -786,6 +798,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         pointsInsideVolume.push(pointsInShape);
       }
     }
+    // console.debug(pointsInsideVolume)
     const stats = this.configuration.statsCalculator.getStatistics();
     data.cachedStats.pointsInVolume = pointsInsideVolume;
     data.cachedStats.statistics = {
@@ -802,6 +815,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
+
     const { viewport } = enabledElement;
 
     const { cachedStats } = data;
