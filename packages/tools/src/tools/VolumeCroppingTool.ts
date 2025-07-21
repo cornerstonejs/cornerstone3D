@@ -35,14 +35,6 @@ import type {
   SVGDrawingHelper,
 } from '../types';
 
-function defaultReferenceLineColor() {
-  return 'rgb(0, 200, 0)';
-}
-
-function defaultReferenceLineControllable() {
-  return true;
-}
-
 const PLANEINDEX = {
   XMIN: 0,
   XMAX: 1,
@@ -84,47 +76,6 @@ class VolumeCroppingTool extends BaseTool {
     };
   } = {};
 
-  // Helper to add a 3D line between two points using vtkActor
-  addLine3DBetweenPoints(
-    viewport,
-    point1,
-    point2,
-    color: [number, number, number] = [0.7, 0.7, 0.7],
-    uid = ''
-  ) {
-    // Avoid creating a line if the points are the same
-    if (
-      point1[0] === point2[0] &&
-      point1[1] === point2[1] &&
-      point1[2] === point2[2]
-    ) {
-      return { actor: null, source: null };
-    }
-    const points = vtkPoints.newInstance();
-    points.setNumberOfPoints(2);
-    points.setPoint(0, point1[0], point1[1], point1[2]);
-    points.setPoint(1, point2[0], point2[1], point2[2]);
-
-    const lines = vtkCellArray.newInstance({ values: [2, 0, 1] });
-    const polyData = vtkPolyData.newInstance();
-    polyData.setPoints(points);
-    polyData.setLines(lines);
-
-    const mapper = vtkMapper.newInstance();
-    mapper.setInputData(polyData);
-    const actor = vtkActor.newInstance();
-    actor.setMapper(mapper);
-    actor.getProperty().setColor(...color);
-    actor.getProperty().setLineWidth(0.5); // Thinner line
-    actor.getProperty().setOpacity(1.0);
-    actor.getProperty().setInterpolationToFlat(); // No shading
-    actor.getProperty().setAmbient(1.0); // Full ambient
-    actor.getProperty().setDiffuse(0.0); // No diffuse
-    actor.getProperty().setSpecular(0.0); // No specular
-    actor.setVisibility(true);
-    viewport.addActor({ actor, uid });
-    return { actor, source: polyData };
-  }
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
@@ -179,23 +130,14 @@ class VolumeCroppingTool extends BaseTool {
     super(toolProps, defaultToolProps);
     this.touchDragCallback = this._dragCallback.bind(this);
     this.mouseDragCallback = this._dragCallback.bind(this);
-    this._getReferenceLineColor =
-      toolProps.configuration?.getReferenceLineColor ||
-      defaultReferenceLineColor;
-    this._getReferenceLineControllable =
-      toolProps.configuration?.getReferenceLineControllable ||
-      defaultReferenceLineControllable;
   }
+
+  // Helper to add a 3D line between two points using vtkActor
 
   setHandlesVisible(visible: boolean) {
     this.configuration.showHandles = visible;
     // Before showing, update sphere positions to match clipping planes
     if (visible) {
-      const viewportsInfo = this._getViewportsInfo();
-      const [viewport3D] = viewportsInfo;
-      const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-      const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
       // Update face spheres from the current clipping planes
       this.sphereStates[SPHEREINDEX.XMIN].point[0] =
         this.originalClippingPlanes[PLANEINDEX.XMIN].origin[0];
@@ -260,27 +202,6 @@ class VolumeCroppingTool extends BaseTool {
     this._updateClippingPlanes(viewport);
     viewport.render();
   }
-
-  _updateHandlesVisibility() {
-    // Spheres
-    this.sphereStates.forEach((state) => {
-      if (state.sphereActor) {
-        state.sphereActor.setVisibility(this.configuration.showHandles);
-      }
-    });
-
-    // Edge lines (box edges)
-    Object.values(this.edgeLines).forEach(({ actor }) => {
-      if (actor) {
-        actor.setVisibility(this.configuration.showHandles);
-      }
-    });
-  }
-
-  _getViewportsInfo = () => {
-    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
-    return viewports;
-  };
 
   onSetToolActive() {
     //console.debug('Setting tool active: volumeCropping');
@@ -376,7 +297,481 @@ class VolumeCroppingTool extends BaseTool {
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
   }
 
-  addSphere(viewport, point, axis, position, cornerKey = null) {
+  onCameraModified = (evt) => {
+    const { element } = evt.currentTarget
+      ? { element: evt.currentTarget }
+      : evt.detail;
+    const enabledElement = getEnabledElement(element);
+    this._updateClippingPlanes(enabledElement.viewport);
+    enabledElement.viewport.render();
+  };
+
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
+    const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+    const actorEntry = viewport.getDefaultActor();
+    const actor = actorEntry.actor as Types.VolumeActor;
+    const mapper = actor.getMapper();
+
+    const mouseCanvas: [number, number] = [
+      evt.detail.currentPoints.canvas[0],
+      evt.detail.currentPoints.canvas[1],
+    ];
+    // Find the sphere under the mouse
+    this.draggingSphereIndex = null;
+    this.cornerDragOffset = null;
+    this.faceDragOffset = null;
+    for (let i = 0; i < this.sphereStates.length; ++i) {
+      const sphereCanvas = viewport.worldToCanvas(this.sphereStates[i].point);
+      const dist = Math.sqrt(
+        Math.pow(mouseCanvas[0] - sphereCanvas[0], 2) +
+          Math.pow(mouseCanvas[1] - sphereCanvas[1], 2)
+      );
+      if (dist < this.configuration.grabSpherePixelDistance) {
+        this.draggingSphereIndex = i;
+        element.style.cursor = 'grabbing';
+
+        // --- Store offset for corners ---
+        const sphereState = this.sphereStates[i];
+        const mouseWorld = viewport.canvasToWorld(mouseCanvas);
+        if (sphereState.isCorner) {
+          this.cornerDragOffset = [
+            sphereState.point[0] - mouseWorld[0],
+            sphereState.point[1] - mouseWorld[1],
+            sphereState.point[2] - mouseWorld[2],
+          ];
+          this.faceDragOffset = null;
+        } else {
+          // For face spheres, only store the offset along the axis of movement
+          const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
+          this.faceDragOffset =
+            sphereState.point[axisIdx] - mouseWorld[axisIdx];
+          this.cornerDragOffset = null;
+        }
+
+        return true;
+      }
+    }
+
+    const hasSampleDistance =
+      'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
+
+    if (!hasSampleDistance) {
+      return true;
+    }
+
+    const originalSampleDistance = mapper.getSampleDistance();
+
+    if (!this._hasResolutionChanged) {
+      const { rotateSampleDistanceFactor } = this.configuration;
+      mapper.setSampleDistance(
+        originalSampleDistance * rotateSampleDistanceFactor
+      );
+      this._hasResolutionChanged = true;
+
+      if (this.cleanUp !== null) {
+        // Clean up previous event listener
+        document.removeEventListener('mouseup', this.cleanUp);
+      }
+
+      this.cleanUp = () => {
+        mapper.setSampleDistance(originalSampleDistance);
+
+        // Reset cursor style
+        (evt.target as HTMLElement).style.cursor = '';
+        if (this.draggingSphereIndex !== null) {
+          const sphereState = this.sphereStates[this.draggingSphereIndex];
+          const [viewport3D] = this._getViewportsInfo();
+          const renderingEngine = getRenderingEngine(
+            viewport3D.renderingEngineId
+          );
+          const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+
+          if (sphereState.isCorner) {
+            this._updateFaceSpheresFromCorners();
+            this._updateCornerSpheres();
+            this._updateClippingPlanesFromFaceSpheres(viewport);
+          }
+        }
+        this.draggingSphereIndex = null;
+        this.cornerDragOffset = null;
+        this.faceDragOffset = null;
+
+        viewport.render();
+        this._hasResolutionChanged = false;
+      };
+
+      document.addEventListener('mouseup', this.cleanUp, { once: true });
+    }
+
+    return true;
+  };
+
+  _dragCallback(evt: EventTypes.InteractionEventType): void {
+    const { element, currentPoints, lastPoints } = evt.detail;
+
+    if (this.draggingSphereIndex !== null) {
+      // crop handles
+      this._onMouseMoveSphere(evt);
+    } else {
+      // rotate
+      const currentPointsCanvas = currentPoints.canvas;
+      const lastPointsCanvas = lastPoints.canvas;
+      const { rotateIncrementDegrees } = this.configuration;
+      const enabledElement = getEnabledElement(element);
+      const { viewport } = enabledElement;
+
+      const camera = viewport.getCamera();
+      const width = element.clientWidth;
+      const height = element.clientHeight;
+
+      const normalizedPosition = [
+        currentPointsCanvas[0] / width,
+        currentPointsCanvas[1] / height,
+      ];
+
+      const normalizedPreviousPosition = [
+        lastPointsCanvas[0] / width,
+        lastPointsCanvas[1] / height,
+      ];
+
+      const center: Types.Point2 = [width * 0.5, height * 0.5];
+      // NOTE: centerWorld corresponds to the focal point in cornerstone3D
+      const centerWorld = viewport.canvasToWorld(center);
+      const normalizedCenter = [0.5, 0.5];
+
+      const radsq = (1.0 + Math.abs(normalizedCenter[0])) ** 2.0;
+      const op = [normalizedPreviousPosition[0], 0, 0];
+      const oe = [normalizedPosition[0], 0, 0];
+
+      const opsq = op[0] ** 2;
+      const oesq = oe[0] ** 2;
+
+      const lop = opsq > radsq ? 0 : Math.sqrt(radsq - opsq);
+      const loe = oesq > radsq ? 0 : Math.sqrt(radsq - oesq);
+
+      const nop: Types.Point3 = [op[0], 0, lop];
+      vtkMath.normalize(nop);
+      const noe: Types.Point3 = [oe[0], 0, loe];
+      vtkMath.normalize(noe);
+
+      const dot = vtkMath.dot(nop, noe);
+      if (Math.abs(dot) > 0.0001) {
+        const angleX =
+          -2 *
+          Math.acos(vtkMath.clampValue(dot, -1.0, 1.0)) *
+          Math.sign(normalizedPosition[0] - normalizedPreviousPosition[0]) *
+          rotateIncrementDegrees;
+
+        const upVec = camera.viewUp;
+        const atV = camera.viewPlaneNormal;
+        const rightV: Types.Point3 = [0, 0, 0];
+        const forwardV: Types.Point3 = [0, 0, 0];
+
+        vtkMath.cross(upVec, atV, rightV);
+        vtkMath.normalize(rightV);
+
+        vtkMath.cross(atV, rightV, forwardV);
+        vtkMath.normalize(forwardV);
+        vtkMath.normalize(upVec);
+
+        this._rotateCamera(viewport, centerWorld, forwardV, angleX);
+
+        const angleY =
+          (normalizedPreviousPosition[1] - normalizedPosition[1]) *
+          rotateIncrementDegrees;
+
+        this._rotateCamera(viewport, centerWorld, rightV, angleY);
+      }
+
+      viewport.render();
+    }
+  }
+
+  _onMouseMoveSphere = (evt) => {
+    if (this.draggingSphereIndex === null) {
+      return false;
+    }
+
+    const sphereState = this.sphereStates[this.draggingSphereIndex];
+    if (!sphereState) {
+      return false;
+    }
+
+    // Get viewport and world coordinates
+    const { viewport, world } = this._getViewportAndWorldCoords(evt);
+    if (!viewport || !world) {
+      return false;
+    }
+
+    // Handle sphere movement based on type WITHOUT updating clipping planes yet
+    if (sphereState.isCorner) {
+      // Calculate and update just the dragged corner position
+      const newCorner = this._calculateNewCornerPosition(world);
+      this._updateSpherePosition(sphereState, newCorner);
+
+      // Update related corners
+      const axisFlags = this._parseCornerKey(sphereState.uid);
+      this._updateRelatedCorners(sphereState, newCorner, axisFlags);
+
+      // Update face spheres and corners
+      this._updateFaceSpheresFromCorners();
+      this._updateCornerSpheres();
+    } else {
+      // Update face sphere position
+      const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
+      let newValue = world[axisIdx];
+      if (this.faceDragOffset !== null) {
+        newValue += this.faceDragOffset;
+      }
+      sphereState.point[axisIdx] = newValue;
+      sphereState.sphereSource.setCenter(...sphereState.point);
+      sphereState.sphereSource.modified();
+
+      // Update corners from face spheres
+      this._updateCornerSpheresFromFaces();
+      this._updateFaceSpheresFromCorners();
+      this._updateCornerSpheres();
+    }
+
+    // Render to show sphere updates FIRST
+    viewport.render();
+
+    // THEN update clipping planes
+    this._updateClippingPlanesFromFaceSpheres(viewport);
+
+    // Final render and event trigger
+    viewport.render();
+    this._triggerToolChangedEvent(sphereState);
+
+    return true;
+  };
+
+  _onControlToolChange = (evt) => {
+    const viewportsInfo = this._getViewportsInfo();
+    const [viewport3D] = viewportsInfo;
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+
+    const isMin = evt.detail.handleType === 'min';
+    const toolCenter = isMin
+      ? evt.detail.toolCenterMin
+      : evt.detail.toolCenterMax;
+    const normals = isMin
+      ? [
+          [1, 0, 0],
+          [0, 1, 0],
+          [0, 0, 1],
+        ]
+      : [
+          [-1, 0, 0],
+          [0, -1, 0],
+          [0, 0, -1],
+        ];
+    const planeIndices = isMin
+      ? [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN]
+      : [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMAX];
+    const sphereIndices = isMin
+      ? [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN]
+      : [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX];
+    const axes = ['x', 'y', 'z'];
+    const orientationAxes = [
+      Enums.OrientationAxis.SAGITTAL,
+      Enums.OrientationAxis.CORONAL,
+      Enums.OrientationAxis.AXIAL,
+    ];
+
+    // Update planes and spheres for each axis
+    for (let i = 0; i < 3; ++i) {
+      const origin: [number, number, number] = [0, 0, 0];
+      origin[i] = toolCenter[i];
+      const plane = vtkPlane.newInstance({
+        origin,
+        normal: normals[i] as [number, number, number],
+      });
+      this.originalClippingPlanes[planeIndices[i]].origin = plane.getOrigin();
+
+      if (this.configuration.showHandles) {
+        // Update face sphere
+        this.sphereStates[sphereIndices[i]].point[i] = plane.getOrigin()[i];
+        this.sphereStates[sphereIndices[i]].sphereSource.setCenter(
+          ...this.sphereStates[sphereIndices[i]].point
+        );
+        this.sphereStates[sphereIndices[i]].sphereSource.modified();
+
+        // Update center for other face spheres (not on this axis)
+        const otherSphere = this.sphereStates.find(
+          (s, idx) => s.axis === axes[i] && idx !== sphereIndices[i]
+        );
+        const newCenter = (otherSphere.point[i] + plane.getOrigin()[i]) / 2;
+        this.sphereStates.forEach((state) => {
+          if (
+            !state.isCorner &&
+            state.axis !== axes[i] &&
+            !evt.detail.viewportOrientation.includes(orientationAxes[i])
+          ) {
+            state.point[i] = newCenter;
+            state.sphereSource.setCenter(state.point);
+            state.sphereActor.getProperty().setColor(state.color);
+            state.sphereSource.modified();
+          }
+        });
+      }
+
+      // Update vtk clipping plane origin
+      const volumeActor = viewport.getDefaultActor()?.actor;
+      if (volumeActor) {
+        const mapper = volumeActor.getMapper() as vtkVolumeMapper;
+        const clippingPlanes = mapper.getClippingPlanes();
+        clippingPlanes[planeIndices[i]].setOrigin(plane.getOrigin());
+      }
+    }
+
+    if (
+      this.configuration.showHandles &&
+      this.configuration.showCornerSpheres
+    ) {
+      this._updateCornerSpheres();
+    }
+    viewport.render();
+  };
+
+  _updateClippingPlanes(viewport) {
+    // Get the actor and transformation matrix
+    const actorEntry = viewport.getDefaultActor();
+    if (!actorEntry || !actorEntry.actor) {
+      // Only warn once per session for missing actor
+      if (!viewport._missingActorWarned) {
+        console.warn(
+          'VolumeCroppingTool._updateClippingPlanes: No default actor found in viewport.'
+        );
+        viewport._missingActorWarned = true;
+      }
+      return;
+    }
+    const actor = actorEntry.actor;
+    const mapper = actor.getMapper();
+    const matrix = actor.getMatrix();
+
+    // Only update if clipping planes are visible
+    if (!this.configuration.showClippingPlanes) {
+      mapper.removeAllClippingPlanes();
+      return;
+    }
+
+    // Extract rotation part for normals
+    const rot = mat3.create();
+    mat3.fromMat4(rot, matrix);
+    // Compute inverse transpose for normal transformation
+    const normalMatrix = mat3.create();
+    mat3.invert(normalMatrix, rot);
+    mat3.transpose(normalMatrix, normalMatrix);
+
+    // Cache transformed origins/normals to avoid repeated work
+    const originalPlanes = this.originalClippingPlanes;
+    if (!originalPlanes || !originalPlanes.length) {
+      return;
+    }
+
+    // Only remove/add if the number of planes has changed or matrix has changed
+    // (Assume matrix changes frequently, so always update for now)
+    mapper.removeAllClippingPlanes();
+
+    // Preallocate arrays for transformed origins/normals
+    const transformedOrigins: Types.Point3[] = [];
+    const transformedNormals: Types.Point3[] = [];
+
+    for (let i = 0; i < originalPlanes.length; ++i) {
+      const plane = originalPlanes[i];
+      // Transform origin (full 4x4)
+      const oVec = vec3.create();
+      vec3.transformMat4(oVec, new Float32Array(plane.origin), matrix);
+      const o: [number, number, number] = [oVec[0], oVec[1], oVec[2]];
+      // Transform normal (rotation only)
+      const nVec = vec3.create();
+      vec3.transformMat3(nVec, new Float32Array(plane.normal), normalMatrix);
+      vec3.normalize(nVec, nVec);
+      const n: [number, number, number] = [nVec[0], nVec[1], nVec[2]];
+      transformedOrigins.push(o);
+      transformedNormals.push(n);
+    }
+
+    // Create and add planes in a single loop
+    for (let i = 0; i < transformedOrigins.length; ++i) {
+      // Use cached transformed values
+      const planeInstance = vtkPlane.newInstance({
+        origin: transformedOrigins[i],
+        normal: transformedNormals[i],
+      });
+      mapper.addClippingPlane(planeInstance);
+    }
+  }
+
+  _updateHandlesVisibility() {
+    // Spheres
+    this.sphereStates.forEach((state) => {
+      if (state.sphereActor) {
+        state.sphereActor.setVisibility(this.configuration.showHandles);
+      }
+    });
+
+    // Edge lines (box edges)
+    Object.values(this.edgeLines).forEach(({ actor }) => {
+      if (actor) {
+        actor.setVisibility(this.configuration.showHandles);
+      }
+    });
+  }
+
+  _addLine3DBetweenPoints(
+    viewport,
+    point1,
+    point2,
+    color: [number, number, number] = [0.7, 0.7, 0.7],
+    uid = ''
+  ) {
+    // Avoid creating a line if the points are the same
+    if (
+      point1[0] === point2[0] &&
+      point1[1] === point2[1] &&
+      point1[2] === point2[2]
+    ) {
+      return { actor: null, source: null };
+    }
+    const points = vtkPoints.newInstance();
+    points.setNumberOfPoints(2);
+    points.setPoint(0, point1[0], point1[1], point1[2]);
+    points.setPoint(1, point2[0], point2[1], point2[2]);
+
+    const lines = vtkCellArray.newInstance({ values: [2, 0, 1] });
+    const polyData = vtkPolyData.newInstance();
+    polyData.setPoints(points);
+    polyData.setLines(lines);
+
+    const mapper = vtkMapper.newInstance();
+    mapper.setInputData(polyData);
+    const actor = vtkActor.newInstance();
+    actor.setMapper(mapper);
+    actor.getProperty().setColor(...color);
+    actor.getProperty().setLineWidth(0.5); // Thinner line
+    actor.getProperty().setOpacity(1.0);
+    actor.getProperty().setInterpolationToFlat(); // No shading
+    actor.getProperty().setAmbient(1.0); // Full ambient
+    actor.getProperty().setDiffuse(0.0); // No diffuse
+    actor.getProperty().setSpecular(0.0); // No specular
+    actor.setVisibility(true);
+    viewport.addActor({ actor, uid });
+    return { actor, source: polyData };
+  }
+
+  _getViewportsInfo = () => {
+    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
+    return viewports;
+  };
+
+  _addSphere(viewport, point, axis, position, cornerKey = null) {
     if (!this.configuration.showHandles) {
       return;
     }
@@ -525,12 +920,12 @@ class VolumeCroppingTool extends BaseTool {
     const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMin];
     const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax];
 
-    this.addSphere(viewport, sphereXminPoint, 'x', 'min');
-    this.addSphere(viewport, sphereXmaxPoint, 'x', 'max');
-    this.addSphere(viewport, sphereYminPoint, 'y', 'min');
-    this.addSphere(viewport, sphereYmaxPoint, 'y', 'max');
-    this.addSphere(viewport, sphereZminPoint, 'z', 'min');
-    this.addSphere(viewport, sphereZmaxPoint, 'z', 'max');
+    this._addSphere(viewport, sphereXminPoint, 'x', 'min');
+    this._addSphere(viewport, sphereXmaxPoint, 'x', 'max');
+    this._addSphere(viewport, sphereYminPoint, 'y', 'min');
+    this._addSphere(viewport, sphereYmaxPoint, 'y', 'max');
+    this._addSphere(viewport, sphereZminPoint, 'z', 'min');
+    this._addSphere(viewport, sphereZmaxPoint, 'z', 'max');
     if (
       this.configuration.showCornerSpheres &&
       this.configuration.showHandles
@@ -558,7 +953,7 @@ class VolumeCroppingTool extends BaseTool {
       ];
 
       for (let i = 0; i < corners.length; i++) {
-        this.addSphere(viewport, corners[i], 'corner', null, cornerKeys[i]);
+        this._addSphere(viewport, corners[i], 'corner', null, cornerKeys[i]);
       }
 
       // draw the lines between corners
@@ -590,7 +985,7 @@ class VolumeCroppingTool extends BaseTool {
         );
         if (state1 && state2) {
           const uid = `edge_${key1}_${key2}`;
-          const { actor, source } = this.addLine3DBetweenPoints(
+          const { actor, source } = this._addLine3DBetweenPoints(
             viewport,
             state1.point,
             state2.point,
@@ -614,196 +1009,6 @@ class VolumeCroppingTool extends BaseTool {
         this._onControlToolChange(evt);
       }
     );
-  };
-
-  _updateClippingPlanes(viewport) {
-    // Get the actor and transformation matrix
-    const actorEntry = viewport.getDefaultActor();
-    if (!actorEntry || !actorEntry.actor) {
-      // Only warn once per session for missing actor
-      if (!viewport._missingActorWarned) {
-        console.warn(
-          'VolumeCroppingTool._updateClippingPlanes: No default actor found in viewport.'
-        );
-        viewport._missingActorWarned = true;
-      }
-      return;
-    }
-    const actor = actorEntry.actor;
-    const mapper = actor.getMapper();
-    const matrix = actor.getMatrix();
-
-    // Only update if clipping planes are visible
-    if (!this.configuration.showClippingPlanes) {
-      mapper.removeAllClippingPlanes();
-      return;
-    }
-
-    // Extract rotation part for normals
-    const rot = mat3.create();
-    mat3.fromMat4(rot, matrix);
-    // Compute inverse transpose for normal transformation
-    const normalMatrix = mat3.create();
-    mat3.invert(normalMatrix, rot);
-    mat3.transpose(normalMatrix, normalMatrix);
-
-    // Cache transformed origins/normals to avoid repeated work
-    const originalPlanes = this.originalClippingPlanes;
-    if (!originalPlanes || !originalPlanes.length) {
-      return;
-    }
-
-    // Only remove/add if the number of planes has changed or matrix has changed
-    // (Assume matrix changes frequently, so always update for now)
-    mapper.removeAllClippingPlanes();
-
-    // Preallocate arrays for transformed origins/normals
-    const transformedOrigins: Types.Point3[] = [];
-    const transformedNormals: Types.Point3[] = [];
-
-    for (let i = 0; i < originalPlanes.length; ++i) {
-      const plane = originalPlanes[i];
-      // Transform origin (full 4x4)
-      const oVec = vec3.create();
-      vec3.transformMat4(oVec, new Float32Array(plane.origin), matrix);
-      const o: [number, number, number] = [oVec[0], oVec[1], oVec[2]];
-      // Transform normal (rotation only)
-      const nVec = vec3.create();
-      vec3.transformMat3(nVec, new Float32Array(plane.normal), normalMatrix);
-      vec3.normalize(nVec, nVec);
-      const n: [number, number, number] = [nVec[0], nVec[1], nVec[2]];
-      transformedOrigins.push(o);
-      transformedNormals.push(n);
-    }
-
-    // Create and add planes in a single loop
-    for (let i = 0; i < transformedOrigins.length; ++i) {
-      // Use cached transformed values
-      const planeInstance = vtkPlane.newInstance({
-        origin: transformedOrigins[i],
-        normal: transformedNormals[i],
-      });
-      mapper.addClippingPlane(planeInstance);
-    }
-  }
-
-  _onControlToolChange = (evt) => {
-    const viewportsInfo = this._getViewportsInfo();
-    const [viewport3D] = viewportsInfo;
-    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
-    const isMin = evt.detail.handleType === 'min';
-    const toolCenter = isMin
-      ? evt.detail.toolCenterMin
-      : evt.detail.toolCenterMax;
-    const normals = isMin
-      ? [
-          [1, 0, 0],
-          [0, 1, 0],
-          [0, 0, 1],
-        ]
-      : [
-          [-1, 0, 0],
-          [0, -1, 0],
-          [0, 0, -1],
-        ];
-    const planeIndices = isMin
-      ? [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN]
-      : [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMAX];
-    const sphereIndices = isMin
-      ? [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN]
-      : [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX];
-    const axes = ['x', 'y', 'z'];
-    const orientationAxes = [
-      Enums.OrientationAxis.SAGITTAL,
-      Enums.OrientationAxis.CORONAL,
-      Enums.OrientationAxis.AXIAL,
-    ];
-
-    // Update planes and spheres for each axis
-    for (let i = 0; i < 3; ++i) {
-      const origin: [number, number, number] = [0, 0, 0];
-      origin[i] = toolCenter[i];
-      const plane = vtkPlane.newInstance({
-        origin,
-        normal: normals[i] as [number, number, number],
-      });
-      this.originalClippingPlanes[planeIndices[i]].origin = plane.getOrigin();
-
-      if (this.configuration.showHandles) {
-        // Update face sphere
-        this.sphereStates[sphereIndices[i]].point[i] = plane.getOrigin()[i];
-        this.sphereStates[sphereIndices[i]].sphereSource.setCenter(
-          ...this.sphereStates[sphereIndices[i]].point
-        );
-        this.sphereStates[sphereIndices[i]].sphereSource.modified();
-
-        // Update center for other face spheres (not on this axis)
-        const otherSphere = this.sphereStates.find(
-          (s, idx) => s.axis === axes[i] && idx !== sphereIndices[i]
-        );
-        const newCenter = (otherSphere.point[i] + plane.getOrigin()[i]) / 2;
-        this.sphereStates.forEach((state) => {
-          if (
-            !state.isCorner &&
-            state.axis !== axes[i] &&
-            !evt.detail.viewportOrientation.includes(orientationAxes[i])
-          ) {
-            state.point[i] = newCenter;
-            state.sphereSource.setCenter(state.point);
-            state.sphereActor.getProperty().setColor(state.color);
-            state.sphereSource.modified();
-          }
-        });
-      }
-
-      // Update vtk clipping plane origin
-      const volumeActor = viewport.getDefaultActor()?.actor;
-      if (volumeActor) {
-        const mapper = volumeActor.getMapper() as vtkVolumeMapper;
-        const clippingPlanes = mapper.getClippingPlanes();
-        clippingPlanes[planeIndices[i]].setOrigin(plane.getOrigin());
-      }
-    }
-
-    if (
-      this.configuration.showHandles &&
-      this.configuration.showCornerSpheres
-    ) {
-      this._updateCornerSpheres();
-    }
-    viewport.render();
-  };
-
-  _onMouseMoveSphere = (evt) => {
-    if (this.draggingSphereIndex === null) {
-      return false;
-    }
-
-    const sphereState = this.sphereStates[this.draggingSphereIndex];
-    if (!sphereState) {
-      return false;
-    }
-
-    // Get viewport and world coordinates
-    const { viewport, world } = this._getViewportAndWorldCoords(evt);
-    if (!viewport || !world) {
-      return false;
-    }
-
-    // Handle sphere movement based on type
-    if (sphereState.isCorner) {
-      this._handleCornerSphereMovement(sphereState, world, viewport);
-    } else {
-      this._handleFaceSphereMovement(sphereState, world, viewport);
-    }
-
-    // Single render and event trigger
-    viewport.render();
-    this._triggerToolChangedEvent(sphereState);
-
-    return true;
   };
 
   // Helper method to get viewport and world coordinates
@@ -1167,15 +1372,6 @@ class VolumeCroppingTool extends BaseTool {
     });
   }
 
-  onCameraModified = (evt) => {
-    const { element } = evt.currentTarget
-      ? { element: evt.currentTarget }
-      : evt.detail;
-    const enabledElement = getEnabledElement(element);
-    this._updateClippingPlanes(enabledElement.viewport);
-    enabledElement.viewport.render();
-  };
-
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
     this._initialize3DViewports(viewportsInfo);
@@ -1211,110 +1407,7 @@ class VolumeCroppingTool extends BaseTool {
     });
   }
 
-  preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
-    const eventDetail = evt.detail;
-    const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor as Types.VolumeActor;
-    const mapper = actor.getMapper();
-
-    const mouseCanvas: [number, number] = [
-      evt.detail.currentPoints.canvas[0],
-      evt.detail.currentPoints.canvas[1],
-    ];
-    // Find the sphere under the mouse
-    this.draggingSphereIndex = null;
-    this.cornerDragOffset = null;
-    this.faceDragOffset = null;
-    for (let i = 0; i < this.sphereStates.length; ++i) {
-      const sphereCanvas = viewport.worldToCanvas(this.sphereStates[i].point);
-      const dist = Math.sqrt(
-        Math.pow(mouseCanvas[0] - sphereCanvas[0], 2) +
-          Math.pow(mouseCanvas[1] - sphereCanvas[1], 2)
-      );
-      if (dist < this.configuration.grabSpherePixelDistance) {
-        this.draggingSphereIndex = i;
-        element.style.cursor = 'grabbing';
-
-        // --- Store offset for corners ---
-        const sphereState = this.sphereStates[i];
-        const mouseWorld = viewport.canvasToWorld(mouseCanvas);
-        if (sphereState.isCorner) {
-          this.cornerDragOffset = [
-            sphereState.point[0] - mouseWorld[0],
-            sphereState.point[1] - mouseWorld[1],
-            sphereState.point[2] - mouseWorld[2],
-          ];
-          this.faceDragOffset = null;
-        } else {
-          // For face spheres, only store the offset along the axis of movement
-          const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
-          this.faceDragOffset =
-            sphereState.point[axisIdx] - mouseWorld[axisIdx];
-          this.cornerDragOffset = null;
-        }
-
-        return true;
-      }
-    }
-
-    const hasSampleDistance =
-      'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
-
-    if (!hasSampleDistance) {
-      return true;
-    }
-
-    const originalSampleDistance = mapper.getSampleDistance();
-
-    if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
-      mapper.setSampleDistance(
-        originalSampleDistance * rotateSampleDistanceFactor
-      );
-      this._hasResolutionChanged = true;
-
-      if (this.cleanUp !== null) {
-        // Clean up previous event listener
-        document.removeEventListener('mouseup', this.cleanUp);
-      }
-
-      this.cleanUp = () => {
-        mapper.setSampleDistance(originalSampleDistance);
-
-        // Reset cursor style
-        (evt.target as HTMLElement).style.cursor = '';
-        if (this.draggingSphereIndex !== null) {
-          const sphereState = this.sphereStates[this.draggingSphereIndex];
-          const [viewport3D] = this._getViewportsInfo();
-          const renderingEngine = getRenderingEngine(
-            viewport3D.renderingEngineId
-          );
-          const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
-          if (sphereState.isCorner) {
-            this._updateFaceSpheresFromCorners();
-            this._updateCornerSpheres();
-            this._updateClippingPlanesFromFaceSpheres(viewport);
-          }
-        }
-        this.draggingSphereIndex = null;
-        this.cornerDragOffset = null;
-        this.faceDragOffset = null;
-
-        viewport.render();
-        this._hasResolutionChanged = false;
-      };
-
-      document.addEventListener('mouseup', this.cleanUp, { once: true });
-    }
-
-    return true;
-  };
-
-  rotateCamera = (viewport, centerWorld, axis, angle) => {
+  _rotateCamera = (viewport, centerWorld, axis, angle) => {
     const vtkCamera = viewport.getVtkActiveCamera();
     const viewUp = vtkCamera.getViewUp();
     const focalPoint = vtkCamera.getFocalPoint();
@@ -1345,87 +1438,6 @@ class VolumeCroppingTool extends BaseTool {
       focalPoint: newFocalPoint,
     });
   };
-
-  _dragCallback(evt: EventTypes.InteractionEventType): void {
-    const { element, currentPoints, lastPoints } = evt.detail;
-
-    if (this.draggingSphereIndex !== null) {
-      // crop handles
-      this._onMouseMoveSphere(evt);
-    } else {
-      // rotate
-      const currentPointsCanvas = currentPoints.canvas;
-      const lastPointsCanvas = lastPoints.canvas;
-      const { rotateIncrementDegrees } = this.configuration;
-      const enabledElement = getEnabledElement(element);
-      const { viewport } = enabledElement;
-
-      const camera = viewport.getCamera();
-      const width = element.clientWidth;
-      const height = element.clientHeight;
-
-      const normalizedPosition = [
-        currentPointsCanvas[0] / width,
-        currentPointsCanvas[1] / height,
-      ];
-
-      const normalizedPreviousPosition = [
-        lastPointsCanvas[0] / width,
-        lastPointsCanvas[1] / height,
-      ];
-
-      const center: Types.Point2 = [width * 0.5, height * 0.5];
-      // NOTE: centerWorld corresponds to the focal point in cornerstone3D
-      const centerWorld = viewport.canvasToWorld(center);
-      const normalizedCenter = [0.5, 0.5];
-
-      const radsq = (1.0 + Math.abs(normalizedCenter[0])) ** 2.0;
-      const op = [normalizedPreviousPosition[0], 0, 0];
-      const oe = [normalizedPosition[0], 0, 0];
-
-      const opsq = op[0] ** 2;
-      const oesq = oe[0] ** 2;
-
-      const lop = opsq > radsq ? 0 : Math.sqrt(radsq - opsq);
-      const loe = oesq > radsq ? 0 : Math.sqrt(radsq - oesq);
-
-      const nop: Types.Point3 = [op[0], 0, lop];
-      vtkMath.normalize(nop);
-      const noe: Types.Point3 = [oe[0], 0, loe];
-      vtkMath.normalize(noe);
-
-      const dot = vtkMath.dot(nop, noe);
-      if (Math.abs(dot) > 0.0001) {
-        const angleX =
-          -2 *
-          Math.acos(vtkMath.clampValue(dot, -1.0, 1.0)) *
-          Math.sign(normalizedPosition[0] - normalizedPreviousPosition[0]) *
-          rotateIncrementDegrees;
-
-        const upVec = camera.viewUp;
-        const atV = camera.viewPlaneNormal;
-        const rightV: Types.Point3 = [0, 0, 0];
-        const forwardV: Types.Point3 = [0, 0, 0];
-
-        vtkMath.cross(upVec, atV, rightV);
-        vtkMath.normalize(rightV);
-
-        vtkMath.cross(atV, rightV, forwardV);
-        vtkMath.normalize(forwardV);
-        vtkMath.normalize(upVec);
-
-        this.rotateCamera(viewport, centerWorld, forwardV, angleX);
-
-        const angleY =
-          (normalizedPreviousPosition[1] - normalizedPosition[1]) *
-          rotateIncrementDegrees;
-
-        this.rotateCamera(viewport, centerWorld, rightV, angleY);
-      }
-
-      viewport.render();
-    }
-  }
 }
 
 VolumeCroppingTool.toolName = 'VolumeCropping';
