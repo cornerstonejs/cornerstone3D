@@ -778,124 +778,199 @@ class VolumeCroppingTool extends BaseTool {
 
   _onMouseMoveSphere = (evt) => {
     if (this.draggingSphereIndex === null) {
-      return;
+      return false;
     }
 
-    const element = evt.detail.element || evt.currentTarget;
+    const sphereState = this.sphereStates[this.draggingSphereIndex];
+    if (!sphereState) {
+      return false;
+    }
+
+    // Get viewport and world coordinates
+    const { viewport, world } = this._getViewportAndWorldCoords(evt);
+    if (!viewport || !world) {
+      return false;
+    }
+
+    // Handle sphere movement based on type
+    if (sphereState.isCorner) {
+      this._handleCornerSphereMovement(sphereState, world, viewport);
+    } else {
+      this._handleFaceSphereMovement(sphereState, world, viewport);
+    }
+
+    // Single render and event trigger
+    viewport.render();
+    this._triggerToolChangedEvent(sphereState);
+
+    return true;
+  };
+
+  // Helper method to get viewport and world coordinates
+  _getViewportAndWorldCoords = (evt) => {
     const [viewport3D] = this._getViewportsInfo();
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine.getViewport(viewport3D.viewportId);
 
-    // Get 2D mouse position in canvas coordinates
-    const rect = element.getBoundingClientRect();
     const x = evt.detail.currentPoints.canvas[0];
     const y = evt.detail.currentPoints.canvas[1];
-
-    // Convert canvas to world coordinates
     const world = viewport.canvasToWorld([x, y]);
 
-    const sphereState = this.sphereStates[this.draggingSphereIndex];
-    if (!sphereState) {
-      return;
+    return { viewport, world };
+  };
+
+  // Handle corner sphere movement
+  _handleCornerSphereMovement = (sphereState, world, viewport) => {
+    // Calculate new position with offset
+    const newCorner = this._calculateNewCornerPosition(world);
+
+    // Update the dragged corner
+    this._updateSpherePosition(sphereState, newCorner);
+
+    // Parse corner key to determine axes
+    const axisFlags = this._parseCornerKey(sphereState.uid);
+
+    // Update related corners efficiently
+    this._updateRelatedCorners(sphereState, newCorner, axisFlags);
+
+    // Update dependent elements
+    this._updateAfterCornerMovement(viewport);
+  };
+
+  // Handle face sphere movement
+  _handleFaceSphereMovement = (sphereState, world, viewport) => {
+    const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
+    let newValue = world[axisIdx];
+
+    if (this.faceDragOffset !== null) {
+      newValue += this.faceDragOffset;
     }
 
-    if (sphereState.isCorner) {
-      // Move the dragged corner sphere
-      let newCorner: [number, number, number] = [world[0], world[1], world[2]];
-      if (this.cornerDragOffset) {
-        newCorner = [
-          world[0] + this.cornerDragOffset[0],
-          world[1] + this.cornerDragOffset[1],
-          world[2] + this.cornerDragOffset[2],
-        ];
-      }
-      sphereState.point = newCorner;
-      sphereState.sphereSource.setCenter(...newCorner);
-      sphereState.sphereSource.modified();
+    // Update only the relevant axis
+    sphereState.point[axisIdx] = newValue;
+    sphereState.sphereSource.setCenter(...sphereState.point);
+    sphereState.sphereSource.modified();
 
-      // Determine which axes are min/max for this corner
-      // Example: XMIN_YMAX_ZMIN => x=min, y=max, z=min
-      const cornerKey = sphereState.uid.replace('corner_', '');
-      const isXMin = cornerKey.includes('XMIN');
-      const isXMax = cornerKey.includes('XMAX');
-      const isYMin = cornerKey.includes('YMIN');
-      const isYMax = cornerKey.includes('YMAX');
-      const isZMin = cornerKey.includes('ZMIN');
-      const isZMax = cornerKey.includes('ZMAX');
+    // Update dependent elements
+    this._updateAfterFaceMovement(viewport);
+  };
 
-      // Update all corners that share any min/max coordinate with this corner
-      this.sphereStates.forEach((state) => {
-        if (!state.isCorner || state === sphereState) {
-          return;
-        }
-        const key = state.uid.replace('corner_', '');
-        if (
-          (isXMin && key.includes('XMIN')) ||
-          (isXMax && key.includes('XMAX')) ||
-          (isYMin && key.includes('YMIN')) ||
-          (isYMax && key.includes('YMAX')) ||
-          (isZMin && key.includes('ZMIN')) ||
-          (isZMax && key.includes('ZMAX'))
-        ) {
-          // For each axis that matches, update that coordinate
-          if (isXMin && key.includes('XMIN')) {
-            state.point[0] = newCorner[0];
-          }
-          if (isXMax && key.includes('XMAX')) {
-            state.point[0] = newCorner[0];
-          }
-          if (isYMin && key.includes('YMIN')) {
-            state.point[1] = newCorner[1];
-          }
-          if (isYMax && key.includes('YMAX')) {
-            state.point[1] = newCorner[1];
-          }
-          if (isZMin && key.includes('ZMIN')) {
-            state.point[2] = newCorner[2];
-          }
-          if (isZMax && key.includes('ZMAX')) {
-            state.point[2] = newCorner[2];
-          }
-          state.sphereSource.setCenter(...state.point);
-          state.sphereSource.modified();
-        }
-      });
+  // Calculate new corner position with offset
+  _calculateNewCornerPosition = (world) => {
+    let newCorner = [world[0], world[1], world[2]];
 
-      // After updating corners, update face spheres and edge cylinders
-      this._updateFaceSpheresFromCorners();
-      this._updateCornerSpheres();
-      this._updateClippingPlanesFromFaceSpheres(viewport);
-    } else {
-      // For face spheres: only update the coordinate along the face's axis
-      const axis = sphereState.axis;
-      const axisIdx = { x: 0, y: 1, z: 2 }[axis];
-      let newValue = world[axisIdx];
-      if (this.faceDragOffset !== null) {
-        newValue += this.faceDragOffset;
-      }
-      // Only update the correct axis for the correct sphere
-      this.sphereStates[this.draggingSphereIndex].point[axisIdx] = newValue;
-      this.sphereStates[this.draggingSphereIndex].sphereSource.setCenter(
-        ...this.sphereStates[this.draggingSphereIndex].point
-      );
-      this.sphereStates[this.draggingSphereIndex].sphereSource.modified();
-
-      // After updating the face sphere, update all corners from faces
-      this._updateCornerSpheresFromFaces();
-      this._updateFaceSpheresFromCorners();
-      this._updateCornerSpheres();
-      this._updateClippingPlanesFromFaceSpheres(viewport);
+    if (this.cornerDragOffset) {
+      newCorner = [
+        world[0] + this.cornerDragOffset[0],
+        world[1] + this.cornerDragOffset[1],
+        world[2] + this.cornerDragOffset[2],
+      ];
     }
 
-    viewport.render();
-    //setTimeout(() => viewport.render(), 0);
+    return newCorner;
+  };
+
+  // Parse corner key to determine which axes are min/max
+  _parseCornerKey = (uid) => {
+    const cornerKey = uid.replace('corner_', '');
+    return {
+      isXMin: cornerKey.includes('XMIN'),
+      isXMax: cornerKey.includes('XMAX'),
+      isYMin: cornerKey.includes('YMIN'),
+      isYMax: cornerKey.includes('YMAX'),
+      isZMin: cornerKey.includes('ZMIN'),
+      isZMax: cornerKey.includes('ZMAX'),
+    };
+  };
+
+  // Update sphere position
+  _updateSpherePosition = (sphereState, newPosition) => {
+    sphereState.point = newPosition;
+    sphereState.sphereSource.setCenter(...newPosition);
+    sphereState.sphereSource.modified();
+  };
+
+  // Update related corners that share axes
+  _updateRelatedCorners = (draggedSphere, newCorner, axisFlags) => {
+    this.sphereStates.forEach((state) => {
+      if (!state.isCorner || state === draggedSphere) {
+        return;
+      }
+
+      const key = state.uid.replace('corner_', '');
+      const shouldUpdate = this._shouldUpdateCorner(key, axisFlags);
+
+      if (shouldUpdate) {
+        this._updateCornerCoordinates(state, newCorner, key, axisFlags);
+      }
+    });
+  };
+
+  // Determine if a corner should be updated
+  _shouldUpdateCorner = (cornerKey, axisFlags) => {
+    return (
+      (axisFlags.isXMin && cornerKey.includes('XMIN')) ||
+      (axisFlags.isXMax && cornerKey.includes('XMAX')) ||
+      (axisFlags.isYMin && cornerKey.includes('YMIN')) ||
+      (axisFlags.isYMax && cornerKey.includes('YMAX')) ||
+      (axisFlags.isZMin && cornerKey.includes('ZMIN')) ||
+      (axisFlags.isZMax && cornerKey.includes('ZMAX'))
+    );
+  };
+
+  // Update individual corner coordinates
+  _updateCornerCoordinates = (state, newCorner, cornerKey, axisFlags) => {
+    // X axis updates
+    if (
+      (axisFlags.isXMin && cornerKey.includes('XMIN')) ||
+      (axisFlags.isXMax && cornerKey.includes('XMAX'))
+    ) {
+      state.point[0] = newCorner[0];
+    }
+
+    // Y axis updates
+    if (
+      (axisFlags.isYMin && cornerKey.includes('YMIN')) ||
+      (axisFlags.isYMax && cornerKey.includes('YMAX'))
+    ) {
+      state.point[1] = newCorner[1];
+    }
+
+    // Z axis updates
+    if (
+      (axisFlags.isZMin && cornerKey.includes('ZMIN')) ||
+      (axisFlags.isZMax && cornerKey.includes('ZMAX'))
+    ) {
+      state.point[2] = newCorner[2];
+    }
+
+    // Apply changes
+    state.sphereSource.setCenter(...state.point);
+    state.sphereSource.modified();
+  };
+
+  // Update after corner movement
+  _updateAfterCornerMovement = (viewport) => {
+    this._updateFaceSpheresFromCorners();
+    this._updateCornerSpheres();
+    this._updateClippingPlanesFromFaceSpheres(viewport);
+  };
+
+  // Update after face movement
+  _updateAfterFaceMovement = (viewport) => {
+    this._updateCornerSpheresFromFaces();
+    this._updateFaceSpheresFromCorners();
+    this._updateCornerSpheres();
+    this._updateClippingPlanesFromFaceSpheres(viewport);
+  };
+
+  // Trigger tool changed event
+  _triggerToolChangedEvent = (sphereState) => {
     triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
       toolCenter: sphereState.point,
       axis: sphereState.isCorner ? 'corner' : sphereState.axis,
       draggingSphereIndex: this.draggingSphereIndex,
     });
-
-    return true;
   };
 
   _updateClippingPlanesFromFaceSpheres(viewport) {
