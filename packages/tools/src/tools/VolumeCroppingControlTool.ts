@@ -1200,56 +1200,37 @@ class VolumeCroppingControlTool extends AnnotationTool {
           this.configuration.extendReferenceLines &&
           intersections.length === 2
         ) {
-          // Calculate distances from line[1] to both intersection points
-          const dist1 = Math.sqrt(
-            Math.pow(line[1][0] - intersections[0].point[0], 2) +
-              Math.pow(line[1][1] - intersections[0].point[1], 2)
-          );
-          const dist2 = Math.sqrt(
-            Math.pow(line[1][0] - intersections[1].point[0], 2) +
-              Math.pow(line[1][1] - intersections[1].point[1], 2)
-          );
-          const closestIntersection =
-            dist1 <= dist2 ? intersections[0].point : intersections[1].point;
+          if (
+            this.configuration.extendReferenceLines &&
+            intersections.length === 2
+          ) {
+            // Sort intersections by distance from line start
+            const sortedIntersections = intersections
+              .map((intersection) => ({
+                ...intersection,
+                distance: vec2.distance(line[1], intersection.point),
+              }))
+              .sort((a, b) => a.distance - b.distance);
 
-          drawLineSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID + '_dashed_before',
-            line[1],
-            closestIntersection,
-            {
-              color,
-              lineWidth,
-              lineDash: [4, 4],
-            }
-          );
-          // Dashed line from second intersection to end
-          const SecondDist1 = Math.sqrt(
-            Math.pow(line[2][0] - intersections[0].point[0], 2) +
-              Math.pow(line[2][1] - intersections[0].point[1], 2)
-          );
-          const SecondDist2 = Math.sqrt(
-            Math.pow(line[2][0] - intersections[1].point[0], 2) +
-              Math.pow(line[2][1] - intersections[1].point[1], 2)
-          );
-          const SecondClosestIntersection =
-            SecondDist1 <= SecondDist2
-              ? intersections[0].point
-              : intersections[1].point;
+            // Draw dashed lines in correct order
+            drawLineSvg(
+              svgDrawingHelper,
+              annotationUID,
+              lineUID + '_dashed_before',
+              line[1],
+              sortedIntersections[0].point,
+              { color, lineWidth, lineDash: [4, 4] }
+            );
 
-          drawLineSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID + '_dashed_after',
-            line[2],
-            SecondClosestIntersection,
-            {
-              color,
-              lineWidth,
-              lineDash: [4, 4],
-            }
-          );
+            drawLineSvg(
+              svgDrawingHelper,
+              annotationUID,
+              lineUID + '_dashed_after',
+              sortedIntersections[1].point,
+              line[2],
+              { color, lineWidth, lineDash: [4, 4] }
+            );
+          }
         }
       }
     });
