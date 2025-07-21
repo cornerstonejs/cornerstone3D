@@ -16,24 +16,15 @@ import {
   getRenderingEngine,
   getEnabledElementByIds,
   getEnabledElement,
-  utilities as csUtils,
   Enums,
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
 
 import { getToolGroup } from '../store/ToolGroupManager';
-
-import { state } from '../store/state';
 import { Events } from '../enums';
 
-import type {
-  EventTypes,
-  PublicToolProps,
-  ToolProps,
-  InteractionTypes,
-  SVGDrawingHelper,
-} from '../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 
 const PLANEINDEX = {
   XMIN: 0,
@@ -104,7 +95,6 @@ class VolumeCroppingTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         showCornerSpheres: true,
         showHandles: true,
@@ -132,73 +122,8 @@ class VolumeCroppingTool extends BaseTool {
     this.mouseDragCallback = this._dragCallback.bind(this);
   }
 
-  // Helper to add a 3D line between two points using vtkActor
-
-  setHandlesVisible(visible: boolean) {
-    this.configuration.showHandles = visible;
-    // Before showing, update sphere positions to match clipping planes
-    if (visible) {
-      // Update face spheres from the current clipping planes
-      this.sphereStates[SPHEREINDEX.XMIN].point[0] =
-        this.originalClippingPlanes[PLANEINDEX.XMIN].origin[0];
-      this.sphereStates[SPHEREINDEX.XMAX].point[0] =
-        this.originalClippingPlanes[PLANEINDEX.XMAX].origin[0];
-      this.sphereStates[SPHEREINDEX.YMIN].point[1] =
-        this.originalClippingPlanes[PLANEINDEX.YMIN].origin[1];
-      this.sphereStates[SPHEREINDEX.YMAX].point[1] =
-        this.originalClippingPlanes[PLANEINDEX.YMAX].origin[1];
-      this.sphereStates[SPHEREINDEX.ZMIN].point[2] =
-        this.originalClippingPlanes[PLANEINDEX.ZMIN].origin[2];
-      this.sphereStates[SPHEREINDEX.ZMAX].point[2] =
-        this.originalClippingPlanes[PLANEINDEX.ZMAX].origin[2];
-
-      // Update all sphere actors' positions
-      [
-        SPHEREINDEX.XMIN,
-        SPHEREINDEX.XMAX,
-        SPHEREINDEX.YMIN,
-        SPHEREINDEX.YMAX,
-        SPHEREINDEX.ZMIN,
-        SPHEREINDEX.ZMAX,
-      ].forEach((idx) => {
-        const s = this.sphereStates[idx];
-        s.sphereSource.setCenter(...s.point);
-        s.sphereSource.modified();
-      });
-
-      // Update corners and edges as well
-      this._updateCornerSpheres();
-    }
-
-    // Show/hide actors
-    this._updateHandlesVisibility();
-
-    // Render
-    const viewportsInfo = this._getViewportsInfo();
-    const [viewport3D] = viewportsInfo;
-    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-    viewport.render();
-  }
-
-  getHandlesVisible() {
-    return this.configuration.showHandles;
-  }
-
-  getClippingPlanesVisible() {
-    return this.configuration.showClippingPlanes;
-  }
-
-  setClippingPlanesVisible(visible: boolean) {
-    this.configuration.showClippingPlanes = visible;
-    const viewport = this._getViewport();
-    this._updateClippingPlanes(viewport);
-    viewport.render();
-  }
-
   onSetToolActive() {
     //console.debug('Setting tool active: volumeCropping');
-
     if (this.sphereStates && this.sphereStates.length > 0) {
       this.setHandlesVisible(!this.configuration.showHandles);
       this.setClippingPlanesVisible(!this.configuration.showClippingPlanes);
@@ -401,6 +326,68 @@ class VolumeCroppingTool extends BaseTool {
 
     return true;
   };
+
+  setHandlesVisible(visible: boolean) {
+    this.configuration.showHandles = visible;
+    // Before showing, update sphere positions to match clipping planes
+    if (visible) {
+      // Update face spheres from the current clipping planes
+      this.sphereStates[SPHEREINDEX.XMIN].point[0] =
+        this.originalClippingPlanes[PLANEINDEX.XMIN].origin[0];
+      this.sphereStates[SPHEREINDEX.XMAX].point[0] =
+        this.originalClippingPlanes[PLANEINDEX.XMAX].origin[0];
+      this.sphereStates[SPHEREINDEX.YMIN].point[1] =
+        this.originalClippingPlanes[PLANEINDEX.YMIN].origin[1];
+      this.sphereStates[SPHEREINDEX.YMAX].point[1] =
+        this.originalClippingPlanes[PLANEINDEX.YMAX].origin[1];
+      this.sphereStates[SPHEREINDEX.ZMIN].point[2] =
+        this.originalClippingPlanes[PLANEINDEX.ZMIN].origin[2];
+      this.sphereStates[SPHEREINDEX.ZMAX].point[2] =
+        this.originalClippingPlanes[PLANEINDEX.ZMAX].origin[2];
+
+      // Update all sphere actors' positions
+      [
+        SPHEREINDEX.XMIN,
+        SPHEREINDEX.XMAX,
+        SPHEREINDEX.YMIN,
+        SPHEREINDEX.YMAX,
+        SPHEREINDEX.ZMIN,
+        SPHEREINDEX.ZMAX,
+      ].forEach((idx) => {
+        const s = this.sphereStates[idx];
+        s.sphereSource.setCenter(...s.point);
+        s.sphereSource.modified();
+      });
+
+      // Update corners and edges as well
+      this._updateCornerSpheres();
+    }
+
+    // Show/hide actors
+    this._updateHandlesVisibility();
+
+    // Render
+    const viewportsInfo = this._getViewportsInfo();
+    const [viewport3D] = viewportsInfo;
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+    viewport.render();
+  }
+
+  getHandlesVisible() {
+    return this.configuration.showHandles;
+  }
+
+  getClippingPlanesVisible() {
+    return this.configuration.showClippingPlanes;
+  }
+
+  setClippingPlanesVisible(visible: boolean) {
+    this.configuration.showClippingPlanes = visible;
+    const viewport = this._getViewport();
+    this._updateClippingPlanes(viewport);
+    viewport.render();
+  }
 
   _dragCallback(evt: EventTypes.InteractionEventType): void {
     const { element, currentPoints, lastPoints } = evt.detail;

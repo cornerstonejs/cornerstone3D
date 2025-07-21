@@ -1,17 +1,10 @@
-import type {
-  BaseVolumeViewport,
-  Types,
-  VolumeViewport3D,
-} from '@cornerstonejs/core';
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   setVolumesForViewports,
   volumeLoader,
-  getRenderingEngine,
-  eventTarget,
 } from '@cornerstonejs/core';
-import { Enums as toolsEnums } from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -20,7 +13,6 @@ import {
   addDropdownToToolbar,
   getLocalUrl,
   addToggleButtonToToolbar,
-  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -203,11 +195,6 @@ const viewportReferenceLineControllable = [
   viewportId2,
   viewportId3,
 ];
-
-function getReferenceLineControllable(viewportId) {
-  const index = viewportReferenceLineControllable.indexOf(viewportId);
-  return index !== -1;
-}
 
 /**
  * Get the number of orthographic viewports from the URL (?numViewports=1|2|3)
