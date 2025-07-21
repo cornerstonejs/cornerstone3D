@@ -40,7 +40,7 @@ import type {
   ICamera,
 } from '../types';
 import type { VoiModifiedEventDetail } from '../types/EventTypes';
-import type { ViewportInput } from '../types/IViewport';
+import type { PlaneRestriction, ViewportInput } from '../types/IViewport';
 import triggerEvent from '../utilities/triggerEvent';
 import * as colormapUtils from '../utilities/colormap';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
@@ -68,7 +68,7 @@ import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInf
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
-import isEqual, { isEqualNegative } from '../utilities/isEqual';
+import isEqual, { isEqualAbs, isEqualNegative } from '../utilities/isEqual';
 import applyPreset from '../utilities/applyPreset';
 import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
@@ -667,7 +667,8 @@ abstract class BaseVolumeViewport extends Viewport {
       return false;
     }
     if (options?.withNavigation) {
-      return true;
+      const { referencedImageId } = viewRef;
+      return !referencedImageId || this.hasImageURI(referencedImageId);
     }
     const currentSliceIndex = this.getSliceIndex();
     const { sliceIndex } = viewRef;
@@ -716,6 +717,58 @@ abstract class BaseVolumeViewport extends Viewport {
   abstract isInAcquisitionPlane(): boolean;
 
   /**
+   * Sets the view reference given a referenced plane and the current
+   * view plane normal being applied.
+   * This will use the existing normal if compatible, otherwise will calculate
+   * a new view plane normal as the referenced plane normal, or else the
+   * cross product of the existing view plane normal and the inPlaneVector1
+   */
+  public setViewPlane(planeRestriction: PlaneRestriction, viewPlaneNormal) {
+    const { point, inPlaneVector1, inPlaneVector2, FrameOfReferenceUID } =
+      planeRestriction;
+
+    if (!inPlaneVector1) {
+      return this.setViewReference({
+        FrameOfReferenceUID,
+        cameraFocalPoint: point,
+      });
+    }
+
+    // const planeUp = <Point3>vec3.normalize(vec3.create(), inPlaneVector1);
+    if (inPlaneVector2) {
+      const planeNormal = <Point3>(
+        vec3.cross(vec3.create(), inPlaneVector1, inPlaneVector2)
+      );
+      vec3.normalize(planeNormal, planeNormal);
+      return this.setViewReference({
+        FrameOfReferenceUID,
+        cameraFocalPoint: point,
+        viewPlaneNormal: planeNormal,
+        // viewUp: planeUp,
+      });
+    }
+    const dotNormal = vec3.dot(viewPlaneNormal, inPlaneVector1);
+    if (isEqual(dotNormal, 0)) {
+      return this.setViewReference({
+        FrameOfReferenceUID,
+        viewPlaneNormal,
+        cameraFocalPoint: point,
+      });
+    }
+
+    const planeNormal = <Point3>(
+      vec3.cross(vec3.create(), viewPlaneNormal, inPlaneVector1)
+    );
+    vec3.normalize(planeNormal, planeNormal);
+    return this.setViewReference({
+      FrameOfReferenceUID,
+      viewPlaneNormal: planeNormal,
+      cameraFocalPoint: point,
+      // viewUp: planeUp,
+    });
+  }
+
+  /**
    * Navigates to the specified view reference.
    */
   public setViewReference(viewRef: ViewReference): void {
@@ -724,14 +777,21 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     const volumeId = this.getVolumeId();
     const {
-      viewPlaneNormal: refViewPlaneNormal,
       FrameOfReferenceUID: refFrameOfReference,
       cameraFocalPoint,
       referencedImageId,
+      planeRestriction,
+      viewPlaneNormal: refViewPlaneNormal,
       viewUp,
     } = viewRef;
     let { sliceIndex } = viewRef;
+
     const { focalPoint, viewPlaneNormal, position } = this.getCamera();
+
+    if (planeRestriction?.inPlaneVector1 && !refViewPlaneNormal) {
+      return this.setViewPlane(planeRestriction, viewPlaneNormal);
+    }
+
     const isNegativeNormal = isEqualNegative(
       viewPlaneNormal,
       refViewPlaneNormal
@@ -1918,14 +1978,11 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /*
-   * Checking if the imageURI is in the volumes that are being
-   * rendered by the viewport. imageURI is the imageId without the schema
-   * for instance for the imageId of `wadors:http://...`, the `http://...` is the imageURI.
-   * Why we don't check the imageId is because the same image can be shown in
-   * another viewport (StackViewport) with a different schema
+   * Checking if the imageURI (as a URI or an ID) is in the volumes that are being
+   * rendered by the viewport.
    *
-   * @param imageURI - The imageURI to check
-   * @returns True if the imageURI is in the volumes that are being rendered by the viewport
+   * @param imageURI - The imageURI or imageID to check
+   * @returns True if the image is in the volumes that are being rendered by the viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
     const volumeActors = this.getActors().filter((actorEntry) =>
@@ -1935,25 +1992,59 @@ abstract class BaseVolumeViewport extends Viewport {
     return volumeActors.some(({ uid, referencedId }) => {
       const volume = cache.getVolume(referencedId || uid);
 
-      if (!volume?.imageIds) {
+      if (!volume?.getImageIdIndex) {
         return false;
       }
 
-      const volumeImageURIs = volume.imageIds.map(imageIdToURI);
-
-      return volumeImageURIs.includes(imageURI);
+      return (
+        volume.getImageIdIndex(imageURI) !== undefined ||
+        volume.getImageURIIndex(imageURI) !== undefined
+      );
     });
   };
+
+  /**
+   * Gets a view up given a view plane normal and the current orientation
+   * Chooses the current view up if orthogonal, otherwise the default view ups
+   * for axial, sagittal and coronal
+   * Otherwise runs the Gram-Schmidt algorithm with the current viewUp
+   */
+  protected _getViewUp(viewPlaneNormal): Point3 {
+    const { viewUp } = this.getCamera();
+    const dot = vec3.dot(viewUp, viewPlaneNormal);
+    if (isEqual(dot, 0)) {
+      // Don't change the view up if not needed
+      return viewUp;
+    }
+    if (isEqualAbs(viewPlaneNormal[0], 1)) {
+      return [0, 0, 1];
+    }
+    if (isEqualAbs(viewPlaneNormal[1], 1)) {
+      return [0, 0, 1];
+    }
+    if (isEqualAbs(viewPlaneNormal[2], 1)) {
+      return [0, -1, 0];
+    }
+    const vupOrthogonal = <Point3>(
+      vec3.scaleAndAdd(vec3.create(), viewUp, viewPlaneNormal, -dot)
+    );
+    vec3.normalize(vupOrthogonal, vupOrthogonal);
+    return vupOrthogonal;
+  }
 
   protected _getOrientationVectors(
     orientation: OrientationAxis | OrientationVectors
   ): OrientationVectors {
     if (typeof orientation === 'object') {
-      if (orientation.viewPlaneNormal && orientation.viewUp) {
-        return orientation;
+      if (orientation.viewPlaneNormal) {
+        return {
+          ...orientation,
+          viewUp:
+            orientation.viewUp || this._getViewUp(orientation.viewPlaneNormal),
+        };
       } else {
         throw new Error(
-          'Invalid orientation object. It must contain viewPlaneNormal and viewUp'
+          'Invalid orientation object. It must contain viewPlaneNormal'
         );
       }
     } else if (typeof orientation === 'string') {

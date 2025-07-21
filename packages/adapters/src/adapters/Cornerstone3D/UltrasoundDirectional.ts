@@ -1,8 +1,10 @@
 import { utilities } from "dcmjs";
+import { utilities as csUtilities } from "@cornerstonejs/core";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Length: TID300Length } = utilities.TID300;
+const { worldToImageCoords } = csUtilities;
 
 class UltrasoundDirectional extends BaseAdapter3D {
     static {
@@ -10,50 +12,34 @@ class UltrasoundDirectional extends BaseAdapter3D {
     }
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(
-        MeasurementGroup,
+        measurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
+        const { state, worldCoords, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
+                measurementGroup,
                 sopInstanceUIDToImageIdMap,
                 metadata,
-                UltrasoundDirectional.toolType
+                this.toolType
             );
 
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const { GraphicData } = SCOORDGroup;
-        const worldCoords = [];
-        for (let i = 0; i < (GraphicData as number[]).length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
-
-        const state = defaultState;
-
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
-                points: [worldCoords[0], worldCoords[1]],
+                points: worldCoords,
                 activeHandleIndex: 0,
                 textBox: {
                     hasMoved: false
                 }
             },
-            cachedStats: {},
             frameNumber: ReferencedFrameNumber
         };
 
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement) {
         const { data, finding, findingSites, metadata } = tool;
         const { handles } = data;
 

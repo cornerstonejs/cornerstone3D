@@ -3,6 +3,7 @@ import MeasurementReport, {
     type AdapterOptions,
     type MeasurementAdapter
 } from "./MeasurementReport";
+import { toScoords } from "../helpers";
 
 export type Point = {
     x: number;
@@ -39,6 +40,56 @@ export default class BaseAdapter3D {
      * but a better/full path key could also be done.
      */
     public static parentType: string;
+
+    public static registerType(code = "", type = "", count = 0) {
+        let key = code;
+        if (type) {
+            key = `${key}${key.length ? "-" : ""}${type}`;
+        }
+        if (count) {
+            key = `${key}${key.length ? "-" : ""}${count}`;
+        }
+        MeasurementReport.registerAdapterTypes(this, key);
+    }
+
+    public static getPointsCount(graphicItem) {
+        const is3DMeasurement = graphicItem.ValueType === "SCOORD3D";
+        const pointSize = is3DMeasurement ? 3 : 2;
+        return graphicItem.GraphicData.length / pointSize;
+    }
+
+    public static getGraphicItems(measurementGroup, filter) {
+        const items = measurementGroup.ContentSequence.filter(
+            group =>
+                group.ValueType === "SCOORD" || group.ValueType === "SCOORD3D"
+        );
+        return filter ? items.filter(filter) : items;
+    }
+
+    public static getGraphicItem(measurementGroup, offset = 0, type = null) {
+        const items = this.getGraphicItems(
+            measurementGroup,
+            type && (group => group.ValueType === type)
+        );
+        return items[offset];
+    }
+
+    public static getGraphicCode(graphicItem) {
+        const { ConceptNameCodeSequence: conceptNameItem } = graphicItem;
+        const {
+            CodeValue: graphicValue,
+            CodingSchemeDesignator: graphicDesignator
+        } = conceptNameItem;
+        return `${graphicDesignator}:${graphicValue}`;
+    }
+
+    public static getGraphicType(graphicItem) {
+        return graphicItem.GraphicType;
+    }
+
+    public static isValidMeasurement(_measurementGroup) {
+        return false;
+    }
 
     public static init(
         toolType: string,
@@ -119,7 +170,6 @@ export default class BaseAdapter3D {
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        _imageToWorldCoords,
         metadata,
         trackingIdentifier?: string
     ) {
@@ -142,55 +192,29 @@ export default class BaseAdapter3D {
 
     public static getTID300RepresentationArguments(
         tool,
-        worldToImageCoords
+        is3DMeasurement = false
     ): TID300Arguments {
-        const { data, metadata } = tool;
+        const { metadata } = tool;
         const { finding, findingSites } = tool;
         const { referencedImageId } = metadata;
-
-        if (!referencedImageId) {
-            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
-        }
-
-        const {
-            handles: { points = [] }
-        } = data;
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
 
         // Using image coordinates for 2D points
-        const pointsImage = points.map(point => {
-            const pointImage = worldToImageCoords(referencedImageId, point);
-            return {
-                x: pointImage[0],
-                y: pointImage[1]
-            };
-        });
+        const pointsImage = toScoords(scoordProps, tool.data.handles.points);
 
         const tidArguments = {
             points: pointsImage,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
-            finding
+            finding,
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null
         };
 
         return tidArguments;
-    }
-
-    static getTID300RepresentationArgumentsSCOORD3D(tool): TID300Arguments {
-        const { data, finding, findingSites } = tool;
-        const {
-            handles: { points = [] }
-        } = data;
-
-        // Using world coordinates for 3D points
-        const point = points[0];
-
-        const pointXYZ = { x: point[0], y: point[1], z: point[2] };
-
-        return {
-            points: [pointXYZ],
-            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
-            findingSites: findingSites || [],
-            finding
-        };
     }
 }

@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.5...v3.31.6) (2025-07-18)
+
+### Bug Fixes
+
+-   **probe:** rehydrate ([#2214](https://github.com/cornerstonejs/cornerstone3D/issues/2214)) ([4ac725e](https://github.com/cornerstonejs/cornerstone3D/commit/4ac725e94729f12ed21f471a6bffe30fea0b5296))
+
+## [3.31.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.4...v3.31.5) (2025-07-18)
+
+### Bug Fixes
+
+-   adapter should be able to convert all the types, including points ([#2211](https://github.com/cornerstonejs/cornerstone3D/issues/2211)) ([9b3fd22](https://github.com/cornerstonejs/cornerstone3D/commit/9b3fd227c11d78e7cc3fbddcfb8926e8a22572fc))
+
+## [3.31.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.3...v3.31.4) (2025-07-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.31.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.2...v3.31.3) (2025-07-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.31.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.1...v3.31.2) (2025-07-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.31.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.0...v3.31.1) (2025-07-16)
+
+### Bug Fixes
+
+-   Distinguishing between scoord3d and scoord (3d/2d) measurements and parsing them ([#2099](https://github.com/cornerstonejs/cornerstone3D/issues/2099)) ([23c03d9](https://github.com/cornerstonejs/cornerstone3D/commit/23c03d9d330750c5f3ab09336819c3cf1fe6cff3))
+
 # [3.31.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.3...v3.31.0) (2025-07-15)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

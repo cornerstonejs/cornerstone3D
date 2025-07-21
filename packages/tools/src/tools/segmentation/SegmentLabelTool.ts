@@ -51,6 +51,8 @@ class SegmentLabelTool extends BaseTool {
       configuration: {
         hoverTimeout: 100,
         searchRadius: 6, // search for border in a 6px radius
+        color: null,
+        background: null,
       },
     }
   ) {
@@ -143,11 +145,13 @@ class SegmentLabelTool extends BaseTool {
       }
     );
     const segment = activeSegmentation.segments[hoveredSegmentIndex];
-    const color = segmentationConfig.color.getSegmentIndexColor(
-      viewport.id,
-      segmentationId,
-      hoveredSegmentIndex
-    );
+    const color =
+      this.configuration.color ??
+      segmentationConfig.color.getSegmentIndexColor(
+        viewport.id,
+        segmentationId,
+        hoveredSegmentIndex
+      );
     const label = segment?.label;
     const canvasCoordinates = viewport.worldToCanvas(worldPoint);
     this._editData = {
@@ -205,6 +209,7 @@ class SegmentLabelTool extends BaseTool {
       textBoxPosition,
       {
         color: `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`,
+        background: this.configuration.background ?? undefined,
       }
     );
 
