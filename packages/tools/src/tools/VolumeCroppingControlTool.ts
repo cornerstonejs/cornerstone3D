@@ -172,7 +172,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           x: null,
           y: null,
         },
-        extendReferenceLines: true,
+        extendReferenceLines: false,
         initialCropFactor: 0.2,
         mobile: {
           enabled: false,
