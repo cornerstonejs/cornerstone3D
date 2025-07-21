@@ -172,7 +172,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           x: null,
           y: null,
         },
-        extendReferenceLines: false,
+        extendReferenceLines: true,
         initialCropFactor: 0.2,
         mobile: {
           enabled: false,
@@ -1200,13 +1200,24 @@ class VolumeCroppingControlTool extends AnnotationTool {
           this.configuration.extendReferenceLines &&
           intersections.length === 2
         ) {
-          const startPoint = line[1][0] > line[2][0] ? line[2] : line[1];
+          // Calculate distances from line[1] to both intersection points
+          const dist1 = Math.sqrt(
+            Math.pow(line[1][0] - intersections[0].point[0], 2) +
+              Math.pow(line[1][1] - intersections[0].point[1], 2)
+          );
+          const dist2 = Math.sqrt(
+            Math.pow(line[1][0] - intersections[1].point[0], 2) +
+              Math.pow(line[1][1] - intersections[1].point[1], 2)
+          );
+          const closestIntersection =
+            dist1 <= dist2 ? intersections[0].point : intersections[1].point;
+
           drawLineSvg(
             svgDrawingHelper,
             annotationUID,
             lineUID + '_dashed_before',
-            startPoint,
-            intersections[0].point,
+            line[1],
+            closestIntersection,
             {
               color,
               lineWidth,
@@ -1214,13 +1225,25 @@ class VolumeCroppingControlTool extends AnnotationTool {
             }
           );
           // Dashed line from second intersection to end
-          const endPoint = line[1][0] > line[2][0] ? line[1] : line[2];
+          const SecondDist1 = Math.sqrt(
+            Math.pow(line[2][0] - intersections[0].point[0], 2) +
+              Math.pow(line[2][1] - intersections[0].point[1], 2)
+          );
+          const SecondDist2 = Math.sqrt(
+            Math.pow(line[2][0] - intersections[1].point[0], 2) +
+              Math.pow(line[2][1] - intersections[1].point[1], 2)
+          );
+          const SecondClosestIntersection =
+            SecondDist1 <= SecondDist2
+              ? intersections[0].point
+              : intersections[1].point;
+
           drawLineSvg(
             svgDrawingHelper,
             annotationUID,
             lineUID + '_dashed_after',
-            intersections[1].point,
-            endPoint,
+            line[2],
+            SecondClosestIntersection,
             {
               color,
               lineWidth,

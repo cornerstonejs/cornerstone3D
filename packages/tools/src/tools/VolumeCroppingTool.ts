@@ -614,8 +614,6 @@ class VolumeCroppingTool extends BaseTool {
         this._onControlToolChange(evt);
       }
     );
-
-    const element = viewport.canvas || viewport.element;
   };
 
   _updateClippingPlanes(viewport) {
