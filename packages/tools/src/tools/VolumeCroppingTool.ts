@@ -191,14 +191,7 @@ class VolumeCroppingTool extends BaseTool {
 
   setClippingPlanesVisible(visible: boolean) {
     this.configuration.showClippingPlanes = visible;
-    // Show/hide actors
-    // this._updateHandlesVisibility();
-
-    // Render
-    const viewportsInfo = this._getViewportsInfo();
-    const [viewport3D] = viewportsInfo;
-    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+    const viewport = this._getViewport();
     this._updateClippingPlanes(viewport);
     viewport.render();
   }
@@ -550,11 +543,7 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   _onControlToolChange = (evt) => {
-    const viewportsInfo = this._getViewportsInfo();
-    const [viewport3D] = viewportsInfo;
-    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
+    const viewport = this._getViewport();
     const isMin = evt.detail.handleType === 'min';
     const toolCenter = isMin
       ? evt.detail.toolCenterMin
@@ -841,9 +830,7 @@ class VolumeCroppingTool extends BaseTool {
       );
       return;
     }
-    const [viewport3D] = viewportsInfo;
-    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
+    const viewport = this._getViewport();
     const volumeActors = viewport.getActors();
     if (!volumeActors || volumeActors.length === 0) {
       console.warn(
@@ -1013,15 +1000,18 @@ class VolumeCroppingTool extends BaseTool {
 
   // Helper method to get viewport and world coordinates
   _getViewportAndWorldCoords = (evt) => {
-    const [viewport3D] = this._getViewportsInfo();
-    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
+    const viewport = this._getViewport();
     const x = evt.detail.currentPoints.canvas[0];
     const y = evt.detail.currentPoints.canvas[1];
     const world = viewport.canvasToWorld([x, y]);
 
     return { viewport, world };
+  };
+
+  _getViewport = () => {
+    const [viewport3D] = this._getViewportsInfo();
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    return renderingEngine.getViewport(viewport3D.viewportId);
   };
 
   // Handle corner sphere movement
