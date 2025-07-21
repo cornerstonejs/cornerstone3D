@@ -1200,11 +1200,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
           this.configuration.extendReferenceLines &&
           intersections.length === 2
         ) {
+          const startPoint = line[1][0] > line[2][0] ? line[2] : line[1];
           drawLineSvg(
             svgDrawingHelper,
             annotationUID,
             lineUID + '_dashed_before',
-            line[1],
+            startPoint,
             intersections[0].point,
             {
               color,
@@ -1213,12 +1214,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
             }
           );
           // Dashed line from second intersection to end
+          const endPoint = line[1][0] > line[2][0] ? line[1] : line[2];
           drawLineSvg(
             svgDrawingHelper,
             annotationUID,
             lineUID + '_dashed_after',
             intersections[1].point,
-            line[2],
+            endPoint,
             {
               color,
               lineWidth,
