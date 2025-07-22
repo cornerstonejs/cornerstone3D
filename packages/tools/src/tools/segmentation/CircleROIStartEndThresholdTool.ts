@@ -40,6 +40,7 @@ import type {
   EventTypes,
   SVGDrawingHelper,
   Annotation,
+  AnnotationMetadata,
 } from '../../types';
 import type {
   CircleROIStartEndThresholdAnnotation,
@@ -300,7 +301,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
-    console.debug(targetId);
     this._computePointsInsideVolume(
       annotation,
       imageVolume,
@@ -439,6 +439,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
       const iteratorVolumeIDs =
+        // @ts-ignore
         annotationEnabledElement.viewport?.volumeIds.values();
 
       for (const volumeId of iteratorVolumeIDs) {
