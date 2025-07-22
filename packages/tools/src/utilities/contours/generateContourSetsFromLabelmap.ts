@@ -27,9 +27,16 @@ async function generateContourSetsFromLabelmap({ segmentations }) {
   let { volumeId: segVolumeId } = representationData[Labelmap];
 
   if (!segVolumeId) {
-    const segVolume = getOrCreateSegmentationVolume(segmentationId);
-    if (segVolume) {
-      segVolumeId = segVolume.volumeId;
+    const segVolumes = getOrCreateSegmentationVolume(segmentationId);
+    // TODO ADD support for extracting contours from multiple volumes
+    // For now, we only handle the first volume
+    if (segVolumes) {
+      segVolumeId = segVolumes[0].volumeId;
+    } else {
+      console.warn(
+        `No segmentation volume found for segmentationId: ${segmentationId}`
+      );
+      return;
     }
   }
 

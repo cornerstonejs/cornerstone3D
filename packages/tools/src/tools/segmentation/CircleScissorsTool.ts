@@ -193,12 +193,15 @@ class CircleScissorsTool extends LabelmapBaseTool {
     };
 
     if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-      const segmentation = cache.getVolume(volumeId);
+      const volumeIds =
+        (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+
+      const primaryVolumeId = volumeIds?.[0] || undefined;
+      const segmentation = cache.getVolume(primaryVolumeId);
 
       this.editData = {
         ...this.editData,
-        volumeId,
+        volumeId: primaryVolumeId,
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {

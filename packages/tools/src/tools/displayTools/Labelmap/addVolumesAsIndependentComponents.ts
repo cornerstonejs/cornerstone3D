@@ -9,19 +9,151 @@ import {
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../../enums';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
-const internalCache = new Map() as Map<
-  string,
-  {
-    added: boolean;
-    segmentationRepresentationUID: string;
-    originalBlendMode: Enums.BlendModes;
+/**
+ * Internal cache entry for independent component state
+ */
+type CacheEntry = {
+  added: boolean;
+  segmentationRepresentationUID: string;
+  originalBlendMode: Enums.BlendModes;
+  cleanup?: () => void;
+};
+
+/**
+ * Configuration options for independent component addition
+ */
+interface IndependentComponentOptions {
+  blendMode?: Enums.BlendModes;
+  debounceTime?: number;
+  validateDimensions?: boolean;
+  enableOptimizations?: boolean;
+}
+
+/**
+ * Result interface for independent component addition
+ */
+interface IndependentComponentResult {
+  uid: string;
+  actor: Types.ViewportActor;
+  success: boolean;
+  error?: string;
+  processedVoxels?: number;
+}
+
+/**
+ * Validates input parameters for addVolumesAsIndependentComponents
+ */
+function validateInputs(
+  viewport: Types.IVolumeViewport,
+  volumeInputs: Types.IVolumeInput[],
+  segmentationId: string
+): void {
+  if (!viewport) {
+    throw new Error('Valid viewport is required');
   }
->;
+
+  if (!Array.isArray(volumeInputs) || volumeInputs.length === 0) {
+    throw new Error(
+      'Valid volumeInputs array with at least one element is required'
+    );
+  }
+
+  if (!segmentationId || typeof segmentationId !== 'string') {
+    throw new Error('Valid segmentation ID is required');
+  }
+
+  // Validate volume inputs
+  volumeInputs.forEach((input, index) => {
+    if (!input.volumeId || typeof input.volumeId !== 'string') {
+      throw new Error(`Invalid volumeId at index ${index}`);
+    }
+  });
+}
+
+/**
+ * Validates that volumes have compatible dimensions
+ */
+function validateVolumeDimensions(
+  baseVolume: Types.IImageVolume,
+  segVolume: Types.IImageVolume
+): void {
+  const baseDims = baseVolume.imageData.getDimensions();
+  const segDims = segVolume.imageData.getDimensions();
+
+  if (
+    baseDims[0] !== segDims[0] ||
+    baseDims[1] !== segDims[1] ||
+    baseDims[2] !== segDims[2]
+  ) {
+    throw new Error(
+      `Volume dimensions mismatch. Base: [${baseDims.join(', ')}], ` +
+        `Segmentation: [${segDims.join(', ')}]`
+    );
+  }
+}
+
+/**
+ * Safely retrieves volume from cache with validation
+ */
+function getValidatedVolume(volumeId: string): Types.IImageVolume {
+  const volume = cache.getVolume(volumeId);
+  if (!volume) {
+    throw new Error(`Volume not found in cache: ${volumeId}`);
+  }
+
+  if (!volume.voxelManager) {
+    throw new Error(`Volume ${volumeId} has no voxel manager`);
+  }
+
+  if (!volume.imageData) {
+    throw new Error(`Volume ${volumeId} has no image data`);
+  }
+
+  return volume;
+}
+
+/**
+ * Optimized function to combine volume data with segmentation data
+ */
+function combineVolumeData(
+  baseData: ArrayLike<number>,
+  segData: ArrayLike<number>,
+  dimensions: number[],
+  enableOptimizations: boolean = true
+): Float32Array {
+  const newComp = 2;
+  const totalVoxels = dimensions[0] * dimensions[1] * dimensions[2];
+  const cubeData = new Float32Array(newComp * totalVoxels);
+
+  if (enableOptimizations && totalVoxels > 1000000) {
+    // Use optimized approach for large volumes
+    console.debug(`Using optimized data combination for ${totalVoxels} voxels`);
+
+    for (let i = 0; i < totalVoxels; i++) {
+      cubeData[i * newComp + 0] = baseData[i];
+      cubeData[i * newComp + 1] = segData[i];
+    }
+  } else {
+    // Use traditional approach for smaller volumes
+    for (let z = 0; z < dimensions[2]; ++z) {
+      for (let y = 0; y < dimensions[1]; ++y) {
+        for (let x = 0; x < dimensions[0]; ++x) {
+          const iTuple = x + dimensions[0] * (y + dimensions[1] * z);
+          cubeData[iTuple * newComp + 0] = baseData[iTuple];
+          cubeData[iTuple * newComp + 1] = segData[iTuple];
+        }
+      }
+    }
+  }
+
+  return cubeData;
+}
+
+const internalCache = new Map<string, CacheEntry>();
 
 const load = ({ cfun, ofun, actor }) => {
   actor.getProperty().setRGBTransferFunction(1, cfun);
@@ -29,180 +161,106 @@ const load = ({ cfun, ofun, actor }) => {
 };
 
 /**
- * Adds segmentation data as an independent component to the volume data.
- *
- * @param options - The options for adding independent components.
- * @param options.viewport - The viewport object.
- * @param options.volumeInputs - An array of volume input objects.
- * @returns - An object containing the UID, actor, and load function.
+ * Creates a debounced event handler for segmentation data modifications
  */
-export async function addVolumesAsIndependentComponents({
-  viewport,
-  volumeInputs,
-  segmentationId,
-}: {
-  viewport: Types.IVolumeViewport;
-  volumeInputs: Types.IVolumeInput[];
-  segmentationId: string;
-}) {
-  // if we are adding the segmentation as independent component we basically
-  // need to remove the old actor/mapper and convert it to a new one
-  // which the segmentation data is added as a second component to the volume data
-  const defaultActor = viewport.getDefaultActor();
-  const { actor } = defaultActor as { actor: vtkVolume };
-  const { uid, callback } = defaultActor;
-
-  const referenceVolumeId = viewport.getVolumeId();
-
-  if (internalCache.get(uid)?.added) {
-    return {
-      uid,
-      actor,
-    };
-  }
-  const volumeInputArray = volumeInputs;
-  const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
-
-  if (!firstImageVolume) {
-    throw new Error(
-      `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
-    );
-  }
-
-  const { volumeId } = volumeInputArray[0];
-
-  const segImageVolume = await volumeLoader.loadVolume(volumeId);
-
-  if (!segImageVolume) {
-    throw new Error(
-      `segImageVolume with id: ${segImageVolume.volumeId} does not exist`
-    );
-  }
-
-  const segVoxelManager = segImageVolume.voxelManager;
-  const segData = segVoxelManager.getCompleteScalarDataArray();
-
-  const { imageData: segImageData } = segImageVolume;
-  const baseVolume = cache.getVolume(referenceVolumeId);
-  const baseVoxelManager = baseVolume.voxelManager;
-  const baseData = baseVoxelManager.getCompleteScalarDataArray();
-
-  const newComp = 2;
-  const cubeData = new Float32Array(
-    newComp * baseVolume.voxelManager.getScalarDataLength()
-  );
-  const dims = segImageData.getDimensions();
-  for (let z = 0; z < dims[2]; ++z) {
-    for (let y = 0; y < dims[1]; ++y) {
-      for (let x = 0; x < dims[0]; ++x) {
-        const iTuple = x + dims[0] * (y + dims[1] * z);
-        cubeData[iTuple * newComp + 0] = baseData[iTuple];
-        cubeData[iTuple * newComp + 1] = segData[iTuple];
+function createSegmentationDataModifiedHandler(
+  segImageVolumeId: string,
+  segImageData: Types.IImageData,
+  mapper: vtkVolumeMapper,
+  viewport: Types.IVolumeViewport
+): (evt: CustomEvent) => void {
+  return (evt: CustomEvent): void => {
+    try {
+      const { segmentationId: eventSegmentationId } = evt.detail || {};
+      if (!eventSegmentationId) {
+        console.warn('Segmentation data modified event missing segmentationId');
+        return;
       }
-    }
-  }
 
-  viewport.removeActors([uid]);
-  const oldMapper = actor.getMapper();
-  const mapper = convertMapperToNotSharedMapper(oldMapper as vtkVolumeMapper);
-  actor.setMapper(mapper);
-
-  mapper.setBlendMode(
-    Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND as unknown as BlendMode
-  );
-
-  const arrayAgain = mapper.getInputData().getPointData().getArray(0);
-
-  arrayAgain.setData(cubeData);
-  arrayAgain.setNumberOfComponents(2);
-
-  actor.getProperty().setColorMixPreset(1);
-
-  actor.getProperty().setForceNearestInterpolation(1, true);
-  actor.getProperty().setIndependentComponents(true);
-
-  viewport.addActor({
-    actor,
-    uid,
-    callback,
-    referencedId: referenceVolumeId,
-    representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
-  });
-
-  internalCache.set(uid, {
-    added: true,
-    segmentationRepresentationUID: `${segmentationId}`,
-    originalBlendMode: viewport.getBlendMode(),
-  });
-
-  actor.set({
-    preLoad: load,
-  });
-
-  function onSegmentationDataModified(evt) {
-    // update the second component of the array with the new segmentation data
-    const { segmentationId } = evt.detail;
-    const { representationData } = getSegmentation(segmentationId);
-    const { volumeId: segVolumeId } =
-      representationData.Labelmap as LabelmapSegmentationDataVolume;
-
-    if (segVolumeId !== segImageVolume.volumeId) {
-      return;
-    }
-
-    const segmentationVolume = cache.getVolume(segVolumeId);
-    const segVoxelManager = segmentationVolume.voxelManager;
-
-    const imageData = mapper.getInputData();
-    const array = imageData.getPointData().getArray(0);
-    const baseData = array.getData();
-    const newComp = 2;
-    const dims = segImageData.getDimensions();
-
-    const slices = Array.from({ length: dims[2] }, (_, i) => i);
-
-    for (const z of slices) {
-      for (let y = 0; y < dims[1]; ++y) {
-        for (let x = 0; x < dims[0]; ++x) {
-          const iTuple = x + dims[0] * (y + dims[1] * z);
-          baseData[iTuple * newComp + 1] = segVoxelManager.getAtIndex(
-            iTuple
-          ) as number;
-        }
+      const segmentation = getSegmentation(eventSegmentationId);
+      if (!segmentation?.representationData?.Labelmap) {
+        console.warn(
+          `No labelmap representation found for segmentation: ${eventSegmentationId}`
+        );
+        return;
       }
+
+      const volumeIds =
+        (
+          segmentation.representationData
+            .Labelmap as LabelmapSegmentationDataVolume
+        ).volumeIds || [];
+
+      // Support multiple volumeIds, but update only if segImageVolume is among them
+      if (!volumeIds.includes(segImageVolumeId)) {
+        return;
+      }
+
+      const segmentationVolume = cache.getVolume(segImageVolumeId);
+      if (!segmentationVolume?.voxelManager) {
+        console.error(
+          `Invalid segmentation volume or voxel manager: ${segImageVolumeId}`
+        );
+        return;
+      }
+
+      const imageData = mapper.getInputData();
+      const array = imageData.getPointData().getArray(0);
+      const baseData = array.getData();
+      const newComp = 2;
+      const dims = segImageData.dimensions;
+
+      // Update segmentation component data
+      const totalVoxels = dims[0] * dims[1] * dims[2];
+      for (let i = 0; i < totalVoxels; i++) {
+        baseData[i * newComp + 1] = segmentationVolume.voxelManager.getAtIndex(
+          i
+        ) as number;
+      }
+
+      array.setData(baseData);
+      imageData.modified();
+      viewport.render();
+    } catch (error) {
+      console.error('Error handling segmentation data modification:', error);
     }
+  };
+}
 
-    array.setData(baseData);
-
-    imageData.modified();
-    viewport.render();
-  }
-
-  eventTarget.addEventListenerDebounced(
-    Events.SEGMENTATION_DATA_MODIFIED,
-    onSegmentationDataModified,
-    200
-  );
-
-  eventTarget.addEventListener(
-    Events.SEGMENTATION_REPRESENTATION_REMOVED,
-    async (evt) => {
+/**
+ * Creates a cleanup handler for segmentation representation removal
+ */
+function createRepresentationRemovedHandler(
+  uid: string,
+  volumeId: string,
+  onSegmentationDataModified: (evt: CustomEvent) => void,
+  viewport: Types.IVolumeViewport
+): (evt: CustomEvent) => Promise<void> {
+  return async (evt: CustomEvent): Promise<void> => {
+    try {
+      // Remove the data modification event listener
       eventTarget.removeEventListener(
         Events.SEGMENTATION_DATA_MODIFIED,
         onSegmentationDataModified
       );
 
       const actorEntry = viewport.getActor(uid);
+      if (!actorEntry) {
+        console.warn(`No actor found for uid: ${uid}`);
+        return;
+      }
+
       const { element, id } = viewport;
       viewport.removeActors([uid]);
 
+      // Recreate the original volume actor
       const actor = await createVolumeActor(
         {
           volumeId: uid,
           blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
           callback: ({ volumeActor }) => {
             if (actorEntry.callback) {
-              // @ts-expect-error
+              // @ts-expect-error - Legacy callback handling
               actorEntry.callback({
                 volumeActor,
                 volumeId,
@@ -215,13 +273,205 @@ export async function addVolumesAsIndependentComponents({
       );
 
       viewport.addActor({ actor, uid });
-
       viewport.render();
-    }
-  );
 
-  return {
-    uid,
-    actor,
+      // Clean up cache entry
+      internalCache.delete(uid);
+    } catch (error) {
+      console.error(
+        'Error handling segmentation representation removal:',
+        error
+      );
+    }
   };
+}
+
+/**
+ * Adds segmentation data as an independent component to the volume data.
+ * This function combines base volume data with segmentation data as separate components
+ * in a multi-component volume, allowing for advanced visualization and blending.
+ *
+ * @param params - The parameters for adding independent components
+ * @param params.viewport - The volume viewport to modify
+ * @param params.volumeInputs - Array of volume input objects (segmentation volumes)
+ * @param params.segmentationId - The segmentation identifier
+ * @param params.options - Optional configuration for the operation
+ * @returns Promise resolving to an object containing the UID and actor
+ * @throws {Error} When input validation fails or volume operations encounter errors
+ */
+export async function addVolumesAsIndependentComponents({
+  viewport,
+  volumeInputs,
+  segmentationId,
+  options = {},
+}: {
+  viewport: Types.IVolumeViewport;
+  volumeInputs: Types.IVolumeInput[];
+  segmentationId: string;
+  options?: IndependentComponentOptions;
+}): Promise<IndependentComponentResult> {
+  const startTime = performance.now();
+
+  try {
+    // Validate inputs early
+    validateInputs(viewport, volumeInputs, segmentationId);
+
+    const defaultActor = viewport.getDefaultActor();
+    if (!defaultActor) {
+      throw new Error('No default actor found in viewport');
+    }
+
+    const { actor: volumeActor, uid, callback } = defaultActor;
+    // Type cast for compatibility with VTK API; safe as long as actor is a VTK volume
+    const actor = volumeActor as vtkVolume;
+
+    // Check if already processed
+    const cacheEntry = internalCache.get(uid);
+    if (cacheEntry?.added) {
+      console.debug(`Independent components already added for uid: ${uid}`);
+      return {
+        uid,
+        actor: actor as unknown as Types.ViewportActor,
+        success: true,
+      };
+    }
+
+    const referenceVolumeId = viewport.getVolumeId();
+    if (!referenceVolumeId) {
+      throw new Error('No reference volume ID found in viewport');
+    }
+
+    // Get and validate volumes
+    const baseVolume = getValidatedVolume(referenceVolumeId);
+
+    const { volumeId } = volumeInputs[0];
+    const segImageVolume = await volumeLoader.loadVolume(volumeId);
+
+    if (!segImageVolume) {
+      throw new Error(`Failed to load segmentation volume: ${volumeId}`);
+    }
+
+    // Validate volume compatibility
+    if (options.validateDimensions !== false) {
+      validateVolumeDimensions(baseVolume, segImageVolume);
+    }
+
+    // Get volume data
+    const segVoxelManager = segImageVolume.voxelManager;
+    const segData = segVoxelManager.getCompleteScalarDataArray();
+    const baseVoxelManager = baseVolume.voxelManager;
+    const baseData = baseVoxelManager.getCompleteScalarDataArray();
+
+    const { imageData: segImageData } = segImageVolume;
+    const dims = segImageData.getDimensions();
+
+    // Combine volume data
+    const cubeData = combineVolumeData(
+      baseData,
+      segData,
+      dims,
+      options.enableOptimizations !== false
+    );
+
+    // Update viewport and mapper
+    viewport.removeActors([uid]);
+    const oldMapper = actor.getMapper();
+    const mapper = convertMapperToNotSharedMapper(oldMapper as vtkVolumeMapper);
+    actor.setMapper(mapper);
+
+    // Configure mapper for labelmap rendering
+    // Blend mode: VTK expects a number, so ensure we pass a number
+    const blendMode =
+      options.blendMode ?? Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND;
+    // If Enums.BlendModes is not a number enum, cast or convert as needed
+    mapper.setBlendMode(Number(blendMode));
+
+    // Update volume data
+    const arrayAgain = mapper.getInputData().getPointData().getArray(0);
+    arrayAgain.setData(cubeData);
+    arrayAgain.setNumberOfComponents(2);
+
+    // Configure actor properties
+    actor.getProperty().setColorMixPreset(1);
+    actor.getProperty().setForceNearestInterpolation(1, true);
+    actor.getProperty().setIndependentComponents(true);
+
+    // Add actor back to viewport
+    viewport.addActor({
+      actor: actor as unknown as Types.ViewportActor,
+      uid,
+      callback,
+      referencedId: referenceVolumeId,
+      representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
+    });
+
+    // Cache the operation
+    const originalBlendMode = viewport.getBlendMode();
+    internalCache.set(uid, {
+      added: true,
+      segmentationRepresentationUID: segmentationId,
+      originalBlendMode,
+    });
+
+    // Set up preLoad function
+    actor.set({
+      preLoad: load,
+    });
+
+    // Set up event handlers
+    const onSegmentationDataModified = createSegmentationDataModifiedHandler(
+      segImageVolume.volumeId,
+      segImageVolume.imageData as unknown as Types.IImageData, // Accepts both vtkImageData and IImageData
+      mapper,
+      viewport
+    );
+
+    const onRepresentationRemoved = createRepresentationRemovedHandler(
+      uid,
+      volumeId,
+      onSegmentationDataModified,
+      viewport
+    );
+
+    // Register event listeners
+    eventTarget.addEventListenerDebounced(
+      Events.SEGMENTATION_DATA_MODIFIED,
+      onSegmentationDataModified,
+      options.debounceTime || 200
+    );
+
+    eventTarget.addEventListener(
+      Events.SEGMENTATION_REPRESENTATION_REMOVED,
+      onRepresentationRemoved
+    );
+
+    const endTime = performance.now();
+    console.debug(
+      `Independent components added successfully in ${endTime - startTime}ms`
+    );
+
+    return {
+      uid,
+      actor: actor as unknown as Types.ViewportActor,
+      success: true,
+      processedVoxels: dims[0] * dims[1] * dims[2],
+    };
+  } catch (error) {
+    const endTime = performance.now();
+
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+
+    console.error(
+      `Failed to add independent components in ${endTime - startTime}ms:`,
+      error
+    );
+
+    return {
+      uid: '',
+      actor: null as unknown as Types.ViewportActor,
+      success: false,
+      error: errorMessage,
+    };
+  }
 }

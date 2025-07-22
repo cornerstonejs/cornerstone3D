@@ -190,7 +190,10 @@ class RectangleScissorsTool extends LabelmapBaseTool {
     };
 
     if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
+      const volumeIds =
+        (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+
+      const volumeId = volumeIds?.[0] || undefined;
       const segmentation = cache.getVolume(volumeId);
 
       this.editData = {
@@ -199,14 +202,15 @@ class RectangleScissorsTool extends LabelmapBaseTool {
         referencedVolumeId: segmentation.referencedVolumeId,
       };
     } else {
-      const segmentationImageId = getCurrentLabelmapImageIdForViewport(
-        viewport.id,
-        segmentationId
-      );
+      const volumeIds =
+        (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+      const primaryVolumeId = volumeIds?.[0] || undefined;
+      const segmentation = cache.getVolume(primaryVolumeId);
 
       this.editData = {
         ...this.editData,
-        imageId: segmentationImageId,
+        volumeId: primaryVolumeId,
+        referencedVolumeId: segmentation.referencedVolumeId,
       };
     }
 

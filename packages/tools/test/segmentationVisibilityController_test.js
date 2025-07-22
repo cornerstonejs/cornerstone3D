@@ -154,7 +154,7 @@ describe('Segmentation Controller:', () => {
                   representation: {
                     type: csToolsEnums.SegmentationRepresentations.Labelmap,
                     data: {
-                      volumeId: seg1VolumeID,
+                      volumeIds: [seg1VolumeID],
                     },
                   },
                 },

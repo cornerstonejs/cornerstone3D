@@ -100,6 +100,10 @@ import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 import getPixelSpacingInformation from './getPixelSpacingInformation';
+import {
+  getNumberOfReferenceImageIds,
+  getReferenceImageIds,
+} from './getNumberOfReferenceImageIds';
 import { asArray } from './asArray';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
@@ -205,5 +209,7 @@ export {
   buildMetadata,
   calculateNeighborhoodStats,
   getPixelSpacingInformation,
+  getNumberOfReferenceImageIds,
+  getReferenceImageIds,
   asArray,
 };

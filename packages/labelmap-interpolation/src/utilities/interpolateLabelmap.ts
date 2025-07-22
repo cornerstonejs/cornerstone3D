@@ -49,50 +49,61 @@ async function interpolateLabelmap({
 
   triggerWorkerProgress(eventTarget, 0);
 
-  const segVolume = getOrCreateSegmentationVolume(segmentationId);
+  const segVolumes = getOrCreateSegmentationVolume(segmentationId);
+  // If segVolume is an array, process each; otherwise, process as single volume
+  const totalVolumes = segVolumes.length;
+  let failed = false;
 
-  const {
-    voxelManager: segmentationVoxelManager,
-    imageData: segmentationImageData,
-  } = segVolume;
+  for (let i = 0; i < totalVolumes; i++) {
+    const currentSegVolume = segVolumes[i];
+    const {
+      voxelManager: segmentationVoxelManager,
+      imageData: segmentationImageData,
+    } = currentSegVolume;
 
-  const segmentationInfo = {
-    scalarData: segmentationVoxelManager.getCompleteScalarDataArray(),
-    dimensions: segmentationImageData.getDimensions(),
-    spacing: segmentationImageData.getSpacing(),
-    origin: segmentationImageData.getOrigin(),
-    direction: segmentationImageData.getDirection(),
-  };
+    const segmentationInfo = {
+      scalarData: segmentationVoxelManager.getCompleteScalarDataArray(),
+      dimensions: segmentationImageData.getDimensions(),
+      spacing: segmentationImageData.getSpacing(),
+      origin: segmentationImageData.getOrigin(),
+      direction: segmentationImageData.getDirection(),
+    };
 
-  try {
-    const { data: outputScalarData } = await workerManager.executeTask(
-      'interpolation',
-      'interpolateLabelmap',
-      {
-        segmentationInfo,
-        configuration: {
-          ...configuration,
-          label: segmentIndex,
-        },
-      }
-    );
+    try {
+      const { data: outputScalarData } = await workerManager.executeTask(
+        'interpolation',
+        'interpolateLabelmap',
+        {
+          segmentationInfo,
+          configuration: {
+            ...configuration,
+            label: segmentIndex,
+          },
+        }
+      );
 
-    // Update the segmentation with the modified data
-    segmentationVoxelManager.setCompleteScalarDataArray(outputScalarData);
+      // Update the segmentation with the modified data
+      segmentationVoxelManager.setCompleteScalarDataArray(outputScalarData);
 
-    triggerSegmentationDataModified(
-      segmentationId,
-      segmentationVoxelManager.getArrayOfModifiedSlices(),
-      segmentIndex
-    );
+      triggerSegmentationDataModified(
+        segmentationId,
+        segmentationVoxelManager.getArrayOfModifiedSlices(),
+        segmentIndex
+      );
 
-    triggerWorkerProgress(eventTarget, 100);
-  } catch (error) {
-    console.warn(
-      'Warning: Failed to perform morphological contour interpolation',
-      error
-    );
-    triggerWorkerProgress(eventTarget, 100);
+      // Update progress percentage
+      const progress = Math.round(((i + 1) / totalVolumes) * 100);
+      triggerWorkerProgress(eventTarget, progress);
+    } catch (error) {
+      console.warn(
+        `Warning: Failed to perform morphological contour interpolation for volume ${i}`,
+        error
+      );
+      failed = true;
+      // Still update progress
+      const progress = Math.round(((i + 1) / totalVolumes) * 100);
+      triggerWorkerProgress(eventTarget, progress);
+    }
   }
 }
 

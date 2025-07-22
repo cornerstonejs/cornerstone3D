@@ -16,86 +16,122 @@ type Options = {
 /**
  * Retrieves the segment index at the border of a labelmap in a segmentation.
  *
+ * For volume segmentations, supports both single and multi-volume segmentations (volumeId or volumeIds).
+ * The function loops through all available volumes and returns the first segment index found at the border.
+ *
+ * For stack segmentations, the behavior is unchanged.
+ *
  * @param segmentationId - The ID of the segmentation.
  * @param worldPoint - The world coordinates of the point.
  * @param options - Additional options.
  * @param options.viewport - The viewport to use.
  * @param options.searchRadius - The search radius to use.
- * @returns The segment index at the labelmap border, or undefined if not found.
+ * @returns The segment index at the labelmap border, or undefined if not found in any volume.
  */
 export function getSegmentIndexAtLabelmapBorder(
   segmentationId: string,
   worldPoint: Types.Point3,
   { viewport, searchRadius }: Options
-): number {
+): number | undefined {
   const segmentation = getSegmentation(segmentationId);
-
+  if (!segmentation) {
+    return undefined;
+  }
   const labelmapData = segmentation.representationData.Labelmap;
 
   if (viewport instanceof BaseVolumeViewport) {
-    const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-    const segmentationVolume = cache.getVolume(volumeId);
-
-    if (!segmentationVolume) {
-      return;
+    // Support both single and multi-volume segmentations
+    const volumeIds =
+      (labelmapData as LabelmapSegmentationDataVolume).volumeIds || [];
+    for (const vid of volumeIds) {
+      if (!vid) {
+        continue;
+      }
+      const segmentationVolume = cache.getVolume(vid);
+      if (
+        !segmentationVolume ||
+        !segmentationVolume.voxelManager ||
+        !segmentationVolume.imageData
+      ) {
+        continue;
+      }
+      const voxelManager = segmentationVolume.voxelManager;
+      const imageData = segmentationVolume.imageData;
+      const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
+      const segmentIndex = voxelManager.getAtIJK(
+        indexIJK[0],
+        indexIJK[1],
+        indexIJK[2]
+      ) as number | undefined;
+      if (segmentIndex === undefined) {
+        continue;
+      }
+      const canvasPoint = viewport.worldToCanvas(worldPoint);
+      if (!canvasPoint) {
+        continue;
+      }
+      const onEdge = isSegmentOnEdgeCanvas(
+        canvasPoint as Types.Point2,
+        segmentIndex,
+        viewport,
+        imageData,
+        searchRadius
+      );
+      if (onEdge) {
+        return segmentIndex;
+      }
     }
-
-    const voxelManager = segmentationVolume.voxelManager;
-    const imageData = segmentationVolume.imageData;
-    const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
-    const segmentIndex = voxelManager.getAtIJK(
-      indexIJK[0],
-      indexIJK[1],
-      indexIJK[2]
-    ) as number;
-
-    const canvasPoint = viewport.worldToCanvas(worldPoint);
-
-    const onEdge = isSegmentOnEdgeCanvas(
-      canvasPoint as Types.Point2,
-      segmentIndex,
-      viewport,
-      imageData,
-      searchRadius
-    );
-
-    return onEdge ? segmentIndex : undefined;
+    return undefined;
   }
 
   // stack segmentation case
+  if (!viewport) {
+    return undefined;
+  }
   const segmentationImageId = getCurrentLabelmapImageIdForViewport(
     viewport.id,
     segmentationId
   );
-
   const image = cache.getImage(segmentationImageId);
-
   if (!image) {
-    return;
+    return undefined;
   }
   const segmentationActorEntry = getLabelmapActorEntry(
     viewport.id,
     segmentationId
   );
   const imageData = segmentationActorEntry?.actor.getMapper().getInputData();
+  if (!imageData) {
+    return undefined;
+  }
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
-
+  if (!indexIJK) {
+    return undefined;
+  }
   const dimensions = imageData.getDimensions();
-  const voxelManager = (imageData.voxelManager ||
-    utilities.VoxelManager.createScalarVolumeVoxelManager({
+  let voxelManager = imageData.voxelManager as
+    | Types.IVoxelManager<number>
+    | undefined;
+  if (!voxelManager) {
+    const scalars = imageData.getPointData().getScalars();
+    if (!scalars) {
+      return undefined;
+    }
+    voxelManager = utilities.VoxelManager.createScalarVolumeVoxelManager({
       dimensions,
-      scalarData: imageData.getPointData().getScalars().getData(),
-    })) as Types.IVoxelManager<number>;
-
+      scalarData: scalars.getData(),
+    }) as Types.IVoxelManager<number>;
+  }
   const segmentIndex = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
-
+  if (segmentIndex === undefined) {
+    return undefined;
+  }
   const onEdge = isSegmentOnEdgeIJK(
     indexIJK as Types.Point3,
     dimensions,
     voxelManager,
     segmentIndex
   );
-
   return onEdge ? segmentIndex : undefined;
 }
 

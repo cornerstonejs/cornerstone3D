@@ -42,12 +42,15 @@ const labelMapConfigCache = new Map();
 let polySegConversionInProgress = false;
 
 /**
- * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element
+ * For each viewport, and for each segmentation, set the segmentation for the viewport's enabled element.
  * Initializes the global and viewport specific state for the segmentation in the
  * SegmentationStateManager.
- * @param toolGroup - the tool group that contains the viewports
- * @param segmentationId - The id of the segmentation
- * @param renderImmediate - If true, there will be a render call after the labelmap is removed
+ *
+ * @param toolGroup - The tool group that contains the viewports.
+ * @param segmentationId - The id of the segmentation.
+ * @param renderImmediate - If true, there will be a render call after the labelmap is removed.
+ *
+ * Supports both single and multi-volume segmentations (imageIds is always a flat string[]; use numberOfImages to determine volumes).
  */
 function removeRepresentation(
   viewportId: string,
@@ -79,11 +82,13 @@ function removeRepresentation(
 }
 
 /**
- * It takes the enabled element, the segmentation Id, and the configuration, and
- * it sets the segmentation for the enabled element as a labelmap
- * @param enabledElement - The cornerstone enabled element
+ * Sets the segmentation for the enabled element as a labelmap.
+ *
+ * @param enabledElement - The cornerstone enabled element.
  * @param segmentationId - The id of the segmentation to be rendered.
  * @param configuration - The configuration object for the labelmap.
+ *
+ * Supports both single and multi-volume segmentations (imageIds is always a flat string[]; use numberOfImages to determine volumes).
  */
 async function render(
   viewport: Types.IStackViewport | Types.IVolumeViewport,
@@ -160,7 +165,7 @@ async function render(
 
   if (viewport instanceof VolumeViewport) {
     if (!labelmapActorEntries?.length) {
-      // only add the labelmap to ToolGroup viewports if it is not already added
+      // Add labelmap actors for all associated volumes
       await _addLabelmapToViewport(
         viewport,
         labelmapData,
@@ -168,7 +173,7 @@ async function render(
         config
       );
     }
-
+    // Refresh actor entries after adding
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   } else {
     // stack segmentation
