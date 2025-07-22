@@ -23,8 +23,6 @@ export default class Length extends BaseAdapter3D {
         const {
             state,
             NUMGroup,
-            scoord,
-            scoordArgs,
             worldCoords,
             referencedImageId,
             ReferencedFrameNumber
@@ -47,11 +45,9 @@ export default class Length extends BaseAdapter3D {
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
+                ...state.annotation.data.handles,
                 points: [worldCoords[0], worldCoords[1]],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                activeHandleIndex: 0
             },
             cachedStats,
             frameNumber: ReferencedFrameNumber

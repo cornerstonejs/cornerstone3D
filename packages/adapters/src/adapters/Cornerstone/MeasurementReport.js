@@ -35,9 +35,9 @@ function getTID300ContentItem(tool, ReferencedSOPSequence, adapterClass) {
     const args = adapterClass.getTID300RepresentationArguments(tool);
     args.ReferencedSOPSequence = ReferencedSOPSequence;
 
-    const TID300Measurement = new adapterClass.TID300Representation(args);
+    const tid300Measurement = new adapterClass.TID300Representation(args);
 
-    return TID300Measurement;
+    return tid300Measurement;
 }
 
 function getMeasurementGroup(toolType, toolData, ReferencedSOPSequence) {
@@ -55,11 +55,11 @@ function getMeasurementGroup(toolType, toolData, ReferencedSOPSequence) {
 
     // Loop through the array of tool instances
     // for this tool
-    const Measurements = toolTypeData.data.map(tool => {
+    const measurements = toolTypeData.data.map(tool => {
         return getTID300ContentItem(tool, ReferencedSOPSequence, toolClass);
     });
 
-    return new TID1501MeasurementGroup(Measurements);
+    return new TID1501MeasurementGroup(measurements);
 }
 
 export default class MeasurementReport {
@@ -184,7 +184,7 @@ export default class MeasurementReport {
                 allMeasurementGroups.concat(measurementGroups);
         });
 
-        const MeasurementReport = new TID1500MeasurementReport(
+        const tid1500MeasurementReport = new TID1500MeasurementReport(
             { TID1501MeasurementGroups: allMeasurementGroups },
             options
         );
@@ -232,7 +232,7 @@ export default class MeasurementReport {
 
         const report = new StructuredReport([derivationSourceDataset]);
 
-        const contentItem = MeasurementReport.contentItem(
+        const contentItem = tid1500MeasurementReport.contentItem(
             derivationSourceDataset
         );
 
