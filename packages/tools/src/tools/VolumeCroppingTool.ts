@@ -930,11 +930,13 @@ class VolumeCroppingTool extends BaseTool {
     }
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);
-    const sphereRadius =
-      this.configuration.sphereRadius !== undefined
-        ? this.configuration.sphereRadius
-        : 15;
-    sphereSource.setRadius(sphereRadius);
+    // const sphereRadius =
+    //   this.configuration.sphereRadius !== undefined
+    //     ? this.configuration.sphereRadius
+    //     : 15;
+    // sphereSource.setRadius(sphereRadius);
+    const adaptiveRadius = this._calculateAdaptiveSphereRadius();
+    sphereSource.setRadius(adaptiveRadius);
     const sphereMapper = vtkMapper.newInstance();
     sphereMapper.setInputConnection(sphereSource.getOutputPort());
     const sphereActor = vtkActor.newInstance();
@@ -979,7 +981,47 @@ class VolumeCroppingTool extends BaseTool {
     sphereActor.setPickable(true);
     viewport.addActor({ actor: sphereActor, uid: uid });
   }
+  _calculateAdaptiveSphereRadius(): number {
+    // Get base radius from configuration (acts as a scaling factor)
+    const baseRadius =
+      this.configuration.sphereRadius !== undefined
+        ? this.configuration.sphereRadius
+        : 8;
 
+    // Get volume bounds to calculate scale
+    const viewport = this._getViewport();
+    const volumeActors = viewport.getActors();
+
+    if (!volumeActors || volumeActors.length === 0) {
+      return baseRadius; // Fallback to base radius
+    }
+
+    const imageData = volumeActors[0].actor.getMapper().getInputData();
+    if (!imageData) {
+      return baseRadius; // Fallback to base radius
+    }
+
+    // Get world bounds
+    const bounds = imageData.getBounds(); // [xmin, xmax, ymin, ymax, zmin, zmax]
+
+    // Calculate volume diagonal length
+    const xRange = bounds[1] - bounds[0];
+    const yRange = bounds[3] - bounds[2];
+    const zRange = bounds[5] - bounds[4];
+    const diagonal = Math.sqrt(
+      xRange * xRange + yRange * yRange + zRange * zRange
+    );
+
+    // Scale radius as a percentage of diagonal (adjustable factor)
+    const scaleFactor = this.configuration.sphereRadiusScale || 0.01; // 1% of diagonal by default
+    const adaptiveRadius = diagonal * scaleFactor;
+
+    // Apply min/max limits to prevent too small or too large spheres
+    const minRadius = this.configuration.minSphereRadius || 2;
+    const maxRadius = this.configuration.maxSphereRadius || 50;
+
+    return Math.max(minRadius, Math.min(maxRadius, adaptiveRadius));
+  }
   _initialize3DViewports = (viewportsInfo): void => {
     if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
       console.warn(
@@ -1000,19 +1042,24 @@ class VolumeCroppingTool extends BaseTool {
       console.warn('VolumeCroppingTool: No image data found for volume actor.');
       return;
     }
-    const dimensions = imageData.getDimensions();
-    const origin = imageData.getOrigin();
-    const spacing = imageData.getSpacing(); // [xSpacing, ySpacing, zSpacing]
+
+    const worldBounds = imageData.getBounds(); // Already in world coordinates
     const cropFactor = this.configuration.initialCropFactor || 0.1;
-    const xMin = origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0];
-    const xMax =
-      origin[0] + (1 - cropFactor) * (dimensions[0] - 1) * spacing[0];
-    const yMin = origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1];
-    const yMax =
-      origin[1] + (1 - cropFactor) * (dimensions[1] - 1) * spacing[1];
-    const zMin = origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2];
-    const zMax =
-      origin[2] + (1 - cropFactor) * (dimensions[2] - 1) * spacing[2];
+
+    // Calculate cropping bounds using world bounds
+    const xRange = worldBounds[1] - worldBounds[0];
+    const yRange = worldBounds[3] - worldBounds[2];
+    const zRange = worldBounds[5] - worldBounds[4];
+
+    const adaptiveRadius =
+      Math.sqrt(xRange * xRange + yRange * yRange + zRange * zRange) * 0.001;
+
+    const xMin = worldBounds[0] + cropFactor * xRange;
+    const xMax = worldBounds[1] - cropFactor * xRange;
+    const yMin = worldBounds[2] + cropFactor * yRange;
+    const yMax = worldBounds[3] - cropFactor * yRange;
+    const zMin = worldBounds[4] + cropFactor * zRange;
+    const zMax = worldBounds[5] - cropFactor * zRange;
 
     const planes: vtkPlane[] = [];
 
