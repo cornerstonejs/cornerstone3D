@@ -295,6 +295,7 @@ class VolumeCroppingTool extends BaseTool {
       }
 
       this.cleanUp = () => {
+        console.debug('Cleaning up after mouseup');
         mapper.setSampleDistance(originalSampleDistance);
 
         // Reset cursor style
