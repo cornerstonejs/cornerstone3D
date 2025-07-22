@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.6...v3.31.7) (2025-07-21)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [3.31.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.5...v3.31.6) (2025-07-18)
+
+### Bug Fixes
+
+-   **probe:** rehydrate ([#2214](https://github.com/cornerstonejs/cornerstone3D/issues/2214)) ([4ac725e](https://github.com/cornerstonejs/cornerstone3D/commit/4ac725e94729f12ed21f471a6bffe30fea0b5296))
+
+## [3.31.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.4...v3.31.5) (2025-07-18)
+
+### Bug Fixes
+
+-   adapter should be able to convert all the types, including points ([#2211](https://github.com/cornerstonejs/cornerstone3D/issues/2211)) ([9b3fd22](https://github.com/cornerstonejs/cornerstone3D/commit/9b3fd227c11d78e7cc3fbddcfb8926e8a22572fc))
+
 ## [3.31.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.3...v3.31.4) (2025-07-17)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

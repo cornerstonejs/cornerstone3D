@@ -13,14 +13,12 @@ export default class KeyImage extends Probe {
     static getMeasurementData(
         measurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata,
         trackingIdentifier
     ) {
         const baseData = super.getMeasurementData(
             measurementGroup,
             sopInstanceUIDToImageIdMap,
-            imageToWorldCoords,
             metadata,
             trackingIdentifier
         );

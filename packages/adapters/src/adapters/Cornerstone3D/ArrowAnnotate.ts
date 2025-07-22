@@ -1,10 +1,13 @@
-import MeasurementReport from "./MeasurementReport";
 import { utilities } from "dcmjs";
+import { utilities as csUtilities } from "@cornerstonejs/core";
+
+import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 import CodingScheme from "./CodingScheme";
 import { toScoord } from "../helpers";
 
 const { Point: TID300Point } = utilities.TID300;
+const { imageToWorldCoords } = csUtilities;
 const { codeValues } = CodingScheme;
 
 class ArrowAnnotate extends BaseAdapter3D {
@@ -16,7 +19,6 @@ class ArrowAnnotate extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata,
         _trackingIdentifier
     ) {

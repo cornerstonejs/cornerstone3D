@@ -19,13 +19,19 @@ class Bidirectional extends BaseAdapter3D {
         sopInstanceUIDToImageIdMap,
         metadata
     ) {
-        const { state, scoordArgs, referencedImageId, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                Bidirectional.toolType
-            );
+        const {
+            state,
+            NUMGroup,
+            scoord,
+            scoordArgs,
+            referencedImageId,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            this.toolType
+        );
 
         const { ContentSequence } = MeasurementGroup;
 
@@ -52,12 +58,8 @@ class Bidirectional extends BaseAdapter3D {
 
         const worldCoords = [];
 
-        worldCoords.push(
-            ...scoordToWorld(scoordArgs, longAxisScoordGroup.GraphicData)
-        );
-        worldCoords.push(
-            ...scoordToWorld(scoordArgs, shortAxisScoordGroup.GraphicData)
-        );
+        worldCoords.push(...scoordToWorld(scoordArgs, longAxisScoordGroup));
+        worldCoords.push(...scoordToWorld(scoordArgs, shortAxisScoordGroup));
 
         state.annotation.data = {
             ...state.annotation.data,

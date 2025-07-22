@@ -128,6 +128,8 @@ export interface MeasurementAdapter {
 
     isValidCornerstoneTrackingIdentifier(trackingIdentifier: string): boolean;
 
+    isValidMeasurement(measurementGroup): boolean;
+
     getTID300RepresentationArguments(
         tool,
         is3DMeasurement
@@ -141,6 +143,12 @@ export default class MeasurementReport {
     public static measurementAdapterByToolType = new Map<
         string,
         MeasurementAdapter
+    >();
+
+    /** Maps tool type to the adapter name used to serialize this item to SR */
+    public static measurementAdaptersByType = new Map<
+        string,
+        MeasurementAdapter[]
     >();
 
     /** Maps tracking identifier to tool class to deserialize from SR into a tool instance */
@@ -445,7 +453,13 @@ export default class MeasurementReport {
             ) || [];
         const NUMGroup = contentSequenceArr.find(
             group => group.ValueType === "NUM"
-        );
+        ) || {
+            ContentSequence: contentSequenceArr.filter(
+                group =>
+                    group.ValueType === "SCOORD" ||
+                    group.ValueType === "SCOORD3D"
+            )
+        };
 
         const spatialGroup = this.processSpatialCoordinatesGroup({
             NUMGroup,
@@ -701,7 +715,8 @@ export default class MeasurementReport {
                     ) ||
                     this.getAdapterForTrackingIdentifier(
                         trackingIdentifierValue
-                    );
+                    ) ||
+                    this.getAdapterForCodeType(measurementGroup);
 
                 if (toolAdapter) {
                     const measurement = toolAdapter.getMeasurementData(
@@ -797,4 +812,72 @@ export default class MeasurementReport {
             }
         }
     }
+
+    /**
+     * This will use the adapter types to figure out which adapters might be
+     * able to convert this object.
+     */
+    public static getAdapterForCodeType(measurementGroup) {
+        for (const adapter of this.measurementAdapterByTrackingIdentifier.values()) {
+            if (adapter.isValidMeasurement(measurementGroup)) {
+                return adapter;
+            }
+        }
+    }
+
+    /**
+     * Register an adapter by type
+     * This will be some combination of the graphic code, type and point count.
+     * Only the most specific variants should be registered, unless the more
+     * general variants can be handled.
+     */
+    public static registerAdapterTypes(adapter, ...types) {
+        for (const type of types) {
+            if (!this.measurementAdaptersByType.has(type)) {
+                this.measurementAdaptersByType.set(type, []);
+            }
+            const adapters = this.measurementAdaptersByType.get(type);
+            if (adapters.indexOf(adapter) === -1) {
+                adapters.push(adapter);
+            }
+        }
+    }
+
+    /**
+     * Finds possible adapters for the point types
+     *
+     * @param graphicCode - in the designator:value format
+     * @param graphicType - as one of the allowed graphic type values
+     * @param pointCount - a number indicating how many points were found
+     * @returns An array of adapters that might handle this type
+     */
+    public static getAdaptersForTypes(
+        graphicCode: string,
+        graphicType: string,
+        pointCount: number
+    ) {
+        const adapters = [];
+
+        appendList(
+            adapters,
+            this.measurementAdaptersByType.get(
+                `${graphicCode}-${graphicType}-${pointCount}`
+            )
+        );
+        appendList(
+            adapters,
+            this.measurementAdaptersByType.get(`${graphicCode}-${graphicType}`)
+        );
+        appendList(adapters, this.measurementAdaptersByType.get(graphicCode));
+        appendList(adapters, this.measurementAdaptersByType.get(graphicType));
+
+        return adapters;
+    }
+}
+
+function appendList(list, appendList) {
+    if (!appendList?.length) {
+        return;
+    }
+    list.push(...appendList);
 }
