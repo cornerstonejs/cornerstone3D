@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.9...v3.31.10) (2025-07-22)
+
+### Bug Fixes
+
+- contour Examples ([#2205](https://github.com/cornerstonejs/cornerstone3D/issues/2205)) ([926224e](https://github.com/cornerstonejs/cornerstone3D/commit/926224e0fadbf7dcab8cc1beaab714da0582e326))
+
 ## [3.31.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.8...v3.31.9) (2025-07-22)
 
 ### Bug Fixes
