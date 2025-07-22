@@ -25,6 +25,7 @@ import { getToolGroup } from '../store/ToolGroupManager';
 import { Events } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
+import { viewportFilters } from '../utilities';
 
 const PLANEINDEX = {
   XMIN: 0,
@@ -57,25 +58,20 @@ const SPHEREINDEX = {
  * VolumeCroppingTool is a tool that provides clipping planes to crop a volume
  */
 class VolumeCroppingTool extends BaseTool {
-  // Store 2D edge lines between corner spheres
-  edgeLines: {
-    [uid: string]: {
-      actor: vtkActor;
-      source: vtkPolyData;
-      key1: string;
-      key2: string;
-    };
-  } = {};
-
   static toolName;
+
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   cleanUp: () => void;
   _resizeObservers = new Map();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _viewportAddedListener: (evt: any) => void;
+  _viewportAddedListener: (evt) => void;
   _hasResolutionChanged = false;
   originalClippingPlanes: { origin: number[]; normal: number[] }[] = [];
+  draggingSphereIndex: number | null = null;
+  toolCenter: Types.Point3 = [0, 0, 0];
+  cornerDragOffset: [number, number, number] | null = null;
+  faceDragOffset: number | null = null;
+  // Store  spheres for show/hide actor.
   sphereStates: {
     point: Types.Point3;
     axis: string;
@@ -85,12 +81,15 @@ class VolumeCroppingTool extends BaseTool {
     isCorner: boolean;
     color: number[]; // [r, g, b] color for the sphere
   }[] = [];
-  draggingSphereIndex: number | null = null;
-  toolCenter: Types.Point3 = [0, 0, 0];
-  _getReferenceLineColor?: (viewportId: string) => string;
-  _getReferenceLineControllable?: (viewportId: string) => boolean;
-  cornerDragOffset: [number, number, number] | null = null;
-  faceDragOffset: number | null = null;
+  // Store 2D edge lines between corner spheres for show/hide actor.
+  edgeLines: {
+    [uid: string]: {
+      actor: vtkActor;
+      source: vtkPolyData;
+      key1: string; //  key1,key2: Corner identifiers such as XMIN_YMIN_ZMIN to XMAX_YMIN_ZMIN
+      key2: string;
+    };
+  } = {};
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -187,7 +186,7 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   onSetToolConfiguration = (): void => {
-    //console.debug('Setting tool settoolconfiguration init: volumeCropping');
+    console.debug('Setting tool settoolconfiguration : volumeCropping');
     //this._init();
   };
 
@@ -225,6 +224,7 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
+    //console.debug('VolumeCroppingTool.preMouseDownCallback called');
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
@@ -295,7 +295,6 @@ class VolumeCroppingTool extends BaseTool {
       }
 
       this.cleanUp = () => {
-        console.debug('Cleaning up after mouseup');
         mapper.setSampleDistance(originalSampleDistance);
 
         // Reset cursor style
@@ -309,8 +308,8 @@ class VolumeCroppingTool extends BaseTool {
           const viewport = renderingEngine.getViewport(viewport3D.viewportId);
 
           if (sphereState.isCorner) {
-            this._updateFaceSpheresFromCorners();
             this._updateCornerSpheres();
+            this._updateFaceSpheresFromCorners();
             this._updateClippingPlanesFromFaceSpheres(viewport);
           }
         }
@@ -517,19 +516,42 @@ class VolumeCroppingTool extends BaseTool {
       this._updateCornerSpheres();
     }
 
-    // Render to show sphere updates FIRST
-    viewport.render();
+    // For OHIF: Force immediate VTK pipeline updates
+    this.sphereStates.forEach((state) => {
+      if (state.sphereSource) {
+        // Force the mapper to update
+        if (state.sphereActor && state.sphereActor.getMapper()) {
+          const mapper = state.sphereActor.getMapper();
+          mapper.update();
+          mapper.modified();
+        }
+      }
+    });
 
     // THEN update clipping planes
     this._updateClippingPlanesFromFaceSpheres(viewport);
 
     // Final render and event trigger
     viewport.render();
+
     this._triggerToolChangedEvent(sphereState);
 
     return true;
   };
 
+  _forceImmediateVTKUpdates(viewport) {
+    // Force all sphere sources to update their geometry immediately
+    this.sphereStates.forEach((state) => {
+      if (state.sphereSource) {
+        // Force the mapper to update
+        if (state.sphereActor && state.sphereActor.getMapper()) {
+          const mapper = state.sphereActor.getMapper();
+          mapper.update();
+          mapper.modified();
+        }
+      }
+    });
+  }
   _onControlToolChange = (evt) => {
     const viewport = this._getViewport();
     const isMin = evt.detail.handleType === 'min';
@@ -1142,8 +1164,8 @@ class VolumeCroppingTool extends BaseTool {
   // Update after face movement
   _updateAfterFaceMovement = (viewport) => {
     this._updateCornerSpheresFromFaces();
-    this._updateFaceSpheresFromCorners();
-    this._updateCornerSpheres();
+    // this._updateFaceSpheresFromCorners();
+    // this._updateCornerSpheres();
     this._updateClippingPlanesFromFaceSpheres(viewport);
   };
 
