@@ -94,42 +94,6 @@ function defaultReferenceLineControllable() {
   return true;
 }
 
-/**
- * Utility function to map a camera normal to an orientation string.
- * Returns 'AXIAL', 'CORONAL', 'SAGITTAL', or null if not matched.
- */
-function getOrientationFromNormal(normal: Types.Point3): string | null {
-  if (!normal) {
-    return null;
-  }
-  // Canonical normals
-  const canonical = {
-    AXIAL: [0, 0, 1],
-    CORONAL: [0, 1, 0],
-    SAGITTAL: [1, 0, 0],
-  };
-  // Use a tolerance for floating point comparison
-  const tol = 1e-2;
-  for (const [key, value] of Object.entries(canonical)) {
-    if (
-      Math.abs(normal[0] - value[0]) < tol &&
-      Math.abs(normal[1] - value[1]) < tol &&
-      Math.abs(normal[2] - value[2]) < tol
-    ) {
-      return key;
-    }
-    // Also check negative direction
-    if (
-      Math.abs(normal[0] + value[0]) < tol &&
-      Math.abs(normal[1] + value[1]) < tol &&
-      Math.abs(normal[2] + value[2]) < tol
-    ) {
-      return key;
-    }
-  }
-  return null;
-}
-
 const OPERATION = {
   DRAG: 1,
   ROTATE: 2,
@@ -137,10 +101,84 @@ const OPERATION = {
 };
 
 /**
- * VolumeCroppingControlTool is a tool that provides reference lines to modify the cropping planes
- * of the VolumeCroppingTool.  It has no use on it's own, and is used in conjunction with
- * the VolumeCroppingTool to allow for more precise adjustments to the cropping planes.
+ * VolumeCroppingControlTool is a tool that provides interactive reference lines to modify the cropping planes
+ * of the VolumeCroppingTool. It renders crosshair-style reference lines across multiple viewports and allows
+ * users to drag these lines to adjust volume cropping boundaries in real-time.
  *
+ * @remarks
+ * This tool has no standalone functionality and must be used in conjunction with the VolumeCroppingTool
+ * to provide precise, visual adjustments to volume cropping planes. It automatically synchronizes with
+ * the main cropping tool and updates clipping planes based on user interactions.
+ *
+ * @example
+ * ```typescript
+ * // Basic setup
+ * const toolGroup = ToolGroupManager.createToolGroup('myToolGroup');
+ * toolGroup.addTool(VolumeCroppingControlTool.toolName);
+ * toolGroup.addTool(VolumeCroppingTool.toolName);
+ *
+ * // Configure with custom colors and settings
+ * toolGroup.setToolConfiguration(VolumeCroppingControlTool.toolName, {
+ *   lineColors: {
+ *     AXIAL: [1.0, 0.0, 0.0],    // Red for axial views
+ *     CORONAL: [0.0, 1.0, 0.0],  // Green for coronal views
+ *     SAGITTAL: [1.0, 1.0, 0.0], // Yellow for sagittal views
+ *   },
+ *   lineWidth: 2.0,
+ *   extendReferenceLines: true,
+ *   viewportIndicators: true
+ * });
+ *
+ * // Activate the tool
+ * toolGroup.setToolActive(VolumeCroppingControlTool.toolName);
+ * ```
+ *
+ * @public
+ * @class VolumeCroppingControlTool
+ * @extends AnnotationTool
+ *
+ * @property {VolumeCroppingAnnotation[]} _virtualAnnotations - Store virtual annotations for missing viewport orientations (e.g., CT_CORONAL when only axial and sagittal are present)
+ * @property {string} toolName - Static tool identifier: 'VolumeCroppingControl'
+ * @property {Array<SphereState>} sphereStates - Array of sphere state objects for 3D volume manipulation handles
+ * @property {number|null} draggingSphereIndex - Index of currently dragged sphere, null when not dragging
+ * @property {Types.Point3} toolCenter - Center point of the cropping volume in world coordinates [x, y, z]
+ * @property {Types.Point3} toolCenterMin - Minimum bounds of the cropping volume in world coordinates [xMin, yMin, zMin]
+ * @property {Types.Point3} toolCenterMax - Maximum bounds of the cropping volume in world coordinates [xMax, yMax, zMax]
+ * @property {Function} _getReferenceLineColor - Optional callback to determine reference line color per viewport
+ * @property {Function} _getReferenceLineControllable - Optional callback to determine if reference lines are interactive per viewport
+ *
+ * @configuration
+ * @property {boolean} viewportIndicators - Whether to show colored circle indicators in viewport corners (default: false)
+ * @property {Object} viewportIndicatorsConfig - Configuration for viewport indicators
+ * @property {number} viewportIndicatorsConfig.radius - Radius of indicator circles in pixels (default: 5)
+ * @property {number|null} viewportIndicatorsConfig.x - X position offset, null for auto-positioning
+ * @property {number|null} viewportIndicatorsConfig.y - Y position offset, null for auto-positioning
+ * @property {number} viewportIndicatorsConfig.xOffset - X position as fraction of viewport width (default: 0.95)
+ * @property {number} viewportIndicatorsConfig.yOffset - Y position as fraction of viewport height (default: 0.05)
+ * @property {number} viewportIndicatorsConfig.circleRadius - Circle radius as fraction of diagonal length
+ * @property {boolean} extendReferenceLines - Whether to extend reference lines beyond intersection points with dashed lines (default: true)
+ * @property {number} initialCropFactor - Initial cropping factor as percentage of volume bounds (default: 0.2)
+ * @property {Object} mobile - Mobile-specific configuration
+ * @property {boolean} mobile.enabled - Enable mobile touch interactions (default: false)
+ * @property {number} mobile.opacity - Opacity for mobile interactions (default: 0.8)
+ * @property {Object} lineColors - Color configuration for different viewport orientations
+ * @property {number[]} lineColors.AXIAL - RGB color array for axial viewport lines [r, g, b] (default: [1.0, 0.0, 0.0])
+ * @property {number[]} lineColors.CORONAL - RGB color array for coronal viewport lines [r, g, b] (default: [0.0, 1.0, 0.0])
+ * @property {number[]} lineColors.SAGITTAL - RGB color array for sagittal viewport lines [r, g, b] (default: [1.0, 1.0, 0.0])
+ * @property {number[]} lineColors.UNKNOWN - RGB color array for unknown orientation lines [r, g, b] (default: [0.0, 0.0, 1.0])
+ * @property {number} lineWidth - Default width of reference lines in pixels (default: 1.5)
+ * @property {number} lineWidthActive - Width of reference lines when actively dragging in pixels (default: 2.5)
+ * @property {number} activeLineWidth - Alias for lineWidthActive for backward compatibility
+ *
+ * @events
+ * @event VOLUMECROPPINGCONTROL_TOOL_CHANGED - Fired when reference lines are dragged or tool state changes
+ * @event VOLUMECROPPING_TOOL_CHANGED - Listens for changes from the main VolumeCroppingTool to synchronize state
+ *
+ *
+ * @limitations
+ * - Does not function independently without VolumeCroppingTool
+ * - Requires volume data to be loaded before activation
+ * - Limited to orthogonal viewport orientations (axial, coronal, sagittal)l
  */
 class VolumeCroppingControlTool extends AnnotationTool {
   // Store virtual annotations (e.g., for missing orientations like CT_CORONAL)
@@ -326,7 +364,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     // Determine orientation from camera normal, fallback to viewportId string
-    const orientation = getOrientationFromNormal(
+    const orientation = this._getOrientationFromNormal(
       viewport.getCamera().viewPlaneNormal
     );
 
@@ -531,7 +569,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           const renderingEngine = getRenderingEngine(vp.renderingEngineId);
           const viewport = renderingEngine.getViewport(vp.viewportId);
           if (viewport && viewport.getCamera) {
-            const orientation = getOrientationFromNormal(
+            const orientation = this._getOrientationFromNormal(
               viewport.getCamera().viewPlaneNormal
             );
             if (orientation) {
@@ -558,7 +596,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         const renderingEngine = getRenderingEngine(vp.renderingEngineId);
         const viewport = renderingEngine.getViewport(vp.viewportId);
         if (viewport && viewport.getCamera) {
-          orientation = getOrientationFromNormal(
+          orientation = this._getOrientationFromNormal(
             viewport.getCamera().viewPlaneNormal
           );
         }
@@ -615,7 +653,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         const renderingEngine = getRenderingEngine(vpInfo.renderingEngineId);
         const viewport = renderingEngine.getViewport(vpInfo.viewportId);
         if (viewport && viewport.getCamera) {
-          presentOrientation = getOrientationFromNormal(
+          presentOrientation = this._getOrientationFromNormal(
             viewport.getCamera().viewPlaneNormal
           );
         }
@@ -670,7 +708,41 @@ class VolumeCroppingControlTool extends AnnotationTool {
       );
     }
   };
-
+  /**
+   * Utility function to map a camera normal to an orientation string.
+   * Returns 'AXIAL', 'CORONAL', 'SAGITTAL', or null if not matched.
+   */
+  _getOrientationFromNormal(normal: Types.Point3): string | null {
+    if (!normal) {
+      return null;
+    }
+    // Canonical normals
+    const canonical = {
+      AXIAL: [0, 0, 1],
+      CORONAL: [0, 1, 0],
+      SAGITTAL: [1, 0, 0],
+    };
+    // Use a tolerance for floating point comparison
+    const tol = 1e-2;
+    for (const [key, value] of Object.entries(canonical)) {
+      if (
+        Math.abs(normal[0] - value[0]) < tol &&
+        Math.abs(normal[1] - value[1]) < tol &&
+        Math.abs(normal[2] - value[2]) < tol
+      ) {
+        return key;
+      }
+      // Also check negative direction
+      if (
+        Math.abs(normal[0] + value[0]) < tol &&
+        Math.abs(normal[1] + value[1]) < tol &&
+        Math.abs(normal[2] + value[2]) < tol
+      ) {
+        return key;
+      }
+    }
+    return null;
+  }
   _syncWithVolumeCroppingTool(originalClippingPlanes) {
     // Sync our tool centers with the clipping plane bounds
     const planes = originalClippingPlanes;
@@ -706,7 +778,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
               annotation.data.handles &&
               annotation.data.orientation
             ) {
-              const orientation = annotation.data.orientation.toUpperCase();
+              const orientation = annotation.data.orientation;
 
               // Update tool centers based on the specific orientation
               if (orientation === 'AXIAL') {
@@ -1020,7 +1092,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     // Use orientation property for matching
     let orientation = null;
     if (enabledElement.viewport && enabledElement.viewport.getCamera) {
-      orientation = getOrientationFromNormal(
+      orientation = this._getOrientationFromNormal(
         enabledElement.viewport.getCamera().viewPlaneNormal
       );
     }

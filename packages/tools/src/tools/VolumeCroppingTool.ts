@@ -55,7 +55,120 @@ const SPHEREINDEX = {
 };
 
 /**
- * VolumeCroppingTool is a tool that provides clipping planes to crop a volume
+ * VolumeCroppingTool is a comprehensive 3D volume cropping tool that provides interactive clipping planes,
+ * manipulatable spheres, and real-time volume cropping capabilities. It renders interactive handles (spheres)
+ * at face centers and corners of a cropping box, allowing users to precisely adjust volume boundaries through
+ * direct manipulation in 3D space.
+ *
+ * @remarks
+ * This tool creates a complete 3D cropping interface with:
+ * - 6 face spheres for individual axis cropping
+ * - 8 corner spheres for multi-axis cropping
+ * - 12 edge lines connecting corner spheres
+ * - Real-time clipping plane updates
+ * - Synchronization with VolumeCroppingControlTool for cross-viewport interaction
+ *
+ * The tool automatically handles volume actor detection, clipping plane management, and provides
+ * smooth interaction through optimized rendering and event handling.
+ *
+ * @example
+ * ```typescript
+ * // Basic setup
+ * const toolGroup = ToolGroupManager.createToolGroup('volume3D');
+ * toolGroup.addTool(VolumeCroppingTool.toolName);
+ *
+ * // Configure with custom settings
+ * toolGroup.setToolConfiguration(VolumeCroppingTool.toolName, {
+ *   showCornerSpheres: true,
+ *   showHandles: true,
+ *   initialCropFactor: 0.1,
+ *   sphereColors: {
+ *     x: [1.0, 1.0, 0.0], // Yellow for X-axis spheres
+ *     y: [0.0, 1.0, 0.0], // Green for Y-axis spheres
+ *     z: [1.0, 0.0, 0.0], // Red for Z-axis spheres
+ *     corners: [0.0, 0.0, 1.0] // Blue for corner spheres
+ *   },
+ *   sphereRadius: 10,
+ *   grabSpherePixelDistance: 25
+ * });
+ *
+ * // Activate the tool
+ * toolGroup.setToolActive(VolumeCroppingTool.toolName);
+ *
+ * // Programmatically control visibility
+ * const tool = toolGroup.getToolInstance(VolumeCroppingTool.toolName);
+ * tool.setHandlesVisible(true);
+ * tool.setClippingPlanesVisible(true);
+ * ```
+ *
+ * @public
+ * @class VolumeCroppingTool
+ * @extends BaseTool
+ *
+ * @property {string} toolName - Static tool identifier: 'VolumeCropping'
+ * @property {Function} touchDragCallback - Touch drag event handler for mobile interactions
+ * @property {Function} mouseDragCallback - Mouse drag event handler for desktop interactions
+ * @property {Function} cleanUp - Cleanup function for resetting tool state after interactions
+ * @property {Map} _resizeObservers - Map of ResizeObserver instances for viewport resize handling
+ * @property {Function} _viewportAddedListener - Event listener for new viewport additions
+ * @property {boolean} _hasResolutionChanged - Flag tracking if rendering resolution has been modified during interaction
+ * @property {Array<Object>} originalClippingPlanes - Array of clipping plane objects with origin and normal vectors
+ * @property {number|null} draggingSphereIndex - Index of currently dragged sphere, null when not dragging
+ * @property {Types.Point3} toolCenter - Center point of the cropping volume in world coordinates [x, y, z]
+ * @property {number[]|null} cornerDragOffset - 3D offset vector for corner sphere dragging [dx, dy, dz]
+ * @property {number|null} faceDragOffset - 1D offset value for face sphere dragging along single axis
+ * @property {Array<SphereState>} sphereStates - Array of sphere state objects containing position, VTK actors, and metadata
+ * @property {Object} edgeLines - Dictionary of edge line actors connecting corner spheres for wireframe visualization
+ *
+ * @typedef {Object} SphereState
+ * @property {Types.Point3} point - World coordinates of sphere center [x, y, z]
+ * @property {string} axis - Axis identifier ('x', 'y', 'z', or 'corner')
+ * @property {string} uid - Unique identifier for the sphere (e.g., 'x_min', 'corner_XMIN_YMIN_ZMIN')
+ * @property {vtkSphereSource} sphereSource - VTK sphere geometry source
+ * @property {vtkActor} sphereActor - VTK actor for rendering the sphere
+ * @property {boolean} isCorner - Flag indicating if sphere is a corner (true) or face (false) sphere
+ * @property {number[]} color - RGB color array [r, g, b] for sphere rendering
+ *
+ * @typedef {Object} EdgeLine
+ * @property {vtkActor} actor - VTK actor for rendering the edge line
+ * @property {vtkPolyData} source - VTK polydata source containing line geometry
+ * @property {string} key1 - First corner identifier (e.g., 'XMIN_YMIN_ZMIN')
+ * @property {string} key2 - Second corner identifier (e.g., 'XMAX_YMIN_ZMIN')
+ *
+ * @configuration
+ * @property {boolean} showCornerSpheres - Whether to show corner manipulation spheres (default: true)
+ * @property {boolean} showHandles - Whether to show all manipulation handles (spheres and edges) (default: true)
+ * @property {boolean} showClippingPlanes - Whether to apply clipping planes to volume rendering (default: true)
+ * @property {Object} mobile - Mobile device interaction settings
+ * @property {boolean} mobile.enabled - Enable touch-based interactions on mobile devices (default: false)
+ * @property {number} mobile.opacity - Opacity for mobile interaction feedback (default: 0.8)
+ * @property {number} initialCropFactor - Initial cropping factor as fraction of volume bounds (default: 0.08)
+ * @property {Object} sphereColors - Color configuration for different sphere types
+ * @property {number[]} sphereColors.x - RGB color for X-axis face spheres [r, g, b] (default: [1.0, 1.0, 0.0])
+ * @property {number[]} sphereColors.y - RGB color for Y-axis face spheres [r, g, b] (default: [0.0, 1.0, 0.0])
+ * @property {number[]} sphereColors.z - RGB color for Z-axis face spheres [r, g, b] (default: [1.0, 0.0, 0.0])
+ * @property {number[]} sphereColors.corners - RGB color for corner spheres [r, g, b] (default: [0.0, 0.0, 1.0])
+ * @property {number} sphereRadius - Radius of manipulation spheres in world units (default: 8)
+ * @property {number} grabSpherePixelDistance - Pixel distance threshold for sphere selection (default: 20)
+ * @property {number} rotateIncrementDegrees - Rotation increment for camera rotation (default: 2)
+ * @property {number} rotateSampleDistanceFactor - Sample distance multiplier during rotation for performance (default: 2)
+ *
+ * @events
+ * @event VOLUMECROPPING_TOOL_CHANGED - Fired when sphere positions change or clipping planes are updated
+ * @event VOLUMECROPPINGCONTROL_TOOL_CHANGED - Listens for changes from VolumeCroppingControlTool
+ * @event VOLUME_VIEWPORT_NEW_VOLUME - Listens for new volume loading to reinitialize cropping bounds
+ * @event TOOLGROUP_VIEWPORT_ADDED - Listens for new viewport additions to extend resize observation
+ *
+ * @methods
+ * - **setHandlesVisible(visible: boolean)**: Show/hide manipulation spheres and edge lines
+ * - **setClippingPlanesVisible(visible: boolean)**: Enable/disable volume clipping planes
+ * - **getHandlesVisible()**: Get current handle visibility state
+ * - **getClippingPlanesVisible()**: Get current clipping plane visibility state
+ *
+ *
+ * @see {@link VolumeCroppingControlTool} - Companion tool for 2D viewport reference lines
+ * @see {@link BaseTool} - Base class providing core tool functionality
+ *
  */
 class VolumeCroppingTool extends BaseTool {
   static toolName;
@@ -135,13 +248,10 @@ class VolumeCroppingTool extends BaseTool {
               viewportId,
               renderingEngineId
             ) || { viewport: null };
-
             if (!viewport) {
               return;
             }
-
             const { element } = viewport;
-
             const resizeObserver = new ResizeObserver(() => {
               const element = getEnabledElementByIds(
                 viewportId,
@@ -151,15 +261,11 @@ class VolumeCroppingTool extends BaseTool {
                 return;
               }
               const { viewport } = element;
-
               const viewPresentation = viewport.getViewPresentation();
-
               viewport.resetCamera();
-
               viewport.setViewPresentation(viewPresentation);
               viewport.render();
             });
-
             resizeObserver.observe(element);
             this._resizeObservers.set(viewportId, resizeObserver);
           }
