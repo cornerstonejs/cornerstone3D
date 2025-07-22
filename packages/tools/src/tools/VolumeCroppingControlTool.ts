@@ -375,7 +375,16 @@ class VolumeCroppingControlTool extends AnnotationTool {
     return viewports;
   };
 
+  onSetToolInactive() {
+    console.debug(
+      `VolumeCroppingControlTool: onSetToolInactive called for tool ${this.getToolName()}`
+    );
+  }
+
   onSetToolActive() {
+    console.debug(
+      `VolumeCroppingControlTool: onSetToolActive called for tool ${this.getToolName()}`
+    );
     const viewportsInfo = this._getViewportsInfo();
 
     // Check if any annotation exists before proceeding
@@ -394,18 +403,50 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (!anyAnnotationExists) {
       this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
       this._subscribeToViewportNewVolumeSet(viewportsInfo);
-
+      // Request the volume cropping tool to send current planes
       this._computeToolCenter(viewportsInfo);
+      triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
+        toolGroupId: this.toolGroupId,
+        viewportsInfo: viewportsInfo,
+      });
+    } else {
+      // Turn off visibility of existing annotations
+      for (const vpInfo of viewportsInfo) {
+        const enabledElement = getEnabledElementByIds(
+          vpInfo.viewportId,
+          vpInfo.renderingEngineId
+        );
+
+        if (!enabledElement) {
+          continue;
+        }
+
+        const annotations = this._getAnnotations(enabledElement);
+        if (annotations && annotations.length > 0) {
+          annotations.forEach((annotation) => {
+            removeAnnotation(annotation.annotationUID);
+          });
+        }
+
+        // Render after removing annotations to clear reference lines
+        enabledElement.viewport.render();
+      }
     }
   }
 
   onSetToolEnabled() {
+    console.debug(
+      `VolumeCroppingControlTool: onSetToolEnabled called for tool ${this.getToolName()}`
+    );
     const viewportsInfo = this._getViewportsInfo();
 
     //this._computeToolCenter(viewportsInfo);
   }
 
   onSetToolDisabled() {
+    console.debug(
+      `VolumeCroppingControlTool: onSetToolDisabled called for tool ${this.getToolName()}`
+    );
     const viewportsInfo = this._getViewportsInfo();
 
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
@@ -472,7 +513,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   computeToolCenter = () => {
     const viewportsInfo = this._getViewportsInfo();
-    this._computeToolCenter(viewportsInfo);
   };
 
   _computeToolCenter = (viewportsInfo): void => {
@@ -630,6 +670,167 @@ class VolumeCroppingControlTool extends AnnotationTool {
       );
     }
   };
+
+  _syncWithVolumeCroppingTool(originalClippingPlanes) {
+    // Sync our tool centers with the clipping plane bounds
+    const planes = originalClippingPlanes;
+    if (planes.length >= 6) {
+      this.toolCenterMin = [
+        planes[0].origin[0], // XMIN
+        planes[2].origin[1], // YMIN
+        planes[4].origin[2], // ZMIN
+      ];
+      this.toolCenterMax = [
+        planes[1].origin[0], // XMAX
+        planes[3].origin[1], // YMAX
+        planes[5].origin[2], // ZMAX
+      ];
+      this.toolCenter = [
+        (this.toolCenterMin[0] + this.toolCenterMax[0]) / 2,
+        (this.toolCenterMin[1] + this.toolCenterMax[1]) / 2,
+        (this.toolCenterMin[2] + this.toolCenterMax[2]) / 2,
+      ];
+
+      // Update annotations based on their specific orientation
+      const viewportsInfo = this._getViewportsInfo();
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        const enabledElement = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+        if (enabledElement) {
+          const annotations = this._getAnnotations(enabledElement);
+          annotations.forEach((annotation) => {
+            if (
+              annotation.data &&
+              annotation.data.handles &&
+              annotation.data.orientation
+            ) {
+              const orientation = annotation.data.orientation.toUpperCase();
+
+              // Update tool centers based on the specific orientation
+              if (orientation === 'AXIAL') {
+                // Axial views see X and Y clipping planes
+                annotation.data.handles.toolCenterMin = [
+                  planes[0].origin[0], // XMIN
+                  planes[2].origin[1], // YMIN
+                  annotation.data.handles.toolCenterMin[2], // Keep existing Z
+                ];
+                annotation.data.handles.toolCenterMax = [
+                  planes[1].origin[0], // XMAX
+                  planes[3].origin[1], // YMAX
+                  annotation.data.handles.toolCenterMax[2], // Keep existing Z
+                ];
+              } else if (orientation === 'CORONAL') {
+                // Coronal views see X and Z clipping planes
+                annotation.data.handles.toolCenterMin = [
+                  planes[0].origin[0], // XMIN
+                  annotation.data.handles.toolCenterMin[1], // Keep existing Y
+                  planes[4].origin[2], // ZMIN
+                ];
+                annotation.data.handles.toolCenterMax = [
+                  planes[1].origin[0], // XMAX
+                  annotation.data.handles.toolCenterMax[1], // Keep existing Y
+                  planes[5].origin[2], // ZMAX
+                ];
+              } else if (orientation === 'SAGITTAL') {
+                // Sagittal views see Y and Z clipping planes
+                annotation.data.handles.toolCenterMin = [
+                  annotation.data.handles.toolCenterMin[0], // Keep existing X
+                  planes[2].origin[1], // YMIN
+                  planes[4].origin[2], // ZMIN
+                ];
+                annotation.data.handles.toolCenterMax = [
+                  annotation.data.handles.toolCenterMax[0], // Keep existing X
+                  planes[3].origin[1], // YMAX
+                  planes[5].origin[2], // ZMAX
+                ];
+              }
+
+              // Update the tool center as midpoint
+              annotation.data.handles.toolCenter = [
+                (annotation.data.handles.toolCenterMin[0] +
+                  annotation.data.handles.toolCenterMax[0]) /
+                  2,
+                (annotation.data.handles.toolCenterMin[1] +
+                  annotation.data.handles.toolCenterMax[1]) /
+                  2,
+                (annotation.data.handles.toolCenterMin[2] +
+                  annotation.data.handles.toolCenterMax[2]) /
+                  2,
+              ];
+            }
+          });
+        }
+      });
+
+      // Update virtual annotations as well
+      if (this._virtualAnnotations && this._virtualAnnotations.length > 0) {
+        this._virtualAnnotations.forEach((annotation) => {
+          if (
+            annotation.data &&
+            annotation.data.handles &&
+            annotation.data.orientation
+          ) {
+            const orientation = annotation.data.orientation.toUpperCase();
+
+            // Apply the same orientation-specific logic to virtual annotations
+            if (orientation === 'AXIAL') {
+              annotation.data.handles.toolCenterMin = [
+                planes[0].origin[0], // XMIN
+                planes[2].origin[1], // YMIN
+                annotation.data.handles.toolCenterMin[2],
+              ];
+              annotation.data.handles.toolCenterMax = [
+                planes[1].origin[0], // XMAX
+                planes[3].origin[1], // YMAX
+                annotation.data.handles.toolCenterMax[2],
+              ];
+            } else if (orientation === 'CORONAL') {
+              annotation.data.handles.toolCenterMin = [
+                planes[0].origin[0], // XMIN
+                annotation.data.handles.toolCenterMin[1],
+                planes[4].origin[2], // ZMIN
+              ];
+              annotation.data.handles.toolCenterMax = [
+                planes[1].origin[0], // XMAX
+                annotation.data.handles.toolCenterMax[1],
+                planes[5].origin[2], // ZMAX
+              ];
+            } else if (orientation === 'SAGITTAL') {
+              annotation.data.handles.toolCenterMin = [
+                annotation.data.handles.toolCenterMin[0],
+                planes[2].origin[1], // YMIN
+                planes[4].origin[2], // ZMIN
+              ];
+              annotation.data.handles.toolCenterMax = [
+                annotation.data.handles.toolCenterMax[0],
+                planes[3].origin[1], // YMAX
+                planes[5].origin[2], // ZMAX
+              ];
+            }
+
+            annotation.data.handles.toolCenter = [
+              (annotation.data.handles.toolCenterMin[0] +
+                annotation.data.handles.toolCenterMax[0]) /
+                2,
+              (annotation.data.handles.toolCenterMin[1] +
+                annotation.data.handles.toolCenterMax[1]) /
+                2,
+              (annotation.data.handles.toolCenterMin[2] +
+                annotation.data.handles.toolCenterMax[2]) /
+                2,
+            ];
+          }
+        });
+      }
+
+      // Trigger re-render to show updated reference lines
+      triggerAnnotationRenderForViewportIds(
+        viewportsInfo.map(({ viewportId }) => viewportId)
+      );
+    }
+  }
 
   setToolCenter(toolCenter: Types.Point3, handleType): void {
     if (handleType === 'min') {
@@ -1281,38 +1482,43 @@ class VolumeCroppingControlTool extends AnnotationTool {
   };
 
   _onSphereMoved = (evt) => {
-    const { draggingSphereIndex, toolCenter } = evt.detail;
-    const newMin: [number, number, number] = [...this.toolCenterMin];
-    const newMax: [number, number, number] = [...this.toolCenterMax];
-    // face spheres
-    if (draggingSphereIndex >= 0 && draggingSphereIndex <= 5) {
-      const axis = Math.floor(draggingSphereIndex / 2);
-      const isMin = draggingSphereIndex % 2 === 0;
-      (isMin ? newMin : newMax)[axis] = toolCenter[axis];
-      this.setToolCenter(newMin, 'min');
-      this.setToolCenter(newMax, 'max');
-      return;
-    }
-    // corner spheres
-    if (draggingSphereIndex >= 6 && draggingSphereIndex <= 13) {
-      const idx = draggingSphereIndex;
-      if (idx < 10) {
-        newMin[0] = toolCenter[0];
-      } else {
-        newMax[0] = toolCenter[0];
+    if (evt.detail.originalClippingPlanes) {
+      this._syncWithVolumeCroppingTool(evt.detail.originalClippingPlanes);
+    } else {
+      // This is called when a sphere is moved
+      const { draggingSphereIndex, toolCenter } = evt.detail;
+      const newMin: [number, number, number] = [...this.toolCenterMin];
+      const newMax: [number, number, number] = [...this.toolCenterMax];
+      // face spheres
+      if (draggingSphereIndex >= 0 && draggingSphereIndex <= 5) {
+        const axis = Math.floor(draggingSphereIndex / 2);
+        const isMin = draggingSphereIndex % 2 === 0;
+        (isMin ? newMin : newMax)[axis] = toolCenter[axis];
+        this.setToolCenter(newMin, 'min');
+        this.setToolCenter(newMax, 'max');
+        return;
       }
-      if ([6, 7, 10, 11].includes(idx)) {
-        newMin[1] = toolCenter[1];
-      } else {
-        newMax[1] = toolCenter[1];
+      // corner spheres
+      if (draggingSphereIndex >= 6 && draggingSphereIndex <= 13) {
+        const idx = draggingSphereIndex;
+        if (idx < 10) {
+          newMin[0] = toolCenter[0];
+        } else {
+          newMax[0] = toolCenter[0];
+        }
+        if ([6, 7, 10, 11].includes(idx)) {
+          newMin[1] = toolCenter[1];
+        } else {
+          newMax[1] = toolCenter[1];
+        }
+        if (idx % 2 === 0) {
+          newMin[2] = toolCenter[2];
+        } else {
+          newMax[2] = toolCenter[2];
+        }
+        this.setToolCenter(newMin, 'min');
+        this.setToolCenter(newMax, 'max');
       }
-      if (idx % 2 === 0) {
-        newMin[2] = toolCenter[2];
-      } else {
-        newMax[2] = toolCenter[2];
-      }
-      this.setToolCenter(newMin, 'min');
-      this.setToolCenter(newMax, 'max');
     }
   };
 
@@ -1515,7 +1721,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
     if (viewport.type === Enums.ViewportType.VOLUME_3D) {
       return;
     }
@@ -1532,8 +1738,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     const { handles } = viewportAnnotation.data;
-    const { currentPoints } = evt.detail;
-    const canvasCoords = currentPoints.canvas;
 
     if (handles.activeOperation === OPERATION.DRAG) {
       if (handles.activeType === 'min') {

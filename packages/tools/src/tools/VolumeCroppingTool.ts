@@ -528,6 +528,8 @@ class VolumeCroppingTool extends BaseTool {
       }
     });
 
+    this._forceImmediateVTKUpdates(viewport);
+
     // THEN update clipping planes
     this._updateClippingPlanesFromFaceSpheres(viewport);
 
@@ -543,100 +545,139 @@ class VolumeCroppingTool extends BaseTool {
     // Force all sphere sources to update their geometry immediately
     this.sphereStates.forEach((state) => {
       if (state.sphereSource) {
+        // Force the source to update
+        state.sphereSource.modified();
+        state.sphereSource.update();
+
         // Force the mapper to update
         if (state.sphereActor && state.sphereActor.getMapper()) {
           const mapper = state.sphereActor.getMapper();
           mapper.update();
           mapper.modified();
         }
+
+        // Force the actor to update
+        if (state.sphereActor) {
+          state.sphereActor.modified();
+        }
+      }
+    });
+
+    // Force edge line updates
+    Object.values(this.edgeLines).forEach(({ source, actor }) => {
+      if (source) {
+        const points = source.getPoints();
+        if (points) {
+          points.modified();
+        }
+        source.modified();
+        //source.update();
+      }
+      if (actor && actor.getMapper()) {
+        const mapper = actor.getMapper();
+        mapper.update();
+        mapper.modified();
+        actor.modified();
       }
     });
   }
+
   _onControlToolChange = (evt) => {
     const viewport = this._getViewport();
-    const isMin = evt.detail.handleType === 'min';
-    const toolCenter = isMin
-      ? evt.detail.toolCenterMin
-      : evt.detail.toolCenterMax;
-    const normals = isMin
-      ? [
-          [1, 0, 0],
-          [0, 1, 0],
-          [0, 0, 1],
-        ]
-      : [
-          [-1, 0, 0],
-          [0, -1, 0],
-          [0, 0, -1],
-        ];
-    const planeIndices = isMin
-      ? [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN]
-      : [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMAX];
-    const sphereIndices = isMin
-      ? [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN]
-      : [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX];
-    const axes = ['x', 'y', 'z'];
-    const orientationAxes = [
-      Enums.OrientationAxis.SAGITTAL,
-      Enums.OrientationAxis.CORONAL,
-      Enums.OrientationAxis.AXIAL,
-    ];
+    if (!evt.detail.toolCenter) {
+      console.debug(
+        'VolumeCroppingTool._onControlToolChange: sending orriginal planes for init'
+      );
 
-    // Update planes and spheres for each axis
-    for (let i = 0; i < 3; ++i) {
-      const origin: [number, number, number] = [0, 0, 0];
-      origin[i] = toolCenter[i];
-      const plane = vtkPlane.newInstance({
-        origin,
-        normal: normals[i] as [number, number, number],
+      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+        originalClippingPlanes: this.originalClippingPlanes,
+        viewportId: viewport.id,
+        renderingEngineId: viewport.renderingEngineId,
       });
-      this.originalClippingPlanes[planeIndices[i]].origin = plane.getOrigin();
+    } else {
+      const isMin = evt.detail.handleType === 'min';
+      const toolCenter = isMin
+        ? evt.detail.toolCenterMin
+        : evt.detail.toolCenterMax;
+      const normals = isMin
+        ? [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+          ]
+        : [
+            [-1, 0, 0],
+            [0, -1, 0],
+            [0, 0, -1],
+          ];
+      const planeIndices = isMin
+        ? [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN]
+        : [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMAX];
+      const sphereIndices = isMin
+        ? [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN]
+        : [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX];
+      const axes = ['x', 'y', 'z'];
+      const orientationAxes = [
+        Enums.OrientationAxis.SAGITTAL,
+        Enums.OrientationAxis.CORONAL,
+        Enums.OrientationAxis.AXIAL,
+      ];
 
-      if (this.configuration.showHandles) {
-        // Update face sphere
-        this.sphereStates[sphereIndices[i]].point[i] = plane.getOrigin()[i];
-        this.sphereStates[sphereIndices[i]].sphereSource.setCenter(
-          ...this.sphereStates[sphereIndices[i]].point
-        );
-        this.sphereStates[sphereIndices[i]].sphereSource.modified();
-
-        // Update center for other face spheres (not on this axis)
-        const otherSphere = this.sphereStates.find(
-          (s, idx) => s.axis === axes[i] && idx !== sphereIndices[i]
-        );
-        const newCenter = (otherSphere.point[i] + plane.getOrigin()[i]) / 2;
-        this.sphereStates.forEach((state) => {
-          if (
-            !state.isCorner &&
-            state.axis !== axes[i] &&
-            !evt.detail.viewportOrientation.includes(orientationAxes[i])
-          ) {
-            state.point[i] = newCenter;
-            state.sphereSource.setCenter(state.point);
-            state.sphereActor.getProperty().setColor(state.color);
-            state.sphereSource.modified();
-          }
+      // Update planes and spheres for each axis
+      for (let i = 0; i < 3; ++i) {
+        const origin: [number, number, number] = [0, 0, 0];
+        origin[i] = toolCenter[i];
+        const plane = vtkPlane.newInstance({
+          origin,
+          normal: normals[i] as [number, number, number],
         });
+        this.originalClippingPlanes[planeIndices[i]].origin = plane.getOrigin();
+
+        if (this.configuration.showHandles) {
+          // Update face sphere
+          this.sphereStates[sphereIndices[i]].point[i] = plane.getOrigin()[i];
+          this.sphereStates[sphereIndices[i]].sphereSource.setCenter(
+            ...this.sphereStates[sphereIndices[i]].point
+          );
+          this.sphereStates[sphereIndices[i]].sphereSource.modified();
+
+          // Update center for other face spheres (not on this axis)
+          const otherSphere = this.sphereStates.find(
+            (s, idx) => s.axis === axes[i] && idx !== sphereIndices[i]
+          );
+          const newCenter = (otherSphere.point[i] + plane.getOrigin()[i]) / 2;
+          this.sphereStates.forEach((state) => {
+            if (
+              !state.isCorner &&
+              state.axis !== axes[i] &&
+              !evt.detail.viewportOrientation.includes(orientationAxes[i])
+            ) {
+              state.point[i] = newCenter;
+              state.sphereSource.setCenter(state.point);
+              state.sphereActor.getProperty().setColor(state.color);
+              state.sphereSource.modified();
+            }
+          });
+        }
+
+        // Update vtk clipping plane origin
+        const volumeActor = viewport.getDefaultActor()?.actor;
+        if (volumeActor) {
+          const mapper = volumeActor.getMapper() as vtkVolumeMapper;
+          const clippingPlanes = mapper.getClippingPlanes();
+          clippingPlanes[planeIndices[i]].setOrigin(plane.getOrigin());
+        }
       }
 
-      // Update vtk clipping plane origin
-      const volumeActor = viewport.getDefaultActor()?.actor;
-      if (volumeActor) {
-        const mapper = volumeActor.getMapper() as vtkVolumeMapper;
-        const clippingPlanes = mapper.getClippingPlanes();
-        clippingPlanes[planeIndices[i]].setOrigin(plane.getOrigin());
+      if (
+        this.configuration.showHandles &&
+        this.configuration.showCornerSpheres
+      ) {
+        this._updateCornerSpheres();
       }
+      viewport.render();
     }
-
-    if (
-      this.configuration.showHandles &&
-      this.configuration.showCornerSpheres
-    ) {
-      this._updateCornerSpheres();
-    }
-    viewport.render();
   };
-
   _updateClippingPlanes(viewport) {
     // Get the actor and transformation matrix
     const actorEntry = viewport.getDefaultActor();
