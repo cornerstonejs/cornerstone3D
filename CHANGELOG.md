@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.6...v3.31.7) (2025-07-21)
+
+### Bug Fixes
+
+- **security:** Pin the versions of eslint-plugin-prettier and eslint-config-prettier. ([#2217](https://github.com/cornerstonejs/cornerstone3D/issues/2217)) ([82752d5](https://github.com/cornerstonejs/cornerstone3D/commit/82752d5d442f829e2718a68ecfbb31e7d8207ad7))
+
 ## [3.31.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.5...v3.31.6) (2025-07-18)
 
 ### Bug Fixes
