@@ -25,7 +25,6 @@ import { getToolGroup } from '../store/ToolGroupManager';
 import { Events } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { viewportFilters } from '../utilities';
 
 const PLANEINDEX = {
   XMIN: 0,
@@ -917,7 +916,14 @@ class VolumeCroppingTool extends BaseTool {
     return viewports;
   };
 
-  _addSphere(viewport, point, axis, position, cornerKey = null) {
+  _addSphere(
+    viewport,
+    point,
+    axis,
+    position,
+    cornerKey = null,
+    adaptiveRadius
+  ) {
     if (!this.configuration.showHandles) {
       return;
     }
@@ -930,12 +936,6 @@ class VolumeCroppingTool extends BaseTool {
     }
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);
-    // const sphereRadius =
-    //   this.configuration.sphereRadius !== undefined
-    //     ? this.configuration.sphereRadius
-    //     : 15;
-    // sphereSource.setRadius(sphereRadius);
-    const adaptiveRadius = this._calculateAdaptiveSphereRadius();
     sphereSource.setRadius(adaptiveRadius);
     const sphereMapper = vtkMapper.newInstance();
     sphereMapper.setInputConnection(sphereSource.getOutputPort());
@@ -981,36 +981,18 @@ class VolumeCroppingTool extends BaseTool {
     sphereActor.setPickable(true);
     viewport.addActor({ actor: sphereActor, uid: uid });
   }
-  _calculateAdaptiveSphereRadius(): number {
+  /**
+   * Calculate an adaptive sphere radius based on the diagonal of the volume.
+   * This allows the sphere size to scale with the volume size.
+   * @param diagonal The diagonal length of the volume in world coordinates.
+   * @returns The calculated adaptive radius, clamped between min and max limits.
+   */
+  _calculateAdaptiveSphereRadius(diagonal): number {
     // Get base radius from configuration (acts as a scaling factor)
     const baseRadius =
       this.configuration.sphereRadius !== undefined
         ? this.configuration.sphereRadius
         : 8;
-
-    // Get volume bounds to calculate scale
-    const viewport = this._getViewport();
-    const volumeActors = viewport.getActors();
-
-    if (!volumeActors || volumeActors.length === 0) {
-      return baseRadius; // Fallback to base radius
-    }
-
-    const imageData = volumeActors[0].actor.getMapper().getInputData();
-    if (!imageData) {
-      return baseRadius; // Fallback to base radius
-    }
-
-    // Get world bounds
-    const bounds = imageData.getBounds(); // [xmin, xmax, ymin, ymax, zmin, zmax]
-
-    // Calculate volume diagonal length
-    const xRange = bounds[1] - bounds[0];
-    const yRange = bounds[3] - bounds[2];
-    const zRange = bounds[5] - bounds[4];
-    const diagonal = Math.sqrt(
-      xRange * xRange + yRange * yRange + zRange * zRange
-    );
 
     // Scale radius as a percentage of diagonal (adjustable factor)
     const scaleFactor = this.configuration.sphereRadiusScale || 0.01; // 1% of diagonal by default
@@ -1022,6 +1004,7 @@ class VolumeCroppingTool extends BaseTool {
 
     return Math.max(minRadius, Math.min(maxRadius, adaptiveRadius));
   }
+
   _initialize3DViewports = (viewportsInfo): void => {
     if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
       console.warn(
@@ -1050,9 +1033,6 @@ class VolumeCroppingTool extends BaseTool {
     const xRange = worldBounds[1] - worldBounds[0];
     const yRange = worldBounds[3] - worldBounds[2];
     const zRange = worldBounds[5] - worldBounds[4];
-
-    const adaptiveRadius =
-      Math.sqrt(xRange * xRange + yRange * yRange + zRange * zRange) * 0.001;
 
     const xMin = worldBounds[0] + cropFactor * xRange;
     const xMax = worldBounds[1] - cropFactor * xRange;
@@ -1110,13 +1090,57 @@ class VolumeCroppingTool extends BaseTool {
     const sphereYmaxPoint = [(xMax + xMin) / 2, yMax, (zMax + zMin) / 2];
     const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMin];
     const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax];
-
-    this._addSphere(viewport, sphereXminPoint, 'x', 'min');
-    this._addSphere(viewport, sphereXmaxPoint, 'x', 'max');
-    this._addSphere(viewport, sphereYminPoint, 'y', 'min');
-    this._addSphere(viewport, sphereYmaxPoint, 'y', 'max');
-    this._addSphere(viewport, sphereZminPoint, 'z', 'min');
-    this._addSphere(viewport, sphereZmaxPoint, 'z', 'max');
+    const adaptiveRadius = this._calculateAdaptiveSphereRadius(
+      Math.sqrt(xRange * xRange + yRange * yRange + zRange * zRange)
+    );
+    this._addSphere(
+      viewport,
+      sphereXminPoint,
+      'x',
+      'min',
+      null,
+      adaptiveRadius
+    );
+    this._addSphere(
+      viewport,
+      sphereXmaxPoint,
+      'x',
+      'max',
+      null,
+      adaptiveRadius
+    );
+    this._addSphere(
+      viewport,
+      sphereYminPoint,
+      'y',
+      'min',
+      null,
+      adaptiveRadius
+    );
+    this._addSphere(
+      viewport,
+      sphereYmaxPoint,
+      'y',
+      'max',
+      null,
+      adaptiveRadius
+    );
+    this._addSphere(
+      viewport,
+      sphereZminPoint,
+      'z',
+      'min',
+      null,
+      adaptiveRadius
+    );
+    this._addSphere(
+      viewport,
+      sphereZmaxPoint,
+      'z',
+      'max',
+      null,
+      adaptiveRadius
+    );
     if (
       this.configuration.showCornerSpheres &&
       this.configuration.showHandles
@@ -1144,7 +1168,14 @@ class VolumeCroppingTool extends BaseTool {
       ];
 
       for (let i = 0; i < corners.length; i++) {
-        this._addSphere(viewport, corners[i], 'corner', null, cornerKeys[i]);
+        this._addSphere(
+          viewport,
+          corners[i],
+          'corner',
+          null,
+          cornerKeys[i],
+          adaptiveRadius
+        );
       }
 
       // draw the lines between corners
