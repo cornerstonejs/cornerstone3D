@@ -91,7 +91,8 @@ export default class LabelData {
      */
     public createQualitativeLabelPosition(annotation: Types.Annotation) {
         const { textBox } = annotation.data.handles;
-        const { referencedImageId } = annotation.metadata;
+        const { referencedImageId, FrameOfReferenceUID: frameOfReferenceUID } =
+            annotation.metadata;
         const is3DMeasurement = !referencedImageId;
         const { worldPosition } = textBox;
         const { x, y, z } = toScoord(
@@ -104,9 +105,11 @@ export default class LabelData {
 
         if (is3DMeasurement) {
             const graphicData = [x, y, z];
-            return new valueTypes.Scoord3dContentItem({
+            return new valueTypes.Scoord3DContentItem({
                 name,
                 relationshipType,
+                graphicType,
+                frameOfReferenceUID,
                 graphicData
             });
         }
