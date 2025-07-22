@@ -20,10 +20,8 @@ const initializeRectangle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points, // bottom, top, left, right
-      imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup
@@ -124,7 +122,13 @@ function createPointInRectangle(
     // Project onto normal
     const d = Math.abs(vec3.dot(v, normal));
     // Check bounds with tolerance in normal direction
-    return u >= 0 && u <= uLen && vproj >= 0 && vproj <= vLen && d <= EPS;
+    return (
+      u >= -EPS &&
+      u <= uLen + EPS &&
+      vproj >= -EPS &&
+      vproj <= vLen + EPS &&
+      d <= EPS
+    );
   };
 
   return { boundsIJK, pointInShapeFn };
