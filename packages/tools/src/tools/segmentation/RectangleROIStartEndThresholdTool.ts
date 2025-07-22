@@ -602,11 +602,18 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       }
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      const iteratorVolumeIDs = annotationEnabledElement.viewport?.volumeIds.values();
+      const iteratorVolumeIDs =
+        annotationEnabledElement.viewport?.volumeIds.values();
 
       for (const volumeId of iteratorVolumeIDs) {
-        if (annotation.invalidated && annotation.metadata.volumeId === volumeId) {
-          this._throttledCalculateCachedStats(annotation, annotationEnabledElement);
+        if (
+          annotation.invalidated &&
+          annotation.metadata.volumeId === volumeId
+        ) {
+          this._throttledCalculateCachedStats(
+            annotation,
+            annotationEnabledElement
+          );
         }
       }
 
