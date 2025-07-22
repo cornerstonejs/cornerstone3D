@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.10...v3.31.11) (2025-07-22)
+
+### Bug Fixes
+
+- remove tolerance ([#2223](https://github.com/cornerstonejs/cornerstone3D/issues/2223)) ([e5382b4](https://github.com/cornerstonejs/cornerstone3D/commit/e5382b4468118545fddec63cd6894d2e0920deb3))
+
 ## [3.31.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.9...v3.31.10) (2025-07-22)
 
 **Note:** Version bump only for package @cornerstonejs/core
