@@ -219,7 +219,6 @@ async function run() {
     },
   ]);
 
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
   // // Add the segmentation representation to the viewport
   await segmentation.addContourRepresentationToViewport(viewportId1, [
     {

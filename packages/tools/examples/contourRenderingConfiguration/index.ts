@@ -252,7 +252,6 @@ async function run() {
     },
   ]);
 
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
   // Render the image
   renderingEngine.render();
 }

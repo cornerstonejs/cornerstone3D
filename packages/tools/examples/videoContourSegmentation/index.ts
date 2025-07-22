@@ -314,7 +314,6 @@ async function run() {
   [segmentationRepresentationUID] = segmentationRepresentationUIDs;
 
   updateInputsForCurrentSegmentation();
-  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 }
 
 run();
