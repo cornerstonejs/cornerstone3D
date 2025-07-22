@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.11...v3.31.12) (2025-07-22)
+
+### Bug Fixes
+
+- fill functions to work with oblique planes ([#2210](https://github.com/cornerstonejs/cornerstone3D/issues/2210)) ([3d5a8c3](https://github.com/cornerstonejs/cornerstone3D/commit/3d5a8c3fa87a5eeb112b30775cb473a3924b0db7))
+
+## [3.31.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.10...v3.31.11) (2025-07-22)
+
+### Bug Fixes
+
+- remove tolerance ([#2223](https://github.com/cornerstonejs/cornerstone3D/issues/2223)) ([e5382b4](https://github.com/cornerstonejs/cornerstone3D/commit/e5382b4468118545fddec63cd6894d2e0920deb3))
+
+## [3.31.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.9...v3.31.10) (2025-07-22)
+
+### Bug Fixes
+
+- contour Examples ([#2205](https://github.com/cornerstonejs/cornerstone3D/issues/2205)) ([926224e](https://github.com/cornerstonejs/cornerstone3D/commit/926224e0fadbf7dcab8cc1beaab714da0582e326))
+
+## [3.31.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.8...v3.31.9) (2025-07-22)
+
+### Bug Fixes
+
+- make undo/redo availability publicly accessible ([#2220](https://github.com/cornerstonejs/cornerstone3D/issues/2220)) ([86c2af6](https://github.com/cornerstonejs/cornerstone3D/commit/86c2af6c31802ea58b717cc46b722115a66361c4))
+
+## [3.31.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.7...v3.31.8) (2025-07-22)
+
+### Bug Fixes
+
+- local segmentation load ([#2222](https://github.com/cornerstonejs/cornerstone3D/issues/2222)) ([f0e6802](https://github.com/cornerstonejs/cornerstone3D/commit/f0e6802aad72475092824e88af8609d498ac3baf))
+
 ## [3.31.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.6...v3.31.7) (2025-07-21)
 
 ### Bug Fixes

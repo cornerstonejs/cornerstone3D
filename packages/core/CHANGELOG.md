@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.11...v3.31.12) (2025-07-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.31.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.10...v3.31.11) (2025-07-22)
+
+### Bug Fixes
+
+- remove tolerance ([#2223](https://github.com/cornerstonejs/cornerstone3D/issues/2223)) ([e5382b4](https://github.com/cornerstonejs/cornerstone3D/commit/e5382b4468118545fddec63cd6894d2e0920deb3))
+
+## [3.31.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.9...v3.31.10) (2025-07-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.31.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.8...v3.31.9) (2025-07-22)
+
+### Bug Fixes
+
+- make undo/redo availability publicly accessible ([#2220](https://github.com/cornerstonejs/cornerstone3D/issues/2220)) ([86c2af6](https://github.com/cornerstonejs/cornerstone3D/commit/86c2af6c31802ea58b717cc46b722115a66361c4))
+
+## [3.31.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.7...v3.31.8) (2025-07-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [3.31.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.6...v3.31.7) (2025-07-21)
 
 **Note:** Version bump only for package @cornerstonejs/core
