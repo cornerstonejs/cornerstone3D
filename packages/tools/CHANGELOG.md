@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.11...v3.31.12) (2025-07-22)
+
+### Bug Fixes
+
+- fill functions to work with oblique planes ([#2210](https://github.com/cornerstonejs/cornerstone3D/issues/2210)) ([3d5a8c3](https://github.com/cornerstonejs/cornerstone3D/commit/3d5a8c3fa87a5eeb112b30775cb473a3924b0db7))
+
 ## [3.31.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.10...v3.31.11) (2025-07-22)
 
 **Note:** Version bump only for package @cornerstonejs/tools
