@@ -23,7 +23,7 @@ const sphereComposition = {
       return;
     }
     // Calculate the center as the midpoint between the first two points
-    // That calculation servers both for orthogonal and oblique planes
+    // That calculation serves both for orthogonal and oblique planes
     const center = vec3.create();
     if (points.length >= 2) {
       vec3.add(center, points[0], points[1]);

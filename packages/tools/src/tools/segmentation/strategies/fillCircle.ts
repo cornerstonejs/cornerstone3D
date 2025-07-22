@@ -44,7 +44,7 @@ const initializeCircle = {
     }
 
     // Calculate the center as the midpoint between the first two points
-    // That calculation servers both for orthogonal and oblique planes
+    // That calculation serves both for orthogonal and oblique planes
     const center = vec3.create();
     if (points.length >= 2) {
       vec3.add(center, points[0], points[1]);
@@ -148,11 +148,9 @@ function createPointInEllipse(cornersInWorld: Types.Point3[] = []) {
     // Express proj in (majorAxis, minorAxis) coordinates
     // Project from center, so shift origin to topLeft
     const fromTopLeft = vec3.create();
-    vec3.subtract(
-      fromTopLeft,
-      proj,
-      vec3.subtract(vec3.create(), center, topLeft)
-    );
+    const centerToTopLeft = vec3.create();
+    vec3.subtract(centerToTopLeft, center, topLeft);
+    vec3.subtract(fromTopLeft, proj, centerToTopLeft);
     const x = vec3.dot(fromTopLeft, majorAxisVec);
     const y = vec3.dot(fromTopLeft, minorAxisVec);
 
