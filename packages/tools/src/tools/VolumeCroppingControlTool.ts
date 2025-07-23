@@ -1617,6 +1617,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
     }
     this._computeToolCenter(viewportsInfo);
+    triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
+      toolGroupId: this.toolGroupId,
+      viewportsInfo: viewportsInfo,
+    });
   };
 
   _unsubscribeToViewportNewVolumeSet(viewportsInfo) {
