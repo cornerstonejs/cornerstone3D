@@ -42,11 +42,8 @@ class Angle extends BaseAdapter3D {
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
-                points: worldCoords,
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                ...state.annotation.data.handles,
+                points: worldCoords
             },
             cachedStats,
             frameNumber: ReferencedFrameNumber

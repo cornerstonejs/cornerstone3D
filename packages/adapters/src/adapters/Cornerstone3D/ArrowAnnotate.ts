@@ -25,7 +25,6 @@ class ArrowAnnotate extends BaseAdapter3D {
         const {
             state,
             SCOORDGroup,
-            scoordArgs,
             worldCoords,
             referencedImageId,
             ReferencedFrameNumber
@@ -68,12 +67,9 @@ class ArrowAnnotate extends BaseAdapter3D {
             ...state.annotation.data,
             text,
             handles: {
+                ...state.annotation.data.handles,
                 arrowFirst: true,
-                points: worldCoords,
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                points: worldCoords
             },
             frameNumber: ReferencedFrameNumber
         };
@@ -83,7 +79,7 @@ class ArrowAnnotate extends BaseAdapter3D {
 
     static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, metadata, findingSites } = tool;
-        let { finding } = tool;
+        const { finding } = tool;
         const { referencedImageId } = metadata;
         const scoordProps = {
             is3DMeasurement,
@@ -109,15 +105,6 @@ class ArrowAnnotate extends BaseAdapter3D {
                 : null,
             use3DSpatialCoordinates: is3DMeasurement
         };
-
-        // If freetext finding isn't present, add it from the tool text.
-        if (!finding || finding.CodeValue !== codeValues.CORNERSTONEFREETEXT) {
-            finding = {
-                CodeValue: codeValues.CORNERSTONEFREETEXT,
-                CodingSchemeDesignator: CodingScheme.CodingSchemeDesignator,
-                CodeMeaning: data.text
-            };
-        }
 
         return TID300RepresentationArguments;
     }
