@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.12...v3.31.13) (2025-07-23)
+
+### Bug Fixes
+
+-   Save label position and use valid DICOM for label text ([#2224](https://github.com/cornerstonejs/cornerstone3D/issues/2224)) ([acb1446](https://github.com/cornerstonejs/cornerstone3D/commit/acb1446027950066ed9d8404ecbd27220f41f020))
+
 ## [3.31.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.11...v3.31.12) (2025-07-22)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
