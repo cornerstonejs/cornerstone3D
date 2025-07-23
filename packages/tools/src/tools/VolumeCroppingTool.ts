@@ -1599,6 +1599,9 @@ class VolumeCroppingTool extends BaseTool {
 
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
+    this.originalClippingPlanes = [];
+    this.sphereStates = [];
+    this.edgeLines = {};
     this._initialize3DViewports(viewportsInfo);
   };
 
