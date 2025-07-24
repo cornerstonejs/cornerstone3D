@@ -105,6 +105,7 @@ const SPHEREINDEX = {
  * @extends BaseTool
  *
  * @property {string} toolName - Static tool identifier: 'VolumeCropping'
+ * @property {string} frameOfReference - Frame of reference for the tool
  * @property {Function} touchDragCallback - Touch drag event handler for mobile interactions
  * @property {Function} mouseDragCallback - Mouse drag event handler for desktop interactions
  * @property {Function} cleanUp - Cleanup function for resetting tool state after interactions
@@ -171,7 +172,7 @@ const SPHEREINDEX = {
  */
 class VolumeCroppingTool extends BaseTool {
   static toolName;
-
+  frameOfReference?: string;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   cleanUp: () => void;
@@ -690,16 +691,16 @@ class VolumeCroppingTool extends BaseTool {
   _onControlToolChange = (evt) => {
     const viewport = this._getViewport();
     if (!evt.detail.toolCenter) {
-      console.debug(
-        'VolumeCroppingTool._onControlToolChange: sending orriginal planes for init'
-      );
-
       triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
         originalClippingPlanes: this.originalClippingPlanes,
         viewportId: viewport.id,
         renderingEngineId: viewport.renderingEngineId,
+        frameOfReference: this.frameOfReference,
       });
     } else {
+      if (evt.detail.frameOfReference !== this.frameOfReference) {
+        return;
+      }
       const isMin = evt.detail.handleType === 'min';
       const toolCenter = isMin
         ? evt.detail.toolCenterMin
@@ -1025,7 +1026,7 @@ class VolumeCroppingTool extends BaseTool {
       console.warn('VolumeCroppingTool: No image data found for volume actor.');
       return;
     }
-
+    this.frameOfReference = imageData.frameOfReference || 'unknown';
     const worldBounds = imageData.getBounds(); // Already in world coordinates
     const cropFactor = this.configuration.initialCropFactor || 0.1;
 
@@ -1231,6 +1232,7 @@ class VolumeCroppingTool extends BaseTool {
         this._onControlToolChange(evt);
       }
     );
+    viewport.render();
   };
 
   // Helper method to get viewport and world coordinates
@@ -1400,6 +1402,7 @@ class VolumeCroppingTool extends BaseTool {
       toolCenter: sphereState.point,
       axis: sphereState.isCorner ? 'corner' : sphereState.axis,
       draggingSphereIndex: this.draggingSphereIndex,
+      frameOfReference: this.frameOfReference,
     });
   };
 
