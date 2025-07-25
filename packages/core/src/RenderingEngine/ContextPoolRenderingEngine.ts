@@ -358,6 +358,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
 
+    widgetRenderers.forEach((_, renderer) => {
+      renderer.setDraw(false);
+    });
+
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const context = openGLRenderWindow.get3DContext();
