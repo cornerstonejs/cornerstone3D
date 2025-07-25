@@ -30,8 +30,6 @@ class Probe extends BaseAdapter3D {
         const {
             state,
             NUMGroup,
-            scoord,
-            scoordArgs,
             worldCoords,
             referencedImageId,
             ReferencedFrameNumber
@@ -52,11 +50,8 @@ class Probe extends BaseAdapter3D {
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
-                points: worldCoords,
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                ...state.annotation.data.handles,
+                points: worldCoords
             },
             cachedStats,
             frameNumber: ReferencedFrameNumber

@@ -21,8 +21,6 @@ class PlanarFreehandROI extends BaseAdapter3D {
         const {
             state,
             NUMGroup,
-            scoord,
-            scoordArgs,
             worldCoords,
             referencedImageId,
             ReferencedFrameNumber
@@ -57,11 +55,8 @@ class PlanarFreehandROI extends BaseAdapter3D {
             ...state.annotation.data,
             contour: { polyline: worldCoords, closed: !isOpenContour },
             handles: {
-                points,
-                activeHandleIndex: null,
-                textBox: {
-                    hasMoved: false
-                }
+                ...state.annotation.data.handles,
+                points
             },
             frameNumber: ReferencedFrameNumber
         };
@@ -118,7 +113,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
             ReferencedFrameOfReferenceUID: is3DMeasurement
                 ? metadata.FrameOfReferenceUID
                 : null,
-            use3DSpatialCoordinates: false
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

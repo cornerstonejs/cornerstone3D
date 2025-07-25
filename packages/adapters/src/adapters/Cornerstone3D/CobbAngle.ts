@@ -34,16 +34,13 @@ class CobbAngle extends BaseAdapter3D {
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
+                ...state.annotation.data.handles,
                 points: [
                     worldCoords[0],
                     worldCoords[1],
                     worldCoords[2],
                     worldCoords[3]
-                ],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                ]
             },
             frameNumber: ReferencedFrameNumber
         };
