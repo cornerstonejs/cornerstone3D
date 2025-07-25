@@ -881,7 +881,7 @@ class VolumeCroppingTool extends BaseTool {
         if (volumeActor) {
           const mapper = volumeActor.getMapper() as vtkVolumeMapper;
           const clippingPlanes = mapper.getClippingPlanes();
-          if (this.getClippingPlanesVisible) {
+          if (clippingPlanes) {
             clippingPlanes[planeIndices[i]].setOrigin(plane.getOrigin());
           }
         }
