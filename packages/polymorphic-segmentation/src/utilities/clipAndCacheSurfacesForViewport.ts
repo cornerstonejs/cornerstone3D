@@ -43,6 +43,14 @@ export type PolyDataClipCacheType = Map<number, Map<string, SurfaceClipResult>>;
 const polyDataCache = new Map() as PolyDataClipCacheType;
 const surfacesAABBCache = new Map();
 
+/**
+ * Clear polyDataCache and surfacesAABBCache
+ */
+export function clearCache() {
+  polyDataCache.clear();
+  surfacesAABBCache.clear();
+}
+
 const triggerWorkerProgress = (eventTarget, progress) => {
   triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
     progress,

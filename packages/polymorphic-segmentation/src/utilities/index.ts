@@ -1,3 +1,6 @@
-import { clipAndCacheSurfacesForViewport } from './clipAndCacheSurfacesForViewport';
+import {
+  clipAndCacheSurfacesForViewport,
+  clearCache,
+} from './clipAndCacheSurfacesForViewport';
 
-export { clipAndCacheSurfacesForViewport };
+export { clipAndCacheSurfacesForViewport, clearCache };
