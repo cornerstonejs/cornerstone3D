@@ -360,7 +360,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     widgetRenderers.forEach((_, renderer) => {
       renderer.setDraw(false);
-    }
+    });
 
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
