@@ -745,22 +745,11 @@ class VolumeCroppingTool extends BaseTool {
       this._updateCornerSpheres();
     }
 
-    // For OHIF: Force immediate VTK pipeline updates
-    this.sphereStates.forEach((state) => {
-      if (state.sphereSource) {
-        // Force the mapper to update
-        if (state.sphereActor && state.sphereActor.getMapper()) {
-          const mapper = state.sphereActor.getMapper();
-          mapper.update();
-          mapper.modified();
-        }
-      }
-    });
-
-    this._forceImmediateVTKUpdates(viewport);
-
-    // THEN update clipping planes
+    // // THEN update clipping planes
     this._updateClippingPlanesFromFaceSpheres(viewport);
+
+    // // For OHIF: Force immediate VTK pipeline updates
+    this._forceImmediateVTKUpdates(viewport);
 
     // Final render and event trigger
     viewport.render();
