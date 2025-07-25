@@ -101,14 +101,15 @@ const OPERATION = {
 };
 
 /**
- * VolumeCroppingControlTool is a tool that provides interactive reference lines to modify the cropping planes
- * of the VolumeCroppingTool. It renders crosshair-style reference lines across multiple viewports and allows
+ * VolumeCroppingControlTool provides interactive reference lines to modify the cropping planes
+ * of the VolumeCroppingTool. It renders  reference lines across 1 to 3 orthographic viewports and allows
  * users to drag these lines to adjust volume cropping boundaries in real-time.
  *
  * @remarks
- * This tool has no standalone functionality and must be used in conjunction with the VolumeCroppingTool
- * to provide precise, visual adjustments to volume cropping planes. It automatically synchronizes with
- * the main cropping tool and updates clipping planes based on user interactions.
+ * This tool has no standalone functionality and must be used in conjunction with a VolumeCroppingTool that will be receiving volume.
+ * Messaging between this tool and the main cropping tool is handled through Cornerstone events that are validated by the series instance UID of the volume.
+ * Therefore the tool does not need to be in the same tool group as the volume cropping tool and
+ * multiple cropping & control instances can be used on different series in the same display.
  *
  * @example
  * ```typescript

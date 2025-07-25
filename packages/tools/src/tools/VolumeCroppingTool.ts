@@ -54,10 +54,8 @@ const SPHEREINDEX = {
 };
 
 /**
- * VolumeCroppingTool is a comprehensive 3D volume cropping tool that provides interactive clipping planes,
- * manipulatable spheres, and real-time volume cropping capabilities. It renders interactive handles (spheres)
- * at face centers and corners of a cropping box, allowing users to precisely adjust volume boundaries through
- * direct manipulation in 3D space.
+ * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
+ *  It renders interactive handles (spheres) at face centers and corners of a cropping box, allowing users to precisely adjust volume boundaries through direct manipulation in 3D space.
  *
  * @remarks
  * This tool creates a complete 3D cropping interface with:
@@ -65,10 +63,8 @@ const SPHEREINDEX = {
  * - 8 corner spheres for multi-axis cropping
  * - 12 edge lines connecting corner spheres
  * - Real-time clipping plane updates
- * - Synchronization with VolumeCroppingControlTool for cross-viewport interaction
+ * - Synchronization with VolumeCroppingControlTool working on the same series instance UID for cross-viewport interaction
  *
- * The tool automatically handles volume actor detection, clipping plane management, and provides
- * smooth interaction through optimized rendering and event handling.
  *
  * @example
  * ```typescript
