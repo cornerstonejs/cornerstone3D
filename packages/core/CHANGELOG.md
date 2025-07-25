@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.31.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.13...v3.31.14) (2025-07-25)
+
+### Bug Fixes
+
+- **widgets:** disable widget renderers after render ([#2229](https://github.com/cornerstonejs/cornerstone3D/issues/2229)) ([fa0d63e](https://github.com/cornerstonejs/cornerstone3D/commit/fa0d63ec6f677bbb7a5cae93c5aed940b8a056ac))
+
 ## [3.31.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.12...v3.31.13) (2025-07-23)
 
 **Note:** Version bump only for package @cornerstonejs/core
