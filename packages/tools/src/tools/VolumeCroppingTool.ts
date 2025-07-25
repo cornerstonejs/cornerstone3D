@@ -78,10 +78,10 @@ const SPHEREINDEX = {
  *   showHandles: true,
  *   initialCropFactor: 0.1,
  *   sphereColors: {
- *     x: [1.0, 1.0, 0.0], // Yellow for X-axis spheres
- *     y: [0.0, 1.0, 0.0], // Green for Y-axis spheres
- *     z: [1.0, 0.0, 0.0], // Red for Z-axis spheres
- *     corners: [0.0, 0.0, 1.0] // Blue for corner spheres
+ *     SAGITTAL: [1.0, 1.0, 0.0], // Yellow for sagittal (X-axis) spheres
+ *     CORONAL: [0.0, 1.0, 0.0], // Green for coronal (Y-axis) spheres
+ *     AXIAL: [1.0, 0.0, 0.0], // Red for axial (Z-axis) spheres
+ *     CORNERS: [0.0, 0.0, 1.0] // Blue for corner spheres
  *   },
  *   sphereRadius: 10,
  *   grabSpherePixelDistance: 25
@@ -93,6 +93,30 @@ const SPHEREINDEX = {
  * // Programmatically control visibility
  * const tool = toolGroup.getToolInstance(VolumeCroppingTool.toolName);
  * tool.setHandlesVisible(true);
+ * tool.setClippingPlanesVisible(true);
+ *
+ * // Toggle visibility for interactive UI
+ * function toggleCroppingInterface() {
+ *   const handlesVisible = tool.getHandlesVisible();
+ *   const planesVisible = tool.getClippingPlanesVisible();
+ *
+ *   // Toggle handles (spheres and edge lines)
+ *   tool.setHandlesVisible(!handlesVisible);
+ *
+ *   // Toggle clipping effect
+ *   tool.setClippingPlanesVisible(!planesVisible);
+ *
+ *   console.log(`Handles: ${!handlesVisible ? 'shown' : 'hidden'}`);
+ *   console.log(`Cropping: ${!planesVisible ? 'active' : 'disabled'}`);
+ * }
+ *
+ * // Common UI scenarios
+ * // Show handles but disable cropping (for positioning)
+ * tool.setHandlesVisible(true);
+ * tool.setClippingPlanesVisible(false);
+ *
+ * // Hide handles but keep cropping active (for clean view)
+ * tool.setHandlesVisible(false);
  * tool.setClippingPlanesVisible(true);
  * ```
  *
@@ -140,10 +164,10 @@ const SPHEREINDEX = {
  * @property {number} mobile.opacity - Opacity for mobile interaction feedback (default: 0.8)
  * @property {number} initialCropFactor - Initial cropping factor as fraction of volume bounds (default: 0.08)
  * @property {Object} sphereColors - Color configuration for different sphere types
- * @property {number[]} sphereColors.x - RGB color for X-axis face spheres [r, g, b] (default: [1.0, 1.0, 0.0])
- * @property {number[]} sphereColors.y - RGB color for Y-axis face spheres [r, g, b] (default: [0.0, 1.0, 0.0])
- * @property {number[]} sphereColors.z - RGB color for Z-axis face spheres [r, g, b] (default: [1.0, 0.0, 0.0])
- * @property {number[]} sphereColors.corners - RGB color for corner spheres [r, g, b] (default: [0.0, 0.0, 1.0])
+ * @property {number[]} sphereColors.SAGITTAL - RGB color for sagittal (X-axis) face spheres [r, g, b] (default: [1.0, 1.0, 0.0])
+ * @property {number[]} sphereColors.CORONAL - RGB color for coronal (Y-axis) face spheres [r, g, b] (default: [0.0, 1.0, 0.0])
+ * @property {number[]} sphereColors.AXIAL - RGB color for axial (Z-axis) face spheres [r, g, b] (default: [1.0, 0.0, 0.0])
+ * @property {number[]} sphereColors.CORNERS - RGB color for corner spheres [r, g, b] (default: [0.0, 0.0, 1.0])
  * @property {number} sphereRadius - Radius of manipulation spheres in world units (default: 8)
  * @property {number} grabSpherePixelDistance - Pixel distance threshold for sphere selection (default: 20)
  * @property {number} rotateIncrementDegrees - Rotation increment for camera rotation (default: 2)
@@ -213,10 +237,10 @@ class VolumeCroppingTool extends BaseTool {
         },
         initialCropFactor: 0.08,
         sphereColors: {
-          x: [1.0, 1.0, 0.0], //  Yellow for X
-          y: [0.0, 1.0, 0.0], // Green for Y
-          z: [1.0, 0.0, 0.0], // Red for Z
-          corners: [0.0, 0.0, 1.0], // Blue for corners
+          SAGITTAL: [1.0, 1.0, 0.0], //  Yellow for sagittal (X-axis)
+          CORONAL: [0.0, 1.0, 0.0], // Green for coronal (Y-axis)
+          AXIAL: [1.0, 0.0, 0.0], // Red for axial (Z-axis)
+          CORNERS: [0.0, 0.0, 1.0], // Blue for corners
         },
         sphereRadius: 8,
         grabSpherePixelDistance: 20, //pixels threshold for closeness to the sphere being grabbed
@@ -429,6 +453,25 @@ class VolumeCroppingTool extends BaseTool {
     return true;
   };
 
+  /**
+   * Sets the visibility of the cropping handles (spheres and edge lines).
+   *
+   * When handles are being shown, this method automatically synchronizes the sphere positions
+   * with the current clipping plane positions to ensure visual consistency. This includes
+   * updating face spheres, corner spheres, and edge lines to match the current crop bounds.
+   *
+   * @param visible - Whether to show or hide the cropping handles
+   *
+   * @example
+   * ```typescript
+   * // Hide all cropping handles
+   * volumeCroppingTool.setHandlesVisible(false);
+   *
+   * // Show handles and sync with current crop state
+   * volumeCroppingTool.setHandlesVisible(true);
+   * ```
+   *
+   */
   setHandlesVisible(visible: boolean) {
     this.configuration.showHandles = visible;
     // Before showing, update sphere positions to match clipping planes
@@ -476,14 +519,83 @@ class VolumeCroppingTool extends BaseTool {
     viewport.render();
   }
 
+  /**
+   * Gets the current visibility state of the cropping handles.
+   *
+   * @returns Whether the cropping handles (spheres and edge lines) are currently visible
+   *
+   * @example
+   * ```typescript
+   * // Check if handles are currently visible
+   * const handlesVisible = volumeCroppingTool.getHandlesVisible();
+   * if (handlesVisible) {
+   *   console.log('Cropping handles are currently shown');
+   * } else {
+   *   console.log('Cropping handles are currently hidden');
+   * }
+   * ```
+   *
+   * @remarks
+   * This method returns the configuration state, which controls the visibility of:
+   * - Face spheres (6 spheres for individual axis cropping)
+   * - Corner spheres (8 spheres for multi-axis cropping)
+   * - Edge lines connecting the corner spheres
+   */
   getHandlesVisible() {
     return this.configuration.showHandles;
   }
 
+  /**
+   * Gets the current visibility state of the clipping planes.
+   *
+   * @returns Whether the clipping planes are currently visible and actively cropping the volume
+   *
+   * @example
+   * ```typescript
+   * // Check if clipping planes are currently active
+   * const planesVisible = volumeCroppingTool.getClippingPlanesVisible();
+   * if (planesVisible) {
+   *   console.log('Volume is currently being cropped');
+   * } else {
+   *   console.log('Volume is displayed in full');
+   * }
+   * ```
+   *
+   * @remarks
+   * This method returns the configuration state that controls whether:
+   * - The volume rendering respects the current clipping plane boundaries
+   * - Parts of the volume outside the crop bounds are hidden from view
+   * - The cropping effect is applied to the 3D volume visualization
+   */
   getClippingPlanesVisible() {
     return this.configuration.showClippingPlanes;
   }
 
+  /**
+   * Sets the visibility of the clipping planes to enable or disable volume cropping.
+   *
+   * When clipping planes are visible, the volume rendering is cropped according to the
+   * current sphere positions. When disabled, the full volume is displayed without cropping.
+   * The viewport is automatically re-rendered after the change.
+   *
+   * @param visible - Whether to enable (true) or disable (false) volume clipping
+   *
+   * @example
+   * ```typescript
+   * // Enable volume cropping
+   * volumeCroppingTool.setClippingPlanesVisible(true);
+   *
+   * // Disable volume cropping to show full volume
+   * volumeCroppingTool.setClippingPlanesVisible(false);
+   * ```
+   *
+   * @remarks
+   * - When enabled, parts of the volume outside the crop bounds are hidden
+   * - When disabled, all clipping planes are removed from the volume mapper
+   * - The cropping bounds are determined by the current sphere positions
+   * - The viewport is automatically re-rendered to reflect the change
+   * - This method updates the internal configuration and applies changes immediately
+   */
   setClippingPlanesVisible(visible: boolean) {
     this.configuration.showClippingPlanes = visible;
     const viewport = this._getViewport();
@@ -942,13 +1054,13 @@ class VolumeCroppingTool extends BaseTool {
     const sphereColors = this.configuration.sphereColors || {};
 
     if (cornerKey) {
-      color = sphereColors.corners || [0.0, 0.0, 1.0]; // Use corners color from config, fallback to blue
+      color = sphereColors.CORNERS || [0.0, 0.0, 1.0]; // Use corners color from config, fallback to blue
     } else if (axis === 'z') {
-      color = sphereColors.z || [1.0, 0.0, 0.0];
+      color = sphereColors.AXIAL || [1.0, 0.0, 0.0]; // Z-axis = AXIAL planes
     } else if (axis === 'x') {
-      color = sphereColors.x || [1.0, 1.0, 0.0];
+      color = sphereColors.SAGITTAL || [1.0, 1.0, 0.0]; // X-axis = SAGITTAL planes
     } else if (axis === 'y') {
-      color = sphereColors.y || [0.0, 1.0, 0.0];
+      color = sphereColors.CORONAL || [0.0, 1.0, 0.0]; // Y-axis = CORONAL planes
     }
     // Store or update the sphere position
     const idx = this.sphereStates.findIndex((s) => s.uid === uid);

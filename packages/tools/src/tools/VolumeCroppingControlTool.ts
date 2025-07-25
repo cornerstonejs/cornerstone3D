@@ -402,17 +402,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     };
   };
 
-  initializeReferenceLines(enabledElement) {
-    const annotations = this._getAnnotations(enabledElement);
-    if (!annotations.length) {
-      // Optionally, create a default annotation here
-      return;
-    }
-    // Force a render to compute reference lines
-    triggerAnnotationRenderForViewportIds(
-      this._getViewportsInfo().map(({ viewportId }) => viewportId)
-    );
-  }
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
     return viewports;
@@ -425,9 +414,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }
 
   onSetToolActive() {
-    console.debug(
-      `VolumeCroppingControlTool: onSetToolActive called for tool ${this.getToolName()}`
-    );
+    // console.debug(
+    //   `VolumeCroppingControlTool: onSetToolActive called for tool ${this.getToolName()}`
+    // );
     const viewportsInfo = this._getViewportsInfo();
 
     // Check if any annotation exists before proceeding
@@ -518,7 +507,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     });
   }
 
-  resetCrosshairs = () => {
+  resetCroppingSpheres = () => {
     const viewportsInfo = this._getViewportsInfo();
     for (const viewportInfo of viewportsInfo) {
       const { viewportId, renderingEngineId } = viewportInfo;
@@ -1041,7 +1030,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }
 
   onResetCamera = (evt) => {
-    this.resetCrosshairs();
+    this.resetCroppingSpheres();
   };
 
   mouseMoveCallback = (
