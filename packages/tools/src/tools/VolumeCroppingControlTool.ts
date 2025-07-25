@@ -137,7 +137,7 @@ const OPERATION = {
  * @class VolumeCroppingControlTool
  * @extends AnnotationTool
  *
- * @property {string} frameOfReference - Frame of reference for the tool
+ * @property {string} seriesInstanceUID - Frame of reference for the tool
  * @property {VolumeCroppingAnnotation[]} _virtualAnnotations - Store virtual annotations for missing viewport orientations (e.g., CT_CORONAL when only axial and sagittal are present)
  * @property {string} toolName - Static tool identifier: 'VolumeCroppingControl'
  * @property {Array<SphereState>} sphereStates - Array of sphere state objects for 3D volume manipulation handles
@@ -185,7 +185,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   // Store virtual annotations (e.g., for missing orientations like CT_CORONAL)
   _virtualAnnotations: VolumeCroppingAnnotation[] = [];
   static toolName;
-  frameOfReference?: string;
+  seriesInstanceUID?: string;
   sphereStates: {
     point: Types.Point3;
     axis: string;
@@ -265,7 +265,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         const dimensions = imageData.getDimensions();
         const spacing = imageData.getSpacing();
         const origin = imageData.getOrigin();
-        this.frameOfReference = imageData.frameOfReference || 'unknown';
+        this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
         const cropFactor = this.configuration.initialCropFactor ?? 0.2;
         this.toolCenter = [
           origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
@@ -296,7 +296,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (!imageData) {
       return;
     }
-    this.frameOfReference = imageData.frameOfReference || 'unknown';
+    this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
     const dimensions = imageData.getDimensions();
     const spacing = imageData.getSpacing();
     const origin = imageData.getOrigin();
@@ -350,7 +350,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
 
-    const { FrameOfReferenceUID, viewport } = enabledElement;
+    const { seriesInstanceUID, viewport } = enabledElement;
     this._updateToolCentersFromViewport(viewport);
     const { element } = viewport;
     const { position, focalPoint, viewPlaneNormal } = viewport.getCamera();
@@ -377,7 +377,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       metadata: {
         cameraPosition: <Types.Point3>[...position],
         cameraFocalPoint: <Types.Point3>[...focalPoint],
-        FrameOfReferenceUID,
+        seriesInstanceUID,
         toolName: this.getToolName(),
       },
       data: {
@@ -450,7 +450,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
         viewportsInfo: viewportsInfo,
-        frameOfReference: this.frameOfReference,
+        seriesInstanceUID: this.seriesInstanceUID,
       });
     } else {
       // Turn off visibility of existing annotations
@@ -1562,7 +1562,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (evt.detail.originalClippingPlanes) {
       this._syncWithVolumeCroppingTool(evt.detail.originalClippingPlanes);
     } else {
-      if (evt.detail.frameOfReference !== this.frameOfReference) {
+      if (evt.detail.seriesInstanceUID !== this.seriesInstanceUID) {
         return;
       }
       // This is called when a sphere is moved
@@ -1612,7 +1612,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (volumeActors.length > 0) {
         const imageData = volumeActors[0].actor.getMapper().getInputData();
         if (imageData) {
-          this.frameOfReference = imageData.frameOfReference;
+          this.seriesInstanceUID = imageData.seriesInstanceUID;
           this._updateToolCentersFromViewport(viewport);
           // Update all annotations' handles.toolCenter
           const annotations =
@@ -1629,7 +1629,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
       toolGroupId: this.toolGroupId,
       viewportsInfo: viewportsInfo,
-      frameOfReference: this.frameOfReference,
+      seriesInstanceUID: this.seriesInstanceUID,
     });
   };
 
@@ -1850,7 +1850,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         toolCenterMax: this.toolCenterMax,
         handleType: handles.activeType,
         viewportOrientation: [],
-        frameOfReference: this.frameOfReference,
+        seriesInstanceUID: this.seriesInstanceUID,
       });
     }
   };

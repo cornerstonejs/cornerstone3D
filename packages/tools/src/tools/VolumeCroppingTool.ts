@@ -105,7 +105,7 @@ const SPHEREINDEX = {
  * @extends BaseTool
  *
  * @property {string} toolName - Static tool identifier: 'VolumeCropping'
- * @property {string} frameOfReference - Frame of reference for the tool
+ * @property {string} seriesInstanceUID - Frame of reference for the tool
  * @property {Function} touchDragCallback - Touch drag event handler for mobile interactions
  * @property {Function} mouseDragCallback - Mouse drag event handler for desktop interactions
  * @property {Function} cleanUp - Cleanup function for resetting tool state after interactions
@@ -172,7 +172,7 @@ const SPHEREINDEX = {
  */
 class VolumeCroppingTool extends BaseTool {
   static toolName;
-  frameOfReference?: string;
+  seriesInstanceUID?: string;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
   cleanUp: () => void;
@@ -695,10 +695,10 @@ class VolumeCroppingTool extends BaseTool {
         originalClippingPlanes: this.originalClippingPlanes,
         viewportId: viewport.id,
         renderingEngineId: viewport.renderingEngineId,
-        frameOfReference: this.frameOfReference,
+        seriesInstanceUID: this.seriesInstanceUID,
       });
     } else {
-      if (evt.detail.frameOfReference !== this.frameOfReference) {
+      if (evt.detail.seriesInstanceUID !== this.seriesInstanceUID) {
         return;
       }
       const isMin = evt.detail.handleType === 'min';
@@ -1026,7 +1026,7 @@ class VolumeCroppingTool extends BaseTool {
       console.warn('VolumeCroppingTool: No image data found for volume actor.');
       return;
     }
-    this.frameOfReference = imageData.frameOfReference || 'unknown';
+    this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
     const worldBounds = imageData.getBounds(); // Already in world coordinates
     const cropFactor = this.configuration.initialCropFactor || 0.1;
 
@@ -1402,7 +1402,7 @@ class VolumeCroppingTool extends BaseTool {
       toolCenter: sphereState.point,
       axis: sphereState.isCorner ? 'corner' : sphereState.axis,
       draggingSphereIndex: this.draggingSphereIndex,
-      frameOfReference: this.frameOfReference,
+      seriesInstanceUID: this.seriesInstanceUID,
     });
   };
 
