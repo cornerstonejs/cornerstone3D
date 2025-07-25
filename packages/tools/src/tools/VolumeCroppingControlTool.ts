@@ -351,7 +351,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
 
-    const { seriesInstanceUID, viewport } = enabledElement;
+    const { viewport } = enabledElement;
     this._updateToolCentersFromViewport(viewport);
     const { element } = viewport;
     const { position, focalPoint, viewPlaneNormal } = viewport.getCamera();
@@ -378,7 +378,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       metadata: {
         cameraPosition: <Types.Point3>[...position],
         cameraFocalPoint: <Types.Point3>[...focalPoint],
-        seriesInstanceUID,
         toolName: this.getToolName(),
       },
       data: {
