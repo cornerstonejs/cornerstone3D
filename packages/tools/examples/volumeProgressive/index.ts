@@ -173,7 +173,7 @@ content.append(instructions);
  * Generate the various configurations by using the options on static DICOMweb:
  * Base lossy/full thumbnail configuration for HTJ2K:
  * ```
- * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name lossy d:\src\viewer-testdata\dcm\Juno
+ * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name lossy /src/viewer-testdata/dcm/Juno
  * ```
  *
  * JLS and JLS thumbnails:
