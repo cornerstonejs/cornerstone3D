@@ -748,9 +748,6 @@ class VolumeCroppingTool extends BaseTool {
     // // THEN update clipping planes
     this._updateClippingPlanesFromFaceSpheres(viewport);
 
-    // // For OHIF: Force immediate VTK pipeline updates
-    this._forceImmediateVTKUpdates(viewport);
-
     // Final render and event trigger
     viewport.render();
 
@@ -758,47 +755,6 @@ class VolumeCroppingTool extends BaseTool {
 
     return true;
   };
-
-  _forceImmediateVTKUpdates(viewport) {
-    // Force all sphere sources to update their geometry immediately
-    this.sphereStates.forEach((state) => {
-      if (state.sphereSource) {
-        // Force the source to update
-        state.sphereSource.modified();
-        state.sphereSource.update();
-
-        // Force the mapper to update
-        if (state.sphereActor && state.sphereActor.getMapper()) {
-          const mapper = state.sphereActor.getMapper();
-          mapper.update();
-          mapper.modified();
-        }
-
-        // Force the actor to update
-        if (state.sphereActor) {
-          state.sphereActor.modified();
-        }
-      }
-    });
-
-    // Force edge line updates
-    Object.values(this.edgeLines).forEach(({ source, actor }) => {
-      if (source) {
-        const points = source.getPoints();
-        if (points) {
-          points.modified();
-        }
-        source.modified();
-        //source.update();
-      }
-      if (actor && actor.getMapper()) {
-        const mapper = actor.getMapper();
-        mapper.update();
-        mapper.modified();
-        actor.modified();
-      }
-    });
-  }
 
   _onControlToolChange = (evt) => {
     const viewport = this._getViewport();
