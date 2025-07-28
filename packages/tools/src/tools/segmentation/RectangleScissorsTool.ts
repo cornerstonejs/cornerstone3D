@@ -383,7 +383,6 @@ class RectangleScissorsTool extends LabelmapBaseTool {
     const data = annotation.data;
     const { points } = data.handles;
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-    // @ts-expect-error
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering

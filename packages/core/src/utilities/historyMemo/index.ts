@@ -81,6 +81,14 @@ export class HistoryMemo {
     this.undoAvailable = 0;
   }
 
+  public get canUndo() {
+    return this.undoAvailable > 0;
+  }
+
+  public get canRedo() {
+    return this.redoAvailable > 0;
+  }
+
   /**
    * Undoes up to the given number of items off the ring.
    * If one is a group (array) item it will undo every item inside

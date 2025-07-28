@@ -43,6 +43,7 @@ import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
 import * as lineSegment from '../utilities/math/line';
 import type {
   Annotation,
+  AnnotationData,
   Annotations,
   EventTypes,
   ToolHandle,
@@ -56,18 +57,20 @@ import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotatio
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
-interface CrosshairsAnnotation extends Annotation {
-  data: {
-    handles: {
-      rotationPoints: Types.Point3[]; // rotation handles, used for rotation interactions
-      slabThicknessPoints: Types.Point3[]; // slab thickness handles, used for setting the slab thickness
-      activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
-      toolCenter: Types.Point3;
-    };
-    activeViewportIds: string[]; // a list of the viewport ids connected to the reference lines being translated
-    viewportId: string;
+export type CrosshairsAnnotationData = AnnotationData & {
+  handles: {
+    rotationPoints: Types.Point3[]; // rotation handles, used for rotation interactions
+    slabThicknessPoints: Types.Point3[]; // slab thickness handles, used for setting the slab thickness
+    activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
+    toolCenter: Types.Point3;
   };
-}
+  activeViewportIds: string[]; // a list of the viewport ids connected to the reference lines being translated
+  viewportId: string;
+};
+
+export type CrosshairsAnnotation = Annotation & {
+  data: CrosshairsAnnotationData;
+};
 
 function defaultReferenceLineColor() {
   return 'rgb(0, 200, 0)';
@@ -90,8 +93,6 @@ const OPERATION = {
   ROTATE: 2,
   SLAB: 3,
 };
-
-const EPSILON = 1e-3;
 
 /**
  * CrosshairsTool is a tool that provides reference lines between different viewports
@@ -2287,17 +2288,21 @@ class CrosshairsTool extends AnnotationTool {
             const viewportDraggableRotatable =
               this._getReferenceLineDraggableRotatable(otherViewport.id);
             if (!viewportDraggableRotatable) {
-              const { rotationPoints } = this.editData.annotation.data.handles;
+              const { rotationPoints } = (<CrosshairsAnnotationData>(
+                this.editData.annotation.data
+              )).handles;
               // Todo: what is a point uid?
-              // @ts-expect-error
               const otherViewportRotationPoints = rotationPoints.filter(
+                // @ts-expect-error
                 (point) => point[1].uid === otherViewport.id
               );
               if (otherViewportRotationPoints.length === 2) {
                 const point1 = viewport.canvasToWorld(
+                  // @ts-expect-error
                   otherViewportRotationPoints[0][3]
                 );
                 const point2 = viewport.canvasToWorld(
+                  // @ts-expect-error
                   otherViewportRotationPoints[1][3]
                 );
                 vtkMath.add(point1, point2, currentCenter);
