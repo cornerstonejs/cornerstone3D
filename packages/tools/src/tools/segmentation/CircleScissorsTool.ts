@@ -380,7 +380,6 @@ class CircleScissorsTool extends LabelmapBaseTool {
 
     const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
 
-    // @ts-expect-error
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
     // If rendering engine has been destroyed while rendering

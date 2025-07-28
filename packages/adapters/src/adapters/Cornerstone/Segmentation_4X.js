@@ -1390,6 +1390,12 @@ export function getImageIdOfSourceImageBySourceImageSequence(
                 /frames\/\d+/,
                 `frames/${ReferencedFrameNumber}`
             );
+        } else if (baseImageId.includes("dicomfile:")) {
+            // dicomfile base 1, despite having frame=
+            return baseImageId.replace(
+                /frame=\d+/,
+                `frame=${ReferencedFrameNumber}`
+            );
         } else if (baseImageId.includes("frame=")) {
             return baseImageId.replace(
                 /frame=\d+/,

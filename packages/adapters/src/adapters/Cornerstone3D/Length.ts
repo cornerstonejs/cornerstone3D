@@ -1,6 +1,7 @@
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { toScoord } from "../helpers";
 
 const { Length: TID300Length } = utilities.TID300;
 
@@ -13,81 +14,17 @@ export default class Length extends BaseAdapter3D {
         this.registerLegacy();
     }
 
-    static getMeasurementDataFromScoord({
-        defaultState,
-        NUMGroup,
-        SCOORDGroup,
-        ReferencedFrameNumber,
-        imageToWorldCoords
-    }) {
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const { GraphicData } = SCOORDGroup;
-        const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
-
-        const state = defaultState;
-
-        state.annotation.data = {
-            handles: {
-                points: [worldCoords[0], worldCoords[1]],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
-            },
-            cachedStats: {
-                [`imageId:${referencedImageId}`]: {
-                    length: NUMGroup
-                        ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : 0
-                }
-            },
-            frameNumber: ReferencedFrameNumber
-        };
-
-        return state;
-    }
-
-    static getMeasurementDataFromScoord3d({ defaultState, SCOORD3DGroup }) {
-        const { GraphicData } = SCOORD3DGroup;
-        const worldCoords = GraphicData;
-
-        const state = defaultState;
-
-        state.annotation.data = {
-            handles: {
-                points: [worldCoords.slice(0, 3), worldCoords.slice(3, 6)],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
-            },
-            cachedStats: {}
-        };
-
-        return state;
-    }
-
     // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
         const {
-            defaultState,
+            state,
             NUMGroup,
-            SCOORDGroup,
-            SCOORD3DGroup,
+            worldCoords,
+            referencedImageId,
             ReferencedFrameNumber
         } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
@@ -96,42 +33,42 @@ export default class Length extends BaseAdapter3D {
             this.toolType
         );
 
-        if (SCOORDGroup) {
-            return this.getMeasurementDataFromScoord({
-                defaultState,
-                NUMGroup,
-                SCOORDGroup,
-                ReferencedFrameNumber,
-                imageToWorldCoords
-            });
-        } else if (SCOORD3DGroup) {
-            return this.getMeasurementDataFromScoord3d({
-                defaultState,
-                SCOORD3DGroup
-            });
-        } else {
-            throw new Error(
-                "Can't get measurement data with missing SCOORD and SCOORD3D groups."
-            );
-        }
+        const cachedStats = referencedImageId
+            ? {
+                  [`imageId:${referencedImageId}`]: {
+                      length: NUMGroup
+                          ? NUMGroup.MeasuredValueSequence.NumericValue
+                          : 0
+                  }
+              }
+            : {};
+        state.annotation.data = {
+            ...state.annotation.data,
+            handles: {
+                ...state.annotation.data.handles,
+                points: [worldCoords[0], worldCoords[1]],
+                activeHandleIndex: 0
+            },
+            cachedStats,
+            frameNumber: ReferencedFrameNumber
+        };
+
+        return state;
     }
 
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
 
-        if (!referencedImageId) {
-            return this.getTID300RepresentationArgumentsSCOORD3D(tool);
-        }
-
-        // Using image coordinates for 2D points
-        const start = worldToImageCoords(referencedImageId, handles.points[0]);
-        const end = worldToImageCoords(referencedImageId, handles.points[1]);
-
-        const point1 = { x: start[0], y: start[1] };
-        const point2 = { x: end[0], y: end[1] };
+        // Do the conversion automatically for hte right coord type
+        const point1 = toScoord(scoordProps, handles.points[0]);
+        const point2 = toScoord(scoordProps, handles.points[1]);
 
         const { length: distance } =
             cachedStats[`imageId:${referencedImageId}`] || {};
@@ -143,35 +80,10 @@ export default class Length extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
-            use3DSpatialCoordinates: false
-        };
-    }
-
-    static getTID300RepresentationArgumentsSCOORD3D(tool) {
-        const { data, finding, findingSites, metadata } = tool;
-        const { cachedStats = {}, handles } = data;
-
-        // Using world coordinates for 3D points
-        const start = handles.points[0];
-        const end = handles.points[1];
-
-        const point1 = { x: start[0], y: start[1], z: start[2] };
-        const point2 = { x: end[0], y: end[1], z: end[2] };
-
-        const cachedStatsKeys = Object.keys(cachedStats)[0];
-        const { length: distance = undefined } = cachedStatsKeys
-            ? cachedStats[cachedStatsKeys]
-            : {};
-
-        return {
-            point1,
-            point2,
-            distance,
-            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
-            finding,
-            findingSites: findingSites || [],
-            ReferencedFrameOfReferenceUID: metadata.FrameOfReferenceUID,
-            use3DSpatialCoordinates: true
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

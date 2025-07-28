@@ -358,6 +358,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
 
+    widgetRenderers.forEach((_, renderer) => {
+      renderer.setDraw(false);
+    });
+
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const context = openGLRenderWindow.get3DContext();
@@ -387,6 +391,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   ): void {
     const offScreenCanvasWidth = viewportCanvas.width;
     const offScreenCanvasHeight = viewportCanvas.height;
+
+    if (
+      // @ts-expect-error
+      offScreenCanvasContainer.height === offScreenCanvasHeight &&
+      // @ts-expect-error
+      offScreenCanvasContainer.width === offScreenCanvasWidth
+    ) {
+      return;
+    }
 
     // @ts-expect-error
     offScreenCanvasContainer.width = offScreenCanvasWidth;

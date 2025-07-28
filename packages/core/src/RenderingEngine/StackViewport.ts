@@ -3162,11 +3162,18 @@ class StackViewport extends Viewport {
       return testIndex <= rangeEndSliceIndex && testIndex >= foundSliceIndex;
     }
 
-    if (!super.isReferenceViewable(viewRef, options)) {
+    // Apply asVolume to withOrientation to indicate allowing changing orientation
+    // only if this gets converted to a volume.
+    if (
+      !super.isReferenceViewable(viewRef, {
+        ...options,
+        withOrientation: options?.asVolume,
+      })
+    ) {
       return false;
     }
 
-    if (viewRef.volumeId) {
+    if (viewRef.volumeId || viewRef.FrameOfReferenceUID) {
       return options.asVolume;
     }
 
