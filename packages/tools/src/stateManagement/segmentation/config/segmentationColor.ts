@@ -127,7 +127,7 @@ function setSegmentIndexColor(
     segmentationId,
     segmentIndex
   );
-
+  console.log(segmentIndex, colorReference, color);
   // Modify the values by reference
   for (let i = 0; i < color.length; i++) {
     colorReference[i] = color[i];

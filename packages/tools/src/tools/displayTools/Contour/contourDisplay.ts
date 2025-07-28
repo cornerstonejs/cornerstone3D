@@ -21,6 +21,8 @@ import { vec3 } from 'gl-matrix';
 const polySegConversionInProgressForViewportId = new Map<string, boolean>();
 
 const processedViewportSegmentations = new Map<string, Set<string>>();
+const cachedGeometryIds = new Map<string, Map<number, string>>();
+
 /**
  * This clear the contour display cache, that is isued when convert from contour to surface.
  * Include: processedViewportSegmentations, polySegConversionInProgressForViewportId,
@@ -33,6 +35,7 @@ function clearContourDisplayCache() {
   clearCachedSegmentIndices();
   const polyseg = getPolySeg();
   polyseg.clearCache();
+  cachedGeometryIds.clear();
 }
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -145,14 +148,19 @@ async function render(
   ) {
     polySegConversionInProgressForViewportId.set(viewport.id, true);
     const segmentIndices = getUniqueSegmentIndices(segmentationId);
+    let geometryIds;
+    if (cachedGeometryIds.has(segmentationId)) {
+      geometryIds = cachedGeometryIds.get(segmentationId);
+    } else {
+      const surfacesInfo = await polySeg.computeSurfaceData(segmentationId, {
+        segmentIndices,
+        viewport,
+      });
 
+      geometryIds = surfacesInfo.geometryIds;
+      cachedGeometryIds.set(segmentationId, geometryIds);
+    }
     // for (const segmentIndex of segmentIndices) {
-    const surfacesInfo = await polySeg.computeSurfaceData(segmentationId, {
-      segmentIndices,
-      viewport,
-    });
-
-    const geometryIds = surfacesInfo.geometryIds;
 
     const pointsAndPolys = [];
     // loop into the map for geometryIds and get the geometry
@@ -290,4 +298,5 @@ export default {
   render,
   removeRepresentation,
   clearContourDisplayCache,
+  cachedGeometryIds,
 };

@@ -81,7 +81,6 @@ type PolySegAddOn = {
 
   /** Clear PolySeg Cache used in clipAndCacheSurfacesForViewport */
   clearCache: () => void;
-
 };
 
 /**
