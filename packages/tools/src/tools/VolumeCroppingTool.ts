@@ -842,6 +842,7 @@ class VolumeCroppingTool extends BaseTool {
           }
         }
       }
+      this._updateCornerSpheres();
       viewport.render();
     }
   };
