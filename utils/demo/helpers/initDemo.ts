@@ -62,6 +62,8 @@ export default async function initDemo(config: any = {}) {
  */
 export async function peerImport(moduleId) {
   if (moduleId === 'dicom-microscopy-viewer') {
+    // The microscopy viewer loads relative to the public URL
+    window.PUBLIC_URL ||= '/';
     return importGlobal(
       '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
       'dicomMicroscopyViewer'
