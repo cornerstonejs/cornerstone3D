@@ -1,5 +1,6 @@
 {
   "plugins": ["typescript"],
+  "ignorePatterns": ["utils/**", "**/examples/**", "packages/dicomImageLoader/src/types/codec*"],
   "rules": {
     // typescript
     "typescript/no-explicit-any": "error",
