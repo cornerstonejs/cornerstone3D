@@ -3,6 +3,7 @@ import loglevelImport from 'loglevel';
 import type { Logger as LogLevelLogger } from 'loglevel';
 
 /** Get the global/shared loglevel version */
+/** Get the global/shared loglevel version */
 const loglevel = loglevelImport.noConflict();
 
 type WindowLog = {
