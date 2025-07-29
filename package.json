@@ -40,6 +40,7 @@
     "docs:watch": "npx lerna run docs:watch",
     "preinstall": "node preinstall.js",
     "prepare": "husky",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "commit:prepare": "yarn test:ci && yarn test:unit",
     "start": "yarn run dev",
     "test:e2e:coverage": "nyc --reporter=html yarn run test:e2e:ci",
@@ -60,6 +61,7 @@
     "webpack:watch": "npx lerna run webpack:watch"
   },
   "devDependencies": {
+    "@prettier/plugin-oxc": "^0.0.4",
     "@babel/core": "^7.21.8",
     "@babel/plugin-external-helpers": "^7.18.6",
     "@babel/plugin-proposal-class-properties": "^7.18.6",

@@ -7,7 +7,6 @@ summary: Updates to the tools package when migrating from Cornerstone3D 1.x to 2
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-
 # @cornerstonejs/tools
 
 ## triggerAnnotationRenderForViewportIds

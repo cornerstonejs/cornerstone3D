@@ -7,8 +7,6 @@ summary: Changes to the core package when migrating from Cornerstone3D 1.x to 2.
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-
-
 # @cornerstonejs/core
 
 ## Initialization

@@ -101,7 +101,10 @@ function addButtonListeners(form: HTMLFormElement): void {
 
       const convertPoint = (point: Point2): Point3 =>
         type === 'image'
-          ? (utilities.imageToWorldCoords(imageId || currentImageId, point) as Point3)
+          ? (utilities.imageToWorldCoords(
+              imageId || currentImageId,
+              point
+            ) as Point3)
           : viewport.canvasToWorld(point);
 
       const points: Point3[] = [

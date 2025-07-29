@@ -2,7 +2,6 @@
   "plugins": ["typescript"],
   "rules": {
     // typescript
-    "typescript/no-explicit-any": "error",
-    "typescript/no-unused-vars": "warn",
+    "typescript/no-explicit-any": "error"
   }
 }
