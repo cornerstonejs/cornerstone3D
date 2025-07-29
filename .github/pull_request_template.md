@@ -72,8 +72,6 @@ after the commits are squashed.
 - [] My code has been well-documented (function documentation, inline comments,
   etc.)
 
-
-
 #### Public Documentation Updates
 
 <!-- https://cornerstonejs.org/ -->

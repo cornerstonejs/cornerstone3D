@@ -83,12 +83,12 @@
   border-bottom-left-radius: 8px;
   background-color: #5e16eb;
   margin-left: 15px;
-  font-size:16px
+  font-size: 16px;
 }
 
 .announcementBar {
   display: flex;
-  font-size:16px
+  font-size: 16px;
 }
 
 .smallScreenAnnouncement {

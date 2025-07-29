@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { utilities } from '@cornerstonejs/tools';
+import * as math from '../../../../utilities/math';
 
 /**
  * Generate a convex hull from a contour by simplifying, smoothing, and computing the hull
@@ -12,9 +12,9 @@ import { utilities } from '@cornerstonejs/tools';
  */
 export function generateConvexHullFromContour(contour: Array<Types.Point2>) {
   // 1) Simplify jagged bits (ε = e.g. 2px):
-  const simplified = utilities.math.polyline.decimate(contour, 2);
+  const simplified = math.polyline.decimate(contour, 2);
 
   // calculate convex hull
-  const hull = utilities.math.polyline.convexHull(simplified);
+  const hull = math.polyline.convexHull(simplified);
   return { simplified, hull };
 }

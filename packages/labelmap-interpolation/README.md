@@ -40,8 +40,8 @@ interpolate({
     noHeuristicAlignment: false, // Whether to disable heuristic alignment
     noUseDistanceTransform: false, // Whether to disable distance transform
     useCustomSlicePositions: false, // Whether to use custom slice positions
-    preview: false // Whether to preview the interpolation result
-  }
+    preview: false, // Whether to preview the interpolation result
+  },
 });
 ```
 

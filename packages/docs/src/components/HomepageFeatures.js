@@ -8,7 +8,8 @@ const FeatureList = [
     title: 'Standards Compliant',
     description: (
       <>
-        Robust DICOM Parsing. Supports DICOMweb and all transfer syntaxes out-of-the-box.
+        Robust DICOM Parsing. Supports DICOMweb and all transfer syntaxes
+        out-of-the-box.
       </>
     ),
   },
@@ -16,7 +17,8 @@ const FeatureList = [
     title: 'Fast',
     description: (
       <>
-        High performance GPU-accelerated image display. Multi-threaded image decoding. Progressive data streaming.
+        High performance GPU-accelerated image display. Multi-threaded image
+        decoding. Progressive data streaming.
       </>
     ),
   },

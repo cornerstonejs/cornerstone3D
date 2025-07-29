@@ -11,7 +11,9 @@ test.beforeEach(async ({ page, context }) => {
 });
 
 test.describe('Context Pool Rendering Engine', async () => {
-  test('should display context pool rendering engine example', async ({ page }) => {
+  test('should display context pool rendering engine example', async ({
+    page,
+  }) => {
     const locator = page.locator('#viewportContainer');
     await checkForScreenshot(
       page,

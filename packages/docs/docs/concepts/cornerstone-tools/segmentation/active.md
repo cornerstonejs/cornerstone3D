@@ -4,22 +4,20 @@ title: Active Segmentation
 summary: Viewport-specific system for determining which segmentation is currently being edited, with distinct visual styling for active versus inactive segmentations
 ---
 
-
 # Active Segmentation
 
 ![](../../../assets/active-segmentation.png)
 
-
 Each viewport can display multiple segmentation representations simultaneously, but only one segmentation can be active per viewport. The active segmentation is the one that will be modified by segmentation tools.
 
 You can have different styles for active and inactive segmentations. For instance, you can configure different fill and outline properties for active versus inactive segmentations in each viewport.
-
 
 As shown in the image above, you can display multiple labelmap segmentations in the same viewport. By default, active segmentations have a higher outline width to make them more visually distinct from inactive segmentations.
 
 ## Viewport-Specific Active Segmentations
 
 An important concept in version 2.x is that active segmentations are viewport-specific. This means:
+
 - Each viewport can have its own active segmentation
 - The same segmentation can be active in one viewport and inactive in another
 - Segmentation tools will only modify the active segmentation in the viewport they're being used in
@@ -44,7 +42,6 @@ Once you have the active segmentation, you can access various properties:
 
 ```js
 const activeSegmentation = segmentation.getActiveSegmentation(viewportId);
-
 ```
 
 ### Working with Multiple Viewports
