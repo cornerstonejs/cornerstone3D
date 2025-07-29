@@ -2,6 +2,7 @@
   "plugins": ["typescript"],
   "rules": {
     // typescript
-    "typescript/no-explicit-any": "error"
+    "typescript/no-explicit-any": "error",
+    "import/no-cycle": "error"
   }
 }
