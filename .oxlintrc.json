@@ -1,8 +1,7 @@
 {
-  "plugins": ["typescript"],
+  "plugins": ["typescript", "import"],
   "ignorePatterns": ["utils/**", "**/examples/**", "packages/dicomImageLoader/src/types/codec*"],
   "rules": {
-    // typescript
     "typescript/no-explicit-any": "error",
     "import/no-cycle": "error"
   }
