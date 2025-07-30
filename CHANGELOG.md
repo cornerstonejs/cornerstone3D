@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.3...v3.32.4) (2025-07-30)
+
+### Bug Fixes
+
+- Ensure FOR is stored when required and cachedStats created ([#2237](https://github.com/cornerstonejs/cornerstone3D/issues/2237)) ([35062da](https://github.com/cornerstonejs/cornerstone3D/commit/35062daedcb6b9f4f785095bfcf0ff811cdbc4f1))
+
 ## [3.32.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.2...v3.32.3) (2025-07-30)
 
 ### Bug Fixes
