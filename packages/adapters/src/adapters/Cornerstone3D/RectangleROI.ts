@@ -17,18 +17,13 @@ export class RectangleROI extends BaseAdapter3D {
         sopInstanceUIDToImageIdMap,
         metadata
     ) {
-        const {
-            state,
-            NUMGroup,
-            worldCoords,
-            referencedImageId,
-            ReferencedFrameNumber
-        } = MeasurementReport.getSetupMeasurementData(
-            MeasurementGroup,
-            sopInstanceUIDToImageIdMap,
-            metadata,
-            this.toolType
-        );
+        const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
+            MeasurementReport.getSetupMeasurementData(
+                MeasurementGroup,
+                sopInstanceUIDToImageIdMap,
+                metadata,
+                this.toolType
+            );
 
         const areaGroup = MeasurementGroup.ContentSequence.find(
             g =>
