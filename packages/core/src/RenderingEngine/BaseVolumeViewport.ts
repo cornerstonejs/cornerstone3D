@@ -755,7 +755,6 @@ abstract class BaseVolumeViewport extends Viewport {
         isCompatible(orientation.viewPlaneNormal, inPlaneVector1)
       ) {
         // Orthogonal view to the current view, so no change.
-        // @ts-ignore
         this.setOrientation(orientation);
         return;
       }
@@ -769,7 +768,7 @@ abstract class BaseVolumeViewport extends Viewport {
       )
     );
     vec3.normalize(planeNormal, planeNormal);
-    this.setOrientation({ viewPlaneNormal: planeNormal, viewUp: null });
+    this.setOrientation({ viewPlaneNormal: planeNormal });
   }
 
   /**
