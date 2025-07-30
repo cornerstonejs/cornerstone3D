@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.4...v3.32.5) (2025-07-30)
+
+### Bug Fixes
+
+- Reset view plane to axial/sag/cor by default if possible ([#2238](https://github.com/cornerstonejs/cornerstone3D/issues/2238)) ([2bf6e2d](https://github.com/cornerstonejs/cornerstone3D/commit/2bf6e2d8d3b54d8e91d041bfd40ad2d3d84a5c65))
+
 ## [3.32.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.3...v3.32.4) (2025-07-30)
 
 ### Bug Fixes
