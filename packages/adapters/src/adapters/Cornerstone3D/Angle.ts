@@ -43,7 +43,7 @@ class Angle extends BaseAdapter3D {
             ...state.annotation.data,
             handles: {
                 ...state.annotation.data.handles,
-                points: worldCoords
+                points: [worldCoords[0], worldCoords[1], worldCoords[3]]
             },
             cachedStats,
             frameNumber: ReferencedFrameNumber
