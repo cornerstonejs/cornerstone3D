@@ -744,7 +744,7 @@ abstract class BaseVolumeViewport extends Viewport {
       isCompatible(acquisition.viewPlaneNormal, inPlaneVector1)
     ) {
       // Orthogonal view to the current view, so no change.
-      this.setCamera(acquisition);
+      this.setOrientation(acquisition);
       return;
     }
     for (const orientation of <{ viewPlaneNormal: Point3 }[]>(
@@ -755,7 +755,8 @@ abstract class BaseVolumeViewport extends Viewport {
         isCompatible(orientation.viewPlaneNormal, inPlaneVector1)
       ) {
         // Orthogonal view to the current view, so no change.
-        this.setCamera(orientation);
+        // @ts-ignore
+        this.setOrientation(orientation);
         return;
       }
     }
@@ -763,12 +764,12 @@ abstract class BaseVolumeViewport extends Viewport {
     const planeNormal = <Point3>(
       vec3.cross(
         vec3.create(),
-        inPlaneVector1,
-        inPlaneVector2 || acquisition.viewPlaneNormal
+        inPlaneVector2 || acquisition.viewPlaneNormal,
+        inPlaneVector1
       )
     );
     vec3.normalize(planeNormal, planeNormal);
-    this.setCamera({ viewPlaneNormal: planeNormal });
+    this.setOrientation({ viewPlaneNormal: planeNormal, viewUp: null });
   }
 
   /**
@@ -779,25 +780,15 @@ abstract class BaseVolumeViewport extends Viewport {
    * cross product of the existing view plane normal and the inPlaneVector1
    */
   public setViewPlane(planeRestriction: PlaneRestriction) {
-    const { point, inPlaneVector1, inPlaneVector2 } = planeRestriction;
+    const { point, inPlaneVector1, inPlaneVector2, FrameOfReferenceUID } =
+      planeRestriction;
 
     this.setBestOrentation(inPlaneVector1, inPlaneVector2);
 
-    const { viewPlaneNormal, focalPoint, position } = this.getCamera();
-
-    const delta = vec3.subtract([0, 0, 0], focalPoint, point);
-    const distance = vec3.dot(delta, viewPlaneNormal);
-    if (isEqual(distance, 0)) {
-      return;
-    }
-    const scaled = vec3.scale([0, 0, 0], viewPlaneNormal, distance);
-
-    const newFocal = <Point3>vec3.subtract([0, 0, 0], focalPoint, scaled);
-    const newPosition = <Point3>vec3.subtract([0, 0, 0], position, scaled);
-
-    this.setCamera({
-      focalPoint: newFocal,
-      position: newPosition,
+    this.setViewReference({
+      FrameOfReferenceUID,
+      cameraFocalPoint: point,
+      viewPlaneNormal: this.getCamera().viewPlaneNormal,
     });
   }
 
