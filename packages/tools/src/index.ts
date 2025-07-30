@@ -91,6 +91,7 @@ import {
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
 
 import * as Enums from './enums';
+import { contourDisplay } from './tools/displayTools/Contour';
 
 export {
   VideoRedactionTool,
@@ -195,4 +196,5 @@ export {
   splines,
   // Version
   version,
+  contourDisplay,
 };

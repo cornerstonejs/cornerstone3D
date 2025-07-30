@@ -9,7 +9,10 @@ import {
   registerPolySegWorker,
   type PolySegInitOptions,
 } from './registerPolySegWorker';
-import { clipAndCacheSurfacesForViewport } from './utilities/clipAndCacheSurfacesForViewport';
+import {
+  clipAndCacheSurfacesForViewport,
+  clearCache,
+} from './utilities/clipAndCacheSurfacesForViewport';
 import { extractContourData } from './Contour/utils/extractContourData';
 import { createAndAddContourSegmentationsFromClippedSurfaces } from './Contour/utils/createAndAddContourSegmentationsFromClippedSurfaces';
 
@@ -29,6 +32,7 @@ export {
   // init
   init,
   clipAndCacheSurfacesForViewport,
+  clearCache,
   extractContourData,
   createAndAddContourSegmentationsFromClippedSurfaces,
 };

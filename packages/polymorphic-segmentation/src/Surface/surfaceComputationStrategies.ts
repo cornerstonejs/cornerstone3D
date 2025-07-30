@@ -6,7 +6,8 @@ import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
 import { convertLabelmapToSurface } from './convertLabelmapToSurface';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
-
+import { eventTarget, triggerEvent, Enums } from '@cornerstonejs/core';
+const { WorkerTypes } = cornerstoneTools.Enums;
 const { getUniqueSegmentIndices } = cornerstoneTools.utilities.segmentation;
 const { getSegmentation } = cornerstoneTools.segmentation.state;
 
@@ -138,7 +139,6 @@ async function computeSurfaceFromContourSegmentation(
 
   const segmentIndices =
     options.segmentIndices || getUniqueSegmentIndices(segmentationId);
-
   const promises = segmentIndices.map(async (index) => {
     const surface = await convertContourToSurface(
       contourRepresentationData as ToolsTypes.ContourSegmentationData,
@@ -149,7 +149,11 @@ async function computeSurfaceFromContourSegmentation(
   });
 
   const surfaces = await Promise.all(promises);
-
+  triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
+    progress: -1,
+    type: WorkerTypes.POLYSEG_CONTOUR_TO_SURFACE,
+    id: 0,
+  });
   return surfaces;
 }
 

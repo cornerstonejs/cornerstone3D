@@ -14,6 +14,9 @@ import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
+import { contourDisplay } from '../Contour';
+// Ensure 3D viewport is processed once.
+const processedViewportSegmentations = new Map();
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -59,14 +62,20 @@ async function render(
   const { segmentationId, type } = representation;
 
   const segmentation = getSegmentation(segmentationId);
-
+  let _geometryIds;
+  if (processedViewportSegmentations.has(viewport.id)) {
+    return;
+  }
   if (!segmentation) {
     return;
   }
 
   let SurfaceData = segmentation.representationData[Representations.Surface];
-
+  if (contourDisplay.cachedGeometryIds.has(segmentationId)) {
+    _geometryIds = contourDisplay.cachedGeometryIds.get(segmentationId);
+  }
   if (
+    !_geometryIds &&
     !SurfaceData &&
     getPolySeg()?.canComputeRequestedRepresentation(
       segmentationId,
@@ -84,25 +93,25 @@ async function render(
       () => polySeg.updateSurfaceData(segmentationId, { viewport })
     );
 
-    if (!SurfaceData) {
+    if (!_geometryIds && !SurfaceData) {
       throw new Error(
         `No Surface data found for segmentationId ${segmentationId} even we tried to compute it`
       );
     }
-  } else if (!SurfaceData && !getPolySeg()) {
+  } else if (!_geometryIds && !SurfaceData && !getPolySeg()) {
     console.debug(
       `No surface data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to surface. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
     );
   }
 
-  if (!SurfaceData) {
+  if (!SurfaceData && !_geometryIds) {
     console.warn(
       `No Surface data found for segmentationId ${segmentationId}. Skipping render.`
     );
     return;
   }
 
-  const { geometryIds } = SurfaceData;
+  const geometryIds = SurfaceData?.geometryIds ?? _geometryIds;
 
   if (!geometryIds?.size) {
     console.warn(
@@ -145,7 +154,7 @@ async function render(
       segmentationId
     );
   });
-
+  processedViewportSegmentations.delete(viewport.id);
   viewport.render();
 }
 

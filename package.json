@@ -97,7 +97,7 @@
     "acorn": "^8.8.2",
     "acorn-jsx": "^5.3.2",
     "ajv": "^8.17.1",
-    "autoprefixer": "^10.4.14",
+    "autoprefixer": "^10.4.21",
     "babel-loader": "9.1.2",
     "babel-plugin-istanbul": "^7.0.0",
     "babel-plugin-transform-import-meta": "2.3.2",
@@ -195,7 +195,6 @@
     "not op_mini all"
   ],
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-  "dependencies": {},
   "resolutions": {
     "canvas": "3.1.0"
   }

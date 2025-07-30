@@ -15,7 +15,10 @@ import camera from './camera';
 import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 import contourTools from './contourTools';
 import createElement from './createElement';
-import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
+import {
+  createImageIdsAndCacheMetaData,
+  createImageIdsAndCacheMetaData2,
+} from './createImageIdsAndCacheMetaData';
 import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
@@ -56,6 +59,7 @@ export {
   contourTools,
   createElement,
   createImageIdsAndCacheMetaData,
+  createImageIdsAndCacheMetaData2,
   createInfoSection,
   ctVoiRange,
   downloadSurfacesData,

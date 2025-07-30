@@ -78,6 +78,9 @@ type PolySegAddOn = {
     viewport: Types.IStackViewport | Types.IVolumeViewport,
     segmentationId: string
   ) => Map<number, Set<string>>;
+
+  /** Clear PolySeg Cache used in clipAndCacheSurfacesForViewport */
+  clearCache: () => void;
 };
 
 /**

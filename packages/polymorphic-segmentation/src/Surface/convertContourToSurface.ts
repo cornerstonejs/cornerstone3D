@@ -41,7 +41,6 @@ export async function convertContourToSurface(
   if (!annotationUIDs) {
     return;
   }
-
   for (const annotationUID of annotationUIDs) {
     const annotation = getAnnotation(annotationUID);
     const { polyline } = (
@@ -50,7 +49,6 @@ export async function convertContourToSurface(
     numPointsArray.push(polyline.length);
     polyline.forEach((polyline) => polylines.push(...polyline));
   }
-
   triggerWorkerProgress(eventTarget, 0, segmentIndex);
 
   const results = await workerManager.executeTask(

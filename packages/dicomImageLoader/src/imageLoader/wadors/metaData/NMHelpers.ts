@@ -40,6 +40,7 @@ function getImageTypeSubItemFromMetadata(metaData, index) {
  * @returns
  */
 function extractOrientationFromNMMultiframeMetadata(metaData) {
+  console.log('there');
   let imageOrientationPatient;
   const imageSubType = getImageTypeSubItemFromMetadata(metaData, 2);
 

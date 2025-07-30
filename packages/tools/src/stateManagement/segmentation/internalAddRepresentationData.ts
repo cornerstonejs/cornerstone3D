@@ -41,7 +41,6 @@ function internalAddRepresentationData({
   if (!segmentation) {
     throw new Error(`Segmentation ${segmentationId} not found`);
   }
-
   if (segmentation.representationData[type]) {
     console.warn(
       `Representation data of type ${type} already exists for segmentation ${segmentationId}, overwriting it.`
