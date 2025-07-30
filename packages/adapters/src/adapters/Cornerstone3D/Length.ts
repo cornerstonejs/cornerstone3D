@@ -80,9 +80,6 @@ export default class Length extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
-            ReferencedFrameOfReferenceUID: is3DMeasurement
-                ? metadata.FrameOfReferenceUID
-                : null,
             use3DSpatialCoordinates: is3DMeasurement
         };
     }

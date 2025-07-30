@@ -185,6 +185,10 @@ export default class MeasurementReport {
             is3DMeasurement
         );
         args.ReferencedSOPSequence = ReferencedSOPSequence;
+        if (args.use3DSpatialCoordinates) {
+            args.ReferencedFrameOfReferenceUID =
+                tool.metadata.FrameOfReferenceUID;
+        }
 
         const tid300Measurement = new toolClass.TID300Representation(args);
         const labelMeasurement = new LabelData(tid300Measurement, tool);
@@ -328,6 +332,7 @@ export default class MeasurementReport {
                 annotation: {
                     data: {
                         annotationUID,
+                        cachedStats: {},
                         handles: {
                             activeHandleIndex: 0,
                             textBox: {
@@ -361,6 +366,7 @@ export default class MeasurementReport {
                     annotationUID,
                     data: {
                         annotationUID,
+                        cachedStats: {},
                         handles: {
                             activeHandleIndex: 0,
                             textBox: {
