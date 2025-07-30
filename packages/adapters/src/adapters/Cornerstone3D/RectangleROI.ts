@@ -20,8 +20,6 @@ export class RectangleROI extends BaseAdapter3D {
         const {
             state,
             NUMGroup,
-            scoord,
-            scoordArgs,
             worldCoords,
             referencedImageId,
             ReferencedFrameNumber
@@ -32,12 +30,20 @@ export class RectangleROI extends BaseAdapter3D {
             this.toolType
         );
 
+        const areaGroup = MeasurementGroup.ContentSequence.find(
+            g =>
+                g.ValueType === "NUM" &&
+                g.ConceptNameCodeSequence[0].CodeMeaning === "Area"
+        );
         const cachedStats = referencedImageId
             ? {
                   [`imageId:${referencedImageId}`]: {
-                      area: NUMGroup
-                          ? NUMGroup.MeasuredValueSequence.NumericValue
-                          : 0
+                      area:
+                          areaGroup?.MeasuredValueSequence?.[0]?.NumericValue ||
+                          0,
+                      areaUnit:
+                          areaGroup?.MeasuredValueSequence?.[0]
+                              ?.MeasurementUnitsCodeSequence?.CodeValue
                   }
               }
             : {};
@@ -45,7 +51,12 @@ export class RectangleROI extends BaseAdapter3D {
             ...state.annotation.data,
             handles: {
                 ...state.annotation.data.handles,
-                points: worldCoords
+                points: [
+                    worldCoords[0],
+                    worldCoords[1],
+                    worldCoords[3],
+                    worldCoords[2]
+                ]
             },
             cachedStats,
             frameNumber: ReferencedFrameNumber
