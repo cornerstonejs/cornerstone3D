@@ -505,8 +505,6 @@ class Cache {
       sizeInBytes: 0,
     };
 
-    this._imageCache.set(imageId, cachedImage);
-
     // For some reason we need to put it here after the rework of volumes
     this._imageCache.set(imageId, cachedImage);
 
