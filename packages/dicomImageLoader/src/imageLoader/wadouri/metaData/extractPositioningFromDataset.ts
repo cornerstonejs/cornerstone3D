@@ -101,6 +101,19 @@ function extractOrientationFromDataset(dataSet) {
       extractOrientationFromNMMultiframeDataset(dataSet);
   }
 
+  // If orientation not valid to this point, trying to get the orientation from
+  // Per-frame Functional Groups Sequence (5200,9230). This is commonly used
+  // in enhanced multiframe DICOMs. Only the first frame is considered.
+  if (!imageOrientationPatient && dataSet.elements.x52009230 && dataSet.elements.x52009230.items?.length > 0) {
+    const frame0 = dataSet.elements.x52009230.items[0].dataSet;
+    const planeOrientationSeq = frame0.elements?.x00209116?.items?.[0]?.dataSet;
+
+    if (planeOrientationSeq) {
+      imageOrientationPatient = getNumberValues(planeOrientationSeq, 'x00200037', 6);
+    }
+  }
+
+
   return imageOrientationPatient;
 }
 
@@ -129,6 +142,18 @@ function extractPositionFromDataset(dataSet) {
     imagePositionPatient = extractPositionFromNMMultiframeDataset(dataSet);
   }
 
+  // If position not valid to this point, trying to get the position from
+  // Per-frame Functional Groups Sequence (5200,9230). This is commonly used
+  // in enhanced multiframe DICOMs. Only the first frame is considered.
+  if (!imagePositionPatient && dataSet.elements.x52009230?.items?.length > 0) {
+    const frame0 = dataSet.elements.x52009230.items[0].dataSet;
+    const planePositionSeq = frame0.elements?.x00209113?.items?.[0]?.dataSet;
+
+    if (planePositionSeq) {
+      imagePositionPatient = getNumberValues(planePositionSeq, 'x00200032', 3);
+    }
+  }
+
   return imagePositionPatient;
 }
 
@@ -149,6 +174,17 @@ function extractSpacingFromDataset(dataSet) {
       'x00280030',
       2
     );
+  }
+
+  // If pixelSpacing not valid to this point, trying to get the spacing
+  // from the SharedFunctionalGroupsSequence
+  if (!pixelSpacing && dataSet.elements.x52009229?.items?.length > 0) {
+    const shared = dataSet.elements.x52009229.items[0].dataSet;
+    const pixelMeasuresSeq = shared.elements?.x00289110?.items?.[0]?.dataSet;
+
+    if (pixelMeasuresSeq) {
+      pixelSpacing = getNumberValues(pixelMeasuresSeq, 'x00280030', 2);
+    }
   }
 
   return pixelSpacing;
