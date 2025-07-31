@@ -104,15 +104,22 @@ function extractOrientationFromDataset(dataSet) {
   // If orientation not valid to this point, trying to get the orientation from
   // Per-frame Functional Groups Sequence (5200,9230). This is commonly used
   // in enhanced multiframe DICOMs. Only the first frame is considered.
-  if (!imageOrientationPatient && dataSet.elements.x52009230 && dataSet.elements.x52009230.items?.length > 0) {
+  if (
+    !imageOrientationPatient &&
+    dataSet.elements.x52009230 &&
+    dataSet.elements.x52009230.items?.length > 0
+  ) {
     const frame0 = dataSet.elements.x52009230.items[0].dataSet;
     const planeOrientationSeq = frame0.elements?.x00209116?.items?.[0]?.dataSet;
 
     if (planeOrientationSeq) {
-      imageOrientationPatient = getNumberValues(planeOrientationSeq, 'x00200037', 6);
+      imageOrientationPatient = getNumberValues(
+        planeOrientationSeq,
+        'x00200037',
+        6
+      );
     }
   }
-
 
   return imageOrientationPatient;
 }
