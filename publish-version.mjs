@@ -147,6 +147,7 @@ async function run() {
   await execa('git', ['add', '.']);
   await execa('git', [
     'commit',
+    '--no-verify',
     '-m',
     'chore: update generated version file [skip ci]',
   ]);
