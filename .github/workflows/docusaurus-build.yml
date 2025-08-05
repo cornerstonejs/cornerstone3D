@@ -35,6 +35,12 @@ jobs:
       - name: Install root dependencies
         run: bun install --frozen-lockfile
 
+      - name: reset nx cache
+        run: rm -rf .nx/cache
+
+      - name: reset nx cache
+        run: bun run nx reset
+
       - name: Build packages in ESM format
         run: yarn build:esm
         env:
