@@ -49,7 +49,7 @@ jobs:
         run: cd packages/docs && yarn install
 
       - name: Build Docusaurus documentation
-        run: cd packages/docs && yarn run build:docs
+        run: cd packages/docs && yarn run build:ci
         env:
           NODE_OPTIONS: --max_old_space_size=32384
 
