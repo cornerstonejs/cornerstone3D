@@ -98,7 +98,7 @@ class Viewport {
   /**
    * The amount by which the images are inset in a viewport by default.
    */
-  protected insetImageMultiplier = 1.1;
+  protected insetImageMultiplier = 1;
 
   protected flipHorizontal = false;
   protected flipVertical = false;
