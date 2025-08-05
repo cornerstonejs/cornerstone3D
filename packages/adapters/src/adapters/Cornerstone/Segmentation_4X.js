@@ -1087,9 +1087,9 @@ export const getSegmentIndex = (multiframe, frame) => {
         ? PerFrameFunctionalGroups.SegmentIdentificationSequence
               .ReferencedSegmentNumber
         : SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-        ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-              .ReferencedSegmentNumber
-        : undefined;
+          ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
+                .ReferencedSegmentNumber
+          : undefined;
 };
 
 export function insertPixelDataPlanar(
@@ -1389,6 +1389,12 @@ export function getImageIdOfSourceImageBySourceImageSequence(
             return baseImageId.replace(
                 /frames\/\d+/,
                 `frames/${ReferencedFrameNumber}`
+            );
+        } else if (baseImageId.includes("dicomfile:")) {
+            // dicomfile base 1, despite having frame=
+            return baseImageId.replace(
+                /frame=\d+/,
+                `frame=${ReferencedFrameNumber}`
             );
         } else if (baseImageId.includes("frame=")) {
             return baseImageId.replace(

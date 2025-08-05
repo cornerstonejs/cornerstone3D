@@ -13,6 +13,7 @@ import { RenderingEngineModeEnum } from '../enums';
 
 class RenderingEngine {
   public hasBeenDestroyed: boolean;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
   private _implementation?: BaseRenderingEngine;

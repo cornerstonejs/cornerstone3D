@@ -358,6 +358,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
 
+    widgetRenderers.forEach((_, renderer) => {
+      renderer.setDraw(false);
+    });
+
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const context = openGLRenderWindow.get3DContext();
@@ -388,20 +392,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const offScreenCanvasWidth = viewportCanvas.width;
     const offScreenCanvasHeight = viewportCanvas.height;
 
-    // Check if dimensions have changed before resizing (with 2px tolerance)
-    const tolerance = 2;
-
-    const widthDiff = Math.abs(
+    if (
       // @ts-expect-error
-      offScreenCanvasContainer.width - offScreenCanvasWidth
-    );
-
-    const heightDiff = Math.abs(
+      offScreenCanvasContainer.height === offScreenCanvasHeight &&
       // @ts-expect-error
-      offScreenCanvasContainer.height - offScreenCanvasHeight
-    );
-
-    if (widthDiff <= tolerance && heightDiff <= tolerance) {
+      offScreenCanvasContainer.width === offScreenCanvasWidth
+    ) {
       return;
     }
 

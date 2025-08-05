@@ -1,8 +1,7 @@
-ImageIds
-========
+# ImageIds
 
 The image loader prefix is 'wadouri' (note that the prefix dicomweb is also supported but is deprecated and will eventually
-be removed).  Here are some example imageId's:
+be removed). Here are some example imageId's:
 
 absolute url:
 
@@ -29,7 +28,7 @@ wadouri:http://localhost:8042/instances/8cce70aa-576ad738-b76cb63f-caedb3c7-2b21
 ```
 
 Note that the web server must support [Cross origin resource sharing](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-or the image will fail to load.  If you are unable to get CORS enabled on the web server that you are loading DICOM P10
-instances from, you can use a [reverse proxy](http://en.wikipedia.org/wiki/Reverse_proxy).  Here is a
+or the image will fail to load. If you are unable to get CORS enabled on the web server that you are loading DICOM P10
+instances from, you can use a [reverse proxy](http://en.wikipedia.org/wiki/Reverse_proxy). Here is a
 [simple Node.js based http-proxy](http://chafey.blogspot.com/2014/09/working-around-cors.html) that adds CORS headers
 that you might find useful.

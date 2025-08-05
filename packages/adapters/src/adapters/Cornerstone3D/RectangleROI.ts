@@ -17,38 +17,41 @@ export class RectangleROI extends BaseAdapter3D {
         sopInstanceUIDToImageIdMap,
         metadata
     ) {
-        const {
-            state,
-            NUMGroup,
-            scoord,
-            scoordArgs,
-            worldCoords,
-            referencedImageId,
-            ReferencedFrameNumber
-        } = MeasurementReport.getSetupMeasurementData(
-            MeasurementGroup,
-            sopInstanceUIDToImageIdMap,
-            metadata,
-            this.toolType
-        );
+        const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
+            MeasurementReport.getSetupMeasurementData(
+                MeasurementGroup,
+                sopInstanceUIDToImageIdMap,
+                metadata,
+                this.toolType
+            );
 
+        const areaGroup = MeasurementGroup.ContentSequence.find(
+            g =>
+                g.ValueType === "NUM" &&
+                g.ConceptNameCodeSequence[0].CodeMeaning === "Area"
+        );
         const cachedStats = referencedImageId
             ? {
                   [`imageId:${referencedImageId}`]: {
-                      area: NUMGroup
-                          ? NUMGroup.MeasuredValueSequence.NumericValue
-                          : 0
+                      area:
+                          areaGroup?.MeasuredValueSequence?.[0]?.NumericValue ||
+                          0,
+                      areaUnit:
+                          areaGroup?.MeasuredValueSequence?.[0]
+                              ?.MeasurementUnitsCodeSequence?.CodeValue
                   }
               }
             : {};
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
-                points: worldCoords,
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                ...state.annotation.data.handles,
+                points: [
+                    worldCoords[0],
+                    worldCoords[1],
+                    worldCoords[3],
+                    worldCoords[2]
+                ]
             },
             cachedStats,
             frameNumber: ReferencedFrameNumber
@@ -59,16 +62,13 @@ export class RectangleROI extends BaseAdapter3D {
     static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
 
-        const { polyline, closed } = data.contour;
-        const isOpenContour = closed !== true;
-
         const { referencedImageId } = metadata;
         const scoordProps = {
             is3DMeasurement,
             referencedImageId
         };
 
-        const corners = toScoords(scoordProps, polyline);
+        const corners = toScoords(scoordProps, data.handles.points);
 
         const { area, perimeter } =
             data.cachedStats[`imageId:${referencedImageId}`] || {};
@@ -86,7 +86,7 @@ export class RectangleROI extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
-            use3DSpatialCoordinates: false
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

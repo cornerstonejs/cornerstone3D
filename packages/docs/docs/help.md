@@ -24,5 +24,4 @@ resources and must be judicious with how we allocate them. If you find yourself
 in this situation and in need of assistance, it may be in your best interest to
 persue paid support.
 
-
 [gh-issues]: https://github.com/cornerstonejs/cornerstone3D/issues/

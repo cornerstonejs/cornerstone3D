@@ -21,7 +21,12 @@ import {
 import Cornerstone3DCodingScheme from "./CodingScheme";
 import { copySeriesTags } from "../helpers/copySeriesTags";
 import { toPoint3 } from "../helpers/toPoint3";
-import { NO_IMAGE_ID } from "./constants";
+import {
+    COMMENT_CODE,
+    NO_IMAGE_ID,
+    TEXT_ANNOTATION_POSITION
+} from "./constants";
+import LabelData from "./LabelData";
 
 type Annotation = Types.Annotation;
 
@@ -36,6 +41,15 @@ const { TID1500MeasurementReport, TID1501MeasurementGroup } = TID1500;
 const { DicomMetaDictionary } = data;
 
 const FINDING = { CodingSchemeDesignator: "DCM", CodeValue: "121071" };
+const COMMENT = {
+    CodingSchemeDesignator: COMMENT_CODE.schemeDesignator,
+    CodeValue: COMMENT_CODE.value
+};
+const COMMENT_POSITION = {
+    CodingSchemeDesignator: TEXT_ANNOTATION_POSITION.schemeDesignator,
+    CodeValue: TEXT_ANNOTATION_POSITION.value
+};
+
 const FINDING_SITE = { CodingSchemeDesignator: "SCT", CodeValue: "363698007" };
 const FINDING_SITE_OLD = { CodingSchemeDesignator: "SRT", CodeValue: "G-C0E3" };
 
@@ -45,6 +59,8 @@ type SpatialCoordinatesState = {
     annotation: Annotation;
     finding?: unknown;
     findingSites?: unknown;
+    commentGroup?;
+    commentPositionGroup?;
 };
 
 type ScoordType = {
@@ -70,6 +86,7 @@ type SetupMeasurementData = {
     ReferencedSOPSequence?: Record<string, unknown>;
     ReferencedSOPInstanceUID?: string;
     referencedImageId?: string;
+    textBoxPosition?: ScoordType;
     ReferencedFrameNumber?: string;
     SCOORD3DGroup?: ScoordType;
     FrameOfReferenceUID?: string;
@@ -168,9 +185,14 @@ export default class MeasurementReport {
             is3DMeasurement
         );
         args.ReferencedSOPSequence = ReferencedSOPSequence;
+        if (args.use3DSpatialCoordinates) {
+            args.ReferencedFrameOfReferenceUID =
+                tool.metadata.FrameOfReferenceUID;
+        }
 
-        const TID300Measurement = new toolClass.TID300Representation(args);
-        return TID300Measurement;
+        const tid300Measurement = new toolClass.TID300Representation(args);
+        const labelMeasurement = new LabelData(tid300Measurement, tool);
+        return labelMeasurement;
     }
 
     public static codeValueMatch = (group, code, oldCode?) => {
@@ -220,7 +242,11 @@ export default class MeasurementReport {
     }
 
     static getCornerstoneLabelFromDefaultState(defaultState) {
-        const { findingSites = [], finding } = defaultState;
+        const { findingSites = [], finding, commentGroup } = defaultState;
+
+        if (commentGroup?.TextValue) {
+            return commentGroup.TextValue;
+        }
 
         const cornersoneFreeTextCodingValue =
             Cornerstone3DCodingScheme.codeValues.CORNERSTONEFREETEXT;
@@ -305,7 +331,14 @@ export default class MeasurementReport {
                 sopInstanceUid: ReferencedSOPInstanceUID,
                 annotation: {
                     data: {
-                        annotationUID
+                        annotationUID,
+                        cachedStats: {},
+                        handles: {
+                            activeHandleIndex: 0,
+                            textBox: {
+                                hasMoved: false
+                            }
+                        }
                     },
                     annotationUID,
                     metadata: {
@@ -332,7 +365,14 @@ export default class MeasurementReport {
                 annotation: {
                     annotationUID,
                     data: {
-                        annotationUID
+                        annotationUID,
+                        cachedStats: {},
+                        handles: {
+                            activeHandleIndex: 0,
+                            textBox: {
+                                hasMoved: false
+                            }
+                        }
                     },
                     metadata: {
                         toolName: toolType,
@@ -356,25 +396,32 @@ export default class MeasurementReport {
         metadata,
         toolType
     }): SpatialCoordinatesData {
-        const SCOORDGroup = toArray(NUMGroup.ContentSequence).find(
+        const contentSequenceArr = toArray(NUMGroup.ContentSequence);
+        const SCOORDGroup = contentSequenceArr.find(
             group => group.ValueType === "SCOORD"
         );
-        const SCOORD3DGroup = toArray(NUMGroup.ContentSequence).find(
+        const SCOORD3DGroup = contentSequenceArr.find(
             group => group.ValueType === "SCOORD3D"
         );
 
-        if (SCOORDGroup) {
-            return this.processSCOORDGroup({
-                SCOORDGroup,
-                toolType,
-                metadata,
-                sopInstanceUIDToImageIdMap
-            });
-        } else if (SCOORD3DGroup) {
-            return this.processSCOORD3DGroup({ SCOORD3DGroup, toolType });
-        } else {
+        const result: SpatialCoordinatesData =
+            (SCOORD3DGroup &&
+                this.processSCOORD3DGroup({
+                    SCOORD3DGroup,
+                    toolType
+                })) ||
+            (SCOORDGroup &&
+                this.processSCOORDGroup({
+                    SCOORDGroup,
+                    toolType,
+                    metadata,
+                    sopInstanceUIDToImageIdMap
+                }));
+        if (!result) {
             throw new Error("No spatial coordinates group found.");
         }
+
+        return result;
     }
 
     public static processSpatialCoordinatesGroup({
@@ -383,6 +430,8 @@ export default class MeasurementReport {
         metadata,
         findingGroup,
         findingSiteGroups,
+        commentGroup,
+        commentPositionGroup,
         toolType
     }) {
         const {
@@ -393,7 +442,8 @@ export default class MeasurementReport {
             ReferencedFrameNumber,
             SCOORD3DGroup,
             FrameOfReferenceUID,
-            referencedImageId
+            referencedImageId,
+            textBoxPosition
         } = this.getSpatialCoordinatesState({
             NUMGroup,
             sopInstanceUIDToImageIdMap,
@@ -408,15 +458,32 @@ export default class MeasurementReport {
             return addAccessors(fsg.ConceptCodeSequence);
         });
 
+        if (commentPositionGroup) {
+            state.commentPositionGroup = commentPositionGroup;
+            const textBoxCoords = scoordToWorld(
+                {
+                    is3DMeasurement: !referencedImageId,
+                    referencedImageId
+                },
+                commentPositionGroup
+            );
+            state.annotation.data.handles.textBox = {
+                hasMoved: true,
+                worldPosition: textBoxCoords[0]
+            };
+        }
+
         state.finding = finding;
         state.findingSites = findingSites;
+        state.commentGroup = commentGroup;
+        state.commentPositionGroup = commentPositionGroup;
 
         if (finding) {
             state.description = finding.CodeMeaning;
         }
 
         state.annotation.data.label =
-            MeasurementReport.getCornerstoneLabelFromDefaultState(state);
+            this.getCornerstoneLabelFromDefaultState(state);
 
         return {
             // Deprecating the defaultState in favour of state, but there are lots
@@ -429,6 +496,7 @@ export default class MeasurementReport {
             ReferencedSOPSequence,
             ReferencedSOPInstanceUID,
             referencedImageId,
+            textBoxPosition,
             ReferencedFrameNumber,
             SCOORD3DGroup,
             FrameOfReferenceUID
@@ -446,6 +514,12 @@ export default class MeasurementReport {
         const contentSequenceArr = toArray(ContentSequence);
         const findingGroup = contentSequenceArr.find(group =>
             this.codeValueMatch(group, FINDING)
+        );
+        const commentGroup = contentSequenceArr.find(group =>
+            this.codeValueMatch(group, COMMENT)
+        );
+        const commentPositionGroup = contentSequenceArr.find(group =>
+            this.codeValueMatch(group, COMMENT_POSITION)
         );
         const findingSiteGroups =
             contentSequenceArr.filter(group =>
@@ -467,6 +541,8 @@ export default class MeasurementReport {
             metadata,
             findingGroup,
             findingSiteGroups,
+            commentGroup,
+            commentPositionGroup,
             toolType
         });
 
