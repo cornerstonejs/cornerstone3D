@@ -76,10 +76,14 @@ export function removeAllProviders(): void {
 function getMetaData(type: string, ...queries): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
-    const result = providers[i].provider(type, ...queries);
+    try {
+      const result = providers[i].provider(type, ...queries);
 
-    if (result !== undefined) {
-      return result;
+      if (result !== undefined) {
+        return result;
+      }
+    } catch (error) {
+      console.warn(`Error occurred in provider ${i}:`, error);
     }
   }
 }

@@ -1111,9 +1111,21 @@ class Viewport {
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
     }
+    let widthWorld;
+    let heightWorld;
 
-    const { widthWorld, heightWorld } =
-      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal);
+    if (imageData) {
+      const extent = imageData.getExtent();
+      const spacing = imageData.getSpacing();
+      widthWorld = (extent[1] - extent[0]) * spacing[0];
+      heightWorld = (extent[3] - extent[2]) * spacing[1];
+    } else {
+      ({ widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
+        bounds,
+        viewUp,
+        viewPlaneNormal
+      ));
+    }
 
     const canvasSize = [this.sWidth, this.sHeight];
 
