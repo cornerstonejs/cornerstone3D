@@ -64,6 +64,6 @@ coverage/
 .cursor
 
 **/.claude/settings.local.json
-
+CLAUDE.md
 # External repositories
 vtk-js/
