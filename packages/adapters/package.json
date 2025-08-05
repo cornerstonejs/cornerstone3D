@@ -1,95 +1,95 @@
 {
-    "name": "@cornerstonejs/adapters",
-    "version": "3.32.5",
-    "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
-    "module": "./dist/esm/index.js",
-    "types": "./dist/esm/index.d.ts",
-    "files": [
-        "dist"
-    ],
-    "directories": {
-        "build": "dist"
+  "name": "@cornerstonejs/adapters",
+  "version": "3.32.5",
+  "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "directories": {
+    "build": "dist"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
     },
-    "exports": {
-        ".": {
-            "import": "./dist/esm/index.js",
-            "types": "./dist/esm/index.d.ts"
-        },
-        "./cornerstone": {
-            "import": "./dist/esm/adapters/Cornerstone/index.js",
-            "types": "./dist/esm/adapters/Cornerstone/index.d.ts"
-        },
-        "./cornerstone/*": {
-            "import": "./dist/esm/adapters/Cornerstone/*.js",
-            "types": "./dist/esm/adapters/Cornerstone/*.d.ts"
-        },
-        "./cornerstone3D": {
-            "import": "./dist/esm/adapters/Cornerstone3D/index.js",
-            "types": "./dist/esm/adapters/Cornerstone3D/index.d.ts"
-        },
-        "./cornerstone3D/*": {
-            "import": "./dist/esm/adapters/Cornerstone3D/*.js",
-            "types": "./dist/esm/adapters/Cornerstone3D/*.d.ts"
-        },
-        "./enums": {
-            "import": "./dist/esm/adapters/enums/index.js",
-            "types": "./dist/esm/adapters/enums/index.d.ts"
-        },
-        "./enums/*": {
-            "import": "./dist/esm/adapters/enums/*.js",
-            "types": "./dist/esm/adapters/enums/*.d.ts"
-        },
-        "./helpers": {
-            "import": "./dist/esm/adapters/helpers/index.js",
-            "types": "./dist/esm/adapters/helpers/index.d.ts"
-        },
-        "./helpers/*": {
-            "import": "./dist/esm/adapters/helpers/*.js",
-            "types": "./dist/esm/adapters/helpers/*.d.ts"
-        },
-        "./version": {
-            "node": "./dist/esm/version.js",
-            "import": "./dist/esm/version.js",
-            "types": "./dist/esm/version.d.ts"
-        }
+    "./cornerstone": {
+      "import": "./dist/esm/adapters/Cornerstone/index.js",
+      "types": "./dist/esm/adapters/Cornerstone/index.d.ts"
     },
-    "publishConfig": {
-        "access": "public"
+    "./cornerstone/*": {
+      "import": "./dist/esm/adapters/Cornerstone/*.js",
+      "types": "./dist/esm/adapters/Cornerstone/*.d.ts"
     },
-    "scripts": {
-        "test": "jest --testTimeout 60000",
-        "build": "rollup -c rollup.config.mjs",
-        "build:esm": "rollup -c rollup.config.mjs",
-        "build:esm:watch": "rollup --watch -c rollup.config.mjs",
-        "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
-        "clean:deep": "yarn run clean && shx rm -rf node_modules",
-        "dev": "rollup --watch  -c rollup.config.mjs",
-        "build:all": "yarn build",
-        "api-check": "echo 'No API check for this package'",
-        "start": "rollup --watch -c rollup.config.mjs",
-        "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-        "lint": "oxlint .",
-        "prebuild": "node ../../scripts/generate-version.js ./"
+    "./cornerstone3D": {
+      "import": "./dist/esm/adapters/Cornerstone3D/index.js",
+      "types": "./dist/esm/adapters/Cornerstone3D/index.d.ts"
     },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/cornerstonejs/cornerstone3D.git"
+    "./cornerstone3D/*": {
+      "import": "./dist/esm/adapters/Cornerstone3D/*.js",
+      "types": "./dist/esm/adapters/Cornerstone3D/*.d.ts"
     },
-    "author": "@cornerstonejs adapters package",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
+    "./enums": {
+      "import": "./dist/esm/adapters/enums/index.js",
+      "types": "./dist/esm/adapters/enums/index.d.ts"
     },
-    "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
-    "dependencies": {
-        "@babel/runtime-corejs2": "^7.17.8",
-        "buffer": "^6.0.3",
-        "dcmjs": "^0.43.1",
-        "gl-matrix": "^3.4.3",
-        "ndarray": "^1.0.19"
+    "./enums/*": {
+      "import": "./dist/esm/adapters/enums/*.js",
+      "types": "./dist/esm/adapters/enums/*.d.ts"
     },
-    "peerDependencies": {
-        "@cornerstonejs/core": "^3.32.5",
-        "@cornerstonejs/tools": "^3.32.5"
+    "./helpers": {
+      "import": "./dist/esm/adapters/helpers/index.js",
+      "types": "./dist/esm/adapters/helpers/index.d.ts"
+    },
+    "./helpers/*": {
+      "import": "./dist/esm/adapters/helpers/*.js",
+      "types": "./dist/esm/adapters/helpers/*.d.ts"
+    },
+    "./version": {
+      "node": "./dist/esm/version.js",
+      "import": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "jest --testTimeout 60000",
+    "build": "rollup -c rollup.config.mjs",
+    "build:esm": "rollup -c rollup.config.mjs",
+    "build:esm:watch": "rollup --watch -c rollup.config.mjs",
+    "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
+    "dev": "rollup --watch  -c rollup.config.mjs",
+    "build:all": "yarn build",
+    "api-check": "echo 'No API check for this package'",
+    "start": "rollup --watch -c rollup.config.mjs",
+    "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
+    "lint": "oxlint .",
+    "prebuild": "node ../../scripts/generate-version.js ./"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cornerstonejs/cornerstone3D.git"
+  },
+  "author": "@cornerstonejs adapters package",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
+  },
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/adapters/README.md",
+  "dependencies": {
+    "@babel/runtime-corejs2": "^7.17.8",
+    "buffer": "^6.0.3",
+    "dcmjs": "^0.43.1",
+    "gl-matrix": "^3.4.3",
+    "ndarray": "^1.0.19"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/core": "^3.32.6",
+    "@cornerstonejs/tools": "^3.32.6"
+  }
 }
