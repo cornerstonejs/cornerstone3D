@@ -1087,9 +1087,9 @@ export const getSegmentIndex = (multiframe, frame) => {
         ? PerFrameFunctionalGroups.SegmentIdentificationSequence
               .ReferencedSegmentNumber
         : SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-        ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-              .ReferencedSegmentNumber
-        : undefined;
+          ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
+                .ReferencedSegmentNumber
+          : undefined;
 };
 
 export function insertPixelDataPlanar(

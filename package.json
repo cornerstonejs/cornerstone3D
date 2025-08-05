@@ -148,7 +148,7 @@
     "postcss-import": "^15.1.0",
     "postcss-loader": "^7.3.0",
     "postcss-preset-env": "^8.3.2",
-    "prettier": "2.8.8",
+    "prettier": "^3.6.2",
     "puppeteer": "^13.5.0",
     "resemblejs": "^5.0.0",
     "rollup": "^3.21.3",

@@ -630,8 +630,8 @@ export default class LabelmapBaseTool extends BaseTool {
       const segmentIndex = hasBoth
         ? startValue
         : startValue === 0
-        ? activeIndex
-        : 0;
+          ? activeIndex
+          : 0;
       for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
         for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
           for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {

@@ -1,5 +1,5 @@
 export interface WADORSMetaDataElement<
-  ValueType = string[] | number[] | boolean
+  ValueType = string[] | number[] | boolean,
 > {
   Value: ValueType;
 }

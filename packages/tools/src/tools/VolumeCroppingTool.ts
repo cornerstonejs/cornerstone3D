@@ -1485,12 +1485,12 @@ class VolumeCroppingTool extends BaseTool {
       const origin = this.originalClippingPlanes[i].origin as [
         number,
         number,
-        number
+        number,
       ];
       const normal = this.originalClippingPlanes[i].normal as [
         number,
         number,
-        number
+        number,
       ];
       const plane = vtkPlane.newInstance({
         origin,

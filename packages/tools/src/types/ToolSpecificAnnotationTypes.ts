@@ -124,7 +124,7 @@ export interface CircleROIAnnotation extends Annotation {
         Types.Point3,
         Types.Point3,
         Types.Point3,
-        Types.Point3
+        Types.Point3,
       ]; // [center, top, bottom, left, right]
       activeHandleIndex: number | null;
       textBox?: {

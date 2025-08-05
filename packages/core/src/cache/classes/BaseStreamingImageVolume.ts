@@ -283,11 +283,11 @@ export default class BaseStreamingImageVolume
     this.imagesLoader = this.isDynamicVolume()
       ? this
       : imageRetrieveConfiguration
-      ? (
-          imageRetrieveConfiguration.create ||
-          ProgressiveRetrieveImages.createProgressive
-        )(imageRetrieveConfiguration)
-      : this;
+        ? (
+            imageRetrieveConfiguration.create ||
+            ProgressiveRetrieveImages.createProgressive
+          )(imageRetrieveConfiguration)
+        : this;
 
     if (loadStatus.loading === true) {
       return; // Already loading, will get callbacks from main load.
@@ -441,11 +441,14 @@ export default class BaseStreamingImageVolume
       loadAndCacheImage(imageId, options)
     );
 
-    return uncompressedIterator.forEach((image) => {
-      // scalarData is the volume container we are progressively loading into
-      // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-      this.successCallback(imageId, image);
-    }, this.errorCallback.bind(this, imageIdIndex, imageId));
+    return uncompressedIterator.forEach(
+      (image) => {
+        // scalarData is the volume container we are progressively loading into
+        // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
+        this.successCallback(imageId, image);
+      },
+      this.errorCallback.bind(this, imageIdIndex, imageId)
+    );
   }
 
   protected getImageIdsRequests(imageIds: string[], priorityDefault: number) {
