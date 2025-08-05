@@ -805,11 +805,11 @@ class CobbAngleTool extends AnnotationTool {
 
       const firstLine = [canvasCoordinates[0], canvasCoordinates[1]] as [
         Types.Point2,
-        Types.Point2
+        Types.Point2,
       ];
       const secondLine = [canvasCoordinates[2], canvasCoordinates[3]] as [
         Types.Point2,
-        Types.Point2
+        Types.Point2,
       ];
 
       let lineUID = 'line1';
@@ -1036,11 +1036,11 @@ class CobbAngleTool extends AnnotationTool {
 
     const firstLine = [canvasPoints[0], canvasPoints[1]] as [
       Types.Point2,
-      Types.Point2
+      Types.Point2,
     ];
     const secondLine = [canvasPoints[2], canvasPoints[3]] as [
       Types.Point2,
-      Types.Point2
+      Types.Point2,
     ];
 
     const mid1 = midPoint2(firstLine[0], firstLine[1]);

@@ -64,7 +64,7 @@ type ReferenceLine = [
   },
   startPoint: Types.Point2,
   endPoint: Types.Point2,
-  type: 'min' | 'max'
+  type: 'min' | 'max',
 ];
 
 interface VolumeCroppingAnnotation extends Annotation {

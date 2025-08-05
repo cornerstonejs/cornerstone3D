@@ -186,7 +186,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         Types.Point3,
         Types.Point3,
         Types.Point3,
-        Types.Point3
+        Types.Point3,
       ];
     }
 

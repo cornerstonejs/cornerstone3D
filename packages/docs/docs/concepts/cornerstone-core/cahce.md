@@ -34,13 +34,11 @@ This new change that was introduced in `Cornerstone3D` 2.x is part of the new im
 Here are other benefits of the new approach:
 
 1. Single Source of Truth
-
    - Previously: Data existed in both image cache and volume cache, leading to synchronization issues.
    - Now: Only one source of truth - the image cache.
    - Benefits: Improved syncing between stack and volume segmentations.
 
 2. New Volume Creation Approach
-
    - Everything now loads as images.
    - Volume streaming is performed image by image.
    - Only images are cached in the image cache.
@@ -48,7 +46,6 @@ Here are other benefits of the new approach:
    - Benefits: Eliminated need for scalar data in CPU, reduced memory usage, improved performance.
 
 3. VoxelManager for Tools
-
    - Acts as an intermediary between indexes and scalar data.
    - Provides mappers from IJK to indexes.
    - Retrieves information without creating scalar data.
@@ -56,12 +53,10 @@ Here are other benefits of the new approach:
    - Benefits: Efficient handling of tools requiring pixel data in CPU.
 
 4. Handling Non-Image Volumes
-
    - Volumes without images (e.g., NIFTI) are chopped and converted to stack format.
    - Makes non-image volumes compatible with the new image-based approach.
 
 5. Optimized Caching Mechanism
-
    - Data stored in native format instead of always caching as float32.
    - On-the-fly conversion to required format when updating GPU textures.
    - Benefits: Reduced memory usage, eliminated unnecessary data type conversions.

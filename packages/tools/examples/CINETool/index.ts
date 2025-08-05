@@ -146,9 +146,8 @@ function setActiveElement(element) {
 
   (<HTMLInputElement>document.querySelector('#fpsSlider')).value = fps;
 
-  (<HTMLElement>(
-    document.querySelector('#fpsSlider-label')
-  )).innerText = ` Frames per second: ${fps}`;
+  (<HTMLElement>document.querySelector('#fpsSlider-label')).innerText =
+    ` Frames per second: ${fps}`;
 }
 
 /**

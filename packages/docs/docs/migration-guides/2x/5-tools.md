@@ -93,25 +93,21 @@ We have a new segmentation model that is more flexible and easier to use.
 In Cornerstone3D version 2, we've made significant architectural changes to our segmentation model while maintaining familiar terminology. This redesign aims to provide a more flexible and intuitive approach to working with segmentations across different viewports. Here are the key changes and the reasons behind them:
 
 1. **Viewport-Specific, Not Tool Group-Based**:
-
    - Old: Segmentations were tied to tool groups, which typically consist of multiple viewports. This created complications when users wanted to add segmentations to some viewports but not others within the same tool group.
    - New: Segmentations are now viewport-specific. Instead of adding or removing representations to a tool group, users can add them directly to viewports. This provides much finer control over what each viewport renders.
    - Why: We discovered that tying rendering to a tool group is not an effective approach. It often necessitated creating an extra tool group for a specific viewport to customize or prevent rendering.
 
 2. **Simplified Identification of Segmentation Representations**:
-
    - Old: Required a unique segmentationRepresentationUID for identification.
    - New: Segmentation representations are identified by a combination of `segmentationId` and representation `type`. This allows each viewport to have different representations of the same segmentation.
    - Why: This simplification makes it easier to manage and reference segmentation representations across different viewports.
 
 3. **Decoupling of Data and Visualization**:
-
    - Old: Segmentation rendering was tightly coupled with tool groups.
    - New: Segmentation is now treated purely as data, separate from the tools used to interact with it.
    - Why: While it's appropriate for tools to be bound to tool groups, viewport-specific functionalities like segmentation rendering should be the responsibility of individual viewports. This separation allows for more flexible rendering and interaction options across different viewports.
 
 4. **Polymorphic Segmentation Support**:
-
    - The new architecture better supports the concept of polymorphic segmentations, where a single segmentation can have multiple representations (e.g., labelmap, contour, surface) that can be efficiently converted between each other.
    - Why: This flexibility allows for more efficient storage, analysis, and real-time visualization of segmentations.
 
@@ -355,7 +351,6 @@ The previous model required users to provide an imageIdReferenceMap, which linke
 1. Manual creation of the map was error-prone, particularly regarding the order of imageIds.
 
 2. Once a segmentation was associated with specific viewport imageIds, rendering it elsewhere became problematic. For example:
-
    - Rendering a CT image stack segmentation on a single key image.
    - Rendering a CT image stack segmentation on a stack that includes both CT and other images.
    - Rendering a DX dual energy segmentation from energy 1 on energy 2.

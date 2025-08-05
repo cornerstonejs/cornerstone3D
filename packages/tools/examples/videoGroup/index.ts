@@ -256,13 +256,13 @@ function updateAnnotationDiv(uid) {
   const { fps } = viewport;
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
-    data.label || data.text
-  } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
+      data.label || data.text
+    } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
     <b>Range:</b> ${rangeArr.join('-')} Time ${rangeArr
-    .map((it) => Math.round((it * 10) / fps) / 10)
-    .join('-')} Groups: ${group1.has(uid) ? '1' : ''} ${
-    group2.has(uid) ? '2' : ''
-  }<br />
+      .map((it) => Math.round((it * 10) / fps) / 10)
+      .join('-')} Groups: ${group1.has(uid) ? '1' : ''} ${
+      group2.has(uid) ? '2' : ''
+    }<br />
   `;
 }
 
