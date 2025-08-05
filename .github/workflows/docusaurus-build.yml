@@ -27,29 +27,34 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'yarn'
+          node-version: '20.18.1'
+          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Install root dependencies
-        run: yarn install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: reset nx cache
         run: rm -rf .nx/cache
 
       - name: reset nx cache
-        run: yarn nx reset
+        run: bun nx reset
 
       - name: Build packages in ESM format
-        run: yarn build:esm
+        run: bun run build:esm
         env:
           NX_CACHE_DIRECTORY: ${{ runner.temp }}/nx-cache
           NX_DAEMON: false
 
       - name: Install docs dependencies
-        run: cd packages/docs && yarn install
+        run: cd packages/docs && bun install
 
       - name: Build Docusaurus documentation
-        run: cd packages/docs && yarn run build:ci
+        run: cd packages/docs && bun run build:ci
         env:
           NODE_OPTIONS: --max_old_space_size=32384
 

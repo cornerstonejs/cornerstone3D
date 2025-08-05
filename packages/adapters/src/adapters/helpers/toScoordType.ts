@@ -5,7 +5,7 @@ const { worldToImageCoords: globalWorldToImageCoords } = utilities;
 let useWorldToImageCoords = globalWorldToImageCoords;
 
 /**
- * Converts a Point2 or a Point3 into a SCOORD { x,y, z? } point.
+ * Converts a Point2 or a Point3 into a SCOORD  object x,y, and optional z.
  */
 export function toScoord({ is3DMeasurement, referencedImageId }, point) {
     if (is3DMeasurement) {
