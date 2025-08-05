@@ -2241,9 +2241,10 @@ abstract class BaseVolumeViewport extends Viewport {
     sliceIndex ??= currentIndex;
     const { viewPlaneNormal, focalPoint } = this.getCamera();
     const querySeparator = volumeId.includes('?') ? '&' : '?';
-    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
-      ','
-    )}`;
+    // Format each element of viewPlaneNormal to 3 decimal places
+    // to avoid floating point precision issues
+    const formattedNormal = viewPlaneNormal.map((v) => v.toFixed(3)).join(',');
+    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${formattedNormal}`;
   }
 
   private _addVolumeId(volumeId: string): void {
