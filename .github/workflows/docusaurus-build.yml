@@ -24,22 +24,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'yarn'
 
       - name: Install root dependencies
-        run: bun install --frozen-lockfile
+        run: yarn install --frozen-lockfile
 
       - name: reset nx cache
         run: rm -rf .nx/cache
 
       - name: reset nx cache
-        run: bun run nx reset
+        run: yarn nx reset
 
       - name: Build packages in ESM format
         run: yarn build:esm
@@ -48,10 +46,10 @@ jobs:
           NX_DAEMON: false
 
       - name: Install docs dependencies
-        run: cd packages/docs && bun install
+        run: cd packages/docs && yarn install
 
       - name: Build Docusaurus documentation
-        run: cd packages/docs && bun run build:docs
+        run: cd packages/docs && yarn run build:docs
         env:
           NODE_OPTIONS: --max_old_space_size=32384
 
