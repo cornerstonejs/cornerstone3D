@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.4...v3.32.5) (2025-07-30)
+
+### Bug Fixes
+
+- Reset view plane to axial/sag/cor by default if possible ([#2238](https://github.com/cornerstonejs/cornerstone3D/issues/2238)) ([2bf6e2d](https://github.com/cornerstonejs/cornerstone3D/commit/2bf6e2d8d3b54d8e91d041bfd40ad2d3d84a5c65))
+
+## [3.32.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.3...v3.32.4) (2025-07-30)
+
+### Bug Fixes
+
+- Ensure FOR is stored when required and cachedStats created ([#2237](https://github.com/cornerstonejs/cornerstone3D/issues/2237)) ([35062da](https://github.com/cornerstonejs/cornerstone3D/commit/35062daedcb6b9f4f785095bfcf0ff811cdbc4f1))
+
+## [3.32.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.2...v3.32.3) (2025-07-30)
+
+### Bug Fixes
+
+- Adapter issues ([#2233](https://github.com/cornerstonejs/cornerstone3D/issues/2233)) ([07620e9](https://github.com/cornerstonejs/cornerstone3D/commit/07620e9b5b2e427866cc91fd616ae0e292b48f3b))
+
 ## [3.32.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.1...v3.32.2) (2025-07-29)
 
 **Note:** Version bump only for package root
