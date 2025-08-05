@@ -11,7 +11,7 @@ on:
     branches: [ beta ]
 
 jobs:
-  format-check:
+  lint:
     timeout-minutes: 30
     runs-on: ubuntu-latest
 
@@ -37,6 +37,6 @@ jobs:
         run: bun run build:esm
 
       - name: Run format check
-        run: bun run format-check
+        run: bun run lint
         env:
           NODE_OPTIONS: --max_old_space_size=32896

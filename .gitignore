@@ -1,4 +1,5 @@
 # dependencies
+CLAUDE.md
 node_modules
 .nyc_output
 .nx

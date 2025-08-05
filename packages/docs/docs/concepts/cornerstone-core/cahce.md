@@ -32,6 +32,7 @@ If you ever actually need the full voxel data of a volume, you can use the `Voxe
 This new change that was introduced in `Cornerstone3D` 2.x is part of the new image-based approach that aims to improve performance, reduce memory usage, and provide more efficient data access, especially for large datasets.
 
 Here are other benefits of the new approach:
+
 1. Single Source of Truth
 
    - Previously: Data existed in both image cache and volume cache, leading to synchronization issues.
