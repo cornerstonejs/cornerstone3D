@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.6...v3.32.7) (2025-08-05)
+
+### Bug Fixes
+
+- Remove duplicate set cache ([#2239](https://github.com/cornerstonejs/cornerstone3D/issues/2239)) ([8605b39](https://github.com/cornerstonejs/cornerstone3D/commit/8605b39fb09644a0cb24b2f43976ac9f1455417b))
+
 ## [3.32.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.5...v3.32.6) (2025-08-05)
 
 **Note:** Version bump only for package root
