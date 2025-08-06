@@ -527,8 +527,8 @@ function quantizeAndInverse(component, blockBufferOffset, p) {
       q <= -2056 / component.bitConversion
         ? 0
         : q >= 2024 / component.bitConversion
-        ? 255 / component.bitConversion
-        : (q + 2056 / component.bitConversion) >> 4;
+          ? 255 / component.bitConversion
+          : (q + 2056 / component.bitConversion) >> 4;
     component.blockData[index] = q;
   }
 }

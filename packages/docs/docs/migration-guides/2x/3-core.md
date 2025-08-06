@@ -7,8 +7,6 @@ summary: Changes to the core package when migrating from Cornerstone3D 1.x to 2.
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-
-
 # @cornerstonejs/core
 
 ## Initialization
@@ -226,13 +224,11 @@ It is more accurate to use `getViewReferenceId` to reflect the actual function o
 The Cornerstone library has undergone significant changes in how it handles image volumes and texture management. These changes aim to improve performance, reduce memory usage, and provide more efficient data access, especially for large datasets.
 
 1. Single Source of Truth
-
    - Previously: Data existed in both image cache and volume cache, leading to synchronization issues.
    - Now: Only one source of truth - the image cache.
    - Benefits: Improved syncing between stack and volume segmentations.
 
 2. New Volume Creation Approach
-
    - Everything now loads as images.
    - Volume streaming is performed image by image.
    - Only images are cached in the image cache.
@@ -240,7 +236,6 @@ The Cornerstone library has undergone significant changes in how it handles imag
    - Benefits: Eliminated need for scalar data in CPU, reduced memory usage, improved performance.
 
 3. VoxelManager for Tools
-
    - Acts as an intermediary between indexes and scalar data.
    - Provides mappers from IJK to indexes.
    - Retrieves information without creating scalar data.
@@ -248,12 +243,10 @@ The Cornerstone library has undergone significant changes in how it handles imag
    - Benefits: Efficient handling of tools requiring pixel data in CPU.
 
 4. Handling Non-Image Volumes
-
    - Volumes without images (e.g., NIFTI) are chopped and converted to stack format.
    - Makes non-image volumes compatible with the new image-based approach.
 
 5. Optimized Caching Mechanism
-
    - Data stored in native format instead of always caching as float32.
    - On-the-fly conversion to required format when updating GPU textures.
    - Benefits: Reduced memory usage, eliminated unnecessary data type conversions.
@@ -292,7 +285,6 @@ A new `VoxelManager` class has been introduced to handle voxel data more efficie
    b. For 3D coordinates, use `getAtIJK(i, j, k)` and `setAtIJK(i, j, k, value)`.
 
 4. Available VoxelManager Methods:
-
    - `getScalarData()`: Returns the entire scalar data array (only for IImage, not for volumes).
    - `getScalarDataLength()`: Returns the total number of voxels.
    - `getAtIndex(index)`: Gets the value at a specific index.
@@ -327,7 +319,6 @@ A new `VoxelManager` class has been introduced to handle voxel data more efficie
    ```
 
 7. Getting volume information:
-
    - Dimensions: `volume.dimensions`
    - Spacing: `volume.spacing`
    - Direction: `volume.direction`
@@ -338,14 +329,12 @@ A new `VoxelManager` class has been introduced to handle voxel data more efficie
    If dealing with RGB data, the `getAtIndex` and `getAtIJK` methods will return an array `[r, g, b]`.
 
 9. Performance considerations:
-
    - Use `getAtIndex` and `setAtIndex` for bulk operations when possible, as they're generally faster than `getAtIJK` and `setAtIJK`.
    - When iterating over a large portion of the volume, consider using `forEach` for optimized performance.
 
 10. Dynamic Volumes:
 
     For 4D datasets, additional methods are available:
-
     - `setTimePoint(timePoint)`: Sets the current time point.
     - `getAtIndexAndTimePoint(index, timePoint)`: Gets a value for a specific index and time point.
 

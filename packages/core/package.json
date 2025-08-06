@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "3.32.0",
+  "version": "3.32.8",
   "description": "Cornerstone3D Core",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -76,8 +76,8 @@
     "build": "yarn run build:esm",
     "build:all": "yarn run build:esm",
     "dev": "tsc --project ./tsconfig.json --watch",
-    "format-check": "npx eslint ./src --quiet",
     "api-check": "api-extractor --debug run ",
+    "lint": "oxlint .",
     "prepublishOnly": "yarn run build"
   },
   "dependencies": {

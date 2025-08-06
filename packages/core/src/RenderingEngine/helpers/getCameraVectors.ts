@@ -176,7 +176,7 @@ export function calculateCameraPosition(
     viewRight: [viewRight[0], viewRight[1], viewRight[2]] as [
       number,
       number,
-      number
+      number,
     ],
   };
 }

@@ -76,6 +76,7 @@ import * as metaData from '../metaData';
 import { getCameraVectors } from './helpers/getCameraVectors';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import mprCameraValues from '../constants/mprCameraValues';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -717,54 +718,76 @@ abstract class BaseVolumeViewport extends Viewport {
   abstract isInAcquisitionPlane(): boolean;
 
   /**
+   * This will apply a camera orientation that is compatible with inPlaneVector1 and 2
+   *
+   * 1. If inPlaneVector1 and inPlaneVector2 are compatible with, no change.
+   * 2. If dot products of the current view plane normal and inPlaneVector 1 and 2 are zero, no change
+   *
+   */
+  public setBestOrentation(inPlaneVector1, inPlaneVector2) {
+    if (!inPlaneVector1 && !inPlaneVector2) {
+      // Any view is compatible with a point position
+      return;
+    }
+    const { viewPlaneNormal } = this.getCamera();
+    if (
+      isCompatible(viewPlaneNormal, inPlaneVector2) &&
+      isCompatible(viewPlaneNormal, inPlaneVector1)
+    ) {
+      // Orthogonal view to the current view, so no change.
+      return;
+    }
+
+    const acquisition = this._getAcquisitionPlaneOrientation();
+    if (
+      isCompatible(acquisition.viewPlaneNormal, inPlaneVector2) &&
+      isCompatible(acquisition.viewPlaneNormal, inPlaneVector1)
+    ) {
+      // Orthogonal view to the current view, so no change.
+      this.setOrientation(acquisition);
+      return;
+    }
+    for (const orientation of <{ viewPlaneNormal: Point3 }[]>(
+      Object.values(mprCameraValues)
+    )) {
+      if (
+        isCompatible(orientation.viewPlaneNormal, inPlaneVector2) &&
+        isCompatible(orientation.viewPlaneNormal, inPlaneVector1)
+      ) {
+        // Orthogonal view to the current view, so no change.
+        this.setOrientation(orientation);
+        return;
+      }
+    }
+
+    const planeNormal = <Point3>(
+      vec3.cross(
+        vec3.create(),
+        inPlaneVector2 || acquisition.viewPlaneNormal,
+        inPlaneVector1
+      )
+    );
+    vec3.normalize(planeNormal, planeNormal);
+    this.setOrientation({ viewPlaneNormal: planeNormal });
+  }
+
+  /**
    * Sets the view reference given a referenced plane and the current
    * view plane normal being applied.
    * This will use the existing normal if compatible, otherwise will calculate
    * a new view plane normal as the referenced plane normal, or else the
    * cross product of the existing view plane normal and the inPlaneVector1
    */
-  public setViewPlane(planeRestriction: PlaneRestriction, viewPlaneNormal) {
+  public setViewPlane(planeRestriction: PlaneRestriction) {
     const { point, inPlaneVector1, inPlaneVector2, FrameOfReferenceUID } =
       planeRestriction;
 
-    if (!inPlaneVector1) {
-      return this.setViewReference({
-        FrameOfReferenceUID,
-        cameraFocalPoint: point,
-      });
-    }
+    this.setBestOrentation(inPlaneVector1, inPlaneVector2);
 
-    // const planeUp = <Point3>vec3.normalize(vec3.create(), inPlaneVector1);
-    if (inPlaneVector2) {
-      const planeNormal = <Point3>(
-        vec3.cross(vec3.create(), inPlaneVector1, inPlaneVector2)
-      );
-      vec3.normalize(planeNormal, planeNormal);
-      return this.setViewReference({
-        FrameOfReferenceUID,
-        cameraFocalPoint: point,
-        viewPlaneNormal: planeNormal,
-        // viewUp: planeUp,
-      });
-    }
-    const dotNormal = vec3.dot(viewPlaneNormal, inPlaneVector1);
-    if (isEqual(dotNormal, 0)) {
-      return this.setViewReference({
-        FrameOfReferenceUID,
-        viewPlaneNormal,
-        cameraFocalPoint: point,
-      });
-    }
-
-    const planeNormal = <Point3>(
-      vec3.cross(vec3.create(), viewPlaneNormal, inPlaneVector1)
-    );
-    vec3.normalize(planeNormal, planeNormal);
-    return this.setViewReference({
+    this.setViewReference({
       FrameOfReferenceUID,
-      viewPlaneNormal: planeNormal,
       cameraFocalPoint: point,
-      // viewUp: planeUp,
+      viewPlaneNormal: this.getCamera().viewPlaneNormal,
     });
   }
 
@@ -786,11 +809,11 @@ abstract class BaseVolumeViewport extends Viewport {
     } = viewRef;
     let { sliceIndex } = viewRef;
 
-    const { focalPoint, viewPlaneNormal, position } = this.getCamera();
-
-    if (planeRestriction?.inPlaneVector1 && !refViewPlaneNormal) {
-      return this.setViewPlane(planeRestriction, viewPlaneNormal);
+    if (planeRestriction && !refViewPlaneNormal) {
+      return this.setViewPlane(planeRestriction);
     }
+
+    const { focalPoint, viewPlaneNormal, position } = this.getCamera();
 
     const isNegativeNormal = isEqualNegative(
       viewPlaneNormal,
@@ -2218,9 +2241,10 @@ abstract class BaseVolumeViewport extends Viewport {
     sliceIndex ??= currentIndex;
     const { viewPlaneNormal, focalPoint } = this.getCamera();
     const querySeparator = volumeId.includes('?') ? '&' : '?';
-    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
-      ','
-    )}`;
+    // Format each element of viewPlaneNormal to 3 decimal places
+    // to avoid floating point precision issues
+    const formattedNormal = viewPlaneNormal.map((v) => v.toFixed(3)).join(',');
+    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${formattedNormal}`;
   }
 
   private _addVolumeId(volumeId: string): void {
@@ -2286,6 +2310,11 @@ abstract class BaseVolumeViewport extends Viewport {
       contextPool: this.getRendererContextPool,
     },
   };
+}
+
+/** Checks of a vector is compatible with the view plane normal */
+function isCompatible(viewPlaneNormal, vector) {
+  return !vector || isEqual(vec3.dot(viewPlaneNormal, vector), 0);
 }
 
 export default BaseVolumeViewport;

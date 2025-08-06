@@ -1,6 +1,6 @@
 {
     "name": "@cornerstonejs/adapters",
-    "version": "3.32.0",
+    "version": "3.32.8",
     "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
     "module": "./dist/esm/index.js",
     "types": "./dist/esm/index.d.ts",
@@ -65,11 +65,10 @@
         "clean:deep": "yarn run clean && shx rm -rf node_modules",
         "dev": "rollup --watch  -c rollup.config.mjs",
         "build:all": "yarn build",
-        "format-check": "npx eslint ./src --quiet",
         "api-check": "echo 'No API check for this package'",
         "start": "rollup --watch -c rollup.config.mjs",
         "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-        "lint": "eslint --fix .",
+        "lint": "oxlint .",
         "prebuild": "node ../../scripts/generate-version.js ./"
     },
     "repository": {
@@ -90,7 +89,7 @@
         "ndarray": "^1.0.19"
     },
     "peerDependencies": {
-        "@cornerstonejs/core": "^3.32.0",
-        "@cornerstonejs/tools": "^3.32.0"
+        "@cornerstonejs/core": "^3.32.8",
+        "@cornerstonejs/tools": "^3.32.8"
     }
 }
