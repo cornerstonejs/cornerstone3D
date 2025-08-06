@@ -64,6 +64,8 @@ export async function peerImport(moduleId) {
   if (moduleId === 'dicom-microscopy-viewer') {
     // The microscopy viewer loads relative to the public URL
     window.PUBLIC_URL ||= '/';
+    // Use a relative library path that includes the component name
+    window.PUBLIC_LIB_URL ||= './${component}/';
     return importGlobal(
       '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
       'dicomMicroscopyViewer'
