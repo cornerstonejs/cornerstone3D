@@ -373,20 +373,36 @@ class VolumeViewport extends BaseVolumeViewport {
   /**
    * Reset the camera for the volume viewport
    */
-  public resetCamera(options?): boolean {
+  public resetCamera(options?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+    resetRotation?: boolean;
+    resetToCenter?: boolean;
+    storeAsInitialCamera?: boolean;
+    suppressEvents?: boolean;
+    resetOrientation?: boolean;
+  }): boolean {
     const {
       resetPan = true,
       resetZoom = true,
       resetRotation = true,
       resetToCenter = true,
+      storeAsInitialCamera = true,
       suppressEvents = false,
       resetOrientation = true,
     } = options || {};
     const { orientation } = this.viewportProperties;
+
     if (orientation && resetOrientation) {
       this.applyViewOrientation(orientation, false);
     }
-    super.resetCamera({ resetPan, resetZoom, resetToCenter });
+
+    super.resetCamera({
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      storeAsInitialCamera,
+    });
 
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
@@ -820,12 +836,10 @@ class VolumeViewport extends BaseVolumeViewport {
     const resetPan = true;
     const resetZoom = true;
     const resetToCenter = true;
-    const resetCameraRotation = true;
     this.resetCamera({
       resetPan,
       resetZoom,
       resetToCenter,
-      resetCameraRotation,
     });
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
