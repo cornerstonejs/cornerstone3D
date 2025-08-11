@@ -5,13 +5,13 @@ export function getBrushToolInstances(toolGroupId: string, toolName?: string) {
   const toolGroup = getToolGroup(toolGroupId);
 
   if (toolGroup === undefined) {
-    return;
+    return [];
   }
 
   const toolInstances = toolGroup._toolInstances;
 
   if (!Object.keys(toolInstances).length) {
-    return;
+    return [];
   }
 
   if (toolName && toolInstances[toolName]) {
