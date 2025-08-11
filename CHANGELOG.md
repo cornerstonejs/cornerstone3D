@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.9...v3.32.10) (2025-08-11)
+
+### Bug Fixes
+
+- **annotation:** toggle visibility off ([#2262](https://github.com/cornerstonejs/cornerstone3D/issues/2262)) ([9ea9140](https://github.com/cornerstonejs/cornerstone3D/commit/9ea91402a277b50cc233382b8d1f09b5725f43ab))
+
 ## [3.32.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.8...v3.32.9) (2025-08-11)
 
 ### Bug Fixes
