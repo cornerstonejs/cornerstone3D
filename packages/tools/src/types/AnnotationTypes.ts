@@ -16,6 +16,9 @@ export type AnnotationMetadata = Types.ViewReference & {
 
   /** The color of the segmentation - really this is annotation data */
   segmentColor?;
+
+  /** The enable element of the annotation */
+  enabledElement?: Types.IEnabledElement;
 };
 
 export type AnnotationData = {
