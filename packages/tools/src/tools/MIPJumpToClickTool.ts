@@ -20,6 +20,8 @@ class MIPJumpToClickTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         targetViewportIds: [],
+        toolGroupId: undefined,
+        toolGroupIds: [],
       },
     }
   ) {
@@ -75,7 +77,7 @@ class MIPJumpToClickTool extends BaseTool {
       return;
     }
 
-    const { targetViewportIds, toolGroupId } = this.configuration;
+    const { targetViewportIds, toolGroupId, toolGroupIds } = this.configuration;
     // TODO - consider making this a utility
     const viewports = renderingEngine.getViewports().filter((vp) => {
       if (targetViewportIds?.indexOf(vp.id) >= 0) {
@@ -83,6 +85,11 @@ class MIPJumpToClickTool extends BaseTool {
       }
       const foundToolGroup = getToolGroupForViewport(vp.id, renderingEngine.id);
       if (toolGroupId && toolGroupId === foundToolGroup?.id) {
+        return true;
+      } else if (
+        toolGroupIds.length > 0 &&
+        toolGroupIds.includes(foundToolGroup?.id)
+      ) {
         return true;
       }
       return false;

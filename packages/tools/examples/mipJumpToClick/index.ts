@@ -83,16 +83,22 @@ async function run() {
   await initDemo();
 
   const mipToolGroupUID = 'MIP_TOOL_GROUP_UID';
+  const ctToolGroupUID = 'CT_TOOL_GROUP_UID';
+  const ptToolGroupUID = 'PT_TOOL_GROUP_UID';
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(MIPJumpToClickTool);
   cornerstoneTools.addTool(VolumeRotateTool);
   const mipToolGroup = ToolGroupManager.createToolGroup(mipToolGroupUID);
+  const ctToolGroup = ToolGroupManager.createToolGroup(ctToolGroupUID);
+  const ptToolGroup = ToolGroupManager.createToolGroup(ptToolGroupUID);
 
   mipToolGroup.addTool(VolumeRotateTool.toolName);
   mipToolGroup.addTool(MIPJumpToClickTool.toolName, {
     targetViewportIds: [viewportIds[0], viewportIds[1]],
+    //Same using toolGroups
+    //toolGroupIds: [ctToolGroup.id, ptToolGroup.id],
   });
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -179,6 +185,8 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray);
 
   // Set the tool group on the viewports
+  ctToolGroup.addViewport(viewportIds[0], renderingEngineId);
+  ptToolGroup.addViewport(viewportIds[1], renderingEngineId);
   mipToolGroup.addViewport(viewportIds[2], renderingEngineId);
 
   // Define volumes in memory
