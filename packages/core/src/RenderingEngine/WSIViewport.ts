@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, mat4 } from 'gl-matrix';
 import { Events as EVENTS, MetadataModules } from '../enums';
 import type {
   WSIViewportProperties,
@@ -9,7 +9,6 @@ import type {
   CPUIImageData,
   ViewportInput,
   BoundsIJK,
-  CPUImageData,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -23,7 +22,9 @@ import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
 
+let WSIUtilFunctions = null;
 const _map = Symbol.for('map');
+const affineSymbol = Symbol.for('affine');
 const EVENT_POSTRENDER = 'postrender';
 /**
  * A viewport which shows a microscopy view using the dicom-microscopy-viewer
@@ -72,6 +73,19 @@ class WSIViewport extends Viewport {
     lower: 0,
     upper: 255,
   };
+
+  /**
+   * feFilter is an inline string value for the CSS filter on the video
+   * CSS filters can reference SVG filters, so for the typical use case here
+   * the CSS filter is actually an link link to a SVG filter.
+   */
+  private feFilter: string;
+
+  /**
+   * An average white point value, used to color balance the image so that
+   * the given white is mapped to [255,255,255] via multiplication per channel.
+   */
+  private averageWhite: [number, number, number];
 
   constructor(props: ViewportInput) {
     super({
@@ -217,19 +231,82 @@ class WSIViewport extends Viewport {
   }
 
   public setProperties(props: WSIViewportProperties) {
-    // No-op - todo implement this
+    if (props.voiRange) {
+      this.setVOI(props.voiRange);
+    }
   }
 
   public getProperties = (): WSIViewportProperties => {
-    return {};
+    return {
+      voiRange: { ...this.voiRange },
+    };
   };
 
+  /**
+   * resetProperties resets the properties of the viewport to the default
+   * values.  It is called by the resetViewer command in OHIF which is called when using
+   * the reset toolbar button.
+   */
   public resetProperties() {
-    this.setProperties({});
+    this.setProperties({
+      voiRange: {
+        lower: 0,
+        upper: 255,
+      },
+    });
+  }
+
+  /**
+   * setVOI sets the window level and window width for the image.  This is
+   * used to set the contrast and brightness of the image.
+   * feFilter is an inline string value for the CSS filter on the openLayers
+   * CSS filters can reference SVG filters, so for the typical use case here
+   * the CSS filter is actually an link link to a SVG filter.
+   * the WSI viewport has two openlayers canvases; one for the main display and one for
+   * the map overlay on the bottom left corner.
+   */
+  public setVOI(voiRange: VOIRange): void {
+    this.voiRange = voiRange;
+    const feFilter = this.setColorTransform(voiRange, this.averageWhite);
+    const olCanvases = this.map
+      .getViewport()
+      .querySelectorAll('.ol-layers canvas');
+    olCanvases.forEach((canvas) => {
+      canvas.style.filter = feFilter;
+    });
+  }
+
+  public setAverageWhite(averageWhite: [number, number, number]) {
+    this.averageWhite = averageWhite;
+    this.setColorTransform(this.voiRange, averageWhite);
   }
 
   protected getScalarData() {
     return null;
+  }
+
+  public computeTransforms() {
+    const indexToWorld = mat4.create();
+    const worldToIndex = mat4.create();
+
+    mat4.fromTranslation(indexToWorld, this.metadata.origin);
+
+    indexToWorld[0] = this.metadata.direction[0];
+    indexToWorld[1] = this.metadata.direction[1];
+    indexToWorld[2] = this.metadata.direction[2];
+
+    indexToWorld[4] = this.metadata.direction[3];
+    indexToWorld[5] = this.metadata.direction[4];
+    indexToWorld[6] = this.metadata.direction[5];
+
+    indexToWorld[8] = this.metadata.direction[6];
+    indexToWorld[9] = this.metadata.direction[7];
+    indexToWorld[10] = this.metadata.direction[8];
+
+    mat4.scale(indexToWorld, indexToWorld, this.metadata.spacing);
+
+    mat4.invert(worldToIndex, indexToWorld);
+    return { indexToWorld, worldToIndex };
   }
 
   public getImageData(): CPUIImageData {
@@ -247,13 +324,10 @@ class WSIViewport extends Viewport {
       getScalarData: () => this.getScalarData(),
       getSpacing: () => metadata.spacing,
       worldToIndex: (point: Point3) => {
-        const canvasPoint = this.worldToCanvas(point);
-        const pixelCoord = this.canvasToIndex(canvasPoint);
-        return [pixelCoord[0], pixelCoord[1], 0] as Point3;
+        return this.worldToIndex(point);
       },
       indexToWorld: (point: Point3) => {
-        const canvasPoint = this.indexToCanvas([point[0], point[1]]);
-        return this.canvasToWorld(canvasPoint);
+        return this.indexToWorld(point);
       },
     };
     const imageDataReturn = {
@@ -274,30 +348,7 @@ class WSIViewport extends Viewport {
       },
       scalarData: this.getScalarData(),
       imageData,
-      // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
-      voxelManager: {
-        forEach: (
-          callback: (args: {
-            value: unknown;
-            index: number;
-            pointIJK: Point3;
-            pointLPS: Point3;
-          }) => void,
-          options?: {
-            boundsIJK?: BoundsIJK;
-            isInObject?: (pointLPS, pointIJK) => boolean;
-            returnPoints?: boolean;
-            imageData;
-          }
-        ) => {
-          return pointInShapeCallback(options.imageData, {
-            pointInShapeFn: options.isInObject ?? (() => true),
-            callback: callback,
-            boundsIJK: options.boundsIJK,
-            returnPoints: options.returnPoints ?? false,
-          });
-        },
-      },
+      // voxelManager is not in wsi.
     };
 
     // @ts-expect-error we need to fully migrate the voxelManager to the new system
@@ -370,13 +421,13 @@ class WSIViewport extends Viewport {
 
   public getCamera(): ICamera {
     this.refreshRenderValues();
-    const { resolution, xSpacing } = this.internalCamera;
+    const { resolution, xSpacing, centerIndex } = this.internalCamera;
     const canvasToWorldRatio = resolution * xSpacing;
-
-    const canvasCenter: Point2 = [
-      this.element.clientWidth / 2,
-      this.element.clientHeight / 2,
-    ];
+    const canvasCenter = this.indexToCanvas([
+      centerIndex[0],
+      centerIndex[1],
+      0,
+    ]);
     const focalPoint = this.canvasToWorld(canvasCenter);
 
     return {
@@ -433,6 +484,54 @@ class WSIViewport extends Viewport {
   };
 
   /**
+   * Converts a slide coordinate to a image coordinate using WSI utils functions
+   * @param point
+   * @returns
+   */
+  public worldToIndexWSI(point: Point3): Point2 {
+    if (!WSIUtilFunctions) {
+      return;
+    }
+    const affine = this.viewer[affineSymbol];
+    const pixelCoords = WSIUtilFunctions.applyInverseTransform({
+      coordinate: [point[0], point[1]],
+      affine,
+    });
+    return [pixelCoords[0], pixelCoords[1]] as Point2;
+  }
+
+  /**
+   * Converts a image coordinate to a slide coordinate using WSI utils functions
+   * @param point
+   * @returns
+   */
+  public indexToWorldWSI(point: Point2): Point3 {
+    if (!WSIUtilFunctions) {
+      return;
+    }
+    const sliceCoords = WSIUtilFunctions.applyTransform({
+      coordinate: [point[0], point[1]],
+      affine: this.viewer[affineSymbol],
+    });
+    return [sliceCoords[0], sliceCoords[1], 0] as Point3;
+  }
+
+  public worldToIndex(point: Point3): Point3 {
+    const { worldToIndex: worldToIndexMatrix } = this.computeTransforms();
+    const imageCoord = vec3.create();
+    vec3.transformMat4(imageCoord, point, worldToIndexMatrix);
+    return imageCoord as Point3;
+  }
+
+  public indexToWorld(point: Point3): Point3 {
+    const { indexToWorld: indexToWorldMatrix } = this.computeTransforms();
+    const worldPos = vec3.create();
+    const point3D = vec3.fromValues(...point);
+    vec3.transformMat4(worldPos, point3D, indexToWorldMatrix);
+    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
+  }
+
+  /**
    * Converts a VideoViewport canvas coordinate to a video coordinate.
    *
    * @param canvasPosition - to convert to world
@@ -443,21 +542,9 @@ class WSIViewport extends Viewport {
       return;
     }
     // compute the pixel coordinate in the image
-    const [px, py] = this.canvasToIndex(canvasPos);
-    // convert pixel coordinate to world coordinate
-    const { origin, spacing, direction } = this.getImageData();
-
-    const worldPos = vec3.fromValues(0, 0, 0);
-
-    // Calculate size of spacing vector in normal direction
-    const iVector = direction.slice(0, 3) as Point3;
-    const jVector = direction.slice(3, 6) as Point3;
-
-    // Calculate the world coordinate of the pixel
-    vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
-    vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
-
-    return [worldPos[0], worldPos[1], worldPos[2]] as Point3;
+    const indexPoint = this.canvasToIndex(canvasPos);
+    indexPoint[1] = -indexPoint[1]; // flip y axis to match canvas coordinates
+    return this.indexToWorld(indexPoint);
   };
 
   /**
@@ -470,20 +557,11 @@ class WSIViewport extends Viewport {
     if (!this.metadata) {
       return;
     }
-    const { spacing, direction, origin } = this.metadata;
-
-    const iVector = direction.slice(0, 3) as Point3;
-    const jVector = direction.slice(3, 6) as Point3;
-
-    const diff = vec3.subtract([0, 0, 0], worldPos, origin);
-
-    const indexPoint: Point2 = [
-      vec3.dot(diff, iVector) / spacing[0],
-      vec3.dot(diff, jVector) / spacing[1],
-    ];
+    const indexPoint = this.worldToIndex(worldPos);
+    indexPoint[1] = -indexPoint[1]; // flip y axis to match canvas coordinates
 
     // pixel to canvas
-    const canvasPoint = this.indexToCanvas(indexPoint);
+    const canvasPoint = this.indexToCanvas([indexPoint[0], indexPoint[1], 0]);
     return canvasPoint;
   };
 
@@ -518,6 +596,7 @@ class WSIViewport extends Viewport {
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
     const DicomMicroscopyViewer = await WSIViewport.getDicomMicroscopyViewer();
+    WSIUtilFunctions ||= DicomMicroscopyViewer.utils;
     this.frameOfReferenceUID = null;
 
     const metadataDicomweb = this.imageIds.map((imageId) => {
@@ -612,18 +691,19 @@ class WSIViewport extends Viewport {
 
   public getRotation = () => 0;
 
-  protected canvasToIndex = (canvasPos: Point2): Point2 => {
+  protected canvasToIndex = (canvasPos: Point2): Point3 => {
     const transform = this.getTransform();
     transform.invert();
-    return transform.transformPoint(
+    const indexPoint = transform.transformPoint(
       canvasPos.map((it) => it * devicePixelRatio) as Point2
     );
+    return [indexPoint[0], indexPoint[1], 0] as Point3;
   };
 
-  protected indexToCanvas = (indexPos: Point2): Point2 => {
+  protected indexToCanvas = (indexPos: Point3): Point2 => {
     const transform = this.getTransform();
     return transform
-      .transformPoint(indexPos)
+      .transformPoint([indexPos[0], indexPos[1]])
       .map((it) => it / devicePixelRatio) as Point2;
   };
 

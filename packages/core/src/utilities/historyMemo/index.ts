@@ -1,4 +1,5 @@
 import eventTarget from '../../eventTarget';
+import { asArray } from '../asArray';
 
 // Define Events from tools package
 // Note: We can't directly import from tools package due to circular dependency
@@ -58,7 +59,8 @@ export class HistoryMemo {
   private position = -1;
   private redoAvailable = 0;
   private undoAvailable = 0;
-  private ring = new Array<Memo>();
+  private ring = new Array<Memo | Memo[]>();
+  private isRecordingGrouped = false;
 
   constructor(label = 'Tools', size = 50) {
     this.label = label;
@@ -79,26 +81,25 @@ export class HistoryMemo {
     this.undoAvailable = 0;
   }
 
+  public get canUndo() {
+    return this.undoAvailable > 0;
+  }
+
+  public get canRedo() {
+    return this.redoAvailable > 0;
+  }
+
   /**
-   * Undoes up to the given number of items off the ring
+   * Undoes up to the given number of items off the ring.
+   * If one is a group (array) item it will undo every item inside
    */
   public undo(items = 1) {
     while (items > 0 && this.undoAvailable > 0) {
       const item = this.ring[this.position];
-      item.restoreMemo(true);
 
-      // Dispatch history undo event
-      if (item.id) {
-        eventTarget.dispatchEvent(
-          new CustomEvent(Events.HISTORY_UNDO, {
-            detail: {
-              isUndo: true,
-              id: item.id,
-              operationType: item.operationType || 'annotation',
-              memo: item,
-            },
-          })
-        );
+      for (const subitem of asArray(item).reverse()) {
+        subitem.restoreMemo(true);
+        this.dispatchHistoryEvent({ item: subitem, isUndo: true });
       }
 
       items--;
@@ -113,7 +114,7 @@ export class HistoryMemo {
    * @param condition - Function that evaluates if the undo should be performed
    * @returns True if an undo was performed, false otherwise
    */
-  public undoIf(condition: (item: Memo) => boolean): boolean {
+  public undoIf(condition: (item: Memo | Memo[]) => boolean): boolean {
     if (this.undoAvailable > 0 && condition(this.ring[this.position])) {
       this.undo();
       return true;
@@ -122,26 +123,37 @@ export class HistoryMemo {
   }
 
   /**
+   * If item has an id, dispatches a undo or redo event.
+   * @param args.item memo with id and operation type
+   * @param args.isUndo true if it is for undo and false if it is for redo
+   */
+  private dispatchHistoryEvent({ item, isUndo }) {
+    if (item.id) {
+      eventTarget.dispatchEvent(
+        new CustomEvent(isUndo ? Events.HISTORY_UNDO : Events.HISTORY_REDO, {
+          detail: {
+            isUndo,
+            id: item.id,
+            operationType: item.operationType || 'annotation',
+            memo: item,
+          },
+        })
+      );
+    }
+  }
+
+  /**
    * Redoes up to the given number of items, adding them to the top of the ring.
+   * If one is a group (array) item it will redo every item inside
    */
   public redo(items = 1) {
     while (items > 0 && this.redoAvailable > 0) {
       const newPosition = (this.position + 1) % this.size;
       const item = this.ring[newPosition];
-      item.restoreMemo(false);
 
-      // Dispatch history redo event
-      if (item.id) {
-        eventTarget.dispatchEvent(
-          new CustomEvent(Events.HISTORY_REDO, {
-            detail: {
-              isUndo: false,
-              id: item.id,
-              operationType: item.operationType || 'annotation',
-              memo: item,
-            },
-          })
-        );
+      for (const subitem of asArray(item).reverse()) {
+        subitem.restoreMemo(false);
+        this.dispatchHistoryEvent({ item: subitem, isUndo: false });
       }
 
       items--;
@@ -149,6 +161,55 @@ export class HistoryMemo {
       this.undoAvailable++;
       this.redoAvailable--;
     }
+  }
+
+  /**  initializes an array for the group item */
+  private initializeGroupItem() {
+    this.redoAvailable = 0;
+    if (this.undoAvailable < this._size) {
+      this.undoAvailable++;
+    }
+    this.position = (this.position + 1) % this._size;
+    this.ring[this.position] = [];
+  }
+
+  /**
+   * Starts a group recording, so that with a single undo you can undo multiple actions that are related to each other.
+   * Requires endGroupRecording to be called after the group action is done.
+   */
+  public startGroupRecording() {
+    this.isRecordingGrouped = true;
+    this.initializeGroupItem();
+  }
+
+  /** Rolls back an initialized but unused group item (an empty array) */
+  private rollbackUnusedGroupItem() {
+    this.ring[this.position] = undefined;
+    this.position = (this.position - 1) % this._size;
+    this.undoAvailable--;
+  }
+
+  /** Ends a group recording. Must be called after the group action is finished */
+  public endGroupRecording() {
+    this.isRecordingGrouped = false;
+
+    const lastItem = this.ring[this.position];
+    const lastItemIsEmpty = Array.isArray(lastItem) && lastItem.length === 0;
+
+    if (lastItemIsEmpty) {
+      this.rollbackUnusedGroupItem();
+    }
+  }
+
+  /** Add grouped items to the ring. If the current item is not a array, it will generate a new array. Otherwise it will push to the current array */
+  private pushGrouped(memo: Memo) {
+    const lastMemo = this.ring[this.position];
+    if (Array.isArray(lastMemo)) {
+      lastMemo.push(memo);
+      return memo;
+    }
+
+    throw new Error('Last item should be an array for grouped memos.');
   }
 
   /**
@@ -166,6 +227,11 @@ export class HistoryMemo {
     if (!memo) {
       return;
     }
+
+    if (this.isRecordingGrouped) {
+      return this.pushGrouped(memo);
+    }
+
     this.redoAvailable = 0;
     if (this.undoAvailable < this._size) {
       this.undoAvailable++;

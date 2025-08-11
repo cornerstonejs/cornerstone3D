@@ -10,6 +10,7 @@ import {
 import { state } from './store/state';
 import * as store from './store';
 import * as CONSTANTS from './constants';
+import { version } from './version';
 
 // Name spaces
 import * as synchronizers from './synchronizers';
@@ -27,6 +28,8 @@ import {
   AnnotationDisplayTool,
   PanTool,
   TrackballRotateTool,
+  VolumeCroppingTool,
+  VolumeCroppingControlTool,
   DragProbeTool,
   WindowLevelTool,
   ZoomTool,
@@ -63,6 +66,7 @@ import {
   AngleTool,
   CobbAngleTool,
   UltrasoundDirectionalTool,
+  UltrasoundPleuraBLineTool,
   MagnifyTool,
   AdvancedMagnifyTool,
   ReferenceCursors,
@@ -81,6 +85,7 @@ import {
   WholeBodySegmentTool,
   LabelmapBaseTool,
   SegmentLabelTool,
+  LabelMapEditWithContourTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -103,6 +108,8 @@ export {
   PanTool,
   SegmentBidirectionalTool,
   TrackballRotateTool,
+  VolumeCroppingTool,
+  VolumeCroppingControlTool,
   DragProbeTool,
   WindowLevelTool,
   WindowLevelRegionTool,
@@ -134,6 +141,7 @@ export {
   AngleTool,
   CobbAngleTool,
   UltrasoundDirectionalTool,
+  UltrasoundPleuraBLineTool,
   KeyImageTool,
   MagnifyTool,
   AdvancedMagnifyTool,
@@ -182,6 +190,9 @@ export {
   RegionSegmentTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
+  LabelMapEditWithContourTool,
   // Spline classes
   splines,
+  // Version
+  version,
 };

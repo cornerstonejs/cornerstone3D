@@ -3,6 +3,368 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.7...v3.32.8) (2025-08-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.32.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.6...v3.32.7) (2025-08-05)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.32.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.5...v3.32.6) (2025-08-05)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.32.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.4...v3.32.5) (2025-07-30)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.32.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.3...v3.32.4) (2025-07-30)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.32.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.2...v3.32.3) (2025-07-30)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.32.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.1...v3.32.2) (2025-07-29)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.32.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.0...v3.32.1) (2025-07-28)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.32.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.14...v3.32.0) (2025-07-28)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.13...v3.31.14) (2025-07-25)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.12...v3.31.13) (2025-07-23)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.11...v3.31.12) (2025-07-22)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.10...v3.31.11) (2025-07-22)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.9...v3.31.10) (2025-07-22)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.8...v3.31.9) (2025-07-22)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.7...v3.31.8) (2025-07-22)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.6...v3.31.7) (2025-07-21)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.5...v3.31.6) (2025-07-18)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.4...v3.31.5) (2025-07-18)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.3...v3.31.4) (2025-07-17)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.2...v3.31.3) (2025-07-16)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.1...v3.31.2) (2025-07-16)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.31.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.0...v3.31.1) (2025-07-16)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.31.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.3...v3.31.0) (2025-07-15)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.30.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.2...v3.30.3) (2025-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.30.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.1...v3.30.2) (2025-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.30.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.0...v3.30.1) (2025-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.30.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.5...v3.30.0) (2025-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.29.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.4...v3.29.5) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.29.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.3...v3.29.4) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.29.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.2...v3.29.3) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.29.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.1...v3.29.2) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.29.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.0...v3.29.1) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.29.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.3...v3.29.0) (2025-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.28.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.2...v3.28.3) (2025-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.28.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.1...v3.28.2) (2025-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.28.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.0...v3.28.1) (2025-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.28.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.27.0...v3.28.0) (2025-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.27.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.2...v3.27.0) (2025-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.26.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.1...v3.26.2) (2025-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.26.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.0...v3.26.1) (2025-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.26.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.25.0...v3.26.0) (2025-07-02)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.25.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.24.0...v3.25.0) (2025-06-27)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.24.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.1...v3.24.0) (2025-06-25)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.23.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.23.0...v3.23.1) (2025-06-24)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.23.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.4...v3.23.0) (2025-06-20)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.22.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.3...v3.22.4) (2025-06-19)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.22.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.2...v3.22.3) (2025-06-18)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.1...v3.22.2) (2025-06-18)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.22.0...v3.22.1) (2025-06-16)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.21.1...v3.22.0) (2025-06-16)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.21.0...v3.21.1) (2025-06-13)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.2...v3.21.0) (2025-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.1...v3.20.2) (2025-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.20.0...v3.20.1) (2025-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.5...v3.20.0) (2025-06-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.19.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.4...v3.19.5) (2025-06-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.3...v3.19.4) (2025-06-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.2...v3.19.3) (2025-06-03)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.1...v3.19.2) (2025-06-02)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.19.0...v3.19.1) (2025-05-30)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.18.0...v3.19.0) (2025-05-30)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.17.1...v3.18.0) (2025-05-29)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.17.0...v3.17.1) (2025-05-29)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.5...v3.17.0) (2025-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.16.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.4...v3.16.5) (2025-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.16.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.3...v3.16.4) (2025-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.16.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.2...v3.16.3) (2025-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.16.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.1...v3.16.2) (2025-05-28)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.16.0...v3.16.1) (2025-05-27)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.6...v3.16.0) (2025-05-26)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.15.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.5...v3.15.6) (2025-05-24)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.4...v3.15.5) (2025-05-23)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.15.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.3...v3.15.4) (2025-05-19)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.15.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.2...v3.15.3) (2025-05-16)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.15.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.1...v3.15.2) (2025-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.15.0...v3.15.1) (2025-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.14.4...v3.15.0) (2025-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.14.3...v3.14.4) (2025-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.14.2...v3.14.3) (2025-05-14)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.14.1...v3.14.2) (2025-05-14)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.14.0...v3.14.1) (2025-05-13)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.13.0...v3.14.0) (2025-05-13)
+
+### Features
+
+- **version:** add version property ([#2068](https://github.com/cornerstonejs/cornerstone3D/issues/2068)) ([b7db4cc](https://github.com/cornerstonejs/cornerstone3D/commit/b7db4cc157027ebbd108c9ef9e4a01abb0769864))
+
+# [3.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.3...v3.13.0) (2025-05-13)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.12.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.2...v3.12.3) (2025-05-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.1...v3.12.2) (2025-05-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.12.0...v3.12.1) (2025-05-07)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [3.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.8...v3.12.0) (2025-05-07)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.11.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.7...v3.11.8) (2025-05-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [3.11.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.6...v3.11.7) (2025-05-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
 ## [3.11.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.11.5...v3.11.6) (2025-05-05)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader

@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "3.11.6",
+  "version": "3.32.8",
   "description": "Cornerstone3D Tools",
   "types": "./dist/esm/index.d.ts",
   "module": "./dist/esm/index.js",
@@ -78,9 +78,14 @@
     },
     "./types/*": {
       "types": "./dist/esm/types/*.d.ts"
+    },
+    "./version": {
+      "import": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts"
     }
   },
   "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
     "build:esm": "tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
@@ -89,7 +94,7 @@
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "dev": "tsc --project ./tsconfig.json --watch",
-    "format-check": "npx eslint ./src --quiet",
+    "lint": "oxlint .",
     "api-check": "api-extractor --debug run ",
     "prepublishOnly": "yarn run build",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
@@ -103,7 +108,7 @@
     "canvas": "^3.1.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.11.6",
+    "@cornerstonejs/core": "^3.32.8",
     "@kitware/vtk.js": "32.12.1",
     "@types/d3-array": "^3.0.4",
     "@types/d3-interpolate": "^3.0.1",

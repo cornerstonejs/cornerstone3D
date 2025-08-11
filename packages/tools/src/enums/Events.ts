@@ -35,6 +35,10 @@ enum Events {
 
   CROSSHAIR_TOOL_CENTER_CHANGED = 'CORNERSTONE_TOOLS_CROSSHAIR_TOOL_CENTER_CHANGED',
 
+  VOLUMECROPPINGCONTROL_TOOL_CHANGED = 'CORNERSTONE_TOOLS_VOLUMECROPPINGCONTROL_TOOL_CHANGED',
+
+  VOLUMECROPPING_TOOL_CHANGED = 'CORNERSTONE_TOOLS_VOLUMECROPPING_TOOL_CHANGED',
+
   ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////
@@ -103,6 +107,12 @@ enum Events {
    * event detail is included in {@link EventTypes.AnnotationRenderedEventDetail | Annotation Rendered Event Detail}.
    */
   ANNOTATION_RENDERED = 'CORNERSTONE_TOOLS_ANNOTATION_RENDERED',
+
+  /**
+   * Triggers on the eventTarget when an annotation cut merge process is completed.
+   * It starts when the users releases the mouse button in contour segmentation annotations
+   */
+  ANNOTATION_CUT_MERGE_PROCESS_COMPLETED = 'CORNERSTONE_TOOLS_ANNOTATION_CUT_MERGE_PROCESS_COMPLETED',
 
   /**
    * Triggers on the eventTarget when an annotation interpolation process completed.

@@ -1087,9 +1087,9 @@ export const getSegmentIndex = (multiframe, frame) => {
         ? PerFrameFunctionalGroups.SegmentIdentificationSequence
               .ReferencedSegmentNumber
         : SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-        ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-              .ReferencedSegmentNumber
-        : undefined;
+          ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
+                .ReferencedSegmentNumber
+          : undefined;
 };
 
 export function insertPixelDataPlanar(
@@ -1305,6 +1305,18 @@ export function unpackPixelData(multiframe, options) {
         // MAX 2GB is the limit right now to allocate a buffer
         return getUnpackedChunks(data, options.maxBytesPerChunk);
     }
+    if (segType === "LABELMAP") {
+        // For LABELMAP, we can return the data as is, since it is already in a
+        // format that Cornerstone can handle. Also here we are returning the
+        // whole data at once, since the storage is more efficent than BINARY mode
+        if (multiframe.BitsStored === 8) {
+            return new Uint8Array(data);
+        } else if (multiframe.BitsStored === 16) {
+            return new Uint16Array(data);
+        } else {
+            return new Uint8Array(data);
+        }
+    }
 
     const pixelData = new Uint8Array(data);
 
@@ -1377,6 +1389,12 @@ export function getImageIdOfSourceImageBySourceImageSequence(
             return baseImageId.replace(
                 /frames\/\d+/,
                 `frames/${ReferencedFrameNumber}`
+            );
+        } else if (baseImageId.includes("dicomfile:")) {
+            // dicomfile base 1, despite having frame=
+            return baseImageId.replace(
+                /frame=\d+/,
+                `frame=${ReferencedFrameNumber}`
             );
         } else if (baseImageId.includes("frame=")) {
             return baseImageId.replace(

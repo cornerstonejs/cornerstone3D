@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/ai",
-  "version": "3.11.6",
+  "version": "3.32.8",
   "description": "AI and ML Interfaces for Cornerstone3D",
   "files": [
     "dist"
@@ -14,12 +14,18 @@
     ".": {
       "import": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
+    },
+    "./version": {
+      "node": "./dist/esm/version.js",
+      "import": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
     "test": "jest --testTimeout 60000",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
@@ -30,8 +36,7 @@
     "build:all": "yarn run build:esm",
     "start": "tsc --project ./tsconfig.json --watch",
     "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-    "lint": "eslint --fix .",
-    "format-check": "npx eslint ./src --quiet",
+    "lint": "oxlint .",
     "api-check": "api-extractor --debug run ",
     "prepublishOnly": "yarn clean && yarn build"
   },
@@ -48,7 +53,7 @@
   "dependencies": {
     "@babel/runtime-corejs2": "^7.17.8",
     "buffer": "^6.0.3",
-    "dcmjs": "^0.29.8",
+    "dcmjs": "^0.43.1",
     "gl-matrix": "^3.4.3",
     "lodash.clonedeep": "^4.5.0",
     "ndarray": "^1.0.19",
@@ -56,7 +61,7 @@
     "onnxruntime-web": "1.17.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.11.6",
-    "@cornerstonejs/tools": "^3.11.6"
+    "@cornerstonejs/core": "^3.32.8",
+    "@cornerstonejs/tools": "^3.32.8"
   }
 }

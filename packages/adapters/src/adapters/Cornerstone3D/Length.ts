@@ -1,6 +1,7 @@
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { toScoord } from "../helpers";
 
 const { Length: TID300Length } = utilities.TID300;
 
@@ -17,70 +18,57 @@ export default class Length extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                this.toolType
-            );
+        const {
+            state,
+            NUMGroup,
+            worldCoords,
+            referencedImageId,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            this.toolType
+        );
 
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const { GraphicData } = SCOORDGroup;
-        const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
-
-        const state = defaultState;
-
+        const cachedStats = referencedImageId
+            ? {
+                  [`imageId:${referencedImageId}`]: {
+                      length: NUMGroup
+                          ? NUMGroup.MeasuredValueSequence.NumericValue
+                          : 0
+                  }
+              }
+            : {};
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
+                ...state.annotation.data.handles,
                 points: [worldCoords[0], worldCoords[1]],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                activeHandleIndex: 0
             },
-            cachedStats: {
-                [`imageId:${referencedImageId}`]: {
-                    length: NUMGroup
-                        ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : 0
-                }
-            },
+            cachedStats,
             frameNumber: ReferencedFrameNumber
         };
 
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
 
-        if (!referencedImageId) {
-            throw new Error(
-                "Length.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
-        }
-
-        const start = worldToImageCoords(referencedImageId, handles.points[0]);
-        const end = worldToImageCoords(referencedImageId, handles.points[1]);
-
-        const point1 = { x: start[0], y: start[1] };
-        const point2 = { x: end[0], y: end[1] };
+        // Do the conversion automatically for hte right coord type
+        const point1 = toScoord(scoordProps, handles.points[0]);
+        const point2 = toScoord(scoordProps, handles.points[1]);
 
         const { length: distance } =
             cachedStats[`imageId:${referencedImageId}`] || {};
@@ -91,7 +79,8 @@ export default class Length extends BaseAdapter3D {
             distance,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

@@ -40,6 +40,7 @@ const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
  */
 class SegmentationRenderingEngine {
   private _needsRender: Set<string> = new Set();
+  private _pendingRenderQueue: string[][] = [];
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   public hasBeenDestroyed: boolean;
@@ -116,11 +117,15 @@ class SegmentationRenderingEngine {
   }
 
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
+    if (this._animationFrameSet) {
+      // If a render is already scheduled, queue this set for after the current one
+      this._pendingRenderQueue.push(viewportIds);
+      return;
+    }
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {
       this._needsRender.add(viewportId);
     });
-
     // Render any flagged viewports
     this._render();
   }
@@ -156,6 +161,14 @@ class SegmentationRenderingEngine {
     // Allow RAF to be called again
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
+
+    // If there are pending viewportId sets, schedule the next one
+    if (this._pendingRenderQueue.length > 0) {
+      const nextViewportIds = this._pendingRenderQueue.shift();
+      if (nextViewportIds && nextViewportIds.length > 0) {
+        this._setViewportsToBeRenderedNextFrame(nextViewportIds);
+      }
+    }
   };
 
   _triggerRender(viewportId?: string) {

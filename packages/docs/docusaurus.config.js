@@ -254,6 +254,8 @@ module.exports = {
             out: `./docs/api/${pkg}`,
             entryPoints: [`../${pkg}/src/index.ts`],
             tsconfig: `../${pkg}/tsconfig.json`,
+            exclude: [`../${pkg}/test/**/*`, `../${pkg}/jest.config.js`],
+            skipErrorChecking: true,
           },
         ]);
       }

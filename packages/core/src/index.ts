@@ -1,7 +1,11 @@
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
 import { Events } from './enums';
-import RenderingEngine from './RenderingEngine';
+import RenderingEngine, {
+  BaseRenderingEngine,
+  TiledRenderingEngine,
+  ContextPoolRenderingEngine,
+} from './RenderingEngine';
 import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
   convertMapperToNotSharedMapper,
@@ -15,6 +19,7 @@ import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
+import { version } from './version';
 
 import {
   getRenderingEngine,
@@ -119,6 +124,9 @@ export {
   VideoViewport,
   WSIViewport,
   RenderingEngine,
+  BaseRenderingEngine,
+  TiledRenderingEngine,
+  ContextPoolRenderingEngine,
   ImageVolume,
   Surface,
   // Helpers
@@ -165,4 +173,6 @@ export {
   StreamingDynamicImageVolume,
   StreamingImageVolume,
   convertMapperToNotSharedMapper,
+  // Version
+  version,
 };

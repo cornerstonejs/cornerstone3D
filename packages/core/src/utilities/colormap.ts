@@ -100,10 +100,13 @@ function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
     }
   }
 
-  return {
+  const result = {
     name: matchedColormap.Name,
-    opacity,
+    ...(Array.isArray(opacity) && opacity.length > 0 && { opacity }),
+    ...(typeof opacity === 'number' && { opacity }),
   };
+
+  return result;
 }
 
 export function setColorMapTransferFunctionForVolumeActor(volumeInfo) {
@@ -151,8 +154,15 @@ export function updateThreshold(volumeActor, newThreshold) {
  * @param {number|null} threshold - The absolute threshold value (not normalized)
  */
 function updateOpacityWithThreshold(volumeActor, opacity, threshold) {
-  const transferFunction = volumeActor.getProperty().getRGBTransferFunction(0);
-  const range = transferFunction.getRange();
+  // there is always a voxel manager for each volume actor
+  const meta = volumeActor.getMapper().getInputData().get('voxelManager');
+
+  if (!meta?.voxelManager) {
+    throw new Error(
+      'No voxel manager was found for the volume actor, or you cannot yet update opacity with a threshold using stacked images'
+    );
+  }
+  const range = meta.voxelManager.getRange();
   const ofun = vtkPiecewiseFunction.newInstance();
 
   if (threshold !== null) {
@@ -238,4 +248,6 @@ export {
   getColormapNames,
   registerColormap,
   findMatchingColormap,
+  getThresholdValue,
+  getMaxOpacity,
 };

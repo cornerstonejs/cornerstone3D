@@ -1,8 +1,10 @@
+import { AnnotationTool } from '../base';
 import {
   CONSTANTS,
   getEnabledElement,
   VolumeViewport,
   utilities as csUtils,
+  metaData,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -479,7 +481,50 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     const annotationsWithParallelNormals = annotations.filter(
       (td: Annotation) => {
-        const annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+        let annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
+
+        if (
+          !td.metadata.referencedImageId &&
+          !annotationViewPlaneNormal &&
+          td.metadata.FrameOfReferenceUID
+        ) {
+          for (const point of td.data.contour.polyline) {
+            const vector = vec3.sub(vec3.create(), point, camera.focalPoint);
+            const dotProduct = vec3.dot(vector, camera.viewPlaneNormal);
+            if (!csUtils.isEqual(dotProduct, 0)) {
+              return false;
+            }
+          }
+          td.metadata.viewPlaneNormal = camera.viewPlaneNormal;
+          td.metadata.cameraFocalPoint = camera.focalPoint;
+          return true;
+        }
+
+        if (!annotationViewPlaneNormal) {
+          // This code is run to set the annotation view plane normal
+          // for historical data which was saved without the normal.
+          const { referencedImageId } = td.metadata;
+          const { imageOrientationPatient } = metaData.get(
+            'imagePlaneModule',
+            referencedImageId
+          );
+          const rowCosineVec = vec3.fromValues(
+            imageOrientationPatient[0],
+            imageOrientationPatient[1],
+            imageOrientationPatient[2]
+          );
+
+          const colCosineVec = vec3.fromValues(
+            imageOrientationPatient[3],
+            imageOrientationPatient[4],
+            imageOrientationPatient[5]
+          );
+
+          annotationViewPlaneNormal = vec3.create() as Types.Point3;
+
+          vec3.cross(annotationViewPlaneNormal, rowCosineVec, colCosineVec);
+          td.metadata.viewPlaneNormal = annotationViewPlaneNormal;
+        }
 
         const isParallel =
           Math.abs(vec3.dot(viewPlaneNormal, annotationViewPlaneNormal)) >
@@ -787,6 +832,22 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         return [topLeftBBIndex, bottomRightBBIndex];
       });
 
+      // Using an arbitrary start point (canvasPoint), calculate the
+      // mm spacing for the canvas in the X and Y directions.
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
       if (closed) {
         this.updateClosedCachedStats({
           targetId,
@@ -798,6 +859,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           cachedStats,
           modalityUnit,
           calibratedScale,
+          deltaInX,
+          deltaInY,
         });
       } else {
         this.updateOpenCachedStats({
@@ -807,6 +870,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           cachedStats,
           modalityUnit,
           calibratedScale,
+          deltaInX,
+          deltaInY,
         });
       }
     }
@@ -836,25 +901,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     modalityUnit,
     canvasCoordinates,
     calibratedScale,
+    deltaInX,
+    deltaInY,
   }) {
     const { scale, areaUnit, unit } = calibratedScale;
 
-    // Using an arbitrary start point (canvasPoint), calculate the
-    // mm spacing for the canvas in the X and Y directions.
     const { voxelManager } = viewport.getImageData();
-    const canvasPoint = canvasCoordinates[0];
-    const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
-    const deltaXPoint = viewport.canvasToWorld([
-      canvasPoint[0] + 1,
-      canvasPoint[1],
-    ]);
-    const deltaYPoint = viewport.canvasToWorld([
-      canvasPoint[0],
-      canvasPoint[1] + 1,
-    ]);
-
-    const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
-    const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
     const worldPosIndex = csUtils.transformWorldToIndex(imageData, points[0]);
     worldPosIndex[0] = Math.floor(worldPosIndex[0]);
@@ -894,6 +946,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // Convert from canvas_pixels ^2 to mm^2
     area *= deltaInX * deltaInY;
 
+    let perimeter = calculatePerimeter(canvasCoordinates, closed) / scale;
+    perimeter *= Math.sqrt(Math.pow(deltaInX, 2) + Math.pow(deltaInY, 2));
+
     // Expand bounding box
     const iDelta = 0.01 * (iMax - iMin);
     const jDelta = 0.01 * (jMax - jMin);
@@ -918,55 +973,59 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let curRow = 0;
     let intersections = [];
     let intersectionCounter = 0;
-    const pointsInShape = voxelManager.forEach(
-      this.configuration.statsCalculator.statsCallback,
-      {
-        imageData,
-        isInObject: (pointLPS, _pointIJK) => {
-          let result = true;
-          const point = viewport.worldToCanvas(pointLPS);
-          if (point[1] != curRow) {
-            intersectionCounter = 0;
-            curRow = point[1];
-            intersections = getLineSegmentIntersectionsCoordinates(
-              canvasCoordinates,
-              point,
-              [canvasPosEnd[0], point[1]]
-            );
-            intersections.sort(
-              (function (index) {
-                return function (a, b) {
-                  return a[index] === b[index]
-                    ? 0
-                    : a[index] < b[index]
-                    ? -1
-                    : 1;
-                };
-              })(0)
-            );
-          }
-          if (intersections.length && point[0] > intersections[0][0]) {
-            intersections.shift();
-            intersectionCounter++;
-          }
-          if (intersectionCounter % 2 === 0) {
-            result = false;
-          }
-          return result;
-        },
-        boundsIJK,
-        returnPoints: this.configuration.storePointData,
-      }
-    );
 
+    let pointsInShape;
+    if (voxelManager) {
+      pointsInShape = voxelManager.forEach(
+        this.configuration.statsCalculator.statsCallback,
+        {
+          imageData,
+          isInObject: (pointLPS, _pointIJK) => {
+            let result = true;
+            const point = viewport.worldToCanvas(pointLPS);
+            if (point[1] != curRow) {
+              intersectionCounter = 0;
+              curRow = point[1];
+              intersections = getLineSegmentIntersectionsCoordinates(
+                canvasCoordinates,
+                point,
+                [canvasPosEnd[0], point[1]]
+              );
+              intersections.sort(
+                (function (index) {
+                  return function (a, b) {
+                    return a[index] === b[index]
+                      ? 0
+                      : a[index] < b[index]
+                        ? -1
+                        : 1;
+                  };
+                })(0)
+              );
+            }
+            if (intersections.length && point[0] > intersections[0][0]) {
+              intersections.shift();
+              intersectionCounter++;
+            }
+            if (intersectionCounter % 2 === 0) {
+              result = false;
+            }
+            return result;
+          },
+          boundsIJK,
+          returnPoints: this.configuration.storePointData,
+        }
+      );
+    }
     const stats = this.configuration.statsCalculator.getStatistics();
 
     cachedStats[targetId] = {
       Modality: metadata.Modality,
       area,
-      perimeter: calculatePerimeter(canvasCoordinates, closed) / scale,
+      perimeter,
       mean: stats.mean?.value,
       max: stats.max?.value,
+      min: stats.min?.value,
       stdDev: stats.stdDev?.value,
       statsArray: stats.array,
       pointsInShape: pointsInShape,
@@ -988,12 +1047,17 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     cachedStats,
     modalityUnit,
     calibratedScale,
+    deltaInX,
+    deltaInY,
   }) {
     const { scale, unit } = calibratedScale;
 
+    let length = calculatePerimeter(canvasCoordinates, closed) / scale;
+    length *= Math.sqrt(Math.pow(deltaInX, 2) + Math.pow(deltaInY, 2));
+
     cachedStats[targetId] = {
       Modality: metadata.Modality,
-      length: calculatePerimeter(canvasCoordinates, false) / scale,
+      length,
       modalityUnit,
       unit,
     };
@@ -1071,6 +1135,7 @@ function defaultGetTextLines(data, targetId): string[] {
     length,
     perimeter,
     max,
+    min,
     isEmptyArea,
     unit,
     areaUnit,
@@ -1079,30 +1144,33 @@ function defaultGetTextLines(data, targetId): string[] {
 
   const textLines: string[] = [];
 
-  if (area) {
+  if (csUtils.isNumber(area)) {
     const areaLine = isEmptyArea
       ? `Area: Oblique not supported`
       : `Area: ${csUtils.roundNumber(area)} ${areaUnit}`;
     textLines.push(areaLine);
   }
 
-  if (mean) {
+  if (csUtils.isNumber(mean)) {
     textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
   }
 
-  if (Number.isFinite(max)) {
+  if (csUtils.isNumber(max)) {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
+  if (csUtils.isNumber(min)) {
+    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
+  }
 
-  if (stdDev) {
+  if (csUtils.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
   }
 
-  if (perimeter) {
+  if (csUtils.isNumber(perimeter)) {
     textLines.push(`Perimeter: ${csUtils.roundNumber(perimeter)} ${unit}`);
   }
 
-  if (length) {
+  if (csUtils.isNumber(length)) {
     // No need to show length prefix as there is just the single value
     textLines.push(`${csUtils.roundNumber(length)} ${unit}`);
   }

@@ -1,4 +1,4 @@
-import type RenderingEngine from '../RenderingEngine/RenderingEngine';
+import type { RenderingEngine } from '../RenderingEngine';
 
 type IRenderingEngine = RenderingEngine;
 

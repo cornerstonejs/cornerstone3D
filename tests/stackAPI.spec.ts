@@ -98,4 +98,27 @@ test.describe('Stack Viewport API', async () => {
     const locator = page.locator('.cornerstone-canvas');
     await checkForScreenshot(page, locator, screenShotPaths.stackAPI.flipBoth);
   });
+  test('should rotate 30, flip both, and scroll to next image preserving transforms', async ({
+    page,
+  }) => {
+    // Rotate delta 30
+    await page.getByRole('button', { name: 'Rotate Delta 30' }).click();
+
+    // Flip horizontally
+    await page.getByRole('button', { name: 'Flip H' }).click();
+
+    // Flip vertically
+    await page.getByRole('button', { name: 'Flip V' }).click();
+
+    // Go to next image
+    await page.getByRole('button', { name: 'Next Image' }).click();
+
+    // Screenshot validation
+    const locator = page.locator('.cornerstone-canvas');
+    await checkForScreenshot(
+      page,
+      locator,
+      screenShotPaths.stackAPI.rotate30FlipBothNext
+    );
+  });
 });

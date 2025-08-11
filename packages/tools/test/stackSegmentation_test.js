@@ -82,7 +82,11 @@ describe('Stack Segmentation Rendering:', () => {
     const imageId1 = encodeImageIdInfo(imageInfo1);
     const vp = renderingEngine.getViewport(viewportId1);
 
-    eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
+    const segmentationRenderedCallback = (evt) => {
+      eventTarget.removeEventListener(
+        Events.SEGMENTATION_RENDERED,
+        segmentationRenderedCallback
+      );
       const canvas = vp.getCanvas();
       const image = canvas.toDataURL('image/png');
 
@@ -91,7 +95,11 @@ describe('Stack Segmentation Rendering:', () => {
         imageURI_64_64_10_5_1_1_0_SEG_Mocked,
         'imageURI_64_64_10_5_1_1_0_SEG_Mocked'
       ).then(done, done.fail);
-    });
+    };
+    eventTarget.addEventListener(
+      Events.SEGMENTATION_RENDERED,
+      segmentationRenderedCallback
+    );
 
     try {
       vp.setStack([imageId1], 0).then(() => {
@@ -153,10 +161,14 @@ describe('Stack Segmentation Rendering:', () => {
     let renderCount = 0;
     const expectedRenderCount = 2; // We expect two segmentations to be rendered
 
-    eventTarget.addEventListener(Events.SEGMENTATION_RENDERED, (evt) => {
+    const segmentationRenderedCallback = (evt) => {
       renderCount++;
 
       if (renderCount === expectedRenderCount) {
+        eventTarget.removeEventListener(
+          Events.SEGMENTATION_RENDERED,
+          segmentationRenderedCallback
+        );
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -166,7 +178,11 @@ describe('Stack Segmentation Rendering:', () => {
           'imageURI_64_64_10_5_1_1_0_SEG_Double_Mocked'
         ).then(done, done.fail);
       }
-    });
+    };
+    eventTarget.addEventListener(
+      Events.SEGMENTATION_RENDERED,
+      segmentationRenderedCallback
+    );
 
     try {
       vp.setStack([imageId1], 0).then(() => {
@@ -254,6 +270,10 @@ describe('Stack Segmentation Rendering:', () => {
     const vp = renderingEngine.getViewport(viewportId1);
 
     const compareImageCallback = (evt) => {
+      eventTarget.removeEventListener(
+        Events.SEGMENTATION_RENDERED,
+        compareImageCallback
+      );
       const canvas = vp.getCanvas();
       const image = canvas.toDataURL('image/png');
 

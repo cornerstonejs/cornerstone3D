@@ -14,6 +14,9 @@ const screenShotPaths = {
   stackBasic: {
     viewport: 'viewport.png',
   },
+  stackBasicTiled: {
+    viewport: 'viewport.png',
+  },
   stackToVolumeFusion: {
     viewport: 'viewport.png',
   },
@@ -31,6 +34,7 @@ const screenShotPaths = {
     // randomZoomAndPan: 'randomZoomAndPan.png',
     colormap: 'colormap.png',
     resetViewport: 'resetViewport.png',
+    rotate30FlipBothNext: 'rotate30FlipBothNext.png',
   },
   stackManipulationTools: {
     planarRotate: 'planarRotate.png',
@@ -47,6 +51,9 @@ const screenShotPaths = {
     resetMetadata: 'resetMetadata.png',
   },
   volumeBasic: {
+    viewport: 'viewport.png',
+  },
+  volumeBasicTiled: {
     viewport: 'viewport.png',
   },
   ultrasoundColors: {
@@ -115,7 +122,15 @@ const screenShotPaths = {
     coronal: 'coronal.png',
     sagittal: 'sagittal.png',
   },
+  labelmapRenderingTiled: {
+    axial: 'axial.png',
+    coronal: 'coronal.png',
+    sagittal: 'sagittal.png',
+  },
   contourRendering: {
+    viewport: 'viewport.png',
+  },
+  contourRenderingTiled: {
     viewport: 'viewport.png',
   },
   labelmapGlobalConfiguration: {
@@ -187,6 +202,26 @@ const screenShotPaths = {
     'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01': 'TG18-RV-2k-01.png',
     'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02': 'TG18-RV-2k-02.png',
     'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03': 'TG18-RV-2k-03.png',
+  },
+  mprReformat: {
+    beforeReformat: 'mpr-reformat-before.png',
+    afterReformat: 'mpr-reformat-after.png',
+    afterInteraction: 'mpr-reformat-after-interaction.png',
+  },
+  contextPoolRenderingEngine: {
+    viewport: 'viewport.png',
+  },
+  volumeAnnotation: {
+    lengthTool: 'lengthTool.png',
+  },
+  volumeAnnotationTiled: {
+    lengthTool: 'lengthTool.png',
+  },
+  stackAnnotation: {
+    lengthTool: 'lengthTool.png',
+  },
+  stackAnnotationTiled: {
+    lengthTool: 'lengthTool.png',
   },
 };
 

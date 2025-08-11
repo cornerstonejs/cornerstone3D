@@ -1,10 +1,12 @@
 import { utilities } from "dcmjs";
+
+import { toScoords } from "../helpers";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
-class RectangleROI extends BaseAdapter3D {
+export class RectangleROI extends BaseAdapter3D {
     static {
         this.init("RectangleROI", TID300Polyline);
         // Register using the Cornerstone 1.x name so this tool is used to load it
@@ -13,75 +15,63 @@ class RectangleROI extends BaseAdapter3D {
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
+        const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
             MeasurementReport.getSetupMeasurementData(
                 MeasurementGroup,
                 sopInstanceUIDToImageIdMap,
                 metadata,
-                RectangleROI.toolType
+                this.toolType
             );
 
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const { GraphicData } = SCOORDGroup;
-        const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
-
-        const state = defaultState;
-
+        const areaGroup = MeasurementGroup.ContentSequence.find(
+            g =>
+                g.ValueType === "NUM" &&
+                g.ConceptNameCodeSequence[0].CodeMeaning === "Area"
+        );
+        const cachedStats = referencedImageId
+            ? {
+                  [`imageId:${referencedImageId}`]: {
+                      area:
+                          areaGroup?.MeasuredValueSequence?.[0]?.NumericValue ||
+                          0,
+                      areaUnit:
+                          areaGroup?.MeasuredValueSequence?.[0]
+                              ?.MeasurementUnitsCodeSequence?.CodeValue
+                  }
+              }
+            : {};
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
+                ...state.annotation.data.handles,
                 points: [
                     worldCoords[0],
                     worldCoords[1],
                     worldCoords[3],
                     worldCoords[2]
-                ],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                ]
             },
-            cachedStats: {
-                [`imageId:${referencedImageId}`]: {
-                    area: NUMGroup
-                        ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : null
-                }
-            },
+            cachedStats,
             frameNumber: ReferencedFrameNumber
         };
-
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
-        const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
 
-        if (!referencedImageId) {
-            throw new Error(
-                "CobbAngle.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
-        }
+        const corners = toScoords(scoordProps, data.handles.points);
 
-        const corners = handles.points.map(point =>
-            worldToImageCoords(referencedImageId, point)
-        );
-
-        const { area, perimeter } = cachedStats;
+        const { area, perimeter } =
+            data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             points: [
@@ -95,7 +85,8 @@ class RectangleROI extends BaseAdapter3D {
             perimeter,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

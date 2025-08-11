@@ -11,7 +11,7 @@ import EventTypes from '../../../enums/Events';
 import * as annotationState from '../../../stateManagement/annotation';
 import selectHandles from './selectHandles';
 import updateChildInterpolationUID from './updateChildInterpolationUID';
-import { createPolylineHole } from '../../../eventListeners/annotations/contourSegmentation/contourSegmentationCompleted';
+import { createPolylineHole } from '../../contourSegmentation';
 
 const { PointsManager } = utilities;
 
@@ -611,8 +611,7 @@ function _getNodesPerSegment(perimInterp, perimInd) {
       arr.push(i);
     }
     return arr;
-  },
-  []);
+  }, []);
 
   const nodesPerSegment = [];
 

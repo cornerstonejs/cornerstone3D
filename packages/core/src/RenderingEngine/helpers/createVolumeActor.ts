@@ -66,7 +66,7 @@ async function createVolumeActor(
   };
 
   const volumeProperty = volumeActor.getProperty();
-  volumeProperty.set({ viewportId: viewportId });
+  volumeProperty.set({ viewportId: viewportId }, true);
 
   if (numberOfComponents === 3) {
     volumeActor.getProperty().setIndependentComponents(false);

@@ -142,6 +142,7 @@ async function calculateVolumeStatistics({
       segmentationInfo,
       imageInfo,
       indices,
+      unit,
       mode,
     }
   );

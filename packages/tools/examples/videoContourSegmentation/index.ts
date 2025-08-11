@@ -193,7 +193,10 @@ addButtonToToolbar({
 
     segmentation.config.visibility.setSegmentIndexVisibility(
       viewportId,
-      segmentationRepresentationUID,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       activeSegmentIndex,
       visible
     );

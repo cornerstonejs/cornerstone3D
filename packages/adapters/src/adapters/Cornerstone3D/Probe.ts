@@ -1,6 +1,7 @@
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { toScoords } from "../helpers";
 
 const { Point: TID300Point } = utilities.TID300;
 
@@ -8,57 +9,88 @@ class Probe extends BaseAdapter3D {
     static {
         this.init("Probe", TID300Point);
         this.registerLegacy();
+        this.registerType("DCM:111030", "POINT", 1);
+        this.registerType("DCM:111030", "POINT", 2);
+    }
+
+    public static isValidMeasurement(measurement) {
+        const graphicItem = this.getGraphicItem(measurement);
+        return (
+            this.getGraphicType(graphicItem) === "POINT" &&
+            this.getPointsCount(graphicItem) <= 2
+        );
     }
 
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata,
-        trackingIdentifier
+        _trackingIdentifier
     ) {
-        const state = super.getMeasurementData(
+        const {
+            state,
+            NUMGroup,
+            worldCoords,
+            referencedImageId,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
             MeasurementGroup,
             sopInstanceUIDToImageIdMap,
-            imageToWorldCoords,
             metadata,
-            trackingIdentifier
+            this.toolType
         );
 
-        const { defaultState, SCOORDGroup } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                Probe.toolType
-            );
-
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const { GraphicData } = SCOORDGroup;
-
-        const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
-
+        const cachedStats = referencedImageId
+            ? {
+                  [`imageId:${referencedImageId}`]: {
+                      value:
+                          NUMGroup?.MeasuredValueSequence?.NumericValue ?? null
+                  }
+              }
+            : {};
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
-                points: worldCoords,
-                activeHandleIndex: null,
-                textBox: {
-                    hasMoved: false
-                }
-            }
+                ...state.annotation.data.handles,
+                points: worldCoords
+            },
+            cachedStats,
+            frameNumber: ReferencedFrameNumber,
+            invalidated: true
         };
 
         return state;
+    }
+
+    public static getTID300RepresentationArguments(
+        tool,
+        is3DMeasurement = false
+    ) {
+        const { data, metadata } = tool;
+        const { finding, findingSites } = tool;
+        const { referencedImageId } = metadata;
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
+
+        const {
+            handles: { points = [] }
+        } = data;
+
+        // Using image coordinates for 2D points
+        const pointsImage = toScoords(scoordProps, points);
+
+        return {
+            points: pointsImage,
+            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+            findingSites: findingSites || [],
+            finding,
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
+            use3DSpatialCoordinates: is3DMeasurement
+        };
     }
 }
 

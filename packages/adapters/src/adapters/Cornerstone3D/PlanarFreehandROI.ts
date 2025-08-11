@@ -2,6 +2,7 @@ import MeasurementReport from "./MeasurementReport";
 import { utilities } from "dcmjs";
 import { vec3 } from "gl-matrix";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { toScoords } from "../helpers";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
@@ -15,31 +16,20 @@ class PlanarFreehandROI extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                PlanarFreehandROI.toolType
-            );
-
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-        const { GraphicData } = SCOORDGroup;
-
-        const worldCoords = [];
-
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-
-            worldCoords.push(point);
-        }
+        const {
+            state,
+            NUMGroup,
+            worldCoords,
+            referencedImageId,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            this.toolType
+        );
 
         const distanceBetweenFirstAndLastPoint = vec3.distance(
             worldCoords[worldCoords.length - 1],
@@ -61,54 +51,46 @@ class PlanarFreehandROI extends BaseAdapter3D {
             points.push(worldCoords[0], worldCoords[worldCoords.length - 1]);
         }
 
-        const state = defaultState;
-
         state.annotation.data = {
+            ...state.annotation.data,
             contour: { polyline: worldCoords, closed: !isOpenContour },
             handles: {
-                points,
-                activeHandleIndex: null,
-                textBox: {
-                    hasMoved: false
-                }
+                ...state.annotation.data.handles,
+                points
             },
-            cachedStats: {
+            frameNumber: ReferencedFrameNumber
+        };
+
+        if (referencedImageId) {
+            state.annotation.data.cachedStats = {
                 [`imageId:${referencedImageId}`]: {
                     area: NUMGroup
                         ? NUMGroup.MeasuredValueSequence.NumericValue
                         : null
                 }
-            },
-            frameNumber: ReferencedFrameNumber
-        };
-
+            };
+        }
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
 
         const { polyline, closed } = data.contour;
         const isOpenContour = closed !== true;
 
         const { referencedImageId } = metadata;
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
 
-        if (!referencedImageId) {
-            throw new Error(
-                "PlanarFreehandROI.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
-        }
-
-        const points = polyline.map(worldPos =>
-            worldToImageCoords(referencedImageId, worldPos)
-        );
+        const points = toScoords(scoordProps, polyline);
 
         if (!isOpenContour) {
             // Need to repeat the first point at the end of to have an explicitly closed contour.
             const firstPoint = points[0];
-
-            // Explicitly expand to avoid circular references.
-            points.push([firstPoint[0], firstPoint[1]]);
+            points.push(firstPoint);
         }
 
         const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
@@ -127,7 +109,11 @@ class PlanarFreehandROI extends BaseAdapter3D {
             /** Other */
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

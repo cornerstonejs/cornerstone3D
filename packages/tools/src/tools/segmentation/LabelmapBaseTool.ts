@@ -5,6 +5,7 @@ import {
   Enums,
   eventTarget,
   BaseVolumeViewport,
+  StackViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -15,11 +16,10 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
-import { getClosestImageIdForStackViewport } from '../../utilities/annotationHydration';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
-import { StrategyCallbacks, Events } from '../../enums';
+import { StrategyCallbacks } from '../../enums';
 import * as LabelmapMemo from '../../utilities/segmentation/createLabelmapMemo';
 import {
   getAllAnnotations,
@@ -188,6 +188,27 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
+   * Checks if the tool has a preview data associated.
+   * @returns True if the tool has preview data, false otherwise.
+   */
+  public hasPreviewData() {
+    return !!this._previewData.preview;
+  }
+
+  /**
+   * Checks if the tool should resolve preview requests.
+   * This is used to determine if the tool is in a state where it can handle
+   * preview requests.
+   * @returns True if the tool should resolve preview requests, false otherwise.
+   */
+  public shouldResolvePreviewRequests() {
+    return (
+      (this.mode === 'Active' || this.mode === 'Enabled') &&
+      this.hasPreviewData()
+    );
+  }
+
+  /**
    * Creates a labelmap memo instance, which stores the changes made to the
    * labelmap rather than the initial state.
    */
@@ -270,8 +291,7 @@ export default class LabelmapBaseTool extends BaseTool {
       ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
 
-      const isStackViewport =
-        viewport instanceof getClosestImageIdForStackViewport;
+      const isStackViewport = viewport instanceof StackViewport;
 
       if (isStackViewport) {
         const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
@@ -410,7 +430,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     let previewColor = null,
       previewSegmentIndex = null;
-    if (this.configuration.preview.enabled) {
+    if (this.configuration.preview?.enabled) {
       previewColor = configColor || lightenColor(...segmentColor);
       previewSegmentIndex = 255;
     }
@@ -456,6 +476,11 @@ export default class LabelmapBaseTool extends BaseTool {
       StrategyCallbacks.AddPreview
     );
     _previewData.isDrag = true;
+    // If the results are modified, we store it as preview data
+    if (results?.modified) {
+      _previewData.preview = results;
+      _previewData.element = element;
+    }
     return results;
   }
 
@@ -529,7 +554,6 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
     const contourAnnotations = viewAnnotations.filter(
-      // @ts-expect-error
       (annotation) => annotation.data.contour?.polyline?.length
     );
     if (!contourAnnotations.length) {
@@ -573,7 +597,6 @@ export default class LabelmapBaseTool extends BaseTool {
         [Infinity, -Infinity],
       ];
 
-      // @ts-expect-error
       const { polyline } = annotation.data.contour;
       for (const point of polyline) {
         const indexPoint = imageData.worldToIndex(point);
@@ -607,8 +630,8 @@ export default class LabelmapBaseTool extends BaseTool {
       const segmentIndex = hasBoth
         ? startValue
         : startValue === 0
-        ? activeIndex
-        : 0;
+          ? activeIndex
+          : 0;
       for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
         for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
           for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {

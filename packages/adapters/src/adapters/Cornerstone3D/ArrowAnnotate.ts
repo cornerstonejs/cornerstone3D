@@ -1,9 +1,13 @@
-import MeasurementReport from "./MeasurementReport";
 import { utilities } from "dcmjs";
+import { utilities as csUtilities } from "@cornerstonejs/core";
+
+import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 import CodingScheme from "./CodingScheme";
+import { toScoord } from "../helpers";
 
 const { Point: TID300Point } = utilities.TID300;
+const { imageToWorldCoords } = csUtilities;
 const { codeValues } = CodingScheme;
 
 class ArrowAnnotate extends BaseAdapter3D {
@@ -15,37 +19,27 @@ class ArrowAnnotate extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata,
         _trackingIdentifier
     ) {
-        const { defaultState, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                ArrowAnnotate.toolType
-            );
+        const {
+            state,
+            SCOORDGroup,
+            worldCoords,
+            referencedImageId,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            this.toolType
+        );
 
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const text = defaultState.annotation.metadata.label;
-
-        const { GraphicData } = SCOORDGroup;
-
-        const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
+        const text = state.annotation.data.label;
 
         // Since the arrowAnnotate measurement is just a point, to generate the tool state
         // we derive the second point based on the image size relative to the first point.
-        if (worldCoords.length === 1) {
+        if (worldCoords.length === 1 && SCOORDGroup) {
             const imagePixelModule = metadata.get(
                 "imagePixelModule",
                 referencedImageId
@@ -60,6 +54,7 @@ class ArrowAnnotate extends BaseAdapter3D {
                 yOffset = rows / 10;
             }
 
+            const { GraphicData } = SCOORDGroup;
             const secondPoint = imageToWorldCoords(referencedImageId, [
                 GraphicData[0] + xOffset,
                 GraphicData[1] + yOffset
@@ -68,17 +63,13 @@ class ArrowAnnotate extends BaseAdapter3D {
             worldCoords.push(secondPoint);
         }
 
-        const state = defaultState;
-
         state.annotation.data = {
+            ...state.annotation.data,
             text,
             handles: {
+                ...state.annotation.data.handles,
                 arrowFirst: true,
-                points: [worldCoords[0], worldCoords[1]],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                points: worldCoords
             },
             frameNumber: ReferencedFrameNumber
         };
@@ -86,57 +77,34 @@ class ArrowAnnotate extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, metadata, findingSites } = tool;
-        let { finding } = tool;
+        const { finding } = tool;
         const { referencedImageId } = metadata;
-
-        if (!referencedImageId) {
-            throw new Error(
-                "ArrowAnnotate.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
-        }
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
 
         const { points, arrowFirst } = data.handles;
 
-        let point;
-        let point2;
+        const point = arrowFirst ? points[0] : points[1];
+        const point2 = arrowFirst ? points[1] : points[0];
 
-        if (arrowFirst) {
-            point = points[0];
-            point2 = points[1];
-        } else {
-            point = points[1];
-            point2 = points[0];
-        }
-
-        const pointImage = worldToImageCoords(referencedImageId, point);
-        const pointImage2 = worldToImageCoords(referencedImageId, point2);
+        // Using image coordinates for 2D points
+        const pointImage = toScoord(scoordProps, point);
+        const pointImage2 = toScoord(scoordProps, point2);
 
         const TID300RepresentationArguments = {
-            points: [
-                {
-                    x: pointImage[0],
-                    y: pointImage[1]
-                },
-                {
-                    x: pointImage2[0],
-                    y: pointImage2[1]
-                }
-            ],
+            points: [pointImage, pointImage2],
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             findingSites: findingSites || [],
-            finding
+            finding,
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
+            use3DSpatialCoordinates: is3DMeasurement
         };
-
-        // If freetext finding isn't present, add it from the tool text.
-        if (!finding || finding.CodeValue !== codeValues.CORNERSTONEFREETEXT) {
-            finding = {
-                CodeValue: codeValues.CORNERSTONEFREETEXT,
-                CodingSchemeDesignator: CodingScheme.CodingSchemeDesignator,
-                CodeMeaning: data.text
-            };
-        }
 
         return TID300RepresentationArguments;
     }

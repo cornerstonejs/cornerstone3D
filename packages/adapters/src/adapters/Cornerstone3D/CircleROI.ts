@@ -1,6 +1,7 @@
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { toScoord } from "../helpers";
 
 const { Circle: TID300Circle } = utilities.TID300;
 
@@ -14,44 +15,31 @@ class CircleROI extends BaseAdapter3D {
     static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                CircleROI.toolType
-            );
-
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const { GraphicData } = SCOORDGroup;
-
-        // GraphicData is ordered as [centerX, centerY, endX, endY]
-        const pointsWorld = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const worldPos = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-
-            pointsWorld.push(worldPos);
-        }
-
-        const state = defaultState;
+        const {
+            state,
+            NUMGroup,
+            worldCoords,
+            referencedImageId,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            this.toolType
+        );
 
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
-                points: [...pointsWorld],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                ...state.annotation.data.handles,
+                points: worldCoords
             },
-            cachedStats: {
+            frameNumber: ReferencedFrameNumber
+        };
+        if (referencedImageId) {
+            state.annotation.data.cachedStats = {
                 [`imageId:${referencedImageId}`]: {
                     area: NUMGroup
                         ? NUMGroup.MeasuredValueSequence.NumericValue
@@ -60,9 +48,8 @@ class CircleROI extends BaseAdapter3D {
                     radius: 0,
                     perimeter: 0
                 }
-            },
-            frameNumber: ReferencedFrameNumber
-        };
+            };
+        }
 
         return state;
     }
@@ -73,24 +60,19 @@ class CircleROI extends BaseAdapter3D {
      * @param {Object} tool
      * @returns
      */
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
 
-        if (!referencedImageId) {
-            throw new Error(
-                "CircleROI.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
-        }
-
-        const center = worldToImageCoords(referencedImageId, handles.points[0]);
-        const end = worldToImageCoords(referencedImageId, handles.points[1]);
-
-        const points = [];
-        points.push({ x: center[0], y: center[1] });
-        points.push({ x: end[0], y: end[1] });
+        // Using image coordinates for 2D points
+        const center = toScoord(scoordProps, handles.points[0]);
+        const end = toScoord(scoordProps, handles.points[1]);
 
         const { area, radius } =
             cachedStats[`imageId:${referencedImageId}`] || {};
@@ -100,10 +82,14 @@ class CircleROI extends BaseAdapter3D {
             area,
             perimeter,
             radius,
-            points,
+            points: [center, end],
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

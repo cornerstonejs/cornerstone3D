@@ -1,6 +1,7 @@
 import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { toScoord } from "../helpers";
 
 const { CobbAngle: TID300CobbAngle } = utilities.TID300;
 
@@ -14,76 +15,63 @@ class Angle extends BaseAdapter3D {
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
         metadata
     ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                Angle.toolType
-            );
+        const {
+            state,
+            NUMGroup,
+            worldCoords,
+            referencedImageId,
+            ReferencedFrameNumber
+        } = MeasurementReport.getSetupMeasurementData(
+            MeasurementGroup,
+            sopInstanceUIDToImageIdMap,
+            metadata,
+            this.toolType
+        );
 
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
-
-        const { GraphicData } = SCOORDGroup;
-        const worldCoords = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
-
-        const state = defaultState;
-
+        const cachedStats = referencedImageId
+            ? {
+                  [`imageId:${referencedImageId}`]: {
+                      angle: NUMGroup
+                          ? NUMGroup.MeasuredValueSequence.NumericValue
+                          : null
+                  }
+              }
+            : {};
         state.annotation.data = {
+            ...state.annotation.data,
             handles: {
-                points: [worldCoords[0], worldCoords[1], worldCoords[3]],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
+                ...state.annotation.data.handles,
+                points: [worldCoords[0], worldCoords[1], worldCoords[3]]
             },
-            cachedStats: {
-                [`imageId:${referencedImageId}`]: {
-                    angle: NUMGroup
-                        ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : null
-                }
-            },
+            cachedStats,
             frameNumber: ReferencedFrameNumber
         };
 
         return state;
     }
 
-    public static getTID300RepresentationArguments(tool, worldToImageCoords) {
+    public static getTID300RepresentationArguments(
+        tool,
+        is3DMeasurement = false
+    ) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
         const { referencedImageId } = metadata;
+        const scoordProps = {
+            is3DMeasurement,
+            referencedImageId
+        };
 
-        if (!referencedImageId) {
-            throw new Error(
-                "Angle.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
-        }
+        // Do the conversion automatically for the right coord type
+        const point1 = toScoord(scoordProps, handles.points[0]);
+        const point2 = toScoord(scoordProps, handles.points[1]);
+        const point3 = toScoord(scoordProps, handles.points[1]);
+        const point4 = toScoord(scoordProps, handles.points[2]);
 
-        const start1 = worldToImageCoords(referencedImageId, handles.points[0]);
-        const middle = worldToImageCoords(referencedImageId, handles.points[1]);
-
-        const end = worldToImageCoords(referencedImageId, handles.points[2]);
-
-        const point1 = { x: start1[0], y: start1[1] };
-        const point2 = { x: middle[0], y: middle[1] };
-        const point3 = point2;
-        const point4 = { x: end[0], y: end[1] };
-
-        const { angle } = cachedStats[`imageId:${referencedImageId}`] || {};
+        const angle = cachedStats[`imageId:${referencedImageId}`]?.angle;
 
         // Represented as a cobb angle
         return {
@@ -94,7 +82,11 @@ class Angle extends BaseAdapter3D {
             rAngle: angle,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            ReferencedFrameOfReferenceUID: is3DMeasurement
+                ? metadata.FrameOfReferenceUID
+                : null,
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

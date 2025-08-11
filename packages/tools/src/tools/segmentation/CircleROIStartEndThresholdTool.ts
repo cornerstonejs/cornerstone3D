@@ -23,6 +23,7 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import throttle from '../../utilities/throttle';
+import debounce from '../../utilities/debounce';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
   hideElementCursor,
@@ -82,23 +83,33 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
+        //Simplified handles, if false (5 handles : center, top, bottom, left, right)
+        simplified: true,
         // Whether to store point data in the annotation
         storePointData: false,
         numSlicesToPropagate: 10,
-        calculatePointsInsideVolume: false,
+        calculatePointsInsideVolume: true,
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         showTextBox: false,
+        throttleTimeout: 100,
       },
     }
   ) {
     super(toolProps, defaultToolProps);
 
-    this._throttledCalculateCachedStats = throttle(
-      this._calculateCachedStatsTool,
-      100,
-      { trailing: true }
-    );
+    if (this.configuration.calculatePointsInsideVolume) {
+      this._throttledCalculateCachedStats = throttle(
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout,
+        { trailing: true }
+      );
+    } else {
+      this._throttledCalculateCachedStats = debounce(
+        this._calculateCachedStatsTool,
+        this.configuration.throttleTimeout
+      );
+    }
   }
 
   /**
@@ -160,6 +171,25 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
+    let points;
+    if (this.configuration.simplified) {
+      points = [[...worldPos], [...worldPos]] as [Types.Point3, Types.Point3];
+    } else {
+      points = [
+        [...worldPos], // center
+        [...worldPos], // top
+        [...worldPos], // bottom
+        [...worldPos], // left
+        [...worldPos], // right
+      ] as [
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+      ];
+    }
+
     const annotation = {
       highlighted: true,
       invalidated: true,
@@ -189,10 +219,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
               bottomRight: <Types.Point3>[0, 0, 0],
             },
           },
-          points: [[...worldPos], [...worldPos]] as [
-            Types.Point3, // center
-            Types.Point3 // end
-          ],
+          points,
           activeHandleIndex: null,
         },
         cachedStats: {
@@ -272,19 +299,19 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        imageVolume,
-        targetId,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      imageVolume,
+      targetId,
+      enabledElement
+    );
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
+    } else {
+      triggerAnnotationModified(annotation, element);
     }
   };
 
@@ -331,14 +358,20 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
 
-      const canvasCoordinates = points.map((p) =>
+      const canvasCoordinates: Types.Point2[] = points.map((p) =>
         viewport.worldToCanvas(p)
-      ) as [Types.Point2, Types.Point2];
+      );
       const center = canvasCoordinates[0];
 
-      const radius = getCanvasCircleRadius(canvasCoordinates);
+      const radius = getCanvasCircleRadius([
+        canvasCoordinates[0],
+        canvasCoordinates[1],
+      ]);
       const { centerPointRadius } = this.configuration;
-      const canvasCorners = getCanvasCircleCorners(canvasCoordinates);
+      const canvasCorners = getCanvasCircleCorners([
+        canvasCoordinates[0],
+        canvasCoordinates[1],
+      ]);
       // range of slices to render based on the start and end slice, like
       // np.arange
 
@@ -423,8 +456,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         activeHandleIndex !== null &&
         isMiddleSlice
       ) {
-        // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+        if (this.configuration.simplified) {
+          activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+        } else {
+          activeHandleCanvasCoords = canvasCoordinates;
+        }
       }
 
       if (activeHandleCanvasCoords) {
@@ -484,10 +520,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       renderStatus = true;
 
-      if (
-        this.configuration.showTextBox == true &&
-        this.configuration.calculatePointsInsideVolume == true
-      ) {
+      if (this.configuration.showTextBox) {
         const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
         if (!options.visibility) {
           data.handles.textBox = {
@@ -528,7 +561,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           textBoxUID,
           textLines,
           textBoxPosition,
-          canvasCoordinates,
+          [canvasCoordinates[0], canvasCoordinates[1]],
           {},
           options
         );
@@ -552,43 +585,22 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   ): void {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;
-    const { imageData } = imageVolume;
     const { startCoordinate, endCoordinate } = data;
     const { points } = data.handles;
 
-    const startIJK = transformWorldToIndex(imageData, points[0]);
-    const endIJK = transformWorldToIndex(imageData, points[0]);
+    const handlesToStart = csUtils.deepClone(points) as Types.Point3[];
 
-    const handlesToStart = csUtils.deepClone(points) as typeof points;
+    const startWorld = vec3.clone(points[0]);
+    const endWorld = vec3.clone(points[0]);
+    const indexOfNormal =
+      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    const startWorld = vec3.create();
-    imageData.indexToWorldVec3(startIJK, startWorld);
+    startWorld[indexOfNormal] = startCoordinate;
+    endWorld[indexOfNormal] = endCoordinate;
 
-    const endWorld = vec3.create();
-    imageData.indexToWorldVec3(endIJK, endWorld);
-
-    // substitute the end slice index 2 with startIJK index 2
-
-    if (this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 2) {
-      startWorld[2] = startCoordinate;
-      endWorld[2] = endCoordinate;
-      handlesToStart[0][2] = startCoordinate;
-      handlesToStart[1][2] = startCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 0
-    ) {
-      startWorld[0] = startCoordinate;
-      endWorld[0] = endCoordinate;
-      handlesToStart[0][0] = startCoordinate;
-      handlesToStart[1][0] = startCoordinate;
-    } else if (
-      this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal) == 1
-    ) {
-      startWorld[1] = startCoordinate;
-      endWorld[1] = endCoordinate;
-      handlesToStart[0][1] = startCoordinate;
-      handlesToStart[1][1] = startCoordinate;
-    }
+    handlesToStart.forEach((handlePoint) => {
+      handlePoint[indexOfNormal] = startCoordinate;
+    });
 
     // distance between start and end slice in the world coordinate
     const distance = vec3.distance(startWorld, endWorld);
@@ -596,17 +608,24 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // for each point inside points, navigate in the direction of the viewPlaneNormal
     // with amount of spacingInNormal, and calculate the next slice until we reach the distance
     const newProjectionPoints = [];
-    for (let dist = 0; dist < distance; dist += spacingInNormal) {
+    if (distance >= 0) {
+      newProjectionPoints.push(
+        handlesToStart.map((p) => Array.from(p as vec3))
+      );
+    }
+    for (
+      let dist = spacingInNormal;
+      dist <= distance;
+      dist += spacingInNormal
+    ) {
       newProjectionPoints.push(
         handlesToStart.map((point) => {
           const newPoint = vec3.create();
-          //@ts-ignore
-          vec3.scaleAndAdd(newPoint, point, viewPlaneNormal, dist);
+          vec3.scaleAndAdd(newPoint, point as vec3, viewPlaneNormal, dist);
           return Array.from(newPoint);
         })
       );
     }
-
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 
@@ -628,19 +647,29 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const canvasCoordinates = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)
     );
-    const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
-      getCanvasCircleCorners(canvasCoordinates)
-    );
-    const pos1 = viewport.canvasToWorld(topLeftCanvas);
-    const pos2 = viewport.canvasToWorld(bottomRightCanvas);
+
+    const baseTopLeftCanvas = getCanvasCircleCorners([
+      canvasCoordinates[0],
+      canvasCoordinates[1],
+    ])[0];
+    const baseBottomRightCanvas = getCanvasCircleCorners([
+      canvasCoordinates[0],
+      canvasCoordinates[1],
+    ])[1];
+
+    const basePos1 = viewport.canvasToWorld(baseTopLeftCanvas);
+    const basePos2 = viewport.canvasToWorld(baseBottomRightCanvas);
 
     const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
       viewPlaneNormal,
       viewUp,
-      pos1,
-      pos2
+      basePos1,
+      basePos2
     );
-    const measureInfo = getCalibratedLengthUnitsAndScale(image, data.handles);
+    const measureInfo = getCalibratedLengthUnitsAndScale(
+      image,
+      data.handles.points
+    );
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
@@ -672,12 +701,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       }
 
       const centerWorld = projectionPoints[i][0];
-      const canvasCoordinates = projectionPoints[i].map((p) =>
+      const currentCanvasCoordinates = projectionPoints[i].map((p) =>
         viewport.worldToCanvas(p)
       );
 
       const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
-        getCanvasCircleCorners(canvasCoordinates)
+        getCanvasCircleCorners([
+          currentCanvasCoordinates[0],
+          currentCanvasCoordinates[1],
+        ])
       );
 
       const topLeftWorld = viewport.canvasToWorld(topLeftCanvas);
@@ -781,14 +813,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // bring the logic for handle to some cachedStats calculation
     this._computeProjectionPoints(annotation, imageVolume);
 
-    if (this.configuration.calculatePointsInsideVolume) {
-      this._computePointsInsideVolume(
-        annotation,
-        imageVolume,
-        targetId,
-        enabledElement
-      );
-    }
+    this._computePointsInsideVolume(
+      annotation,
+      imageVolume,
+      targetId,
+      enabledElement
+    );
 
     annotation.invalidated = false;
 
@@ -871,7 +901,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   ): number | undefined {
     const indexOfDirection =
       this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
-
     return pos[indexOfDirection];
   }
 }

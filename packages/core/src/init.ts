@@ -4,6 +4,7 @@ import deepMerge from './utilities/deepMerge';
 import type { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getSupportedTextureFormats } from './utilities/textureSupport';
+import { RenderingEngineModeEnum } from './enums';
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -14,7 +15,30 @@ const defaultConfig: Cornerstone3DConfig = {
     // GPU rendering options
     preferSizeOverAccuracy: false,
     strictZSpacingForVolumeViewport: true,
+    /**
+     * The rendering engine mode to use.
+     * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
+     * 'tiled' is a rendering engine that uses tiled rendering.
+     */
+    renderingEngineMode: RenderingEngineModeEnum.ContextPool,
+
+    /**
+     * The number of WebGL contexts to create. This is used for parallel rendering.
+     * The default value is 7, which is suitable for mobile/desktop.
+     */
+    webGlContextCount: 7,
   },
+
+  debug: {
+    /**
+     * Wether or not to show the stats overlay for debugging purposes, stats include:
+     * - FPS Frames rendered in the last second. The higher the number the better.
+     * - MS Milliseconds needed to render a frame. The lower the number the better.
+     * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
+     */
+    statsOverlay: false,
+  },
+
   /**
    * Imports peer modules.
    * This may just fallback to the default import, but many packaging
@@ -28,7 +52,7 @@ let config: Cornerstone3DConfig = {
   rendering: { ...defaultConfig.rendering },
 };
 
-let webWorkerManager = null;
+let webWorkerManager: CentralizedWebWorkerManager | null = null;
 let canUseNorm16Texture = false;
 
 function _getGLContext(): RenderingContext {
@@ -96,6 +120,11 @@ function init(configuration = config): boolean {
 
   // merge configs
   config = deepMerge(defaultConfig, configuration);
+
+  // mobile safe
+  if (config.isMobile) {
+    config.rendering.webGlContextCount = 1;
+  }
 
   if (isIOS()) {
     if (configuration.rendering?.preferSizeOverAccuracy) {
