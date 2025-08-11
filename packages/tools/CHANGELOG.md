@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.8...v3.32.9) (2025-08-11)
+
+### Bug Fixes
+
+- getBrushToolInstances always return array ([#2258](https://github.com/cornerstonejs/cornerstone3D/issues/2258)) ([d23ef9b](https://github.com/cornerstonejs/cornerstone3D/commit/d23ef9b77f50a313d0311bce499a8f3d2c678411))
+
 ## [3.32.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.7...v3.32.8) (2025-08-06)
 
 **Note:** Version bump only for package @cornerstonejs/tools
