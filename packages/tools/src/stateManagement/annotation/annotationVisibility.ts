@@ -98,6 +98,8 @@ function hide(
       deselectAnnotation(annotationUID);
     }
     detail.lastHidden.push(annotationUID);
+    const annotation = getAnnotation(annotationUID);
+    annotation.isVisible = false;
   }
 }
 
