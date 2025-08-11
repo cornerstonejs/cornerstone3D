@@ -205,7 +205,7 @@ class LabelTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    hideElementCursor(element);
+    // hideElementCursor(element);
     this.isDrawing = true;
 
     const camera = viewport.getCamera();
