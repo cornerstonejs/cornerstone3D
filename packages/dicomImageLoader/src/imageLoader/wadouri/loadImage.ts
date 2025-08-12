@@ -221,7 +221,7 @@ function loadImage(
   return loadImageFromPromise(
     dataSetPromise,
     imageId,
-    parsedImageId.frame,
+    parsedImageId.pixelDataFrame,
     parsedImageId.url,
     options
   );
