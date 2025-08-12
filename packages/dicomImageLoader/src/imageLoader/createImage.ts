@@ -271,8 +271,8 @@ function createImage(
         // calculate smallest and largest PixelValue of the converted pixelData
         const minMax = getMinMax(imageFrame.pixelData as any);
 
-        imageFrame.smallestPixelValue = minMax.min;
-        imageFrame.largestPixelValue = minMax.max;
+        imageFrame.minAfterScale = minMax.min;
+        imageFrame.maxAfterScale = minMax.max;
       }
 
       const image: DICOMLoaderIImage = {
@@ -289,8 +289,8 @@ function createImage(
           ? modalityLutModule.rescaleSlope
           : 1,
         invert: imageFrame.photometricInterpretation === 'MONOCHROME1',
-        minPixelValue: imageFrame.smallestPixelValue,
-        maxPixelValue: imageFrame.largestPixelValue,
+        minPixelValue: imageFrame.minAfterScale,
+        maxPixelValue: imageFrame.maxAfterScale,
         rowPixelSpacing: imagePlaneModule.rowPixelSpacing,
         rows: imageFrame.rows,
         sizeInBytes: imageFrame.pixelData.byteLength,
