@@ -28,6 +28,7 @@ You can create your own custom Annotation Manager by implementing the `IAnnotati
 ```ts
 interface IAnnotationManager {
   getGroupKey: (annotationGroupSelector: any) => string;
+  getGroupKeys: () => string[];
   getAnnotations: (
     groupKey: string,
     toolName?: string

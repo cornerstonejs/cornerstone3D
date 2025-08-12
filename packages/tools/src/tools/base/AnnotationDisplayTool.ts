@@ -92,15 +92,15 @@ abstract class AnnotationDisplayTool extends BaseTool {
 
     const imageURI = utilities.imageIdToURI(imageId);
     const annotationManager = getAnnotationManager();
-    const framesOfReference = annotationManager.getFramesOfReference();
+    const groupKeys = annotationManager.getGroupKeys();
 
     // For each frame Of Reference
-    framesOfReference.forEach((frameOfReference) => {
-      const frameOfReferenceSpecificAnnotations =
-        annotationManager.getAnnotations(frameOfReference);
+    groupKeys.forEach((groupKey) => {
+      const groupSpecificAnnotations =
+        annotationManager.getAnnotations(groupKey);
 
       const toolSpecificAnnotations =
-        frameOfReferenceSpecificAnnotations[this.getToolName()];
+        groupSpecificAnnotations[this.getToolName()];
 
       if (!toolSpecificAnnotations || !toolSpecificAnnotations.length) {
         return;
