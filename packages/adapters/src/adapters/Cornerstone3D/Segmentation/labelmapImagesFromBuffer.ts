@@ -370,6 +370,7 @@ export function insertPixelDataPlanar({
                 const imageIdIndex = imageIdMaps.indices[imageId];
                 const labelmapImage = labelMapImages[imageIdIndex];
                 const labelmap2DView = labelmapImage.getPixelData();
+                const imageVoxelManager = labelmapImage.voxelManager;
 
                 const data = alignedPixelDataI.data;
 
@@ -400,7 +401,16 @@ export function insertPixelDataPlanar({
                                         })
                                     );
                                 }
-                                labelmap2DView[x] = segmentIndex;
+                                if (imageVoxelManager) {
+                                    // Ensure voxelManager updates boundaries
+                                    imageVoxelManager.setAtIndex(
+                                        x,
+                                        segmentIndex
+                                    );
+                                } else {
+                                    // Directly assign pixel data when volume is not managed via voxelManager.
+                                    labelmap2DView[x] = segmentIndex;
+                                }
                                 indexCache.push(x);
                             }
                         }
