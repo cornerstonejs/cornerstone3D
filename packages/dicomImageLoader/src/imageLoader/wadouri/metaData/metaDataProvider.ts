@@ -60,9 +60,16 @@ function metaDataProvider(type, imageId) {
       seriesNumber: dataSet.intString('x00200011'),
       studyInstanceUID: dataSet.string('x0020000d'),
       seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),
+      studyDate: dicomParser.parseDA(dataSet.string('x00080020')),
+      studyDescription: dataSet.string('x00081030'),
+      studyTime: dicomParser.parseTM(dataSet.string('x00080030') || ''),
       seriesTime: dicomParser.parseTM(dataSet.string('x00080031') || ''),
       acquisitionDate: dicomParser.parseDA(dataSet.string('x00080022') || ''),
       acquisitionTime: dicomParser.parseTM(dataSet.string('x00080032') || ''),
+      accessionNumber: dataSet.string('x00080050'),
+      referringPhysicianName: dataSet.string('x00080090'),
+      institutionName: dataSet.string('x00080080'),
+      studyId: dataSet.string('x00200010'),
     };
   }
 
@@ -71,6 +78,10 @@ function metaDataProvider(type, imageId) {
       patientAge: dataSet.intString('x00101010'),
       patientSize: dataSet.floatString('x00101020'),
       patientWeight: dataSet.floatString('x00101030'),
+      patientName: dataSet.string('x00100010'),
+      patientId: dataSet.string('x00100020'),
+      patientBirthDate: dicomParser.parseDA(dataSet.string('x00100030')),
+      patientSex: dataSet.string('x00100040'),
     };
   }
 
