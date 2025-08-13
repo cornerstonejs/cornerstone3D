@@ -65,11 +65,13 @@ export default function rangeRequest(
     imageQualityStatus: Enums.ImageQualityStatus;
     // eslint-disable-next-line no-async-promise-executor
   }>(async (resolve, reject) => {
-    const headers = Object.assign(
-      {},
-      defaultHeaders
-      /* beforeSendHeaders */
+    const beforeSendHeaders = globalOptions.beforeSend(
+      null,
+      imageId,
+      defaultHeaders,
+      {}
     );
+    const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 
     Object.keys(headers).forEach(function (key) {
       if (headers[key] === null || headers[key] === undefined) {
