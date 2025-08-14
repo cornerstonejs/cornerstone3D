@@ -32,6 +32,8 @@ let resetPrefetchTimeout;
 // loaded, so a 5 ms prefetch delay is fine
 const resetPrefetchDelay = 5;
 
+const priorities = {};
+
 /**
  * Call this to enable stack context sensitive prefetch.  Should be called
  * before stack data is set in order to start prefetch after load first image.
@@ -76,6 +78,8 @@ const enable = (element, priority = 0): void => {
   }
 
   updateToolState(element);
+
+  priorities[element] = priority;
 
   prefetch(element, priority);
 
@@ -270,7 +274,7 @@ function onImageUpdated(e) {
     // An exception will be thrown because the element will not be enabled anymore
     try {
       updateToolState(element);
-      prefetch(element, 0);
+      prefetch(element, priorities[element]);
     } catch (error) {
       return;
     }
