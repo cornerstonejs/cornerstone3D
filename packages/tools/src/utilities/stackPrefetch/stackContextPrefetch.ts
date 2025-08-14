@@ -11,7 +11,6 @@ import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
   getStackData,
   requestType,
-  priority,
   clearFromImageIds,
   getPromiseRemovedHandler,
 } from './stackPrefetchUtils';
@@ -62,8 +61,11 @@ const resetPrefetchDelay = 5;
  *     * Up to 100 images in the direction of travel will be prefetched
  *
  * @param element - to prefetch on
+ * @param priority - priority to be used for the request manager
  */
-const enable = (element): void => {
+const enable = (element, priority = 0): void => {
+  console.log(`CornerstoneTools.stackPrefetch - ${priority}`);
+
   const stack = getStackData(element);
   if (!stack) {
     return;
@@ -75,7 +77,7 @@ const enable = (element): void => {
 
   updateToolState(element);
 
-  prefetch(element);
+  prefetch(element, priority);
 
   element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
   element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
@@ -92,7 +94,7 @@ const enable = (element): void => {
   );
 };
 
-function prefetch(element) {
+function prefetch(element, priority = 0) {
   const stack = getStackData(element);
   if (!stack) {
     return;
@@ -194,7 +196,7 @@ function prefetch(element) {
           stats.initialTime = Date.now() - stats.start;
           stats.initialSize = stats.imageIds.size;
           updateToolState(element, usage);
-          prefetch(element);
+          prefetch(element, priority);
         } else if (stats.imageIds.size) {
           stats.fillTime = Date.now() - stats.start;
           const { size } = stats.imageIds;
@@ -268,7 +270,7 @@ function onImageUpdated(e) {
     // An exception will be thrown because the element will not be enabled anymore
     try {
       updateToolState(element);
-      prefetch(element);
+      prefetch(element, 0);
     } catch (error) {
       return;
     }
