@@ -4,6 +4,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import { get } from 'http';
 
 /**
  * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
@@ -30,7 +31,15 @@ export default function createVolumeMapper(
   const spacing = imageData.getSpacing();
   // Set the sample distance to half the mean length of one side. This is where the divide by 6 comes from.
   // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
-  const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
+  let sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
+
+  const volumeRenderingConfig =
+    getConfiguration().rendering?.volumeRendering || {};
+  if (volumeRenderingConfig.sampleDistanceMultiplier !== undefined) {
+    console.debug('Updated sampling quality:', volumeRenderingConfig);
+    sampleDistance =
+      sampleDistance * volumeRenderingConfig.sampleDistanceMultiplier;
+  }
 
   // This is to allow for good pixel level image quality.
   // Todo: why we are setting this to 4000? Is this a good number? it should be configurable

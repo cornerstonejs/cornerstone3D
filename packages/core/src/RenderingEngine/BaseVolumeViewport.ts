@@ -77,6 +77,8 @@ import { getCameraVectors } from './helpers/getCameraVectors';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
+import { setConfiguration, getConfiguration } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -137,6 +139,10 @@ abstract class BaseVolumeViewport extends Viewport {
     this.initializeVolumeNewImageEventDispatcher();
   }
 
+  public updateRenderingPipeline = () => {
+    this._updateRenderingPipeline();
+  };
+
   static get useCustomRenderingPipeline(): boolean {
     return false;
   }
@@ -150,6 +156,52 @@ abstract class BaseVolumeViewport extends Viewport {
     indexToSliceMatrix: mat4;
   } {
     throw new Error('Method not implemented.');
+  }
+
+  private _updateRenderingPipeline() {
+    // Update the rendering pipeline for the viewport
+    const actors = this.getActors();
+
+    // Get current cornerstone configuration
+    const cornerstoneConfig = getConfiguration();
+    const volumeRenderingConfig =
+      cornerstoneConfig.rendering?.volumeRendering || {};
+
+    // Use provided config or fall back to cornerstone configuration
+    const settings = {
+      sampleDistanceMultiplier: volumeRenderingConfig.sampleDistanceMultiplier,
+    };
+
+    if (!settings.sampleDistanceMultiplier) {
+      return;
+    }
+    actors.forEach((actorEntry) => {
+      if (actorIsA(actorEntry, 'vtkVolume')) {
+        const actor = actorEntry.actor as Types.VolumeActor;
+        const mapper = actor.getMapper();
+
+        if (mapper && mapper.getInputData) {
+          const imageData = mapper.getInputData();
+
+          if (imageData) {
+            const spacing = imageData.getSpacing();
+
+            //Calculate sample distance
+            const defaultSampleDistance =
+              (spacing[0] + spacing[1] + spacing[2]) / 6;
+            let sampleDistance =
+              defaultSampleDistance * settings.sampleDistanceMultiplier;
+
+            // Apply sample distance if specified
+            if (sampleDistance !== undefined && mapper.setSampleDistance) {
+              const currentSampleDistance = mapper.getSampleDistance();
+              mapper.setSampleDistance(sampleDistance);
+            }
+          }
+        }
+        this.render();
+      }
+    });
   }
 
   protected applyViewOrientation(
