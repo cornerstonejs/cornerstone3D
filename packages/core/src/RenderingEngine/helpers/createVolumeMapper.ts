@@ -4,7 +4,6 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import { get } from 'http';
 
 /**
  * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
