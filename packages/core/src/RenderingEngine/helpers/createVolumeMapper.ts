@@ -35,7 +35,6 @@ export default function createVolumeMapper(
   const volumeRenderingConfig =
     getConfiguration().rendering?.volumeRendering || {};
   if (volumeRenderingConfig.sampleDistanceMultiplier !== undefined) {
-    console.debug('Updated sampling quality:', volumeRenderingConfig);
     sampleDistance =
       sampleDistance * volumeRenderingConfig.sampleDistanceMultiplier;
   }
