@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.10...v3.32.11) (2025-08-18)
+
+### Bug Fixes
+
+- partial image quality misreporting when not Multipart ([#2269](https://github.com/cornerstonejs/cornerstone3D/issues/2269)) ([17047e6](https://github.com/cornerstonejs/cornerstone3D/commit/17047e65b5237675a7daeb9d7754203126fdb89d))
+
 ## [3.32.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.9...v3.32.10) (2025-08-11)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
