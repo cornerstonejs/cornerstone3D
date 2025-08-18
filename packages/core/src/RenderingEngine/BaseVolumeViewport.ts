@@ -887,12 +887,16 @@ abstract class BaseVolumeViewport extends Viewport {
           [-viewPlaneNormal[0], -viewPlaneNormal[1], -viewPlaneNormal[2]],
           projectedDistance
         );
+        const focalShift = vec3.subtract(vec3.create(), newImagePositionPatient, focalPoint);
+        const newPosition = vec3.add(vec3.create(), position, focalShift);
         // this.setViewReference({
         //   ...viewRef,
         //   cameraFocalPoint: newImagePositionPatient as Point3,
         // });
         this.setCamera({
           focalPoint: newImagePositionPatient as Point3,
+          position: newPosition as Point3
+
         });
         this.render();
         return;
