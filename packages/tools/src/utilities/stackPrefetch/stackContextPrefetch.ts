@@ -66,8 +66,6 @@ const priorities = {};
  * @param priority - priority to be used for the request manager
  */
 const enable = (element, priority = 0): void => {
-  console.log(`CornerstoneTools.stackPrefetch - ${priority}`);
-
   const stack = getStackData(element);
   if (!stack) {
     return;
