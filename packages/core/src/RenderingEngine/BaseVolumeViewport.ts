@@ -896,7 +896,6 @@ abstract class BaseVolumeViewport extends Viewport {
         this.setCamera({
           focalPoint: newImagePositionPatient as Point3,
           position: newPosition as Point3
-
         });
         this.render();
         return;
