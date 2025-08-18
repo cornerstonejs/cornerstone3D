@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.32.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.11...v3.32.12) (2025-08-18)
+
+### Bug Fixes
+
+- Load microscopy viewer using updated paths ([#2226](https://github.com/cornerstonejs/cornerstone3D/issues/2226)) ([0088cbc](https://github.com/cornerstonejs/cornerstone3D/commit/0088cbcfa910af62937dae0e554603d4c008710e))
+
 ## [3.32.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.10...v3.32.11) (2025-08-18)
 
 **Note:** Version bump only for package @cornerstonejs/core
