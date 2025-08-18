@@ -618,6 +618,10 @@
       "volumeProgressive": {
         "name": "Volume Progressive Loading",
         "description": "Volume progressive loading inter and intra image"
+      },
+      "volumeDynamicLoading": {
+        "name": "Volume Dynamic Loading",
+        "description": "Volume dynamic loading "
       }
     },
     "adapters": {
