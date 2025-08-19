@@ -14,6 +14,7 @@ import {
   setTitleAndDescription,
   addSliderToToolbar,
   addManipulationBindings,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import hardcodedMetaDataProvider from './hardcodedMetaDataProvider';
 import registerWebImageLoader from './registerWebImageLoader';
@@ -120,6 +121,26 @@ addSliderToToolbar({
     viewport.render();
   },
 });
+
+addButtonToToolbar({
+  title: 'Invert',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    const { invert } = viewport.getProperties();
+
+    viewport.setProperties({ invert: !invert });
+
+    viewport.render();
+  },
+});
+
 /**
  * Runs the demo
  */
