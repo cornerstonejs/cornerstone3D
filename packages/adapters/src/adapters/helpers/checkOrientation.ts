@@ -1,5 +1,5 @@
 import checkIfPerpendicular from "./checkIfPerpendicular";
-import compareArrays from "./compareArrays";
+import { utilities } from "@cornerstonejs/core";
 
 export default function checkOrientation(
     multiframe,
@@ -25,7 +25,7 @@ export default function checkOrientation(
             .ImageOrientationPatient;
 
     const inPlane = validOrientations.some(operation =>
-        compareArrays(iop, operation, tolerance)
+        utilities.isEqual(iop, operation, tolerance)
     );
 
     if (inPlane) {
