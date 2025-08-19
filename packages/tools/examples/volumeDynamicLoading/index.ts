@@ -1,3 +1,27 @@
+// For the low resolution image loader, what is required to do this is to create a new volume with a metadata loader that has a reduced set of images.
+// The reduced set should be specified as "skip" distances in i,j,k pixels.
+// The skip distance for k will REMOVE frames from the dataset.
+// The i distance will remove columns, while the j distance will remove rows.
+// Naturally, that affects the sizing/image positioning.
+
+// There should also be an image loader that re-uses an existing loader but decimates OR fetches the data using the jls reduced resolution endpoint.
+// The ordering should be:1. See if the reduced resolution version is available in cache -> use it immediately2.
+// See if the full resolution version is available in cache -> decimate it and put the reduced resolution version in cache3.
+// Fetch the reduced resolution version if configured against the back end4. Fetch the full resolution version and decimate it
+
+// The data that is affected is:
+
+// Frames - either the SOP instances or the frames in a multiframe need to be reduce in count.
+// This should occur as an integer fraction such that the spacing is consistent - examples: 1,3,5,7 - distance of two, so start with first image and go up by 2 1,4,7,10 - distance of three - start with first image and go up by 3 OR 2,5,8,11... - starting at 2
+// The starting/end are a bit arbitrary, but centering it to minimize the missed distance at both ends is probably worthwhile - that is, starting at 2 for a skip of 3 is better than starting at 1, since that skips 2 images at the end normally. Start with just using 1 always, and then see if we have time to improve that.
+
+// The DICOM values which need to be reduced are:
+// Pixel Spacing and related tags, including ultrasound enhanced regions (which you can throw an error on initially) slice thickness image position patient for multiframe only (because it is specified overall for the multiframe, and then can be calculated per-frame) number of frames image orientation patient - if these values include distances between pixels (they might be unitized to length 1)
+
+// The way this should work is to fetch the full resolution data, and then to have a metadata loader for partial resolution data.
+// OHIF will need a way to link TWO different volumes into a display set, and to choose between them.The CS3D example will just have a pulldown with various options on a 2+3 layout including a 3d volume, a stack, and 3 mprs below it.
+// The path to the sub-resolution images can be probably left alone and the existing JLS ones re-used.
+
 import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
@@ -55,7 +79,7 @@ const viewportIds = [
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Dynamic Loading for Volume Viewport',
-  'Here we demonstrate creating volumes with a reduced set of images.'
+  'Here we demonstrate creating volumes with a reduced set of images and pixels.'
 );
 
 const size = '512px';
@@ -104,20 +128,20 @@ buttonInfo.innerHTML = `
 </ul>`;
 content.appendChild(buttonInfo);
 
-const stageInfo = document.createElement('div');
-stageInfo.style.width = '30em';
-stageInfo.style.height = '10em';
-stageInfo.style.float = 'left';
-stageInfo.innerHTML = `
-<ul style="margin:0">
-<li>Stages are arbitrary names for retrieve configurations</li>
-<li>Stages are skipped if data already complete</li>
-<li>Decimations are every 1 out of 4 sequential images</li>
-<li>quarter/half thumb are lossy decimations retrieves</li>
-<li>quarter/half/threeQuarter/final are non-lossy decimation retrieves</li>
-<li>lossy is based on configuration, and when not available, defaults to lossless</li>
-</ul>`;
-content.appendChild(stageInfo);
+// const stageInfo = document.createElement('div');
+// stageInfo.style.width = '30em';
+// stageInfo.style.height = '10em';
+// stageInfo.style.float = 'left';
+// stageInfo.innerHTML = `
+// <ul style="margin:0">
+// <li>Stages are arbitrary names for retrieve configurations</li>
+// <li>Stages are skipped if data already complete</li>
+// <li>Decimations are every 1 out of 4 sequential images</li>
+// <li>quarter/half thumb are lossy decimations retrieves</li>
+// <li>quarter/half/threeQuarter/final are non-lossy decimation retrieves</li>
+// <li>lossy is based on configuration, and when not available, defaults to lossless</li>
+// </ul>`;
+// content.appendChild(stageInfo);
 
 const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
@@ -146,28 +170,28 @@ viewportGrid.appendChild(element3);
 
 content.appendChild(viewportGrid);
 
-const instructions = document.createElement('div');
-instructions.innerHTML = `
-<ul>
-<li>Partial is reduced resolution for all images</li>
-<li>Lossy means some sort of lossy encoding for all images</li>
-<li>Byte range is 64kb of all images</li>
-<li>JLS/HTJ2K is full resolution JLS/HTJ2K</li>
-<li>Mixed is byte range (htj2k) or partial (jls) initially followed by remaining data</li>
-</ul>
-Stages are:
-<ul>
-<li>initialImages - final version of image 0, 50%, 100%</li>
-<li>quarterThumb - lossy configuration for every 4th image, offset 1</li>
-<li>halfThumb - lossy configuration for every 4th image, offset 3</li>
-<li>Remaing *Full - final configuration for every 4th image, offset 0, 2, 1, 3</li>
-<li>If lossy is configured as final, then some stages won't retrieve anything</li>
-</ul>
-<p>Left Click to change window/level</p>
-Use the mouse wheel to scroll through the stack.
-`;
+// const instructions = document.createElement('div');
+// instructions.innerHTML = `
+// <ul>
+// <li>Partial is reduced resolution for all images</li>
+// <li>Lossy means some sort of lossy encoding for all images</li>
+// <li>Byte range is 64kb of all images</li>
+// <li>JLS/HTJ2K is full resolution JLS/HTJ2K</li>
+// <li>Mixed is byte range (htj2k) or partial (jls) initially followed by remaining data</li>
+// </ul>
+// Stages are:
+// <ul>
+// <li>initialImages - final version of image 0, 50%, 100%</li>
+// <li>quarterThumb - lossy configuration for every 4th image, offset 1</li>
+// <li>halfThumb - lossy configuration for every 4th image, offset 3</li>
+// <li>Remaing *Full - final configuration for every 4th image, offset 0, 2, 1, 3</li>
+// <li>If lossy is configured as final, then some stages won't retrieve anything</li>
+// </ul>
+// <p>Left Click to change window/level</p>
+// Use the mouse wheel to scroll through the stack.
+// `;
 
-content.append(instructions);
+// content.append(instructions);
 
 /**
  * Generate the various configurations by using the options on static DICOMweb:
@@ -188,6 +212,16 @@ content.append(instructions);
  * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name htj2kThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
  * ```
  */
+
+const configReduced2 = {
+  ...interleavedRetrieveStages,
+  retrieveOptions: {
+    default: {
+      framesPath: '/jls/',
+    },
+  },
+};
+
 const configJLS = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
@@ -327,8 +361,9 @@ async function run() {
   const imageIdsCT = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+    //   wadoRsRoot:
+    // getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    wadoRsRoot: getLocalUrl() || 'http://localhost:5000/dicomweb',
   });
 
   // Instantiate a rendering engine
@@ -430,21 +465,24 @@ async function run() {
 
   const loadButton = (text, volId, imageIds, config) =>
     createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
+  loadButton(' Skip 1 ', volumeId, imageIdsCT, configReduced2);
+  loadButton(' Skip 2 ', volumeId, imageIdsCT, configReduced2);
+  loadButton(' Skip 3 ', volumeId, imageIdsCT, configReduced2);
 
-  loadButton('JLS', volumeId, imageIdsCT, configJLS);
-  loadButton(
-    'JLS Non Interleaved',
-    volumeId,
-    imageIdsCT,
-    configJLSNonInterleaved
-  );
-  loadButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
-  loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
-  loadButton('J2K', volumeId, imageIdsCT, configHtj2k);
-  loadButton('J2K Non Progressive', volumeId, imageIdsCT, null);
-  loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
-  loadButton('J2K Lossy', volumeId, imageIdsCT, configHtj2kLossy);
-  loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
+  // loadButton('JLS', volumeId, imageIdsCT, configJLS);
+  // loadButton(
+  //   'JLS Non Interleaved',
+  //   volumeId,
+  //   imageIdsCT,
+  //   configJLSNonInterleaved
+  // );
+  // loadButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
+  // loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
+  // loadButton('J2K', volumeId, imageIdsCT, configHtj2k);
+  // loadButton('J2K Non Progressive', volumeId, imageIdsCT, null);
+  // loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
+  // loadButton('J2K Lossy', volumeId, imageIdsCT, configHtj2kLossy);
+  // loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
 }
 
 run();
