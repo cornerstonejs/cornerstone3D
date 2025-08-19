@@ -8,10 +8,12 @@ import {
   setVolumesForViewports,
   volumeLoader,
 } from '@cornerstonejs/core';
+import { LengthTool, ToolGroupManager } from '@cornerstonejs/tools';
 import {
   initDemo,
   setTitleAndDescription,
   addSliderToToolbar,
+  addManipulationBindings,
 } from '../../../../utils/demo/helpers';
 import hardcodedMetaDataProvider from './hardcodedMetaDataProvider';
 import registerWebImageLoader from './registerWebImageLoader';
@@ -22,6 +24,8 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+
+const toolGroupId = 'toolGroup';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -66,6 +70,11 @@ rowElement.appendChild(element4);
 content.appendChild(element1);
 content.appendChild(paraElement);
 content.appendChild(rowElement);
+
+element1.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
+element3.oncontextmenu = (e) => e.preventDefault();
+element4.oncontextmenu = (e) => e.preventDefault();
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'COLOR_STACK';
@@ -117,6 +126,9 @@ addSliderToToolbar({
 async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
+  // Define tool groups to add the segmentation display tool to
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  addManipulationBindings(toolGroup);
 
   metaData.addProvider(
     // @ts-ignore
@@ -155,6 +167,11 @@ async function run() {
       },
     },
   ];
+
+  toolGroup.addViewport('COLOR_STACK', renderingEngineId);
+  toolGroup.addViewport('COLOR_VOLUME_1', renderingEngineId);
+  toolGroup.addViewport('COLOR_VOLUME_2', renderingEngineId);
+  toolGroup.addViewport('COLOR_VOLUME_3', renderingEngineId);
 
   const volumeId = 'cornerstoneStreamingImageVolume:COLOR_VOLUME';
 
