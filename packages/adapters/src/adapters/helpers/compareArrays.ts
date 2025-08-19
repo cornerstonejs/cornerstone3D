@@ -1,6 +1,4 @@
-import { utilities } from "dcmjs";
-
-const { nearlyEqual } = utilities.orientation;
+import { utilities } from "@cornerstonejs/core";
 
 /**
  * Returns true if array1 and array2 are equal within a tolerance.
@@ -15,15 +13,5 @@ export default function compareArrays(
     array2: number[],
     tolerance: number
 ): boolean {
-    if (array1.length !== array2.length) {
-        return false;
-    }
-
-    for (let i = 0; i < array1.length; ++i) {
-        if (!nearlyEqual(array1[i], array2[i], tolerance)) {
-            return false;
-        }
-    }
-
-    return true;
+    return utilities.isEqual(array1, array2, tolerance);
 }
