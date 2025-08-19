@@ -52,7 +52,7 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   ySpacing: 1,
 });
 
-fdescribe('Rectangle ROI StartEnd Tool:', () => {
+describe('Rectangle ROI StartEnd Tool:', () => {
   let testEnv;
   let renderingEngine;
 
