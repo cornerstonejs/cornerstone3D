@@ -60,7 +60,8 @@ viewportGrid.appendChild(element1);
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
-instructions.innerText = 'Click the image to rotate it.';
+instructions.innerText =
+  'Click the image to rotate it.  Select the preset and sampling distance from the drop downs';
 
 content.append(instructions);
 
