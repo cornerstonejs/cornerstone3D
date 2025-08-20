@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.33.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.13...v3.33.0) (2025-08-20)
+
+### Features
+
+- Sampling distance for 3D rendering settings ([#2275](https://github.com/cornerstonejs/cornerstone3D/issues/2275)) ([0762dc7](https://github.com/cornerstonejs/cornerstone3D/commit/0762dc7b2a4653143fb45ef184cafd1f36b62c3c))
+
 ## [3.32.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.12...v3.32.13) (2025-08-20)
 
 ### Bug Fixes
