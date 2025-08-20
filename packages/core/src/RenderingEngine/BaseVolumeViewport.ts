@@ -77,6 +77,8 @@ import { getCameraVectors } from './helpers/getCameraVectors';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
+import { setConfiguration, getConfiguration } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -978,6 +980,7 @@ abstract class BaseVolumeViewport extends Viewport {
       preset,
       interpolationType,
       slabThickness,
+      sampleDistanceMultiplier,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -1031,6 +1034,9 @@ abstract class BaseVolumeViewport extends Viewport {
     if (slabThickness !== undefined) {
       this.setSlabThickness(slabThickness);
     }
+    if (sampleDistanceMultiplier !== undefined) {
+      this.setSampleDistanceMultiplier(sampleDistanceMultiplier);
+    }
   }
 
   /**
@@ -1064,14 +1070,13 @@ abstract class BaseVolumeViewport extends Viewport {
       this.viewportProperties.slabThickness = properties.slabThickness;
     }
 
-    if (properties.preset !== undefined) {
-      this.setPreset(properties.preset, volumeId, false);
+    if (properties.sampleDistanceMultiplier !== undefined) {
+      this.setSampleDistanceMultiplier(properties.sampleDistanceMultiplier);
     }
 
     if (properties.preset !== undefined) {
       this.setPreset(properties.preset, volumeId, false);
     }
-
     this.render();
   }
 
@@ -1119,6 +1124,8 @@ abstract class BaseVolumeViewport extends Viewport {
       });
     }
   }
+
+  public setSampleDistanceMultiplier(multiplier: number): void {}
 
   /**
    * Retrieve the viewport default properties
