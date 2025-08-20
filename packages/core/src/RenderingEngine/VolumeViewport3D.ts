@@ -36,9 +36,6 @@ class VolumeViewport3D extends BaseVolumeViewport {
   }
 
   public setSampleDistanceMultiplier = (multiplier: number): void => {
-    console.debug(
-      `Setting sample distance multiplier in volumeviewport3d: ${multiplier}`
-    );
     const actors = this.getActors();
     actors.forEach((actorEntry) => {
       if (actorIsA(actorEntry, 'vtkVolume')) {
@@ -64,7 +61,6 @@ class VolumeViewport3D extends BaseVolumeViewport {
               const currentSampleDistance = mapper.getSampleDistance();
               mapper.setSampleDistance(sampleDistance);
             }
-            console.debug(`New sample distance set: ${sampleDistance}`);
           }
         }
       }
