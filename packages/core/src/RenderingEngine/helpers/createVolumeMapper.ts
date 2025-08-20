@@ -32,11 +32,11 @@ export default function createVolumeMapper(
   // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
   let sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
 
-  const volumeRenderingConfig =
-    getConfiguration().rendering?.volumeRendering || {};
-  if (volumeRenderingConfig.sampleDistanceMultiplier !== undefined) {
-    sampleDistance =
-      sampleDistance * volumeRenderingConfig.sampleDistanceMultiplier;
+  const sampleDistanceMultiplier =
+    getConfiguration().rendering?.volumeRendering?.sampleDistanceMultiplier ||
+    1;
+  if (sampleDistanceMultiplier !== undefined) {
+    sampleDistance = sampleDistance * sampleDistanceMultiplier;
   }
 
   // This is to allow for good pixel level image quality.
