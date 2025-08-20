@@ -139,10 +139,6 @@ abstract class BaseVolumeViewport extends Viewport {
     this.initializeVolumeNewImageEventDispatcher();
   }
 
-  public updateRenderingPipeline = () => {
-    this._updateRenderingPipeline();
-  };
-
   static get useCustomRenderingPipeline(): boolean {
     return false;
   }
@@ -156,52 +152,6 @@ abstract class BaseVolumeViewport extends Viewport {
     indexToSliceMatrix: mat4;
   } {
     throw new Error('Method not implemented.');
-  }
-
-  private _updateRenderingPipeline() {
-    // Update the rendering pipeline for the viewport
-    const actors = this.getActors();
-
-    // Get current cornerstone configuration
-    const cornerstoneConfig = getConfiguration();
-    const volumeRenderingConfig =
-      cornerstoneConfig.rendering?.volumeRendering || {};
-
-    // Use provided config or fall back to cornerstone configuration
-    const settings = {
-      sampleDistanceMultiplier: volumeRenderingConfig.sampleDistanceMultiplier,
-    };
-
-    if (!settings.sampleDistanceMultiplier) {
-      return;
-    }
-    actors.forEach((actorEntry) => {
-      if (actorIsA(actorEntry, 'vtkVolume')) {
-        const actor = actorEntry.actor as Types.VolumeActor;
-        const mapper = actor.getMapper();
-
-        if (mapper && mapper.getInputData) {
-          const imageData = mapper.getInputData();
-
-          if (imageData) {
-            const spacing = imageData.getSpacing();
-
-            //Calculate sample distance
-            const defaultSampleDistance =
-              (spacing[0] + spacing[1] + spacing[2]) / 6;
-            let sampleDistance =
-              defaultSampleDistance * settings.sampleDistanceMultiplier;
-
-            // Apply sample distance if specified
-            if (sampleDistance !== undefined && mapper.setSampleDistance) {
-              const currentSampleDistance = mapper.getSampleDistance();
-              mapper.setSampleDistance(sampleDistance);
-            }
-          }
-        }
-        this.render();
-      }
-    });
   }
 
   protected applyViewOrientation(
@@ -1030,6 +980,7 @@ abstract class BaseVolumeViewport extends Viewport {
       preset,
       interpolationType,
       slabThickness,
+      sampleDistanceMultiplier,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -1083,6 +1034,9 @@ abstract class BaseVolumeViewport extends Viewport {
     if (slabThickness !== undefined) {
       this.setSlabThickness(slabThickness);
     }
+    if (sampleDistanceMultiplier !== undefined) {
+      this.setSampleDistanceMultiplier(sampleDistanceMultiplier);
+    }
   }
 
   /**
@@ -1114,6 +1068,10 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setSlabThickness(properties.slabThickness);
       //We need to set the current slabThickness here since setSlabThickness is define in VolumeViewport
       this.viewportProperties.slabThickness = properties.slabThickness;
+    }
+
+    if (properties.sampleDistanceMultiplier !== undefined) {
+      this.setSampleDistanceMultiplier(properties.sampleDistanceMultiplier);
     }
 
     if (properties.preset !== undefined) {
@@ -1165,6 +1123,12 @@ abstract class BaseVolumeViewport extends Viewport {
         presetName: preset.name,
       });
     }
+  }
+
+  public setSampleDistanceMultiplier(multiplier: number): void {
+    console.debug(
+      `Setting sample distance multiplier in BaseVolumeViewport: ${multiplier}`
+    );
   }
 
   /**
