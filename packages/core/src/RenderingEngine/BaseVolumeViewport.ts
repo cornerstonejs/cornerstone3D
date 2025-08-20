@@ -143,10 +143,6 @@ abstract class BaseVolumeViewport extends Viewport {
     return false;
   }
 
-  public updateRenderingPipeline = () => {
-    this._configureRenderingPipeline();
-  };
-
   public getSliceViewInfo(): {
     width: number;
     height: number;
