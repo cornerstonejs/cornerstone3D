@@ -1129,11 +1129,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
   }
 
-  public setSampleDistanceMultiplier(multiplier: number): void {
-    console.debug(
-      `Setting sample distance multiplier in BaseVolumeViewport: ${multiplier}`
-    );
-  }
+  public setSampleDistanceMultiplier(multiplier: number): void {}
 
   /**
    * Retrieve the viewport default properties
