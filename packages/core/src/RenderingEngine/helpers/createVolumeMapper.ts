@@ -35,9 +35,8 @@ export default function createVolumeMapper(
   const sampleDistanceMultiplier =
     getConfiguration().rendering?.volumeRendering?.sampleDistanceMultiplier ||
     1;
-  if (sampleDistanceMultiplier !== undefined) {
-    sampleDistance = sampleDistance * sampleDistanceMultiplier;
-  }
+
+  sampleDistance = sampleDistance * sampleDistanceMultiplier;
 
   // This is to allow for good pixel level image quality.
   // Todo: why we are setting this to 4000? Is this a good number? it should be configurable
