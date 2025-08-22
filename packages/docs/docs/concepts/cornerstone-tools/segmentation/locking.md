@@ -6,13 +6,12 @@ summary: Feature that prevents modification of specified segments, protecting co
 
 # Segment Locking
 
-
 ![](../../../assets/segment-locking.png)
-
 
 You can lock specific segments in a segmentation to prevent them from being modified by any tools.
 
 For example, consider the following image with an overlaid labelmap:
+
 - Left image: shows `segment index 1`
 - Middle image: shows the result when `segment index 2` is drawn on top of `segment index 1`
 - Right image: shows the result when `segment index 1` is locked and `segment index 2` is drawn on top of `segment index 1`
@@ -36,7 +35,8 @@ segmentation.locking.setSegmentIndexLocked(
 );
 
 // Get all locked segment indices for a segmentation
-const lockedIndices = segmentation.locking.getLockedSegmentIndices(segmentationId);
+const lockedIndices =
+  segmentation.locking.getLockedSegmentIndices(segmentationId);
 
 // Check if a segment index is locked
 const isLocked = segmentation.locking.isSegmentIndexLocked(
@@ -56,7 +56,8 @@ const isLocked = segmentation.locking.isSegmentIndexLocked('segmentation1', 1);
 console.log(`Segment 1 is ${isLocked ? 'locked' : 'unlocked'}`);
 
 // Get all locked segments
-const lockedIndices = segmentation.locking.getLockedSegmentIndices('segmentation1');
+const lockedIndices =
+  segmentation.locking.getLockedSegmentIndices('segmentation1');
 console.log('Locked segment indices:', lockedIndices);
 
 // Unlock segment 1
@@ -67,6 +68,7 @@ segmentation.locking.setSegmentIndexLocked('segmentation1', 1, false);
 
 1. Renamed `getLockedSegments` to `getLockedSegmentIndices` for clarity
 2. The locked state is now stored in the segment data structure:
+
 ```js
 {
   segments: {

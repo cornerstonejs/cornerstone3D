@@ -34,6 +34,9 @@ const codeValueMatch = (group, code, oldCode) => {
 function getTID300ContentItem(tool, ReferencedSOPSequence, adapterClass) {
     const args = adapterClass.getTID300RepresentationArguments(tool);
     args.ReferencedSOPSequence = ReferencedSOPSequence;
+    args.ReferencedFrameOfReferenceUID = args.use3DSpatialCoordinates
+        ? tool.metadata.FrameOfReferenceUID
+        : null;
 
     const tid300Measurement = new adapterClass.TID300Representation(args);
 

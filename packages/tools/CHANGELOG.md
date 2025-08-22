@@ -3,6 +3,90 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.33.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.1...v3.33.2) (2025-08-21)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.33.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.0...v3.33.1) (2025-08-21)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [3.33.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.13...v3.33.0) (2025-08-20)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.12...v3.32.13) (2025-08-20)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.11...v3.32.12) (2025-08-18)
+
+### Bug Fixes
+
+- Load microscopy viewer using updated paths ([#2226](https://github.com/cornerstonejs/cornerstone3D/issues/2226)) ([0088cbc](https://github.com/cornerstonejs/cornerstone3D/commit/0088cbcfa910af62937dae0e554603d4c008710e))
+
+## [3.32.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.10...v3.32.11) (2025-08-18)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.9...v3.32.10) (2025-08-11)
+
+### Bug Fixes
+
+- **annotation:** toggle visibility off ([#2262](https://github.com/cornerstonejs/cornerstone3D/issues/2262)) ([9ea9140](https://github.com/cornerstonejs/cornerstone3D/commit/9ea91402a277b50cc233382b8d1f09b5725f43ab))
+
+## [3.32.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.8...v3.32.9) (2025-08-11)
+
+### Bug Fixes
+
+- getBrushToolInstances always return array ([#2258](https://github.com/cornerstonejs/cornerstone3D/issues/2258)) ([d23ef9b](https://github.com/cornerstonejs/cornerstone3D/commit/d23ef9b77f50a313d0311bce499a8f3d2c678411))
+
+## [3.32.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.7...v3.32.8) (2025-08-06)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.6...v3.32.7) (2025-08-05)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.5...v3.32.6) (2025-08-05)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.4...v3.32.5) (2025-07-30)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.3...v3.32.4) (2025-07-30)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.2...v3.32.3) (2025-07-30)
+
+### Bug Fixes
+
+- Adapter issues ([#2233](https://github.com/cornerstonejs/cornerstone3D/issues/2233)) ([07620e9](https://github.com/cornerstonejs/cornerstone3D/commit/07620e9b5b2e427866cc91fd616ae0e292b48f3b))
+
+## [3.32.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.1...v3.32.2) (2025-07-29)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [3.32.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.0...v3.32.1) (2025-07-28)
+
+### Bug Fixes
+
+- add missing call to update spheres on on receive event from control tool ([#2230](https://github.com/cornerstonejs/cornerstone3D/issues/2230)) ([d527ea2](https://github.com/cornerstonejs/cornerstone3D/commit/d527ea2858b44af1f461f1a468d788a0eb8b5059))
+
+# [3.32.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.14...v3.32.0) (2025-07-28)
+
+### Features
+
+- volume cropping ([#2139](https://github.com/cornerstonejs/cornerstone3D/issues/2139)) ([e8a5a04](https://github.com/cornerstonejs/cornerstone3D/commit/e8a5a04f5c2d484c3464a5661800d84af3e58f96))
+
+## [3.31.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.13...v3.31.14) (2025-07-25)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [3.31.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.12...v3.31.13) (2025-07-23)
 
 **Note:** Version bump only for package @cornerstonejs/tools

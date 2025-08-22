@@ -201,7 +201,7 @@ class CircleROITool extends AnnotationTool {
         Types.Point3,
         Types.Point3,
         Types.Point3,
-        Types.Point3
+        Types.Point3,
       ];
     }
 

@@ -30,7 +30,7 @@ const {
   CrosshairsTool,
   TrackballRotateTool,
   VolumeRotateTool,
-  RectangleROITool
+  RectangleROITool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -89,7 +89,11 @@ setTitleAndDescription(
   'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
 );
 
-const optionsValues = [WindowLevelTool.toolName, CrosshairsTool.toolName, RectangleROITool.toolName];
+const optionsValues = [
+  WindowLevelTool.toolName,
+  CrosshairsTool.toolName,
+  RectangleROITool.toolName,
+];
 
 // ============================= //
 addDropdownToToolbar({

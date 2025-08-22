@@ -7,13 +7,11 @@ summary: Improvements to the developer experience when migrating from Cornerston
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-
 # Developer Experience
 
 ### Dependency Cycles
 
 We have removed all dependency cycles in the library, ensuring it is now free of any such issues. To maintain this, we have added rules in our linters that will catch any dependency cycles in pull requests during continuous integration. Additionally, you can run `yarn run format-check` to ensure that the formatting is correct and to check for dependencies as well.
-
 
 ### Karma tests
 
