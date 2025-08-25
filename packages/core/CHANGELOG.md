@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.33.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.4...v3.33.5) (2025-08-25)
+
+### Bug Fixes
+
+- **StartEndThresholdTools:** Fix pointInsideVolumes calculation when multiples toolgroups ([#2221](https://github.com/cornerstonejs/cornerstone3D/issues/2221)) ([beb9d5b](https://github.com/cornerstonejs/cornerstone3D/commit/beb9d5b502dabd7e5bd1d2c1bf1a8842bae08ebf))
+
 ## [3.33.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.3...v3.33.4) (2025-08-22)
 
 **Note:** Version bump only for package @cornerstonejs/core

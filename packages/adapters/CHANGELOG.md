@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.33.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.4...v3.33.5) (2025-08-25)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [3.33.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.3...v3.33.4) (2025-08-22)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
