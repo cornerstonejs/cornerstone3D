@@ -15,7 +15,7 @@ const defaultConfig: Cornerstone3DConfig = {
     // GPU rendering options
     preferSizeOverAccuracy: false,
     // Use new method by default for accurate full-width display
-    useLegacyCameraFOV: true,
+    useLegacyCameraFOV: false,
     strictZSpacingForVolumeViewport: true,
     /**
      * The rendering engine mode to use.
