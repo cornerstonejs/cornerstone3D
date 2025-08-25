@@ -33,7 +33,6 @@ import type {
 } from '../types';
 import type {
   ViewportInput,
-  IViewport,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
@@ -49,6 +48,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { getConfiguration } from '../init';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -98,7 +98,10 @@ class Viewport {
   /**
    * The amount by which the images are inset in a viewport by default.
    */
-  protected insetImageMultiplier = 1;
+  protected insetImageMultiplier = getConfiguration().rendering
+    ?.useLegacyCameraFOV
+    ? 1.1
+    : 1;
 
   protected flipHorizontal = false;
   protected flipVertical = false;
@@ -1114,8 +1117,10 @@ class Viewport {
 
     let widthWorld;
     let heightWorld;
+    const config = getConfiguration();
+    const useLegacyMethod = config.rendering?.useLegacyCameraFOV ?? false;
 
-    if (imageData) {
+    if (imageData && !useLegacyMethod) {
       const extent = imageData.getExtent();
       const spacing = imageData.getSpacing();
 
