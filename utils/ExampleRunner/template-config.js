@@ -40,7 +40,7 @@ module.exports = {
         {
           from:
           '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/',
-          to: '${destPath.replace(/\\/g, '/')}',
+          to: '${destPath.replace(/\\/g, '/') + '/dicom-microscopy-viewer'}',
           noErrorOnMissing: true,
         },
         {

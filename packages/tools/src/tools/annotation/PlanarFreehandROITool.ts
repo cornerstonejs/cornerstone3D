@@ -997,8 +997,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
                     return a[index] === b[index]
                       ? 0
                       : a[index] < b[index]
-                      ? -1
-                      : 1;
+                        ? -1
+                        : 1;
                   };
                 })(0)
               );

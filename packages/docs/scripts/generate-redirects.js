@@ -15,7 +15,9 @@ const redirectsContent = `# Netlify redirects
 
 // Ensure the build directory exists
 if (!fs.existsSync(buildDir)) {
-  console.error('Build directory does not exist. Make sure the Docusaurus build has completed.');
+  console.error(
+    'Build directory does not exist. Make sure the Docusaurus build has completed.'
+  );
   process.exit(1);
 }
 

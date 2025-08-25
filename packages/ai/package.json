@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/ai",
-  "version": "3.31.13",
+  "version": "3.33.5",
   "description": "AI and ML Interfaces for Cornerstone3D",
   "files": [
     "dist"
@@ -36,8 +36,7 @@
     "build:all": "yarn run build:esm",
     "start": "tsc --project ./tsconfig.json --watch",
     "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-    "lint": "eslint --fix .",
-    "format-check": "npx eslint ./src --quiet",
+    "lint": "oxlint .",
     "api-check": "api-extractor --debug run ",
     "prepublishOnly": "yarn clean && yarn build"
   },
@@ -62,7 +61,7 @@
     "onnxruntime-web": "1.17.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.31.13",
-    "@cornerstonejs/tools": "^3.31.13"
+    "@cornerstonejs/core": "^3.33.5",
+    "@cornerstonejs/tools": "^3.33.5"
   }
 }

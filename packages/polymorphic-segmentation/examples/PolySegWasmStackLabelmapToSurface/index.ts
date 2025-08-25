@@ -225,9 +225,8 @@ async function run() {
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
 
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIds
-  );
+  const segImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
   const segmentationImageIds = segImages.map((it) => it.imageId);
 

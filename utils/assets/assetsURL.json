@@ -7,5 +7,4 @@
   "SurfaceLung16": "https://ohif-assets.s3.us-east-2.amazonaws.com/cornerstone3D/segmentation/surface/lung16.json",
   "SurfaceLung17": "https://ohif-assets.s3.us-east-2.amazonaws.com/cornerstone3D/segmentation/surface/lung17.json",
   "Labelmap": "https://ohif-assets.s3.us-east-2.amazonaws.com/cornerstone3D/segmentation/labelmap/lung/labelMap.json"
-
 }

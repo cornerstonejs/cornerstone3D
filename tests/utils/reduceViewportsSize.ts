@@ -5,12 +5,15 @@
  */
 
 export const reduceViewportsSize = async (page) => {
-  await page.evaluate(({ cornerstone }) => {
-    const enabledElements = cornerstone.getEnabledElements();
+  await page.evaluate(
+    ({ cornerstone }) => {
+      const enabledElements = cornerstone.getEnabledElements();
 
-    enabledElements.forEach(({ viewport }) => {
-      viewport.setZoom(0.4);
-      viewport.render();
-    });
-  }, await page.evaluateHandle('window'));
+      enabledElements.forEach(({ viewport }) => {
+        viewport.setZoom(0.4);
+        viewport.render();
+      });
+    },
+    await page.evaluateHandle('window')
+  );
 };

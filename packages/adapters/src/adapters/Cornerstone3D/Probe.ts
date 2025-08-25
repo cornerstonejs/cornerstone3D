@@ -43,7 +43,8 @@ class Probe extends BaseAdapter3D {
         const cachedStats = referencedImageId
             ? {
                   [`imageId:${referencedImageId}`]: {
-                      length: NUMGroup?.MeasuredValueSequence?.NumericValue || 0
+                      value:
+                          NUMGroup?.MeasuredValueSequence?.NumericValue ?? null
                   }
               }
             : {};
@@ -54,7 +55,8 @@ class Probe extends BaseAdapter3D {
                 points: worldCoords
             },
             cachedStats,
-            frameNumber: ReferencedFrameNumber
+            frameNumber: ReferencedFrameNumber,
+            invalidated: true
         };
 
         return state;
