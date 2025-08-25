@@ -96,7 +96,7 @@ class Viewport {
   /**
    * The amount by which the images are inset in a viewport by default.
    */
-  protected insetImageMultiplier = 1.1;
+  protected insetImageMultiplier = 1;
 
   protected flipHorizontal = false;
   protected flipVertical = false;
@@ -1110,8 +1110,22 @@ class Viewport {
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    const { widthWorld, heightWorld } =
-      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal);
+    let widthWorld;
+    let heightWorld;
+
+    if (imageData) {
+      const extent = imageData.getExtent();
+      const spacing = imageData.getSpacing();
+
+      widthWorld = (extent[1] - extent[0]) * spacing[0];
+      heightWorld = (extent[3] - extent[2]) * spacing[1];
+    } else {
+      ({ widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
+        bounds,
+        viewUp,
+        viewPlaneNormal
+      ));
+    }
 
     const canvasSize = [this.sWidth, this.sHeight];
 
