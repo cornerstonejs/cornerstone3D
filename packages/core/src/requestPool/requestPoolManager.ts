@@ -66,6 +66,12 @@ type RequestPool = {
  * You don't need to directly use the imageRetrievalPoolManager to load images
  * since the imageLoadPoolManager will automatically use it for retrieval. However,
  * maximum number of concurrent requests can be set by calling `setMaxConcurrentRequests`.
+ *
+ * ### Requests between types
+ * There are different types of requests, and each type starves the next request
+ * type, under the assumption that they are needed in order for fetching.
+ * The total number of requests is set by the setMaxCOncurrentRequests, defaulting to 10
+ * concurrent requests.
  */
 class RequestPoolManager {
   private id: string;
@@ -77,8 +83,11 @@ class RequestPoolManager {
     [RequestType.Prefetch]: 0,
     [RequestType.Compute]: 0,
   } as Record<RequestType, number>;
+  private maxConcurrentRequests = 10;
+
   /* maximum number of requests of each type. */
   public maxNumRequests: {
+    [RequestType.Metadata]: number;
     [RequestType.Interaction]: number;
     [RequestType.Thumbnail]: number;
     [RequestType.Prefetch]: number;
@@ -97,6 +106,7 @@ class RequestPoolManager {
     this.id = id ? id : uuidv4();
 
     this.requestPool = {
+      [RequestType.Metadata]: { 0: [] },
       [RequestType.Interaction]: { 0: [] },
       [RequestType.Thumbnail]: { 0: [] },
       [RequestType.Prefetch]: { 0: [] },
@@ -107,6 +117,7 @@ class RequestPoolManager {
     this.awake = false;
 
     this.numRequests = {
+      [RequestType.Metadata]: 0,
       [RequestType.Interaction]: 0,
       [RequestType.Thumbnail]: 0,
       [RequestType.Prefetch]: 0,
@@ -114,6 +125,7 @@ class RequestPoolManager {
     } as Record<RequestType, number>;
 
     this.maxNumRequests = {
+      [RequestType.Metadata]: 6,
       [RequestType.Interaction]: 6,
       [RequestType.Thumbnail]: 6,
       [RequestType.Prefetch]: 5,
@@ -125,6 +137,14 @@ class RequestPoolManager {
       // I'm setting the limit to 1000 for now.
       [RequestType.Compute]: 1000,
     };
+  }
+
+  /**
+   * Sets the overall maximum number of requests combined between the various types.
+   * Only applies to metadata, interaction, thumbnail and prefetch
+   */
+  public setMaxConcurrentRequests(maxNumRequests: number) {
+    this.maxConcurrentRequests = maxNumRequests;
   }
 
   /**
@@ -231,8 +251,18 @@ class RequestPoolManager {
     this.requestPool[type] = { 0: [] };
   }
 
-  private sendRequests(type) {
-    const requestsToSend = this.maxNumRequests[type] - this.numRequests[type];
+  protected getRequestsAvailable(type) {
+    return this.maxNumRequests[type] - this.numRequests[type];
+  }
+
+  private sendRequests(type, maxRemaining = 1000) {
+    if (maxRemaining <= 0) {
+      return this.getRequestsAvailable(type) > 0;
+    }
+    const requestsToSend = Math.min(
+      this.getRequestsAvailable(type),
+      maxRemaining
+    );
     let syncImageCount = 0;
 
     for (let i = 0; i < requestsToSend; i++) {
@@ -280,19 +310,48 @@ class RequestPoolManager {
     return null;
   }
 
-  protected startGrabbing(): void {
-    const hasRemainingInteractionRequests = this.sendRequests(
-      RequestType.Interaction
+  public get outstandingRequests() {
+    return (
+      this.numRequests[RequestType.Interaction] +
+      this.numRequests[RequestType.Thumbnail] +
+      this.numRequests[RequestType.Prefetch]
     );
+  }
+
+  protected startGrabbing(): void {
+    const hasRemainingMetadataRequests = this.sendRequests(
+      RequestType.Metadata,
+      this.maxConcurrentRequests - this.outstandingRequests
+    );
+    let available = this.maxConcurrentRequests - this.outstandingRequests;
+    // Allow 1 interaction request always
+    const hasRemainingInteractionRequests = this.sendRequests(
+      RequestType.Interaction,
+      (available > 0 && available) ||
+        (this.numRequests[RequestType.Interaction] === 0 && 1) ||
+        0
+    );
+    available = this.maxConcurrentRequests - this.outstandingRequests;
+    // Allow an extra request for thumbnail if there are no outstanding
+    // interaction or thumbnail requests.
     const hasRemainingThumbnailRequests = this.sendRequests(
-      RequestType.Thumbnail
+      RequestType.Thumbnail,
+      (available > 0 && available) ||
+        (this.numRequests[RequestType.Interaction] === 0 &&
+          this.numRequests[RequestType.Thumbnail] === 0 &&
+          1) ||
+        0
     );
     const hasRemainingPrefetchRequests = this.sendRequests(
-      RequestType.Prefetch
+      RequestType.Prefetch,
+      this.maxConcurrentRequests - this.outstandingRequests
     );
+
+    // Compute requests are on a different queue as they don't use http requests
     const hasRemainingComputeRequests = this.sendRequests(RequestType.Compute);
 
     if (
+      !hasRemainingMetadataRequests &&
       !hasRemainingInteractionRequests &&
       !hasRemainingThumbnailRequests &&
       !hasRemainingPrefetchRequests &&
