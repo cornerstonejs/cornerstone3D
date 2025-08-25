@@ -4,7 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-const groundTruthDir = path.join(__dirname, '../packages/core/test/groundTruth');
+// Get directories for both core and tools packages
+const coreGroundTruthDir = path.join(__dirname, '../packages/core/test/groundTruth');
+const toolsGroundTruthDir = path.join(__dirname, '../packages/tools/test/groundTruth');
 
 console.log('Running karma tests to collect ground truth images...');
 
@@ -32,6 +34,8 @@ karmaProcess.on('close', (code) => {
   const regex = /\[GROUND_TRUTH_UPDATE\]::([^:]+)::([^\s]+)/g;
   let match;
   let updatedCount = 0;
+  let coreCount = 0;
+  let toolsCount = 0;
   
   while ((match = regex.exec(outputBuffer)) !== null) {
     const fileName = match[1];
@@ -40,16 +44,40 @@ karmaProcess.on('close', (code) => {
     // Extract base64 data from data URL
     const base64Data = dataURL.replace(/^data:image\/png;base64,/, '');
     
-    // Construct file path
-    const filePath = path.join(groundTruthDir, `${fileName}.png`);
+    // Try to write to both directories - the file will exist in one or the other
+    let written = false;
     
-    // Write the image file
-    fs.writeFileSync(filePath, base64Data, 'base64');
-    console.log(`Updated: ${filePath}`);
+    // Check if file exists in core directory
+    const coreFilePath = path.join(coreGroundTruthDir, `${fileName}.png`);
+    if (fs.existsSync(coreFilePath)) {
+      fs.writeFileSync(coreFilePath, base64Data, 'base64');
+      console.log(`Updated (core): ${coreFilePath}`);
+      coreCount++;
+      written = true;
+    }
+    
+    // Check if file exists in tools directory
+    const toolsFilePath = path.join(toolsGroundTruthDir, `${fileName}.png`);
+    if (fs.existsSync(toolsFilePath)) {
+      fs.writeFileSync(toolsFilePath, base64Data, 'base64');
+      console.log(`Updated (tools): ${toolsFilePath}`);
+      toolsCount++;
+      written = true;
+    }
+    
+    // If not found in either, default to core (for new files)
+    if (!written) {
+      fs.writeFileSync(coreFilePath, base64Data, 'base64');
+      console.log(`Updated (core-new): ${coreFilePath}`);
+      coreCount++;
+    }
+    
     updatedCount++;
   }
   
-  console.log(`\nUpdated ${updatedCount} ground truth images`);
+  console.log(`\nUpdated ${updatedCount} ground truth images total`);
+  console.log(`  Core package: ${coreCount} images`);
+  console.log(`  Tools package: ${toolsCount} images`);
   
   if (code !== 0) {
     console.log('\nNote: Tests may have failed due to image comparison mismatches.');
