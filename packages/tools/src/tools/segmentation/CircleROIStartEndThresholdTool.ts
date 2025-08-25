@@ -40,6 +40,7 @@ import type {
   EventTypes,
   SVGDrawingHelper,
   Annotation,
+  AnnotationMetadata,
 } from '../../types';
 import type {
   CircleROIStartEndThresholdAnnotation,
@@ -284,7 +285,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
+    const { metadata } = annotation;
+    const { enabledElement } = metadata;
 
     this.editData = null;
     this.isDrawing = false;
@@ -348,9 +350,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as CircleROIStartEndThresholdAnnotation;
+
       const { annotationUID, data, metadata } = annotation;
       const { startCoordinate, endCoordinate } = data;
       const { points, activeHandleIndex } = data.handles;
+      const { enabledElement: annotationEnabledElement } = metadata;
 
       styleSpecifier.annotationUID = annotationUID;
 
@@ -434,9 +438,20 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ] = middleCoordinate;
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
+      const iteratorVolumeIDs =
+        // @ts-ignore
+        annotationEnabledElement.viewport?.volumeIds.values();
 
-      if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(annotation, enabledElement);
+      for (const volumeId of iteratorVolumeIDs) {
+        if (
+          annotation.invalidated &&
+          annotation.metadata.volumeId === volumeId
+        ) {
+          this._throttledCalculateCachedStats(
+            annotation,
+            annotationEnabledElement
+          );
+        }
       }
 
       // If rendering engine has been destroyed while rendering
@@ -694,6 +709,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       modalityUnitOptions
     );
 
+    // console.debug(projectionPoints)
     for (let i = 0; i < projectionPoints.length; i++) {
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -788,6 +804,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         pointsInsideVolume.push(pointsInShape);
       }
     }
+    // console.debug(pointsInsideVolume)
     const stats = this.configuration.statsCalculator.getStatistics();
     data.cachedStats.pointsInVolume = pointsInsideVolume;
     data.cachedStats.statistics = {
@@ -804,6 +821,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
+
     const { viewport } = enabledElement;
 
     const { cachedStats } = data;
