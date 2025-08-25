@@ -111,7 +111,7 @@ export default function rangeRequest(
         imageQualityStatus,
         percentComplete: extract.extractDone
           ? 100
-          : (chunkSize * 100) / totalBytes,
+          : (encodedData.byteLength * 100) / totalBytes,
       });
     } catch (err) {
       errorInterceptor(err);
