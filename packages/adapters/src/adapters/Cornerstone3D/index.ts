@@ -19,6 +19,11 @@ import * as Segmentation from "./Segmentation";
 import * as ParametricMap from "./ParametricMap";
 import * as RTSS from "./RTStruct";
 import KeyImage from "./KeyImage";
+import {
+    COMMENT_CODE,
+    NO_IMAGE_ID,
+    TEXT_ANNOTATION_POSITION
+} from "./constants";
 
 const Cornerstone3DSR = {
     BaseAdapter3D,
@@ -36,7 +41,10 @@ const Cornerstone3DSR = {
     KeyImage,
     MeasurementReport,
     CodeScheme,
-    CORNERSTONE_3D_TAG
+    CORNERSTONE_3D_TAG,
+    COMMENT_CODE,
+    NO_IMAGE_ID,
+    TEXT_ANNOTATION_POSITION
 };
 
 const Cornerstone3DSEG = {

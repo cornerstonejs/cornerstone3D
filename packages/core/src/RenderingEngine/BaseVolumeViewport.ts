@@ -40,7 +40,7 @@ import type {
   ICamera,
 } from '../types';
 import type { VoiModifiedEventDetail } from '../types/EventTypes';
-import type { ViewportInput } from '../types/IViewport';
+import type { PlaneRestriction, ViewportInput } from '../types/IViewport';
 import triggerEvent from '../utilities/triggerEvent';
 import * as colormapUtils from '../utilities/colormap';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
@@ -68,13 +68,17 @@ import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInf
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
-import isEqual, { isEqualNegative } from '../utilities/isEqual';
+import isEqual, { isEqualAbs, isEqualNegative } from '../utilities/isEqual';
 import applyPreset from '../utilities/applyPreset';
 import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
 import { getCameraVectors } from './helpers/getCameraVectors';
-
+import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import mprCameraValues from '../constants/mprCameraValues';
+import { setConfiguration, getConfiguration } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -110,6 +114,8 @@ abstract class BaseVolumeViewport extends Viewport {
         'VolumeViewports cannot be used whilst CPU Fallback Rendering is enabled.'
       );
     }
+
+    this._configureRenderingPipeline();
 
     const renderer = this.getRenderer();
 
@@ -664,7 +670,8 @@ abstract class BaseVolumeViewport extends Viewport {
       return false;
     }
     if (options?.withNavigation) {
-      return true;
+      const { referencedImageId } = viewRef;
+      return !referencedImageId || this.hasImageURI(referencedImageId);
     }
     const currentSliceIndex = this.getSliceIndex();
     const { sliceIndex } = viewRef;
@@ -713,6 +720,80 @@ abstract class BaseVolumeViewport extends Viewport {
   abstract isInAcquisitionPlane(): boolean;
 
   /**
+   * This will apply a camera orientation that is compatible with inPlaneVector1 and 2
+   *
+   * 1. If inPlaneVector1 and inPlaneVector2 are compatible with, no change.
+   * 2. If dot products of the current view plane normal and inPlaneVector 1 and 2 are zero, no change
+   *
+   */
+  public setBestOrentation(inPlaneVector1, inPlaneVector2) {
+    if (!inPlaneVector1 && !inPlaneVector2) {
+      // Any view is compatible with a point position
+      return;
+    }
+    const { viewPlaneNormal } = this.getCamera();
+    if (
+      isCompatible(viewPlaneNormal, inPlaneVector2) &&
+      isCompatible(viewPlaneNormal, inPlaneVector1)
+    ) {
+      // Orthogonal view to the current view, so no change.
+      return;
+    }
+
+    const acquisition = this._getAcquisitionPlaneOrientation();
+    if (
+      isCompatible(acquisition.viewPlaneNormal, inPlaneVector2) &&
+      isCompatible(acquisition.viewPlaneNormal, inPlaneVector1)
+    ) {
+      // Orthogonal view to the current view, so no change.
+      this.setOrientation(acquisition);
+      return;
+    }
+    for (const orientation of <{ viewPlaneNormal: Point3 }[]>(
+      Object.values(mprCameraValues)
+    )) {
+      if (
+        isCompatible(orientation.viewPlaneNormal, inPlaneVector2) &&
+        isCompatible(orientation.viewPlaneNormal, inPlaneVector1)
+      ) {
+        // Orthogonal view to the current view, so no change.
+        this.setOrientation(orientation);
+        return;
+      }
+    }
+
+    const planeNormal = <Point3>(
+      vec3.cross(
+        vec3.create(),
+        inPlaneVector2 || acquisition.viewPlaneNormal,
+        inPlaneVector1
+      )
+    );
+    vec3.normalize(planeNormal, planeNormal);
+    this.setOrientation({ viewPlaneNormal: planeNormal });
+  }
+
+  /**
+   * Sets the view reference given a referenced plane and the current
+   * view plane normal being applied.
+   * This will use the existing normal if compatible, otherwise will calculate
+   * a new view plane normal as the referenced plane normal, or else the
+   * cross product of the existing view plane normal and the inPlaneVector1
+   */
+  public setViewPlane(planeRestriction: PlaneRestriction) {
+    const { point, inPlaneVector1, inPlaneVector2, FrameOfReferenceUID } =
+      planeRestriction;
+
+    this.setBestOrentation(inPlaneVector1, inPlaneVector2);
+
+    this.setViewReference({
+      FrameOfReferenceUID,
+      cameraFocalPoint: point,
+      viewPlaneNormal: this.getCamera().viewPlaneNormal,
+    });
+  }
+
+  /**
    * Navigates to the specified view reference.
    */
   public setViewReference(viewRef: ViewReference): void {
@@ -721,14 +802,21 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     const volumeId = this.getVolumeId();
     const {
-      viewPlaneNormal: refViewPlaneNormal,
       FrameOfReferenceUID: refFrameOfReference,
       cameraFocalPoint,
       referencedImageId,
+      planeRestriction,
+      viewPlaneNormal: refViewPlaneNormal,
       viewUp,
     } = viewRef;
     let { sliceIndex } = viewRef;
+
+    if (planeRestriction && !refViewPlaneNormal) {
+      return this.setViewPlane(planeRestriction);
+    }
+
     const { focalPoint, viewPlaneNormal, position } = this.getCamera();
+
     const isNegativeNormal = isEqualNegative(
       viewPlaneNormal,
       refViewPlaneNormal
@@ -892,6 +980,7 @@ abstract class BaseVolumeViewport extends Viewport {
       preset,
       interpolationType,
       slabThickness,
+      sampleDistanceMultiplier,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -945,6 +1034,9 @@ abstract class BaseVolumeViewport extends Viewport {
     if (slabThickness !== undefined) {
       this.setSlabThickness(slabThickness);
     }
+    if (sampleDistanceMultiplier !== undefined) {
+      this.setSampleDistanceMultiplier(sampleDistanceMultiplier);
+    }
   }
 
   /**
@@ -978,14 +1070,13 @@ abstract class BaseVolumeViewport extends Viewport {
       this.viewportProperties.slabThickness = properties.slabThickness;
     }
 
-    if (properties.preset !== undefined) {
-      this.setPreset(properties.preset, volumeId, false);
+    if (properties.sampleDistanceMultiplier !== undefined) {
+      this.setSampleDistanceMultiplier(properties.sampleDistanceMultiplier);
     }
 
     if (properties.preset !== undefined) {
       this.setPreset(properties.preset, volumeId, false);
     }
-
     this.render();
   }
 
@@ -1033,6 +1124,8 @@ abstract class BaseVolumeViewport extends Viewport {
       });
     }
   }
+
+  public setSampleDistanceMultiplier(multiplier: number): void {}
 
   /**
    * Retrieve the viewport default properties
@@ -1600,7 +1693,8 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns The corresponding world coordinates.
    * @public
    */
-  public canvasToWorld = (canvasPos: Point2): Point3 => {
+
+  public canvasToWorldTiled = (canvasPos: Point2): Point3 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
@@ -1628,7 +1722,7 @@ abstract class BaseVolumeViewport extends Viewport {
     vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
-    const displayCoords = this.getVtkDisplayCoords(canvasPos);
+    const displayCoords = this.getVtkDisplayCoordsTiled(canvasPos);
     const offscreenMultiRenderWindow =
       this.getRenderingEngine().offscreenMultiRenderWindow;
     const openGLRenderWindow =
@@ -1645,6 +1739,74 @@ abstract class BaseVolumeViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
+  public canvasToWorldContextPool = (canvasPos: Point2): Point3 => {
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
+
+    /**
+     * NOTE: this is necessary because we want the coordinate transformation
+     * respect to the view plane (plane orthogonal to the camera and passing to
+     * the focal point).
+     *
+     * When vtk.js computes the coordinate transformations, it simply uses the
+     * camera matrix (no ray casting).
+     *
+     * However for the volume viewport the clipping range is set to be
+     * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
+     * The clipping range is used in the camera method getProjectionMatrix().
+     * The projection matrix is used then for viewToWorld/worldToView methods of
+     * the renderer. This means that vkt.js will not return the coordinates of
+     * the point on the view plane (i.e. the depth coordinate will correspond
+     * to the focal point).
+     *
+     * Therefore the clipping range has to be set to (distance, distance + 0.01),
+     * where now distance is the distance between the camera position and focal
+     * point. This is done internally, in our camera customization when the flag
+     * isPerformingCoordinateTransformation is set to true.
+     */
+
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
+
+    const renderer = this.getRenderer();
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Convert canvas coordinates to normalized display coordinates
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+
+    // Normalize to [0,1] range
+    const normalizedDisplay = [
+      canvasPosWithDPR[0] / width,
+      1 - canvasPosWithDPR[1] / height, // Flip Y axis
+      0,
+    ];
+
+    // Transform from normalized display to world coordinates
+    const projCoords = renderer.normalizedDisplayToProjection(
+      normalizedDisplay[0],
+      normalizedDisplay[1],
+      normalizedDisplay[2]
+    );
+    const viewCoords = renderer.projectionToView(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2],
+      aspectRatio
+    );
+    const worldCoord = renderer.viewToWorld(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2]
+    );
+
+    vtkCamera.setIsPerformingCoordinateTransformation?.(false);
+
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
+  };
+
   /**
    * Returns the VTK.js display coordinates of the given `canvasPos` projected onto the
    * `Viewport`'s `vtkCamera`'s focal point and the direction of projection.
@@ -1652,7 +1814,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns The corresponding display coordinates.
    *
    */
-  public getVtkDisplayCoords = (canvasPos: Point2): Point3 => {
+  public getVtkDisplayCoordsTiled = (canvasPos: Point2): Point3 => {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
@@ -1672,6 +1834,23 @@ abstract class BaseVolumeViewport extends Viewport {
     displayCoord[1] = size[1] - displayCoord[1];
     return [displayCoord[0], displayCoord[1], 0];
   };
+
+  public getVtkDisplayCoordsContextPool = (canvasPos: Point2): Point3 => {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+
+    const { height } = this.canvas;
+
+    // Canvas coordinates with origin at top-left
+    // VTK display coordinates have origin at bottom-left
+    const displayCoord = [canvasPosWithDPR[0], height - canvasPosWithDPR[1]];
+
+    return [displayCoord[0], displayCoord[1], 0];
+  };
+
   /**
    * Returns the canvas coordinates of the given `worldPos`
    * projected onto the `Viewport`'s `canvas`.
@@ -1680,7 +1859,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns The corresponding canvas coordinates.
    * @public
    */
-  public worldToCanvas = (worldPos: Point3): Point2 => {
+  public worldToCanvasTiled = (worldPos: Point3): Point2 => {
     const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
 
     /**
@@ -1737,15 +1916,103 @@ abstract class BaseVolumeViewport extends Viewport {
     return canvasCoordWithDPR;
   };
 
-  /*
-   * Checking if the imageURI is in the volumes that are being
-   * rendered by the viewport. imageURI is the imageId without the schema
-   * for instance for the imageId of `wadors:http://...`, the `http://...` is the imageURI.
-   * Why we don't check the imageId is because the same image can be shown in
-   * another viewport (StackViewport) with a different schema
+  public worldToCanvasContextPool = (worldPos: Point3): Point2 => {
+    const vtkCamera = this.getVtkActiveCamera() as vtkSlabCameraType;
+
+    /**
+     * NOTE: this is necessary because we want the coordinate transformation
+     * respect to the view plane (plane orthogonal to the camera and passing to
+     * the focal point).
+     *
+     * When vtk.js computes the coordinate transformations, it simply uses the
+     * camera matrix (no ray casting).
+     *
+     * However for the volume viewport the clipping range is set to be
+     * (-RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE, RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE).
+     * The clipping range is used in the camera method getProjectionMatrix().
+     * The projection matrix is used then for viewToWorld/worldToView methods of
+     * the renderer. This means that vkt.js will not return the coordinates of
+     * the point on the view plane (i.e. the depth coordinate will corresponded
+     * to the focal point).
+     *
+     * Therefore the clipping range has to be set to (distance, distance + 0.01),
+     * where now distance is the distance between the camera position and focal
+     * point. This is done internally, in our camera customization when the flag
+     * isPerformingCoordinateTransformation is set to true.
+     */
+
+    vtkCamera.setIsPerformingCoordinateTransformation?.(true);
+
+    const renderer = this.getRenderer();
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Transform from world to view coordinates
+    const viewCoords = renderer.worldToView(
+      worldPos[0],
+      worldPos[1],
+      worldPos[2]
+    );
+
+    // Transform from view to projection coordinates
+    const projCoords = renderer.viewToProjection(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2],
+      aspectRatio
+    );
+
+    // Transform from projection to normalized display coordinates
+    const normalizedDisplay = renderer.projectionToNormalizedDisplay(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2]
+    );
+
+    // Convert normalized display [0,1] to canvas pixels
+    const canvasX = normalizedDisplay[0] * width;
+    const canvasY = (1 - normalizedDisplay[1]) * height; // Flip Y axis
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasCoordWithDPR = [
+      canvasX / devicePixelRatio,
+      canvasY / devicePixelRatio,
+    ] as Point2;
+
+    vtkCamera.setIsPerformingCoordinateTransformation(false);
+
+    return canvasCoordWithDPR;
+  };
+
+  /**
+   * Get the renderer for this viewport - handles ContextPoolRenderingEngine
+   */
+  public getRendererContextPool(): vtkRenderer {
+    const renderingEngine = this.getRenderingEngine();
+    return renderingEngine.getRenderer(this.id);
+  }
+
+  /**
+   * Returns the `vtkRenderer` responsible for rendering the `Viewport`.
    *
-   * @param imageURI - The imageURI to check
-   * @returns True if the imageURI is in the volumes that are being rendered by the viewport
+   * @returns The `vtkRenderer` for the `Viewport`.
+   */
+  public getRendererTiled(): vtkRenderer {
+    const renderingEngine = this.getRenderingEngine();
+
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      throw new Error('Rendering engine has been destroyed');
+    }
+
+    return renderingEngine.offscreenMultiRenderWindow?.getRenderer(this.id);
+  }
+
+  /*
+   * Checking if the imageURI (as a URI or an ID) is in the volumes that are being
+   * rendered by the viewport.
+   *
+   * @param imageURI - The imageURI or imageID to check
+   * @returns True if the image is in the volumes that are being rendered by the viewport
    */
   public hasImageURI = (imageURI: string): boolean => {
     const volumeActors = this.getActors().filter((actorEntry) =>
@@ -1755,25 +2022,59 @@ abstract class BaseVolumeViewport extends Viewport {
     return volumeActors.some(({ uid, referencedId }) => {
       const volume = cache.getVolume(referencedId || uid);
 
-      if (!volume?.imageIds) {
+      if (!volume?.getImageIdIndex) {
         return false;
       }
 
-      const volumeImageURIs = volume.imageIds.map(imageIdToURI);
-
-      return volumeImageURIs.includes(imageURI);
+      return (
+        volume.getImageIdIndex(imageURI) !== undefined ||
+        volume.getImageURIIndex(imageURI) !== undefined
+      );
     });
   };
+
+  /**
+   * Gets a view up given a view plane normal and the current orientation
+   * Chooses the current view up if orthogonal, otherwise the default view ups
+   * for axial, sagittal and coronal
+   * Otherwise runs the Gram-Schmidt algorithm with the current viewUp
+   */
+  protected _getViewUp(viewPlaneNormal): Point3 {
+    const { viewUp } = this.getCamera();
+    const dot = vec3.dot(viewUp, viewPlaneNormal);
+    if (isEqual(dot, 0)) {
+      // Don't change the view up if not needed
+      return viewUp;
+    }
+    if (isEqualAbs(viewPlaneNormal[0], 1)) {
+      return [0, 0, 1];
+    }
+    if (isEqualAbs(viewPlaneNormal[1], 1)) {
+      return [0, 0, 1];
+    }
+    if (isEqualAbs(viewPlaneNormal[2], 1)) {
+      return [0, -1, 0];
+    }
+    const vupOrthogonal = <Point3>(
+      vec3.scaleAndAdd(vec3.create(), viewUp, viewPlaneNormal, -dot)
+    );
+    vec3.normalize(vupOrthogonal, vupOrthogonal);
+    return vupOrthogonal;
+  }
 
   protected _getOrientationVectors(
     orientation: OrientationAxis | OrientationVectors
   ): OrientationVectors {
     if (typeof orientation === 'object') {
-      if (orientation.viewPlaneNormal && orientation.viewUp) {
-        return orientation;
+      if (orientation.viewPlaneNormal) {
+        return {
+          ...orientation,
+          viewUp:
+            orientation.viewUp || this._getViewUp(orientation.viewPlaneNormal),
+        };
       } else {
         throw new Error(
-          'Invalid orientation object. It must contain viewPlaneNormal and viewUp'
+          'Invalid orientation object. It must contain viewPlaneNormal'
         );
       }
     } else if (typeof orientation === 'string') {
@@ -1947,9 +2248,10 @@ abstract class BaseVolumeViewport extends Viewport {
     sliceIndex ??= currentIndex;
     const { viewPlaneNormal, focalPoint } = this.getCamera();
     const querySeparator = volumeId.includes('?') ? '&' : '?';
-    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal.join(
-      ','
-    )}`;
+    // Format each element of viewPlaneNormal to 3 decimal places
+    // to avoid floating point precision issues
+    const formattedNormal = viewPlaneNormal.map((v) => v.toFixed(3)).join(',');
+    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${formattedNormal}`;
   }
 
   private _addVolumeId(volumeId: string): void {
@@ -1979,6 +2281,47 @@ abstract class BaseVolumeViewport extends Viewport {
   public getAllVolumeIds(): string[] {
     return Array.from(this.volumeIds);
   }
+
+  private _configureRenderingPipeline() {
+    const isContextPool = isContextPoolRenderingEngine();
+
+    for (const key in this.renderingPipelineFunctions) {
+      if (
+        Object.prototype.hasOwnProperty.call(
+          this.renderingPipelineFunctions,
+          key
+        )
+      ) {
+        const functions = this.renderingPipelineFunctions[key];
+
+        this[key] = isContextPool ? functions.contextPool : functions.tiled;
+      }
+    }
+  }
+
+  protected renderingPipelineFunctions = {
+    worldToCanvas: {
+      tiled: this.worldToCanvasTiled,
+      contextPool: this.worldToCanvasContextPool,
+    },
+    canvasToWorld: {
+      tiled: this.canvasToWorldTiled,
+      contextPool: this.canvasToWorldContextPool,
+    },
+    getVtkDisplayCoords: {
+      tiled: this.getVtkDisplayCoordsTiled,
+      contextPool: this.getVtkDisplayCoordsContextPool,
+    },
+    getRenderer: {
+      tiled: this.getRendererTiled,
+      contextPool: this.getRendererContextPool,
+    },
+  };
+}
+
+/** Checks of a vector is compatible with the view plane normal */
+function isCompatible(viewPlaneNormal, vector) {
+  return !vector || isEqual(vec3.dot(viewPlaneNormal, vector), 0);
 }
 
 export default BaseVolumeViewport;

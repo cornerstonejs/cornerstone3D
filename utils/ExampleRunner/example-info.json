@@ -149,9 +149,25 @@
         "name": "Apply view reference and/or presentation parameters",
         "description": "Demonstrates how to apply various view/reference presentation parameters."
       },
+      "stackToVolume": {
+        "name": "Stack to Volume Viewport",
+        "description": "Demonstrates how to convert a Stack Viewport to a Volume Viewport"
+      },
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
+      },
+      "contextpoolrenderingengine": {
+        "name": "6x6 Grid with ContextPoolRenderingEngine",
+        "description": "Displays a 6x6 grid of viewports using ContextPoolRenderingEngine for better performance with large viewport counts"
+      },
+      "ptctmultimonitor": {
+        "name": "PET-CT Multi-Monitor Layout",
+        "description": "Demonstrates how to create a multi-monitor layout with PET-CT fusion using the ContextPoolRenderingEngine"
+      },
+      "webGLContextPooling": {
+        "name": "WebGL Context Pooling",
+        "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync using ContextPoolRenderingEngine"
       }
     },
     "tools-basic": {
@@ -162,6 +178,10 @@
       "cursor3D": {
         "name": "3D Volume Picking",
         "description": "Demonstrates how to use the VTK.js vtkCellPicker object to pick 3D point in volume rendering scene. Also shows how to synchronize between 3D and 2D viewports."
+      },
+      "volumeCroppingTool": {
+        "name": "3D Volume Cropping",
+        "description": "Demonstrates how to use the VolumeCropping  and VolumeCroppingControl tools."
       },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",
@@ -534,6 +554,10 @@
       "toolHistory": {
         "name": "Tool History",
         "description": "Demonstrates how to use the tool history to undo and redo tool actions"
+      },
+      "toolHistoryGrouping": {
+        "name": "Tool History Grouping",
+        "description": "Demonstrates how to use the tool history grouping to undo and redo batched tool actions that are related to one another"
       }
     },
     "polymorph-segmentation": {

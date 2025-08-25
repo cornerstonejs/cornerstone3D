@@ -60,7 +60,8 @@ viewportGrid.appendChild(element1);
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
-instructions.innerText = 'Click the image to rotate it.';
+instructions.innerText =
+  'Click the image to rotate it.  Select the preset and sampling distance from the drop downs';
 
 content.append(instructions);
 
@@ -88,6 +89,17 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (presetName) => {
     viewport.setProperties({ preset: presetName });
+    viewport.render();
+  },
+});
+
+addDropdownToToolbar({
+  options: {
+    values: Array.from({ length: 16 }, (_, i) => i + 1), // [1, 2, ..., 16]
+    defaultValue: 1,
+  },
+  onSelectedValueChange: (sampleDistanceMultiplier) => {
+    viewport.setProperties({ sampleDistanceMultiplier });
     viewport.render();
   },
 });

@@ -1002,9 +1002,8 @@ export default class ONNXSegmentationController {
         renderArguments.viewReference = viewRef;
         renderArguments.imageId = null;
       }
-      imageSession.canvasPosition = await utilities.loadImageToCanvas(
-        renderArguments
-      );
+      imageSession.canvasPosition =
+        await utilities.loadImageToCanvas(renderArguments);
       canvas.style.width = size;
       canvas.style.height = size;
       if (isCurrent) {

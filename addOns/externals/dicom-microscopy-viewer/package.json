@@ -9,7 +9,7 @@
     "yarn": ">=1.19.1"
   },
   "dependencies": {
-    "dicom-microscopy-viewer": "^0.46.1"
+    "dicom-microscopy-viewer": "^0.48.6"
   },
   "scripts": {
     "build": "echo addOns externals dependency"

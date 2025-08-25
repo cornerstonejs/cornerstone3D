@@ -305,8 +305,7 @@ class VideoRedactionTool extends AnnotationTool {
       const { points } = data.handles;
 
       // Move this handle.
-      // @ts-expect-error
-      points[handleIndex] = [...worldPos];
+      points[handleIndex] = <Types.Point3>[...worldPos];
 
       let bottomLeftCanvas;
       let bottomRightCanvas;
@@ -389,8 +388,7 @@ class VideoRedactionTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(viewportUIDsToRender);
 
     this.editData = null;
-    // @ts-expect-error
-    return annotation.metadata.annotationUID;
+    return annotation.annotationUID;
   }
   /**
    * Add event handlers for the modify event loop, and prevent default event prapogation.

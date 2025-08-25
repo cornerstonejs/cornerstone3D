@@ -658,6 +658,7 @@ class ProbeTool extends AnnotationTool {
           Modality: modality,
           modalityUnit,
         };
+        annotation.invalidated = true;
       } else {
         this.isHandleOutsideImage = true;
         cachedStats[targetId] = {

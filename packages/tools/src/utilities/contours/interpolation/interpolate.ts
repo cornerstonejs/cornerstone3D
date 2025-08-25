@@ -611,8 +611,7 @@ function _getNodesPerSegment(perimInterp, perimInd) {
       arr.push(i);
     }
     return arr;
-  },
-  []);
+  }, []);
 
   const nodesPerSegment = [];
 

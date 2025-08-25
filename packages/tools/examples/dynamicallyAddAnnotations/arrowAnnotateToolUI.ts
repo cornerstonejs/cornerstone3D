@@ -34,20 +34,20 @@ function createFormElement(): HTMLFormElement {
         coordType.charAt(0).toUpperCase() + coordType.slice(1)
       } Coords: Start [${coordType === 'canvas' ? 'x, y' : 'i, j'}]:</label>
       <input style="width:40px" type="number" id="${coordType}-start-1" placeholder="${
-      coordType === 'canvas' ? 'x' : 'i'
-    }" value="10">
+        coordType === 'canvas' ? 'x' : 'i'
+      }" value="10">
       <input style="width:40px" type="number" id="${coordType}-start-2" placeholder="${
-      coordType === 'canvas' ? 'y' : 'j'
-    }" value="10">
+        coordType === 'canvas' ? 'y' : 'j'
+      }" value="10">
       <label style="margin-left: 52px; margin-right: 21px;">End [${
         coordType === 'canvas' ? 'x, y' : 'i, j'
       }]:</label>
       <input style="width:40px" type="number" id="${coordType}-end-1" placeholder="End ${
-      coordType === 'canvas' ? 'x' : 'i'
-    }" value="100">
+        coordType === 'canvas' ? 'x' : 'i'
+      }" value="100">
       <input style="width:40px" type="number" id="${coordType}-end-2" placeholder="End ${
-      coordType === 'canvas' ? 'y' : 'j'
-    }" value="100">
+        coordType === 'canvas' ? 'y' : 'j'
+      }" value="100">
       <label style="margin-left: 52px; margin-right: 21px;">Text:</label>
       <input style="width:100px" type="text" id="${coordType}-text" placeholder="My Annotation" value="">
       <br>
@@ -72,7 +72,7 @@ function addButtonListeners(form: HTMLFormElement): void {
       const [type, viewportType, useImageId] = button.id.split('-') as [
         'canvas' | 'image',
         keyof typeof typeToIdMap,
-        'imageId'?
+        'imageId'?,
       ];
       const enabledElement = getEnabledElementByViewportId(
         typeToIdMap[viewportType]

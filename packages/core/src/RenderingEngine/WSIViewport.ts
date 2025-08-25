@@ -8,7 +8,6 @@ import type {
   VOIRange,
   CPUIImageData,
   ViewportInput,
-  BoundsIJK,
 } from '../types';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
@@ -18,13 +17,10 @@ import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
 import triggerEvent from '../utilities/triggerEvent';
 import { peerImport } from '../init';
-import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
 
 let WSIUtilFunctions = null;
-const _map = Symbol.for('map');
-const affineSymbol = Symbol.for('affine');
 const EVENT_POSTRENDER = 'postrender';
 /**
  * A viewport which shows a microscopy view using the dicom-microscopy-viewer
@@ -492,7 +488,7 @@ class WSIViewport extends Viewport {
     if (!WSIUtilFunctions) {
       return;
     }
-    const affine = this.viewer[affineSymbol];
+    const affine = this.viewer.getAffine();
     const pixelCoords = WSIUtilFunctions.applyInverseTransform({
       coordinate: [point[0], point[1]],
       affine,
@@ -511,7 +507,7 @@ class WSIViewport extends Viewport {
     }
     const sliceCoords = WSIUtilFunctions.applyTransform({
       coordinate: [point[0], point[1]],
-      affine: this.viewer[affineSymbol],
+      affine: this.viewer.getAffine(),
     });
     return [sliceCoords[0], sliceCoords[1], 0] as Point3;
   }
@@ -654,7 +650,7 @@ class WSIViewport extends Viewport {
 
     viewer.deactivateDragPanInteraction();
     this.viewer = viewer;
-    this.map = viewer[_map];
+    this.map = viewer.getMap();
     this.map.on(EVENT_POSTRENDER, this.postrender);
     this.resize();
     this.microscopyElement.innerText = '';
@@ -721,7 +717,7 @@ class WSIViewport extends Viewport {
       return;
     }
     // TODO - use a native method rather than accessing internals directly
-    const map = this.viewer[_map];
+    const map = this.viewer.getMap();
     // TODO - remove the globals setter
     const anyWindow = window as unknown as Record<string, unknown>;
     anyWindow.map = map;

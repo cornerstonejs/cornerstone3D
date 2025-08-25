@@ -51,6 +51,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
     };
   };
   memo?: LabelmapMemo;
+  modified?: boolean;
 };
 
 export type StrategyFunction = (

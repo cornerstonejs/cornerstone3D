@@ -218,8 +218,8 @@ function updateAnnotationDiv(uid) {
   const range = AnnotationMultiSlice.getFrameRangeStr(annotation);
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
-    data.label || data.text
-  } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
+      data.label || data.text
+    } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
     <b>Range:</b> Frames: ${range}<br />
   `;
 }
