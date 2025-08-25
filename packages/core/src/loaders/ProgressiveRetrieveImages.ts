@@ -301,8 +301,8 @@ class ProgressiveRetrieveImagesInstance {
         position < 0
           ? this.imageIds.length + position
           : position < 1
-          ? Math.floor((this.imageIds.length - 1) * position)
-          : position;
+            ? Math.floor((this.imageIds.length - 1) * position)
+            : position;
       const imageId = this.imageIds[index];
       if (!imageId) {
         throw new Error(`No value found to add to requests at ${position}`);

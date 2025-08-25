@@ -234,11 +234,11 @@ function updateAnnotationDiv(uid) {
   const { fps } = viewport;
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
-    data.label || data.text
-  } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
+      data.label || data.text
+    } ${annotation.isVisible ? 'visible' : 'not visible'}<br />
     <b>Range:</b> Frames: ${rangeArr.join('-')} Times ${rangeArr
-    .map((it) => Math.round((it * 10) / fps) / 10)
-    .join('-')}<br />
+      .map((it) => Math.round((it * 10) / fps) / 10)
+      .join('-')}<br />
   `;
 }
 

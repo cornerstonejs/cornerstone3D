@@ -20,6 +20,8 @@ import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
 import initDemo from './initDemo';
+import initProviders from './initProviders';
+import initVolumeLoader from './initVolumeLoader';
 import labelmapTools from './labelmapTools';
 import setCtTransferFunctionForVolumeActor, {
   ctVoiRange,
@@ -59,6 +61,8 @@ export {
   downloadSurfacesData,
   getLocalUrl,
   initDemo,
+  initProviders,
+  initVolumeLoader,
   labelmapTools,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,

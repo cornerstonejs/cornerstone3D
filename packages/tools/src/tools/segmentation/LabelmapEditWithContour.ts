@@ -164,7 +164,7 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    * representation. If not present, it automatically adds one to enable contour-based editing.
    *
    * @param viewportId - The ID of the viewport to check
-   * @returns Promise<boolean | undefined> - True if contour representation is available or was successfully added,
+   * @returns Promise boolean or undefined - True if contour representation is available or was successfully added,
    *                                        false if no active segmentation exists, undefined if already checked
    *
    * @remarks

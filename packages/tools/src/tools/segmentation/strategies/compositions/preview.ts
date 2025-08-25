@@ -38,6 +38,7 @@ export default {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const { segmentIndex, previewColor, previewSegmentIndex } = operationData;
 
+    operationData.modified = false;
     if (previewSegmentIndex == null || segmentIndex == null) {
       return;
     }
@@ -58,6 +59,7 @@ export default {
         previewColor as Types.Color
       );
     });
+    operationData.modified = true;
   },
 
   [StrategyCallbacks.AcceptPreview]: (

@@ -337,7 +337,7 @@ class EllipticalROITool extends AnnotationTool {
       Types.Point2,
       Types.Point2,
       Types.Point2,
-      Types.Point2
+      Types.Point2,
     ];
 
     const [bottom, top, left, right] = canvasCoordinates;
