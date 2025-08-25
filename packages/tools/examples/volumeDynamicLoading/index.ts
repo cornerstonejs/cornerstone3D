@@ -19,27 +19,37 @@
 // Pixel Spacing and related tags, including ultrasound enhanced regions (which you can throw an error on initially) slice thickness image position patient for multiframe only (because it is specified overall for the multiframe, and then can be calculated per-frame) number of frames image orientation patient - if these values include distances between pixels (they might be unitized to length 1)
 
 // The way this should work is to fetch the full resolution data, and then to have a metadata loader for partial resolution data.
-// OHIF will need a way to link TWO different volumes into a display set, and to choose between them.The CS3D example will just have a pulldown with various options on a 2+3 layout including a 3d volume, a stack, and 3 mprs below it.
+// OHIF will need a way to link TWO different volumes into a display set, and to choose between them.
+// The CS3D example will just have a pulldown with various options on a 2+3 layout including a 3d volume, a stack, and 3 mprs below it.
 // The path to the sub-resolution images can be probably left alone and the existing JLS ones re-used.
 
-import type { Types } from '@cornerstonejs/core';
+// Decimate imageIds in the volume.  Maybe need to change pixel sampling
+// new volumeid every time.  update all 4 viewports on reloading.
+//  When off metadata provided that provides data for the decimated images
+//  The metadata provided will return different number of rows and columns
+// Some codecs can decode to partial resolution.
+//
+
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  volumeLoader,
   setVolumesForViewports,
+  volumeLoader,
   cache,
-  eventTarget,
   utilities,
   ProgressiveRetrieveImages,
-  imageLoadPoolManager,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  setCtTransferFunctionForVolumeActor,
+  addDropdownToToolbar,
   getLocalUrl,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -47,372 +57,242 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { RequestType } = Enums;
-
+const { interleavedRetrieveStages } = ProgressiveRetrieveImages;
+const { imageRetrieveMetadataProvider } = utilities;
 const {
-  PanTool,
-  WindowLevelTool,
-  ZoomTool,
   ToolGroupManager,
-  StackScrollTool,
   Enums: csToolsEnums,
+  TrackballRotateTool,
+  ZoomTool,
+  PanTool,
+  OrientationMarkerTool,
+  StackScrollTool,
 } = cornerstoneTools;
 
-const { imageRetrieveMetadataProvider } = utilities;
-const { ImageQualityStatus, ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
-
-const { interleavedRetrieveStages } = ProgressiveRetrieveImages;
+const { ViewportType } = Enums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const toolGroupId = 'MY_TOOLGROUP_ID';
+const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
+
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_CORONAL';
+const viewportId3 = 'CT_SAGITTAL';
+const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
+const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
+
+// Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
+addDropdownToToolbar({
+  labelText: 'Sample distance in i,j pixels (rows,columns) :',
+  options: {
+    values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+    defaultValue: getNumViewportsFromUrl(),
+  },
+  onSelectedValueChange: (selectedValue) => {
+    // const url = new URL(window.location.href);
+    // url.searchParams.set('numViewports', selectedValue);
+    // window.location.href = url.toString();
+  },
+});
+addDropdownToToolbar({
+  labelText: 'Sample distance k pixels (slices/frames) to skip:',
+  options: {
+    values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+    defaultValue: getNumViewportsFromUrl(),
+  },
+  onSelectedValueChange: (selectedValue) => {
+    // const url = new URL(window.location.href);
+    // url.searchParams.set('numViewports', selectedValue);
+    // window.location.href = url.toString();
+  },
+});
 
 const renderingEngineId = 'myRenderingEngine';
-const viewportIds = [
-  'CT_SAGITTAL_STACK_1',
-  'CT_SAGITTAL_STACK_2',
-  'CT_SAGITTAL_STACK_3',
-];
 
+/////////////////////////////////////////
 // ======== Set up page ======== //
+
 setTitleAndDescription(
-  'Dynamic Loading for Volume Viewport',
-  'Here we demonstrate creating volumes with a reduced set of images and pixels.'
+  'Decimated Dynamic Loading for Volume Viewport',
+  'Here we demonstrate decimated dynamic loading of volumes.'
 );
 
-const size = '512px';
+const size = '400px';
+
+const viewportGrid = document.createElement('div');
+
 const content = document.getElementById('content');
 
 const loaders = document.createElement('div');
 content.appendChild(loaders);
 
-const timingInfo = document.createElement('div');
-timingInfo.style.width = '35em';
-timingInfo.style.height = '10em';
-timingInfo.style.float = 'left';
-content.appendChild(timingInfo);
-const timingIds = [];
-const getOrCreateTiming = (id) => {
-  const element = document.getElementById(id);
-  if (element) {
-    return element;
-  }
-  timingIds.push(id);
-  timingInfo.innerHTML += `<p id="${id}">${id}</p>`;
-  const p = document.getElementById(id);
-  p.style.lineHeight = 1;
-  p.style.marginTop = 0;
-  p.style.marginBottom = 0;
-  return p;
-};
-function resetTimingInfo() {
-  for (const id of timingIds) {
-    getOrCreateTiming(id).innerText = `Waiting ${id}`;
-  }
-}
-getOrCreateTiming('loadingStatus').innerText = 'Timing Information';
-
-const buttonInfo = document.createElement('div');
-buttonInfo.style.width = '20em';
-buttonInfo.style.height = '10em';
-buttonInfo.style.float = 'left';
-buttonInfo.innerHTML = `
-<ul style="margin:0">
-<li>JLS Thumb - reduced resolution only</li>
-<li>JLS Mixed - reduced resolution first, then full</li>
-<li>J2K - streaming HTJ2K</li>
-<li>J2K bytes - byte range request only</li>
-<li>J2K Mixed - J2K byte range first, then full</li>
-</ul>`;
-content.appendChild(buttonInfo);
-
-// const stageInfo = document.createElement('div');
-// stageInfo.style.width = '30em';
-// stageInfo.style.height = '10em';
-// stageInfo.style.float = 'left';
-// stageInfo.innerHTML = `
-// <ul style="margin:0">
-// <li>Stages are arbitrary names for retrieve configurations</li>
-// <li>Stages are skipped if data already complete</li>
-// <li>Decimations are every 1 out of 4 sequential images</li>
-// <li>quarter/half thumb are lossy decimations retrieves</li>
-// <li>quarter/half/threeQuarter/final are non-lossy decimation retrieves</li>
-// <li>lossy is based on configuration, and when not available, defaults to lossless</li>
-// </ul>`;
-// content.appendChild(stageInfo);
-
-const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
-viewportGrid.style.clear = 'both';
-const element1 = document.createElement('div');
-const element2 = document.createElement('div');
-const element3 = document.createElement('div');
-element1.style.width = size;
-element1.style.height = size;
-element2.style.width = size;
-element2.style.height = size;
-element3.style.width = size;
-element3.style.height = size;
+viewportGrid.style.width = '100%';
+viewportGrid.style.height = '800px';
+
+// Create elements for the viewports
+const element1 = document.createElement('div'); // Axial
+const element2 = document.createElement('div'); // Sagittal
+const element3 = document.createElement('div'); // Coronal
+const element4 = document.createElement('div'); // 3D Volume
+
+// Create a container for the right side viewports
+const rightViewportsContainer = document.createElement('div');
+rightViewportsContainer.style.display = 'flex';
+rightViewportsContainer.style.flexDirection = 'column';
+rightViewportsContainer.style.width = '20%';
+rightViewportsContainer.style.height = '100%';
+
+// Set styles for the 2D viewports (stacked vertically on the right)
+element1.style.width = '100%';
+element1.style.height = '33.33%';
+element1.style.minHeight = '200px';
+
+element2.style.width = '100%';
+element2.style.height = '33.33%';
+element2.style.minHeight = '200px';
+
+element3.style.width = '100%';
+element3.style.height = '33.33%';
+element3.style.minHeight = '200px';
+
+// Set styles for the 3D viewport (on the left)
+element4.style.width = '75%';
+element4.style.height = '100%';
+element4.style.minHeight = '600px';
+element4.style.position = 'relative';
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = (e) => e.preventDefault();
-// Disable right click context menu so we can have right click tools
 element2.oncontextmenu = (e) => e.preventDefault();
-// Disable right click context menu so we can have right click tools
 element3.oncontextmenu = (e) => e.preventDefault();
+element4.oncontextmenu = (e) => e.preventDefault();
 
-viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
-viewportGrid.appendChild(element3);
+// Add elements to the viewport grid
+// First add the 3D viewport on the left
+viewportGrid.appendChild(element4);
+
+// Add the 2D viewports stacked vertically on the right
+rightViewportsContainer.appendChild(element1);
+rightViewportsContainer.appendChild(element2);
+rightViewportsContainer.appendChild(element3);
+viewportGrid.appendChild(rightViewportsContainer);
 
 content.appendChild(viewportGrid);
 
-// const instructions = document.createElement('div');
-// instructions.innerHTML = `
-// <ul>
-// <li>Partial is reduced resolution for all images</li>
-// <li>Lossy means some sort of lossy encoding for all images</li>
-// <li>Byte range is 64kb of all images</li>
-// <li>JLS/HTJ2K is full resolution JLS/HTJ2K</li>
-// <li>Mixed is byte range (htj2k) or partial (jls) initially followed by remaining data</li>
-// </ul>
-// Stages are:
-// <ul>
-// <li>initialImages - final version of image 0, 50%, 100%</li>
-// <li>quarterThumb - lossy configuration for every 4th image, offset 1</li>
-// <li>halfThumb - lossy configuration for every 4th image, offset 3</li>
-// <li>Remaing *Full - final configuration for every 4th image, offset 0, 2, 1, 3</li>
-// <li>If lossy is configured as final, then some stages won't retrieve anything</li>
-// </ul>
-// <p>Left Click to change window/level</p>
-// Use the mouse wheel to scroll through the stack.
-// `;
+const instructions = document.createElement('p');
+instructions.innerText = `
+  Basic controls:
+  - Select numbers of pixels to skip from the drop down and see the timing results.
+  `;
 
-// content.append(instructions);
+content.append(instructions);
 
 /**
- * Generate the various configurations by using the options on static DICOMweb:
- * Base lossy/full thumbnail configuration for HTJ2K:
- * ```
- * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name lossy d:\src\viewer-testdata\dcm\Juno
- * ```
- *
- * JLS and JLS thumbnails:
- * ```bash
- * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jls /src/viewer-testdata/dcm/Juno
- * mkdicomweb create -t jhc --recompress true --alternate jls --alternate-name jlsThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
- * ```
- *
- * HTJ2K and HTJ2K thumbnail - lossless:
- * ```bash
- * mkdicomweb create -t jhc --recompress true --alternate jhcLossless --alternate-name htj2k  /src/viewer-testdata/dcm/Juno
- * mkdicomweb create -t jhc --recompress true --alternate jhc --alternate-name htj2kThumbnail --alternate-thumbnail /src/viewer-testdata/dcm/Juno
- * ```
+ * Get the number of orthographic viewports from the URL (?numViewports=1|2|3)
  */
-
-const configReduced2 = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    default: {
-      framesPath: '/jls/',
-    },
-  },
-};
-
-const configJLS = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    default: {
-      framesPath: '/jls/',
-    },
-  },
-};
-
-const configJLSNonInterleaved = {
-  retrieveOptions: {
-    default: {
-      framesPath: '/jls/',
-    },
-  },
-};
-
-const configJLSThumbnail = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    default: {
-      framesPath: '/jlsThumbnail/',
-    },
-  },
-};
-
-const configJLSMixed = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    ...configJLS.retrieveOptions,
-    multipleFast: {
-      imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
-      framesPath: '/jlsThumbnail/',
-    },
-  },
-};
-
-const configHtj2k = interleavedRetrieveStages;
-
-const configHtj2kByteRange = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    multipleFast: {
-      rangeIndex: 0,
-      decodeLevel: 0,
-    },
-  },
-};
-
-const configHtj2kLossy = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    multipleFinal: {
-      streaming: true,
-    },
-    multipleFast: {
-      imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
-      framesPath: '/lossy/',
-      rangeIndex: 0,
-      decodeLevel: 2,
-    },
-  },
-};
-
-const configHtj2kMixed = {
-  ...interleavedRetrieveStages,
-  retrieveOptions: {
-    multipleFast: {
-      rangeIndex: 0,
-      chunkSize: 32000,
-      decodeLevel: 1,
-    },
-    multipleFinal: {
-      rangeIndex: -1,
-    },
-  },
-};
+function getNumViewportsFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('numViewports');
+  const num = Number(value);
+  if ([1, 2, 3].includes(num)) {
+    return num;
+  }
+  return 3; // default
+}
 
 /**
- * Runs the demo
+ * Runs the demo with a configurable number of orthographic viewports
  */
-async function run() {
-  // Init Cornerstone and related libraries
+async function run(numViewports = getNumViewportsFromUrl()) {
   await initDemo();
 
-  const toolGroupId = 'TOOL_GROUP_ID';
-
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(WindowLevelTool);
-  cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(OrientationMarkerTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Add tools to the tool group
-  toolGroup.addTool(WindowLevelTool.toolName, { volumeId });
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-
-  // Set the initial state of the tools, here all tools are active and bound to
-  // Different mouse inputs
-  toolGroup.setToolActive(WindowLevelTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-  // As the Stack Scroll mouse wheel is a tool using the `mouseWheelCallback`
-  // hook instead of mouse buttons, it does not need to assign any mouse button.
-  toolGroup.setToolActive(StackScrollTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Wheel,
-      },
-    ],
-  });
-
-  const imageIdsCT = await createImageIdsAndCacheMetaData({
+  const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    //   wadoRsRoot:
-    // getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    //     StudyInstanceUID:
+    //   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    // SeriesInstanceUID:
+    //   '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+
+    //    wadoRsRoot:
+    //  getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
     wadoRsRoot: getLocalUrl() || 'http://localhost:5000/dicomweb',
   });
 
-  // Instantiate a rendering engine
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create the viewports
-  const viewportInputArray = [
+  // Only include the requested number of orthographic viewports
+  const orthographicViewports = [
     {
-      viewportId: viewportIds[0],
+      viewportId: viewportId1,
       type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: <Types.Point3>[0, 0, 0],
       },
     },
     {
-      viewportId: viewportIds[1],
+      viewportId: viewportId2,
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: <Types.Point3>[0, 0, 0],
       },
     },
     {
-      viewportId: viewportIds[2],
+      viewportId: viewportId3,
       type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+  ].slice(0, numViewports);
+
+  // Show/hide orthographic viewport elements based on numViewports
+  [element1, element2, element3].forEach((el, idx) => {
+    if (idx < numViewports) {
+      el.style.display = 'block';
+      el.style.height = `${100 / numViewports}%`;
+    } else {
+      el.style.display = 'none';
+    }
+  });
+
+  // Always set viewport4 (3D viewport) orientation to CORONAL
+  const viewportInputArray = [
+    ...orthographicViewports,
+    {
+      viewportId: viewportId4,
+      type: ViewportType.VOLUME_3D,
+      element: element4,
+      defaultOptions: {
+        background: <Types.Point3>[0, 0, 0],
+        orientation: Enums.OrientationAxis.CORONAL,
       },
     },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
-
-  // Set the tool group on the viewports
-  viewportIds.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineId)
-  );
-  renderingEngine.renderViewports(viewportIds);
-
-  const progressiveRendering = true;
-
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Interaction, 6);
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 12);
-  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 16);
 
   async function loadVolume(volumeId, imageIds, config, text) {
     cache.purgeCache();
@@ -420,69 +300,132 @@ async function run() {
     if (config) {
       imageRetrieveMetadataProvider.add('volume', config);
     }
-    resetTimingInfo();
-    // Define a volume in memory
-    getOrCreateTiming('loadingStatus').innerText = 'Loading...';
-    const start = Date.now();
+    // resetTimingInfo();
+    // // Define a volume in memory
+    // getOrCreateTiming('loadingStatus').innerText = 'Loading...';
+    // const start = Date.now();
+    const progressiveRenderingtrue = true;
     const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
-      progressiveRendering,
+      progressiveRenderingtrue,
     });
 
     // Set the volume to load
-    volume.load(() => {
-      const now = Date.now();
-      getOrCreateTiming('loadingStatus').innerText = `Took ${
-        now - start
-      } ms for ${text} with ${imageIds.length} items`;
-    });
+    volume.load(() => {});
 
-    setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+    setVolumesForViewports(
+      renderingEngine,
+      [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+      viewportIds
+    );
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
   }
 
-  const imageLoadStage = (evt) => {
-    const { detail } = evt;
-    const { stageId, numberOfImages, stageDurationInMS, startDurationInMS } =
-      detail;
-    getOrCreateTiming(stageId).innerText = stageDurationInMS
-      ? `Stage ${stageId} took ${stageDurationInMS} ms, from start ${startDurationInMS} ms for ${numberOfImages} frames`
-      : `Stage ${stageId} not run`;
-  };
+  //  volume.load();
 
-  eventTarget.addEventListener(Events.IMAGE_RETRIEVAL_STAGE, imageLoadStage);
+  // Only set volumes for the active viewport IDs
+  const activeViewportIds = [
+    ...orthographicViewports.map((vp) => vp.viewportId),
+    viewportId4,
+  ];
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+      },
+    ],
+    activeViewportIds
+  );
 
-  const createButton = (text, action) => {
-    const button = document.createElement('button');
-    button.innerText = text;
-    button.id = text;
-    button.onclick = action;
-    loaders.appendChild(button);
-    return button;
-  };
+  // Tool group for orthographic viewports
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  orthographicViewports.forEach((vp) => {
+    toolGroup.addViewport(vp.viewportId, renderingEngineId);
+  });
+  toolGroup.addTool(StackScrollTool.toolName, {
+    viewportIndicators: true,
+  });
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
 
-  const loadButton = (text, volId, imageIds, config) =>
-    createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
-  loadButton(' Skip 1 ', volumeId, imageIdsCT, configReduced2);
-  loadButton(' Skip 2 ', volumeId, imageIdsCT, configReduced2);
-  loadButton(' Skip 3 ', volumeId, imageIdsCT, configReduced2);
+  // Tool group for 3D viewport
+  const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
+  toolGroupVRT.addTool(ZoomTool.toolName);
+  toolGroupVRT.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+  toolGroupVRT.addTool(PanTool.toolName);
+  toolGroupVRT.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
+  toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
+    overlayMarkerType:
+      OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
+  });
+  // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
-  // loadButton('JLS', volumeId, imageIdsCT, configJLS);
-  // loadButton(
-  //   'JLS Non Interleaved',
-  //   volumeId,
-  //   imageIdsCT,
-  //   configJLSNonInterleaved
-  // );
-  // loadButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
-  // loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
-  // loadButton('J2K', volumeId, imageIdsCT, configHtj2k);
-  // loadButton('J2K Non Progressive', volumeId, imageIdsCT, null);
-  // loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
-  // loadButton('J2K Lossy', volumeId, imageIdsCT, configHtj2kLossy);
-  // loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
+  const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
+  const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
+  renderingEngine.renderViewports(activeViewportIds);
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId4]
+  ).then(() => {
+    viewport.setProperties({
+      preset: 'CT-Bone',
+    });
+    toolGroupVRT.addViewport(viewportId4, renderingEngineId);
+    toolGroupVRT.addTool(TrackballRotateTool.toolName, {});
+    toolGroupVRT.setToolActive(TrackballRotateTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+        },
+      ],
+    });
+    const createButton = (text, action) => {
+      const button = document.createElement('button');
+      button.innerText = text;
+      button.id = text;
+      button.onclick = action;
+      loaders.appendChild(button);
+      return button;
+    };
+
+    const loadButton = (text, volId, imageIds, config) =>
+      createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
+    const configJLS = {
+      ...interleavedRetrieveStages,
+      retrieveOptions: {
+        default: {
+          framesPath: '/jls/',
+        },
+      },
+    };
+    loadButton('Load JLS', volumeId, imageIds, configJLS);
+    viewport.render();
+  });
 }
 
 run();
