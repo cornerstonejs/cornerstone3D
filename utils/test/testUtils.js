@@ -42,11 +42,7 @@ function setupTestEnvironment({
   // Initialize csTools3d and add specified tools
   window.devicePixelRatio = 1;
 
-  initCore({
-    rendering: {
-      useLegacyCameraFOV: false
-    }
-  });
+  initCore();
   initTools();
   tools.forEach((tool) => addTool(tool));
 
@@ -278,9 +274,9 @@ function compareImages(
       window.__groundTruthUpdates = {};
     }
     window.__groundTruthUpdates[outputName] = imageDataURL;
-    
+
     console.log(`[GROUND_TRUTH_UPDATE]::${outputName}::${imageDataURL}`);
-    
+
     return Promise.resolve();
   }
 
