@@ -55,6 +55,7 @@
     "test:unit:ci": "yarn test:unit && yarn test:ci",
     "test": "karma start",
     "test:unit": "jest --collectCoverage",
+    "test:unit:no-coverage": "jest",
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
     "lint": "oxlint packages/**/src --quiet",

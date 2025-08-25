@@ -26,6 +26,8 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 1', async ({
     closePath: true,
   });
 
+  await page.waitForTimeout(1500);
+
   await page.getByRole('combobox').first().selectOption('CircularEraser');
 
   await simulateDrawPath(

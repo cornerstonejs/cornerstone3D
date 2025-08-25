@@ -269,8 +269,14 @@ function compareImages(
   updateBaselines = false
 ) {
   if (updateBaselines) {
-    console.debug(`[Update Baseline]`);
-    console.debug(`${outputName}: ${imageDataURL}`);
+    // Store the base64 data in a global object for later processing
+    if (!window.__groundTruthUpdates) {
+      window.__groundTruthUpdates = {};
+    }
+    window.__groundTruthUpdates[outputName] = imageDataURL;
+
+    console.log(`[GROUND_TRUTH_UPDATE]::${outputName}::${imageDataURL}`);
+
     return Promise.resolve();
   }
 

@@ -3,8 +3,6 @@ import {
   checkForScreenshot,
   visitExample,
   screenShotPaths,
-  reduceViewportsSize,
-  attemptAction,
 } from './utils/index';
 
 test.beforeEach(async ({ page, context }) => {
@@ -12,12 +10,10 @@ test.beforeEach(async ({ page, context }) => {
   await context.addInitScript(() => (window.IS_TILED = true));
 });
 
-test.describe('Labelmap Rendering', async () => {
+test.describe('Labelmap Rendering shouldUpdateThis', async () => {
   test('should render the labelmap in axial/coronal/sagittal orientations', async ({
     page,
   }) => {
-    await attemptAction(() => reduceViewportsSize(page), 1000, 10);
-
     const axial = await page.locator('canvas').nth(0);
     const coronal = await page.locator('canvas').nth(1);
     const sagittal = await page.locator('canvas').nth(2);
