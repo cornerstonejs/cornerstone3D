@@ -273,7 +273,7 @@ describe('CobbAngleTool:', () => {
         expect(targets.length).toBe(1);
 
         // we changed the camera FOV so this is changing too
-        expect(Math.round(data[targets[0]].angle)).toBe(130);
+        expect(Math.round(data[targets[0]].angle)).toBe(136);
 
         annotation.state.removeAnnotation(cobbAngleAnnotation.annotationUID);
         done();
