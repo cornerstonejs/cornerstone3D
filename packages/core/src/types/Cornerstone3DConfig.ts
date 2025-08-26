@@ -23,6 +23,12 @@ interface Cornerstone3DConfig {
     preferSizeOverAccuracy?: boolean;
     useCPURendering?: boolean;
     /**
+     * Use the legacy camera field of view calculation method which uses bounds
+     * to calculate the field of view. When false (default), uses the image dimensions
+     * directly for more accurate full-screen display.
+     */
+    useLegacyCameraFOV?: boolean;
+    /**
      * flag to control whether to use fallback behavior for z-spacing calculation in
      * volume viewports when the necessary metadata is missing. If enabled,
      * we will fall back to using slice thickness or a default value of 1 to render
