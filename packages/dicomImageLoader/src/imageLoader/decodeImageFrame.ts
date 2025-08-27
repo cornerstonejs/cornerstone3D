@@ -23,8 +23,11 @@ function processDecodeTask(
   // although it can be passed to the decoder, it isn't needed and is slow
   delete options.streamingData;
   // The chunkSize option may be a function, in which case serialization fill
-  // fail.
-  delete options.retrieveOptions?.chunkSize;
+  // fail. Deconstruct the object to avoid modifying the original object.
+  if (options.retrieveOptions?.chunkSize) {
+    options.retrieveOptions = { ...options.retrieveOptions };
+    delete options.retrieveOptions.chunkSize;
+  }
 
   const webWorkerManager = getWebWorkerManager();
   const priority = options.priority || undefined;
