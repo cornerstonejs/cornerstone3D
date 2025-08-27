@@ -19,7 +19,7 @@ export interface LoaderOptions {
     imageId: string,
     defaultHeaders: Record<string, string>,
     params: LoaderXhrRequestParams
-  ) => Promise<Record<string, string> | void>;
+  ) => Promise<Record<string, string> | void> | Record<string, string> | void;
   // callback allowing modification of the xhr response before creating image objects
   beforeProcessing?: (xhr: XMLHttpRequest) => Promise<ArrayBuffer>;
   // callback allowing modification of newly created image objects
