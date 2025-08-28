@@ -6,8 +6,10 @@ In version 4.x, images now display edge-to-edge in viewports without the 10% pad
 
 ### Visual Difference
 
-- **Before (3.x)**: Images had automatic padding around edges
+- **Before (3.x)**: Images had automatic padding around edges (configurable color for background)
 - **After (4.x)**: Images fill the entire viewport
+
+![](../../assets/fov.png)
 
 ## How to Revert
 
