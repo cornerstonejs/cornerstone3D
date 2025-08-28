@@ -227,61 +227,17 @@ class EllipticalROITool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const canvasPos = currentPoints.canvas;
-
-    const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
+    const annotation = <EllipticalROIAnnotation>(
+      this.createAnnotation(evt, [
+        [...worldPos],
+        [...worldPos],
+        [...worldPos],
+        [...worldPos],
+      ] as [Types.Point3, Types.Point3, Types.Point3, Types.Point3])
     );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
-      data: {
-        label: '',
-        handles: {
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-          points: [
-            [...worldPos],
-            [...worldPos],
-            [...worldPos],
-            [...worldPos],
-          ] as [Types.Point3, Types.Point3, Types.Point3, Types.Point3],
-          activeHandleIndex: null,
-        },
-        cachedStats: {},
-        initialRotation: viewport.getRotation(),
-      },
-    };
 
     addAnnotation(annotation, element);
 

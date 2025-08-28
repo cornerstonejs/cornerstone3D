@@ -169,22 +169,7 @@ class CircleROITool extends AnnotationTool {
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
 
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
     this.isDrawing = true;
-
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
     let points;
     if (this.configuration.simplified) {
@@ -205,36 +190,7 @@ class CircleROITool extends AnnotationTool {
       ];
     }
 
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
-      data: {
-        label: '',
-        handles: {
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-          points,
-          activeHandleIndex: null,
-        },
-        cachedStats: {},
-      },
-    };
+    const annotation = <CircleROIAnnotation>this.createAnnotation(evt, points);
 
     addAnnotation(annotation, element);
 
