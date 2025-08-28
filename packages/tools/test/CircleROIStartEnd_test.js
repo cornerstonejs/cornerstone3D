@@ -128,7 +128,8 @@ describe('Circle Start End Tool: ', () => {
         expect(data.pointsInVolume).toBeInstanceOf(Array);
 
         // the rectangle is drawn on the strip
-        expect(data.statistics.mean).toBeCloseTo(28.33);
+        // we changed the camera FOV so this is changing too
+        expect(data.statistics.mean).toBeCloseTo(25.5);
 
         annotation.state.removeAnnotation(circleAnnotation.annotationUID);
         done();

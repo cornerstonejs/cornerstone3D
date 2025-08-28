@@ -6,7 +6,7 @@ let options: LoaderOptions = {
     xhr.open('get', url, true);
   },
   // callback allowing customization of the xhr (e.g. adding custom auth headers, cors, etc)
-  beforeSend(/* xhr, imageId */) {
+  beforeSend: async (/* xhr, imageId */) => {
     // before send code
   },
   // callback allowing modification of the xhr response before creating image objects

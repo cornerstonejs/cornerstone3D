@@ -115,14 +115,14 @@ class KeyImageTool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
-    this.configuration.getTextCallback((text) => {
-      if (!text) {
+    this.configuration.getTextCallback((label) => {
+      if (!label) {
         removeAnnotation(annotation.annotationUID);
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
         this.isDrawing = false;
         return;
       }
-      annotation.data.text = text;
+      annotation.data.label = label;
 
       triggerAnnotationCompleted(annotation);
 
@@ -307,7 +307,7 @@ class KeyImageTool extends AnnotationTool {
   };
 
   _doneChangingTextCallback(element, annotation, updatedText): void {
-    annotation.data.text = updatedText;
+    annotation.data.label = updatedText;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,

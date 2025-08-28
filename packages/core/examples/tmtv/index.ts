@@ -5,7 +5,7 @@ import {
   setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
-  cache
+  cache,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -15,7 +15,7 @@ import {
   setPetTransferFunctionForVolumeActor,
   setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
-  addButtonToToolbar
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -34,7 +34,7 @@ const {
   RectangleROITool,
   CircleROIStartEndThresholdTool,
   RectangleROIStartEndThresholdTool,
-  segmentation
+  segmentation,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -66,7 +66,7 @@ const volumeIds = {
   study1: {
     ct: `${volumeLoaderScheme}:CT_VOLUME_STUDY1`,
     pt: `${volumeLoaderScheme}:PT_VOLUME_STUDY1`,
-  }
+  },
 };
 
 // Tool group IDs for each study
@@ -76,7 +76,7 @@ const toolGroupIds = {
     pt: 'PT_TOOLGROUP_STUDY1',
     fusion: 'FUSION_TOOLGROUP_STUDY1',
     mip: 'MIP_TOOLGROUP_STUDY1',
-  }
+  },
 };
 
 // Viewport IDs for each study
@@ -98,7 +98,7 @@ const viewportIds = {
       CORONAL: 'FUSION_CORONAL_S1',
     },
     PETMIP: { CORONAL: 'PET_MIP_CORONAL_S1' },
-  }
+  },
 };
 
 // Synchronizer IDs for each study
@@ -110,7 +110,7 @@ const synchronizerIds = {
     ctVoi: 'CT_VOI_SYNC_S1',
     ptVoi: 'PT_VOI_SYNC_S1',
     fusionVoi: 'FUSION_VOI_SYNC_S1',
-  }
+  },
 };
 
 // Store volumes and synchronizers
@@ -135,7 +135,7 @@ const studyConfigs = [
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
     ptSeriesUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
-  }
+  },
 ];
 
 // Store DOM elements
@@ -407,30 +407,25 @@ function setUpToolGroupsForStudy(studyKey) {
     });
     toolGroup.addTool(RectangleROITool.toolName);
     // if (toolGroup === ptToolGroup) {
-    toolGroup.addTool(CircleROIStartEndThresholdTool.toolName,
-      {
-        calculatePointsInsideVolume: true,
-        showTextBox: false,
-        storePointData: true,
-        /* Set a custom wait time */
-        throttleTimeout: 100,
-        /* Simplified handles */
-        simplified: false,
-      }
-    );
-    toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName,
-      {
-        calculatePointsInsideVolume: true,
-        showTextBox: false,
-        storePointData: true,
-        /* Set a custom wait time */
-        throttleTimeout: 100,
-        /* Simplified handles */
-        simplified: false,
-      }
-    );
+    toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
+      calculatePointsInsideVolume: true,
+      showTextBox: false,
+      storePointData: true,
+      /* Set a custom wait time */
+      throttleTimeout: 100,
+      /* Simplified handles */
+      simplified: false,
+    });
+    toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
+      calculatePointsInsideVolume: true,
+      showTextBox: false,
+      storePointData: true,
+      /* Set a custom wait time */
+      throttleTimeout: 100,
+      /* Simplified handles */
+      simplified: false,
+    });
     // }
-
   });
 
   // Add tools to fusion group
@@ -454,7 +449,6 @@ function setUpToolGroupsForStudy(studyKey) {
     throttleTimeout: 100,
     /* Simplified handles */
     simplified: false,
-
   });
   fusionToolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
@@ -815,8 +809,8 @@ async function setUpDisplayForStudy(config, studyIndex) {
 
   const slabThickness = Math.sqrt(
     ptVolumeDimensions[0] * ptVolumeDimensions[0] +
-    ptVolumeDimensions[1] * ptVolumeDimensions[1] +
-    ptVolumeDimensions[2] * ptVolumeDimensions[2]
+      ptVolumeDimensions[1] * ptVolumeDimensions[1] +
+      ptVolumeDimensions[2] * ptVolumeDimensions[2]
   );
 
   await setVolumesForViewports(
@@ -876,7 +870,6 @@ async function addSegmentationsToState() {
     },
   ]);
 }
-
 
 /**
  * Runs the demo

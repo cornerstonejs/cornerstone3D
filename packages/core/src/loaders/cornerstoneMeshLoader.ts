@@ -16,12 +16,15 @@ function fetchArrayBuffer({
   onload?: () => void;
   loaderOptions: GeometryLoaderOptions;
 }): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
 
     const defaultHeaders = {} as Record<string, string>;
-    const beforeSendHeaders = loaderOptions.beforeSend(xhr, defaultHeaders);
+    const beforeSendHeaders = await loaderOptions.beforeSend(
+      xhr,
+      defaultHeaders
+    );
     const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 
     xhr.responseType = 'arraybuffer';

@@ -617,7 +617,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const distance = vec3.length(direction);
 
     if (distance === 0) {
-      const handlesOnStartPlane = points.map(p => {
+      const handlesOnStartPlane = points.map((p) => {
         const newPoint = vec3.clone(p as vec3);
         newPoint[projectionAxisIndex] = startCoordinate;
         return Array.from(newPoint) as Types.Point3;
@@ -690,8 +690,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
       Math.PI *
-      (worldWidth / measureInfo.scale / 2) *
-      (worldHeight / aspect / measureInfo.scale / 2)
+        (worldWidth / measureInfo.scale / 2) *
+        (worldHeight / aspect / measureInfo.scale / 2)
     );
 
     const modalityUnitOptions = {
