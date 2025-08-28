@@ -2,12 +2,23 @@
 
 ## What Changed
 
-In version 4.x, all of the tools now consistently use `data.label` instead of `data.text`. Previously, the Arrow and Label tools
-used data.text as well as data.label allowing for inconsistencies on what got displayed.
+In version 4.x, all of the tools now consistently use `annotation.data.label` instead of `annotation.data.text`.
+Previously, the arrow and label, and key image tools used a mixture of text and label leading
+to inconsistencies between the displayed values.
 
-To support this, the consistent use of `createAnnotation` from `AnnotationDisplayTool`
-is used inside the `addNewAnnotation`, and this method has been enhanced to support
-setting the point value as well as setting additional attributes.
+To support better consistency between the shape of the annotation data created,
+the addNewAnnotation methods have been changed to call the createAnnotation
+method instead of each tool creating their own data.
+
+## What you need to change?
+
+If you were previously using the `ArrowAnnotateTool`, `LabelTool` or `KeyImageTool`
+text field, you need to use the label field instead.
+
+It is additionally recommended for any annotation tools that you have defined
+outside CS3D to modify the addNewAnnotation method to call the `this.createAnnotation`
+method instead of creating your annotation data manually. This will help ensure
+consistency with any new changes to the basic shape of annotation data.
 
 ## Why We Changed This
 
