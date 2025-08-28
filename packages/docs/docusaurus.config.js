@@ -87,6 +87,10 @@ module.exports = {
               value: '<hr class="dropdown-separator">',
             },
             {
+              href: 'https://v3.cornerstonejs.org/',
+              label: '3.0',
+            },
+            {
               href: 'https://v2.cornerstonejs.org/',
               label: '2.0',
             },
@@ -219,7 +223,7 @@ module.exports = {
           onlyIncludeVersions: ['current'],
           versions: {
             current: {
-              label: `3.0 (Latest)`,
+              label: `4.0 (Latest)`,
             },
           },
         },
