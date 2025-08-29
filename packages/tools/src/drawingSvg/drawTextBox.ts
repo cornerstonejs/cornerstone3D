@@ -1,8 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import type { SVGDrawingHelper } from '../types';
-
-import _getHash from './_getHash';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
+import _draw from './_draw';
 
 /**
  * Draws a textBox.
@@ -57,80 +56,55 @@ function _drawTextGroup(
 ): SVGRect {
   const { padding, color, fontFamily, fontSize, background } = options;
 
-  let textGroupBoundingBox;
   const [x, y] = [position[0] + padding, position[1] + padding];
-  const svgns = 'http://www.w3.org/2000/svg';
-  const svgNodeHash = _getHash(annotationUID, 'text', textUID);
-  const existingTextGroup = svgDrawingHelper.getSvgNode(svgNodeHash);
+  const textGroupAttributes = {
+    'data-annotation-uid': annotationUID,
+    transform: `translate(${x} ${y})`,
+  };
 
-  // Todo: right now textBox gets a re-render even if the textBox has not changed
-  // and evenIf the attributes are not set again since they are the same.
-  if (existingTextGroup) {
-    // TODO: Iterate each node and update color? font-size?
-    const textElement = existingTextGroup.querySelector('text');
-    const textSpans = Array.from(textElement.children) as Array<SVGElement>;
+  const { element: existingTextGroup, isNew } = _draw(
+    'g',
+    svgDrawingHelper,
+    annotationUID,
+    textUID,
+    textGroupAttributes
+  );
+  let textElement: SVGElement | null = existingTextGroup.querySelector('text');
+  if (textElement === null) {
+    textElement = _createTextElement(svgDrawingHelper, options);
+  }
+  const textSpans = Array.from(textElement.children) as Array<SVGElement>;
+  const textAttributes = {
+    fill: color,
+    'font-size': fontSize,
+    'font-family': fontFamily,
+  };
 
-    for (let i = 0; i < textSpans.length; i++) {
-      const textSpanElement = textSpans[i];
-      const text = textLines[i] || '';
-
+  // TODO: Iterate each node and update color? font-size?
+  for (let i = 0; i < textSpans.length; i++) {
+    const textSpanElement = textSpans[i];
+    const text = textLines[i] || '';
+    if (text !== textSpanElement.textContent) {
       textSpanElement.textContent = text;
     }
-
-    // if the textLines have changed size, we need to create textSpans for them
-    if (textLines.length > textSpans.length) {
-      for (let i = 0; i < textLines.length - textSpans.length; i++) {
-        const textLine = textLines[i + textSpans.length];
-        const textSpan = _createTextSpan(textLine);
-
-        textElement.appendChild(textSpan);
-      }
-
-      existingTextGroup.appendChild(textElement);
-      svgDrawingHelper.appendNode(existingTextGroup, svgNodeHash);
-    }
-
-    const textAttributes = {
-      fill: color,
-      'font-size': fontSize,
-      'font-family': fontFamily,
-    };
-
-    const textGroupAttributes = {
-      transform: `translate(${x} ${y})`,
-    };
-
-    // Todo: for some reason this does not work to not re-render the textBox
-    setAttributesIfNecessary(textAttributes, textElement);
-    setAttributesIfNecessary(textGroupAttributes, existingTextGroup);
-
-    // Add data attribute for annotation UID
-    existingTextGroup.setAttribute('data-annotation-uid', annotationUID);
-
-    textGroupBoundingBox = _drawTextBackground(existingTextGroup, background);
-
-    svgDrawingHelper.setNodeTouched(svgNodeHash);
-  } else {
-    const textGroup = document.createElementNS(svgns, 'g');
-    // Add data attribute for annotation UID
-    textGroup.setAttribute('data-annotation-uid', annotationUID);
-
-    textGroup.setAttribute('transform', `translate(${x} ${y})`);
-
-    //
-    const textElement = _createTextElement(svgDrawingHelper, options);
-    for (let i = 0; i < textLines.length; i++) {
-      const textLine = textLines[i];
+  }
+  // if the textLines have changed size, we need to create textSpans for them
+  if (textLines.length > textSpans.length) {
+    for (let i = 0; i < textLines.length - textSpans.length; i++) {
+      const textLine = textLines[i + textSpans.length];
       const textSpan = _createTextSpan(textLine);
-
       textElement.appendChild(textSpan);
     }
-
-    textGroup.appendChild(textElement);
-    svgDrawingHelper.appendNode(textGroup, svgNodeHash);
-    textGroupBoundingBox = _drawTextBackground(textGroup, background);
+    existingTextGroup.appendChild(textElement);
   }
-
+  setAttributesIfNecessary(textAttributes, textElement);
+  const textGroupBoundingBox = _drawTextBackground(
+    existingTextGroup,
+    background
+  );
+  // if (updated && !isNew) {
+  //   svgDrawingHelper.setNodeTouched(existingTextGroup.getAttribute('data-id'));
+  // }
   // We translate the group using `position`
   // which means we also need to pluck those values when returning
   // the bounding box

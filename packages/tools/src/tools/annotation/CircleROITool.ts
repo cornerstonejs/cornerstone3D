@@ -744,7 +744,6 @@ class CircleROITool extends AnnotationTool {
         );
       }
 
-      const dataId = `${annotationUID}-circle`;
       const circleUID = '0';
       drawCircleSvg(
         svgDrawingHelper,
@@ -756,8 +755,7 @@ class CircleROITool extends AnnotationTool {
           color,
           lineDash,
           lineWidth,
-        },
-        dataId
+        }
       );
 
       // draw center point, if "centerPointRadius" configuration is valid.
