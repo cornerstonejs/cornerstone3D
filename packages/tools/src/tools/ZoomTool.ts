@@ -207,8 +207,10 @@ class ZoomTool extends BaseTool {
 
       // Get display area, if available
       const displayArea = viewport.options?.displayArea;
-      const imageAreaScaleX = displayArea?.imageArea?.[0] ?? 1.1;
-      const imageAreaScaleY = displayArea?.imageArea?.[1] ?? 1.1;
+      const imageAreaScaleX =
+        displayArea?.imageArea?.[0] ?? viewport.insetImageMultiplier;
+      const imageAreaScaleY =
+        displayArea?.imageArea?.[1] ?? viewport.insetImageMultiplier;
 
       // Adjust image dimensions by display area scale
       const scaledImageWidth = imageWidth * imageAreaScaleX;
