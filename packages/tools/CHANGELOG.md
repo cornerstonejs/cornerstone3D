@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.0.0...v4.0.1) (2025-09-01)
+
+### Bug Fixes
+
+- **ZoomTool:** use insetImageMultiplier to determine zoom scale ([#2302](https://github.com/cornerstonejs/cornerstone3D/issues/2302)) ([251f2d4](https://github.com/cornerstonejs/cornerstone3D/commit/251f2d459aabcf50cf2d5b0b1fab2e3eca7a1b53))
+
 # [4.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.5...v4.0.0) (2025-08-28)
 
 ### Features
