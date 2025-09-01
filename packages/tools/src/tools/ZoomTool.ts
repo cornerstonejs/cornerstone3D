@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import type { Types } from '@cornerstonejs/core';
+import { getConfiguration, type Types } from '@cornerstonejs/core';
 import { Enums, getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -205,12 +205,17 @@ class ZoomTool extends BaseTool {
 
       const canvasAspect = size[0] / size[1];
 
+      const insetImageMultiplier = getConfiguration().rendering
+        ?.useLegacyCameraFOV
+        ? 1.1
+        : 1;
+
       // Get display area, if available
       const displayArea = viewport.options?.displayArea;
       const imageAreaScaleX =
-        displayArea?.imageArea?.[0] ?? viewport.insetImageMultiplier;
+        displayArea?.imageArea?.[0] ?? insetImageMultiplier;
       const imageAreaScaleY =
-        displayArea?.imageArea?.[1] ?? viewport.insetImageMultiplier;
+        displayArea?.imageArea?.[1] ?? insetImageMultiplier;
 
       // Adjust image dimensions by display area scale
       const scaledImageWidth = imageWidth * imageAreaScaleX;
