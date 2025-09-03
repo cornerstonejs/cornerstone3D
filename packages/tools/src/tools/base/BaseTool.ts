@@ -308,6 +308,16 @@ abstract class BaseTool {
     }
     this.memo = null;
   }
+
+  /** Starts a group recording of history memo, so that with a single undo you can undo multiple actions that are related to each other */
+  public static startGroupRecording() {
+    DefaultHistoryMemo.startGroupRecording();
+  }
+
+  /** Ends a group recording of history memo */
+  public static endGroupRecording() {
+    DefaultHistoryMemo.endGroupRecording();
+  }
 }
 
 // Note: this is a workaround since terser plugin does not support static blocks

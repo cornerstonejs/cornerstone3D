@@ -241,6 +241,8 @@ async function run() {
     storePointData: true,
     /* Set a custom wait time */
     throttleTimeout: 100,
+    /* Simplified handles */
+    simplified: true,
   });
 
   toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {

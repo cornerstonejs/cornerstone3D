@@ -21,7 +21,6 @@ Below you can see a simplified code for our `cornerstoneStreamingImageVolumeLoad
 
 1. Based on a set of imageIds, we compute volume metadata such as: spacing, origin, direction, etc.
 2. Instantiate a new [`StreamingImageVolume`](/docs/api/core/classes/streamingimagevolume/)
-
    - `StreamingImageVolume` implements methods for loading (`.load`)
    - It implements load via using `imageLoadPoolManager`
    - Each loaded frame (imageId) is put at the correct slice in the 3D volume

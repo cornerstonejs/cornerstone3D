@@ -110,7 +110,10 @@ function calculateUSPixelSpacing(instance) {
   const { PhysicalDeltaX, PhysicalDeltaY } = isArrayOfSequences
     ? SequenceOfUltrasoundRegions[0]
     : SequenceOfUltrasoundRegions;
-  const USPixelSpacing = [PhysicalDeltaX * 10, PhysicalDeltaY * 10];
+  const USPixelSpacing = [
+    Math.abs(PhysicalDeltaX) * 10,
+    Math.abs(PhysicalDeltaY) * 10,
+  ];
 
   return {
     PixelSpacing: USPixelSpacing,

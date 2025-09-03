@@ -188,6 +188,27 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
+   * Checks if the tool has a preview data associated.
+   * @returns True if the tool has preview data, false otherwise.
+   */
+  public hasPreviewData() {
+    return !!this._previewData.preview;
+  }
+
+  /**
+   * Checks if the tool should resolve preview requests.
+   * This is used to determine if the tool is in a state where it can handle
+   * preview requests.
+   * @returns True if the tool should resolve preview requests, false otherwise.
+   */
+  public shouldResolvePreviewRequests() {
+    return (
+      (this.mode === 'Active' || this.mode === 'Enabled') &&
+      this.hasPreviewData()
+    );
+  }
+
+  /**
    * Creates a labelmap memo instance, which stores the changes made to the
    * labelmap rather than the initial state.
    */
@@ -455,6 +476,11 @@ export default class LabelmapBaseTool extends BaseTool {
       StrategyCallbacks.AddPreview
     );
     _previewData.isDrag = true;
+    // If the results are modified, we store it as preview data
+    if (results?.modified) {
+      _previewData.preview = results;
+      _previewData.element = element;
+    }
     return results;
   }
 
@@ -604,8 +630,8 @@ export default class LabelmapBaseTool extends BaseTool {
       const segmentIndex = hasBoth
         ? startValue
         : startValue === 0
-        ? activeIndex
-        : 0;
+          ? activeIndex
+          : 0;
       for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
         for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
           for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {

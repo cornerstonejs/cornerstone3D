@@ -34,11 +34,11 @@ function createFormElement(): HTMLFormElement {
         coordType.charAt(0).toUpperCase() + coordType.slice(1)
       } Coords: Point [${coordType === 'canvas' ? 'x, y' : 'i, j'}]:</label>
       <input style="width:40px" type="number" id="${coordType}-start-1" placeholder="${
-      coordType === 'canvas' ? 'x' : 'i'
-    }" value="10">
+        coordType === 'canvas' ? 'x' : 'i'
+      }" value="10">
       <input style="width:40px" type="number" id="${coordType}-start-2" placeholder="${
-      coordType === 'canvas' ? 'y' : 'j'
-    }" value="10">
+        coordType === 'canvas' ? 'y' : 'j'
+      }" value="10">
       <br>
       <button style="margin-left: 52px;" type="button" id="${coordType}-stack">Add Stack</button>
       <button type="button" id="${coordType}-volume">Add Volume</button>
@@ -61,7 +61,7 @@ function addButtonListeners(form: HTMLFormElement): void {
       const [type, viewportType, useImageId] = button.id.split('-') as [
         'canvas' | 'image',
         keyof typeof typeToIdMap,
-        'imageId'?
+        'imageId'?,
       ];
       const enabledElement = getEnabledElementByViewportId(
         typeToIdMap[viewportType]

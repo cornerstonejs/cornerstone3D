@@ -145,9 +145,8 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-  const geometriesInfo = await createAndCacheGeometriesFromContours(
-    'SampleContour'
-  );
+  const geometriesInfo =
+    await createAndCacheGeometriesFromContours('SampleContour');
 
   // Add the segmentations to state
   segmentation.addSegmentations([

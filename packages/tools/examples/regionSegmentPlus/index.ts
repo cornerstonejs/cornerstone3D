@@ -152,9 +152,8 @@ const updateSeedVariancesConfig = cstUtils.throttle(
 
 async function addSegmentationToState(imageIds) {
   // Create segmentation images for each image in the stack
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIds
-  );
+  const segImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
   // Add the segmentation to state
   segmentation.addSegmentations([

@@ -88,6 +88,7 @@ The script is automatically run as part of the `build:docs` command (after `gene
 5. Save the file to the build directory root so it will be accessible at the root of the website
 
 The output file has the following structure:
+
 - Title and introduction for Cornerstone3D
 - Files are organized by their directory structure (e.g., concepts, tutorials)
 - Each file has a header with its title and source URL

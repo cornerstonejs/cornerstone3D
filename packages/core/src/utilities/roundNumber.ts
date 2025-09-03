@@ -31,16 +31,16 @@ function roundNumber(
     absValue >= 100
       ? precision - 2
       : absValue >= 10
-      ? precision - 1
-      : absValue >= 1
-      ? precision
-      : absValue >= 0.1
-      ? precision + 1
-      : absValue >= 0.01
-      ? precision + 2
-      : absValue >= 0.001
-      ? precision + 3
-      : precision + 4;
+        ? precision - 1
+        : absValue >= 1
+          ? precision
+          : absValue >= 0.1
+            ? precision + 1
+            : absValue >= 0.01
+              ? precision + 2
+              : absValue >= 0.001
+                ? precision + 3
+                : precision + 4;
   return value.toFixed(fixedPrecision);
 }
 

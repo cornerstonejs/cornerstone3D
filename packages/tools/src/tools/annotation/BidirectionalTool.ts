@@ -135,60 +135,17 @@ class BidirectionalTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation: BidirectionalAnnotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
-      data: {
-        handles: {
-          points: [
-            // long
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            // short
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-          ],
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-          activeHandleIndex: null,
-        },
-        label: '',
-        cachedStats: {},
-      },
-    };
+    const annotation = <BidirectionalAnnotation>this.createAnnotation(evt, [
+      // long
+      <Types.Point3>[...worldPos],
+      <Types.Point3>[...worldPos],
+      // short
+      <Types.Point3>[...worldPos],
+      <Types.Point3>[...worldPos],
+    ]);
 
     addAnnotation(annotation, element);
 

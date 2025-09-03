@@ -97,6 +97,7 @@ import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
+import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 
 const EPSILON = 1; // Slice Thickness
 
@@ -234,6 +235,8 @@ class StackViewport extends Viewport {
   };
 
   private _configureRenderingPipeline(value?: boolean) {
+    const isContextPool = isContextPoolRenderingEngine();
+
     this.useCPURendering = value ?? getShouldUseCPURendering();
 
     for (const key in this.renderingPipelineFunctions) {
@@ -244,7 +247,21 @@ class StackViewport extends Viewport {
         )
       ) {
         const functions = this.renderingPipelineFunctions[key];
-        this[key] = this.useCPURendering ? functions.cpu : functions.gpu;
+        if (this.useCPURendering) {
+          this[key] = functions.cpu;
+        } else {
+          if (
+            typeof functions.gpu === 'object' &&
+            functions.gpu.tiled &&
+            functions.gpu.contextPool
+          ) {
+            this[key] = isContextPool
+              ? functions.gpu.contextPool
+              : functions.gpu.tiled;
+          } else {
+            this[key] = functions.gpu;
+          }
+        }
       }
     }
 
@@ -350,13 +367,6 @@ class StackViewport extends Viewport {
    * @public
    */
   public worldToCanvas: (worldPos: Point3) => Point2;
-
-  /**
-   * If the renderer is CPU based, throw an error. Otherwise, returns the `vtkRenderer` responsible for rendering the `Viewport`.
-   *
-   * @returns The `vtkRenderer` for the `Viewport`.
-   */
-  public getRenderer: () => vtkRenderer;
 
   /**
    * If the renderer is CPU based, throw an error. Otherwise, return the default
@@ -2826,7 +2836,61 @@ class StackViewport extends Viewport {
     return canvasPoint;
   };
 
-  private canvasToWorldGPU = (canvasPos: Point2): Point3 => {
+  private canvasToWorldGPUContextPool = (canvasPos: Point2): Point3 => {
+    const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    // Convert canvas coordinates to normalized display coordinates
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+
+    // Normalize to [0,1] range
+    const normalizedDisplay = [
+      canvasPosWithDPR[0] / width,
+      1 - canvasPosWithDPR[1] / height, // Flip Y axis
+      0,
+    ];
+
+    // Transform from normalized display to world coordinates
+    const projCoords = renderer.normalizedDisplayToProjection(
+      normalizedDisplay[0],
+      normalizedDisplay[1],
+      normalizedDisplay[2]
+    );
+    const viewCoords = renderer.projectionToView(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2],
+      aspectRatio
+    );
+    const worldCoord = renderer.viewToWorld(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2]
+    );
+
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
+  };
+
+  private canvasToWorldGPUTiled = (canvasPos: Point2): Point3 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2846,6 +2910,7 @@ class StackViewport extends Viewport {
     const size = openGLRenderWindow.getSize();
 
     const devicePixelRatio = window.devicePixelRatio || 1;
+
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
       canvasPos[1] * devicePixelRatio,
@@ -2871,7 +2936,59 @@ class StackViewport extends Viewport {
     return [worldCoord[0], worldCoord[1], worldCoord[2]];
   };
 
-  private worldToCanvasGPU = (worldPos: Point3): Point2 => {
+  private worldToCanvasGPUContextPool = (worldPos: Point3): Point2 => {
+    const renderer = this.getRenderer();
+
+    // Temporary setting the clipping range to the distance and distance + 0.1
+    // in order to calculate the transformations correctly.
+    // This is similar to the vtkSlabCamera isPerformingCoordinateTransformations
+    // You can read more about it here there.
+    const vtkCamera = this.getVtkActiveCamera();
+    const crange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    const { width, height } = this.canvas;
+
+    const aspectRatio = width / height;
+
+    const viewCoords = renderer.worldToView(
+      worldPos[0],
+      worldPos[1],
+      worldPos[2]
+    );
+
+    const projCoords = renderer.viewToProjection(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2],
+      aspectRatio
+    );
+
+    const normalizedDisplay = renderer.projectionToNormalizedDisplay(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2]
+    );
+
+    const canvasX = normalizedDisplay[0] * width;
+    const canvasY = (1 - normalizedDisplay[1]) * height;
+
+    // set clipping range back to original to be able
+    vtkCamera.setClippingRange(crange[0], crange[1]);
+
+    const canvasCoordWithDPR = [
+      canvasX / devicePixelRatio,
+      canvasY / devicePixelRatio,
+    ] as Point2;
+
+    return canvasCoordWithDPR;
+  };
+
+  private worldToCanvasGPUTiled = (worldPos: Point3): Point2 => {
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2913,6 +3030,29 @@ class StackViewport extends Viewport {
 
     return canvasCoordWithDPR;
   };
+
+  /**
+   * Get the renderer for this viewport - handles ContextPoolRenderingEngine
+   */
+  public getRendererContextPool(): vtkRenderer {
+    const renderingEngine = this.getRenderingEngine();
+    return renderingEngine.getRenderer(this.id);
+  }
+
+  /**
+   * Returns the `vtkRenderer` responsible for rendering the `Viewport`.
+   *
+   * @returns The `vtkRenderer` for the `Viewport`.
+   */
+  public getRendererTiled(): vtkRenderer {
+    const renderingEngine = this.getRenderingEngine();
+
+    if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+      throw new Error('Rendering engine has been destroyed');
+    }
+
+    return renderingEngine.offscreenMultiRenderWindow?.getRenderer(this.id);
+  }
 
   private _getVOIRangeForCurrentImage() {
     const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
@@ -3022,11 +3162,18 @@ class StackViewport extends Viewport {
       return testIndex <= rangeEndSliceIndex && testIndex >= foundSliceIndex;
     }
 
-    if (!super.isReferenceViewable(viewRef, options)) {
+    // Apply asVolume to withOrientation to indicate allowing changing orientation
+    // only if this gets converted to a volume.
+    if (
+      !super.isReferenceViewable(viewRef, {
+        ...options,
+        withOrientation: options?.asVolume,
+      })
+    ) {
       return false;
     }
 
-    if (viewRef.volumeId) {
+    if (viewRef.volumeId || viewRef.FrameOfReferenceUID) {
       return options.asVolume;
     }
 
@@ -3382,15 +3529,24 @@ class StackViewport extends Viewport {
     },
     canvasToWorld: {
       cpu: this.canvasToWorldCPU,
-      gpu: this.canvasToWorldGPU,
+      gpu: {
+        tiled: this.canvasToWorldGPUTiled,
+        contextPool: this.canvasToWorldGPUContextPool,
+      },
     },
     worldToCanvas: {
       cpu: this.worldToCanvasCPU,
-      gpu: this.worldToCanvasGPU,
+      gpu: {
+        tiled: this.worldToCanvasGPUTiled,
+        contextPool: this.worldToCanvasGPUContextPool,
+      },
     },
     getRenderer: {
       cpu: () => this.getCPUFallbackError('getRenderer'),
-      gpu: super.getRenderer,
+      gpu: {
+        tiled: this.getRendererTiled,
+        contextPool: this.getRendererContextPool,
+      },
     },
     getDefaultActor: {
       cpu: () => this.getCPUFallbackError('getDefaultActor'),

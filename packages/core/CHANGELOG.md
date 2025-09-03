@@ -3,6 +3,44 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.0.0...v4.0.1) (2025-09-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [4.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.5...v4.0.0) (2025-08-28)
+
+### Features
+
+- Cornerstone3D 4.0 ([#2296](https://github.com/cornerstonejs/cornerstone3D/issues/2296)) ([f176995](https://github.com/cornerstonejs/cornerstone3D/commit/f1769957dd447277f474f363ce6fb1fad564fb0a))
+
+# [4.0.0-beta.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.0.0-beta.4...v4.0.0-beta.5) (2025-08-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [4.0.0-beta.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.5...v4.0.0-beta.4) (2025-08-25)
+
+# [4.0.0-beta.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.2...v4.0.0-beta.3) (2025-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [4.0.0-beta.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.2...v4.0.0-beta.3) (2025-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [3.26.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.1...v3.26.2) (2025-07-07)
+
+### Bug Fixes
+
+- **BaseVolumeViewport:** avoid undefined volumeId reference in error message ([#2179](https://github.com/cornerstonejs/cornerstone3D/issues/2179)) ([204921f](https://github.com/cornerstonejs/cornerstone3D/commit/204921f9fa32d755dc3ffc0be86ef16e1c9f00b5))
+
+## [3.26.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.0...v3.26.1) (2025-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [3.26.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.25.0...v3.26.0) (2025-07-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 # [3.25.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.24.0...v3.25.0) (2025-06-27)
 
 **Note:** Version bump only for package @cornerstonejs/core

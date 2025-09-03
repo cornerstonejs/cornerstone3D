@@ -37,14 +37,18 @@ function fetchArrayBuffer({
   signal?: AbortSignal;
   onload?: () => void;
 }): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
 
     const defaultHeaders = {} as Record<string, string>;
     const options = getOptions();
 
-    const beforeSendHeaders = options.beforeSend(xhr, defaultHeaders, url);
+    const beforeSendHeaders = await options.beforeSend(
+      xhr,
+      defaultHeaders,
+      url
+    );
 
     const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 

@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import type { WebWorkerDecodeConfig } from '../../types';
 
 const local = {
-  jpeg: undefined,
+  DecoderClass: undefined,
   decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
@@ -12,14 +12,13 @@ export function initialize(
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
 
-  if (local.jpeg) {
+  if (local.DecoderClass) {
     return Promise.resolve();
   }
 
   return new Promise((resolve, reject) => {
     import('jpeg-lossless-decoder-js').then(({ Decoder }) => {
-      const decoder = new Decoder();
-      local.jpeg = decoder;
+      local.DecoderClass = Decoder;
       resolve();
     }, reject);
   });
@@ -32,13 +31,16 @@ async function decodeJPEGLossless(
   await initialize();
 
   // check to make sure codec is loaded
-  if (typeof local.jpeg === 'undefined') {
+  if (typeof local.DecoderClass === 'undefined') {
     throw new Error('No JPEG Lossless decoder loaded');
   }
 
+  // Create a new decoder instance for each decode operation to ensure thread safety
+  const decoder = new local.DecoderClass();
+
   const byteOutput = imageFrame.bitsAllocated <= 8 ? 1 : 2;
   const buffer = pixelData.buffer;
-  const decompressedData = local.jpeg.decode(
+  const decompressedData = decoder.decode(
     buffer,
     pixelData.byteOffset,
     pixelData.length,

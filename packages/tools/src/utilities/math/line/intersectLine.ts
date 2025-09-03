@@ -8,8 +8,8 @@ function sign(x: number | string): number {
         ? -1
         : 1
       : x === x
-      ? 0
-      : NaN
+        ? 0
+        : NaN
     : NaN;
 }
 

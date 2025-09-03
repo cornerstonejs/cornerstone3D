@@ -8,7 +8,7 @@ import {
 import ndarray from "ndarray";
 import getDatasetsFromImages from "../helpers/getDatasetsFromImages";
 import checkOrientation from "../helpers/checkOrientation";
-import compareArrays from "../helpers/compareArrays";
+import { utilities as csUtilities } from "@cornerstonejs/core";
 
 import { Events } from "../enums";
 
@@ -1087,9 +1087,9 @@ export const getSegmentIndex = (multiframe, frame) => {
         ? PerFrameFunctionalGroups.SegmentIdentificationSequence
               .ReferencedSegmentNumber
         : SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-        ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-              .ReferencedSegmentNumber
-        : undefined;
+          ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
+                .ReferencedSegmentNumber
+          : undefined;
 };
 
 export function insertPixelDataPlanar(
@@ -1390,6 +1390,12 @@ export function getImageIdOfSourceImageBySourceImageSequence(
                 /frames\/\d+/,
                 `frames/${ReferencedFrameNumber}`
             );
+        } else if (baseImageId.includes("dicomfile:")) {
+            // dicomfile base 1, despite having frame=
+            return baseImageId.replace(
+                /frame=\d+/,
+                `frame=${ReferencedFrameNumber}`
+            );
         } else if (baseImageId.includes("frame=")) {
             return baseImageId.replace(
                 /frame=\d+/,
@@ -1476,12 +1482,12 @@ export function getImageIdOfSourceImagebyGeometry(
 
             if (
                 framePosition &&
-                compareArrays(segFramePosition, framePosition, tolerance)
+                csUtilities.isEqual(segFramePosition, framePosition, tolerance)
             ) {
                 return imageId;
             }
         } else if (
-            compareArrays(
+            csUtilities.isEqual(
                 segFramePosition,
                 sourceImageMetadata.ImagePositionPatient,
                 tolerance
@@ -1569,38 +1575,38 @@ export function alignPixelDataWithSourceData(
     orientations,
     tolerance
 ) {
-    if (compareArrays(iop, orientations[0], tolerance)) {
+    if (csUtilities.isEqual(iop, orientations[0], tolerance)) {
         return pixelData2D;
-    } else if (compareArrays(iop, orientations[1], tolerance)) {
+    } else if (csUtilities.isEqual(iop, orientations[1], tolerance)) {
         // Flipped vertically.
 
         // Undo Flip
         return flipMatrix2D.v(pixelData2D);
-    } else if (compareArrays(iop, orientations[2], tolerance)) {
+    } else if (csUtilities.isEqual(iop, orientations[2], tolerance)) {
         // Flipped horizontally.
 
         // Unfo flip
         return flipMatrix2D.h(pixelData2D);
-    } else if (compareArrays(iop, orientations[3], tolerance)) {
+    } else if (csUtilities.isEqual(iop, orientations[3], tolerance)) {
         //Rotated 90 degrees
 
         // Rotate back
         return rotateMatrix902D(pixelData2D);
-    } else if (compareArrays(iop, orientations[4], tolerance)) {
+    } else if (csUtilities.isEqual(iop, orientations[4], tolerance)) {
         //Rotated 90 degrees and fliped horizontally.
 
         // Undo flip and rotate back.
         return rotateMatrix902D(flipMatrix2D.h(pixelData2D));
-    } else if (compareArrays(iop, orientations[5], tolerance)) {
+    } else if (csUtilities.isEqual(iop, orientations[5], tolerance)) {
         // Rotated 90 degrees and fliped vertically
 
         // Unfo flip and rotate back.
         return rotateMatrix902D(flipMatrix2D.v(pixelData2D));
-    } else if (compareArrays(iop, orientations[6], tolerance)) {
+    } else if (csUtilities.isEqual(iop, orientations[6], tolerance)) {
         // Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
 
         return rotateMatrix902D(rotateMatrix902D(pixelData2D));
-    } else if (compareArrays(iop, orientations[7], tolerance)) {
+    } else if (csUtilities.isEqual(iop, orientations[7], tolerance)) {
         // Rotated 270 degrees
 
         // Rotate back.

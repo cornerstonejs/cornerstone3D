@@ -36,7 +36,7 @@ function _loadImageIntoBuffer(
         imageId,
         pixelData,
         transferSyntax,
-        options as any
+        options as unknown
       );
 
       logFn('Loader: done loading image: ', sopInstanceUid);

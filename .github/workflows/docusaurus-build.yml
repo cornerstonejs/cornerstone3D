@@ -1,0 +1,65 @@
+name: Docusaurus Build
+
+on:
+  pull_request:
+    branches: [ main ]
+
+env:
+  ACTIONS_STEP_DEBUG: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docusaurus-build:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.18.1'
+          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install root dependencies
+        run: bun install --frozen-lockfile
+
+      - name: reset nx cache
+        run: rm -rf .nx/cache
+
+      - name: reset nx cache
+        run: bun nx reset
+
+      - name: Build packages in ESM format
+        run: bun run build:esm
+        env:
+          NX_CACHE_DIRECTORY: ${{ runner.temp }}/nx-cache
+          NX_DAEMON: false
+
+      - name: Install docs dependencies
+        run: cd packages/docs && bun install
+
+      - name: Build Docusaurus documentation
+        run: cd packages/docs && bun run build:ci
+        env:
+          NODE_OPTIONS: --max_old_space_size=32384
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docusaurus-build-${{ github.sha }}
+          path: packages/docs/build/
+          retention-days: 7

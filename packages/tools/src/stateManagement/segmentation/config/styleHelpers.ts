@@ -24,10 +24,10 @@ type StyleForType<T extends SegmentationRepresentations> =
   T extends SegmentationRepresentations.Labelmap
     ? LabelmapStyle
     : T extends SegmentationRepresentations.Contour
-    ? ContourStyle
-    : T extends SegmentationRepresentations.Surface
-    ? SurfaceStyle
-    : never;
+      ? ContourStyle
+      : T extends SegmentationRepresentations.Surface
+        ? SurfaceStyle
+        : never;
 
 /**
  * Get the style for a given segmentation representation.

@@ -1,6 +1,8 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import { config as segmentationConfig } from '../../stateManagement/segmentation';
+
 import { BaseTool } from '../base';
 import type {
   PublicToolProps,
@@ -14,7 +16,8 @@ import { getActiveSegmentation } from '../../stateManagement/segmentation/active
 import { getSegmentIndexAtWorldPoint } from '../../utilities/segmentation';
 import { state } from '../../store/state';
 import type { Segmentation } from '../../types/SegmentationStateTypes';
-import { drawLinkedTextBox as drawLinkedTextBoxSvg } from '../../drawingSvg';
+import { drawTextBox as drawTextBoxSvg } from '../../drawingSvg';
+import type { Point2 } from 'packages/core/dist/esm/types';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -48,6 +51,8 @@ class SegmentLabelTool extends BaseTool {
       configuration: {
         hoverTimeout: 100,
         searchRadius: 6, // search for border in a 6px radius
+        color: null,
+        background: null,
       },
     }
   ) {
@@ -140,13 +145,20 @@ class SegmentLabelTool extends BaseTool {
       }
     );
     const segment = activeSegmentation.segments[hoveredSegmentIndex];
+    const color =
+      this.configuration.color ??
+      segmentationConfig.color.getSegmentIndexColor(
+        viewport.id,
+        segmentationId,
+        hoveredSegmentIndex
+      );
     const label = segment?.label;
     const canvasCoordinates = viewport.worldToCanvas(worldPoint);
     this._editData = {
       hoveredSegmentIndex,
       hoveredSegmentLabel: label,
       canvasCoordinates,
-      worldPoint,
+      color,
     };
 
     // No need to select background
@@ -176,24 +188,29 @@ class SegmentLabelTool extends BaseTool {
       hoveredSegmentIndex,
       hoveredSegmentLabel,
       canvasCoordinates,
-      worldPoint,
+      color,
     } = this._editData;
 
     if (!hoveredSegmentIndex) {
       return;
     }
 
-    const textBoxPosition = viewport.worldToCanvas(worldPoint);
+    const offset = -15;
+    const textBoxPosition = [
+      canvasCoordinates[0] + offset,
+      canvasCoordinates[1] + offset,
+    ] as Point2;
 
-    const boundingBox = drawLinkedTextBoxSvg(
+    const boundingBox = drawTextBoxSvg(
       svgDrawingHelper,
       'segmentSelectLabelAnnotation',
       'segmentSelectLabelTextBox',
-      [hoveredSegmentLabel ? hoveredSegmentLabel : '(unnamed segment)'],
+      [hoveredSegmentLabel ?? '(unnamed segment)'],
       textBoxPosition,
-      [canvasCoordinates],
-      {},
-      {}
+      {
+        color: `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`,
+        background: this.configuration.background ?? undefined,
+      }
     );
 
     const left = canvasCoordinates[0];
