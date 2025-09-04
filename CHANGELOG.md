@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.0.1...v4.0.3) (2025-09-04)
+
+### Bug Fixes
+
+- incorrect reporting of range request percent complete ([#2272](https://github.com/cornerstonejs/cornerstone3D/issues/2272)) ([7b3b77b](https://github.com/cornerstonejs/cornerstone3D/commit/7b3b77bb7273a12442baaf6fa98a3a56869f482a))
+
 ## [4.0.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.0.1...v4.0.2) (2025-09-04)
 
 **Note:** Version bump only for package root
