@@ -74,7 +74,8 @@ const { ViewportType } = Enums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+//const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeLoaderScheme = 'decimateVolumeLoader'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
@@ -90,7 +91,7 @@ addDropdownToToolbar({
   labelText: 'Sample distance in i,j pixels (rows,columns) :',
   options: {
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    defaultValue: getNumViewportsFromUrl(),
+    defaultValue: 1,
   },
   onSelectedValueChange: (selectedValue) => {
     // const url = new URL(window.location.href);
@@ -102,7 +103,7 @@ addDropdownToToolbar({
   labelText: 'Sample distance k pixels (slices/frames) to skip:',
   options: {
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    defaultValue: getNumViewportsFromUrl(),
+    defaultValue: 1,
   },
   onSelectedValueChange: (selectedValue) => {
     // const url = new URL(window.location.href);
@@ -196,20 +197,20 @@ content.append(instructions);
 /**
  * Get the number of orthographic viewports from the URL (?numViewports=1|2|3)
  */
-function getNumViewportsFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const value = params.get('numViewports');
-  const num = Number(value);
-  if ([1, 2, 3].includes(num)) {
-    return num;
-  }
-  return 3; // default
-}
+// function getNumViewportsFromUrl() {
+//   const params = new URLSearchParams(window.location.search);
+//   const value = params.get('numViewports');
+//   const num = Number(value);
+//   if ([1, 2, 3].includes(num)) {
+//     return num;
+//   }
+//   return 3; // default
+// }
 
 /**
  * Runs the demo with a configurable number of orthographic viewports
  */
-async function run(numViewports = getNumViewportsFromUrl()) {
+async function run() {
   await initDemo();
 
   cornerstoneTools.addTool(TrackballRotateTool);
@@ -266,19 +267,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
         background: <Types.Point3>[0, 0, 0],
       },
     },
-  ].slice(0, numViewports);
-
-  // Show/hide orthographic viewport elements based on numViewports
-  [element1, element2, element3].forEach((el, idx) => {
-    if (idx < numViewports) {
-      el.style.display = 'block';
-      el.style.height = `${100 / numViewports}%`;
-    } else {
-      el.style.display = 'none';
-    }
-  });
-
-  // Always set viewport4 (3D viewport) orientation to CORONAL
+  ];
   const viewportInputArray = [
     ...orthographicViewports,
     {
@@ -323,23 +312,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     renderingEngine.renderViewports(viewportIds);
   }
 
-  //  volume.load();
-
-  // Only set volumes for the active viewport IDs
-  const activeViewportIds = [
-    ...orthographicViewports.map((vp) => vp.viewportId),
-    viewportId4,
-  ];
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-    ],
-    activeViewportIds
-  );
+  volume.load();
 
   // Tool group for orthographic viewports
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -386,7 +359,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
-  renderingEngine.renderViewports(activeViewportIds);
+  renderingEngine.renderViewports(viewportIds);
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
@@ -423,7 +396,8 @@ async function run(numViewports = getNumViewportsFromUrl()) {
         },
       },
     };
-    loadButton('Load JLS', volumeId, imageIds, configJLS);
+    loadButton('Load Decimated Volume', volumeId, imageIds, configJLS);
+    //   loadButton('Load Decimated Volume', volumeId, imageIds);
     viewport.render();
   });
 }
