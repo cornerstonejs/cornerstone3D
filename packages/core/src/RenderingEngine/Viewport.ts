@@ -33,7 +33,6 @@ import type {
 } from '../types';
 import type {
   ViewportInput,
-  IViewport,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
@@ -49,6 +48,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { getConfiguration } from '../init';
 
 /**
  * An object representing a single viewport, which is a camera

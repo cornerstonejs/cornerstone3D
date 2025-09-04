@@ -302,8 +302,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
       getMouseModifierKey(evt.detail.event) ===
       this.configuration.contourHoleAdditionModifierKey;
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
     const annotation = this.createAnnotation(evt) as SplineROIAnnotation;
 
     this.isDrawing = true;

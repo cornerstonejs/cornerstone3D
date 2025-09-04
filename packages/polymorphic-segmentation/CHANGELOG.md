@@ -3,191 +3,27 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [3.33.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.1...v3.33.2) (2025-08-21)
+## [4.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.0.0...v4.0.1) (2025-09-01)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
 
-## [3.33.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.0...v3.33.1) (2025-08-21)
+# [4.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.5...v4.0.0) (2025-08-28)
+
+### Features
+
+- Cornerstone3D 4.0 ([#2296](https://github.com/cornerstonejs/cornerstone3D/issues/2296)) ([f176995](https://github.com/cornerstonejs/cornerstone3D/commit/f1769957dd447277f474f363ce6fb1fad564fb0a))
+
+# [4.0.0-beta.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.0.0-beta.4...v4.0.0-beta.5) (2025-08-26)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
 
-# [3.33.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.13...v3.33.0) (2025-08-20)
+# [4.0.0-beta.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.33.5...v4.0.0-beta.4) (2025-08-25)
+
+# [4.0.0-beta.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.2...v4.0.0-beta.3) (2025-07-07)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
 
-## [3.32.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.12...v3.32.13) (2025-08-20)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.11...v3.32.12) (2025-08-18)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.10...v3.32.11) (2025-08-18)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.9...v3.32.10) (2025-08-11)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.8...v3.32.9) (2025-08-11)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.7...v3.32.8) (2025-08-06)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.6...v3.32.7) (2025-08-05)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.5...v3.32.6) (2025-08-05)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.4...v3.32.5) (2025-07-30)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.3...v3.32.4) (2025-07-30)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.2...v3.32.3) (2025-07-30)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.1...v3.32.2) (2025-07-29)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.32.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.32.0...v3.32.1) (2025-07-28)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-# [3.32.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.14...v3.32.0) (2025-07-28)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.14](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.13...v3.31.14) (2025-07-25)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.13](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.12...v3.31.13) (2025-07-23)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.12](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.11...v3.31.12) (2025-07-22)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.11](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.10...v3.31.11) (2025-07-22)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.10](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.9...v3.31.10) (2025-07-22)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.9](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.8...v3.31.9) (2025-07-22)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.8](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.7...v3.31.8) (2025-07-22)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.7](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.6...v3.31.7) (2025-07-21)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.6](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.5...v3.31.6) (2025-07-18)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.4...v3.31.5) (2025-07-18)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.3...v3.31.4) (2025-07-17)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.2...v3.31.3) (2025-07-16)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.1...v3.31.2) (2025-07-16)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.31.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.31.0...v3.31.1) (2025-07-16)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-# [3.31.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.3...v3.31.0) (2025-07-15)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.30.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.2...v3.30.3) (2025-07-11)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.30.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.1...v3.30.2) (2025-07-11)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.30.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.30.0...v3.30.1) (2025-07-11)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-# [3.30.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.5...v3.30.0) (2025-07-11)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.29.5](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.4...v3.29.5) (2025-07-10)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.29.4](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.3...v3.29.4) (2025-07-10)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.29.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.2...v3.29.3) (2025-07-10)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.29.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.1...v3.29.2) (2025-07-10)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.29.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.29.0...v3.29.1) (2025-07-10)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-# [3.29.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.3...v3.29.0) (2025-07-10)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.28.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.2...v3.28.3) (2025-07-09)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.28.2](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.1...v3.28.2) (2025-07-09)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-## [3.28.1](https://github.com/cornerstonejs/cornerstone3D/compare/v3.28.0...v3.28.1) (2025-07-09)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-# [3.28.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.27.0...v3.28.0) (2025-07-08)
-
-**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
-
-# [3.27.0](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.2...v3.27.0) (2025-07-08)
+# [4.0.0-beta.3](https://github.com/cornerstonejs/cornerstone3D/compare/v3.26.2...v4.0.0-beta.3) (2025-07-07)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
 

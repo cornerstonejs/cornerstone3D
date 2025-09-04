@@ -53,28 +53,12 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: os
+  - type: textarea
+    id: system-info
     attributes:
-      label: 'OS'
-      description: 'Your operating system.'
-      placeholder: 'e.g., Windows 10, macOS 10.15.4'
-    validations:
-      required: true
-  - type: input
-    id: node-version
-    attributes:
-      label: 'Node version'
-      description: 'Your Node.js version.'
-      placeholder: 'e.g., 16.14.0'
-    validations:
-      required: true
-  - type: input
-    id: browser
-    attributes:
-      label: 'Browser'
-      description: 'Your browser.'
-      placeholder: 'e.g., Chrome 83.0.4103.116, Firefox 77.0.1, Safari 13.1.1'
+      label: 'System Information'
+      description: 'Please run the following command in your terminal and paste the output below:'
+      placeholder: 'npx envinfo --system --binaries --browsers'
     validations:
       required: true
 

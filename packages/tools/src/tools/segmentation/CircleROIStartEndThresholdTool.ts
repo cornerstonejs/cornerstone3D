@@ -40,6 +40,7 @@ import type {
   EventTypes,
   SVGDrawingHelper,
   Annotation,
+  AnnotationMetadata,
 } from '../../types';
 import type {
   CircleROIStartEndThresholdAnnotation,
@@ -284,7 +285,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
+    const { metadata } = annotation;
+    const { enabledElement } = metadata;
 
     this.editData = null;
     this.isDrawing = false;
@@ -348,9 +350,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     for (let i = 0; i < annotations.length; i++) {
       const annotation = annotations[i] as CircleROIStartEndThresholdAnnotation;
+
       const { annotationUID, data, metadata } = annotation;
       const { startCoordinate, endCoordinate } = data;
       const { points, activeHandleIndex } = data.handles;
+      const { enabledElement: annotationEnabledElement } = metadata;
 
       styleSpecifier.annotationUID = annotationUID;
 
@@ -434,9 +438,20 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ] = middleCoordinate;
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
+      const iteratorVolumeIDs =
+        // @ts-ignore
+        annotationEnabledElement.viewport?.volumeIds.values();
 
-      if (annotation.invalidated) {
-        this._throttledCalculateCachedStats(annotation, enabledElement);
+      for (const volumeId of iteratorVolumeIDs) {
+        if (
+          annotation.invalidated &&
+          annotation.metadata.volumeId === volumeId
+        ) {
+          this._throttledCalculateCachedStats(
+            annotation,
+            annotationEnabledElement
+          );
+        }
       }
 
       // If rendering engine has been destroyed while rendering
@@ -578,7 +593,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     return renderStatus;
   };
 
-  //Now works for axial, sagitall and coronal
   _computeProjectionPoints(
     annotation: CircleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
@@ -588,44 +602,47 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { startCoordinate, endCoordinate } = data;
     const { points } = data.handles;
 
-    const handlesToStart = csUtils.deepClone(points) as Types.Point3[];
-
-    const startWorld = vec3.clone(points[0]);
-    const endWorld = vec3.clone(points[0]);
-    const indexOfNormal =
+    const projectionAxisIndex =
       this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
 
-    startWorld[indexOfNormal] = startCoordinate;
-    endWorld[indexOfNormal] = endCoordinate;
+    const startWorld = vec3.clone(points[0]);
+    startWorld[projectionAxisIndex] = startCoordinate;
 
-    handlesToStart.forEach((handlePoint) => {
-      handlePoint[indexOfNormal] = startCoordinate;
-    });
+    const endWorld = vec3.clone(points[0]);
+    endWorld[projectionAxisIndex] = endCoordinate;
 
-    // distance between start and end slice in the world coordinate
-    const distance = vec3.distance(startWorld, endWorld);
+    const direction = vec3.create();
+    vec3.subtract(direction, endWorld, startWorld);
 
-    // for each point inside points, navigate in the direction of the viewPlaneNormal
-    // with amount of spacingInNormal, and calculate the next slice until we reach the distance
-    const newProjectionPoints = [];
-    if (distance >= 0) {
-      newProjectionPoints.push(
-        handlesToStart.map((p) => Array.from(p as vec3))
-      );
+    const distance = vec3.length(direction);
+
+    if (distance === 0) {
+      const handlesOnStartPlane = points.map((p) => {
+        const newPoint = vec3.clone(p as vec3);
+        newPoint[projectionAxisIndex] = startCoordinate;
+        return Array.from(newPoint) as Types.Point3;
+      });
+      data.cachedStats.projectionPoints = [handlesOnStartPlane];
+      return;
     }
-    for (
-      let dist = spacingInNormal;
-      dist <= distance;
-      dist += spacingInNormal
-    ) {
+
+    vec3.normalize(direction, direction);
+
+    const handlesToStart = csUtils.deepClone(points) as typeof points;
+    handlesToStart[0][projectionAxisIndex] = startCoordinate;
+    handlesToStart[1][projectionAxisIndex] = startCoordinate;
+
+    const newProjectionPoints = [];
+    for (let dist = 0; dist <= distance + 1e-6; dist += spacingInNormal) {
       newProjectionPoints.push(
         handlesToStart.map((point) => {
           const newPoint = vec3.create();
-          vec3.scaleAndAdd(newPoint, point as vec3, viewPlaneNormal, dist);
-          return Array.from(newPoint);
+          vec3.scaleAndAdd(newPoint, point as vec3, direction, dist);
+          return Array.from(newPoint) as Types.Point3;
         })
       );
     }
+
     data.cachedStats.projectionPoints = newProjectionPoints;
   }
 
@@ -692,6 +709,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       modalityUnitOptions
     );
 
+    // console.debug(projectionPoints)
     for (let i = 0; i < projectionPoints.length; i++) {
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -786,6 +804,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         pointsInsideVolume.push(pointsInShape);
       }
     }
+    // console.debug(pointsInsideVolume)
     const stats = this.configuration.statsCalculator.getStatistics();
     data.cachedStats.pointsInVolume = pointsInsideVolume;
     data.cachedStats.statistics = {
@@ -802,6 +821,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
   _calculateCachedStatsTool(annotation, enabledElement) {
     const data = annotation.data;
+
     const { viewport } = enabledElement;
 
     const { cachedStats } = data;

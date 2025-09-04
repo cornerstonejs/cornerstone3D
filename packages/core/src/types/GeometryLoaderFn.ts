@@ -22,7 +22,7 @@ export interface GeometryLoaderOptions {
   beforeSend?: (
     xhr: XMLHttpRequest,
     defaultHeaders: Record<string, string>
-  ) => Record<string, string> | void;
+  ) => Promise<Record<string, string> | void> | Record<string, string> | void;
 }
 
 export type { GeometryLoaderFn as default };
