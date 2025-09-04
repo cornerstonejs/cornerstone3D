@@ -98,7 +98,17 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     // Get the context and add the renderer
     const contextData = this.contextPool.getContextByIndex(contextIndex);
 
-    const { context: offscreenMultiRenderWindow } = contextData;
+    const { context: offscreenMultiRenderWindow, container } = contextData;
+
+    // Initialize the offscreen canvas size to the max size for this context
+    const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
+    // @ts-expect-error
+    container.width = maxSize.width;
+    // @ts-expect-error
+    container.height = maxSize.height;
+
+    offscreenMultiRenderWindow.resize();
+
     offscreenMultiRenderWindow.addRenderer({
       viewport: [0, 0, 1, 1],
       id: viewportId,
