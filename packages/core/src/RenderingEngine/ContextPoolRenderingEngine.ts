@@ -88,6 +88,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
     this.contextPool.assignViewportToContext(viewportId, contextIndex);
 
+    // Track viewport size
+    this.contextPool.updateViewportSize(
+      viewportId,
+      canvas.width,
+      canvas.height
+    );
+
     // Get the context and add the renderer
     const contextData = this.contextPool.getContextByIndex(contextIndex);
 
@@ -334,7 +341,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
     this._resizeOffScreenCanvasForViewport(
-      viewport.canvas,
+      viewport,
       offScreenCanvasContainer,
       offscreenMultiRenderWindow
     );
@@ -385,26 +392,42 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   }
 
   private _resizeOffScreenCanvasForViewport(
-    viewportCanvas: HTMLCanvasElement,
+    viewport: IViewport,
     offScreenCanvasContainer: HTMLDivElement,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
   ): void {
-    const offScreenCanvasWidth = viewportCanvas.width;
-    const offScreenCanvasHeight = viewportCanvas.height;
+    const contextIndex = this.contextPool.getContextIndexForViewport(
+      viewport.id
+    );
+    if (contextIndex === undefined) {
+      return;
+    }
 
+    const maxSizeChanged = this.contextPool.updateViewportSize(
+      viewport.id,
+      viewport.canvas.width,
+      viewport.canvas.height
+    );
+
+    if (!maxSizeChanged) {
+      return;
+    }
+
+    const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
+
+    // @ts-expect-error
     if (
+      offScreenCanvasContainer.width === maxSize.width &&
       // @ts-expect-error
-      offScreenCanvasContainer.height === offScreenCanvasHeight &&
-      // @ts-expect-error
-      offScreenCanvasContainer.width === offScreenCanvasWidth
+      offScreenCanvasContainer.height === maxSize.height
     ) {
       return;
     }
 
     // @ts-expect-error
-    offScreenCanvasContainer.width = offScreenCanvasWidth;
+    offScreenCanvasContainer.width = maxSize.width;
     // @ts-expect-error
-    offScreenCanvasContainer.height = offScreenCanvasHeight;
+    offScreenCanvasContainer.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
   }
@@ -423,16 +446,20 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const { width: dWidth, height: dHeight } = canvas;
 
     const onScreenContext = canvas.getContext('2d');
+
+    // Copy only the portion of the offscreen canvas that corresponds to this viewport
+    // Since the offscreen canvas is sized to the largest viewport in the context,
+    // we only need to copy the portion that this viewport actually uses
     onScreenContext.drawImage(
       offScreenCanvas,
       0,
       0,
-      dWidth,
-      dHeight,
+      dWidth, // Source width (only copy what we need)
+      dHeight, // Source height (only copy what we need)
       0,
       0,
-      dWidth,
-      dHeight
+      dWidth, // Destination width
+      dHeight // Destination height
     );
 
     return {
@@ -447,6 +474,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private _resize(
     viewportsDrivenByVtkJs: (IStackViewport | IVolumeViewport)[]
   ): void {
+    // Track which contexts need resizing
+    const contextsToResize = new Set<number>();
+
     for (const viewport of viewportsDrivenByVtkJs) {
       viewport.sx = 0;
       viewport.sy = 0;
@@ -458,12 +488,39 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         viewport.id
       );
 
+      // Update viewport size and check if max size changed
+      const maxSizeChanged = this.contextPool.updateViewportSize(
+        viewport.id,
+        viewport.canvas.width,
+        viewport.canvas.height
+      );
+
+      if (maxSizeChanged) {
+        contextsToResize.add(contextIndex);
+      }
+
       const contextData = this.contextPool.getContextByIndex(contextIndex);
       const { context: offscreenMultiRenderWindow } = contextData;
       const renderer = offscreenMultiRenderWindow.getRenderer(viewport.id);
 
       renderer.setViewport(0, 0, 1, 1);
     }
+
+    // Resize contexts that had their max size change
+    contextsToResize.forEach((contextIndex) => {
+      const contextData = this.contextPool.getContextByIndex(contextIndex);
+      if (contextData) {
+        const { context: offscreenMultiRenderWindow, container } = contextData;
+        const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
+
+        // @ts-expect-error
+        container.width = maxSize.width;
+        // @ts-expect-error
+        container.height = maxSize.height;
+
+        offscreenMultiRenderWindow.resize();
+      }
+    });
   }
 
   private getWidgetRenderers(): Map<vtkRenderer, string> {
@@ -526,6 +583,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
           offscreenMultiRenderWindow.removeRenderer(viewportId);
         }
       }
+
+      this.contextPool.removeViewport(viewportId);
     }
   }
 
