@@ -415,8 +415,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-    // @ts-expect-error
     if (
+      // @ts-expect-error
       offScreenCanvasContainer.width === maxSize.width &&
       // @ts-expect-error
       offScreenCanvasContainer.height === maxSize.height
