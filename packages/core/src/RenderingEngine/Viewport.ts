@@ -98,10 +98,7 @@ class Viewport {
   /**
    * The amount by which the images are inset in a viewport by default.
    */
-  protected insetImageMultiplier = getConfiguration().rendering
-    ?.useLegacyCameraFOV
-    ? 1.1
-    : 1;
+  protected insetImageMultiplier = 1;
 
   protected flipHorizontal = false;
   protected flipVertical = false;
@@ -1114,16 +1111,12 @@ class Viewport {
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
     }
-
     let widthWorld;
     let heightWorld;
-    const config = getConfiguration();
-    const useLegacyMethod = config.rendering?.useLegacyCameraFOV ?? false;
 
-    if (imageData && !useLegacyMethod) {
+    if (imageData) {
       const extent = imageData.getExtent();
       const spacing = imageData.getSpacing();
-
       widthWorld = (extent[1] - extent[0]) * spacing[0];
       heightWorld = (extent[3] - extent[2]) * spacing[1];
     } else {

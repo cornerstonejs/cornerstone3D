@@ -392,12 +392,19 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const offScreenCanvasWidth = viewportCanvas.width;
     const offScreenCanvasHeight = viewportCanvas.height;
 
-    if (
+    const tolerance = 2;
+
+    const widthDiff = Math.abs(
       // @ts-expect-error
-      offScreenCanvasContainer.height === offScreenCanvasHeight &&
+      offScreenCanvasContainer.width - offScreenCanvasWidth
+    );
+
+    const heightDiff = Math.abs(
       // @ts-expect-error
-      offScreenCanvasContainer.width === offScreenCanvasWidth
-    ) {
+      offScreenCanvasContainer.height - offScreenCanvasHeight
+    );
+
+    if (widthDiff <= tolerance && heightDiff <= tolerance) {
       return;
     }
 
