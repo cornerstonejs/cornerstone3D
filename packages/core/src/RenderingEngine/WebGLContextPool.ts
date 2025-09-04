@@ -127,9 +127,7 @@ class WebGLContextPool {
     width: number;
     height: number;
   } {
-    return (
-      this.contextMaxSizes.get(contextIndex) || { width: 512, height: 512 }
-    );
+    return this.contextMaxSizes.get(contextIndex);
   }
 
   /**
@@ -157,8 +155,8 @@ class WebGLContextPool {
 
     // Return the maximum dimensions (or minimum default if no viewports)
     return {
-      width: Math.max(maxWidth, 512),
-      height: Math.max(maxHeight, 512),
+      width: maxWidth,
+      height: maxHeight,
     };
   }
 
