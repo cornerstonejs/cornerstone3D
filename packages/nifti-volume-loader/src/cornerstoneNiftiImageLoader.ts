@@ -148,7 +148,7 @@ export default function cornerstoneNiftiImageLoader(
 
   return {
     promise: promise as Promise<Types.IImage>,
-    cancelFn: undefined,
+    cancelFn: undefined, // TODO: add proper cancel function
     decache: () => {
       dataFetchStateMap.delete(url);
     },
@@ -198,10 +198,18 @@ function waitForNiftiData(
   imagePixelModule: Types.ImagePixelModule,
   imagePlaneModule: Types.ImagePlaneModule
 ): Promise<Types.IImage> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const intervalId = setInterval(() => {
       const dataFetchState = dataFetchStateMap.get(url);
-      if (dataFetchState.status === 'fetched') {
+
+      if (!dataFetchState) {
+        clearInterval(intervalId);
+        reject(
+          `dataFetchState for ${url} is not found. The cache was purged before it completed loading.`
+        );
+      }
+
+      if (dataFetchState?.status === 'fetched') {
         clearInterval(intervalId);
         resolve(
           createImage(
