@@ -724,7 +724,6 @@ class LengthTool extends AnnotationTool {
         );
       }
 
-      const dataId = `${annotationUID}-line`;
       const lineUID = '1';
       drawLineSvg(
         svgDrawingHelper,
@@ -737,8 +736,7 @@ class LengthTool extends AnnotationTool {
           width: lineWidth,
           lineDash,
           shadow,
-        },
-        dataId
+        }
       );
 
       renderStatus = true;
