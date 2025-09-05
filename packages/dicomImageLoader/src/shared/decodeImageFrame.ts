@@ -273,6 +273,8 @@ function postProcessDecodedPixels(
 
   imageFrame.minAfterScale = minAfterScale;
   imageFrame.maxAfterScale = maxAfterScale;
+  imageFrame.smallestPixelValue = minAfterScale;
+  imageFrame.largestPixelValue = maxAfterScale;
 
   const end = new Date().getTime();
   imageFrame.decodeTimeInMS = end - start;
