@@ -10,6 +10,10 @@ class WebGLContextPool {
   private contexts: VtkOffscreenMultiRenderWindow[] = [];
   private offScreenCanvasContainers: HTMLDivElement[] = [];
   private viewportToContext: Map<string, number> = new Map();
+  private viewportSizes: Map<string, { width: number; height: number }> =
+    new Map();
+  private contextMaxSizes: Map<number, { width: number; height: number }> =
+    new Map();
 
   /**
    * Creates a pool with the specified number of WebGL contexts
@@ -80,6 +84,99 @@ class WebGLContextPool {
   }
 
   /**
+   * Updates the size of a viewport and recalculates the maximum size for its context
+   * @param viewportId - ID of the viewport
+   * @param width - New width
+   * @param height - New height
+   * @returns True if the maximum size for the context changed
+   */
+  updateViewportSize(
+    viewportId: string,
+    width: number,
+    height: number
+  ): boolean {
+    const contextIndex = this.viewportToContext.get(viewportId);
+    if (contextIndex === undefined) {
+      return false;
+    }
+
+    // Update viewport size
+    this.viewportSizes.set(viewportId, { width, height });
+
+    // Calculate new maximum size for this context
+    const previousMax = this.contextMaxSizes.get(contextIndex);
+    const newMax = this.calculateMaxSizeForContext(contextIndex);
+
+    // Update the max size
+    this.contextMaxSizes.set(contextIndex, newMax);
+
+    // Return whether the max size changed
+    return (
+      !previousMax ||
+      previousMax.width !== newMax.width ||
+      previousMax.height !== newMax.height
+    );
+  }
+
+  /**
+   * Gets the maximum size for a given context
+   * @param contextIndex - Index of the context
+   * @returns Maximum width and height, or default size if no viewports
+   */
+  getMaxSizeForContext(contextIndex: number): {
+    width: number;
+    height: number;
+  } {
+    return this.contextMaxSizes.get(contextIndex);
+  }
+
+  /**
+   * Calculates the maximum size needed for a context based on its viewports
+   * @param contextIndex - Index of the context
+   * @returns Maximum width and height
+   */
+  private calculateMaxSizeForContext(contextIndex: number): {
+    width: number;
+    height: number;
+  } {
+    let maxWidth = 0;
+    let maxHeight = 0;
+
+    // Find all viewports assigned to this context
+    this.viewportToContext.forEach((assignedContext, viewportId) => {
+      if (assignedContext === contextIndex) {
+        const size = this.viewportSizes.get(viewportId);
+        if (size) {
+          maxWidth = Math.max(maxWidth, size.width);
+          maxHeight = Math.max(maxHeight, size.height);
+        }
+      }
+    });
+
+    // Return the maximum dimensions (or minimum default if no viewports)
+    return {
+      width: maxWidth,
+      height: maxHeight,
+    };
+  }
+
+  /**
+   * Removes a viewport from tracking
+   * @param viewportId - ID of the viewport to remove
+   */
+  removeViewport(viewportId: string): void {
+    const contextIndex = this.viewportToContext.get(viewportId);
+    this.viewportToContext.delete(viewportId);
+    this.viewportSizes.delete(viewportId);
+
+    // Recalculate max size for the affected context
+    if (contextIndex !== undefined) {
+      const newMax = this.calculateMaxSizeForContext(contextIndex);
+      this.contextMaxSizes.set(contextIndex, newMax);
+    }
+  }
+
+  /**
    * Cleans up all contexts and releases resources
    */
   destroy(): void {
@@ -89,6 +186,8 @@ class WebGLContextPool {
     this.contexts = [];
     this.offScreenCanvasContainers = [];
     this.viewportToContext.clear();
+    this.viewportSizes.clear();
+    this.contextMaxSizes.clear();
   }
 }
 
