@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.1.0...v4.1.1) (2025-09-05)
+
+### Bug Fixes
+
+- **nifti-volume-loader:** add check and clear for orphaned interval at waitForNiftiData function ([#2308](https://github.com/cornerstonejs/cornerstone3D/issues/2308)) ([c6da6d1](https://github.com/cornerstonejs/cornerstone3D/commit/c6da6d131f4d924c51b2176f32e6bb778ad78188))
+
 # [4.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.0.3...v4.1.0) (2025-09-05)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
