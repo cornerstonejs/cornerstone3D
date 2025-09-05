@@ -350,6 +350,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
+    // Update the offscreen canvas size if needed
     this._resizeOffScreenCanvasForViewport(
       viewport,
       offScreenCanvasContainer,
@@ -357,7 +358,20 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     );
 
     const renderer = offscreenMultiRenderWindow.getRenderer(viewport.id);
-    renderer.setViewport(0, 0, 1, 1);
+
+    // Get the context index and calculate viewport specific rendering area
+    const contextIndex = this.contextPool.getContextIndexForViewport(
+      viewport.id
+    );
+    const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
+
+    const viewportWidth = viewport.canvas.width;
+    const viewportHeight = viewport.canvas.height;
+
+    const xEnd = Math.min(1, viewportWidth / maxSize.width);
+    const yEnd = Math.min(1, viewportHeight / maxSize.height);
+
+    renderer.setViewport(0, 0, xEnd, yEnd);
 
     // Set only this renderer to draw
     const allRenderers = offscreenMultiRenderWindow.getRenderers();
@@ -457,17 +471,21 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const onScreenContext = canvas.getContext('2d');
 
-    // Copy only the portion of the offscreen canvas that corresponds to this viewport
-    // Since the offscreen canvas is sized to the largest viewport in the context,
-    // we only need to copy the portion that this viewport actually uses
+    // Get the context index for this viewport to find the max size
+    const contextIndex =
+      this.contextPool.getContextIndexForViewport(viewportId);
+    const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
+
+    const sourceY = maxSize.height - dHeight;
+
     onScreenContext.drawImage(
       offScreenCanvas,
-      0,
-      0,
-      dWidth, // Source width (only copy what we need)
-      dHeight, // Source height (only copy what we need)
-      0,
-      0,
+      0, // Source X
+      sourceY, // Source Y (copy from where VTK rendered at bottom)
+      dWidth, // Source width
+      dHeight, // Source height
+      0, // Destination X
+      0, // Destination Y
       dWidth, // Destination width
       dHeight // Destination height
     );
@@ -513,7 +531,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       const { context: offscreenMultiRenderWindow } = contextData;
       const renderer = offscreenMultiRenderWindow.getRenderer(viewport.id);
 
-      renderer.setViewport(0, 0, 1, 1);
+      // Calculate viewport coordinates relative to the max size
+      const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
+      const xEnd = Math.min(1, viewport.canvas.width / maxSize.width);
+      const yEnd = Math.min(1, viewport.canvas.height / maxSize.height);
+
+      renderer.setViewport(0, 0, xEnd, yEnd);
     }
 
     // Resize contexts that had their max size change
