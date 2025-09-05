@@ -20,7 +20,8 @@ type Properties =
   | 'shadow'
   | 'visibility'
   | 'markerSize'
-  | 'angleArcLineDash';
+  | 'angleArcLineDash'
+  | 'pointerStrokeWidth';
 
 export type AnnotationStyle = {
   [key in `${Properties}${States}${Modes}`]?:
