@@ -324,6 +324,15 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === MetadataModules.PET_SERIES) {
+    let correctedImageData = metaData['00280051'];
+    let correctedImage = getValue(metaData['00280051']);
+    if (
+      correctedImageData &&
+      correctedImageData.Value &&
+      Array.isArray(correctedImageData.Value)
+    ) {
+      correctedImage = correctedImageData.Value.join('\\');
+    }
     return {
       correctedImage: getValue(metaData['00280051']),
       units: getValue(metaData['00541001']),
