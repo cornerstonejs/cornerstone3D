@@ -61,6 +61,7 @@ import {
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { vec2, vec3 } from 'gl-matrix';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -731,13 +732,16 @@ class CircleROITool extends AnnotationTool {
         }
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
           handleGroupUID,
-          activeHandleCanvasCoords,
+          showHandlesAlways ? canvasCoordinates : activeHandleCanvasCoords,
           {
             color,
           }

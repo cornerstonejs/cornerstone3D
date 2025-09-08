@@ -48,6 +48,7 @@ import type {
 import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 class CobbAngleTool extends AnnotationTool {
   static toolName = 'CobbAngle';
@@ -749,7 +750,10 @@ class CobbAngleTool extends AnnotationTool {
         continue;
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
