@@ -9,6 +9,8 @@ import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseE
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import type { MouseMoveEventType } from '../../types/EventTypes';
 import { setCursorForElement } from '../../cursors';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { Active, Passive } = ToolModes;
 
@@ -69,7 +71,11 @@ export default function mouseMove(evt: MouseMoveEventType) {
     }
   }
 
-  if (showCrosshairsCursor) {
+  const showHandlesAlways = Boolean(
+    getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+  );
+
+  if (showCrosshairsCursor && showHandlesAlways) {
     setCursorForElement(element, 'move');
   } else {
     const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
