@@ -82,9 +82,9 @@
   },
   "dependencies": {
     "@kitware/vtk.js": "32.12.1",
-    "comlink": "^4.4.1",
-    "gl-matrix": "^3.4.3",
-    "loglevel": "^1.9.2"
+    "comlink": "4.4.2",
+    "gl-matrix": "3.4.3",
+    "loglevel": "1.9.2"
   },
   "contributors": [
     {
