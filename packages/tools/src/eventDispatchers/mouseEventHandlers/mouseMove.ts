@@ -4,9 +4,13 @@ import { ToolModes } from '../../enums';
 
 // // Util
 import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
+import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import getToolsWithModesForMouseEvent from '../shared/getToolsWithModesForMouseEvent';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import type { MouseMoveEventType } from '../../types/EventTypes';
+import { setCursorForElement } from '../../cursors';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import type { StyleSpecifier } from '../../types/AnnotationStyle';
 
 const { Active, Passive } = ToolModes;
 
@@ -30,7 +34,7 @@ export default function mouseMove(evt: MouseMoveEventType) {
   ]);
 
   const eventDetail = evt.detail;
-  const { element } = eventDetail;
+  const { element, currentPoints, renderingEngineId, viewportId } = eventDetail;
 
   // Annotation tool specific
   const toolsWithAnnotations = filterToolsWithAnnotationsForElement(
@@ -48,11 +52,38 @@ export default function mouseMove(evt: MouseMoveEventType) {
   });
 
   let annotationsNeedToBeRedrawn = false;
+  let showCrosshairsCursor = false;
 
   for (const { tool, annotations } of toolsWithAnnotations) {
     if (typeof tool.mouseMoveCallback === 'function') {
       annotationsNeedToBeRedrawn =
         tool.mouseMoveCallback(evt, annotations) || annotationsNeedToBeRedrawn;
+
+      for (const annotation of annotations) {
+        showCrosshairsCursor =
+          !!tool.getHandleNearImagePoint(
+            element,
+            annotation,
+            currentPoints.canvas,
+            6
+          ) || showCrosshairsCursor;
+      }
+    }
+  }
+
+  const showGrabCursorEnabled = Boolean(
+    getStyleProperty('showGrabCursor', {} as StyleSpecifier)
+  );
+
+  if (showCrosshairsCursor && showGrabCursorEnabled) {
+    setCursorForElement(element, 'move');
+  } else {
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
+    const activeTool = toolGroup?.getActivePrimaryMouseButtonTool();
+    if (activeTool) {
+      setCursorForElement(element, activeTool);
+    } else {
+      setCursorForElement(element, 'default');
     }
   }
 

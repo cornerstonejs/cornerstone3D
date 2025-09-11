@@ -48,6 +48,7 @@ import type { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotation
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -1136,14 +1137,17 @@ class BidirectionalTool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
           handleGroupUID,
-          activeHandleCanvasCoords,
+          showHandlesAlways ? canvasCoordinates : activeHandleCanvasCoords,
           {
             color,
           }
