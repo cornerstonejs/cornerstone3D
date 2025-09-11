@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.1.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.1.3...v4.1.4) (2025-09-11)
+
+### Bug Fixes
+
+- **segmentation:** Initialize the active segment index to the first available segment if none is currently set. ([#2322](https://github.com/cornerstonejs/cornerstone3D/issues/2322)) ([2ac9f9a](https://github.com/cornerstonejs/cornerstone3D/commit/2ac9f9a594b613d98163dcfeddd8b2227b38a02c))
+
 ## [4.1.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.1.2...v4.1.3) (2025-09-09)
 
 ### Bug Fixes
