@@ -220,6 +220,7 @@ async function run() {
     cornerstoneTools.annotation.config.style.getDefaultToolStyles();
 
   defaultToolStyles.global.showHandlesAlways = true;
+  defaultToolStyles.global.showGrabCursor = true;
 
   cornerstoneTools.annotation.config.style.setDefaultToolStyles(
     defaultToolStyles

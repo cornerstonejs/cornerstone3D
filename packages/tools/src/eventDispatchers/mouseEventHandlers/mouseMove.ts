@@ -71,11 +71,11 @@ export default function mouseMove(evt: MouseMoveEventType) {
     }
   }
 
-  const showHandlesAlways = Boolean(
-    getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+  const showGrabCursorEnabled = Boolean(
+    getStyleProperty('showGrabCursor', {} as StyleSpecifier)
   );
 
-  if (showCrosshairsCursor && showHandlesAlways) {
+  if (showCrosshairsCursor && showGrabCursorEnabled) {
     setCursorForElement(element, 'move');
   } else {
     const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
