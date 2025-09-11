@@ -838,7 +838,7 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.27.1"
 
-"@babel/plugin-transform-for-of@^7.25.9":
+"@babel/plugin-transform-for-of@^7.26.9":
   version "7.27.1"
   resolved "https://registry.yarnpkg.com/@babel/plugin-transform-for-of/-/plugin-transform-for-of-7.27.1.tgz#bc24f7080e9ff721b63a70ac7b2564ca15b6c40a"
   integrity sha512-BfbWFFEJFQzLCQ5N8VocnCtA8J1CLkNTe2Ms2wocj75dd6VpiqS5Z5quTYcUoo4Yq+DN0rtikODccuv7RU81sw==
@@ -1163,10 +1163,10 @@
     "@babel/helper-create-regexp-features-plugin" "^7.27.1"
     "@babel/helper-plugin-utils" "^7.27.1"
 
-"@babel/preset-env@7.26.8":
-  version "7.26.8"
-  resolved "https://registry.yarnpkg.com/@babel/preset-env/-/preset-env-7.26.8.tgz#7af0090829b606d2046db99679004731e1dc364d"
-  integrity sha512-um7Sy+2THd697S4zJEfv/U5MHGJzkN2xhtsR3T/SWRbVSic62nbISh51VVfU9JiO/L/Z97QczHTaFVkOU8IzNg==
+"@babel/preset-env@7.26.9":
+  version "7.26.9"
+  resolved "https://registry.yarnpkg.com/@babel/preset-env/-/preset-env-7.26.9.tgz#2ec64e903d0efe743699f77a10bdf7955c2123c3"
+  integrity sha512-vX3qPGE8sEKEAZCWk05k3cpTAE3/nOYca++JA+Rd0z2NCNzabmYvEiSShKzm10zdquOIAVXsy2Ei/DTW34KlKQ==
   dependencies:
     "@babel/compat-data" "^7.26.8"
     "@babel/helper-compilation-targets" "^7.26.5"
@@ -1197,7 +1197,7 @@
     "@babel/plugin-transform-dynamic-import" "^7.25.9"
     "@babel/plugin-transform-exponentiation-operator" "^7.26.3"
     "@babel/plugin-transform-export-namespace-from" "^7.25.9"
-    "@babel/plugin-transform-for-of" "^7.25.9"
+    "@babel/plugin-transform-for-of" "^7.26.9"
     "@babel/plugin-transform-function-name" "^7.25.9"
     "@babel/plugin-transform-json-strings" "^7.25.9"
     "@babel/plugin-transform-literals" "^7.25.9"
