@@ -21,9 +21,7 @@ type Properties =
   | 'visibility'
   | 'markerSize'
   | 'angleArcLineDash'
-  | 'pointerStrokeWidth'
-  | 'showHandlesAlways'
-  | 'showGrabCursor';
+  | 'pointerStrokeWidth';
 
 export type AnnotationStyle = {
   [key in `${Properties}${States}${Modes}`]?:

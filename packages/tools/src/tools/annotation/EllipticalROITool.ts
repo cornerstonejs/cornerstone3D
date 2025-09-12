@@ -57,7 +57,6 @@ import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { vec2 } from 'gl-matrix';
-import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -880,16 +879,13 @@ class EllipticalROITool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      const showHandlesAlways = Boolean(
-        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
-      );
-      if (activeHandleCanvasCoords || showHandlesAlways) {
+      if (activeHandleCanvasCoords) {
         const handleGroupUID = '0';
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
           handleGroupUID,
-          showHandlesAlways ? canvasCoordinates : activeHandleCanvasCoords,
+          activeHandleCanvasCoords,
           {
             color,
           }

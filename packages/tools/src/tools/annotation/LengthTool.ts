@@ -49,7 +49,6 @@ import type {
 } from '../../types';
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -709,10 +708,7 @@ class LengthTool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      const showHandlesAlways = Boolean(
-        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
-      );
-      if (activeHandleCanvasCoords || showHandlesAlways) {
+      if (activeHandleCanvasCoords) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
