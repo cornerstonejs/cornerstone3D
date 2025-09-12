@@ -65,20 +65,17 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
-import { actorIsA, isImageActor } from '../utilities/actorCheck';
+import { actorIsA } from '../utilities/actorCheck';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import isEqual, { isEqualAbs, isEqualNegative } from '../utilities/isEqual';
 import applyPreset from '../utilities/applyPreset';
-import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
 import { getCameraVectors } from './helpers/getCameraVectors';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
-import { setConfiguration, getConfiguration } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
