@@ -1,25 +1,25 @@
 // https://emscripten.org/docs/api_reference/module.html
+// @ts-ignore
+import openJpegFactory from '@cornerstonejs/codec-openjpeg/decodewasmjs';
 import type {
   J2KDecoder,
   OpenJpegModule,
 } from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
-// @ts-ignore
-import openJpegFactory from '@cornerstonejs/codec-openjpeg/decodewasmjs';
+import type { Types } from '@cornerstonejs/core';
+import type { WebWorkerDecodeConfig } from '../../types';
 
 // Webpack asset/resource copies this to our output folder
 
-// TODO: At some point maybe we can use this instead.
-// This is closer to what Webpack 5 wants but it doesn't seem to work now
-// const wasm = new URL('./blah.wasm', import.meta.url)
-// @ts-ignore
-// import openjpegWasm from '@cornerstonejs/codec-openjpeg/decodewasm';
+/**
+ * Default URL to load the OpenJPH codec from.
+ *
+ * In order for this to be loaded correctly, you will need to configure your
+ * bundler to treat `.wasm` files as an asset/resource.
+ */
 const openjpegWasm = new URL(
   '@cornerstonejs/codec-openjpeg/decodewasm',
   import.meta.url
 );
-
-import type { Types } from '@cornerstonejs/core';
-import type { WebWorkerDecodeConfig } from '../../types';
 
 const local: {
   codec: OpenJpegModule;
@@ -31,8 +31,16 @@ const local: {
   decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
+/**
+ *
+ * @param decodeConfig
+ * @param wasmUrlCodecOpenJpeg - Optional path to load the OpenJpeg WASM codec from.
+ * If not given, it will default to using the default `openjpegWasm` URL.
+ * @returns
+ */
 export function initialize(
-  decodeConfig?: WebWorkerDecodeConfig
+  decodeConfig?: WebWorkerDecodeConfig,
+  wasmUrlCodecOpenJpeg?: string
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
 
@@ -43,6 +51,9 @@ export function initialize(
   const openJpegModule = openJpegFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
+        if (wasmUrlCodecOpenJpeg) {
+          return wasmUrlCodecOpenJpeg;
+        }
         return openjpegWasm.toString();
       }
 
@@ -62,9 +73,10 @@ export function initialize(
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
 async function decodeAsync(
   compressedImageFrame,
-  imageInfo
+  imageInfo,
+  wasmUrlCodecOpenJpeg?: string
 ): Promise<Types.IImageFrame> {
-  await initialize();
+  await initialize(undefined, wasmUrlCodecOpenJpeg);
   const decoder = local.decoder;
 
   // get pointer to the source/encoded bit stream buffer in WASM memory
