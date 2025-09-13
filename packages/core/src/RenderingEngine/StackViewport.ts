@@ -2859,10 +2859,19 @@ class StackViewport extends Viewport {
       canvasPos[1] * devicePixelRatio,
     ];
 
-    // Normalize to [0,1] range
+    // Get the actual renderer viewport bounds to account for context pool sizing
+    const viewport = renderer.getViewport() as unknown as number[];
+    const [xStart, yStart, xEnd, yEnd] = viewport;
+
+    // Scale normalized coordinates to account for the actual renderer viewport
+    // The renderer viewport might be smaller than 1.0 when using context pool
+    const viewportWidth = xEnd - xStart;
+    const viewportHeight = yEnd - yStart;
+
+    // Normalize to the actual viewport range, not the full canvas
     const normalizedDisplay = [
-      canvasPosWithDPR[0] / width,
-      1 - canvasPosWithDPR[1] / height, // Flip Y axis
+      xStart + (canvasPosWithDPR[0] / width) * viewportWidth,
+      yStart + (1 - canvasPosWithDPR[1] / height) * viewportHeight, // Flip Y axis
       0,
     ];
 
@@ -2974,8 +2983,16 @@ class StackViewport extends Viewport {
       projCoords[2]
     );
 
-    const canvasX = normalizedDisplay[0] * width;
-    const canvasY = (1 - normalizedDisplay[1]) * height;
+    // Get the actual renderer viewport bounds to account for context pool sizing
+    const viewport = renderer.getViewport() as unknown as number[];
+    const [xStart, yStart, xEnd, yEnd] = viewport;
+    const viewportWidth = xEnd - xStart;
+    const viewportHeight = yEnd - yStart;
+
+    // Unscale from the actual renderer viewport to canvas coordinates
+    const canvasX = ((normalizedDisplay[0] - xStart) / viewportWidth) * width;
+    const canvasY =
+      (1 - (normalizedDisplay[1] - yStart) / viewportHeight) * height;
 
     // set clipping range back to original to be able
     vtkCamera.setClippingRange(crange[0], crange[1]);
