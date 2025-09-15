@@ -52,17 +52,18 @@ import {
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
+import { decimateVolumeLoader } from '../../../core/src/loaders/decimateVolumeLoader';
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const { interleavedRetrieveStages } = ProgressiveRetrieveImages;
 const { imageRetrieveMetadataProvider } = utilities;
 const {
   ToolGroupManager,
   Enums: csToolsEnums,
-  TrackballRotateTool,
+  VolumeCroppingTool,
   ZoomTool,
   PanTool,
   OrientationMarkerTool,
@@ -86,6 +87,9 @@ const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
+let kDecimation = 1;
+let iDecimation = 1;
+
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
   labelText: 'Sample distance in i,j pixels (rows,columns) :',
@@ -93,22 +97,18 @@ addDropdownToToolbar({
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     defaultValue: 1,
   },
-  onSelectedValueChange: (selectedValue) => {
-    // const url = new URL(window.location.href);
-    // url.searchParams.set('numViewports', selectedValue);
-    // window.location.href = url.toString();
+  onSelectedValueChange: async (selectedValue) => {
+    iDecimation = Number(selectedValue);
   },
 });
 addDropdownToToolbar({
   labelText: 'Sample distance k pixels (slices/frames) to skip:',
   options: {
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    defaultValue: 1,
+    defaultValue: 4,
   },
-  onSelectedValueChange: (selectedValue) => {
-    // const url = new URL(window.location.href);
-    // url.searchParams.set('numViewports', selectedValue);
-    // window.location.href = url.toString();
+  onSelectedValueChange: async (selectedValue) => {
+    kDecimation = Number(selectedValue);
   },
 });
 
@@ -152,20 +152,20 @@ rightViewportsContainer.style.height = '100%';
 // Set styles for the 2D viewports (stacked vertically on the right)
 element1.style.width = '100%';
 element1.style.height = '33.33%';
-element1.style.minHeight = '200px';
+element1.style.minHeight = '100px';
 
 element2.style.width = '100%';
 element2.style.height = '33.33%';
-element2.style.minHeight = '200px';
+element2.style.minHeight = '100px';
 
 element3.style.width = '100%';
 element3.style.height = '33.33%';
-element3.style.minHeight = '200px';
+element3.style.minHeight = '100px';
 
 // Set styles for the 3D viewport (on the left)
 element4.style.width = '75%';
 element4.style.height = '100%';
-element4.style.minHeight = '600px';
+element4.style.minHeight = '300px';
 element4.style.position = 'relative';
 
 // Disable right click context menu so we can have right click tools
@@ -174,7 +174,7 @@ element2.oncontextmenu = (e) => e.preventDefault();
 element3.oncontextmenu = (e) => e.preventDefault();
 element4.oncontextmenu = (e) => e.preventDefault();
 
-// Add elements to the viewport grid
+// Add elements to the viewport gri
 // First add the 3D viewport on the left
 viewportGrid.appendChild(element4);
 
@@ -194,26 +194,10 @@ instructions.innerText = `
 
 content.append(instructions);
 
-/**
- * Get the number of orthographic viewports from the URL (?numViewports=1|2|3)
- */
-// function getNumViewportsFromUrl() {
-//   const params = new URLSearchParams(window.location.search);
-//   const value = params.get('numViewports');
-//   const num = Number(value);
-//   if ([1, 2, 3].includes(num)) {
-//     return num;
-//   }
-//   return 3; // default
-// }
-
-/**
- * Runs the demo with a configurable number of orthographic viewports
- */
 async function run() {
   await initDemo();
 
-  cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(VolumeCroppingTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
@@ -234,6 +218,8 @@ async function run() {
 
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
+    kDecimation: kDecimation,
+    iDecimation: iDecimation,
   });
 
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -296,7 +282,9 @@ async function run() {
     const progressiveRenderingtrue = true;
     const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
-      progressiveRenderingtrue,
+      progressiveRendering: progressiveRenderingtrue,
+      kDecimation: kDecimation,
+      iDecimation: iDecimation,
     });
 
     // Set the volume to load
@@ -351,26 +339,20 @@ async function run() {
       },
     ],
   });
-  toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
-    overlayMarkerType:
-      OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
-  });
-  // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
-  const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
   renderingEngine.renderViewports(viewportIds);
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
-    [viewportId4]
+    viewportIds
   ).then(() => {
     viewport.setProperties({
       preset: 'CT-Bone',
     });
     toolGroupVRT.addViewport(viewportId4, renderingEngineId);
-    toolGroupVRT.addTool(TrackballRotateTool.toolName, {});
-    toolGroupVRT.setToolActive(TrackballRotateTool.toolName, {
+    toolGroupVRT.addTool(VolumeCroppingTool.toolName, {});
+    toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
       bindings: [
         {
           mouseButton: MouseBindings.Primary,
@@ -389,7 +371,6 @@ async function run() {
     const loadButton = (text, volId, imageIds, config) =>
       createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
     const configJLS = {
-      ...interleavedRetrieveStages,
       retrieveOptions: {
         default: {
           framesPath: '/jls/',

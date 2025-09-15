@@ -28,10 +28,13 @@ import {
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import type { StreamingDynamicImageVolume } from '../cache';
 import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingImageVolumeLoader';
+import { decimateVolumeLoader } from './decimateVolumeLoader';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
   progressiveRendering?: boolean;
+  kDecimation?: number; // Optional parameter for decimation factor
+  iDecimation?: number; // Optional parameter for interleave decimation
 }
 
 interface DerivedVolumeOptions {

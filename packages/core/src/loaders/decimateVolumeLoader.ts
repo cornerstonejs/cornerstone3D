@@ -23,11 +23,13 @@ interface IVolumeLoader {
  * @param options - options for loading, imageIds
  * @returns a promise that resolves to a StreamingImageVolume
  */
-function decimateVolumeLoader(
+export function decimateVolumeLoader(
   volumeId: string,
   options: {
     imageIds: string[];
     progressiveRendering?: boolean | IRetrieveConfiguration;
+    kDecimation?: number; // New optional parameter for decimation factor
+    iDecimation?: number; // New optional parameter for interleave decimation
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
@@ -36,7 +38,17 @@ function decimateVolumeLoader(
     );
   }
 
-  const result = decimate(options.imageIds, 2);
+  const originalImageIds = options.imageIds.slice();
+  const decimatedResult = decimate(originalImageIds, options.kDecimation);
+
+  const decimatedImageIds =
+    Array.isArray(decimatedResult) &&
+    decimatedResult.length &&
+    typeof decimatedResult[0] === 'number'
+      ? decimatedResult.map((idx) => originalImageIds[idx])
+      : decimatedResult;
+
+  options.imageIds = decimatedImageIds;
 
   async function getStreamingImageVolume() {
     /**
@@ -144,4 +156,4 @@ function decimateVolumeLoader(
   };
 }
 
-export { decimateVolumeLoader };
+export default decimateVolumeLoader;
