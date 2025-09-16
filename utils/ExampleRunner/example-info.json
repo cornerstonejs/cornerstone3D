@@ -168,6 +168,10 @@
       "webGLContextPooling": {
         "name": "WebGL Context Pooling",
         "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync using ContextPoolRenderingEngine"
+      },
+      "sharpeningStack": {
+        "name": "Image Sharpening For Stack Viewport",
+        "description": "Demonstrates how to apply image sharpening to stack viewports"
       }
     },
     "tools-basic": {

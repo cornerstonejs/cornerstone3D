@@ -98,8 +98,7 @@ import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirectio
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
-
-const EPSILON = 1; // Slice Thickness
+import { applySharpeningFilter } from '../utilities/imageSharpening';
 
 export interface ImageDataMetaData {
   bitsAllocated: number;
@@ -167,6 +166,7 @@ class StackViewport extends Viewport {
   private colormap: ColormapPublic | CPUFallbackColormapData;
   private voiRange: VOIRange;
   private voiUpdatedWithSetProperties = false;
+  private sharpening: { enabled: boolean; intensity?: number };
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -209,10 +209,6 @@ class StackViewport extends Viewport {
     this.modality = null;
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
-
-    const result = this.useCPURendering
-      ? this._resetCPUFallbackElement()
-      : this._resetGPUViewport();
 
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
@@ -264,10 +260,6 @@ class StackViewport extends Viewport {
         }
       }
     }
-
-    const result = this.useCPURendering
-      ? this._resetCPUFallbackElement()
-      : this._resetGPUViewport();
   }
 
   private _resetCPUFallbackElement() {
@@ -429,6 +421,39 @@ class StackViewport extends Viewport {
     colormap: CPUFallbackColormapData | ColormapPublic
   ) => void;
 
+  /**
+   * Sets the sharpening for the current viewport.
+   * @param sharpening - The sharpening configuration to use.
+   */
+  private setSharpening = (sharpening: {
+    enabled: boolean;
+    intensity?: number;
+  }): void => {
+    // Store sharpening settings directly on the class
+    this.sharpening = sharpening;
+
+    // Re-render the current image with sharpening applied
+    if (this.csImage && !this.useCPURendering) {
+      // Update the existing actor with the new sharpening settings
+      const actor = this.getDefaultActor();
+
+      const mapper = actor.actor.getMapper() as vtkImageMapper;
+
+      // Apply sharpening if enabled
+      let processedImageData = this._imageData;
+      if (sharpening?.enabled && sharpening.intensity > 0) {
+        processedImageData = applySharpeningFilter({
+          imageData: this._imageData,
+          intensity: sharpening.intensity,
+        });
+      }
+
+      mapper.setInputData(processedImageData);
+    }
+
+    this.render();
+  };
+
   private initializeElementDisabledHandler() {
     eventTarget.addEventListener(
       Events.ELEMENT_DISABLED,
@@ -570,9 +595,19 @@ class StackViewport extends Viewport {
    * @param imageData - vtkImageData for the viewport
    * @returns actor vtkActor
    */
-  private createActorMapper = (imageData) => {
+  private createActorMapper = (imageData: vtkImageDataType) => {
     const mapper = vtkImageMapper.newInstance();
-    mapper.setInputData(imageData);
+
+    // Apply sharpening if enabled
+    let processedImageData = imageData;
+    if (this.sharpening?.enabled && this.sharpening.intensity > 0) {
+      processedImageData = applySharpeningFilter({
+        imageData: imageData,
+        intensity: this.sharpening.intensity,
+      });
+    }
+
+    mapper.setInputData(processedImageData);
 
     const actor = vtkImageSlice.newInstance();
 
@@ -685,6 +720,7 @@ class StackViewport extends Viewport {
       VOILUTFunction,
       invert,
       interpolationType,
+      sharpening,
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
@@ -702,6 +738,7 @@ class StackViewport extends Viewport {
       invert: this.globalDefaultProperties.invert ?? invert,
       interpolationType:
         this.globalDefaultProperties.interpolationType ?? interpolationType,
+      sharpening: this.globalDefaultProperties.sharpening ?? sharpening,
     };
 
     if (typeof colormap !== 'undefined') {
@@ -724,6 +761,10 @@ class StackViewport extends Viewport {
 
     if (typeof interpolationType !== 'undefined') {
       this.setInterpolationType(interpolationType);
+    }
+
+    if (typeof sharpening !== 'undefined') {
+      this.setSharpening(sharpening);
     }
   }
 
@@ -769,6 +810,7 @@ class StackViewport extends Viewport {
       interpolationType,
       invert,
       isComputedVOI: !voiUpdatedWithSetProperties,
+      sharpening: this.sharpening,
     };
   };
 
@@ -2203,7 +2245,7 @@ class StackViewport extends Viewport {
     };
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-    return this.imagesLoader.loadImages([imageId], this).then((v) => {
+    return this.imagesLoader.loadImages([imageId], this).then(() => {
       return imageId;
     });
   }
@@ -2371,6 +2413,17 @@ class StackViewport extends Viewport {
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
+
+      // Apply sharpening if enabled after updating the image data
+      if (this.sharpening?.enabled && this.sharpening.intensity > 0) {
+        const actor = this.getDefaultActor();
+        const mapper = actor.actor.getMapper() as vtkImageMapper;
+        const sharpenedImageData = applySharpeningFilter({
+          imageData: this._imageData,
+          intensity: this.sharpening.intensity,
+        });
+        mapper.setInputData(sharpenedImageData);
+      }
 
       this.resetCameraNoEvent();
       this.setViewPresentation(viewPresentation);
@@ -3139,7 +3192,7 @@ class StackViewport extends Viewport {
         return true;
       }
       viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
-      const { referencedImageURI: referencedImageURI } = viewRef;
+      const { referencedImageURI } = viewRef;
       const foundSliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
       if (options.asOverlay) {
         const matchedImageId = this.matchImagesForOverlay(
@@ -3251,7 +3304,7 @@ class StackViewport extends Viewport {
     }
     const { referencedImageId } = viewRef;
     viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
-    const { referencedImageURI: referencedImageURI } = viewRef;
+    const { referencedImageURI } = viewRef;
     const sliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
     if (sliceIndex === undefined) {
       log.error(`No image URI found for ${referencedImageURI}`);
