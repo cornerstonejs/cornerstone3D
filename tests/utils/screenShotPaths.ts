@@ -226,6 +226,9 @@ const screenShotPaths = {
   stackAnnotationTiled: {
     lengthTool: 'lengthTool.png',
   },
+  fov: {
+    fovIsCorrect: 'fovIsCorrect.png',
+  }
 };
 
 export { screenShotPaths };
