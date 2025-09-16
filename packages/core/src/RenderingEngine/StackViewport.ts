@@ -210,6 +210,10 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
+    this.useCPURendering
+      ? this._resetCPUFallbackElement()
+      : this._resetGPUViewport();
+
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
     this.resetCamera();
@@ -260,6 +264,10 @@ class StackViewport extends Viewport {
         }
       }
     }
+
+    this.useCPURendering
+      ? this._resetCPUFallbackElement()
+      : this._resetGPUViewport();
   }
 
   private _resetCPUFallbackElement() {
