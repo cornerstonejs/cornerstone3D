@@ -96,7 +96,7 @@ addButtonToToolbar({
 
 addSliderToToolbar({
   title: 'Sharpening Intensity',
-  range: [0, 100],
+  range: [0, 300],
   defaultValue: 50,
   onSelectedValueChange: (value) => {
     sharpeningIntensity = value / 100;

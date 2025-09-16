@@ -8,7 +8,7 @@ import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/Da
  * (edge detection) from the original image to enhance edges.
  *
  * @param imageData - The vtkImageData to sharpen
- * @param intensity - Sharpening intensity (0-1, where 0 is no sharpening, 1 is maximum)
+ * @param intensity - Sharpening intensity (0-3, where 0 is no sharpening, 3 is maximum)
  * @returns The sharpened vtkImageData
  */
 function applySharpeningFilter({
@@ -23,7 +23,7 @@ function applySharpeningFilter({
   }
 
   // Clamp intensity to valid range
-  intensity = Math.max(0, Math.min(1, intensity));
+  intensity = Math.max(0, Math.min(3, intensity));
 
   if (intensity === 0) {
     // No sharpening needed
