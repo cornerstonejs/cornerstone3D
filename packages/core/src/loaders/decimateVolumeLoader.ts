@@ -6,6 +6,7 @@ import type { IRetrieveConfiguration } from '../types';
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import { loadImage } from './imageLoader';
 import decimate from '../utilities/decimate';
+import decimateImagePixels from '../utilities/decimateImagePixels';
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -29,7 +30,7 @@ export function decimateVolumeLoader(
     imageIds: string[];
     progressiveRendering?: boolean | IRetrieveConfiguration;
     kDecimation?: number; // New optional parameter for decimation factor
-    iDecimation?: number; // New optional parameter for interleave decimation
+    iDecimation?: number; // New optional parameter for in-plane decimation
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
@@ -37,6 +38,11 @@ export function decimateVolumeLoader(
       'ImageIds must be provided to create a streaming image volume'
     );
   }
+
+  const sliceDecimation =
+    options.kDecimation && options.kDecimation > 1 ? options.kDecimation : 1;
+  const inPlaneDecimation =
+    options.iDecimation && options.iDecimation > 1 ? options.iDecimation : 1;
 
   const originalImageIds = options.imageIds.slice();
   const decimatedResult = decimate(originalImageIds, options.kDecimation);
@@ -49,6 +55,11 @@ export function decimateVolumeLoader(
       : decimatedResult;
 
   options.imageIds = decimatedImageIds;
+
+  async function loadImageDecimated(imageId: string) {
+    const img = await loadImage(imageId);
+    return decimateImagePixels(img, inPlaneDecimation);
+  }
 
   async function getStreamingImageVolume() {
     /**
@@ -74,7 +85,7 @@ export function decimateVolumeLoader(
             const imageId = options.imageIds[index];
             imageLoadPoolManager.addRequest(
               async () => {
-                loadImage(imageId)
+                loadImageDecimated(imageId)
                   .then(() => {
                     console.log(`Prefetched imageId: ${imageId}`);
                     resolve(true);
@@ -97,7 +108,7 @@ export function decimateVolumeLoader(
       volumeId
     );
 
-    const {
+    let {
       dimensions,
       spacing,
       origin,
@@ -107,6 +118,20 @@ export function decimateVolumeLoader(
       dataType,
       numberOfComponents,
     } = volumeProps;
+
+    // Adjust in‑plane dimensions + spacing if we decimate rows/cols
+    if (inPlaneDecimation > 1) {
+      dimensions = [
+        Math.ceil(dimensions[0] / inPlaneDecimation),
+        Math.ceil(dimensions[1] / inPlaneDecimation),
+        dimensions[2],
+      ];
+      spacing = [
+        spacing[0] * inPlaneDecimation,
+        spacing[1] * inPlaneDecimation,
+        spacing[2],
+      ];
+    }
 
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
@@ -132,9 +157,14 @@ export function decimateVolumeLoader(
           cachedFrames: [],
           callbacks: [],
         },
+        customLoadInfo: {
+          sliceDecimation,
+          inPlaneDecimation,
+        },
       }
     );
 
+    //(streamingImageVolume as StreamingImageVolume)._loadImageFn = loadImageDecimated;
     return streamingImageVolume;
   }
 

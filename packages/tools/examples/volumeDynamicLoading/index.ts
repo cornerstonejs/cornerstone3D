@@ -52,8 +52,6 @@ import {
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
-import { decimateVolumeLoader } from '../../../core/src/loaders/decimateVolumeLoader';
-
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -87,7 +85,7 @@ const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
-let kDecimation = 1;
+let kDecimation = 4;
 let iDecimation = 1;
 
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
@@ -210,21 +208,13 @@ async function run() {
     //   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     // SeriesInstanceUID:
     //   '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-
     //    wadoRsRoot:
     //  getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
     wadoRsRoot: getLocalUrl() || 'http://localhost:5000/dicomweb',
   });
 
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-    kDecimation: kDecimation,
-    iDecimation: iDecimation,
-  });
-
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Only include the requested number of orthographic viewports
   const orthographicViewports = [
     {
       viewportId: viewportId1,
@@ -269,38 +259,48 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  async function loadVolume(volumeId, imageIds, config, text) {
+  function buildDynamicVolumeId() {
+    // stable per (k,i); add Date.now() if you want always-new
+    return `${volumeLoaderScheme}:${volumeName}_k${kDecimation}_i${iDecimation}`;
+  }
+
+  async function loadVolume(config) {
+    const dynamicVolumeId = buildDynamicVolumeId();
+
+    // Clear cache only when changing decimation factors to avoid leaking memory
     cache.purgeCache();
     imageRetrieveMetadataProvider.clear();
     if (config) {
       imageRetrieveMetadataProvider.add('volume', config);
     }
-    // resetTimingInfo();
-    // // Define a volume in memory
-    // getOrCreateTiming('loadingStatus').innerText = 'Loading...';
-    // const start = Date.now();
-    const progressiveRenderingtrue = true;
-    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+
+    const volume = await volumeLoader.createAndCacheVolume(dynamicVolumeId, {
       imageIds,
-      progressiveRendering: progressiveRenderingtrue,
-      kDecimation: kDecimation,
-      iDecimation: iDecimation,
+      progressiveRendering: true,
+      kDecimation,
+      iDecimation,
     });
 
-    // Set the volume to load
-    volume.load(() => {});
-
-    setVolumesForViewports(
+    await setVolumesForViewports(
       renderingEngine,
-      [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+      [
+        {
+          volumeId: dynamicVolumeId,
+          callback: setCtTransferFunctionForVolumeActor,
+        },
+      ],
       viewportIds
     );
 
-    // Render the image
+    volume.load?.();
+
+    const vrtViewport = renderingEngine.getViewport(
+      viewportId4
+    ) as VolumeViewport3D;
+    vrtViewport.setProperties({ preset: 'CT-Bone' });
+    vrtViewport.resetCamera?.();
     renderingEngine.renderViewports(viewportIds);
   }
-
-  volume.load();
 
   // Tool group for orthographic viewports
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -340,47 +340,38 @@ async function run() {
     ],
   });
 
-  const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
-  renderingEngine.renderViewports(viewportIds);
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    viewportIds
-  ).then(() => {
-    viewport.setProperties({
-      preset: 'CT-Bone',
-    });
-    toolGroupVRT.addViewport(viewportId4, renderingEngineId);
-    toolGroupVRT.addTool(VolumeCroppingTool.toolName, {});
-    toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
-    const createButton = (text, action) => {
-      const button = document.createElement('button');
-      button.innerText = text;
-      button.id = text;
-      button.onclick = action;
-      loaders.appendChild(button);
-      return button;
-    };
-
-    const loadButton = (text, volId, imageIds, config) =>
-      createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
-    const configJLS = {
-      retrieveOptions: {
-        default: {
-          framesPath: '/jls/',
-        },
+  // Add 3D viewport tools & cropping tool before any volume loads
+  toolGroupVRT.addViewport(viewportId4, renderingEngineId);
+  toolGroupVRT.addTool(VolumeCroppingTool.toolName, {});
+  toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
       },
-    };
-    loadButton('Load Decimated Volume', volumeId, imageIds, configJLS);
-    //   loadButton('Load Decimated Volume', volumeId, imageIds);
-    viewport.render();
+    ],
   });
+
+  // Button to trigger (re)loading with current decimation values
+  const createButton = (text, action) => {
+    const button = document.createElement('button');
+    button.innerText = text;
+    button.id = text.replace(/\s+/g, '-');
+    button.onclick = action;
+    loaders.appendChild(button);
+    return button;
+  };
+
+  const configJLS = {};
+  //   retrieveOptions: {
+  //     default: {
+  //       framesPath: '/jls/',
+  //     },
+  //   },
+  // };
+
+  createButton('Load Decimated Volume', () => loadVolume(configJLS));
+
+  await loadVolume(configJLS);
 }
 
 run();
