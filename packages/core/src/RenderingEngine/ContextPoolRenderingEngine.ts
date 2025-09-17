@@ -375,14 +375,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     );
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-    // Set viewport to render only what's needed for this specific viewport
-    // This ensures proper aspect ratio and prevents stretching
     const viewportWidth = viewport.canvas.width;
     const viewportHeight = viewport.canvas.height;
 
-    // Calculate the rendering area normalized coordinates
-    // VTK's coordinate system: (0,0) is bottom-left, (1,1) is top-right
-    // We want smaller viewports to render at the bottom-left corner
     const xEnd = Math.min(1, viewportWidth / maxSize.width);
     const yEnd = Math.min(1, viewportHeight / maxSize.height);
 
@@ -495,10 +490,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       this.contextPool.getContextIndexForViewport(viewportId);
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-    // VTK renders from bottom-left, but canvas drawImage uses top-left
-    // Since VTK rendered the viewport at (0,0) in VTK coords (bottom-left),
-    // we need to copy from the bottom of the canvas in canvas coords
-    // The rendered content is at the bottom of the offscreen canvas
     const sourceY = maxSize.height - dHeight;
 
     onScreenContext.drawImage(
