@@ -76,6 +76,7 @@ import { getCameraVectors } from './helpers/getCameraVectors';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
+import { isInvalidNumber } from './helpers/isInvalidNumber';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -495,6 +496,14 @@ abstract class BaseVolumeViewport extends Viewport {
       throw new Error(
         'voiRangeToUse is undefined, need to implement this in the new volume model'
       );
+    }
+
+    if ([voiRangeToUse.lower, voiRangeToUse.upper].some(isInvalidNumber)) {
+      console.warn(
+        'VOI range contains invalid values, ignoring setVOI request',
+        voiRangeToUse
+      );
+      return;
     }
 
     const { VOILUTFunction } = this.getProperties(volumeIdToUse);
