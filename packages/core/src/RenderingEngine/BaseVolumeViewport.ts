@@ -1768,16 +1768,22 @@ abstract class BaseVolumeViewport extends Viewport {
     const { width, height } = this.canvas;
     const aspectRatio = width / height;
 
+    // Get the actual renderer viewport bounds
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
     // Convert canvas coordinates to normalized display coordinates
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
       canvasPos[1] * devicePixelRatio,
     ];
 
-    // Normalize to [0,1] range
+    // Normalize to [0,1] range within the actual viewport bounds
     const normalizedDisplay = [
-      canvasPosWithDPR[0] / width,
-      1 - canvasPosWithDPR[1] / height, // Flip Y axis
+      xMin + (canvasPosWithDPR[0] / width) * viewportWidth,
+      yMin + (1 - canvasPosWithDPR[1] / height) * viewportHeight, // Flip Y axis
       0,
     ];
 
@@ -1839,11 +1845,22 @@ abstract class BaseVolumeViewport extends Viewport {
       canvasPos[1] * devicePixelRatio,
     ];
 
-    const { height } = this.canvas;
+    const renderer = this.getRenderer();
+    const { width, height } = this.canvas;
+
+    // Get the actual renderer viewport bounds
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
+    // Scale the canvas position to the actual viewport size
+    const scaledX = (canvasPosWithDPR[0] / width) * viewportWidth * width;
+    const scaledY = (canvasPosWithDPR[1] / height) * viewportHeight * height;
 
     // Canvas coordinates with origin at top-left
     // VTK display coordinates have origin at bottom-left
-    const displayCoord = [canvasPosWithDPR[0], height - canvasPosWithDPR[1]];
+    const displayCoord = [scaledX, viewportHeight * height - scaledY];
 
     return [displayCoord[0], displayCoord[1], 0];
   };
@@ -1944,6 +1961,12 @@ abstract class BaseVolumeViewport extends Viewport {
     const { width, height } = this.canvas;
     const aspectRatio = width / height;
 
+    // Get the actual renderer viewport bounds
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
     // Transform from world to view coordinates
     const viewCoords = renderer.worldToView(
       worldPos[0],
@@ -1966,9 +1989,13 @@ abstract class BaseVolumeViewport extends Viewport {
       projCoords[2]
     );
 
+    // Unscale from the viewport bounds to get canvas-relative normalized coordinates
+    const canvasNormalizedX = (normalizedDisplay[0] - xMin) / viewportWidth;
+    const canvasNormalizedY = (normalizedDisplay[1] - yMin) / viewportHeight;
+
     // Convert normalized display [0,1] to canvas pixels
-    const canvasX = normalizedDisplay[0] * width;
-    const canvasY = (1 - normalizedDisplay[1]) * height; // Flip Y axis
+    const canvasX = canvasNormalizedX * width;
+    const canvasY = (1 - canvasNormalizedY) * height; // Flip Y axis
 
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasCoordWithDPR = [

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.2.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.2.3...v4.2.4) (2025-09-17)
+
+### Bug Fixes
+
+- coordinates to account for new max viewport size canvas ([#2329](https://github.com/cornerstonejs/cornerstone3D/issues/2329)) ([665053a](https://github.com/cornerstonejs/cornerstone3D/commit/665053ab53f6399099ed6720527a9d5a76080554))
+
 ## [4.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.2.2...v4.2.3) (2025-09-12)
 
 **Note:** Version bump only for package @cornerstonejs/core
