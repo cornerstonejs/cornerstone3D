@@ -76,6 +76,7 @@ import { getCameraVectors } from './helpers/getCameraVectors';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
+import { createSharpeningRenderPass } from './renderPasses';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -88,6 +89,7 @@ import mprCameraValues from '../constants/mprCameraValues';
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
+  private sharpening: number = 0;
 
   protected initialTransferFunctionNodes: TransferFunctionNodes;
   // Viewport Properties
@@ -978,6 +980,7 @@ abstract class BaseVolumeViewport extends Viewport {
       interpolationType,
       slabThickness,
       sampleDistanceMultiplier,
+      sharpening,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -1034,7 +1037,47 @@ abstract class BaseVolumeViewport extends Viewport {
     if (sampleDistanceMultiplier !== undefined) {
       this.setSampleDistanceMultiplier(sampleDistanceMultiplier);
     }
+
+    if (typeof sharpening !== 'undefined') {
+      this.setSharpening(sharpening);
+    }
   }
+
+  /**
+   * Sets the sharpening for the current viewport.
+   * @param sharpening - The sharpening configuration to use.
+   */
+  private setSharpening = (sharpening: number): void => {
+    // Store sharpening settings directly on the class
+    this.sharpening = sharpening;
+    this.render();
+  };
+
+  /**
+   * Check if custom render passes should be used for this viewport.
+   * @returns True if custom render passes should be used, false otherwise
+   */
+  protected shouldUseCustomRenderPass(): boolean {
+    return this.sharpening > 0 && !this.useCPURendering;
+  }
+
+  /**
+   * Get render passes for this viewport.
+   * If sharpening is enabled, returns appropriate render passes.
+   * @returns Array of VTK render passes or null if no custom passes are needed
+   */
+  public getRenderPasses = () => {
+    if (!this.shouldUseCustomRenderPass()) {
+      return null;
+    }
+
+    try {
+      return [createSharpeningRenderPass(this.sharpening)];
+    } catch (e) {
+      console.warn('Failed to create sharpening render passes:', e);
+      return null;
+    }
+  };
 
   /**
    * Reset the viewport properties to the default values
@@ -1204,6 +1247,7 @@ abstract class BaseVolumeViewport extends Viewport {
       invert: invert,
       slabThickness: slabThickness,
       preset,
+      sharpening: this.sharpening,
     };
   };
 

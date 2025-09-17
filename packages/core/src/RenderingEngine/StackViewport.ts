@@ -98,8 +98,7 @@ import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirectio
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
-
-const EPSILON = 1; // Slice Thickness
+import { createSharpeningRenderPass } from './renderPasses';
 
 export interface ImageDataMetaData {
   bitsAllocated: number;
@@ -167,6 +166,7 @@ class StackViewport extends Viewport {
   private colormap: ColormapPublic | CPUFallbackColormapData;
   private voiRange: VOIRange;
   private voiUpdatedWithSetProperties = false;
+  private sharpening: number = 0;
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -429,6 +429,43 @@ class StackViewport extends Viewport {
     colormap: CPUFallbackColormapData | ColormapPublic
   ) => void;
 
+  /**
+   * Sets the sharpening for the current viewport.
+   * @param sharpening - The sharpening configuration to use.
+   */
+  private setSharpening = (sharpening: number): void => {
+    // Store sharpening settings directly on the class
+    this.sharpening = sharpening;
+
+    this.render();
+  };
+
+  /**
+   * Check if custom render passes should be used for this viewport.
+   * @returns True if custom render passes should be used, false otherwise
+   */
+  protected shouldUseCustomRenderPass(): boolean {
+    return this.sharpening > 0 && !this.useCPURendering;
+  }
+
+  /**
+   * Get render passes for this viewport.
+   * If sharpening is enabled, returns appropriate render passes.
+   * @returns Array of VTK render passes or null if no custom passes are needed
+   */
+  public getRenderPasses = () => {
+    if (!this.shouldUseCustomRenderPass()) {
+      return null;
+    }
+
+    try {
+      return [createSharpeningRenderPass(this.sharpening)];
+    } catch (e) {
+      console.warn('Failed to create sharpening render passes:', e);
+      return null;
+    }
+  };
+
   private initializeElementDisabledHandler() {
     eventTarget.addEventListener(
       Events.ELEMENT_DISABLED,
@@ -685,6 +722,7 @@ class StackViewport extends Viewport {
       VOILUTFunction,
       invert,
       interpolationType,
+      sharpening,
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
@@ -702,6 +740,7 @@ class StackViewport extends Viewport {
       invert: this.globalDefaultProperties.invert ?? invert,
       interpolationType:
         this.globalDefaultProperties.interpolationType ?? interpolationType,
+      sharpening: this.globalDefaultProperties.sharpening ?? sharpening,
     };
 
     if (typeof colormap !== 'undefined') {
@@ -724,6 +763,10 @@ class StackViewport extends Viewport {
 
     if (typeof interpolationType !== 'undefined') {
       this.setInterpolationType(interpolationType);
+    }
+
+    if (typeof sharpening !== 'undefined') {
+      this.setSharpening(sharpening);
     }
   }
 
@@ -769,6 +812,7 @@ class StackViewport extends Viewport {
       interpolationType,
       invert,
       isComputedVOI: !voiUpdatedWithSetProperties,
+      sharpening: this.sharpening,
     };
   };
 
@@ -2203,7 +2247,7 @@ class StackViewport extends Viewport {
     };
     triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
 
-    return this.imagesLoader.loadImages([imageId], this).then((v) => {
+    return this.imagesLoader.loadImages([imageId], this).then(() => {
       return imageId;
     });
   }
@@ -3156,7 +3200,7 @@ class StackViewport extends Viewport {
         return true;
       }
       viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
-      const { referencedImageURI: referencedImageURI } = viewRef;
+      const { referencedImageURI } = viewRef;
       const foundSliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
       if (options.asOverlay) {
         const matchedImageId = this.matchImagesForOverlay(
@@ -3268,7 +3312,7 @@ class StackViewport extends Viewport {
     }
     const { referencedImageId } = viewRef;
     viewRef.referencedImageURI ||= imageIdToURI(referencedImageId);
-    const { referencedImageURI: referencedImageURI } = viewRef;
+    const { referencedImageURI } = viewRef;
     const sliceIndex = this.imageKeyToIndexMap.get(referencedImageURI);
     if (sliceIndex === undefined) {
       log.error(`No image URI found for ${referencedImageURI}`);
