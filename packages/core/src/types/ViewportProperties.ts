@@ -25,7 +25,7 @@ export interface ViewportProperties {
   sharpening?: {
     /** Enable/disable sharpening */
     enabled: boolean;
-    /** Sharpening intensity (0-1, where 0 is no sharpening, 1 is maximum) */
+    /** Sharpening intensity (where 0 is no sharpening, and higher is more) */
     intensity?: number;
   };
 }
