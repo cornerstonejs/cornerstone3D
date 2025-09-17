@@ -3,6 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -11,6 +12,7 @@ import {
   addButtonToToolbar,
   addSliderToToolbar,
   ctVoiRange,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -24,12 +26,13 @@ const { ViewportType } = Enums;
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
 const stackViewportId = 'CT_STACK';
+const volumeViewportId = 'CT_VOLUME';
 const toolGroupId = 'myToolGroup';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Image Sharpening',
-  'Demonstrates image sharpening using Laplacian edge enhancement for Stack Viewports.'
+  'Demonstrates image sharpening using Laplacian edge enhancement for Stack & Volume Viewports.'
 );
 
 const content = document.getElementById('content');
@@ -48,12 +51,26 @@ stackElement.style.height = '500px';
 
 viewportsContainer.appendChild(stackElement);
 
+// Create volume viewport element
+const volumeElement = document.createElement('div');
+volumeElement.id = 'cornerstone-volume-element';
+volumeElement.style.width = '500px';
+volumeElement.style.height = '500px';
+
+viewportsContainer.appendChild(volumeElement);
+
 // Add labels
 const stackLabel = document.createElement('div');
 stackLabel.innerText = 'Stack Viewport';
 stackLabel.style.textAlign = 'center';
 stackLabel.style.marginTop = '10px';
 stackElement.appendChild(stackLabel);
+
+const volumeLabel = document.createElement('div');
+volumeLabel.innerText = 'Volume Viewport';
+volumeLabel.style.textAlign = 'center';
+volumeLabel.style.marginTop = '10px';
+volumeElement.appendChild(volumeLabel);
 
 const info = document.createElement('div');
 content.appendChild(info);
@@ -90,6 +107,21 @@ addButtonToToolbar({
       stackViewport.render();
     }
 
+    // Update volume viewport
+    const volumeViewport = renderingEngine.getViewport(
+      volumeViewportId
+    ) as Types.IVolumeViewport;
+
+    if (volumeViewport) {
+      volumeViewport.setProperties({
+        sharpening: {
+          enabled: sharpeningEnabled,
+          intensity: sharpeningIntensity,
+        },
+      });
+      volumeViewport.render();
+    }
+
     sharpeningInfo.innerText = `Sharpening: ${sharpeningEnabled ? 'Enabled' : 'Disabled'} (Intensity: ${(sharpeningIntensity * 100).toFixed(0)}%)`;
   },
 });
@@ -123,6 +155,21 @@ addSliderToToolbar({
       stackViewport.render();
     }
 
+    // Update volume viewport
+    const volumeViewport = renderingEngine.getViewport(
+      volumeViewportId
+    ) as Types.IVolumeViewport;
+
+    if (volumeViewport) {
+      volumeViewport.setProperties({
+        sharpening: {
+          enabled: sharpeningEnabled,
+          intensity: sharpeningIntensity,
+        },
+      });
+      volumeViewport.render();
+    }
+
     sharpeningInfo.innerText = `Sharpening: ${sharpeningEnabled ? 'Enabled' : 'Disabled'} (Intensity: ${(sharpeningIntensity * 100).toFixed(0)}%)`;
   },
 });
@@ -150,6 +197,22 @@ addButtonToToolbar({
       });
       stackViewport.resetProperties();
       stackViewport.render();
+    }
+
+    // Reset volume viewport
+    const volumeViewport = renderingEngine.getViewport(
+      volumeViewportId
+    ) as Types.IVolumeViewport;
+
+    if (volumeViewport) {
+      volumeViewport.setProperties({
+        sharpening: {
+          enabled: false,
+          intensity: 0.5,
+        },
+      });
+      volumeViewport.resetProperties();
+      volumeViewport.render();
     }
 
     sharpeningInfo.innerText = 'Sharpening: Disabled';
@@ -191,6 +254,15 @@ async function run() {
         background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
+    {
+      viewportId: volumeViewportId,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: volumeElement,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: [0.2, 0, 0.2] as Types.Point3,
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
@@ -209,11 +281,38 @@ async function run() {
   // Render the stack viewport
   stackViewport.render();
 
+  // Get the volume viewport
+  const volumeViewport = renderingEngine.getViewport(
+    volumeViewportId
+  ) as Types.IVolumeViewport;
+
+  // Define a unique id for the volume
+  const volumeName = 'CT_VOLUME_ID';
+  const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
+  const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  // Set the volume to load
+  volume.load();
+
+  // Set the volume on the viewport
+  volumeViewport.setVolumes([
+    { volumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
+
+  // Render the volume viewport
+  volumeViewport.render();
+
   // Create a tool group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add both viewports to the tool group
   toolGroup.addViewport(stackViewportId, renderingEngineId);
+  toolGroup.addViewport(volumeViewportId, renderingEngineId);
 
   // Add the StackScrollMouseWheelTool to the tool group
   toolGroup.addTool(StackScrollTool.toolName);

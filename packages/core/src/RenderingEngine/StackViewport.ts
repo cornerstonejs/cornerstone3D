@@ -98,7 +98,7 @@ import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirectio
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
-import { applySharpeningFilter } from '../utilities/imageSharpening';
+import { createSharpeningRenderPass } from './renderPasses';
 
 export interface ImageDataMetaData {
   bitsAllocated: number;
@@ -210,7 +210,7 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    this.useCPURendering
+    const result = this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
@@ -265,7 +265,7 @@ class StackViewport extends Viewport {
       }
     }
 
-    this.useCPURendering
+    const result = this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
   }
@@ -440,26 +440,29 @@ class StackViewport extends Viewport {
     // Store sharpening settings directly on the class
     this.sharpening = sharpening;
 
-    // Re-render the current image with sharpening applied
-    if (this.csImage && !this.useCPURendering) {
-      // Update the existing actor with the new sharpening settings
-      const actor = this.getDefaultActor();
+    this.render();
+  };
 
-      const mapper = actor.actor.getMapper() as vtkImageMapper;
-
-      // Apply sharpening if enabled
-      let processedImageData = this._imageData;
-      if (sharpening?.enabled && sharpening.intensity > 0) {
-        processedImageData = applySharpeningFilter({
-          imageData: this._imageData,
-          intensity: sharpening.intensity,
-        });
-      }
-
-      mapper.setInputData(processedImageData);
+  /**
+   * Get render passes for this viewport.
+   * If sharpening is enabled, returns appropriate render passes.
+   * @returns Array of VTK render passes or null if no custom passes are needed
+   */
+  public getRenderPasses = () => {
+    if (
+      !this.sharpening?.enabled ||
+      this.sharpening.intensity <= 0 ||
+      this.useCPURendering
+    ) {
+      return null;
     }
 
-    this.render();
+    try {
+      return [createSharpeningRenderPass(this.sharpening)];
+    } catch (e) {
+      console.warn('Failed to create sharpening render passes:', e);
+      return null;
+    }
   };
 
   private initializeElementDisabledHandler() {
@@ -603,19 +606,9 @@ class StackViewport extends Viewport {
    * @param imageData - vtkImageData for the viewport
    * @returns actor vtkActor
    */
-  private createActorMapper = (imageData: vtkImageDataType) => {
+  private createActorMapper = (imageData) => {
     const mapper = vtkImageMapper.newInstance();
-
-    // Apply sharpening if enabled
-    let processedImageData = imageData;
-    if (this.sharpening?.enabled && this.sharpening.intensity > 0) {
-      processedImageData = applySharpeningFilter({
-        imageData: imageData,
-        intensity: this.sharpening.intensity,
-      });
-    }
-
-    mapper.setInputData(processedImageData);
+    mapper.setInputData(imageData);
 
     const actor = vtkImageSlice.newInstance();
 
@@ -2421,17 +2414,6 @@ class StackViewport extends Viewport {
     if (sameImageData && !this.stackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
-
-      // Apply sharpening if enabled after updating the image data
-      if (this.sharpening?.enabled && this.sharpening.intensity > 0) {
-        const actor = this.getDefaultActor();
-        const mapper = actor.actor.getMapper() as vtkImageMapper;
-        const sharpenedImageData = applySharpeningFilter({
-          imageData: this._imageData,
-          intensity: this.sharpening.intensity,
-        });
-        mapper.setInputData(sharpenedImageData);
-      }
 
       this.resetCameraNoEvent();
       this.setViewPresentation(viewPresentation);
