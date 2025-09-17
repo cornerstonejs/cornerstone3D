@@ -101,20 +101,20 @@
   },
   "dependencies": {
     "@types/offscreencanvas": "2019.7.3",
-    "comlink": "^4.4.1",
-    "lodash.get": "^4.4.2"
+    "comlink": "4.4.2",
+    "lodash.get": "4.4.2"
   },
   "devDependencies": {
-    "canvas": "^3.1.0"
+    "canvas": "3.1.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^4.3.1",
+    "@cornerstonejs/core": "4.3.1",
     "@kitware/vtk.js": "32.12.1",
-    "@types/d3-array": "^3.0.4",
-    "@types/d3-interpolate": "^3.0.1",
-    "d3-array": "^3.2.3",
-    "d3-interpolate": "^3.0.1",
-    "gl-matrix": "^3.4.3"
+    "@types/d3-array": "3.2.1",
+    "@types/d3-interpolate": "3.0.4",
+    "d3-array": "3.2.4",
+    "d3-interpolate": "3.0.1",
+    "gl-matrix": "3.4.3"
   },
   "contributors": [
     {
