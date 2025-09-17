@@ -77,6 +77,16 @@ volumeElement.style.height = '400px';
 
 viewportsContainer.appendChild(volumeElement);
 
+// Disable right-click context menu on all viewport elements
+[stackElement, stackElement2, stackElement3, volumeElement].forEach(
+  (element) => {
+    element.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      return false;
+    });
+  }
+);
+
 // Add labels
 const stackLabel = document.createElement('div');
 stackLabel.innerText = 'Stack Viewport 1';
@@ -108,6 +118,30 @@ content.appendChild(info);
 const sharpeningInfo = document.createElement('div');
 info.appendChild(sharpeningInfo);
 sharpeningInfo.innerText = 'Sharpening: 0%';
+
+// Add interaction instructions
+const instructionsContainer = document.createElement('div');
+instructionsContainer.style.marginTop = '20px';
+instructionsContainer.style.padding = '10px';
+instructionsContainer.style.backgroundColor = '#f0f0f0';
+instructionsContainer.style.borderRadius = '5px';
+content.appendChild(instructionsContainer);
+
+const instructionsTitle = document.createElement('h3');
+instructionsTitle.innerText = 'Interaction Instructions:';
+instructionsTitle.style.marginTop = '0';
+instructionsContainer.appendChild(instructionsTitle);
+
+const instructionsList = document.createElement('ul');
+instructionsList.style.marginTop = '10px';
+instructionsList.innerHTML = `
+  <li><strong>Left Click + Drag:</strong> Stack Scroll (navigate through slices)</li>
+  <li><strong>Right Click + Drag:</strong> Zoom In/Out</li>
+  <li><strong>Middle Click + Drag:</strong> Pan (move the image)</li>
+  <li><strong>Mouse Wheel:</strong> Stack Scroll (navigate through slices)</li>
+  <li><strong>Sharpening Slider:</strong> Adjust image sharpening (0-300%)</li>
+`;
+instructionsContainer.appendChild(instructionsList);
 
 // Add sharpening slider with a unique ID so we can reference it later
 addSliderToToolbar({
@@ -249,10 +283,13 @@ async function run() {
   await initDemo();
 
   // Initialize cornerstone tools
-  const { ToolGroupManager, StackScrollTool } = cornerstoneTools;
+  const { ToolGroupManager, StackScrollTool, ZoomTool, PanTool } =
+    cornerstoneTools;
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(PanTool);
 
   // Get Cornerstone imageIds and fetch metadata into RAM for first series
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -410,15 +447,30 @@ async function run() {
   toolGroup.addViewport(stackViewportId3, renderingEngineId);
   toolGroup.addViewport(volumeViewportId, renderingEngineId);
 
-  // Add the StackScrollMouseWheelTool to the tool group
+  // Add all tools to the tool group
   toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
 
-  // Set the tool as active for mouse wheel interaction
-  toolGroup.setToolActive(StackScrollTool.toolName, {
-    bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Wheel }],
-  });
+  // Set up tool bindings
+  // Left click (Primary) - Stack Scroll
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Primary }],
+  });
+
+  // Right click (Secondary) - Zoom
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Secondary }],
+  });
+
+  // Middle click (Auxiliary/Middle) - Pan
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Auxiliary }],
+  });
+
+  // Mouse wheel - Stack Scroll
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: cornerstoneTools.Enums.MouseBindings.Wheel }],
   });
 }
 
