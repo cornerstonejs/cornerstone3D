@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.1...v4.3.2) (2025-09-17)
+
+### Bug Fixes
+
+- **security:** Use exact versioning in package.json. ([#2323](https://github.com/cornerstonejs/cornerstone3D/issues/2323)) ([d682ca1](https://github.com/cornerstonejs/cornerstone3D/commit/d682ca1fa68c94a31ac25ad9830d216d28ee9c1e))
+
 ## [4.3.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.0...v4.3.1) (2025-09-17)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
