@@ -199,6 +199,15 @@ class Viewport {
     return Array.from(this.viewportWidgets.values());
   };
 
+  /**
+   * Get render passes for this viewport.
+   * Viewports can override this to provide custom render passes (e.g., for sharpening).
+   * @returns Array of VTK render passes or null if no custom passes are needed
+   */
+  public getRenderPasses = () => {
+    return null;
+  };
+
   public removeWidgets = () => {
     const widgets = this.getWidgets();
     widgets.forEach((widget) => {
