@@ -441,12 +441,20 @@ class StackViewport extends Viewport {
   };
 
   /**
+   * Check if custom render passes should be used for this viewport.
+   * @returns True if custom render passes should be used, false otherwise
+   */
+  protected shouldUseCustomRenderPass(): boolean {
+    return this.sharpening > 0 && !this.useCPURendering;
+  }
+
+  /**
    * Get render passes for this viewport.
    * If sharpening is enabled, returns appropriate render passes.
    * @returns Array of VTK render passes or null if no custom passes are needed
    */
   public getRenderPasses = () => {
-    if (this.sharpening <= 0 || this.useCPURendering) {
+    if (!this.shouldUseCustomRenderPass()) {
       return null;
     }
 
