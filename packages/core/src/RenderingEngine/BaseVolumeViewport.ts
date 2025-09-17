@@ -89,7 +89,7 @@ import { createSharpeningRenderPass } from './renderPasses';
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
-  private sharpening: { enabled: boolean; intensity?: number };
+  private sharpening: number = 0;
 
   protected initialTransferFunctionNodes: TransferFunctionNodes;
   // Viewport Properties
@@ -1047,10 +1047,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * Sets the sharpening for the current viewport.
    * @param sharpening - The sharpening configuration to use.
    */
-  private setSharpening = (sharpening: {
-    enabled: boolean;
-    intensity?: number;
-  }): void => {
+  private setSharpening = (sharpening: number): void => {
     // Store sharpening settings directly on the class
     this.sharpening = sharpening;
     this.render();
@@ -1062,11 +1059,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns Array of VTK render passes or null if no custom passes are needed
    */
   public getRenderPasses = () => {
-    if (
-      !this.sharpening?.enabled ||
-      this.sharpening.intensity <= 0 ||
-      this.useCPURendering
-    ) {
+    if (this.sharpening <= 0 || this.useCPURendering) {
       return null;
     }
 

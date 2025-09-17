@@ -9,17 +9,12 @@ import vtkForwardPass from '@kitware/vtk.js/Rendering/OpenGL/ForwardPass';
  * effectively enhancing the edges in the image.
  *
  * @param intensity - Sharpening intensity (0 = no sharpening, higher values = more sharpening)
- * @param delegates - Optional array of render passes to delegate to (usually ForwardPass)
  * @returns vtkConvolution2DPass configured for edge enhancement
  */
-function createSharpeningRenderPass(sharpeningConfig: {
-  enabled: boolean;
-  intensity?: number;
-}) {
-  const { intensity = 0, enabled } = sharpeningConfig;
+function createSharpeningRenderPass(intensity: number) {
   let renderPass = vtkForwardPass.newInstance();
 
-  if (enabled && intensity > 0) {
+  if (intensity > 0) {
     const convolutionPass = vtkConvolution2DPass.newInstance();
     convolutionPass.setDelegates([renderPass]);
     const k = Math.max(0, intensity);

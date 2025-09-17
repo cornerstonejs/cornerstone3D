@@ -77,66 +77,15 @@ content.appendChild(info);
 
 const sharpeningInfo = document.createElement('div');
 info.appendChild(sharpeningInfo);
-sharpeningInfo.innerText = 'Sharpening: Disabled';
+sharpeningInfo.innerText = 'Sharpening: 0%';
 
-// Global sharpening state
-let sharpeningEnabled = false;
-let sharpeningIntensity = 0.5;
-
-// Add sharpening controls
-addButtonToToolbar({
-  title: 'Toggle Sharpening',
-  onClick: () => {
-    sharpeningEnabled = !sharpeningEnabled;
-
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Update stack viewport
-    const stackViewport = renderingEngine.getViewport(
-      stackViewportId
-    ) as Types.IStackViewport;
-
-    if (stackViewport) {
-      stackViewport.setProperties({
-        sharpening: {
-          enabled: sharpeningEnabled,
-          intensity: sharpeningIntensity,
-        },
-      });
-      stackViewport.render();
-    }
-
-    // Update volume viewport
-    const volumeViewport = renderingEngine.getViewport(
-      volumeViewportId
-    ) as Types.IVolumeViewport;
-
-    if (volumeViewport) {
-      volumeViewport.setProperties({
-        sharpening: {
-          enabled: sharpeningEnabled,
-          intensity: sharpeningIntensity,
-        },
-      });
-      volumeViewport.render();
-    }
-
-    sharpeningInfo.innerText = `Sharpening: ${sharpeningEnabled ? 'Enabled' : 'Disabled'} (Intensity: ${(sharpeningIntensity * 100).toFixed(0)}%)`;
-  },
-});
-
+// Add sharpening slider with a unique ID so we can reference it later
 addSliderToToolbar({
-  title: 'Sharpening Intensity',
+  id: 'sharpening-slider',
+  title: 'Sharpening',
   range: [0, 300],
-  defaultValue: 50,
-  onSelectedValueChange: (value) => {
-    sharpeningIntensity = value / 100;
-
-    if (!sharpeningEnabled) {
-      return;
-    }
-
+  defaultValue: 0,
+  onSelectedValueChange: (value: number) => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
@@ -147,10 +96,7 @@ addSliderToToolbar({
 
     if (stackViewport) {
       stackViewport.setProperties({
-        sharpening: {
-          enabled: sharpeningEnabled,
-          intensity: sharpeningIntensity,
-        },
+        sharpening: value / 100, // Convert percentage to decimal
       });
       stackViewport.render();
     }
@@ -162,23 +108,25 @@ addSliderToToolbar({
 
     if (volumeViewport) {
       volumeViewport.setProperties({
-        sharpening: {
-          enabled: sharpeningEnabled,
-          intensity: sharpeningIntensity,
-        },
+        sharpening: value / 100, // Convert percentage to decimal
       });
       volumeViewport.render();
     }
 
-    sharpeningInfo.innerText = `Sharpening: ${sharpeningEnabled ? 'Enabled' : 'Disabled'} (Intensity: ${(sharpeningIntensity * 100).toFixed(0)}%)`;
+    sharpeningInfo.innerText = `Sharpening: ${value}%`;
   },
 });
 
 addButtonToToolbar({
   title: 'Reset',
   onClick: () => {
-    sharpeningEnabled = false;
-    sharpeningIntensity = 0.5;
+    // Reset the slider value
+    const slider = document.getElementById(
+      'sharpening-slider'
+    ) as HTMLInputElement;
+    if (slider) {
+      slider.value = '0';
+    }
 
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -190,10 +138,7 @@ addButtonToToolbar({
 
     if (stackViewport) {
       stackViewport.setProperties({
-        sharpening: {
-          enabled: false,
-          intensity: 0.5,
-        },
+        sharpening: 0,
       });
       stackViewport.resetProperties();
       stackViewport.render();
@@ -206,16 +151,13 @@ addButtonToToolbar({
 
     if (volumeViewport) {
       volumeViewport.setProperties({
-        sharpening: {
-          enabled: false,
-          intensity: 0.5,
-        },
+        sharpening: 0,
       });
       volumeViewport.resetProperties();
       volumeViewport.render();
     }
 
-    sharpeningInfo.innerText = 'Sharpening: Disabled';
+    sharpeningInfo.innerText = 'Sharpening: 0%';
   },
 });
 

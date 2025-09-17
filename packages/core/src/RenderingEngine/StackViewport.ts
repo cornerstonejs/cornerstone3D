@@ -166,7 +166,7 @@ class StackViewport extends Viewport {
   private colormap: ColormapPublic | CPUFallbackColormapData;
   private voiRange: VOIRange;
   private voiUpdatedWithSetProperties = false;
-  private sharpening: { enabled: boolean; intensity?: number };
+  private sharpening: number = 0;
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -433,10 +433,7 @@ class StackViewport extends Viewport {
    * Sets the sharpening for the current viewport.
    * @param sharpening - The sharpening configuration to use.
    */
-  private setSharpening = (sharpening: {
-    enabled: boolean;
-    intensity?: number;
-  }): void => {
+  private setSharpening = (sharpening: number): void => {
     // Store sharpening settings directly on the class
     this.sharpening = sharpening;
 
@@ -449,11 +446,7 @@ class StackViewport extends Viewport {
    * @returns Array of VTK render passes or null if no custom passes are needed
    */
   public getRenderPasses = () => {
-    if (
-      !this.sharpening?.enabled ||
-      this.sharpening.intensity <= 0 ||
-      this.useCPURendering
-    ) {
+    if (this.sharpening <= 0 || this.useCPURendering) {
       return null;
     }
 
