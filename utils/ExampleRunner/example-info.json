@@ -168,6 +168,10 @@
       "webGLContextPooling": {
         "name": "WebGL Context Pooling",
         "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync using ContextPoolRenderingEngine"
+      },
+      "fov": {
+        "name": "Field of View (FOV)",
+        "description": "Demonstrates we set and display the correct Field of View (FOV) for Stack, Volume and 3D viewports"
       }
     },
     "tools-basic": {
