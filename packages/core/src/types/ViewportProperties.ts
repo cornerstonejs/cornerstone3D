@@ -20,4 +20,7 @@ export interface ViewportProperties {
   preset?: string;
 
   sampleDistanceMultiplier?: number;
+
+  /** Image sharpening settings */
+  sharpening?: number;
 }
