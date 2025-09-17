@@ -112,7 +112,7 @@
     "uuid": "^9.0.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^4.2.4",
+    "@cornerstonejs/core": "^4.3.0",
     "dicom-parser": "^1.8.9"
   },
   "config": {
