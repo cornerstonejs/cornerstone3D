@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "4.3.1",
+  "version": "4.3.3",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -101,19 +101,19 @@
     "prepublishOnly": "yarn run build:loader"
   },
   "dependencies": {
-    "@cornerstonejs/codec-charls": "^1.2.3",
-    "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
-    "@cornerstonejs/codec-openjpeg": "^1.2.2",
-    "@cornerstonejs/codec-openjph": "^2.4.5",
-    "comlink": "^4.4.1",
-    "dicom-parser": "^1.8.9",
-    "jpeg-lossless-decoder-js": "^2.1.0",
-    "pako": "^2.0.4",
-    "uuid": "^9.0.0"
+    "@cornerstonejs/codec-charls": "1.2.3",
+    "@cornerstonejs/codec-libjpeg-turbo-8bit": "1.2.2",
+    "@cornerstonejs/codec-openjpeg": "1.2.4",
+    "@cornerstonejs/codec-openjph": "2.4.7",
+    "comlink": "4.4.2",
+    "dicom-parser": "1.8.21",
+    "jpeg-lossless-decoder-js": "2.1.2",
+    "pako": "2.1.0",
+    "uuid": "9.0.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^4.3.1",
-    "dicom-parser": "^1.8.9"
+    "@cornerstonejs/core": "4.3.3",
+    "dicom-parser": "1.8.21"
   },
   "config": {
     "commitizen": {

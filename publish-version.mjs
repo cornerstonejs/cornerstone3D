@@ -74,7 +74,7 @@ async function run() {
               dependency.startsWith('@cornerstonejs/') &&
               npmPackageNames.includes(dependency)
             ) {
-              dependencies[dependency] = `^${nextVersion}`;
+              dependencies[dependency] = `${nextVersion}`;
 
               console.log(
                 `updating ${dependencyType} of ${dependency} to `,

@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "4.3.1",
+  "version": "4.3.3",
   "description": "Cornerstone3D Core",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -82,9 +82,9 @@
   },
   "dependencies": {
     "@kitware/vtk.js": "32.12.1",
-    "comlink": "^4.4.1",
-    "gl-matrix": "^3.4.3",
-    "loglevel": "^1.9.2"
+    "comlink": "4.4.2",
+    "gl-matrix": "3.4.3",
+    "loglevel": "1.9.2"
   },
   "contributors": [
     {
