@@ -117,12 +117,12 @@ export function decimateVolumeLoader(
       dimensions = [
         Math.ceil(dimensions[0] / inPlaneDecimation),
         Math.ceil(dimensions[1] / inPlaneDecimation),
-        dimensions[2],
+        Math.ceil(dimensions[2] / options.kDecimation),
       ];
       spacing = [
         spacing[0] * inPlaneDecimation,
         spacing[1] * inPlaneDecimation,
-        spacing[2],
+        spacing[2] * options.kDecimation,
       ];
       metadata.Rows = dimensions[0];
       metadata.Columns = dimensions[1];

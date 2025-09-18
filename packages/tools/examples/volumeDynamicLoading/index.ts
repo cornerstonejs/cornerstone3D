@@ -87,7 +87,7 @@ const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
-let kDecimation = 4;
+let kDecimation = 2;
 let iDecimation = 1;
 
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
@@ -95,7 +95,7 @@ addDropdownToToolbar({
   labelText: 'Sample distance in i,j pixels (rows,columns) :',
   options: {
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    defaultValue: 1,
+    defaultValue: iDecimation,
   },
   onSelectedValueChange: async (selectedValue) => {
     iDecimation = Number(selectedValue);
@@ -105,7 +105,7 @@ addDropdownToToolbar({
   labelText: 'Sample distance k pixels (slices/frames) to skip:',
   options: {
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    defaultValue: 4,
+    defaultValue: kDecimation,
   },
   onSelectedValueChange: async (selectedValue) => {
     kDecimation = Number(selectedValue);
@@ -204,12 +204,18 @@ async function run() {
   cornerstoneTools.addTool(StackScrollTool);
 
   const imageIds = await createImageIdsAndCacheMetaData({
+    // Denny 3000 slice CT
+    // StudyInstanceUID: '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084',
+    // SeriesInstanceUID: '1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297',
+    //Juno
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
+
     //     StudyInstanceUID:
     //   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     // SeriesInstanceUID:
     //   '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+
     //    wadoRsRoot:
     //  getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
     wadoRsRoot: getLocalUrl() || 'http://localhost:5000/dicomweb',
