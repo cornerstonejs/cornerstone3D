@@ -127,6 +127,35 @@ export function decimateVolumeLoader(
       metadata.Rows = dimensions[0];
       metadata.Columns = dimensions[1];
       metadata.PixelSpacing = [spacing[1], spacing[0]];
+
+      //  imagePlaneMetadata
+      //       rows: dimensions[1],
+      //       columns: dimensions[0],
+      //       imageOrientationPatient,
+      //       rowCosines: direction.slice(0, 3),
+      //       columnCosines: direction.slice(3, 6),
+      //       imagePositionPatient,
+      //       sliceThickness: spacing[2],
+      //       sliceLocation: origin[2] + i * spacing[2],
+      //       pixelSpacing: [spacing[0], spacing[1]],
+      //       rowPixelSpacing: spacing[1],
+      //       columnPixelSpacing: spacing[0],
+      //
+      //  imagePixelMetadata
+      //       rows: dimensions[1],
+      //       columns: dimensions[0],
+      //
+      //       rows: dimensions[1],
+
+      //       utilities.genericMetadataProvider.add(imageId, {
+      //   type: 'imagePixelModule',
+      //   metadata: imagePixelMetadata,
+      // });
+
+      // utilities.genericMetadataProvider.add(imageId, {
+      //   type: 'imagePlaneModule',
+      //   metadata: imagePlaneMetadata,
+      // });
     }
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
