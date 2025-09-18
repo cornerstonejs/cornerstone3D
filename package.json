@@ -18,7 +18,7 @@
   "sideEffects": false,
   "engines": {
     "node": ">=20",
-    "yarn": ">=1.19.1"
+    "npm": ">=10.0.0"
   },
   "scripts": {
     "api-check": "npx lerna run api-check",
@@ -33,17 +33,17 @@
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
     "build-all-examples": "cross-env NODE_OPTIONS=--max_old_space_size=32896 node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot || (echo 'Build failed - likely due to memory constraints' && exit 1)",
     "serve-static-examples": "npx serve .static-examples --listen 3333",
-    "build-and-serve-static-examples": "cross-env NODE_OPTIONS=--max_old_space_size=32896 yarn run build-all-examples && yarn run serve-static-examples",
+    "build-and-serve-static-examples": "cross-env NODE_OPTIONS=--max_old_space_size=32896 npm run build-all-examples && npm run serve-static-examples",
     "build:all": "npx lerna run build:all",
-    "dev": "yarn run all-examples",
+    "dev": "npm run all-examples",
     "docs": "npx lerna run docs",
     "docs:watch": "npx lerna run docs:watch",
     "preinstall": "node preinstall.js",
     "prepare": "husky",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
-    "commit:prepare": "yarn test:ci && yarn test:unit",
-    "start": "yarn run dev",
-    "test:e2e:coverage": "nyc --reporter=html yarn run test:e2e:ci",
+    "commit:prepare": "npm run test:ci && npm run test:unit",
+    "start": "npm run dev",
+    "test:e2e:coverage": "nyc --reporter=html npm run test:e2e:ci",
     "test:e2e:ci": "npx playwright test",
     "test:e2e:update": "npx playwright test --update-snapshots -g shouldUpdateThis",
     "test:e2e:ui": "npx playwright test --ui",
@@ -52,7 +52,7 @@
     "test:chrome": "karma start ./karma.conf.js --browsers Chrome",
     "test:dev": "karma start",
     "test:ci": "karma start --single-run",
-    "test:unit:ci": "yarn test:unit && yarn test:ci",
+    "test:unit:ci": "npm run test:unit && npm run test:ci",
     "test": "karma start",
     "test:unit": "jest --collectCoverage",
     "test:unit:no-coverage": "jest",
@@ -188,7 +188,6 @@
     "not ie < 11",
     "not op_mini all"
   ],
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "dependencies": {
     "caniuse-lite": "1.0.30001734"
   },
