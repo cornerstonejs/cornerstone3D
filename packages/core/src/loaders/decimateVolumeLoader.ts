@@ -16,7 +16,7 @@ interface IVolumeLoader {
 
 /**
  * It handles loading of a image by streaming in its imageIds. It will be the
- * volume loader if the schema for the volumeID is `cornerstoneStreamingImageVolume`.
+ * volume loader if the schema for the volumeID is `decimateImageVolume`.
  * This function returns a promise that resolves to the StreamingImageVolume instance.
  *
  *
@@ -29,8 +29,8 @@ export function decimateVolumeLoader(
   options: {
     imageIds: string[];
     progressiveRendering?: boolean | IRetrieveConfiguration;
-    kDecimation?: number; // New optional parameter for decimation factor
-    iDecimation?: number; // New optional parameter for in-plane decimation
+    kDecimation?: number;
+    iDecimation?: number;
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
@@ -39,8 +39,6 @@ export function decimateVolumeLoader(
     );
   }
 
-  const sliceDecimation =
-    options.kDecimation && options.kDecimation > 1 ? options.kDecimation : 1;
   const inPlaneDecimation =
     options.iDecimation && options.iDecimation > 1 ? options.iDecimation : 1;
 
@@ -55,11 +53,6 @@ export function decimateVolumeLoader(
       : decimatedResult;
 
   options.imageIds = decimatedImageIds;
-
-  async function loadImageDecimated(imageId: string) {
-    const img = await loadImage(imageId);
-    return decimateImagePixels(img, inPlaneDecimation);
-  }
 
   async function getStreamingImageVolume() {
     /**
@@ -85,7 +78,7 @@ export function decimateVolumeLoader(
             const imageId = options.imageIds[index];
             imageLoadPoolManager.addRequest(
               async () => {
-                loadImageDecimated(imageId)
+                loadImage(imageId)
                   .then(() => {
                     console.log(`Prefetched imageId: ${imageId}`);
                     resolve(true);
@@ -131,8 +124,10 @@ export function decimateVolumeLoader(
         spacing[1] * inPlaneDecimation,
         spacing[2],
       ];
+      metadata.Rows = dimensions[0];
+      metadata.Columns = dimensions[1];
+      metadata.PixelSpacing = [spacing[1], spacing[0]];
     }
-
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
       {
@@ -150,21 +145,18 @@ export function decimateVolumeLoader(
       {
         imageIds,
         loadStatus: {
-          // todo: loading and loaded should be on ImageVolume
           loaded: false,
           loading: false,
           cancelled: false,
           cachedFrames: [],
           callbacks: [],
         },
-        customLoadInfo: {
-          sliceDecimation,
-          inPlaneDecimation,
-        },
       }
     );
-
-    //(streamingImageVolume as StreamingImageVolume)._loadImageFn = loadImageDecimated;
+    streamingImageVolume.setImagePostProcess((image) =>
+      decimateImagePixels(image, inPlaneDecimation)
+    );
+    console.debug(streamingImageVolume);
     return streamingImageVolume;
   }
 

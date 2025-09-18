@@ -1,7 +1,5 @@
 import type { IImage } from '../types';
 export default function decimateImagePixels(image: IImage, factor: number) {
-  if (factor <= 1) return image;
-
   const rows = image.rows ?? image.height;
   const cols = image.columns ?? image.width;
   const newRows = Math.ceil(rows / factor);
@@ -14,40 +12,65 @@ export default function decimateImagePixels(image: IImage, factor: number) {
 
   if (numComponents === 1) {
     let oi = 0;
-    for (let r = 0; r < rows; r += factor) {
-      const base = r * cols;
-      for (let c = 0; c < cols; c += factor) {
-        out[oi++] = pixelData[base + c];
+    for (let r = 0; r < newRows; r++) {
+      for (let c = 0; c < newCols; c++) {
+        const inR = r * factor;
+        const inC = c * factor;
+        if (inR < rows && inC < cols) {
+          out[oi++] = pixelData[inR * cols + inC];
+        }
       }
     }
   } else {
     let oi = 0;
-    for (let r = 0; r < rows; r += factor) {
-      const base = r * cols * numComponents;
-      for (let c = 0; c < cols; c += factor) {
-        const src = base + c * numComponents;
-        for (let k = 0; k < numComponents; k++) {
-          out[oi++] = pixelData[src + k];
+    for (let r = 0; r < newRows; r++) {
+      for (let c = 0; c < newCols; c++) {
+        const inR = r * factor;
+        const inC = c * factor;
+        if (inR < rows && inC < cols) {
+          const src = (inR * cols + inC) * numComponents;
+          for (let k = 0; k < numComponents; k++) {
+            out[oi++] = pixelData[src + k];
+          }
         }
       }
     }
   }
+  const rowSpacing = image.rowPixelSpacing * factor;
+  const colSpacing = image.columnPixelSpacing * factor;
+  let imageFrame = image.imageFrame
+    ? {
+        ...image.imageFrame,
+        rows: newRows,
+        columns: newCols,
+        pixelData: out,
+        pixelDataLength: out.length,
+      }
+    : undefined;
 
-  const rowSpacing = image.rowPixelSpacing ?? image.spacing?.[1];
-  const colSpacing = image.columnPixelSpacing ?? image.spacing?.[0];
-
+  if (imageFrame && imageFrame.imageInfo) {
+    imageFrame.imageInfo = {
+      ...imageFrame.imageInfo,
+      rows: newRows,
+      columns: newCols,
+    };
+  }
+  const newSpacing = [
+    image.spacing[0] * factor,
+    image.spacing[1] * factor,
+    image.spacing[2],
+  ];
   return {
     ...image,
     rows: newRows,
     columns: newCols,
     width: newCols,
     height: newRows,
-    rowPixelSpacing: rowSpacing ? rowSpacing * factor : rowSpacing,
-    columnPixelSpacing: colSpacing ? colSpacing * factor : colSpacing,
-    spacing: image.spacing
-      ? [image.spacing[0] * factor, image.spacing[1] * factor, image.spacing[2]]
-      : image.spacing,
+    rowPixelSpacing: rowSpacing,
+    columnPixelSpacing: colSpacing,
+    spacing: newSpacing,
     sizeInBytes: out.byteLength,
-    getPixelData: () => out,
+    getPixelData: () => imageFrame?.pixelData,
+    imageFrame,
   };
 }

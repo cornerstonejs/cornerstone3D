@@ -5,9 +5,11 @@
 // Naturally, that affects the sizing/image positioning.
 
 // There should also be an image loader that re-uses an existing loader but decimates OR fetches the data using the jls reduced resolution endpoint.
-// The ordering should be:1. See if the reduced resolution version is available in cache -> use it immediately2.
-// See if the full resolution version is available in cache -> decimate it and put the reduced resolution version in cache3.
-// Fetch the reduced resolution version if configured against the back end4. Fetch the full resolution version and decimate it
+// The ordering should be:
+// 1. See if the reduced resolution version is available in cache -> use it immediately
+// 2. See if the full resolution version is available in cache -> decimate it and put the reduced resolution version in cache
+// 3. Fetch the reduced resolution version if configured against the back end
+// 4. Fetch the full resolution version and decimate it
 
 // The data that is affected is:
 
@@ -259,14 +261,7 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  function buildDynamicVolumeId() {
-    // stable per (k,i); add Date.now() if you want always-new
-    return `${volumeLoaderScheme}:${volumeName}_k${kDecimation}_i${iDecimation}`;
-  }
-
   async function loadVolume(config) {
-    const dynamicVolumeId = buildDynamicVolumeId();
-
     // Clear cache only when changing decimation factors to avoid leaking memory
     cache.purgeCache();
     imageRetrieveMetadataProvider.clear();
@@ -274,7 +269,7 @@ async function run() {
       imageRetrieveMetadataProvider.add('volume', config);
     }
 
-    const volume = await volumeLoader.createAndCacheVolume(dynamicVolumeId, {
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
       progressiveRendering: true,
       kDecimation,
@@ -285,7 +280,7 @@ async function run() {
       renderingEngine,
       [
         {
-          volumeId: dynamicVolumeId,
+          volumeId: volumeId,
           callback: setCtTransferFunctionForVolumeActor,
         },
       ],
@@ -361,17 +356,16 @@ async function run() {
     return button;
   };
 
-  const configJLS = {};
-  //   retrieveOptions: {
-  //     default: {
-  //       framesPath: '/jls/',
-  //     },
-  //   },
-  // };
-
-  createButton('Load Decimated Volume', () => loadVolume(configJLS));
-
-  await loadVolume(configJLS);
+  const configJLS = {
+    retrieveOptions: {
+      default: {
+        framesPath: '/jls/',
+      },
+    },
+  };
+  const config = {};
+  createButton('Load Decimated Volume', () => loadVolume(config));
+  await loadVolume(config);
 }
 
 run();
