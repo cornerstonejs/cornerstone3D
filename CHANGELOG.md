@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.5...v4.3.6) (2025-09-19)
+
+### Bug Fixes
+
+- **docs:** add frozen lockfile to yarn install instructions ([#2347](https://github.com/cornerstonejs/cornerstone3D/issues/2347)) ([42d0629](https://github.com/cornerstonejs/cornerstone3D/commit/42d0629e4f1111ee120a468d348faa04d46b831e))
+
 ## [4.3.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.4...v4.3.5) (2025-09-19)
 
 ### Bug Fixes
