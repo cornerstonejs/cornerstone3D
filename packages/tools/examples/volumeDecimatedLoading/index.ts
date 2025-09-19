@@ -118,8 +118,8 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 
 setTitleAndDescription(
-  'Decimated Dynamic Loading for Volume Viewport',
-  'Here we demonstrate decimated dynamic loading of volumes.'
+  'Decimated Loading for Volume Viewport',
+  'Here we demonstrate decimated loading of volumes.'
 );
 
 const size = '400px';
