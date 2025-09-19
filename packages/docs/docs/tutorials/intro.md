@@ -22,11 +22,18 @@ How to run it?
 
 ```bash
 # from the root of the library
-yarn install
+yarn install --frozen-lockfile
 
 # run the tutorial example
 yarn run example tutorial
 ```
+
+:::warning
+In general run `yarn install` with the `--frozen-lockfile` flag to help avoid
+supply chain attacks by enforcing reproducible dependencies. That is, if the
+`yarn.lock` file is clean and does NOT reference compromised packages, then
+no compromised packages should land on your machine by using this flag.
+:::
 
 Then open a new tab in your browser and navigate to `http://localhost:3000/`.
 
