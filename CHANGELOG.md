@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.4...v4.3.5) (2025-09-19)
+
+### Bug Fixes
+
+- add null check for surfaceRepresentation in updateSurfaceData ([#2344](https://github.com/cornerstonejs/cornerstone3D/issues/2344)) ([2855591](https://github.com/cornerstonejs/cornerstone3D/commit/2855591b0dd67729a53ef3fc348e89430b25ce3b))
+
 ## [4.3.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.3...v4.3.4) (2025-09-18)
 
 ### Bug Fixes
