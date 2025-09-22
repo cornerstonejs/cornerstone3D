@@ -45,8 +45,8 @@ const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Planar Freehand Annotation Tool',
-  'Here we demonstrate how to use the Planar Freehand Annotation Tool to draw 2D open and closed ROIs'
+  'Contour Utility API',
+  'Here we demonstrate how to use various contour utility functions concerning simplification, smoothing, and hole removal.'
 );
 
 const size = '500px';
