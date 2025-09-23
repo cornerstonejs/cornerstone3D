@@ -41,9 +41,11 @@ export function decimateVolumeLoader(
 
   const inPlaneDecimation =
     options.iDecimation && options.iDecimation > 1 ? options.iDecimation : 1;
+  const kAxisDecimation =
+    options.kDecimation && options.kDecimation > 1 ? options.kDecimation : 1;
 
   const originalImageIds = options.imageIds.slice();
-  const decimatedResult = decimate(originalImageIds, options.kDecimation);
+  const decimatedResult = decimate(originalImageIds, kAxisDecimation);
 
   const decimatedImageIds =
     Array.isArray(decimatedResult) &&
@@ -52,7 +54,7 @@ export function decimateVolumeLoader(
       ? decimatedResult.map((idx) => originalImageIds[idx])
       : decimatedResult;
 
-  options.imageIds = decimatedImageIds;
+  options.imageIds = decimatedImageIds as string[];
 
   async function getStreamingImageVolume() {
     /**
@@ -112,51 +114,31 @@ export function decimateVolumeLoader(
       numberOfComponents,
     } = volumeProps;
 
-    // Adjust in‑plane dimensions + spacing if we decimate rows/cols
+    // Start from current props and apply decimations independently
+    let newDimensions = [...dimensions] as typeof dimensions;
+    let newSpacing = [...spacing] as typeof spacing;
+
+    // Apply in‑plane decimation (columns = x = index 0, rows = y = index 1)
     if (inPlaneDecimation > 1) {
-      dimensions = [
-        Math.ceil(dimensions[0] / inPlaneDecimation),
-        Math.ceil(dimensions[1] / inPlaneDecimation),
-        Math.ceil(dimensions[2] / options.kDecimation),
-      ];
-      spacing = [
-        spacing[0] * inPlaneDecimation,
-        spacing[1] * inPlaneDecimation,
-        spacing[2] * options.kDecimation,
-      ];
-      metadata.Rows = dimensions[0];
-      metadata.Columns = dimensions[1];
-      metadata.PixelSpacing = [spacing[1], spacing[0]];
+      newDimensions[0] = Math.ceil(newDimensions[0] / inPlaneDecimation);
+      newDimensions[1] = Math.ceil(newDimensions[1] / inPlaneDecimation);
+      newSpacing[0] = newSpacing[0] * inPlaneDecimation; // column spacing (x)
+      newSpacing[1] = newSpacing[1] * inPlaneDecimation; // row spacing (y)
 
-      //  imagePlaneMetadata
-      //       rows: dimensions[1],
-      //       columns: dimensions[0],
-      //       imageOrientationPatient,
-      //       rowCosines: direction.slice(0, 3),
-      //       columnCosines: direction.slice(3, 6),
-      //       imagePositionPatient,
-      //       sliceThickness: spacing[2],
-      //       sliceLocation: origin[2] + i * spacing[2],
-      //       pixelSpacing: [spacing[0], spacing[1]],
-      //       rowPixelSpacing: spacing[1],
-      //       columnPixelSpacing: spacing[0],
-      //
-      //  imagePixelMetadata
-      //       rows: dimensions[1],
-      //       columns: dimensions[0],
-      //
-      //       rows: dimensions[1],
-
-      //       utilities.genericMetadataProvider.add(imageId, {
-      //   type: 'imagePixelModule',
-      //   metadata: imagePixelMetadata,
-      // });
-
-      // utilities.genericMetadataProvider.add(imageId, {
-      //   type: 'imagePlaneModule',
-      //   metadata: imagePlaneMetadata,
-      // });
+      // DICOM: Rows = Y, Columns = X
+      metadata.Rows = newDimensions[1];
+      metadata.Columns = newDimensions[0];
+      // DICOM PixelSpacing = [row, column] = [y, x]
+      metadata.PixelSpacing = [newSpacing[1], newSpacing[0]];
     }
+
+    // Do NOT scale Z spacing here. We decimated imageIds before
+    // generating volume props, so sortImageIdsAndGetSpacing already
+    // computed the effective z-spacing between the kept frames.
+
+    // Commit any updates
+    dimensions = newDimensions;
+    spacing = newSpacing;
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
       {
@@ -182,8 +164,12 @@ export function decimateVolumeLoader(
         },
       }
     );
-    streamingImageVolume.setImagePostProcess((image) =>
-      decimateImagePixels(image, inPlaneDecimation)
+    streamingImageVolume.setImagePostProcess(
+      (image) =>
+        decimateImagePixels(
+          image as unknown as import('../types').IImage,
+          inPlaneDecimation
+        ) as unknown as import('../types').PixelDataTypedArray
     );
     console.debug(streamingImageVolume);
     return streamingImageVolume;
