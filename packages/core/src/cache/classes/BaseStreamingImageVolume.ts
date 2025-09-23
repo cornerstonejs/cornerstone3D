@@ -317,7 +317,8 @@ export default class BaseStreamingImageVolume
   }
 
   public getLoaderImageOptions(imageId: string) {
-    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
+    const { transferSyntaxUID: transferSyntaxUID } =
+      metaData.get('transferSyntax', imageId) || {};
 
     // Note: per-image rows/columns may be full-res after in-plane decimation.
     // Always use the current volume's dimensions for allocation.
@@ -517,7 +518,7 @@ export default class BaseStreamingImageVolume
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests(_priority: number): ImageLoadRequests[] {
+  public getImageLoadRequests(priority: number): ImageLoadRequests[] {
     throw new Error('Abstract method');
   }
 
@@ -608,5 +609,5 @@ export default class BaseStreamingImageVolume
     this.scaling = { PT: petScaling };
   }
 
-  protected checkDimensionGroupCompletion(_imageIdIndex: number): void {}
+  protected checkDimensionGroupCompletion(imageIdIndex: number): void {}
 }
