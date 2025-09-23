@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.7...v4.3.8) (2025-09-23)
+
+### Bug Fixes
+
+- **examples:** add contour api example to example info ([#2349](https://github.com/cornerstonejs/cornerstone3D/issues/2349)) ([3675774](https://github.com/cornerstonejs/cornerstone3D/commit/3675774b62d48eb3398d2b85ce3187485b762323))
+
 ## [4.3.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.6...v4.3.7) (2025-09-22)
 
 ### Bug Fixes
