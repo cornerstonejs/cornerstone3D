@@ -88,7 +88,7 @@ const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
 let kDecimation = 2;
-let iDecimation = 1;
+let iDecimation = 2;
 
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
@@ -128,8 +128,7 @@ const viewportGrid = document.createElement('div');
 
 const content = document.getElementById('content');
 
-const loaders = document.createElement('div');
-content.appendChild(loaders);
+// Use the shared demo toolbar for controls so elements appear on one line
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
@@ -205,8 +204,8 @@ async function run() {
 
   const imageIds = await createImageIdsAndCacheMetaData({
     // Denny 3000 slice CT
-    // StudyInstanceUID: '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084',
-    // SeriesInstanceUID: '1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297',
+    //StudyInstanceUID: '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084',
+    //SeriesInstanceUID: '1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297',
     //Juno
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
@@ -353,14 +352,6 @@ async function run() {
   });
 
   // Button to trigger (re)loading with current decimation values
-  const createButton = (text, action) => {
-    const button = document.createElement('button');
-    button.innerText = text;
-    button.id = text.replace(/\s+/g, '-');
-    button.onclick = action;
-    loaders.appendChild(button);
-    return button;
-  };
 
   const configJLS = {
     retrieveOptions: {
@@ -370,7 +361,10 @@ async function run() {
     },
   };
   const config = {};
-  createButton('Load Decimated Volume', () => loadVolume(config));
+  addButtonToToolbar({
+    title: 'Load Decimated Volume',
+    onClick: () => loadVolume(config),
+  });
   await loadVolume(config);
 }
 
