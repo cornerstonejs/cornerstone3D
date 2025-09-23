@@ -1,5 +1,10 @@
-import type { IImage } from '../types';
+import type { IImage, PixelDataTypedArray } from '../types';
 export default function decimateImagePixels(image: IImage, factor: number) {
+  // Trivial case: no decimation requested
+  if (!factor || factor <= 1) {
+    return image;
+  }
+
   const rows = image.rows ?? image.height;
   const cols = image.columns ?? image.width;
   const newRows = Math.ceil(rows / factor);
@@ -7,37 +12,37 @@ export default function decimateImagePixels(image: IImage, factor: number) {
 
   const pixelData = image.getPixelData();
   const numComponents = image.numberOfComponents || 1;
-  const OutArray = pixelData.constructor as typeof pixelData;
-  const out = new OutArray(newRows * newCols * numComponents);
+  const OutArrayCtor = pixelData.constructor as unknown as new (
+    length: number
+  ) => PixelDataTypedArray;
+  const out = new OutArrayCtor(newRows * newCols * numComponents);
 
-  if (numComponents === 1) {
-    let oi = 0;
-    for (let r = 0; r < newRows; r++) {
-      for (let c = 0; c < newCols; c++) {
-        const inR = r * factor;
-        const inC = c * factor;
-        if (inR < rows && inC < cols) {
-          out[oi++] = pixelData[inR * cols + inC];
-        }
-      }
-    }
-  } else {
-    let oi = 0;
-    for (let r = 0; r < newRows; r++) {
-      for (let c = 0; c < newCols; c++) {
-        const inR = r * factor;
-        const inC = c * factor;
-        if (inR < rows && inC < cols) {
-          const src = (inR * cols + inC) * numComponents;
-          for (let k = 0; k < numComponents; k++) {
-            out[oi++] = pixelData[src + k];
-          }
-        }
+  let outIndex = 0;
+  for (let r = 0; r < newRows; r++) {
+    const inR = r * factor;
+    if (inR >= rows) break;
+    for (let c = 0; c < newCols; c++) {
+      const inC = c * factor;
+      if (inC >= cols) break;
+      const src = (inR * cols + inC) * numComponents;
+      for (let k = 0; k < numComponents; k++) {
+        out[outIndex++] = pixelData[src + k];
       }
     }
   }
-  const rowSpacing = image.rowPixelSpacing * factor;
-  const colSpacing = image.columnPixelSpacing * factor;
+
+  // Spacing: prefer explicit row/column spacing; preserve Z
+  const s = (image as unknown as { spacing?: [number, number, number] })
+    .spacing;
+  const newSpacing: [number, number, number] = [
+    (image.columnPixelSpacing ?? s?.[0] ?? 1) * factor,
+    (image.rowPixelSpacing ?? s?.[1] ?? 1) * factor,
+    s?.[2] ?? image.sliceThickness ?? 1,
+  ];
+  const colSpacing = newSpacing[0];
+  const rowSpacing = newSpacing[1];
+
+  // Carry over imageFrame when present
   let imageFrame = image.imageFrame
     ? {
         ...image.imageFrame,
@@ -47,19 +52,8 @@ export default function decimateImagePixels(image: IImage, factor: number) {
         pixelDataLength: out.length,
       }
     : undefined;
+  // Note: some loaders attach a non-standard imageInfo; skip updating to avoid type casting.
 
-  if (imageFrame && imageFrame.imageInfo) {
-    imageFrame.imageInfo = {
-      ...imageFrame.imageInfo,
-      rows: newRows,
-      columns: newCols,
-    };
-  }
-  const newSpacing = [
-    image.spacing[0] * factor,
-    image.spacing[1] * factor,
-    image.spacing[2],
-  ];
   return {
     ...image,
     rows: newRows,
@@ -70,7 +64,7 @@ export default function decimateImagePixels(image: IImage, factor: number) {
     columnPixelSpacing: colSpacing,
     spacing: newSpacing,
     sizeInBytes: out.byteLength,
-    getPixelData: () => imageFrame?.pixelData,
+    getPixelData: () => imageFrame?.pixelData ?? out,
     imageFrame,
   };
 }
