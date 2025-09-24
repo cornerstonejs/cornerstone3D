@@ -199,6 +199,15 @@ class Viewport {
     return Array.from(this.viewportWidgets.values());
   };
 
+  /**
+   * Get render passes for this viewport.
+   * Viewports can override this to provide custom render passes (e.g., for sharpening).
+   * @returns Array of VTK render passes or null if no custom passes are needed
+   */
+  public getRenderPasses = () => {
+    return null;
+  };
+
   public removeWidgets = () => {
     const widgets = this.getWidgets();
     widgets.forEach((widget) => {
@@ -636,14 +645,19 @@ class Viewport {
       this.addActor(actor);
     });
 
-    const prevViewPresentation = this.getViewPresentation();
-    const prevViewRef = this.getViewReference();
-
-    this.resetCamera();
-
+    // In the case of loading a new volume with WADO-URI, we may not have loaded
+    // metadata for all imageIds, as they are streaming in. The
+    // getViewReference() call uses getClosestImageId() in its call stack, which
+    // will error in that scenario as it tries to loop over all imageId
+    // metadata. So only call getViewReference if necessary.
     if (!resetCamera) {
+      const prevViewPresentation = this.getViewPresentation();
+      const prevViewRef = this.getViewReference();
+      this.resetCamera();
       this.setViewReference(prevViewRef);
       this.setViewPresentation(prevViewPresentation);
+    } else {
+      this.resetCamera();
     }
 
     // Trigger ACTORS_CHANGED event after adding actors

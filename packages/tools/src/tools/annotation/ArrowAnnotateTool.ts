@@ -46,6 +46,7 @@ import type { ArrowAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { setAnnotationLabel } from '../../utilities';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 class ArrowAnnotateTool extends AnnotationTool {
   static toolName = 'ArrowAnnotate';
@@ -745,7 +746,10 @@ class ArrowAnnotateTool extends AnnotationTool {
         continue;
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(

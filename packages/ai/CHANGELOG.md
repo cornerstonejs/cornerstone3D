@@ -3,6 +3,72 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.7...v4.3.8) (2025-09-23)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.3.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.6...v4.3.7) (2025-09-22)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.3.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.5...v4.3.6) (2025-09-19)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.3.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.4...v4.3.5) (2025-09-19)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.3.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.3...v4.3.4) (2025-09-18)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.3.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.2...v4.3.3) (2025-09-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.3.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.1...v4.3.2) (2025-09-17)
+
+### Bug Fixes
+
+- **security:** Use exact versioning in package.json. ([#2323](https://github.com/cornerstonejs/cornerstone3D/issues/2323)) ([d682ca1](https://github.com/cornerstonejs/cornerstone3D/commit/d682ca1fa68c94a31ac25ad9830d216d28ee9c1e))
+
+## [4.3.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.0...v4.3.1) (2025-09-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+# [4.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.2.4...v4.3.0) (2025-09-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.2.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.2.3...v4.2.4) (2025-09-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.2.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.2.2...v4.2.3) (2025-09-12)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.2.1...v4.2.2) (2025-09-12)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.2.0...v4.2.1) (2025-09-12)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+# [4.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.1.4...v4.2.0) (2025-09-11)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.1.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.1.3...v4.1.4) (2025-09-11)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.1.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.1.2...v4.1.3) (2025-09-09)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
 ## [4.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.1.1...v4.1.2) (2025-09-05)
 
 **Note:** Version bump only for package @cornerstonejs/ai
