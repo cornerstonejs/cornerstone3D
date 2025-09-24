@@ -98,7 +98,7 @@ import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirectio
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
-import { createSharpeningRenderPass } from './renderPasses';
+import { createSharpeningAndSmoothingRenderPass } from './renderPasses';
 
 export interface ImageDataMetaData {
   bitsAllocated: number;
@@ -445,7 +445,7 @@ class StackViewport extends Viewport {
    * @returns True if custom render passes should be used, false otherwise
    */
   protected shouldUseCustomRenderPass(): boolean {
-    return this.sharpening > 0 && !this.useCPURendering;
+    return !this.useCPURendering;
   }
 
   /**
@@ -459,7 +459,7 @@ class StackViewport extends Viewport {
     }
 
     try {
-      return [createSharpeningRenderPass(this.sharpening)];
+      return [createSharpeningAndSmoothingRenderPass(this.sharpening)];
     } catch (e) {
       console.warn('Failed to create sharpening render passes:', e);
       return null;

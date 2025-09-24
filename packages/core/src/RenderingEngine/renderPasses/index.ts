@@ -1,3 +1,3 @@
-import { createSharpeningRenderPass } from './sharpeningRenderPass';
+import { createSharpeningAndSmoothingRenderPass } from './sharpeningRenderPass';
 
-export { createSharpeningRenderPass };
+export { createSharpeningAndSmoothingRenderPass };

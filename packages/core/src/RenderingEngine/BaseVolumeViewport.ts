@@ -77,7 +77,7 @@ import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEn
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
 import { isInvalidNumber } from './helpers/isInvalidNumber';
-import { createSharpeningRenderPass } from './renderPasses';
+import { createSharpeningAndSmoothingRenderPass } from './renderPasses';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -897,7 +897,11 @@ abstract class BaseVolumeViewport extends Viewport {
           [-viewPlaneNormal[0], -viewPlaneNormal[1], -viewPlaneNormal[2]],
           projectedDistance
         );
-        const focalShift = vec3.subtract(vec3.create(), newImagePositionPatient, focalPoint);
+        const focalShift = vec3.subtract(
+          vec3.create(),
+          newImagePositionPatient,
+          focalPoint
+        );
         const newPosition = vec3.add(vec3.create(), position, focalShift);
         // this.setViewReference({
         //   ...viewRef,
@@ -905,7 +909,7 @@ abstract class BaseVolumeViewport extends Viewport {
         // });
         this.setCamera({
           focalPoint: newImagePositionPatient as Point3,
-          position: newPosition as Point3
+          position: newPosition as Point3,
         });
         this.render();
         return;
@@ -1070,7 +1074,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns True if custom render passes should be used, false otherwise
    */
   protected shouldUseCustomRenderPass(): boolean {
-    return this.sharpening > 0 && !this.useCPURendering;
+    return !this.useCPURendering;
   }
 
   /**
@@ -1084,7 +1088,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     try {
-      return [createSharpeningRenderPass(this.sharpening)];
+      return [createSharpeningAndSmoothingRenderPass(this.sharpening)];
     } catch (e) {
       console.warn('Failed to create sharpening render passes:', e);
       return null;
