@@ -194,7 +194,13 @@ instructions.innerText = `
 content.append(instructions);
 
 async function run() {
-  await initDemo();
+  // Force consistent GPU rendering across different hardware
+  await initDemo({
+    rendering: {
+      preferSizeOverAccuracy: false, // Use full precision for consistency
+      strictZSpacingForVolumeViewport: true, // Strict Z spacing calculation
+    },
+  });
 
   cornerstoneTools.addTool(VolumeCroppingTool);
   cornerstoneTools.addTool(ZoomTool);
@@ -204,8 +210,8 @@ async function run() {
 
   const imageIds = await createImageIdsAndCacheMetaData({
     // Denny 3000 slice CT
-    //StudyInstanceUID: '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084',
-    //SeriesInstanceUID: '1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297',
+    // StudyInstanceUID: '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084',
+    // SeriesInstanceUID: '1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297',
     //Juno
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
@@ -217,7 +223,7 @@ async function run() {
 
     //    wadoRsRoot:
     //  getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-    wadoRsRoot: getLocalUrl() || 'http://localhost:5000/dicomweb',
+    wadoRsRoot: getLocalUrl() || 'http://BusinessLaptop1:5000/dicomweb',
   });
 
   const renderingEngine = new RenderingEngine(renderingEngineId);
