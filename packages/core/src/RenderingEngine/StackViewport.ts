@@ -98,7 +98,10 @@ import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirectio
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
-import { createSharpeningRenderPass } from './renderPasses';
+import {
+  createSharpeningRenderPass,
+  createSmoothingRenderPass,
+} from './renderPasses';
 
 export interface ImageDataMetaData {
   bitsAllocated: number;
@@ -167,6 +170,7 @@ class StackViewport extends Viewport {
   private voiRange: VOIRange;
   private voiUpdatedWithSetProperties = false;
   private sharpening: number = 0;
+  private smoothing: number = 0;
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -439,13 +443,21 @@ class StackViewport extends Viewport {
 
     this.render();
   };
-
+  /**
+   * Sets the smoothing for the current viewport.
+   * @param smoothing - The smoothing configuration to use.
+   */
+  private setSmoothing = (smoothing: number): void => {
+    // Store smoothing settings directly on the class
+    this.smoothing = smoothing;
+    this.render();
+  };
   /**
    * Check if custom render passes should be used for this viewport.
    * @returns True if custom render passes should be used, false otherwise
    */
   protected shouldUseCustomRenderPass(): boolean {
-    return this.sharpening > 0 && !this.useCPURendering;
+    return (this.sharpening > 0 || this.smoothing < 0) && !this.useCPURendering;
   }
 
   /**
@@ -459,9 +471,15 @@ class StackViewport extends Viewport {
     }
 
     try {
-      return [createSharpeningRenderPass(this.sharpening)];
+      if (this.sharpening > 0) {
+        return [createSharpeningRenderPass(this.sharpening)];
+      } else if (this.smoothing < 0) {
+        return [createSmoothingRenderPass(this.smoothing)];
+      } else {
+        return null;
+      }
     } catch (e) {
-      console.warn('Failed to create sharpening render passes:', e);
+      console.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
@@ -723,6 +741,7 @@ class StackViewport extends Viewport {
       invert,
       interpolationType,
       sharpening,
+      smoothing,
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
@@ -741,6 +760,7 @@ class StackViewport extends Viewport {
       interpolationType:
         this.globalDefaultProperties.interpolationType ?? interpolationType,
       sharpening: this.globalDefaultProperties.sharpening ?? sharpening,
+      smoothing: this.globalDefaultProperties.smoothing ?? smoothing,
     };
 
     if (typeof colormap !== 'undefined') {
@@ -767,6 +787,9 @@ class StackViewport extends Viewport {
 
     if (typeof sharpening !== 'undefined') {
       this.setSharpening(sharpening);
+    }
+    if (typeof smoothing !== 'undefined') {
+      this.setSmoothing(smoothing);
     }
   }
 
@@ -813,6 +836,7 @@ class StackViewport extends Viewport {
       invert,
       isComputedVOI: !voiUpdatedWithSetProperties,
       sharpening: this.sharpening,
+      smoothing: this.smoothing,
     };
   };
 
