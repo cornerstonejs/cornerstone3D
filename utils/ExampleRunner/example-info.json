@@ -482,7 +482,7 @@
       "labelmapEditWithContourAutomatic": {
         "name": "Labelmap Edit With Contour",
         "description": "Demonstrates editing of a labelmap using contour tools"
-      },
+      }
     },
     "advanced-gpu-segmentation": {
       "regionSegment": {
