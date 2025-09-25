@@ -478,7 +478,11 @@
       "contourApi": {
         "name": "Contour Utility API",
         "description": "Demonstrates how to use various contour utility functions concerning simplification, smoothing, and hole removal."
-      }
+      },
+      "labelmapEditWithContourAutomatic": {
+        "name": "Labelmap Edit With Contour",
+        "description": "Demonstrates editing of a labelmap using contour tools"
+      },
     },
     "advanced-gpu-segmentation": {
       "regionSegment": {
