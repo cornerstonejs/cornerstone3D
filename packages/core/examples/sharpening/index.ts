@@ -147,7 +147,7 @@ instructionsContainer.appendChild(instructionsList);
 addSliderToToolbar({
   id: 'sharpening-slider',
   title: 'Sharpening',
-  range: [-1000, 1000],
+  range: [0, 300],
   defaultValue: 0,
   onSelectedValueChange: (value: number) => {
     // Get the rendering engine
