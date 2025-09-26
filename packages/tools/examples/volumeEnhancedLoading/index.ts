@@ -75,9 +75,9 @@ const { ViewportType, InterpolationType } = Enums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-//const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeLoaderScheme = 'decimateVolumeLoader'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
 
@@ -117,8 +117,8 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 
 setTitleAndDescription(
-  'Decimated Loading for Volume Viewport',
-  'Here we demonstrate decimated loading of volumes.'
+  'Enhanced Volume Loading',
+  'Here we demonstrate enhanced volume loading with configurable in-plane (i,j) and axial (k) decimation.'
 );
 
 const size = '400px';
@@ -377,7 +377,7 @@ async function run() {
   };
   const config = {};
   addButtonToToolbar({
-    title: 'Load Decimated Volume',
+    title: 'Load Enhanced Volume',
     onClick: () => loadVolume(configJLS),
   });
   await loadVolume(configJLS);
