@@ -1,4 +1,41 @@
 import type { IImage, PixelDataTypedArray } from '../types';
+
+/**
+ * Decimates (downsamples) an image by a specified factor.
+ *
+ * This function reduces the resolution of an image by sampling every nth pixel
+ * in both dimensions, where n is the decimation factor. For example, with a
+ * factor of 2, it takes every 2nd pixel, resulting in an image that is 1/4
+ * the size (half width × half height).
+ *
+ * **Values Changed:**
+ * - **Dimensions**: `rows`, `columns`, `width`, `height` are divided by factor
+ * - **Pixel Spacing**: `rowPixelSpacing`, `columnPixelSpacing` are multiplied by factor
+ * - **Spacing Array**: `spacing[0]` and `spacing[1]` are multiplied by factor
+ * - **Pixel Data**: New array with `newRows × newCols × numComponents` elements
+ * - **Size**: `sizeInBytes` reflects the new pixel data size
+ * - **Image Frame**: Updated with new dimensions and pixel data (if present)
+ *
+ * **Values Preserved:**
+ * - `spacing[2]` (Z-spacing/slice thickness) remains unchanged
+ * - All other image metadata and properties are copied over
+ *
+ * @param image - The input image to decimate
+ * @param factor - The decimation factor (must be > 1). A factor of 2 means
+ *                 take every 2nd pixel, factor of 3 means every 3rd pixel, etc.
+ * @returns A new image with reduced resolution, or the original image if
+ *          factor <= 1
+ *
+ * @example
+ * // Decimate a 512x512 image by factor of 2 to get 256x256
+ * // Original: 512×512, spacing 0.5mm → Result: 256×256, spacing 1.0mm
+ * const decimatedImage = decimateImagePixels(originalImage, 2);
+ *
+ * @example
+ * // Decimate a 1000x800 image by factor of 4 to get 250x200
+ * // Original: 1000×800, spacing 0.25mm → Result: 250×200, spacing 1.0mm
+ * const decimatedImage = decimateImagePixels(originalImage, 4);
+ */
 export default function decimateImagePixels(image: IImage, factor: number) {
   // Trivial case: no decimation requested
   if (!factor || factor <= 1) {
