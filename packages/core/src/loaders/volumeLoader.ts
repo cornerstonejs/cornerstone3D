@@ -28,7 +28,7 @@ import {
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import type { StreamingDynamicImageVolume } from '../cache';
 import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingImageVolumeLoader';
-import { decimateVolumeLoader } from './decimateVolumeLoader';
+import { enhancedVolumeLoader } from './enhancedVolumeLoader';
 
 interface VolumeLoaderOptions {
   imageIds: string[];

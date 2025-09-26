@@ -24,7 +24,7 @@ interface IVolumeLoader {
  * @param options - options for loading, imageIds
  * @returns a promise that resolves to a StreamingImageVolume
  */
-export function decimateVolumeLoader(
+export function enhancedVolumeLoader(
   volumeId: string,
   options: {
     imageIds: string[];
@@ -193,4 +193,4 @@ export function decimateVolumeLoader(
   };
 }
 
-export default decimateVolumeLoader;
+export default enhancedVolumeLoader;

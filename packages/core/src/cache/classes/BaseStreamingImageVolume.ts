@@ -320,8 +320,8 @@ export default class BaseStreamingImageVolume
     const { transferSyntaxUID: transferSyntaxUID } =
       metaData.get('transferSyntax', imageId) || {};
 
-    // Note: per-image rows/columns may be full-res after in-plane decimation.
-    // Always use the current volume's dimensions for allocation.
+    // Note: before PR 2340, rows and columns were from  imagePlaneModule = metaData.get('imagePlaneModule', imageId) .
+    // This is now using the volume's dimensions instead.
     const targetRows = this.dimensions?.[1];
     const targetCols = this.dimensions?.[0];
     const imageIdIndex = this.getImageIdIndex(imageId);

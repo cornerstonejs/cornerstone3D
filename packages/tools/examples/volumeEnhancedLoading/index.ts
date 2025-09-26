@@ -75,7 +75,7 @@ const { ViewportType, InterpolationType } = Enums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'decimateVolumeLoader'; // Loader id which defines which volume loader to use
+const volumeLoaderScheme = 'enhancedVolumeLoader'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 const toolGroupId = 'MY_TOOLGROUP_ID';
