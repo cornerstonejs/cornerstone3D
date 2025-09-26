@@ -45,6 +45,14 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     }
   }
 
+  protected onSetToolConfiguration() {
+    if (this.configuration.interpolation?.enabled) {
+      InterpolationManager.addTool(this.getToolName());
+    } else {
+      InterpolationManager.removeTool(this.getToolName());
+    }
+  }
+
   /**
    * Allow children classes inherit from this one and disable contour segmentation
    * behavior and children classes shall work like a normal contour instance which
@@ -65,12 +73,6 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   protected createAnnotation(
     evt: EventTypes.InteractionEventType
   ): ContourAnnotation {
-    if (this.configuration.interpolation?.enabled) {
-      InterpolationManager.addTool(this.getToolName());
-    } else {
-      InterpolationManager.removeTool(this.getToolName());
-    }
-
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
