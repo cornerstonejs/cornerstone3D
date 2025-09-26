@@ -65,6 +65,12 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   protected createAnnotation(
     evt: EventTypes.InteractionEventType
   ): ContourAnnotation {
+    if (this.configuration.interpolation?.enabled) {
+      InterpolationManager.addTool(this.getToolName());
+    } else {
+      InterpolationManager.removeTool(this.getToolName());
+    }
+
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
