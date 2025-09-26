@@ -7,8 +7,8 @@ export default function decimateImagePixels(image: IImage, factor: number) {
 
   const rows = image.rows ?? image.height;
   const cols = image.columns ?? image.width;
-  const newRows = Math.ceil(rows / factor);
-  const newCols = Math.ceil(cols / factor);
+  const newRows = Math.floor(rows / factor);
+  const newCols = Math.floor(cols / factor);
 
   const pixelData = image.getPixelData();
   const numComponents = image.numberOfComponents || 1;
@@ -20,10 +20,8 @@ export default function decimateImagePixels(image: IImage, factor: number) {
   let outIndex = 0;
   for (let r = 0; r < newRows; r++) {
     const inR = r * factor;
-    if (inR >= rows) break;
     for (let c = 0; c < newCols; c++) {
       const inC = c * factor;
-      if (inC >= cols) break;
       const src = (inR * cols + inC) * numComponents;
       for (let k = 0; k < numComponents; k++) {
         out[outIndex++] = pixelData[src + k];
