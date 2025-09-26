@@ -31,10 +31,6 @@ import type { IImage, PixelDataTypedArray } from '../types';
  * // Original: 512×512, spacing 0.5mm → Result: 256×256, spacing 1.0mm
  * const decimatedImage = decimateImagePixels(originalImage, 2);
  *
- * @example
- * // Decimate a 1000x800 image by factor of 4 to get 250x200
- * // Original: 1000×800, spacing 0.25mm → Result: 250×200, spacing 1.0mm
- * const decimatedImage = decimateImagePixels(originalImage, 4);
  */
 export default function decimateImagePixels(image: IImage, factor: number) {
   // Trivial case: no decimation requested
@@ -66,7 +62,7 @@ export default function decimateImagePixels(image: IImage, factor: number) {
     }
   }
 
-  // Spacing: prefer explicit row/column spacing; preserve Z
+  // Spacing: preserve k
   const s = (image as unknown as { spacing?: [number, number, number] })
     .spacing;
   const newSpacing: [number, number, number] = [
@@ -87,7 +83,6 @@ export default function decimateImagePixels(image: IImage, factor: number) {
         pixelDataLength: out.length,
       }
     : undefined;
-  // Note: some loaders attach a non-standard imageInfo; skip updating to avoid type casting.
 
   return {
     ...image,
