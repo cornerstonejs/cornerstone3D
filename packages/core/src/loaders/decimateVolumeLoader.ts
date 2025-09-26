@@ -29,8 +29,7 @@ export function decimateVolumeLoader(
   options: {
     imageIds: string[];
     progressiveRendering?: boolean | IRetrieveConfiguration;
-    kDecimation?: number;
-    iDecimation?: number;
+    ijkDecimation?: [number, number, number];
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
@@ -39,10 +38,11 @@ export function decimateVolumeLoader(
     );
   }
 
-  const inPlaneDecimation =
-    options.iDecimation && options.iDecimation > 1 ? options.iDecimation : 1;
-  const kAxisDecimation =
-    options.kDecimation && options.kDecimation > 1 ? options.kDecimation : 1;
+  const [iDecimation, jDecimation, kDecimation] = options.ijkDecimation || [
+    1, 1, 1,
+  ];
+  const inPlaneDecimation = iDecimation > 1 ? iDecimation : 1;
+  const kAxisDecimation = kDecimation > 1 ? kDecimation : 1;
 
   const originalImageIds = options.imageIds.slice();
   const decimatedResult = decimate(originalImageIds, kAxisDecimation);

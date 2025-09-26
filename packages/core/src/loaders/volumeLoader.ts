@@ -33,8 +33,7 @@ import { decimateVolumeLoader } from './decimateVolumeLoader';
 interface VolumeLoaderOptions {
   imageIds: string[];
   progressiveRendering?: boolean;
-  kDecimation?: number; // Optional parameter for decimation factor
-  iDecimation?: number; // Optional parameter for interleave decimation
+  ijkDecimation?: [number, number, number]; // Optional parameter for decimation factors [i, j, k]
 }
 
 interface DerivedVolumeOptions {
