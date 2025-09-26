@@ -149,6 +149,7 @@ class ArrowAnnotateTool extends AnnotationTool {
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
   ): ArrowAnnotation => {
+    this.startGroupRecording();
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -372,7 +373,8 @@ class ArrowAnnotateTool extends AnnotationTool {
         // This is only new if it wasn't already memoed
         this.createMemo(element, annotation, { newAnnotation: !!this.memo });
         setAnnotationLabel(annotation, element, label);
-
+        this.endGroupRecording();
+        this.doneEditMemo();
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
       });
     } else if (!movingTextBox) {
