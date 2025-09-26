@@ -619,9 +619,9 @@
         "name": "Volume Progressive Loading",
         "description": "Volume progressive loading inter and intra image"
       },
-      "VolumeDecimatedLoading": {
-        "name": "Volume Decimated Loading",
-        "description": "Volume decimated loading"
+      "VolumeEnhancedLoading": {
+        "name": "Volume Enhanced Loading",
+        "description": "Volume enhanced loading"
       }
     },
     "adapters": {
