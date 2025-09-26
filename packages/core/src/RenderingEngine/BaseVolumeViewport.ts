@@ -77,7 +77,10 @@ import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEn
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
 import { isInvalidNumber } from './helpers/isInvalidNumber';
-import { createSharpeningRenderPass } from './renderPasses';
+import {
+  createSharpeningRenderPass,
+  createSmoothingRenderPass,
+} from './renderPasses';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -91,6 +94,7 @@ abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
   private sharpening: number = 0;
+  private smoothing: number = 0;
 
   protected initialTransferFunctionNodes: TransferFunctionNodes;
   // Viewport Properties
@@ -897,7 +901,11 @@ abstract class BaseVolumeViewport extends Viewport {
           [-viewPlaneNormal[0], -viewPlaneNormal[1], -viewPlaneNormal[2]],
           projectedDistance
         );
-        const focalShift = vec3.subtract(vec3.create(), newImagePositionPatient, focalPoint);
+        const focalShift = vec3.subtract(
+          vec3.create(),
+          newImagePositionPatient,
+          focalPoint
+        );
         const newPosition = vec3.add(vec3.create(), position, focalShift);
         // this.setViewReference({
         //   ...viewRef,
@@ -905,7 +913,7 @@ abstract class BaseVolumeViewport extends Viewport {
         // });
         this.setCamera({
           focalPoint: newImagePositionPatient as Point3,
-          position: newPosition as Point3
+          position: newPosition as Point3,
         });
         this.render();
         return;
@@ -993,6 +1001,7 @@ abstract class BaseVolumeViewport extends Viewport {
       slabThickness,
       sampleDistanceMultiplier,
       sharpening,
+      smoothing,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -1053,6 +1062,9 @@ abstract class BaseVolumeViewport extends Viewport {
     if (typeof sharpening !== 'undefined') {
       this.setSharpening(sharpening);
     }
+    if (typeof smoothing !== 'undefined') {
+      this.setSmoothing(smoothing);
+    }
   }
 
   /**
@@ -1064,18 +1076,27 @@ abstract class BaseVolumeViewport extends Viewport {
     this.sharpening = sharpening;
     this.render();
   };
+  /**
+   * Sets the smoothing for the current viewport.
+   * @param smoothing - The smoothing configuration to use.
+   */
+  private setSmoothing = (smoothing: number): void => {
+    // Store smoothing settings directly on the class
+    this.smoothing = smoothing;
+    this.render();
+  };
 
   /**
    * Check if custom render passes should be used for this viewport.
    * @returns True if custom render passes should be used, false otherwise
    */
   protected shouldUseCustomRenderPass(): boolean {
-    return this.sharpening > 0 && !this.useCPURendering;
+    return (this.sharpening > 0 || this.smoothing < 0) && !this.useCPURendering;
   }
 
   /**
    * Get render passes for this viewport.
-   * If sharpening is enabled, returns appropriate render passes.
+   * If sharpening or smoothing is enabled, returns appropriate render passes.
    * @returns Array of VTK render passes or null if no custom passes are needed
    */
   public getRenderPasses = () => {
@@ -1084,9 +1105,15 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     try {
-      return [createSharpeningRenderPass(this.sharpening)];
+      if (this.sharpening > 0) {
+        return [createSharpeningRenderPass(this.sharpening)];
+      } else if (this.smoothing < 0) {
+        return [createSmoothingRenderPass(this.smoothing)];
+      } else {
+        return null;
+      }
     } catch (e) {
-      console.warn('Failed to create sharpening render passes:', e);
+      console.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
@@ -1260,6 +1287,7 @@ abstract class BaseVolumeViewport extends Viewport {
       slabThickness: slabThickness,
       preset,
       sharpening: this.sharpening,
+      smoothing: this.smoothing,
     };
   };
 
