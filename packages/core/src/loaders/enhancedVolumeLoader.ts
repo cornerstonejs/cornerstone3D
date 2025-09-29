@@ -39,7 +39,7 @@ export function enhancedVolumeLoader(
   }
 
   const [iDecimation, jDecimation, kDecimation] = options.ijkDecimation || [
-    2, 2, 8,
+    1, 1, 1,
   ];
   const inPlaneDecimation = iDecimation > 1 ? iDecimation : 1;
   const kAxisDecimation = kDecimation > 1 ? kDecimation : 1;
@@ -115,19 +115,19 @@ export function enhancedVolumeLoader(
     } = volumeProps;
 
     // Start from current props and apply decimations independently
+    let newDimensions = [...dimensions] as typeof dimensions;
     let newSpacing = [...spacing] as typeof spacing;
 
     // Apply in‑plane decimation (columns = x = index 0, rows = y = index 1)
     if (inPlaneDecimation > 1) {
-      // Don't modify dimensions - VTK needs original dimensions for pixel data layout
-      // Only adjust spacing so geometric extent remains the same
+      newDimensions[0] = Math.ceil(newDimensions[0] / inPlaneDecimation);
+      newDimensions[1] = Math.ceil(newDimensions[1] / inPlaneDecimation);
       newSpacing[0] = newSpacing[0] * inPlaneDecimation; // column spacing (x)
       newSpacing[1] = newSpacing[1] * inPlaneDecimation; // row spacing (y)
 
-      // Update metadata to reflect decimated appearance
       // DICOM: Rows = Y, Columns = X
-      metadata.Rows = Math.ceil(metadata.Rows / inPlaneDecimation);
-      metadata.Columns = Math.ceil(metadata.Columns / inPlaneDecimation);
+      metadata.Rows = newDimensions[1];
+      metadata.Columns = newDimensions[0];
       // DICOM PixelSpacing = [row, column] = [y, x]
       metadata.PixelSpacing = [newSpacing[1], newSpacing[0]];
     }
@@ -136,7 +136,8 @@ export function enhancedVolumeLoader(
     // generating volume props, so sortImageIdsAndGetSpacing already
     // computed the effective z-spacing between the kept frames.
 
-    // Commit spacing updates only
+    // Commit any updates
+    dimensions = newDimensions;
     spacing = newSpacing;
     const streamingImageVolume = new StreamingImageVolume(
       // ImageVolume properties
