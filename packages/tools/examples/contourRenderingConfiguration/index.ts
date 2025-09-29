@@ -31,7 +31,7 @@ const {
   TrackballRotateTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
-const { ViewportType, GeometryType } = Enums;
+const { ViewportType } = Enums;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -89,8 +89,10 @@ addToggleButtonToToolbar({
     const segmentIndex = 1;
     segmentation.config.visibility.setSegmentIndexVisibility(
       viewportId,
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       segmentIndex,
       !toggle
     );
@@ -103,8 +105,10 @@ addToggleButtonToToolbar({
     const segmentIndex = 2;
     segmentation.config.visibility.setSegmentIndexVisibility(
       viewportId,
-      segmentationId,
-      csToolsEnums.SegmentationRepresentations.Contour,
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
       segmentIndex,
       !toggle
     );
@@ -130,9 +134,8 @@ addSliderToToolbar({
 async function addSegmentationsToState() {
   // load the contour data
 
-  const geometryIds = await createAndCacheGeometriesFromContours(
-    'CircleContour'
-  );
+  const geometryIds =
+    await createAndCacheGeometriesFromContours('CircleContour');
 
   // Add the segmentations to state
   segmentation.addSegmentations([

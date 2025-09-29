@@ -372,7 +372,7 @@ async function run() {
     showTextBox: true,
     storePointData: true,
     /*Set a custom wait time */
-    throttleTimeout: 100
+    throttleTimeout: 100,
   });
 
   toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {

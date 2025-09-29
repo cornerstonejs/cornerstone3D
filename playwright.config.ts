@@ -52,6 +52,7 @@ export default defineConfig({
       testIgnore: [
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
+        '**/interpolationContourSegmentation.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
         '**/rectangleROIThresholdStatisticsMIM.spec.ts',
         '**/renderingPipeline.spec.ts',
@@ -70,6 +71,7 @@ export default defineConfig({
       testIgnore: [
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
+        '**/interpolationContourSegmentation.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
         '**/rectangleROIThresholdStatisticsMIM.spec.ts',
         '**/stackLabelmapSegmentation/**.spec.ts',

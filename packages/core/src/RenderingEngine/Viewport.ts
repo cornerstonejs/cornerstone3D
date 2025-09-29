@@ -33,11 +33,11 @@ import type {
 } from '../types';
 import type {
   ViewportInput,
-  IViewport,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
   DataSetOptions,
+  PlaneRestriction,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import type IImageCalibration from '../types/IImageCalibration';
@@ -47,6 +47,8 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
+import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { getConfiguration } from '../init';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -96,7 +98,10 @@ class Viewport {
   /**
    * The amount by which the images are inset in a viewport by default.
    */
-  protected insetImageMultiplier = 1.1;
+  protected insetImageMultiplier = getConfiguration().rendering
+    ?.useLegacyCameraFOV
+    ? 1.1
+    : 1;
 
   protected flipHorizontal = false;
   protected flipVertical = false;
@@ -192,6 +197,15 @@ class Viewport {
 
   public getWidgets = () => {
     return Array.from(this.viewportWidgets.values());
+  };
+
+  /**
+   * Get render passes for this viewport.
+   * Viewports can override this to provide custom render passes (e.g., for sharpening).
+   * @returns Array of VTK render passes or null if no custom passes are needed
+   */
+  public getRenderPasses = () => {
+    return null;
   };
 
   public removeWidgets = () => {
@@ -631,14 +645,19 @@ class Viewport {
       this.addActor(actor);
     });
 
-    const prevViewPresentation = this.getViewPresentation();
-    const prevViewRef = this.getViewReference();
-
-    this.resetCamera();
-
+    // In the case of loading a new volume with WADO-URI, we may not have loaded
+    // metadata for all imageIds, as they are streaming in. The
+    // getViewReference() call uses getClosestImageId() in its call stack, which
+    // will error in that scenario as it tries to loop over all imageId
+    // metadata. So only call getViewReference if necessary.
     if (!resetCamera) {
+      const prevViewPresentation = this.getViewPresentation();
+      const prevViewRef = this.getViewReference();
+      this.resetCamera();
       this.setViewReference(prevViewRef);
       this.setViewPresentation(prevViewPresentation);
+    } else {
+      this.resetCamera();
     }
 
     // Trigger ACTORS_CHANGED event after adding actors
@@ -1110,8 +1129,24 @@ class Viewport {
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    const { widthWorld, heightWorld } =
-      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal);
+    let widthWorld;
+    let heightWorld;
+    const config = getConfiguration();
+    const useLegacyMethod = config.rendering?.useLegacyCameraFOV ?? false;
+
+    if (imageData && !useLegacyMethod) {
+      const extent = imageData.getExtent();
+      const spacing = imageData.getSpacing();
+
+      widthWorld = (extent[1] - extent[0]) * spacing[0];
+      heightWorld = (extent[3] - extent[2]) * spacing[1];
+    } else {
+      ({ widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
+        bounds,
+        viewUp,
+        viewPlaneNormal
+      ));
+    }
 
     const canvasSize = [this.sWidth, this.sHeight];
 
@@ -1823,14 +1858,64 @@ class Viewport {
       viewPlaneNormal,
       viewUp,
     } = this.getCamera();
+    const FrameOfReferenceUID = this.getFrameOfReferenceUID();
     const target: ViewReference = {
-      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      FrameOfReferenceUID,
       cameraFocalPoint,
       viewPlaneNormal,
       viewUp,
       sliceIndex: viewRefSpecifier?.sliceIndex ?? this.getSliceIndex(),
+      /** The referenced plane is the canonical specifier for whether
+       * this view reference is visible or not.
+       */
+      planeRestriction: {
+        FrameOfReferenceUID,
+        point: viewRefSpecifier?.points?.[0] || cameraFocalPoint,
+        inPlaneVector1: viewUp,
+        inPlaneVector2: <Point3>(
+          vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
+        ),
+      },
     };
+    if (viewRefSpecifier?.points) {
+      updatePlaneRestriction(viewRefSpecifier.points, target.planeRestriction);
+    }
     return target;
+  }
+
+  public isPlaneViewable(
+    planeRestriction: PlaneRestriction,
+    options?: ReferenceCompatibleOptions
+  ): boolean {
+    if (
+      planeRestriction.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
+    ) {
+      return false;
+    }
+    const { focalPoint, viewPlaneNormal } = this.getCamera();
+    const { point, inPlaneVector1, inPlaneVector2 } = planeRestriction;
+    if (options?.withOrientation) {
+      // Don't need to check the normal or the navigation if asking as a volume
+      // since those can both be updated
+      return true;
+    }
+    if (
+      inPlaneVector1 &&
+      !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector1))
+    ) {
+      return false;
+    }
+    if (
+      inPlaneVector2 &&
+      !isEqual(0, vec3.dot(viewPlaneNormal, inPlaneVector2))
+    ) {
+      return false;
+    }
+    if (options?.withNavigation) {
+      return true;
+    }
+    const pointVector = vec3.sub(vec3.create(), point, focalPoint);
+    return isEqual(0, vec3.dot(pointVector, viewPlaneNormal));
   }
 
   /**
@@ -1843,6 +1928,9 @@ class Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
+    if (viewRef.planeRestriction) {
+      return this.isPlaneViewable(viewRef.planeRestriction, options);
+    }
     if (
       viewRef.FrameOfReferenceUID &&
       viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()

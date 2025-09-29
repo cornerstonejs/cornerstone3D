@@ -8,18 +8,27 @@ import {
 import { drawPath } from '../drawingSvg';
 import { getToolGroup } from '../store/ToolGroupManager';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
+import type {
+  PublicToolProps,
+  ToolProps,
+  SVGDrawingHelper,
+  Annotation,
+} from '../types';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
-import type { Annotation } from '../types';
 import { distanceToPoint } from '../utilities/math/point';
 import { pointToString } from '../utilities/pointToString';
 import { polyDataUtils } from '../utilities';
 
-export interface SegmentationIntersectionAnnotation extends Annotation {
+export type WorldPointSet = {
+  worldPointsSet;
+  color;
+};
+
+export type SegmentationIntersectionAnnotation = Annotation & {
   data: {
-    actorsWorldPointsMap: Map<string, Map<string, object>>;
+    actorsWorldPointsMap: Map<string, Map<string, WorldPointSet>>;
   };
-}
+};
 
 class SegmentationIntersectionTool extends AnnotationDisplayTool {
   static toolName;
@@ -112,7 +121,9 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     }
     const annotation = annotations[0];
     const { annotationUID } = annotation;
-    const actorsWorldPointsMap = annotation.data.actorsWorldPointsMap;
+    const actorsWorldPointsMap = (<SegmentationIntersectionAnnotation>(
+      annotation
+    )).data.actorsWorldPointsMap;
 
     calculateSurfaceSegmentationIntersectionsForViewport(
       actorsWorldPointsMap,
@@ -126,7 +137,6 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       if (!actorEntry?.clippingFilter) {
         return;
       }
-      // @ts-expect-error
       const actorWorldPointMap = actorsWorldPointsMap.get(actorEntry.uid);
       if (!actorWorldPointMap) {
         return;

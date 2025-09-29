@@ -7,19 +7,19 @@ summary: Updates to the segmentation statistics API when migrating to Cornerston
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-
 ## Key Changes:
 
-* Statistics calculation has been moved from brush tool methods to a dedicated utility function
-* Statistics are now calculated asynchronously using web workers
-* The function signature for getting statistics has changed completely
-* Progress events are now emitted during statistics calculation
+- Statistics calculation has been moved from brush tool methods to a dedicated utility function
+- Statistics are now calculated asynchronously using web workers
+- The function signature for getting statistics has changed completely
+- Progress events are now emitted during statistics calculation
 
 ## Migration Steps:
 
 ### 1. Replace tool-based statistics methods with the standalone utility
 
 **Before:**
+
 ```diff
 - const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 - const activeName = toolGroup.getActivePrimaryMouseButtonTool();
@@ -28,6 +28,7 @@ import TabItem from '@theme/TabItem';
 ```
 
 **After:**
+
 ```diff
 + const stats = await segmentationUtils.getStatistics({
 +   segmentationId,

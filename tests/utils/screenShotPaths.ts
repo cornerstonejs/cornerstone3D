@@ -14,6 +14,9 @@ const screenShotPaths = {
   stackBasic: {
     viewport: 'viewport.png',
   },
+  stackBasicTiled: {
+    viewport: 'viewport.png',
+  },
   stackToVolumeFusion: {
     viewport: 'viewport.png',
   },
@@ -50,6 +53,9 @@ const screenShotPaths = {
   volumeBasic: {
     viewport: 'viewport.png',
   },
+  volumeBasicTiled: {
+    viewport: 'viewport.png',
+  },
   ultrasoundColors: {
     slice1: 'slice1.png',
     slice2: 'slice2.png',
@@ -58,6 +64,9 @@ const screenShotPaths = {
     slice5: 'slice5.png',
     slice6: 'slice6.png',
     slice7: 'slice7.png',
+  },
+  interpolationContourSegmentation: {
+    splineContourSegmentationTool: 'splineContourSegmentationTool.png',
   },
   splineContourSegmentationTools: {
     catmullRomSplineROI: 'catmullRomSplineROI.png',
@@ -116,7 +125,15 @@ const screenShotPaths = {
     coronal: 'coronal.png',
     sagittal: 'sagittal.png',
   },
+  labelmapRenderingTiled: {
+    axial: 'axial.png',
+    coronal: 'coronal.png',
+    sagittal: 'sagittal.png',
+  },
   contourRendering: {
+    viewport: 'viewport.png',
+  },
+  contourRenderingTiled: {
     viewport: 'viewport.png',
   },
   labelmapGlobalConfiguration: {
@@ -193,6 +210,21 @@ const screenShotPaths = {
     beforeReformat: 'mpr-reformat-before.png',
     afterReformat: 'mpr-reformat-after.png',
     afterInteraction: 'mpr-reformat-after-interaction.png',
+  },
+  contextPoolRenderingEngine: {
+    viewport: 'viewport.png',
+  },
+  volumeAnnotation: {
+    lengthTool: 'lengthTool.png',
+  },
+  volumeAnnotationTiled: {
+    lengthTool: 'lengthTool.png',
+  },
+  stackAnnotation: {
+    lengthTool: 'lengthTool.png',
+  },
+  stackAnnotationTiled: {
+    lengthTool: 'lengthTool.png',
   },
 };
 

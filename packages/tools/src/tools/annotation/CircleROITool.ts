@@ -61,6 +61,7 @@ import {
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { vec2, vec3 } from 'gl-matrix';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -169,22 +170,7 @@ class CircleROITool extends AnnotationTool {
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
 
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
     this.isDrawing = true;
-
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
     let points;
     if (this.configuration.simplified) {
@@ -201,40 +187,11 @@ class CircleROITool extends AnnotationTool {
         Types.Point3,
         Types.Point3,
         Types.Point3,
-        Types.Point3
+        Types.Point3,
       ];
     }
 
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
-      data: {
-        label: '',
-        handles: {
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-          points,
-          activeHandleIndex: null,
-        },
-        cachedStats: {},
-      },
-    };
+    const annotation = <CircleROIAnnotation>this.createAnnotation(evt, points);
 
     addAnnotation(annotation, element);
 
@@ -775,13 +732,16 @@ class CircleROITool extends AnnotationTool {
         }
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
           handleGroupUID,
-          activeHandleCanvasCoords,
+          showHandlesAlways ? canvasCoordinates : activeHandleCanvasCoords,
           {
             color,
           }
@@ -824,60 +784,62 @@ class CircleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
+      if (this.configuration.calculateStats) {
+        const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+        if (!options.visibility) {
+          data.handles.textBox = {
+            hasMoved: false,
+            worldPosition: <Types.Point3>[0, 0, 0],
+            worldBoundingBox: {
+              topLeft: <Types.Point3>[0, 0, 0],
+              topRight: <Types.Point3>[0, 0, 0],
+              bottomLeft: <Types.Point3>[0, 0, 0],
+              bottomRight: <Types.Point3>[0, 0, 0],
+            },
+          };
+          continue;
+        }
+
+        const textLines = this.configuration.getTextLines(data, targetId);
+        if (!textLines || textLines.length === 0) {
+          continue;
+        }
+
+        // Poor man's cached?
+        let canvasTextBoxCoords;
+
+        if (!data.handles.textBox.hasMoved) {
+          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
+
+          data.handles.textBox.worldPosition =
+            viewport.canvasToWorld(canvasTextBoxCoords);
+        }
+
+        const textBoxPosition = viewport.worldToCanvas(
+          data.handles.textBox.worldPosition
+        );
+
+        const textBoxUID = '1';
+        const boundingBox = drawLinkedTextBoxSvg(
+          svgDrawingHelper,
+          annotationUID,
+          textBoxUID,
+          textLines,
+          textBoxPosition,
+          [center, canvasCoordinates[1]],
+          {},
+          options
+        );
+
+        const { x: left, y: top, width, height } = boundingBox;
+
+        data.handles.textBox.worldBoundingBox = {
+          topLeft: viewport.canvasToWorld([left, top]),
+          topRight: viewport.canvasToWorld([left + width, top]),
+          bottomLeft: viewport.canvasToWorld([left, top + height]),
+          bottomRight: viewport.canvasToWorld([left + width, top + height]),
         };
-        continue;
       }
-
-      const textLines = this.configuration.getTextLines(data, targetId);
-      if (!textLines || textLines.length === 0) {
-        continue;
-      }
-
-      // Poor man's cached?
-      let canvasTextBoxCoords;
-
-      if (!data.handles.textBox.hasMoved) {
-        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
-      }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        [center, canvasCoordinates[1]],
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;

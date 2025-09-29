@@ -20,13 +20,28 @@ import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
 
-export default async function initDemo(config = {}) {
+export default async function initDemo(config: any = {}) {
   initProviders();
   cornerstoneDICOMImageLoader.init();
   initVolumeLoader();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugEnabled = urlParams.get('debug') === 'true';
+
   await csRenderInit({
     peerImport,
-    ...(config?.core ? config.core : {}),
+    ...(config?.core
+      ? {
+          ...config.core,
+          debug: {
+            statsOverlay: debugEnabled,
+          },
+        }
+      : {
+          debug: {
+            statsOverlay: debugEnabled,
+          },
+        }),
   });
   await csToolsInit({
     addons: {
@@ -47,6 +62,10 @@ export default async function initDemo(config = {}) {
  */
 export async function peerImport(moduleId) {
   if (moduleId === 'dicom-microscopy-viewer') {
+    // The microscopy viewer loads relative to the public URL
+    window.PUBLIC_URL ||= '/';
+    // Use a relative library path that includes the component name
+    window.PUBLIC_LIB_URL ||= './${component}/';
     return importGlobal(
       '/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
       'dicomMicroscopyViewer'

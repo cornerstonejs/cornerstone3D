@@ -1,9 +1,4 @@
-import type {
-  Annotation,
-  Annotations,
-  AnnotationState,
-  GroupSpecificAnnotations,
-} from './AnnotationTypes';
+export type * from './AnnotationTypes';
 import type {
   ContourAnnotationData,
   ContourAnnotation,
@@ -101,8 +96,6 @@ import type {
 
 export type {
   // AnnotationState
-  Annotation,
-  Annotations,
   ContourAnnotationData,
   ContourAnnotation,
   ContourSegmentationAnnotationData,
@@ -112,8 +105,6 @@ export type {
   IAnnotationManager,
   InterpolationViewportData,
   ImageInterpolationData,
-  GroupSpecificAnnotations,
-  AnnotationState,
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
   AnnotationGroupSelector,
