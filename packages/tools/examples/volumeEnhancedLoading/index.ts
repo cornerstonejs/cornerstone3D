@@ -287,7 +287,7 @@ async function run() {
 
     const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
-      progressiveRendering: true,
+      progressiveRendering: false,
       ijkDecimation,
     });
 
@@ -380,7 +380,7 @@ async function run() {
     title: 'Load Enhanced Volume',
     onClick: () => loadVolume(configJLS),
   });
-  await loadVolume(configJLS);
+  await loadVolume(config);
 }
 
 run();
