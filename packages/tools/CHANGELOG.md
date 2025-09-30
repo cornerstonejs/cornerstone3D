@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.10...v4.3.11) (2025-09-30)
+
+### Bug Fixes
+
+- imageId instead of image ([#2362](https://github.com/cornerstonejs/cornerstone3D/issues/2362)) ([5fceb39](https://github.com/cornerstonejs/cornerstone3D/commit/5fceb3936fc586181c91be9bfb5beb504f43e2a5))
+
 ## [4.3.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.9...v4.3.10) (2025-09-26)
 
 ### Bug Fixes
