@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.14](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.13...v4.3.14) (2025-09-30)
+
+### Bug Fixes
+
+- **segmentation:** Now contour annotations are removed when a segment is removed. ([#2364](https://github.com/cornerstonejs/cornerstone3D/issues/2364)) ([f2b0283](https://github.com/cornerstonejs/cornerstone3D/commit/f2b028378a816ca2c33bf71c94aae43b0ec9112d))
+
 ## [4.3.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.12...v4.3.13) (2025-09-30)
 
 ### Bug Fixes
