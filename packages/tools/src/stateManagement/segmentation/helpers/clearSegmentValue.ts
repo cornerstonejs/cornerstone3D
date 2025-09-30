@@ -20,16 +20,15 @@ export function clearSegmentValue(
   segmentIndex: number
 ) {
   const segmentation = getSegmentation(segmentationId);
+  const { representationData } = segmentation;
+  const segData = representationData.Labelmap ?? representationData.Contour;
 
-  if (segmentation.representationData.Labelmap) {
-    const { representationData } = segmentation;
-    const labelmapData = representationData.Labelmap;
-
-    if ('imageIds' in labelmapData || 'volumeId' in labelmapData) {
+  if (segData) {
+    if ('imageIds' in segData || 'volumeId' in segData) {
       const items =
-        'imageIds' in labelmapData
-          ? labelmapData.imageIds.map((imageId) => cache.getImage(imageId))
-          : [cache.getVolume(labelmapData.volumeId)];
+        'imageIds' in segData
+          ? segData.imageIds.map((imageId) => cache.getImage(imageId))
+          : [cache.getVolume(segData.volumeId)];
 
       items.forEach((item) => {
         if (!item) {
@@ -48,7 +47,7 @@ export function clearSegmentValue(
     triggerSegmentationDataModified(segmentationId);
   } else {
     throw new Error(
-      'Invalid segmentation type, only labelmap is supported right now'
+      'The segmentation data is not valid. Perhaps it is not a labelmap or contour?'
     );
   }
 }
