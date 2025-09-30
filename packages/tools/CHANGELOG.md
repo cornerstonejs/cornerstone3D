@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.12...v4.3.13) (2025-09-30)
+
+### Bug Fixes
+
+- RectangleROI minimum value label ([#2363](https://github.com/cornerstonejs/cornerstone3D/issues/2363)) ([e55465c](https://github.com/cornerstonejs/cornerstone3D/commit/e55465c0efd8812716f29883e33587cb9135edc7))
+
 ## [4.3.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.11...v4.3.12) (2025-09-30)
 
 **Note:** Version bump only for package @cornerstonejs/tools
