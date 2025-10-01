@@ -6,6 +6,7 @@ import {
   cache,
   metaData,
   utilities,
+  triggerEvent,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
@@ -127,6 +128,14 @@ function prefetch(element) {
     const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);
+
+    // If all requests are complete, trigger the STACK_PREFETCH_COMPLETE event,
+    // providing the last imageId so that the stack can be identified
+    if (stackPrefetch.indicesToRequest.length === 0) {
+      triggerEvent(eventTarget, Enums.Events.STACK_PREFETCH_COMPLETE, {
+        imageId: imageId,
+      });
+    }
   }
 
   // Prefetch images around the current image (before and after)
