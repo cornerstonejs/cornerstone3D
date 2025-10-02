@@ -28,7 +28,6 @@ import {
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import type { StreamingDynamicImageVolume } from '../cache';
 import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingImageVolumeLoader';
-import { enhancedVolumeLoader } from './enhancedVolumeLoader';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
@@ -89,6 +88,14 @@ function loadVolumeFromVolumeLoader(
   const colonIndex = volumeId.indexOf(':');
   const scheme = volumeId.substring(0, colonIndex);
   let loader = volumeLoaders[scheme];
+
+  console.log('🔧 VolumeLoader: loadVolumeFromVolumeLoader called:', {
+    volumeId,
+    scheme,
+    loaderExists: !!loader,
+    loaderType: typeof loader,
+    availableLoaders: Object.keys(volumeLoaders)
+  });
 
   if (loader === undefined || loader === null) {
     if (

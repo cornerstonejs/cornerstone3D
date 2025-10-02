@@ -7,6 +7,7 @@ import { generateVolumePropsFromImageIds } from '../utilities/generateVolumeProp
 import { loadImage } from './imageLoader';
 import decimate from '../utilities/decimate';
 import decimateImagePixels from '../utilities/decimateImagePixels';
+import { get as getMetaData, addProvider } from '../metaData';
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -32,13 +33,15 @@ export function enhancedVolumeLoader(
     ijkDecimation?: [number, number, number];
   }
 ): IVolumeLoader {
+  console.log(`🚀 EnhancedVolumeLoader: Loading volume (${options?.imageIds?.length} images, decimation: ${options?.ijkDecimation?.join('x') || '1x1x1'})`);
+
   if (!options || !options.imageIds || !options.imageIds.length) {
     throw new Error(
       'ImageIds must be provided to create a streaming image volume'
     );
   }
 
-  const [iDecimation, jDecimation, kDecimation] = options.ijkDecimation || [
+  const [iDecimation, _jDecimation, kDecimation] = options.ijkDecimation || [
     1, 1, 1,
   ];
   const inPlaneDecimation = iDecimation > 1 ? iDecimation : 1;
@@ -82,7 +85,6 @@ export function enhancedVolumeLoader(
               async () => {
                 loadImage(imageId)
                   .then(() => {
-                    console.log(`Prefetched imageId: ${imageId}`);
                     resolve(true);
                   })
                   .catch((err) => {
@@ -120,8 +122,8 @@ export function enhancedVolumeLoader(
 
     // Apply in‑plane decimation (columns = x = index 0, rows = y = index 1)
     if (inPlaneDecimation > 1) {
-      newDimensions[0] = Math.ceil(newDimensions[0] / inPlaneDecimation);
-      newDimensions[1] = Math.ceil(newDimensions[1] / inPlaneDecimation);
+      newDimensions[0] = Math.floor(newDimensions[0] / inPlaneDecimation);
+      newDimensions[1] = Math.floor(newDimensions[1] / inPlaneDecimation);
       newSpacing[0] = newSpacing[0] * inPlaneDecimation; // column spacing (x)
       newSpacing[1] = newSpacing[1] * inPlaneDecimation; // row spacing (y)
 
@@ -162,14 +164,132 @@ export function enhancedVolumeLoader(
           cachedFrames: [],
           callbacks: [],
         },
+        progressiveRendering: false,
       }
     );
+
+    console.log(`✅ Volume created: ${streamingImageVolume.dimensions.join('x')} (decimation: ${inPlaneDecimation}x${kAxisDecimation})`);
+    console.log(`🔧 Volume bounds:`, {
+      dimensions: streamingImageVolume.dimensions,
+      spacing: streamingImageVolume.spacing,
+      origin: streamingImageVolume.origin,
+      direction: streamingImageVolume.direction
+    });
+    
+    // Update VTK imageData bounds after decimation
+    if (inPlaneDecimation > 1) {
+      const vtkImageData = streamingImageVolume.imageData;
+      if (vtkImageData) {
+        console.log(`🔧 Updating VTK imageData bounds for decimation:`, {
+          originalDimensions: dimensions,
+          newDimensions: streamingImageVolume.dimensions,
+          newSpacing: streamingImageVolume.spacing
+        });
+        
+        // Update VTK imageData with new dimensions and spacing
+        vtkImageData.setDimensions(streamingImageVolume.dimensions);
+        vtkImageData.setSpacing(streamingImageVolume.spacing);
+        
+        // Force VTK to recalculate bounds
+        vtkImageData.modified();
+        
+        console.log(`✅ VTK imageData bounds updated`);
+      }
+      
+      // Create new voxel manager with correct dimensions
+      console.log(`🔧 Creating new voxel manager for decimation:`, {
+        originalDimensions: dimensions,
+        newDimensions: streamingImageVolume.dimensions
+      });
+      
+      // Import VoxelManager to create a new one
+      const VoxelManager = require('../utilities/VoxelManager').default;
+      const newVoxelManager = VoxelManager.createImageVolumeVoxelManager({
+        dimensions: streamingImageVolume.dimensions,
+        imageIds: streamingImageVolume.imageIds,
+        numberOfComponents: numberOfComponents,
+      });
+      
+      // Update the volume's voxel manager
+      streamingImageVolume.voxelManager = newVoxelManager;
+      
+      // Update VTK imageData to use new voxel manager
+      vtkImageData.set({
+        voxelManager: newVoxelManager,
+      });
+      
+      console.log(`✅ New voxel manager created and set`);
+    }
+    
+    // Track processed images to prevent double processing
+    const processedImages = new Set<string>();
+    
     streamingImageVolume.setImagePostProcess(
-      (image) =>
-        decimateImagePixels(
-          image as unknown as import('../types').IImage,
-          inPlaneDecimation
-        ) as unknown as import('../types').PixelDataTypedArray
+      (image) => {
+        // Check if this image has already been processed
+        if (processedImages.has(image.imageId)) {
+          return image;
+        }
+        
+        // Mark image as processed
+        processedImages.add(image.imageId);
+        
+        // Check if image is already decimated to prevent double decimation
+        const expectedDecimatedRows = Math.floor(streamingImageVolume.dimensions[1]);
+        const expectedDecimatedCols = Math.floor(streamingImageVolume.dimensions[0]);
+        
+        if (image.rows === expectedDecimatedRows && image.columns === expectedDecimatedCols) {
+          return image;
+        }
+        
+        const decimatedImage = decimateImagePixels(image, inPlaneDecimation);
+        
+        // Update metadata for this specific image
+        if (inPlaneDecimation > 1) {
+          const originalGeneralImageModule = getMetaData('generalImageModule', image.imageId) || {};
+          const originalImagePixelModule = getMetaData('imagePixelModule', image.imageId) || {};
+          const originalImagePlaneModule = getMetaData('imagePlaneModule', image.imageId) || {};
+          
+          // Create updated metadata with decimated dimensions
+          const updatedGeneralImageModule = {
+            ...originalGeneralImageModule,
+            Rows: decimatedImage.rows,
+            Columns: decimatedImage.columns,
+          };
+          
+          const updatedImagePixelModule = {
+            ...originalImagePixelModule,
+            Rows: decimatedImage.rows,
+            Columns: decimatedImage.columns,
+          };
+          
+          const updatedImagePlaneModule = {
+            ...originalImagePlaneModule,
+            Rows: decimatedImage.rows,
+            Columns: decimatedImage.columns,
+            PixelSpacing: [decimatedImage.rowPixelSpacing, decimatedImage.columnPixelSpacing],
+          };
+          
+          // Add metadata providers for this specific image
+          addProvider((type, imageId) => {
+            if (imageId === image.imageId) {
+              switch (type) {
+                case 'generalImageModule':
+                  return updatedGeneralImageModule;
+                case 'imagePixelModule':
+                  return updatedImagePixelModule;
+                case 'imagePlaneModule':
+                  return updatedImagePlaneModule;
+                default:
+                  return undefined;
+              }
+            }
+            return undefined;
+          });
+        }
+        
+        return decimatedImage;
+      }
     );
     console.debug(streamingImageVolume);
     return streamingImageVolume;

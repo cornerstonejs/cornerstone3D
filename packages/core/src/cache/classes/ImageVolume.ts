@@ -124,6 +124,13 @@ export class ImageVolume {
     this.direction = direction;
     this.dataType = dataType;
 
+    console.log('🔧 ImageVolume: Constructor setting dimensions:', {
+      volumeId,
+      dimensions,
+      spacing,
+      imageIdsCount: imageIds?.length
+    });
+
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.vtkOpenGLTexture.setVolumeId(volumeId);
 
@@ -140,6 +147,11 @@ export class ImageVolume {
 
     if (!imageData) {
       imageData = vtkImageData.newInstance();
+      console.log('🔧 ImageVolume: Setting VTK imageData dimensions:', {
+        volumeId,
+        dimensions,
+        spacing
+      });
       imageData.setDimensions(dimensions);
       imageData.setSpacing(spacing);
       imageData.setDirection(direction);

@@ -1,5 +1,4 @@
 import type {
-  ICache,
   IImage,
   IGeometry,
   IImageLoadObject,
@@ -1195,6 +1194,8 @@ class Cache {
     allowPartialMatch = false
   ): IImageVolume | undefined => {
     if (volumeId === undefined) {
+      console.error('❌ Cache: getVolume called with undefined volumeId');
+      console.trace('Stack trace for undefined volumeId:');
       throw new Error('getVolume: volumeId must not be undefined');
     }
 

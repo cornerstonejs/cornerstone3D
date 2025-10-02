@@ -41,6 +41,8 @@ import {
   cache,
   utilities,
   ProgressiveRetrieveImages,
+  eventTarget,
+  imageLoadPoolManager,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -64,6 +66,7 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   VolumeCroppingTool,
+  TrackballRotateTool,
   ZoomTool,
   PanTool,
   OrientationMarkerTool,
@@ -71,12 +74,18 @@ const {
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
-const { ViewportType, InterpolationType } = Enums;
+const { ViewportType, InterpolationType, Events, RequestType } = Enums;
 
-// Define a unique id for the volume
-const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+// Define volume loader scheme
 const volumeLoaderScheme = 'enhancedVolumeLoader'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+
+// Function to generate a unique volume ID each time
+function generateVolumeId(): string {
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(2, 8);
+  const volumeName = `CT_VOLUME_${timestamp}_${randomId}`;
+  return `${volumeLoaderScheme}:${volumeName}`;
+}
 
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
@@ -87,7 +96,7 @@ const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
-let ijkDecimation = [2, 2, 8]; // [ j is not used at th moment
+let ijkDecimation: [number, number, number] = [1, 1, 2]; // [i, j, k] decimation factors
 
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
@@ -97,17 +106,44 @@ addDropdownToToolbar({
     defaultValue: ijkDecimation[0],
   },
   onSelectedValueChange: async (selectedValue) => {
-    ijkDecimation[0] = Number(selectedValue);
+    ijkDecimation = [Number(selectedValue), ijkDecimation[1], ijkDecimation[2]];
   },
 });
+
 addDropdownToToolbar({
   labelText: 'Sample distance k pixels (slices/frames) to skip:',
   options: {
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    defaultValue: ijkDecimation[2],
+    defaultValue: 2,
   },
   onSelectedValueChange: async (selectedValue) => {
-    ijkDecimation[2] = Number(selectedValue);
+    ijkDecimation = [ijkDecimation[0], ijkDecimation[1], Number(selectedValue)];
+  },
+});
+
+addDropdownToToolbar({
+  labelText: 'Slice Loading Strategy:',
+  options: {
+    values: ['nth', 'interleave', 'interleaveCenter', 'interleaveTopToBottom', 'sequential'],
+    defaultValue: 'nth',
+    labels: ['nth', 'interleave', 'interleaveCenter', 'interleaveTopToBottom', 'sequential'],
+  },
+  onSelectedValueChange: async (selectedValue) => {
+    console.log('🔄 Slice loading strategy changed to:', selectedValue);
+    // You can add strategy logic here if needed
+  },
+});
+
+addDropdownToToolbar({
+  labelText: 'Progressive Loading:',
+  options: {
+    values: ['basic', 'jls', 'jls-mixed', 'j2k', 'j2k-bytes', 'j2k-mixed'],
+    defaultValue: 'basic',
+    labels: ['Basic', 'JLS', 'JLS Mixed', 'J2K', 'J2K Bytes', 'J2K Mixed'],
+  },
+  onSelectedValueChange: async (selectedValue) => {
+    console.log('🔄 Progressive loading option changed to:', selectedValue);
+    // You can add progressive loading logic here if needed
   },
 });
 
@@ -126,6 +162,33 @@ const size = '400px';
 const viewportGrid = document.createElement('div');
 
 const content = document.getElementById('content');
+
+// Add timing information display
+const timingInfo = document.createElement('div');
+timingInfo.style.width = '35em';
+timingInfo.style.height = '10em';
+timingInfo.style.float = 'left';
+content.appendChild(timingInfo);
+const timingIds = [];
+const getOrCreateTiming = (id) => {
+  const element = document.getElementById(id);
+  if (element) {
+    return element;
+  }
+  timingIds.push(id);
+  timingInfo.innerHTML += `<p id="${id}">${id}</p>`;
+  const p = document.getElementById(id);
+  p.style.lineHeight = '1';
+  p.style.marginTop = '0';
+  p.style.marginBottom = '0';
+  return p;
+};
+function resetTimingInfo() {
+  for (const id of timingIds) {
+    getOrCreateTiming(id).innerText = `Waiting ${id}`;
+  }
+}
+getOrCreateTiming('loadingStatus').innerText = 'Timing Information';
 
 // Use the shared demo toolbar for controls so elements appear on one line
 
@@ -201,7 +264,7 @@ async function run() {
     },
   });
 
-  cornerstoneTools.addTool(VolumeCroppingTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
@@ -211,14 +274,14 @@ async function run() {
   let exampleSeriesInstanceUID = '';
 
   // OHIF Juno
-  // exampleStudyInstanceUID= '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
-  // exampleSeriesInstanceUID= '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
+  exampleStudyInstanceUID= '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1';
+  exampleSeriesInstanceUID= '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4';
 
   // 3000 slice CT - horse knee example
-  exampleStudyInstanceUID =
-    '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084';
-  exampleSeriesInstanceUID =
-    '1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297';
+  // exampleStudyInstanceUID =
+  //   '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084';
+  // exampleSeriesInstanceUID =
+  //   '1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297';
 
   // Other
   // exampleStudyInstanceUID = '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084';
@@ -277,7 +340,18 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
+  // Configure image load pool manager for progressive loading
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Interaction, 6);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 12);
+  imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 16);
+
   async function loadVolume(config) {
+    // Generate a new unique volume ID for each load
+    const currentVolumeId = generateVolumeId();
+    
+    console.log('🚀 Creating new volume with ID:', currentVolumeId);
+    console.log('🔧 Decimation settings:', ijkDecimation);
+    
     // Clear cache only when changing decimation factors to avoid leaking memory
     cache.purgeCache();
     imageRetrieveMetadataProvider.clear();
@@ -285,24 +359,77 @@ async function run() {
       imageRetrieveMetadataProvider.add('volume', config);
     }
 
-    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-      imageIds,
-      progressiveRendering: false,
+    console.log('📊 Volume creation parameters:', {
+      volumeId: currentVolumeId,
+      imageIdsCount: imageIds.length,
       ijkDecimation,
+      progressiveRendering: true
+    });
+
+    const volume = await volumeLoader.createAndCacheVolume(currentVolumeId, {
+      imageIds,
+      progressiveRendering: true,
+      ijkDecimation,
+    });
+
+    console.log('✅ Volume created successfully:', {
+      volumeId: currentVolumeId,
+      volumeExists: !!volume,
+      volumeDimensions: volume?.dimensions,
+      volumeSpacing: volume?.spacing,
+      volumeImageIds: volume?.imageIds?.length,
+      hasImagePostProcess: typeof (volume as any)?.setImagePostProcess === 'function'
+    });
+
+    // Reset timing information and start timing
+    resetTimingInfo();
+    getOrCreateTiming('loadingStatus').innerText = 'Loading...';
+    const start = Date.now();
+
+    // Load the volume with progressive refresh
+    console.log('🔄 Loading volume data...');
+    
+    // Set up periodic refresh during loading for progressive updates
+    const refreshInterval = setInterval(() => {
+      renderingEngine.renderViewports(viewportIds);
+    }, 100); // Refresh every 100ms during loading
+    
+    volume.load(() => {
+      const now = Date.now();
+      getOrCreateTiming('loadingStatus').innerText = `Took ${
+        now - start
+      } ms with ${imageIds.length} items (decimation: ${ijkDecimation.join(',')})`;
+      
+      // Clear the refresh interval when loading is complete
+      clearInterval(refreshInterval);
+      
+      // Final render after loading is complete
+      renderingEngine.renderViewports(viewportIds);
+      console.log('✅ Volume data loading completed');
+    });
+    console.log('✅ Volume data loading initiated with progressive refresh');
+    
+    // Check if the volume has the expected properties after loading
+    console.log('🔍 Volume properties after loading:', {
+      volumeId: currentVolumeId,
+      volumeDimensions: volume?.dimensions,
+      volumeSpacing: volume?.spacing,
+      imageDataDimensions: volume?.imageData?.getDimensions?.(),
+      imageDataSpacing: volume?.imageData?.getSpacing?.(),
+      imageDataOrigin: volume?.imageData?.getOrigin?.(),
+      imageIdsCount: volume?.imageIds?.length
     });
 
     await setVolumesForViewports(
       renderingEngine,
       [
         {
-          volumeId: volumeId,
+          volumeId: currentVolumeId,
           callback: setCtTransferFunctionForVolumeActor,
         },
       ],
       viewportIds
     );
-
-    volume.load?.();
 
     const vrtViewport = renderingEngine.getViewport(
       viewportId4
@@ -313,9 +440,58 @@ async function run() {
       // Not seeing a difference between LINEAR and NEAREST.
       //Enums.InterpolationType.LINEAR,
     });
-    vrtViewport.resetCamera?.();
+   // vrtViewport.resetCamera?.();
     renderingEngine.renderViewports(viewportIds);
   }
+
+  // Add event listeners for progressive loading events
+  const volumeLoadingProgress = (evt) => {
+    const { detail } = evt;
+    console.log('Volume loading progress:', detail);
+    // Refresh viewports on any volume loading progress
+    renderingEngine.renderViewports(viewportIds);
+  };
+
+  const imageLoaded = (evt) => {
+    const { detail } = evt;
+    console.log('Image loaded:', detail);
+    // Refresh viewports when individual images are loaded
+    renderingEngine.renderViewports(viewportIds);
+  };
+
+  const volumeCacheImageAdded = (evt) => {
+    const { detail } = evt;
+    console.log('Volume cache image added:', detail);
+    // Refresh viewports when new images are added to volume cache
+    renderingEngine.renderViewports(viewportIds);
+  };
+
+  const stackNewImage = (evt) => {
+    const { detail } = evt;
+    console.log('Stack new image:', detail);
+    // Refresh viewports when new images are available in stack
+    renderingEngine.renderViewports(viewportIds);
+  };
+
+  // Add event listener for image retrieval stages timing
+  const imageLoadStage = (evt) => {
+    const { detail } = evt;
+    const { stageId, numberOfImages, stageDurationInMS, startDurationInMS } =
+      detail;
+    getOrCreateTiming(stageId).innerText = stageDurationInMS
+      ? `Stage ${stageId} took ${stageDurationInMS} ms, from start ${startDurationInMS} ms for ${numberOfImages} frames`
+      : `Stage ${stageId} not run`;
+    
+    // Trigger viewport refresh after each stage
+    renderingEngine.renderViewports(viewportIds);
+  };
+
+  eventTarget.addEventListener(Events.IMAGE_RETRIEVAL_STAGE, imageLoadStage);
+  eventTarget.addEventListener(Events.IMAGE_VOLUME_LOADING_COMPLETED, volumeLoadingProgress);
+  eventTarget.addEventListener(Events.IMAGE_LOADED, imageLoaded);
+  eventTarget.addEventListener(Events.VOLUME_LOADED, volumeLoadingProgress);
+  eventTarget.addEventListener(Events.IMAGE_CACHE_IMAGE_ADDED, volumeCacheImageAdded);
+  eventTarget.addEventListener(Events.STACK_NEW_IMAGE, stackNewImage);
 
   // Tool group for orthographic viewports
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -357,8 +533,8 @@ async function run() {
 
   // Add 3D viewport tools & cropping tool before any volume loads
   toolGroupVRT.addViewport(viewportId4, renderingEngineId);
-  toolGroupVRT.addTool(VolumeCroppingTool.toolName, {});
-  toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
+  toolGroupVRT.addTool(TrackballRotateTool.toolName, {});
+  toolGroupVRT.setToolActive(TrackballRotateTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary,
@@ -377,8 +553,11 @@ async function run() {
   };
   const config = {};
   addButtonToToolbar({
-    title: 'Load Enhanced Volume',
-    onClick: () => loadVolume(configJLS),
+    title: 'Load Enhanced Volume (New ID)',
+    onClick: () => {
+      console.log('🔄 Load button clicked - creating new volume with current decimation settings');
+      loadVolume(config);
+    },
   });
   await loadVolume(config);
 }

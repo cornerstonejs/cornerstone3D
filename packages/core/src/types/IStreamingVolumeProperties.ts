@@ -1,4 +1,5 @@
 import type { ImageQualityStatus } from '../enums';
+import type { IRetrieveConfiguration } from './IRetrieveConfiguration';
 
 interface IStreamingVolumeProperties {
   /** imageIds of the volume  */
@@ -12,6 +13,9 @@ interface IStreamingVolumeProperties {
     cachedFrames: ImageQualityStatus[];
     callbacks: (() => void)[];
   };
+
+  /** Progressive rendering configuration */
+  progressiveRendering?: boolean | IRetrieveConfiguration;
 }
 
 export type { IStreamingVolumeProperties as default };

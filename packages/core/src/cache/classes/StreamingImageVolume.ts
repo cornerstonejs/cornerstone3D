@@ -3,6 +3,7 @@ import type {
   ImageVolumeProps,
   IStreamingVolumeProperties,
   PixelDataTypedArray,
+  IImage,
 } from '../../types';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
 
@@ -12,8 +13,8 @@ import BaseStreamingImageVolume from './BaseStreamingImageVolume';
  */
 export default class StreamingImageVolume extends BaseStreamingImageVolume {
   private imagePostProcess?: (
-    image: PixelDataTypedArray
-  ) => PixelDataTypedArray;
+    image: IImage
+  ) => IImage;
   constructor(
     imageVolumeProperties: ImageVolumeProps,
     streamingProperties: IStreamingVolumeProperties
@@ -23,18 +24,41 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
       imageVolumeProperties.imageIds = streamingProperties.imageIds;
     }
     super(imageVolumeProperties, streamingProperties);
+    
+    // Disable auto-rendering if progressive rendering is disabled
+    if (streamingProperties.progressiveRendering === false) {
+      this.autoRenderOnLoad = false;
+      console.log('🔧 StreamingImageVolume: Disabled auto-rendering for non-progressive loading');
+    }
   }
   public setImagePostProcess(
-    fn: (image: PixelDataTypedArray) => PixelDataTypedArray
+    fn: (image: IImage) => IImage
   ) {
     this.imagePostProcess = fn;
   }
 
   // Override successCallback to apply post-process if set
-  public override successCallback(imageId: string, image: PixelDataTypedArray) {
+  public override successCallback(imageId: string, image: IImage) {
+    console.log('🔧 StreamingImageVolume: successCallback called with:', {
+      imageId,
+      hasPostProcess: !!this.imagePostProcess,
+      imageDimensions: `${image.rows}x${image.columns}`,
+      pixelDataLength: image.getPixelData().length
+    });
+    
     if (this.imagePostProcess) {
       try {
+        const originalImage = image;
         image = this.imagePostProcess(image) || image;
+        
+        console.log('🔧 StreamingImageVolume: Post-process applied:', {
+          imageId,
+          originalDimensions: `${originalImage.rows}x${originalImage.columns}`,
+          decimatedDimensions: `${image.rows}x${image.columns}`,
+          originalPixelDataLength: originalImage.getPixelData().length,
+          decimatedPixelDataLength: image.getPixelData().length,
+          compressionRatio: `${image.getPixelData().length}/${originalImage.getPixelData().length} = ${(image.getPixelData().length/originalImage.getPixelData().length*100).toFixed(1)}%`
+        });
       } catch (e) {
         console.warn('imagePostProcess failed, using original image', e);
       }

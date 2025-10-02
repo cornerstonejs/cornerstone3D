@@ -2192,7 +2192,18 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public getVolumeId(specifier?: ViewReferenceSpecifier) {
     const actorEntries = this.getActors();
+    console.log('🔍 BaseVolumeViewport: getVolumeId called:', {
+      specifier,
+      actorEntriesCount: actorEntries?.length,
+      actorEntries: actorEntries?.map(entry => ({
+        uid: entry.uid,
+        referencedId: entry.referencedId,
+        actorClassName: entry.actor.getClassName()
+      }))
+    });
+    
     if (!actorEntries) {
+      console.warn('⚠️ BaseVolumeViewport: No actor entries found');
       return;
     }
     if (!specifier?.volumeId) {
@@ -2201,7 +2212,14 @@ abstract class BaseVolumeViewport extends Viewport {
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       );
 
-      return found?.referencedId || found?.uid;
+      const result = found?.referencedId || found?.uid;
+      console.log('🔍 BaseVolumeViewport: Found volume ID:', {
+        found: !!found,
+        referencedId: found?.referencedId,
+        uid: found?.uid,
+        result
+      });
+      return result;
     }
 
     // See if this volumeId can be found in one of the actors for this
@@ -2213,7 +2231,15 @@ abstract class BaseVolumeViewport extends Viewport {
         actorEntry.referencedId === specifier?.volumeId
     );
 
-    return found?.referencedId || found?.uid;
+    const result = found?.referencedId || found?.uid;
+    console.log('🔍 BaseVolumeViewport: Found specific volume ID:', {
+      specifierVolumeId: specifier?.volumeId,
+      found: !!found,
+      referencedId: found?.referencedId,
+      uid: found?.uid,
+      result
+    });
+    return result;
   }
 
   /**
