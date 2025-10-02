@@ -52,14 +52,6 @@ export default class BaseStreamingImageVolume
   ) {
     super(imageVolumeProperties);
     this.loadStatus = streamingProperties.loadStatus;
-    // Store progressive rendering setting for use in load method
-    (this as unknown as { progressiveRendering: boolean }).progressiveRendering = streamingProperties.progressiveRendering;
-    
-    console.log('🔧 BaseStreamingImageVolume: Constructor called with:', {
-      progressiveRendering: streamingProperties.progressiveRendering,
-      volumeId: imageVolumeProperties.volumeId,
-      storedProgressiveRendering: (this as unknown as { progressiveRendering: boolean }).progressiveRendering
-    });
   }
 
   protected invalidateVolume(immediate: boolean): void {
@@ -288,30 +280,15 @@ export default class BaseStreamingImageVolume
       'volume'
     );
 
-    // Check progressive rendering setting
-    const progressiveRendering = (this as unknown as { progressiveRendering: boolean }).progressiveRendering;
-    console.log('🔄 BaseStreamingImageVolume: Load method called with:', {
-      progressiveRendering: progressiveRendering,
-      volumeId: this.volumeId,
-      imageIdsCount: imageIds.length,
-      loadStatus: loadStatus
-    });
-
-    // Set up the appropriate image loader based on progressive rendering setting
-    if (progressiveRendering === false) {
-      console.log('🔄 BaseStreamingImageVolume: Using non-progressive loading');
-      this.imagesLoader = this; // Use standard loader for non-progressive
-    } else {
-      console.log('🔄 BaseStreamingImageVolume: Using progressive loading');
-      this.imagesLoader = this.isDynamicVolume()
-        ? this
-        : imageRetrieveConfiguration
-          ? (
-              imageRetrieveConfiguration.create ||
-              ProgressiveRetrieveImages.createProgressive
-            )(imageRetrieveConfiguration)
-          : this;
-    }
+    // Set up the appropriate image loader
+    this.imagesLoader = this.isDynamicVolume()
+      ? this
+      : imageRetrieveConfiguration
+        ? (
+            imageRetrieveConfiguration.create ||
+            ProgressiveRetrieveImages.createProgressive
+          )(imageRetrieveConfiguration)
+        : this;
 
     if (loadStatus.loading === true) {
       return; // Already loading, will get callbacks from main load.
@@ -341,8 +318,7 @@ export default class BaseStreamingImageVolume
   }
 
   public getLoaderImageOptions(imageId: string) {
-    const { transferSyntaxUID } =
-      metaData.get('transferSyntax', imageId) || {};
+    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
 
     // Note: before PR 2340, rows and columns were from  imagePlaneModule = metaData.get('imagePlaneModule', imageId) .
     // This is now using the volume's dimensions instead.
@@ -355,7 +331,7 @@ export default class BaseStreamingImageVolume
       volumeId: this.volumeId,
       targetRows,
       targetCols,
-      volumeDimensions: this.dimensions
+      volumeDimensions: this.dimensions,
     });
 
     const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
@@ -605,15 +581,7 @@ export default class BaseStreamingImageVolume
     this.totalNumFrames = this.imageIds.length;
     const autoRenderPercentage = 2;
 
-    // Check if progressive rendering is disabled
-    const progressiveRendering = (this as unknown as { progressiveRendering: boolean }).progressiveRendering;
-    
-    if (progressiveRendering === false) {
-      console.log('🔄 BaseStreamingImageVolume: Non-progressive loading - disabling auto-render');
-      this.autoRenderOnLoad = false;
-      this.reRenderFraction = 0;
-      this.reRenderTarget = 0;
-    } else if (this.autoRenderOnLoad) {
+    if (this.autoRenderOnLoad) {
       this.reRenderFraction =
         this.totalNumFrames * (autoRenderPercentage / 100);
       this.reRenderTarget = this.reRenderFraction;

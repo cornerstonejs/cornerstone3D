@@ -91,13 +91,13 @@ function generateVolumeId(): string {
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
 
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_CORONAL';
-const viewportId3 = 'CT_SAGITTAL';
+const viewportId1 = 'CT_VOLUME_AXIAL';
+const viewportId2 = 'CT_STACK_AXIAL';
+const viewportId3 = 'CT_VOLUME_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
-let ijkDecimation: [number, number, number] = [2, 2, 2]; // [i, j, k] decimation factors
+let ijkDecimation: [number, number, number] = [4, 4, 4]; // [i, j, k] decimation factors
 
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
@@ -119,19 +119,6 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: async (selectedValue) => {
     ijkDecimation = [ijkDecimation[0], ijkDecimation[1], Number(selectedValue)];
-  },
-});
-
-addDropdownToToolbar({
-  labelText: 'Slice Loading Strategy:',
-  options: {
-    values: ['nth', 'interleave', 'interleaveCenter', 'interleaveTopToBottom', 'sequential'],
-    defaultValue: 'nth',
-    labels: ['nth', 'interleave', 'interleaveCenter', 'interleaveTopToBottom', 'sequential'],
-  },
-  onSelectedValueChange: async (selectedValue) => {
-    console.log('🔄 Slice loading strategy changed to:', selectedValue);
-    // You can add strategy logic here if needed
   },
 });
 
@@ -167,8 +154,9 @@ const content = document.getElementById('content');
 // Add timing information display
 const timingInfo = document.createElement('div');
 timingInfo.style.width = '35em';
-timingInfo.style.height = '10em';
+timingInfo.style.height = '6em'; // Reduced height
 timingInfo.style.float = 'left';
+timingInfo.style.marginBottom = '10px'; // Add small margin
 content.appendChild(timingInfo);
 const timingIds = [];
 const getOrCreateTiming = (id) => {
@@ -193,10 +181,17 @@ getOrCreateTiming('loadingStatus').innerText = 'Timing Information';
 
 // Use the shared demo toolbar for controls so elements appear on one line
 
+// Add a clear div to ensure proper layout
+const clearDiv = document.createElement('div');
+clearDiv.style.clear = 'both';
+clearDiv.style.marginTop = '10px';
+content.appendChild(clearDiv);
+
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 viewportGrid.style.width = '100%';
 viewportGrid.style.height = '800px';
+viewportGrid.style.marginTop = '5px'; // Reduce top margin
 
 // Create elements for the viewports
 const element1 = document.createElement('div'); // Axial
@@ -276,14 +271,14 @@ async function run() {
   let exampleSeriesInstanceUID = '';
 
   // OHIF Juno
-  exampleStudyInstanceUID= '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1';
-  exampleSeriesInstanceUID= '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4';
+  exampleStudyInstanceUID =
+    '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1';
+  exampleSeriesInstanceUID =
+    '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4';
 
   // 3000 slice CT - horse knee example
-  // exampleStudyInstanceUID =
-  //   '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084';
-  // exampleSeriesInstanceUID =
-  //   '1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297';
+  // exampleStudyInstanceUID ='1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084';
+  // exampleSeriesInstanceUID ='1.2.392.200036.9116.2.6.1.44063.1804609875.1652234897.14297';
 
   // Other
   // exampleStudyInstanceUID = '1.2.276.1.74.1.2.11712397.41276.13296733802084081563787857002084';
@@ -313,6 +308,7 @@ async function run() {
       type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
@@ -349,10 +345,10 @@ async function run() {
   async function loadVolume(config) {
     // Generate a new unique volume ID for each load
     const currentVolumeId = generateVolumeId();
-    
+
     console.log('🚀 Creating new volume with ID:', currentVolumeId);
     console.log('🔧 Decimation settings:', ijkDecimation);
-    
+
     // Clear cache only when changing decimation factors to avoid leaking memory
     cache.purgeCache();
     imageRetrieveMetadataProvider.clear();
@@ -364,7 +360,7 @@ async function run() {
       volumeId: currentVolumeId,
       imageIdsCount: imageIds.length,
       ijkDecimation,
-      progressiveRendering: true
+      progressiveRendering: true,
     });
 
     const volume = await volumeLoader.createAndCacheVolume(currentVolumeId, {
@@ -379,7 +375,8 @@ async function run() {
       volumeDimensions: volume?.dimensions,
       volumeSpacing: volume?.spacing,
       volumeImageIds: volume?.imageIds?.length,
-      hasImagePostProcess: typeof (volume as any)?.setImagePostProcess === 'function'
+      hasImagePostProcess:
+        typeof (volume as any)?.setImagePostProcess === 'function',
     });
 
     // Reset timing information and start timing
@@ -389,27 +386,46 @@ async function run() {
 
     // Load the volume with progressive refresh
     console.log('🔄 Loading volume data...');
-    
+
     // Set up periodic refresh during loading for progressive updates
     const refreshInterval = setInterval(() => {
       renderingEngine.renderViewports(viewportIds);
     }, 100); // Refresh every 100ms during loading
-    
+
     volume.load(() => {
       const now = Date.now();
       getOrCreateTiming('loadingStatus').innerText = `Took ${
         now - start
       } ms with ${imageIds.length} items (decimation: ${ijkDecimation.join(',')})`;
-      
+
       // Clear the refresh interval when loading is complete
       clearInterval(refreshInterval);
-      
+
+      // Reset camera for 3D viewport now that volume data is loaded
+      try {
+        const vrtViewport = renderingEngine.getViewport(
+          viewportId4
+        ) as VolumeViewport3D;
+        if (
+          vrtViewport &&
+          volume.voxelManager &&
+          volume.voxelManager.scalarData
+        ) {
+          console.log(
+            '🔄 Resetting 3D viewport camera after volume load completion'
+          );
+          vrtViewport.resetCamera();
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to reset 3D viewport camera:', error);
+      }
+
       // Final render after loading is complete
       renderingEngine.renderViewports(viewportIds);
       console.log('✅ Volume data loading completed');
     });
     console.log('✅ Volume data loading initiated with progressive refresh');
-    
+
     // Check if the volume has the expected properties after loading
     console.log('🔍 Volume properties after loading:', {
       volumeId: currentVolumeId,
@@ -418,11 +434,11 @@ async function run() {
       imageDataDimensions: volume?.imageData?.getDimensions?.(),
       imageDataSpacing: volume?.imageData?.getSpacing?.(),
       imageDataOrigin: volume?.imageData?.getOrigin?.(),
-      imageIdsCount: volume?.imageIds?.length
+      imageIdsCount: volume?.imageIds?.length,
     });
 
     // Set volumes for orthographic and 3D viewports (excluding stack viewport)
-    const volumeViewportIds = viewportIds.filter(id => id !== viewportId2);
+    const volumeViewportIds = viewportIds.filter((id) => id !== viewportId2);
     await setVolumesForViewports(
       renderingEngine,
       [
@@ -435,7 +451,9 @@ async function run() {
     );
 
     // Set up the stack viewport separately with axial images
-    const stackViewport = renderingEngine.getViewport(viewportId2) as Types.IStackViewport;
+    const stackViewport = renderingEngine.getViewport(
+      viewportId2
+    ) as Types.IStackViewport;
     const centerSliceIndex = Math.floor(imageIds.length / 2);
     await stackViewport.setStack(imageIds, centerSliceIndex); // Start at center slice
 
@@ -448,7 +466,7 @@ async function run() {
       // Not seeing a difference between LINEAR and NEAREST.
       //Enums.InterpolationType.LINEAR,
     });
-   // vrtViewport.resetCamera?.();
+
     renderingEngine.renderViewports(viewportIds);
   }
 
@@ -489,16 +507,22 @@ async function run() {
     getOrCreateTiming(stageId).innerText = stageDurationInMS
       ? `Stage ${stageId} took ${stageDurationInMS} ms, from start ${startDurationInMS} ms for ${numberOfImages} frames`
       : `Stage ${stageId} not run`;
-    
+
     // Trigger viewport refresh after each stage
     renderingEngine.renderViewports(viewportIds);
   };
 
   eventTarget.addEventListener(Events.IMAGE_RETRIEVAL_STAGE, imageLoadStage);
-  eventTarget.addEventListener(Events.IMAGE_VOLUME_LOADING_COMPLETED, volumeLoadingProgress);
+  eventTarget.addEventListener(
+    Events.IMAGE_VOLUME_LOADING_COMPLETED,
+    volumeLoadingProgress
+  );
   eventTarget.addEventListener(Events.IMAGE_LOADED, imageLoaded);
   eventTarget.addEventListener(Events.VOLUME_LOADED, volumeLoadingProgress);
-  eventTarget.addEventListener(Events.IMAGE_CACHE_IMAGE_ADDED, volumeCacheImageAdded);
+  eventTarget.addEventListener(
+    Events.IMAGE_CACHE_IMAGE_ADDED,
+    volumeCacheImageAdded
+  );
   eventTarget.addEventListener(Events.STACK_NEW_IMAGE, stackNewImage);
 
   // Tool group for orthographic viewports
@@ -519,7 +543,7 @@ async function run() {
       },
     ],
   });
-  
+
   // Add LengthTool to the orthographic viewports
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.setToolActive(LengthTool.toolName, {
@@ -573,7 +597,9 @@ async function run() {
   addButtonToToolbar({
     title: 'Load Enhanced Volume (New ID)',
     onClick: () => {
-      console.log('🔄 Load button clicked - creating new volume with current decimation settings');
+      console.log(
+        '🔄 Load button clicked - creating new volume with current decimation settings'
+      );
       loadVolume(config);
     },
   });

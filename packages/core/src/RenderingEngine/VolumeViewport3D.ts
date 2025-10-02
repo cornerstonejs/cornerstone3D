@@ -51,7 +51,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
     // Log volume dimensions and voxel manager info before camera reset
     const actors = this.getActors();
     if (actors && actors.length > 0) {
-      actors.forEach(actor => {
+      actors.forEach((actor) => {
         const volume = cache.getVolume(actor.referencedId);
         if (volume) {
           console.log('📏 VolumeViewport3D: Volume info before camera reset:', {
@@ -60,26 +60,24 @@ class VolumeViewport3D extends BaseVolumeViewport {
             volumeSpacing: Array.from(volume.spacing),
             volumeOrigin: Array.from(volume.origin),
             volumeDirection: Array.from(volume.direction),
-            imageDataDimensions: Array.from(volume.imageData?.getDimensions() || []),
+            imageDataDimensions: Array.from(
+              volume.imageData?.getDimensions() || []
+            ),
             imageDataSpacing: Array.from(volume.imageData?.getSpacing() || []),
             imageDataOrigin: Array.from(volume.imageData?.getOrigin() || []),
-            imageDataDirection: Array.from(volume.imageData?.getDirection() || []),
-            voxelManager: volume.voxelManager ? {
-              dimensions: volume.voxelManager.dimensions,
-              sizeInBytes: (() => {
-                try {
-                  return volume.voxelManager.sizeInBytes;
-                } catch (e) {
-                  console.warn('Error accessing voxelManager.sizeInBytes:', e);
-                  return 'Error accessing sizeInBytes';
+            imageDataDirection: Array.from(
+              volume.imageData?.getDirection() || []
+            ),
+            voxelManager: volume.voxelManager
+              ? {
+                  dimensions: volume.voxelManager.dimensions,
                 }
-              })()
-            } : null,
+              : null,
             numberOfComponents: volume.imageData?.get('numberOfComponents'),
             dataType: volume.dataType,
             metadataRows: volume.metadata?.Rows,
             metadataColumns: volume.metadata?.Columns,
-            metadataPixelSpacing: volume.metadata?.PixelSpacing
+            metadataPixelSpacing: volume.metadata?.PixelSpacing,
           });
         }
       });
@@ -106,18 +104,20 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
     // Log volume dimensions and voxel manager info after camera reset
     if (actors && actors.length > 0) {
-      actors.forEach(actor => {
+      actors.forEach((actor) => {
         const volume = cache.getVolume(actor.referencedId);
         if (volume) {
           console.log('📏 VolumeViewport3D: Volume info after camera reset:', {
             volumeId: actor.referencedId,
             volumeDimensions: Array.from(volume.dimensions),
-            imageDataDimensions: Array.from(volume.imageData?.getDimensions() || []),
+            imageDataDimensions: Array.from(
+              volume.imageData?.getDimensions() || []
+            ),
             numberOfComponents: volume.imageData?.get('numberOfComponents'),
             dataType: volume.dataType,
             viewportBounds: this.getBounds(),
             cameraPosition: this.getCamera().position,
-            cameraFocalPoint: this.getCamera().focalPoint
+            cameraFocalPoint: this.getCamera().focalPoint,
           });
         }
       });
@@ -215,26 +215,33 @@ class VolumeViewport3D extends BaseVolumeViewport {
     // Log volume dimensions and voxel manager info before setting camera
     const actors = this.getActors();
     if (actors && actors.length > 0) {
-      actors.forEach(actor => {
+      actors.forEach((actor) => {
         const volume = cache.getVolume(actor.referencedId);
         if (volume) {
           console.log('📏 VolumeViewport3D: Volume info before setCamera:', {
             volumeId: actor.referencedId,
             volumeDimensions: Array.from(volume.dimensions),
-            imageDataDimensions: Array.from(volume.imageData?.getDimensions() || []),
+            imageDataDimensions: Array.from(
+              volume.imageData?.getDimensions() || []
+            ),
             numberOfComponents: volume.imageData?.get('numberOfComponents'),
             dataType: volume.dataType,
-            voxelManager: volume.voxelManager ? {
-              dimensions: volume.voxelManager.dimensions,
-              sizeInBytes: (() => {
-                try {
-                  return volume.voxelManager.sizeInBytes;
-                } catch (e) {
-                  console.warn('Error accessing voxelManager.sizeInBytes:', e);
-                  return 'Error accessing sizeInBytes';
+            voxelManager: volume.voxelManager
+              ? {
+                  dimensions: volume.voxelManager.dimensions,
+                  sizeInBytes: (() => {
+                    try {
+                      return volume.voxelManager.sizeInBytes;
+                    } catch (e) {
+                      console.warn(
+                        'Error accessing voxelManager.sizeInBytes:',
+                        e
+                      );
+                      return 'Error accessing sizeInBytes';
+                    }
+                  })(),
                 }
-              })()
-            } : null
+              : null,
           });
         }
       });

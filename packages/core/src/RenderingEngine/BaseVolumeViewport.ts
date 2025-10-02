@@ -2192,16 +2192,7 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public getVolumeId(specifier?: ViewReferenceSpecifier) {
     const actorEntries = this.getActors();
-    console.log('🔍 BaseVolumeViewport: getVolumeId called:', {
-      specifier,
-      actorEntriesCount: actorEntries?.length,
-      actorEntries: actorEntries?.map(entry => ({
-        uid: entry.uid,
-        referencedId: entry.referencedId,
-        actorClassName: entry.actor.getClassName()
-      }))
-    });
-    
+
     if (!actorEntries) {
       console.warn('⚠️ BaseVolumeViewport: No actor entries found');
       return;
@@ -2217,7 +2208,7 @@ abstract class BaseVolumeViewport extends Viewport {
         found: !!found,
         referencedId: found?.referencedId,
         uid: found?.uid,
-        result
+        result,
       });
       return result;
     }
@@ -2237,7 +2228,7 @@ abstract class BaseVolumeViewport extends Viewport {
       found: !!found,
       referencedId: found?.referencedId,
       uid: found?.uid,
-      result
+      result,
     });
     return result;
   }
