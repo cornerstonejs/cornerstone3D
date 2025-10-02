@@ -71,6 +71,7 @@ const {
   PanTool,
   OrientationMarkerTool,
   StackScrollTool,
+  LengthTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -96,7 +97,7 @@ const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
-let ijkDecimation: [number, number, number] = [1, 1, 2]; // [i, j, k] decimation factors
+let ijkDecimation: [number, number, number] = [2, 2, 2]; // [i, j, k] decimation factors
 
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
@@ -114,7 +115,7 @@ addDropdownToToolbar({
   labelText: 'Sample distance k pixels (slices/frames) to skip:',
   options: {
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-    defaultValue: 2,
+    defaultValue: ijkDecimation[2],
   },
   onSelectedValueChange: async (selectedValue) => {
     ijkDecimation = [ijkDecimation[0], ijkDecimation[1], Number(selectedValue)];
@@ -269,6 +270,7 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
   cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(LengthTool);
 
   let exampleStudyInstanceUID = '';
   let exampleSeriesInstanceUID = '';
@@ -308,10 +310,9 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
@@ -420,6 +421,8 @@ async function run() {
       imageIdsCount: volume?.imageIds?.length
     });
 
+    // Set volumes for orthographic and 3D viewports (excluding stack viewport)
+    const volumeViewportIds = viewportIds.filter(id => id !== viewportId2);
     await setVolumesForViewports(
       renderingEngine,
       [
@@ -428,8 +431,13 @@ async function run() {
           callback: setCtTransferFunctionForVolumeActor,
         },
       ],
-      viewportIds
+      volumeViewportIds
     );
+
+    // Set up the stack viewport separately with axial images
+    const stackViewport = renderingEngine.getViewport(viewportId2) as Types.IStackViewport;
+    const centerSliceIndex = Math.floor(imageIds.length / 2);
+    await stackViewport.setStack(imageIds, centerSliceIndex); // Start at center slice
 
     const vrtViewport = renderingEngine.getViewport(
       viewportId4
@@ -508,6 +516,16 @@ async function run() {
       },
       {
         mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+  
+  // Add LengthTool to the orthographic viewports
+  toolGroup.addTool(LengthTool.toolName);
+  toolGroup.setToolActive(LengthTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary, // Left click to draw length measurements
       },
     ],
   });
