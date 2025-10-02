@@ -6,6 +6,7 @@ import {
   cache,
   metaData,
   utilities,
+  triggerEvent,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
@@ -14,6 +15,8 @@ import {
   clearFromImageIds,
   getPromiseRemovedHandler,
 } from './stackPrefetchUtils';
+import { Events } from '../../enums';
+import type { EventTypes } from '../../types';
 
 const { imageRetrieveMetadataProvider } = utilities;
 
@@ -221,6 +224,17 @@ function prefetch(element, priority = 0) {
           // );
         }
       }
+    }
+
+    // If all requests are complete, trigger the STACK_PREFETCH_COMPLETE event,
+    // providing the last imageId and triggering element so that the stack can
+    // be identified
+    if (stackPrefetch.indicesToRequest.length === 0) {
+      const eventDetail: EventTypes.StackPrefetchCompleteEventDetail = {
+        imageId: imageId,
+        element: element,
+      };
+      triggerEvent(eventTarget, Events.STACK_PREFETCH_COMPLETE, eventDetail);
     }
   }
 

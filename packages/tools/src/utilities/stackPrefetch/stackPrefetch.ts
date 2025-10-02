@@ -17,6 +17,8 @@ import {
   nearestIndex,
   range,
 } from './stackPrefetchUtils';
+import { Events } from '../../enums';
+import type { EventTypes } from '../../types';
 
 const { imageRetrieveMetadataProvider } = utilities;
 
@@ -130,11 +132,14 @@ function prefetch(element) {
     removeFromList(imageIdIndex);
 
     // If all requests are complete, trigger the STACK_PREFETCH_COMPLETE event,
-    // providing the last imageId so that the stack can be identified
+    // providing the last imageId and triggering element so that the stack can
+    // be identified
     if (stackPrefetch.indicesToRequest.length === 0) {
-      triggerEvent(eventTarget, Enums.Events.STACK_PREFETCH_COMPLETE, {
+      const eventDetail: EventTypes.StackPrefetchCompleteEventDetail = {
         imageId: imageId,
-      });
+        element: element,
+      };
+      triggerEvent(eventTarget, Events.STACK_PREFETCH_COMPLETE, eventDetail);
     }
   }
 

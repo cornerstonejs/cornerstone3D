@@ -213,11 +213,6 @@ enum Events {
   STACK_SCROLL_OUT_OF_BOUNDS = 'STACK_SCROLL_OUT_OF_BOUNDS',
 
   /**
-   * Triggers on the eventTarget when a stack prefetch has been completed (i.e., the indicesToRequest list has been emptied).
-   */
-  STACK_PREFETCH_COMPLETE = 'CORNERSTONE_STACK_PREFETCH_COMPLETE',
-
-  /**
    * Triggers on the eventTarget when a new geometry is added to the geometry cache
    */
   GEOMETRY_CACHE_GEOMETRY_ADDED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_ADDED',
