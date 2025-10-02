@@ -470,10 +470,10 @@ type MouseWheelEventDetail = NormalizedInteractionEventDetail &
  * Event detail for STACK_PREFETCH_COMPLETE events
  */
 type StackPrefetchCompleteEventDetail = {
-  /** The imageId of the last prefetched image before completion */
-  imageId: string;
   /** The viewport element that requested the prefetch */
   element: HTMLDivElement;
+  /** The imageId of the last prefetched image before completion */
+  lastPrefetchedImageId: string;
 };
 
 /////////////////////////////

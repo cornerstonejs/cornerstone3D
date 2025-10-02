@@ -231,8 +231,8 @@ function prefetch(element, priority = 0) {
     // be identified
     if (stackPrefetch.indicesToRequest.length === 0) {
       const eventDetail: EventTypes.StackPrefetchCompleteEventDetail = {
-        imageId: imageId,
         element: element,
+        lastPrefetchedImageId: imageId,
       };
       triggerEvent(eventTarget, Events.STACK_PREFETCH_COMPLETE, eventDetail);
     }
