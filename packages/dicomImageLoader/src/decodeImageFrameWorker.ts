@@ -1,25 +1,27 @@
 /* eslint-disable complexity */
+import { expose } from 'comlink';
+import decodeBigEndian from './shared/decoders/decodeBigEndian';
+import decodeJPEGBaseline8Bit from './shared/decoders/decodeJPEGBaseline8Bit';
+import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
+import decodeRLE from './shared/decoders/decodeRLE';
 import bilinear from './shared/scaling/bilinear';
 import replicate from './shared/scaling/replicate';
-import { expose } from 'comlink';
-
-import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
-import decodeBigEndian from './shared/decoders/decodeBigEndian';
-import decodeRLE from './shared/decoders/decodeRLE';
-import decodeJPEGBaseline8Bit from './shared/decoders/decodeJPEGBaseline8Bit';
 // import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit';
+import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
+import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
 import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit-js';
 import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
 import decodeJPEGLS from './shared/decoders/decodeJPEGLS';
-import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
-import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
-// Note that the scaling is pixel value scaling, which is applying a modality LUT
-import applyModalityLUT from './shared/scaling/scaleArray';
+import type { Types as CoreTypes } from '@cornerstonejs/core';
+import type { ByteArray } from 'dicom-parser';
 import getMinMax from './shared/getMinMax';
 import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
 } from './shared/getPixelDataTypeFromMinMax';
 import isColorImage from './shared/isColorImage';
+// Note that the scaling is pixel value scaling, which is applying a modality LUT
+import applyModalityLUT from './shared/scaling/scaleArray';
+import type { DICOMLoaderImageOptions, LoaderDecodeOptions } from './types';
 
 const imageUtils = {
   bilinear,
@@ -33,8 +35,14 @@ const typedArrayConstructors = {
   Float32Array,
   Uint32Array,
 };
+type TypedArrayConstructorsMap = typeof typedArrayConstructors;
 
-function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
+function postProcessDecodedPixels(
+  imageFrame: CoreTypes.IImageFrame,
+  options: DICOMLoaderImageOptions,
+  start: number,
+  decodeConfig: LoaderDecodeOptions
+): CoreTypes.IImageFrame {
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;
@@ -165,7 +173,10 @@ function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
   return imageFrame;
 }
 
-function _isRequiredScaling(scalingParameters) {
+function _isRequiredScaling(
+  scalingParameters: CoreTypes.ScalingParameters
+): boolean {
+  // @ts-expect-error ScalingParameters type does not include `doseGridScaling`
   const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
     scalingParameters;
 
@@ -179,11 +190,11 @@ function _isRequiredScaling(scalingParameters) {
 }
 
 function _handleTargetBuffer(
-  options,
-  imageFrame,
-  typedArrayConstructors,
-  pixelDataArray
-) {
+  options: DICOMLoaderImageOptions,
+  imageFrame: CoreTypes.IImageFrame,
+  typedArrayConstructors: TypedArrayConstructorsMap,
+  pixelDataArray: CoreTypes.PixelDataTypedArray
+): CoreTypes.PixelDataTypedArray {
   const {
     arrayBuffer,
     type,
@@ -231,10 +242,10 @@ function _handleTargetBuffer(
 }
 
 function _handlePreScaleSetup(
-  options,
-  minBeforeScale,
-  maxBeforeScale,
-  imageFrame
+  options: DICOMLoaderImageOptions,
+  minBeforeScale: number,
+  maxBeforeScale: number,
+  imageFrame: CoreTypes.IImageFrame
 ) {
   const scalingParameters = options.preScale.scalingParameters;
   _validateScalingParameters(scalingParameters);
@@ -252,7 +263,11 @@ function _handlePreScaleSetup(
   );
 }
 
-function _getDefaultPixelDataArray(min, max, imageFrame) {
+function _getDefaultPixelDataArray(
+  min: number,
+  max: number,
+  imageFrame: CoreTypes.IImageFrame
+): CoreTypes.PixelDataTypedArray {
   const TypedArrayConstructor = getPixelDataTypeFromMinMax(min, max);
   // @ts-ignore
   const typedArray = new TypedArrayConstructor(imageFrame.pixelData.length);
@@ -261,7 +276,12 @@ function _getDefaultPixelDataArray(min, max, imageFrame) {
   return typedArray;
 }
 
-function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
+function _calculateScaledMinMax(
+  minValue: number,
+  maxValue: number,
+  scalingParameters: CoreTypes.ScalingParameters
+): { min: number; max: number } {
+  // @ts-expect-error ScalingParameters type does not include `doseGridScaling`
   const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
     scalingParameters;
 
@@ -295,7 +315,9 @@ function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
   }
 }
 
-function _validateScalingParameters(scalingParameters) {
+function _validateScalingParameters(
+  scalingParameters: CoreTypes.ScalingParameters
+) {
   if (!scalingParameters) {
     throw new Error(
       'options.preScale.scalingParameters must be defined if preScale.enabled is true, and scalingParameters cannot be derived from the metadata providers.'
@@ -304,9 +326,9 @@ function _validateScalingParameters(scalingParameters) {
 }
 
 function createDestinationImage(
-  imageFrame,
-  targetBuffer,
-  TypedArrayConstructor
+  imageFrame: CoreTypes.IImageFrame,
+  targetBuffer: DICOMLoaderImageOptions['targetBuffer'],
+  TypedArrayConstructor: new (size: number) => CoreTypes.PixelDataTypedArray
 ) {
   const { samplesPerPixel } = imageFrame;
   const { rows, columns } = targetBuffer;
@@ -318,11 +340,13 @@ function createDestinationImage(
     rows,
     columns,
     frameInfo: {
+      // @ts-expect-error frameInfo is not defined in IImageFrame
       ...imageFrame.frameInfo,
       rows,
       columns,
     },
     imageInfo: {
+      // @ts-expect-error imageInfo is not defined in IImageFrame
       ...imageFrame.imageInfo,
       rows,
       columns,
@@ -331,10 +355,11 @@ function createDestinationImage(
   };
 }
 
-/** Scales the image frame, updating the frame in place with a new scaled
- * version of it (in place modification)
- */
-function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
+function scaleImageFrame(
+  imageFrame: CoreTypes.IImageFrame,
+  targetBuffer: DICOMLoaderImageOptions['targetBuffer'],
+  TypedArrayConstructor: new (size: number) => CoreTypes.PixelDataTypedArray
+) {
   const dest = createDestinationImage(
     imageFrame,
     targetBuffer,
@@ -353,16 +378,16 @@ function scaleImageFrame(imageFrame, targetBuffer, TypedArrayConstructor) {
  * callbackFn that is called with the results.
  */
 export async function decodeImageFrame(
-  imageFrame,
-  transferSyntax,
-  pixelData,
-  decodeConfig,
-  options,
-  callbackFn
-) {
+  imageFrame: CoreTypes.IImageFrame,
+  transferSyntax: string,
+  pixelData: ByteArray,
+  decodeConfig: LoaderDecodeOptions,
+  options: DICOMLoaderImageOptions,
+  callbackFn?: (image: CoreTypes.IImageFrame) => void
+): Promise<CoreTypes.IImageFrame> {
   const start = new Date().getTime();
 
-  let decodePromise = null;
+  let decodePromise: Promise<CoreTypes.IImageFrame> | null = null;
 
   let opts;
 
@@ -390,7 +415,11 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
+      decodePromise = decodeJPEGBaseline8Bit(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecLibJpegTurbo8bit
+      );
       break;
     case '1.2.840.10008.1.2.4.51':
       // JPEG Baseline lossy process 2 & 4 (12 bit)
@@ -418,7 +447,11 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGLS(pixelData, opts);
+      decodePromise = decodeJPEGLS(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecCharls
+      );
       break;
     case '1.2.840.10008.1.2.4.81':
       // JPEG-LS Lossy (Near-Lossless) Image Compression
@@ -429,7 +462,11 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGLS(pixelData, opts);
+      decodePromise = decodeJPEGLS(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecCharls
+      );
       break;
     case '1.2.840.10008.1.2.4.90':
       opts = {
@@ -438,7 +475,11 @@ export async function decodeImageFrame(
 
       // JPEG 2000 Lossless
       // imageFrame, pixelData, decodeConfig, options
-      decodePromise = decodeJPEG2000(pixelData, opts);
+      decodePromise = decodeJPEG2000(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecOpenJpeg
+      );
       break;
     case '1.2.840.10008.1.2.4.91':
       // JPEG 2000 Lossy
@@ -448,7 +489,11 @@ export async function decodeImageFrame(
 
       // JPEG 2000 Lossy
       // imageFrame, pixelData, decodeConfig, options
-      decodePromise = decodeJPEG2000(pixelData, opts);
+      decodePromise = decodeJPEG2000(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecOpenJpeg
+      );
       break;
     case '3.2.840.10008.1.2.4.96':
     case '1.2.840.10008.1.2.4.201':
@@ -459,7 +504,11 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeHTJ2K(pixelData, opts);
+      decodePromise = decodeHTJ2K(
+        pixelData,
+        opts,
+        decodeConfig?.wasmUrlCodecOpenJph
+      );
       break;
     default:
       throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
