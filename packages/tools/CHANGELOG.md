@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.17...v4.4.0) (2025-10-03)
+
+### Features
+
+- **Stackprefetch:** add event that is triggered when the stack prefetch for a viewport has completed ([#2365](https://github.com/cornerstonejs/cornerstone3D/issues/2365)) ([a451a8c](https://github.com/cornerstonejs/cornerstone3D/commit/a451a8cc319fb11fb548c0a169dd241beba7feea))
+
 ## [4.3.17](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.16...v4.3.17) (2025-10-03)
 
 ### Bug Fixes
