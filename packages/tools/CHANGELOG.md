@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.3.16](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.15...v4.3.16) (2025-10-03)
+
+### Bug Fixes
+
+- reset center segment index info ([#2352](https://github.com/cornerstonejs/cornerstone3D/issues/2352)) ([cb7392e](https://github.com/cornerstonejs/cornerstone3D/commit/cb7392ec94f307ea5c5a898e08ac567182e831b5))
+
 ## [4.3.15](https://github.com/cornerstonejs/cornerstone3D/compare/v4.3.14...v4.3.15) (2025-10-02)
 
 **Note:** Version bump only for package @cornerstonejs/tools
