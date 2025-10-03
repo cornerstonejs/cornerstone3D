@@ -217,4 +217,18 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
     undefinedAnnotation = annotationManager.getAnnotation(annotationUID);
     expect(undefinedAnnotation).toBeUndefined();
   });
+
+  it('Should not throw when removeAnnotations is called with a non-existent tool name', () => {
+    // Add an annotation for TOOLNAME_0
+    addAndReturnToolName0Annotation();
+
+    // This should not throw even though RandomToolName doesn't exist
+    expect(() => {
+      const removedAnnotations = annotationManager.removeAnnotations(
+        FrameOfReferenceUID,
+        'RandomToolName'
+      );
+      expect(removedAnnotations).toEqual([]);
+    }).not.toThrow();
+  });
 });
