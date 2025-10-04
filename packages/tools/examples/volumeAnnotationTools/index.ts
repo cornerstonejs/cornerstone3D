@@ -18,7 +18,7 @@ console.warn(
 );
 
 const {
-  LengthTool,
+  LengthToolZoom,
   ToolGroupManager,
   StackScrollTool,
   ZoomTool,
@@ -87,7 +87,7 @@ async function run() {
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(LengthToolZoom);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
 
@@ -96,13 +96,13 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group and specify which volume they are pointing at
-  toolGroup.addTool(LengthTool.toolName, { volumeId });
+  toolGroup.addTool(LengthToolZoom.toolName, { volumeId });
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
-  toolGroup.setToolActive(LengthTool.toolName, {
+  toolGroup.setToolActive(LengthToolZoom.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
