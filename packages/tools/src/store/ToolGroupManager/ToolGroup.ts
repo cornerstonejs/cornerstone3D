@@ -653,6 +653,13 @@ export default class ToolGroup {
       return cursor;
     }
 
+    // Fall back to a standard CSS cursor registered for the tool name.
+    cursor = MouseCursor.getDefinedCursor(cursorName);
+
+    if (cursor) {
+      return cursor;
+    }
+
     return MouseCursor.getDefinedCursor('default');
   }
 

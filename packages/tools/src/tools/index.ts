@@ -24,6 +24,7 @@ import VolumeRotateTool from './VolumeRotateTool';
 import BidirectionalTool from './annotation/BidirectionalTool';
 import LabelTool from './annotation/LabelTool';
 import LengthTool from './annotation/LengthTool';
+import LengthToolZoom from './annotation/LengthToolZoom';
 import HeightTool from './annotation/HeightTool';
 import ProbeTool from './annotation/ProbeTool';
 import DragProbeTool from './annotation/DragProbeTool';
@@ -92,6 +93,7 @@ export {
   BidirectionalTool,
   LabelTool,
   LengthTool,
+  LengthToolZoom,
   HeightTool,
   ProbeTool,
   RectangleROITool,

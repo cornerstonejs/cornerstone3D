@@ -39,6 +39,7 @@ import {
   MIPJumpToClickTool,
   LabelTool,
   LengthTool,
+  LengthToolZoom,
   HeightTool,
   ProbeTool,
   RectangleROITool,
@@ -120,6 +121,7 @@ export {
   // Annotation Tools
   LabelTool,
   LengthTool,
+  LengthToolZoom,
   HeightTool,
   CrosshairsTool,
   ReferenceLinesTool,
