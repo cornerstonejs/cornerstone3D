@@ -69,6 +69,7 @@ const MOVEMENT_EPSILON = 1e-3;
 const HANDLE_MOVE_LINGER_FRAMES = 20;
 const HANDLE_GLOW_RADIUS = 26;
 const HANDLE_GLOW_COLOR = 'rgba(18, 132, 255, 0.3)';
+const CROSSBAR_HALF_LENGTH = 8;
 
 /**
  * LengthToolZoom let you draw annotations that measures the length of two drawing
@@ -1077,13 +1078,67 @@ class LengthToolZoom extends AnnotationTool {
         canvasCoordinates[0],
         canvasCoordinates[1],
         {
-          color,
-          width: lineWidth,
+          color: 'var(--ui-2, #EC6602)',
+          width: 2,
           lineDash,
-          shadow,
+          shadow: {
+            color: 'rgba(0, 0, 0, 0.8)',
+            offsetX: 0,
+            offsetY: 1,
+            blur: 1,
+          },
         },
         dataId
       );
+
+      const crossbarStyle = {
+        color: 'var(--ui-2, #EC6602)',
+        width: 2,
+        lineDash: undefined,
+        shadow: {
+          color: 'rgba(0, 0, 0, 0.8)',
+          offsetX: 0,
+          offsetY: 1,
+          blur: 1,
+        },
+      };
+
+      const [startPoint, endPoint] = canvasCoordinates;
+      const dx = endPoint[0] - startPoint[0];
+      const dy = endPoint[1] - startPoint[1];
+      const length = Math.sqrt(dx * dx + dy * dy);
+
+      if (length > 0.0001) {
+        const invLength = 1 / length;
+        const perpX = -dy * invLength * CROSSBAR_HALF_LENGTH;
+        const perpY = dx * invLength * CROSSBAR_HALF_LENGTH;
+
+        const startCrossStart = [startPoint[0] - perpX, startPoint[1] - perpY];
+        const startCrossEnd = [startPoint[0] + perpX, startPoint[1] + perpY];
+
+        const endCrossStart = [endPoint[0] - perpX, endPoint[1] - perpY];
+        const endCrossEnd = [endPoint[0] + perpX, endPoint[1] + perpY];
+
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          'start-crossbar',
+          startCrossStart,
+          startCrossEnd,
+          crossbarStyle,
+          `${annotationUID}-start-crossbar`
+        );
+
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          'end-crossbar',
+          endCrossStart,
+          endCrossEnd,
+          crossbarStyle,
+          `${annotationUID}-end-crossbar`
+        );
+      }
 
       renderStatus = true;
 
