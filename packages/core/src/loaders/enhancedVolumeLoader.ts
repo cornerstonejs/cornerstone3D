@@ -91,17 +91,43 @@ export function enhancedVolumeLoader(
   const inPlaneDecimation = iDecimation > 1 ? iDecimation : 1;
   const kAxisDecimation = kDecimation > 1 ? kDecimation : 1;
 
-  // Apply k-decimation to reduce the number of slices
-  const decimatedResult = decimate(options.imageIds, kAxisDecimation);
+  // Check if k-decimation has already been applied at the displaySet level
+  const expectedDecimatedCount = Math.floor(options.imageIds.length / kAxisDecimation);
+  const isAlreadyDecimated = kAxisDecimation > 1 && options.imageIds.length <= expectedDecimatedCount + 1;
+  
+  console.log('🔍 EnhancedVolumeLoader: K-decimation analysis:', {
+    originalSliceCount: options.imageIds.length,
+    kAxisDecimation,
+    expectedDecimatedCount,
+    isAlreadyDecimated,
+    willApplyDecimation: kAxisDecimation > 1 && !isAlreadyDecimated
+  });
+  
+  if (kAxisDecimation > 1 && !isAlreadyDecimated) {
+    // Apply k-decimation to reduce the number of slices
+    console.log('🔍 EnhancedVolumeLoader: Applying k-decimation in enhanced loader');
+    
+    const decimatedResult = decimate(options.imageIds, kAxisDecimation);
+    
+    const decimatedImageIds =
+      Array.isArray(decimatedResult) &&
+      decimatedResult.length &&
+      typeof decimatedResult[0] === 'number'
+        ? decimatedResult.map((idx) => options.imageIds[idx])
+        : decimatedResult;
 
-  const decimatedImageIds =
-    Array.isArray(decimatedResult) &&
-    decimatedResult.length &&
-    typeof decimatedResult[0] === 'number'
-      ? decimatedResult.map((idx) => options.imageIds[idx])
-      : decimatedResult;
+    console.log('✅ EnhancedVolumeLoader: K-decimation applied in enhanced loader:', {
+      originalSliceCount: options.imageIds.length,
+      decimatedSliceCount: decimatedImageIds.length,
+      decimationFactor: kAxisDecimation
+    });
 
-  options.imageIds = decimatedImageIds as string[];
+    options.imageIds = decimatedImageIds as string[];
+  } else if (isAlreadyDecimated) {
+    console.log('✅ EnhancedVolumeLoader: K-decimation already applied at displaySet level, skipping');
+  } else {
+    console.log('🔍 EnhancedVolumeLoader: No k-decimation needed (factor = 1)');
+  }
 
   async function getStreamingImageVolume() {
     /**
@@ -266,17 +292,22 @@ export function enhancedVolumeLoader(
       console.log(`✅ New voxel manager created and set`);
     }
 
-    // Track processed images to prevent double processing
-    const processedImages = new Set<string>();
+
+    console.log('🔧 EnhancedVolumeLoader: Setting post-process function on volume:', {
+      volumeId: streamingImageVolume.volumeId,
+      inPlaneDecimation,
+hasExistingPostProcess: typeof streamingImageVolume.setImagePostProcess === 'function'
+    });
 
     streamingImageVolume.setImagePostProcess((image) => {
-      // Check if this image has already been processed
-      if (processedImages.has(image.imageId)) {
-        return image;
-      }
+      console.log('🔧 EnhancedVolumeLoader: Post-processing image:', {
+        imageId: image.imageId.substring(0, 50) + '...',
+        originalDimensions: `${image.columns}x${image.rows}`,
+        inPlaneDecimation,
+        expectedDecimatedDimensions: `${Math.floor(streamingImageVolume.dimensions[0])}x${Math.floor(streamingImageVolume.dimensions[1])}`
+      });
 
-      // Mark image as processed
-      processedImages.add(image.imageId);
+      // Always process images to ensure consistent decimation
 
       // Check if image is already decimated to prevent double decimation
       const expectedDecimatedRows = Math.floor(
@@ -286,14 +317,32 @@ export function enhancedVolumeLoader(
         streamingImageVolume.dimensions[0]
       );
 
+      console.log('🔧 EnhancedVolumeLoader: Decimation check:', {
+        imageDimensions: `${image.columns}x${image.rows}`,
+        expectedDecimatedDimensions: `${expectedDecimatedCols}x${expectedDecimatedRows}`,
+        needsDecimation: !(image.rows === expectedDecimatedRows && image.columns === expectedDecimatedCols)
+      });
+
       if (
         image.rows === expectedDecimatedRows &&
         image.columns === expectedDecimatedCols
       ) {
+        console.log('🔧 EnhancedVolumeLoader: Image already has correct decimated dimensions');
         return image;
       }
 
+      console.log('🔧 EnhancedVolumeLoader: Applying pixel decimation:', {
+        inPlaneDecimation,
+        beforeDimensions: `${image.columns}x${image.rows}`,
+      });
+
       const decimatedImage = decimateImagePixels(image, inPlaneDecimation);
+
+      console.log('🔧 EnhancedVolumeLoader: Pixel decimation applied:', {
+        afterDimensions: `${decimatedImage.columns}x${decimatedImage.rows}`,
+        pixelDataLength: decimatedImage.getPixelData?.()?.length,
+        success: decimatedImage.columns < image.columns && decimatedImage.rows < image.rows
+      });
 
       // Update metadata for this specific image
       if (inPlaneDecimation > 1) {
@@ -344,6 +393,11 @@ export function enhancedVolumeLoader(
           return undefined;
         });
       }
+
+      console.log('✅ EnhancedVolumeLoader: Post-processing complete, returning image:', {
+        finalDimensions: `${decimatedImage.columns}x${decimatedImage.rows}`,
+        imageId: decimatedImage.imageId.substring(0, 50) + '...'
+      });
 
       return decimatedImage;
     });

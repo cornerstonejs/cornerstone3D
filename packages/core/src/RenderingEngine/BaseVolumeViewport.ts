@@ -2194,7 +2194,6 @@ abstract class BaseVolumeViewport extends Viewport {
     const actorEntries = this.getActors();
 
     if (!actorEntries) {
-      console.warn('⚠️ BaseVolumeViewport: No actor entries found');
       return;
     }
     if (!specifier?.volumeId) {
@@ -2204,12 +2203,6 @@ abstract class BaseVolumeViewport extends Viewport {
       );
 
       const result = found?.referencedId || found?.uid;
-      console.log('🔍 BaseVolumeViewport: Found volume ID:', {
-        found: !!found,
-        referencedId: found?.referencedId,
-        uid: found?.uid,
-        result,
-      });
       return result;
     }
 
@@ -2223,13 +2216,6 @@ abstract class BaseVolumeViewport extends Viewport {
     );
 
     const result = found?.referencedId || found?.uid;
-    console.log('🔍 BaseVolumeViewport: Found specific volume ID:', {
-      specifierVolumeId: specifier?.volumeId,
-      found: !!found,
-      referencedId: found?.referencedId,
-      uid: found?.uid,
-      result,
-    });
     return result;
   }
 
