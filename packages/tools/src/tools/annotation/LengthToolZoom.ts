@@ -60,6 +60,16 @@ if (pointerCursor) {
   MouseCursor.setDefinedCursor('LengthZoom', pointerCursor);
 }
 
+const HANDLE_RADIUS = 8;
+const HANDLE_COLOR = '#1284FF';
+const HANDLE_FILL = '#ffffff';
+const HANDLE_LINE_WIDTH = 2;
+const ACTIVE_HANDLE_RADIUS = 12;
+const MOVEMENT_EPSILON = 1e-3;
+const HANDLE_MOVE_LINGER_FRAMES = 20;
+const HANDLE_GLOW_RADIUS = 26;
+const HANDLE_GLOW_COLOR = 'rgba(18, 132, 255, 0.3)';
+
 /**
  * LengthToolZoom let you draw annotations that measures the length of two drawing
  * points on a slice. You can use the LengthToolZoom in all imaging planes even in oblique
@@ -106,9 +116,14 @@ class LengthToolZoom extends AnnotationTool {
     movingTextBox?: boolean;
     newAnnotation?: boolean;
     hasMoved?: boolean;
+    stage?: 'placingFirst' | 'placingSecond';
+    isHandleMoving?: boolean;
+    handleMoveLinger?: number;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
+  private pendingAnnotation: LengthAnnotation | null;
+  private _handleMoveAnimationFrame: number | null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -139,6 +154,13 @@ class LengthToolZoom extends AnnotationTool {
       100,
       { trailing: true }
     );
+
+    this.pendingAnnotation = null;
+    this._handleMoveAnimationFrame = null;
+
+    if (!toolProps.configuration?.getTextLines) {
+      this.configuration.getTextLines = this._getTextLinesWithLabel;
+    }
   }
 
   static hydrate = (
@@ -210,6 +232,14 @@ class LengthToolZoom extends AnnotationTool {
   ): LengthAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
+
+    if (
+      this.pendingAnnotation &&
+      this.pendingAnnotation.metadata?.creationStage === 'waitingSecond'
+    ) {
+      return this._beginSecondPointPlacement(evt, this.pendingAnnotation);
+    }
+
     const worldPos = currentPoints.world;
 
     hideElementCursor(element);
@@ -222,7 +252,56 @@ class LengthToolZoom extends AnnotationTool {
       ])
     );
 
+    annotation.metadata.creationStage = 'placingFirst';
+    annotation.data.handles.activeHandleIndex = 0;
+
+    this._assignAnnotationLabel(annotation, element);
     addAnnotation(annotation, element);
+
+    const viewportIdsToRender = getViewportIdsWithToolToRender(
+      element,
+      this.getToolName()
+    );
+
+    this.editData = {
+      annotation,
+      viewportIdsToRender,
+      handleIndex: 0,
+      movingTextBox: false,
+      newAnnotation: true,
+      hasMoved: false,
+      stage: 'placingFirst',
+      isHandleMoving: false,
+      handleMoveLinger: 0,
+    };
+    this._activateDraw(element);
+
+    evt.preventDefault();
+
+    triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+    this.pendingAnnotation = annotation;
+
+    return annotation;
+  };
+
+  private _beginSecondPointPlacement(
+    evt: EventTypes.InteractionEventType,
+    annotation: LengthAnnotation
+  ): LengthAnnotation {
+    const eventDetail = evt.detail;
+    const { currentPoints, element } = eventDetail;
+    const worldPos = currentPoints.world;
+
+    hideElementCursor(element);
+    this.isDrawing = true;
+
+    const points = annotation.data.handles.points;
+    points[1] = <Types.Point3>[...worldPos];
+    annotation.metadata.creationStage = 'placingSecond';
+    annotation.data.handles.activeHandleIndex = 1;
+    annotation.highlighted = true;
+    annotation.invalidated = true;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -236,15 +315,21 @@ class LengthToolZoom extends AnnotationTool {
       movingTextBox: false,
       newAnnotation: true,
       hasMoved: false,
+      stage: 'placingSecond',
+      isHandleMoving: false,
+      handleMoveLinger: 0,
     };
+
     this._activateDraw(element);
 
     evt.preventDefault();
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
+    this.pendingAnnotation = annotation;
+
     return annotation;
-  };
+  }
 
   /**
    * It returns if the canvas point is near the provided length annotation in the provided
@@ -302,6 +387,7 @@ class LengthToolZoom extends AnnotationTool {
     const { element } = eventDetail;
 
     annotation.highlighted = true;
+    annotation.data.handles.activeHandleIndex = null;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -312,6 +398,8 @@ class LengthToolZoom extends AnnotationTool {
       annotation,
       viewportIdsToRender,
       movingTextBox: false,
+      isHandleMoving: false,
+      handleMoveLinger: 0,
     };
 
     this._activateModify(element);
@@ -343,6 +431,12 @@ class LengthToolZoom extends AnnotationTool {
       handleIndex = data.handles.points.findIndex((p) => p === handle);
     }
 
+    if (movingTextBox || handleIndex === undefined || handleIndex === -1) {
+      data.handles.activeHandleIndex = null;
+    } else {
+      data.handles.activeHandleIndex = handleIndex;
+    }
+
     // Find viewports to render on drag.
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -354,6 +448,8 @@ class LengthToolZoom extends AnnotationTool {
       viewportIdsToRender,
       handleIndex,
       movingTextBox,
+      isHandleMoving: false,
+      handleMoveLinger: 0,
     };
     this._activateModify(element);
 
@@ -368,11 +464,32 @@ class LengthToolZoom extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
+    if (!this.editData) {
+      return;
+    }
+
+    const { annotation, viewportIdsToRender, newAnnotation, hasMoved, stage } =
       this.editData;
     const { data } = annotation;
 
-    if (newAnnotation && !hasMoved) {
+    if (stage === 'placingFirst') {
+      annotation.metadata.creationStage = 'waitingSecond';
+      data.handles.activeHandleIndex = null;
+
+      this._deactivateModify(element);
+      this._deactivateDraw(element);
+      resetElementCursor(element);
+
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+      this.doneEditMemo();
+
+      this.editData = null;
+      this.isDrawing = false;
+
+      return;
+    }
+
+    if (stage !== 'placingSecond' && newAnnotation && !hasMoved) {
       // when user starts the drawing by click, and moving the mouse, instead
       // of click and drag
       return;
@@ -383,6 +500,7 @@ class LengthToolZoom extends AnnotationTool {
     this._deactivateModify(element);
     this._deactivateDraw(element);
     resetElementCursor(element);
+    this._cancelHandleMoveLingerTick();
 
     if (
       this.isHandleOutsideImage &&
@@ -400,6 +518,8 @@ class LengthToolZoom extends AnnotationTool {
 
     this.editData = null;
     this.isDrawing = false;
+    delete annotation.metadata.creationStage;
+    this.pendingAnnotation = null;
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -413,15 +533,64 @@ class LengthToolZoom extends AnnotationTool {
       handleIndex,
       movingTextBox,
       newAnnotation,
+      stage,
     } = this.editData;
     const { data } = annotation;
 
     this.createMemo(element, annotation, { newAnnotation });
 
+    const deltaPointsWorld = (
+      eventDetail as { deltaPoints?: { world?: Types.Point3 } }
+    ).deltaPoints?.world as Types.Point3 | undefined;
+
+    const movedByWorld = Boolean(
+      deltaPointsWorld &&
+        (Math.abs(deltaPointsWorld[0]) > MOVEMENT_EPSILON ||
+          Math.abs(deltaPointsWorld[1]) > MOVEMENT_EPSILON ||
+          Math.abs(deltaPointsWorld[2]) > MOVEMENT_EPSILON)
+    );
+
+    let movedThisFrame = false;
+
+    const mouseEvent = eventDetail.event as MouseEvent;
+    const buttons =
+      (eventDetail as unknown as { buttons?: number }).buttons ??
+      (mouseEvent instanceof MouseEvent ? mouseEvent.buttons : undefined);
+
+    if (stage && typeof buttons === 'number' && buttons === 0) {
+      return;
+    }
+
+    if (stage === 'placingFirst') {
+      const { currentPoints } = eventDetail;
+      const worldPos = currentPoints.world;
+      const previousPoint = data.handles.points[0];
+      const moved =
+        movedByWorld || this._hasPointChanged(previousPoint, worldPos);
+
+      data.handles.points[0] = <Types.Point3>[...worldPos];
+      data.handles.points[1] = <Types.Point3>[...worldPos];
+      annotation.invalidated = true;
+
+      movedThisFrame = moved;
+      if (moved) {
+        this.editData.handleMoveLinger = HANDLE_MOVE_LINGER_FRAMES;
+        this.editData.isHandleMoving = true;
+        this._scheduleHandleMoveLingerTick();
+      }
+      this.editData.hasMoved = this.editData.hasMoved || moved;
+
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+
+      return;
+    }
+
     if (movingTextBox) {
       // Drag mode - moving text box
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
       const worldPosDelta = deltaPoints.world;
+
+      data.handles.activeHandleIndex = null;
 
       const { textBox } = data.handles;
       const { worldPosition } = textBox;
@@ -431,6 +600,7 @@ class LengthToolZoom extends AnnotationTool {
       worldPosition[2] += worldPosDelta[2];
 
       textBox.hasMoved = true;
+      movedThisFrame = movedByWorld;
     } else if (handleIndex === undefined) {
       // Drag mode - moving handle
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
@@ -438,22 +608,39 @@ class LengthToolZoom extends AnnotationTool {
 
       const points = data.handles.points;
 
+      if (stage !== 'placingFirst' && stage !== 'placingSecond') {
+        data.handles.activeHandleIndex = null;
+      }
+
       points.forEach((point) => {
         point[0] += worldPosDelta[0];
         point[1] += worldPosDelta[1];
         point[2] += worldPosDelta[2];
       });
-      annotation.invalidated = true;
+      annotation.invalidated = annotation.invalidated || movedByWorld;
+      movedThisFrame = movedByWorld;
     } else {
       // Move mode - after double click, and mouse move to draw
       const { currentPoints } = eventDetail;
       const worldPos = currentPoints.world;
+      const previousPoint = data.handles.points[handleIndex];
+      const moved =
+        movedByWorld || this._hasPointChanged(previousPoint, worldPos);
 
-      data.handles.points[handleIndex] = [...worldPos];
-      annotation.invalidated = true;
+      if (moved) {
+        data.handles.points[handleIndex] = [...worldPos];
+        annotation.invalidated = true;
+      }
+
+      movedThisFrame = moved;
     }
 
-    this.editData.hasMoved = true;
+    if (movedThisFrame && !movingTextBox) {
+      this.editData.handleMoveLinger = HANDLE_MOVE_LINGER_FRAMES;
+      this.editData.isHandleMoving = true;
+      this._scheduleHandleMoveLingerTick();
+    }
+    this.editData.hasMoved = this.editData.hasMoved || movedThisFrame;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -473,8 +660,10 @@ class LengthToolZoom extends AnnotationTool {
       this._deactivateDraw(element);
       this._deactivateModify(element);
       resetElementCursor(element);
+      this._cancelHandleMoveLingerTick();
 
-      const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
+      const { annotation, viewportIdsToRender, newAnnotation, stage } =
+        this.editData;
       const { data } = annotation;
 
       annotation.highlighted = false;
@@ -482,11 +671,29 @@ class LengthToolZoom extends AnnotationTool {
 
       triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
-      if (newAnnotation) {
+      if (stage === 'placingFirst') {
+        removeAnnotation(annotation.annotationUID);
+      } else if (newAnnotation) {
         triggerAnnotationCompleted(annotation);
       }
 
       this.editData = null;
+      delete annotation.metadata.creationStage;
+      this.pendingAnnotation = null;
+      return annotation.annotationUID;
+    }
+
+    if (
+      this.pendingAnnotation &&
+      this.pendingAnnotation.metadata?.creationStage === 'waitingSecond'
+    ) {
+      const annotation = this.pendingAnnotation;
+      removeAnnotation(annotation.annotationUID);
+      triggerAnnotationRenderForViewportIds(
+        getViewportIdsWithToolToRender(element, this.getToolName())
+      );
+      delete annotation.metadata.creationStage;
+      this.pendingAnnotation = null;
       return annotation.annotationUID;
     }
   };
@@ -617,6 +824,8 @@ class LengthToolZoom extends AnnotationTool {
       Events.TOUCH_TAP,
       this._endCallback as EventListener
     );
+
+    this._cancelHandleMoveLingerTick();
   };
 
   /**
@@ -675,6 +884,69 @@ class LengthToolZoom extends AnnotationTool {
 
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
+      const editDataForAnnotation =
+        this.editData && this.editData.annotation === annotation
+          ? this.editData
+          : null;
+
+      const creationStage = annotation.metadata?.creationStage as
+        | 'placingFirst'
+        | 'waitingSecond'
+        | 'placingSecond'
+        | undefined;
+
+      if (
+        creationStage === 'placingFirst' ||
+        creationStage === 'waitingSecond'
+      ) {
+        const handleGroupUID = 'preview';
+        const isFirstHandleGrabbed = creationStage === 'placingFirst';
+        const isDraggingFirstHandle =
+          isFirstHandleGrabbed &&
+          Boolean(editDataForAnnotation?.isHandleMoving);
+        const previewHandleStyle = isFirstHandleGrabbed
+          ? {
+              color: HANDLE_FILL,
+              lineWidth: HANDLE_LINE_WIDTH,
+              handleRadius: `${ACTIVE_HANDLE_RADIUS}`,
+              fill: HANDLE_COLOR,
+            }
+          : {
+              color: HANDLE_COLOR,
+              lineWidth: HANDLE_LINE_WIDTH,
+              handleRadius: `${HANDLE_RADIUS}`,
+              fill: HANDLE_FILL,
+            };
+
+        if (isDraggingFirstHandle) {
+          const previewGlowUID = 'preview-glow';
+          drawHandlesSvg(
+            svgDrawingHelper,
+            annotationUID,
+            previewGlowUID,
+            [canvasCoordinates[0]],
+            {
+              color: HANDLE_GLOW_COLOR,
+              lineDash: undefined,
+              lineWidth: 0,
+              handleRadius: `${HANDLE_GLOW_RADIUS}`,
+              fill: HANDLE_GLOW_COLOR,
+            }
+          );
+        }
+        drawHandlesSvg(
+          svgDrawingHelper,
+          annotationUID,
+          handleGroupUID,
+          [canvasCoordinates[0]],
+          previewHandleStyle
+        );
+        renderStatus = true;
+        continue;
+      }
+
+      const isPreviewingSecondPoint = creationStage === 'placingSecond';
+
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
       if (
@@ -719,7 +991,20 @@ class LengthToolZoom extends AnnotationTool {
       const showHandlesAlways = Boolean(
         getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
       );
-      if (activeHandleCanvasCoords || showHandlesAlways) {
+      const dragHandleIndex =
+        editDataForAnnotation &&
+        typeof editDataForAnnotation.handleIndex === 'number' &&
+        !editDataForAnnotation.movingTextBox
+          ? editDataForAnnotation.handleIndex
+          : null;
+
+      const shouldDrawHandles =
+        isPreviewingSecondPoint ||
+        Boolean(activeHandleCanvasCoords?.length) ||
+        showHandlesAlways ||
+        dragHandleIndex !== null;
+
+      if (shouldDrawHandles) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
@@ -730,9 +1015,57 @@ class LengthToolZoom extends AnnotationTool {
           {
             color,
             lineDash,
-            lineWidth,
+            lineWidth: HANDLE_LINE_WIDTH,
+            handleRadius: `${HANDLE_RADIUS}`,
+            fill: HANDLE_FILL,
           }
         );
+
+        const highlightHandleIndex = dragHandleIndex;
+        const highlightIsMoving = Boolean(
+          editDataForAnnotation?.isHandleMoving
+        );
+
+        if (
+          highlightHandleIndex !== null &&
+          highlightHandleIndex >= 0 &&
+          highlightHandleIndex < canvasCoordinates.length
+        ) {
+          const activeHandleGroupUID = 'active';
+          const highlightStroke = HANDLE_FILL;
+          const highlightFill = HANDLE_COLOR;
+
+          if (highlightIsMoving) {
+            const glowGroupUID = 'active-glow';
+            drawHandlesSvg(
+              svgDrawingHelper,
+              annotationUID,
+              glowGroupUID,
+              [canvasCoordinates[highlightHandleIndex]],
+              {
+                color: HANDLE_GLOW_COLOR,
+                lineDash: undefined,
+                lineWidth: 0,
+                handleRadius: `${HANDLE_GLOW_RADIUS}`,
+                fill: HANDLE_GLOW_COLOR,
+              }
+            );
+          }
+
+          drawHandlesSvg(
+            svgDrawingHelper,
+            annotationUID,
+            activeHandleGroupUID,
+            [canvasCoordinates[highlightHandleIndex]],
+            {
+              color: highlightStroke,
+              lineDash,
+              lineWidth: HANDLE_LINE_WIDTH,
+              handleRadius: `${ACTIVE_HANDLE_RADIUS}`,
+              fill: highlightFill,
+            }
+          );
+        }
       }
 
       const dataId = `${annotationUID}-line`;
@@ -813,6 +1146,135 @@ class LengthToolZoom extends AnnotationTool {
 
     return renderStatus;
   };
+
+  private _assignAnnotationLabel(
+    annotation: LengthAnnotation,
+    element: HTMLDivElement
+  ): void {
+    const existingAnnotations =
+      getAnnotations(this.getToolName(), element) ?? [];
+
+    const existingMaxIndex = existingAnnotations.reduce((maxIndex, ann) => {
+      if (ann === annotation) {
+        return maxIndex;
+      }
+
+      const label = (ann as LengthAnnotation)?.data?.label;
+      const match = label && /^d(\d+)$/i.exec(label);
+
+      if (!match) {
+        return maxIndex;
+      }
+
+      const index = Number(match[1]);
+
+      return Number.isFinite(index) && index > maxIndex ? index : maxIndex;
+    }, 0);
+
+    const currentLabel = annotation.data?.label;
+
+    if (currentLabel && /^d\d+$/i.test(currentLabel)) {
+      return;
+    }
+
+    annotation.data.label = `d${existingMaxIndex + 1}`;
+  }
+
+  private _getTextLinesWithLabel(data, targetId): string[] | undefined {
+    const cachedStats = data?.cachedStats?.[targetId];
+
+    if (!cachedStats) {
+      return;
+    }
+
+    const { length, unit } = cachedStats;
+
+    if (length === undefined || length === null || isNaN(length)) {
+      return;
+    }
+
+    const lengthText = `${csUtils.roundNumber(length)} ${unit}`;
+    const label = data?.label;
+
+    return [label ? `${label}: ${lengthText}` : lengthText];
+  }
+
+  private _scheduleHandleMoveLingerTick(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (this._handleMoveAnimationFrame !== null) {
+      return;
+    }
+
+    const tick = () => {
+      this._handleMoveAnimationFrame = null;
+
+      const editData = this.editData;
+
+      if (!editData) {
+        return;
+      }
+
+      const linger = editData.handleMoveLinger ?? 0;
+
+      if (linger <= 0) {
+        editData.handleMoveLinger = 0;
+        editData.isHandleMoving = false;
+
+        const viewportIds = editData.viewportIdsToRender?.length
+          ? editData.viewportIdsToRender
+          : [];
+
+        if (viewportIds.length) {
+          triggerAnnotationRenderForViewportIds(viewportIds);
+        }
+
+        return;
+      }
+
+      editData.handleMoveLinger = linger - 1;
+      editData.isHandleMoving = editData.handleMoveLinger > 0;
+
+      const viewportIds = editData.viewportIdsToRender?.length
+        ? editData.viewportIdsToRender
+        : [];
+
+      if (viewportIds.length) {
+        triggerAnnotationRenderForViewportIds(viewportIds);
+      }
+
+      if (editData.handleMoveLinger > 0) {
+        this._handleMoveAnimationFrame = window.requestAnimationFrame(tick);
+      } else {
+        editData.isHandleMoving = false;
+      }
+    };
+
+    this._handleMoveAnimationFrame = window.requestAnimationFrame(tick);
+  }
+
+  private _cancelHandleMoveLingerTick(): void {
+    if (
+      typeof window !== 'undefined' &&
+      this._handleMoveAnimationFrame !== null
+    ) {
+      window.cancelAnimationFrame(this._handleMoveAnimationFrame);
+      this._handleMoveAnimationFrame = null;
+    }
+  }
+
+  private _hasPointChanged(
+    previous: Types.Point3,
+    current: Types.Point3
+  ): boolean {
+    return (
+      Math.abs(previous[0] - current[0]) > MOVEMENT_EPSILON ||
+      Math.abs(previous[1] - current[1]) > MOVEMENT_EPSILON ||
+      Math.abs(previous[2] - current[2]) > MOVEMENT_EPSILON
+    );
+  }
 
   _calculateLength(pos1, pos2) {
     const dx = pos1[0] - pos2[0];
