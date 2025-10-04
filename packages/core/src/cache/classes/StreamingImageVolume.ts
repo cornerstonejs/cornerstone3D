@@ -3,6 +3,7 @@ import type {
   ImageVolumeProps,
   IStreamingVolumeProperties,
   PixelDataTypedArray,
+  IImage,
 } from '../../types';
 import BaseStreamingImageVolume from './BaseStreamingImageVolume';
 
@@ -11,6 +12,7 @@ import BaseStreamingImageVolume from './BaseStreamingImageVolume';
  * It implements load method to load the imageIds and insert them into the volume.
  */
 export default class StreamingImageVolume extends BaseStreamingImageVolume {
+  private imagePostProcess?: (image: IImage) => IImage;
   constructor(
     imageVolumeProperties: ImageVolumeProps,
     streamingProperties: IStreamingVolumeProperties
@@ -20,6 +22,29 @@ export default class StreamingImageVolume extends BaseStreamingImageVolume {
       imageVolumeProperties.imageIds = streamingProperties.imageIds;
     }
     super(imageVolumeProperties, streamingProperties);
+  }
+  public setImagePostProcess(fn: (image: IImage) => IImage) {
+    this.imagePostProcess = fn;
+  }
+
+  // Override successCallback to apply post-process if set
+  public override successCallback(imageId: string, image: IImage) {
+    console.log('🔧 StreamingImageVolume: successCallback called with:', {
+      imageId,
+      hasPostProcess: !!this.imagePostProcess,
+      imageDimensions: `${image.rows}x${image.columns}`,
+      pixelDataLength: image.getPixelData().length,
+    });
+
+    if (this.imagePostProcess) {
+      try {
+        const originalImage = image;
+        image = this.imagePostProcess(image) || image;
+      } catch (e) {
+        console.warn('imagePostProcess failed, using original image', e);
+      }
+    }
+    super.successCallback(imageId, image);
   }
 
   /**
