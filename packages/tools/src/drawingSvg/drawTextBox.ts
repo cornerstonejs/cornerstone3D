@@ -24,6 +24,10 @@ function drawTextBox(
     {
       fontFamily: 'Helvetica, Arial, sans-serif',
       fontSize: '14px',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      lineHeight: '1.2em',
+      textShadow: '',
       color: 'rgb(255, 255, 0)',
       background: '',
       padding: 25,
@@ -55,7 +59,19 @@ function _drawTextGroup(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options: Record<string, any>
 ): SVGRect {
-  const { padding, color, fontFamily, fontSize, background } = options;
+  const {
+    padding,
+    color,
+    fontFamily,
+    fontSize,
+    background,
+    fontWeight,
+    fontStyle,
+    lineHeight,
+  } = options;
+
+  const defaultLineHeight = lineHeight || '1.2em';
+  const lineHeightDy = _resolveLineHeightDy(defaultLineHeight);
 
   let textGroupBoundingBox;
   const [x, y] = [position[0] + padding, position[1] + padding];
@@ -75,13 +91,14 @@ function _drawTextGroup(
       const text = textLines[i] || '';
 
       textSpanElement.textContent = text;
+      textSpanElement.setAttribute('dy', lineHeightDy);
     }
 
     // if the textLines have changed size, we need to create textSpans for them
     if (textLines.length > textSpans.length) {
       for (let i = 0; i < textLines.length - textSpans.length; i++) {
         const textLine = textLines[i + textSpans.length];
-        const textSpan = _createTextSpan(textLine);
+        const textSpan = _createTextSpan(textLine, lineHeightDy);
 
         textElement.appendChild(textSpan);
       }
@@ -90,10 +107,15 @@ function _drawTextGroup(
       svgDrawingHelper.appendNode(existingTextGroup, svgNodeHash);
     }
 
+    const combinedStyle = _getTextElementStyle(svgDrawingHelper, options);
+
     const textAttributes = {
       fill: color,
       'font-size': fontSize,
       'font-family': fontFamily,
+      ...(fontStyle ? { 'font-style': fontStyle } : {}),
+      ...(fontWeight ? { 'font-weight': fontWeight } : {}),
+      style: combinedStyle,
     };
 
     const textGroupAttributes = {
@@ -121,7 +143,7 @@ function _drawTextGroup(
     const textElement = _createTextElement(svgDrawingHelper, options);
     for (let i = 0; i < textLines.length; i++) {
       const textLine = textLines[i];
-      const textSpan = _createTextSpan(textLine);
+      const textSpan = _createTextSpan(textLine, lineHeightDy);
 
       textElement.appendChild(textSpan);
     }
@@ -147,26 +169,29 @@ function _createTextElement(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options: Record<string, any>
 ): SVGElement {
-  const { color, fontFamily, fontSize } = options;
+  const { color, fontFamily, fontSize, fontWeight, fontStyle } = options;
   const svgns = 'http://www.w3.org/2000/svg';
   const textElement = document.createElementNS(svgns, 'text');
-  const noSelectStyle =
-    'user-select: none; pointer-events: none; -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);';
-  const dropShadowStyle = `filter:url(#shadow-${svgDrawingHelper.svgLayerElement.id});`;
-  const combinedStyle = `${noSelectStyle}${dropShadowStyle}`;
+  const combinedStyle = _getTextElementStyle(svgDrawingHelper, options);
 
   textElement.setAttribute('x', '0');
   textElement.setAttribute('y', '0');
   textElement.setAttribute('fill', color);
   textElement.setAttribute('font-family', fontFamily);
   textElement.setAttribute('font-size', fontSize);
+  if (fontWeight) {
+    textElement.setAttribute('font-weight', fontWeight);
+  }
+  if (fontStyle) {
+    textElement.setAttribute('font-style', fontStyle);
+  }
   textElement.setAttribute('style', combinedStyle);
   textElement.setAttribute('pointer-events', 'visible');
 
   return textElement;
 }
 
-function _createTextSpan(text): SVGElement {
+function _createTextSpan(text, lineHeight): SVGElement {
   const svgns = 'http://www.w3.org/2000/svg';
   const textSpanElement = document.createElementNS(svgns, 'tspan');
 
@@ -175,10 +200,44 @@ function _createTextSpan(text): SVGElement {
   // TODO: centerY
 
   textSpanElement.setAttribute('x', '0');
-  textSpanElement.setAttribute('dy', '1.2em');
+  textSpanElement.setAttribute('dy', lineHeight || '1.2em');
   textSpanElement.textContent = text;
 
   return textSpanElement;
+}
+
+function _resolveLineHeightDy(lineHeight: string): string {
+  if (!lineHeight) {
+    return '1.2em';
+  }
+
+  if (lineHeight.startsWith('var(')) {
+    const fallbackMatch = lineHeight.match(/var\([^,]+,\s*([^)]+)\)/);
+
+    if (fallbackMatch && fallbackMatch[1]) {
+      return fallbackMatch[1].trim();
+    }
+  }
+
+  return lineHeight;
+}
+
+function _getTextElementStyle(
+  svgDrawingHelper: SVGDrawingHelper,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: Record<string, any>
+): string {
+  const noSelectStyle =
+    'user-select: none; pointer-events: none; -webkit-tap-highlight-color:  rgba(255, 255, 255, 0);';
+  const dropShadowStyle = `filter:url(#shadow-${svgDrawingHelper.svgLayerElement.id});`;
+  const textShadowStyle = options.textShadow
+    ? `text-shadow: ${options.textShadow};`
+    : '';
+  const lineHeightStyle = options.lineHeight
+    ? `line-height: ${options.lineHeight};`
+    : '';
+
+  return `${noSelectStyle}${dropShadowStyle}${textShadowStyle}${lineHeightStyle}`;
 }
 
 function _drawTextBackground(group: SVGGElement, color: string) {

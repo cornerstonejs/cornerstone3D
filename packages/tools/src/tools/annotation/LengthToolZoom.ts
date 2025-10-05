@@ -81,6 +81,16 @@ const HANDLE_LAYER_CLASS = 'lengthtool-zoom__handle-layer';
 const TEXTBOX_HORIZONTAL_OFFSET = HANDLE_RADIUS + 4;
 const TEXTBOX_VERTICAL_OFFSET = ACTIVE_HANDLE_RADIUS + 8;
 const TEXTBOX_PADDING = 37; // Must stay in sync with default padding in drawTextBox
+const TEXTBOX_FIXED_STYLE = {
+  color: 'var(--text-white, #FFF)',
+  textShadow:
+    '0 0 2px #000, 0 0 4px #000, -1px -1px 4px #000, 1px 1px 4px #000',
+  fontFamily: 'var(--font-body-font, "Siemens Sans")',
+  fontSize: 'var(--text-classes-body-200-font-size, 14px)',
+  fontStyle: 'normal',
+  fontWeight: '400',
+  lineHeight: 'var(--text-classes-body-200-line-height, 20px)',
+};
 
 /**
  * LengthToolZoom let you draw annotations that measures the length of two drawing
@@ -1267,6 +1277,11 @@ class LengthToolZoom extends AnnotationTool {
       );
 
       const textBoxUID = '1';
+      const textBoxOptions = {
+        ...options,
+        ...TEXTBOX_FIXED_STYLE,
+      };
+
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
         annotationUID,
@@ -1275,7 +1290,7 @@ class LengthToolZoom extends AnnotationTool {
         textBoxPosition,
         canvasCoordinates,
         {},
-        options
+        textBoxOptions
       );
 
       const { x: left, y: top, width, height } = boundingBox;
