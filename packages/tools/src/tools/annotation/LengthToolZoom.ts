@@ -562,6 +562,31 @@ class LengthToolZoom extends AnnotationTool {
     const selected = isAnnotationSelected(annotation.annotationUID);
 
     if (!this.editData && !selected) {
+      const enabledElement = getEnabledElement(element);
+      const { viewport } = enabledElement;
+      const { textBox } = annotation.data.handles;
+      const worldBoundingBox = textBox?.worldBoundingBox;
+
+      if (textBox && worldBoundingBox) {
+        const canvasBoundingBox = {
+          topLeft: viewport.worldToCanvas(worldBoundingBox.topLeft),
+          topRight: viewport.worldToCanvas(worldBoundingBox.topRight),
+          bottomLeft: viewport.worldToCanvas(worldBoundingBox.bottomLeft),
+          bottomRight: viewport.worldToCanvas(worldBoundingBox.bottomRight),
+        };
+
+        const withinBounds =
+          canvasCoords[0] >= canvasBoundingBox.topLeft[0] &&
+          canvasCoords[0] <= canvasBoundingBox.bottomRight[0] &&
+          canvasCoords[1] >= canvasBoundingBox.topLeft[1] &&
+          canvasCoords[1] <= canvasBoundingBox.bottomRight[1];
+
+        if (withinBounds) {
+          annotation.data.handles.activeHandleIndex = null;
+          return textBox as ToolHandle;
+        }
+      }
+
       return;
     }
 
