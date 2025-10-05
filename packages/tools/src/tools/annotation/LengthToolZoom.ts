@@ -78,6 +78,9 @@ const CROSSBAR_HALF_LENGTH = 8;
 const HIGHLIGHT_LAYER_CLASS = 'lengthtool-zoom__highlight-layer';
 const MAIN_LAYER_CLASS = 'lengthtool-zoom__main-layer';
 const HANDLE_LAYER_CLASS = 'lengthtool-zoom__handle-layer';
+const TEXTBOX_HORIZONTAL_OFFSET = HANDLE_RADIUS + 4;
+const TEXTBOX_VERTICAL_OFFSET = ACTIVE_HANDLE_RADIUS + 8;
+const TEXTBOX_PADDING = 37; // Must stay in sync with default padding in drawTextBox
 
 /**
  * LengthToolZoom let you draw annotations that measures the length of two drawing
@@ -1252,7 +1255,8 @@ class LengthToolZoom extends AnnotationTool {
 
       // Need to update to sync with annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        const canvasTextBoxCoords =
+          this._getAnchoredTextBoxCanvasCoords(canvasCoordinates);
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);
@@ -1435,6 +1439,26 @@ class LengthToolZoom extends AnnotationTool {
     } finally {
       svgDrawingHelper.svgLayerElement = originalLayer;
     }
+  }
+
+  private _getAnchoredTextBoxCanvasCoords(
+    canvasCoordinates: Array<Types.Point2>
+  ): Types.Point2 {
+    const [firstPoint, secondPoint] = canvasCoordinates;
+
+    if (!firstPoint || !secondPoint) {
+      return getTextBoxCoordsCanvas(canvasCoordinates);
+    }
+
+    const isSecondAboveFirst = secondPoint[1] < firstPoint[1];
+    const verticalOffset = isSecondAboveFirst
+      ? TEXTBOX_VERTICAL_OFFSET
+      : -TEXTBOX_VERTICAL_OFFSET;
+
+    return <Types.Point2>[
+      firstPoint[0] + TEXTBOX_HORIZONTAL_OFFSET - TEXTBOX_PADDING,
+      firstPoint[1] + verticalOffset - TEXTBOX_PADDING,
+    ];
   }
 
   private _hasPointChanged(
