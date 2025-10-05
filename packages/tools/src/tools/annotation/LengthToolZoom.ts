@@ -92,6 +92,11 @@ const TEXTBOX_FIXED_STYLE = {
   lineHeight: 'var(--text-classes-body-200-line-height, 20px)',
 };
 
+type CreationStage = 'placingFirst' | 'placingSecond' | 'waitingSecond';
+type LengthZoomMetadata = LengthAnnotation['metadata'] & {
+  creationStage?: CreationStage;
+};
+
 /**
  * LengthToolZoom let you draw annotations that measures the length of two drawing
  * points on a slice. You can use the LengthToolZoom in all imaging planes even in oblique
@@ -185,16 +190,17 @@ class LengthToolZoom extends AnnotationTool {
     }
   }
 
-  public mouseMoveCallback(
+  private _baseMouseMoveCallback = this.mouseMoveCallback;
+
+  public mouseMoveCallback = (
     evt: EventTypes.MouseMoveEventType,
     filteredAnnotations?: Annotations
-  ): boolean {
+  ): boolean => {
     if (this.editData) {
-      return super.mouseMoveCallback(evt, filteredAnnotations);
+      return this._baseMouseMoveCallback(evt, filteredAnnotations);
     }
-
     return false;
-  }
+  };
 
   static hydrate = (
     viewportId: string,
@@ -268,7 +274,8 @@ class LengthToolZoom extends AnnotationTool {
 
     if (
       this.pendingAnnotation &&
-      this.pendingAnnotation.metadata?.creationStage === 'waitingSecond'
+      (this.pendingAnnotation.metadata as LengthZoomMetadata)?.creationStage ===
+        'waitingSecond'
     ) {
       return this._beginSecondPointPlacement(evt, this.pendingAnnotation);
     }
@@ -285,7 +292,7 @@ class LengthToolZoom extends AnnotationTool {
       ])
     );
 
-    annotation.metadata.creationStage = 'placingFirst';
+    (annotation.metadata as LengthZoomMetadata).creationStage = 'placingFirst';
     annotation.data.handles.activeHandleIndex = 0;
 
     this._assignAnnotationLabel(annotation, element);
@@ -318,6 +325,52 @@ class LengthToolZoom extends AnnotationTool {
     return annotation;
   };
 
+  public postMouseDownCallback = (
+    evt: EventTypes.MouseDownEventType
+  ): boolean => {
+    if (
+      this.pendingAnnotation &&
+      (this.pendingAnnotation.metadata as LengthZoomMetadata)?.creationStage ===
+        'waitingSecond'
+    ) {
+      return false;
+    }
+
+    if (this.editData?.stage === 'placingFirst' || this.isDrawing) {
+      return false;
+    }
+
+    const { element } = evt.detail;
+    const annotations = getAnnotations(this.getToolName(), element) ?? [];
+
+    const shouldDeselect = annotations.some((annotation) => {
+      const isSelected = isAnnotationSelected(annotation.annotationUID);
+      const hasActiveHandle =
+        annotation.data?.handles?.activeHandleIndex !== null &&
+        annotation.data?.handles?.activeHandleIndex !== undefined;
+
+      return isSelected || annotation.highlighted || hasActiveHandle;
+    });
+
+    if (!shouldDeselect) {
+      return false;
+    }
+
+    const changed = this._deselectAllLengthAnnotations(element);
+
+    if (changed) {
+      const viewportIdsToRender = getViewportIdsWithToolToRender(
+        element,
+        this.getToolName()
+      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    }
+
+    evt.preventDefault();
+
+    return true;
+  };
+
   private _beginSecondPointPlacement(
     evt: EventTypes.InteractionEventType,
     annotation: LengthAnnotation
@@ -331,7 +384,7 @@ class LengthToolZoom extends AnnotationTool {
 
     const points = annotation.data.handles.points;
     points[1] = <Types.Point3>[...worldPos];
-    annotation.metadata.creationStage = 'placingSecond';
+    (annotation.metadata as LengthZoomMetadata).creationStage = 'placingSecond';
     annotation.data.handles.activeHandleIndex = 1;
     annotation.highlighted = true;
     annotation.invalidated = true;
@@ -526,7 +579,8 @@ class LengthToolZoom extends AnnotationTool {
     const { data } = annotation;
 
     if (stage === 'placingFirst') {
-      annotation.metadata.creationStage = 'waitingSecond';
+      (annotation.metadata as LengthZoomMetadata).creationStage =
+        'waitingSecond';
       data.handles.activeHandleIndex = null;
 
       this._deactivateModify(element);
@@ -569,14 +623,14 @@ class LengthToolZoom extends AnnotationTool {
       triggerAnnotationCompleted(annotation);
     }
 
-    if (newAnnotation && stage !== 'placingFirst') {
+    if (newAnnotation) {
       annotation.highlighted = false;
       deselectAnnotation(annotation.annotationUID);
     }
 
     this.editData = null;
     this.isDrawing = false;
-    delete annotation.metadata.creationStage;
+    delete (annotation.metadata as LengthZoomMetadata).creationStage;
     this.pendingAnnotation = null;
   };
 
@@ -666,7 +720,7 @@ class LengthToolZoom extends AnnotationTool {
 
       const points = data.handles.points;
 
-      if (stage !== 'placingFirst' && stage !== 'placingSecond') {
+      if (!['placingFirst', 'placingSecond'].includes(stage)) {
         data.handles.activeHandleIndex = null;
       }
 
@@ -736,21 +790,22 @@ class LengthToolZoom extends AnnotationTool {
       }
 
       this.editData = null;
-      delete annotation.metadata.creationStage;
+      delete (annotation.metadata as LengthZoomMetadata).creationStage;
       this.pendingAnnotation = null;
       return annotation.annotationUID;
     }
 
     if (
       this.pendingAnnotation &&
-      this.pendingAnnotation.metadata?.creationStage === 'waitingSecond'
+      (this.pendingAnnotation.metadata as LengthZoomMetadata)?.creationStage ===
+        'waitingSecond'
     ) {
       const annotation = this.pendingAnnotation;
       removeAnnotation(annotation.annotationUID);
       triggerAnnotationRenderForViewportIds(
         getViewportIdsWithToolToRender(element, this.getToolName())
       );
-      delete annotation.metadata.creationStage;
+      delete (annotation.metadata as LengthZoomMetadata).creationStage;
       this.pendingAnnotation = null;
       return annotation.annotationUID;
     }
@@ -959,11 +1014,8 @@ class LengthToolZoom extends AnnotationTool {
           ? this.editData
           : null;
 
-      const creationStage = annotation.metadata?.creationStage as
-        | 'placingFirst'
-        | 'waitingSecond'
-        | 'placingSecond'
-        | undefined;
+      const creationStage = (annotation.metadata as LengthZoomMetadata)
+        ?.creationStage;
 
       if (
         creationStage === 'placingFirst' ||
@@ -1138,14 +1190,23 @@ class LengthToolZoom extends AnnotationTool {
           const perpX = -dy * invLength * CROSSBAR_HALF_LENGTH;
           const perpY = dx * invLength * CROSSBAR_HALF_LENGTH;
 
-          const startCrossStart = [
+          const startCrossStart: Types.Point2 = [
             startPoint[0] - perpX,
             startPoint[1] - perpY,
           ];
-          const startCrossEnd = [startPoint[0] + perpX, startPoint[1] + perpY];
+          const startCrossEnd: Types.Point2 = [
+            startPoint[0] + perpX,
+            startPoint[1] + perpY,
+          ];
 
-          const endCrossStart = [endPoint[0] - perpX, endPoint[1] - perpY];
-          const endCrossEnd = [endPoint[0] + perpX, endPoint[1] + perpY];
+          const endCrossStart: Types.Point2 = [
+            endPoint[0] - perpX,
+            endPoint[1] - perpY,
+          ];
+          const endCrossEnd: Types.Point2 = [
+            endPoint[0] + perpX,
+            endPoint[1] + perpY,
+          ];
 
           drawLineSvg(
             svgDrawingHelper,
@@ -1454,6 +1515,44 @@ class LengthToolZoom extends AnnotationTool {
     } finally {
       svgDrawingHelper.svgLayerElement = originalLayer;
     }
+  }
+
+  private _deselectAllLengthAnnotations(element: HTMLDivElement): boolean {
+    let changed = false;
+    const annotations = getAnnotations(this.getToolName(), element) ?? [];
+
+    annotations.forEach((annotation) => {
+      if (annotation.highlighted) {
+        annotation.highlighted = false;
+        changed = true;
+      }
+
+      const handles = annotation.data?.handles;
+
+      if (handles && handles.activeHandleIndex !== null) {
+        handles.activeHandleIndex = null;
+        changed = true;
+      }
+
+      if (isAnnotationSelected(annotation.annotationUID)) {
+        deselectAnnotation(annotation.annotationUID);
+        changed = true;
+      }
+    });
+
+    if (changed && this.editData) {
+      this._deactivateModify(element);
+      this._deactivateDraw(element);
+      resetElementCursor(element);
+      this._cancelHandleMoveLingerTick();
+      this.editData = null;
+      this.isDrawing = false;
+      this.doneEditMemo();
+    }
+
+    this.pendingAnnotation = null;
+
+    return changed;
   }
 
   private _getAnchoredTextBoxCanvasCoords(
