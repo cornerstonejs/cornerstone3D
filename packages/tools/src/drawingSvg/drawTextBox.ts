@@ -33,6 +33,10 @@ function drawTextBox(
       padding: 25,
       centerX: false,
       centerY: true,
+      borderColor: '',
+      borderWidth: 0,
+      borderRadius: 0,
+      backgroundPadding: 0,
     },
     options
   );
@@ -129,7 +133,7 @@ function _drawTextGroup(
     // Add data attribute for annotation UID
     existingTextGroup.setAttribute('data-annotation-uid', annotationUID);
 
-    textGroupBoundingBox = _drawTextBackground(existingTextGroup, background);
+    textGroupBoundingBox = _drawTextBackground(existingTextGroup, options);
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
@@ -150,7 +154,7 @@ function _drawTextGroup(
 
     textGroup.appendChild(textElement);
     svgDrawingHelper.appendNode(textGroup, svgNodeHash);
-    textGroupBoundingBox = _drawTextBackground(textGroup, background);
+    textGroupBoundingBox = _drawTextBackground(textGroup, options);
   }
 
   // We translate the group using `position`
@@ -240,12 +244,46 @@ function _getTextElementStyle(
   return `${noSelectStyle}${dropShadowStyle}${textShadowStyle}${lineHeightStyle}`;
 }
 
-function _drawTextBackground(group: SVGGElement, color: string) {
+function _drawTextBackground(
+  group: SVGGElement,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: Record<string, any>
+) {
+  const {
+    background: color,
+    borderColor,
+    borderWidth,
+    borderRadius,
+    backgroundPadding,
+  } = options;
   let element = group.querySelector('rect.background');
 
-  // If we have no background color, remove any element that exists and return
-  // the bounding box of the text
-  if (!color) {
+  const borderWidthValue =
+    borderWidth === undefined
+      ? 0
+      : typeof borderWidth === 'number'
+        ? borderWidth
+        : parseFloat(borderWidth);
+  const borderRadiusValue =
+    borderRadius === undefined
+      ? 0
+      : typeof borderRadius === 'number'
+        ? borderRadius
+        : parseFloat(borderRadius);
+  const backgroundPaddingValue =
+    backgroundPadding === undefined
+      ? 0
+      : typeof backgroundPadding === 'number'
+        ? backgroundPadding
+        : parseFloat(backgroundPadding);
+
+  const hasBorderColor = typeof borderColor === 'string' && borderColor !== '';
+  const hasBorder = Boolean(hasBorderColor && borderWidthValue > 0);
+  const shouldDrawRect = Boolean(color || hasBorder);
+
+  // If we have no background color and no border, remove any element that exists
+  // and return the bounding box of the text
+  if (!shouldDrawRect) {
     if (element) {
       group.removeChild(element);
     }
@@ -260,20 +298,31 @@ function _drawTextBackground(group: SVGGElement, color: string) {
     group.insertBefore(element, group.firstChild);
   }
 
-  // Get the text groups's bounding box and use it to draw the background rectangle
-  const bBox = group.getBBox();
+  // Measure the text bounding box to expand it with background padding
+  const textElement = group.querySelector('text');
+  const textBBox = textElement?.getBBox
+    ? textElement.getBBox()
+    : group.getBBox();
+  const xWithPadding = textBBox.x - backgroundPaddingValue;
+  const yWithPadding = textBBox.y - backgroundPaddingValue;
+  const widthWithPadding = textBBox.width + backgroundPaddingValue * 2;
+  const heightWithPadding = textBBox.height + backgroundPaddingValue * 2;
 
   const attributes = {
-    x: `${bBox.x}`,
-    y: `${bBox.y}`,
-    width: `${bBox.width}`,
-    height: `${bBox.height}`,
-    fill: color,
+    x: `${xWithPadding}`,
+    y: `${yWithPadding}`,
+    width: `${widthWithPadding}`,
+    height: `${heightWithPadding}`,
+    fill: color || 'none',
+    stroke: hasBorder ? borderColor : 'none',
+    'stroke-width': hasBorder ? `${borderWidthValue}` : '0',
+    rx: borderRadiusValue > 0 ? `${borderRadiusValue}` : '0',
+    ry: borderRadiusValue > 0 ? `${borderRadiusValue}` : '0',
   };
 
   setAttributesIfNecessary(attributes, element);
 
-  return bBox;
+  return element.getBBox();
 }
 
 export default drawTextBox;

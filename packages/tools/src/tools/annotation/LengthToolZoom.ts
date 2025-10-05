@@ -78,9 +78,10 @@ const CROSSBAR_HALF_LENGTH = 8;
 const HIGHLIGHT_LAYER_CLASS = 'lengthtool-zoom__highlight-layer';
 const MAIN_LAYER_CLASS = 'lengthtool-zoom__main-layer';
 const HANDLE_LAYER_CLASS = 'lengthtool-zoom__handle-layer';
-const TEXTBOX_HORIZONTAL_OFFSET = HANDLE_RADIUS + 4;
-const TEXTBOX_VERTICAL_OFFSET = ACTIVE_HANDLE_RADIUS + 8;
-const TEXTBOX_PADDING = 37; // Must stay in sync with default padding in drawTextBox
+const TEXTBOX_HORIZONTAL_OFFSET = HANDLE_RADIUS + 10;
+const TEXTBOX_VERTICAL_OFFSET = ACTIVE_HANDLE_RADIUS + 16;
+const TEXTBOX_PADDING = 12; // Must stay in sync with TEXTBOX_FIXED_STYLE padding
+const TEXTBOX_BACKGROUND_PADDING = 4;
 const LENGTH_COLOR = 'rgb(var(--ui-2, 236, 102, 2))';
 const TEXTBOX_FIXED_STYLE = {
   color: 'var(--text-white, #FFF)',
@@ -91,6 +92,11 @@ const TEXTBOX_FIXED_STYLE = {
   fontStyle: 'normal',
   fontWeight: '400',
   lineHeight: 'var(--text-classes-body-200-line-height, 20px)',
+  borderColor: LENGTH_COLOR,
+  borderWidth: 2,
+  borderRadius: 3,
+  padding: TEXTBOX_PADDING,
+  backgroundPadding: TEXTBOX_BACKGROUND_PADDING,
 };
 
 type CreationStage = 'placingFirst' | 'placingSecond' | 'waitingSecond';
@@ -1570,9 +1576,12 @@ class LengthToolZoom extends AnnotationTool {
       ? TEXTBOX_VERTICAL_OFFSET
       : -TEXTBOX_VERTICAL_OFFSET;
 
+    const anchorPaddingCorrection =
+      TEXTBOX_PADDING * 2 + TEXTBOX_BACKGROUND_PADDING;
+
     return <Types.Point2>[
-      firstPoint[0] + TEXTBOX_HORIZONTAL_OFFSET - TEXTBOX_PADDING,
-      firstPoint[1] + verticalOffset - TEXTBOX_PADDING,
+      firstPoint[0] + TEXTBOX_HORIZONTAL_OFFSET - anchorPaddingCorrection,
+      firstPoint[1] + verticalOffset - anchorPaddingCorrection,
     ];
   }
 
