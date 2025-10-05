@@ -83,6 +83,7 @@ const TEXTBOX_VERTICAL_OFFSET = ACTIVE_HANDLE_RADIUS + 16;
 const TEXTBOX_PADDING = 12; // Must stay in sync with TEXTBOX_FIXED_STYLE padding
 const TEXTBOX_BACKGROUND_PADDING = 4;
 const LENGTH_COLOR = 'rgb(var(--ui-2, 236, 102, 2))';
+const LINK_LINE_DASH = '8,8';
 const TEXTBOX_FIXED_STYLE = {
   color: 'var(--text-white, #FFF)',
   textShadow:
@@ -1373,6 +1374,9 @@ class LengthToolZoom extends AnnotationTool {
       const textBoxOptions = {
         ...options,
         ...TEXTBOX_FIXED_STYLE,
+        linkColor: LENGTH_COLOR,
+        lineDash: LINK_LINE_DASH,
+        lineWidth: 2,
       };
 
       const boundingBox = drawLinkedTextBoxSvg(

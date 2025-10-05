@@ -41,6 +41,12 @@ function drawLink(
     options
   );
 
+  const linkColor = (mergedOptions as { linkColor?: string }).linkColor;
+
+  if (linkColor) {
+    mergedOptions.color = linkColor;
+  }
+
   drawLine(
     svgDrawingHelper,
     annotationUID,
