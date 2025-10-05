@@ -1364,9 +1364,7 @@ class LengthToolZoom extends AnnotationTool {
 
       const textLines = this.configuration.getTextLines(data, targetId);
 
-      if (data.handles.textBox.isMoving === undefined) {
-        data.handles.textBox.isMoving = false;
-      }
+      data.handles.textBox.isMoving ??= false;
 
       // Need to update to sync with annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
@@ -1382,28 +1380,30 @@ class LengthToolZoom extends AnnotationTool {
       );
 
       const textBoxUID = '1';
+      const textBoxStyleOverrides = data.handles.textBox.isMoving
+        ? {
+            borderColor: '',
+            borderWidth: 0,
+            borderRadius: 6,
+            background: HANDLE_GLOW_COLOR_50,
+            backgroundPadding: MOVING_BACKGROUND_PADDING,
+          }
+        : {
+            borderColor: TEXTBOX_FIXED_STYLE.borderColor,
+            borderWidth: TEXTBOX_FIXED_STYLE.borderWidth,
+            borderRadius: TEXTBOX_FIXED_STYLE.borderRadius,
+            background: '',
+            backgroundPadding: TEXTBOX_FIXED_STYLE.backgroundPadding,
+          };
+
       const textBoxOptions = {
         ...options,
         ...TEXTBOX_FIXED_STYLE,
         linkColor: LENGTH_COLOR,
         lineDash: LINK_LINE_DASH,
         lineWidth: 2,
+        ...textBoxStyleOverrides,
       };
-
-      if (data.handles.textBox.isMoving) {
-        textBoxOptions.borderColor = '';
-        textBoxOptions.borderWidth = 0;
-        textBoxOptions.borderRadius = 6;
-        textBoxOptions.background = HANDLE_GLOW_COLOR_50;
-        textBoxOptions.backgroundPadding = MOVING_BACKGROUND_PADDING;
-      } else {
-        textBoxOptions.borderColor = TEXTBOX_FIXED_STYLE.borderColor;
-        textBoxOptions.borderWidth = TEXTBOX_FIXED_STYLE.borderWidth;
-        textBoxOptions.borderRadius = TEXTBOX_FIXED_STYLE.borderRadius;
-        textBoxOptions.background = '';
-        textBoxOptions.backgroundPadding =
-          TEXTBOX_FIXED_STYLE.backgroundPadding;
-      }
 
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,

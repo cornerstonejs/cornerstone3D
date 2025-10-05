@@ -73,6 +73,7 @@ export interface LengthAnnotation extends Annotation {
       activeHandleIndex: number | null;
       textBox: {
         hasMoved: boolean;
+        isMoving?: boolean;
         worldPosition: Types.Point3;
         worldBoundingBox: {
           topLeft: Types.Point3;
