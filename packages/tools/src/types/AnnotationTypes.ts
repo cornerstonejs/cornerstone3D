@@ -130,6 +130,8 @@ export type Handles = {
   textBox?: {
     /** whether the text box has moved */
     hasMoved?: boolean;
+    /** whether the text box is currently moving */
+    isMoving?: boolean;
     /** the world location of the text box */
     worldPosition?: Types.Point3;
     /** text box bounding box information */

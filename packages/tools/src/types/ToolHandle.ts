@@ -10,6 +10,7 @@ type AnnotationHandle = Types.Point3;
  */
 type TextBoxHandle = {
   hasMoved: boolean;
+  isMoving?: boolean;
   worldBoundingBox: {
     bottomLeft: Types.Point3;
     bottomRight: Types.Point3;

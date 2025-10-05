@@ -73,7 +73,8 @@ const ACTIVE_HANDLE_RADIUS = 12;
 const MOVEMENT_EPSILON = 1e-3;
 const HANDLE_MOVE_LINGER_FRAMES = 20;
 const HANDLE_GLOW_RADIUS = 26;
-const HANDLE_GLOW_COLOR = 'rgba(18, 132, 255, 0.3)';
+const HANDLE_GLOW_COLOR_30 = 'rgba(18, 132, 255, 0.3)';
+const HANDLE_GLOW_COLOR_50 = 'rgba(18, 132, 255, 0.5)';
 const CROSSBAR_HALF_LENGTH = 8;
 const HIGHLIGHT_LAYER_CLASS = 'lengthtool-zoom__highlight-layer';
 const MAIN_LAYER_CLASS = 'lengthtool-zoom__main-layer';
@@ -82,17 +83,13 @@ const TEXTBOX_HORIZONTAL_OFFSET = HANDLE_RADIUS + 10;
 const TEXTBOX_VERTICAL_OFFSET = ACTIVE_HANDLE_RADIUS + 16;
 const TEXTBOX_PADDING = 12; // Must stay in sync with TEXTBOX_FIXED_STYLE padding
 const TEXTBOX_BACKGROUND_PADDING = 4;
+const MOVING_BACKGROUND_PADDING = 6;
 const LENGTH_COLOR = 'rgb(var(--ui-2, 236, 102, 2))';
 const LINK_LINE_DASH = '8,8';
 const TEXTBOX_FIXED_STYLE = {
   color: 'var(--text-white, #FFF)',
   textShadow:
     '0 0 2px #000, 0 0 4px #000, -1px -1px 4px #000, 1px 1px 4px #000',
-  fontFamily: 'var(--font-body-font, "Siemens Sans")',
-  fontSize: 'var(--text-classes-body-200-font-size, 14px)',
-  fontStyle: 'normal',
-  fontWeight: '400',
-  lineHeight: 'var(--text-classes-body-200-line-height, 20px)',
   borderColor: LENGTH_COLOR,
   borderWidth: 2,
   borderRadius: 3,
@@ -611,6 +608,10 @@ class LengthToolZoom extends AnnotationTool {
       this.editData;
     const { data } = annotation;
 
+    if (data?.handles?.textBox) {
+      data.handles.textBox.isMoving = false;
+    }
+
     if (stage === 'placingFirst') {
       (annotation.metadata as LengthZoomMetadata).creationStage =
         'waitingSecond';
@@ -744,6 +745,7 @@ class LengthToolZoom extends AnnotationTool {
       worldPosition[1] += worldPosDelta[1];
       worldPosition[2] += worldPosDelta[2];
 
+      textBox.isMoving = true;
       textBox.hasMoved = true;
       movedThisFrame = movedByWorld;
     } else if (handleIndex === undefined) {
@@ -813,6 +815,10 @@ class LengthToolZoom extends AnnotationTool {
 
       annotation.highlighted = false;
       data.handles.activeHandleIndex = null;
+
+      if (data?.handles?.textBox) {
+        data.handles.textBox.isMoving = false;
+      }
 
       triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -1084,11 +1090,11 @@ class LengthToolZoom extends AnnotationTool {
               previewGlowUID,
               [canvasCoordinates[0]],
               {
-                color: HANDLE_GLOW_COLOR,
+                color: HANDLE_GLOW_COLOR_30,
                 lineDash: undefined,
                 lineWidth: 0,
                 handleRadius: `${HANDLE_GLOW_RADIUS}`,
-                fill: HANDLE_GLOW_COLOR,
+                fill: HANDLE_GLOW_COLOR_30,
               }
             );
           }
@@ -1306,11 +1312,11 @@ class LengthToolZoom extends AnnotationTool {
               glowGroupUID,
               [canvasCoordinates[highlightHandleIndex]],
               {
-                color: HANDLE_GLOW_COLOR,
+                color: HANDLE_GLOW_COLOR_30,
                 lineDash: undefined,
                 lineWidth: 0,
                 handleRadius: `${HANDLE_GLOW_RADIUS}`,
-                fill: HANDLE_GLOW_COLOR,
+                fill: HANDLE_GLOW_COLOR_30,
               }
             );
           }
@@ -1344,6 +1350,7 @@ class LengthToolZoom extends AnnotationTool {
       if (!options.visibility) {
         data.handles.textBox = {
           hasMoved: false,
+          isMoving: false,
           worldPosition: <Types.Point3>[0, 0, 0],
           worldBoundingBox: {
             topLeft: <Types.Point3>[0, 0, 0],
@@ -1356,6 +1363,10 @@ class LengthToolZoom extends AnnotationTool {
       }
 
       const textLines = this.configuration.getTextLines(data, targetId);
+
+      if (data.handles.textBox.isMoving === undefined) {
+        data.handles.textBox.isMoving = false;
+      }
 
       // Need to update to sync with annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
@@ -1378,6 +1389,21 @@ class LengthToolZoom extends AnnotationTool {
         lineDash: LINK_LINE_DASH,
         lineWidth: 2,
       };
+
+      if (data.handles.textBox.isMoving) {
+        textBoxOptions.borderColor = '';
+        textBoxOptions.borderWidth = 0;
+        textBoxOptions.borderRadius = 6;
+        textBoxOptions.background = HANDLE_GLOW_COLOR_50;
+        textBoxOptions.backgroundPadding = MOVING_BACKGROUND_PADDING;
+      } else {
+        textBoxOptions.borderColor = TEXTBOX_FIXED_STYLE.borderColor;
+        textBoxOptions.borderWidth = TEXTBOX_FIXED_STYLE.borderWidth;
+        textBoxOptions.borderRadius = TEXTBOX_FIXED_STYLE.borderRadius;
+        textBoxOptions.background = '';
+        textBoxOptions.backgroundPadding =
+          TEXTBOX_FIXED_STYLE.backgroundPadding;
+      }
 
       const boundingBox = drawLinkedTextBoxSvg(
         svgDrawingHelper,
@@ -1448,8 +1474,15 @@ class LengthToolZoom extends AnnotationTool {
     if (length === undefined || length === null || isNaN(length)) {
       return;
     }
+    const hasMillimeterUnit =
+      typeof unit === 'string' && unit.toLowerCase().startsWith('mm');
 
-    const lengthText = `${csUtils.roundNumber(length)} ${unit}`;
+    const convertedLength = hasMillimeterUnit ? length / 10 : length;
+    const convertedUnit = hasMillimeterUnit
+      ? unit.replace(/mm/i, 'cm')
+      : (unit ?? '');
+
+    const lengthText = `${convertedLength.toFixed(1)} ${convertedUnit}`;
     const label = data?.label;
 
     return [label ? `${label}: ${lengthText}` : lengthText];
