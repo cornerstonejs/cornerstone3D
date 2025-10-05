@@ -23,9 +23,14 @@ function drawLinkedTextBox(
         x: false,
         y: true, // yCenter,
       },
+      drawLink: true,
     },
     options
   );
+
+  const { drawLink: shouldDrawLink, ...forwardedOptions } = mergedOptions as {
+    drawLink?: boolean;
+  } & Record<string, unknown>;
 
   // Draw the text box
   const canvasBoundingBox = drawTextBox(
@@ -34,19 +39,21 @@ function drawLinkedTextBox(
     textBoxUID,
     textLines,
     textBoxPosition,
-    mergedOptions
+    forwardedOptions
   );
   // if (textBox.hasMoved) {
   //   // Draw dashed link line between tool and text
-  drawLink(
-    svgDrawingHelper,
-    annotationUID,
-    textBoxUID,
-    annotationAnchorPoints, // annotationAnchorPoints
-    textBoxPosition, // refPoint (text)
-    canvasBoundingBox, // textBoxBoundingBox
-    mergedOptions
-  );
+  if (shouldDrawLink) {
+    drawLink(
+      svgDrawingHelper,
+      annotationUID,
+      textBoxUID,
+      annotationAnchorPoints, // annotationAnchorPoints
+      textBoxPosition, // refPoint (text)
+      canvasBoundingBox, // textBoxBoundingBox
+      forwardedOptions
+    );
+  }
   // }
 
   // const { top, left, width, height } = canvasBoundingBox

@@ -1380,6 +1380,7 @@ class LengthToolZoom extends AnnotationTool {
       );
 
       const textBoxUID = '1';
+      const hasDetachedTextBox = Boolean(data.handles.textBox.hasMoved);
       const textBoxStyleOverrides = data.handles.textBox.isMoving
         ? {
             borderColor: '',
@@ -1403,6 +1404,7 @@ class LengthToolZoom extends AnnotationTool {
         lineDash: LINK_LINE_DASH,
         lineWidth: 2,
         ...textBoxStyleOverrides,
+        ...(hasDetachedTextBox ? { drawLink: false } : {}),
       };
 
       const boundingBox = drawLinkedTextBoxSvg(
@@ -1424,6 +1426,35 @@ class LengthToolZoom extends AnnotationTool {
         bottomLeft: viewport.canvasToWorld([left, top + height]),
         bottomRight: viewport.canvasToWorld([left + width, top + height]),
       };
+
+      if (hasDetachedTextBox) {
+        const labelTextLines = this._getLabelOnlyTextLines(annotation.data);
+
+        if (labelTextLines?.length) {
+          const anchoredCanvasCoords =
+            this._getAnchoredTextBoxCanvasCoords(canvasCoordinates);
+
+          const labelTextBoxOptions = {
+            ...options,
+            ...TEXTBOX_FIXED_STYLE,
+            linkColor: LENGTH_COLOR,
+            lineDash: LINK_LINE_DASH,
+            lineWidth: 2,
+            drawLink: false,
+          };
+
+          drawLinkedTextBoxSvg(
+            svgDrawingHelper,
+            annotationUID,
+            'label',
+            labelTextLines,
+            anchoredCanvasCoords,
+            canvasCoordinates,
+            {},
+            labelTextBoxOptions
+          );
+        }
+      }
     }
 
     return renderStatus;
@@ -1486,6 +1517,18 @@ class LengthToolZoom extends AnnotationTool {
     const label = data?.label;
 
     return [label ? `${label}: ${lengthText}` : lengthText];
+  }
+
+  private _getLabelOnlyTextLines(
+    data: LengthAnnotation['data'] | undefined
+  ): string[] | undefined {
+    const label = data?.label;
+
+    if (!label) {
+      return;
+    }
+
+    return [label];
   }
 
   private _scheduleHandleMoveLingerTick(): void {
