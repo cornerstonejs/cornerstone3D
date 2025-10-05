@@ -81,6 +81,7 @@ const HANDLE_LAYER_CLASS = 'lengthtool-zoom__handle-layer';
 const TEXTBOX_HORIZONTAL_OFFSET = HANDLE_RADIUS + 4;
 const TEXTBOX_VERTICAL_OFFSET = ACTIVE_HANDLE_RADIUS + 8;
 const TEXTBOX_PADDING = 37; // Must stay in sync with default padding in drawTextBox
+const LENGTH_COLOR = 'rgb(var(--ui-2, 236, 102, 2))';
 const TEXTBOX_FIXED_STYLE = {
   color: 'var(--text-white, #FFF)',
   textShadow:
@@ -1160,7 +1161,7 @@ class LengthToolZoom extends AnnotationTool {
           canvasCoordinates[0],
           canvasCoordinates[1],
           {
-            color: 'var(--ui-2, #EC6602)',
+            color: LENGTH_COLOR,
             width: 2,
             lineDash,
             shadow: {
@@ -1174,7 +1175,7 @@ class LengthToolZoom extends AnnotationTool {
         );
 
         const crossbarStyle = {
-          color: 'var(--ui-2, #EC6602)',
+          color: LENGTH_COLOR,
           width: 2,
           lineDash: undefined,
           shadow: {
