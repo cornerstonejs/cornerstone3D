@@ -21,6 +21,10 @@ import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
 } from '../../stateManagement/annotation/helpers/state';
+import {
+  deselectAnnotation,
+  isAnnotationSelected,
+} from '../../stateManagement/annotation/annotationSelection';
 import * as lineSegment from '../../utilities/math/line';
 
 import {
@@ -43,6 +47,7 @@ import type {
   EventTypes,
   ToolHandle,
   TextBoxHandle,
+  Annotations,
   PublicToolProps,
   ToolProps,
   SVGDrawingHelper,
@@ -70,6 +75,9 @@ const HANDLE_MOVE_LINGER_FRAMES = 20;
 const HANDLE_GLOW_RADIUS = 26;
 const HANDLE_GLOW_COLOR = 'rgba(18, 132, 255, 0.3)';
 const CROSSBAR_HALF_LENGTH = 8;
+const HIGHLIGHT_LAYER_CLASS = 'lengthtool-zoom__highlight-layer';
+const MAIN_LAYER_CLASS = 'lengthtool-zoom__main-layer';
+const HANDLE_LAYER_CLASS = 'lengthtool-zoom__handle-layer';
 
 /**
  * LengthToolZoom let you draw annotations that measures the length of two drawing
@@ -162,6 +170,17 @@ class LengthToolZoom extends AnnotationTool {
     if (!toolProps.configuration?.getTextLines) {
       this.configuration.getTextLines = this._getTextLinesWithLabel;
     }
+  }
+
+  public mouseMoveCallback(
+    evt: EventTypes.MouseMoveEventType,
+    filteredAnnotations?: Annotations
+  ): boolean {
+    if (this.editData) {
+      return super.mouseMoveCallback(evt, filteredAnnotations);
+    }
+
+    return false;
   }
 
   static hydrate = (
@@ -461,6 +480,26 @@ class LengthToolZoom extends AnnotationTool {
     evt.preventDefault();
   }
 
+  public getHandleNearImagePoint(
+    element: HTMLDivElement,
+    annotation: Annotation,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): ToolHandle | undefined {
+    const selected = isAnnotationSelected(annotation.annotationUID);
+
+    if (!this.editData && !selected) {
+      return;
+    }
+
+    return super.getHandleNearImagePoint(
+      element,
+      annotation,
+      canvasCoords,
+      proximity
+    );
+  }
+
   _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -515,6 +554,11 @@ class LengthToolZoom extends AnnotationTool {
 
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
+    }
+
+    if (newAnnotation && stage !== 'placingFirst') {
+      annotation.highlighted = false;
+      deselectAnnotation(annotation.annotationUID);
     }
 
     this.editData = null;
@@ -869,6 +913,18 @@ class LengthToolZoom extends AnnotationTool {
       toolName: this.getToolName(),
       viewportId: enabledElement.viewport.id,
     };
+    const highlightLayer = this._getOrCreateLayer(
+      svgDrawingHelper,
+      HIGHLIGHT_LAYER_CLASS
+    );
+    const mainLayer = this._getOrCreateLayer(
+      svgDrawingHelper,
+      MAIN_LAYER_CLASS
+    );
+    const handleLayer = this._getOrCreateLayer(
+      svgDrawingHelper,
+      HANDLE_LAYER_CLASS
+    );
 
     // Draw SVG
     for (let i = 0; i < annotations.length; i++) {
@@ -901,7 +957,9 @@ class LengthToolZoom extends AnnotationTool {
         creationStage === 'waitingSecond'
       ) {
         const handleGroupUID = 'preview';
-        const isFirstHandleGrabbed = creationStage === 'placingFirst';
+        const annotationIsSelected = isAnnotationSelected(annotationUID);
+        const isFirstHandleGrabbed =
+          creationStage === 'placingFirst' && annotationIsSelected;
         const isDraggingFirstHandle =
           isFirstHandleGrabbed &&
           Boolean(editDataForAnnotation?.isHandleMoving);
@@ -919,29 +977,33 @@ class LengthToolZoom extends AnnotationTool {
               fill: HANDLE_FILL,
             };
 
-        if (isDraggingFirstHandle) {
-          const previewGlowUID = 'preview-glow';
+        this._withLayer(svgDrawingHelper, handleLayer, () => {
+          if (isDraggingFirstHandle) {
+            const previewGlowUID = 'preview-glow';
+            drawHandlesSvg(
+              svgDrawingHelper,
+              annotationUID,
+              previewGlowUID,
+              [canvasCoordinates[0]],
+              {
+                color: HANDLE_GLOW_COLOR,
+                lineDash: undefined,
+                lineWidth: 0,
+                handleRadius: `${HANDLE_GLOW_RADIUS}`,
+                fill: HANDLE_GLOW_COLOR,
+              }
+            );
+          }
+
           drawHandlesSvg(
             svgDrawingHelper,
             annotationUID,
-            previewGlowUID,
+            handleGroupUID,
             [canvasCoordinates[0]],
-            {
-              color: HANDLE_GLOW_COLOR,
-              lineDash: undefined,
-              lineWidth: 0,
-              handleRadius: `${HANDLE_GLOW_RADIUS}`,
-              fill: HANDLE_GLOW_COLOR,
-            }
+            previewHandleStyle
           );
-        }
-        drawHandlesSvg(
-          svgDrawingHelper,
-          annotationUID,
-          handleGroupUID,
-          [canvasCoordinates[0]],
-          previewHandleStyle
-        );
+        });
+
         renderStatus = true;
         continue;
       }
@@ -974,20 +1036,12 @@ class LengthToolZoom extends AnnotationTool {
         return renderStatus;
       }
 
-      let activeHandleCanvasCoords;
-
       if (!isAnnotationVisible(annotationUID)) {
         continue;
       }
 
-      if (
-        !isAnnotationLocked(annotationUID) &&
-        !this.editData &&
-        activeHandleIndex !== null
-      ) {
-        // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
-      }
+      const annotationIsSelected =
+        Boolean(editDataForAnnotation) || isAnnotationSelected(annotationUID);
 
       const showHandlesAlways = Boolean(
         getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
@@ -1001,11 +1055,112 @@ class LengthToolZoom extends AnnotationTool {
 
       const shouldDrawHandles =
         isPreviewingSecondPoint ||
-        Boolean(activeHandleCanvasCoords?.length) ||
+        annotationIsSelected ||
         showHandlesAlways ||
         dragHandleIndex !== null;
 
-      if (shouldDrawHandles) {
+      const [startPoint, endPoint] = canvasCoordinates;
+      const dx = endPoint[0] - startPoint[0];
+      const dy = endPoint[1] - startPoint[1];
+      const length = Math.sqrt(dx * dx + dy * dy);
+
+      if (annotationIsSelected) {
+        this._withLayer(svgDrawingHelper, highlightLayer, () => {
+          const highlightLineUID = 'selected-highlight';
+          drawLineSvg(
+            svgDrawingHelper,
+            annotationUID,
+            highlightLineUID,
+            canvasCoordinates[0],
+            canvasCoordinates[1],
+            {
+              color: 'rgba(18, 132, 255, 0.5)',
+              width: 16,
+              lineDash: undefined,
+              shadow: false,
+              lineCap: 'round',
+            },
+            `${annotationUID}-selected-highlight`
+          );
+        });
+      }
+
+      this._withLayer(svgDrawingHelper, mainLayer, () => {
+        const dataId = `${annotationUID}-line`;
+        const lineUID = '1';
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          canvasCoordinates[0],
+          canvasCoordinates[1],
+          {
+            color: 'var(--ui-2, #EC6602)',
+            width: 2,
+            lineDash,
+            shadow: {
+              color: 'rgba(0, 0, 0, 0.8)',
+              offsetX: 0,
+              offsetY: 1,
+              blur: 1,
+            },
+          },
+          dataId
+        );
+
+        const crossbarStyle = {
+          color: 'var(--ui-2, #EC6602)',
+          width: 2,
+          lineDash: undefined,
+          shadow: {
+            color: 'rgba(0, 0, 0, 0.8)',
+            offsetX: 0,
+            offsetY: 1,
+            blur: 1,
+          },
+        };
+
+        if (length > 0.0001) {
+          const invLength = 1 / length;
+          const perpX = -dy * invLength * CROSSBAR_HALF_LENGTH;
+          const perpY = dx * invLength * CROSSBAR_HALF_LENGTH;
+
+          const startCrossStart = [
+            startPoint[0] - perpX,
+            startPoint[1] - perpY,
+          ];
+          const startCrossEnd = [startPoint[0] + perpX, startPoint[1] + perpY];
+
+          const endCrossStart = [endPoint[0] - perpX, endPoint[1] - perpY];
+          const endCrossEnd = [endPoint[0] + perpX, endPoint[1] + perpY];
+
+          drawLineSvg(
+            svgDrawingHelper,
+            annotationUID,
+            'start-crossbar',
+            startCrossStart,
+            startCrossEnd,
+            crossbarStyle,
+            `${annotationUID}-start-crossbar`
+          );
+
+          drawLineSvg(
+            svgDrawingHelper,
+            annotationUID,
+            'end-crossbar',
+            endCrossStart,
+            endCrossEnd,
+            crossbarStyle,
+            `${annotationUID}-end-crossbar`
+          );
+        }
+      });
+
+      this._withLayer(svgDrawingHelper, handleLayer, () => {
+        if (!shouldDrawHandles) {
+          return;
+        }
+
         const handleGroupUID = '0';
 
         drawHandlesSvg(
@@ -1014,7 +1169,7 @@ class LengthToolZoom extends AnnotationTool {
           handleGroupUID,
           canvasCoordinates,
           {
-            color,
+            color: HANDLE_COLOR,
             lineDash,
             lineWidth: HANDLE_LINE_WIDTH,
             handleRadius: `${HANDLE_RADIUS}`,
@@ -1067,78 +1222,7 @@ class LengthToolZoom extends AnnotationTool {
             }
           );
         }
-      }
-
-      const dataId = `${annotationUID}-line`;
-      const lineUID = '1';
-      drawLineSvg(
-        svgDrawingHelper,
-        annotationUID,
-        lineUID,
-        canvasCoordinates[0],
-        canvasCoordinates[1],
-        {
-          color: 'var(--ui-2, #EC6602)',
-          width: 2,
-          lineDash,
-          shadow: {
-            color: 'rgba(0, 0, 0, 0.8)',
-            offsetX: 0,
-            offsetY: 1,
-            blur: 1,
-          },
-        },
-        dataId
-      );
-
-      const crossbarStyle = {
-        color: 'var(--ui-2, #EC6602)',
-        width: 2,
-        lineDash: undefined,
-        shadow: {
-          color: 'rgba(0, 0, 0, 0.8)',
-          offsetX: 0,
-          offsetY: 1,
-          blur: 1,
-        },
-      };
-
-      const [startPoint, endPoint] = canvasCoordinates;
-      const dx = endPoint[0] - startPoint[0];
-      const dy = endPoint[1] - startPoint[1];
-      const length = Math.sqrt(dx * dx + dy * dy);
-
-      if (length > 0.0001) {
-        const invLength = 1 / length;
-        const perpX = -dy * invLength * CROSSBAR_HALF_LENGTH;
-        const perpY = dx * invLength * CROSSBAR_HALF_LENGTH;
-
-        const startCrossStart = [startPoint[0] - perpX, startPoint[1] - perpY];
-        const startCrossEnd = [startPoint[0] + perpX, startPoint[1] + perpY];
-
-        const endCrossStart = [endPoint[0] - perpX, endPoint[1] - perpY];
-        const endCrossEnd = [endPoint[0] + perpX, endPoint[1] + perpY];
-
-        drawLineSvg(
-          svgDrawingHelper,
-          annotationUID,
-          'start-crossbar',
-          startCrossStart,
-          startCrossEnd,
-          crossbarStyle,
-          `${annotationUID}-start-crossbar`
-        );
-
-        drawLineSvg(
-          svgDrawingHelper,
-          annotationUID,
-          'end-crossbar',
-          endCrossStart,
-          endCrossEnd,
-          crossbarStyle,
-          `${annotationUID}-end-crossbar`
-        );
-      }
+      });
 
       renderStatus = true;
 
@@ -1149,6 +1233,7 @@ class LengthToolZoom extends AnnotationTool {
       }
 
       const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+
       if (!options.visibility) {
         data.handles.textBox = {
           hasMoved: false,
@@ -1317,6 +1402,38 @@ class LengthToolZoom extends AnnotationTool {
     ) {
       window.cancelAnimationFrame(this._handleMoveAnimationFrame);
       this._handleMoveAnimationFrame = null;
+    }
+  }
+
+  private _getOrCreateLayer(
+    svgDrawingHelper: SVGDrawingHelper,
+    className: string
+  ): SVGGElement {
+    const root = svgDrawingHelper.svgLayerElement as unknown as SVGGElement;
+    let layer = root.querySelector(`:scope > g.${className}`) as SVGGElement;
+    if (!layer) {
+      layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      layer.classList.add(className);
+      if (!layer.id) {
+        const baseId = root.id ? `${root.id}-${className}` : className;
+        layer.id = baseId;
+      }
+      root.appendChild(layer);
+    }
+    return layer;
+  }
+
+  private _withLayer(
+    svgDrawingHelper: SVGDrawingHelper,
+    layer: SVGGElement,
+    drawFn: () => void
+  ): void {
+    const originalLayer = svgDrawingHelper.svgLayerElement;
+    svgDrawingHelper.svgLayerElement = layer;
+    try {
+      drawFn();
+    } finally {
+      svgDrawingHelper.svgLayerElement = originalLayer;
     }
   }
 
