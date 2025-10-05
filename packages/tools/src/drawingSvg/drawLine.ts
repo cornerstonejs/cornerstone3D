@@ -28,6 +28,7 @@ export default function drawLine(
     markerEndId = null,
     shadow = false,
     strokeOpacity = 1,
+    lineCap,
   } = options as {
     color?: string;
     width?: string;
@@ -37,6 +38,7 @@ export default function drawLine(
     markerEndId?: string;
     shadow?: boolean;
     strokeOpacity?: number;
+    lineCap?: 'butt' | 'round' | 'square';
   };
 
   // for supporting both lineWidth and width options
@@ -60,7 +62,8 @@ export default function drawLine(
     'marker-start': markerStartId ? `url(#${markerStartId})` : '',
     'marker-end': markerEndId ? `url(#${markerEndId})` : '',
     'stroke-opacity': strokeOpacity,
-  };
+    ...(lineCap ? { 'stroke-linecap': lineCap } : {}),
+  } as Record<string, string | number>;
 
   if (existingLine) {
     // This is run to avoid re-rendering annotations that actually haven't changed

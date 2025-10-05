@@ -1,5 +1,5 @@
 type SVGDrawingHelper = {
-  svgLayerElement: HTMLDivElement;
+  svgLayerElement: Element;
   svgNodeCacheForCanvas: Record<string, unknown>;
   getSvgNode: (cacheKey: string) => SVGGElement | undefined;
   appendNode: (svgNode: SVGElement, cacheKey: string) => void;

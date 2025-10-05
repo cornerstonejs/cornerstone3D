@@ -20,14 +20,17 @@ function getSvgDrawingHelper(element: HTMLDivElement): SVGDrawingHelper {
     state.svgNodeCache[canvasHash][cacheKey].touched = false;
   });
 
-  return {
-    svgLayerElement: svgLayerElement,
+  const svgDrawingHelper = {
+    svgLayerElement: svgLayerElement as unknown as Element,
     svgNodeCacheForCanvas: state.svgNodeCache,
     getSvgNode: getSvgNode.bind(this, canvasHash),
-    appendNode: appendNode.bind(this, svgLayerElement, canvasHash),
+    appendNode: (svgNode: SVGElement, cacheKey: string) =>
+      appendNode(svgDrawingHelper, canvasHash, svgNode, cacheKey),
     setNodeTouched: setNodeTouched.bind(this, canvasHash),
-    clearUntouched: clearUntouched.bind(this, svgLayerElement, canvasHash),
-  };
+    clearUntouched: () => clearUntouched(svgDrawingHelper, canvasHash),
+  } as SVGDrawingHelper;
+
+  return svgDrawingHelper;
 }
 
 /**
@@ -57,10 +60,15 @@ function getSvgNode(canvasHash, cacheKey) {
   }
 }
 
-function appendNode(svgLayerElement, canvasHash, svgNode, cacheKey) {
+function appendNode(
+  svgDrawingHelper: SVGDrawingHelper,
+  canvasHash,
+  svgNode,
+  cacheKey
+) {
   // If state has been reset
   if (!state.svgNodeCache[canvasHash]) {
-    return null;
+    return;
   }
 
   state.svgNodeCache[canvasHash][cacheKey] = {
@@ -68,7 +76,11 @@ function appendNode(svgLayerElement, canvasHash, svgNode, cacheKey) {
     domRef: svgNode,
   };
 
-  svgLayerElement.appendChild(svgNode);
+  const targetLayer = svgDrawingHelper.svgLayerElement;
+
+  if (targetLayer) {
+    targetLayer.appendChild(svgNode);
+  }
 }
 
 function setNodeTouched(canvasHash, cacheKey) {
@@ -82,17 +94,25 @@ function setNodeTouched(canvasHash, cacheKey) {
   }
 }
 
-function clearUntouched(svgLayerElement, canvasHash) {
+function clearUntouched(svgDrawingHelper: SVGDrawingHelper, canvasHash) {
   // If state has been reset
   if (!state.svgNodeCache[canvasHash]) {
     return;
   }
 
+  const rootLayer = svgDrawingHelper.svgLayerElement;
+
   Object.keys(state.svgNodeCache[canvasHash]).forEach((cacheKey) => {
     const cacheEntry = state.svgNodeCache[canvasHash][cacheKey];
 
     if (!cacheEntry.touched && cacheEntry.domRef) {
-      svgLayerElement.removeChild(cacheEntry.domRef);
+      const parent = cacheEntry.domRef.parentNode;
+
+      if (parent) {
+        parent.removeChild(cacheEntry.domRef);
+      } else if (rootLayer?.contains(cacheEntry.domRef)) {
+        rootLayer.removeChild(cacheEntry.domRef);
+      }
       delete state.svgNodeCache[canvasHash][cacheKey];
     }
   });
