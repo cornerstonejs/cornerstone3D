@@ -47,8 +47,21 @@ export default function drawLine(
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
   const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
-  const layerId = svgDrawingHelper.svgLayerElement.id;
-  const dropShadowStyle = shadow ? `filter:url(#shadow-${layerId});` : '';
+  // Ursprünglich wurde die ID des aktuellen Layer-<g> verwendet. Der Shadow-Filter
+  // ist jedoch auf dem Root-<svg> ("svg-layer-<viewportId>") definiert.
+  // In Safari führt eine Referenz auf einen nicht existierenden Filter dazu, dass die Linie
+  // (teilweise) nicht gerendert wird. Wir traversieren daher zum übergeordneten <svg>.
+  let filterHost: Element | null = svgDrawingHelper.svgLayerElement as Element;
+  if (filterHost && filterHost.tagName.toLowerCase() !== 'svg') {
+    // Nutzung von closest('svg') ist breit unterstützt; Falls nicht vorhanden, fallback auf ursprüngliches Element
+    const parentSvg = (filterHost as HTMLElement).closest('svg');
+    if (parentSvg) {
+      filterHost = parentSvg;
+    }
+  }
+  const rootSvgId = (filterHost as SVGElement)?.id;
+  const dropShadowStyle =
+    shadow && rootSvgId ? `filter:url(#shadow-${rootSvgId});` : '';
 
   const attributes = {
     x1: `${start[0]}`,
