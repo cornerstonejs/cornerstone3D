@@ -37,14 +37,18 @@ function fetchArrayBuffer({
   signal?: AbortSignal;
   onload?: () => void;
 }): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
 
     const defaultHeaders = {} as Record<string, string>;
     const options = getOptions();
 
-    const beforeSendHeaders = options.beforeSend(xhr, defaultHeaders, url);
+    const beforeSendHeaders = await options.beforeSend(
+      xhr,
+      defaultHeaders,
+      url
+    );
 
     const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 
@@ -144,7 +148,7 @@ export default function cornerstoneNiftiImageLoader(
 
   return {
     promise: promise as Promise<Types.IImage>,
-    cancelFn: undefined,
+    cancelFn: undefined, // TODO: add proper cancel function
     decache: () => {
       dataFetchStateMap.delete(url);
     },
@@ -194,10 +198,18 @@ function waitForNiftiData(
   imagePixelModule: Types.ImagePixelModule,
   imagePlaneModule: Types.ImagePlaneModule
 ): Promise<Types.IImage> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const intervalId = setInterval(() => {
       const dataFetchState = dataFetchStateMap.get(url);
-      if (dataFetchState.status === 'fetched') {
+
+      if (!dataFetchState) {
+        clearInterval(intervalId);
+        reject(
+          `dataFetchState for ${url} is not found. The cache was purged before it completed loading.`
+        );
+      }
+
+      if (dataFetchState?.status === 'fetched') {
         clearInterval(intervalId);
         resolve(
           createImage(

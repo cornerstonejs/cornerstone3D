@@ -35,6 +35,17 @@ enum Events {
 
   CROSSHAIR_TOOL_CENTER_CHANGED = 'CORNERSTONE_TOOLS_CROSSHAIR_TOOL_CENTER_CHANGED',
 
+  VOLUMECROPPINGCONTROL_TOOL_CHANGED = 'CORNERSTONE_TOOLS_VOLUMECROPPINGCONTROL_TOOL_CHANGED',
+
+  VOLUMECROPPING_TOOL_CHANGED = 'CORNERSTONE_TOOLS_VOLUMECROPPING_TOOL_CHANGED',
+
+  /**
+   * Triggers on the eventTarget when a stack prefetch has been completed (i.e., the indicesToRequest list
+   * has been emptied). It is triggered both by the stackPrefetch and stackContextPrefetch mechanism.
+   * See what event detail is included in {@link EventTypes.StackPrefetchCompleteEventDetail | Stack Prefetch Complete Event Detail}.
+   */
+  STACK_PREFETCH_COMPLETE = 'CORNERSTONE_TOOLS_STACK_PREFETCH_COMPLETE',
+
   ///////////////////////////////////////
   //            Annotations
   ///////////////////////////////////////

@@ -48,6 +48,7 @@ import type {
 import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 class CobbAngleTool extends AnnotationTool {
   static toolName = 'CobbAngle';
@@ -107,54 +108,16 @@ class CobbAngleTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
 
     hideElementCursor(element);
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
+    const annotation = <CobbAngleAnnotation>(
+      this.createAnnotation(evt, [
+        <Types.Point3>[...worldPos],
+        <Types.Point3>[...worldPos],
+      ])
     );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
-      data: {
-        handles: {
-          points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
-          activeHandleIndex: null,
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-        },
-        label: '',
-        cachedStats: {},
-      },
-    };
 
     addAnnotation(annotation, element);
 
@@ -787,7 +750,10 @@ class CobbAngleTool extends AnnotationTool {
         continue;
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
@@ -805,11 +771,11 @@ class CobbAngleTool extends AnnotationTool {
 
       const firstLine = [canvasCoordinates[0], canvasCoordinates[1]] as [
         Types.Point2,
-        Types.Point2
+        Types.Point2,
       ];
       const secondLine = [canvasCoordinates[2], canvasCoordinates[3]] as [
         Types.Point2,
-        Types.Point2
+        Types.Point2,
       ];
 
       let lineUID = 'line1';
@@ -1036,11 +1002,11 @@ class CobbAngleTool extends AnnotationTool {
 
     const firstLine = [canvasPoints[0], canvasPoints[1]] as [
       Types.Point2,
-      Types.Point2
+      Types.Point2,
     ];
     const secondLine = [canvasPoints[2], canvasPoints[3]] as [
       Types.Point2,
-      Types.Point2
+      Types.Point2,
     ];
 
     const mid1 = midPoint2(firstLine[0], firstLine[1]);

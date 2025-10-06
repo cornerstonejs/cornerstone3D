@@ -1,4 +1,3 @@
-import type { Types } from '@cornerstonejs/core';
 import type {
   RenderingConfig,
   RepresentationPublicInput,
@@ -9,6 +8,7 @@ import { SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { getActiveSegmentIndex, setActiveSegmentIndex } from './segmentIndex';
 
 function internalAddSegmentationRepresentation(
   viewportId: string,
@@ -28,6 +28,21 @@ function internalAddSegmentationRepresentation(
     representationInput.type,
     renderingConfig
   );
+
+  // Initialize the active segment index to the first available segment if none is currently set
+  if (!getActiveSegmentIndex(segmentationId)) {
+    let firstSegmentIndex = 1;
+    const segmentation =
+      defaultSegmentationStateManager.getSegmentation(segmentationId);
+
+    if (segmentation) {
+      const segmentKeys = Object.keys(segmentation.segments);
+      if (segmentKeys.length > 0) {
+        firstSegmentIndex = segmentKeys.map((k) => Number(k)).sort()[0];
+      }
+    }
+    setActiveSegmentIndex(segmentationId, firstSegmentIndex);
+  }
 
   if (representationInput.type === SegmentationRepresentations.Contour) {
     triggerAnnotationRenderForViewportIds([viewportId]);

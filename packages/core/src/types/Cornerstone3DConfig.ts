@@ -23,6 +23,12 @@ interface Cornerstone3DConfig {
     preferSizeOverAccuracy?: boolean;
     useCPURendering?: boolean;
     /**
+     * Use the legacy camera field of view calculation method which uses bounds
+     * to calculate the field of view. When false (default), uses the image dimensions
+     * directly for more accurate full-screen display.
+     */
+    useLegacyCameraFOV?: boolean;
+    /**
      * flag to control whether to use fallback behavior for z-spacing calculation in
      * volume viewports when the necessary metadata is missing. If enabled,
      * we will fall back to using slice thickness or a default value of 1 to render
@@ -45,6 +51,20 @@ interface Cornerstone3DConfig {
      * The default value is 7, which is suitable for mobile/desktop.
      */
     webGlContextCount?: number;
+    volumeRendering?: {
+      /** Multiplier for the calculated sample distance */
+      sampleDistanceMultiplier?: number;
+    };
+  };
+
+  debug: {
+    /**
+     * Wether or not to show the stats overlay for debugging purposes, stats include:
+     * - FPS Frames rendered in the last second. The higher the number the better.
+     * - MS Milliseconds needed to render a frame. The lower the number the better.
+     * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
+     */
+    statsOverlay?: boolean;
   };
 
   /**

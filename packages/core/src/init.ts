@@ -14,6 +14,8 @@ const defaultConfig: Cornerstone3DConfig = {
     useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
+    // Use new method by default for accurate full-width display
+    useLegacyCameraFOV: false,
     strictZSpacingForVolumeViewport: true,
     /**
      * The rendering engine mode to use.
@@ -27,6 +29,20 @@ const defaultConfig: Cornerstone3DConfig = {
      * The default value is 7, which is suitable for mobile/desktop.
      */
     webGlContextCount: 7,
+    volumeRendering: {
+      /** Multiplier for the calculated sample distance */
+      sampleDistanceMultiplier: 1,
+    },
+  },
+
+  debug: {
+    /**
+     * Wether or not to show the stats overlay for debugging purposes, stats include:
+     * - FPS Frames rendered in the last second. The higher the number the better.
+     * - MS Milliseconds needed to render a frame. The lower the number the better.
+     * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
+     */
+    statsOverlay: false,
   },
 
   /**

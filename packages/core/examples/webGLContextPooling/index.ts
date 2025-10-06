@@ -187,9 +187,16 @@ async function run() {
   initVolumeLoader();
 
   // Initialize Cornerstone with custom WebGL context count
+  // check query params for ?debug=true
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugMode = urlParams.get('debug') === 'true';
+
   await csRenderInit({
     rendering: {
       webGlContextCount: currentContextCount,
+    },
+    debug: {
+      statsOverlay: debugMode,
     },
   });
 

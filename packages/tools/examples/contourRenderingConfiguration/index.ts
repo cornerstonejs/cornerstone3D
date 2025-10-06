@@ -134,9 +134,8 @@ addSliderToToolbar({
 async function addSegmentationsToState() {
   // load the contour data
 
-  const geometryIds = await createAndCacheGeometriesFromContours(
-    'CircleContour'
-  );
+  const geometryIds =
+    await createAndCacheGeometriesFromContours('CircleContour');
 
   // Add the segmentations to state
   segmentation.addSegmentations([

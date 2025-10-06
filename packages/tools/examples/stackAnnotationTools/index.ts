@@ -216,6 +216,16 @@ async function run() {
     : {};
   await initDemo(config);
 
+  const defaultToolStyles =
+    cornerstoneTools.annotation.config.style.getDefaultToolStyles();
+
+  defaultToolStyles.global.showHandlesAlways = true;
+  defaultToolStyles.global.showGrabCursor = true;
+
+  cornerstoneTools.annotation.config.style.setDefaultToolStyles(
+    defaultToolStyles
+  );
+
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(HeightTool);

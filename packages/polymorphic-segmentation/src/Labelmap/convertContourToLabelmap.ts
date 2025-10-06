@@ -124,9 +124,8 @@ export async function convertContourToStackLabelmap(
   });
 
   // create
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIds
-  );
+  const segImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
   const segmentationImageIds = segImages.map((it) => it.imageId);
 

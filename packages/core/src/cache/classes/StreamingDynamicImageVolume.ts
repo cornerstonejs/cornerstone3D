@@ -22,8 +22,6 @@ export default class StreamingDynamicImageVolume
   private _loadedDimensionGroups: Set<number> = new Set();
 
   public numDimensionGroups: number;
-  /** @deprecated Use numDimensionGroups instead */
-  public override numTimePoints: number;
 
   constructor(
     imageVolumeProperties: ImageVolumeProps & {
@@ -37,7 +35,6 @@ export default class StreamingDynamicImageVolume
     this._splittingTag = splittingTag;
     this._imageIdGroups = imageIdGroups;
     this.numDimensionGroups = this._imageIdGroups.length;
-    this.numTimePoints = this.numDimensionGroups; // Keep in sync for backward compatibility
   }
 
   private _getImageIdsToLoad(): string[] {
@@ -78,18 +75,6 @@ export default class StreamingDynamicImageVolume
   }
 
   /**
-   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
-   */
-  public set timePointIndex(index: number) {
-    console.warn(
-      'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
-    );
-
-    // Convert zero-based timePointIndex to one-based dimensionGroupNumber
-    this.dimensionGroupNumber = index + 1;
-  }
-
-  /**
    * Set the active dimension group number which also updates the active scalar data
    * Dimension group numbers are 1-based.
    *
@@ -114,25 +99,6 @@ export default class StreamingDynamicImageVolume
       numImageIdGroups: this.numDimensionGroups,
       splittingTag: this.splittingTag,
     });
-
-    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED, {
-      volumeId: this.volumeId,
-      timePointIndex: dimensionGroupNumber - 1,
-      numTimePoints: this.numDimensionGroups,
-      imageIdGroupIndex: dimensionGroupNumber - 1,
-      numImageIdGroups: this.numDimensionGroups,
-      splittingTag: this.splittingTag,
-    });
-  }
-
-  /**
-   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
-   */
-  public get timePointIndex(): number {
-    console.warn(
-      'Warning: timePointIndex is deprecated. Please use dimensionGroupNumber instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
-    );
-    return this._dimensionGroupNumber - 1;
   }
 
   /**
@@ -153,26 +119,6 @@ export default class StreamingDynamicImageVolume
 
   public getCurrentDimensionGroupImageIds(): string[] {
     return this._imageIdGroups[this._dimensionGroupNumber - 1];
-  }
-
-  /**
-   * @deprecated Use getCurrentDimensionGroupImageIds instead
-   */
-  public getCurrentTimePointImageIds(): string[] {
-    console.warn(
-      'Warning: getCurrentTimePointImageIds is deprecated. Please use getCurrentDimensionGroupImageIds instead.'
-    );
-    return this.getCurrentDimensionGroupImageIds();
-  }
-
-  /**
-   * @deprecated Use flatImageIdIndexToDimensionGroupNumber instead
-   */
-  public flatImageIdIndexToTimePointIndex(flatImageIdIndex: number): number {
-    console.warn(
-      'Warning: flatImageIdIndexToTimePointIndex is deprecated. Please use flatImageIdIndexToDimensionGroupNumber instead.'
-    );
-    return this.flatImageIdIndexToDimensionGroupNumber(flatImageIdIndex) - 1;
   }
 
   public flatImageIdIndexToDimensionGroupNumber(
@@ -210,16 +156,6 @@ export default class StreamingDynamicImageVolume
   };
 
   /**
-   * @deprecated Use isDimensionGroupLoaded instead
-   */
-  public isTimePointLoaded(timePointIndex: number): boolean {
-    console.warn(
-      'Warning: isTimePointLoaded is deprecated. Please use isDimensionGroupLoaded instead. Note that timePointIndex is zero-based while dimensionGroupNumber starts at 1.'
-    );
-    return this.isDimensionGroupLoaded(timePointIndex + 1);
-  }
-
-  /**
    * Checks if a specific dimension group is fully loaded
    * @param dimensionGroupNumber - The dimension group number to check (1-based)
    * @returns boolean indicating if the dimension group is fully loaded
@@ -240,22 +176,6 @@ export default class StreamingDynamicImageVolume
       volumeId: this.volumeId,
       dimensionGroupNumber: dimensionGroupNumber,
     });
-
-    // Trigger deprecated time point event for backward compatibility
-    triggerEvent(eventTarget, Events.DYNAMIC_VOLUME_TIME_POINT_LOADED, {
-      volumeId: this.volumeId,
-      timePointIndex: dimensionGroupNumber - 1,
-    });
-  }
-
-  /**
-   * @deprecated Use checkDimensionGroupCompletion instead
-   */
-  protected checkTimePointCompletion(imageIdIndex: number): void {
-    console.warn(
-      'Warning: checkTimePointCompletion is deprecated. Please use checkDimensionGroupCompletion instead.'
-    );
-    this.checkDimensionGroupCompletion(imageIdIndex);
   }
 
   protected checkDimensionGroupCompletion(imageIdIndex: number): void {

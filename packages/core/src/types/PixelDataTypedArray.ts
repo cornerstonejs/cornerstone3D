@@ -1,5 +1,6 @@
 export type PixelDataTypedArray =
   | Float32Array
+  | Float64Array
   | Int16Array
   | Uint16Array
   | Uint8Array
@@ -10,6 +11,7 @@ export type PixelDataTypedArray =
 
 export type PixelDataTypedArrayString =
   | 'Float32Array'
+  | 'Float64Array'
   | 'Int16Array'
   | 'Uint16Array'
   | 'Uint8Array'

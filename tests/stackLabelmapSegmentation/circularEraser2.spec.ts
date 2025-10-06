@@ -26,6 +26,8 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 2', async ({
     closePath: true,
   });
 
+  await page.waitForTimeout(1500);
+
   await page
     .getByRole('button', { name: 'Create New Segmentation on' })
     .click();

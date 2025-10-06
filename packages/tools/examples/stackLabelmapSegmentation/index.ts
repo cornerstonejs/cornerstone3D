@@ -484,13 +484,11 @@ async function run() {
   viewport = renderingEngine.getViewport(viewportId);
 
   const ctImageIds = imageIds.slice(0, 3);
-  const ctSegImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    ctImageIds
-  );
+  const ctSegImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(ctImageIds);
 
-  const mgSegImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    mgImageIds
-  );
+  const mgSegImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(mgImageIds);
 
   const viewport2 = renderingEngine.getViewport(viewportId2);
   await viewport.setStack(ctImageIds, 0);

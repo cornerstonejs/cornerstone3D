@@ -149,6 +149,10 @@
         "name": "Apply view reference and/or presentation parameters",
         "description": "Demonstrates how to apply various view/reference presentation parameters."
       },
+      "stackToVolume": {
+        "name": "Stack to Volume Viewport",
+        "description": "Demonstrates how to convert a Stack Viewport to a Volume Viewport"
+      },
       "webWorker": {
         "name": "Custom Web Worker Function",
         "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
@@ -164,6 +168,10 @@
       "webGLContextPooling": {
         "name": "WebGL Context Pooling",
         "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync using ContextPoolRenderingEngine"
+      },
+      "sharpening": {
+        "name": "Image Sharpening For Stack & Volume Viewports",
+        "description": "Demonstrates how to apply image sharpening to stack and volume viewports"
       }
     },
     "tools-basic": {
@@ -174,6 +182,10 @@
       "cursor3D": {
         "name": "3D Volume Picking",
         "description": "Demonstrates how to use the VTK.js vtkCellPicker object to pick 3D point in volume rendering scene. Also shows how to synchronize between 3D and 2D viewports."
+      },
+      "volumeCroppingTool": {
+        "name": "3D Volume Cropping",
+        "description": "Demonstrates how to use the VolumeCropping  and VolumeCroppingControl tools."
       },
       "multipleToolGroups": {
         "name": "Multiple Tool Groups",
@@ -462,6 +474,10 @@
       "labelmapMIP": {
         "name": "Labelmap MIP",
         "description": "Demonstrates how to use the labelmap MIP tool"
+      },
+      "contourApi": {
+        "name": "Contour Utility API",
+        "description": "Demonstrates how to use various contour utility functions concerning simplification, smoothing, and hole removal."
       }
     },
     "advanced-gpu-segmentation": {

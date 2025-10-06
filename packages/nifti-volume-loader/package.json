@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/nifti-volume-loader",
-  "version": "3.30.3",
+  "version": "4.4.1",
   "description": "Nifti Image Loader for Cornerstone3D",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -56,16 +56,16 @@
     "build": "yarn run build:all",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
-    "format-check": "npx eslint ./src --quiet",
+    "lint": "oxlint .",
     "api-check": "api-extractor --debug run ",
     "prepublishOnly": "yarn run build",
     "webpack:watch": "webpack --mode development --progress --watch  --config ./.webpack/webpack.dev.js"
   },
   "dependencies": {
-    "nifti-reader-js": "^0.6.8"
+    "nifti-reader-js": "0.6.9"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.30.3"
+    "@cornerstonejs/core": "4.4.1"
   },
   "contributors": [
     {

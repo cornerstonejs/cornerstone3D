@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/labelmap-interpolation",
-  "version": "3.30.3",
+  "version": "4.4.1",
   "description": "Labelmap Interpolation utility for Cornerstone3D",
   "files": [
     "dist"
@@ -36,8 +36,7 @@
     "build:all": "yarn run build:esm",
     "start": "tsc --project ./tsconfig.json --watch",
     "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
-    "lint": "eslint --fix .",
-    "format-check": "npx eslint ./src --quiet",
+    "lint": "oxlint .",
     "api-check": "api-extractor --debug run ",
     "prepublishOnly": "yarn clean && yarn build"
   },
@@ -56,8 +55,8 @@
     "itk-wasm": "1.0.0-b.165"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "^3.30.3",
-    "@cornerstonejs/tools": "^3.30.3",
+    "@cornerstonejs/core": "4.4.1",
+    "@cornerstonejs/tools": "4.4.1",
     "@kitware/vtk.js": "32.12.1"
   }
 }
