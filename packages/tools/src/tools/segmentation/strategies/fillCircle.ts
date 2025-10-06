@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
+import type { ReadonlyVec3 } from 'gl-matrix';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 import { getBoundingBoxAroundShapeIJK } from '../../../utilities/boundingBox';
 import BrushStrategy from './BrushStrategy';
@@ -10,7 +12,7 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 
-const { transformWorldToIndex, isEqual } = csUtils;
+const { transformWorldToIndex, transformIndexToWorld, isEqual } = csUtils;
 
 /**
  * Returns the corners of an ellipse in canvas coordinates.
@@ -30,12 +32,119 @@ export function getEllipseCornersFromCanvasCoordinates(
   return [topLeft, bottomRight, bottomLeft, topRight];
 }
 
+function createCircleCornersForCenter(
+  center: Types.Point3,
+  viewUp: ReadonlyVec3,
+  viewRight: ReadonlyVec3,
+  radius: number
+): Types.Point3[] {
+  const centerVec = vec3.fromValues(center[0], center[1], center[2]);
+
+  const top = vec3.create();
+  vec3.scaleAndAdd(top, centerVec, viewUp, radius);
+
+  const bottom = vec3.create();
+  vec3.scaleAndAdd(bottom, centerVec, viewUp, -radius);
+
+  const right = vec3.create();
+  vec3.scaleAndAdd(right, centerVec, viewRight, radius);
+
+  const left = vec3.create();
+  vec3.scaleAndAdd(left, centerVec, viewRight, -radius);
+
+  return [
+    bottom as Types.Point3,
+    top as Types.Point3,
+    left as Types.Point3,
+    right as Types.Point3,
+  ];
+}
+
+// Build a lightweight capsule predicate that covers every sampled point and
+// the straight segment in between. The previous approach re-ran the brush
+// strategy for many intermediate samples, which was unnecessarily expensive
+// and still missed fast mouse moves. This predicate lets us describe the full
+// swept volume in constant time per segment when the strategy runs.
+function createStrokePredicate(centers: Types.Point3[], radius: number) {
+  if (!centers.length || radius <= 0) {
+    return null;
+  }
+
+  const radiusSquared = radius * radius;
+  const centerVecs = centers.map(
+    (point) => [point[0], point[1], point[2]] as Types.Point3
+  );
+  const segments = [] as Array<{
+    start: Types.Point3;
+    vector: [number, number, number];
+    lengthSquared: number;
+  }>;
+
+  for (let i = 1; i < centerVecs.length; i++) {
+    const start = centerVecs[i - 1];
+    const end = centerVecs[i];
+    const dx = end[0] - start[0];
+    const dy = end[1] - start[1];
+    const dz = end[2] - start[2];
+    const lengthSquared = dx * dx + dy * dy + dz * dz;
+
+    segments.push({ start, vector: [dx, dy, dz], lengthSquared });
+  }
+
+  return (worldPoint: Types.Point3) => {
+    if (!worldPoint) {
+      return false;
+    }
+
+    for (const centerVec of centerVecs) {
+      const dx = worldPoint[0] - centerVec[0];
+      const dy = worldPoint[1] - centerVec[1];
+      const dz = worldPoint[2] - centerVec[2];
+      if (dx * dx + dy * dy + dz * dz <= radiusSquared) {
+        return true;
+      }
+    }
+
+    for (const { start, vector, lengthSquared } of segments) {
+      if (lengthSquared === 0) {
+        const dx = worldPoint[0] - start[0];
+        const dy = worldPoint[1] - start[1];
+        const dz = worldPoint[2] - start[2];
+        if (dx * dx + dy * dy + dz * dz <= radiusSquared) {
+          return true;
+        }
+        continue;
+      }
+
+      const dx = worldPoint[0] - start[0];
+      const dy = worldPoint[1] - start[1];
+      const dz = worldPoint[2] - start[2];
+      const dot = dx * vector[0] + dy * vector[1] + dz * vector[2];
+      const t = Math.max(0, Math.min(1, dot / lengthSquared));
+      const projX = start[0] + vector[0] * t;
+      const projY = start[1] + vector[1] * t;
+      const projZ = start[2] + vector[2] * t;
+      const distX = worldPoint[0] - projX;
+      const distY = worldPoint[1] - projY;
+      const distZ = worldPoint[2] - projZ;
+
+      if (distX * distX + distY * distY + distZ * distZ <= radiusSquared) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+}
+
 const initializeCircle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points, // bottom, top, left, right
       viewport,
       segmentationImageData,
+      viewUp,
+      viewPlaneNormal,
     } = operationData;
 
     // Happens on a preview setup
@@ -60,6 +169,9 @@ const initializeCircle = {
       center as Types.Point3
     );
 
+    const brushRadius =
+      points.length >= 2 ? vec3.distance(points[0], points[1]) / 2 : 0;
+
     const canvasCoordinates = points.map((p) =>
       viewport.worldToCanvas(p)
     ) as CanvasCoordinates;
@@ -69,20 +181,58 @@ const initializeCircle = {
     const cornersInWorld = corners.map((corner) =>
       viewport.canvasToWorld(corner)
     );
-    // 2. Find the extent of the ellipse (circle) in IJK index space of the image
-    const circleCornersIJK = points.map((world) => {
-      return transformWorldToIndex(segmentationImageData, world);
-    });
 
-    // get the bounds from the circle points since in oblique images the
-    // circle will not be axis aligned
+    const normalizedViewUp = vec3.fromValues(viewUp[0], viewUp[1], viewUp[2]);
+    vec3.normalize(normalizedViewUp, normalizedViewUp);
+
+    const normalizedPlaneNormal = vec3.fromValues(
+      viewPlaneNormal[0],
+      viewPlaneNormal[1],
+      viewPlaneNormal[2]
+    );
+    vec3.normalize(normalizedPlaneNormal, normalizedPlaneNormal);
+
+    const viewRight = vec3.create();
+    vec3.cross(viewRight, normalizedViewUp, normalizedPlaneNormal);
+    vec3.normalize(viewRight, viewRight);
+
+    // Build a set of explicit stroke centers. When we only looked at the last
+    // sample, quick cursor moves left holes behind. Feeding the full segment
+    // gives us deterministic coverage regardless of device speed.
+    const strokeCentersSource =
+      operationData.strokePointsWorld &&
+      operationData.strokePointsWorld.length > 0
+        ? operationData.strokePointsWorld
+        : [operationData.centerWorld];
+
+    const strokeCenters = strokeCentersSource.map(
+      (point) => vec3.clone(point) as Types.Point3
+    );
+
+    const strokeCornersWorld = strokeCenters.flatMap((centerPoint) =>
+      createCircleCornersForCenter(
+        centerPoint,
+        normalizedViewUp,
+        viewRight,
+        brushRadius
+      )
+    );
+
+    const circleCornersIJK = strokeCornersWorld.map((world) =>
+      transformWorldToIndex(segmentationImageData, world)
+    );
+
     const boundsIJK = getBoundingBoxAroundShapeIJK(
       circleCornersIJK,
       segmentationImageData.getDimensions()
     );
 
-    // 3. Derives the ellipse function from the corners
-    operationData.isInObject = createPointInEllipse(cornersInWorld);
+    operationData.strokePointsWorld = strokeCenters;
+    operationData.isInObject = createPointInEllipse(cornersInWorld, {
+      strokePointsWorld: strokeCenters,
+      segmentationImageData,
+      radius: brushRadius,
+    });
 
     operationData.isInObjectBoundsIJK = boundsIJK;
   },
@@ -96,7 +246,14 @@ const initializeCircle = {
  * sphere shape (same radius in two or three dimensions), or an elliptical shape
  * if they differ.
  */
-function createPointInEllipse(cornersInWorld: Types.Point3[] = []) {
+function createPointInEllipse(
+  cornersInWorld: Types.Point3[] = [],
+  options: {
+    strokePointsWorld?: Types.Point3[];
+    segmentationImageData?: vtkImageData;
+    radius?: number;
+  } = {}
+) {
   if (!cornersInWorld || cornersInWorld.length !== 4) {
     throw new Error('createPointInEllipse: cornersInWorld must have 4 points');
   }
@@ -125,6 +282,12 @@ function createPointInEllipse(cornersInWorld: Types.Point3[] = []) {
   vec3.normalize(normal, normal);
 
   // If radii are equal, treat as sphere
+  const radiusForStroke = options.radius ?? Math.max(xRadius, yRadius);
+  const strokePredicate = createStrokePredicate(
+    options.strokePointsWorld || [],
+    radiusForStroke
+  );
+
   if (isEqual(xRadius, yRadius)) {
     const radius = xRadius;
     const sphereObj = {
@@ -132,14 +295,50 @@ function createPointInEllipse(cornersInWorld: Types.Point3[] = []) {
       radius,
       radius2: radius * radius,
     };
-    return (pointLPS) => pointInSphere(sphereObj, pointLPS);
+    return (pointLPS?: Types.Point3, pointIJK?: Types.Point3) => {
+      let worldPoint = pointLPS;
+
+      if (!worldPoint && pointIJK && options.segmentationImageData) {
+        worldPoint = transformIndexToWorld(
+          options.segmentationImageData,
+          pointIJK as Types.Point3
+        ) as Types.Point3;
+      }
+
+      if (worldPoint && strokePredicate?.(worldPoint)) {
+        return true;
+      }
+
+      if (!worldPoint) {
+        return false;
+      }
+
+      return pointInSphere(sphereObj, worldPoint);
+    };
   }
 
   // Otherwise, treat as ellipse in oblique plane
-  return (pointLPS: Types.Point3) => {
+  return (pointLPS?: Types.Point3, pointIJK?: Types.Point3) => {
+    let worldPoint = pointLPS;
+
+    if (!worldPoint && pointIJK && options.segmentationImageData) {
+      worldPoint = transformIndexToWorld(
+        options.segmentationImageData,
+        pointIJK as Types.Point3
+      ) as Types.Point3;
+    }
+
+    if (worldPoint && strokePredicate?.(worldPoint)) {
+      return true;
+    }
+
+    if (!worldPoint) {
+      return false;
+    }
+
     // Project point onto the plane
     const pointVec = vec3.create();
-    vec3.subtract(pointVec, pointLPS, center);
+    vec3.subtract(pointVec, worldPoint, center);
     // Remove component along normal
     const distToPlane = vec3.dot(pointVec, normal);
     const proj = vec3.create();
@@ -213,5 +412,6 @@ export {
   CIRCLE_THRESHOLD_STRATEGY,
   fillInsideCircle,
   thresholdInsideCircle,
+  createPointInEllipse,
   createPointInEllipse as createEllipseInPoint,
 };
