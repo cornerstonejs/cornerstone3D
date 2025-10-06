@@ -256,7 +256,7 @@ function _drawTextBackground(
     borderRadius,
     backgroundPadding,
   } = options;
-  let element = group.querySelector('rect.background');
+  let element = group.querySelector('rect.background') as SVGRectElement | null;
 
   const borderWidthValue =
     borderWidth === undefined
@@ -293,16 +293,17 @@ function _drawTextBackground(
 
   // Otherwise, check if we have a <rect> element. If not, create one
   if (!element) {
-    element = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    element = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'rect'
+    ) as SVGRectElement;
     element.setAttribute('class', 'background');
     group.insertBefore(element, group.firstChild);
   }
 
   // Measure the text bounding box to expand it with background padding
-  const textElement = group.querySelector('text');
-  const textBBox = textElement?.getBBox
-    ? textElement.getBBox()
-    : group.getBBox();
+  const textElement = group.querySelector('text') as SVGGraphicsElement | null;
+  const textBBox = textElement ? textElement.getBBox() : group.getBBox();
   const xWithPadding = textBBox.x - backgroundPaddingValue;
   const yWithPadding = textBBox.y - backgroundPaddingValue;
   const widthWithPadding = textBBox.width + backgroundPaddingValue * 2;
@@ -322,7 +323,7 @@ function _drawTextBackground(
 
   setAttributesIfNecessary(attributes, element);
 
-  return element.getBBox();
+  return element!.getBBox();
 }
 
 export default drawTextBox;
