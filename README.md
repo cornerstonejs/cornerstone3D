@@ -42,3 +42,28 @@ Read our guide on [How-to Contribute](https://cornerstonejs.org/docs/category/co
 ### License
 
 Cornerstone is [MIT licensed](./LICENSE).
+
+
+## Development notes
+
+For developing locally and instantly testing with another test project, we need
+to link this repository to the other project. This can be done as follows:
+
+- In this project:
+
+```
+yarn install
+yarn build
+```
+
+- In the test project: `npm install /path/to/this/repository`
+- In this project: `npm link`
+- In the test project: `npm link cornerstone-core`
+
+
+To immediately reload the test project when something changes here (e.g. in the
+tools package), run the build server as follow:
+
+```
+yarn workspace @cornerstonejs/tools build:esm:watch
+```
