@@ -48,7 +48,23 @@ function keyListener(evt: KeyboardEvent): void {
   state.key = evt.key;
   state.keyCode = evt.keyCode;
 
-  evt.preventDefault();
+  // Don't prevent default for modifier-only keys (Shift, Ctrl, Alt, Meta)
+  // as this can interfere with mouse event handling
+  // Check both evt.key and variations (ShiftLeft, ShiftRight, etc.) for compatibility
+  const isModifierKey = 
+    evt.key === 'Shift' || 
+    evt.key === 'Control' || 
+    evt.key === 'Alt' || 
+    evt.key === 'Meta' ||
+    evt.key?.startsWith('Shift') ||
+    evt.key?.startsWith('Control') ||
+    evt.key?.startsWith('Alt') ||
+    evt.key?.startsWith('Meta');
+  
+  if (!isModifierKey) {
+    evt.preventDefault();
+  }
+  
   const eventDetail: KeyDownEventDetail = {
     renderingEngineId: state.renderingEngineId,
     viewportId: state.viewportId,
