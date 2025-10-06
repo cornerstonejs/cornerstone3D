@@ -151,6 +151,7 @@ class LengthToolZoom extends AnnotationTool {
     stage?: 'placingFirst' | 'placingSecond';
     isHandleMoving?: boolean;
     handleMoveLinger?: number;
+    textBoxAnchorCanvas?: Types.Point2;
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage: boolean;
@@ -164,6 +165,7 @@ class LengthToolZoom extends AnnotationTool {
       configuration: {
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
+        textBoxDetachThreshold: 75, // Canvas pixels distance before label detaches
         actions: {
           // TODO - bind globally - but here is actually pretty good as it
           // is almost always active.
@@ -611,6 +613,10 @@ class LengthToolZoom extends AnnotationTool {
     if (data?.handles?.textBox) {
       data.handles.textBox.isMoving = false;
     }
+    // Clear stored anchor (will be re-established on next drag if needed)
+    if (this.editData) {
+      this.editData.textBoxAnchorCanvas = undefined;
+    }
 
     if (stage === 'placingFirst') {
       (annotation.metadata as LengthZoomMetadata).creationStage =
@@ -732,7 +738,7 @@ class LengthToolZoom extends AnnotationTool {
     }
 
     if (movingTextBox) {
-      // Drag mode - moving text box
+      // Drag mode - moving text box (refactored to use editData.textBoxAnchorCanvas)
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
       const worldPosDelta = deltaPoints.world;
 
@@ -740,14 +746,58 @@ class LengthToolZoom extends AnnotationTool {
 
       const { textBox } = data.handles;
       const { worldPosition } = textBox;
+      const enabledEl = getEnabledElement(element);
+      const { viewport } = enabledEl;
 
+      const prevCanvas = viewport.worldToCanvas(worldPosition);
+
+      // Apply delta
       worldPosition[0] += worldPosDelta[0];
       worldPosition[1] += worldPosDelta[1];
       worldPosition[2] += worldPosDelta[2];
 
+      const newCanvas = viewport.worldToCanvas(worldPosition);
+
+      // Establish persistent anchor (first point canvas position) once while still attached
+      if (!textBox.hasMoved && !this.editData.textBoxAnchorCanvas) {
+        const firstPointWorld = data.handles.points[0];
+        this.editData.textBoxAnchorCanvas = viewport.worldToCanvas(
+          firstPointWorld
+        ) as Types.Point2;
+      }
+
+      const anchorCanvas: Types.Point2 = this.editData.textBoxAnchorCanvas
+        ? { ...this.editData.textBoxAnchorCanvas }
+        : (viewport.worldToCanvas(data.handles.points[0]) as Types.Point2);
+
+      // Approximate center of textbox (prefer last rendered bounding box)
+      let centerCanvas: Types.Point2 = newCanvas as Types.Point2;
+      const lastBBox = textBox.worldBoundingBox;
+      if (lastBBox) {
+        const tl = viewport.worldToCanvas(lastBBox.topLeft);
+        const br = viewport.worldToCanvas(lastBBox.bottomRight);
+        if (tl && br) {
+          centerCanvas = [
+            tl[0] + (br[0] - tl[0]) / 2,
+            tl[1] + (br[1] - tl[1]) / 2,
+          ];
+        }
+      }
+
+      const dx = centerCanvas[0] - anchorCanvas[0];
+      const dy = centerCanvas[1] - anchorCanvas[1];
+      const distToAnchor = Math.sqrt(dx * dx + dy * dy);
+
+      const threshold = this.configuration.textBoxDetachThreshold ?? 75;
+      if (!textBox.hasMoved && distToAnchor >= threshold) {
+        textBox.hasMoved = true;
+      }
+
       textBox.isMoving = true;
-      textBox.hasMoved = true;
-      movedThisFrame = movedByWorld;
+      movedThisFrame =
+        movedByWorld ||
+        Math.abs(newCanvas[0] - prevCanvas[0]) > 0.01 ||
+        Math.abs(newCanvas[1] - prevCanvas[1]) > 0.01;
     } else if (handleIndex === undefined) {
       // Drag mode - moving handle
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
@@ -818,6 +868,9 @@ class LengthToolZoom extends AnnotationTool {
 
       if (data?.handles?.textBox) {
         data.handles.textBox.isMoving = false;
+      }
+      if (this.editData) {
+        this.editData.textBoxAnchorCanvas = undefined;
       }
 
       triggerAnnotationRenderForViewportIds(viewportIdsToRender);
@@ -1366,11 +1419,11 @@ class LengthToolZoom extends AnnotationTool {
 
       data.handles.textBox.isMoving ??= false;
 
-      // Need to update to sync with annotation while unlinked/not moved
-      if (!data.handles.textBox.hasMoved) {
+      // While the textbox is not detached we only re-anchor it if the user is NOT actively dragging it.
+      // This allows immediate visual feedback: during drag the box follows the cursor even before threshold.
+      if (!data.handles.textBox.hasMoved && !data.handles.textBox.isMoving) {
         const canvasTextBoxCoords =
           this._getAnchoredTextBoxCanvasCoords(canvasCoordinates);
-
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);
       }
@@ -1381,6 +1434,8 @@ class LengthToolZoom extends AnnotationTool {
 
       const textBoxUID = '1';
       const hasDetachedTextBox = Boolean(data.handles.textBox.hasMoved);
+      // hasMoved becomes true only after the drag distance from the anchor exceeds textBoxDetachThreshold.
+      // Until then the label is logically attached (auto re-anchored when not being dragged) but still follows the cursor during drag.
       const textBoxStyleOverrides = data.handles.textBox.isMoving
         ? {
             borderColor: '',
