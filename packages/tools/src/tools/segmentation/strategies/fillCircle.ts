@@ -295,9 +295,12 @@ function createPointInEllipse(
       radius,
       radius2: radius * radius,
     };
-    return (pointLPS?: Types.Point3, pointIJK?: Types.Point3) => {
-      let worldPoint = pointLPS;
+    return (pointLPS: Types.Point3 | null, pointIJK?: Types.Point3) => {
+      let worldPoint: Types.Point3 | null = pointLPS;
 
+      // When the iterator only supplies IJK coordinates we reconstruct the
+      // world position once here instead of forcing callers to do the
+      // conversion (the previous code re-did this work on every sample).
       if (!worldPoint && pointIJK && options.segmentationImageData) {
         worldPoint = transformIndexToWorld(
           options.segmentationImageData,
@@ -305,12 +308,12 @@ function createPointInEllipse(
         ) as Types.Point3;
       }
 
-      if (worldPoint && strokePredicate?.(worldPoint)) {
-        return true;
-      }
-
       if (!worldPoint) {
         return false;
+      }
+
+      if (strokePredicate?.(worldPoint)) {
+        return true;
       }
 
       return pointInSphere(sphereObj, worldPoint);
@@ -318,8 +321,8 @@ function createPointInEllipse(
   }
 
   // Otherwise, treat as ellipse in oblique plane
-  return (pointLPS?: Types.Point3, pointIJK?: Types.Point3) => {
-    let worldPoint = pointLPS;
+  return (pointLPS: Types.Point3 | null, pointIJK?: Types.Point3) => {
+    let worldPoint: Types.Point3 | null = pointLPS;
 
     if (!worldPoint && pointIJK && options.segmentationImageData) {
       worldPoint = transformIndexToWorld(
@@ -328,15 +331,17 @@ function createPointInEllipse(
       ) as Types.Point3;
     }
 
-    if (worldPoint && strokePredicate?.(worldPoint)) {
-      return true;
-    }
-
     if (!worldPoint) {
       return false;
     }
 
-    // Project point onto the plane
+    if (strokePredicate?.(worldPoint)) {
+      return true;
+    }
+
+    // Project point onto the plane so we can evaluate the ellipse equation in
+    // plane coordinates. We do this once per sample; previously the repeated
+    // conversions happened on callers for every interpolated point.
     const pointVec = vec3.create();
     vec3.subtract(pointVec, worldPoint, center);
     // Remove component along normal
