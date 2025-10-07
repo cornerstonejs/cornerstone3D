@@ -144,7 +144,7 @@ async function run() {
 
   // Add tools to the tool group
   toolGroup.addTool(WindowLevelTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(PanTool.toolName, { limitToViewport: true });
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName, { loop: false });
   toolGroup.addTool(PlanarRotateTool.toolName);
