@@ -39,7 +39,6 @@ import {
   MIPJumpToClickTool,
   LabelTool,
   LengthTool,
-  LengthToolZoom,
   HeightTool,
   ProbeTool,
   RectangleROITool,
@@ -88,6 +87,8 @@ import {
   SegmentLabelTool,
   LabelMapEditWithContourTool,
 } from './tools';
+
+import LengthToolZoom from './tools/annotation/LengthToolZoom/LengthToolZoom';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
 

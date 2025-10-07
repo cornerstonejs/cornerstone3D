@@ -1,4 +1,4 @@
-import { Events, ChangeTypes } from '../../enums';
+import { Events, ChangeTypes } from '../../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -7,41 +7,40 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
-import { AnnotationTool } from '../base';
-import throttle from '../../utilities/throttle';
+import { getCalibratedLengthUnitsAndScale } from '../../../utilities/getCalibratedUnits';
+import { AnnotationTool } from '../../base';
+import throttle from '../../../utilities/throttle';
 import {
   addAnnotation,
   getAnnotations,
   removeAnnotation,
-} from '../../stateManagement/annotation/annotationState';
-import { isAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
-import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+} from '../../../stateManagement/annotation/annotationState';
+import { isAnnotationVisible } from '../../../stateManagement/annotation/annotationVisibility';
 import {
   triggerAnnotationCompleted,
   triggerAnnotationModified,
-} from '../../stateManagement/annotation/helpers/state';
+} from '../../../stateManagement/annotation/helpers/state';
 import {
   deselectAnnotation,
   isAnnotationSelected,
-} from '../../stateManagement/annotation/annotationSelection';
-import * as lineSegment from '../../utilities/math/line';
+} from '../../../stateManagement/annotation/annotationSelection';
+import * as lineSegment from '../../../utilities/math/line';
 
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
-import { state } from '../../store/state';
-import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+} from '../../../drawingSvg';
+import { state } from '../../../store/state';
+import { getViewportIdsWithToolToRender } from '../../../utilities/viewportFilters';
+import { getTextBoxCoordsCanvas } from '../../../utilities/drawing';
+import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
 import {
   resetElementCursor,
   hideElementCursor,
-} from '../../cursors/elementCursor';
-import { MouseCursor } from '../../cursors';
+} from '../../../cursors/elementCursor';
+import { MouseCursor } from '../../../cursors';
 
 import type {
   EventTypes,
@@ -52,10 +51,12 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
-} from '../../types';
-import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
-import type { StyleSpecifier } from '../../types/AnnotationStyle';
-import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+} from '../../../types';
+import type { LengthAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
+import type { StyleSpecifier } from '../../../types/AnnotationStyle';
+import { getStyleProperty } from '../../../stateManagement/annotation/config/helpers';
+
+import { LensOverlay, type LensOverlayConfig } from './LensOverlay';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -157,6 +158,8 @@ class LengthToolZoom extends AnnotationTool {
   isHandleOutsideImage: boolean;
   private pendingAnnotation: LengthAnnotation | null;
   private _handleMoveAnimationFrame: number | null;
+  private currentMousePosition: Types.Point2 | null = null;
+  private lensOverlay: LensOverlay;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -166,6 +169,14 @@ class LengthToolZoom extends AnnotationTool {
         preventHandleOutsideImage: false,
         getTextLines: defaultGetTextLines,
         textBoxDetachThreshold: 75, // Canvas pixels distance before label detaches
+        magnifier: {
+          enabled: true,
+          radius: 100,
+          zoomFactor: 2,
+          borderWidth: 2,
+          borderColor: '#FFFFFF',
+          showCrosshair: true,
+        },
         actions: {
           // TODO - bind globally - but here is actually pretty good as it
           // is almost always active.
@@ -192,19 +203,40 @@ class LengthToolZoom extends AnnotationTool {
     this.pendingAnnotation = null;
     this._handleMoveAnimationFrame = null;
 
+    // Initialize lens overlay with configuration
+    this.lensOverlay = new LensOverlay(
+      this.configuration.magnifier as LensOverlayConfig
+    );
+
     if (!toolProps.configuration?.getTextLines) {
       this.configuration.getTextLines = this._getTextLinesWithLabel;
     }
   }
 
-  private _baseMouseMoveCallback = this.mouseMoveCallback;
-
   public mouseMoveCallback = (
     evt: EventTypes.MouseMoveEventType,
     filteredAnnotations?: Annotations
   ): boolean => {
+    const eventDetail = evt.detail;
+    this.currentMousePosition = eventDetail.currentPoints.canvas;
+
+    // Update lens overlay mouse position
+    this.lensOverlay.updateMousePosition(this.currentMousePosition);
+
+    // Lupe bei aktiver Platzierung anzeigen
+    if (this._shouldShowMagnifier()) {
+      this.lensOverlay.show(eventDetail.element);
+    } else {
+      this.lensOverlay.hide();
+    }
+
     if (this.editData) {
-      return this._baseMouseMoveCallback(evt, filteredAnnotations);
+      // Call parent class mouseMoveCallback by calling the parent method directly
+      return AnnotationTool.prototype.mouseMoveCallback.call(
+        this,
+        evt,
+        filteredAnnotations
+      );
     }
     return false;
   };
@@ -323,6 +355,13 @@ class LengthToolZoom extends AnnotationTool {
     };
     this._activateDraw(element);
 
+    // Lupe sofort nach dem Start der Zeichnung anzeigen
+    this.currentMousePosition = eventDetail.currentPoints.canvas;
+    this.lensOverlay.updateMousePosition(this.currentMousePosition);
+    if (this._shouldShowMagnifier()) {
+      this.lensOverlay.show(element);
+    }
+
     evt.preventDefault();
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
@@ -414,6 +453,13 @@ class LengthToolZoom extends AnnotationTool {
     };
 
     this._activateDraw(element);
+
+    // Lupe sofort nach dem Start der zweiten Punktplatzierung anzeigen
+    this.currentMousePosition = eventDetail.currentPoints.canvas;
+    this.lensOverlay.updateMousePosition(this.currentMousePosition);
+    if (this._shouldShowMagnifier()) {
+      this.lensOverlay.show(element);
+    }
 
     evt.preventDefault();
 
@@ -602,6 +648,9 @@ class LengthToolZoom extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
+    // Lupe ausblenden bei Ende der Zeichnung
+    this.lensOverlay.hide();
+
     if (!this.editData) {
       return;
     }
@@ -677,7 +726,14 @@ class LengthToolZoom extends AnnotationTool {
   _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
-    const { element } = eventDetail;
+    const { element, currentPoints } = eventDetail;
+
+    // Mausposition für die Lupe während des Drags aktualisieren
+    this.currentMousePosition = currentPoints.canvas;
+    this.lensOverlay.updateMousePosition(this.currentMousePosition);
+    if (this._shouldShowMagnifier()) {
+      this.lensOverlay.show(element);
+    }
 
     const {
       annotation,
@@ -1031,6 +1087,7 @@ class LengthToolZoom extends AnnotationTool {
     );
 
     this._cancelHandleMoveLingerTick();
+    this.lensOverlay.hide();
   };
 
   /**
@@ -1828,6 +1885,18 @@ class LengthToolZoom extends AnnotationTool {
     return (
       csUtils.indexWithinDimensions(index1, dimensions) &&
       csUtils.indexWithinDimensions(index2, dimensions)
+    );
+  }
+
+  private _shouldShowMagnifier(): boolean {
+    return (
+      this.configuration.magnifier?.enabled &&
+      this.currentMousePosition !== null &&
+      (this.editData?.stage === 'placingFirst' ||
+        this.editData?.stage === 'placingSecond' ||
+        (this.editData &&
+          this.editData.handleIndex !== undefined &&
+          this.isDrawing))
     );
   }
 }
