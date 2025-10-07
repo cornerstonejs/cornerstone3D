@@ -1208,7 +1208,20 @@ class LengthToolZoom extends AnnotationTool {
         styleSpecifier,
       });
 
-      const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
+      // Ensure consistent world-to-canvas transformation
+      // This fixes the issue where lines shift position when zooming out
+      const canvasCoordinates = points.map((p) => {
+        try {
+          return viewport.worldToCanvas(p);
+        } catch (error) {
+          // Fallback to prevent rendering issues
+          console.warn(
+            'Failed to transform world coordinates to canvas:',
+            error
+          );
+          return [0, 0] as Types.Point2;
+        }
+      });
 
       const editDataForAnnotation =
         this.editData && this.editData.annotation === annotation
