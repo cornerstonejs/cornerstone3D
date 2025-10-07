@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.0...v4.5.1) (2025-10-07)
+
+### Bug Fixes
+
+- **segmentation:** For contour segmentation logical operators, avoid updating segment color and label when they are not defined/specified. ([#2376](https://github.com/cornerstonejs/cornerstone3D/issues/2376)) ([969369a](https://github.com/cornerstonejs/cornerstone3D/commit/969369a623ea39ba9740e547fb94867183ec396b))
+
 # [4.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.4.2...v4.5.0) (2025-10-07)
 
 ### Features
