@@ -398,6 +398,8 @@ class LengthToolZoom extends AnnotationTool {
       return isSelected || annotation.highlighted || hasActiveHandle;
     });
 
+    // Wenn nichts zum Deselektieren da ist, lassen wir das Tool normal weiterarbeiten
+    // (kann eine neue Linie beginnen bei Drag)
     if (!shouldDeselect) {
       return false;
     }
@@ -414,7 +416,57 @@ class LengthToolZoom extends AnnotationTool {
 
     evt.preventDefault();
 
-    return true;
+    // Nur true zurückgeben, wenn tatsächlich deselektiert wurde
+    return changed;
+  };
+
+  public postTouchStartCallback = (
+    evt: EventTypes.TouchStartEventType
+  ): boolean => {
+    if (
+      this.pendingAnnotation &&
+      (this.pendingAnnotation.metadata as LengthZoomMetadata)?.creationStage ===
+        'waitingSecond'
+    ) {
+      return false;
+    }
+
+    if (this.editData?.stage === 'placingFirst' || this.isDrawing) {
+      return false;
+    }
+
+    const { element } = evt.detail;
+    const annotations = getAnnotations(this.getToolName(), element) ?? [];
+
+    const shouldDeselect = annotations.some((annotation) => {
+      const isSelected = isAnnotationSelected(annotation.annotationUID);
+      const hasActiveHandle =
+        annotation.data?.handles?.activeHandleIndex !== null &&
+        annotation.data?.handles?.activeHandleIndex !== undefined;
+
+      return isSelected || annotation.highlighted || hasActiveHandle;
+    });
+
+    // Wenn nichts zum Deselektieren da ist, lassen wir das Tool normal weiterarbeiten
+    // (kann eine neue Linie beginnen bei Drag)
+    if (!shouldDeselect) {
+      return false;
+    }
+
+    const changed = this._deselectAllLengthAnnotations(element);
+
+    if (changed) {
+      const viewportIdsToRender = getViewportIdsWithToolToRender(
+        element,
+        this.getToolName()
+      );
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    }
+
+    evt.preventDefault();
+
+    // Nur true zurückgeben, wenn tatsächlich deselektiert wurde
+    return changed;
   };
 
   private _beginSecondPointPlacement(
