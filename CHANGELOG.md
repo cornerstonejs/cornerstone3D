@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.4.2...v4.5.0) (2025-10-07)
+
+### Features
+
+- **BrushTool:** segmentation brush interpolation ([#2374](https://github.com/cornerstonejs/cornerstone3D/issues/2374)) ([690ec6e](https://github.com/cornerstonejs/cornerstone3D/commit/690ec6e90499b24364c06ad404fd0d2b0c521134))
+
 ## [4.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.4.1...v4.4.2) (2025-10-06)
 
 ### Bug Fixes
