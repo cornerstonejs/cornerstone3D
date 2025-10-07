@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.1...v4.5.2) (2025-10-07)
+
+### Bug Fixes
+
+- limit pan off viewport ([#2375](https://github.com/cornerstonejs/cornerstone3D/issues/2375)) ([1850916](https://github.com/cornerstonejs/cornerstone3D/commit/18509162c91b4c2be08c61d95ce75dbeeb4329f2))
+
 ## [4.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.0...v4.5.1) (2025-10-07)
 
 ### Bug Fixes
