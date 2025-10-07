@@ -186,41 +186,69 @@ export class LensOverlay {
     const destSize = radius * 2;
 
     // Berechne den Quellbereich um die Mausposition zentriert
-    let srcX = canvasCenterX - sourceSize;
-    let srcY = canvasCenterY - sourceSize;
-    let srcWidth = sourceSize * 2;
-    let srcHeight = sourceSize * 2;
+    const srcX = canvasCenterX - sourceSize;
+    const srcY = canvasCenterY - sourceSize;
+    const srcWidth = sourceSize * 2;
+    const srcHeight = sourceSize * 2;
 
-    // Stelle sicher, dass der Quellbereich innerhalb des Canvas bleibt
-    if (srcX < 0) {
-      srcWidth += srcX; // Reduziere Breite um den negativen Offset
-      srcX = 0;
-    }
-    if (srcY < 0) {
-      srcHeight += srcY; // Reduziere Höhe um den negativen Offset
-      srcY = 0;
-    }
-    if (srcX + srcWidth > canvasWidth) {
-      srcWidth = canvasWidth - srcX;
-    }
-    if (srcY + srcHeight > canvasHeight) {
-      srcHeight = canvasHeight - srcY;
+    // Erstelle temporären Canvas für die Pixelwiederholung
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = srcWidth;
+    tempCanvas.height = srcHeight;
+    const tempContext = tempCanvas.getContext('2d');
+
+    if (!tempContext) return;
+
+    // Hole die ImageData des Quell-Canvas
+    const sourceImageData = sourceCanvas
+      .getContext('2d')
+      ?.getImageData(0, 0, canvasWidth, canvasHeight);
+    if (!sourceImageData) return;
+
+    // Erstelle ImageData für temporären Canvas
+    const tempImageData = tempContext.createImageData(srcWidth, srcHeight);
+
+    // Fülle temporäres ImageData mit wiederholten Randpixeln
+    for (let y = 0; y < srcHeight; y++) {
+      for (let x = 0; x < srcWidth; x++) {
+        // Berechne die tatsächliche Position im Quell-Canvas
+        let sourceX = Math.floor(srcX + x);
+        let sourceY = Math.floor(srcY + y);
+
+        // Clampe die Koordinaten auf den gültigen Bereich (0 bis canvasWidth/Height - 1)
+        sourceX = Math.max(0, Math.min(canvasWidth - 1, sourceX));
+        sourceY = Math.max(0, Math.min(canvasHeight - 1, sourceY));
+
+        // Berechne Indizes für Quell- und Ziel-ImageData
+        const sourceIndex = (sourceY * canvasWidth + sourceX) * 4;
+        const tempIndex = (y * srcWidth + x) * 4;
+
+        // Kopiere Pixelwerte
+        tempImageData.data[tempIndex] = sourceImageData.data[sourceIndex]; // R
+        tempImageData.data[tempIndex + 1] =
+          sourceImageData.data[sourceIndex + 1]; // G
+        tempImageData.data[tempIndex + 2] =
+          sourceImageData.data[sourceIndex + 2]; // B
+        tempImageData.data[tempIndex + 3] =
+          sourceImageData.data[sourceIndex + 3]; // A
+      }
     }
 
-    // Nur zeichnen, wenn der Quellbereich gültig ist
-    if (srcWidth > 0 && srcHeight > 0) {
-      this.context?.drawImage(
-        sourceCanvas,
-        srcX, // Quell-X
-        srcY, // Quell-Y
-        srcWidth, // Quell-Breite
-        srcHeight, // Quell-Höhe
-        0, // Ziel-X
-        0, // Ziel-Y
-        destSize, // Ziel-Breite
-        destSize // Ziel-Höhe
-      );
-    }
+    // Setze die ImageData auf temporären Canvas
+    tempContext.putImageData(tempImageData, 0, 0);
+
+    // Zeichne den temporären Canvas auf den Lens-Canvas
+    this.context?.drawImage(
+      tempCanvas,
+      0, // Quell-X
+      0, // Quell-Y
+      srcWidth, // Quell-Breite
+      srcHeight, // Quell-Höhe
+      0, // Ziel-X
+      0, // Ziel-Y
+      destSize, // Ziel-Breite
+      destSize // Ziel-Höhe
+    );
   }
 
   private drawOverlay(
