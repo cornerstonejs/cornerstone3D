@@ -164,14 +164,26 @@ function addSegmentInSegmentation(
   if (!segmentation?.segments) {
     return;
   }
-  segmentation.segments[segmentIndex] = {
+
+  const segmentData: SegmentInfo = segmentation.segments[segmentIndex] ?? {
     active: false,
     locked: false,
-    label,
     segmentIndex,
     cachedStats: {},
+    label,
     color,
   };
+
+  // Only update label if it's defined
+  if (label !== undefined) {
+    segmentData.label = label;
+  }
+  // Only update color if it's defined
+  if (color !== undefined) {
+    segmentData.color = color;
+  }
+
+  segmentation.segments[segmentIndex] = segmentData;
 }
 
 /**
