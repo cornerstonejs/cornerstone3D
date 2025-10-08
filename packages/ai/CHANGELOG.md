@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.3...v4.5.4) (2025-10-08)
+
+### Bug Fixes
+
+- clear preview segmentation when AI tools are disabled ([#2373](https://github.com/cornerstonejs/cornerstone3D/issues/2373)) ([cfc232c](https://github.com/cornerstonejs/cornerstone3D/commit/cfc232c0472aa89eba859d2e2da97af58ca50bfc))
+
 ## [4.5.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.2...v4.5.3) (2025-10-08)
 
 **Note:** Version bump only for package @cornerstonejs/ai
