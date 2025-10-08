@@ -23,5 +23,6 @@ export interface ViewportProperties {
 
   /** Image sharpening settings */
   sharpening?: number;
+  /** Image smoothing settings */
   smoothing?: number;
 }

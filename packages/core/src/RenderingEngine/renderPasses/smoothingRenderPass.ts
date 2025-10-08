@@ -8,23 +8,26 @@ import vtkForwardPass from '@kitware/vtk.js/Rendering/OpenGL/ForwardPass';
  * which averages pixel values with their neighbors, effectively reducing noise
  * and softening edges. The intensity parameter controls the strength of the smoothing effect.
  *
- * @param intensity - Smoothing intensity (0 = no smoothing, negative values = more smoothing)
- * @returns vtkConvolution2DPass configured for edge enhancement
+ * @param intensity - Smoothing intensity (0 = no smoothing, positive values = more smoothing)
+ * @returns vtkConvolution2DPass configured for image smoothing (Gaussian blur)
  */
 function createSmoothingRenderPass(intensity: number) {
   let renderPass = vtkForwardPass.newInstance();
 
-  if (intensity < 0) {
+  if (intensity > 0) {
     const convolutionPass = vtkConvolution2DPass.newInstance();
     convolutionPass.setDelegates([renderPass]);
-    const smoothStrength = Math.min(Math.abs(intensity), 1000);
+    const smoothStrength = Math.min(intensity, 1000);
 
     // Generate a 15x15 Gaussian blur kernel (σ ≈ 5.0)
-    const gaussianKernel = createGaussianKernel(15, 5.0);
-
+    const kernelSize = 15;
+    const sigma = 5.0;
+    const gaussianKernel = createGaussianKernel(kernelSize, sigma);
+    const totalElements = kernelSize * kernelSize;
+    const centerIndex = Math.floor(totalElements / 2);
     // Identity kernel (15x15 → center=1, rest=0)
-    const identityKernel: number[] = Array(225).fill(0);
-    identityKernel[112] = 1; // center index
+    const identityKernel: number[] = Array(totalElements).fill(0);
+    identityKernel[centerIndex] = 1;
     // Blend strength
     const alpha = Math.min(smoothStrength / 10, 1.0);
 

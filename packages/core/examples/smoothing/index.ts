@@ -147,7 +147,7 @@ instructionsContainer.appendChild(instructionsList);
 addSliderToToolbar({
   id: 'smoothing-slider',
   title: 'Smoothing',
-  range: [-1000, 0],
+  range: [0, 1000],
   defaultValue: 0,
   onSelectedValueChange: (value: number) => {
     // Get the rendering engine

@@ -1091,7 +1091,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @returns True if custom render passes should be used, false otherwise
    */
   protected shouldUseCustomRenderPass(): boolean {
-    return (this.sharpening > 0 || this.smoothing < 0) && !this.useCPURendering;
+    return !this.useCPURendering;
   }
 
   /**
@@ -1104,14 +1104,17 @@ abstract class BaseVolumeViewport extends Viewport {
       return null;
     }
 
+    const renderPasses = [];
+
     try {
-      if (this.sharpening > 0) {
-        return [createSharpeningRenderPass(this.sharpening)];
-      } else if (this.smoothing < 0) {
-        return [createSmoothingRenderPass(this.smoothing)];
-      } else {
-        return null;
+      if (this.smoothing > 0) {
+        renderPasses.push(createSmoothingRenderPass(this.smoothing));
       }
+      if (this.sharpening > 0) {
+        renderPasses.push(createSharpeningRenderPass(this.sharpening));
+      }
+
+      return renderPasses.length ? renderPasses : null;
     } catch (e) {
       console.warn('Failed to create custom render passes:', e);
       return null;
