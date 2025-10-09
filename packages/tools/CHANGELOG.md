@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.4...v4.5.5) (2025-10-09)
+
+### Bug Fixes
+
+- **interpolation:** Fixed contour segmentation interpolation for spline contours. ([#2381](https://github.com/cornerstonejs/cornerstone3D/issues/2381)) ([7d61b2c](https://github.com/cornerstonejs/cornerstone3D/commit/7d61b2c7cd1627c34b0547967c5616d01fc29f96))
+
 ## [4.5.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.3...v4.5.4) (2025-10-08)
 
 **Note:** Version bump only for package @cornerstonejs/tools
