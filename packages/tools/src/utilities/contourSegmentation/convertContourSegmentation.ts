@@ -6,6 +6,7 @@ import { addAnnotation, removeAnnotation } from '../../stateManagement';
 import type { ContourSegmentationAnnotation } from '../../types';
 import { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation';
 import { addContourSegmentationAnnotation } from './addContourSegmentationAnnotation';
+import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 
 // Default tool name used for converted contour segmentation annotations
 const DEFAULT_CONTOUR_SEG_TOOL_NAME = 'PlanarFreehandContourSegmentationTool';
@@ -105,6 +106,8 @@ export default function convertContourSegmentationAnnotation(
   // and the specific contour segmentation system
   addAnnotation(newAnnotation, annotation.metadata.FrameOfReferenceUID);
   addContourSegmentationAnnotation(newAnnotation);
+
+  triggerAnnotationModified(newAnnotation);
 
   // Return the newly created annotation
   return newAnnotation;
