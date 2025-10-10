@@ -32,6 +32,7 @@ import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingIma
 interface VolumeLoaderOptions {
   imageIds: string[];
   progressiveRendering?: boolean;
+  ijkDecimation?: [number, number, number]; // Optional parameter for decimation factors [i, j, k]
 }
 
 interface DerivedVolumeOptions {
@@ -87,6 +88,14 @@ function loadVolumeFromVolumeLoader(
   const colonIndex = volumeId.indexOf(':');
   const scheme = volumeId.substring(0, colonIndex);
   let loader = volumeLoaders[scheme];
+
+  console.log('🔧 VolumeLoader: loadVolumeFromVolumeLoader called:', {
+    volumeId,
+    scheme,
+    loaderExists: !!loader,
+    loaderType: typeof loader,
+    availableLoaders: Object.keys(volumeLoaders)
+  });
 
   if (loader === undefined || loader === null) {
     if (

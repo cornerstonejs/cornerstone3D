@@ -280,6 +280,7 @@ export default class BaseStreamingImageVolume
       'volume'
     );
 
+    // Set up the appropriate image loader
     this.imagesLoader = this.isDynamicVolume()
       ? this
       : imageRetrieveConfiguration
@@ -317,12 +318,21 @@ export default class BaseStreamingImageVolume
   }
 
   public getLoaderImageOptions(imageId: string) {
-    const { transferSyntaxUID: transferSyntaxUID } =
-      metaData.get('transferSyntax', imageId) || {};
+    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
 
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
-    const { rows, columns } = imagePlaneModule;
+    // Note: before PR 2340, rows and columns were from  imagePlaneModule = metaData.get('imagePlaneModule', imageId) .
+    // This is now using the volume's dimensions instead.
+    const targetRows = this.dimensions?.[1];
+    const targetCols = this.dimensions?.[0];
     const imageIdIndex = this.getImageIdIndex(imageId);
+
+    console.log('🔧 BaseStreamingImageVolume: getLoaderImageOptions called:', {
+      imageId: imageId.substring(0, 50) + '...',
+      volumeId: this.volumeId,
+      targetRows,
+      targetCols,
+      volumeDimensions: this.dimensions,
+    });
 
     const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
 
@@ -380,8 +390,8 @@ export default class BaseStreamingImageVolume
 
     const targetBuffer = {
       type: this.dataType,
-      rows,
-      columns,
+      rows: targetRows,
+      columns: targetCols,
     };
 
     return {
@@ -516,7 +526,7 @@ export default class BaseStreamingImageVolume
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests(priority: number): ImageLoadRequests[] {
+  public getImageLoadRequests(_priority: number): ImageLoadRequests[] {
     throw new Error('Abstract method');
   }
 
@@ -607,5 +617,5 @@ export default class BaseStreamingImageVolume
     this.scaling = { PT: petScaling };
   }
 
-  protected checkDimensionGroupCompletion(imageIdIndex: number): void {}
+  protected checkDimensionGroupCompletion(_imageIdIndex: number): void {}
 }
