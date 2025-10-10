@@ -48,7 +48,20 @@ function keyListener(evt: KeyboardEvent): void {
   state.key = evt.key;
   state.keyCode = evt.keyCode;
 
-  evt.preventDefault();
+  // Don't prevent default behavior for modifier-only keys (Shift, Control, Alt, Meta, AltGraph)
+  // as this can interfere with mouse cursor movement and other browser behaviors.
+  // Preventing default on these keys can block browser features and mouse tracking.
+  const isModifierOnlyKey = 
+    evt.key === 'Shift' || 
+    evt.key === 'Control' || 
+    evt.key === 'Alt' || 
+    evt.key === 'Meta' ||
+    evt.key === 'AltGraph';
+  
+  if (!isModifierOnlyKey) {
+    evt.preventDefault();
+  }
+  
   const eventDetail: KeyDownEventDetail = {
     renderingEngineId: state.renderingEngineId,
     viewportId: state.viewportId,
