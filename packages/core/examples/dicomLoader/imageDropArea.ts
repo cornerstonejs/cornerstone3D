@@ -16,11 +16,10 @@ const SERIES_INSTANCE_UID_TAG = 'x0020000e';
 function createImageDropArea(logFn: AddLogFn) {
   const area = document.createElement('div');
   area.id = 'image-drop-area';
+  area.className = 'example-drop-area';
   area.style.width = '500px';
   area.style.height = '300px';
-  area.style.background = 'lightblue';
   area.style.margin = '5px';
-  area.style.padding = '5px';
 
   const p = document.createElement('p');
   p.appendChild(

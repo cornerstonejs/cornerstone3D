@@ -166,15 +166,9 @@ function addTemporaryPickedPositionLabel(
 ) {
   // Create a temporary div to show the coordinates
   const coordDiv = document.createElement('div');
-  coordDiv.style.position = 'absolute';
+  coordDiv.className = 'example-info-overlay';
   coordDiv.style.top = `${y + 10}px`;
   coordDiv.style.left = `${x + 10}px`;
-  coordDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-  coordDiv.style.color = 'white';
-  coordDiv.style.padding = '5px';
-  coordDiv.style.borderRadius = '3px';
-  coordDiv.style.zIndex = '1000';
-  coordDiv.style.pointerEvents = 'none';
   coordDiv.textContent = `X: ${pickedPoint[0].toFixed(
     2
   )}, Y: ${pickedPoint[1].toFixed(2)}, Z: ${pickedPoint[2].toFixed(2)}`;

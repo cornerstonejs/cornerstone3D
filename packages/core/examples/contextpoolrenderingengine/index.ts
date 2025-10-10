@@ -51,10 +51,10 @@ const viewportContainer = document.createElement('div');
 viewportContainer.id = 'viewportContainer';
 viewportContainer.style.display = 'flex';
 viewportContainer.style.flexDirection = 'column';
-viewportContainer.style.width = '95vw';
+viewportContainer.style.width = '100%';
 viewportContainer.style.height = '90vh';
-viewportContainer.style.backgroundColor = 'darkred';
 viewportContainer.style.gap = '2px';
+viewportContainer.style.position = 'relative';
 
 content.appendChild(viewportContainer);
 
@@ -161,21 +161,17 @@ async function run() {
   // Add performance info
   if (!window.IS_PLAYWRIGHT) {
     const info = document.createElement('div');
-    info.style.position = 'absolute';
+    info.className = 'example-info-panel';
     info.style.top = '10px';
     info.style.right = '10px';
-    info.style.color = 'white';
-    info.style.backgroundColor = 'rgba(0,0,0,0.7)';
-    info.style.padding = '10px';
-    info.style.borderRadius = '5px';
     info.innerHTML = `
     <h3>ContextPoolRenderingEngine Example</h3>
     <p>${count} viewports (${columns}x${rows} grid)</p>
     <p>Using ContextPoolRenderingEngine for better performance with large viewport counts</p>
     <p>Resize the window to test resize observer</p>
-    <p style="color: #4CAF50;">Avoids WebGL, browser and OS limits</p>
+    <p class="example-status-active">Avoids WebGL, browser and OS limits</p>
   `;
-    content.appendChild(info);
+    viewportContainer.appendChild(info);
   }
 }
 

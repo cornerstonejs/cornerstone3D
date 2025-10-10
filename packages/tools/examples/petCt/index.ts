@@ -89,6 +89,49 @@ setTitleAndDescription(
   'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
 );
 
+const instructions = document.createElement('div');
+instructions.innerHTML = `
+  <div style="background: #0f1330; padding: 1rem; border-radius: 8px; border: 1px solid #1a1d3f; margin-bottom: 1rem;">
+    <h3 style="color: #5acce6; margin-bottom: 1rem;">Instructions</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; color: #ffffff; font-size: 0.9rem; line-height: 1.6;">
+      <div>
+        <h4 style="color: #5acce6; margin-bottom: 0.5rem;">Basic Controls:</h4>
+        <ul style="margin: 0; padding-left: 1.5rem;">
+          <li>Left click: Use selected tool</li>
+          <li>Middle click: Pan</li>
+          <li>Right click: Zoom</li>
+          <li>Mouse Wheel: Stack Scroll</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="color: #5acce6; margin-bottom: 0.5rem;">Window Level Tool:</h4>
+        <p style="margin: 0;">Drag to set the window level for the CT and threshold for the PET.</p>
+      </div>
+      <div>
+        <h4 style="color: #5acce6; margin-bottom: 0.5rem;">Rectangle ROI Tool:</h4>
+        <p style="margin: 0;">Left click and drag to draw a rectangle ROI.</p>
+      </div>
+      <div>
+        <h4 style="color: #5acce6; margin-bottom: 0.5rem;">Crosshairs:</h4>
+        <ul style="margin: 0; padding-left: 1.5rem;">
+          <li>Click/Drag to move the center of crosshairs</li>
+          <li>Drag reference lines to scroll other views</li>
+          <li>Square: Change MIP slab thickness</li>
+          <li>Circle: Rotate the axes</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="color: #5acce6; margin-bottom: 0.5rem;">PET MIP:</h4>
+        <ul style="margin: 0; padding-left: 1.5rem;">
+          <li>Mouse Wheel: Rotate PET</li>
+          <li>Left click: Jump to highest SUV point</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+`;
+document.getElementById('content').appendChild(instructions);
+
 const optionsValues = [
   WindowLevelTool.toolName,
   CrosshairsTool.toolName,
@@ -226,44 +269,6 @@ element_mip.style.width = '100%';
 element_mip.style.height = '100%';
 element_mip.oncontextmenu = (e) => e.preventDefault();
 resizeObserver.observe(element_mip);
-
-const instructions = document.createElement('p');
-
-instructions.innerText = `
-  Basic Controls:
-  - Left click: Use selected tool
-  - Middle click: Pan
-  - Right click: Zoom
-  - Mouse Wheel: Stack Scroll
-
-  Window Level Tool:
-  - Drag to set the window level for the CT and threshold for the PET.
-
-  Rectangle ROI Tool:
-  - Left click and drag to draw a rectangle ROI.
-
-  Crosshairs:
-  - When the tool is active: Click/Drag anywhere in the viewport to move the center of the crosshairs.
-  - Drag a reference line to move it, scrolling the other views.
-  - Square (closest to center): Drag these to change the thickness of the MIP slab in that plane.
-  - Circle (further from center): Drag these to rotate the axes.
-
-  PET MIP:
-  - Mouse Wheel: Rotate PET
-  - Left click: Jump all views to the point of highest SUV in the region clicked.
-
-  Volume_3D Controls:
-  - Middle click : Rotate the image
-  - Mouse Wheel: Rotate PET
-  - Right click : Pan
-  - Left click: Jump all views to the point of highest SUV in the region clicked.
-  `;
-
-instructions.style.gridColumnStart = '5';
-instructions.style.gridRowStart = '1';
-instructions.style.gridRowEnd = 'span 3';
-
-viewportGrid.append(instructions);
 
 // ============================= //
 

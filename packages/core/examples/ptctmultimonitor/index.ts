@@ -335,7 +335,7 @@ function createViewportGrid() {
   viewportGrid.style.display = 'grid';
   viewportGrid.style.gridTemplateRows = `repeat(3, 33.33%)`;
   viewportGrid.style.gridTemplateColumns = `repeat(12, 8.33%)`;
-  viewportGrid.style.width = '98vw';
+  viewportGrid.style.width = '100%';
   viewportGrid.style.height = '95vh';
   viewportGrid.style.gap = '2px';
 

@@ -1,0 +1,659 @@
+/**
+ * Example information for navigation
+ * This file is auto-generated from example-info.json
+ */
+
+// This will be injected into the global scope for the navigation to use
+window.EXAMPLE_INFO = {
+  "categories": {
+    "core-basic": {
+      "description": "Basic usage"
+    },
+    "tools-basic": {
+      "description": "Tools library"
+    },
+    "tools-segmentation": {
+      "description": "Segmentation"
+    },
+    "tools-advanced": {
+      "description": "Advanced Tools library"
+    },
+    "advanced-gpu-segmentation": {
+      "description": "GPU Segmentation Tools"
+    },
+    "polymorph-segmentation": {
+      "description": "Polymorph Segmentation"
+    },
+    "dicom-image-loader": {
+      "description": "DICOM image loader"
+    },
+    "adapters": {
+      "description": "Adapters"
+    },
+    "viewports": {
+      "description": "Other Viewports (video,wsi)"
+    },
+    "nifti": {
+      "description": "Nifti Volume loader"
+    }
+  },
+  "examplesByCategory": {
+    "core-basic": {
+      "stackBasic": {
+        "name": "Basic Stack Viewport Usage",
+        "description": "Displays a single image in a Stack Viewport."
+      },
+      "stackAPI": {
+        "name": "Stack Viewport API",
+        "description": "Demonstrates how to interact with a Stack viewport (e.g. Set VOI Range, Next/Previous Images, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "stackPosition": {
+        "name": "Stack Viewport Positioning",
+        "description": "Demonstrates basic positioning of the viewport image using display area and flip/rotation"
+      },
+      "stackVoiSigmoid": {
+        "name": "Stack Sigmoid LUT",
+        "description": "Demonstrates the Sigmoid LUT Function instead of Linear"
+      },
+      "stackEvents": {
+        "name": "Stack Viewport Events",
+        "description": "Demonstrates the Events that are fired during interaction with a Stack Viewport"
+      },
+      "stackCanvasToWorld": {
+        "name": "Stack Viewport Canvas-to-World",
+        "description": "Demonstrates how to obtain the coordinates in the 3D world from a coordinate on the canvas."
+      },
+      "volumeBasic": {
+        "name": "Basic Volume Viewport Usage",
+        "description": "Displays a set of DICOM images in a Volume Viewport."
+      },
+      "volumeAPI": {
+        "name": "Volume Viewport API",
+        "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"
+      },
+      "volumeVoiSigmoid": {
+        "name": "Volume Sigmoid LUT",
+        "description": "Demonstrates the Sigmoid LUT Function instead of Linear"
+      },
+      "volumeViewport3D": {
+        "name": "3D Volume Rendering",
+        "description": "Demonstrates how to 3D render a volume and apply a preset"
+      },
+      "volumeEvents": {
+        "name": "Volume Viewport Events",
+        "description": "Demonstrates the Events that are fired during interaction with a Volume Viewport"
+      },
+      "multiVolumeAPI": {
+        "name": "Multiple Volumes in a Volume Viewport",
+        "description": "Demonstrates how to interact with a Volume viewport when using multiple volumes (e.g. for PET/CT fusion)."
+      },
+      "multiVolumeCanvasToWorld": {
+        "name": "Multiple Volume Canvas-to-World",
+        "description": "Demonstrates how to use the canvasToWorld API to find the intensity value of each volume on mouse hover"
+      },
+      "polyDataActorAPI": {
+        "name": "Poly Data Actor in a Volume Viewport",
+        "description": "Demonstrates how to render poly data with a Volume viewport"
+      },
+      "wadouri": {
+        "name": "Legacy DICOMweb (WADO-URI) Support",
+        "description": "Demonstrates how to support retrieval of entire Part 10 DICOM files directly via URL"
+      },
+      "volumeBasicWadoUri": {
+        "name": "Basic Volume using streaming WADOURI",
+        "description": "Demonstrates how to displays a DICOM series (via URL) in a Volume viewport"
+      },
+      "meshLoader": {
+        "name": "Load Mesh of PLY, OBJ, STL or VTP format",
+        "description": "Demonstrates how to load a mesh in a volume3D viewport"
+      },
+      "webLoader": {
+        "name": "Load Web images of PNG or JPG format",
+        "description": "Demonstrates how render web images in a stack viewport"
+      },
+      "dynamicCINETool": {
+        "name": "Load a dynamic 4D data",
+        "description": "Demonstrates how you can render 4D data with cornerstone 3d"
+      },
+      "renderToCanvas": {
+        "name": "Render To Canvas",
+        "description": "Demonstrates how to use the api to render to a canvas directly"
+      },
+      "changeColorMap": {
+        "name": "Change the colormap and adjusting the opacity",
+        "description": "Demonstrate how to interact with a fusion viewport, specifically by changing the colormap and adjusting the opacity."
+      },
+      "volumePriorityLoading": {
+        "name": "Prioritizing Slices during Volume Loading",
+        "description": "Demonstrates how to customize the slice loading order using the streaming-image volume loader"
+      },
+      "programaticPanZoom": {
+        "name": "Programmatic Pan/Zoom",
+        "description": "Demonstrates how to programmatically pan/zoom a stack viewport. It can be used for setting initial display area and presentation state."
+      },
+      "local": {
+        "name": "DICOM P10 from the local file system",
+        "description": "Provides an interface to load a DICOM P10 image from your local file system to the Cornerstone3D"
+      },
+      "localCPU": {
+        "name": "DICOM P10 from the local file system using CPU",
+        "description": "Cornerstone3D uses WebGL for rendering by default (if available) and a fallback to CPU. This example force rendering on CPU for debugging purposes."
+      },
+      "stackProperties": {
+        "name": "Stack viewport default properties",
+        "description": "Demonstrates how you can set per image properties for a stack viewport that acts as default values for that specific image"
+      },
+      "volumeSlabScroll": {
+        "name": "Volume Slab Scroll",
+        "description": "Demonstrates how to use the slab scroll tool to scroll through a volume"
+      },
+      "resize": {
+        "name": "Resize viewport and change aspect ratio",
+        "description": "Resize the viewport and allow various aspect ratios/conditions"
+      },
+      "viewReferencePresentation": {
+        "name": "Apply view reference and/or presentation parameters",
+        "description": "Demonstrates how to apply various view/reference presentation parameters."
+      },
+      "stackToVolume": {
+        "name": "Stack to Volume Viewport",
+        "description": "Demonstrates how to convert a Stack Viewport to a Volume Viewport"
+      },
+      "webWorker": {
+        "name": "Custom Web Worker Function",
+        "description": "Demonstrates how to use the web worker manager to register and execute custom web worker functions off the main thread"
+      },
+      "contextpoolrenderingengine": {
+        "name": "6x6 Grid with ContextPoolRenderingEngine",
+        "description": "Displays a 6x6 grid of viewports using ContextPoolRenderingEngine for better performance with large viewport counts"
+      },
+      "ptctmultimonitor": {
+        "name": "PET-CT Multi-Monitor Layout",
+        "description": "Demonstrates how to create a multi-monitor layout with PET-CT fusion using the ContextPoolRenderingEngine"
+      },
+      "webGLContextPooling": {
+        "name": "WebGL Context Pooling",
+        "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync using ContextPoolRenderingEngine"
+      },
+      "sharpening": {
+        "name": "Image Sharpening For Stack & Volume Viewports",
+        "description": "Demonstrates how to apply image sharpening to stack and volume viewports"
+      }
+    },
+    "tools-basic": {
+      "etdrsGrid": {
+        "name": "ETDRS Grid Tool",
+        "description": "Demonstrates how to use the ETDRS Grid tool. An ETDRS Grid (Early Treatment Diabetic Retinopathy Study Grid) is a standardized grid used in ophthalmology to assess macular thickness and retinal changes."
+      },
+      "cursor3D": {
+        "name": "3D Volume Picking",
+        "description": "Demonstrates how to use the VTK.js vtkCellPicker object to pick 3D point in volume rendering scene. Also shows how to synchronize between 3D and 2D viewports."
+      },
+      "volumeCroppingTool": {
+        "name": "3D Volume Cropping",
+        "description": "Demonstrates how to use the VolumeCropping  and VolumeCroppingControl tools."
+      },
+      "multipleToolGroups": {
+        "name": "Multiple Tool Groups",
+        "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
+      },
+      "stackManipulationTools": {
+        "name": "Stack Manipulation Tools",
+        "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
+      },
+      "stackManipulationToolsTouch": {
+        "name": "Stack Manipulation Tools Touch",
+        "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling for mobile touch"
+      },
+      "annotationToolModes": {
+        "name": "Annotation Tool Modes",
+        "description": "Demonstrates the various tool modes for annotation tools (active, passive, enabled, disabled)"
+      },
+      "stackAnnotationTools": {
+        "name": "Stack Annotation Tools",
+        "description": "Demonstrates usage of various annotation tools (Probe, Rectangle ROI, Elliptical ROI, Bidirectional measurements) on a Stack Viewport."
+      },
+      "stackRange": {
+        "name": "Stack Range",
+        "description": "Demonstrates use of a selection range for key image and other tools"
+      },
+      "calibrationTools": {
+        "name": "Calibration Tools",
+        "description": "Demonstrates usage of calibration tools on a Stack Viewport."
+      },
+      "volumeAnnotationTools": {
+        "name": "Volume Annotation Tools ",
+        "description": "Demonstrates annotation using the Length tool in a Volume Viewport (on axial, sagittal, and oblique views)"
+      },
+      "annotationSelectionAndLocking": {
+        "name": "Annotation Selection and Locking",
+        "description": "Demonstrates how to toggle the Locked and Selected states for Annotations"
+      },
+      "resetCamera": {
+        "name": "Viewports Reset Camera",
+        "description": "Demonstrates various options that are available for resetting camera on viewports"
+      },
+      "annotationVisibility": {
+        "name": "Annotation changing visibility",
+        "description": "Demonstrates how to toggle the Visibility state for Annotations"
+      },
+      "modifierKeys": {
+        "name": "Binding Tools with Modifier Keys",
+        "description": "Demonstrates how to bind a tool to a keyboard and mouse combination (e.g. shift+click, ctrl+click)"
+      },
+      "magnifyTool": {
+        "name": "Magnify Tool",
+        "description": "Demonstrates the usage of the magnification tool"
+      },
+      "advancedMagnifyTool": {
+        "name": "Advanced Magnify Tool",
+        "description": "Demonstrates the usage of the advanced magnification tool on stack and volume viewports"
+      },
+      "CINETool": {
+        "name": "CINE Tool",
+        "description": "Demonstrates the usage of the CINE tool"
+      },
+      "planarFreehandROITool": {
+        "name": "Freehand ROI Tool",
+        "description": "Demonstrates drawing of both open and closed freehand ROIs (contour tool) on stack and volume viewports"
+      },
+      "SculptorTool": {
+        "name": "Sculptor Tool",
+        "description": "Demonstrates sculpting of freehand ROIs and FreehandContourSegmentations"
+      },
+      "polyDataActorManipulationTools": {
+        "name": "Manipulation Tools with Poly Data in a Volume Viewport API",
+        "description": "Demonstrates how to interact with a Volume viewport (Pan, Zoom, Rotate) by mouse events"
+      },
+      "volumeViewportOrientation": {
+        "name": "Volume Viewport Orientation",
+        "description": "Demonstrates you can switch between different orientation of a volume viewport"
+      },
+      "referenceCursors": {
+        "name": "Referencing Cursors",
+        "description": "Demonstrates how to synchronize the cursor between multiple viewports"
+      },
+      "doubleClickWithStackAnnotationTools": {
+        "name": "Double Click With Stack Annotation Tools",
+        "description": "Demonstrates double click detection before/during/after using various annotation tools on a stack viewport."
+      },
+      "colorBar": {
+        "name": "ColorBar",
+        "description": "Demonstrates how to add an interactive color bar to stack viewport"
+      },
+      "advancedColorBar": {
+        "name": "Advanced ColorBar",
+        "description": "Demonstrates how to add an interactive color bar to stack and volume viewports with PT/CT volumes"
+      },
+      "ultrasoundenhancedregion": {
+        "name": "Ultrasound Enhanced Region",
+        "description": "Demonstrates several tools that can be used on Ultrasound data with Sequence of Ultrasound Regions Attributes"
+      },
+      "windowLevelRegion": {
+        "name": "Window Level Region",
+        "description": "Demonstrates how to use the window level region tool to adjust the window level of an image"
+      },
+      "splineROITools": {
+        "name": "Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
+      },
+      "livewireContour": {
+        "name": "Livewire",
+        "description": "Demonstrates how to use the livewire tool to create ROIs"
+      }
+    },
+    "viewports": {
+      "video": {
+        "name": "Video Display",
+        "description": "Basic video display"
+      },
+      "videoNavigation": {
+        "name": "Video Navigation",
+        "description": "Navigation of video playback"
+      },
+      "videoColor": {
+        "name": "Video Color Control",
+        "description": "Video Color Correction and Brightness/Contrast"
+      },
+      "videoTools": {
+        "name": "Video Tools",
+        "description": "Video annotation tools"
+      },
+      "videoGroup": {
+        "name": "Video Annotation Grouping",
+        "description": "Annotation grouping tools"
+      },
+      "videoSegmentation": {
+        "name": "Video Labelmap Segmentation",
+        "description": "Video Labelmap Based Segmentation"
+      },
+      "videoContourSegmentation": {
+        "name": "Video Contour Segmentation",
+        "description": "Demonstrates spline and livewire contour segmentation on video viewports"
+      },
+      "videoRange": {
+        "name": "Video Range Selection",
+        "description": "Video range selection"
+      },
+      "wsi": {
+        "name": "Whole Slide Imaging",
+        "description": "Display WSI Series"
+      },
+      "wsiAnnotationTools": {
+        "name": "WSI Annotation Tools",
+        "description": "WSI with length and other annotation tools"
+      }
+    },
+    "tools-segmentation": {
+      "labelmapRendering": {
+        "name": "Labelmap Segmentation Rendering",
+        "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
+      },
+      "contourRendering": {
+        "name": "Contour Segmentation Representation",
+        "description": "Demonstrates how to use the Contour Segmentation Representation"
+      },
+      "surfaceRendering": {
+        "name": "Surface Segmentation Representation",
+        "description": "Demonstrates how to use the Surface Segmentation Representation"
+      },
+      "labelmapSwapping": {
+        "name": "Labelmap Segmentation Swapping",
+        "description": "Demonstrate how to display segmentations on a volume viewport, and swap which segmentation is being displayed"
+      },
+      "labelmapGlobalConfiguration": {
+        "name": "Global Labelmap Segmentation Configuration",
+        "description": "Demonstrates how to set a global configuration for segmentation representations"
+      },
+      "contourRenderingConfiguration": {
+        "name": "Contour rendering configuration ",
+        "description": "Demonstrates how to set a configuration (such as line thickness) for contour rendering"
+      },
+      "labelmapViewportSpecificConfiguration": {
+        "name": "Viewport Specific Labelmap Segmentation Configuration",
+        "description": "Demonstrate how to change the configuration of how a specific tool group displays segmentations through via segmentation representations"
+      },
+      "labelmapSegmentSpecificConfiguration": {
+        "name": "Labelmap segment-specific Configuration",
+        "description": "Demonstrates how to change the configuration of a specific segment"
+      },
+      "labelmapSegmentationTools": {
+        "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
+        "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
+      },
+      "labelmapStatistics": {
+        "name": "Labelmap Statistics",
+        "description": "Show labelmap statistics"
+      },
+      "labelmapSegmentationDynamicThreshold": {
+        "name": "Labelmap Segmentation Dynamic Threshold and Preview",
+        "description": "Demonstrates how to use dynamic threshold with preview to modify the segmentation data"
+      },
+      "labelmapSegmentColorChange": {
+        "name": "Labelmap Segment Color Change",
+        "description": "Here we demonstrate how to change the color of a segment in a segmentation representation"
+      },
+      "labelmapSegmentLocking": {
+        "name": "Labelmap Segmentation Locking",
+        "description": "Demonstrate how a segment can be locked such that it cannot be edited by segmentation tools"
+      },
+      "labelmapRenderingDifferentResolutions": {
+        "name": "Rendering Labelmap with Different Resolutions",
+        "description": "Demonstrates that the segmentation resolution need not to be the same as the source data"
+      },
+      "rectangleROIThreshold": {
+        "name": "Rectangle ROI Threshold Segmentation",
+        "description": "Demonstrates how to use the rectangle roi tool to perform threshold segmentation"
+      },
+      "stackLabelmapSegmentation": {
+        "name": "Stack Labelmap creation/edit for stack viewports",
+        "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
+      },
+      "stackViewportsWithSegmentationSync": {
+        "name": "Stack Viewports with Segmentation Sync",
+        "description": "Demonstrates how to synchronize two stack viewports with a segmentation on one of them"
+      },
+      "splineROITools": {
+        "name": "Spline ROI Tools",
+        "description": "Demonstrates how to use spline ROI tools (Linear, Cardinal, Catmull-ROM and BSpline)"
+      },
+      "interpolationContourSegmentation": {
+        "name": "Interpolation of Contours between slices",
+        "description": "Demonstrates how to setup interpolation between frames for contour segmentations"
+      },
+      "surfaceContourRendering": {
+        "name": "Display surfaces in slices",
+        "description": "Demonstrates how 3D surfaces as displayed in different orientation viewports"
+      },
+      "contourSegmentationConfiguration": {
+        "name": "Contour Segmentation Configuration",
+        "description": "Demonstrates how to set a configuration for contour segmentations"
+      },
+      "segmentBidirectionalTool": {
+        "name": "Segmentation Bidirectional Tool",
+        "description": "Demonstrates the calculation of largest bidirectional diameters within segmented contours, akin to RECIST measurements for assessing changes in tumor sizes or anatomical structures over time in medical imaging."
+      },
+      "segmentSelect": {
+        "name": "Segment Select Tool",
+        "description": "Demonstrates the segmentSelectTool capabilities which you can use to switch active segment by only hovering over them."
+      },
+      "segmentLabel": {
+        "name": "Segment Label Tool",
+        "description": "Demonstrates the segmentLabelTool capabilities which you can use to see the labels of segments by only hovering over them."
+      },
+      "splineContourSegmentationTools": {
+        "name": "Spline Segmentation Tools",
+        "description": "Demonstrates how to create contour segmentations using SplineROI tool"
+      },
+      "splineContourSegmentationToolsAdvanced": {
+        "name": "Advanced Spline Segmentation Tools",
+        "description": "Demonstrates how to create contour segmentations using SplineROI tool on multiple viewports (stack and volume), segmentations and different styles for active and inactive states"
+      },
+      "planarFreehandContourSegmentationTool": {
+        "name": "Freehand Segmentation Tool",
+        "description": "Demonstrates how to create contour segmentations using planarFreehandROITool tool"
+      },
+      "livewireContourSegmentation": {
+        "name": "Livewire Segmentation Tool",
+        "description": "Demonstrates how to create contour segmentations using livewireContour tool"
+      },
+      "sculptorTool": {
+        "name": "sculptorTool Tool",
+        "description": "Demonstrates how to have similar brush tool effects on the contour"
+      },
+      "logicalOperators": {
+        "name": "Logical operators for contour segmentations",
+        "description": "Demonstrates the logical operations that can be performed on contour segmentations, such as union, intersection, and subtraction."
+      },
+      "labelmapEditWithContour": {
+        "name": "Labelmap Editing with Contour",
+        "description": "Use contour tools to edit the labelmap"
+      },
+      "labelmapEditWithContourAutomatic": {
+        "name": "Automatic Labelmap editing with contour Tool",
+        "description": "Apply contour tool automatic to efficiently modify and refine labelmap regions."
+      },
+      "labelmapInterpolation": {
+        "name": "Labelmap Interpolation",
+        "description": "Interpolate between slices using labelmap"
+      },
+      "labelmapMIP": {
+        "name": "Labelmap MIP",
+        "description": "Demonstrates how to use the labelmap MIP tool"
+      },
+      "contourApi": {
+        "name": "Contour Utility API",
+        "description": "Demonstrates how to use various contour utility functions concerning simplification, smoothing, and hole removal."
+      }
+    },
+    "advanced-gpu-segmentation": {
+      "regionSegment": {
+        "name": "Region Segment Tool",
+        "description": "Demonstrates how to create a segmentation after drawing a 3D sphere and running grow cut algorithm in the GPU"
+      },
+      "regionSegmentPlus": {
+        "name": "Region Segment Plus Tool",
+        "description": "Demonstrates how to create a segmentation with a single click and running grow cut algorithm in the gpu"
+      },
+      "growCutLabelmap": {
+        "name": "Custom Brush Grow Cut",
+        "description": "Demonstrates how to run grow cut algorithm in the GPU on a labelmap with positive and negative seeds"
+      },
+      "wholeBodySegment": {
+        "name": "Whole Body Segment tool",
+        "description": "Demonstrates how to segment the whole body of a region selected by the user that is processed in the gpu"
+      },
+      "SAMClientSide": {
+        "name": "Segmentation AI Assistance",
+        "description": "Demonstrates how to use AI assistance tools for segmentation creation using onnx runtime on the client side"
+      }
+    },
+    "tools-advanced": {
+      "mipJumpToClick": {
+        "name": "Maximum Intensity Projection (MIP) - Jump to Click",
+        "description": "Demonstrates how to obtain the location of the maximum value along the ray in a MIP view, and then navigate another set of viewports to this location."
+      },
+      "crossHairs": {
+        "name": "Crosshairs",
+        "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
+      },
+      "mprReformat": {
+        "name": "DICOM Reformats in MPR",
+        "description": "Aligns MPR viewports to dicom acquisition orientations"
+      },
+      "overlayGrid": {
+        "name": "Overlay Grid",
+        "description": "Demonstrate overlay grid tool usage with three viewports one for each orientation"
+      },
+      "referenceLines": {
+        "name": "Reference Lines",
+        "description": "Demonstrate reference line tool for rendering viewports location with respect to each other"
+      },
+      "orientationMarker": {
+        "name": "Orientation Marker",
+        "description": "Demonstrate orientation marker tool for viewports orientation it has cube, axis and custom actors"
+      },
+      "petCT": {
+        "name": "PET-CT Fusion + MIPLayout",
+        "description": "PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold"
+      },
+      "sharedToolState": {
+        "name": "Shared Tool State",
+        "description": "Demonstrates that annotations are stored on frame of reference, and can therefore be shared between Stack and Volume Viewports."
+      },
+      "stackToVolumeWithAnnotations": {
+        "name": "StackViewport to and from VolumeViewport ",
+        "description": "Demonstrates how annotations are preserved and rendered correctly even when a stack viewport is converted to a volume viewport and vice versa. This is an advanced usage for MPR"
+      },
+      "volumeViewportSynchronization": {
+        "name": "Volume Viewport Synchronization",
+        "description": "Demonstrates how to set up synchronization between viewports for viewport-level (e.g. camera) and actor-level (e.g. VOI) properties."
+      },
+      "cancelAnnotationDrawing": {
+        "name": "Cancel Annotation Drawing",
+        "description": "Demonstrates how to use the keyboard (ESC) key to cancel annotation drawing."
+      },
+      "scaleOverlayTool": {
+        "name": "Scale Overlay Tool",
+        "description": "Demonstrates the scale overlay tool for rendering a scale on a viewport showing the real world size of the image."
+      },
+      "generateImageFromTimeData": {
+        "name": "Generate 3D Volume From 4D Data",
+        "description": "Demonstrates generating a 3D volume from 4D data using subtract, average or sum."
+      },
+      "dynamicallyAddAnnotations": {
+        "name": "Dynamically Add Annotations",
+        "description": "Demonstrates how to dynamically add annotations to a viewport"
+      },
+      "toolHistory": {
+        "name": "Tool History",
+        "description": "Demonstrates how to use the tool history to undo and redo tool actions"
+      },
+      "toolHistoryGrouping": {
+        "name": "Tool History Grouping",
+        "description": "Demonstrates how to use the tool history grouping to undo and redo batched tool actions that are related to one another"
+      }
+    },
+    "polymorph-segmentation": {
+      "PolySegWasmContourToStackLabelmap": {
+        "name": "Convert contour segmentation to stack labelmap",
+        "description": "Demonstrates how to convert a contour segmentation to a stack labelmap"
+      },
+      "PolySegWasmContourToVolumeLabelmap": {
+        "name": "Convert contour segmentation to volume labelmap",
+        "description": "Demonstrates how to convert a contour segmentation to a volume labelmap"
+      },
+      "PolySegWasmContourToSurface": {
+        "name": "Convert contour segmentation to surface",
+        "description": "Demonstrates how to convert a contour segmentation to a closed surface"
+      },
+      "PolySegWasmStackLabelmapToSurface": {
+        "name": "Convert stack labelmap to surface",
+        "description": "Demonstrates how to convert a stack labelmap to a closed surface"
+      },
+      "PolySegWasmVolumeLabelmapToSurface": {
+        "name": "Convert volume labelmap to surface",
+        "description": "Demonstrates how to convert a volume labelmap to a closed surface"
+      },
+      "PolySegWasmSurfaceToVolumeLabelmap": {
+        "name": "Convert surface to volume labelmap",
+        "description": "Demonstrates how to convert a closed surface to a volume labelmap"
+      },
+      "PolySegWasmSurfaceToStackLabelmap": {
+        "name": "Convert surface to stack labelmap",
+        "description": "Demonstrates how to convert a closed surface to a stack labelmap"
+      },
+      "PolySegWasmVolumeLabelmapToContour": {
+        "name": "Convert volume labelmap to contour",
+        "description": "Demonstrates how to convert a volume labelmap to a contour segmentation"
+      },
+      "PolySegWasmSurfaceToContour": {
+        "name": "Convert surface to contour",
+        "description": "Demonstrates how to convert a closed surface to a contour segmentation"
+      }
+    },
+    "dicom-image-loader": {
+      "dicomImageLoaderWADOURI": {
+        "name": "WADO-URI (DICOM P10)",
+        "description": "WADO-URI (DICOM P10 via HTTP GET) with different codecs"
+      },
+      "htj2kStackBasic": {
+        "name": "HTJ2K Stack Basic Loading",
+        "description": "Demonstrates basic loading of HTJ2K"
+      },
+      "htj2kVolumeBasic": {
+        "name": "HTJ2K Volume Basic Loading",
+        "description": "Demonstrates basic loading of HTJ2K in MPR views"
+      },
+      "stackProgressive": {
+        "name": "Stack Progressive Loading",
+        "description": "Stack progressive loading using HTJ2K and/or other methods."
+      },
+      "volumeProgressive": {
+        "name": "Volume Progressive Loading",
+        "description": "Volume progressive loading inter and intra image"
+      }
+    },
+    "adapters": {
+      "segmentationStack": {
+        "name": "DICOM SEG Stack",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D stack"
+      },
+      "segmentationVolume": {
+        "name": "DICOM SEG Volume",
+        "description": "Demonstrates how to import or export a segmentation to DICOM SEG from a Cornerstone3D volume"
+      }
+    },
+    "nifti": {
+      "niftiBasic": {
+        "name": "Load Nifti Volume",
+        "description": "Demonstrates how to load and render a nifti volume"
+      },
+      "niftiWithTools": {
+        "name": "Tool Usage in Nifti",
+        "description": "Demonstrates how to use manipulation and annotation tools on a nifti volume"
+      }
+    }
+  }
+};
+
