@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.5...v4.5.6) (2025-10-10)
+
+### Bug Fixes
+
+- Updated BasicStatsCalculator to change from private to protected ([#2382](https://github.com/cornerstonejs/cornerstone3D/issues/2382)) ([89a8db5](https://github.com/cornerstonejs/cornerstone3D/commit/89a8db54bec5b96a61624dcca65464982d5e40b3))
+
 ## [4.5.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.4...v4.5.5) (2025-10-09)
 
 ### Bug Fixes
