@@ -58,7 +58,7 @@ const demoToolbar = document.getElementById('demo-toolbar');
 
 const group0 = document.createElement('div');
 group0.style.marginBottom = '10px';
-group0.style.color = 'red';
+group0.className = 'example-status-inactive';
 group0.innerText = 'Recording is OFF';
 demoToolbar.appendChild(group0);
 
@@ -162,7 +162,7 @@ addButtonToToolbar({
   title: 'Start Group Recordings',
   onClick() {
     DefaultHistoryMemo.startGroupRecording();
-    group0.style.color = 'green';
+    group0.className = 'example-status-active';
     group0.innerText = 'Recording is ON';
   },
   container: group1,
@@ -173,7 +173,7 @@ addButtonToToolbar({
   title: 'End Group Recordings',
   onClick() {
     DefaultHistoryMemo.endGroupRecording();
-    group0.style.color = 'red';
+    group0.className = 'example-status-inactive';
     group0.innerText = 'Recording is OFF';
   },
   container: group1,
