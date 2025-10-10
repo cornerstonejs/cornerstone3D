@@ -630,6 +630,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     );
   }
 
+  protected startGroupRecording() {
+    DefaultHistoryMemo.startGroupRecording();
+  }
+
+  /** Ends a group recording of history memo */
+  protected endGroupRecording() {
+    DefaultHistoryMemo.endGroupRecording();
+  }
+
   protected static hydrateBase<T extends AnnotationTool>(
     ToolClass: new () => T,
     enabledElement: Types.IEnabledElement,
