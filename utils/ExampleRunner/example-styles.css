@@ -5,6 +5,29 @@
 
 :root {
   --primary-blue: #5acce6;
+  --success-green: #22c55e;
+  --warning-yellow: #fbbf24;
+}
+
+/* Light Mode (default) */
+:root,
+[data-theme="light"] {
+  --dark-bg: #f8fafc;
+  --darker-bg: #ffffff;
+  --card-bg: #ffffff;
+  --text-light: #0f172a;
+  --text-gray: #64748b;
+  --border-color: #e2e8f0;
+  --hover-bg: #f1f5f9;
+  --overlay-bg: rgba(255, 255, 255, 0.95);
+  --overlay-border: rgba(90, 204, 230, 0.5);
+  --drop-area-bg: rgba(90, 204, 230, 0.05);
+  --drop-area-border: rgba(90, 204, 230, 0.5);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
   --dark-bg: #090B2B;
   --darker-bg: #090B2B;
   --card-bg: #0f1330;
@@ -12,8 +35,11 @@
   --text-gray: #94a3b8;
   --border-color: #1a1d3f;
   --hover-bg: #1a1d3f;
-  --success-green: #22c55e;
-  --warning-yellow: #fbbf24;
+  --overlay-bg: rgba(15, 19, 48, 0.95);
+  --overlay-border: rgba(90, 204, 230, 0.3);
+  --drop-area-bg: rgba(90, 204, 230, 0.05);
+  --drop-area-border: rgba(90, 204, 230, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -43,7 +69,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px var(--shadow-color);
 }
 
 #example-header-content {
@@ -502,11 +528,11 @@ body {
 /* Info overlay - for coordinate displays, tooltips, etc. */
 .example-info-overlay {
   position: absolute;
-  background-color: rgba(15, 19, 48, 0.95);
+  background-color: var(--overlay-bg);
   color: var(--primary-blue);
   padding: 8px 12px;
   border-radius: 6px;
-  border: 1px solid rgba(90, 204, 230, 0.3);
+  border: 1px solid var(--overlay-border);
   font-size: 14px;
   font-family: monospace;
   z-index: 1000;
@@ -519,23 +545,23 @@ body {
   top: 5px;
   left: 5px;
   color: var(--primary-blue);
-  background-color: rgba(15, 19, 48, 0.9);
+  background-color: var(--overlay-bg);
   padding: 4px 8px;
   font-size: 12px;
   z-index: 1000;
   pointer-events: none;
-  border: 1px solid rgba(90, 204, 230, 0.3);
+  border: 1px solid var(--overlay-border);
   border-radius: 4px;
 }
 
 /* Info panel - for larger information displays */
 .example-info-panel {
   position: absolute;
-  color: #ffffff;
-  background-color: rgba(15, 19, 48, 0.95);
+  color: var(--text-light);
+  background-color: var(--overlay-bg);
   padding: 12px;
   border-radius: 6px;
-  border: 1px solid rgba(90, 204, 230, 0.3);
+  border: 1px solid var(--overlay-border);
 }
 
 .example-info-panel h3 {
@@ -585,7 +611,7 @@ body {
 
 /* Log/Debug area */
 .example-log-area {
-  background-color: rgba(15, 19, 48, 0.9);
+  background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 8px;
@@ -595,15 +621,67 @@ body {
 
 /* Drop area */
 .example-drop-area {
-  background-color: rgba(90, 204, 230, 0.05);
-  border: 2px dashed rgba(90, 204, 230, 0.3);
+  background-color: var(--drop-area-bg);
+  border: 2px dashed var(--drop-area-border);
   border-radius: 6px;
   padding: 12px;
   transition: all 0.2s;
 }
 
 .example-drop-area:hover {
-  background-color: rgba(90, 204, 230, 0.1);
-  border-color: rgba(90, 204, 230, 0.5);
+  background-color: var(--hover-bg);
+  border-color: var(--primary-blue);
+}
+
+/* Theme Toggle Button */
+#theme-toggle {
+  padding: 0.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+#theme-toggle:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary-blue);
+  transform: translateY(-1px);
+}
+
+#theme-toggle:active {
+  transform: translateY(0);
+}
+
+#theme-icon {
+  transition: transform 0.3s ease;
+}
+
+#theme-toggle:hover #theme-icon {
+  transform: rotate(15deg);
+}
+
+/* Smooth theme transition */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#example-header,
+#example-info,
+#demo-toolbar,
+#content,
+#example-footer,
+.example-info-overlay,
+.example-slice-counter,
+.example-info-panel,
+.example-log-area,
+.example-drop-area {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 

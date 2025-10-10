@@ -136,6 +136,23 @@ module.exports = function buildExampleIndexStyled(names, exampleBasePaths) {
     <style>
       :root {
         --primary-blue: #5acce6;
+      }
+
+      /* Light Mode (default) */
+      :root,
+      [data-theme="light"] {
+        --dark-bg: #f8fafc;
+        --darker-bg: #ffffff;
+        --card-bg: #ffffff;
+        --text-light: #0f172a;
+        --text-gray: #64748b;
+        --border-color: #e2e8f0;
+        --hover-bg: #f1f5f9;
+        --shadow-color: rgba(0, 0, 0, 0.1);
+      }
+
+      /* Dark Mode */
+      [data-theme="dark"] {
         --dark-bg: #090B2B;
         --darker-bg: #090B2B;
         --card-bg: #0f1330;
@@ -143,6 +160,7 @@ module.exports = function buildExampleIndexStyled(names, exampleBasePaths) {
         --text-gray: #94a3b8;
         --border-color: #1a1d3f;
         --hover-bg: #1a1d3f;
+        --shadow-color: rgba(0, 0, 0, 0.05);
       }
 
       * {
@@ -492,13 +510,75 @@ module.exports = function buildExampleIndexStyled(names, exampleBasePaths) {
       .hidden {
         display: none !important;
       }
+
+      /* Theme Toggle Button */
+      #theme-toggle {
+        padding: 0.5rem;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-light);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+      }
+
+      #theme-toggle:hover {
+        background: var(--hover-bg);
+        border-color: var(--primary-blue);
+        transform: scale(1.1);
+      }
+
+      #theme-toggle:active {
+        transform: scale(0.95);
+      }
+
+      #theme-icon {
+        transition: transform 0.3s ease;
+      }
+
+      #theme-toggle:hover #theme-icon {
+        transform: rotate(15deg);
+      }
+
+      /* Smooth theme transitions */
+      body,
+      .header,
+      .search-box,
+      .example-card,
+      .footer {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+      }
     </style>
   </head>
   <body>
+    <button id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Sun icon (default for light mode) -->
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+    </button>
+    
     <header class="header">
       <div class="header-content">
         <div class="logo">
-          <img src="https://www.cornerstonejs.org/img/cornerstone-dark.png" alt="Cornerstone3D" style="height: 60px; width: auto; display: block;" />
+          <img src="https://www.cornerstonejs.org/img/cornerstone-light.png" alt="Cornerstone3D" style="height: 60px; width: auto; display: block;" />
         </div>
         <h1>Cornerstone3D Examples</h1>
         <p>
@@ -610,6 +690,68 @@ module.exports = function buildExampleIndexStyled(names, exampleBasePaths) {
           searchInput.focus();
         }
       });
+    </script>
+
+    <!-- Theme Toggle Script -->
+    <script>
+      (function() {
+        // Get stored theme or default to light
+        const getStoredTheme = () => localStorage.getItem('theme') || 'light';
+        const setStoredTheme = (theme) => localStorage.setItem('theme', theme);
+        
+        // Apply theme to document
+        const applyTheme = (theme) => {
+          document.documentElement.setAttribute('data-theme', theme);
+          const themeIcon = document.getElementById('theme-icon');
+          if (themeIcon) {
+            // Update SVG icon based on theme
+            if (theme === 'dark') {
+              // Moon icon for dark mode
+              themeIcon.innerHTML = `
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              `;
+            } else {
+              // Sun icon for light mode
+              themeIcon.innerHTML = `
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              `;
+            }
+          }
+          // Update logo image based on theme
+          const logoImg = document.querySelector('.logo img');
+          if (logoImg) {
+            logoImg.src = theme === 'dark' 
+              ? 'https://www.cornerstonejs.org/img/cornerstone-dark.png'
+              : 'https://www.cornerstonejs.org/img/cornerstone-light.png';
+          }
+        };
+        
+        // Toggle theme
+        const toggleTheme = () => {
+          const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          setStoredTheme(newTheme);
+          applyTheme(newTheme);
+        };
+        
+        // Initialize theme on load
+        const theme = getStoredTheme();
+        applyTheme(theme);
+        
+        // Attach event listener to toggle button
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+          themeToggle.addEventListener('click', toggleTheme);
+        }
+      })();
     </script>
   </body>
 </html>
