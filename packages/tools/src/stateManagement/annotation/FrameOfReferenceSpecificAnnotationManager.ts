@@ -290,9 +290,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
     if (toolName) {
       const annotationsForTool = annotations[groupKey][toolName];
-      for (const annotation of annotationsForTool) {
-        this.removeAnnotation(annotation.annotationUID);
-        removedAnnotations.push(annotation);
+      if (annotationsForTool) {
+        for (const annotation of annotationsForTool) {
+          this.removeAnnotation(annotation.annotationUID);
+          removedAnnotations.push(annotation);
+        }
       }
     } else {
       for (const toolName in annotations[groupKey]) {

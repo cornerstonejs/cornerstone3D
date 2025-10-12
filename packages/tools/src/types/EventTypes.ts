@@ -466,6 +466,16 @@ type MouseWheelEventDetail = NormalizedInteractionEventDetail &
     points: IPoints;
   };
 
+/**
+ * Event detail for STACK_PREFETCH_COMPLETE events
+ */
+type StackPrefetchCompleteEventDetail = {
+  /** The viewport element that requested the prefetch */
+  element: HTMLDivElement;
+  /** The imageId of the last prefetched image before completion */
+  lastPrefetchedImageId: string;
+};
+
 /////////////////////////////
 //
 //
@@ -780,4 +790,5 @@ export type {
   MouseWheelEventType,
   SegmentationAddedEventDetail,
   SegmentationAddedEventType,
+  StackPrefetchCompleteEventDetail,
 };

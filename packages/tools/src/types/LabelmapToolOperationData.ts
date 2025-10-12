@@ -21,6 +21,11 @@ type LabelmapToolOperationData = {
   viewUp: number[];
   activeStrategy: string;
   points: Types.Point3[];
+  /**
+   * Optional pair of world points describing the last stroke segment so the
+   * strategy can cover the full path instead of a single sample location.
+   */
+  strokePointsWorld?: Types.Point3[];
   voxelManager;
   override: {
     voxelManager: Types.IVoxelManager<number>;

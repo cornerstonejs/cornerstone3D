@@ -293,7 +293,7 @@ function basicGetStatistics(
  * A static basic stats calculator that uses shared helper functions.
  */
 export class BasicStatsCalculator extends Calculator {
-  private static state: BasicStatsState = createBasicStatsState(true);
+  protected static state: BasicStatsState = createBasicStatsState(true);
 
   public static statsInit(options: { storePointData: boolean }): void {
     if (!options.storePointData) {

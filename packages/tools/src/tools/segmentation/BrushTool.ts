@@ -37,6 +37,12 @@ import { getStrategyData } from './strategies/utils/getStrategyData';
  */
 class BrushTool extends LabelmapBaseTool {
   static toolName;
+  // Remember the last drag position in both canvas and world space so we can
+  // pass a full stroke segment to the strategies instead of a single point.
+  private _lastDragInfo: {
+    canvas: Types.Point2;
+    world: Types.Point3;
+  } | null = null;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -180,8 +186,9 @@ class BrushTool extends LabelmapBaseTool {
     evt: EventTypes.MouseDownActivateEventType
   ): boolean => {
     const eventData = evt.detail;
-    const { element } = eventData;
+    const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
 
     // @ts-expect-error
     this._editData = this.createEditData(element);
@@ -194,6 +201,15 @@ class BrushTool extends LabelmapBaseTool {
     // This might be a mouse down
     this._previewData.isDrag = false;
     this._previewData.timerStart = Date.now();
+    const canvasPoint = vec2.clone(currentPoints.canvas) as Types.Point2;
+    const worldPoint = viewport.canvasToWorld([
+      canvasPoint[0],
+      canvasPoint[1],
+    ]) as Types.Point3;
+    this._lastDragInfo = {
+      canvas: canvasPoint,
+      world: vec3.clone(worldPoint) as Types.Point3,
+    };
 
     const hoverData = this._hoverData || this.createHoverData(element);
 
@@ -343,6 +359,7 @@ class BrushTool extends LabelmapBaseTool {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
 
     this.updateCursor(evt);
 
@@ -370,17 +387,53 @@ class BrushTool extends LabelmapBaseTool {
       window.clearTimeout(this._previewData.timer);
       this._previewData.timer = null;
     }
+    if (!this._lastDragInfo) {
+      const startCanvas = this._previewData.startPoint;
+      const startWorld = viewport.canvasToWorld([
+        startCanvas[0],
+        startCanvas[1],
+      ]) as Types.Point3;
+      this._lastDragInfo = {
+        canvas: vec2.clone(startCanvas) as Types.Point2,
+        world: vec3.clone(startWorld) as Types.Point3,
+      };
+    }
+
+    const currentCanvas = currentPoints.canvas;
+    const currentWorld = viewport.canvasToWorld([
+      currentCanvas[0],
+      currentCanvas[1],
+    ]) as Types.Point3;
+
+    this._hoverData = this.createHoverData(element, currentCanvas);
+
+    this._calculateCursor(element, currentCanvas);
+
+    const operationData = this.getOperationData(element);
+    // Hand the strategy the exact stroke segment we just traversed so it can
+    // paint a continuous capsule in one pass instead of trying to infer the
+    // path from scattered samples.
+    operationData.strokePointsWorld = [
+      vec3.clone(this._lastDragInfo.world) as Types.Point3,
+      vec3.clone(currentWorld) as Types.Point3,
+    ];
 
     this._previewData.preview = this.applyActiveStrategy(
       enabledElement,
-      this.getOperationData(element)
+      operationData
     );
+
+    const currentCanvasClone = vec2.clone(currentCanvas) as Types.Point2;
+    this._lastDragInfo = {
+      canvas: currentCanvasClone,
+      world: vec3.clone(currentWorld) as Types.Point3,
+    };
     this._previewData.element = element;
     // Add a bit of time to the timer start so small accidental movements dont
     // cause issues on clicking
     this._previewData.timerStart = Date.now() + dragTimeMs;
     this._previewData.isDrag = true;
-    this._previewData.startPoint = currentPoints.canvas;
+    this._previewData.startPoint = currentCanvasClone;
   };
 
   private _calculateCursor(element, centerCanvas) {
@@ -483,6 +536,8 @@ class BrushTool extends LabelmapBaseTool {
     this.updateCursor(evt);
 
     this._editData = null;
+
+    this._lastDragInfo = null;
 
     this.applyActiveStrategyCallback(
       enabledElement,

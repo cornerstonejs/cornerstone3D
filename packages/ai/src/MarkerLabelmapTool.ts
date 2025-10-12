@@ -235,6 +235,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     if (this.segmentAI) {
       this.segmentAI.enabled = false;
     }
+    this.rejectPreview();
   };
 
   /**

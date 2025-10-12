@@ -1,3 +1,5 @@
+import type IImage from './IImage';
+
 /**
  * Any imageLoader function should implement a loading given the imageId
  * and returns a mandatory promise which will resolve to the loaded image object.
@@ -8,7 +10,7 @@ type ImageLoaderFn = (
   options?: Record<string, unknown>
 ) => {
   /** Promise that resolves to the image object */
-  promise: Promise<Record<string, unknown>>;
+  promise: Promise<IImage>;
   cancelFn?: () => void | undefined;
   decache?: () => void | undefined;
 };

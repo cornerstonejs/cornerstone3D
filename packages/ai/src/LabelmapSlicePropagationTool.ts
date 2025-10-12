@@ -106,6 +106,7 @@ class LabelmapSlicePropagationTool extends LabelmapBaseTool {
     if (this.segmentAI) {
       this.segmentAI.enabled = false;
     }
+    this.rejectPreview();
   };
 
   onSetToolPassive = (): void => {
@@ -113,6 +114,7 @@ class LabelmapSlicePropagationTool extends LabelmapBaseTool {
     if (this.segmentAI) {
       this.segmentAI.enabled = false;
     }
+    this.rejectPreview();
   };
 
   /**

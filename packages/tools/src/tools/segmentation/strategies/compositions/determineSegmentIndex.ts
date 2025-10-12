@@ -41,7 +41,12 @@ export default {
       configuration,
     } = operationData;
 
+    // Reset center segment index info when the feature is disabled
     if (!configuration?.useCenterSegmentIndex) {
+      operationData.centerSegmentIndexInfo.segmentIndex = null;
+      operationData.centerSegmentIndexInfo.hasSegmentIndex = false;
+      operationData.centerSegmentIndexInfo.hasPreviewIndex = false;
+
       return;
     }
 
