@@ -45,6 +45,11 @@ interface Cornerstone3DConfig {
      * The default value is 7, which is suitable for mobile/desktop.
      */
     webGlContextCount?: number;
+
+    volumeRendering?: {
+      /** Multiplier for the calculated sample distance */
+      sampleDistanceMultiplier?: number;
+    };
   };
 
   debug: {

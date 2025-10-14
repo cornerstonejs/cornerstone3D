@@ -18,4 +18,6 @@ export interface ViewportProperties {
   interpolationType?: InterpolationType;
 
   preset?: string;
+
+  sampleDistanceMultiplier?: number;
 }
