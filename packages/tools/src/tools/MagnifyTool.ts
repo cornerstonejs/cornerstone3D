@@ -12,7 +12,6 @@ import {
   hideElementCursor,
   resetElementCursor,
 } from '../cursors/elementCursor';
-import { event } from '@kitware/vtk.js/macros';
 
 const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 
@@ -147,10 +146,12 @@ class MagnifyTool extends BaseTool {
     }
 
     // Todo: use CSS transform instead of setting top and left for better performance
-    magnifyToolElement.style.top = `${canvasPos[1] - this.configuration.magnifyHeight / 2
-      }px`;
-    magnifyToolElement.style.left = `${canvasPos[0] - this.configuration.magnifyWidth / 2
-      }px`;
+    magnifyToolElement.style.top = `${
+        canvasPos[1] - this.configuration.magnifyHeight / 2
+    }px`;
+    magnifyToolElement.style.left = `${
+        canvasPos[0] - this.configuration.magnifyWidth / 2
+    }px`;
 
     const magnifyViewport = renderingEngine.getViewport(
       MAGNIFY_VIEWPORT_ID
@@ -175,8 +176,8 @@ class MagnifyTool extends BaseTool {
 
       const distance = Math.sqrt(
         Math.pow(focalPoint[0] - position[0], 2) +
-        Math.pow(focalPoint[1] - position[1], 2) +
-        Math.pow(focalPoint[2] - position[2], 2)
+          Math.pow(focalPoint[1] - position[1], 2) +
+          Math.pow(focalPoint[2] - position[2], 2)
       );
 
       const updatedFocalPoint = <Types.Point3>[
@@ -231,10 +232,12 @@ class MagnifyTool extends BaseTool {
       return;
     }
 
-    magnifyElement.style.top = `${canvasPos[1] - this.configuration.magnifyHeight / 2
-      }px`;
-    magnifyElement.style.left = `${canvasPos[0] - this.configuration.magnifyWidth / 2
-      }px`;
+    magnifyElement.style.top = `${
+      canvasPos[1] - this.configuration.magnifyHeight / 2
+    }px`;
+    magnifyElement.style.left = `${
+      canvasPos[0] - this.configuration.magnifyWidth / 2
+    }px`;
 
     const { focalPoint, position } = magnifyViewport.getCamera();
 
