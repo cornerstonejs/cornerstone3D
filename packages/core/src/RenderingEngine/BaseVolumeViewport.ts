@@ -994,6 +994,7 @@ abstract class BaseVolumeViewport extends Viewport {
         colormap,
         preset,
         slabThickness,
+        sampleDistanceMultiplier,
       });
     }
 
