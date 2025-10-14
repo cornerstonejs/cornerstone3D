@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.6...v4.5.7) (2025-10-14)
+
+### Bug Fixes
+
+- **bun:** Use bun version 1.2.23. ([#2390](https://github.com/cornerstonejs/cornerstone3D/issues/2390)) ([222e3a8](https://github.com/cornerstonejs/cornerstone3D/commit/222e3a8d7ea0297a4be327df03510d0ab77d938f))
+
 ## [4.5.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.5...v4.5.6) (2025-10-10)
 
 ### Bug Fixes
