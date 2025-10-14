@@ -12,6 +12,7 @@ import {
   hideElementCursor,
   resetElementCursor,
 } from '../cursors/elementCursor';
+import { event } from '@kitware/vtk.js/macros';
 
 const MAGNIFY_VIEWPORT_ID = 'magnify-viewport';
 
@@ -146,12 +147,10 @@ class MagnifyTool extends BaseTool {
     }
 
     // Todo: use CSS transform instead of setting top and left for better performance
-    magnifyToolElement.style.top = `${
-      canvasPos[1] - this.configuration.magnifyHeight / 2
-    }px`;
-    magnifyToolElement.style.left = `${
-      canvasPos[0] - this.configuration.magnifyWidth / 2
-    }px`;
+    magnifyToolElement.style.top = `${canvasPos[1] - this.configuration.magnifyHeight / 2
+      }px`;
+    magnifyToolElement.style.left = `${canvasPos[0] - this.configuration.magnifyWidth / 2
+      }px`;
 
     const magnifyViewport = renderingEngine.getViewport(
       MAGNIFY_VIEWPORT_ID
@@ -176,8 +175,8 @@ class MagnifyTool extends BaseTool {
 
       const distance = Math.sqrt(
         Math.pow(focalPoint[0] - position[0], 2) +
-          Math.pow(focalPoint[1] - position[1], 2) +
-          Math.pow(focalPoint[2] - position[2], 2)
+        Math.pow(focalPoint[1] - position[1], 2) +
+        Math.pow(focalPoint[2] - position[2], 2)
       );
 
       const updatedFocalPoint = <Types.Point3>[
@@ -204,6 +203,15 @@ class MagnifyTool extends BaseTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
+  _cancelCallback = (evt: EventTypes.InteractionEventType) => {
+    // Empêche l'affichage du menu contextuel par défaut du navigateur
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    // Appelle la fonction qui désactive et nettoie l'outil
+    this._dragEndCallback(evt);
+  };
+
   _dragCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
 
@@ -223,12 +231,10 @@ class MagnifyTool extends BaseTool {
       return;
     }
 
-    magnifyElement.style.top = `${
-      canvasPos[1] - this.configuration.magnifyHeight / 2
-    }px`;
-    magnifyElement.style.left = `${
-      canvasPos[0] - this.configuration.magnifyWidth / 2
-    }px`;
+    magnifyElement.style.top = `${canvasPos[1] - this.configuration.magnifyHeight / 2
+      }px`;
+    magnifyElement.style.left = `${canvasPos[0] - this.configuration.magnifyWidth / 2
+      }px`;
 
     const { focalPoint, position } = magnifyViewport.getCamera();
 
@@ -253,7 +259,17 @@ class MagnifyTool extends BaseTool {
   };
 
   _dragEndCallback = (evt: EventTypes.InteractionEventType) => {
-    const { element } = evt.detail;
+    let { element } = evt.detail;
+
+    if (element === undefined) {
+      const {
+        enabledElement,
+      } = this.editData;
+
+      const { viewport } = enabledElement;
+      element = viewport.element;
+    }
+
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -290,6 +306,11 @@ class MagnifyTool extends BaseTool {
     );
 
     element.addEventListener(
+      "contextmenu",
+      this._cancelCallback as EventListener
+    );
+
+    element.addEventListener(
       Events.TOUCH_END,
       this._dragEndCallback as EventListener
     );
@@ -313,6 +334,11 @@ class MagnifyTool extends BaseTool {
     element.removeEventListener(
       Events.MOUSE_CLICK,
       this._dragEndCallback as EventListener
+    );
+
+    element.removeEventListener(
+      "contextmenu",
+      this._cancelCallback as EventListener
     );
     element.removeEventListener(
       Events.TOUCH_END,
