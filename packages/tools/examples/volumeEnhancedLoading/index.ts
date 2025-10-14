@@ -80,6 +80,9 @@ const { ViewportType, InterpolationType, Events, RequestType } = Enums;
 // Define volume loader scheme
 const volumeLoaderScheme = 'enhancedVolumeLoader'; // Loader id which defines which volume loader to use
 
+// Retrive configuration
+const config = {};
+
 // Function to generate a unique volume ID each time
 function generateVolumeId(): string {
   const timestamp = Date.now();
@@ -112,7 +115,7 @@ addDropdownToToolbar({
 });
 
 addDropdownToToolbar({
-  labelText: 'Sample distance k pixels (slices/frames) to skip:',
+  labelText: ' Sample distance k pixels (slices/frames) to skip:',
   options: {
     values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
     defaultValue: ijkDecimation[2],
@@ -123,15 +126,29 @@ addDropdownToToolbar({
 });
 
 addDropdownToToolbar({
-  labelText: 'Progressive Loading:',
+  labelText: ' Retrieve options:',
   options: {
-    values: ['basic', 'jls', 'jls-mixed', 'j2k', 'j2k-bytes', 'j2k-mixed'],
-    defaultValue: 'basic',
-    labels: ['Basic', 'JLS', 'JLS Mixed', 'J2K', 'J2K Bytes', 'J2K Mixed'],
+    values: ['none', 'jls', 'j2k'],
+    defaultValue: 'None',
+    labels: ['None', 'JLS', 'J2K'],
   },
   onSelectedValueChange: async (selectedValue) => {
-    console.log('🔄 Progressive loading option changed to:', selectedValue);
-    // You can add progressive loading logic here if needed
+    console.log('🔄 PRetrieve option changed to:', selectedValue);
+    if (selectedValue === 'jls') {
+      config.retrieveOptions = {
+        default: {
+          framesPath: '/jls/',
+          decodeLevel: 2,
+        },
+      };
+    } else if (selectedValue === 'j2k') {
+      config.retrieveOptions = {
+        default: {
+          framesPath: '/j2k/',
+          decodeLevel: 2,
+        },
+      };
+    }
   },
 });
 
@@ -593,12 +610,13 @@ async function run() {
       },
     },
   };
-  const config = {};
+
   addButtonToToolbar({
     title: 'Load Enhanced Volume (New ID)',
     onClick: () => {
       console.log(
-        '🔄 Load button clicked - creating new volume with current decimation settings'
+        '🔄 Load button clicked - creating new volume with current decimation settings with config ',
+        config
       );
       loadVolume(config);
     },

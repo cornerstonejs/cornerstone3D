@@ -75,24 +75,6 @@ export default function applyPreset(
   property.setGradientOpacityMaximumValue(0, gradientMaxValue);
   property.setGradientOpacityMaximumOpacity(0, gradientMaxOpacity);
 
-  // if (preset.interpolation === '1') {
-  //   // 🔧 FIX: Use nearest neighbor interpolation when decimation is active to show actual pixel decimation
-  //   // Check if the volume has decimation applied (has _needsCameraReset flag)
-  //   let hasDecimation = false;
-  //   if (volumeId) {
-  //     const volume = cache.getVolume(volumeId);
-  //     hasDecimation = volume && (volume as any)._needsCameraReset;
-  //   }
-    
-  //   if (hasDecimation) {
-  //     console.log('🔧 ApplyPreset: Using nearest neighbor interpolation for decimated volume');
-  //     actor.getProperty().setInterpolationTypeToNearest();
-  //   } else {
-  //     actor.getProperty().setInterpolationTypeToFastLinear();
-  //   }
-  //   //actor.setInterpolationTypeToLinear()
-  // }
-
   property.setShade(preset.shade === '1');
 
   const ambient = parseFloat(preset.ambient);
