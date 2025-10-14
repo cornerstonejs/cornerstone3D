@@ -316,6 +316,14 @@ type KeyDownEventDetail = {
   key: string;
   /** key code */
   keyCode: number;
+  /** The control key that was pressed */
+  ctrl: boolean;
+  /** The meta key that was pressed */
+  meta: boolean;
+  /** The shift key that was pressed */
+  shift: boolean;
+  /** The alt key that was pressed */
+  alt: boolean;
 };
 
 /** EventDetail for keyDown event */
