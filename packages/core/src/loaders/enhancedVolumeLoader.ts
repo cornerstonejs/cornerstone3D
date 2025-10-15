@@ -8,7 +8,7 @@ import { loadImage } from './imageLoader';
 import decimate from '../utilities/decimate';
 import decimateImagePixels from '../utilities/decimateImagePixels';
 import { get as getMetaData, addProvider } from '../metaData';
-
+import VoxelManager from '../utilities/VoxelManager';
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
   cancel: () => void;
@@ -37,23 +37,19 @@ export function enhancedVolumeLoader(
   let decimationValues = options.ijkDecimation;
   if (!decimationValues) {
     // Check if we're in a browser environment and have localStorage
-    const decimationEnabled =
-      localStorage.getItem('ohif-decimation-enabled') !== 'false';
+
     const savedDecimationIj = parseInt(
-      localStorage.getItem('current-decimation-ij') || '2'
+      localStorage.getItem('current-decimation-ij') || '1'
     );
     const savedDecimationK = parseInt(
-      localStorage.getItem('current-decimation-k') || '2'
+      localStorage.getItem('current-decimation-k') || '1'
     );
-    decimationValues = decimationEnabled
-      ? [savedDecimationIj, savedDecimationIj, savedDecimationK]
-      : [1, 1, 1];
+    decimationValues = [savedDecimationIj, savedDecimationIj, savedDecimationK];
 
     console.log(
       '🔧 EnhancedVolumeLoader: Applied default decimation from localStorage: ',
       {
         volumeId,
-        decimationEnabled,
         decimationValues,
         source: 'localStorage',
       }
@@ -112,8 +108,6 @@ export function enhancedVolumeLoader(
         : decimatedResult;
 
     options.imageIds = decimatedImageIds as string[];
-  } else if (isAlreadyDecimated) {
-  } else {
   }
 
   async function getStreamingImageVolume() {
@@ -235,11 +229,6 @@ export function enhancedVolumeLoader(
         // Force VTK to recalculate bounds
         vtkImageData.modified();
       }
-
-      // Create new voxel manager with correct dimensions
-
-      // Import VoxelManager to create a new one
-      const VoxelManager = require('../utilities/VoxelManager').default;
       const newVoxelManager = VoxelManager.createImageVolumeVoxelManager({
         dimensions: streamingImageVolume.dimensions,
         imageIds: streamingImageVolume.imageIds,

@@ -128,12 +128,12 @@ addDropdownToToolbar({
 addDropdownToToolbar({
   labelText: ' Retrieve options:',
   options: {
-    values: ['none', 'jls', 'j2k'],
+    values: ['none', 'jls', 'jlsthumbnail'],
     defaultValue: 'None',
-    labels: ['None', 'JLS', 'J2K'],
+    labels: ['None', 'JLS', 'JLSTHUMBNAIL'],
   },
   onSelectedValueChange: async (selectedValue) => {
-    console.log('🔄 PRetrieve option changed to:', selectedValue);
+    console.log('🔄 Retrieve option changed to:', selectedValue);
     if (selectedValue === 'jls') {
       config.retrieveOptions = {
         default: {
@@ -141,10 +141,10 @@ addDropdownToToolbar({
           decodeLevel: 2,
         },
       };
-    } else if (selectedValue === 'j2k') {
+    } else if (selectedValue === 'jlsthumbnail') {
       config.retrieveOptions = {
         default: {
-          framesPath: '/j2k/',
+          framesPath: '/jlsthumbnail/',
           decodeLevel: 2,
         },
       };

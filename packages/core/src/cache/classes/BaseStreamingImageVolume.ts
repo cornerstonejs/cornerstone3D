@@ -202,30 +202,6 @@ export default class BaseStreamingImageVolume
     const imageIdIndex = this.getImageIdIndex(imageId);
     const { imageQualityStatus } = image;
 
-    // Check if image is decimated or not
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const savedDecimationIj = parseInt(
-        localStorage.getItem('current-decimation-ij') || '1'
-      );
-
-      if (savedDecimationIj > 1) {
-        const { columns, rows } = image;
-        const expectedDecimatedCols = Math.floor(columns / savedDecimationIj);
-        const expectedDecimatedRows = Math.floor(rows / savedDecimationIj);
-
-        const isDecimated =
-          columns <= expectedDecimatedCols * savedDecimationIj &&
-          rows <= expectedDecimatedRows * savedDecimationIj;
-
-        if (!isDecimated) {
-          // Non-decimated image detected - could be from stack viewport
-          console.warn(
-            'NON-DECIMATED IMAGE DETECTED IN BASESTREAMINGIMAGEVOLUME'
-          );
-        }
-      }
-    }
-
     // check if the load was cancelled while we were waiting for the image
     // if so we don't want to do anything
     if (this.loadStatus.cancelled) {
