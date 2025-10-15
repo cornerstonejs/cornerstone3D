@@ -22,6 +22,8 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
+  utilities;
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
@@ -146,7 +148,24 @@ function metaDataProvider(type, imageId) {
     //metaData = fixNMMetadata(metaData);
     let imageOrientationPatient = extractOrientationFromMetadata(metaData);
     let imagePositionPatient = extractPositionFromMetadata(metaData);
-    const pixelSpacing = getNumberValues(metaData['00280030'], 2);
+
+    // Read the pixel spacing from the calibratedPixelSpacingMetadataProvider if it
+    // has been set while processing the WADORS metadata call. This ensures that
+    // the calibrated spacing for DX images is used (as calculated with the function
+    // getPixelSpacingInformation from the core utilities).
+    let pixelSpacing = null;
+    const calibrationData = calibratedPixelSpacingMetadataProvider.get(
+      'calibratedPixelSpacing',
+      imageId
+    );
+    if (calibrationData) {
+      pixelSpacing = [
+        calibrationData.rowPixelSpacing,
+        calibrationData.columnPixelSpacing,
+      ];
+    } else {
+      pixelSpacing = getNumberValues(metaData['00280030'], 2);
+    }
 
     let columnPixelSpacing = null;
     let rowPixelSpacing = null;
