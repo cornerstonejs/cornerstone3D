@@ -2,6 +2,7 @@ import { getActiveSegmentIndex } from './getActiveSegmentIndex';
 import { getSegmentation } from './getSegmentation';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation';
+import { removeContourSegmentAnnotations } from './helpers/removeSegmentAnnotations';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { setActiveSegmentIndex } from './segmentIndex';
 import { updateSegmentations } from './updateSegmentations';
@@ -31,12 +32,19 @@ export function removeSegment(
     setNextSegmentAsActive: true,
   }
 ) {
-  clearSegmentValue(segmentationId, segmentIndex);
+  const segmentation = getSegmentation(segmentationId);
+
+  if (segmentation?.representationData.Contour) {
+    removeContourSegmentAnnotations(segmentationId, segmentIndex);
+  } else if (segmentation?.representationData.Labelmap) {
+    clearSegmentValue(segmentationId, segmentIndex);
+  } else {
+    throw new Error('Invalid segmentation type');
+  }
 
   const isThisSegmentActive =
     getActiveSegmentIndex(segmentationId) === segmentIndex;
 
-  const segmentation = getSegmentation(segmentationId);
   const { segments } = segmentation;
 
   // remove the segment from the list

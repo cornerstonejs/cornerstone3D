@@ -82,6 +82,10 @@ export default function modalityScaleNifti(
       niiBuffer = new Uint32Array(niftiImageBuffer);
       scalarData = allocateScalarData('Float32Array', niiBuffer);
       break;
+    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT64:
+      niiBuffer = new Float64Array(niftiImageBuffer);
+      scalarData = allocateScalarData('Float64Array', niiBuffer);
+      break;
     default:
       throw new Error(
         `NIFTI datatypeCode ${datatypeCode} is not yet supported`
@@ -150,6 +154,11 @@ function allocateScalarData(
       bitsAllocated = 8;
       checkCacheAvailable(bitsAllocated, nVox);
       scalarData = new Uint8Array(nVox);
+      break;
+    case 'Float64Array':
+      bitsAllocated = 64;
+      checkCacheAvailable(bitsAllocated, nVox);
+      scalarData = new Float64Array(nVox);
       break;
     default:
       throw new Error(`TypedArray ${types} is not yet supported`);

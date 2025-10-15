@@ -5,10 +5,14 @@ import {
   VolumeViewport,
   utilities as csUtils,
   getEnabledElementByViewportId,
+  EPSILON,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import {
+  getCalibratedAspect,
+  getCalibratedLengthUnitsAndScale,
+} from '../../utilities/getCalibratedUnits';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -57,6 +61,7 @@ import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { vec2 } from 'gl-matrix';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -879,13 +884,16 @@ class EllipticalROITool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
           handleGroupUID,
-          activeHandleCanvasCoords,
+          showHandlesAlways ? canvasCoordinates : activeHandleCanvasCoords,
           {
             color,
           }
@@ -1035,111 +1043,118 @@ class EllipticalROITool extends AnnotationTool {
       pos1Index[1] = Math.floor(pos1Index[1]);
       pos1Index[2] = Math.floor(pos1Index[2]);
 
-      const post2Index = transformWorldToIndex(imageData, worldPos2);
+      const pos2Index = transformWorldToIndex(imageData, worldPos2);
 
-      post2Index[0] = Math.floor(post2Index[0]);
-      post2Index[1] = Math.floor(post2Index[1]);
-      post2Index[2] = Math.floor(post2Index[2]);
+      pos2Index[0] = Math.floor(pos2Index[0]);
+      pos2Index[1] = Math.floor(pos2Index[1]);
+      pos2Index[2] = Math.floor(pos2Index[2]);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      this.isHandleOutsideImage = !this._isInsideVolume(
-        pos1Index,
-        post2Index,
-        dimensions
-      );
+      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
+        const iMin = Math.min(pos1Index[0], pos2Index[0]);
+        const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
-      const iMin = Math.min(pos1Index[0], post2Index[0]);
-      const iMax = Math.max(pos1Index[0], post2Index[0]);
+        const jMin = Math.min(pos1Index[1], pos2Index[1]);
+        const jMax = Math.max(pos1Index[1], pos2Index[1]);
 
-      const jMin = Math.min(pos1Index[1], post2Index[1]);
-      const jMax = Math.max(pos1Index[1], post2Index[1]);
+        const kMin = Math.min(pos1Index[2], pos2Index[2]);
+        const kMax = Math.max(pos1Index[2], pos2Index[2]);
 
-      const kMin = Math.min(pos1Index[2], post2Index[2]);
-      const kMax = Math.max(pos1Index[2], post2Index[2]);
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2];
 
-      const boundsIJK = [
-        [iMin, iMax],
-        [jMin, jMax],
-        [kMin, kMax],
-      ] as [Types.Point2, Types.Point2, Types.Point2];
+        const center = [
+          (topLeftWorld[0] + bottomRightWorld[0]) / 2,
+          (topLeftWorld[1] + bottomRightWorld[1]) / 2,
+          (topLeftWorld[2] + bottomRightWorld[2]) / 2,
+        ] as Types.Point3;
 
-      const center = [
-        (topLeftWorld[0] + bottomRightWorld[0]) / 2,
-        (topLeftWorld[1] + bottomRightWorld[1]) / 2,
-        (topLeftWorld[2] + bottomRightWorld[2]) / 2,
-      ] as Types.Point3;
+        const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
+        const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
+        const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
 
-      const ellipseObj = {
-        center,
-        xRadius: Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2,
-        yRadius: Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2,
-        zRadius: Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2,
-      };
+        const ellipseObj = {
+          center,
+          xRadius: xRadius < EPSILON / 2 ? 0 : xRadius,
+          yRadius: yRadius < EPSILON / 2 ? 0 : yRadius,
+          zRadius: zRadius < EPSILON / 2 ? 0 : zRadius,
+        };
 
-      const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
-        viewPlaneNormal,
-        viewUp,
-        worldPos1,
-        worldPos2
-      );
-      const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-
-      const handles = [pos1Index, post2Index];
-      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-        image,
-        handles
-      );
-
-      const area =
-        Math.abs(Math.PI * (worldWidth / 2) * (worldHeight / 2)) /
-        scale /
-        scale;
-
-      const pixelUnitsOptions = {
-        isPreScaled: isViewportPreScaled(viewport, targetId),
-
-        isSuvScaled: this.isSuvScaled(
-          viewport,
-          targetId,
-          annotation.metadata.referencedImageId
-        ),
-      };
-
-      const modalityUnit = getPixelValueUnits(
-        metadata.Modality,
-        annotation.metadata.referencedImageId,
-        pixelUnitsOptions
-      );
-
-      let pointsInShape;
-      if (voxelManager) {
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            boundsIJK,
-            imageData,
-            isInObject: (pointLPS) =>
-              pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-            returnPoints: this.configuration.storePointData,
-          }
+        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
+          viewPlaneNormal,
+          viewUp,
+          worldPos1,
+          worldPos2
         );
+        const isEmptyArea = worldWidth === 0 && worldHeight === 0;
+
+        const handles = [pos1Index, pos2Index];
+        const { scale, unit, areaUnit } = getCalibratedLengthUnitsAndScale(
+          image,
+          handles
+        );
+        const aspect = getCalibratedAspect(image);
+        const area = Math.abs(
+          Math.PI *
+            (worldWidth / scale / 2) *
+            (worldHeight / aspect / scale / 2)
+        );
+
+        const pixelUnitsOptions = {
+          isPreScaled: isViewportPreScaled(viewport, targetId),
+          isSuvScaled: this.isSuvScaled(
+            viewport,
+            targetId,
+            annotation.metadata.referencedImageId
+          ),
+        };
+
+        const modalityUnit = getPixelValueUnits(
+          metadata.Modality,
+          annotation.metadata.referencedImageId,
+          pixelUnitsOptions
+        );
+
+        let pointsInShape;
+        if (voxelManager) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              isInObject: (pointLPS) =>
+                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
+        const stats = this.configuration.statsCalculator.getStatistics();
+
+        cachedStats[targetId] = {
+          Modality: metadata.Modality,
+          area,
+          mean: stats.mean?.value,
+          max: stats.max?.value,
+          min: stats.min?.value,
+          stdDev: stats.stdDev?.value,
+          statsArray: stats.array,
+          pointsInShape,
+          isEmptyArea,
+          areaUnit,
+          modalityUnit,
+        };
+      } else {
+        this.isHandleOutsideImage = true;
+
+        cachedStats[targetId] = {
+          Modality: metadata.Modality,
+        };
       }
-      const stats = this.configuration.statsCalculator.getStatistics();
-      cachedStats[targetId] = {
-        Modality: metadata.Modality,
-        area,
-        mean: stats.mean?.value,
-        max: stats.max?.value,
-        min: stats.min?.value,
-        stdDev: stats.stdDev?.value,
-        statsArray: stats.array,
-        pointsInShape,
-        isEmptyArea,
-        areaUnit,
-        modalityUnit,
-      };
     }
 
     const invalidated = annotation.invalidated;

@@ -121,6 +121,10 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       Events.SEGMENTATION_MODIFIED,
       this.onSegmentationModifiedBinded
     );
+    eventTarget.addEventListener(
+      Events.SEGMENTATION_REPRESENTATION_MODIFIED,
+      this.onSegmentationModifiedBinded
+    );
   }
 
   /**
@@ -153,6 +157,10 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
 
     eventTarget.removeEventListener(
       Events.SEGMENTATION_MODIFIED,
+      this.onSegmentationModified.bind(this)
+    );
+    eventTarget.removeEventListener(
+      Events.SEGMENTATION_REPRESENTATION_MODIFIED,
       this.onSegmentationModified.bind(this)
     );
   }

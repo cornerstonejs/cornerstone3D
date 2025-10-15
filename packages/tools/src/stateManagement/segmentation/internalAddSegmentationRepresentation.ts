@@ -29,18 +29,19 @@ function internalAddSegmentationRepresentation(
     renderingConfig
   );
 
-  // If no active segment index is set, default to the first segment
+  // Initialize the active segment index to the first available segment if none is currently set
   if (!getActiveSegmentIndex(segmentationId)) {
+    let firstSegmentIndex = 1;
     const segmentation =
       defaultSegmentationStateManager.getSegmentation(segmentationId);
 
     if (segmentation) {
       const segmentKeys = Object.keys(segmentation.segments);
       if (segmentKeys.length > 0) {
-        const firstSegmentIndex = segmentKeys.map((k) => Number(k)).sort()[0];
-        setActiveSegmentIndex(segmentationId, firstSegmentIndex);
+        firstSegmentIndex = segmentKeys.map((k) => Number(k)).sort()[0];
       }
     }
+    setActiveSegmentIndex(segmentationId, firstSegmentIndex);
   }
 
   if (representationInput.type === SegmentationRepresentations.Contour) {
