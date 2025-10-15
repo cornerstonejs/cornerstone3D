@@ -74,8 +74,8 @@ class WindowLevelTool extends BaseTool {
     }
 
     // If modality is PT and the viewport is pre-scaled (SUV),
-    // treat it special to not include the canvas delta in
-    // the x direction. For other modalities, use the canvas delta in both
+    // treat it special to not include the canvas delta in the
+    // x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
     // is calculated using the volume min and max.
     if (modality === PT && isPreScaled) {
