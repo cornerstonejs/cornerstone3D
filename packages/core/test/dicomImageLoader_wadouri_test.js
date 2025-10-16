@@ -3,7 +3,6 @@
 import { imageLoader, metaData } from '@cornerstonejs/core';
 import {
   init as dicomImageLoaderInit,
-  wadors,
   wadouri,
 } from '@cornerstonejs/dicom-image-loader';
 import { createImageHash } from '../../../utils/test/pixel-data-hash';
@@ -27,9 +26,9 @@ import { WADOURI_TEST as TestPatternPalette } from '../../dicomImageLoader/testI
 import { WADOURI_TEST as TestPatternPalette_16 } from '../../dicomImageLoader/testImages/TestPattern_Palette_16';
 import { WADOURI_TEST as TestPatternRGB } from '../../dicomImageLoader/testImages/TestPattern_RGB';
 import { WADOURI_TEST as NoPixelSpacing } from '../../dicomImageLoader/testImages/no-pixel-spacing';
-import { WADOURI_TEST as UsMultiframeYbrFull422 } from '../../dicomImageLoader/testImages/us-multiframe-ybr-full-422';
 import { WADOURI_TEST as ParamapTest } from '../../dicomImageLoader/testImages/paramap';
 import { WADOURI_TEST as ParamapFloatTest } from '../../dicomImageLoader/testImages/paramap-float';
+import { WADOURI_TEST as UsMultiframeYbrFull422 } from '../../dicomImageLoader/testImages/us-multiframe-ybr-full-422';
 
 /** @type {import("../../dicomImageLoader/testImages/tests.models").IWadoUriTest[]} */
 const tests = [
@@ -59,6 +58,9 @@ const tests = [
   UsMultiframeYbrFull422,
 ];
 
+// register the wadouri loader
+wadouri.register();
+
 /**
  * These are paramaterized tests for dicomImageLoader.  It allows us to test
  * that different images are loaded correctly, and that the metadata returned by
@@ -73,11 +75,87 @@ const tests = [
  * 3. Retrieving metadata modules and comparing them with expected metadata
  *    modules.
  */
-describe('dicomImageLoader - WADO-URI', () => {
-  beforeAll(() => {
-    wadouri.register();
-    wadors.register();
+fdescribe('dicomImageLoader - WADO-URI', () => {
+  beforeEach(() => {
+    // Purge any loaded data so each test loads the image
+    wadouri.dataSetCacheManager.purge();
+    // re-initialise the loader before each test to clear any previous config
     dicomImageLoaderInit();
+  });
+
+  it('should allow customising the http request with beforeSend', async () => {
+    const test = CtLittleEndian_1_2_840_10008_1_2;
+    const beforeSpy = jasmine.createSpy('beforeHandler').and.resolveTo();
+
+    dicomImageLoaderInit({
+      beforeSend: beforeSpy,
+    });
+
+    await imageLoader.loadImage(test.wadouri);
+
+    const expectedHeaders = {};
+    const expectedImageId = test.wadouri;
+    const expectedUrl = test.wadouri.replace('wadouri:', '');
+
+    expect(beforeSpy).toHaveBeenCalledWith(
+      jasmine.any(XMLHttpRequest),
+      expectedImageId,
+      expectedHeaders,
+      {
+        url: expectedUrl,
+        deferred: {
+          resolve: jasmine.any(Function),
+          reject: jasmine.any(Function),
+        },
+        imageId: expectedImageId,
+      }
+    );
+  });
+
+  it('should call request lifecycle callbacks', async () => {
+    const test = CtLittleEndian_1_2_840_10008_1_2;
+    const onreadystatechangeSpy = jasmine.createSpy('onreadystatechange');
+    const onprogressSpy = jasmine.createSpy('onprogress');
+    const onloadendSpy = jasmine.createSpy('onloadend');
+    const onloadstartSpy = jasmine.createSpy('onloadstart');
+
+    dicomImageLoaderInit({
+      onreadystatechange: onreadystatechangeSpy,
+      onprogress: onprogressSpy,
+      onloadend: onloadendSpy,
+      onloadstart: onloadstartSpy,
+    });
+
+    await imageLoader.loadImage(test.wadouri);
+
+    const expectedImageId = test.wadouri;
+    const expectedUrl = test.wadouri.replace('wadouri:', '');
+    const expectedLoaderParams = {
+      url: expectedUrl,
+      deferred: {
+        resolve: jasmine.any(Function),
+        reject: jasmine.any(Function),
+      },
+      imageId: expectedImageId,
+    };
+
+    expect(onloadstartSpy).toHaveBeenCalledOnceWith(
+      jasmine.any(Event),
+      expectedLoaderParams
+    );
+
+    expect(onprogressSpy).toHaveBeenCalled();
+
+    expect(onreadystatechangeSpy).toHaveBeenCalledTimes(3);
+    expect(onreadystatechangeSpy.calls.argsFor(0)).toEqual([
+      jasmine.any(Event),
+      expectedLoaderParams,
+    ]);
+
+    expect(onloadendSpy).toHaveBeenCalledOnceWith(
+      jasmine.any(Event),
+      expectedLoaderParams
+    );
   });
 
   for (const t of tests) {

@@ -3,7 +3,6 @@ import { metaData } from '@cornerstonejs/core';
 import {
   init as dicomImageLoaderInit,
   wadors,
-  wadouri,
 } from '@cornerstonejs/dicom-image-loader';
 import { WADO_RS_TEST as CtBigEndian_1_2_840_10008_1_2_2 } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2';
 import { WADO_RS_TEST as JpegBaselineWadoRS } from '../../dicomImageLoader/testImages/TestPattern_JPEG-Baseline_YBR422';
@@ -18,6 +17,9 @@ const WADO_RS_TESTS = [
   NoPixelSpacingWadoRS,
 ];
 
+// Register the WADO-RS Loader
+wadors.register();
+
 /**
  * These are paramaterized tests for dicomImageLoader.  Theses tests are for
  * validating the WADO-RS loader works correctly for a wide variety of images.
@@ -28,10 +30,11 @@ const WADO_RS_TESTS = [
  * 1. Testing pixel data matches the expected hash
  * 2. Testing the Image object returned by `loadImage`
  */
-describe('dicomImageLoader - WADO-RS', () => {
-  beforeAll(() => {
-    wadouri.register();
-    wadors.register();
+fdescribe('dicomImageLoader - WADO-RS', () => {
+  beforeEach(() => {
+    // Before each test, purge all the metadata tags so that they are
+    // loaded fresh
+    wadors.metaDataManager.purge();
     dicomImageLoaderInit();
   });
 
@@ -40,13 +43,13 @@ describe('dicomImageLoader - WADO-RS', () => {
       for (const frame of t.frames) {
         // WADO-RS Loader Tests
         if (frame.metadataModule && t.wadorsMetadata) {
-          wadors.metaDataManager.add(t.wadorsUrl, t.wadorsMetadata);
-
           for (const [
             metadataModuleName,
             expectedModuleValues,
           ] of Object.entries(frame.metadataModule)) {
             it(`should get the ${metadataModuleName} metadata from the ${t.name} image`, async () => {
+              wadors.metaDataManager.add(t.wadorsUrl, t.wadorsMetadata);
+
               const actualModuleValue = metaData.get(
                 metadataModuleName,
                 t.wadorsUrl
