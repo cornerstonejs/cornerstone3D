@@ -2,7 +2,7 @@ import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
 import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
-import { getTransferFunctionHash } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
+import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
@@ -45,13 +45,13 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       }
       model.jitterTexture.setMinificationFilter(Filter.LINEAR);
       model.jitterTexture.setMagnificationFilter(Filter.LINEAR);
-      model.jitterTexture.create2DFromRaw(
-        32,
-        32,
-        1,
-        VtkDataTypes.UNSIGNED_CHAR,
-        oTable
-      );
+      model.jitterTexture.create2DFromRaw({
+        width: 32,
+        height: 32,
+        numberOfComponents: 1,
+        dataType: VtkDataTypes.UNSIGNED_CHAR,
+        data: oTable,
+      });
     }
 
     const { numberOfComponents: numIComps } = image.get('numberOfComponents');
@@ -60,8 +60,8 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     const scalarOpacityFunc = vprop.getScalarOpacity();
     const opTex =
       model._openGLRenderWindow.getGraphicsResourceForObject(scalarOpacityFunc);
-    let toString = getTransferFunctionHash(
-      scalarOpacityFunc,
+    let toString = getTransferFunctionsHash(
+      [scalarOpacityFunc],
       useIndependentComps,
       numIComps
     );
@@ -112,25 +112,25 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         model.context.getExtension('OES_texture_float') &&
         model.context.getExtension('OES_texture_float_linear')
       ) {
-        model.opacityTexture.create2DFromRaw(
-          oWidth,
-          2 * numIComps,
-          1,
-          VtkDataTypes.FLOAT,
-          ofTable
-        );
+        model.opacityTexture.create2DFromRaw({
+          width: oWidth,
+          height: 2 * numIComps,
+          numberOfComponents: 1,
+          dataType: VtkDataTypes.FLOAT,
+          data: ofTable,
+        });
       } else {
         const oTable = new Uint8ClampedArray(oSize);
         for (let i = 0; i < oSize; ++i) {
           oTable[i] = 255.0 * ofTable[i];
         }
-        model.opacityTexture.create2DFromRaw(
-          oWidth,
-          2 * numIComps,
-          1,
-          VtkDataTypes.UNSIGNED_CHAR,
-          oTable
-        );
+        model.opacityTexture.create2DFromRaw({
+          width: oWidth,
+          height: 2 * numIComps,
+          numberOfComponents: 1,
+          dataType: VtkDataTypes.UNSIGNED_CHAR,
+          data: oTable,
+        });
       }
       if (scalarOpacityFunc) {
         model._openGLRenderWindow.setGraphicsResourceForObject(
@@ -195,13 +195,13 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       model.colorTexture.setMinificationFilter(Filter.LINEAR);
       model.colorTexture.setMagnificationFilter(Filter.LINEAR);
 
-      model.colorTexture.create2DFromRaw(
-        cWidth,
-        2 * numIComps,
-        3,
-        VtkDataTypes.UNSIGNED_CHAR,
-        cTable
-      );
+      model.colorTexture.create2DFromRaw({
+        width: cWidth,
+        height: 2 * numIComps,
+        numberOfComponents: 3,
+        dataType: VtkDataTypes.UNSIGNED_CHAR,
+        data: cTable,
+      });
       if (colorTransferFunc) {
         model._openGLRenderWindow.setGraphicsResourceForObject(
           colorTransferFunc,
@@ -280,15 +280,15 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
         // There are some bugs in mac for texStorage3D so basically here
         // we let the vtk.js decide if it wants to use it or not
-        model.scalarTexture.create3DFromRaw(
-          dims[0],
-          dims[1],
-          dims[2],
-          numIComps,
+        model.scalarTexture.create3DFromRaw({
+          width: dims[0],
+          height: dims[1],
+          depth: dims[2],
+          numberOfComponents: numIComps,
           dataType,
-          null
+          data: null,
           // emptyData
-        );
+        });
 
         // do an initial update since some data may be already
         // available and we can avoid a re-render to trigger
