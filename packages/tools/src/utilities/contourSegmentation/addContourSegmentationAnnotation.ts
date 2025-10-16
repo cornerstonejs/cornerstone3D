@@ -40,10 +40,9 @@ export function addContourSegmentationAnnotation(
   }
 
   // Lock the annotation if the segment is locked.
-  setAnnotationLocked(
-    annotation.annotationUID,
-    segmentation.segments[segmentIndex].locked
-  );
+  if (segmentation.segments[segmentIndex].locked) {
+    setAnnotationLocked(annotation.annotationUID, true);
+  }
 
   annotationUIDsMap.set(
     segmentIndex,
