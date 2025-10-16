@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.14](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.13...v4.5.14) (2025-10-16)
+
+### Bug Fixes
+
+- **dicomImageLoader:** :bug: set usingDefaultValues in ImagePlane metadata module in the WadoUri loader ([#2391](https://github.com/cornerstonejs/cornerstone3D/issues/2391)) ([d0ea9fd](https://github.com/cornerstonejs/cornerstone3D/commit/d0ea9fdbd3af2df8dc538a5bba15ea8a241dfb0e))
+
 ## [4.5.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.12...v4.5.13) (2025-10-16)
 
 ### Bug Fixes
