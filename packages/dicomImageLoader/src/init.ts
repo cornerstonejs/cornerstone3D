@@ -5,7 +5,7 @@ import { getWebWorkerManager } from '@cornerstonejs/core';
 
 const workerFn = () => {
   const instance = new Worker(
-    new URL('./decodeImageFrameWorker.js', import.meta.url),
+    new URL('./decodeImageFrameWorker.ts', import.meta.url),
     { type: 'module' }
   );
   return instance;
