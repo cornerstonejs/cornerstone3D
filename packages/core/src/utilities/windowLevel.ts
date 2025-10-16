@@ -58,7 +58,13 @@ function toLowHighRange(
   lower: number;
   upper: number;
 } {
-  if (voiLUTFunction === VOILUTFunctionType.LINEAR) {
+  // Note: The SIGMOID function is currently treated the same as LINEAR
+  // because we don't have a good way to define "bounds" for it.
+  // Remove or statement when fixed
+  if (
+    voiLUTFunction === VOILUTFunctionType.LINEAR ||
+    voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
+  ) {
     // From C.11.2.1.2.1 (linear function)
     return {
       lower: windowCenter - 0.5 - (windowWidth - 1) / 2,
@@ -70,15 +76,18 @@ function toLowHighRange(
       lower: windowCenter - windowWidth / 2,
       upper: windowCenter + windowWidth / 2,
     };
-  } else if (voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
-    // From C.11.2.1.3.1 (sigmoid function)
-    // Sigmoid: y = 1 / (1 + exp(-4*(x - c)/w))
-    const xLower = logit(0.01, windowCenter, windowWidth);
-    const xUpper = logit(0.99, windowCenter, windowWidth);
-    return {
-      lower: xLower,
-      upper: xUpper,
-    };
+    // Note: The SIGMOID function is currently treated the same as LINEAR
+    // because we don't have a good way to define "bounds" for it.
+    // Uncomment when fixed
+    // } else if (voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
+    //   // From C.11.2.1.3.1 (sigmoid function)
+    //   // Sigmoid: y = 1 / (1 + exp(-4*(x - c)/w))
+    //   const xLower = logit(0.01, windowCenter, windowWidth);
+    //   const xUpper = logit(0.99, windowCenter, windowWidth);
+    //   return {
+    //     lower: xLower,
+    //     upper: xUpper,
+    //   };
   } else {
     throw new Error('Invalid VOI LUT function');
   }
