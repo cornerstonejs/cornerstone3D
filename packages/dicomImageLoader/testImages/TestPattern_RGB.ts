@@ -72,11 +72,11 @@ const EXPECTED_IMAGE: Types.IImage = {
 
 const IMAGE_HASH =
   'db754473cb0f7754a77e709c199e787285f68beb675a934f8d4567328ab8f107';
-const TEST_NAME = 'JPEG Lossless RGB';
+const TEST_NAME = 'TestPattern_RGB';
 
 export const WADOURI_TEST: IWadoUriTest = {
   name: TEST_NAME,
-  wadouri: `wadouri:/testImages/TestPattern_JPEG-Lossless_RGB.dcm`,
+  wadouri: `wadouri:/testImages/TestPattern_RGB.dcm`,
   frames: [
     {
       pixelDataHash: IMAGE_HASH,
@@ -87,7 +87,7 @@ export const WADOURI_TEST: IWadoUriTest = {
 
 export const WADO_RS_TEST: IWadoRsTest = {
   name: TEST_NAME,
-  wadorsUrl: `wadors:/testImages/TestPattern_JPEG-Lossless_RGB.dcm`,
+  wadorsUrl: `wadors:/testImages/TestPattern_RGB.dcm`,
   frames: [
     {
       pixelDataHash: IMAGE_HASH,

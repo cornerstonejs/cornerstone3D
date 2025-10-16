@@ -2,7 +2,7 @@ import { Enums, type Types } from '@cornerstonejs/core';
 import { tags } from './TestPattern_JPEG-Baseline_YBR422.wado-rs-tags';
 import type { IWadoRsTest, IWadoUriTest } from './tests.models';
 
-const CS_IMAGE: Types.IImage = {
+const EXPECTED_IMAGE: Types.IImage = {
   // @ts-expect-error Extra fields not defined in IImage
   calibration: {},
   color: true,
@@ -143,7 +143,7 @@ export const WADOURI_TEST: IWadoUriTest = {
   frames: [
     {
       pixelDataHash: IMAGE_HASH,
-      image: CS_IMAGE,
+      image: EXPECTED_IMAGE,
       metadataModule: {
         [Enums.MetadataModules.CALIBRATION]: CALIBRATION_MODULE,
         [Enums.MetadataModules.IMAGE_PLANE]: WADO_URI_IMAGE_PLANE_MODULE,

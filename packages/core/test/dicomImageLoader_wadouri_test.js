@@ -6,18 +6,30 @@ import {
   wadors,
   wadouri,
 } from '@cornerstonejs/dicom-image-loader';
+import { createImageHash } from '../../../utils/test/pixel-data-hash';
 import { WADOURI_TEST as CtBigEndian_1_2_840_1008_1_2_2 } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2';
 import { WADOURI_TEST as CtJpeg2000Lossless_1_2_840_10008_1_2_4_90 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90';
 import { WADOURI_TEST as CtJpeg2000_1_2_840_10008_1_2_4_91 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91';
 import { WADOURI_TEST as CtJpegLsLossless_1_2_840_10008_1_2_4_80 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80';
 import { WADOURI_TEST as CtJpegLsLossless_1_2_840_10008_1_2_4_81 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81';
+import { WADOURI_TEST as CtJpegProcess14V1_1_2_840_10008_1_2_4_70 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEGProcess14SV1TransferSyntax_1.2.840.10008.1.2.4.70';
+import { WADOURI_TEST as CtJpegProcess14_1_2_840_10008_1_2_4_57 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEGProcess14TransferSyntax_1.2.840.10008.1.2.4.57';
 import { WADOURI_TEST as CtJpegProcess1_1_2_840_10008_1_2_4_50 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50';
 import { WADOURI_TEST as CtLittleEndian_1_2_840_10008_1_2_1 } from '../../dicomImageLoader/testImages/CTImage.dcm_LittleEndianExplicitTransferSyntax_1.2.840.10008.1.2.1';
+import { WADOURI_TEST as CtLittleEndian_1_2_840_10008_1_2 } from '../../dicomImageLoader/testImages/CTImage.dcm_LittleEndianImplicitTransferSyntax_1.2.840.10008.1.2';
+import { WADOURI_TEST as CtRLELossless_1_2_840_10008_1_2_5 } from '../../dicomImageLoader/testImages/CTImage.dcm_RLELosslessTransferSyntax_1.2.840.10008.1.2.5';
 import { WADOURI_TEST as TestPattern_JpegBaselineYbr422 } from '../../dicomImageLoader/testImages/TestPattern_JPEG-Baseline_YBR422';
 import { WADOURI_TEST as TestPatternJpegBaselineYbrFull } from '../../dicomImageLoader/testImages/TestPattern_JPEG-Baseline_YBRFull';
+import { WADOURI_TEST as TestPatternJpegLsLossless } from '../../dicomImageLoader/testImages/TestPattern_JPEG-LS-Lossless';
+import { WADOURI_TEST as TestPatternJpegLsNearLossless } from '../../dicomImageLoader/testImages/TestPattern_JPEG-LS-NearLossless';
 import { WADOURI_TEST as TestPatternJpegLosslessRgb } from '../../dicomImageLoader/testImages/TestPattern_JPEG-Lossless_RGB';
+import { WADOURI_TEST as TestPatternPalette } from '../../dicomImageLoader/testImages/TestPattern_Palette';
+import { WADOURI_TEST as TestPatternPalette_16 } from '../../dicomImageLoader/testImages/TestPattern_Palette_16';
+import { WADOURI_TEST as TestPatternRGB } from '../../dicomImageLoader/testImages/TestPattern_RGB';
 import { WADOURI_TEST as NoPixelSpacing } from '../../dicomImageLoader/testImages/no-pixel-spacing';
 import { WADOURI_TEST as UsMultiframeYbrFull422 } from '../../dicomImageLoader/testImages/us-multiframe-ybr-full-422';
+import { WADOURI_TEST as ParamapTest } from '../../dicomImageLoader/testImages/paramap';
+import { WADOURI_TEST as ParamapFloatTest } from '../../dicomImageLoader/testImages/paramap-float';
 
 /** @type {import("../../dicomImageLoader/testImages/tests.models").IWadoUriTest[]} */
 const tests = [
@@ -27,11 +39,23 @@ const tests = [
   CtJpegLsLossless_1_2_840_10008_1_2_4_80,
   CtJpegLsLossless_1_2_840_10008_1_2_4_81,
   CtJpegProcess1_1_2_840_10008_1_2_4_50,
+  CtBigEndian_1_2_840_1008_1_2_2,
+  CtJpegProcess14_1_2_840_10008_1_2_4_57,
+  CtJpegProcess14V1_1_2_840_10008_1_2_4_70,
   CtLittleEndian_1_2_840_10008_1_2_1,
+  CtLittleEndian_1_2_840_10008_1_2,
+  CtRLELossless_1_2_840_10008_1_2_5,
   NoPixelSpacing,
+  ParamapFloatTest,
+  ParamapTest,
   TestPattern_JpegBaselineYbr422,
   TestPatternJpegBaselineYbrFull,
   TestPatternJpegLosslessRgb,
+  TestPatternJpegLsLossless,
+  TestPatternJpegLsNearLossless,
+  TestPatternPalette_16,
+  TestPatternPalette,
+  TestPatternRGB,
   UsMultiframeYbrFull422,
 ];
 
@@ -64,10 +88,17 @@ describe('dicomImageLoader - WADO-URI', () => {
 
         if (frame.pixelDataHash) {
           it(`decodes the image and the pixel data hash for frame ${frameIndex} of ${t.name} is correct`, async () => {
-            const image = await imageLoader.loadImage(t.wadouri).catch((e) => {
-              console.error(e);
-              throw e;
-            });
+            // first load the image without the frame so that it is loaded into
+            // the cache
+            const { imageId } = await imageLoader.loadImage(t.wadouri);
+            /**
+             * If the test case has `.pixelDataHash` defined, then we want to
+             * load the image and check that the pixel data matches the expected
+             * hash.
+             */
+            const image = await imageLoader.loadImage(
+              imageIdWithFrame(imageId, frameIndex)
+            );
             const hash = await createImageHash(image.getPixelData());
 
             expect(hash).toBe(frame.pixelDataHash);
@@ -114,19 +145,6 @@ describe('dicomImageLoader - WADO-URI', () => {
     });
   }
 });
-
-/**
- *
- * @param {ArrayBufferLike} image
- */
-async function createImageHash(image) {
-  const hashBuffer = await crypto.subtle.digest('SHA-256', image);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-  return hashHex;
-}
 
 /**
  *

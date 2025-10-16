@@ -7,7 +7,7 @@ const EXPECTED_IMAGE: Types.IImage = {
   color: true,
   columnPixelSpacing: 1,
   columns: 640,
-  dataType: 'Uint8Array',
+  dataType: 'Uint8ClampedArray',
   data: jasmine.any(Object),
   // @ts-expect-error Extra fields not defined in IImage
   decodeTimeInMS: jasmine.any(Number),
@@ -20,34 +20,39 @@ const EXPECTED_IMAGE: Types.IImage = {
   imageFrame: {
     bitsAllocated: 8,
     bitsStored: 8,
-    bluePaletteColorLookupTableData: undefined,
-    bluePaletteColorLookupTableDescriptor: undefined,
+    // @ts-expect-error jasmine matcher
+    bluePaletteColorLookupTableData: jasmine.any(Array),
+    bluePaletteColorLookupTableDescriptor: [256, 0, 8],
     columns: 640,
     decodeLevel: undefined,
     // @ts-expect-error jasmine matcher
     decodeTimeInMS: jasmine.any(Number),
-    greenPaletteColorLookupTableData: undefined,
-    greenPaletteColorLookupTableDescriptor: undefined,
+    // @ts-expect-error jasmine matcher
+    greenPaletteColorLookupTableData: jasmine.any(Array),
+    greenPaletteColorLookupTableDescriptor: [256, 0, 8],
+    // @ts-expect-error jasmine matcher
+    imageData: { data: jasmine.any(Uint8ClampedArray) },
     // @ts-expect-error jasmine matcher
     imageId: jasmine.any(String),
-    largestPixelValue: 255,
-    photometricInterpretation: 'RGB',
+    largestPixelValue: 0,
+    photometricInterpretation: 'PALETTE COLOR',
     // @ts-expect-error jasmine matcher
-    pixelData: jasmine.any(Uint8Array),
+    pixelData: jasmine.any(Uint8ClampedArray),
     pixelDataLength: 768000,
     pixelRepresentation: 0,
-    planarConfiguration: 0,
-    redPaletteColorLookupTableData: undefined,
-    redPaletteColorLookupTableDescriptor: undefined,
+    planarConfiguration: undefined,
+    // @ts-expect-error jasmine matcher
+    redPaletteColorLookupTableData: jasmine.any(Array),
+    redPaletteColorLookupTableDescriptor: [256, 0, 8],
     rows: 400,
-    samplesPerPixel: 3,
+    samplesPerPixel: 1,
     smallestPixelValue: 0,
   },
   // @ts-expect-error jasmine matcher
   imageId: jasmine.any(String),
   intercept: 0,
   invert: false,
-  maxPixelValue: 255,
+  maxPixelValue: 0,
   minPixelValue: 0,
   numberOfComponents: 3,
   preScale: undefined,
@@ -71,12 +76,12 @@ const EXPECTED_IMAGE: Types.IImage = {
 };
 
 const IMAGE_HASH =
-  'db754473cb0f7754a77e709c199e787285f68beb675a934f8d4567328ab8f107';
-const TEST_NAME = 'JPEG Lossless RGB';
+  '7cd0371eb339cb41d63862964d8908a03d548427694a8918bd4debc94f54eeea';
+const TEST_NAME = 'TestPattern_Palette';
 
 export const WADOURI_TEST: IWadoUriTest = {
   name: TEST_NAME,
-  wadouri: `wadouri:/testImages/TestPattern_JPEG-Lossless_RGB.dcm`,
+  wadouri: `wadouri:/testImages/TestPattern_Palette.dcm`,
   frames: [
     {
       pixelDataHash: IMAGE_HASH,
@@ -87,7 +92,7 @@ export const WADOURI_TEST: IWadoUriTest = {
 
 export const WADO_RS_TEST: IWadoRsTest = {
   name: TEST_NAME,
-  wadorsUrl: `wadors:/testImages/TestPattern_JPEG-Lossless_RGB.dcm`,
+  wadorsUrl: `wadors:/testImages/TestPattern_Palette.dcm`,
   frames: [
     {
       pixelDataHash: IMAGE_HASH,

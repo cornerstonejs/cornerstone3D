@@ -22,14 +22,43 @@ const EXPECTED_IMAGE: Types.IImage = {
     bitsStored: 8,
     bluePaletteColorLookupTableData: undefined,
     bluePaletteColorLookupTableDescriptor: undefined,
+    bytesPerPixel: 1,
     columns: 640,
     decodeLevel: undefined,
     // @ts-expect-error jasmine matcher
     decodeTimeInMS: jasmine.any(Number),
+    nearLossless: 2,
+    interleaveMode: 1,
+    bitsPerPixel: 8,
+    componentsPerPixel: 3,
+    encodeOptions: {
+      nearLossless: 2,
+      interleaveMode: 1,
+      frameInfo: {
+        width: 640,
+        height: 400,
+        bitsPerSample: 8,
+        componentCount: 3,
+      },
+    },
+    frameInfo: {
+      bitsPerSample: 8,
+      componentCount: 3,
+      height: 400,
+      width: 640,
+    },
     greenPaletteColorLookupTableData: undefined,
     greenPaletteColorLookupTableDescriptor: undefined,
     // @ts-expect-error jasmine matcher
     imageId: jasmine.any(String),
+    imageInfo: {
+      columns: 640,
+      rows: 400,
+      bitsPerPixel: 8,
+      signed: false,
+      bytesPerPixel: 1,
+      componentsPerPixel: 3,
+    },
     largestPixelValue: 255,
     photometricInterpretation: 'RGB',
     // @ts-expect-error jasmine matcher
@@ -41,6 +70,7 @@ const EXPECTED_IMAGE: Types.IImage = {
     redPaletteColorLookupTableDescriptor: undefined,
     rows: 400,
     samplesPerPixel: 3,
+    signed: false,
     smallestPixelValue: 0,
   },
   // @ts-expect-error jasmine matcher
@@ -71,12 +101,12 @@ const EXPECTED_IMAGE: Types.IImage = {
 };
 
 const IMAGE_HASH =
-  'db754473cb0f7754a77e709c199e787285f68beb675a934f8d4567328ab8f107';
-const TEST_NAME = 'JPEG Lossless RGB';
+  'b004180226bc4fa4f5982f914e924b31ccb2cd19782c149ea303a773e465c4d7';
+const TEST_NAME = 'TestPattern_JPEG-LS-NearLossless';
 
 export const WADOURI_TEST: IWadoUriTest = {
   name: TEST_NAME,
-  wadouri: `wadouri:/testImages/TestPattern_JPEG-Lossless_RGB.dcm`,
+  wadouri: `wadouri:/testImages/TestPattern_JPEG-LS-NearLossless.dcm`,
   frames: [
     {
       pixelDataHash: IMAGE_HASH,
@@ -87,7 +117,7 @@ export const WADOURI_TEST: IWadoUriTest = {
 
 export const WADO_RS_TEST: IWadoRsTest = {
   name: TEST_NAME,
-  wadorsUrl: `wadors:/testImages/TestPattern_JPEG-Lossless_RGB.dcm`,
+  wadorsUrl: `wadors:/testImages/TestPattern_JPEG-LS-NearLossless.dcm`,
   frames: [
     {
       pixelDataHash: IMAGE_HASH,

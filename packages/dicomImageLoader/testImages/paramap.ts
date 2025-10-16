@@ -1,69 +1,65 @@
 import { Enums, type Types } from '@cornerstonejs/core';
-import { tags } from './TestPattern_JPEG-Baseline_YBRFull.wado-rs-tags';
 import type { IWadoRsTest, IWadoUriTest } from './tests.models';
 
-const EXPECTED_IMAGE: Types.IImage = {
+const CS_IMAGE: Types.IImage = {
   // @ts-expect-error Extra fields not defined in IImage
   calibration: {},
-  color: true,
-  columnPixelSpacing: 1,
-  columns: 640,
-  dataType: 'Uint8Array',
+  color: false,
+  columnPixelSpacing: 0.7031,
+  columns: 256,
+  dataType: 'Uint16Array',
   data: jasmine.any(Object),
   // @ts-expect-error Extra fields not defined in IImage
   decodeTimeInMS: jasmine.any(Number),
   floatPixelData: undefined,
-  // @ts-expect-error jasmine matcher
-  getCanvas: jasmine.any(Function),
+  getCanvas: undefined,
   // @ts-expect-error jasmine matcher
   getPixelData: jasmine.any(Function),
-  height: 400,
+  height: 256,
   imageFrame: {
-    bitsAllocated: 8,
-    bitsStored: 8,
+    bitsAllocated: 32,
+    bitsStored: undefined,
     bluePaletteColorLookupTableData: undefined,
     bluePaletteColorLookupTableDescriptor: undefined,
-    columns: 640,
+    columns: 256,
     decodeLevel: undefined,
     // @ts-expect-error jasmine matcher
     decodeTimeInMS: jasmine.any(Number),
     greenPaletteColorLookupTableData: undefined,
     greenPaletteColorLookupTableDescriptor: undefined,
     // @ts-expect-error jasmine matcher
-    imageData: jasmine.any(ImageData),
-    // @ts-expect-error jasmine matcher
     imageId: jasmine.any(String),
-    largestPixelValue: 255,
-    photometricInterpretation: 'YBR_FULL',
+
+    largestPixelValue: 4095,
+    photometricInterpretation: 'MONOCHROME2',
     // @ts-expect-error jasmine matcher
-    pixelData: jasmine.any(Uint8Array),
-    pixelDataLength: 768000,
-    pixelRepresentation: 0,
-    planarConfiguration: 0,
+    pixelData: jasmine.any(Uint16Array),
+    pixelDataLength: 65536,
+    pixelRepresentation: undefined,
+    planarConfiguration: undefined,
     redPaletteColorLookupTableData: undefined,
     redPaletteColorLookupTableDescriptor: undefined,
-    rows: 400,
-    samplesPerPixel: 3,
+    rows: 256,
+    samplesPerPixel: 1,
     smallestPixelValue: 0,
   },
   // @ts-expect-error jasmine matcher
   imageId: jasmine.any(String),
   intercept: 0,
   invert: false,
-  maxPixelValue: 255,
+  maxPixelValue: 4095,
   minPixelValue: 0,
-  numberOfComponents: 3,
+  numberOfComponents: 1,
   preScale: undefined,
-  rgba: undefined,
-  rowPixelSpacing: 1,
-  rows: 400,
-  sizeInBytes: 768000,
+  rgba: false,
+  rowPixelSpacing: 0.7031,
+  rows: 256,
+  sizeInBytes: 131072,
   slope: 1,
   voiLUTFunction: undefined,
-  width: 640,
-  windowCenter: 128,
-  windowWidth: 256,
-  // @todo - add tests for voxelManager.
+  width: 256,
+  windowCenter: 2048,
+  windowWidth: 4096,
   // @ts-expect-error jasmine matcher
   voxelManager: jasmine.any(Object),
   // @ts-expect-error jasmine matcher
@@ -74,34 +70,37 @@ const EXPECTED_IMAGE: Types.IImage = {
 };
 
 const WADO_URI_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
-  columnCosines: [0, 1, 0],
-  columnPixelSpacing: 1,
-  columns: 640,
-  frameOfReferenceUID: undefined,
+  columnCosines: [-0.005401652, 0.9847554, 0.1738611],
+  columnPixelSpacing: 0.7031,
+  columns: 256,
+  frameOfReferenceUID:
+    '1.3.6.1.4.1.14519.5.2.1.3671.7001.241598906086676267096591752663',
   // @ts-expect-error Incorrect type in core
-  imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-  imagePositionPatient: [0.5, 0.5, 0.5],
-  pixelSpacing: [1, 1],
-  rowCosines: [1, 0, 0],
-  rowPixelSpacing: 1,
-  rows: 400,
+  imageOrientationPatient: [
+    0.999981, 0.004800584, 0.003877514, -0.005401652, 0.9847554, 0.1738611,
+  ],
+  imagePositionPatient: [-90.0225, -108.462, -43.9748],
+  pixelSpacing: [0.7031, 0.7031],
+  rowCosines: [0.999981, 0.004800584, 0.003877514],
+  rowPixelSpacing: 0.7031,
+  rows: 256,
   sliceLocation: undefined,
-  sliceThickness: undefined,
+  sliceThickness: 2.999902,
   usingDefaultValues: false,
 };
 // Should be `Types.ImagePixelModule` the actual metadata doesn't conform to it.
 const WADO_URI_IMAGE_PIXEL_MODULE = {
-  bitsAllocated: 8,
-  bitsStored: 8,
-  columns: 640,
-  highBit: 7,
+  bitsAllocated: 32,
+  bitsStored: undefined,
+  columns: 256,
+  highBit: undefined,
   largestPixelValue: undefined,
-  photometricInterpretation: 'YBR_FULL',
+  photometricInterpretation: 'MONOCHROME2',
   pixelAspectRatio: undefined,
-  pixelRepresentation: 0,
-  planarConfiguration: 0,
-  rows: 400,
-  samplesPerPixel: 3,
+  pixelRepresentation: undefined,
+  planarConfiguration: undefined,
+  rows: 256,
+  samplesPerPixel: 1,
   smallestPixelValue: undefined,
 };
 
@@ -120,31 +119,37 @@ const WADO_RS_IMAGE_PIXEL_MODULE = {
 };
 
 const SERIES_MODULE: Types.GeneralSeriesModuleMetadata = {
-  modality: 'OT',
-  seriesDate: undefined,
-  seriesInstanceUID: '1.3.6.1.4.1.34261.90254037371867.41912.1553085024.3',
-  seriesNumber: 1,
-  seriesTime: undefined,
-  studyInstanceUID: '1.3.6.1.4.1.34261.90254037371867.41912.1553085024.2',
+  modality: 'MR',
+  seriesDate: { year: 2016, month: 9, day: 29 },
+  seriesInstanceUID: '1.2.276.0.7230010.3.1.3.0.50782.1475186871.424076',
+  seriesNumber: 701,
+  seriesTime: {
+    hours: 18,
+    minutes: 7,
+    seconds: 51,
+    fractionalSeconds: undefined,
+  },
+  studyInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.3671.7001.133687106572018334063091507027',
   // @ts-expect-error The following fields are not defined in GeneralSeriesModuleMetadata
   acquisitionDate: undefined,
   acquisitionTime: undefined,
-  seriesDescription: undefined,
+  seriesDescription: 'Apparent Diffusion Coefficient',
 };
 
 const CALIBRATION_MODULE = undefined;
 
 const IMAGE_HASH =
-  '7e07e65b853f83c2239a253037dd29278d22638fbaaa8d80e7ae31f300606586';
-const TEST_NAME = 'JPEG Baseline YBR Full';
+  '5f5f97c3b88747f6498c38c99f41b484a1814acf7b1e140fcc77c3a2afe2d17c';
+const TEST_NAME = 'paramap';
 
 export const WADOURI_TEST: IWadoUriTest = {
   name: TEST_NAME,
-  wadouri: `wadouri:/testImages/TestPattern_JPEG-Baseline_YBRFull.dcm`,
+  wadouri: `wadouri:/testImages/paramap.dcm`,
   frames: [
     {
       pixelDataHash: IMAGE_HASH,
-      image: EXPECTED_IMAGE,
+      image: CS_IMAGE,
       metadataModule: {
         [Enums.MetadataModules.CALIBRATION]: CALIBRATION_MODULE,
         [Enums.MetadataModules.IMAGE_PLANE]: WADO_URI_IMAGE_PLANE_MODULE,
@@ -155,10 +160,13 @@ export const WADOURI_TEST: IWadoUriTest = {
   ],
 };
 
+/**
+ * Disabled - dcm2json reports an error
+ */
 export const WADO_RS_TEST: IWadoRsTest = {
   name: TEST_NAME,
-  wadorsUrl: `wadors:/testImages/TestPattern_JPEG-Baseline_YBRFull.dcm`,
-  wadorsMetadata: tags,
+  wadorsUrl: `wadors:/testImages/paramap.dcm`,
+  // wadorsMetadata: tags,
   frames: [
     {
       pixelDataHash: IMAGE_HASH,

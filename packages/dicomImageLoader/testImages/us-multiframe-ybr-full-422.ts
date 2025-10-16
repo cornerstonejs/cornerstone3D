@@ -25,7 +25,7 @@ const CALIBRATION_MODULE = {
   ],
 };
 
-const CS_IMAGE: Types.IImage = {
+const EXPECTED_IMAGE: Types.IImage = {
   // @ts-expect-error Extra fields not defined in IImage
   calibration: CALIBRATION_MODULE,
   color: true,
@@ -144,10 +144,12 @@ const MULTIFRAME_MODULE = {
   PerFrameFunctionalInformation: {},
   SharedFunctionalInformation: {},
 };
-
-const IMAGE_HASH =
-  '969155018b2b569d530b22bfdc537650c7162c56bad3783f1d1ecab2d558abf0';
 const TEST_NAME = 'US Multiframe YBR Full 422';
+
+const FRAME_1_PIXEL_DATA_HASH =
+  '969155018b2b569d530b22bfdc537650c7162c56bad3783f1d1ecab2d558abf0';
+const FRAME_78_PIXEL_DATA_HASH =
+  '31f6c10f923f9b970dc81e7bd6b2a68376abceeb47b91efa6ea481391df1c6c0';
 
 export const WADOURI_TEST: IWadoUriTest = {
   name: TEST_NAME,
@@ -155,8 +157,8 @@ export const WADOURI_TEST: IWadoUriTest = {
   frames: [
     {
       index: 1,
-      pixelDataHash: IMAGE_HASH,
-      image: CS_IMAGE,
+      pixelDataHash: FRAME_1_PIXEL_DATA_HASH,
+      image: EXPECTED_IMAGE,
       metadataModule: {
         [Enums.MetadataModules.CALIBRATION]: CALIBRATION_MODULE,
         [Enums.MetadataModules.IMAGE_PIXEL]: WADO_URI_IMAGE_PIXEL_MODULE,
@@ -166,7 +168,7 @@ export const WADOURI_TEST: IWadoUriTest = {
     },
     {
       index: 78,
-      pixelDataHash: IMAGE_HASH,
+      pixelDataHash: FRAME_78_PIXEL_DATA_HASH,
     },
   ],
 };
@@ -177,8 +179,8 @@ export const WADO_RS_TEST: IWadoRsTest = {
   wadorsMetadata: tags,
   frames: [
     {
-      pixelDataHash: IMAGE_HASH,
-      image: CS_IMAGE,
+      pixelDataHash: FRAME_1_PIXEL_DATA_HASH,
+      image: EXPECTED_IMAGE,
       // these aren't working yet - the wado-rs metadata provider
       // doesn't return anything for these modules. Need to fix
       // how the data is being cached by the wado-rs loader.

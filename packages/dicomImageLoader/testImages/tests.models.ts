@@ -74,6 +74,8 @@ export interface IWadoRsTest {
    * Wado-RS JSON metadata to allow loading of metadata without
    * having to fetch it from a Wado-RS server. This is used in the tess
    * to verify that metadata is parsed correctly.
+   *
+   * This can be created using `dcm2json source.dcm`
    */
   wadorsMetadata?: WADORSMetaData | Record<string, unknown>;
   /**
