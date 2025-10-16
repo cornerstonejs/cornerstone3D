@@ -1,5 +1,5 @@
 // @ts-check
-import { metaData } from '@cornerstonejs/core';
+import { cache, imageLoader, metaData } from '@cornerstonejs/core';
 import {
   init as dicomImageLoaderInit,
   wadors,
@@ -17,9 +17,6 @@ const WADO_RS_TESTS = [
   NoPixelSpacingWadoRS,
 ];
 
-// Register the WADO-RS Loader
-wadors.register();
-
 /**
  * These are paramaterized tests for dicomImageLoader.  Theses tests are for
  * validating the WADO-RS loader works correctly for a wide variety of images.
@@ -32,10 +29,16 @@ wadors.register();
  */
 describe('dicomImageLoader - WADO-RS', () => {
   beforeEach(() => {
+    wadors.register();
+    dicomImageLoaderInit();
+  });
+
+  afterEach(() => {
     // Before each test, purge all the metadata tags so that they are
     // loaded fresh
     wadors.metaDataManager.purge();
-    dicomImageLoaderInit();
+    cache.purgeCache();
+    imageLoader.unregisterAllImageLoaders();
   });
 
   for (const t of WADO_RS_TESTS) {

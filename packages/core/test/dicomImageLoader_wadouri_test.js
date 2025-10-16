@@ -1,6 +1,6 @@
 // @ts-check
 
-import { imageLoader, metaData } from '@cornerstonejs/core';
+import { cache, imageLoader, metaData } from '@cornerstonejs/core';
 import {
   init as dicomImageLoaderInit,
   wadouri,
@@ -58,9 +58,6 @@ const tests = [
   UsMultiframeYbrFull422,
 ];
 
-// register the wadouri loader
-wadouri.register();
-
 /**
  * These are paramaterized tests for dicomImageLoader.  It allows us to test
  * that different images are loaded correctly, and that the metadata returned by
@@ -77,10 +74,17 @@ wadouri.register();
  */
 describe('dicomImageLoader - WADO-URI', () => {
   beforeEach(() => {
-    // Purge any loaded data so each test loads the image
-    wadouri.dataSetCacheManager.purge();
+    // register the wadouri loader
+    wadouri.register();
     // re-initialise the loader before each test to clear any previous config
     dicomImageLoaderInit();
+  });
+
+  afterEach(() => {
+    // Purge any loaded data so each test loads the image
+    wadouri.dataSetCacheManager.purge();
+    cache.purgeCache();
+    imageLoader.unregisterAllImageLoaders();
   });
 
   it('should allow customising the http request with beforeSend', async () => {
