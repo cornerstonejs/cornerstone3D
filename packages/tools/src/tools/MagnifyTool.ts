@@ -147,10 +147,10 @@ class MagnifyTool extends BaseTool {
 
     // Todo: use CSS transform instead of setting top and left for better performance
     magnifyToolElement.style.top = `${
-        canvasPos[1] - this.configuration.magnifyHeight / 2
+      canvasPos[1] - this.configuration.magnifyHeight / 2
     }px`;
     magnifyToolElement.style.left = `${
-        canvasPos[0] - this.configuration.magnifyWidth / 2
+      canvasPos[0] - this.configuration.magnifyWidth / 2
     }px`;
 
     const magnifyViewport = renderingEngine.getViewport(
@@ -265,9 +265,7 @@ class MagnifyTool extends BaseTool {
     let { element } = evt.detail;
 
     if (element === undefined) {
-      const {
-        enabledElement,
-      } = this.editData;
+      const { enabledElement } = this.editData;
 
       const { viewport } = enabledElement;
       element = viewport.element;
@@ -309,7 +307,7 @@ class MagnifyTool extends BaseTool {
     );
 
     element.addEventListener(
-      "contextmenu",
+      'contextmenu',
       this._cancelCallback as EventListener
     );
 
@@ -340,7 +338,7 @@ class MagnifyTool extends BaseTool {
     );
 
     element.removeEventListener(
-      "contextmenu",
+      'contextmenu',
       this._cancelCallback as EventListener
     );
     element.removeEventListener(
