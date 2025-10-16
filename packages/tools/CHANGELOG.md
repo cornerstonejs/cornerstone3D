@@ -3,6 +3,40 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.12...v4.5.13) (2025-10-16)
+
+### Bug Fixes
+
+- **segmentation:** Lock added contour annotations when segment is locked ([#2399](https://github.com/cornerstonejs/cornerstone3D/issues/2399)) ([15cfdd9](https://github.com/cornerstonejs/cornerstone3D/commit/15cfdd93ffdc55dfa70f15bec8cb1be15d1290df))
+
+## [4.5.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.11...v4.5.12) (2025-10-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.5.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.10...v4.5.11) (2025-10-16)
+
+### Bug Fixes
+
+- **segmentation:** Lock contour annotations when segment is locked. ([#2395](https://github.com/cornerstonejs/cornerstone3D/issues/2395)) ([83b4092](https://github.com/cornerstonejs/cornerstone3D/commit/83b4092d76c6e115adfd12a50d399e96483622a4))
+
+## [4.5.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.9...v4.5.10) (2025-10-16)
+
+### Bug Fixes
+
+- **MagnifyTool:** Fix MagnifyTool freeze when pressing right click ([#2388](https://github.com/cornerstonejs/cornerstone3D/issues/2388)) ([a13fce2](https://github.com/cornerstonejs/cornerstone3D/commit/a13fce2d65aa1d5b8de849ddf6255e3d42dc841a))
+
+## [4.5.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.8...v4.5.9) (2025-10-15)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.5.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.7...v4.5.8) (2025-10-15)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.5.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.6...v4.5.7) (2025-10-14)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [4.5.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.5...v4.5.6) (2025-10-10)
 
 ### Bug Fixes
