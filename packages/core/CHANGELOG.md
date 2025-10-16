@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.15](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.14...v4.5.15) (2025-10-16)
+
+### Bug Fixes
+
+- set volume id on creation ([#2345](https://github.com/cornerstonejs/cornerstone3D/issues/2345)) ([#2396](https://github.com/cornerstonejs/cornerstone3D/issues/2396)) ([a47b125](https://github.com/cornerstonejs/cornerstone3D/commit/a47b125193743290c8c412cea85c990738c339ab))
+
+## [4.5.14](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.13...v4.5.14) (2025-10-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [4.5.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.12...v4.5.13) (2025-10-16)
 
 **Note:** Version bump only for package @cornerstonejs/core
