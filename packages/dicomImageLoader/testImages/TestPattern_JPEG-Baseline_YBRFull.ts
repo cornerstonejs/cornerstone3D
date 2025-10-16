@@ -134,8 +134,14 @@ const SERIES_MODULE: Types.GeneralSeriesModuleMetadata = {
 
 const CALIBRATION_MODULE = undefined;
 
+/**
+ * On MacOS the expected image hash is
+ * `1ba91b409f0cecc9f0605c3a1ce184782afec2984a56274d5f2abc895c57f540`
+ * In GH Actions it is
+ * `7e07e65b853f83c2239a253037dd29278d22638fbaaa8d80e7ae31f300606586`
+ */
 const IMAGE_HASH =
-  '7e07e65b853f83c2239a253037dd29278d22638fbaaa8d80e7ae31f300606586';
+  '1ba91b409f0cecc9f0605c3a1ce184782afec2984a56274d5f2abc895c57f540';
 const TEST_NAME = 'JPEG Baseline YBR Full';
 
 export const WADOURI_TEST: IWadoUriTest = {
