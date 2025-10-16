@@ -15,10 +15,6 @@ function _setContourSegmentationSegmentAnnotationsLocked(
   segmentIndex: number,
   locked: boolean
 ) {
-  if (!segmentation?.representationData?.Contour) {
-    return;
-  }
-
   const annotationUIDsMap = getAnnotationsUIDMapFromSegmentation(
     segmentation.segmentationId
   );
@@ -79,11 +75,13 @@ function setSegmentIndexLocked(
 
   segments[segmentIndex].locked = locked;
 
-  _setContourSegmentationSegmentAnnotationsLocked(
-    segmentation,
-    segmentIndex,
-    locked
-  );
+  if (segmentation?.representationData?.Contour) {
+    _setContourSegmentationSegmentAnnotationsLocked(
+      segmentation,
+      segmentIndex,
+      locked
+    );
+  }
 
   triggerSegmentationModified(segmentationId);
 }
