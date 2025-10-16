@@ -1,3 +1,4 @@
+import { setAnnotationLocked } from '../../stateManagement/annotation/annotationLocking';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type { ContourSegmentationAnnotation } from '../../types';
 
@@ -37,6 +38,12 @@ export function addContourSegmentationAnnotation(
     annotationsUIDsSet = new Set();
     annotationUIDsMap.set(segmentIndex, annotationsUIDsSet);
   }
+
+  // Lock the annotation if the segment is locked.
+  setAnnotationLocked(
+    annotation.annotationUID,
+    segmentation.segments[segmentIndex].locked
+  );
 
   annotationUIDsMap.set(
     segmentIndex,
