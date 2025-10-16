@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.10...v4.5.11) (2025-10-16)
+
+### Bug Fixes
+
+- **segmentation:** Lock contour annotations when segment is locked. ([#2395](https://github.com/cornerstonejs/cornerstone3D/issues/2395)) ([83b4092](https://github.com/cornerstonejs/cornerstone3D/commit/83b4092d76c6e115adfd12a50d399e96483622a4))
+
 ## [4.5.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.9...v4.5.10) (2025-10-16)
 
 ### Bug Fixes
