@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.9...v4.5.10) (2025-10-16)
+
+### Bug Fixes
+
+- **MagnifyTool:** Fix MagnifyTool freeze when pressing right click ([#2388](https://github.com/cornerstonejs/cornerstone3D/issues/2388)) ([a13fce2](https://github.com/cornerstonejs/cornerstone3D/commit/a13fce2d65aa1d5b8de849ddf6255e3d42dc841a))
+
 ## [4.5.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.8...v4.5.9) (2025-10-15)
 
 ### Bug Fixes
