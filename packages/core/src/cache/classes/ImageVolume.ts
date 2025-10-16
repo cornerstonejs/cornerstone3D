@@ -133,6 +133,7 @@ export class ImageVolume {
         dimensions,
         imageIds,
         numberOfComponents,
+        id: volumeId,
       });
 
     this.numVoxels =
