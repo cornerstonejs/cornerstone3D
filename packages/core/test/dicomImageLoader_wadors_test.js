@@ -30,7 +30,7 @@ wadors.register();
  * 1. Testing pixel data matches the expected hash
  * 2. Testing the Image object returned by `loadImage`
  */
-fdescribe('dicomImageLoader - WADO-RS', () => {
+describe('dicomImageLoader - WADO-RS', () => {
   beforeEach(() => {
     // Before each test, purge all the metadata tags so that they are
     // loaded fresh

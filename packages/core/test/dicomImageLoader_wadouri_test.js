@@ -75,7 +75,7 @@ wadouri.register();
  * 3. Retrieving metadata modules and comparing them with expected metadata
  *    modules.
  */
-fdescribe('dicomImageLoader - WADO-URI', () => {
+describe('dicomImageLoader - WADO-URI', () => {
   beforeEach(() => {
     // Purge any loaded data so each test loads the image
     wadouri.dataSetCacheManager.purge();
