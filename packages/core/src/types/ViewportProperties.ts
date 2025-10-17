@@ -16,8 +16,8 @@ export interface ViewportProperties {
   colormap?: ColormapPublic;
   /** interpolation type */
   interpolationType?: InterpolationType;
-
+  /** transfer function preset (coloring) */
   preset?: string;
-
+  /** sample distnace - higher number means lower resolution and GPU demands */
   sampleDistanceMultiplier?: number;
 }

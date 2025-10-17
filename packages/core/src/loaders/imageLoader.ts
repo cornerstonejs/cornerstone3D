@@ -87,19 +87,6 @@ function loadImageFromImageLoader(
   const cachedImageLoadObject = cache.getImageLoadObject(imageId);
 
   if (cachedImageLoadObject) {
-    // This is an in-progress image, which someone else is loading, so just
-    // handle the response directly.
-    // WARNING: This returns the cached image and ignores any new options (including targetBuffer)!
-    if (options.targetBuffer) {
-      console.warn(
-        `⚠️ CACHED IMAGE WITH TARGETBUFFER in imageLoader.loadImageFromImageLoader:\n` +
-          `  ImageId: ${imageId}\n` +
-          `  Requested targetBuffer: ${options.targetBuffer.columns}x${options.targetBuffer.rows}\n` +
-          `  Returning cached image which may have different dimensions!\n` +
-          `  This can cause dimension mismatch if stack loaded full-res and volume expects decimated.`
-      );
-      return null;
-    }
     handleImageLoadPromise(cachedImageLoadObject.promise, imageId);
     return cachedImageLoadObject;
   }

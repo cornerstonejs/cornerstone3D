@@ -75,6 +75,11 @@ export default function applyPreset(
   property.setGradientOpacityMaximumValue(0, gradientMaxValue);
   property.setGradientOpacityMaximumOpacity(0, gradientMaxOpacity);
 
+  if (preset.interpolation === '1') {
+    property.setInterpolationTypeToFastLinear();
+    //property.setInterpolationTypeToLinear()
+  }
+
   property.setShade(preset.shade === '1');
 
   const ambient = parseFloat(preset.ambient);

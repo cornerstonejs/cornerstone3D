@@ -1,4 +1,5 @@
 import type {
+  ICache,
   IImage,
   IGeometry,
   IImageLoadObject,

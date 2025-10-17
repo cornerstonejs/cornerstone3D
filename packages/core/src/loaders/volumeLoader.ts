@@ -89,14 +89,6 @@ function loadVolumeFromVolumeLoader(
   const scheme = volumeId.substring(0, colonIndex);
   let loader = volumeLoaders[scheme];
 
-  console.log('🔧 VolumeLoader: loadVolumeFromVolumeLoader called:', {
-    volumeId,
-    scheme,
-    loaderExists: !!loader,
-    loaderType: typeof loader,
-    availableLoaders: Object.keys(volumeLoaders)
-  });
-
   if (loader === undefined || loader === null) {
     if (
       unknownVolumeLoader == null ||
