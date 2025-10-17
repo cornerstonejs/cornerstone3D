@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.16](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.15...v4.5.16) (2025-10-17)
+
+### Bug Fixes
+
+- **CrosshairTool:** Fix "setToolCenter" to apply the modification to the viewports camera ([#2402](https://github.com/cornerstonejs/cornerstone3D/issues/2402)) ([4028207](https://github.com/cornerstonejs/cornerstone3D/commit/402820739678f8b9db0b2bddd8c03dc447fabc85))
+
 ## [4.5.15](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.14...v4.5.15) (2025-10-16)
 
 **Note:** Version bump only for package @cornerstonejs/tools
