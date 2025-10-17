@@ -121,6 +121,14 @@ export interface CornerstoneWadoRsLoaderOptions
 const mediaType =
   'multipart/related; type=application/octet-stream; transfer-syntax=*';
 
+/**
+ * Strip decimation parameter from imageId before making server request.
+ * The server doesn't understand this parameter - it's only for cache differentiation.
+ */
+function stripDecimationParam(imageId: string): string {
+  return imageId.replace(/[?&]decimation=\d+/, '');
+}
+
 function loadImage(
   imageId: string,
   options: CornerstoneWadoRsLoaderOptions = {}
@@ -201,7 +209,11 @@ function loadImage(
     options.requestType || csCoreEnums.RequestType.Interaction;
   const additionalDetails = options.additionalDetails || { imageId };
   const priority = options.priority === undefined ? 5 : options.priority;
-  const uri = imageId.substring(7);
+
+  // Strip decimation parameter from URI for server request
+  // but keep original imageId for caching
+  const cleanImageId = stripDecimationParam(imageId);
+  const uri = cleanImageId.substring(7);
 
   imageRetrievalPool.addRequest(
     sendXHR.bind(this, uri, imageId, mediaType),

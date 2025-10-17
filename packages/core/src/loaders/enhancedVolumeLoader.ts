@@ -87,6 +87,18 @@ export function enhancedVolumeLoader(
   const inPlaneDecimation = iDecimation > 1 ? iDecimation : 1;
   const kAxisDecimation = kDecimation > 1 ? kDecimation : 1;
 
+  // Function to add decimation parameter to imageId
+  function addDecimationToImageId(imageId: string, factor: number): string {
+    // Only add param if decimation is applied
+    if (factor === 1) {
+      return imageId;
+    }
+
+    // Check if imageId already has query params
+    const separator = imageId.includes('?') ? '&' : '?';
+    return `${imageId}${separator}decimation=${factor}`;
+  }
+
   // Check if k-decimation has already been applied at the displaySet level
   const expectedDecimatedCount = Math.floor(
     options.imageIds.length / kAxisDecimation
@@ -108,6 +120,22 @@ export function enhancedVolumeLoader(
         : decimatedResult;
 
     options.imageIds = decimatedImageIds as string[];
+  }
+
+  // Apply in-plane decimation parameter to imageIds
+  if (inPlaneDecimation > 1) {
+    options.imageIds = options.imageIds.map((imageId) =>
+      addDecimationToImageId(imageId, inPlaneDecimation)
+    );
+
+    console.log(
+      '🔧 EnhancedVolumeLoader: Added decimation param to imageIds:',
+      {
+        volumeId,
+        decimation: inPlaneDecimation,
+        sampleImageId: options.imageIds[0],
+      }
+    );
   }
 
   async function getStreamingImageVolume() {
