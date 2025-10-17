@@ -574,7 +574,9 @@ export default class BaseStreamingImageVolume
       this.reRenderTarget = this.reRenderFraction;
     }
 
-    return this.imagesLoader.loadImages(imageIds, this).catch(() => {});
+    return this.imagesLoader.loadImages(imageIds, this).catch((e) => {
+      console.debug('progressive loading failed to complete', e);
+    });
   }
 
   private _addScalingToVolume(suvFactor) {

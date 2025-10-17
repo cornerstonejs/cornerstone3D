@@ -34,7 +34,7 @@ import type { IImage, PixelDataTypedArray } from '../types';
  */
 export default function decimateImagePixels(image: IImage, factor: number) {
   // Trivial case: no decimation requested
- // console.debug('🔧 Decimate Image Pixels: ',factor);
+  // console.debug('🔧 Decimate Image Pixels: ',factor);
   if (!factor || factor <= 1) {
     return image;
   }
@@ -56,12 +56,12 @@ export default function decimateImagePixels(image: IImage, factor: number) {
     const inR = r * factor;
     // Ensure we don't go out of bounds
     if (inR >= rows) break;
-    
+
     for (let c = 0; c < newCols; c++) {
       const inC = c * factor;
       // Ensure we don't go out of bounds
       if (inC >= cols) break;
-      
+
       const src = (inR * cols + inC) * numComponents;
       // Ensure we don't read beyond pixel data bounds
       if (src + numComponents <= pixelData.length) {
@@ -70,7 +70,9 @@ export default function decimateImagePixels(image: IImage, factor: number) {
         }
       } else {
         // Fill with zeros if we're out of bounds
-        console.debug('🔧 Decimate Image Pixels: Filling with zeros because we are out of bounds');
+        console.debug(
+          '🔧 Decimate Image Pixels: Filling with zeros because we are out of bounds'
+        );
         for (let k = 0; k < numComponents; k++) {
           out[outIndex++] = 0;
         }
@@ -99,24 +101,6 @@ export default function decimateImagePixels(image: IImage, factor: number) {
         pixelDataLength: out.length,
       }
     : undefined;
-
-  console.log('🔧 Decimate Image Pixels: Decimation completed:', {
-    factor,
-    originalDimensions: `${rows}x${cols}`,
-    decimatedDimensions: `${newRows}x${newCols}`,
-    originalPixelDataLength: pixelData.length,
-    decimatedPixelDataLength: out.length,
-    compressionRatio: `${out.length}/${pixelData.length} = ${(out.length/pixelData.length*100).toFixed(1)}%`,
-    newSpacing,
-    imageId: (image as unknown as { imageId?: string }).imageId || 'unknown',
-    boundsCheck: {
-      maxInR: (newRows - 1) * factor,
-      maxInC: (newCols - 1) * factor,
-      maxSrc: ((newRows - 1) * factor * cols + (newCols - 1) * factor) * numComponents,
-      pixelDataLength: pixelData.length
-    }
-  
-  });
 
   return {
     ...image,

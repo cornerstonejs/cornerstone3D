@@ -64,17 +64,6 @@ export function enhancedVolumeLoader(
   if (options?.imageIds?.length > 0) {
     const firstFew = options.imageIds.slice(0, 3);
     const lastFew = options.imageIds.slice(-3);
-    console.log('🔍 EnhancedVolumeLoader: ImageIds order check:', {
-      volumeId,
-      totalCount: options.imageIds.length,
-      firstThree: firstFew,
-      lastThree: lastFew,
-      firstImageIdEnding: firstFew[0]?.split('/').pop()?.split('?')[0],
-      lastImageIdEnding: lastFew[lastFew.length - 1]
-        ?.split('/')
-        .pop()
-        ?.split('?')[0],
-    });
   }
 
   if (!options || !options.imageIds || !options.imageIds.length) {
