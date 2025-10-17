@@ -76,6 +76,7 @@ import { getCameraVectors } from './helpers/getCameraVectors';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
+import { isInvalidNumber } from './helpers/isInvalidNumber';
 import { createSharpeningRenderPass } from './renderPasses';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
@@ -499,6 +500,14 @@ abstract class BaseVolumeViewport extends Viewport {
       );
     }
 
+    if ([voiRangeToUse.lower, voiRangeToUse.upper].some(isInvalidNumber)) {
+      console.warn(
+        'VOI range contains invalid values, ignoring setVOI request',
+        voiRangeToUse
+      );
+      return;
+    }
+
     const { VOILUTFunction } = this.getProperties(volumeIdToUse);
 
     // scaling logic here
@@ -888,12 +897,15 @@ abstract class BaseVolumeViewport extends Viewport {
           [-viewPlaneNormal[0], -viewPlaneNormal[1], -viewPlaneNormal[2]],
           projectedDistance
         );
+        const focalShift = vec3.subtract(vec3.create(), newImagePositionPatient, focalPoint);
+        const newPosition = vec3.add(vec3.create(), position, focalShift);
         // this.setViewReference({
         //   ...viewRef,
         //   cameraFocalPoint: newImagePositionPatient as Point3,
         // });
         this.setCamera({
           focalPoint: newImagePositionPatient as Point3,
+          position: newPosition as Point3
         });
         this.render();
         return;

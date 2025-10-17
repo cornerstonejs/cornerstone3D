@@ -16,5 +16,15 @@ export default function getViewportForAnnotation(
 ): Types.IStackViewport | Types.IVolumeViewport | undefined {
   const viewports = getViewportsForAnnotation(annotation);
 
-  return viewports.length ? viewports[0] : undefined;
+  if (!viewports?.length) {
+    return undefined;
+  }
+
+  const viewport = viewports.find((viewport) =>
+    viewport
+      .getImageIds()
+      .some((imageId) => imageId === annotation.metadata.referencedImageId)
+  );
+
+  return viewport ?? viewports[0];
 }
