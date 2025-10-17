@@ -276,7 +276,6 @@ export default class BaseStreamingImageVolume
       'volume'
     );
 
-    // Set up the appropriate image loader
     this.imagesLoader = this.isDynamicVolume()
       ? this
       : imageRetrieveConfiguration
