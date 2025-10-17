@@ -22,8 +22,7 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
-const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
-  utilities;
+const { calibratedPixelSpacingMetadataProvider } = utilities;
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
