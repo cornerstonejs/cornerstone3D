@@ -430,15 +430,15 @@ class CrosshairsTool extends AnnotationTool {
 
       // Project this vector onto the view plane normal.
       // This isolates the component of the movement that corresponds to the "scroll" (slice change).
-      const dotProduct =
+      const scroll =
         delta[0] * viewPlaneNormal[0] +
         delta[1] * viewPlaneNormal[1] +
         delta[2] * viewPlaneNormal[2];
 
       const scrollDelta = [
-        dotProduct * viewPlaneNormal[0],
-        dotProduct * viewPlaneNormal[1],
-        dotProduct * viewPlaneNormal[2],
+        scroll * viewPlaneNormal[0],
+        scroll * viewPlaneNormal[1],
+        scroll * viewPlaneNormal[2],
       ];
 
       // Apply this "scroll" to the position and focal point of the camera.
