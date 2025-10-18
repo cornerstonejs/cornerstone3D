@@ -89,7 +89,7 @@
         "ndarray": "1.0.19"
     },
     "peerDependencies": {
-        "@cornerstonejs/core": "4.5.16",
-        "@cornerstonejs/tools": "4.5.16"
+        "@cornerstonejs/core": "4.5.17",
+        "@cornerstonejs/tools": "4.5.17"
     }
 }
