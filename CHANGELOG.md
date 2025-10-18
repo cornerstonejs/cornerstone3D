@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.17](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.16...v4.5.17) (2025-10-18)
+
+### Bug Fixes
+
+- planar freehand roi perimeter calculation ([#2341](https://github.com/cornerstonejs/cornerstone3D/issues/2341)) ([d3b607c](https://github.com/cornerstonejs/cornerstone3D/commit/d3b607c2596aec33d93cb7f2834c01ca2783b412))
+
 ## [4.5.16](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.15...v4.5.16) (2025-10-17)
 
 ### Bug Fixes
