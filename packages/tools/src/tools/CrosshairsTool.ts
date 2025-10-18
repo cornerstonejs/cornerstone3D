@@ -4,7 +4,7 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 
 import { AnnotationTool } from './base';
 
-import type { Types } from '@cornerstonejs/core';
+import { getRenderingEngine, type Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
   getEnabledElement,
@@ -412,13 +412,57 @@ class CrosshairsTool extends AnnotationTool {
 
   setToolCenter(toolCenter: Types.Point3, suppressEvents = false): void {
     // prettier-ignore
-    this.toolCenter = toolCenter;
     const viewportsInfo = this._getViewportsInfo();
 
-    // assuming all viewports are in the same rendering engine
-    triggerAnnotationRenderForViewportIds(
-      viewportsInfo.map(({ viewportId }) => viewportId)
-    );
+    viewportsInfo.map(({ renderingEngineId, viewportId }) => {
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+
+      const viewport = renderingEngine.getViewport(viewportId);
+      const camera = viewport.getCamera();
+      const { focalPoint, position, viewPlaneNormal } = camera;
+
+      // Calculate the delta between the current camera focal point and the new tool center
+      const delta = [
+        toolCenter[0] - focalPoint[0],
+        toolCenter[1] - focalPoint[1],
+        toolCenter[2] - focalPoint[2],
+      ];
+
+      // Project this vector onto the view plane normal.
+      // This isolates the component of the movement that corresponds to the "scroll" (slice change).
+      const scroll =
+        delta[0] * viewPlaneNormal[0] +
+        delta[1] * viewPlaneNormal[1] +
+        delta[2] * viewPlaneNormal[2];
+
+      const scrollDelta = [
+        scroll * viewPlaneNormal[0],
+        scroll * viewPlaneNormal[1],
+        scroll * viewPlaneNormal[2],
+      ];
+
+      // Apply this "scroll" to the position and focal point of the camera.
+      const newFocalPoint: Types.Point3 = [
+        focalPoint[0] + scrollDelta[0],
+        focalPoint[1] + scrollDelta[1],
+        focalPoint[2] + scrollDelta[2],
+      ];
+      const newPosition: Types.Point3 = [
+        position[0] + scrollDelta[0],
+        position[1] + scrollDelta[1],
+        position[2] + scrollDelta[2],
+      ];
+
+      viewport.setCamera({
+        focalPoint: newFocalPoint,
+        position: newPosition,
+      });
+
+      viewport.render();
+    });
+
+    this.toolCenter = toolCenter;
+
     if (!suppressEvents) {
       triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
         toolGroupId: this.toolGroupId,
