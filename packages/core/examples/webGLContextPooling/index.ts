@@ -142,15 +142,7 @@ for (let i = 0; i < 64; i++) {
 
   // Create slice count display
   const sliceCountDiv = document.createElement('div');
-  sliceCountDiv.style.position = 'absolute';
-  sliceCountDiv.style.top = '5px';
-  sliceCountDiv.style.left = '5px';
-  sliceCountDiv.style.color = 'white';
-  sliceCountDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-  sliceCountDiv.style.padding = '2px 5px';
-  sliceCountDiv.style.fontSize = '12px';
-  sliceCountDiv.style.zIndex = '1000';
-  sliceCountDiv.style.pointerEvents = 'none';
+  sliceCountDiv.className = 'example-slice-counter';
   sliceCountDiv.innerText = 'Slice: 0/0';
 
   viewportContainer.appendChild(element);
