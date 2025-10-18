@@ -277,7 +277,6 @@ class ReferenceLines extends AnnotationDisplayTool {
       return renderStatus;
     }
 
-    const dataId = `${annotationUID}-line`;
     const lineUID = '1';
     drawLineSvg(
       svgDrawingHelper,
@@ -290,8 +289,7 @@ class ReferenceLines extends AnnotationDisplayTool {
         width: lineWidth,
         lineDash,
         shadow,
-      },
-      dataId
+      }
     );
 
     renderStatus = true;
