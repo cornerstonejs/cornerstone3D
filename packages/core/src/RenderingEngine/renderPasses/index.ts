@@ -1,3 +1,4 @@
 import { createSharpeningRenderPass } from './sharpeningRenderPass';
+import { createSmoothingRenderPass } from './smoothingRenderPass';
 
-export { createSharpeningRenderPass };
+export { createSharpeningRenderPass, createSmoothingRenderPass };
