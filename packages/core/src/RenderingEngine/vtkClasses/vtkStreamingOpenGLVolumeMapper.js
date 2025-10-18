@@ -77,6 +77,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     if (model.currentValidInputs.length > 0) {
       const volumeProperties = actor.getProperties();
       const firstValidInput = model.currentValidInputs[0];
+      const firstImageData = firstValidInput.imageData;
       const firstVolumeProperty = volumeProperties[firstValidInput.inputIndex];
 
       // Get the number of lights
@@ -91,9 +92,22 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         });
       }
 
-      // cornerstone3D adapted: we use single component
-      model.numberOfComponents = 1;
-      model.useIndependentComponents = false;
+      // Number of components
+      const numberOfValidInputs = model.currentValidInputs.length;
+      const multiTexturePerVolumeEnabled = numberOfValidInputs > 1;
+      const { numberOfComponents } = firstImageData.get('numberOfComponents');
+      model.numberOfComponents = multiTexturePerVolumeEnabled
+        ? numberOfValidInputs
+        : numberOfComponents;
+
+      // Check if we should use independent components
+      // For multi-component data, check the volume property
+      if (model.numberOfComponents > 1) {
+        model.useIndependentComponents =
+          firstVolumeProperty.getIndependentComponents();
+      } else {
+        model.useIndependentComponents = false;
+      }
     }
     if (newNumberOfLights !== model.numberOfLights) {
       model.numberOfLights = newNumberOfLights;
