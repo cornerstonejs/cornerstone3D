@@ -33,20 +33,9 @@ export function enhancedVolumeLoader(
     ijkDecimation?: [number, number, number];
   }
 ): IVolumeLoader {
-  // Apply default decimation from localStorage if not provided
-  console.debug('Applying requested decimation:', options.ijkDecimation);
-  let decimationValues = options.ijkDecimation;
-  if (!decimationValues) {
-    // Check if we're in a browser environment and have localStorage
-
-    const savedDecimationIj = parseInt(
-      localStorage.getItem('current-decimation-ij') || '1'
-    );
-    const savedDecimationK = parseInt(
-      localStorage.getItem('current-decimation-k') || '1'
-    );
-    decimationValues = [savedDecimationIj, savedDecimationIj, savedDecimationK];
-  }
+  // Use provided decimation or default to [1, 1, 1]
+  // The hanging protocol service is responsible for providing decimation values
+  const decimationValues = options.ijkDecimation || [1, 1, 1];
 
   // Log first few and last few imageIds
   if (options?.imageIds?.length > 0) {
