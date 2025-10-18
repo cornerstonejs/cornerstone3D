@@ -34,6 +34,7 @@ export function enhancedVolumeLoader(
   }
 ): IVolumeLoader {
   // Apply default decimation from localStorage if not provided
+  console.debug('Applying requested decimation:', options.ijkDecimation);
   let decimationValues = options.ijkDecimation;
   if (!decimationValues) {
     // Check if we're in a browser environment and have localStorage
@@ -45,20 +46,7 @@ export function enhancedVolumeLoader(
       localStorage.getItem('current-decimation-k') || '1'
     );
     decimationValues = [savedDecimationIj, savedDecimationIj, savedDecimationK];
-
-    console.log(
-      '🔧 EnhancedVolumeLoader: Applied default decimation from localStorage: ',
-      {
-        volumeId,
-        decimationValues,
-        source: 'localStorage',
-      }
-    );
   }
-
-  console.log(
-    `🚀 EnhancedVolumeLoader: Loading volume (${options?.imageIds?.length} images, decimation: ${decimationValues?.join('x') || '1x1x1'})`
-  );
 
   // Log first few and last few imageIds
   if (options?.imageIds?.length > 0) {
@@ -115,15 +103,6 @@ export function enhancedVolumeLoader(
   if (inPlaneDecimation > 1) {
     options.imageIds = options.imageIds.map((imageId) =>
       addDecimationToImageId(imageId, inPlaneDecimation)
-    );
-
-    console.log(
-      '🔧 EnhancedVolumeLoader: Added decimation param to imageIds:',
-      {
-        volumeId,
-        decimation: inPlaneDecimation,
-        sampleImageId: options.imageIds[0],
-      }
     );
   }
 
