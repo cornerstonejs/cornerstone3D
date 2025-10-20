@@ -795,7 +795,9 @@ class EllipticalROITool extends AnnotationTool {
 
       if (preferredVolumeId) {
         //Check if preferredVolumeId is directly a targetId
-        targetId = allTargetIds.find((targetIdToFind) => targetIdToFind.includes(preferredVolumeId));
+        targetId = allTargetIds.find((targetIdToFind) =>
+          targetIdToFind.includes(preferredVolumeId)
+        );
       }
 
       // If preferred volumeId is not found, use default targetId
