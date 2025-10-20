@@ -607,7 +607,6 @@ class RectangleROITool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -623,6 +622,20 @@ class RectangleROITool extends AnnotationTool {
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       styleSpecifier.annotationUID = annotationUID;
+
+      let targetId: string;
+      const allTargetIds = Object.keys(data.cachedStats);
+      const preferredVolumeId = this.configuration.volumeId; // Configured preferred volumeId
+
+      if (preferredVolumeId) {
+        //Check if preferredVolumeId is directly a targetId
+        targetId = allTargetIds.find((targetIdToFind) => targetIdToFind.includes(preferredVolumeId));
+      }
+
+      // If preferred volumeId is not found, use default targetId
+      if (!targetId) {
+        targetId = this.getTargetId(viewport);
+      }
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
         annotation,
