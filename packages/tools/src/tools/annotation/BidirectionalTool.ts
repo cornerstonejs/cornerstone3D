@@ -1289,14 +1289,6 @@ class BidirectionalTool extends AnnotationTool {
     return wouldPutThroughShortAxis;
   };
 
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-
   _calculateCachedStats = (annotation, renderingEngine, enabledElement) => {
     const { data } = annotation;
     const { element } = enabledElement.viewport;
@@ -1330,18 +1322,22 @@ class BidirectionalTool extends AnnotationTool {
       const handles1 = [index1, index2];
       const handles2 = [index3, index4];
 
-      const { scale: scale1, unit: units1 } = getCalibratedLengthUnitsAndScale(
-        image,
-        handles1
-      );
+      const calibrate1 = getCalibratedLengthUnitsAndScale(image, handles1);
 
-      const { scale: scale2, unit: units2 } = getCalibratedLengthUnitsAndScale(
-        image,
-        handles2
-      );
+      const calibrate2 = getCalibratedLengthUnitsAndScale(image, handles2);
 
-      const dist1 = this._calculateLength(worldPos1, worldPos2) / scale1;
-      const dist2 = this._calculateLength(worldPos3, worldPos4) / scale2;
+      const dist1 = BidirectionalTool._calculateLength(
+        index1,
+        index2,
+        calibrate1
+      );
+      const dist2 = BidirectionalTool._calculateLength(
+        index3,
+        index4,
+        calibrate2
+      );
+      const { unit: units1 } = calibrate1;
+      const { unit: units2 } = calibrate2;
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
 

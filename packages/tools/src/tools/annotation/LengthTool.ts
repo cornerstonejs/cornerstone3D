@@ -807,14 +807,6 @@ class LengthTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
     const { element } = enabledElement.viewport;
@@ -843,9 +835,10 @@ class LengthTool extends AnnotationTool {
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
       const handles = [index1, index2];
-      const { scale, unit } = getCalibratedLengthUnitsAndScale(image, handles);
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+      const { unit } = calibrate;
 
-      const length = this._calculateLength(worldPos1, worldPos2) / scale;
+      const length = LengthTool._calculateLength(index1, index2, calibrate);
 
       if (this._isInsideVolume(index1, index2, dimensions)) {
         this.isHandleOutsideImage = false;

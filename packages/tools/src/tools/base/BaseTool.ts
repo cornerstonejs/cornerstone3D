@@ -318,6 +318,21 @@ abstract class BaseTool {
   public static endGroupRecording() {
     DefaultHistoryMemo.endGroupRecording();
   }
+
+  /**
+   * Calculates the length between two coordintes.
+   * If calibrate is provided, the coordinates are INDEX coordinates
+   */
+  public static _calculateLength(pos1, pos2, calibrate?) {
+    const scale = calibrate?.scale || 1;
+    const scaleY = calibrate?.scaleY || scale;
+    const scaleZ = calibrate?.scaleZ || scale;
+    const dx = (pos1[0] - pos2[0]) / scale;
+    const dy = (pos1[1] - pos2[1]) / scaleY;
+    const dz = (pos1[2] - pos2[2]) / scaleZ;
+
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }
 }
 
 // Note: this is a workaround since terser plugin does not support static blocks

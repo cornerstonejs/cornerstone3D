@@ -53,18 +53,21 @@ const SQUARE = '\xb2';
  * @returns Object containing the units, area units, and scale
  */
 const getCalibratedLengthUnitsAndScale = (image, handles) => {
-  const { calibration, hasPixelSpacing } = image;
+  const { calibration, hasPixelSpacing, spacing = [1, 1, 1] } = image;
   let unit = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
   const volumeUnit = hasPixelSpacing ? 'mm\xb3' : VOXEL_UNITS;
   let areaUnit = unit + SQUARE;
-  let scale = 1;
+  const baseScale = calibration?.scale || 1;
+  let scale = baseScale / (calibration?.columnPixelSpacing || spacing[0]);
+  let scaleY = baseScale / (calibration?.rowPixelSpacing || spacing[1]);
+  let scaleZ = baseScale / spacing[2];
   let calibrationType = '';
 
   if (
     !calibration ||
     (!calibration.type && !calibration.sequenceOfUltrasoundRegions)
   ) {
-    return { unit, areaUnit, scale, volumeUnit };
+    return { unit, areaUnit, scale, scaleY, volumeUnit };
   }
 
   if (calibration.type === CalibrationTypes.UNCALIBRATED) {
@@ -72,6 +75,8 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       unit: PIXEL_UNITS,
       areaUnit: PIXEL_UNITS + SQUARE,
       scale,
+      scaleY,
+      scaleZ,
       volumeUnit: VOXEL_UNITS,
     };
   }
@@ -101,7 +106,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     // If we are not in a region at all we should show the underlying calibration
     // which might be the mm spacing for the image
     if (!regions?.length) {
-      return { unit, areaUnit, scale, volumeUnit };
+      return { unit, areaUnit, scale, scaleY, volumeUnit };
     }
 
     // if we are in a region then it is the question of whether we support it
@@ -130,34 +135,12 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     const physicalDeltaX = Math.abs(region.physicalDeltaX);
     const physicalDeltaY = Math.abs(region.physicalDeltaY);
 
-    // if we are in a supported region then we should check if the
-    // physicalDeltaX and physicalDeltaY are the same. If they are not
-    // then we should show px again, but if they are the same then we should
-    // show the units
-    const isSamePhysicalDelta = utilities.isEqual(
-      physicalDeltaX,
-      physicalDeltaY,
-      EPS
-    );
-
-    if (isSamePhysicalDelta) {
-      // 1 to 1 aspect ratio, we use just one of them
-      scale = 1 / physicalDeltaX;
-      calibrationType = 'US Region';
-      unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
-      areaUnit = unit + SQUARE;
-    } else {
-      // here we are showing at the aspect ratio of the physical delta
-      // if they are not the same, then we should show px, but the correct solution
-      // is to grab each point separately and scale them individually
-      // Todo: implement this
-      return {
-        unit: PIXEL_UNITS,
-        areaUnit: PIXEL_UNITS + SQUARE,
-        scale,
-        volumeUnit: VOXEL_UNITS,
-      };
-    }
+    // 1 to 1 aspect ratio, we use just one of them
+    scale = 1 / physicalDeltaX;
+    scaleY = 1 / physicalDeltaY;
+    calibrationType = 'US Region';
+    unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
+    areaUnit = unit + SQUARE;
   } else if (calibration.scale) {
     scale = calibration.scale;
   }
@@ -180,6 +163,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     unit: unit + (calibrationType ? ` ${calibrationType}` : ''),
     areaUnit: areaUnit + (calibrationType ? ` ${calibrationType}` : ''),
     scale,
+    scaleY,
     volumeUnit: volumeUnit + (calibrationType ? ` ${calibrationType}` : ''),
   };
 };
