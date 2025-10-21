@@ -158,8 +158,11 @@ class CrosshairsTool extends AnnotationTool {
         filterActorUIDsToSetSlabThickness: [],
         // blend mode for slabThickness modifications
         slabThicknessBlendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-        centerPointColor: 'rgba(255, 255, 0, 0.5)',
-        centerPointSize: 0,
+        centerPoint: {
+          enabled: false,
+          color: 'rgba(255, 255, 0, 0.5)',
+          size: 2,
+        },
         mobile: {
           enabled: false,
           opacity: 0.8,
@@ -1550,9 +1553,18 @@ class CrosshairsTool extends AnnotationTool {
       );
     }
 
-    if (this.configuration.centerPointSize) {
-      const centerPointColor = this.configuration.centerPointColor;
-      const centerPointSize = Math.min(this.configuration.centerPointSize, 5);
+    if (this.configuration.centerPoint?.enabled) {
+      const defaultColor = 'rgba(255, 255, 0, 0.5)';
+      const defaultSize = 2;
+      const maxAllowedSize = 5;
+
+      const centerPointColor =
+        this.configuration.centerPoint.color || defaultColor;
+      const centerPointSize = Math.min(
+        this.configuration.centerPoint.size || defaultSize,
+        maxAllowedSize
+      );
+
       drawCircleSvg(
         svgDrawingHelper,
         annotationUID,

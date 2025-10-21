@@ -244,9 +244,15 @@ addDropdownToToolbar({
     );
     const oldConfiguration = crosshairsInstance.configuration;
 
+    const newCenterPointConfig = {
+      ...oldConfiguration.centerPoint,
+      enabled: +selectedValue > 0,
+      size: +selectedValue,
+    };
+
     crosshairsInstance.configuration = {
       ...oldConfiguration,
-      centerPointSize: selectedValue,
+      centerPoint: newCenterPointConfig,
     };
 
     toolGroup.viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
