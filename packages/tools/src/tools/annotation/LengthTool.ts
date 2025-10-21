@@ -832,8 +832,8 @@ class LengthTool extends AnnotationTool {
 
       const { imageData, dimensions } = image;
 
-      const index1 = transformWorldToIndex(imageData, worldPos1);
-      const index2 = transformWorldToIndex(imageData, worldPos2);
+      const index1 = imageData.worldToIndex(worldPos1);
+      const index2 = imageData.worldToIndex(worldPos2);
       const handles = [index1, index2];
       const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
       const { unit } = calibrate;

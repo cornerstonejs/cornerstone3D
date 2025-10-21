@@ -1314,10 +1314,10 @@ class BidirectionalTool extends AnnotationTool {
       }
 
       const { imageData, dimensions } = image;
-      const index1 = transformWorldToIndex(imageData, worldPos1);
-      const index2 = transformWorldToIndex(imageData, worldPos2);
-      const index3 = transformWorldToIndex(imageData, worldPos3);
-      const index4 = transformWorldToIndex(imageData, worldPos4);
+      const index1 = imageData.worldToIndex(worldPos1);
+      const index2 = imageData.worldToIndex(worldPos2);
+      const index3 = imageData.worldToIndex(worldPos3);
+      const index4 = imageData.worldToIndex(worldPos4);
 
       const handles1 = [index1, index2];
       const handles2 = [index3, index4];
