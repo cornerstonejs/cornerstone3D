@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.5.20](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.19...v4.5.20) (2025-10-21)
+
+### Bug Fixes
+
+- **VolumeLoading:** Fixes and Enhancements to enable fix of OHIF 4980 issue. ([#2409](https://github.com/cornerstonejs/cornerstone3D/issues/2409)) ([c1b1808](https://github.com/cornerstonejs/cornerstone3D/commit/c1b1808516922c2af469449412e154f05ab95c88))
+
 ## [4.5.19](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.18...v4.5.19) (2025-10-18)
 
 ### Bug Fixes
