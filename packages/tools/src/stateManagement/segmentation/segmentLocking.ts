@@ -1,5 +1,37 @@
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import type { Segmentation } from '../../types';
+import { setAnnotationLocked } from '../annotation/annotationLocking';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import { getAnnotationsUIDMapFromSegmentation } from './utilities';
+
+/**
+ * Set the locked status of every annotation in a segment.
+ * @param segmentation - The segmentation to set the locked status for.
+ * @param segmentIndex - The index of the segment to set the locked status for.
+ * @param locked - The locked status to set.
+ */
+function _setContourSegmentationSegmentAnnotationsLocked(
+  segmentation: Segmentation,
+  segmentIndex: number,
+  locked: boolean
+) {
+  const annotationUIDsMap = getAnnotationsUIDMapFromSegmentation(
+    segmentation.segmentationId
+  );
+
+  if (!annotationUIDsMap) {
+    return;
+  }
+
+  const annotationUIDs = annotationUIDsMap.get(segmentIndex);
+  if (!annotationUIDs) {
+    return;
+  }
+
+  annotationUIDs.forEach((annotationUID) => {
+    setAnnotationLocked(annotationUID, locked);
+  });
+}
 
 /**
  * Get the locked status for a segment index in a segmentation
@@ -42,6 +74,14 @@ function setSegmentIndexLocked(
   const { segments } = segmentation;
 
   segments[segmentIndex].locked = locked;
+
+  if (segmentation?.representationData?.Contour) {
+    _setContourSegmentationSegmentAnnotationsLocked(
+      segmentation,
+      segmentIndex,
+      locked
+    );
+  }
 
   triggerSegmentationModified(segmentationId);
 }
