@@ -230,6 +230,36 @@ addToggleButtonToToolbar({
   },
 });
 
+addDropdownToToolbar({
+  labelText: 'Center Point Size',
+  options: {
+    values: [0, 1, 2, 3, 4, 5],
+    defaultValue: 0,
+  },
+  onSelectedValueChange: (selectedValue) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    const crosshairsInstance = toolGroup.getToolInstance(
+      CrosshairsTool.toolName
+    );
+    const oldConfiguration = crosshairsInstance.configuration;
+
+    const newCenterPointConfig = {
+      ...oldConfiguration.centerPoint,
+      enabled: +selectedValue > 0,
+      size: +selectedValue,
+    };
+
+    crosshairsInstance.configuration = {
+      ...oldConfiguration,
+      centerPoint: newCenterPointConfig,
+    };
+
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
+  },
+});
+
 function setUpSynchronizers() {
   synchronizer = createSlabThicknessSynchronizer(synchronizerId);
 
