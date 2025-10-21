@@ -697,13 +697,15 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
-    this._calculateStatsIfActive(
-      annotation,
-      targetId,
-      viewport,
-      renderingEngine,
-      enabledElement
-    );
+    if (annotation.invalidated) {
+      this._calculateStatsIfActive(
+        annotation,
+        targetId,
+        viewport,
+        renderingEngine,
+        enabledElement
+      );
+    }
 
     this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
 
