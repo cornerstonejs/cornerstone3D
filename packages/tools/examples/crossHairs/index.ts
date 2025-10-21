@@ -255,13 +255,8 @@ addDropdownToToolbar({
       centerPoint: newCenterPointConfig,
     };
 
-    toolGroup.viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
-      viewport.render();
-    });
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
   },
 });
 
