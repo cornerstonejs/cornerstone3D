@@ -1,9 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  cache,
-  getEnabledElementByViewportId,
-  Enums,
-} from '@cornerstonejs/core';
+import { cache, getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
@@ -140,7 +136,7 @@ async function render(
 
     surfaces.push(surface);
     addOrUpdateSurfaceToElement(
-      viewport.element,
+      viewport as Types.IVolumeViewport,
       surface as Types.ISurface,
       segmentationId
     );

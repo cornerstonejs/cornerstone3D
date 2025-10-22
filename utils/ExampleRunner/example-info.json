@@ -474,6 +474,10 @@
       "labelmapMIP": {
         "name": "Labelmap MIP",
         "description": "Demonstrates how to use the labelmap MIP tool"
+      },
+      "contourApi": {
+        "name": "Contour Utility API",
+        "description": "Demonstrates how to use various contour utility functions concerning simplification, smoothing, and hole removal."
       }
     },
     "advanced-gpu-segmentation": {

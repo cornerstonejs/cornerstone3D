@@ -1096,7 +1096,7 @@ class StackViewport extends Viewport {
   private getPanCPU(): Point2 {
     const { viewport } = this._cpuFallbackEnabledElement;
 
-    return [viewport.translation.x, viewport.translation.y];
+    return [viewport.translation?.x ?? 0, viewport.translation?.y ?? 0];
   }
 
   private setPanCPU(pan: Point2): void {

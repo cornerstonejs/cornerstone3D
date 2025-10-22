@@ -1079,7 +1079,7 @@ function defaultGetTextLines(data, targetId: string): string[] {
     textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
   }
   if (csUtils.isNumber(min)) {
-    textLines.push(`Max: ${csUtils.roundNumber(min)} ${modalityUnit}`);
+    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
   }
   if (csUtils.isNumber(stdDev)) {
     textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
