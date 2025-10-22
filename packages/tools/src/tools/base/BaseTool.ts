@@ -239,7 +239,7 @@ abstract class BaseTool {
    */
   protected getTargetId(
     viewport: Types.IViewport,
-    data?: any
+    data?: unknown & { cachedStats?: Record<string, unknown> }
   ): string | undefined {
     const preferredVolumeId = this.configuration?.volumeId; // Get preferred ID from config
 
