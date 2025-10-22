@@ -67,7 +67,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     !calibration ||
     (!calibration.type && !calibration.sequenceOfUltrasoundRegions)
   ) {
-    return { unit, areaUnit, scale, scaleY, volumeUnit };
+    return { unit, areaUnit, scale, scaleY, scaleZ, volumeUnit };
   }
 
   if (calibration.type === CalibrationTypes.UNCALIBRATED) {
@@ -106,7 +106,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     // If we are not in a region at all we should show the underlying calibration
     // which might be the mm spacing for the image
     if (!regions?.length) {
-      return { unit, areaUnit, scale, scaleY, volumeUnit };
+      return { unit, areaUnit, scale, scaleY, scaleZ, volumeUnit };
     }
 
     // if we are in a region then it is the question of whether we support it
@@ -125,6 +125,8 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
         unit: PIXEL_UNITS,
         areaUnit: PIXEL_UNITS + SQUARE,
         scale,
+        scaleY,
+        scaleZ,
         volumeUnit: VOXEL_UNITS,
       };
     }

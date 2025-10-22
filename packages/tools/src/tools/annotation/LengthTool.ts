@@ -51,8 +51,6 @@ import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
-const { transformWorldToIndex } = csUtils;
-
 /**
  * LengthTool let you draw annotations that measures the length of two drawing
  * points on a slice. You can use the LengthTool in all imaging planes even in oblique
@@ -811,8 +809,6 @@ class LengthTool extends AnnotationTool {
     const data = annotation.data;
     const { element } = enabledElement.viewport;
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
@@ -832,28 +828,23 @@ class LengthTool extends AnnotationTool {
 
       const { imageData, dimensions } = image;
 
-      const index1 = imageData.worldToIndex(worldPos1);
-      const index2 = imageData.worldToIndex(worldPos2);
-      const handles = [index1, index2];
+      const handles = data.handles.points.map((point) =>
+        imageData.worldToIndex(point)
+      );
       const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
       const { unit } = calibrate;
 
-      const length = LengthTool._calculateLength(index1, index2, calibrate);
+      const length = LengthTool.calculateLength(calibrate, handles);
 
-      if (this._isInsideVolume(index1, index2, dimensions)) {
-        this.isHandleOutsideImage = false;
-      } else {
-        this.isHandleOutsideImage = true;
-      }
+      this.isHandleOutsideImage = !LengthTool.isInsideVolume(
+        dimensions,
+        handles
+      );
 
-      // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
-      // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
-      // corner is off the canvas.
-
-      // todo: add insideVolume calculation, for removing tool if outside
       cachedStats[targetId] = {
         length,
         unit,
+        stats: [{ value: length, name: 'length', unit, type: 'linear' }],
       };
     }
 
@@ -866,13 +857,6 @@ class LengthTool extends AnnotationTool {
     }
 
     return cachedStats;
-  }
-
-  _isInsideVolume(index1, index2, dimensions) {
-    return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions)
-    );
   }
 }
 

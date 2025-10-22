@@ -1314,45 +1314,40 @@ class BidirectionalTool extends AnnotationTool {
       }
 
       const { imageData, dimensions } = image;
-      const index1 = imageData.worldToIndex(worldPos1);
-      const index2 = imageData.worldToIndex(worldPos2);
-      const index3 = imageData.worldToIndex(worldPos3);
-      const index4 = imageData.worldToIndex(worldPos4);
-
-      const handles1 = [index1, index2];
-      const handles2 = [index3, index4];
-
-      const calibrate1 = getCalibratedLengthUnitsAndScale(image, handles1);
-
-      const calibrate2 = getCalibratedLengthUnitsAndScale(image, handles2);
-
-      const dist1 = BidirectionalTool._calculateLength(
-        index1,
-        index2,
-        calibrate1
+      const handles = data.handles.points.map((point) =>
+        imageData.worldToIndex(point)
       );
-      const dist2 = BidirectionalTool._calculateLength(
-        index3,
-        index4,
-        calibrate2
-      );
-      const { unit: units1 } = calibrate1;
-      const { unit: units2 } = calibrate2;
+
+      const handles1 = handles.slice(0, 2);
+      const handles2 = handles.slice(2, 4);
+
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+
+      const dist1 = BidirectionalTool.calculateLength(calibrate, handles1);
+      const dist2 = BidirectionalTool.calculateLength(calibrate, handles2);
+      const { unit } = calibrate;
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
 
-      const unit = dist1 > dist2 ? units1 : units2;
-      const widthUnit = dist1 > dist2 ? units2 : units1;
+      // Previously the width could end up with a different unit - that is a really
+      // bad idea because it means that US measurements can be very weird, so
+      // just use a single unit now based on all the coordinates.
+      const widthUnit = unit;
 
-      this._isInsideVolume(index1, index2, index3, index4, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
+      this.isHandleOutsideImage = !BidirectionalTool.isInsideVolume(
+        dimensions,
+        handles
+      );
 
       cachedStats[targetId] = {
         length,
         width,
         unit,
         widthUnit,
+        stats: [
+          { value: length, name: 'height', unit, type: 'linear' },
+          { value: width, name: 'width', unit, type: 'linear' },
+        ],
       };
     }
 
