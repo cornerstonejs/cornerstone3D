@@ -285,14 +285,6 @@ async function run() {
 
   toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
     calculateStats: true,
-    decimate: {
-      enabled: true,
-      // Epsilon est la distance max (en mm) qu'un point peut avoir
-      // par rapport à la ligne simplifiée.
-      // Augmentez cette valeur pour une simplification plus agressive
-      // et de meilleures performances.
-      epsilon: 0.5,
-    },
   });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
