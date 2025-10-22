@@ -82,25 +82,14 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
   }
 
   if (calibration.sequenceOfUltrasoundRegions) {
-    let imageIndex1, imageIndex2;
-    if (Array.isArray(handles) && handles.length === 2) {
-      [imageIndex1, imageIndex2] = handles;
-    } else if (typeof handles === 'function') {
-      const points = handles();
-      imageIndex1 = points[0];
-      imageIndex2 = points[1];
-    }
-
-    let regions = calibration.sequenceOfUltrasoundRegions.filter(
-      (region) =>
-        imageIndex1[0] >= region.regionLocationMinX0 &&
-        imageIndex1[0] <= region.regionLocationMaxX1 &&
-        imageIndex1[1] >= region.regionLocationMinY0 &&
-        imageIndex1[1] <= region.regionLocationMaxY1 &&
-        imageIndex2[0] >= region.regionLocationMinX0 &&
-        imageIndex2[0] <= region.regionLocationMaxX1 &&
-        imageIndex2[1] >= region.regionLocationMinY0 &&
-        imageIndex2[1] <= region.regionLocationMaxY1
+    let regions = calibration.sequenceOfUltrasoundRegions.filter((region) =>
+      handles.every(
+        (handle) =>
+          handle[0] >= region.regionLocationMinX0 &&
+          handle[0] <= region.regionLocationMaxX1 &&
+          handle[1] >= region.regionLocationMinY0 &&
+          handle[1] <= region.regionLocationMaxY1
+      )
     );
 
     // If we are not in a region at all we should show the underlying calibration
