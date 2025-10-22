@@ -667,7 +667,6 @@ class CobbAngleTool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -682,6 +681,7 @@ class CobbAngleTool extends AnnotationTool {
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
 
+      const targetId = this.getTargetId(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
