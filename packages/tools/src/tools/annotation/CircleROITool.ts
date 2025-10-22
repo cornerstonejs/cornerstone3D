@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { AnnotationTool, BaseTool } from '../base';
 
 import {
   getEnabledElement,
@@ -848,13 +848,13 @@ class CircleROITool extends AnnotationTool {
   _calculateCachedStats = (
     annotation,
     viewport,
-    renderingEngine,
-    enabledElement
+    _renderingEngine,
+    _enabledElement
   ) => {
     if (!this.configuration.calculateStats) {
       return;
     }
-    const data = annotation.data;
+    const { data } = annotation;
     const { element } = viewport;
 
     const wasInvalidated = annotation.invalidated;
@@ -876,8 +876,6 @@ class CircleROITool extends AnnotationTool {
     const { cachedStats } = data;
 
     const targetIds = Object.keys(cachedStats);
-    const worldPos1 = topLeftWorld;
-    const worldPos2 = bottomRightWorld;
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
@@ -893,22 +891,58 @@ class CircleROITool extends AnnotationTool {
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const pos1Index = transformWorldToIndex(imageData, worldPos1);
+      const handles = points.map((point) => imageData.worldToIndex(point));
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+      const radius = CircleROITool.calculateLength(calibrate, handles);
+      const area = Math.PI * radius * radius;
+      const perimeter = 2 * Math.PI * radius;
+      const isEmptyArea = radius === 0;
+      const { unit, areaUnit } = calibrate;
 
-      pos1Index[0] = Math.floor(pos1Index[0]);
-      pos1Index[1] = Math.floor(pos1Index[1]);
-      pos1Index[2] = Math.floor(pos1Index[2]);
+      // Generates a basic cached stats.
+      const namedArea = {
+        name: 'area',
+        label: 'Area',
+        value: area,
+        unit: areaUnit,
+      };
+      const namedCircumference = {
+        name: 'circumference',
+        label: 'Circumference',
+        value: perimeter,
+        unit,
+      };
+      const namedRadius = {
+        name: 'radius',
+        label: 'Radius',
+        value: radius,
+        unit,
+      };
+      const named = [namedArea, namedRadius, namedCircumference];
 
-      const pos2Index = transformWorldToIndex(imageData, worldPos2);
+      cachedStats[targetId] = {
+        Modality: metadata.Modality,
+        area,
+        isEmptyArea,
+        areaUnit,
+        radius,
+        radiusUnit: unit,
+        perimeter,
+        array: named,
+      };
 
-      pos2Index[0] = Math.floor(pos2Index[0]);
-      pos2Index[1] = Math.floor(pos2Index[1]);
-      pos2Index[2] = Math.floor(pos2Index[2]);
+      const pos1Index = transformWorldToIndex(imageData, topLeftWorld);
+      const pos2Index = transformWorldToIndex(imageData, bottomRightWorld);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
+      this.isHandleOutsideImage = !BaseTool.isInsideVolume(dimensions, [
+        pos1Index,
+        pos2Index,
+      ]);
+
+      if (!this.isHandleOutsideImage) {
         const iMin = Math.min(pos1Index[0], pos2Index[0]);
         const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
@@ -936,25 +970,6 @@ class CircleROITool extends AnnotationTool {
           yRadius: yRadius < EPSILON / 2 ? 0 : yRadius,
           zRadius: zRadius < EPSILON / 2 ? 0 : zRadius,
         };
-
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
-          viewPlaneNormal,
-          viewUp,
-          worldPos1,
-          worldPos2
-        );
-        const isEmptyArea = worldWidth === 0 && worldHeight === 0;
-        const handles = [pos1Index, pos2Index];
-        const { scale, unit, areaUnit } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
-        const aspect = getCalibratedAspect(image);
-        const area = Math.abs(
-          Math.PI *
-            (worldWidth / scale / 2) *
-            (worldHeight / aspect / scale / 2)
-        );
 
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
@@ -987,26 +1002,16 @@ class CircleROITool extends AnnotationTool {
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
+          ...cachedStats[targetId],
           Modality: metadata.Modality,
-          area,
           mean: stats.mean?.value,
           max: stats.max?.value,
           min: stats.min?.value,
           pointsInShape,
           stdDev: stats.stdDev?.value,
           statsArray: stats.array,
-          isEmptyArea,
-          areaUnit,
-          radius: worldWidth / 2 / scale,
-          radiusUnit: unit,
-          perimeter: (2 * Math.PI * (worldWidth / 2)) / scale,
           modalityUnit,
-        };
-      } else {
-        this.isHandleOutsideImage = true;
-
-        cachedStats[targetId] = {
-          Modality: metadata.Modality,
+          array: [...named, ...stats.array],
         };
       }
     }
@@ -1019,13 +1024,6 @@ class CircleROITool extends AnnotationTool {
     }
 
     return cachedStats;
-  };
-
-  _isInsideVolume = (index1, index2, dimensions) => {
-    return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions)
-    );
   };
 
   static hydrate = (

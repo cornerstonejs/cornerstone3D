@@ -841,10 +841,17 @@ class LengthTool extends AnnotationTool {
         handles
       );
 
+      const namedLength = {
+        name: 'length',
+        label: 'Length',
+        value: length,
+        unit,
+        type: 'linear',
+      };
       cachedStats[targetId] = {
         length,
         unit,
-        stats: [{ value: length, name: 'length', unit, type: 'linear' }],
+        named: { length: namedLength, array: [namedLength] },
       };
     }
 

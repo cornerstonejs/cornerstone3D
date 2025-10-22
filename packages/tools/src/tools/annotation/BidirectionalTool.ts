@@ -1344,9 +1344,15 @@ class BidirectionalTool extends AnnotationTool {
         width,
         unit,
         widthUnit,
-        stats: [
-          { value: length, name: 'height', unit, type: 'linear' },
-          { value: width, name: 'width', unit, type: 'linear' },
+        array: [
+          {
+            value: length,
+            name: 'height',
+            label: 'Height',
+            unit,
+            type: 'linear',
+          },
+          { value: width, name: 'width', label: 'Width', unit, type: 'linear' },
         ],
       };
     }
@@ -1360,15 +1366,6 @@ class BidirectionalTool extends AnnotationTool {
     }
 
     return cachedStats;
-  };
-
-  _isInsideVolume = (index1, index2, index3, index4, dimensions): boolean => {
-    return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions) &&
-      csUtils.indexWithinDimensions(index3, dimensions) &&
-      csUtils.indexWithinDimensions(index4, dimensions)
-    );
   };
 
   _getSignedAngle = (vector1, vector2) => {
