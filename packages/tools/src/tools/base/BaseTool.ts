@@ -228,18 +228,39 @@ abstract class BaseTool {
   /**
    * Get the target Id for the viewport which will be used to store the cached
    * statistics scoped to that target in the annotations.
-   * For StackViewport, targetId is the viewportId, but for the volume viewport,
-   * the targetId will be grabbed from the volumeId if particularly specified
-   * in the tool configuration, or if not, the first actorUID in the viewport.
+   * For StackViewport, targetId is usually derived from the imageId.
+   * For VolumeViewport, it's derived from the volumeId.
+   * This method allows prioritizing a specific volumeId from the tool's
+   * configuration if available in the cachedStats.
    *
    * @param viewport - viewport to get the targetId for
+   * @param data - Optional: The annotation's data object, containing cachedStats.
    * @returns targetId
    */
-  protected getTargetId(viewport: Types.IViewport): string | undefined {
-    const targetId = viewport.getViewReferenceId?.();
-    if (targetId) {
-      return targetId;
+  protected getTargetId(
+    viewport: Types.IViewport,
+    data?: unknown & { cachedStats?: Record<string, any> }
+  ): string | undefined {
+    const preferredVolumeId = this.configuration?.volumeId; // Get preferred ID from config
+
+    // Check if cachedStats is available and contains the preferredVolumeId
+    if (data?.cachedStats && preferredVolumeId) {
+      const allTargetIds = Object.keys(data.cachedStats);
+      const foundTargetId = allTargetIds.find((tId) =>
+        tId.includes(preferredVolumeId)
+      );
+
+      if (foundTargetId) {
+        return foundTargetId;
+      }
     }
+
+    // If not found or not applicable, use the viewport's default method
+    const defaultTargetId = viewport.getViewReferenceId?.();
+    if (defaultTargetId) {
+      return defaultTargetId;
+    }
+
     throw new Error(
       'getTargetId: viewport must have a getViewReferenceId method'
     );

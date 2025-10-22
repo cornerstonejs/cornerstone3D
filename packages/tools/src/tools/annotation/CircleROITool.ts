@@ -607,8 +607,6 @@ class CircleROITool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
-
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -623,6 +621,7 @@ class CircleROITool extends AnnotationTool {
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
+      const targetId = this.getTargetId(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
