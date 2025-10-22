@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.20...v4.6.0) (2025-10-21)
+
+### Features
+
+- **tools:** Add configurable center point to CrosshairsTool ([#2406](https://github.com/cornerstonejs/cornerstone3D/issues/2406)) ([e54d3fd](https://github.com/cornerstonejs/cornerstone3D/commit/e54d3fd6debec5292aaab7955ec5b27f943dda39))
+
+## [4.5.20](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.19...v4.5.20) (2025-10-21)
+
+### Bug Fixes
+
+- **VolumeLoading:** Fixes and Enhancements to enable fix of OHIF 4980 issue. ([#2409](https://github.com/cornerstonejs/cornerstone3D/issues/2409)) ([c1b1808](https://github.com/cornerstonejs/cornerstone3D/commit/c1b1808516922c2af469449412e154f05ab95c88))
+
 ## [4.5.19](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.18...v4.5.19) (2025-10-18)
 
 ### Bug Fixes
