@@ -1065,21 +1065,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   ) => {
     const { data } = <PlanarFreehandROIAnnotation>annotation;
 
-    let targetId: string;
-    const allTargetIds = Object.keys(data.cachedStats);
-    const preferredVolumeId = this.configuration.volumeId; // Configured preferred volumeId
-
-    if (preferredVolumeId) {
-      //Check if preferredVolumeId is directly a targetId
-      targetId = allTargetIds.find((targetIdToFind) =>
-        targetIdToFind.includes(preferredVolumeId)
-      );
-    }
-
-    // If preferred volumeId is not found, use default targetId
-    if (!targetId) {
-      targetId = this.getTargetId(viewport);
-    }
+    const targetId = this.getTargetId(viewport, data);
 
     const styleSpecifier: AnnotationStyle.StyleSpecifier = {
       toolGroupId: this.toolGroupId,
