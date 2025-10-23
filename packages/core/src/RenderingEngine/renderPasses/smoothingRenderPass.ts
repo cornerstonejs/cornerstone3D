@@ -27,6 +27,7 @@ function createSmoothingRenderPass(intensity: number) {
     const centerIndex = Math.floor(totalElements / 2);
     const identityKernel: number[] = Array(totalElements).fill(0);
     identityKernel[centerIndex] = 1;
+
     // Blend strength
     const alpha = Math.min(smoothStrength / 10, 1.0);
 
