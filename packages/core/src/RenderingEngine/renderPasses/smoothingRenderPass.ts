@@ -25,7 +25,6 @@ function createSmoothingRenderPass(intensity: number) {
     const gaussianKernel = createGaussianKernel(kernelSize, sigma);
     const totalElements = kernelSize * kernelSize;
     const centerIndex = Math.floor(totalElements / 2);
-    // Identity kernel (15x15 → center=1, rest=0)
     const identityKernel: number[] = Array(totalElements).fill(0);
     identityKernel[centerIndex] = 1;
     // Blend strength
