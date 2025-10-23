@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.6.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.2...v4.6.3) (2025-10-23)
+
+### Bug Fixes
+
+- **PlanarFreeHandRoiTool:** Optimize PlanarFreeHandRoiTool ([#2419](https://github.com/cornerstonejs/cornerstone3D/issues/2419)) ([eb107ce](https://github.com/cornerstonejs/cornerstone3D/commit/eb107cef85ee18ecc2520306eb6e862564d4354c))
+
 ## [4.6.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.1...v4.6.2) (2025-10-23)
 
 ### Bug Fixes
