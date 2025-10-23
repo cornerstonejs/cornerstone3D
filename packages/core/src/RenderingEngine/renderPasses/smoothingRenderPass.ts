@@ -56,7 +56,7 @@ function createSmoothingRenderPass(intensity: number) {
  * @returns A flattened array of kernel weights, normalized so their sum is 1.
  */
 function createGaussianKernel(size: number, sigma: number): number[] {
-  const kernel = [];
+  const kernel: number[] = [];
   const mean = (size - 1) / 2;
   let sum = 0;
 
