@@ -767,7 +767,12 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(worldPos1Index, worldPos2Index, dimensions)) {
+      if (
+        CircleROITool.isInsideVolume(dimensions, [
+          worldPos1Index,
+          worldPos2Index,
+        ])
+      ) {
         const iMin = Math.min(worldPos1Index[0], worldPos2Index[0]);
         const iMax = Math.max(worldPos1Index[0], worldPos2Index[0]);
 
