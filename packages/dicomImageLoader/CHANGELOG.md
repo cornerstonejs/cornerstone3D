@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.4...v4.7.0) (2025-10-24)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [4.6.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.3...v4.6.4) (2025-10-23)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [4.6.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.2...v4.6.3) (2025-10-23)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [4.6.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.1...v4.6.2) (2025-10-23)
+
+### Bug Fixes
+
+- **codec:** update version to fix JPEG 2000 16 bit RGB ([#2422](https://github.com/cornerstonejs/cornerstone3D/issues/2422)) ([055d00c](https://github.com/cornerstonejs/cornerstone3D/commit/055d00c1e863de7ebacca82a1b8a2ae81964d890))
+
+## [4.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.0...v4.6.1) (2025-10-22)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 # [4.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.20...v4.6.0) (2025-10-21)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
