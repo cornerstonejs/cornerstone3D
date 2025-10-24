@@ -2,7 +2,12 @@ import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
-import type { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
+import type {
+  InteractionTypes,
+  ToolProps,
+  PublicToolProps,
+  ToolConfiguration,
+} from '../../types';
 
 const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
@@ -15,8 +20,17 @@ abstract class BaseTool {
   static toolName;
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
+  /**
+   * The configuration for this tool.
+   * IBaseTool contains some default configuration values, and you can use
+   * configurationTyped to get the typed version of this.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public configuration: Record<string, any>;
+  public get configurationTyped() {
+    return <ToolConfiguration>this.configuration;
+  }
+
   /** ToolGroup ID the tool instance belongs to */
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
@@ -74,6 +88,15 @@ abstract class BaseTool {
       return defaultProps;
     }
     return utilities.deepMerge(defaultProps, additionalProps);
+  }
+
+  /**
+   * A function generator to test if the target id is the desired one.
+   * Used for deciding which set of cached stats is appropriate to display
+   * for a given viewport.
+   */
+  public static isSpecifiedTargetId(desiredTargetId: string) {
+    return (_viewport, { targetId }) => targetId.includes(desiredTargetId);
   }
 
   /**
@@ -241,17 +264,14 @@ abstract class BaseTool {
     viewport: Types.IViewport,
     data?: unknown & { cachedStats?: Record<string, unknown> }
   ): string | undefined {
-    const preferredVolumeId = this.configuration?.volumeId; // Get preferred ID from config
+    const { isPreferredTargetId } = this.configurationTyped; // Get preferred ID from config
 
     // Check if cachedStats is available and contains the preferredVolumeId
-    if (data?.cachedStats && preferredVolumeId) {
-      const allTargetIds = Object.keys(data.cachedStats);
-      const foundTargetId = allTargetIds.find((tId) =>
-        tId.includes(preferredVolumeId)
-      );
-
-      if (foundTargetId) {
-        return foundTargetId;
+    if (isPreferredTargetId && data?.cachedStats) {
+      for (const [targetId, cachedStat] of Object.entries(data.cachedStats)) {
+        if (isPreferredTargetId(viewport, { targetId, cachedStat })) {
+          return targetId;
+        }
       }
     }
 
