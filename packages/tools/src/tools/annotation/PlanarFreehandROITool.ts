@@ -798,41 +798,41 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         annotation.metadata.referencedImageId,
         modalityUnitOptions
       );
-      const calibratedScale = getCalibratedLengthUnitsAndScale(image, () => {
-        const polyline = data.contour.polyline;
-        const numPoints = polyline.length;
-        const projectedPolyline = new Array(numPoints);
+      const polyline = data.contour.polyline;
+      const numPoints = polyline.length;
+      const projectedPolyline = new Array(numPoints);
 
-        for (let i = 0; i < numPoints; i++) {
-          projectedPolyline[i] = viewport.worldToCanvas(polyline[i]);
-        }
+      for (let i = 0; i < numPoints; i++) {
+        projectedPolyline[i] = viewport.worldToCanvas(polyline[i]);
+      }
 
-        const {
-          maxX: canvasMaxX,
-          maxY: canvasMaxY,
-          minX: canvasMinX,
-          minY: canvasMinY,
-        } = math.polyline.getAABB(projectedPolyline);
+      const {
+        maxX: canvasMaxX,
+        maxY: canvasMaxY,
+        minX: canvasMinX,
+        minY: canvasMinY,
+      } = math.polyline.getAABB(projectedPolyline);
 
-        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
+      const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
 
-        const topLeftBBIndex = csUtils.transformWorldToIndex(
-          imageData,
-          topLeftBBWorld
-        );
+      const topLeftBBIndex = csUtils.transformWorldToIndex(
+        imageData,
+        topLeftBBWorld
+      );
 
-        const bottomRightBBWorld = viewport.canvasToWorld([
-          canvasMaxX,
-          canvasMaxY,
-        ]);
+      const bottomRightBBWorld = viewport.canvasToWorld([
+        canvasMaxX,
+        canvasMaxY,
+      ]);
 
-        const bottomRightBBIndex = csUtils.transformWorldToIndex(
-          imageData,
-          bottomRightBBWorld
-        );
+      const bottomRightBBIndex = csUtils.transformWorldToIndex(
+        imageData,
+        bottomRightBBWorld
+      );
 
-        return [topLeftBBIndex, bottomRightBBIndex];
-      });
+      const handles = [topLeftBBIndex, bottomRightBBIndex];
+
+      const calibratedScale = getCalibratedLengthUnitsAndScale(image, handles);
 
       // Using an arbitrary start point (canvasPoint), calculate the
       // mm spacing for the canvas in the X and Y directions.

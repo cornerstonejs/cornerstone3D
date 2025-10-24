@@ -1,4 +1,5 @@
 import { AnnotationTool, BaseTool } from '../base';
+import { vec2, vec3 } from 'gl-matrix';
 
 import {
   getEnabledElement,
@@ -9,10 +10,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-import {
-  getCalibratedAspect,
-  getCalibratedLengthUnitsAndScale,
-} from '../../utilities/getCalibratedUnits';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import throttle from '../../utilities/throttle';
 import {
   addAnnotation,
@@ -34,7 +32,6 @@ import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -60,7 +57,6 @@ import {
 } from '../../utilities/math/circle';
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
-import { vec2, vec3 } from 'gl-matrix';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
@@ -864,8 +860,6 @@ class CircleROITool extends AnnotationTool {
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
     const canvasCenter = canvasCoordinates[0] as Types.Point2;
     const canvasTop = canvasCoordinates[1] as Types.Point2;
-
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
 
     const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
       getCanvasCircleCorners([canvasCenter, canvasTop])
