@@ -95,8 +95,11 @@ abstract class BaseTool {
    * Used for deciding which set of cached stats is appropriate to display
    * for a given viewport.
    */
-  public static isSpecifiedTargetId(desiredTargetId: string) {
-    return (_viewport, { targetId }) => targetId.includes(desiredTargetId);
+  public static isSpecifiedTargetId(desiredVolumeId: string) {
+    // imageId including the target id is a proxy for testing if the
+    // image id is a member of that volume.  This may need to be fixed in the
+    // future to add more criteria.
+    return (_viewport, { imageId }) => imageId.includes(desiredVolumeId);
   }
 
   /**
@@ -268,9 +271,9 @@ abstract class BaseTool {
 
     // Check if cachedStats is available and contains the preferredVolumeId
     if (isPreferredTargetId && data?.cachedStats) {
-      for (const [targetId, cachedStat] of Object.entries(data.cachedStats)) {
-        if (isPreferredTargetId(viewport, { targetId, cachedStat })) {
-          return targetId;
+      for (const [imageId, cachedStat] of Object.entries(data.cachedStats)) {
+        if (isPreferredTargetId(viewport, { imageId, cachedStat })) {
+          return imageId;
         }
       }
     }

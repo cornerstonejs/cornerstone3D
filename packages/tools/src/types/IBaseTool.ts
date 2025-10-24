@@ -17,10 +17,19 @@ export interface ToolConfiguration {
    */
   isPreferredTargetId?: (
     viewport,
+    /**
+     * The target info is a specifier for different types of target information.
+     * Right now there is just the single option consisting of an image id and
+     * cached stat, but in the future other alternatives might be provided.
+     */
     targetInfo: {
-      targetId: string;
+      /**
+       * The imageId of a cachedStat instance.  This isn't the only way to
+       * identify data, but is one possible option.
+       */
+      imageId: string;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      cachedStat?: any;
+      cachedStat: any;
     }
   ) => boolean;
 }
