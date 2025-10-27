@@ -1,4 +1,4 @@
-import { Events, ChangeTypes, MeasurementDimension } from '../../enums';
+import { Events, ChangeTypes, MeasurementType } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -846,7 +846,7 @@ class LengthTool extends AnnotationTool {
         name: 'length',
         value: length,
         unit,
-        type: MeasurementDimension.Linear,
+        type: MeasurementType.Linear,
       };
       cachedStats[targetId] = {
         length,

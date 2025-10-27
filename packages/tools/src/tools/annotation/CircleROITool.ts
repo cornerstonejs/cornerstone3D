@@ -29,7 +29,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { ChangeTypes, Events, MeasurementDimension } from '../../enums';
+import { ChangeTypes, Events, MeasurementType } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import {
@@ -899,19 +899,19 @@ class CircleROITool extends AnnotationTool {
         name: 'area',
         value: area,
         unit: areaUnit,
-        type: MeasurementDimension.Area,
+        type: MeasurementType.Area,
       };
       const namedCircumference: Statistics = {
         name: 'circumference',
         value: perimeter,
         unit,
-        type: MeasurementDimension.Linear,
+        type: MeasurementType.Linear,
       };
       const namedRadius: Statistics = {
         name: 'radius',
         value: radius,
         unit,
-        type: MeasurementDimension.Linear,
+        type: MeasurementType.Linear,
       };
       const statsArray = [namedArea, namedRadius, namedCircumference];
 

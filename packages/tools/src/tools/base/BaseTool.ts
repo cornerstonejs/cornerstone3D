@@ -322,6 +322,8 @@ abstract class BaseTool {
   /**
    * Calculates the length between two index coordinates using the calibrate
    * information for scaling information.
+   * @param closed - set to true to calculate the closed length,
+   *    including the line between the first/last index
    */
   public static calculateLengthInIndex(calibrate, indexPoints, closed = false) {
     const scale = calibrate?.scale || 1;

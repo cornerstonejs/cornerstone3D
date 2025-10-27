@@ -27,7 +27,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { ChangeTypes, Events, MeasurementDimension } from '../../enums';
+import { ChangeTypes, Events, MeasurementType } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as lineSegment from '../../utilities/math/line';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -1355,13 +1355,13 @@ class BidirectionalTool extends AnnotationTool {
             value: length,
             name: 'height',
             unit,
-            type: MeasurementDimension.Linear,
+            type: MeasurementType.Linear,
           },
           {
             value: width,
             name: 'width',
             unit,
-            type: MeasurementDimension.Linear,
+            type: MeasurementType.Linear,
           },
         ],
       };

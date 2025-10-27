@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import type { MeasurementDimension } from '../enums/MeasurementDimension';
+import type { MeasurementType } from '../enums/MeasurementType';
 
 export type Statistics = {
   name: string;
@@ -8,7 +8,7 @@ export type Statistics = {
   unit: null | string;
   pointIJK?: Types.Point3;
   pointLPS?: Types.Point3;
-  type?: MeasurementDimension;
+  type?: MeasurementType;
 };
 
 export type NamedStatistics = {

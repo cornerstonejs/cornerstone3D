@@ -47,11 +47,7 @@ import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/pol
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
-import {
-  KeyboardBindings,
-  ChangeTypes,
-  MeasurementDimension,
-} from '../../enums';
+import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 
 const { pointCanProjectOnLine } = polyline;
@@ -1011,13 +1007,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       name: 'area',
       value: area,
       unit: areaUnit,
-      type: MeasurementDimension.Area,
+      type: MeasurementType.Area,
     };
     const namedPerimeter: Statistics = {
       name: 'perimeter',
       value: perimeter,
       unit,
-      type: MeasurementDimension.Linear,
+      type: MeasurementType.Linear,
     };
     cachedStats[targetId] = {
       Modality: metadata.Modality,
@@ -1060,7 +1056,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       name: 'length',
       value: length,
       unit,
-      type: MeasurementDimension.Linear,
+      type: MeasurementType.Linear,
     };
 
     cachedStats[targetId] = {
