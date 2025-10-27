@@ -100,14 +100,15 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
             handle[0] <= region.regionLocationMaxX1 &&
             handle[1] >= region.regionLocationMinY0 &&
             handle[1] <= region.regionLocationMaxY1
-        ) &&
-        SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
-        region.physicalUnitsXDirection === region.physicalUnitsYDirection
+        ) && SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType)
     );
 
     // If we are not in a region at all we should show the underlying calibration
     // which might be the mm spacing for the image
-    if (region) {
+    if (
+      region &&
+      region.physicalUnitsXDirection === region.physicalUnitsYDirection
+    ) {
       const physicalDeltaX = Math.abs(region.physicalDeltaX);
       const physicalDeltaY = Math.abs(region.physicalDeltaY);
 
