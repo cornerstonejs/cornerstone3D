@@ -29,7 +29,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { ChangeTypes, Events } from '../../enums';
+import { ChangeTypes, Events, MeasurementDimension } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import {
@@ -44,6 +44,7 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
+  Statistics,
 } from '../../types';
 import type { CircleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 
@@ -887,32 +888,32 @@ class CircleROITool extends AnnotationTool {
 
       const handles = points.map((point) => imageData.worldToIndex(point));
       const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
-      const radius = CircleROITool.calculateLength(calibrate, handles);
+      const radius = CircleROITool.calculateLengthInIndex(calibrate, handles);
       const area = Math.PI * radius * radius;
       const perimeter = 2 * Math.PI * radius;
       const isEmptyArea = radius === 0;
       const { unit, areaUnit } = calibrate;
 
       // Generates a basic cached stats.
-      const namedArea = {
+      const namedArea: Statistics = {
         name: 'area',
-        label: 'Area',
         value: area,
         unit: areaUnit,
+        type: MeasurementDimension.Area,
       };
-      const namedCircumference = {
+      const namedCircumference: Statistics = {
         name: 'circumference',
-        label: 'Circumference',
         value: perimeter,
         unit,
+        type: MeasurementDimension.Linear,
       };
-      const namedRadius = {
+      const namedRadius: Statistics = {
         name: 'radius',
-        label: 'Radius',
         value: radius,
         unit,
+        type: MeasurementDimension.Linear,
       };
-      const named = [namedArea, namedRadius, namedCircumference];
+      const statsArray = [namedArea, namedRadius, namedCircumference];
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
@@ -922,7 +923,7 @@ class CircleROITool extends AnnotationTool {
         radius,
         radiusUnit: unit,
         perimeter,
-        array: named,
+        statsArray,
       };
 
       const pos1Index = transformWorldToIndex(imageData, topLeftWorld);
@@ -1003,9 +1004,8 @@ class CircleROITool extends AnnotationTool {
           min: stats.min?.value,
           pointsInShape,
           stdDev: stats.stdDev?.value,
-          statsArray: stats.array,
           modalityUnit,
-          array: [...named, ...stats.array],
+          statsArray: [...statsArray, ...stats.array],
         };
       }
     }

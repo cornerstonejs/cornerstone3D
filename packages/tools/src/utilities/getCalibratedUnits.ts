@@ -1,4 +1,4 @@
-import { Enums, utilities } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 
 const { CalibrationTypes } = Enums;
 const PIXEL_UNITS = 'px';
@@ -12,11 +12,6 @@ const SUPPORTED_REGION_DATA_TYPES = [
   2, // Color Flow
   3, // PW Spectral Doppler
   4, // CW Spectral Doppler
-];
-
-const SUPPORTED_LENGTH_VARIANT = [
-  '3,3', // x: cm & y:cm
-  '4,7', // x: seconds & y : cm/sec
 ];
 
 const SUPPORTED_PROBE_VARIANT = [
@@ -44,6 +39,17 @@ const UNIT_MAPPING = {
 
 const EPS = 1e-3;
 const SQUARE = '\xb2';
+
+// everything except REGION/Uncalibrated
+const types = [
+  CalibrationTypes.ERMF,
+  CalibrationTypes.USER,
+  CalibrationTypes.ERROR,
+  CalibrationTypes.PROJECTION,
+  CalibrationTypes.CALIBRATED,
+  CalibrationTypes.UNKNOWN,
+];
+
 /**
  * Extracts the calibrated length units, area units, and the scale
  * for converting from internal spacing to image spacing.
@@ -70,6 +76,10 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     return { unit, areaUnit, scale, scaleY, scaleZ, volumeUnit };
   }
 
+  if (types.includes(calibration?.type)) {
+    calibrationType = calibration.type;
+  }
+
   if (calibration.type === CalibrationTypes.UNCALIBRATED) {
     return {
       unit: PIXEL_UNITS,
@@ -82,80 +92,43 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
   }
 
   if (calibration.sequenceOfUltrasoundRegions) {
-    let regions = calibration.sequenceOfUltrasoundRegions.filter((region) =>
-      handles.every(
-        (handle) =>
-          handle[0] >= region.regionLocationMinX0 &&
-          handle[0] <= region.regionLocationMaxX1 &&
-          handle[1] >= region.regionLocationMinY0 &&
-          handle[1] <= region.regionLocationMaxY1
-      )
+    const region = calibration.sequenceOfUltrasoundRegions.find(
+      (region) =>
+        handles.every(
+          (handle) =>
+            handle[0] >= region.regionLocationMinX0 &&
+            handle[0] <= region.regionLocationMaxX1 &&
+            handle[1] >= region.regionLocationMinY0 &&
+            handle[1] <= region.regionLocationMaxY1
+        ) &&
+        SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
+        region.physicalUnitsXDirection === region.physicalUnitsYDirection
     );
 
     // If we are not in a region at all we should show the underlying calibration
     // which might be the mm spacing for the image
-    if (!regions?.length) {
-      return { unit, areaUnit, scale, scaleY, scaleZ, volumeUnit };
+    if (region) {
+      const physicalDeltaX = Math.abs(region.physicalDeltaX);
+      const physicalDeltaY = Math.abs(region.physicalDeltaY);
+
+      // 1 to 1 aspect ratio, we use just one of them
+      scale = 1 / physicalDeltaX;
+      scaleY = 1 / physicalDeltaY;
+      calibrationType = 'US Region';
+      unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
+      areaUnit = unit + SQUARE;
     }
-
-    // if we are in a region then it is the question of whether we support it
-    // or not. If we do not support it we should show px
-
-    regions = regions.filter(
-      (region) =>
-        SUPPORTED_REGION_DATA_TYPES.includes(region.regionDataType) &&
-        SUPPORTED_LENGTH_VARIANT.includes(
-          `${region.physicalUnitsXDirection},${region.physicalUnitsYDirection}`
-        )
-    );
-
-    if (!regions.length) {
-      return {
-        unit: PIXEL_UNITS,
-        areaUnit: PIXEL_UNITS + SQUARE,
-        scale,
-        scaleY,
-        scaleZ,
-        volumeUnit: VOXEL_UNITS,
-      };
-    }
-
-    // Todo: expand on this logic
-    const region = regions[0];
-
-    const physicalDeltaX = Math.abs(region.physicalDeltaX);
-    const physicalDeltaY = Math.abs(region.physicalDeltaY);
-
-    // 1 to 1 aspect ratio, we use just one of them
-    scale = 1 / physicalDeltaX;
-    scaleY = 1 / physicalDeltaY;
-    calibrationType = 'US Region';
-    unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
-    areaUnit = unit + SQUARE;
   } else if (calibration.scale) {
     scale = calibration.scale;
-  }
-
-  // everything except REGION/Uncalibrated
-  const types = [
-    CalibrationTypes.ERMF,
-    CalibrationTypes.USER,
-    CalibrationTypes.ERROR,
-    CalibrationTypes.PROJECTION,
-    CalibrationTypes.CALIBRATED,
-    CalibrationTypes.UNKNOWN,
-  ];
-
-  if (types.includes(calibration?.type)) {
-    calibrationType = calibration.type;
   }
 
   return {
     unit: unit + (calibrationType ? ` ${calibrationType}` : ''),
     areaUnit: areaUnit + (calibrationType ? ` ${calibrationType}` : ''),
+    volumeUnit: volumeUnit + (calibrationType ? ` ${calibrationType}` : ''),
     scale,
     scaleY,
-    volumeUnit: volumeUnit + (calibrationType ? ` ${calibrationType}` : ''),
+    scaleZ,
   };
 };
 

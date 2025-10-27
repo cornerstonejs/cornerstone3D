@@ -1,4 +1,4 @@
-import { Events, ChangeTypes } from '../../enums';
+import { Events, ChangeTypes, MeasurementDimension } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -46,6 +46,7 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
+  Statistics,
 } from '../../types';
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -834,24 +835,23 @@ class LengthTool extends AnnotationTool {
       const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
       const { unit } = calibrate;
 
-      const length = LengthTool.calculateLength(calibrate, handles);
+      const length = LengthTool.calculateLengthInIndex(calibrate, handles);
 
       this.isHandleOutsideImage = !LengthTool.isInsideVolume(
         dimensions,
         handles
       );
 
-      const namedLength = {
+      const namedLength: Statistics = {
         name: 'length',
-        label: 'Length',
         value: length,
         unit,
-        type: 'linear',
+        type: MeasurementDimension.Linear,
       };
       cachedStats[targetId] = {
         length,
         unit,
-        named: { length: namedLength, array: [namedLength] },
+        statsArray: [namedLength],
       };
     }
 

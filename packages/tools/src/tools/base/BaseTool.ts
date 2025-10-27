@@ -323,7 +323,7 @@ abstract class BaseTool {
    * Calculates the length between two index coordinates using the calibrate
    * information for scaling information.
    */
-  public static calculateLength(calibrate, indexPoints, closed = false) {
+  public static calculateLengthInIndex(calibrate, indexPoints, closed = false) {
     const scale = calibrate?.scale || 1;
     const scaleY = calibrate?.scaleY || scale;
     const scaleZ = calibrate?.scaleZ || scale;

@@ -27,7 +27,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { ChangeTypes, Events } from '../../enums';
+import { ChangeTypes, Events, MeasurementDimension } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as lineSegment from '../../utilities/math/line';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -1323,8 +1323,14 @@ class BidirectionalTool extends AnnotationTool {
 
       const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
-      const dist1 = BidirectionalTool.calculateLength(calibrate, handles1);
-      const dist2 = BidirectionalTool.calculateLength(calibrate, handles2);
+      const dist1 = BidirectionalTool.calculateLengthInIndex(
+        calibrate,
+        handles1
+      );
+      const dist2 = BidirectionalTool.calculateLengthInIndex(
+        calibrate,
+        handles2
+      );
       const { unit } = calibrate;
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
@@ -1344,15 +1350,19 @@ class BidirectionalTool extends AnnotationTool {
         width,
         unit,
         widthUnit,
-        array: [
+        statsArray: [
           {
             value: length,
             name: 'height',
-            label: 'Height',
             unit,
-            type: 'linear',
+            type: MeasurementDimension.Linear,
           },
-          { value: width, name: 'width', label: 'Width', unit, type: 'linear' },
+          {
+            value: width,
+            name: 'width',
+            unit,
+            type: MeasurementDimension.Linear,
+          },
         ],
       };
     }

@@ -1,15 +1,17 @@
 import type { Types } from '@cornerstonejs/core';
+import type { MeasurementDimension } from '../enums/MeasurementDimension';
 
-type Statistics = {
+export type Statistics = {
   name: string;
   label?: string;
   value: number | number[];
   unit: null | string;
   pointIJK?: Types.Point3;
   pointLPS?: Types.Point3;
+  type?: MeasurementDimension;
 };
 
-type NamedStatistics = {
+export type NamedStatistics = {
   mean: Statistics & { name: 'mean' };
   max: Statistics & { name: 'max' };
   min: Statistics & { name: 'min' };
@@ -33,5 +35,3 @@ type NamedStatistics = {
   maxIJKs?: Array<{ value: number; pointIJK: Types.Point3 }>;
   array: Statistics[];
 };
-
-export type { Statistics, NamedStatistics };
