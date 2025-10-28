@@ -93,15 +93,23 @@ class PlanarFreehandROI extends BaseAdapter3D {
             points.push(firstPoint);
         }
 
-        const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
-            data.cachedStats[`imageId:${referencedImageId}`] || {};
+        const {
+            area,
+            areaUnit,
+            modalityUnit,
+            perimeter,
+            mean,
+            max,
+            stdDev,
+            length
+        } = data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             /** From cachedStats */
             points,
             area,
             areaUnit,
-            perimeter,
+            perimeter: perimeter ?? length,
             modalityUnit,
             mean,
             max,
