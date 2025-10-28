@@ -1,4 +1,4 @@
-import type { ToolModes } from '../../enums';
+import { KeyboardBindings, type ToolModes } from '../../enums';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import type { EventTypes } from '../../types';
 
@@ -16,13 +16,13 @@ export default function getToolsWithModesForKeyboardEvent(
   const toolsWithActions = new Map();
   const { renderingEngineId, viewportId } = evt.detail;
   const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
-
   if (!toolGroup) {
     return toolsWithActions;
   }
 
   const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
-  const key = evt.detail.key;
+
+  const { key, ctrl, meta, alt, shift } = evt.detail;
 
   for (let j = 0; j < toolGroupToolNames.length; j++) {
     const toolName = toolGroupToolNames[j];
@@ -37,9 +37,26 @@ export default function getToolsWithModesForKeyboardEvent(
       continue;
     }
 
+    const modifierCombinations = {
+      undefined: !ctrl && !meta && !shift && !alt,
+      [KeyboardBindings.Ctrl]: ctrl && !meta && !shift && !alt,
+      [KeyboardBindings.Meta]: !ctrl && meta && !shift && !alt,
+      [KeyboardBindings.Shift]: !ctrl && !meta && shift && !alt,
+      [KeyboardBindings.Alt]: !ctrl && !meta && !shift && alt,
+      [KeyboardBindings.ShiftCtrl]: ctrl && !meta && shift && !alt,
+      [KeyboardBindings.ShiftMeta]: !ctrl && meta && shift && !alt,
+      [KeyboardBindings.ShiftAlt]: !ctrl && !meta && shift && alt,
+      [KeyboardBindings.CtrlAlt]: ctrl && !meta && !shift && alt,
+      [KeyboardBindings.CtrlMeta]: ctrl && meta && !shift && !alt,
+      [KeyboardBindings.AltMeta]: !ctrl && meta && !shift && alt,
+    };
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const action = actions.find((action: any) =>
-      action.bindings?.some((binding) => binding.key === key)
+      action.bindings?.some((binding) => {
+        const hasCorrectModifier = !!modifierCombinations[binding.modifierKey];
+        return binding.key === key && hasCorrectModifier;
+      })
     );
 
     if (action) {
