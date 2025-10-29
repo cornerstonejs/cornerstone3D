@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.7.1...v4.8.0) (2025-10-29)
+
+### Features
+
+- **exports:** add intializers exports to dicom image loader ([#2432](https://github.com/cornerstonejs/cornerstone3D/issues/2432)) ([d94328c](https://github.com/cornerstonejs/cornerstone3D/commit/d94328cc3ed81995d665dcd1736db98c00e3978b))
+
 ## [4.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.7.0...v4.7.1) (2025-10-28)
 
 ### Bug Fixes
