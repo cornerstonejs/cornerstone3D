@@ -1,7 +1,8 @@
 import { setOptions } from './imageLoader/internal/index';
-import type { LoaderOptions } from './types';
+import type { LoaderOptions, DecoderName } from './types';
 import registerLoaders from './imageLoader/registerLoaders';
 import { getWebWorkerManager } from '@cornerstonejs/core';
+import { preloadDecoders } from './shared/decoders/preloadDecoders';
 
 const workerFn = () => {
   const instance = new Worker(
@@ -23,6 +24,16 @@ function init(options: LoaderOptions = {}): void {
   workerManager.registerWorker('dicomImageLoader', workerFn, {
     maxWorkerInstances: maxWorkers,
   });
+  if (options.preloadDecoders) {
+    const decodersToPreload =
+      options.preloadDecoders === true
+        ? true
+        : (options.preloadDecoders as DecoderName[]);
+
+    preloadDecoders(decodersToPreload, options.decodeConfig).catch((error) => {
+      console.warn('Failed to preload some decoders:', error);
+    });
+  }
 }
 
 function getReasonableWorkerCount(): number {

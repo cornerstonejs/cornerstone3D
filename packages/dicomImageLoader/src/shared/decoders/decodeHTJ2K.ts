@@ -61,7 +61,7 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
-async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
+export async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   await initialize();
   // const decoder = local.decoder; // This is much slower for some reason
   // @ts-expect-error

@@ -31,4 +31,11 @@ export interface LoaderOptions {
   errorInterceptor?: (error: LoaderXhrRequestError) => void;
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
+  /**
+   * Preload image decoders during initialization.
+   * - true: preload all available decoders
+   * - string[]: array of decoder names to preload (e.g., ['htj2k', 'jpeg2000', 'jpegls'])
+   * - false/undefined: no preloading (default)
+   */
+  preloadDecoders?: boolean | string[];
 }
