@@ -11,6 +11,7 @@ import type { DICOMLoaderImageOptions } from './DICOMLoaderImageOptions';
 import type { LutType } from './LutType';
 import type { LoadRequestFunction } from './LoadRequestFunction';
 import type { DICOMLoaderDataSetWithFetchMore } from './DICOMLoaderDataSetWithFetchMore';
+import type { DecoderName } from '../shared/decoders/preloadDecoders';
 
 import type {
   WebWorkerOptions,
@@ -52,4 +53,5 @@ export type {
   WebWorkerDeferredObject,
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
+  DecoderName,
 };

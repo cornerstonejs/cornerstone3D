@@ -46,6 +46,12 @@ function initLibjpegTurbo(): Promise<void> {
   });
 }
 
+/**
+ * Initialize the JPEG Baseline 8-bit decoder
+ * Exported for preloading support
+ */
+export const initialize = initLibjpegTurbo;
+
 // imageFrame.pixelRepresentation === 1 <-- Signed
 /**
  *

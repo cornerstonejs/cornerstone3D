@@ -21,6 +21,7 @@ import { internal } from './imageLoader/internal/index';
 import * as constants from './constants';
 import type * as Types from './types';
 import { decodeImageFrame } from './decodeImageFrameWorker';
+import { preloadDecoders } from './shared/decoders/preloadDecoders';
 
 const cornerstoneDICOMImageLoader = {
   constants,
@@ -42,6 +43,7 @@ const cornerstoneDICOMImageLoader = {
   isJPEGBaseline8BitColor,
   internal,
   decodeImageFrame,
+  preloadDecoders,
 };
 
 export {
@@ -64,6 +66,7 @@ export {
   isJPEGBaseline8BitColor,
   internal,
   decodeImageFrame,
+  preloadDecoders,
 };
 
 export type { Types };
