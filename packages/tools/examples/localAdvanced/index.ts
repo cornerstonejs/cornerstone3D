@@ -262,6 +262,7 @@ function loadAndViewImages(imageIds) {
     const sopCommonModule = metaData.get('sopCommonModule', imageId);
     const transferSyntax = metaData.get('transferSyntax', imageId);
 
+    document.getElementById('numberofimages').innerHTML = imageIds.length;
     document.getElementById('transfersyntax').innerHTML =
       transferSyntax.transferSyntaxUID;
     document.getElementById('sopclassuid').innerHTML = `${
