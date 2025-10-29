@@ -119,4 +119,8 @@ function getPixelData(frameInfo, decodedBuffer: ByteArray) {
   );
 }
 
+const initialize = initLibjpegTurbo;
+
+export { initialize };
+
 export default decodeAsync;
