@@ -18,6 +18,7 @@ import {
   addToggleButtonToToolbar,
   addDropdownToToolbar,
   annotationTools,
+  createImageIdsAndCacheMetaData,
 } from '../../../../utils/demo/helpers';
 
 const { ToolGroupManager } = cornerstoneTools;
@@ -53,7 +54,7 @@ const toolGroupId = 'myToolGroup';
 function onUpload(files) {
   const file = files[0];
   const imageId = dicomImageLoader.wadouri.fileManager.add(file);
-  loadAndViewImage(imageId);
+  loadAndViewImages(imageId);
 }
 
 addUploadToToolbar({ title: 'Upload', onChange: onUpload });
@@ -103,6 +104,85 @@ addDropdownToToolbar({
   },
 });
 
+const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
+
+const webSeries = new Map();
+webSeries.set('', {});
+webSeries.set('US Region with Calibration', {
+  StudyInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7085.2626.494695569589117268722281491772',
+  SeriesInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7085.2626.711316574089470618250806015633',
+  SOPInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7085.2626.126609591637341054592307275932',
+  wadoRsRoot,
+});
+webSeries.set('US Region with no base calibration', {
+  StudyInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7085.2626.494695569589117268722281491772',
+  SeriesInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7085.2626.711316574089470618250806015633',
+  SOPInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.7085.2626.153002229311736409855382581622',
+  wadoRsRoot,
+});
+
+webSeries.set('ERMF from imager/pixel', {
+  StudyInstanceUID: '1.3.46.670589.30.1.3.1.1625260923.1632320482484.1',
+  SeriesInstanceUID: '1.3.46.670589.30.1.3.1.1625260923.1632320560703.1',
+  wadoRsRoot,
+});
+
+webSeries.set('Projected', {
+  StudyInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.99.1071.55651399101931177647030363790032',
+  SeriesInstanceUID:
+    '1.3.6.1.4.1.14519.5.2.1.99.1071.87075509829481869121008947712950',
+  wadoRsRoot,
+});
+
+webSeries.set('Unknown Spacing', {
+  StudyInstanceUID: '1.2.276.0.7230010.3.1.2.2155604110.4180.1021041295.21',
+  SeriesInstanceUID: '1.2.840.113654.2.4.4.3.5.119950730134200',
+  wadoRsRoot,
+});
+
+webSeries.set('Pixel Spacing', {
+  StudyInstanceUID: '1.2.276.0.7230010.3.1.2.2155604110.4180.1021041295.21',
+  SeriesInstanceUID: '1.2.392.200036.9125.0.198811291108.7',
+  wadoRsRoot,
+});
+
+webSeries.set('US Multiple Region', {
+  StudyInstanceUID: '1.2.840.113663.1500.1.248223208.1.1.20110323.105903.687',
+  SeriesInstanceUID: '1.2.840.113663.1500.1.248223208.2.1.20110323.105903.687',
+  SOPInstanceUID: '1.2.840.113663.1500.1.248223208.3.10.20110323.110423.875',
+  wadoRsRoot,
+});
+
+/*
+webSeries.set('', {
+  StudyInstanceUID: '',
+  SeriesInstanceUID: '',
+  SOPInstanceUID: '',
+  wadoRsRoot,
+});
+*/
+
+let imageIds = [];
+
+addDropdownToToolbar({
+  options: { map: webSeries, defaultValue: '' },
+  onSelectedValueChange: async (newSelectedSeries, data) => {
+    console.warn('newSelectedSeries', newSelectedSeries, data);
+    if (!data?.wadoRsRoot) {
+      return;
+    }
+    imageIds = await createImageIdsAndCacheMetaData(data);
+    loadAndViewImages(imageIds);
+  },
+});
+
 /**
  * Runs the demo
  */
@@ -146,9 +226,10 @@ function handleFileSelect(evt) {
   const files = evt.dataTransfer.files;
 
   // this UI is only built for a single file so just dump the first one
-  const file = files[0];
-  const imageId = dicomImageLoader.wadouri.fileManager.add(file);
-  loadAndViewImage(imageId);
+  imageIds = files.map((file) =>
+    dicomImageLoader.wadouri.fileManager.add(file)
+  );
+  loadAndViewImages(imageIds);
 }
 
 function handleDragOver(evt) {
@@ -157,10 +238,9 @@ function handleDragOver(evt) {
   evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
 }
 
-function loadAndViewImage(imageId) {
-  const stack = [imageId];
+function loadAndViewImages(imageIds) {
   // Set the stack on the viewport
-  viewport.setStack(stack).then(() => {
+  viewport.setStack(imageIds).then(() => {
     // Set the VOI of the stack
     // viewport.setProperties({ voiRange: ctVoiRange });
     // Render the image
@@ -168,6 +248,7 @@ function loadAndViewImage(imageId) {
 
     const imageData = viewport.getImageData();
 
+    const [imageId] = imageIds;
     const {
       pixelRepresentation,
       bitsAllocated,
