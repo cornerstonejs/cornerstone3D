@@ -16,14 +16,47 @@ interface IVolumeLoader {
 }
 
 /**
- * It handles loading of a image by streaming in its imageIds. It will be the
- * volume loader if the schema for the volumeID is `decimateImageVolume`.
- * This function returns a promise that resolves to the StreamingImageVolume instance.
+ * Enhanced volume loader that creates a StreamingImageVolume with optional decimation
+ * capabilities for optimized rendering and memory usage. This loader supports both
+ * k-axis (slice) decimation and in-plane (pixel) decimation to reduce volume resolution.
  *
+ * The loader performs the following operations:
+ * - **K-axis decimation**: Reduces the number of slices by keeping every Nth slice
+ *   (e.g., decimation=2 keeps every other slice). This is applied before volume creation
+ *   unless already decimated at the displaySet level.
+ * - **In-plane decimation**: Downsamples the resolution of each slice by reducing pixel
+ *   dimensions. This is achieved by appending a decimation parameter to imageIds, which
+ *   is processed during image loading.
+ * - Automatically adjusts volume spacing, dimensions, and DICOM metadata to reflect
+ *   the decimated resolution.
  *
- * @param volumeId - The ID of the volume
- * @param options - options for loading, imageIds
- * @returns a promise that resolves to a StreamingImageVolume
+ * @param volumeId - The unique identifier for the volume
+ * @param options - Configuration options for volume loading
+ * @param options.imageIds - Array of DICOM imageIds to construct the volume from (required)
+ * @param options.progressiveRendering - Enable progressive rendering or provide custom
+ *   retrieve configuration for streaming behavior
+ * @param options.ijkDecimation - Decimation factors for [I, J, K] axes where I/J affect
+ *   in-plane resolution and K affects slice count. Defaults to [1, 1, 1] (no decimation).
+ *   Example: [2, 2, 2] reduces dimensions by half in all axes.
+ *
+ * @returns An object containing:
+ *   - `promise`: Resolves to the created StreamingImageVolume instance
+ *   - `cancel`: Function to cancel ongoing volume loading
+ *   - `decache`: Function to destroy and remove the volume from cache
+ *
+ * @throws Error if imageIds are not provided or empty
+ *
+ * @example
+ * ```typescript
+ * const volumeLoader = enhancedVolumeLoader('volumeId', {
+ *   imageIds: ['dicomweb:...', 'dicomweb:...'],
+ *   ijkDecimation: [2, 2, 2], // Half resolution in all dimensions
+ *   progressiveRendering: true
+ * });
+ *
+ * const volume = await volumeLoader.promise;
+ * // Later: volumeLoader.cancel() or volumeLoader.decache()
+ * ```
  */
 export function enhancedVolumeLoader(
   volumeId: string,

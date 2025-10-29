@@ -11,7 +11,6 @@ import BaseStreamingImageVolume from './BaseStreamingImageVolume';
  * It implements load method to load the imageIds and insert them into the volume.
  */
 export default class StreamingImageVolume extends BaseStreamingImageVolume {
-  // private imagePostProcess?: (image: IImage) => IImage;
   constructor(
     imageVolumeProperties: ImageVolumeProps,
     streamingProperties: IStreamingVolumeProperties
