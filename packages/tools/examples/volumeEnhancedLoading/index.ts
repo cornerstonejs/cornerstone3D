@@ -100,7 +100,7 @@ const viewportId3 = 'CT_VOLUME_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
-let ijkDecimation: [number, number, number] = [4, 4, 4]; // [i, j, k] decimation factors
+let ijkDecimation: [number, number, number] = [2, 2, 2]; // [i, j, k] decimation factors
 
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
@@ -304,8 +304,8 @@ async function run() {
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: exampleStudyInstanceUID,
     SeriesInstanceUID: exampleSeriesInstanceUID,
-    //    wadoRsRoot:'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-    wadoRsRoot: getLocalUrl() || 'http://BusinessLaptop1:5000/dicomweb',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    //  wadoRsRoot: getLocalUrl() || 'http://BusinessLaptop1:5000/dicomweb',
   });
 
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -392,8 +392,8 @@ async function run() {
       volumeDimensions: volume?.dimensions,
       volumeSpacing: volume?.spacing,
       volumeImageIds: volume?.imageIds?.length,
-      hasImagePostProcess:
-        typeof (volume as any)?.setImagePostProcess === 'function',
+      //  hasImagePostProcess:
+      //      typeof (volume as any)?.setImagePostProcess === 'function',
     });
 
     // Reset timing information and start timing

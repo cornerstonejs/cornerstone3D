@@ -37,12 +37,6 @@ export function enhancedVolumeLoader(
   // The hanging protocol service is responsible for providing decimation values
   const decimationValues = options.ijkDecimation || [1, 1, 1];
 
-  // Log first few and last few imageIds
-  if (options?.imageIds?.length > 0) {
-    const firstFew = options.imageIds.slice(0, 3);
-    const lastFew = options.imageIds.slice(-3);
-  }
-
   if (!options || !options.imageIds || !options.imageIds.length) {
     throw new Error(
       'ImageIds must be provided to create a streaming image volume'
@@ -96,46 +90,6 @@ export function enhancedVolumeLoader(
   }
 
   async function getStreamingImageVolume() {
-    /**
-     * Check if we are using the `wadouri:` scheme, and if so, preload first,
-     * middle, and last image metadata as these are the images the current
-     * streaming image loader may explicitly request metadata from. The last image
-     * metadata would only be specifically requested if the imageId array order is
-     * reversed in the `sortImageIdsAndGetSpacing.ts` file.
-     */
-    if (options.imageIds[0].split(':')[0] === 'wadouri') {
-      const [middleImageIndex, lastImageIndex] = [
-        Math.floor(options.imageIds.length / 2),
-        options.imageIds.length - 1,
-      ];
-      const indexesToPrefetch = [0, middleImageIndex, lastImageIndex];
-      await Promise.all(
-        indexesToPrefetch.map((index) => {
-          // check if image is cached
-          if (cache.isLoaded(options.imageIds[index])) {
-            return Promise.resolve(true);
-          }
-          return new Promise((resolve, reject) => {
-            const imageId = options.imageIds[index];
-            imageLoadPoolManager.addRequest(
-              async () => {
-                loadImage(imageId)
-                  .then(() => {
-                    resolve(true);
-                  })
-                  .catch((err) => {
-                    reject(err);
-                  });
-              },
-              RequestType.Prefetch,
-              { volumeId },
-              1 // priority
-            );
-          });
-        })
-      ).catch(console.error);
-    }
-
     const volumeProps = generateVolumePropsFromImageIds(
       options.imageIds,
       volumeId
@@ -229,78 +183,6 @@ export function enhancedVolumeLoader(
       });
     }
 
-    streamingImageVolume.setImagePostProcess((image) => {
-      // Always process images to ensure consistent decimation
-
-      // Check if image is already decimated to prevent double decimation
-      const expectedDecimatedRows = Math.floor(
-        streamingImageVolume.dimensions[1]
-      );
-      const expectedDecimatedCols = Math.floor(
-        streamingImageVolume.dimensions[0]
-      );
-
-      if (
-        image.rows === expectedDecimatedRows &&
-        image.columns === expectedDecimatedCols
-      ) {
-        return image;
-      }
-
-      const decimatedImage = decimateImagePixels(image, inPlaneDecimation);
-
-      // Update metadata for this specific image
-      if (inPlaneDecimation > 1) {
-        const originalGeneralImageModule =
-          getMetaData('generalImageModule', image.imageId) || {};
-        const originalImagePixelModule =
-          getMetaData('imagePixelModule', image.imageId) || {};
-        const originalImagePlaneModule =
-          getMetaData('imagePlaneModule', image.imageId) || {};
-
-        // Create updated metadata with decimated dimensions
-        const updatedGeneralImageModule = {
-          ...originalGeneralImageModule,
-          Rows: decimatedImage.rows,
-          Columns: decimatedImage.columns,
-        };
-
-        const updatedImagePixelModule = {
-          ...originalImagePixelModule,
-          Rows: decimatedImage.rows,
-          Columns: decimatedImage.columns,
-        };
-
-        const updatedImagePlaneModule = {
-          ...originalImagePlaneModule,
-          Rows: decimatedImage.rows,
-          Columns: decimatedImage.columns,
-          PixelSpacing: [
-            decimatedImage.rowPixelSpacing,
-            decimatedImage.columnPixelSpacing,
-          ],
-        };
-
-        // Add metadata providers for this specific image
-        addProvider((type, imageId) => {
-          if (imageId === image.imageId) {
-            switch (type) {
-              case 'generalImageModule':
-                return updatedGeneralImageModule;
-              case 'imagePixelModule':
-                return updatedImagePixelModule;
-              case 'imagePlaneModule':
-                return updatedImagePlaneModule;
-              default:
-                return undefined;
-            }
-          }
-          return undefined;
-        });
-      }
-
-      return decimatedImage;
-    });
     return streamingImageVolume;
   }
 
