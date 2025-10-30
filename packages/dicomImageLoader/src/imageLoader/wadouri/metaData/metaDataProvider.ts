@@ -22,6 +22,7 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import { Modules } from '../../../shared/Tags';
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
@@ -65,12 +66,16 @@ function metaDataProvider(type, imageId) {
   return metadataForDataset(type, imageId, dataSet);
 }
 
+const { MetadataModules } = Enums;
+
 export function metadataForDataset(
   type,
   imageId,
   dataSet: dicomParser.DataSet
 ) {
-  const { MetadataModules } = Enums;
+  if (Modules[type]) {
+    return Modules[type].fromDataset(dataSet);
+  }
 
   if (type === MetadataModules.GENERAL_STUDY) {
     return {
@@ -237,10 +242,7 @@ export function metadataForDataset(
   }
 
   if (type === MetadataModules.SOP_COMMON) {
-    return {
-      sopClassUID: dataSet.string('x00080016'),
-      sopInstanceUID: dataSet.string('x00080018'),
-    };
+    return Modules[MetadataModules.SOP_COMMON].fromDataset(dataSet);
   }
 
   if (type === MetadataModules.PET_ISOTOPE) {

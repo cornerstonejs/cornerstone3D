@@ -14,7 +14,6 @@ const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
   utilities;
 
 /**
-/**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
  * and return a list of imageIds for the frames.
  *
@@ -23,7 +22,6 @@ const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
  *
  * @returns {string[]} An array of imageIds for instances in the study.
  */
-
 export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,

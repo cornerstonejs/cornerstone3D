@@ -22,11 +22,12 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import { Modules } from '../../../shared/Tags';
 const { calibratedPixelSpacingMetadataProvider } = utilities;
 
-function metaDataProvider(type, imageId) {
-  const { MetadataModules } = Enums;
+const { MetadataModules } = Enums;
 
+function metaDataProvider(type, imageId) {
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
     const { metadata, frame } = retrieveMultiframeMetadataImageId(imageId);
@@ -67,6 +68,10 @@ function metaDataProvider(type, imageId) {
     return;
   }
 
+  if (Modules[type]) {
+    return Modules[type].fromMetadata(metaData);
+  }
+
   if (type === MetadataModules.GENERAL_STUDY) {
     return {
       studyDescription: getValue<string>(metaData['00081030']),
@@ -95,16 +100,6 @@ function metaDataProvider(type, imageId) {
       acquisitionTime: dicomParser.parseTM(
         getValue<string>(metaData['00080032'], 0, '')
       ),
-    };
-  }
-
-  if (type === MetadataModules.GENERAL_IMAGE) {
-    return {
-      sopInstanceUID: getValue<string>(metaData['00080018']),
-      instanceNumber: getNumberValue(metaData['00200013']),
-      lossyImageCompression: getValue<string>(metaData['00282110']),
-      lossyImageCompressionRatio: getNumberValue(metaData['00282112']),
-      lossyImageCompressionMethod: getValue<string>(metaData['00282114']),
     };
   }
 
@@ -294,13 +289,6 @@ function metaDataProvider(type, imageId) {
       rescaleIntercept: getNumberValue(metaData['00281052']),
       rescaleSlope: getNumberValue(metaData['00281053']),
       rescaleType: getValue(metaData['00281054']),
-    };
-  }
-
-  if (type === MetadataModules.SOP_COMMON) {
-    return {
-      sopClassUID: getValue<string>(metaData['00080016']),
-      sopInstanceUID: getValue<string>(metaData['00080018']),
     };
   }
 
