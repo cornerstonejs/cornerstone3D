@@ -12,7 +12,7 @@ const {
 export const PIXEL_INSTANCE = 'PixelInstanceModule';
 
 export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
-  public fromInstance(instance) {
+  public fromNatural(instance) {
     const { ImageOrientationPatient, ImagePositionPatient } = instance;
     console.warn('Extracting image plane module from', instance);
 
@@ -92,15 +92,11 @@ export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
 
   fromDataset(dataSet) {
     const instance = Modules[PIXEL_INSTANCE].fromDataset(dataSet);
-    return this.fromInstance(instance);
-  }
-  fromNatural(natural) {
-    const instance = Modules[PIXEL_INSTANCE].fromNatural(natural);
-    return this.fromInstance(instance);
+    return this.fromNatural(instance);
   }
   fromMetadata(metadata) {
     const instance = Modules[PIXEL_INSTANCE].fromMetadata(metadata);
-    return this.fromInstance(instance);
+    return this.fromNatural(instance);
   }
 }
 
