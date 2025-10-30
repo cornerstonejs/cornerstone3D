@@ -223,7 +223,7 @@ function handleFileSelect(evt) {
   evt.preventDefault();
 
   // Get the FileList object that contains the list of files that were dropped
-  const files = evt.dataTransfer.files;
+  const files = [...evt.dataTransfer.files];
 
   // this UI is only built for a single file so just dump the first one
   imageIds = files.map((file) =>
