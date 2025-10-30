@@ -660,7 +660,6 @@ class AdvancedMagnifyTool extends AnnotationTool {
         );
       }
 
-      const dataId = `${annotationUID}-advancedMagnify`;
       const circleUID = '0';
       drawCircleSvg(
         svgDrawingHelper,
@@ -671,8 +670,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
         {
           color,
           lineWidth: 5,
-        },
-        dataId
+        }
       );
 
       const magnifyViewport =
