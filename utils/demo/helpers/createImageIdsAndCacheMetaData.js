@@ -81,33 +81,6 @@ export default async function createImageIdsAndCacheMetaData({
     imageIds = convertMultiframeImageIds(imageIds);
   }
 
-  imageIds.forEach((imageId) => {
-    let instanceMetaData =
-      cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
-
-    if (!instanceMetaData) {
-      return;
-    }
-
-    // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
-    instanceMetaData = removeInvalidTags(instanceMetaData);
-
-    if (instanceMetaData) {
-      // Add calibrated pixel spacing
-      const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
-      const pixelSpacingInformation = getPixelSpacingInformation(metadata);
-      const pixelSpacing = pixelSpacingInformation?.PixelSpacing;
-
-      if (pixelSpacing) {
-        calibratedPixelSpacingMetadataProvider.add(imageId, {
-          rowPixelSpacing: parseFloat(pixelSpacing[0]),
-          columnPixelSpacing: parseFloat(pixelSpacing[1]),
-          type: pixelSpacingInformation.type,
-        });
-      }
-    }
-  });
-
   // we don't want to add non-pet
   // Note: for 99% of scanners SUV calculation is consistent bw slices
   if (modality === 'PT') {

@@ -1,3 +1,4 @@
+import { capitalizeTag } from '../shared/tagCase';
 /**
  * Retrieves metadata from a DICOM image and returns it as an object with capitalized keys.
  * @param imageId - the imageId
@@ -28,9 +29,6 @@ function getInstanceModule(imageId, metaDataProvider, types) {
 
   return result;
 }
-
-const capitalizeTag = (tag: string) =>
-  tag.charAt(0).toUpperCase() + tag.slice(1);
 
 const instanceModuleNames = [
   'multiframeModule',
