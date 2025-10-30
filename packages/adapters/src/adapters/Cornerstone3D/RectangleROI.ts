@@ -70,7 +70,7 @@ export class RectangleROI extends BaseAdapter3D {
 
         const corners = toScoords(scoordProps, data.handles.points);
 
-        const { area, perimeter } =
+        const { area, perimeter, max, mean, stdDev, areaUnit, modalityUnit } =
             data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
@@ -83,6 +83,11 @@ export class RectangleROI extends BaseAdapter3D {
             ],
             area,
             perimeter,
+            max,
+            mean,
+            stdDev,
+            areaUnit,
+            modalityUnit,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
