@@ -204,6 +204,15 @@ class MagnifyTool extends BaseTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
+  _cancelCallback = (evt: EventTypes.InteractionEventType) => {
+    // Empêche l'affichage du menu contextuel par défaut du navigateur
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    // Appelle la fonction qui désactive et nettoie l'outil
+    this._dragEndCallback(evt);
+  };
+
   _dragCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
 
@@ -253,7 +262,15 @@ class MagnifyTool extends BaseTool {
   };
 
   _dragEndCallback = (evt: EventTypes.InteractionEventType) => {
-    const { element } = evt.detail;
+    let { element } = evt.detail;
+
+    if (element === undefined) {
+      const { enabledElement } = this.editData;
+
+      const { viewport } = enabledElement;
+      element = viewport.element;
+    }
+
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
@@ -290,6 +307,11 @@ class MagnifyTool extends BaseTool {
     );
 
     element.addEventListener(
+      'contextmenu',
+      this._cancelCallback as EventListener
+    );
+
+    element.addEventListener(
       Events.TOUCH_END,
       this._dragEndCallback as EventListener
     );
@@ -313,6 +335,11 @@ class MagnifyTool extends BaseTool {
     element.removeEventListener(
       Events.MOUSE_CLICK,
       this._dragEndCallback as EventListener
+    );
+
+    element.removeEventListener(
+      'contextmenu',
+      this._cancelCallback as EventListener
     );
     element.removeEventListener(
       Events.TOUCH_END,
