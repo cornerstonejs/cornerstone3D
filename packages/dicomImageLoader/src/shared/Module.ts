@@ -122,8 +122,7 @@ export const Modules = Module.modules;
 export const TagsAny: Record<string, ITag<unknown>> = {};
 
 const newVrType = (fromDataset, options?) => {
-  // const postProcess = options?.postProcess;
-  const isArray = options?.array !== true;
+  const isArray = !!options?.array;
   const fromMetadata = isArray ? arrayMetadata : singleMetadata;
   const fromNatural = isArray ? arrayNatural : singleNatural;
   return (name, tag, ...modules) => {
@@ -166,6 +165,7 @@ const vrFloatsString = newVrType(floatStringsDataset, {
 });
 
 export const vrUI = vrString;
+export const vrLO = vrString;
 export const vrCS = vrString;
 export const vrDS = vrFloatString;
 export const vrDSs = vrFloatsString;

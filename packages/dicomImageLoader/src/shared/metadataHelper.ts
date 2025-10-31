@@ -2,14 +2,22 @@ import { utilities } from '@cornerstonejs/core';
 
 const { toNumber } = utilities;
 
-export function singleMetadata(metadata, index = 0) {
+export function singleMetadata(metadata, options?) {
   const value = metadata[this.tag];
+  const index = options?.index ?? this.index ?? 0;
+  if (index === -1) {
+    return value?.Value;
+  }
   return value?.Value?.[index];
 }
 
-export function arrayMetadata(metadata, index = 0) {
+export function arrayMetadata(metadata, options) {
   const value = metadata[this.tag];
-  return value?.Value;
+  const index = options?.index ?? this.index ?? -1;
+  if (index === -1) {
+    return value?.Value;
+  }
+  return value?.Value?.[index];
 }
 
 export function numberMetadata(metadata, index = 0) {

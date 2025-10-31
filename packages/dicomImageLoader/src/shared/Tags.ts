@@ -9,6 +9,7 @@ import {
   vrUL,
   vrSL,
   vrSQs,
+  vrLO,
 } from './Module';
 import { type ITag } from '../types/TagTypes';
 import { PIXEL_INSTANCE } from './ImagePlaneModule';
@@ -34,8 +35,22 @@ export const TagsArray = [
   vrCS('LossyImageCompression', '00282110', GENERAL_IMAGE),
   vrDS('LossyImageCompressionRatio', '00282112', GENERAL_IMAGE),
   vrCS('LossyImageCompressionMethod', '00282114', GENERAL_IMAGE),
+
+  // Image Plane requirements
   vrDSs('PixelSpacing', '00280030', 2, IMAGE_PLANE, PIXEL_INSTANCE),
   vrDSs('ImagerPixelSpacing', '00181164', 2, IMAGE_PLANE, PIXEL_INSTANCE),
+  vrDSs('ImageOrientationPatient', '00200037', 3, IMAGE_PLANE, PIXEL_INSTANCE),
+  vrDSs('ImagePositionPatient', '00200037', 3, IMAGE_PLANE, PIXEL_INSTANCE),
+  vrUI('FrameOfReferenceUID', '00200052', PIXEL_INSTANCE),
+  vrUS('Rows', '00280010', PIXEL_INSTANCE),
+  vrUS('Columns', '00280011', PIXEL_INSTANCE),
+  vrDS('SpacingBetweenSlices', '00180088', PIXEL_INSTANCE),
+  vrDS('SliceThickness', '00180050', PIXEL_INSTANCE),
+  vrDS('SliceLocation', '00201041', PIXEL_INSTANCE),
+  vrDS('EstimatedRadiographicMagnificationFactor', '00181114', PIXEL_INSTANCE),
+  vrCS('PixelSpacingCalibrationType', '00280A02', PIXEL_INSTANCE),
+  vrLO('PixelSpacingCalibrationDescription', '00280A04', PIXEL_INSTANCE),
+
   vrSQs(
     'SequenceOfUltrasoundRegions',
     '00186011',
