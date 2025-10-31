@@ -39,11 +39,6 @@ import { computeVolumeLabelmapFromStack } from '../../stateManagement/segmentati
 import { getReferenceVolumeForSegmentationVolume } from './getReferenceVolumeForSegmentationVolume';
 import { getSegmentLargestBidirectional } from './getSegmentLargestBidirectional';
 import { computeMetabolicStats } from './computeMetabolicStats';
-import {
-  addSegmentationListener,
-  removeRepresentationListener,
-  removeAllSegmentationListeners,
-} from './segmentationEventManager';
 
 export {
   thresholdVolumeByRange,
@@ -81,7 +76,4 @@ export {
   getReferenceVolumeForSegmentationVolume,
   getSegmentLargestBidirectional,
   computeMetabolicStats,
-  addSegmentationListener,
-  removeRepresentationListener,
-  removeAllSegmentationListeners,
 };
