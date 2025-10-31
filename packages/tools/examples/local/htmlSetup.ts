@@ -18,12 +18,12 @@ function setup(document) {
   const content = document.getElementById('content');
 
   // Form
-  const form = document.createElement('form');
-  form.style.marginBottom = '20px';
-  const formInput = document.createElement('input');
-  formInput.id = 'selectFile';
-  formInput.type = 'file';
-  form.appendChild(formInput);
+  // const form = document.createElement('form');
+  // form.style.marginBottom = '20px';
+  // const formInput = document.createElement('input');
+  // formInput.id = 'selectFile';
+  // formInput.type = 'file';
+  // form.appendChild(formInput);
 
   // image div
   const element = document.createElement('div');
@@ -42,7 +42,9 @@ function setup(document) {
   div.appendChild(element);
   div.appendChild(metadata);
 
+  createMetadataRow('Number of Images', metadata);
   createMetadataRow('Transfer Syntax', metadata);
+  createMetadataRow('Study Instance UID', metadata);
   createMetadataRow('SOPClassUID', metadata);
   createMetadataRow('SOPInstanceUID', metadata);
   createMetadataRow('Rows', metadata);
@@ -59,7 +61,7 @@ function setup(document) {
   createMetadataRow('Window Width', metadata);
   createMetadataRow('Window Center', metadata);
 
-  content.appendChild(form);
+  // content.appendChild(form);
   content.appendChild(div);
 
   return { element };
