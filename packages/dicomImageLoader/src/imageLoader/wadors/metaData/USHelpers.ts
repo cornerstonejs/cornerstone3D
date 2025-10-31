@@ -5,6 +5,8 @@ import getSequenceItems from './getSequenceItems';
  * This function retrieves the ultrasound regions from the provided metadata.
  * @param metadata - The metadata from which to retrieve the ultrasound regions.
  * @returns An array of ultrasound regions, or null if no regions are found.
+ * @deprecated This class will be going away in a future version in favour of
+ *    direct usage of the Modules system.
  */
 function getUSEnhancedRegions(metadata) {
   const sequenceOfUltrasoundRegions = getSequenceItems(metadata['00186011']);

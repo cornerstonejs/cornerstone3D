@@ -1,9 +1,22 @@
-import { utilities } from '@cornerstonejs/core';
 import type { ITag, IModule, IModules } from '../types/TagTypes';
 import { tagToCamel } from './tagCase';
-import getNumberValues from '../imageLoader/wadouri/metaData/getNumberValues';
-
-const { toNumber } = utilities;
+import {
+  stringDataset,
+  floatStringDataset,
+  floatStringsDataset,
+  doubleDataset,
+  uint16Dataset,
+  int32Dataset,
+  datasetSQ,
+} from './datasetHelper';
+import {
+  arrayNatural,
+  arrayMetadata,
+  singleMetadata,
+  singleNatural,
+  sqNatural,
+  sqMetadata,
+} from './metadataHelper';
 
 export class Module<T> implements IModule<T> {
   name: string;
@@ -11,6 +24,12 @@ export class Module<T> implements IModule<T> {
 
   public static OPTION_NATURAL_NAME = { keyName: 'name' };
   public static OPTION_MODULE_NAME = { keyName: 'lowerName' };
+
+  /**
+   * The modules that are registered globally are listed here.
+   * Also exported as Modules for convenience below.
+   */
+  public static modules: IModules = {};
 
   constructor(name) {
     this.name = name;
@@ -41,7 +60,7 @@ export class Module<T> implements IModule<T> {
     const result = {} as T;
     const keyName = options?.keyName || 'lowerName';
     for (const tag of this.tags) {
-      const value = tag.fromMetadata(metadata);
+      const value = tag.fromMetadata(metadata, options);
       if (value === undefined) {
         continue;
       }
@@ -62,82 +81,80 @@ export class Module<T> implements IModule<T> {
     }
     return result;
   }
-}
 
-export const Modules: IModules = {};
-
-function bindFromDataset<T>(method, defaultIndex = 0) {
-  return function (dataSet, _index = defaultIndex) {
-    return dataSet[method](this.xTag) as T;
-  };
-}
-
-export const stringDataset = bindFromDataset<string>('string');
-export const floatStringDataset = bindFromDataset<number>('floatString');
-export const floatStringsDataset = function (dataSet) {
-  return getNumberValues(dataSet, this.xTag, 0);
-};
-
-export function singleMetadata(metadata, index = 0) {
-  const value = metadata[this.tag];
-  return value?.Value?.[index];
-}
-
-export function arrayMetadata(metadata, index = 0) {
-  const value = metadata[this.tag];
-  return value?.Value;
-}
-
-export function numberMetadata(metadata, index = 0) {
-  return toNumber(this.singleMetadata(metadata, index));
-}
-
-export function singleNatural<T>(metadata) {
-  const value = metadata[this.lowerName];
-  return (Array.isArray(value) ? value[index] : value) as T;
-}
-
-export function arrayNatural<T>(natural) {
-  const value = natural[this.lowerName];
-  if (Array.isArray(value) || value === null || value === undefined) {
-    return value;
+  public static sqFromDataset(dataSet, options?) {
+    console.warn('Parsing dataset', dataSet);
   }
-  return [value];
+
+  public static createModules(tagValue: ITag<unknown>) {
+    if (!tagValue.modules) {
+      return;
+    }
+    for (const module of tagValue.modules) {
+      Modules[module] ||= new Module(module);
+      Modules[module].addTag(tagValue);
+    }
+  }
+  public static createSqNatural<T>(tag: ITag<unknown>, natural, options?) {
+    if (options?.keyName === 'name') {
+      return natural as T;
+    }
+    throw new Error('Unsupported');
+  }
+
+  public static createSqDataset<T>(tag: ITag<unknown>, dataSet, options?) {
+    if (tag?.sqModule) {
+      return Module.modules[tag.sqModule].fromDataset(dataSet, options) as T;
+    }
+    throw new Error('Not implemented yet');
+  }
+
+  public static createSqMetadata<T>(tag: ITag<unknown>, metadata, options?) {
+    if (tag?.sqModule) {
+      return Module.modules[tag.sqModule].fromMetadata(metadata, options) as T;
+    }
+    throw new Error('Not implemented yet');
+  }
 }
 
-export function numberNatural(metadata, index = 0) {
-  return toNumber(this.singleMetadata(metadata, index));
-}
+export const Modules = Module.modules;
 
 export const TagsAny: Record<string, ITag<unknown>> = {};
 
-function createModules(tagValue: ITag<unknown>) {
-  if (!tagValue.modules) {
-    return;
-  }
-  for (const module of tagValue.modules) {
-    Modules[module] ||= new Module(module);
-    Modules[module].addTag(tagValue);
-  }
-}
 const newVrType = (fromDataset, options?) => {
   // const postProcess = options?.postProcess;
   const isArray = options?.array !== true;
-  let fromMetadata = isArray ? arrayMetadata : singleMetadata;
+  const fromMetadata = isArray ? arrayMetadata : singleMetadata;
   const fromNatural = isArray ? arrayNatural : singleNatural;
   return (name, tag, ...modules) => {
+    let extraOptions = null;
+    let vm = isArray ? -1 : 1;
+    while (modules?.length && typeof modules[0] !== 'string') {
+      const [module] = modules;
+      const typeModule = typeof module;
+      if (typeModule === 'number') {
+        vm = module;
+      } else if (typeModule === 'object') {
+        extraOptions = module;
+      }
+      modules.splice(0, 1);
+    }
     const tagValue = {
       fromDataset,
       fromMetadata,
       fromNatural,
       tag,
-      xTag: `x${tag}`,
+      xTag: `x${tag.toLowerCase()}`,
       lowerName: tagToCamel(name),
       name,
       modules,
+      ...options,
+      vm,
+      ...extraOptions,
+      moduleStatic: Module,
     };
     TagsAny[name] = tagValue;
-    createModules(tagValue);
+    Module.createModules(tagValue);
     return tagValue;
   };
 };
@@ -152,3 +169,12 @@ export const vrUI = vrString;
 export const vrCS = vrString;
 export const vrDS = vrFloatString;
 export const vrDSs = vrFloatsString;
+export const vrFD = newVrType(doubleDataset);
+export const vrUS = newVrType(uint16Dataset);
+export const vrUL = newVrType(uint16Dataset);
+export const vrSL = newVrType(int32Dataset);
+export const vrSQs = newVrType(datasetSQ, {
+  array: true,
+  fromNatural: sqNatural,
+  fromMetadata: sqMetadata,
+});

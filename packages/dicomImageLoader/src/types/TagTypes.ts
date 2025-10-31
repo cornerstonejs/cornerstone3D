@@ -10,15 +10,25 @@ export interface ITag<T> {
   fromDataset: (dataset, index?) => T;
   fromMetadata: (metadata, index?) => T;
   fromNatural: (natural, index?) => T;
-  modules?: string[];
+  moduleStatic: IModuleStatic;
+  modules: string[];
+  /** Name of the module for the child types */
+  sqModule?: string;
+}
+
+export interface IModuleStatic {
+  modules: IModules;
+  createSqDataset: <T>(tag: ITag<unknown>, dataSet, options) => T;
+  createSqNatural: <T>(tag: ITag<unknown>, natural, options) => T;
+  createSqMetadata: <T>(tag: ITag<unknown>, metadata, options) => T;
 }
 
 export interface IModule<T> {
   name: string;
   tags: ITag<unknown>[];
-  fromDataset: (dataset) => T;
-  fromNatural: (natural) => T;
-  fromMetadata: (metadata) => T;
+  fromDataset: (dataset, options?) => T;
+  fromNatural: (natural, options?) => T;
+  fromMetadata: (metadata, options?) => T;
 }
 
 export interface IModules {

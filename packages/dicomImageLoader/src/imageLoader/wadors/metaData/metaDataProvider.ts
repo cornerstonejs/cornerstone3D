@@ -23,7 +23,6 @@ import {
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
 import { Modules } from '../../../shared/Tags';
-const { calibratedPixelSpacingMetadataProvider } = utilities;
 
 const { MetadataModules } = Enums;
 
@@ -69,7 +68,7 @@ function metaDataProvider(type, imageId) {
   }
 
   if (Modules[type]) {
-    return Modules[type].fromMetadata(metaData);
+    return Modules[type].fromMetadata(metaData, { imageId });
   }
 
   if (type === MetadataModules.GENERAL_STUDY) {
@@ -140,17 +139,6 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
     return getUSEnhancedRegions(metaData);
-  }
-
-  if (type === MetadataModules.CALIBRATION) {
-    const modality = getValue(metaData['00080060']);
-
-    if (modality === 'US') {
-      const enhancedRegion = getUSEnhancedRegions(metaData);
-      return {
-        sequenceOfUltrasoundRegions: enhancedRegion,
-      };
-    }
   }
 
   if (type === MetadataModules.IMAGE_URL) {

@@ -43,6 +43,7 @@ export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
         calibratedPixelSpacingMetadataProvider.add(imageId, {
           rowPixelSpacing: parseFloat(PixelSpacing[0]),
           columnPixelSpacing: parseFloat(PixelSpacing[1]),
+          scale: parseFloat(PixelSpacing[0]),
           type,
         });
       }
@@ -98,7 +99,8 @@ export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
     );
     return this.fromNatural(instance, options);
   }
-  fromMetadata(metadata) {
+
+  fromMetadata(metadata, options) {
     const instance = Modules[PIXEL_INSTANCE].fromMetadata(
       metadata,
       Module.OPTION_NATURAL_NAME
