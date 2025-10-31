@@ -74,7 +74,7 @@ export function metadataForDataset(
   dataSet: dicomParser.DataSet
 ) {
   if (Modules[type]) {
-    return Modules[type].fromDataset(dataSet);
+    return Modules[type].fromDataset(dataSet, { imageId });
   }
 
   if (type === MetadataModules.GENERAL_STUDY) {
@@ -179,10 +179,6 @@ export function metadataForDataset(
         dataSet.elements.x00283000
       ),
     };
-  }
-
-  if (type === MetadataModules.SOP_COMMON) {
-    return Modules[MetadataModules.SOP_COMMON].fromDataset(dataSet);
   }
 
   if (type === MetadataModules.PET_ISOTOPE) {

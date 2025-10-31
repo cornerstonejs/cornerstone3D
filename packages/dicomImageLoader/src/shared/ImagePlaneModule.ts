@@ -12,7 +12,8 @@ const {
 export const PIXEL_INSTANCE = 'PixelInstanceModule';
 
 export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
-  public fromNatural(instance) {
+  public fromNatural(instance, options?) {
+    const imageId = options?.imageId;
     const { ImageOrientationPatient, ImagePositionPatient } = instance;
     console.warn('Extracting image plane module from', instance);
 
@@ -31,15 +32,15 @@ export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
     let isDefaultValueSetForRowCosine = false;
     let isDefaultValueSetForColumnCosine = false;
     let imageOrientationPatient;
-    if (PixelSpacing) {
+    if (PixelSpacing && imageId) {
       [rowPixelSpacing, columnPixelSpacing] = PixelSpacing;
       const calibratedPixelSpacing =
         utilities.calibratedPixelSpacingMetadataProvider.get(
           'calibratedPixelSpacing',
-          instance.imageId
+          imageId
         );
       if (!calibratedPixelSpacing) {
-        calibratedPixelSpacingMetadataProvider.add(instance.imageId, {
+        calibratedPixelSpacingMetadataProvider.add(imageId, {
           rowPixelSpacing: parseFloat(PixelSpacing[0]),
           columnPixelSpacing: parseFloat(PixelSpacing[1]),
           type,
@@ -90,13 +91,19 @@ export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
     };
   }
 
-  fromDataset(dataSet) {
-    const instance = Modules[PIXEL_INSTANCE].fromDataset(dataSet);
-    return this.fromNatural(instance);
+  fromDataset(dataSet, options) {
+    const instance = Modules[PIXEL_INSTANCE].fromDataset(
+      dataSet,
+      Module.OPTION_NATURAL_NAME
+    );
+    return this.fromNatural(instance, options);
   }
   fromMetadata(metadata) {
-    const instance = Modules[PIXEL_INSTANCE].fromMetadata(metadata);
-    return this.fromNatural(instance);
+    const instance = Modules[PIXEL_INSTANCE].fromMetadata(
+      metadata,
+      Module.OPTION_NATURAL_NAME
+    );
+    return this.fromNatural(instance, options);
   }
 }
 

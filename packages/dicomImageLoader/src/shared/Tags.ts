@@ -14,14 +14,8 @@ export const TagsArray = [
   vrCS('LossyImageCompression', '00282110', GENERAL_IMAGE),
   vrDS('LossyImageCompressionRatio', '00282112', GENERAL_IMAGE),
   vrCS('LossyImageCompressionMethod', '00282114', GENERAL_IMAGE),
-  vrDSs('PixelSpacing', '00280030', { vm: 2 }, PIXEL_INSTANCE),
-  vrDSs(
-    'ImagerPixelSpacing',
-    '00181164',
-    { vm: 2 },
-    IMAGE_PLANE,
-    PIXEL_INSTANCE
-  ),
+  vrDSs('PixelSpacing', '00280030', 2, IMAGE_PLANE, PIXEL_INSTANCE),
+  vrDSs('ImagerPixelSpacing', '00181164', 2, IMAGE_PLANE, PIXEL_INSTANCE),
 ];
 
 export type FieldTags = (typeof TagsArray)[number]['tag'];

@@ -9,6 +9,9 @@ export class Module<T> implements IModule<T> {
   name: string;
   tags = new Array<ITag<unknown>>();
 
+  public static OPTION_NATURAL_NAME = { keyName: 'name' };
+  public static OPTION_MODULE_NAME = { keyName: 'lowerName' };
+
   constructor(name) {
     this.name = name;
   }
@@ -20,39 +23,42 @@ export class Module<T> implements IModule<T> {
     this.tags.push(tagData);
   }
 
-  public fromDataset(dataset) {
+  public fromDataset(dataset, options?) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: Record<string, any> = {};
+    const keyName = options?.keyName || 'lowerName';
     for (const tag of this.tags) {
       const value = tag.fromDataset(dataset);
       if (value === undefined) {
         continue;
       }
-      result[tag.lowerName] = value;
+      result[tag[keyName]] = value;
     }
     return result as T;
   }
 
-  public fromMetadata(metadata) {
+  public fromMetadata(metadata, options?) {
     const result = {} as T;
+    const keyName = options?.keyName || 'lowerName';
     for (const tag of this.tags) {
       const value = tag.fromMetadata(metadata);
       if (value === undefined) {
         continue;
       }
-      result[tag.lowerName] = value;
+      result[tag[keyName]] = value;
     }
     return result as T;
   }
 
-  public fromNatural(natural) {
+  public fromNatural(natural, options?) {
     const result = {} as T;
+    const keyName = options?.keyName || 'lowerName';
     for (const tag of this.tags) {
       const value = tag.fromNatural(natural);
       if (value === undefined) {
         continue;
       }
-      result[tag.lowerName] = value;
+      result[tag[keyName]] = value;
     }
     return result;
   }
