@@ -20,8 +20,10 @@ const {
   GENERAL_IMAGE,
   SOP_COMMON,
   IMAGE_PLANE,
-  CALIBRATION,
-  ULTRASOUND_ENHANCED_REGION,
+  // These should get added once there is a good way to
+  // set default configuration values:
+  // CALIBRATION,
+  // ULTRASOUND_ENHANCED_REGION,
 } = Enums.MetadataModules;
 
 export const USRegionChild = 'usRegionChild';
@@ -38,8 +40,8 @@ export const TagsArray = [
     'SequenceOfUltrasoundRegions',
     '00186011',
     { sqModule: USRegionChild },
-    ULTRASOUND_ENHANCED_REGION,
-    CALIBRATION,
+    // ULTRASOUND_ENHANCED_REGION,
+    // CALIBRATION,
     PIXEL_INSTANCE
   ),
 

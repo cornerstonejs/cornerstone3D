@@ -60,7 +60,6 @@ export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
       rowCosines = [1, 0, 0];
       columnCosines = [0, 1, 0];
       imageOrientationPatient = [1, 0, 0, 0, 1, 0];
-      usingDefaultValues = true;
       isDefaultValueSetForRowCosine = true;
       isDefaultValueSetForColumnCosine = true;
     }
