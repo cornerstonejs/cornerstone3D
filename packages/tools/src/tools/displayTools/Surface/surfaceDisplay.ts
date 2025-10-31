@@ -76,8 +76,7 @@ async function render(
     SurfaceData = await computeAndAddRepresentation(
       segmentationId,
       Representations.Surface,
-      () => polySeg.computeSurfaceData(segmentationId, { viewport }),
-      () => polySeg.updateSurfaceData(segmentationId, { viewport })
+      () => polySeg.computeSurfaceData(segmentationId, { viewport })
     );
 
     if (!SurfaceData) {
@@ -145,9 +144,18 @@ async function render(
   viewport.render();
 }
 
+function getUpdateFunction(
+  viewport: Types.IVolumeViewport | Types.IStackViewport
+): (segmentationId: string) => Promise<void> {
+  const polySeg = getPolySeg();
+  return (segmentationId: string) =>
+    polySeg.updateSurfaceData(segmentationId, { viewport }).then();
+}
+
 export default {
+  getUpdateFunction,
   render,
   removeRepresentation,
 };
 
-export { render, removeRepresentation };
+export { getUpdateFunction, render, removeRepresentation };

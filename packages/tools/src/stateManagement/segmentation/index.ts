@@ -45,6 +45,13 @@ import {
   getLabelmapImageIdsForImageId,
 } from './getCurrentLabelmapImageIdForViewport';
 import { getActiveSegmentation } from './getActiveSegmentation';
+import {
+  addSegmentationListener,
+  addDefaultSegmentationListener,
+  removeSegmentationListener,
+  removeAllSegmentationListeners,
+} from './segmentationEventManager';
+
 const helpers = {
   clearSegmentValue,
   convertStackToVolumeLabelmap,
@@ -71,6 +78,11 @@ export {
   addSurfaceRepresentationToViewportMap,
   addSegmentations,
   updateSegmentations,
+  // Listener management
+  addSegmentationListener,
+  addDefaultSegmentationListener,
+  removeSegmentationListener,
+  removeAllSegmentationListeners,
   // name spaces
   state,
   activeSegmentation,
