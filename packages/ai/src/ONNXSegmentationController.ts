@@ -1155,48 +1155,71 @@ export default class ONNXSegmentationController {
    * encoding of the image isn't ready yet, or the encoder is otherwise busy,
    * it will run the update again once the tryLoad is done at the end of the task.
    */
-  updateAnnotations(useSession = this.currentImage) {
-    if (
-      this.isGpuInUse ||
-      !this.annotationsNeedUpdating ||
-      !this.currentImage
-    ) {
-      return;
-    }
-    const promptAnnotations = this.getPromptAnnotations();
-    this.annotationsNeedUpdating = false;
-    this.points = [];
-    this.labels = [];
-    this.worldPoints = [];
-
-    if (!promptAnnotations?.length || !useSession?.canvasPosition) {
-      return;
-    }
-    for (const annotation of promptAnnotations) {
-      const handle = annotation.data.handles.points[0];
-      const point = this.mapAnnotationPoint(handle, useSession.canvasPosition);
-      this.points.push(...point);
-      if (
-        annotation.metadata.toolName === ONNXSegmentationController.BoxPrompt
-      ) {
-        // 2 and 3 are the codes for the handles on a box prompt
-        this.labels.push(2, 3);
-        this.points.push(
-          ...this.mapAnnotationPoint(
-            annotation.data.handles.points[3],
-            useSession.canvasPosition
-          )
-        );
-      } else {
-        const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
-        if (label) {
-          this.worldPoints.push(handle);
-        }
-        this.labels.push(label);
-      }
-    }
-    this.runDecode();
+   updateAnnotations(useSession = this.currentImage) {
+  if (
+    this.isGpuInUse ||
+    !this.annotationsNeedUpdating ||
+    !this.currentImage
+  ) {
+    return;
   }
+  const promptAnnotations = this.getPromptAnnotations();
+  this.annotationsNeedUpdating = false;
+  this.points = [];
+  this.labels = [];
+  this.worldPoints = [];
+
+  if (!promptAnnotations?.length || !useSession?.canvasPosition) {
+    return;
+  }
+  for (const annotation of promptAnnotations) {
+    const handles = annotation.data?.handles?.points ?? [];
+
+    if (annotation.metadata.toolName === ONNXSegmentationController.BoxPrompt) {
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      //Keep z dimension; fall back to the first point’s z or 0
+      const baseZ = (handles[0] && handles[0][2] != null) ? handles[0][2] : 0;
+
+      for (const handel of handles) {
+        if (!handel) continue;
+        const x = handel[0], y = handel[1];
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+
+      //Two opposite corners (top-left & bottom-right in world space)
+      const cornerA: [number, number, number] = [minX, minY, baseZ];
+      const cornerB: [number, number, number] = [maxX, maxY, baseZ];
+
+      const mappedA = this.mapAnnotationPoint(cornerA, useSession.canvasPosition);
+      const mappedB = this.mapAnnotationPoint(cornerB, useSession.canvasPosition);
+
+      //ONNX box prompt expects two handles with labels 2 and 3
+      this.points.push(...mappedA, ...mappedB);
+      this.labels.push(2, 3);
+
+      //Intentionally NOT pushing worldPoints for boxes to match original behavior
+      continue;
+    }
+
+    // Point prompts (positive/negative)
+    const handle = handles[0];
+    if (!handle) continue;
+
+    const mappedPoint = this.mapAnnotationPoint(handle, useSession.canvasPosition);
+    this.points.push(...mappedPoint);
+
+    const label = annotation.metadata.toolName === this.excludeTool ? 0 : 1;
+    if (label) {
+      this.worldPoints.push(handle);
+    }
+    this.labels.push(label);
+  }
+  this.runDecode();
+}
 
   /**
    * Restores a stored image encoding from memory cache first, and from
