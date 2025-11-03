@@ -18,6 +18,11 @@ export interface ViewportProperties {
   interpolationType?: InterpolationType;
   /** transfer function preset (coloring) */
   preset?: string;
-  /** sample distance multiplier- higher number means lower resolution and lower GPU demands */
+
   sampleDistanceMultiplier?: number;
+
+  /** Image sharpening settings */
+  sharpening?: number;
+  /** Image smoothing settings */
+  smoothing?: number;
 }

@@ -217,4 +217,25 @@ describe('FrameOfReferenceSpecificAnnotationManager:', () => {
     undefinedAnnotation = annotationManager.getAnnotation(annotationUID);
     expect(undefinedAnnotation).toBeUndefined();
   });
+
+  it('Should not throw when removeAnnotations is called with a non-existent tool name', () => {
+    // Add an annotation with a specific tool name
+    addAndReturnToolName0Annotation();
+
+    // Try to remove annotations for a tool that doesn't exist
+    // This should not throw an error
+    expect(() => {
+      annotationManager.removeAnnotations(
+        FrameOfReferenceUID,
+        'NonExistentToolName'
+      );
+    }).not.toThrow();
+
+    // The existing annotation should still be there
+    const annotations = annotationManager.getAnnotations(
+      FrameOfReferenceUID,
+      TOOLNAME_0
+    );
+    expect(annotations.length).toBe(1);
+  });
 });

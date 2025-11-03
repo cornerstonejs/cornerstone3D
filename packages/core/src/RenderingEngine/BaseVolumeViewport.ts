@@ -65,12 +65,11 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
-import { actorIsA, isImageActor } from '../utilities/actorCheck';
+import { actorIsA } from '../utilities/actorCheck';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import isEqual, { isEqualAbs, isEqualNegative } from '../utilities/isEqual';
 import applyPreset from '../utilities/applyPreset';
-import imageIdToURI from '../utilities/imageIdToURI';
 import uuidv4 from '../utilities/uuidv4';
 import * as metaData from '../metaData';
 import { getCameraVectors } from './helpers/getCameraVectors';
@@ -79,6 +78,11 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
 import { setConfiguration, getConfiguration } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { isInvalidNumber } from './helpers/isInvalidNumber';
+import {
+  createSharpeningRenderPass,
+  createSmoothingRenderPass,
+} from './renderPasses';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -91,6 +95,8 @@ import type { Types } from '@cornerstonejs/core';
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
+  private sharpening: number = 0;
+  private smoothing: number = 0;
 
   protected initialTransferFunctionNodes: TransferFunctionNodes;
   // Viewport Properties
@@ -500,6 +506,14 @@ abstract class BaseVolumeViewport extends Viewport {
       );
     }
 
+    if ([voiRangeToUse.lower, voiRangeToUse.upper].some(isInvalidNumber)) {
+      console.warn(
+        'VOI range contains invalid values, ignoring setVOI request',
+        voiRangeToUse
+      );
+      return;
+    }
+
     const { VOILUTFunction } = this.getProperties(volumeIdToUse);
 
     // scaling logic here
@@ -889,12 +903,19 @@ abstract class BaseVolumeViewport extends Viewport {
           [-viewPlaneNormal[0], -viewPlaneNormal[1], -viewPlaneNormal[2]],
           projectedDistance
         );
+        const focalShift = vec3.subtract(
+          vec3.create(),
+          newImagePositionPatient,
+          focalPoint
+        );
+        const newPosition = vec3.add(vec3.create(), position, focalShift);
         // this.setViewReference({
         //   ...viewRef,
         //   cameraFocalPoint: newImagePositionPatient as Point3,
         // });
         this.setCamera({
           focalPoint: newImagePositionPatient as Point3,
+          position: newPosition as Point3,
         });
         this.render();
         return;
@@ -981,6 +1002,8 @@ abstract class BaseVolumeViewport extends Viewport {
       interpolationType,
       slabThickness,
       sampleDistanceMultiplier,
+      sharpening,
+      smoothing,
     }: VolumeViewportProperties = {},
     volumeId?: string,
     suppressEvents = false
@@ -1035,11 +1058,71 @@ abstract class BaseVolumeViewport extends Viewport {
     if (slabThickness !== undefined) {
       this.setSlabThickness(slabThickness);
     }
-
     if (sampleDistanceMultiplier !== undefined) {
       this.setSampleDistanceMultiplier(sampleDistanceMultiplier);
     }
+
+    if (typeof sharpening !== 'undefined') {
+      this.setSharpening(sharpening);
+    }
+    if (typeof smoothing !== 'undefined') {
+      this.setSmoothing(smoothing);
+    }
   }
+
+  /**
+   * Sets the sharpening for the current viewport.
+   * @param sharpening - The sharpening configuration to use.
+   */
+  private setSharpening = (sharpening: number): void => {
+    // Store sharpening settings directly on the class
+    this.sharpening = sharpening;
+    this.render();
+  };
+  /**
+   * Sets the smoothing for the current viewport.
+   * @param smoothing - The smoothing configuration to use.
+   */
+  private setSmoothing = (smoothing: number): void => {
+    // Store smoothing settings directly on the class
+    this.smoothing = smoothing;
+    this.render();
+  };
+
+  /**
+   * Check if custom render passes should be used for this viewport.
+   * @returns True if custom render passes should be used, false otherwise
+   */
+  protected shouldUseCustomRenderPass(): boolean {
+    return !this.useCPURendering;
+  }
+
+  /**
+   * Get render passes for this viewport.
+   * If sharpening or smoothing is enabled, returns appropriate render passes.
+   * @returns Array of VTK render passes or null if no custom passes are needed
+   */
+  public getRenderPasses = () => {
+    if (!this.shouldUseCustomRenderPass()) {
+      return null;
+    }
+
+    const renderPasses = [];
+
+    try {
+      if (this.smoothing > 0) {
+        renderPasses.push(createSmoothingRenderPass(this.smoothing));
+      }
+      if (this.sharpening > 0) {
+        renderPasses.push(createSharpeningRenderPass(this.sharpening));
+      }
+
+      return renderPasses.length ? renderPasses : null;
+    } catch (e) {
+      console.warn('Failed to create custom render passes:', e);
+      return null;
+    }
+  };
 
   /**
    * Reset the viewport properties to the default values
@@ -1079,7 +1162,6 @@ abstract class BaseVolumeViewport extends Viewport {
     if (properties.preset !== undefined) {
       this.setPreset(properties.preset, volumeId, false);
     }
-
     this.render();
   }
 
@@ -1127,6 +1209,8 @@ abstract class BaseVolumeViewport extends Viewport {
       });
     }
   }
+  public setSampleDistanceMultiplier(multiplier: number): void {}
+
   public setSampleDistanceMultiplier(multiplier: number): void {}
 
   /**
@@ -1209,6 +1293,8 @@ abstract class BaseVolumeViewport extends Viewport {
       invert: invert,
       slabThickness: slabThickness,
       preset,
+      sharpening: this.sharpening,
+      smoothing: this.smoothing,
     };
   };
 
@@ -1773,16 +1859,22 @@ abstract class BaseVolumeViewport extends Viewport {
     const { width, height } = this.canvas;
     const aspectRatio = width / height;
 
+    // Get the actual renderer viewport bounds
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
     // Convert canvas coordinates to normalized display coordinates
     const canvasPosWithDPR = [
       canvasPos[0] * devicePixelRatio,
       canvasPos[1] * devicePixelRatio,
     ];
 
-    // Normalize to [0,1] range
+    // Normalize to [0,1] range within the actual viewport bounds
     const normalizedDisplay = [
-      canvasPosWithDPR[0] / width,
-      1 - canvasPosWithDPR[1] / height, // Flip Y axis
+      xMin + (canvasPosWithDPR[0] / width) * viewportWidth,
+      yMin + (1 - canvasPosWithDPR[1] / height) * viewportHeight, // Flip Y axis
       0,
     ];
 
@@ -1844,11 +1936,22 @@ abstract class BaseVolumeViewport extends Viewport {
       canvasPos[1] * devicePixelRatio,
     ];
 
-    const { height } = this.canvas;
+    const renderer = this.getRenderer();
+    const { width, height } = this.canvas;
+
+    // Get the actual renderer viewport bounds
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
+    // Scale the canvas position to the actual viewport size
+    const scaledX = (canvasPosWithDPR[0] / width) * viewportWidth * width;
+    const scaledY = (canvasPosWithDPR[1] / height) * viewportHeight * height;
 
     // Canvas coordinates with origin at top-left
     // VTK display coordinates have origin at bottom-left
-    const displayCoord = [canvasPosWithDPR[0], height - canvasPosWithDPR[1]];
+    const displayCoord = [scaledX, viewportHeight * height - scaledY];
 
     return [displayCoord[0], displayCoord[1], 0];
   };
@@ -1949,6 +2052,12 @@ abstract class BaseVolumeViewport extends Viewport {
     const { width, height } = this.canvas;
     const aspectRatio = width / height;
 
+    // Get the actual renderer viewport bounds
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
     // Transform from world to view coordinates
     const viewCoords = renderer.worldToView(
       worldPos[0],
@@ -1971,9 +2080,13 @@ abstract class BaseVolumeViewport extends Viewport {
       projCoords[2]
     );
 
+    // Unscale from the viewport bounds to get canvas-relative normalized coordinates
+    const canvasNormalizedX = (normalizedDisplay[0] - xMin) / viewportWidth;
+    const canvasNormalizedY = (normalizedDisplay[1] - yMin) / viewportHeight;
+
     // Convert normalized display [0,1] to canvas pixels
-    const canvasX = normalizedDisplay[0] * width;
-    const canvasY = (1 - normalizedDisplay[1]) * height; // Flip Y axis
+    const canvasX = canvasNormalizedX * width;
+    const canvasY = (1 - canvasNormalizedY) * height; // Flip Y axis
 
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasCoordWithDPR = [

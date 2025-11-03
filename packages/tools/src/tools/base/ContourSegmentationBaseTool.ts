@@ -45,6 +45,14 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     }
   }
 
+  protected onSetToolConfiguration() {
+    if (this.configuration.interpolation?.enabled) {
+      InterpolationManager.addTool(this.getToolName());
+    } else {
+      InterpolationManager.removeTool(this.getToolName());
+    }
+  }
+
   /**
    * Allow children classes inherit from this one and disable contour segmentation
    * behavior and children classes shall work like a normal contour instance which

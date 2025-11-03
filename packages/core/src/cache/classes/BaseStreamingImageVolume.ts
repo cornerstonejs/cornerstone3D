@@ -26,7 +26,7 @@ const requestTypeDefault = RequestType.Prefetch;
  * It implements load method to load the imageIds and insert them into the volume.
  *
  */
-export default class BaseStreamingImageVolume
+export class BaseStreamingImageVolume
   extends ImageVolume
   implements IImagesLoader
 {
@@ -513,7 +513,7 @@ export default class BaseStreamingImageVolume
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests(_priority: number): ImageLoadRequests[] {
+  public getImageLoadRequests(priority?: number): ImageLoadRequests[] {
     throw new Error('Abstract method');
   }
 
@@ -606,3 +606,5 @@ export default class BaseStreamingImageVolume
 
   protected checkDimensionGroupCompletion(_imageIdIndex: number): void {}
 }
+
+export default BaseStreamingImageVolume;

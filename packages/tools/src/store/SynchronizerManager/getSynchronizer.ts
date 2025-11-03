@@ -6,7 +6,7 @@ import type Synchronizer from './Synchronizer';
  * @param synchronizerId - The id of the synchronizer to be retrieved.
  * @returns A synchronizer object.
  */
-function getSynchronizer(synchronizerId: string): Synchronizer | void {
+function getSynchronizer(synchronizerId: string): Synchronizer | undefined {
   return state.synchronizers.find((s) => s.id === synchronizerId);
 }
 

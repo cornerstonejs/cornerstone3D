@@ -1,6 +1,6 @@
 import { log, data as dcmjsData, normalizers } from "dcmjs";
 import checkOrientation from "../helpers/checkOrientation";
-import compareArrays from "../helpers/compareArrays";
+import { utilities } from "@cornerstonejs/core";
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
@@ -338,7 +338,7 @@ function getImageIdOfSourceImagebyGeometry(
         }
 
         if (
-            compareArrays(
+            utilities.isEqual(
                 PerFrameFunctionalGroup.PlanePositionSequence[0]
                     .ImagePositionPatient,
                 sourceImageMetadata.ImagePositionPatient,

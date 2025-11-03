@@ -17,6 +17,8 @@ export function getArrayConstructor(datatypeCode: number): unknown {
       return Uint16Array;
     case NIFTICONSTANTS.NIFTI_TYPE_UINT32:
       return Uint32Array;
+    case NIFTICONSTANTS.NIFTI_TYPE_FLOAT64:
+      return Float64Array;
     default:
       throw new Error(
         `NIFTI datatypeCode ${datatypeCode} is not yet supported`

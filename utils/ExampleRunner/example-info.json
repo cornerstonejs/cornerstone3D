@@ -168,6 +168,14 @@
       "webGLContextPooling": {
         "name": "WebGL Context Pooling",
         "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync using ContextPoolRenderingEngine"
+      },
+      "sharpening": {
+        "name": "Image Sharpening For Stack & Volume Viewports",
+        "description": "Demonstrates how to apply image sharpening to stack and volume viewports"
+      },
+      "smoothing": {
+        "name": "Image Smoothing For Stack & Volume Viewports",
+        "description": "Demonstrates how to apply image smoothing to stack and volume viewports"
       }
     },
     "tools-basic": {
@@ -470,6 +478,10 @@
       "labelmapMIP": {
         "name": "Labelmap MIP",
         "description": "Demonstrates how to use the labelmap MIP tool"
+      },
+      "contourApi": {
+        "name": "Contour Utility API",
+        "description": "Demonstrates how to use various contour utility functions concerning simplification, smoothing, and hole removal."
       }
     },
     "advanced-gpu-segmentation": {

@@ -103,6 +103,10 @@ export async function updateSurfaceData(segmentationId) {
           }
         );
 
+        if (!surfaceRepresentation) {
+          return;
+        }
+
         return [surfaceRepresentation].map((surfaceRepresentation) => {
           segmentation.representationData.Surface.geometryIds.set(
             segmentIndex,

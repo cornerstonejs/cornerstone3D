@@ -45,6 +45,7 @@ class SplineContourSegmentationTool extends SplineROITool {
   protected annotationCutMergeCompleted(evt) {
     const { sourceAnnotation: annotation } = evt.detail;
     if (
+      this.toolName !== annotation?.metadata?.toolName ||
       !this.splineToolNames.includes(annotation?.metadata?.toolName) ||
       !this.configuration.simplifiedSpline
     ) {

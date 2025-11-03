@@ -4,14 +4,13 @@ import { OrientationAxis, Events } from '../enums';
 import cache from '../cache/cache';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import triggerEvent from '../utilities/triggerEvent';
-import { isImageActor } from '../utilities/actorCheck';
+import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
 import type { ImageActor } from '../types/IActor';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import type { Types } from '@cornerstonejs/core';
-
 /**
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render
  * 3D volumes in their entirety, and not just load a single slice at a time.
@@ -39,30 +38,29 @@ class VolumeViewport3D extends BaseVolumeViewport {
   public setSampleDistanceMultiplier = (multiplier: number): void => {
     const actors = this.getActors();
     actors.forEach((actorEntry) => {
-      const actor = actorEntry.actor as Types.VolumeActor;
-      const mapper = actor.getMapper();
+      if (actorIsA(actorEntry, 'vtkVolume')) {
+        const actor = actorEntry.actor as Types.VolumeActor;
+        const mapper = actor.getMapper();
 
-      if (mapper && mapper.getInputData) {
-        const imageData = mapper.getInputData();
+        if (mapper && mapper.getInputData) {
+          const imageData = mapper.getInputData();
 
-        if (imageData) {
-          const spacing = imageData.getSpacing();
+          if (imageData) {
+            const spacing = imageData.getSpacing();
 
-          //Calculate sample distance
-          const defaultSampleDistance =
-            (spacing[0] + spacing[1] + spacing[2]) / 6;
+            //Calculate sample distance
+            const defaultSampleDistance =
+              (spacing[0] + spacing[1] + spacing[2]) / 6;
 
-          const sampleDistanceMultiplier = multiplier || 1;
-          let sampleDistance = defaultSampleDistance * sampleDistanceMultiplier;
+            const sampleDistanceMultiplier = multiplier || 1;
+            let sampleDistance =
+              defaultSampleDistance * sampleDistanceMultiplier;
 
-          // Apply sample distance if specified
-          if (sampleDistance !== undefined && mapper.setSampleDistance) {
-            const currentSampleDistance = mapper.getSampleDistance();
-            mapper.setSampleDistance(sampleDistance);
-            console.log(
-              '🔧 VolumeViewport3D: Set sample distance to ',
-              sampleDistance
-            );
+            // Apply sample distance if specified
+            if (sampleDistance !== undefined && mapper.setSampleDistance) {
+              const currentSampleDistance = mapper.getSampleDistance();
+              mapper.setSampleDistance(sampleDistance);
+            }
           }
         }
       }

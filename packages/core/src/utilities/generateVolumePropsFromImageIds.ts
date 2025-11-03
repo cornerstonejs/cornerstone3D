@@ -187,6 +187,9 @@ function _determineDataType(
     case 32:
       return 'Float32Array';
 
+    case 64:
+      return 'Float64Array';
+
     default:
       throw new Error(
         `Bits allocated of ${BitsAllocated} is not defined to generate scalarData for the volume.`

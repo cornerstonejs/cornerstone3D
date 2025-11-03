@@ -33,7 +33,6 @@ import type {
 } from '../types';
 import type {
   ViewportInput,
-  IViewport,
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewPresentationSelector,
@@ -49,6 +48,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { getConfiguration } from '../init';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -98,7 +98,10 @@ class Viewport {
   /**
    * The amount by which the images are inset in a viewport by default.
    */
-  protected insetImageMultiplier = 1.1;
+  protected insetImageMultiplier = getConfiguration().rendering
+    ?.useLegacyCameraFOV
+    ? 1.1
+    : 1;
 
   protected flipHorizontal = false;
   protected flipVertical = false;
@@ -194,6 +197,15 @@ class Viewport {
 
   public getWidgets = () => {
     return Array.from(this.viewportWidgets.values());
+  };
+
+  /**
+   * Get render passes for this viewport.
+   * Viewports can override this to provide custom render passes (e.g., for sharpening).
+   * @returns Array of VTK render passes or null if no custom passes are needed
+   */
+  public getRenderPasses = () => {
+    return null;
   };
 
   public removeWidgets = () => {
@@ -633,14 +645,19 @@ class Viewport {
       this.addActor(actor);
     });
 
-    const prevViewPresentation = this.getViewPresentation();
-    const prevViewRef = this.getViewReference();
-
-    this.resetCamera();
-
+    // In the case of loading a new volume with WADO-URI, we may not have loaded
+    // metadata for all imageIds, as they are streaming in. The
+    // getViewReference() call uses getClosestImageId() in its call stack, which
+    // will error in that scenario as it tries to loop over all imageId
+    // metadata. So only call getViewReference if necessary.
     if (!resetCamera) {
+      const prevViewPresentation = this.getViewPresentation();
+      const prevViewRef = this.getViewReference();
+      this.resetCamera();
       this.setViewReference(prevViewRef);
       this.setViewPresentation(prevViewPresentation);
+    } else {
+      this.resetCamera();
     }
 
     // Trigger ACTORS_CHANGED event after adding actors
@@ -1112,8 +1129,24 @@ class Viewport {
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    const { widthWorld, heightWorld } =
-      this._getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal);
+    let widthWorld;
+    let heightWorld;
+    const config = getConfiguration();
+    const useLegacyMethod = config.rendering?.useLegacyCameraFOV ?? false;
+
+    if (imageData && !useLegacyMethod) {
+      const extent = imageData.getExtent();
+      const spacing = imageData.getSpacing();
+
+      widthWorld = (extent[1] - extent[0]) * spacing[0];
+      heightWorld = (extent[3] - extent[2]) * spacing[1];
+    } else {
+      ({ widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
+        bounds,
+        viewUp,
+        viewPlaneNormal
+      ));
+    }
 
     const canvasSize = [this.sWidth, this.sHeight];
 
