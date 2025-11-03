@@ -22,10 +22,11 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import { Modules } from '../../../shared/Tags';
+
+const { MetadataModules } = Enums;
 
 function metaDataProvider(type, imageId) {
-  const { MetadataModules } = Enums;
-
   if (type === MetadataModules.MULTIFRAME) {
     // the get function removes the PerFrameFunctionalGroupsSequence
     const { metadata, frame } = retrieveMultiframeMetadataImageId(imageId);
@@ -66,6 +67,10 @@ function metaDataProvider(type, imageId) {
     return;
   }
 
+  if (Modules[type]) {
+    return Modules[type].fromMetadata(metaData, { imageId });
+  }
+
   if (type === MetadataModules.GENERAL_STUDY) {
     return {
       studyDescription: getValue<string>(metaData['00081030']),
@@ -94,16 +99,6 @@ function metaDataProvider(type, imageId) {
       acquisitionTime: dicomParser.parseTM(
         getValue<string>(metaData['00080032'], 0, '')
       ),
-    };
-  }
-
-  if (type === MetadataModules.GENERAL_IMAGE) {
-    return {
-      sopInstanceUID: getValue<string>(metaData['00080018']),
-      instanceNumber: getNumberValue(metaData['00200013']),
-      lossyImageCompression: getValue<string>(metaData['00282110']),
-      lossyImageCompressionRatio: getNumberValue(metaData['00282112']),
-      lossyImageCompressionMethod: getValue<string>(metaData['00282114']),
     };
   }
 
@@ -142,86 +137,8 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === MetadataModules.IMAGE_PLANE) {
-    //metaData = fixNMMetadata(metaData);
-    let imageOrientationPatient = extractOrientationFromMetadata(metaData);
-    let imagePositionPatient = extractPositionFromMetadata(metaData);
-    const pixelSpacing = getNumberValues(metaData['00280030'], 2);
-
-    let columnPixelSpacing = null;
-    let rowPixelSpacing = null;
-    let rowCosines = null;
-    let columnCosines = null;
-
-    let usingDefaultValues = false;
-    if (pixelSpacing) {
-      rowPixelSpacing = pixelSpacing[0];
-      columnPixelSpacing = pixelSpacing[1];
-    } else {
-      usingDefaultValues = true;
-      rowPixelSpacing = 1;
-      columnPixelSpacing = 1;
-    }
-
-    if (imageOrientationPatient) {
-      rowCosines = [
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[0]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[1]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[2]),
-      ];
-      columnCosines = [
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[3]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[4]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[5]),
-      ];
-    } else {
-      rowCosines = [1, 0, 0];
-      columnCosines = [0, 1, 0];
-      usingDefaultValues = true;
-      imageOrientationPatient = [...rowCosines, ...columnCosines];
-    }
-
-    if (!imagePositionPatient) {
-      imagePositionPatient = [0, 0, 0];
-      usingDefaultValues = true;
-    }
-
-    return {
-      frameOfReferenceUID: getValue<string>(metaData['00200052']),
-      rows: getNumberValue(metaData['00280010']),
-      columns: getNumberValue(metaData['00280011']),
-      imageOrientationPatient,
-      rowCosines,
-      columnCosines,
-      imagePositionPatient,
-      sliceThickness: getNumberValue(metaData['00180050']),
-      sliceLocation: getNumberValue(metaData['00201041']),
-      pixelSpacing,
-      rowPixelSpacing,
-      columnPixelSpacing,
-      usingDefaultValues,
-    };
-  }
-
   if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
     return getUSEnhancedRegions(metaData);
-  }
-
-  if (type === MetadataModules.CALIBRATION) {
-    const modality = getValue(metaData['00080060']);
-
-    if (modality === 'US') {
-      const enhancedRegion = getUSEnhancedRegions(metaData);
-      return {
-        sequenceOfUltrasoundRegions: enhancedRegion,
-      };
-    }
   }
 
   if (type === MetadataModules.IMAGE_URL) {
@@ -276,13 +193,6 @@ function metaDataProvider(type, imageId) {
       rescaleIntercept: getNumberValue(metaData['00281052']),
       rescaleSlope: getNumberValue(metaData['00281053']),
       rescaleType: getValue(metaData['00281054']),
-    };
-  }
-
-  if (type === MetadataModules.SOP_COMMON) {
-    return {
-      sopClassUID: getValue<string>(metaData['00080016']),
-      sopInstanceUID: getValue<string>(metaData['00080018']),
     };
   }
 

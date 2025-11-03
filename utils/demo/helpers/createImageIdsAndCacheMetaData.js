@@ -14,7 +14,6 @@ const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
   utilities;
 
 /**
-/**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
  * and return a list of imageIds for the frames.
  *
@@ -23,7 +22,6 @@ const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
  *
  * @returns {string[]} An array of imageIds for instances in the study.
  */
-
 export default async function createImageIdsAndCacheMetaData({
   StudyInstanceUID,
   SeriesInstanceUID,
@@ -82,33 +80,6 @@ export default async function createImageIdsAndCacheMetaData({
   if (convertMultiframe) {
     imageIds = convertMultiframeImageIds(imageIds);
   }
-
-  imageIds.forEach((imageId) => {
-    let instanceMetaData =
-      cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
-
-    if (!instanceMetaData) {
-      return;
-    }
-
-    // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
-    instanceMetaData = removeInvalidTags(instanceMetaData);
-
-    if (instanceMetaData) {
-      // Add calibrated pixel spacing
-      const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
-      const pixelSpacingInformation = getPixelSpacingInformation(metadata);
-      const pixelSpacing = pixelSpacingInformation?.PixelSpacing;
-
-      if (pixelSpacing) {
-        calibratedPixelSpacingMetadataProvider.add(imageId, {
-          rowPixelSpacing: parseFloat(pixelSpacing[0]),
-          columnPixelSpacing: parseFloat(pixelSpacing[1]),
-          type: pixelSpacingInformation.type,
-        });
-      }
-    }
-  });
 
   // we don't want to add non-pet
   // Note: for 99% of scanners SUV calculation is consistent bw slices

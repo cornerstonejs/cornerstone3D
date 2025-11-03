@@ -117,6 +117,7 @@ function calculateUSPixelSpacing(instance) {
 
   return {
     PixelSpacing: USPixelSpacing,
+    type: null,
   };
 }
 

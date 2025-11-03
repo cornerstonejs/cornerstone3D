@@ -22,6 +22,7 @@ import * as constants from './constants';
 import type * as Types from './types';
 import { decodeImageFrame } from './decodeImageFrameWorker';
 import { initializers, decoders } from './shared/decoders';
+import * as utilities from './shared';
 
 const cornerstoneDICOMImageLoader = {
   constants,
@@ -33,6 +34,7 @@ const cornerstoneDICOMImageLoader = {
   wadouri,
   wadors,
   init,
+  utilities,
   convertColorSpace,
   createImage,
   decodeJPEGBaseline8BitColor,
@@ -56,6 +58,7 @@ export {
   convertPALETTECOLOR,
   wadouri,
   wadors,
+  utilities,
   init,
   convertColorSpace,
   createImage,

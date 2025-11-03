@@ -22,6 +22,7 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import { Modules } from '../../../shared/Tags';
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
@@ -65,12 +66,16 @@ function metaDataProvider(type, imageId) {
   return metadataForDataset(type, imageId, dataSet);
 }
 
+const { MetadataModules } = Enums;
+
 export function metadataForDataset(
   type,
   imageId,
   dataSet: dicomParser.DataSet
 ) {
-  const { MetadataModules } = Enums;
+  if (Modules[type]) {
+    return Modules[type].fromDataset(dataSet, { imageId });
+  }
 
   if (type === MetadataModules.GENERAL_STUDY) {
     return {
@@ -139,66 +144,6 @@ export function metadataForDataset(
     };
   }
 
-  if (type === MetadataModules.IMAGE_PLANE) {
-    const imageOrientationPatient = extractOrientationFromDataset(dataSet);
-    const imagePositionPatient = extractPositionFromDataset(dataSet);
-    const pixelSpacing = extractSpacingFromDataset(dataSet);
-    const sliceThickness = extractSliceThicknessFromDataset(dataSet);
-
-    let columnPixelSpacing = null;
-
-    let rowPixelSpacing = null;
-
-    let usingDefaultValues = false;
-    if (pixelSpacing) {
-      rowPixelSpacing = pixelSpacing[0];
-      columnPixelSpacing = pixelSpacing[1];
-    } else {
-      usingDefaultValues = true;
-      rowPixelSpacing = 1;
-      columnPixelSpacing = 1;
-    }
-
-    let rowCosines = null;
-
-    let columnCosines = null;
-
-    if (imageOrientationPatient) {
-      rowCosines = [
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[0]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[1]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[2]),
-      ];
-      columnCosines = [
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[3]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[4]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[5]),
-      ];
-    }
-
-    return {
-      frameOfReferenceUID: dataSet.string('x00200052'),
-      rows: dataSet.uint16('x00280010'),
-      columns: dataSet.uint16('x00280011'),
-      imageOrientationPatient,
-      rowCosines,
-      columnCosines,
-      imagePositionPatient,
-      sliceThickness,
-      sliceLocation: dataSet.floatString('x00201041'),
-      pixelSpacing,
-      rowPixelSpacing,
-      columnPixelSpacing,
-      usingDefaultValues,
-    };
-  }
-
   if (type === MetadataModules.CINE) {
     return {
       frameTime: dataSet.floatString('x00181063'),
@@ -233,13 +178,6 @@ export function metadataForDataset(
         dataSet.uint16('x00280103'),
         dataSet.elements.x00283000
       ),
-    };
-  }
-
-  if (type === MetadataModules.SOP_COMMON) {
-    return {
-      sopClassUID: dataSet.string('x00080016'),
-      sopInstanceUID: dataSet.string('x00080018'),
     };
   }
 
