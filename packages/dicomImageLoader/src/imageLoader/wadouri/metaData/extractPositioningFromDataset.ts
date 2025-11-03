@@ -115,7 +115,10 @@ function extractPositionFromDataset(dataSet) {
   let imagePositionPatient = getNumberValues(dataSet, 'x00200032', 3);
 
   // Trying to get the position from the Plane Position Sequence
-  if (!imagePositionPatient && dataSet.elements.x00209113) {
+  if (
+    !imagePositionPatient &&
+    dataSet.elements.x00209113?.items?.[0]?.dataSet
+  ) {
     imagePositionPatient = getNumberValues(
       dataSet.elements.x00209113.items[0].dataSet,
       'x00200032',
