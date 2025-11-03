@@ -21,7 +21,7 @@ import { internal } from './imageLoader/internal/index';
 import * as constants from './constants';
 import type * as Types from './types';
 import { decodeImageFrame } from './decodeImageFrameWorker';
-import { initializers } from './shared/decoders';
+import { initializers, decoders } from './shared/decoders';
 
 const cornerstoneDICOMImageLoader = {
   constants,
@@ -44,6 +44,7 @@ const cornerstoneDICOMImageLoader = {
   internal,
   decodeImageFrame,
   initializers,
+  decoders,
 };
 
 export {
@@ -67,6 +68,7 @@ export {
   internal,
   decodeImageFrame,
   initializers,
+  decoders,
 };
 
 export type { Types };
