@@ -1,13 +1,7 @@
-import cache from '../cache/cache';
 import StreamingImageVolume from '../cache/classes/StreamingImageVolume';
-import { RequestType } from '../enums';
-import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import type { IRetrieveConfiguration } from '../types';
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
-import { loadImage } from './imageLoader';
 import decimate from '../utilities/decimate';
-import decimateImagePixels from '../utilities/decimateImagePixels';
-import { get as getMetaData, addProvider } from '../metaData';
 import VoxelManager from '../utilities/VoxelManager';
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -27,6 +21,8 @@ interface IVolumeLoader {
  * - **In-plane decimation**: Downsamples the resolution of each slice by reducing pixel
  *   dimensions. This is achieved by appending a decimation parameter to imageIds, which
  *   is processed during image loading.
+ *   The BaseStreamingVolume has been adjusted to handle the desired dimensions (targetRows and targetColumns)
+ *    DecodeImageFrame is used to decode produce the PixelData.
  * - Automatically adjusts volume spacing, dimensions, and DICOM metadata to reflect
  *   the decimated resolution.
  *
