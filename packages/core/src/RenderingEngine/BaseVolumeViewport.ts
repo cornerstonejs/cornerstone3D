@@ -76,8 +76,6 @@ import { getCameraVectors } from './helpers/getCameraVectors';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
-import { setConfiguration, getConfiguration } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import { isInvalidNumber } from './helpers/isInvalidNumber';
 import {
   createSharpeningRenderPass,
