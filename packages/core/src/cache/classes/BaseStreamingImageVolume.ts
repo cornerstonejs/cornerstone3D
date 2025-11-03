@@ -205,6 +205,10 @@ export class BaseStreamingImageVolume
     // check if the load was cancelled while we were waiting for the image
     // if so we don't want to do anything
     if (this.loadStatus.cancelled) {
+      console.warn(
+        'volume load cancelled, returning for imageIdIndex: ',
+        imageIdIndex
+      );
       return;
     }
 
@@ -313,7 +317,8 @@ export class BaseStreamingImageVolume
   }
 
   public getLoaderImageOptions(imageId: string) {
-    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
+    const { transferSyntaxUID: transferSyntaxUID } =
+      metaData.get('transferSyntax', imageId) || {};
 
     // Note: before PR 2340, rows and columns were from  imagePlaneModule = metaData.get('imagePlaneModule', imageId) .
     // This is now using the volume's dimensions instead.
@@ -604,7 +609,7 @@ export class BaseStreamingImageVolume
     this.scaling = { PT: petScaling };
   }
 
-  protected checkDimensionGroupCompletion(_imageIdIndex: number): void {}
+  protected checkDimensionGroupCompletion(imageIdIndex: number): void {}
 }
 
 export default BaseStreamingImageVolume;
