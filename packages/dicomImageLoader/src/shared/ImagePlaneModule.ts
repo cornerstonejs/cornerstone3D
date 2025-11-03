@@ -11,6 +11,14 @@ const {
 
 export const PIXEL_INSTANCE = 'PixelInstanceModule';
 
+/**
+ * This is a standardized implementation of the metaData module for ImagePlaneModule.
+ * There were multiple different implementations of this previously, with updates
+ * to one not being applied to the others.  This version consistently has the same
+ * behaviour and uses an Instance object containing standard metadata required to
+ * generate the pixel spacing information, which then gets registered with the
+ * scaling module.
+ */
 export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
   public fromNatural(instance, options?) {
     const imageId = options?.imageId;

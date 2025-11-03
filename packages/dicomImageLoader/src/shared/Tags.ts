@@ -29,6 +29,13 @@ const {
 
 export const USRegionChild = 'usRegionChild';
 
+/**
+ * The TagsArray is an array of the available standardized tag values which
+ * can be read from any of the supported data sources.
+ * Each tag is registered with the standard group it belongs to first, followed
+ * by the other groups it belongs to.
+ *
+ */
 export const TagsArray = [
   vrUI('SOPInstanceUID', '00080018', GENERAL_IMAGE, SOP_COMMON),
   vrUI('SOPClassUID', '00080016', GENERAL_IMAGE, SOP_COMMON, PIXEL_INSTANCE),
@@ -38,6 +45,9 @@ export const TagsArray = [
 
   // Image Plane requirements
   vrDSs('PixelSpacing', '00280030', 2, IMAGE_PLANE, PIXEL_INSTANCE),
+  /**
+   * The 2 below indicates the value multiplicity is 2.
+   */
   vrDSs('ImagerPixelSpacing', '00181164', 2, IMAGE_PLANE, PIXEL_INSTANCE),
   vrDSs('ImageOrientationPatient', '00200037', 3, IMAGE_PLANE, PIXEL_INSTANCE),
   vrDSs('ImagePositionPatient', '00200037', 3, IMAGE_PLANE, PIXEL_INSTANCE),
@@ -54,6 +64,7 @@ export const TagsArray = [
   vrSQs(
     'SequenceOfUltrasoundRegions',
     '00186011',
+    // The sqModule defines the module for the child elements
     { sqModule: USRegionChild },
     // ULTRASOUND_ENHANCED_REGION,
     // CALIBRATION,
@@ -79,10 +90,13 @@ export const TagsArray = [
   vrUL('TransducerFrequency', '00186030', USRegionChild),
 ];
 
+/**
+ * The FieldTags is a type of all the tag numbers defined above.
+ */
 export type FieldTags = (typeof TagsArray)[number]['tag'];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type TagsType = Record<FieldTags, ITag<any>>;
+/** The TagsTyep defined an object of tag numbers as strings to ITag values */
+export type TagsType = Record<FieldTags, ITag<unknown>>;
 
 export function createTags(tagsArray): TagsType {
   const tags = {} as TagsType;

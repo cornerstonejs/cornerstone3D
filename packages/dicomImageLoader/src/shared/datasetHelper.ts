@@ -1,3 +1,12 @@
+/**
+ * This helper utility defines methods for reading from a DicomParser defined
+ * dataset objects, for use by the Modules and Tags registry.
+ * TODO: Modify these functions to accept the default configuration values
+ * on the base ITag instance to automatically choose between vm=1 and vm>1
+ * single/multiple values, as well as creating an optional vm=1 item which allows
+ * for returning a singleton Number/String object with a .array entry for the full
+ * dataset.
+ */
 import getNumberValues from '../imageLoader/wadouri/metaData/getNumberValues';
 
 function bindFromDataset<T>(method, defaultIndex = 0) {

@@ -1,3 +1,7 @@
+/**
+ * The metadata helper defines methods to access metadata and naturalized data
+ * objects for use by the MOdules and Tags registry.
+ */
 import { utilities } from '@cornerstonejs/core';
 
 const { toNumber } = utilities;

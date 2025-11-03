@@ -18,6 +18,22 @@ import {
   sqMetadata,
 } from './metadataHelper';
 
+/**
+ * The module class supports reading DICOM modules from various data sources
+ * in a way that defines a single requirement for the source data, and generates
+ * the same type of result data regardless of input.  This allows writing a single
+ * module provider for the metadata provider system, which helps prevent bugs
+ * when differing implementations load things in different ways.
+ *
+ * Currently there are three loaders:
+ *  * fromDataset to load from DicomParser
+ *  * fromNatural to load from dcmjs naturalized format
+ *  * fromMetadata to load from standard DICOM part 18 metadata format
+ *
+ * The output format is always a module, although naming can be specified for
+ * any of the Upper Camel Case, lower Camel Case, tag numbers or xTag numbers to
+ * agree with Naturalized, metaData module, DICOM metadata or Dataset values.
+ */
 export class Module<T> implements IModule<T> {
   name: string;
   tags = new Array<ITag<unknown>>();
@@ -121,6 +137,12 @@ export const Modules = Module.modules;
 
 export const TagsAny: Record<string, ITag<unknown>> = {};
 
+/**
+ * Creates a new VR type.
+ * These are functions that register tag instances along with the reader
+ * method for dataset, natural and metadata formats, along with other options
+ * such as child tag names.
+ */
 const newVrType = (fromDataset, options?) => {
   const isArray = !!options?.array;
   const fromMetadata = isArray ? arrayMetadata : singleMetadata;
@@ -164,6 +186,25 @@ const vrFloatsString = newVrType(floatStringsDataset, {
   array: true,
 });
 
+/**
+ * vr constructor elements to register a tag/name with the given vr information.
+ * Format is vr <CODE> s?  where CODE is the 2 letter code, and s is included
+ * for multiple value readers returning arrays.
+ *
+ * The general convention is to return an array all the time on any tag value
+ * not in the vm range 0...1.
+ * For sequences of vm 0...1, the returned object contains an object
+ * with extra hidden attributes for an iterator, length and index 0 so that it
+ * can almost be treated as an array, eg all of:
+ * ```
+ * module.sharedFunctionalGroupsSequence.segmentIdentificationSequence.referencedSegmentNumber
+ *   === module.sharedFunctionalGroupsSequence[0].segmentIdentificationSequence[0].referencedSegmentNumber
+ * and
+ * module.sharedFunctionalGroupsSequence.length===1
+ * module.sharedFunctionalGroupsSequence.segmentIdentificationSequence.iterator() returns an iterator containing
+ *  exactly module.sharedFunctionalGroupsSequence.segmentIdentificationSequence[0]
+ * ```
+ */
 export const vrUI = vrString;
 export const vrLO = vrString;
 export const vrCS = vrString;
