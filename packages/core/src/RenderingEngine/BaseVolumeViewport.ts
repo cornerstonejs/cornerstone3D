@@ -1211,8 +1211,6 @@ abstract class BaseVolumeViewport extends Viewport {
   }
   public setSampleDistanceMultiplier(multiplier: number): void {}
 
-  public setSampleDistanceMultiplier(multiplier: number): void {}
-
   /**
    * Retrieve the viewport default properties
    * @param volumeId If given, we retrieve the default properties of a volumeId if it exists
