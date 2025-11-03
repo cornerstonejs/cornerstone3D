@@ -169,21 +169,10 @@ function getLoaderForScheme(scheme: string): LoadRequestFunction {
   }
 }
 
-// /**
-//  * Strip decimation parameter from imageId before making server request.
-//  * The server doesn't understand this parameter - it's only for cache differentiation.
-//  */
-// function stripDecimationParam(imageId: string): string {
-//   return imageId.replace(/[?&]decimation=\d+/, '');
-// }
-
 function loadImage(
   imageId: string,
   options: DICOMLoaderImageOptions = {}
 ): Types.IImageLoadObject {
-  // Strip decimation parameter before parsing for server request
-  // but keep original imageId for caching purposes
-  // const cleanImageId = stripDecimationParam(imageId);
   const parsedImageId = parseImageId(imageId);
 
   options = Object.assign({}, options);

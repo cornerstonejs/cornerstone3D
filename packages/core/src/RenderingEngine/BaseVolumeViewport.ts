@@ -1209,6 +1209,7 @@ abstract class BaseVolumeViewport extends Viewport {
       });
     }
   }
+
   public setSampleDistanceMultiplier(multiplier: number): void {}
 
   /**
@@ -2312,7 +2313,6 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public getVolumeId(specifier?: ViewReferenceSpecifier) {
     const actorEntries = this.getActors();
-
     if (!actorEntries) {
       return;
     }
@@ -2322,8 +2322,7 @@ abstract class BaseVolumeViewport extends Viewport {
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       );
 
-      const result = found?.referencedId || found?.uid;
-      return result;
+      return found?.referencedId || found?.uid;
     }
 
     // See if this volumeId can be found in one of the actors for this
@@ -2335,8 +2334,7 @@ abstract class BaseVolumeViewport extends Viewport {
         actorEntry.referencedId === specifier?.volumeId
     );
 
-    const result = found?.referencedId || found?.uid;
-    return result;
+    return found?.referencedId || found?.uid;
   }
 
   /**

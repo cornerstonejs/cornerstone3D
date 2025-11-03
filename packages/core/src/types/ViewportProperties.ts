@@ -16,7 +16,7 @@ export interface ViewportProperties {
   colormap?: ColormapPublic;
   /** interpolation type */
   interpolationType?: InterpolationType;
-  /** transfer function preset (coloring) */
+
   preset?: string;
 
   sampleDistanceMultiplier?: number;

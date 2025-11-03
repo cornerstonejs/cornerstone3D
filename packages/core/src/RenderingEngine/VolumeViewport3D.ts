@@ -100,7 +100,6 @@ class VolumeViewport3D extends BaseVolumeViewport {
     // reset camera clipping range
     const renderer = this.getRenderer();
     renderer.resetCameraClippingRange();
-
     return true;
   }
 

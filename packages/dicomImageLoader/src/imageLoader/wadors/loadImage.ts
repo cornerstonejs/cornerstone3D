@@ -201,7 +201,6 @@ function loadImage(
     options.requestType || csCoreEnums.RequestType.Interaction;
   const additionalDetails = options.additionalDetails || { imageId };
   const priority = options.priority === undefined ? 5 : options.priority;
-
   const uri = imageId.substring(7);
 
   imageRetrievalPool.addRequest(
