@@ -241,11 +241,15 @@ const initializeCircle = {
     );
 
     operationData.strokePointsWorld = strokeCenters;
-    operationData.isInObject = createPointInEllipse(cornersInWorld, viewport, {
-      strokePointsWorld: strokeCenters,
-      segmentationImageData,
-      radius: xRadius === yRadius ? xRadius : Math.max(xRadius, yRadius),
-    });
+    operationData.isInObject = createPointInEllipse(
+      cornersInWorld,
+      {
+        strokePointsWorld: strokeCenters,
+        segmentationImageData,
+        radius: xRadius === yRadius ? xRadius : Math.max(xRadius, yRadius),
+      },
+      viewport
+    );
 
     operationData.isInObjectBoundsIJK = boundsIJK;
   },
@@ -261,12 +265,12 @@ const initializeCircle = {
  */
 function createPointInEllipse(
   cornersInWorld: Types.Point3[] = [],
-  viewport?,
   options: {
     strokePointsWorld?: Types.Point3[];
     segmentationImageData?: vtkImageData;
     radius?: number;
-  } = {}
+  } = {},
+  viewport?
 ) {
   if (!cornersInWorld || cornersInWorld.length !== 4) {
     throw new Error('createPointInEllipse: cornersInWorld must have 4 points');
@@ -300,11 +304,12 @@ function createPointInEllipse(
   const yRadius = originalRadius / sy;
 
   // If radii are equal, treat as sphere
-  const radiusForStroke = options.radius ?? Math.max(xRadius, yRadius);
+  const xRadiusForStroke = options.radius ?? xRadius;
+  const yRadiusForStroke = options.radius ?? yRadius;
   const strokePredicate = createStrokePredicate(
     options.strokePointsWorld || [],
-    xRadius,
-    yRadius
+    xRadiusForStroke,
+    yRadiusForStroke
   );
 
   if (isEqual(xRadius, yRadius)) {
