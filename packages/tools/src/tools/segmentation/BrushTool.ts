@@ -30,6 +30,7 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import LabelmapBaseTool from './LabelmapBaseTool';
 import { getStrategyData } from './strategies/utils/getStrategyData';
+import { getCenterAndRadiusInCanvas } from '../../utilities/getCenterAndRadiusInCanvas';
 
 /**
  * @public

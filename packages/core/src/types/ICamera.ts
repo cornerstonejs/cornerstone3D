@@ -33,6 +33,8 @@ interface ICamera {
   flipVertical?: boolean;
   /** clipping range */
   clippingRange?: Point2;
+  /** Aspect Ratio */
+  aspectRatio?: Point2;
 }
 
 export type { ICamera as default };
