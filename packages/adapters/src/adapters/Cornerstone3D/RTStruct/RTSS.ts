@@ -11,6 +11,14 @@ const { generateContourSetsFromLabelmap, AnnotationToPointData } =
     utilities.contours;
 const { DicomMetaDictionary } = dcmjs.data;
 
+export const ImplementationClassRtssContours =
+    "2.25.2470123695996825859949881583571202391.2.0.1";
+
+export const ImplementationVersionName = {
+    Value: ["cs3d-4.8.4"],
+    vr: "SH"
+};
+
 /**
  * Convert handles to RTSS report containing the dcmjs dicom dataset.
  *
@@ -24,7 +32,7 @@ const { DicomMetaDictionary } = dcmjs.data;
  * @param csTools - cornerstone tool instance
  * @returns Report object containing the dataset
  */
-async function generateRTSSFromSegmentations(
+export async function generateRTSSFromSegmentations(
     segmentations,
     metadataProvider,
     DicomMetadataStore
@@ -77,7 +85,7 @@ async function generateRTSSFromSegmentations(
                     { ReferencedSOPClassUID, ReferencedSOPInstanceUID } // NOTE: replace in dcmjs?
                 ];
 
-                const sliceContourPolyData = sliceContour.polyData;
+                const { points: polyDataPoints } = sliceContour.polyData;
 
                 sliceContour.contours.forEach((contour, index) => {
                     const ContourGeometricType = contour.type;
@@ -85,13 +93,8 @@ async function generateRTSSFromSegmentations(
                     const ContourData = [];
 
                     contour.contourPoints.forEach(point => {
-                        const pointData = sliceContourPolyData.points[point];
-                        pointData[0] = +pointData[0].toFixed(2);
-                        pointData[1] = +pointData[1].toFixed(2);
-                        pointData[2] = +pointData[2].toFixed(2);
-                        ContourData.push(pointData[0]);
-                        ContourData.push(pointData[1]);
-                        ContourData.push(pointData[2]);
+                        const pointData = polyDataPoints[point];
+                        ContourData.push(...pointData.map(v => v.toFixed(2)));
                     });
 
                     contourSequence.push({
@@ -172,13 +175,10 @@ async function generateRTSSFromSegmentations(
             vr: "UI"
         },
         ImplementationClassUID: {
-            Value: [DicomMetaDictionary.uid()], // TODO: could be git hash or other valid id
+            Value: [ImplementationClassRtssContours],
             vr: "UI"
         },
-        ImplementationVersionName: {
-            Value: ["dcmjs"],
-            vr: "SH"
-        }
+        ImplementationVersionName
     };
 
     dataset._meta = _meta;
@@ -199,7 +199,7 @@ async function generateRTSSFromSegmentations(
  * @param metadataProvider -  Metadata provider
  * @returns Report object containing the dataset
  */
-function generateRTSSFromAnnotations(
+export function generateRTSSFromAnnotations(
     annotations,
     metadataProvider,
     DicomMetadataStore
@@ -261,13 +261,10 @@ function generateRTSSFromAnnotations(
             vr: "UI"
         },
         ImplementationClassUID: {
-            Value: [DicomMetaDictionary.uid()], // TODO: could be git hash or other valid id
+            Value: [ImplementationClassRtssContours],
             vr: "UI"
         },
-        ImplementationVersionName: {
-            Value: ["dcmjs"],
-            vr: "SH"
-        }
+        ImplementationVersionName
     };
 
     dataset._meta = _meta;
@@ -329,4 +326,23 @@ function _initializeDataset(rtMetadata, imgMetadata, metadataProvider) {
     };
 }
 
-export { generateRTSSFromSegmentations, generateRTSSFromAnnotations };
+/**
+ * Representation will be either a .Labelmap or a .Contour
+ */
+export function generateRTSSFromRepresentation(segmentations, options) {
+    const { metaData, DicomMetadataStore } = options;
+    console.warn("representation", representation);
+    if (segmentations.representationData.Labelmap) {
+        return generateRTSSFromSegmentations(
+            representation,
+            metaData,
+            DicomMetadataStore
+        );
+    }
+    debugger;
+    return generateRTSSFromAnnotations(
+        representation,
+        metaData,
+        DicomMetadataStore
+    );
+}

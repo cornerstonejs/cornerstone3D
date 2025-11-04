@@ -28,6 +28,10 @@ import {
 } from "./constants";
 import LabelData from "./LabelData";
 
+// UUID with 1.0.1 being type 1 (annotation) and version 0.1
+export const ImplementationClassUIDSRAnnotation =
+    "2.25.2470123695996825859949881583571202391.1.0.1";
+
 type Annotation = Types.Annotation;
 
 const { TID1500, addAccessors } = dcmjsUtilities;
@@ -283,11 +287,11 @@ export default class MeasurementReport {
                 vr: "UI"
             },
             ImplementationClassUID: {
-                Value: [DicomMetaDictionary.uid()], // TODO: could be git hash or other valid id
+                Value: [ImplementationClassUIDSRAnnotation],
                 vr: "UI"
             },
             ImplementationVersionName: {
-                Value: ["dcmjs"],
+                Value: ["@cornerstone"],
                 vr: "SH"
             }
         };
