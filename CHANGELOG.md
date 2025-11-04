@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.3...v4.8.4) (2025-11-04)
+
+### Bug Fixes
+
+- **SplineROITool:** Do not reset the cursor for the SplineROITool because it was never set in the first place. ([#2440](https://github.com/cornerstonejs/cornerstone3D/issues/2440)) ([20f63e7](https://github.com/cornerstonejs/cornerstone3D/commit/20f63e70da3b8c266f72f82dc4847cb9f31b7afd))
+
 ## [4.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.2...v4.8.3) (2025-11-03)
 
 **Note:** Version bump only for package root
