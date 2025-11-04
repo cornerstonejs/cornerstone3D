@@ -175,6 +175,7 @@ interface CPUFallbackEnabledElement {
     imagePixelModule?: ImagePixelModule;
   };
   voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
+  aspectRatio?: Point2;
 }
 
 export type { IImage as default };
