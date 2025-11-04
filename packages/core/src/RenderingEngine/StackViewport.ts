@@ -1,7 +1,7 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+import extendedVtkCamera from './vtkClasses/extendedVtkCamera';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
@@ -285,7 +285,7 @@ class StackViewport extends Viewport {
 
   private _resetGPUViewport() {
     const renderer = this.getRenderer();
-    const camera = vtkCamera.newInstance();
+    const camera = extendedVtkCamera.newInstance();
     renderer.setActiveCamera(camera);
 
     const viewPlaneNormal = [0, 0, -1] as Point3;
@@ -350,6 +350,7 @@ class StackViewport extends Viewport {
     resetZoom?: boolean;
     resetToCenter?: boolean;
     suppressEvents?: boolean;
+    resetAspectRatio?: boolean;
   }) => boolean;
 
   /**
@@ -844,6 +845,7 @@ class StackViewport extends Viewport {
       resetPan: true,
       resetZoom: true,
       resetToCenter: true,
+      resetAspectRatio: true,
       suppressEvents: true,
     });
   };
@@ -1026,6 +1028,7 @@ class StackViewport extends Viewport {
       position: [0, 0, 0],
       parallelScale,
       scale: viewport.scale,
+      aspectRatio: viewport.aspectRatio || [1, 1],
       viewPlaneNormal: [
         viewPlaneNormal[0],
         viewPlaneNormal[1],
@@ -1041,8 +1044,14 @@ class StackViewport extends Viewport {
     const { viewport, image } = this._cpuFallbackEnabledElement;
     const previousCamera = this.getCameraCPU();
 
-    const { focalPoint, parallelScale, scale, flipHorizontal, flipVertical } =
-      cameraInterface;
+    const {
+      focalPoint,
+      parallelScale,
+      scale,
+      flipHorizontal,
+      flipVertical,
+      aspectRatio,
+    } = cameraInterface;
 
     const { clientHeight } = this.element;
 
@@ -1098,6 +1107,10 @@ class StackViewport extends Viewport {
 
     if (flipHorizontal !== undefined || flipVertical !== undefined) {
       this.setFlipCPU({ flipHorizontal, flipVertical });
+    }
+
+    if (aspectRatio) {
+      viewport.aspectRatio = aspectRatio;
     }
 
     // re-calculate the transforms
@@ -2679,7 +2692,7 @@ class StackViewport extends Viewport {
     });
   }
 
-  private resetCameraGPU({ resetPan, resetZoom }): boolean {
+  private resetCameraGPU({ resetPan, resetZoom, resetAspectRatio }): boolean {
     // Todo: we need to make the rotation a camera properties so that
     // we can reset it there, right now it is not possible to reset the rotation
     // without this
@@ -2695,7 +2708,12 @@ class StackViewport extends Viewport {
     // For stack Viewport we since we have only one slice
     // it should be enough to reset the camera to the center of the image
     const resetToCenter = true;
-    return super.resetCamera({ resetPan, resetZoom, resetToCenter });
+    return super.resetCamera({
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      resetAspectRatio,
+    });
   }
 
   /**
@@ -3604,10 +3622,18 @@ class StackViewport extends Viewport {
         return true;
       },
       gpu: (
-        options: { resetPan?: boolean; resetZoom?: boolean } = {}
+        options: {
+          resetPan?: boolean;
+          resetZoom?: boolean;
+          resetAspectRatio?: boolean;
+        } = {}
       ): boolean => {
-        const { resetPan = true, resetZoom = true } = options;
-        this.resetCameraGPU({ resetPan, resetZoom });
+        const {
+          resetPan = true,
+          resetZoom = true,
+          resetAspectRatio = true,
+        } = options;
+        this.resetCameraGPU({ resetPan, resetZoom, resetAspectRatio });
         return true;
       },
     },
