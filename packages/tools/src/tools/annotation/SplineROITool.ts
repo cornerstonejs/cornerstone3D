@@ -24,7 +24,6 @@ import {
   KeyboardBindings,
   ChangeTypes,
 } from '../../enums';
-import { resetElementCursor } from '../../cursors/elementCursor';
 import type {
   Annotation,
   EventTypes,
