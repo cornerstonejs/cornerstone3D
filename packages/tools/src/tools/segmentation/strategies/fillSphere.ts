@@ -140,11 +140,15 @@ const sphereComposition = {
       operationData.isInObjectBoundsIJK = boundsToUse;
     }
 
-    operationData.isInObject = createEllipseInPoint(cornersInWorld, viewport, {
-      strokePointsWorld: operationData.strokePointsWorld,
-      segmentationImageData,
-      radius: strokeRadius,
-    });
+    operationData.isInObject = createEllipseInPoint(
+      cornersInWorld,
+      {
+        strokePointsWorld: operationData.strokePointsWorld,
+        segmentationImageData,
+        radius: strokeRadius,
+      },
+      viewport
+    );
     // }
   },
 } as Composition;
