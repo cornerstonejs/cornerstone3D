@@ -455,7 +455,12 @@ class SegmentationStyle {
    * @param specifier - The specifier object containing viewportId, segmentationId, type, and segmentIndex.
    * @returns True if there is a non-global style, false otherwise.
    */
-  hasCustomStyle(specifier: StyleSpecifier): boolean {
+  hasCustomStyle(specifier: {
+    viewportId?: string;
+    segmentationId?: string;
+    type?: SegmentationRepresentations;
+    segmentIndex?: number;
+  }): boolean {
     const { type } = specifier;
     const style = this.getStyle(specifier);
     // Perform a deep comparison between the style and the default style
