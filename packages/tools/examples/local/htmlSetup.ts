@@ -42,6 +42,7 @@ function setup(document) {
   div.appendChild(element);
   div.appendChild(metadata);
 
+  createMetadataRow('Number of Images', metadata);
   createMetadataRow('Transfer Syntax', metadata);
   createMetadataRow('SOPClassUID', metadata);
   createMetadataRow('SOPInstanceUID', metadata);
