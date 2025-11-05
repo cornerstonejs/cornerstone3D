@@ -109,7 +109,15 @@ class SegmentationStyle {
    * @param specifier.segmentIndex - Optional. The index of the specific segment to style.
    * @param styles - The styles to set.
    */
-  setStyle(specifier: StyleSpecifier, styles: RepresentationStyle): void {
+  setStyle(
+    specifier: {
+      type: SegmentationRepresentations;
+      viewportId?: string;
+      segmentationId?: string;
+      segmentIndex?: number;
+    },
+    styles: RepresentationStyle
+  ): void {
     const { viewportId, segmentationId, type, segmentIndex } = specifier;
 
     const currentStyles = this.getStyle(specifier);
@@ -252,7 +260,12 @@ class SegmentationStyle {
    * @param specifier.segmentIndex - Optional. The index of the specific segment.
    * @returns An object containing the combined style and renderInactiveSegmentations flag for the viewport.
    */
-  getStyle(specifier: StyleSpecifier): RepresentationStyle {
+  getStyle(specifier: {
+    viewportId?: string;
+    segmentationId?: string;
+    type?: SegmentationRepresentations;
+    segmentIndex?: number;
+  }): RepresentationStyle {
     const { viewportId, segmentationId, type, segmentIndex } = specifier;
     let combinedStyle = this.getDefaultStyle(type);
     let renderInactiveSegmentations = false;

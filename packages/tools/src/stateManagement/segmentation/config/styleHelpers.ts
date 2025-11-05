@@ -6,7 +6,10 @@ import { getSegmentations } from '../getSegmentations';
 import { getViewportSegmentations } from '../getViewportSegmentations';
 import { triggerSegmentationRender } from '../SegmentationRenderingEngine';
 import { segmentationStyle } from '../SegmentationStyle';
-import type { RepresentationStyle } from '../SegmentationStyle';
+import type {
+  RepresentationStyle,
+  RepresentationStyleKeys,
+} from '../SegmentationStyle';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
 
 type BaseSpecifier = {
@@ -131,6 +134,18 @@ function hasCustomStyle(specifier: {
   return segmentationStyle.hasCustomStyle(specifier);
 }
 
+function createRestoreFunction(
+  specifier: {
+    viewportId?: string;
+    segmentationId?: string;
+    type: SegmentationRepresentations;
+    segmentIndex?: number;
+  },
+  styleKeys: RepresentationStyleKeys[]
+): () => void {
+  return segmentationStyle.createRestoreFunction(specifier, styleKeys);
+}
+
 export {
   getStyle,
   setStyle,
@@ -138,4 +153,5 @@ export {
   getRenderInactiveSegmentations,
   resetToGlobalStyle,
   hasCustomStyle,
+  createRestoreFunction,
 };

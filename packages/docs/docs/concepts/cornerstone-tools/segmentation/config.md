@@ -84,6 +84,34 @@ const hasCustomStyle = segmentation.hasCustomStyle({
 });
 ```
 
+## Restore style API
+
+The `createRestoreFunction` API enables temporary style modifications that can be safely reverted later.
+It is typically used to handle transient visual states, such as segment highlighting, without permanently altering configuration values.
+
+```js
+// Create a restore function capturing current style values
+const restore = segmentation.createRestoreFunction({
+  viewportId: 'viewport1',
+  segmentationId: 'segmentation1',
+  type: Enums.SegmentationRepresentations.Labelmap,
+  styleKeys: ['fillAlpha', 'outlineWidth'],
+});
+
+// Apply temporary changes
+segmentation.setStyle(
+  {
+    viewportId: 'viewport1',
+    segmentationId: 'segmentation1',
+    type: Enums.SegmentationRepresentations.Labelmap,
+  },
+  { fillAlpha: 1.0, outlineWidth: 6 }
+);
+
+// Restore previous values when done
+restore();
+```
+
 ### Inactive Segmentations
 
 The rendering of inactive segmentations is now controlled per viewport:
