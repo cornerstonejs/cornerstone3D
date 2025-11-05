@@ -1,4 +1,9 @@
-import { utilities } from "@cornerstonejs/tools";
+import { metaData } from "@cornerstonejs/core";
+import {
+    utilities,
+    type Types,
+    annotation as toolsAnnotation
+} from "@cornerstonejs/tools";
 import dcmjs from "dcmjs";
 import getPatientModule from "./utilities/getPatientModule";
 import getReferencedFrameOfReferenceSequence from "./utilities/getReferencedFrameOfReferenceSequence";
@@ -6,6 +11,8 @@ import getReferencedSeriesSequence from "./utilities/getReferencedSeriesSequence
 import getRTROIObservationsSequence from "./utilities/getRTROIObservationsSequence";
 import getRTSeriesModule from "./utilities/getRTSeriesModule";
 import getStructureSetModule from "./utilities/getStructureSetModule";
+
+type Segmentation = Types.Segmentation;
 
 const { generateContourSetsFromLabelmap, AnnotationToPointData } =
     utilities.contours;
@@ -19,24 +26,58 @@ export const ImplementationVersionName = {
     vr: "SH"
 };
 
+const fileMetaInformationVersionArray = new Uint8Array(2);
+fileMetaInformationVersionArray[1] = 1;
+
+const _meta = {
+    FileMetaInformationVersion: {
+        Value: [fileMetaInformationVersionArray.buffer],
+        vr: "OB"
+    },
+    TransferSyntaxUID: {
+        Value: ["1.2.840.10008.1.2.1"],
+        vr: "UI"
+    },
+    ImplementationClassUID: {
+        Value: [ImplementationClassRtssContours],
+        vr: "UI"
+    },
+    ImplementationVersionName
+};
+
 /**
  * Convert handles to RTSS report containing the dcmjs dicom dataset.
  *
  * Note: current WIP and using segmentation to contour conversion,
  * routine that is not fully tested
  *
- * @param segmentations - Cornerstone tool segmentations data
+ * @param segmentation - Cornerstone tool segmentations data
  * @param metadataProvider - Metadata provider
  * @param DicomMetadataStore - metadata store instance
  * @param cs - cornerstone instance
  * @param csTools - cornerstone tool instance
  * @returns Report object containing the dataset
+ *
+ * @deprecated in favour of generateRTSSFromLabelmap which has options
+ *    parameter.
  */
-export async function generateRTSSFromSegmentations(
-    segmentations,
+export function generateRTSSFromSegmentations(
+    segmentation: Segmentation,
     metadataProvider,
     DicomMetadataStore
 ) {
+    return generateRTSSFromLabelmap(segmentation, {
+        metadataProvider,
+        DicomMetadataStore
+    });
+}
+
+export async function generateRTSSFromLabelmap(
+    segmentations: Segmentation,
+    options
+) {
+    const { metadataProvider = metaData, DicomMetadataStore } = options;
+
     // Convert segmentations to ROIContours
     const roiContours = [];
 
@@ -162,29 +203,7 @@ export async function generateRTSSFromSegmentations(
             );
     });
 
-    const fileMetaInformationVersionArray = new Uint8Array(2);
-    fileMetaInformationVersionArray[1] = 1;
-
-    const _meta = {
-        FileMetaInformationVersion: {
-            Value: [fileMetaInformationVersionArray.buffer],
-            vr: "OB"
-        },
-        TransferSyntaxUID: {
-            Value: ["1.2.840.10008.1.2.1"],
-            vr: "UI"
-        },
-        ImplementationClassUID: {
-            Value: [ImplementationClassRtssContours],
-            vr: "UI"
-        },
-        ImplementationVersionName
-    };
-
     dataset._meta = _meta;
-
-    // @ts-ignore
-    dataset.SpecificCharacterSet = "ISO_IR 192";
 
     return dataset;
 }
@@ -199,11 +218,8 @@ export async function generateRTSSFromSegmentations(
  * @param metadataProvider -  Metadata provider
  * @returns Report object containing the dataset
  */
-export function generateRTSSFromAnnotations(
-    annotations,
-    metadataProvider,
-    DicomMetadataStore
-) {
+export function generateRTSSFromAnnotations(annotations, options) {
+    const { metadataProvider, DicomMetadataStore } = options;
     const rtMetadata = {
         name: "RTSS from Annotations",
         label: "RTSS from Annotations"
@@ -248,28 +264,7 @@ export function generateRTSSFromAnnotations(
             );
     });
 
-    const fileMetaInformationVersionArray = new Uint8Array(2);
-    fileMetaInformationVersionArray[1] = 1;
-
-    const _meta = {
-        FileMetaInformationVersion: {
-            Value: [fileMetaInformationVersionArray.buffer],
-            vr: "OB"
-        },
-        TransferSyntaxUID: {
-            Value: ["1.2.840.10008.1.2.1"],
-            vr: "UI"
-        },
-        ImplementationClassUID: {
-            Value: [ImplementationClassRtssContours],
-            vr: "UI"
-        },
-        ImplementationVersionName
-    };
-
     dataset._meta = _meta;
-    //@ts-ignore
-    dataset.SpecificCharacterSet = "ISO_IR 192";
 
     return dataset;
 }
@@ -322,27 +317,54 @@ function _initializeDataset(rtMetadata, imgMetadata, metadataProvider) {
         OperatorsName: "",
         StructureSetDate: DicomMetaDictionary.date(),
         StructureSetTime: DicomMetaDictionary.time(),
+        SpecificCharacterSet: "ISO_IR 192",
         _meta: null
     };
 }
 
 /**
+ * Generates an RTSS metadata representation of a contour annotation
+ * by looking up the annotation UIDS in the annotation state and
+ * then converting those to RTSS format.
+ */
+export function generateRTSSFromContour(segmentations: Segmentation, options) {
+    const { annotationUIDsMap } = segmentations.representationData.Contour;
+
+    const annotations = [];
+
+    for (const annotationSet of annotationUIDsMap.values()) {
+        for (const annotationUID of annotationSet.values()) {
+            const annotation =
+                toolsAnnotation.state.getAnnotation(annotationUID);
+            if (!annotation) {
+                console.error(
+                    "Unable to find an annotation for UID",
+                    annotationUID
+                );
+                continue;
+            }
+            annotations.push(annotation);
+        }
+    }
+
+    return generateRTSSFromAnnotations(annotations, options);
+}
+
+/**
  * Representation will be either a .Labelmap or a .Contour
  */
-export function generateRTSSFromRepresentation(segmentations, options) {
-    const { metaData, DicomMetadataStore } = options;
-    console.warn("representation", representation);
+export function generateRTSSFromRepresentation(
+    segmentations: Types.Segmentation,
+    options
+) {
+    console.warn("segmentations", segmentations);
     if (segmentations.representationData.Labelmap) {
-        return generateRTSSFromSegmentations(
-            representation,
-            metaData,
-            DicomMetadataStore
-        );
+        return generateRTSSFromLabelmap(segmentations, options);
     }
-    debugger;
-    return generateRTSSFromAnnotations(
-        representation,
-        metaData,
-        DicomMetadataStore
+    if (segmentations.representationData.Contour) {
+        return generateRTSSFromContour(segmentations, options);
+    }
+    throw new Error(
+        `No representation available to save to RTSS: ${Object.keys(segmentations.representationData)}`
     );
 }

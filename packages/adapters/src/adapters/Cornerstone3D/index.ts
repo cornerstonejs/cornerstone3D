@@ -25,6 +25,8 @@ import {
     TEXT_ANNOTATION_POSITION
 } from "./constants";
 
+console.warn("RTSS info:", !!RTSS.generateRTSSFromSegmentations);
+
 const Cornerstone3DSR = {
     BaseAdapter3D,
     Bidirectional,
