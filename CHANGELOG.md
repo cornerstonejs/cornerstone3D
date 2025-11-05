@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.4...v4.8.5) (2025-11-05)
+
+### Bug Fixes
+
+- **segmentation:** Re-adding a segmentation representation with contour annotations was not rendering the contour annotations ([2090a38](https://github.com/cornerstonejs/cornerstone3D/commit/2090a389cdd8ac7c8736897025801fc6757a9622))
+
 ## [4.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.3...v4.8.4) (2025-11-04)
 
 ### Bug Fixes
