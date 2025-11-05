@@ -228,8 +228,10 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
       const segmentationId = (annotation as ContourSegmentationAnnotation)?.data
         ?.segmentation?.segmentationId;
 
+      // If there is no segmentationId, then we don't now how to filter it
+      // here so we return true to keep it.
       if (!segmentationId) {
-        return false;
+        return true;
       }
 
       return !!defaultSegmentationStateManager.getSegmentationRepresentation(
