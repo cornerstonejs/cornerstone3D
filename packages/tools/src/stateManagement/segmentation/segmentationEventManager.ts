@@ -55,7 +55,7 @@ function addSegmentationListener(
     segmentationListeners.set(segmentationId, new Map());
   }
 
-  const listenerMap = segmentationListeners.get(segmentationId)!;
+  const listenerMap = segmentationListeners.get(segmentationId);
 
   // If existing listener, remove it before adding the new one
   if (listenerMap.has(representationType)) {
