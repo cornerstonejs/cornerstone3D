@@ -6,10 +6,7 @@ import { getSegmentationRepresentations } from './getSegmentationRepresentation'
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { surfaceDisplay } from '../../tools/displayTools/Surface';
-import {
-  removeSegmentationListener,
-  removeAllSegmentationListeners,
-} from './segmentationEventManager';
+import { removeSegmentationListener } from './segmentationEventManager';
 
 /**
  * Removes a segmentation representation from a viewport.
