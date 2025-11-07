@@ -4,7 +4,9 @@ export const seriesTags = [
     "SeriesDescription",
     "Modality",
     "SeriesDate",
-    "SeriesTime"
+    "SeriesTime",
+    "_meta",
+    "_vrMap"
 ];
 
 /**
@@ -13,10 +15,7 @@ export const seriesTags = [
  * Usage:  `const newStudyInstance = copySeriesTags(exampleInstance)`
  */
 export function copySeriesTags(src) {
-    const study = {
-        _meta: src._meta,
-        _vrMap: src._vrMap
-    };
+    const study = {};
     for (const tagKey of seriesTags) {
         const value = src[tagKey];
         if (value === undefined) {

@@ -15,6 +15,8 @@ import {
     instanceSuccessor
 } from "../../helpers/instanceSuccessor";
 
+console.warn("_meta=", _meta);
+
 type Segmentation = Types.Segmentation;
 
 const { generateContourSetsFromLabelmap, AnnotationToPointData } =
@@ -192,19 +194,19 @@ export function generateRTSSFromAnnotations(
     annotations,
     options
 ) {
-    const { metadataProvider, DicomMetadataStore } = options;
+    const { metaData = metaData, DicomMetadataStore } = options;
     const dataset = _initializeDataset(
         segmentation,
         options,
         annotations[0].metadata,
-        metadataProvider
+        metaData
     );
 
     annotations.forEach((annotation, index) => {
         const ContourSequence = AnnotationToPointData.convert(
             annotation,
             index,
-            metadataProvider
+            metaData
         );
 
         dataset.StructureSetROISequence.push(
@@ -221,7 +223,7 @@ export function generateRTSSFromAnnotations(
         dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
             annotation.metadata,
             index,
-            metadataProvider,
+            metaData,
             DicomMetadataStore
         );
 
@@ -229,7 +231,7 @@ export function generateRTSSFromAnnotations(
         dataset.ReferencedFrameOfReferenceSequence =
             getReferencedFrameOfReferenceSequence(
                 annotation.metadata,
-                metadataProvider,
+                metaData,
                 dataset
             );
     });
@@ -254,7 +256,7 @@ function _initializeDataset(
     segmentation: Segmentation,
     rtMetadata,
     imgMetadata,
-    metadataProvider
+    metadataProvider = metaData
 ) {
     // get the first annotation data
     const { referencedImageId: imageId, FrameOfReferenceUID } = imgMetadata;
@@ -269,11 +271,9 @@ function _initializeDataset(
 
     const studyData = copyStudyTags(instanceForStudy);
 
-    const previous = getRTSeriesModule(rtMetadata, {
-        predecessorImageId,
-        imageId
-    });
+    const previous = getRTSeriesModule(rtMetadata, predecessorInstance);
 
+    console.warn("_meta=", _meta);
     return instanceSuccessor(
         {
             ...INSTANCE_DEFAULTS,
