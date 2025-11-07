@@ -23,14 +23,11 @@ import { copySeriesTags } from "../helpers/copySeriesTags";
 import { toPoint3 } from "../helpers/toPoint3";
 import {
     COMMENT_CODE,
+    metaSRAnnotation,
     NO_IMAGE_ID,
     TEXT_ANNOTATION_POSITION
 } from "./constants";
 import LabelData from "./LabelData";
-
-// UUID with 1.0.1 being type 1 (annotation) and version 0.1
-export const ImplementationClassUIDSRAnnotation =
-    "2.25.2470123695996825859949881583571202391.1.0.1";
 
 type Annotation = Types.Annotation;
 
@@ -268,35 +265,11 @@ export default class MeasurementReport {
         }
     }
 
+    /**
+     * @deprecated in favour of the constants version
+     */
     static generateDatasetMeta() {
-        // TODO: what is the correct metaheader
-        // http://dicom.nema.org/medical/Dicom/current/output/chtml/part10/chapter_7.html
-        // TODO: move meta creation to happen in derivations.js
-        const fileMetaInformationVersionArray = new Uint8Array(2);
-        fileMetaInformationVersionArray[1] = 1;
-
-        const _meta = {
-            FileMetaInformationVersion: {
-                Value: [fileMetaInformationVersionArray.buffer],
-                vr: "OB"
-            },
-            //MediaStorageSOPClassUID
-            //MediaStorageSOPInstanceUID: sopCommonModule.sopInstanceUID,
-            TransferSyntaxUID: {
-                Value: ["1.2.840.10008.1.2.1"],
-                vr: "UI"
-            },
-            ImplementationClassUID: {
-                Value: [ImplementationClassUIDSRAnnotation],
-                vr: "UI"
-            },
-            ImplementationVersionName: {
-                Value: ["@cornerstone"],
-                vr: "SH"
-            }
-        };
-
-        return _meta;
+        return metaSRAnnotation;
     }
 
     static generateDerivationSourceDataset = instance => {

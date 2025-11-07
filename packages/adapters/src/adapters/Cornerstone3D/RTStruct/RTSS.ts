@@ -1,49 +1,25 @@
 import { metaData } from "@cornerstonejs/core";
-import {
-    utilities,
-    type Types,
-    annotation as toolsAnnotation
-} from "@cornerstonejs/tools";
+import { utilities, annotation as toolsAnnotation } from "@cornerstonejs/tools";
+import type { Types } from "@cornerstonejs/tools";
+
 import dcmjs from "dcmjs";
-import getPatientModule from "./utilities/getPatientModule";
 import getReferencedFrameOfReferenceSequence from "./utilities/getReferencedFrameOfReferenceSequence";
 import getReferencedSeriesSequence from "./utilities/getReferencedSeriesSequence";
 import getRTROIObservationsSequence from "./utilities/getRTROIObservationsSequence";
 import getRTSeriesModule from "./utilities/getRTSeriesModule";
 import getStructureSetModule from "./utilities/getStructureSetModule";
+import { metaRTSSContour as _meta } from "../constants";
+import { copyStudyTags } from "../../helpers";
+import {
+    INSTANCE_DEFAULTS,
+    instanceSuccessor
+} from "../../helpers/instanceSuccessor";
 
 type Segmentation = Types.Segmentation;
 
 const { generateContourSetsFromLabelmap, AnnotationToPointData } =
     utilities.contours;
 const { DicomMetaDictionary } = dcmjs.data;
-
-export const ImplementationClassRtssContours =
-    "2.25.2470123695996825859949881583571202391.2.0.1";
-
-export const ImplementationVersionName = {
-    Value: ["cs3d-4.8.4"],
-    vr: "SH"
-};
-
-const fileMetaInformationVersionArray = new Uint8Array(2);
-fileMetaInformationVersionArray[1] = 1;
-
-const _meta = {
-    FileMetaInformationVersion: {
-        Value: [fileMetaInformationVersionArray.buffer],
-        vr: "OB"
-    },
-    TransferSyntaxUID: {
-        Value: ["1.2.840.10008.1.2.1"],
-        vr: "UI"
-    },
-    ImplementationClassUID: {
-        Value: [ImplementationClassRtssContours],
-        vr: "UI"
-    },
-    ImplementationVersionName
-};
 
 /**
  * Convert handles to RTSS report containing the dcmjs dicom dataset.
@@ -64,11 +40,11 @@ const _meta = {
 export function generateRTSSFromSegmentations(
     segmentation: Segmentation,
     metadataProvider,
-    DicomMetadataStore
+    _DicomMetadataStore
 ) {
     return generateRTSSFromLabelmap(segmentation, {
         metadataProvider,
-        DicomMetadataStore
+        _DicomMetadataStore
     });
 }
 
@@ -76,7 +52,7 @@ export async function generateRTSSFromLabelmap(
     segmentations: Segmentation,
     options
 ) {
-    const { metadataProvider = metaData, DicomMetadataStore } = options;
+    const { metadataProvider = metaData } = options;
 
     // Convert segmentations to ROIContours
     const roiContours = [];
@@ -162,13 +138,9 @@ export async function generateRTSSFromLabelmap(
         }
     });
 
-    const rtMetadata = {
-        name: segmentations.label,
-        label: segmentations.label
-    };
-
     const dataset = _initializeDataset(
-        rtMetadata,
+        segmentations,
+        options,
         roiContours[0].metadata,
         metadataProvider
     );
@@ -190,8 +162,7 @@ export async function generateRTSSFromLabelmap(
         dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
             contour.metadata,
             index,
-            metadataProvider,
-            DicomMetadataStore
+            metadataProvider
         );
 
         // ReferencedFrameOfReferenceSequence
@@ -202,8 +173,6 @@ export async function generateRTSSFromLabelmap(
                 dataset
             );
     });
-
-    dataset._meta = _meta;
 
     return dataset;
 }
@@ -218,14 +187,15 @@ export async function generateRTSSFromLabelmap(
  * @param metadataProvider -  Metadata provider
  * @returns Report object containing the dataset
  */
-export function generateRTSSFromAnnotations(annotations, options) {
+export function generateRTSSFromAnnotations(
+    segmentation,
+    annotations,
+    options
+) {
     const { metadataProvider, DicomMetadataStore } = options;
-    const rtMetadata = {
-        name: "RTSS from Annotations",
-        label: "RTSS from Annotations"
-    };
     const dataset = _initializeDataset(
-        rtMetadata,
+        segmentation,
+        options,
         annotations[0].metadata,
         metadataProvider
     );
@@ -264,8 +234,6 @@ export function generateRTSSFromAnnotations(annotations, options) {
             );
     });
 
-    dataset._meta = _meta;
-
     return dataset;
 }
 
@@ -282,44 +250,52 @@ export function generateRTSSFromAnnotations(annotations, options) {
 //     console.warn("RTSS.generateToolState not implemented");
 // }
 
-function _initializeDataset(rtMetadata, imgMetadata, metadataProvider) {
-    const rtSOPInstanceUID = DicomMetaDictionary.uid();
-
+function _initializeDataset(
+    segmentation: Segmentation,
+    rtMetadata,
+    imgMetadata,
+    metadataProvider
+) {
     // get the first annotation data
     const { referencedImageId: imageId, FrameOfReferenceUID } = imgMetadata;
+    const { predecessorImageId } = rtMetadata;
 
-    const { studyInstanceUID } = metadataProvider.get(
-        "generalSeriesModule",
+    const predecessorInstance =
+        predecessorImageId &&
+        metadataProvider.get("instance", predecessorImageId);
+    // If no existing series, then will have to use the instance data
+    const instanceForStudy =
+        predecessorInstance || metadataProvider.get("instance", imageId);
+
+    const studyData = copyStudyTags(instanceForStudy);
+
+    const previous = getRTSeriesModule(rtMetadata, {
+        predecessorImageId,
         imageId
+    });
+
+    return instanceSuccessor(
+        {
+            ...INSTANCE_DEFAULTS,
+            ...studyData,
+            StructureSetROISequence: [],
+            ROIContourSequence: [],
+            RTROIObservationsSequence: [],
+            ReferencedSeriesSequence: [],
+            ReferencedFrameOfReferenceSequence: [],
+            Modality: "RTSTRUCT",
+            SOPClassUID: "1.2.840.10008.5.1.4.1.1.481.3", // RT Structure Set Storage
+            FrameOfReferenceUID,
+            PositionReferenceIndicator: "",
+            StructureSetLabel: segmentation.label || "",
+            StructureSetName: segmentation.label || "",
+            StructureSetDate: DicomMetaDictionary.date(),
+            StructureSetTime: DicomMetaDictionary.time(),
+            _meta
+        },
+        previous,
+        rtMetadata
     );
-
-    const patientModule = getPatientModule(imageId, metadataProvider);
-    const rtSeriesModule = getRTSeriesModule(DicomMetaDictionary);
-
-    return {
-        StructureSetROISequence: [],
-        ROIContourSequence: [],
-        RTROIObservationsSequence: [],
-        ReferencedSeriesSequence: [],
-        ReferencedFrameOfReferenceSequence: [],
-        ...patientModule,
-        ...rtSeriesModule,
-        StudyInstanceUID: studyInstanceUID,
-        SOPClassUID: "1.2.840.10008.5.1.4.1.1.481.3", // RT Structure Set Storage
-        SOPInstanceUID: rtSOPInstanceUID,
-        Manufacturer: "dcmjs",
-        Modality: "RTSTRUCT",
-        FrameOfReferenceUID,
-        PositionReferenceIndicator: "",
-        StructureSetLabel: rtMetadata.label || "",
-        StructureSetName: rtMetadata.name || "",
-        ReferringPhysicianName: "",
-        OperatorsName: "",
-        StructureSetDate: DicomMetaDictionary.date(),
-        StructureSetTime: DicomMetaDictionary.time(),
-        SpecificCharacterSet: "ISO_IR 192",
-        _meta: null
-    };
 }
 
 /**
@@ -347,7 +323,7 @@ export function generateRTSSFromContour(segmentations: Segmentation, options) {
         }
     }
 
-    return generateRTSSFromAnnotations(annotations, options);
+    return generateRTSSFromAnnotations(segmentations, annotations, options);
 }
 
 /**
@@ -355,7 +331,7 @@ export function generateRTSSFromContour(segmentations: Segmentation, options) {
  */
 export function generateRTSSFromRepresentation(
     segmentations: Types.Segmentation,
-    options
+    options = {}
 ) {
     console.warn("segmentations", segmentations);
     if (segmentations.representationData.Labelmap) {
@@ -365,6 +341,8 @@ export function generateRTSSFromRepresentation(
         return generateRTSSFromContour(segmentations, options);
     }
     throw new Error(
-        `No representation available to save to RTSS: ${Object.keys(segmentations.representationData)}`
+        `No representation available to save to RTSS: ${Object.keys(
+            segmentations.representationData
+        )}`
     );
 }
