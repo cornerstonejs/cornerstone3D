@@ -441,6 +441,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
+    const baseFilteredAnnotations =
+      super.filterInteractableAnnotationsForElement(element, annotations);
+    if (!baseFilteredAnnotations || !baseFilteredAnnotations.length) {
+      return;
+    }
+
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -454,7 +460,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
       // Get data with same normal and within the same slice
       annotationsToDisplay = this.filterAnnotationsWithinSlice(
-        annotations,
+        baseFilteredAnnotations,
         camera,
         spacingInNormalDirection
       );

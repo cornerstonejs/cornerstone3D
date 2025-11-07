@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.5...v4.9.0) (2025-11-05)
+
+### Features
+
+- **BrushTool:** added logic to check for min/max radius while set brush ([#2449](https://github.com/cornerstonejs/cornerstone3D/issues/2449)) ([464d07d](https://github.com/cornerstonejs/cornerstone3D/commit/464d07dad6f95f91cd04e5f5948f80d8e4f83ac5))
+
+## [4.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.4...v4.8.5) (2025-11-05)
+
+### Bug Fixes
+
+- **segmentation:** Re-adding a segmentation representation with contour annotations was not rendering the contour annotations ([2090a38](https://github.com/cornerstonejs/cornerstone3D/commit/2090a389cdd8ac7c8736897025801fc6757a9622))
+
 ## [4.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.3...v4.8.4) (2025-11-04)
 
 ### Bug Fixes
