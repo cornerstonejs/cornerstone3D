@@ -2044,11 +2044,18 @@ class Viewport {
     if (zoom) {
       target.zoom = initZoom;
     }
+    const currentAspectRatio = this.getAspectRatio();
+    target.aspectRatio = currentAspectRatio;
     if (pan) {
-      target.pan = this.getPan();
-      vec2.scale(target.pan, target.pan, 1 / initZoom);
+      const currentPan = this.getPan();
+      const [aspectX, aspectY] = currentAspectRatio;
+
+      // Normalize pan to remove effect of zoom and stretch
+      const normalizedPanX = currentPan[0] / (initZoom * aspectX);
+      const normalizedPanY = currentPan[1] / (initZoom * aspectY);
+
+      target.pan = [normalizedPanX, normalizedPanY] as Point2;
     }
-    target.aspectRatio = this.getAspectRatio();
 
     if (flipHorizontal) {
       target.flipHorizontal = this.flipHorizontal;
