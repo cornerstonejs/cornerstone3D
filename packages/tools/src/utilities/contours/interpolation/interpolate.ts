@@ -108,6 +108,11 @@ function startInterpolation(viewportData: InterpolationViewportData) {
 
   if (interpolationList.length) {
     triggerEvent(
+      viewportData.viewport.element,
+      EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
+      eventDetails
+    );
+    triggerEvent(
       eventTarget,
       EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
       eventDetails
