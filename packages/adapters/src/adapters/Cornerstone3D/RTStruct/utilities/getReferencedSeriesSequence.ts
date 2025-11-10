@@ -16,7 +16,6 @@ export default function getReferencedSeriesSequence(
     imageId
   );
 
-  debugger;
   referencedSeriesSequence ||= [];
   if (newReferenceSeq) {
     const {
