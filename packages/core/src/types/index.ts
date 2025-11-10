@@ -143,16 +143,7 @@ import type {
   PolyDataPointConfiguration,
 } from './IPointsManager';
 import type IImageFrame from './IImageFrame';
-import type {
-  DicomDateObject,
-  DicomTimeObject,
-  GeneralSeriesModuleMetadata,
-  ImagePlaneModuleMetadata,
-  SopCommonModuleMetadata,
-  ImagePixelModuleMetadata,
-  PatientStudyModuleMetadata,
-  TransferSyntaxMetadata,
-} from './MetadataModuleTypes';
+export type * from './MetadataModuleTypes';
 import type { IVoxelManager } from './IVoxelManager';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
@@ -296,14 +287,6 @@ export type {
   ColorLUT,
   VolumeProps,
   IImageFrame,
-  DicomDateObject,
-  DicomTimeObject,
-  GeneralSeriesModuleMetadata,
-  ImagePlaneModuleMetadata,
-  SopCommonModuleMetadata,
-  ImagePixelModuleMetadata,
-  PatientStudyModuleMetadata,
-  TransferSyntaxMetadata,
   LocalVolumeOptions,
   IVoxelManager,
   IRLEVoxelMap,

@@ -1,29 +1,28 @@
 export const patientTags = [
-    "PatientName",
-    "PatientID",
-    "PatientBirthDate",
-    "PatientBirthTime",
-    "PatientID",
-    "IssuerOfPatientID",
-    "OtherPatientIDs",
-    "OtherPatientIDsSequence",
-    "PatientSex",
-    "PatientIdentityRemoved",
-    "DeidentificationMethodCodeSequence"
+  'PatientName',
+  'PatientID',
+  'PatientBirthDate',
+  'PatientBirthTime',
+  'PatientID',
+  'IssuerOfPatientID',
+  'OtherPatientIDs',
+  'OtherPatientIDsSequence',
+  'PatientSex',
+  'PatientIdentityRemoved',
+  'DeidentificationMethodCodeSequence',
 ];
 
 export const studyTags = [
-    "StudyDate",
-    "StudyTime",
-    "StudyStatusID",
-    "StudyPriorityID",
-    "StudyInstanceUID",
-    "StudyDescription",
-    "AccessionNumber",
-    "StudyID",
-    "ReferringPhysicianName",
-    "BodyPartExamined",
-    "TimezoneOffsetFromUTC"
+  'StudyDate',
+  'StudyTime',
+  'StudyStatusID',
+  'StudyPriorityID',
+  'StudyInstanceUID',
+  'StudyDescription',
+  'AccessionNumber',
+  'StudyID',
+  'ReferringPhysicianName',
+  'TimezoneOffsetFromUTC',
 ];
 
 /**
@@ -42,16 +41,16 @@ export const patientStudyTags = [...patientTags, ...studyTags];
  * appropriate for whatever you are creating.
  */
 export function copyStudyTags(src) {
-    const study = {
-        _meta: src._meta,
-        _vrMap: src._vrMap
-    };
-    for (const tagKey of patientStudyTags) {
-        const value = src[tagKey];
-        if (value === undefined) {
-            continue;
-        }
-        study[tagKey] = value;
+  const study = {
+    _meta: src._meta,
+    _vrMap: src._vrMap,
+  };
+  for (const tagKey of patientStudyTags) {
+    const value = src[tagKey];
+    if (value === undefined) {
+      continue;
     }
-    return study;
+    study[tagKey] = value;
+  }
+  return study;
 }

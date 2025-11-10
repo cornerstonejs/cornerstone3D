@@ -1,12 +1,12 @@
 export const seriesTags = [
-    "SeriesInstanceUID",
-    "SeriesNumber",
-    "SeriesDescription",
-    "Modality",
-    "SeriesDate",
-    "SeriesTime",
-    "_meta",
-    "_vrMap"
+  'SeriesInstanceUID',
+  'SeriesNumber',
+  'SeriesDescription',
+  'Modality',
+  'SeriesDate',
+  'SeriesTime',
+  '_meta',
+  '_vrMap',
 ];
 
 /**
@@ -14,14 +14,14 @@ export const seriesTags = [
  *
  * Usage:  `const newStudyInstance = copySeriesTags(exampleInstance)`
  */
-export function copySeriesTags(src) {
-    const study = {};
-    for (const tagKey of seriesTags) {
-        const value = src[tagKey];
-        if (value === undefined) {
-            continue;
-        }
-        study[tagKey] = value;
+export function copySeriesTags(src): Record<string, unknown> {
+  const result = {};
+  for (const tagKey of seriesTags) {
+    const value = src[tagKey];
+    if (value === undefined) {
+      continue;
     }
-    return study;
+    result[tagKey] = value;
+  }
+  return result;
 }
