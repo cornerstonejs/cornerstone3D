@@ -149,7 +149,7 @@ function getUpdateFunction(
 ): (segmentationId: string) => Promise<void> {
   const polySeg = getPolySeg();
   return (segmentationId: string) =>
-    polySeg.updateSurfaceData(segmentationId, { viewport }).then();
+    polySeg.updateSurfaceData(segmentationId, { viewport });
 }
 
 export default {

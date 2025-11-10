@@ -7,7 +7,6 @@ import addRepresentationData from '../../stateManagement/segmentation/internalAd
  * @param segmentationId - The ID of the segmentation.
  * @param type - Representation type (e.g., LABELMAP, CONTOUR).
  * @param computeFunction - Async function that computes representation data.
- * @param updateFunction - Optional function to update UI/state on segmentation change.
  * @param onComputationComplete - Optional callback invoked after computation completes.
  * @returns - A promise that resolves with the computed representation data.
  */
