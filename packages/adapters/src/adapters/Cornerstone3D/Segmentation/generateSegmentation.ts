@@ -72,6 +72,12 @@ function _createMultiframeSegmentationFromReferencedImages(
   multiframe.SharedFunctionalGroupsSequence ||= {};
   multiframe.SharedFunctionalGroupsSequence.PixelMeasuresSequence = {};
   multiframe.PerFrameFunctionalGroupsSequence ||= [];
+  for (let index = 0; index < images.length; index++) {
+    multiframe.PerFrameFunctionalGroupsSequence[index] ||= {
+      PlanePositionSequence: {},
+      PlaneOrientationSequence: {},
+    };
+  }
   return new SegmentationDerivation([multiframe], options);
 }
 
