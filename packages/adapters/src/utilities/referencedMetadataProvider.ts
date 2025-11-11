@@ -2,6 +2,23 @@ import { metaData, Enums, type Types } from '@cornerstonejs/core';
 
 const { MetadataModules } = Enums;
 
+export const STUDY_MODULES = [
+  MetadataModules.GENERAL_STUDY,
+  MetadataModules.PATIENT,
+  MetadataModules.PATIENT_STUDY,
+];
+
+export const SERIES_MODULES = [MetadataModules.GENERAL_SERIES];
+
+export const IMAGE_MODULES = [
+  MetadataModules.GENERAL_IMAGE,
+  MetadataModules.IMAGE_PLANE,
+  MetadataModules.CINE,
+  MetadataModules.VOI_LUT,
+  MetadataModules.MODALITY_LUT,
+  MetadataModules.SOP_COMMON,
+];
+
 /**
  * Contains a metadata provider which knows how to generate the various referenced
  * metadata instances based on the existing metadata modules.
@@ -56,7 +73,50 @@ export const metadataProvider = {
       ],
     };
   },
+
+  /**
+   * Returns a predecessor sequence and related information to apply
+   * to the generated object.
+   */
+  [MetadataModules.PREDECESSOR_SEQUENCE]: (imageId) => {
+    // Start with the series data
+    const result = { ...metaData.get(MetadataModules.SERIES_DATA) };
+    // And extend with the predecessor information, plus updates for a new
+    // instance.
+    const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE);
+    const study = metaData.get(MetadataModules.GENERAL_STUDY);
+    result.InstanceNumber = 1 + Number(generalImage.instanceNumber);
+    result.PredecessorDocumentsSequence = {
+      StudyInstanceUID: study.studyInstanceUID,
+      ReferencedSeriesSequence: {
+        SeriesInstanceUID: result.SeriesInstanceUID,
+        ReferencedSOPSequence: {
+          ReferencedSOPClassUID: generalImage.sopClassUID,
+          ReferencedSOPInstanceUID: generalImage.sopInstanceUID,
+        },
+      },
+    };
+    return result;
+  },
+
+  /**
+   * Returns a Study header instance data for a given image.
+   */
+  [MetadataModules.STUDY_DATA]: (imageId) => {
+    return metaData.getInstanceModule(imageId, STUDY_MODULES);
+  },
+  /**
+   * Returns a Series only header instance data for a given image.
+   */
+  [MetadataModules.SERIES_DATA]: (imageId) => {
+    return metaData.getInstanceModule(imageId, SERIES_MODULES);
+  },
+  /**
+   * Returns a Study header instance data for a given image.
+   */
+  [MetadataModules.IMAGE_DATA]: (imageId) => {
+    return metaData.getInstanceModule(imageId, IMAGE_MODULES);
+  },
 };
 
-console.warn('Registering metadata provider for referenced info');
 metaData.addProvider(metadataProvider.get, 9023);

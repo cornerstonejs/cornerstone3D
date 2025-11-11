@@ -84,4 +84,58 @@ function getMetaData(type: string, ...queries): any {
   }
 }
 
+/**
+ * Retrieves metadata from a DICOM image and returns it as an object with capitalized keys.
+ * @param imageId - the imageId
+ * @param metaDataProvider - The metadata provider either wadors or wadouri
+ * @param types - An array of metadata types to retrieve.
+ * @returns An object containing the retrieved metadata with capitalized keys.
+ */
+export function getInstanceModule(
+  imageId,
+  types,
+  metaDataProvider = getMetaData
+) {
+  const result = {};
+  for (const t of types) {
+    try {
+      const data = metaDataProvider(t, imageId);
+      if (data) {
+        const capitalizedData = {};
+        for (const key in data) {
+          if (key in data) {
+            const capitalizedKey = capitalizeTag(key);
+            capitalizedData[capitalizedKey] = data[key];
+          }
+        }
+        Object.assign(result, capitalizedData);
+      }
+    } catch (error) {
+      console.error(`Error retrieving ${t} data:`, error);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Converts a tag name to UpperCamelCase
+ */
+export const capitalizeTag = (tag: string) => {
+  if (tag.startsWith('sop')) {
+    return `SOP${tag.substring(3)}`;
+  }
+  return tag.charAt(0).toUpperCase() + tag.slice(1);
+};
+
+/**
+ * Converts a tag name to lowerCamelCase
+ */
+export const lowerTag = (tag: string) => {
+  if (tag.startsWith('SOP')) {
+    return `sop${tag.substring(3)}`;
+  }
+  return tag.charAt(0).toLowerCase() + tag.slice(1);
+};
+
 export { getMetaData as get };

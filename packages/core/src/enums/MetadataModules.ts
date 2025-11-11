@@ -64,6 +64,11 @@ enum MetadataModules {
   /** References a given frame*/
   IMAGE_SOP_INSTANCE_REFERENCE = 'ImageSopInstanceReference',
   REFERENCED_SERIES_REFERENCE = 'ReferencedSeriesReference',
+  PREDECESSOR_SEQUENCE = 'PredecessorSequence',
+
+  STUDY_DATA = 'StudyData',
+  SERIES_DATA = 'SeriesData',
+  IMAGE_DATA = 'ImageData',
 }
 
 export default MetadataModules;

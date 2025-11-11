@@ -1,7 +1,9 @@
 import { normalizers, derivations } from 'dcmjs';
+import { Enums } from '@cornerstonejs/core';
 import { fillSegmentation } from '../../Cornerstone/Segmentation_4X';
 
-const { Normalizer } = normalizers;
+const { MetadataModules } = Enums;
+const { SEGImageNormalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 
 /**
@@ -16,7 +18,16 @@ function generateSegmentation(images, labelmaps, metadata, options = {}) {
     metadata,
     options
   );
-  return fillSegmentation(segmentation, labelmaps, options);
+  const segmentationResult = fillSegmentation(segmentation, labelmaps, options);
+  const predecessorImageId = options?.predecessorImageId;
+  if (predecessorImageId) {
+    const predecessor = metadata.get(
+      MetadataModules.PREDECESSOR_SEQUENCE,
+      predecessorImageId
+    );
+    Object.assign(segmentationResult, predecessor);
+  }
+  return segmentationResult;
 }
 
 /**
@@ -34,25 +45,17 @@ function _createMultiframeSegmentationFromReferencedImages(
   metadata,
   options
 ) {
+  const studyData = images[0].imageId;
   const datasets = images.map((image) => {
-    // add the sopClassUID to the dataset
-    const instance = metadata.get('instance', image.imageId);
+    console.warn('image=', image);
+    const { imageId } = image;
+    const seriesData = metadata.get(MetadataModules.SERIES_DATA, imageId);
+    const imageData = metadata.get(MetadataModules.IMAGE_DATA, imageId);
     return {
-      ...image,
-      ...instance,
-      // Todo: move to dcmjs tag style
-      SOPClassUID: '1.2.840.10008.5.1.4.1.1.66.4',
-      SOPInstanceUID: instance.SopInstanceUID || instance.SOPInstanceUID,
-      Modality: 'SEG',
-      SamplesPerPixel: '1',
-      PhotometricInterpretation: 'MONOCHROME2',
-      BitsAllocated: '1',
-      BitsStored: '1',
-      HighBit: '0',
-      PixelRepresentation: '0',
-      LossyImageCompression: '00',
-      SegmentationType: 'BINARY',
-      ContentLabel: 'SEGMENTATION',
+      // ...image,
+      ...studyData,
+      ...seriesData,
+      ...imageData,
       PixelData: image.voxelManager.getScalarData(),
       _vrMap: {
         PixelData: 'OW',
@@ -61,7 +64,17 @@ function _createMultiframeSegmentationFromReferencedImages(
     };
   });
 
-  const multiframe = Normalizer.normalizeToDataset(datasets);
+  // const multiframe = Normalizer.normalizeToDataset(datasets);
+  const isSingleSingleFrame =
+    datasets.length === 1 && !(datasets[0].NumberOfFrames > 1);
+  if (isSingleSingleFrame) {
+    datasets.push(datasets[0]);
+  }
+  // Directly use the SEGImageNormalizer to allow creating a SEG virtual instance consisting of
+  // whatever instance data we happen to have.
+  const normalizer = new SEGImageNormalizer(datasets);
+  normalizer.normalize();
+  const { dataset: multiframe } = normalizer;
 
   if (!multiframe) {
     throw new Error(
@@ -77,6 +90,12 @@ function _createMultiframeSegmentationFromReferencedImages(
       PlanePositionSequence: {},
       PlaneOrientationSequence: {},
     };
+  }
+  if (isSingleSingleFrame) {
+    multiframe.PerFrameFunctionalGroupsSequence = [
+      multiframe.PerFrameFunctionalGroupsSequence[0],
+    ];
+    multiframe.NumberOfFrames = 1;
   }
   return new SegmentationDerivation([multiframe], options);
 }
