@@ -178,11 +178,18 @@ const initializeCircle = {
       center as Types.Point3
     );
 
+    // Get your aspect ratio values
+    const aspectRatio = viewport?.getAspectRatio?.() || [1, 1];
+
     const yRadius =
-      points.length >= 2 ? vec3.distance(points[0], points[1]) / 2 : 0;
+      points.length >= 2
+        ? vec3.distance(points[0], points[1]) / 2 / aspectRatio[1]
+        : 0;
 
     const xRadius =
-      points.length >= 2 ? vec3.distance(points[2], points[3]) / 2 : 0;
+      points.length >= 2
+        ? vec3.distance(points[2], points[3]) / 2 / aspectRatio[0]
+        : 0;
 
     const canvasCoordinates = points.map((p) =>
       viewport.worldToCanvas(p)
@@ -241,15 +248,13 @@ const initializeCircle = {
     );
 
     operationData.strokePointsWorld = strokeCenters;
-    operationData.isInObject = createPointInEllipse(
-      cornersInWorld,
-      {
-        strokePointsWorld: strokeCenters,
-        segmentationImageData,
-        radius: xRadius === yRadius ? xRadius : Math.max(xRadius, yRadius),
-      },
-      viewport
-    );
+    operationData.isInObject = createPointInEllipse(cornersInWorld, {
+      strokePointsWorld: strokeCenters,
+      segmentationImageData,
+      xRadius,
+      yRadius,
+      aspectRatio,
+    });
 
     operationData.isInObjectBoundsIJK = boundsIJK;
   },
@@ -268,17 +273,17 @@ function createPointInEllipse(
   options: {
     strokePointsWorld?: Types.Point3[];
     segmentationImageData?: vtkImageData;
-    radius?: number;
-  } = {},
-  viewport?
+    xRadius?: number;
+    yRadius?: number;
+    aspectRatio?: [number, number];
+  } = {}
 ) {
   if (!cornersInWorld || cornersInWorld.length !== 4) {
     throw new Error('createPointInEllipse: cornersInWorld must have 4 points');
   }
   const [topLeft, bottomRight, bottomLeft, topRight] = cornersInWorld;
 
-  // Get your aspect ratio values
-  const [sx, sy] = viewport?.getAspectRatio?.() || [1, 1];
+  const aspectRatio = options.aspectRatio || [1, 1];
 
   // Center is the midpoint of the diagonal
   const center = vec3.create();
@@ -300,12 +305,12 @@ function createPointInEllipse(
   //Apply the inverse aspect ratio stretch CORRECTLY and ALWAYS the same way.
   // To counteract the viewport's stretching and make the shape appear circular,
   // we must "pre-squash" it in world space.
-  const xRadius = originalRadius / sx;
-  const yRadius = originalRadius / sy;
+  const xRadius = originalRadius / aspectRatio[0];
+  const yRadius = originalRadius / aspectRatio[1];
 
   // If radii are equal, treat as sphere
-  const xRadiusForStroke = options.radius ?? xRadius;
-  const yRadiusForStroke = options.radius ?? yRadius;
+  const xRadiusForStroke = options.xRadius ?? xRadius;
+  const yRadiusForStroke = options.yRadius ?? yRadius;
   const strokePredicate = createStrokePredicate(
     options.strokePointsWorld || [],
     xRadiusForStroke,
