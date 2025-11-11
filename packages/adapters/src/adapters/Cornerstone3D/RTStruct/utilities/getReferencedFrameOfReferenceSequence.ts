@@ -6,10 +6,15 @@ export default function getReferencedFrameOfReferenceSequence(
   const { FrameOfReferenceUID } = metadata;
 
   referencedFrameOfReferenceSequence ||= [];
-  if (referencedFrameOfReferenceSequence.indexOf(FrameOfReferenceUID) === -1) {
-    referencedFrameOfReferenceSequence.push(FrameOfReferenceUID);
+  let referencedItem = referencedFrameOfReferenceSequence.find(
+    (it) => it.FrameOfReferenceUID === FrameOfReferenceUID
+  );
+  if (!referencedItem) {
+    referencedItem = {
+      FrameOfReferenceUID,
+    };
+    referencedFrameOfReferenceSequence.push(referencedItem);
   }
-  // TODO - update this with references for every instance or frame? referenced
 
   // The RTReferencedStudySequence is optional and may be included in a future
   // version of this to specify exactly how this reference occurs.
