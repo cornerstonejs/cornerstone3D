@@ -31,4 +31,29 @@ export interface LoaderOptions {
   errorInterceptor?: (error: LoaderXhrRequestError) => void;
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
+  /**
+   * Pass a custom web worker factory function to create the web worker.
+   *
+   * By default, cornerstone creates the path to the web worker, relying on a
+   * bundler to resolve the path. This is not always possible, especially when
+   * using a custom bundler or when the web worker is not in the same directory
+   * as the main script.  This is particularly helpful when including
+   * `@cornerstonejs/dicom-image-loader` in an Angular project.
+   *
+   * This option allows you to provide a custom function that returns a new web
+   * worker instance.
+   *
+   * @example
+   * ```typescript
+   * const customWebWorkerFactory = () => {
+   *  const worker = new Worker('path/to/your/customWorker.js');
+   *  return worker;
+   * }
+   *
+   * const loaderOptions: LoaderOptions = {
+   *   webWorkerFactory: customWebWorkerFactory,
+   * }
+   * ```
+   */
+  webWorkerFactory?: () => Worker;
 }
