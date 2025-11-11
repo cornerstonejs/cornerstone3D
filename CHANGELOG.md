@@ -3,6 +3,90 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.0...v4.9.1) (2025-11-10)
+
+### Bug Fixes
+
+- **interpolation:** Use eventTarget for the interpolation process completed event. ([#2454](https://github.com/cornerstonejs/cornerstone3D/issues/2454)) ([89bc3f5](https://github.com/cornerstonejs/cornerstone3D/commit/89bc3f5c151cf790ae37040c3254bbf372775a05))
+
+# [4.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.5...v4.9.0) (2025-11-05)
+
+### Features
+
+- **BrushTool:** added logic to check for min/max radius while set brush ([#2449](https://github.com/cornerstonejs/cornerstone3D/issues/2449)) ([464d07d](https://github.com/cornerstonejs/cornerstone3D/commit/464d07dad6f95f91cd04e5f5948f80d8e4f83ac5))
+
+## [4.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.4...v4.8.5) (2025-11-05)
+
+### Bug Fixes
+
+- **segmentation:** Re-adding a segmentation representation with contour annotations was not rendering the contour annotations ([2090a38](https://github.com/cornerstonejs/cornerstone3D/commit/2090a389cdd8ac7c8736897025801fc6757a9622))
+
+## [4.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.3...v4.8.4) (2025-11-04)
+
+### Bug Fixes
+
+- **SplineROITool:** Do not reset the cursor for the SplineROITool because it was never set in the first place. ([#2440](https://github.com/cornerstonejs/cornerstone3D/issues/2440)) ([20f63e7](https://github.com/cornerstonejs/cornerstone3D/commit/20f63e70da3b8c266f72f82dc4847cb9f31b7afd))
+
+## [4.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.2...v4.8.3) (2025-11-03)
+
+**Note:** Version bump only for package root
+
+## [4.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.1...v4.8.2) (2025-11-03)
+
+**Note:** Version bump only for package root
+
+## [4.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.0...v4.8.1) (2025-10-30)
+
+### Bug Fixes
+
+- **security:** Various security fixes and enhancements. ([#2434](https://github.com/cornerstonejs/cornerstone3D/issues/2434)) ([9da6b3e](https://github.com/cornerstonejs/cornerstone3D/commit/9da6b3e78ed2fade071072ea20f8b379925965f5))
+
+# [4.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.7.1...v4.8.0) (2025-10-29)
+
+### Features
+
+- **exports:** add intializers exports to dicom image loader ([#2432](https://github.com/cornerstonejs/cornerstone3D/issues/2432)) ([d94328c](https://github.com/cornerstonejs/cornerstone3D/commit/d94328cc3ed81995d665dcd1736db98c00e3978b))
+
+## [4.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.7.0...v4.7.1) (2025-10-28)
+
+### Bug Fixes
+
+- **AdvancedMagnifyTool:** Only set the active segment index if there is a segmentation representation. ([#2427](https://github.com/cornerstonejs/cornerstone3D/issues/2427)) ([a1ed218](https://github.com/cornerstonejs/cornerstone3D/commit/a1ed21861779b52257557ab5c3928c492fd238a8))
+
+# [4.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.4...v4.7.0) (2025-10-24)
+
+### Features
+
+- **image:** image smoothing for stack/volume viewports ([#2353](https://github.com/cornerstonejs/cornerstone3D/issues/2353)) ([9554cae](https://github.com/cornerstonejs/cornerstone3D/commit/9554caec98cb4c2098799ede7a1df4620c6af5f9))
+
+## [4.6.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.3...v4.6.4) (2025-10-23)
+
+### Bug Fixes
+
+- support history in height tool (undo\redo) ([#2420](https://github.com/cornerstonejs/cornerstone3D/issues/2420)) ([c8b568d](https://github.com/cornerstonejs/cornerstone3D/commit/c8b568dc9861be7fd363f7a389def2a6114ff9db))
+
+## [4.6.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.2...v4.6.3) (2025-10-23)
+
+### Bug Fixes
+
+- **PlanarFreeHandRoiTool:** Optimize PlanarFreeHandRoiTool ([#2419](https://github.com/cornerstonejs/cornerstone3D/issues/2419)) ([eb107ce](https://github.com/cornerstonejs/cornerstone3D/commit/eb107cef85ee18ecc2520306eb6e862564d4354c))
+
+## [4.6.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.1...v4.6.2) (2025-10-23)
+
+### Bug Fixes
+
+- **codec:** update version to fix JPEG 2000 16 bit RGB ([#2422](https://github.com/cornerstonejs/cornerstone3D/issues/2422)) ([055d00c](https://github.com/cornerstonejs/cornerstone3D/commit/055d00c1e863de7ebacca82a1b8a2ae81964d890))
+
+## [4.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.6.0...v4.6.1) (2025-10-22)
+
+**Note:** Version bump only for package root
+
+# [4.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.20...v4.6.0) (2025-10-21)
+
+### Features
+
+- **tools:** Add configurable center point to CrosshairsTool ([#2406](https://github.com/cornerstonejs/cornerstone3D/issues/2406)) ([e54d3fd](https://github.com/cornerstonejs/cornerstone3D/commit/e54d3fd6debec5292aaab7955ec5b27f943dda39))
+
 ## [4.5.20](https://github.com/cornerstonejs/cornerstone3D/compare/v4.5.19...v4.5.20) (2025-10-21)
 
 ### Bug Fixes

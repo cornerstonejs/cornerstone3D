@@ -40,8 +40,8 @@ function internalAddSegmentationRepresentation(
       if (segmentKeys.length > 0) {
         firstSegmentIndex = segmentKeys.map((k) => Number(k)).sort()[0];
       }
+      setActiveSegmentIndex(segmentationId, firstSegmentIndex);
     }
-    setActiveSegmentIndex(segmentationId, firstSegmentIndex);
   }
 
   if (representationInput.type === SegmentationRepresentations.Contour) {

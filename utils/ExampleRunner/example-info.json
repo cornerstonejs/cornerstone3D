@@ -172,6 +172,10 @@
       "sharpening": {
         "name": "Image Sharpening For Stack & Volume Viewports",
         "description": "Demonstrates how to apply image sharpening to stack and volume viewports"
+      },
+      "smoothing": {
+        "name": "Image Smoothing For Stack & Volume Viewports",
+        "description": "Demonstrates how to apply image smoothing to stack and volume viewports"
       }
     },
     "tools-basic": {
