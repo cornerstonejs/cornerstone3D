@@ -193,7 +193,7 @@ function _createTextSpan(text): SVGElement {
 }
 
 function _drawTextBackground(group: SVGGElement, backgroundStyles) {
-  const { color, borderRadius, margin } = backgroundStyles;
+  const { color, borderRadius = 0, margin = 0 } = backgroundStyles;
   let element = group.querySelector('rect.background');
   const textElement = group.querySelector('text').getBBox();
 
