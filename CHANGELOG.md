@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.3...v4.10.0) (2025-11-12)
+
+### Features
+
+- add scoord bounding box rehydration ([#2389](https://github.com/cornerstonejs/cornerstone3D/issues/2389)) ([a1288d6](https://github.com/cornerstonejs/cornerstone3D/commit/a1288d6548e9e18240f4c89dcfe3dcb0dfce20dd))
+
 ## [4.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.2...v4.9.3) (2025-11-11)
 
 **Note:** Version bump only for package root
