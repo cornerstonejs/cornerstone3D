@@ -24,7 +24,6 @@ import {
   KeyboardBindings,
   ChangeTypes,
 } from '../../enums';
-import { resetElementCursor } from '../../cursors/elementCursor';
 import type {
   Annotation,
   EventTypes,
@@ -434,7 +433,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
     this._deactivateModify(element);
     this._deactivateDraw(element);
-    resetElementCursor(element);
 
     const enabledElement = getEnabledElement(element);
 
@@ -637,7 +635,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     this.isDrawing = false;
     this._deactivateDraw(element);
     this._deactivateModify(element);
-    resetElementCursor(element);
 
     const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
 

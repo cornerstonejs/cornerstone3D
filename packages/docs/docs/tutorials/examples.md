@@ -56,7 +56,7 @@ Use the root of the repository as the working directory when running the example
 Previously, you had to run the example in each package directory. This is no longer the case.
 :::
 
-:::warning
+:::danger
 In general run `yarn install` with the `--frozen-lockfile` flag to help avoid
 supply chain attacks by enforcing reproducible dependencies. That is, if the
 `yarn.lock` file is clean and does NOT reference compromised packages, then

@@ -119,21 +119,23 @@ export default function filterAnnotationsWithinSlice(
   const annotationsWithinSlice = [];
 
   for (const annotation of annotationsWithParallelNormals) {
-    const data = annotation.data;
+    const { data, metadata, isVisible } = annotation;
 
-    const point = data.handles.points[0] || data.contour?.polyline[0];
-
-    if (!annotation.isVisible) {
+    if (!isVisible) {
       continue;
     }
+
+    const point =
+      metadata.planeRestriction?.point ||
+      data.handles?.points?.[0] ||
+      data.contour?.polyline[0];
+
     // A = point
     // B = focal point
     // P = normal
 
     // B-A dot P  => Distance in the view direction.
     // this should be less than half the slice distance.
-
-    const dir = vec3.create();
 
     // If the handles has no values, eg a key image or other annotation, it
     // should just be included.
@@ -142,11 +144,11 @@ export default function filterAnnotationsWithinSlice(
       continue;
     }
 
-    vec3.sub(dir, focalPoint, point);
+    const dir = vec3.sub(vec3.create(), focalPoint, point);
 
-    const dot = vec3.dot(dir, viewPlaneNormal);
+    const dot = Math.abs(vec3.dot(dir, viewPlaneNormal));
 
-    if (Math.abs(dot) < halfSpacingInNormalDirection) {
+    if (dot < halfSpacingInNormalDirection) {
       annotationsWithinSlice.push(annotation);
     }
   }

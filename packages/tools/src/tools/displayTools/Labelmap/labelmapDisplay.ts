@@ -127,7 +127,6 @@ async function render(
       segmentationId,
       SegmentationRepresentations.Labelmap,
       () => polySeg.computeLabelmapData(segmentationId, { viewport }),
-      () => null,
       () => {
         defaultSegmentationStateManager.processLabelmapRepresentationAddition(
           viewport.id,
@@ -525,7 +524,20 @@ async function _addLabelmapToViewport(
   return result || undefined;
 }
 
+/**
+ * Function to call when segmentation representation is updated
+ *
+ * @param viewport
+ * @returns
+ */
+function getUpdateFunction(
+  viewport: Types.IVolumeViewport | Types.IStackViewport
+): (segmentationId: string) => Promise<void> | null {
+  return;
+}
+
 export default {
+  getUpdateFunction,
   render,
   removeRepresentation,
 };

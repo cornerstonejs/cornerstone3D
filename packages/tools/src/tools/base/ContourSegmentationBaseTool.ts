@@ -5,6 +5,7 @@ import type {
   PublicToolProps,
   ToolProps,
   AnnotationRenderContext,
+  Annotations,
 } from '../../types';
 
 import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
@@ -30,7 +31,7 @@ import { getViewportIdsWithSegmentation } from '../../stateManagement/segmentati
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
 import { getSVGStyleForSegment } from '../../utilities/segmentation/getSVGStyleForSegment';
-
+import { defaultSegmentationStateManager } from '../../stateManagement/segmentation/SegmentationStateManager';
 /**
  * A base contour segmentation class responsible for rendering, registering
  * and unregister contour segmentation annotations.
@@ -198,6 +199,49 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
     }
 
     return renderResult;
+  }
+
+  /**
+   * @override We override this method so that the tool does not
+   * render annotations that are not part of any segmentation representation
+   * for the given viewport (element).
+   */
+  public filterInteractableAnnotationsForElement(
+    element: HTMLDivElement,
+    annotations: Annotations
+  ): Annotations {
+    if (!annotations || !annotations.length) {
+      return;
+    }
+
+    const baseFilteredAnnotations =
+      super.filterInteractableAnnotationsForElement(element, annotations);
+
+    if (!baseFilteredAnnotations || !baseFilteredAnnotations.length) {
+      return;
+    }
+
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    return baseFilteredAnnotations.filter((annotation) => {
+      const segmentationId = (annotation as ContourSegmentationAnnotation)?.data
+        ?.segmentation?.segmentationId;
+
+      // If there is no segmentationId, then we don't now how to filter it
+      // here so we return true to keep it.
+      if (!segmentationId) {
+        return true;
+      }
+
+      return !!defaultSegmentationStateManager.getSegmentationRepresentation(
+        viewport.id,
+        {
+          segmentationId,
+          type: SegmentationRepresentations.Contour,
+        }
+      );
+    });
   }
 
   /**

@@ -149,9 +149,14 @@ export function metadataForDataset(
 
     let rowPixelSpacing = null;
 
+    let usingDefaultValues = false;
     if (pixelSpacing) {
       rowPixelSpacing = pixelSpacing[0];
       columnPixelSpacing = pixelSpacing[1];
+    } else {
+      usingDefaultValues = true;
+      rowPixelSpacing = 1;
+      columnPixelSpacing = 1;
     }
 
     let rowCosines = null;
@@ -190,6 +195,7 @@ export function metadataForDataset(
       pixelSpacing,
       rowPixelSpacing,
       columnPixelSpacing,
+      usingDefaultValues,
     };
   }
 

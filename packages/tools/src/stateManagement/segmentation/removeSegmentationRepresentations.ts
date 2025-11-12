@@ -6,6 +6,7 @@ import { getSegmentationRepresentations } from './getSegmentationRepresentation'
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { surfaceDisplay } from '../../tools/displayTools/Surface';
+import { removeSegmentationListener } from './segmentationEventManager';
 
 /**
  * Removes a segmentation representation from a viewport.
@@ -198,6 +199,11 @@ function _removeRepresentationObject(
         immediate
       );
     }
+    // Remove any active listeners for this representation
+    removeSegmentationListener(
+      representation.segmentationId,
+      representation.type
+    );
   });
 
   // trigger render for viewport

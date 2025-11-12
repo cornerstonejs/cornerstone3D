@@ -68,7 +68,7 @@ const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;
 const { Events: csEvents } = Enums;
 
 // TODO: find a better to identify segmentation actors
-const isSegmentation = (actor) => actor.uid !== actor.referencedId;
+const isSegmentation = (actor) => !!actor.representationUID;
 
 export type AutoPanCallbackData = {
   points: {
@@ -1355,7 +1355,7 @@ class AdvancedMagnifyViewport {
     const actors = sourceViewport.getActors();
     const volumeInputArray: Types.IVolumeInput[] = actors
       .filter((actor) => !isSegmentation(actor))
-      .map((actor) => ({ volumeId: actor.uid }));
+      .map((actor) => ({ volumeId: actor.referencedId }));
 
     magnifyViewport.setVolumes(volumeInputArray).then(() => {
       this._isViewportReady = true;

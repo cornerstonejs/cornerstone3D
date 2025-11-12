@@ -1,3 +1,4 @@
+import type IBaseStreamingImageVolume from './IBaseStreamingImageVolume';
 import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
@@ -168,6 +169,7 @@ export type {
   // config
   Cornerstone3DConfig,
   //
+  IBaseStreamingImageVolume,
   ICamera,
   IStackViewport,
   IVideoViewport,

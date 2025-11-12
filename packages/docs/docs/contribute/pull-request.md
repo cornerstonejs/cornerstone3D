@@ -28,3 +28,30 @@ While we do appreciate code contributions, triaging and integrating contributed 
 - Quality of design is acceptable. This is a bit subjective so you should consider posting on the forum for specific guidance.
 - The scope of the pull request is not too large. Please consider separate pull requests for each feature as big pull requests are very time consuming to understand.
 - We will provide feedback on your pull requests as soon as possible. Following the tips above will help ensure your changes are reviewed.
+
+## My changes require updating dependencies in the package.json files - what is the process for doing this?
+
+In general you will typically not be updating the various `package.json` files.
+But for the case when you do, you will have to also update the various Cornerstone3D lock files
+and as such you will have to do both a `yarn` and `bun` `install` without
+the `--frozen-lockfile` flag.
+
+:::danger
+Updating the `package.json` files must be done with care so as to avoid incorporating
+vulnerable, third-party packages and/or versions. Please research the added
+packages and/or versions for vulnerabilities.
+
+Here is what you should do when adding new packages and/or versions prior to
+committing and pushing your code:
+
+1. Do your due diligence researching the added packages and/or versions for vulnerabilities.
+2. Update the `package.json` files.
+3. Execute `yarn run install:update-lockfile`. This updates both the `yarn.lock` and
+   the `bun.lock` files.
+4. Execute `yarn run audit` for a last security check. This runs both `yarn audit` and
+   `bun audit`.
+5. Include both the `yarn.lock` and `bun.lock` files as part of your commit.
+
+If any of your research or auditing for vulnerabilities find HIGH risk vulnerabilities
+do NOT commit or push your changes! Low and moderate risk vulnerabilities are acceptable.
+:::

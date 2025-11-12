@@ -34,7 +34,12 @@ const typedArrayConstructors = {
   Uint32Array,
 };
 
-function postProcessDecodedPixels(imageFrame, options, start, decodeConfig) {
+export function postProcessDecodedPixels(
+  imageFrame,
+  options,
+  start,
+  decodeConfig
+) {
   const shouldShift =
     imageFrame.pixelRepresentation !== undefined &&
     imageFrame.pixelRepresentation === 1;
