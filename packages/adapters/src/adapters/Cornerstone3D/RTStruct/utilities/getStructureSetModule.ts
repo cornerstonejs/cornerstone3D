@@ -1,10 +1,10 @@
-export default function getStructureSetModule(contour, index) {
+export default function getStructureSetModule(contour, segment) {
   const { FrameOfReferenceUID } = contour.metadata;
 
   return {
-    ROINumber: index + 1,
-    ROIName: contour.name || `Todo: name ${index + 1}`,
-    ROIDescription: 'OHIF Contour',
+    ROINumber: segment.segmentIndex,
+    ROIName: segment.label,
+    ROIDescription: segment.label,
     ROIGenerationAlgorithm: 'MANUAL',
     ReferencedFrameOfReferenceUID: FrameOfReferenceUID,
   };

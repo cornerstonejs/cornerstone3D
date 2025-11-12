@@ -153,7 +153,10 @@ export async function generateRTSSFromLabelmap(
       ReferencedROINumber: index + 1,
     };
 
-    dataset.StructureSetROISequence.push(getStructureSetModule(contour, index));
+    const segment = segmentations.segments[index + 1];
+    dataset.StructureSetROISequence.push(
+      getStructureSetModule(contour, segment)
+    );
 
     dataset.ROIContourSequence.push(roiContour);
 
@@ -176,6 +179,15 @@ export async function generateRTSSFromLabelmap(
   return dataset;
 }
 
+type SegmentAnnotation = {
+  annotations: Types.Annotation[];
+  segmentationUID: string;
+  segmentIndex: number;
+  roiContourSequence: ReturnType<typeof AnnotationToPointData.convert>;
+  segment;
+  structureSetModule: ReturnType<typeof getStructureSetModule>;
+};
+
 /**
  * Convert handles to RTSSReport report object containing the dcmjs dicom dataset.
  *
@@ -187,31 +199,61 @@ export async function generateRTSSFromLabelmap(
  * @returns Report object containing the dataset
  */
 export function generateRTSSFromAnnotations(
-  segmentation,
+  segmentations,
   annotations,
   options
 ) {
   const dataset = _initializeDataset(
-    segmentation,
+    segmentations,
     annotations[0].metadata,
     options
   );
 
+  const segmentsContour = new Map<string, SegmentAnnotation>();
+
   annotations.forEach((annotation, index) => {
-    const ContourSequence = AnnotationToPointData.convert(
+    const {
+      data: { segmentation },
+    } = annotation;
+    if (!segmentation) {
+      console.warn('Annotation is not a segmentation:', annotation);
+      return;
+    }
+    const { segmentationId, segmentIndex } = segmentation;
+    const key = `${segmentationId}:${segmentIndex}`;
+    let segmentAnnotation = segmentsContour.get(key);
+    if (!segmentAnnotation) {
+      const segment = segmentations.segments[segmentIndex];
+      console.warn('segment=', segment);
+      const structureSetModule = getStructureSetModule(annotation, segment);
+      dataset.StructureSetROISequence.push(structureSetModule);
+      dataset.RTROIObservationsSequence.push(
+        getRTROIObservationsSequence(segment, index, options)
+      );
+      segmentAnnotation = {
+        ...segmentation,
+        annotations: [],
+        structureSetModule,
+        segment,
+        roiContourSequence: null,
+      };
+      segmentsContour.set(key, segmentAnnotation);
+    }
+
+    const roiContourSequence = AnnotationToPointData.convert(
       annotation,
-      index,
+      segmentAnnotation.segment,
       metaData
     );
-
-    dataset.StructureSetROISequence.push(
-      getStructureSetModule(annotation, index)
-    );
-
-    dataset.ROIContourSequence.push(ContourSequence);
-    dataset.RTROIObservationsSequence.push(
-      getRTROIObservationsSequence(annotation, index, options)
-    );
+    console.warn('roiContourSequence', roiContourSequence);
+    if (segmentAnnotation.roiContourSequence) {
+      segmentAnnotation.roiContourSequence.ContourSequence.push(
+        ...roiContourSequence.ContourSequence
+      );
+    } else {
+      dataset.ROIContourSequence.push(roiContourSequence);
+      segmentAnnotation.roiContourSequence = roiContourSequence;
+    }
 
     // May update the existing referenced series sequence in place
     dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
@@ -220,7 +262,7 @@ export function generateRTSSFromAnnotations(
       options
     );
 
-    // ReferencedFrameOfReferenceSequence
+    // ReferencedFrameOfReferenceSequence gets updated for each new sop instance
     dataset.ReferencedFrameOfReferenceSequence =
       getReferencedFrameOfReferenceSequence(
         dataset.ReferencedFrameOfReferenceSequence,
