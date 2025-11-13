@@ -68,6 +68,12 @@ export interface SopCommonModuleMetadata {
   sopInstanceUID: string;
 }
 
+export interface FrameMetadata extends SopCommonModuleMetadata {
+  // This is a 1 based frame number
+  frameNumber: number;
+  numberOfFrames: number;
+}
+
 export interface TransferSyntaxMetadata {
   transferSyntaxUID: string;
 }

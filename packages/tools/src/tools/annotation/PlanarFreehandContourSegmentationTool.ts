@@ -3,8 +3,9 @@ import type { AnnotationRenderContext, PublicToolProps } from '../../types';
 import type { PlanarFreehandContourSegmentationAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import PlanarFreehandROITool from './PlanarFreehandROITool';
+import AnnotationToPointData from '../../utilities/contours/AnnotationToPointData';
 
-class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
+export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
   static toolName = 'PlanarFreehandContourSegmentationTool';
 
   constructor(toolProps: PublicToolProps) {
@@ -24,6 +25,10 @@ class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool {
     );
 
     super(initialProps);
+  }
+
+  static {
+    AnnotationToPointData.register(PlanarFreehandContourSegmentationTool);
   }
 
   protected isContourSegmentationTool(): boolean {

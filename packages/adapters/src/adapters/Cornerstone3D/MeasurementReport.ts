@@ -23,6 +23,7 @@ import { copySeriesTags } from "../helpers/copySeriesTags";
 import { toPoint3 } from "../helpers/toPoint3";
 import {
     COMMENT_CODE,
+    metaSRAnnotation,
     NO_IMAGE_ID,
     TEXT_ANNOTATION_POSITION
 } from "./constants";
@@ -264,35 +265,11 @@ export default class MeasurementReport {
         }
     }
 
+    /**
+     * @deprecated in favour of the constants version
+     */
     static generateDatasetMeta() {
-        // TODO: what is the correct metaheader
-        // http://dicom.nema.org/medical/Dicom/current/output/chtml/part10/chapter_7.html
-        // TODO: move meta creation to happen in derivations.js
-        const fileMetaInformationVersionArray = new Uint8Array(2);
-        fileMetaInformationVersionArray[1] = 1;
-
-        const _meta = {
-            FileMetaInformationVersion: {
-                Value: [fileMetaInformationVersionArray.buffer],
-                vr: "OB"
-            },
-            //MediaStorageSOPClassUID
-            //MediaStorageSOPInstanceUID: sopCommonModule.sopInstanceUID,
-            TransferSyntaxUID: {
-                Value: ["1.2.840.10008.1.2.1"],
-                vr: "UI"
-            },
-            ImplementationClassUID: {
-                Value: [DicomMetaDictionary.uid()], // TODO: could be git hash or other valid id
-                vr: "UI"
-            },
-            ImplementationVersionName: {
-                Value: ["dcmjs"],
-                vr: "SH"
-            }
-        };
-
-        return _meta;
+        return metaSRAnnotation;
     }
 
     static generateDerivationSourceDataset = instance => {
