@@ -125,6 +125,9 @@ export const capitalizeTag = (tag: string) => {
   if (tag.startsWith('sop')) {
     return `SOP${tag.substring(3)}`;
   }
+  if (tag.endsWith('Id')) {
+    tag = `${tag.substring(0, tag.length - 2)}ID`;
+  }
   return tag.charAt(0).toUpperCase() + tag.slice(1);
 };
 
@@ -134,6 +137,9 @@ export const capitalizeTag = (tag: string) => {
 export const lowerTag = (tag: string) => {
   if (tag.startsWith('SOP')) {
     return `sop${tag.substring(3)}`;
+  }
+  if (tag.endsWith('ID')) {
+    tag = `${tag.substring(0, tag.length - 2)}Id`;
   }
   return tag.charAt(0).toLowerCase() + tag.slice(1);
 };

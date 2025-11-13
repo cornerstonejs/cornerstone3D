@@ -40,6 +40,7 @@
     "docs:watch": "npx lerna run docs:watch",
     "install:update-lockfile": "yarn install && bun install --config=./bunfig.update-lockfile.toml",
     "install:yarn:frozen-lockfile": "yarn install --frozen-lockfile",
+    "install:frozen": "yarn install --frozen-lockfile",
     "audit": "yarn audit || bun audit",
     "preinstall": "node preinstall.js",
     "prepare": "husky",

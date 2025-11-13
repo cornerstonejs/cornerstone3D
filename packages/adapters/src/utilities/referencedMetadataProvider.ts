@@ -1,11 +1,13 @@
 import { metaData, Enums, type Types } from '@cornerstonejs/core';
+import dcmjs from 'dcmjs';
 
+const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
 
 export const STUDY_MODULES = [
   MetadataModules.GENERAL_STUDY,
-  MetadataModules.PATIENT,
   MetadataModules.PATIENT_STUDY,
+  MetadataModules.PATIENT,
 ];
 
 export const SERIES_MODULES = [MetadataModules.GENERAL_SERIES];
@@ -116,6 +118,49 @@ export const metadataProvider = {
    */
   [MetadataModules.IMAGE_DATA]: (imageId) => {
     return metaData.getInstanceModule(imageId, IMAGE_MODULES);
+  },
+
+  /**
+   * RTSS Instance metadata
+   */
+  [MetadataModules.RTSS_INSTANCE_DATA]: (imageId) => {
+    const newInstanceData = metaData.get(
+      MetadataModules.NEW_INSTANCE_DATA,
+      imageId
+    );
+    const frame = metaData.get(MetadataModules.FRAME_MODULE, imageId);
+    return {
+      ...newInstanceData,
+      SeriesNumber: '3201',
+      StructureSetROISequence: [],
+      ROIContourSequence: [],
+      RTROIObservationsSequence: [],
+      ReferencedSeriesSequence: [],
+      ReferencedFrameOfReferenceSequence: [],
+      Modality: 'RTSTRUCT',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.481.3', // RT Structure Set Storage
+      FrameOfReferenceUID: frame.frameOfReferenceUID,
+      PositionReferenceIndicator: '',
+      StructureSetLabel: '',
+      StructureSetName: '',
+      StructureSetDate: DicomMetaDictionary.date(),
+      StructureSetTime: DicomMetaDictionary.time(),
+    };
+  },
+
+  [MetadataModules.NEW_INSTANCE_DATA]: (imageId) => {
+    const studyData = metaData.get(MetadataModules.STUDY_DATA, imageId);
+    return {
+      ...studyData,
+      SeriesNumber: '50000',
+      InstanceNumber: '1',
+      OperatorsName: '',
+      ReferringPhysicianName: '',
+      SpecificCharacterSet: 'ISO_IR 192',
+      Manufacturer: 'cs3d',
+      SOPInstanceUID: DicomMetaDictionary.uid(),
+      SeriesInstanceUID: DicomMetaDictionary.uid(),
+    };
   },
 };
 

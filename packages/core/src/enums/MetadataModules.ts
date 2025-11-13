@@ -69,6 +69,15 @@ enum MetadataModules {
   STUDY_DATA = 'StudyData',
   SERIES_DATA = 'SeriesData',
   IMAGE_DATA = 'ImageData',
+
+  /**
+   * Static data for various header initialization.
+   * This change allows writing a custom provider to replace the metadata
+   * either on a per-instance basis or the default data.
+   */
+  /** The basic header data for new RTSS instances */
+  RTSS_INSTANCE_DATA = 'RtssInstanceData',
+  NEW_INSTANCE_DATA = 'NewInstanceData',
 }
 
 export default MetadataModules;

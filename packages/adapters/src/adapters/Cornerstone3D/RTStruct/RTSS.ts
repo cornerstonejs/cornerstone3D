@@ -1,27 +1,24 @@
-import { metaData } from '@cornerstonejs/core';
+import { metaData, Enums } from '@cornerstonejs/core';
 import { utilities, annotation as toolsAnnotation } from '@cornerstonejs/tools';
 import type { Types } from '@cornerstonejs/tools';
 
-import dcmjs from 'dcmjs';
 import getReferencedFrameOfReferenceSequence from './utilities/getReferencedFrameOfReferenceSequence';
 import getReferencedSeriesSequence from './utilities/getReferencedSeriesSequence';
 import getRTROIObservationsSequence from './utilities/getRTROIObservationsSequence';
-import getRTSeriesModule from './utilities/getRTSeriesModule';
 import getStructureSetModule from './utilities/getStructureSetModule';
 import { metaRTSSContour as _meta } from '../constants';
-import { copyStudyTags } from '../../helpers';
-import {
-  INSTANCE_DEFAULTS,
-  instanceSuccessor,
-} from '../../helpers/instanceSuccessor';
-
+import { createInstance } from '../../../utilities';
+import type {
+  NormalModule,
+  RtssModule,
+} from '../../../utilities/InstanceTypes';
 import '../../../utilities/referencedMetadataProvider';
 
 type Segmentation = Types.Segmentation;
 
 const { generateContourSetsFromLabelmap, AnnotationToPointData } =
   utilities.contours;
-const { DicomMetaDictionary } = dcmjs.data;
+const { MetadataModules } = Enums;
 
 /**
  * Convert handles to RTSS report containing the dcmjs dicom dataset.
@@ -224,7 +221,6 @@ export function generateRTSSFromAnnotations(
     let segmentAnnotation = segmentsContour.get(key);
     if (!segmentAnnotation) {
       const segment = segmentations.segments[segmentIndex];
-      console.warn('segment=', segment);
       const structureSetModule = getStructureSetModule(annotation, segment);
       dataset.StructureSetROISequence.push(structureSetModule);
       dataset.RTROIObservationsSequence.push(
@@ -251,7 +247,9 @@ export function generateRTSSFromAnnotations(
         ...roiContourSequence.ContourSequence
       );
     } else {
-      dataset.ROIContourSequence.push(roiContourSequence);
+      dataset.ROIContourSequence.push(
+        roiContourSequence as unknown as NormalModule
+      );
       segmentAnnotation.roiContourSequence = roiContourSequence;
     }
 
@@ -288,43 +286,21 @@ export function generateRTSSFromAnnotations(
 // }
 
 function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
-  const { metadataProvider = metaData } = options;
   // get the first annotation data
-  const { referencedImageId: imageId, FrameOfReferenceUID } = imgMetadata;
-  const { predecessorImageId } = options;
+  const { referencedImageId: studyExemplarImageId } = imgMetadata;
 
-  const predecessorInstance =
-    predecessorImageId && metadataProvider.get('instance', predecessorImageId);
-
-  // If no existing series, then will have to use the instance data
-  const instanceForStudy =
-    predecessorInstance || metadataProvider.get('instance', imageId);
-
-  const studyData = copyStudyTags(instanceForStudy);
-
-  const rtMetadata = getRTSeriesModule(predecessorInstance, options);
-
-  return instanceSuccessor(
+  return createInstance<RtssModule>(
+    MetadataModules.RTSS_INSTANCE_DATA,
+    studyExemplarImageId,
     {
-      ...INSTANCE_DEFAULTS,
-      ...studyData,
-      StructureSetROISequence: [],
-      ROIContourSequence: [],
-      RTROIObservationsSequence: [],
-      ReferencedSeriesSequence: [],
-      ReferencedFrameOfReferenceSequence: [],
-      Modality: 'RTSTRUCT',
-      SOPClassUID: '1.2.840.10008.5.1.4.1.1.481.3', // RT Structure Set Storage
-      FrameOfReferenceUID,
-      PositionReferenceIndicator: '',
-      StructureSetLabel: segmentation.label || '',
-      StructureSetName: segmentation.label || '',
-      StructureSetDate: DicomMetaDictionary.date(),
-      StructureSetTime: DicomMetaDictionary.time(),
+      // FrameOfReferenceUID,
+      StructureSetLabel: segmentation.label,
+      StructureSetName: segmentation.label,
+      SeriesDescription: options.predecessorImageId
+        ? undefined
+        : segmentation.label,
       _meta,
-      ...rtMetadata,
     },
-    predecessorInstance,
     options
   );
 }
