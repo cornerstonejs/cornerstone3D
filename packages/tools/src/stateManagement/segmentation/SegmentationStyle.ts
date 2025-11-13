@@ -82,8 +82,8 @@ class SegmentationStyle {
    * @param specifier.viewportId - Optional. The ID of the viewport.
    * @param specifier.segmentationId - Optional. The ID of the segmentation.
    * @param specifier.segmentIndex - Optional. The index of the specific segment to style.
-   * @param specifier.merge - Whether to merge the provided styles with existing ones. Defaults to `true`
    * @param styles - The styles to set.
+   * @param merge - If `true` (default), merges the new styles with existing ones; otherwise, replaces them entirely.
    */
   setStyle(
     specifier: {
@@ -91,17 +91,11 @@ class SegmentationStyle {
       viewportId?: string;
       segmentationId?: string;
       segmentIndex?: number;
-      merge?: boolean;
     },
-    styles: RepresentationStyle
+    styles: RepresentationStyle,
+    merge: boolean = true
   ): void {
-    const {
-      viewportId,
-      segmentationId,
-      type,
-      segmentIndex,
-      merge = true,
-    } = specifier;
+    const { viewportId, segmentationId, type, segmentIndex } = specifier;
 
     const currentStyles = this.getStyle(specifier);
     const mergedStyles = merge ? { ...currentStyles, ...styles } : styles;
