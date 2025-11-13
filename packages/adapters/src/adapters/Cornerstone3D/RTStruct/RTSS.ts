@@ -3,7 +3,6 @@ import { utilities, annotation as toolsAnnotation } from '@cornerstonejs/tools';
 import type { Types } from '@cornerstonejs/tools';
 
 import getReferencedFrameOfReferenceSequence from './utilities/getReferencedFrameOfReferenceSequence';
-import getReferencedSeriesSequence from './utilities/getReferencedSeriesSequence';
 import getRTROIObservationsSequence from './utilities/getRTROIObservationsSequence';
 import getStructureSetModule from './utilities/getStructureSetModule';
 import { metaRTSSContour as _meta } from '../constants';
@@ -97,15 +96,10 @@ export async function generateRTSSFromLabelmap(
          * }
          */
         // Note: change needed if support non-planar contour representation is needed
-        const sopCommon = metadataProvider.get(
-          'sopCommonModule',
+        const ContourImageSequence = metadataProvider.get(
+          'ImageSopInstanceReference',
           sliceContour.referencedImageId
         );
-        const ReferencedSOPClassUID = sopCommon.sopClassUID;
-        const ReferencedSOPInstanceUID = sopCommon.sopInstanceUID;
-        const ContourImageSequence = [
-          { ReferencedSOPClassUID, ReferencedSOPInstanceUID }, // NOTE: replace in dcmjs?
-        ];
 
         const { points: polyDataPoints } = sliceContour.polyData;
 
@@ -135,7 +129,7 @@ export async function generateRTSSFromLabelmap(
         name: segLabel,
         description: segLabel,
         contourSequence,
-        color: contourSet.color,
+        color: contourSet.color.slice(0, 3),
         metadata: contourSet.metadata,
       };
 
@@ -160,15 +154,11 @@ export async function generateRTSSFromLabelmap(
     dataset.StructureSetROISequence.push(
       getStructureSetModule(contour, segment)
     );
+    dataset.RTROIObservationsSequence.push(
+      getRTROIObservationsSequence(segment, index, options)
+    );
 
     dataset.ROIContourSequence.push(roiContour);
-
-    // ReferencedSeriesSequence
-    dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
-      dataset.ReferencedSeriesSequence,
-      contour.metadata,
-      options
-    );
 
     // ReferencedFrameOfReferenceSequence
     dataset.ReferencedFrameOfReferenceSequence =
@@ -178,6 +168,11 @@ export async function generateRTSSFromLabelmap(
         options
       );
   });
+
+  if (dataset.ReferencedFrameOfReferenceSequence?.length === 1) {
+    dataset.FrameOfReferenceUID =
+      dataset.ReferencedFrameOfReferenceSequence[0].FrameOfReferenceUID;
+  }
 
   return dataset;
 }
@@ -247,7 +242,6 @@ export function generateRTSSFromAnnotations(
       segmentAnnotation.segment,
       metaData
     );
-    console.warn('roiContourSequence', roiContourSequence);
     if (segmentAnnotation.roiContourSequence) {
       segmentAnnotation.roiContourSequence.ContourSequence.push(
         ...roiContourSequence.ContourSequence
@@ -258,13 +252,6 @@ export function generateRTSSFromAnnotations(
       );
       segmentAnnotation.roiContourSequence = roiContourSequence;
     }
-
-    // May update the existing referenced series sequence in place
-    dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
-      dataset.ReferencedSeriesSequence,
-      annotation.metadata,
-      options
-    );
 
     // ReferencedFrameOfReferenceSequence gets updated for each new sop instance
     dataset.ReferencedFrameOfReferenceSequence =
@@ -279,7 +266,6 @@ export function generateRTSSFromAnnotations(
     dataset.FrameOfReferenceUID =
       dataset.ReferencedFrameOfReferenceSequence[0].FrameOfReferenceUID;
   }
-
   return dataset;
 }
 
