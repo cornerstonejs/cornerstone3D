@@ -58,7 +58,7 @@ function _createMultiframeSegmentationFromReferencedImages(
   metadata,
   options
 ) {
-  const studyData = images[0].imageId;
+  const studyData = metadata.get(MetadataModules.STUDY_DATA, images[0].imageId);
   const datasets = images.map((image) => {
     const { imageId } = image;
     const seriesData = metadata.get(MetadataModules.SERIES_DATA, imageId);
@@ -69,7 +69,7 @@ function _createMultiframeSegmentationFromReferencedImages(
       ...imageData,
       PixelData: image.voxelManager.getScalarData(),
       // Declaring it as 16 bits allows the normalizer to work on 8 bit data
-      BitsPerPixel: 16,
+      BitsAllocated: 16,
       _vrMap: {
         PixelData: 'OW',
       },
