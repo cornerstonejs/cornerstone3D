@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.1...v4.10.2) (2025-11-13)
+
+### Bug Fixes
+
+- **SegmentationStyle:** Fix inactive contour visibility and styling. ([#2460](https://github.com/cornerstonejs/cornerstone3D/issues/2460)) ([73df576](https://github.com/cornerstonejs/cornerstone3D/commit/73df5763dc4b1c9c105892c1486be87565c0cd42))
+
 ## [4.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.0...v4.10.1) (2025-11-13)
 
 **Note:** Version bump only for package @cornerstonejs/tools
