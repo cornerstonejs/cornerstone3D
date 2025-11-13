@@ -1,11 +1,12 @@
 import macro from '@kitware/vtk.js/macros';
-import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
-import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
-import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
-import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
+import { VtkDataTypes } from '@kitware/vtk.js/Common/Core/DataArray/Constants';
+import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
+import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
+import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
+import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getCanUseNorm16Texture } from '../../init';
 
 /**
