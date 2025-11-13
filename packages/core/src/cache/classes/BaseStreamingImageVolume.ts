@@ -320,8 +320,10 @@ export class BaseStreamingImageVolume
     const { transferSyntaxUID: transferSyntaxUID } =
       metaData.get('transferSyntax', imageId) || {};
 
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
-    const { rows, columns } = imagePlaneModule;
+    // Note: before PR 2340, rows and columns were from  imagePlaneModule = metaData.get('imagePlaneModule', imageId) .
+    // This is now using the volume's dimensions instead.
+    const targetRows = this.dimensions?.[1];
+    const targetCols = this.dimensions?.[0];
     const imageIdIndex = this.getImageIdIndex(imageId);
 
     const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
@@ -380,8 +382,8 @@ export class BaseStreamingImageVolume
 
     const targetBuffer = {
       type: this.dataType,
-      rows,
-      columns,
+      rows: targetRows,
+      columns: targetCols,
     };
 
     return {
