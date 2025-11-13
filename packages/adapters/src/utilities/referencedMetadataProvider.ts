@@ -22,11 +22,17 @@ export const IMAGE_MODULES = [
 ];
 
 /**
- * Contains a metadata provider which knows how to generate the various referenced
- * metadata instances based on the existing metadata modules.
+ * Contains a metadata provider which knows how to generate different types of
+ * referenced metadata for things like creation a reference to an existing
+ * image, creating a new DICOM object entirely etc.
+ *
+ * There are also specific study/series/instance level attribute getters which
+ * can be used to get the attributes at a given level in the Normalized format
+ * instead of the lowerCamelCase format.  This assists in creating new DICOM
+ * objects.
  *
  * For example, this module provides a `ImageSopInstanceReference` implementation
- * based on 'sopCommonModule' and 'frameModule'
+ * based on 'sopCommonModule' and 'frameModule' which references an image correctly
  */
 
 export const metadataProvider = {

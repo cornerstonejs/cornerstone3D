@@ -6,6 +6,8 @@ import { metaData } from '@cornerstonejs/core';
  * @param metaDataProvider - The metadata provider either wadors or wadouri
  * @param types - An array of metadata types to retrieve.
  * @returns An object containing the retrieved metadata with capitalized keys.
+ *
+ * @deprecated Use the getInstanceModule in metaData instead.
  */
 function getInstanceModule(imageId, metaDataProvider, types) {
   const result = {};
