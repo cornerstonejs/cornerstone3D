@@ -13,6 +13,7 @@ type BaseSpecifier = {
   viewportId?: string;
   segmentationId?: string;
   segmentIndex?: number;
+  merge?: boolean;
 };
 
 type SpecifierWithType<T extends SegmentationRepresentations> =
