@@ -3,6 +3,7 @@ import { utilities, annotation as toolsAnnotation } from '@cornerstonejs/tools';
 import type { Types } from '@cornerstonejs/tools';
 
 import getReferencedFrameOfReferenceSequence from './utilities/getReferencedFrameOfReferenceSequence';
+import getReferencedSeriesSequence from './utilities/getReferencedSeriesSequence';
 import getRTROIObservationsSequence from './utilities/getRTROIObservationsSequence';
 import getStructureSetModule from './utilities/getStructureSetModule';
 import { metaRTSSContour as _meta } from '../constants';
@@ -160,6 +161,13 @@ export async function generateRTSSFromLabelmap(
 
     dataset.ROIContourSequence.push(roiContour);
 
+    // ReferencedSeriesSequence
+    dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
+      dataset.ReferencedSeriesSequence,
+      contour.metadata,
+      options
+    );
+
     // ReferencedFrameOfReferenceSequence
     dataset.ReferencedFrameOfReferenceSequence =
       getReferencedFrameOfReferenceSequence(
@@ -253,6 +261,13 @@ export function generateRTSSFromAnnotations(
       segmentAnnotation.roiContourSequence = roiContourSequence;
     }
 
+    // May update the existing referenced series sequence in place
+    dataset.ReferencedSeriesSequence = getReferencedSeriesSequence(
+      dataset.ReferencedSeriesSequence,
+      annotation.metadata,
+      options
+    );
+
     // ReferencedFrameOfReferenceSequence gets updated for each new sop instance
     dataset.ReferencedFrameOfReferenceSequence =
       getReferencedFrameOfReferenceSequence(
@@ -266,6 +281,7 @@ export function generateRTSSFromAnnotations(
     dataset.FrameOfReferenceUID =
       dataset.ReferencedFrameOfReferenceSequence[0].FrameOfReferenceUID;
   }
+
   return dataset;
 }
 

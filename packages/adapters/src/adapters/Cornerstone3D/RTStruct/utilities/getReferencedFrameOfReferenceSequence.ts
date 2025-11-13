@@ -1,3 +1,7 @@
+/**
+ * Generates a referenced frame of reference sequence
+ * and updates it to includes the reference instance series
+ */
 export default function getReferencedFrameOfReferenceSequence(
   referencedFrameOfReferenceSequence,
   metadata,
