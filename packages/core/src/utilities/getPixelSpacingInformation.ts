@@ -17,76 +17,116 @@ const projectionRadiographSOPClassUIDs = new Set([
   '1.2.840.10008.5.1.4.1.1.12.3', // X-Ray Angiographic Bi-plane Image Storage	Retired
 ]);
 
-function calculateRadiographicPixelSpacing(instance) {
+/**
+ * Calculates the ERMF value using any of:
+ *   * EstimatedRadiographicMagnificationFactor
+ *   * PixelSpacing / Imager Pixel Spacing
+ *   * Distance Source / imager / patient pair
+ *
+ * @returns ERMF if available.  True means the PixelSpacing has been pre-calculated
+ */
+export function getERMF(instance) {
   const {
     PixelSpacing,
     ImagerPixelSpacing,
-    EstimatedRadiographicMagnificationFactor,
-    PixelSpacingCalibrationType,
-    PixelSpacingCalibrationDescription,
+    EstimatedRadiographicMagnificationFactor: ermf,
+    // Naming is traditionally sid/sod here
+    DistanceSourceToDetector: sid,
+    DistanceSourceToPatient: sod,
   } = instance;
+  if (ermf) {
+    return ermf;
+  }
+  if (sod < sid) {
+    return sid / sod;
+  }
+  if (ImagerPixelSpacing?.[0] > PixelSpacing?.[0]) {
+    return true;
+  }
+}
+
+/**
+ * Given an instance, calculates the project (radiographic) pixel spacing
+ * plus the type of calibration that got used for it.
+ *
+ * This will be Calibrated if the calibration type is Fiducial (calibration)
+ *
+ * It will be ERMF if Pixel Spacing is present, and the calibration is GEOMETRY
+ *
+ * It will be ERMF if Imager Pixel Spacing is present and ermf is defined in some
+ * format.
+ *
+ * It will be projection if imager pixel spacing is defined, but no ermf
+ *
+ * It will be unknown if pixel spacing is defined
+ *
+ * Otherwise it will be undefined (no spacing).
+ */
+export function calculateRadiographicPixelSpacing(instance) {
+  const { PixelSpacing, ImagerPixelSpacing, PixelSpacingCalibrationType } =
+    instance;
 
   const isProjection = true;
 
-  if (!ImagerPixelSpacing) {
-    // If only Pixel Spacing is present, and this is a projection radiograph,
-    // PixelSpacing should be used, but the user should be informed that
-    // what it means is unknown
+  if (PixelSpacing && PixelSpacingCalibrationType === 'GEOMETRY') {
+    if (isEqual(PixelSpacing, ImagerPixelSpacing)) {
+      console.warn(
+        'Calibration type is geometry, but pixel spacing and imager pixel spacing identical',
+        PixelSpacing,
+        ImagerPixelSpacing
+      );
+    }
+    // This tag says just trust the pixel spacing without worrying about the value
     return {
       PixelSpacing,
-      type: CalibrationTypes.UNKNOWN,
-      isProjection,
-    };
-  }
-
-  if (!PixelSpacing) {
-    if (!EstimatedRadiographicMagnificationFactor) {
-      console.warn(
-        'EstimatedRadiographicMagnificationFactor was not present. Unable to correct ImagerPixelSpacing.'
-      );
-
-      return {
-        PixelSpacing: ImagerPixelSpacing,
-        type: CalibrationTypes.PROJECTION,
-        isProjection,
-      };
-    }
-    // Note that in IHE Mammo profile compliant displays, the value of Imager Pixel Spacing is required to be corrected by
-    // Estimated Radiographic Magnification Factor and the user informed of that.
-    // TODO: should this correction be done before all of this logic?
-    const correctedPixelSpacing = ImagerPixelSpacing.map(
-      (pixelSpacing) => pixelSpacing / EstimatedRadiographicMagnificationFactor
-    );
-
-    return {
-      PixelSpacing: correctedPixelSpacing,
       type: CalibrationTypes.ERMF,
       isProjection,
     };
   }
 
-  if (isEqual(PixelSpacing, ImagerPixelSpacing)) {
-    // If Imager Pixel Spacing and Pixel Spacing are present and they have the same values,
-    // then the user should be informed that the measurements are at the detector plane
+  if (PixelSpacing && PixelSpacingCalibrationType === 'FIDUCIAL') {
+    // This tag says that the pixel spacing has been manually calibrated
     return {
       PixelSpacing,
+      type: CalibrationTypes.CALIBRATED,
+      isProjection,
+    };
+  }
+
+  if (ImagerPixelSpacing) {
+    const ermf = getERMF(instance);
+    if (ermf > 1) {
+      // The IHE Mammo profile specifies that the value of Imager Pixel Spacing is required to be corrected by
+      // Estimated Radiographic Magnification Factor and the user informed of that.
+      const correctedPixelSpacing = ImagerPixelSpacing.map(
+        (pixelSpacing) => pixelSpacing / ermf
+      );
+
+      return {
+        PixelSpacing: correctedPixelSpacing,
+        type: CalibrationTypes.ERMF,
+        isProjection,
+      };
+    }
+    if (ermf === true) {
+      // PixelSpacing already updated/correct, don't tweak it
+      return {
+        PixelSpacing,
+        type: CalibrationTypes.ERMF,
+        isProjection,
+      };
+    }
+    if (ermf) {
+      console.error('Illegal ERMF value:', ermf);
+    }
+    return {
+      PixelSpacing: PixelSpacing || ImagerPixelSpacing,
       type: CalibrationTypes.PROJECTION,
       isProjection,
     };
   }
 
-  if (PixelSpacingCalibrationType || PixelSpacingCalibrationDescription) {
-    // If Imager Pixel Spacing and Pixel Spacing are present and they have different values,
-    // then the user should be informed that these are "calibrated"
-    return {
-      PixelSpacing,
-      type: CalibrationTypes.CALIBRATED,
-      isProjection,
-      PixelSpacingCalibrationType,
-      PixelSpacingCalibrationDescription,
-    };
-  }
-
+  // If only Pixel Spacing is present, and this is a projection radiograph,
   // PixelSpacing should be used, but the user should be informed that
   // what it means is unknown
   return {
@@ -96,39 +136,11 @@ function calculateRadiographicPixelSpacing(instance) {
   };
 }
 
-function calculateUSPixelSpacing(instance) {
-  const { SequenceOfUltrasoundRegions } = instance;
-  const isArrayOfSequences = Array.isArray(SequenceOfUltrasoundRegions);
-
-  if (isArrayOfSequences && SequenceOfUltrasoundRegions.length > 1) {
-    console.warn(
-      'Sequence of Ultrasound Regions > one entry. This is not yet implemented, all measurements will be shown in pixels.'
-    );
-    return;
-  }
-
-  const { PhysicalDeltaX, PhysicalDeltaY } = isArrayOfSequences
-    ? SequenceOfUltrasoundRegions[0]
-    : SequenceOfUltrasoundRegions;
-  const USPixelSpacing = [
-    Math.abs(PhysicalDeltaX) * 10,
-    Math.abs(PhysicalDeltaY) * 10,
-  ];
-
-  return {
-    PixelSpacing: USPixelSpacing,
-  };
-}
-
-export default function getPixelSpacingInformation(instance) {
+export function getPixelSpacingInformation(instance) {
   // See http://gdcm.sourceforge.net/wiki/index.php/Imager_Pixel_Spacing
   // TODO: Add manual calibration
 
-  const { PixelSpacing, SOPClassUID, SequenceOfUltrasoundRegions } = instance;
-
-  if (SequenceOfUltrasoundRegions) {
-    return calculateUSPixelSpacing(instance);
-  }
+  const { PixelSpacing, SOPClassUID } = instance;
 
   const isProjection = projectionRadiographSOPClassUIDs.has(SOPClassUID);
 
@@ -142,3 +154,5 @@ export default function getPixelSpacingInformation(instance) {
     isProjection: false,
   };
 }
+
+export default getPixelSpacingInformation;
