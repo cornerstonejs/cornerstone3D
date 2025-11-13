@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.0...v4.10.1) (2025-11-13)
+
+**Note:** Version bump only for package root
+
+# [4.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.3...v4.10.0) (2025-11-12)
+
+### Features
+
+- add scoord bounding box rehydration ([#2389](https://github.com/cornerstonejs/cornerstone3D/issues/2389)) ([a1288d6](https://github.com/cornerstonejs/cornerstone3D/commit/a1288d6548e9e18240f4c89dcfe3dcb0dfce20dd))
+
+## [4.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.2...v4.9.3) (2025-11-11)
+
+**Note:** Version bump only for package root
+
+## [4.9.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.1...v4.9.2) (2025-11-11)
+
+### Bug Fixes
+
+- restrict labelmap to surface conversion ([#2426](https://github.com/cornerstonejs/cornerstone3D/issues/2426)) ([677103d](https://github.com/cornerstonejs/cornerstone3D/commit/677103dfccfcf270c9c06a09cccf310a84e0cff5))
+
+## [4.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.0...v4.9.1) (2025-11-10)
+
+### Bug Fixes
+
+- **interpolation:** Use eventTarget for the interpolation process completed event. ([#2454](https://github.com/cornerstonejs/cornerstone3D/issues/2454)) ([89bc3f5](https://github.com/cornerstonejs/cornerstone3D/commit/89bc3f5c151cf790ae37040c3254bbf372775a05))
+
 # [4.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.5...v4.9.0) (2025-11-05)
 
 ### Features

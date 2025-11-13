@@ -80,8 +80,7 @@ async function render(
     contourData = await computeAndAddRepresentation(
       segmentationId,
       Representations.Contour,
-      () => polySeg.computeContourData(segmentationId, { viewport }),
-      () => undefined
+      () => polySeg.computeContourData(segmentationId, { viewport })
     );
 
     polySegConversionInProgressForViewportId.set(viewport.id, false);
@@ -271,7 +270,20 @@ function _checkContourNormalsMatchViewport(
   return true;
 }
 
+/**
+ * Default function to call when segmentation representation is updated
+ *
+ * @param viewport
+ * @returns
+ */
+function getUpdateFunction(
+  viewport: Types.IVolumeViewport | Types.IStackViewport
+): (segmentationId: string) => Promise<void> {
+  return null;
+}
+
 export default {
+  getUpdateFunction,
   render,
   removeRepresentation,
 };
