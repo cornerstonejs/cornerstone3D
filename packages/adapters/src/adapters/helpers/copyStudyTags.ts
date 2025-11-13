@@ -3,7 +3,6 @@ export const patientTags = [
   'PatientID',
   'PatientBirthDate',
   'PatientBirthTime',
-  'PatientID',
   'IssuerOfPatientID',
   'OtherPatientIDs',
   'OtherPatientIDsSequence',
