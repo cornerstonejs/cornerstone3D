@@ -111,6 +111,8 @@ class SegmentationStyle {
         mergedStyles,
         type
       );
+    } else {
+      updatedStyles = mergedStyles;
     }
 
     if (!type) {
