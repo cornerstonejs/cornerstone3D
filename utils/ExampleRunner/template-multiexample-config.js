@@ -105,7 +105,8 @@ module.exports = {
     rules,
   },
   experiments: {
-    asyncWebAssembly: true
+    asyncWebAssembly: true,
+    nativeWatcher: true,
   },
   externals: {
     "dicom-microscopy-viewer": {

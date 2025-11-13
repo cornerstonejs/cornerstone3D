@@ -441,6 +441,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
+    const baseFilteredAnnotations =
+      super.filterInteractableAnnotationsForElement(element, annotations);
+    if (!baseFilteredAnnotations || !baseFilteredAnnotations.length) {
+      return;
+    }
+
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -454,7 +460,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
       // Get data with same normal and within the same slice
       annotationsToDisplay = this.filterAnnotationsWithinSlice(
-        annotations,
+        baseFilteredAnnotations,
         camera,
         spacingInNormalDirection
       );
@@ -697,13 +703,15 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
-    this._calculateStatsIfActive(
-      annotation,
-      targetId,
-      viewport,
-      renderingEngine,
-      enabledElement
-    );
+    if (annotation.invalidated) {
+      this._calculateStatsIfActive(
+        annotation,
+        targetId,
+        viewport,
+        renderingEngine,
+        enabledElement
+      );
+    }
 
     this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
 
@@ -865,13 +873,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       } else {
         this.updateOpenCachedStats({
           metadata,
-          canvasCoordinates,
           targetId,
           cachedStats,
           modalityUnit,
           calibratedScale,
-          deltaInX,
-          deltaInY,
+          points,
         });
       }
     }
@@ -946,8 +952,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // Convert from canvas_pixels ^2 to mm^2
     area *= deltaInX * deltaInY;
 
-    let perimeter = calculatePerimeter(canvasCoordinates, closed) / scale;
-    perimeter *= Math.sqrt(Math.pow(deltaInX, 2) + Math.pow(deltaInY, 2));
+    const perimeter = calculatePerimeter(points, closed) / scale;
 
     // Expand bounding box
     const iDelta = 0.01 * (iMax - iMin);
@@ -1043,17 +1048,14 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   protected updateOpenCachedStats({
     targetId,
     metadata,
-    canvasCoordinates,
     cachedStats,
     modalityUnit,
     calibratedScale,
-    deltaInX,
-    deltaInY,
+    points,
   }) {
     const { scale, unit } = calibratedScale;
 
-    let length = calculatePerimeter(canvasCoordinates, closed) / scale;
-    length *= Math.sqrt(Math.pow(deltaInX, 2) + Math.pow(deltaInY, 2));
+    const length = calculatePerimeter(points, closed) / scale;
 
     cachedStats[targetId] = {
       Modality: metadata.Modality,

@@ -309,11 +309,13 @@ export default class MeasurementReport {
         metadata
     }) {
         const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
-        const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
+        const { ReferencedSOPInstanceUID, ReferencedFrameNumber = 1 } =
             ReferencedSOPSequence;
 
         const referencedImageId =
-            sopInstanceUIDToImageIdMap[ReferencedSOPInstanceUID];
+            sopInstanceUIDToImageIdMap[
+                `${ReferencedSOPInstanceUID}:${ReferencedFrameNumber}`
+            ];
         const imagePlaneModule = metadata.get(
             "imagePlaneModule",
             referencedImageId
