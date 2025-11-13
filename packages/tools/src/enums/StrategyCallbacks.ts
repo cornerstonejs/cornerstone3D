@@ -2,7 +2,10 @@
  * Defines the names of the strategy callbacks used for performing enhanced
  * strategy operations.
  */
+// Add the callbacks necessary for the cursor geometry AND cursor rendering
 enum StrategyCallbacks {
+  CalculateCursorGeometry = 'calculateCursorGeometry',
+  RenderCursor = 'renderCursor',
   /**
    * startStrategy is called at the start of a strategy, typically on mouse down
    * Note this is separate from preview and the endings for preview, which could

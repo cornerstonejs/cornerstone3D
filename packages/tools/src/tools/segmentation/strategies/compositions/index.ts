@@ -9,6 +9,8 @@ import threshold from './threshold';
 import labelmapStatistics from './labelmapStatistics';
 import ensureSegmentationVolumeFor3DManipulation from './ensureSegmentationVolume';
 import ensureImageVolumeFor3DManipulation from './ensureImageVolume';
+import circularCursor from './circularCursor';
+import squareCursor from './squareCursor';
 
 export default {
   determineSegmentIndex,
@@ -22,4 +24,6 @@ export default {
   labelmapStatistics,
   ensureSegmentationVolumeFor3DManipulation,
   ensureImageVolumeFor3DManipulation,
+  circularCursor,
+  squareCursor,
 };

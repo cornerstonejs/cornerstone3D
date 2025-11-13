@@ -12,6 +12,9 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 
+const HALF_SIDE_EPSILON_RATIO = 1e-2;
+const MIN_HALF_SIDE_EPSILON = 1e-3;
+
 const { transformWorldToIndex, transformIndexToWorld, isEqual } = csUtils;
 
 /**
@@ -32,32 +35,89 @@ export function getEllipseCornersFromCanvasCoordinates(
   return [topLeft, bottomRight, bottomLeft, topRight];
 }
 
-function createCircleCornersForCenter(
+function createSquareCornersForCenter(
   center: Types.Point3,
   viewUp: ReadonlyVec3,
   viewRight: ReadonlyVec3,
-  radius: number
+  halfSideLength: number
 ): Types.Point3[] {
   const centerVec = vec3.fromValues(center[0], center[1], center[2]);
 
-  const top = vec3.create();
-  vec3.scaleAndAdd(top, centerVec, viewUp, radius);
+  const topOffset = vec3.create();
+  vec3.scale(topOffset, viewUp, halfSideLength);
 
-  const bottom = vec3.create();
-  vec3.scaleAndAdd(bottom, centerVec, viewUp, -radius);
+  const bottomOffset = vec3.create();
+  vec3.scale(bottomOffset, viewUp, -halfSideLength);
 
-  const right = vec3.create();
-  vec3.scaleAndAdd(right, centerVec, viewRight, radius);
+  const rightOffset = vec3.create();
+  vec3.scale(rightOffset, viewRight, halfSideLength);
 
-  const left = vec3.create();
-  vec3.scaleAndAdd(left, centerVec, viewRight, -radius);
+  const leftOffset = vec3.create();
+  vec3.scale(leftOffset, viewRight, -halfSideLength);
+
+  const topLeft = vec3.create();
+  vec3.add(topLeft, centerVec, topOffset);
+  vec3.add(topLeft, topLeft, leftOffset);
+
+  const topRight = vec3.create();
+  vec3.add(topRight, centerVec, topOffset);
+  vec3.add(topRight, topRight, rightOffset);
+
+  const bottomLeft = vec3.create();
+  vec3.add(bottomLeft, centerVec, bottomOffset);
+  vec3.add(bottomLeft, bottomLeft, leftOffset);
+
+  const bottomRight = vec3.create();
+  vec3.add(bottomRight, centerVec, bottomOffset);
+  vec3.add(bottomRight, bottomRight, rightOffset);
 
   return [
-    bottom as Types.Point3,
-    top as Types.Point3,
-    left as Types.Point3,
-    right as Types.Point3,
+    topLeft as Types.Point3,
+    topRight as Types.Point3,
+    bottomLeft as Types.Point3,
+    bottomRight as Types.Point3,
   ];
+}
+
+function densifyStrokeCenters(
+  strokeCenters: Types.Point3[],
+  halfSideLength: number
+): Types.Point3[] {
+  if (!strokeCenters.length) {
+    return [];
+  }
+
+  if (halfSideLength <= 0) {
+    return strokeCenters.map((point) => vec3.clone(point) as Types.Point3);
+  }
+
+  const expandedCenters: Types.Point3[] = [];
+
+  for (let i = 0; i < strokeCenters.length - 1; i++) {
+    const start = strokeCenters[i];
+    const end = strokeCenters[i + 1];
+
+    expandedCenters.push(vec3.clone(start) as Types.Point3);
+
+    const distance = vec3.distance(start, end);
+    if (distance === 0) {
+      continue;
+    }
+
+    const steps = Math.max(1, Math.ceil(distance / halfSideLength));
+    for (let step = 1; step < steps; step++) {
+      const t = step / steps;
+      const interpolated = vec3.create();
+      vec3.lerp(interpolated, start, end, t);
+      expandedCenters.push(interpolated as Types.Point3);
+    }
+  }
+
+  expandedCenters.push(
+    vec3.clone(strokeCenters[strokeCenters.length - 1]) as Types.Point3
+  );
+
+  return expandedCenters;
 }
 
 // Build a lightweight capsule predicate that covers every sampled point and
@@ -137,7 +197,7 @@ function createStrokePredicate(centers: Types.Point3[], radius: number) {
   };
 }
 
-const initializeCircle = {
+const initializeSquare = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points, // bottom, top, left, right
@@ -169,14 +229,13 @@ const initializeCircle = {
       center as Types.Point3
     );
 
-    const brushRadius =
+    const halfSideLength =
       points.length >= 2 ? vec3.distance(points[0], points[1]) / 2 : 0;
 
     const canvasCoordinates = points.map((p) =>
       viewport.worldToCanvas(p)
     ) as CanvasCoordinates;
 
-    // 1. From the drawn tool: Get the ellipse (circle) corners in canvas coordinates
     const corners = getEllipseCornersFromCanvasCoordinates(canvasCoordinates);
     const cornersInWorld = corners.map((corner) =>
       viewport.canvasToWorld(corner)
@@ -205,38 +264,119 @@ const initializeCircle = {
         ? operationData.strokePointsWorld
         : [operationData.centerWorld];
 
-    const strokeCenters = strokeCentersSource.map(
-      (point) => vec3.clone(point) as Types.Point3
+    const densifiedStrokeCenters = densifyStrokeCenters(
+      strokeCentersSource,
+      halfSideLength
     );
 
-    const strokeCornersWorld = strokeCenters.flatMap((centerPoint) =>
-      createCircleCornersForCenter(
+    const strokeCornersWorld = densifiedStrokeCenters.flatMap((centerPoint) =>
+      createSquareCornersForCenter(
         centerPoint,
         normalizedViewUp,
         viewRight,
-        brushRadius
+        halfSideLength
       )
     );
 
-    const circleCornersIJK = strokeCornersWorld.map((world) =>
+    const squareCornersIJK = strokeCornersWorld.map((world) =>
       transformWorldToIndex(segmentationImageData, world)
     );
 
     const boundsIJK = getBoundingBoxAroundShapeIJK(
-      circleCornersIJK,
+      squareCornersIJK,
       segmentationImageData.getDimensions()
     );
 
-    operationData.strokePointsWorld = strokeCenters;
-    operationData.isInObject = createPointInEllipse(cornersInWorld, {
-      strokePointsWorld: strokeCenters,
+    operationData.strokePointsWorld = densifiedStrokeCenters;
+    operationData.isInObject = createPointInSquare(cornersInWorld, {
+      centerWorld: operationData.centerWorld,
+      strokePointsWorld: densifiedStrokeCenters,
       segmentationImageData,
-      radius: brushRadius,
+      viewUp: normalizedViewUp,
+      viewRight,
+      normal: normalizedPlaneNormal,
+      halfSideLength,
     });
 
     operationData.isInObjectBoundsIJK = boundsIJK;
   },
 } as Composition;
+
+function createPointInSquare(
+  cornersInWorld: Types.Point3[] = [],
+  options: {
+    centerWorld?: Types.Point3;
+    strokePointsWorld?: Types.Point3[];
+    segmentationImageData?: vtkImageData;
+    viewUp: ReadonlyVec3;
+    viewRight: ReadonlyVec3;
+    normal: ReadonlyVec3;
+    halfSideLength: number;
+  }
+) {
+  if (!cornersInWorld || cornersInWorld.length !== 4) {
+    throw new Error('createPointInSquare: cornersInWorld must have 4 points');
+  }
+
+  const {
+    strokePointsWorld = [],
+    segmentationImageData,
+    viewUp,
+    viewRight,
+    normal,
+    halfSideLength,
+    centerWorld,
+  } = options;
+
+  const epsilon =
+    halfSideLength * HALF_SIDE_EPSILON_RATIO + MIN_HALF_SIDE_EPSILON;
+
+  const centers: Types.Point3[] = [];
+
+  if (strokePointsWorld.length > 0) {
+    centers.push(
+      ...strokePointsWorld.map((point) => vec3.clone(point) as Types.Point3)
+    );
+  }
+
+  if (centerWorld) {
+    centers.push(vec3.clone(centerWorld) as Types.Point3);
+  }
+
+  if (!centers.length) {
+    return () => false;
+  }
+
+  const projectedCenters = centers.map((point) => ({
+    u: vec3.dot(point, viewRight),
+    v: vec3.dot(point, viewUp),
+  }));
+
+  return (pointLPS: Types.Point3 | null, pointIJK?: Types.Point3) => {
+    let worldPoint: Types.Point3 | null = pointLPS;
+
+    if (!worldPoint && pointIJK && segmentationImageData) {
+      worldPoint = transformIndexToWorld(
+        segmentationImageData,
+        pointIJK as Types.Point3
+      ) as Types.Point3;
+    }
+
+    if (!worldPoint) {
+      return false;
+    }
+
+    const uPoint = vec3.dot(worldPoint, viewRight);
+    const vPoint = vec3.dot(worldPoint, viewUp);
+
+    return projectedCenters.some((center) => {
+      const du = uPoint - center.u;
+      const dv = vPoint - center.v;
+
+      return Math.max(Math.abs(du), Math.abs(dv)) <= halfSideLength + epsilon;
+    });
+  };
+}
 
 /**
  * Creates a function that tells the user if the provided point in LPS space
@@ -363,60 +503,63 @@ function createPointInEllipse(
   };
 }
 
-const CIRCLE_STRATEGY = new BrushStrategy(
-  'Circle',
+const SQUARE_STRATEGY = new BrushStrategy(
+  'Square',
   compositions.regionFill,
   compositions.setValue,
-  initializeCircle,
+  initializeSquare,
   compositions.determineSegmentIndex,
   compositions.preview,
   compositions.labelmapStatistics,
+  compositions.squareCursor
 );
 
-const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(
-  'CircleThreshold',
+const SQUARE_THRESHOLD_STRATEGY = new BrushStrategy(
+  'SquareThreshold',
   compositions.regionFill,
   compositions.setValue,
-  initializeCircle,
+  initializeSquare,
   compositions.determineSegmentIndex,
   compositions.dynamicThreshold,
   compositions.threshold,
   compositions.preview,
   compositions.islandRemoval,
-  compositions.labelmapStatistics
+  compositions.labelmapStatistics,
+  compositions.squareCursor
 );
 
 /**
- * Fill inside the circular region segment inside the segmentation defined by the operationData.
- * It fills the segmentation pixels inside the defined circle.
+ * Fill inside the square region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels inside the defined square footprint.
  * @param enabledElement - The element for which the segment is being erased.
  * @param operationData - EraseOperationData
  */
-const fillInsideCircle = CIRCLE_STRATEGY.strategyFunction;
+const fillInsideSquare = SQUARE_STRATEGY.strategyFunction;
 
 /**
- * Fill inside the circular region segment inside the segmentation defined by the operationData.
- * It fills the segmentation pixels inside the defined circle.
+ * Fill inside the square region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels inside the defined square footprint.
  * @param enabledElement - The element for which the segment is being erased.
  * @param operationData - EraseOperationData
  */
-const thresholdInsideCircle = CIRCLE_THRESHOLD_STRATEGY.strategyFunction;
+const thresholdInsideSquare = SQUARE_THRESHOLD_STRATEGY.strategyFunction;
 
 /**
- * Fill outside the circular region segment inside the segmentation defined by the operationData.
- * It fills the segmentation pixels outside the  defined circle.
+ * Fill outside the square region segment inside the segmentation defined by the operationData.
+ * It fills the segmentation pixels outside the defined square footprint.
  * @param enabledElement - The element for which the segment is being erased.
  * @param operationData - EraseOperationData
  */
 export function fillOutsideCircle(): void {
-  throw new Error('Not yet implemented');
+  throw new Error('Square brush erase not yet implemented');
 }
 
 export {
-  CIRCLE_STRATEGY,
-  CIRCLE_THRESHOLD_STRATEGY,
-  fillInsideCircle,
-  thresholdInsideCircle,
+  SQUARE_STRATEGY,
+  SQUARE_THRESHOLD_STRATEGY,
+  fillInsideSquare,
+  thresholdInsideSquare,
+  createPointInSquare,
   createPointInEllipse,
   createPointInEllipse as createEllipseInPoint,
 };
