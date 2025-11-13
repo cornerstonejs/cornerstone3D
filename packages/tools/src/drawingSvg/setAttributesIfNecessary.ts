@@ -1,5 +1,11 @@
+/**
+ *
+ * @param attributes
+ * @param svgNode
+ * @returns true if attributes were modified
+ */
 export function setAttributesIfNecessary(attributes, svgNode) {
-  Object.keys(attributes).forEach((key) => {
+  return Object.keys(attributes).forEach((key) => {
     const currentValue = svgNode.getAttribute(key);
     const newValue = attributes[key];
     if (newValue === undefined || newValue === '') {

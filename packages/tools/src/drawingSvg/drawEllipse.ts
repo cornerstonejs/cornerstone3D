@@ -1,7 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import type { SVGDrawingHelper } from '../types';
 
-import _getHash from './_getHash';
 import drawEllipseByCoordinates from './drawEllipseByCoordinates';
 
 function drawEllipse(
@@ -10,8 +9,7 @@ function drawEllipse(
   ellipseUID: string,
   corner1: Types.Point2,
   corner2: Types.Point2,
-  options = {},
-  dataId = ''
+  options = {}
 ) {
   const top: Types.Point2 = [(corner1[0] + corner2[0]) / 2, corner1[1]];
   const bottom: Types.Point2 = [(corner1[0] + corner2[0]) / 2, corner2[1]];
@@ -23,8 +21,7 @@ function drawEllipse(
     annotationUID,
     ellipseUID,
     [bottom, top, left, right],
-    (options = {}),
-    (dataId = '')
+    (options = {})
   );
 }
 

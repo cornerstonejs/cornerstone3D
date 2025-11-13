@@ -1,6 +1,4 @@
 import type { Types } from '@cornerstonejs/core';
-
-import _getHash from './_getHash';
 import type { SVGDrawingHelper } from '../types';
 import drawRectByCoordinates from './drawRectByCoordinates';
 
@@ -12,8 +10,7 @@ export default function drawRect(
   rectangleUID: string,
   start: Types.Point2,
   end: Types.Point2,
-  options = {},
-  dataId = ''
+  options = {}
 ): void {
   const topLeft: Types.Point2 = [start[0], start[1]];
   const topRight: Types.Point2 = [end[0], start[1]];
@@ -25,7 +22,6 @@ export default function drawRect(
     annotationUID,
     rectangleUID,
     [topLeft, topRight, bottomLeft, bottomRight],
-    options,
-    dataId
+    options
   );
 }

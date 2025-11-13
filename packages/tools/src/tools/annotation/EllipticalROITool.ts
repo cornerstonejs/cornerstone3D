@@ -900,7 +900,6 @@ class EllipticalROITool extends AnnotationTool {
         );
       }
 
-      const dataId = `${annotationUID}-ellipse`;
       const ellipseUID = '0';
       drawEllipseSvg(
         svgDrawingHelper,
@@ -911,8 +910,7 @@ class EllipticalROITool extends AnnotationTool {
           color,
           lineDash,
           lineWidth,
-        },
-        dataId
+        }
       );
 
       // draw center point, if "centerPointRadius" configuration is valid.
