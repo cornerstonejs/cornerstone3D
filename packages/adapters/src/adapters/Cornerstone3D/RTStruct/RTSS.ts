@@ -47,6 +47,12 @@ export function generateRTSSFromSegmentations(
   });
 }
 
+/**
+ * Generates an RTSS instance given a labelmap segmentations object,
+ * plus a set of options to apply.
+ * This will convert the RTSS to a contour object first, then will
+ * continue running to generate the actual RTSS.
+ */
 export async function generateRTSSFromLabelmap(
   segmentations: Segmentation,
   options
@@ -269,21 +275,13 @@ export function generateRTSSFromAnnotations(
       );
   });
 
+  if (dataset.ReferencedFrameOfReferenceSequence?.length === 1) {
+    dataset.FrameOfReferenceUID =
+      dataset.ReferencedFrameOfReferenceSequence[0].FrameOfReferenceUID;
+  }
+
   return dataset;
 }
-
-// /**
-//  * Generate Cornerstone tool state from dataset
-//  * @param {object} dataset dataset
-//  * @param {object} hooks
-//  * @param {function} hooks.getToolClass Function to map dataset to a tool class
-//  * @returns
-//  */
-// //static generateToolState(_dataset, _hooks = {}) {
-// function generateToolState() {
-//     // Todo
-//     console.warn("RTSS.generateToolState not implemented");
-// }
 
 function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
   // get the first annotation data
@@ -336,7 +334,6 @@ export function generateRTSSFromRepresentation(
   segmentations: Types.Segmentation,
   options = {}
 ) {
-  console.warn('segmentations', segmentations);
   if (segmentations.representationData.Labelmap) {
     return generateRTSSFromLabelmap(segmentations, options);
   }

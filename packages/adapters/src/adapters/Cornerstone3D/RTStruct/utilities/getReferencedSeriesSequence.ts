@@ -40,8 +40,11 @@ export default function getReferencedSeriesSequence(
       return referencedSeriesSequence;
     }
 
+    const referencedInstanceSeq = newReferenceSeq.ReferencedInstanceSequence;
     existingSeries.ReferencedInstanceSequence.push(
-      newReferenceSeq.ReferencedInstanceSequence
+      Array.isArray(referencedInstanceSeq)
+        ? referencedInstanceSeq[0]
+        : referencedInstanceSeq
     );
   }
 

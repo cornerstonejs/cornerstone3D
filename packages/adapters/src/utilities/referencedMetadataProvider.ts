@@ -128,7 +128,6 @@ export const metadataProvider = {
       MetadataModules.NEW_INSTANCE_DATA,
       imageId
     );
-    const frame = metaData.get(MetadataModules.FRAME_MODULE, imageId);
     return {
       ...newInstanceData,
       SeriesNumber: '3201',
@@ -139,7 +138,6 @@ export const metadataProvider = {
       ReferencedFrameOfReferenceSequence: [],
       Modality: 'RTSTRUCT',
       SOPClassUID: '1.2.840.10008.5.1.4.1.1.481.3', // RT Structure Set Storage
-      FrameOfReferenceUID: frame.frameOfReferenceUID,
       PositionReferenceIndicator: '',
       StructureSetLabel: '',
       StructureSetName: '',
