@@ -136,6 +136,8 @@ export const metadataProvider = {
     );
     return {
       ...newInstanceData,
+      // Put the RTSS after SR and SEG instances, so in the 3200 series
+      // Should be replaced externally
       SeriesNumber: '3201',
       StructureSetROISequence: [],
       ROIContourSequence: [],
@@ -155,6 +157,7 @@ export const metadataProvider = {
     const studyData = metaData.get(MetadataModules.STUDY_DATA, imageId);
     return {
       ...studyData,
+      // Just a garbage series number as this should be replaced elsewhere
       SeriesNumber: '50000',
       InstanceNumber: '1',
       OperatorsName: '',
