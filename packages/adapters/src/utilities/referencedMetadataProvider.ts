@@ -111,19 +111,19 @@ export const metadataProvider = {
    * Returns a Study header instance data for a given image.
    */
   [MetadataModules.STUDY_DATA]: (imageId) => {
-    return metaData.getInstanceModule(imageId, STUDY_MODULES);
+    return metaData.combineNormalizeModules(imageId, STUDY_MODULES);
   },
   /**
    * Returns a Series only header instance data for a given image.
    */
   [MetadataModules.SERIES_DATA]: (imageId) => {
-    return metaData.getInstanceModule(imageId, SERIES_MODULES);
+    return metaData.combineNormalizeModules(imageId, SERIES_MODULES);
   },
   /**
    * Returns a Study header instance data for a given image.
    */
   [MetadataModules.IMAGE_DATA]: (imageId) => {
-    return metaData.getInstanceModule(imageId, IMAGE_MODULES);
+    return metaData.combineNormalizeModules(imageId, IMAGE_MODULES);
   },
 
   /**

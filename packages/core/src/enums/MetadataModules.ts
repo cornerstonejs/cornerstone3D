@@ -61,13 +61,51 @@ enum MetadataModules {
    * See the adapters package for standard methods to create these.
    */
 
-  /** References a given frame*/
+  /**
+   * Reference object for the frame of the imageId provided
+   */
   IMAGE_SOP_INSTANCE_REFERENCE = 'ImageSopInstanceReference',
+  /**
+   * Reference object starting with the series to the sop instance
+   * provided.
+   *
+   * This will likely need to be merged with other series references
+   */
   REFERENCED_SERIES_REFERENCE = 'ReferencedSeriesReference',
+
+  /**
+   * Creates a predecessor sequence to indicate the new object replaces
+   * the old one.
+   *
+   * Also includes the series level attributes that this object has
+   * in order to allow placing the new instance into the same series.
+   */
   PREDECESSOR_SEQUENCE = 'PredecessorSequence',
 
+  /**
+   * The study data module contains the normalized values associated with the
+   * study header, including StudyInstanceUID, PatientID and the other cross-
+   * study information.
+   *
+   * This should be used as a basis for adding a new series to an existing study.
+   */
   STUDY_DATA = 'StudyData',
+  /**
+   * The Series Data module contains the normalized values associated with the
+   * series object, PLUS the study instance uid.
+   *
+   * This should be combined with the study data to add new instances to an
+   * existing series.
+   */
   SERIES_DATA = 'SeriesData',
+
+  /**
+   * The image data module has the image specific information associated with
+   * the image frame of interest.
+   *
+   * This is used when modifying study structure such as creating a multiframe
+   * reference used internally for segmentation.
+   */
   IMAGE_DATA = 'ImageData',
 
   /**
@@ -75,8 +113,13 @@ enum MetadataModules {
    * This change allows writing a custom provider to replace the metadata
    * either on a per-instance basis or the default data.
    */
-  /** The basic header data for new RTSS instances */
+  /**
+   * The basic header data for new RTSS instances
+   */
   RTSS_INSTANCE_DATA = 'RtssInstanceData',
+  /**
+   * Generic new instance data, including study and new series instance data.
+   */
   NEW_INSTANCE_DATA = 'NewInstanceData',
 }
 

@@ -1,5 +1,9 @@
 import * as dicomParser from 'dicom-parser';
-import { Enums, utilities } from '@cornerstonejs/core';
+import {
+  Enums,
+  utilities,
+  metaData as coreMetaData,
+} from '@cornerstonejs/core';
 import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
@@ -349,7 +353,7 @@ function metaDataProvider(type, imageId) {
 
   // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
-    return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
+    return coreMetaData.combineNormalizeModules(imageId, instanceModuleNames);
   }
 }
 

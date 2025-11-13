@@ -32,6 +32,7 @@ export type RtssModule = InstanceData & {
   StructureSetROISequence: NormalModule[];
   ROIContourSequence: NormalModule[];
   RTROIObservationsSequence: NormalModule[];
+  ReferencedSeriesSequence: NormalModule[];
   ReferencedFrameOfReferenceSequence: NormalModule[];
   Modality: 'RTSTRUCT';
   PositionReferenceIndicator: string;
