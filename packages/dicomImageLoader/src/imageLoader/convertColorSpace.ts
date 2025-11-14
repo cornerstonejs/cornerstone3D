@@ -28,9 +28,9 @@ export default function convertColorSpace(imageFrame, colorBuffer, useRGBA) {
   if (imageFrame.photometricInterpretation === 'RGB') {
     convertRGB(imageFrame, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'YBR_RCT') {
-    convertRGB(imageFrame, colorBuffer, useRGBA);
+    convertRGBColorByPixel(imageFrame.pixelData, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'YBR_ICT') {
-    convertRGB(imageFrame, colorBuffer, useRGBA);
+    convertRGBColorByPixel(imageFrame.pixelData, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
     convertPALETTECOLOR(imageFrame, colorBuffer, useRGBA);
   } else if (imageFrame.photometricInterpretation === 'YBR_FULL_422') {
