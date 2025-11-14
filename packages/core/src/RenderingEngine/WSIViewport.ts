@@ -19,9 +19,11 @@ import triggerEvent from '../utilities/triggerEvent';
 import { peerImport } from '../init';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
+import eventTarget from '../eventTarget';
 
 let WSIUtilFunctions = null;
 const EVENT_POSTRENDER = 'postrender';
+const TOOLS_ANNOTATION_REMOVED_EVENT = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED';
 /**
  * A viewport which shows a microscopy view using the dicom-microscopy-viewer
  * library.  This viewport accepts standard CS3D annotations, and responds
@@ -61,6 +63,22 @@ class WSIViewport extends Viewport {
   };
 
   private viewer;
+  private annotationRemovedListener: EventListener = (evt: Event) => {
+    const { detail } = evt as CustomEvent<{
+      annotation?: {
+        metadata?: {
+          FrameOfReferenceUID?: string;
+        };
+      };
+    }>;
+
+    const annotationFOR =
+      detail?.annotation?.metadata?.FrameOfReferenceUID ?? null;
+
+    if (!annotationFOR || annotationFOR === this.frameOfReferenceUID) {
+      this.postrender();
+    }
+  };
 
   /**
    * The VOI Range is used to apply contrast/brightness adjustments to the image.
@@ -130,12 +148,20 @@ class WSIViewport extends Viewport {
       EVENTS.ELEMENT_DISABLED,
       this.elementDisabledHandler
     );
+    eventTarget.addEventListener(
+      TOOLS_ANNOTATION_REMOVED_EVENT,
+      this.annotationRemovedListener
+    );
   }
 
   private removeEventListeners() {
     this.canvas.removeEventListener(
       EVENTS.ELEMENT_DISABLED,
       this.elementDisabledHandler
+    );
+    eventTarget.removeEventListener(
+      TOOLS_ANNOTATION_REMOVED_EVENT,
+      this.annotationRemovedListener
     );
   }
 
