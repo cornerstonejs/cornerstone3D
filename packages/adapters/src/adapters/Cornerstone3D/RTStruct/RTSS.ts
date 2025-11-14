@@ -295,9 +295,7 @@ function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
       // FrameOfReferenceUID,
       StructureSetLabel: segmentation.label,
       StructureSetName: segmentation.label,
-      SeriesDescription: options.predecessorImageId
-        ? undefined
-        : segmentation.label,
+      SeriesDescription: segmentation.label,
       _meta: metaData.get(MetadataModules.RTSS_CONTOUR, studyExemplarImageId),
     },
     options

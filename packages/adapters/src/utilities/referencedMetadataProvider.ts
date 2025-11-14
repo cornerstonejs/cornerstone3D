@@ -93,11 +93,11 @@ export const metadataProvider = {
    */
   [MetadataModules.PREDECESSOR_SEQUENCE]: (imageId) => {
     // Start with the series data
-    const result = { ...metaData.get(MetadataModules.SERIES_DATA) };
+    const result = { ...metaData.get(MetadataModules.SERIES_DATA, imageId) };
     // And extend with the predecessor information, plus updates for a new
     // instance.
-    const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE);
-    const study = metaData.get(MetadataModules.GENERAL_STUDY);
+    const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE, imageId);
+    const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId);
     result.InstanceNumber = 1 + Number(generalImage.instanceNumber);
     result.PredecessorDocumentsSequence = {
       StudyInstanceUID: study.studyInstanceUID,
