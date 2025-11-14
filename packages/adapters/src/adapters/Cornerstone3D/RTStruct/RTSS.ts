@@ -6,7 +6,6 @@ import getReferencedFrameOfReferenceSequence from './utilities/getReferencedFram
 import getReferencedSeriesSequence from './utilities/getReferencedSeriesSequence';
 import getRTROIObservationsSequence from './utilities/getRTROIObservationsSequence';
 import getStructureSetModule from './utilities/getStructureSetModule';
-import { metaRTSSContour as _meta } from '../constants';
 import { createInstance } from '../../../utilities';
 import type {
   NormalModule,
@@ -299,7 +298,7 @@ function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
       SeriesDescription: options.predecessorImageId
         ? undefined
         : segmentation.label,
-      _meta,
+      _meta: metaData.get(MetadataModules.RTSS_CONTOUR, studyExemplarImageId),
     },
     options
   );

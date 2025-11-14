@@ -58,7 +58,8 @@ function _createMultiframeSegmentationFromReferencedImages(
   metadata,
   options
 ) {
-  const studyData = metadata.get(MetadataModules.STUDY_DATA, images[0].imageId);
+  const studyImageId = options?.predecessorImageId || images[0].imageId;
+  const studyData = metadata.get(MetadataModules.STUDY_DATA, studyImageId);
   const datasets = images.map((image) => {
     const { imageId } = image;
     const seriesData = metadata.get(MetadataModules.SERIES_DATA, imageId);

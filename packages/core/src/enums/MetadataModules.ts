@@ -121,6 +121,13 @@ enum MetadataModules {
    * Generic new instance data, including study and new series instance data.
    */
   NEW_INSTANCE_DATA = 'NewInstanceData',
+
+  /**
+   * Meta module providers return the _meta field for a new instance
+   */
+  RTSS_CONTOUR = 'metaRTSSContour',
+  SEG_BIT = 'metaSegBitmap',
+  SR_ANNOTATION = 'metaSrAnnotation',
 }
 
 export default MetadataModules;

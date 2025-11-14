@@ -1,6 +1,11 @@
 import { metaData, Enums, type Types } from '@cornerstonejs/core';
 import dcmjs from 'dcmjs';
 
+import {
+  metaSRAnnotation,
+  metaRTSSContour,
+} from '../adapters/Cornerstone3D/constants';
+
 const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
 
@@ -168,6 +173,9 @@ export const metadataProvider = {
       SeriesInstanceUID: DicomMetaDictionary.uid(),
     };
   },
+
+  [MetadataModules.RTSS_CONTOUR]: () => metaRTSSContour,
+  [MetadataModules.SR_ANNOTATION]: () => metaSRAnnotation,
 };
 
 metaData.addProvider(metadataProvider.get, 9023);
