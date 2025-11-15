@@ -23,7 +23,7 @@ import eventTarget from '../eventTarget';
 
 let WSIUtilFunctions = null;
 const EVENT_POSTRENDER = 'postrender';
-const TOOLS_ANNOTATION_REMOVED_EVENT = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED';
+const ANNOTATION_REMOVED = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED';
 /**
  * A viewport which shows a microscopy view using the dicom-microscopy-viewer
  * library.  This viewport accepts standard CS3D annotations, and responds
@@ -149,7 +149,7 @@ class WSIViewport extends Viewport {
       this.elementDisabledHandler
     );
     eventTarget.addEventListener(
-      TOOLS_ANNOTATION_REMOVED_EVENT,
+      ANNOTATION_REMOVED,
       this.annotationRemovedListener
     );
   }
@@ -160,7 +160,7 @@ class WSIViewport extends Viewport {
       this.elementDisabledHandler
     );
     eventTarget.removeEventListener(
-      TOOLS_ANNOTATION_REMOVED_EVENT,
+      ANNOTATION_REMOVED,
       this.annotationRemovedListener
     );
   }
