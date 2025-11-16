@@ -19,6 +19,18 @@ interface ICachedImage {
   sharedCacheKey?: string;
   timeStamp: number;
   sizeInBytes: number;
+  /**
+   * Compressed blob storage for memory optimization
+   */
+  compressedBlob?: Blob;
+  /**
+   * Quality level used for compression (0.0 to 1.0)
+   */
+  compressionQuality?: number;
+  /**
+   * Flag indicating if this image is stored in compressed format
+   */
+  isCompressed?: boolean;
 }
 
 export type { ICachedImage as default };

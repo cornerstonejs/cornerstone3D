@@ -11,6 +11,7 @@ import type {
   ICachedGeometry,
   EventTypes,
   IImageVolume,
+  CacheCompressionConfig,
 } from '../types';
 import triggerEvent from '../utilities/triggerEvent';
 import imageIdToURI from '../utilities/imageIdToURI';
@@ -18,6 +19,7 @@ import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 import { ImageQualityStatus } from '../enums';
 import fnv1aHash from '../utilities/fnv1aHash';
+import { compressImageToBlob, decompressBlobToImage } from './imageCompression';
 
 const ONE_GB = 1073741824;
 
@@ -45,6 +47,12 @@ class Cache {
   private _imageCacheSize = 0;
   private _maxCacheSize = 3 * ONE_GB;
   private _geometryCacheSize = 0;
+
+  private _compressionConfig: CacheCompressionConfig = {
+    enabled: false,
+    format: 'webp',
+    quality: 0.8,
+  };
 
   /**
    * Generates a deterministic volume ID from a list of image IDs
@@ -93,6 +101,36 @@ class Cache {
 
     this._maxCacheSize = newMaxCacheSize;
   };
+
+  /**
+   * Set compression configuration for the cache
+   *
+   * When enabled, images will be compressed asynchronously after loading using
+   * the specified format (WebP or JPEG) and quality. Compressed images are
+   * automatically decompressed on-demand when accessed.
+   *
+   * @example
+   * ```typescript
+   * cache.setCompressionConfig({
+   *   enabled: true,
+   *   format: 'webp',
+   *   quality: 0.8
+   * });
+   * ```
+   *
+   * @param config - Partial compression configuration to update
+   */
+  public setCompressionConfig(config: Partial<CacheCompressionConfig>): void {
+    Object.assign(this._compressionConfig, config);
+  }
+
+  /**
+   * Get current compression configuration
+   * @returns Current compression configuration
+   */
+  public getCompressionConfig(): CacheCompressionConfig {
+    return { ...this._compressionConfig };
+  }
 
   /**
    * Determines if the cache can accommodate the requested byte size.
@@ -181,6 +219,11 @@ class Cache {
 
     if (imageLoadObject?.decache) {
       imageLoadObject.decache();
+    }
+
+    // Clean up compressed blob if it exists
+    if (cachedImage.compressedBlob) {
+      cachedImage.compressedBlob = undefined;
     }
 
     this._imageCache.delete(imageId);
@@ -439,6 +482,62 @@ class Cache {
     triggerEvent(eventTarget, Events.IMAGE_CACHE_IMAGE_ADDED, eventDetails);
 
     cachedImage.sharedCacheKey = image.sharedCacheKey;
+
+    // Compress image asynchronously if compression is enabled
+    if (this._compressionConfig.enabled) {
+      this._compressAndStoreImage(imageId, image, cachedImage).catch(
+        (error) => {
+          console.warn('Failed to compress image:', error);
+        }
+      );
+    }
+  }
+
+  /**
+   * Compress and store image asynchronously
+   *
+   * This method compresses an image to the configured format (WebP/JPEG) and quality,
+   * then replaces the uncompressed image data with the compressed blob to save memory.
+   *
+   * @param imageId - Image identifier
+   * @param image - Cornerstone image object
+   * @param cachedImage - Cached image entry
+   */
+  private async _compressAndStoreImage(
+    imageId: string,
+    image: IImage,
+    cachedImage: ICachedImage
+  ): Promise<void> {
+    try {
+      const blob = await compressImageToBlob(
+        image,
+        this._compressionConfig.format,
+        this._compressionConfig.quality
+      );
+
+      // Check if image is still in cache (may have been evicted during compression)
+      if (!this._imageCache.has(imageId)) {
+        return;
+      }
+
+      cachedImage.compressedBlob = blob;
+      cachedImage.compressionQuality = this._compressionConfig.quality;
+      cachedImage.isCompressed = true;
+
+      // Update cache size tracking to reflect the compressed size
+      const oldSize = cachedImage.sizeInBytes;
+      const newSize = blob.size;
+      const sizeDifference = newSize - oldSize;
+
+      cachedImage.sizeInBytes = newSize;
+      this.incrementImageCacheSize(sizeDifference);
+
+      // Clear uncompressed image data to free memory.
+      // The image will be decompressed on-demand when accessed.
+      cachedImage.image = undefined;
+    } catch (error) {
+      console.warn(`Failed to compress image ${imageId}:`, error);
+    }
   }
 
   /**
@@ -582,6 +681,44 @@ class Cache {
 
     // Bump time stamp for cached image
     cachedImage.timeStamp = Date.now();
+
+    // If compressed and image not in memory, decompress on-demand
+    if (
+      cachedImage.isCompressed &&
+      cachedImage.compressedBlob &&
+      !cachedImage.image
+    ) {
+      // Check if we already have a decompression in progress.
+      // If imageLoadObject.promise exists and the image is still undefined,
+      // it means we're already decompressing, so return the existing promise
+      // to avoid creating duplicate decompression operations.
+      if (cachedImage.imageLoadObject?.promise) {
+        return cachedImage.imageLoadObject;
+      }
+
+      // Create a new decompression promise
+      const decompressionLoadObject = {
+        promise: decompressBlobToImage(
+          cachedImage.compressedBlob,
+          imageId
+        ).then((decompressedImage) => {
+          // Store decompressed image back in cache temporarily
+          cachedImage.image = decompressedImage;
+          cachedImage.loaded = true;
+          return decompressedImage;
+        }),
+        cancelFn: cachedImage.imageLoadObject?.cancelFn,
+        decache: cachedImage.imageLoadObject?.decache,
+      };
+
+      // Store the decompression promise in the cache to prevent race conditions.
+      // This ensures that if the same image is requested multiple times while
+      // decompression is in progress, all requests will use the same promise
+      // instead of triggering multiple decompressions or server fetches.
+      cachedImage.imageLoadObject = decompressionLoadObject;
+
+      return decompressionLoadObject;
+    }
 
     return cachedImage.imageLoadObject;
   }

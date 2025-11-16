@@ -3,6 +3,7 @@ import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
+import type { CacheCompressionConfig } from './ICache';
 import type { IVolume } from './IVolume';
 import type { VOI, VOIRange } from './voi';
 import type DisplayArea from './displayArea';
@@ -177,6 +178,7 @@ export type {
   IVolumeViewport,
   IEnabledElement,
   ICache,
+  CacheCompressionConfig,
   IVolume,
   IViewportId,
   IImageVolume,

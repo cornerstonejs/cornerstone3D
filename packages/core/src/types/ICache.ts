@@ -1,5 +1,17 @@
 import type { IImageLoadObject, IVolumeLoadObject } from './ILoadObject';
 
+/**
+ * Configuration for cache compression
+ */
+interface CacheCompressionConfig {
+  /** Enable/disable compression */
+  enabled: boolean;
+  /** Image format for compression ('webp' or 'jpeg') */
+  format: 'webp' | 'jpeg';
+  /** Compression quality (0.0 to 1.0) */
+  quality: number;
+}
+
 interface ICache {
   /** Set the maximum cache size  */
   setMaxCacheSize: (maxCacheSize: number) => void;
@@ -26,4 +38,4 @@ interface ICache {
   purgeCache: () => void;
 }
 
-export type { ICache as default };
+export type { ICache as default, CacheCompressionConfig };
