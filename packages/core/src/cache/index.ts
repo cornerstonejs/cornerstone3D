@@ -4,7 +4,6 @@ import { Surface } from './classes/Surface';
 import { Mesh } from './classes/Mesh';
 import StreamingImageVolume from './classes/StreamingImageVolume';
 import StreamingDynamicImageVolume from './classes/StreamingDynamicImageVolume';
-import { compressImageToBlob, decompressBlobToImage } from './imageCompression';
 
 export {
   ImageVolume,
@@ -13,6 +12,4 @@ export {
   Mesh,
   StreamingImageVolume,
   StreamingDynamicImageVolume,
-  compressImageToBlob,
-  decompressBlobToImage,
 };

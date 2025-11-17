@@ -20,15 +20,15 @@ interface ICachedImage {
   timeStamp: number;
   sizeInBytes: number;
   /**
-   * Compressed blob storage for memory optimization
+   * Compressed blob storage for memory optimization.
+   * When a compression provider is configured, images will be stored
+   * as compressed blobs to reduce memory usage.
    */
   compressedBlob?: Blob;
   /**
-   * Quality level used for compression (0.0 to 1.0)
-   */
-  compressionQuality?: number;
-  /**
-   * Flag indicating if this image is stored in compressed format
+   * Flag indicating if this image is stored in compressed format.
+   * When true, the image will be decompressed on-demand using the
+   * configured compression provider.
    */
   isCompressed?: boolean;
 }
