@@ -357,13 +357,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         specifications,
         annotation
       ),
-      borderRadius: this.getStyle(
+      textBoxBorderRadius: this.getStyle(
         'textBoxBorderRadius',
         specifications,
         annotation
       ),
-      margin: this.getStyle('textBoxMargin', specifications, annotation),
-      linkLineColor: this.getStyle(
+      textBoxMargin: this.getStyle('textBoxMargin', specifications, annotation),
+      textBoxLinkLineColor: this.getStyle(
         'textBoxLinkLineColor',
         specifications,
         annotation

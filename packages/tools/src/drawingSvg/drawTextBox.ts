@@ -61,16 +61,16 @@ function _drawTextGroup(
     fontFamily,
     fontSize,
     background,
-    borderRadius,
-    margin,
+    textBoxBorderRadius,
+    textBoxMargin,
   } = options;
 
   let textGroupBoundingBox;
   const [x, y] = [position[0] + padding, position[1] + padding];
   const backgroundStyles = {
     color: background,
-    borderRadius,
-    margin,
+    textBoxBorderRadius,
+    textBoxMargin,
   };
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'text', textUID);
@@ -193,7 +193,11 @@ function _createTextSpan(text): SVGElement {
 }
 
 function _drawTextBackground(group: SVGGElement, backgroundStyles) {
-  const { color, borderRadius = '0', margin = '0' } = backgroundStyles;
+  const {
+    color,
+    textBoxBorderRadius = 0,
+    textBoxMargin = 0,
+  } = backgroundStyles;
   let element = group.querySelector('rect.background');
   const textElement = group.querySelector('text').getBBox();
 
@@ -215,27 +219,29 @@ function _drawTextBackground(group: SVGGElement, backgroundStyles) {
   }
 
   // Get the text groups's bounding box and use it to draw the background rectangle
-  // use the text box dimensions to apply the margin
+  // use the text box dimensions to apply the textBoxMargin
   const bBox = group.getBBox();
 
   const attributes = {
     x: `${bBox.x}`,
     y: `${bBox.y}`,
-    width: `${textElement.width + Number(margin) * 2}`,
-    height: `${textElement.height + Number(margin) * 2}`,
+    width: `${textElement.width + Number(textBoxMargin) * 2}`,
+    height: `${textElement.height + Number(textBoxMargin) * 2}`,
     fill: color,
-    rx: borderRadius,
-    ry: borderRadius,
+    rx: textBoxBorderRadius,
+    ry: textBoxBorderRadius,
   };
 
-  // Add offset to the text spans to centre them within the margin
-  const tSpans = Array.from(
-    group.querySelector('text').querySelectorAll('tspan')
-  );
-  tSpans.forEach((tspan, i) => {
-    i === 0 && tspan.setAttribute('y', margin);
-    tspan.setAttribute('x', margin);
-  });
+  if (textBoxMargin) {
+    // Add offset to the text spans to centre them within the textBoxMargin
+    const tSpans = Array.from(
+      group.querySelector('text').querySelectorAll('tspan')
+    );
+    tSpans.forEach((tspan, i) => {
+      i === 0 && tspan.setAttribute('y', textBoxMargin);
+      tspan.setAttribute('x', textBoxMargin);
+    });
+  }
 
   setAttributesIfNecessary(attributes, element);
 
