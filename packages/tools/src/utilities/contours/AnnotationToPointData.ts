@@ -1,3 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
+
 import RectangleROIStartEndThreshold from './RectangleROIStartEndThreshold';
 
 function validateAnnotation(annotation) {
@@ -12,7 +14,7 @@ function validateAnnotation(annotation) {
 
 type ContourSequence = {
   NumberOfContourPoints: number;
-  ContourImageSequence;
+  ContourImageSequence: Types.NormalModule[];
   ContourGeometricType: string;
   ContourData: string[];
 };

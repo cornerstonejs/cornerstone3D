@@ -6,8 +6,8 @@ import {
 } from 'dcmjs';
 import {
   cache,
+  Enums,
   utilities as csUtilities,
-  metaData,
   type Types as CSTypes,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/tools';
@@ -29,7 +29,8 @@ import {
   TEXT_ANNOTATION_POSITION,
 } from './constants';
 import LabelData from './LabelData';
-import { MetadataModules } from '@cornerstonejs/core/enums';
+
+const { MetadataModules } = Enums;
 
 type Annotation = Types.Annotation;
 

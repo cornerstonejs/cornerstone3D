@@ -125,8 +125,11 @@ enum MetadataModules {
   /**
    * Meta module providers return the _meta field for a new instance
    */
+  /** Metadata module for RTSS contour */
   RTSS_CONTOUR = 'metaRTSSContour',
+  /** Metadata module for single bit segmentation */
   SEG_BIT = 'metaSegBitmap',
+  /** Metadata module for RTSS annotations */
   SR_ANNOTATION = 'metaSrAnnotation',
 }
 

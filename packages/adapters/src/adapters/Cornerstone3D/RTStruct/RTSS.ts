@@ -1,19 +1,18 @@
 import { metaData, Enums } from '@cornerstonejs/core';
 import { utilities, annotation as toolsAnnotation } from '@cornerstonejs/tools';
-import type { Types } from '@cornerstonejs/tools';
+import type { Types } from '@cornerstonejs/core';
+import type { Types as ToolTypes } from '@cornerstonejs/tools';
 
 import getReferencedFrameOfReferenceSequence from './utilities/getReferencedFrameOfReferenceSequence';
 import getReferencedSeriesSequence from './utilities/getReferencedSeriesSequence';
 import getRTROIObservationsSequence from './utilities/getRTROIObservationsSequence';
 import getStructureSetModule from './utilities/getStructureSetModule';
 import { createInstance } from '../../../utilities';
-import type {
-  NormalModule,
-  RtssModule,
-} from '../../../utilities/InstanceTypes';
 import '../../../utilities/referencedMetadataProvider';
 
-type Segmentation = Types.Segmentation;
+type Segmentation = ToolTypes.Segmentation;
+type RtssModule = Types.RtssModule;
+type NormalModule = Types.NormalModule;
 
 const { generateContourSetsFromLabelmap, AnnotationToPointData } =
   utilities.contours;
@@ -185,7 +184,7 @@ export async function generateRTSSFromLabelmap(
 }
 
 type SegmentAnnotation = {
-  annotations: Types.Annotation[];
+  annotations: ToolTypes.Annotation[];
   segmentationUID: string;
   segmentIndex: number;
   roiContourSequence: ReturnType<typeof AnnotationToPointData.convert>;
@@ -330,7 +329,7 @@ export function generateRTSSFromContour(segmentations: Segmentation, options) {
  * Representation will be either a .Labelmap or a .Contour
  */
 export function generateRTSSFromRepresentation(
-  segmentations: Types.Segmentation,
+  segmentations: Segmentation,
   options = {}
 ) {
   if (segmentations.representationData.Labelmap) {

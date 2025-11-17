@@ -1,3 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
+
 export const seriesTags = [
   'SeriesInstanceUID',
   'SeriesNumber',
@@ -14,7 +16,7 @@ export const seriesTags = [
  *
  * Usage:  `const newStudyInstance = copySeriesTags(exampleInstance)`
  */
-export function copySeriesTags(src): Record<string, unknown> {
+export function copySeriesTags(src: Types.NormalModule): Types.NormalModule {
   const result = {};
   for (const tagKey of seriesTags) {
     const value = src[tagKey];
