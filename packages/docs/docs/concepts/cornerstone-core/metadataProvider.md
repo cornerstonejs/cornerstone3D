@@ -42,3 +42,53 @@ Since it is possible to register more than one metadata provider, upon adding a 
 
 For instance, if provider1 is registered with 10 priority and provider2 is registered
 with 100 priority, provider2 is asked first for the metadata for the imageId.
+
+## Provided Computed Metadata
+
+There are a few metadata providers which either store metadata information updated/modified while running,
+or which transform the existing metadata into other formats, or provide static metadata.
+
+### Transient Metadata
+
+#### Calibrated Pixel Spacing
+
+The `calibratedPixelSpacingMetadataProvider` allows storing of over-ride values for
+the calibration metadata, allowing a user or system to add calibration of spacing
+for an image independent of the original metadata.
+
+### Computed Metadata
+
+Some metadata can be computed based on other metadata available in the system.
+For example, the adapters module can generate study module information in the
+'Normalized' format from dcmjs based on the existing default metadata providers.
+
+It is suggested that any metadata that is computed just from straight DICOM
+data, but is modified in some way use a computed metadata provider. This pattern
+allows creating standard computed changes to the existing metadata across
+a variety of different types of underlying data such as multiframe instances, formatted data,
+or data used for producing new instances
+
+#### `referencedMetadataProvider`
+
+The adapters module provides referenced metadata useful when creating new instances
+based on an existing module. It also provides constants for the Part 10 prefix
+header and referenced objects.
+
+##### Study, Series, Instance Data
+
+The data modules provide the study or series level information in the 'Normal'
+format for dcmjs, without including the full instance header, and based on the
+underlying standard modules defined for WADO-URI, RS and from OHIF.
+
+##### Part 10 Constants
+
+The part 10 \_meta field in dcmjs can be hard coded, but that prevents changes
+to the generated object without modifying the object after creation or without modifying the creation code.
+The part 10 constants metadata provides the standard `0002` header module for
+dcmjs to use when encoding DICOM.
+
+##### Referenced and Predecessor Data
+
+The referenced data and predecessor sequence providers allow replacing the default
+instance in an SR or SEQ type series with a new one that references the previously
+used data.
