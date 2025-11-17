@@ -21,10 +21,10 @@ import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
 import eventTarget from '../eventTarget';
 import imageIdToURI from '../utilities/imageIdToURI';
+import { Events as ToolsEvents } from '@cornerstonejs/tools/enums';
 
 let WSIUtilFunctions = null;
 const EVENT_POSTRENDER = 'postrender';
-const ANNOTATION_REMOVED = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED';
 /**
  * A viewport which shows a microscopy view using the dicom-microscopy-viewer
  * library.  This viewport accepts standard CS3D annotations, and responds
@@ -171,7 +171,7 @@ class WSIViewport extends Viewport {
       this.elementDisabledHandler
     );
     eventTarget.addEventListener(
-      ANNOTATION_REMOVED,
+      ToolsEvents.ANNOTATION_REMOVED,
       this.annotationRemovedListener
     );
   }
@@ -182,7 +182,7 @@ class WSIViewport extends Viewport {
       this.elementDisabledHandler
     );
     eventTarget.removeEventListener(
-      ANNOTATION_REMOVED,
+      ToolsEvents.ANNOTATION_REMOVED,
       this.annotationRemovedListener
     );
   }
