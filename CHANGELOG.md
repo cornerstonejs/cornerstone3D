@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.3...v4.11.0) (2025-11-17)
+
+**Note:** Version bump only for package root
+
+## [4.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.2...v4.10.3) (2025-11-17)
+
+### Bug Fixes
+
+- **segmentation:** renderOutlineInactive should be used to determine if the outline should be rendered for inactive contour segments ([#2465](https://github.com/cornerstonejs/cornerstone3D/issues/2465)) ([4ca8d75](https://github.com/cornerstonejs/cornerstone3D/commit/4ca8d75629a571a3fc52cc9eb8598c663632ae1a))
+
 ## [4.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.1...v4.10.2) (2025-11-13)
 
 ### Bug Fixes
