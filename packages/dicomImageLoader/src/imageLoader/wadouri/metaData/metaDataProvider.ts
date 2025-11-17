@@ -316,7 +316,7 @@ export function metadataForDataset(
 
   // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
-    return metaData.getNormalizedModule(imageId, instanceModuleNames);
+    return metaData.getNormalized(imageId, instanceModuleNames);
   }
 }
 

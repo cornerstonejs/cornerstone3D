@@ -98,7 +98,7 @@ used data.
 The metaData service has a few helper methods to deal with naming variations
 and computed results.
 
-### `getNormalizedModule`
+### `getNormalized`
 
 The get normalized module method will take a set of modules in the lower camel case version,
 and combine them into an upper (dcmjs NormalCase) version. This is used for
