@@ -353,7 +353,7 @@ function metaDataProvider(type, imageId) {
 
   // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
-    return coreMetaData.combineNormalizeModules(imageId, instanceModuleNames);
+    return coreMetaData.getNormalizedModule(imageId, instanceModuleNames);
   }
 }
 

@@ -98,9 +98,9 @@ used data.
 The metaData service has a few helper methods to deal with naming variations
 and computed results.
 
-### `combineNormalizeModules`
+### `getNormalizedModule`
 
-The combine method will take a set of modules in the lower camel case version,
+The get normalized module method will take a set of modules in the lower camel case version,
 and combine them into an upper (dcmjs NormalCase) version. This is used for
 creating an `instance` module from non-dcmjs data sources as well as for creating the
 study/series/instance data modules.

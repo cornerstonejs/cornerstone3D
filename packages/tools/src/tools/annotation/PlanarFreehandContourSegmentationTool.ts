@@ -28,7 +28,7 @@ export class PlanarFreehandContourSegmentationTool extends PlanarFreehandROITool
   }
 
   static {
-    AnnotationToPointData.register(PlanarFreehandContourSegmentationTool);
+    AnnotationToPointData.register(this);
   }
 
   protected isContourSegmentationTool(): boolean {

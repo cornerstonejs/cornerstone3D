@@ -91,7 +91,7 @@ function getMetaData(type: string, ...queries): any {
  * @param types - An array of metadata types to retrieve.
  * @returns An object containing the retrieved metadata with capitalized keys.
  */
-export function combineNormalizeModules(
+export function getNormalizedModule(
   imageId: string,
   types: string[],
   metaDataProvider = getMetaData
