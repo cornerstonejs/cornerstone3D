@@ -92,3 +92,22 @@ dcmjs to use when encoding DICOM.
 The referenced data and predecessor sequence providers allow replacing the default
 instance in an SR or SEQ type series with a new one that references the previously
 used data.
+
+## metaData helpers
+
+The metaData service has a few helper methods to deal with naming variations
+and computed results.
+
+### `combineNormalizeModules`
+
+The combine method will take a set of modules in the lower camel case version,
+and combine them into an upper (dcmjs NormalCase) version. This is used for
+creating an `instance` module from non-dcmjs data sources as well as for creating the
+study/series/instance data modules.
+
+### `capitalizeTag` and `lowerTag`
+
+There are some specific rules needed for converting between UpperCamelCase
+names used in dcmjs `normalized` modules and the `lowerCamelCase` names used in
+the metaData modules. These are encapsulated into helper functions
+available on the metaData object exported from CS3D core.
