@@ -55,10 +55,23 @@ function _drawTextGroup(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options: Record<string, any>
 ): SVGRect {
-  const { padding, color, fontFamily, fontSize, background } = options;
+  const {
+    padding,
+    color,
+    fontFamily,
+    fontSize,
+    background,
+    textBoxBorderRadius,
+    textBoxMargin,
+  } = options;
 
   let textGroupBoundingBox;
   const [x, y] = [position[0] + padding, position[1] + padding];
+  const backgroundStyles = {
+    color: background,
+    textBoxBorderRadius,
+    textBoxMargin,
+  };
   const svgns = 'http://www.w3.org/2000/svg';
   const svgNodeHash = _getHash(annotationUID, 'text', textUID);
   const existingTextGroup = svgDrawingHelper.getSvgNode(svgNodeHash);
@@ -106,8 +119,10 @@ function _drawTextGroup(
 
     // Add data attribute for annotation UID
     existingTextGroup.setAttribute('data-annotation-uid', annotationUID);
-
-    textGroupBoundingBox = _drawTextBackground(existingTextGroup, background);
+    textGroupBoundingBox = _drawTextBackground(
+      existingTextGroup,
+      backgroundStyles
+    );
 
     svgDrawingHelper.setNodeTouched(svgNodeHash);
   } else {
@@ -170,10 +185,6 @@ function _createTextSpan(text): SVGElement {
   const svgns = 'http://www.w3.org/2000/svg';
   const textSpanElement = document.createElementNS(svgns, 'tspan');
 
-  // TODO: centerX
-  // (parent width / 2) - my width
-  // TODO: centerY
-
   textSpanElement.setAttribute('x', '0');
   textSpanElement.setAttribute('dy', '1.2em');
   textSpanElement.textContent = text;
@@ -181,8 +192,14 @@ function _createTextSpan(text): SVGElement {
   return textSpanElement;
 }
 
-function _drawTextBackground(group: SVGGElement, color: string) {
+function _drawTextBackground(group: SVGGElement, backgroundStyles) {
+  const {
+    color,
+    textBoxBorderRadius = 0,
+    textBoxMargin = 0,
+  } = backgroundStyles;
   let element = group.querySelector('rect.background');
+  const textElement = group.querySelector('text').getBBox();
 
   // If we have no background color, remove any element that exists and return
   // the bounding box of the text
@@ -202,15 +219,29 @@ function _drawTextBackground(group: SVGGElement, color: string) {
   }
 
   // Get the text groups's bounding box and use it to draw the background rectangle
+  // use the text box dimensions to apply the textBoxMargin
   const bBox = group.getBBox();
 
   const attributes = {
     x: `${bBox.x}`,
     y: `${bBox.y}`,
-    width: `${bBox.width}`,
-    height: `${bBox.height}`,
+    width: `${textElement.width + Number(textBoxMargin) * 2}`,
+    height: `${textElement.height + Number(textBoxMargin) * 2}`,
     fill: color,
+    rx: textBoxBorderRadius,
+    ry: textBoxBorderRadius,
   };
+
+  if (textBoxMargin) {
+    // Add offset to the text spans to centre them within the textBoxMargin
+    const tSpans = Array.from(
+      group.querySelector('text').querySelectorAll('tspan')
+    );
+    tSpans.forEach((tspan, i) => {
+      i === 0 && tspan.setAttribute('y', textBoxMargin);
+      tspan.setAttribute('x', textBoxMargin);
+    });
+  }
 
   setAttributesIfNecessary(attributes, element);
 
