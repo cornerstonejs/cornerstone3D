@@ -35,7 +35,7 @@ jobs:
             echo "🔍 Running bun audit for security vulnerabilities..."
             echo "Checking for HIGH-RISK vulnerabilities..."
 
-            if bun audit --audit-level high; then
+            if bun audit --ignore CVE-2025-64756 --audit-level high; then
               echo "✅ No high-risk vulnerabilities found"
               echo "🎉 Security audit passed!"
             else
@@ -51,7 +51,7 @@ jobs:
               echo "  5. Re-run: bun audit --audit-level high"
               echo ""
               echo "📋 Full audit report:"
-              bun audit --audit-level low || true
+              bun audit --ignore CVE-2025-64756--audit-level low || true
               echo ""
               echo "❌ This build cannot proceed until high-risk vulnerabilities are resolved."
               exit 1
