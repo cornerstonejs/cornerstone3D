@@ -118,6 +118,9 @@ const WADO_URI_IMAGE_PIXEL_MODULE = {
   rows: 512,
   samplesPerPixel: 1,
   smallestPixelValue: undefined,
+  spacingBetweenSlices: 6.5,
+  isDefaultValueSetForRowCosine: false,
+  isDefaultValueSetForColumnCosine: false,
 };
 
 /**

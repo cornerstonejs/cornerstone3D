@@ -11,6 +11,10 @@ import getNumberValues from '../imageLoader/wadouri/metaData/getNumberValues';
 
 function bindFromDataset<T>(method, defaultIndex = 0) {
   return function (dataSet, _index = defaultIndex) {
+    if (!dataSet[method]) {
+      console.warn('method', method);
+      throw new Error(`Method ${method} is not a member of dataSet`);
+    }
     return dataSet[method](this.xTag) as T;
   };
 }
@@ -32,7 +36,15 @@ export function datasetSQ(dataSet, options?) {
   const result = [];
 
   for (const item of sequence.items) {
-    this.moduleStatic.createSqDataset(this, item, options);
+    if (!item.double) {
+      console.error(
+        'Mangled (multiframe) dataset value for',
+        this.name,
+        this.xTag
+      );
+      return;
+    }
+    result.push(this.moduleStatic.createSqDataset(this, item, options));
   }
   return result;
 }

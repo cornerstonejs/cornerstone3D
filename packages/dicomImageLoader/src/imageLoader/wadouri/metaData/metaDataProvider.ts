@@ -74,6 +74,8 @@ export function metadataForDataset(
   dataSet: dicomParser.DataSet
 ) {
   if (Modules[type]) {
+    console.warn('metadataForDataset', type, new Error('trace'));
+    console.warn('Constructor', dataSet.constructor);
     return Modules[type].fromDataset(dataSet, { imageId });
   }
 

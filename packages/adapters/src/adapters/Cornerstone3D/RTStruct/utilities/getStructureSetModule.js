@@ -4,8 +4,8 @@ export default function getStructureSetModule(contour, index) {
     return {
         ROINumber: index + 1,
         ROIName: contour.name || `Todo: name ${index + 1}`,
-        ROIDescription: `Todo: description ${index + 1}`,
-        ROIGenerationAlgorithm: "Todo: algorithm",
+        ROIDescription: "OHIF Generated ROI",
+        ROIGenerationAlgorithm: "MANUAL",
         ReferencedFrameOfReferenceUID: FrameOfReferenceUID
     };
 }

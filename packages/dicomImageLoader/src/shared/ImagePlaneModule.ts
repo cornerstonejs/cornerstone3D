@@ -100,6 +100,7 @@ export class ImagePlaneModule extends Module<Types.ImagePlaneModuleMetadata> {
   }
 
   fromDataset(dataSet, options) {
+    console.warn('Getting image plane module from dataSet');
     const instance = Modules[PIXEL_INSTANCE].fromDataset(
       dataSet,
       Module.OPTION_NATURAL_NAME

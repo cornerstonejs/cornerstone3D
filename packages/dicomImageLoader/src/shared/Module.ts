@@ -1,3 +1,5 @@
+import * as dicomParser from 'dicom-parser';
+
 import type { ITag, IModule, IModules } from '../types/TagTypes';
 import { tagToCamel } from './tagCase';
 import {
@@ -58,9 +60,8 @@ export class Module<T> implements IModule<T> {
     this.tags.push(tagData);
   }
 
-  public fromDataset(dataset, options?) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: Record<string, any> = {};
+  public fromDataset(dataset: dicomParser.DataSet, options?) {
+    const result: Record<string, unknown> = {};
     const keyName = options?.keyName || 'lowerName';
     for (const tag of this.tags) {
       const value = tag.fromDataset(dataset);
@@ -98,7 +99,7 @@ export class Module<T> implements IModule<T> {
     return result;
   }
 
-  public static sqFromDataset(dataSet, options?) {
+  public static sqFromDataset(dataSet: dicomParser.DataSet, _options?) {
     console.warn('Parsing dataset', dataSet);
   }
 
@@ -118,8 +119,13 @@ export class Module<T> implements IModule<T> {
     throw new Error('Unsupported');
   }
 
-  public static createSqDataset<T>(tag: ITag<unknown>, dataSet, options?) {
+  public static createSqDataset<T>(
+    tag: ITag<unknown>,
+    dataSet: dicomParser.DataSet,
+    options?
+  ) {
     if (tag?.sqModule) {
+      console.warn('dataSet');
       return Module.modules[tag.sqModule].fromDataset(dataSet, options) as T;
     }
     throw new Error('Not implemented yet');

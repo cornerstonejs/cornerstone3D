@@ -16,4 +16,7 @@ export interface ImagePlaneModule {
   rows: number;
   usingDefaultValues?: boolean;
   calibration?: IImageCalibration;
+  spacingBetweenSlices?: number;
+  isDefaultValueSetForRowCosine?: boolean;
+  isDefaultValueSetForColumnCosine?: boolean;
 }

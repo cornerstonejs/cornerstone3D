@@ -17,6 +17,9 @@ const WADO_RS_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
   sliceLocation: undefined,
   sliceThickness: undefined,
   usingDefaultValues: true,
+  spacingBetweenSlices: undefined,
+  isDefaultValueSetForRowCosine: true,
+  isDefaultValueSetForColumnCosine: true,
 };
 
 /**

@@ -87,6 +87,9 @@ const WADO_URI_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
   sliceLocation: undefined,
   sliceThickness: undefined,
   usingDefaultValues: false,
+  spacingBetweenSlices: undefined,
+  isDefaultValueSetForRowCosine: false,
+  isDefaultValueSetForColumnCosine: false,
 };
 // Should be `Types.ImagePixelModule` the actual metadata doesn't conform to it.
 const WADO_URI_IMAGE_PIXEL_MODULE = {
