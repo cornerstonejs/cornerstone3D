@@ -53,8 +53,8 @@
     "@icr/polyseg-wasm": "0.4.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "4.11.1",
-    "@cornerstonejs/tools": "4.11.1",
+    "@cornerstonejs/core": "4.11.2",
+    "@cornerstonejs/tools": "4.11.2",
     "@kitware/vtk.js": "32.12.1"
   }
 }
