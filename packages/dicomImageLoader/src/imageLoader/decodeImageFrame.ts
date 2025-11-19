@@ -1,5 +1,3 @@
-import decodeJPEGBaseline8BitColor from './decodeJPEGBaseline8BitColor';
-
 // dicomParser requires pako for browser-side decoding of deflate transfer syntax
 // We only need one function though, so lets import that so we don't make our bundle
 // too large.
@@ -50,7 +48,6 @@ function decodeImageFrame(
   imageFrame,
   transferSyntax,
   pixelData,
-  canvas,
   options = {},
   decodeConfig
 ) {
@@ -102,16 +99,6 @@ function decodeImageFrame(
       );
     case '1.2.840.10008.1.2.4.50':
       // JPEG Baseline lossy process 1 (8 bit)
-
-      // Handle 8-bit JPEG Baseline color images using the browser's built-in
-      // JPEG decoding
-      if (
-        imageFrame.bitsAllocated === 8 &&
-        (imageFrame.samplesPerPixel === 3 || imageFrame.samplesPerPixel === 4)
-      ) {
-        return decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas);
-      }
-
       return processDecodeTask(
         imageFrame,
         transferSyntax,
