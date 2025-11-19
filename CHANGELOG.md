@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.11.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.1...v4.11.2) (2025-11-19)
+
+### Bug Fixes
+
+- **segmentation:** In segmentationEventManager, call the update function only if the requested representation type is available. ([#2476](https://github.com/cornerstonejs/cornerstone3D/issues/2476)) ([3295b99](https://github.com/cornerstonejs/cornerstone3D/commit/3295b9978481c1536b99806f2001e2cdd986f7c2))
+
 ## [4.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.0...v4.11.1) (2025-11-19)
 
 **Note:** Version bump only for package root
