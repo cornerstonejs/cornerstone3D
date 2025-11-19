@@ -1,4 +1,3 @@
-import { AnnotationTool } from '../base';
 import {
   CONSTANTS,
   getEnabledElement,
