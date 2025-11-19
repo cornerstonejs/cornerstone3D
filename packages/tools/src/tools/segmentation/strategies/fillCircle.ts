@@ -370,7 +370,7 @@ const CIRCLE_STRATEGY = new BrushStrategy(
   initializeCircle,
   compositions.determineSegmentIndex,
   compositions.preview,
-  compositions.labelmapStatistics,
+  compositions.labelmapStatistics
 );
 
 const CIRCLE_THRESHOLD_STRATEGY = new BrushStrategy(

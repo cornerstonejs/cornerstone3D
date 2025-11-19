@@ -31,7 +31,6 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import LabelmapBaseTool from './LabelmapBaseTool';
 import { getStrategyData } from './strategies/utils/getStrategyData';
-import { fillInsideSquare } from './strategies/fillSquare';
 
 /**
  * @public
@@ -55,8 +54,6 @@ class BrushTool extends LabelmapBaseTool {
           FILL_INSIDE_CIRCLE: fillInsideCircle,
           /** Erase (to 0) inside a circle */
           ERASE_INSIDE_CIRCLE: eraseInsideCircle,
-          /** Perform fill of the active segment index inside a (2d) square */
-          FILL_INSIDE_SQUARE: fillInsideSquare,
           /** Fill a 3d sphere with the active segment index */
           FILL_INSIDE_SPHERE: fillInsideSphere,
           /** Erase inside a 3d sphere, clearing any segment index (to 0) */
@@ -439,16 +436,14 @@ class BrushTool extends LabelmapBaseTool {
     this._previewData.startPoint = currentCanvasClone;
   };
 
-  // This part calculates the cursor geometry in world space
-  // but this should be strategy dependent
   private _calculateCursor(element, centerCanvas) {
     const enabledElement = getEnabledElement(element);
-    // const { viewport } = enabledElement;
-    // const { canvasToWorld } = viewport;
-    // const camera = viewport.getCamera();
-    // const { brushSize } = this.configuration;
 
-   this.applyActiveStrategyCallback(enabledElement, this.getOperationData(element), StrategyCallbacks.CalculateCursorGeometry);
+    this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.CalculateCursorGeometry
+    );
   }
 
   /**
