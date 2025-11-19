@@ -2288,10 +2288,10 @@
   resolved "https://registry.yarnpkg.com/@jsonjoy.com/util/-/util-1.5.0.tgz#6008e35b9d9d8ee27bc4bfaa70c8cbf33a537b4c"
   integrity sha512-ojoNsrIuPI9g6o8UxhraZQSyF2ByJanAY4cTFbc8Mf2AXEF4aQRGY1dJxyJpuyav8r9FGflEt/Ff3u5Nt6YMPA==
 
-"@kitware/vtk.js@34.15.0":
-  version "34.15.0"
-  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-34.15.0.tgz#b1ab9479f19dc67ad6683a9cef6d41f369a27e24"
-  integrity sha512-/UeKRk8TkR4Sb4qOxBbHmncDYv4ycCuayYkrqL0YgPSj0aC3DneGc69L0hpj8DdRg+RyUaqyIfCJuvKKnfDnHA==
+"@kitware/vtk.js@34.15.1":
+  version "34.15.1"
+  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-34.15.1.tgz#3a292488ca3b985ec217bd45837c0eb1fd73cbf0"
+  integrity sha512-9BH/a++drhclknBKNVzVpcOzDK95nc/OflKpQE8nY+IlaXTB1+Z6WXS6IwkEEUkRRUqSVskcW4ksgWdxihB49w==
   dependencies:
     "@babel/runtime" "^7.28.2"
     "@types/webxr" "^0.5.5"
