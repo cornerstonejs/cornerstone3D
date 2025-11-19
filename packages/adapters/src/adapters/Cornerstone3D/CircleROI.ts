@@ -74,14 +74,19 @@ class CircleROI extends BaseAdapter3D {
         const center = toScoord(scoordProps, handles.points[0]);
         const end = toScoord(scoordProps, handles.points[1]);
 
-        const { area, radius } =
+        const { area, radius, max, min, stdDev, mean, modalityUnit } =
             cachedStats[`imageId:${referencedImageId}`] || {};
         const perimeter = 2 * Math.PI * radius;
 
         return {
             area,
             perimeter,
+            modalityUnit,
             radius,
+            max,
+            min,
+            stdDev,
+            mean,
             points: [center, end],
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
