@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.0...v4.11.1) (2025-11-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [4.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.3...v4.11.0) (2025-11-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.2...v4.10.3) (2025-11-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.1...v4.10.2) (2025-11-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.0...v4.10.1) (2025-11-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 # [4.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.3...v4.10.0) (2025-11-12)
 
 ### Features

@@ -38,11 +38,11 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@cornerstonejs/adapters": "4.10.0",
-    "@cornerstonejs/core": "4.10.0",
-    "@cornerstonejs/dicom-image-loader": "4.10.0",
-    "@cornerstonejs/nifti-volume-loader": "4.10.0",
-    "@cornerstonejs/tools": "4.10.0",
+    "@cornerstonejs/adapters": "4.11.1",
+    "@cornerstonejs/core": "4.11.1",
+    "@cornerstonejs/dicom-image-loader": "4.11.1",
+    "@cornerstonejs/nifti-volume-loader": "4.11.1",
+    "@cornerstonejs/tools": "4.11.1",
     "@docusaurus/core": "3.6.3",
     "@docusaurus/faster": "3.6.3",
     "@docusaurus/module-type-aliases": "3.6.3",
@@ -85,7 +85,7 @@
   "devDependencies": {
     "copyfiles": "2.4.1",
     "esbuild-loader": "2.18.0",
-    "glob": "10.3.10",
+    "glob": "10.5.0",
     "karma-chrome-launcher": "3.1.0",
     "netlify-plugin-cache": "1.0.3",
     "puppeteer": "24.27.0",
