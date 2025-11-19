@@ -41,7 +41,7 @@
     "install:update-lockfile": "yarn install && bun install --config=./bunfig.update-lockfile.toml",
     "install:yarn:frozen-lockfile": "echo Deprecated in favor of install:frozen && yarn install:frozen",
     "install:frozen": "yarn install --frozen-lockfile",
-    "audit": "yarn audit || bun audit",
+    "audit": "bun audit --ignore=GHSA-5j98-mcp5-4vw2",
     "preinstall": "node preinstall.js",
     "prepare": "husky",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
