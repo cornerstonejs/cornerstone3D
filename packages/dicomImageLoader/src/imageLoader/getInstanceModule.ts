@@ -19,7 +19,7 @@ function getInstanceModule(imageId, metaDataProvider, types) {
         for (const key in data) {
           if (key in data) {
             // each tag should get capitalized to match dcmjs style. Todo: move all of the tags to dcmjs style
-            const capitalizedKey = metaData.capitalizeTag(key);
+            const capitalizedKey = metaData.toUpperCamelTag(key);
             capitalizedData[capitalizedKey] = data[key];
           }
         }

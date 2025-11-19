@@ -104,7 +104,7 @@ export function getNormalized(
         const capitalizedData = {};
         for (const key in data) {
           if (key in data) {
-            const capitalizedKey = capitalizeTag(key);
+            const capitalizedKey = toUpperCamelTag(key);
             capitalizedData[capitalizedKey] = data[key];
           }
         }
@@ -121,7 +121,7 @@ export function getNormalized(
 /**
  * Converts a tag name to UpperCamelCase
  */
-export const capitalizeTag = (tag: string) => {
+export const toUpperCamelTag = (tag: string) => {
   if (tag.startsWith('sop')) {
     return `SOP${tag.substring(3)}`;
   }
@@ -134,7 +134,7 @@ export const capitalizeTag = (tag: string) => {
 /**
  * Converts a tag name to lowerCamelCase
  */
-export const lowerTag = (tag: string) => {
+export const toLowerCamelTag = (tag: string) => {
   if (tag.startsWith('SOP')) {
     return `sop${tag.substring(3)}`;
   }
