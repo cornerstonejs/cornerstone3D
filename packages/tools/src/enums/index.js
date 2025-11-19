@@ -7,6 +7,7 @@ import { Swipe } from './Touch';
 import StrategyCallbacks from './StrategyCallbacks';
 import ChangeTypes from './ChangeTypes';
 import WorkerTypes from './WorkerTypes';
+export * from './MeasurementType';
 
 export {
   MouseBindings,
