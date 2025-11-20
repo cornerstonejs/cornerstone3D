@@ -4,6 +4,7 @@ import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 import { toScoord } from "../helpers";
+import { extractAllNUMGroups, restoreAdditionalMetrics } from "./metricHandler";
 
 const { Ellipse: TID300Ellipse } = utilities.TID300;
 
@@ -31,7 +32,13 @@ class EllipticalROI extends BaseAdapter3D {
             metadata,
             EllipticalROI.toolType
         );
-
+        const referencedSOPInstanceUID = state.sopInstanceUid;
+        const allNUMGroups = extractAllNUMGroups(
+            MeasurementGroup,
+            referencedSOPInstanceUID
+        );
+        const measurementNUMGroups =
+            allNUMGroups[referencedSOPInstanceUID] || {};
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
@@ -45,7 +52,8 @@ class EllipticalROI extends BaseAdapter3D {
                   [`imageId:${referencedImageId}`]: {
                       area: NUMGroup
                           ? NUMGroup.MeasuredValueSequence.NumericValue
-                          : 0
+                          : 0,
+                      ...restoreAdditionalMetrics(measurementNUMGroups)
                   }
               }
             : {};

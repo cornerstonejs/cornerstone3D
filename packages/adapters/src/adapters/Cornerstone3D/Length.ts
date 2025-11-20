@@ -38,7 +38,9 @@ export default class Length extends BaseAdapter3D {
                   [`imageId:${referencedImageId}`]: {
                       length: NUMGroup
                           ? NUMGroup.MeasuredValueSequence.NumericValue
-                          : 0
+                          : 0,
+                      unit: NUMGroup.MeasuredValueSequence
+                          .MeasurementUnitsCodeSequence.CodeValue
                   }
               }
             : {};
