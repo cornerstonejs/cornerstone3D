@@ -73,7 +73,12 @@ class Bidirectional extends BaseAdapter3D {
             state.annotation.data.cachedStats = {
                 [`imageId:${referencedImageId}`]: {
                     length: longAxisNUMGroup.MeasuredValueSequence.NumericValue,
-                    width: shortAxisNUMGroup.MeasuredValueSequence.NumericValue
+                    width: shortAxisNUMGroup.MeasuredValueSequence.NumericValue,
+                    unit: longAxisNUMGroup.MeasuredValueSequence
+                        .MeasurementUnitsCodeSequence.CodeValue,
+                    widthUnit:
+                        shortAxisNUMGroup.MeasuredValueSequence
+                            .MeasurementUnitsCodeSequence.CodeValue
                 }
             };
         }
