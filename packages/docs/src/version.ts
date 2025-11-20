@@ -2,4 +2,4 @@
  * Auto-generated from version.json
  * Do not modify this file directly
  */
-export const version = '4.11.5';
+export const version = '4.12.0';
