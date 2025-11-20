@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.5...v4.12.0) (2025-11-20)
+
+### Features
+
+- upgrade to vtk.js 34.x ([#2398](https://github.com/cornerstonejs/cornerstone3D/issues/2398)) ([6db4ab5](https://github.com/cornerstonejs/cornerstone3D/commit/6db4ab5769fcbf8e5adbd39e6016e5ba18ba8794))
+
 ## [4.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.4...v4.11.5) (2025-11-20)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
