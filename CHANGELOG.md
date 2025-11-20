@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.3...v4.11.4) (2025-11-20)
+
+### Bug Fixes
+
+- type error calling function of undefined (segmentAI) ([#2481](https://github.com/cornerstonejs/cornerstone3D/issues/2481)) ([562d48e](https://github.com/cornerstonejs/cornerstone3D/commit/562d48e4bdc7c10441b911bebc38309d962422d2)), closes [OHIF#5547](https://github.com/OHIF/issues/5547)
+
 ## [4.11.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.2...v4.11.3) (2025-11-19)
 
 ### Bug Fixes
