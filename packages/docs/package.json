@@ -59,7 +59,7 @@
     "docusaurus-plugin-copy": "0.1.1",
     "docusaurus-plugin-typedoc": "1.0.5",
     "file-loader": "6.2.0",
-    "gl-matrix": "3.4.3",
+    "gl-matrix": "3.4.4",
     "hammerjs": "2.0.8",
     "prism-react-renderer": "2.4.0",
     "patch-package": "8.0.0",

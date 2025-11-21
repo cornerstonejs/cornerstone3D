@@ -29,14 +29,26 @@ import type { ISculptToolShape } from '../types/ISculptToolShape';
 import { distancePointToContour } from './distancePointToContour';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
+export type Contour = {
+  annotationUID: string;
+  points: Array<Types.Point3>;
+};
+
 export type SculptData = {
   mousePoint: Types.Point3;
-  deltaWorld: Types.Point3;
   mouseCanvasPoint: Types.Point2;
   points: Array<Types.Point3>;
   maxSpacing: number;
-  meanDistance?: number; // Optional, used for CircleSculptCursor to calculate the mean distance between points
   element: HTMLDivElement;
+  contours: Contour[];
+};
+
+export type SculptIntersect = {
+  annotationUID: string;
+  isEnter: boolean;
+  index: number;
+  point: Types.Point3;
+  angle: number;
 };
 
 type CommonData = {
@@ -75,7 +87,6 @@ class SculptorTool extends BaseTool {
         ],
         toolShape: 'circle',
         referencedToolName: 'PlanarFreehandROI',
-        updateCursorSize: 'dynamic',
       },
     }
   ) {
@@ -143,13 +154,22 @@ class SculptorTool extends BaseTool {
     this.sculptData = {
       mousePoint: eventData.currentPoints.world,
       mouseCanvasPoint: eventData.currentPoints.canvas,
-      deltaWorld: eventData.deltaPoints.world,
       points,
       maxSpacing: cursorShape.getMaxSpacing(config.minSpacing),
       element: element,
+      contours: [
+        {
+          annotationUID: this.commonData.activeAnnotationUID,
+          points,
+        },
+      ],
     };
 
+    const intersections = cursorShape.intersect(viewport, this.sculptData);
+    console.warn('intersections=', intersections);
+
     const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);
+
     if (pushedHandles.first !== undefined) {
       this.insertNewHandles(pushedHandles);
     }
@@ -215,11 +235,7 @@ class SculptorTool extends BaseTool {
     } else {
       const cursorShape = this.registeredShapes.get(this.selectedShape);
       const canvasCoords = eventData.currentPoints.canvas;
-
-      // Only call updateToolSize when updateCursorSize is set to 'dynamic'
-      if (this.configuration.updateCursorSize === 'dynamic') {
-        cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
-      }
+      cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
     }
 
     triggerAnnotationRenderForViewportIds(this.commonData.viewportIdsToRender);
