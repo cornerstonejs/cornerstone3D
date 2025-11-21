@@ -31,6 +31,7 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import LabelmapBaseTool from './LabelmapBaseTool';
 import { getStrategyData } from './strategies/utils/getStrategyData';
+import { getCenterAndRadiusInCanvas } from '../../utilities/getCenterAndRadiusInCanvas';
 
 /**
  * @public
@@ -706,17 +707,7 @@ class BrushTool extends LabelmapBaseTool {
 
     const data = brushCursor.data;
     const { points } = data.handles;
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-
-    const bottom = canvasCoordinates[0];
-    const top = canvasCoordinates[1];
-
-    const center = [
-      Math.floor((bottom[0] + top[0]) / 2),
-      Math.floor((bottom[1] + top[1]) / 2),
-    ];
-
-    const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
+    const { center, radius } = getCenterAndRadiusInCanvas(points, viewport);
 
     const color = `rgb(${toolMetadata.segmentColor?.slice(0, 3) || [0, 0, 0]})`;
 
