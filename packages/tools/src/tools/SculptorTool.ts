@@ -29,12 +29,26 @@ import type { ISculptToolShape } from '../types/ISculptToolShape';
 import { distancePointToContour } from './distancePointToContour';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
+export type Contour = {
+  annotationUID: string;
+  points: Array<Types.Point3>;
+};
+
 export type SculptData = {
   mousePoint: Types.Point3;
   mouseCanvasPoint: Types.Point2;
   points: Array<Types.Point3>;
   maxSpacing: number;
   element: HTMLDivElement;
+  contours: Contour[];
+};
+
+export type SculptIntersect = {
+  annotationUID: string;
+  isEnter: boolean;
+  index: number;
+  point: Types.Point3;
+  angle: number;
 };
 
 type CommonData = {
@@ -143,7 +157,16 @@ class SculptorTool extends BaseTool {
       points,
       maxSpacing: cursorShape.getMaxSpacing(config.minSpacing),
       element: element,
+      contours: [
+        {
+          annotationUID: this.commonData.activeAnnotationUID,
+          points,
+        },
+      ],
     };
+
+    const intersections = cursorShape.intersect(viewport, this.sculptData);
+    console.warn('intersections=', intersections);
 
     const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);
 

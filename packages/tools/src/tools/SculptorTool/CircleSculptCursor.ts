@@ -1,7 +1,8 @@
 import type { Types } from '@cornerstonejs/core';
+import { vec2, vec3 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { ISculptToolShape } from '../../types/ISculptToolShape';
-import type { SculptData } from '../SculptorTool';
+import type { SculptData, SculptIntersect } from '../SculptorTool';
 import { distancePointToContour } from '../distancePointToContour';
 import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import { point } from '../../utilities/math';
@@ -206,6 +207,84 @@ class CircleSculptCursor implements ISculptToolShape {
     handle[0] = position.x;
     handle[1] = position.y;
     handle[2] = position.z;
+  }
+
+  /**
+   * This will return an array of EVEN length, containing ordered
+   * entry/exit points for where the given contour(s) enter the cursor region
+   * and leave the cursor region.
+   */
+  public intersect(
+    viewport: Types.IViewport,
+    sculptData: SculptData
+  ): SculptIntersect[] {
+    const { contours, mousePoint, mouseCanvasPoint } = sculptData;
+
+    const result = new Array<SculptIntersect>();
+
+    for (const contour of contours) {
+      const { annotationUID, points } = contour;
+      let lastIn = false;
+      let anyIn = false;
+      let anyOut = false;
+      for (let i = 0; i < points.length; i++) {
+        const point = points[i];
+        const inCursor = this.isInCursor(point, mousePoint);
+        anyIn ||= inCursor;
+        anyOut ||= !inCursor;
+        if (i === 0) {
+          lastIn = inCursor;
+          continue;
+        }
+        if (lastIn === inCursor) {
+          continue;
+        }
+        lastIn = inCursor;
+        const edge = this.getEdge(
+          viewport,
+          point,
+          points[i - 1],
+          mouseCanvasPoint
+        );
+        result.push({
+          annotationUID,
+          isEnter: inCursor,
+          index: i,
+          point: edge.point,
+          angle: edge.angle,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Gets the point and angle which is on the edge of the cursor and between
+   * p1 and p2.
+   */
+  public getEdge(
+    viewport,
+    p1: Types.Point3,
+    p2: Types.Point3,
+    mouseCanvas: Types.Point2
+  ) {
+    // Approximation is the midpoint
+    const point = vec3.add(vec3.create(), p1, p2) as Types.Point3;
+    vec3.scale(point, point, 0.5);
+
+    const canvasPoint = viewport.worldToCanvas(point);
+    const angle = vec2.signedAngle(canvasPoint, mouseCanvas);
+
+    return {
+      point,
+      angle,
+      canvasPoint,
+    };
+  }
+
+  public isInCursor(point, mousePoint) {
+    return vec3.distance(point, mousePoint) < this.toolInfo.toolSize;
   }
 }
 

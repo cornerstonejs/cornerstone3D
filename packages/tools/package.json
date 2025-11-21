@@ -114,7 +114,7 @@
     "@types/d3-interpolate": "3.0.4",
     "d3-array": "3.2.4",
     "d3-interpolate": "3.0.1",
-    "gl-matrix": "3.4.3"
+    "gl-matrix": "3.4.4"
   },
   "contributors": [
     {
