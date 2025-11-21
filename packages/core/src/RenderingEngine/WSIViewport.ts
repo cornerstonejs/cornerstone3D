@@ -19,6 +19,9 @@ import triggerEvent from '../utilities/triggerEvent';
 import { peerImport } from '../init';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
+import eventTarget from '../eventTarget';
+import imageIdToURI from '../utilities/imageIdToURI';
+import { Events as ToolsEvents } from '@cornerstonejs/tools/enums';
 
 let WSIUtilFunctions = null;
 const EVENT_POSTRENDER = 'postrender';
@@ -49,6 +52,7 @@ class WSIViewport extends Viewport {
   private microscopyElement: HTMLDivElement;
 
   protected map;
+  private imageURISet: Set<string> = new Set();
 
   private internalCamera = {
     rotation: 0,
@@ -61,6 +65,42 @@ class WSIViewport extends Viewport {
   };
 
   private viewer;
+  private annotationRemovedListener: EventListener = (evt: Event) => {
+    const { detail } = evt as CustomEvent<{
+      annotation?: {
+        metadata?: {
+          FrameOfReferenceUID?: string;
+          referencedImageId?: string;
+          referencedImageURI?: string;
+        };
+      };
+    }>;
+
+    const metadata = detail?.annotation?.metadata;
+
+    if (!metadata) {
+      this.postrender();
+      return;
+    }
+
+    const referencedImageURI =
+      metadata.referencedImageURI ??
+      (metadata.referencedImageId
+        ? imageIdToURI(metadata.referencedImageId)
+        : null);
+
+    if (referencedImageURI && !this.hasImageURI(referencedImageURI)) {
+      return;
+    }
+
+    const annotationFOR = metadata.FrameOfReferenceUID ?? null;
+
+    if (annotationFOR && annotationFOR !== this.frameOfReferenceUID) {
+      return;
+    }
+
+    this.postrender();
+  };
 
   /**
    * The VOI Range is used to apply contrast/brightness adjustments to the image.
@@ -130,12 +170,20 @@ class WSIViewport extends Viewport {
       EVENTS.ELEMENT_DISABLED,
       this.elementDisabledHandler
     );
+    eventTarget.addEventListener(
+      ToolsEvents.ANNOTATION_REMOVED,
+      this.annotationRemovedListener
+    );
   }
 
   private removeEventListeners() {
     this.canvas.removeEventListener(
       EVENTS.ELEMENT_DISABLED,
       this.elementDisabledHandler
+    );
+    eventTarget.removeEventListener(
+      ToolsEvents.ANNOTATION_REMOVED,
+      this.annotationRemovedListener
     );
   }
 
@@ -146,6 +194,7 @@ class WSIViewport extends Viewport {
     const cs3dElement = this.element.firstElementChild;
     cs3dElement.removeChild(this.microscopyElement);
     this.microscopyElement = null;
+    this.imageURISet.clear();
   }
 
   private getImageDataMetadata(imageIndex = 0) {
@@ -368,9 +417,12 @@ class WSIViewport extends Viewport {
    * @param imageURI - containing frame number or range.
    * @returns
    */
-  public hasImageURI(imageURI: string) {
-    // TODO - implement this
-    return true;
+  public hasImageURI(imageURI: string): boolean {
+    if (!imageURI) {
+      return false;
+    }
+
+    return this.imageURISet.has(imageURI);
   }
 
   public setCamera(camera: ICamera): void {
@@ -591,6 +643,9 @@ class WSIViewport extends Viewport {
     this.microscopyElement.style.background = 'black';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
+    this.imageURISet = new Set(
+      imageIds.map((imageId) => imageIdToURI(imageId))
+    );
     const DicomMicroscopyViewer = await WSIViewport.getDicomMicroscopyViewer();
     WSIUtilFunctions ||= DicomMicroscopyViewer.utils;
     this.frameOfReferenceUID = null;
