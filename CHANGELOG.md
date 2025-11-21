@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.0...v4.12.1) (2025-11-21)
+
+### Bug Fixes
+
+- Display YBR_RCT/ICT/PARTIAL_420 Photometric interpretation uncompressed image data ([6d869b6](https://github.com/cornerstonejs/cornerstone3D/commit/6d869b6812504da1c2372efd5325f7c3ab742b30))
+
 # [4.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.5...v4.12.0) (2025-11-20)
 
 ### Features
