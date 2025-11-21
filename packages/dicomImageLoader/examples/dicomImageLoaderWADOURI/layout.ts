@@ -1,5 +1,19 @@
 const html = `
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<style>
+  body {
+    background: #090B2B !important;
+    color: #ffffff !important;
+  }
+  .container {
+    background: #090B2B !important;
+  }
+  select, option {
+    background: #0f1330 !important;
+    color: #ffffff !important;
+    border-color: #1a1d3f !important;
+  }
+</style>
 
 <div class="container mt-4">
    <select id="imageSelector">
@@ -80,7 +94,7 @@ const html = `
     <br>
     <div class="row">
         <div class="col-md-6">
-            <div id="cornerstone-element" style="width:512px;height:512px" onmousedown='return false;' oncontextmenu='return false;'>
+            <div id="cornerstone-element" style="width:512px;height:512px;background:#090B2B;border:1px solid #1a1d3f" onmousedown='return false;' oncontextmenu='return false;'>
             </div>
         </div>
         <div class="col-md-6">

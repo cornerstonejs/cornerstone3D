@@ -3,11 +3,10 @@ export type AddLogFn = (message: string, ...args: unknown[]) => void;
 function createLogArea() {
   const area = document.createElement('div');
   area.id = 'log-area';
+  area.className = 'example-log-area';
   area.style.width = '500px';
   area.style.height = '80vh';
-  area.style.background = 'lightblue';
   area.style.margin = '5px';
-  area.style.padding = '5px';
   area.style.float = 'right';
   area.style.overflow = 'scroll';
 
