@@ -1,10 +1,11 @@
 // @ts-check
 
-import { cache, imageLoader, metaData } from '@cornerstonejs/core';
+import { cache, Enums, imageLoader, metaData } from '@cornerstonejs/core';
 import {
   init as dicomImageLoaderInit,
   wadouri,
 } from '@cornerstonejs/dicom-image-loader';
+import * as dcmjs from 'dcmjs';
 import { createImageHash } from '../../../utils/test/pixel-data-hash';
 import { WADOURI_TEST as CtBigEndian_1_2_840_1008_1_2_2 } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2';
 import { WADOURI_TEST as CtJpeg2000Lossless_1_2_840_10008_1_2_4_90 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90';
@@ -226,6 +227,66 @@ describe('dicomImageLoader - WADO-URI', () => {
       }
     });
   }
+
+  describe('multiframe images', () => {
+    it('returns ImagePlaneModule metadata for each frame', async () => {
+      /**
+       * When loading ImagePlaneModule metadata from multi-frame images that
+       * have SharedFunctionalGroupsSequence or
+       * PerFrameFunctionalGroupsSequence, some values are extracted from
+       * SharedFunctionalGroupsSequence or PerFrameFunctionalGroupsSequence. For
+       * example ImagePositionPatient is extracted from
+       * SharedFunctionalGroupsSequence[0].PlanePositionSequence[0].ImagePositionPatient
+       *
+       * Some dicoms may not have any contents of .PlanePositionSequence, which
+       * causes the extraction to fail. This test ensures that even if
+       * .PlanePositionSequence is empty, the ImagePlaneModule metadata is still
+       * returned.
+       */
+
+      // Use the US Multiframe Test Images
+      const wadorsUrl = UsMultiframeYbrFull422.wadouri;
+      const data = await (
+        await fetch(wadorsUrl.replace('wadouri:', ''))
+      ).arrayBuffer();
+      // Load it using dcmjs
+      const dicomDataset = dcmjs.data.DicomMessage.readFile(data);
+      const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
+        dicomDataset.dict
+      );
+      // Modify the dataset to
+      // SharedFunctionalGroupsSequence[0].PlanePositionSequence to be empty
+      dataset.SharedFunctionalGroupsSequence = [
+        {
+          PlanePositionSequence: [],
+        },
+      ];
+      const modifiedDicomData =
+        dcmjs.data.DicomMetaDictionary.denaturalizeDataset(dataset);
+      dicomDataset.dict = modifiedDicomData;
+
+      // Write the modified dicom dataset back to a byte array
+      const updatedDicom = dicomDataset.write();
+      const updatedDicomAsBlob = new Blob([updatedDicom], {
+        type: 'application/dicom',
+      });
+
+      // Cache the file in the wadouri file manager
+      const fileId = wadouri.fileManager.add(updatedDicomAsBlob);
+
+      const fileIdWithFrame = imageIdWithFrame(fileId, 1);
+      // load the image
+      await imageLoader.loadImage(fileIdWithFrame);
+
+      // get the ImagePlaneModule metadata
+      const imagePlaneMetaData = metaData.get(
+        Enums.MetadataModules.IMAGE_PLANE,
+        fileIdWithFrame
+      );
+      // Ensure the metadata is returned
+      expect(imagePlaneMetaData).toBeDefined();
+    });
+  });
 });
 
 /**
