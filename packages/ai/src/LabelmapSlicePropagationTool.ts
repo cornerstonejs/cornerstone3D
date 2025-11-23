@@ -105,16 +105,16 @@ class LabelmapSlicePropagationTool extends LabelmapBaseTool {
     this.configuration.enabled = false;
     if (this.segmentAI) {
       this.segmentAI.enabled = false;
+      this.rejectPreview();
     }
-    this.rejectPreview();
   };
 
   onSetToolPassive = (): void => {
     this.configuration.enabled = false;
     if (this.segmentAI) {
       this.segmentAI.enabled = false;
+      this.rejectPreview();
     }
-    this.rejectPreview();
   };
 
   /**

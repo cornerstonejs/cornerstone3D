@@ -5,6 +5,7 @@ import debounce from '../../utilities/debounce';
 import surfaceDisplay from '../../tools/displayTools/Surface/surfaceDisplay';
 import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
 import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
+import { getSegmentation } from './getSegmentation';
 
 const renderers = {
   [SegmentationRepresentations.Labelmap]: labelmapDisplay,
@@ -65,6 +66,7 @@ function addSegmentationListener(
   // Create and register a new debounced listener
   const listener = createDebouncedSegmentationListener(
     segmentationId,
+    representationType,
     updateFunction
   );
   eventTarget.addEventListener(Events.SEGMENTATION_DATA_MODIFIED, listener);
@@ -130,6 +132,7 @@ function removeAllSegmentationListeners(segmentationId: string): void {
  */
 function createDebouncedSegmentationListener(
   segmentationId: string,
+  representationType: string,
   updateFunction: (segmentationId: string) => Promise<void>
 ): EventListener {
   // Debounced function ensures that frequent segmentation updates
@@ -137,8 +140,14 @@ function createDebouncedSegmentationListener(
   const debouncedHandler = debounce((event: CustomEvent) => {
     const eventSegmentationId = event.detail?.segmentationId;
 
-    // Execute only if the event is relevant to this segmentation
-    if (eventSegmentationId === segmentationId) {
+    const segmentation = getSegmentation(eventSegmentationId);
+
+    // Execute only if the event is relevant to this segmentation and
+    // it has the representation type.
+    if (
+      eventSegmentationId === segmentationId &&
+      !!segmentation?.representationData?.[representationType]
+    ) {
       updateFunction(segmentationId);
       triggerSegmentationModified(segmentationId);
     }

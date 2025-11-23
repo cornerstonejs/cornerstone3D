@@ -1,9 +1,14 @@
 {
-    "extends": "../../tsconfig.base.json",
-    "compilerOptions": {
-        "outDir": "./dist/esm",
-        "rootDir": "./src"
-    },
-    "include": ["./src/**/*", "./test/**/*", "./jest.config.js"],
-    "exclude": ["node_modules", "dist"]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist/esm",
+    "rootDir": "./src"
+  },
+  "include": [
+    "./src/**/*",
+    "./test/**/*",
+    "./jest.config.js",
+    "../core/src/types/InstanceTypes.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
 }

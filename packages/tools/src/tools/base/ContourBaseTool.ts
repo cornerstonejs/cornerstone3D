@@ -1,4 +1,3 @@
-import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   addAnnotation,
@@ -28,6 +27,30 @@ import type { ContourWindingDirection } from '../../types/ContourAnnotation';
 abstract class ContourBaseTool extends AnnotationTool {
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     super(toolProps, defaultToolProps);
+  }
+
+  static getContourSequence(toolData, metadataProvider) {
+    const { data } = toolData;
+
+    const ContourData = [];
+    for (const point of data.contour.polyline) {
+      for (const v of point) {
+        ContourData.push(v.toFixed(2));
+      }
+    }
+
+    const { referencedImageId } = toolData.metadata;
+    const ContourImageSequence = metadataProvider.get(
+      'ImageSopInstanceReference',
+      referencedImageId
+    );
+
+    return {
+      NumberOfContourPoints: ContourData.length / 3,
+      ContourImageSequence,
+      ContourGeometricType: 'CLOSED_PLANAR',
+      ContourData,
+    };
   }
 
   /**

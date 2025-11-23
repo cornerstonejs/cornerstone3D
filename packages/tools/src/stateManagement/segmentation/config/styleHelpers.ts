@@ -47,16 +47,19 @@ function getStyle(
  * Set the style for a given segmentation representation.
  * @param specifier The specifier object containing the viewportId, segmentationId, type, and segmentIndex.
  * @param style The style to set for the given segmentation representation.
+ * @param merge - If `true` (default), merges the new styles with existing ones; otherwise, replaces them entirely.
  */
 function setStyle<T extends SegmentationRepresentations>(
   specifier: SpecifierWithType<T>,
-  style: StyleForType<T>
+  style: StyleForType<T>,
+  merge?: boolean
 ): void;
 function setStyle(
   specifier: BaseSpecifier & { type: SegmentationRepresentations },
-  style: RepresentationStyle
+  style: RepresentationStyle,
+  merge?: boolean
 ): void {
-  segmentationStyle.setStyle(specifier, style);
+  segmentationStyle.setStyle(specifier, style, merge);
 
   // if only type is provided, we need to trigger a render for all segmentations in the viewport
   if (!specifier.viewportId && !specifier.segmentationId) {

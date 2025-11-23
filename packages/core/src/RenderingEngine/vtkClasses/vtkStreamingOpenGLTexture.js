@@ -33,27 +33,27 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw;
 
-  publicAPI.create3DFilterableFromRaw = (
+  publicAPI.create3DFilterableFromRaw = ({
     width,
     height,
     depth,
     numberOfComponents,
     dataType,
     data,
-    preferSizeOverAccuracy
-  ) => {
+    preferSizeOverAccuracy,
+  }) => {
     model.inputDataType = dataType;
     model.inputNumComps = numberOfComponents;
 
-    superCreate3DFilterableFromRaw(
+    superCreate3DFilterableFromRaw({
       width,
       height,
       depth,
       numberOfComponents,
       dataType,
       data,
-      preferSizeOverAccuracy
-    );
+      preferSizeOverAccuracy,
+    });
   };
 
   const superUpdate = publicAPI.updateVolumeInfoForGL;
