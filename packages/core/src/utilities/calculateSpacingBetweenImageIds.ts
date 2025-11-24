@@ -87,9 +87,6 @@ export default function calculateSpacingBetweenImageIds(
       imageIds[Math.floor(imageIds.length / 2)],
     ];
 
-    const firstImageDistance = getDistance(prefetchedImageIds[0]);
-    const middleImageDistance = getDistance(prefetchedImageIds[1]);
-
     const metadataForMiddleImage = metaData.get(
       'imagePlaneModule',
       prefetchedImageIds[1]

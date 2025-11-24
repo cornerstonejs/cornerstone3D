@@ -3,6 +3,7 @@ import {
   volumeLoader,
   utilities,
   type Types,
+  ImageVolume,
 } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type {
@@ -11,13 +12,13 @@ import type {
 } from '../../types/LabelmapTypes';
 
 function getOrCreateSegmentationVolume(
-  segmentationId
+  segmentationId: string
 ): Types.IImageVolume | undefined {
   const { representationData } = getSegmentation(segmentationId);
   let { volumeId } =
     representationData.Labelmap as LabelmapSegmentationDataVolume;
 
-  let segVolume;
+  let segVolume: ImageVolume;
   if (volumeId) {
     segVolume = cache.getVolume(volumeId);
 
