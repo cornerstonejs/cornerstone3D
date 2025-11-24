@@ -3,6 +3,12 @@ import * as metaData from '../metaData';
 import { getConfiguration } from '../init';
 
 /**
+ * Default spacing value (in mm) used as fallback when spacing cannot be calculated
+ * or retrieved from DICOM metadata
+ */
+const DEFAULT_SPACING = 1;
+
+/**
  * Calculates the spacing between images in a series based on their positions
  *
  * @param imageIds - array of imageIds
@@ -15,6 +21,17 @@ export default function calculateSpacingBetweenImageIds(
     imagePositionPatient: referenceImagePositionPatient,
     imageOrientationPatient,
   } = metaData.get('imagePlaneModule', imageIds[0]);
+
+  if (imageIds.length === 1) {
+    const { sliceThickness, spacingBetweenSlices } = metaData.get(
+      'imagePlaneModule',
+      imageIds[0]
+    );
+
+    if (sliceThickness) return sliceThickness;
+    if (spacingBetweenSlices) return spacingBetweenSlices;
+    return DEFAULT_SPACING;
+  }
 
   // Calculate scan axis normal from image orientation
   const rowCosineVec = vec3.fromValues(
@@ -139,7 +156,7 @@ export default function calculateSpacingBetweenImageIds(
       console.debug(
         'Could not calculate spacing. The VolumeViewport visualization is compromised. Setting spacing to 1 to render'
       );
-      spacing = 1;
+      spacing = DEFAULT_SPACING;
     }
   }
 
