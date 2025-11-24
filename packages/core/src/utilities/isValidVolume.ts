@@ -10,7 +10,7 @@ import isEqual from './isEqual';
  * @returns true if the imageIds form a valid volume, false otherwise.
  */
 function isValidVolume(imageIds: string[]): boolean {
-  if (imageIds.length <= 1) {
+  if (imageIds.length === 0) {
     return false;
   }
 

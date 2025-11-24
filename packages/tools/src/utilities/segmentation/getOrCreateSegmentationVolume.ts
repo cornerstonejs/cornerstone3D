@@ -35,7 +35,7 @@ function getOrCreateSegmentationVolume(
   // because we've already ensured the stack constructs a volume,
   // making the scenario for multi-image non-consistent metadata is not likely.
 
-  if (!labelmapImageIds || labelmapImageIds.length === 1) {
+  if (!labelmapImageIds || labelmapImageIds.length === 0) {
     return;
   }
 
