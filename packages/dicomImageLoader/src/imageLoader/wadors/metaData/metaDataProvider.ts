@@ -87,9 +87,9 @@ function metaDataProvider(type, imageId) {
       seriesNumber: getNumberValue(metaData['00200011']),
       studyInstanceUID: getValue<string>(metaData['0020000D']),
       seriesDate: getValue<string>(metaData['00080021']),
-      seriesTime: getValue<string>(metaData['00080031'], 0, ''),
+      seriesTime: getValue<string>(metaData['00080031']),
       acquisitionDate: getValue<string>(metaData['00080022']),
-      acquisitionTime: getValue<string>(metaData['00080032'], 0, ''),
+      acquisitionTime: getValue<string>(metaData['00080032']),
     };
   }
 
