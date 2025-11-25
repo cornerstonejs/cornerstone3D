@@ -100,7 +100,7 @@ class CircleSculptCursor implements ISculptToolShape {
     const eventData = evt.detail;
     const element = eventData.element;
     const minDim = Math.min(element.clientWidth, element.clientHeight);
-    const maxRadius = minDim / 12;
+    const maxRadius = minDim / 24;
 
     toolInfo.toolSize = maxRadius;
     toolInfo.maxToolSize = maxRadius;
@@ -274,13 +274,27 @@ class CircleSculptCursor implements ISculptToolShape {
     vec3.scale(point, point, 0.5);
 
     const canvasPoint = viewport.worldToCanvas(point);
-    const angle = vec2.signedAngle(canvasPoint, mouseCanvas);
+    const canvasDelta = vec2.sub(vec2.create(), canvasPoint, mouseCanvas);
+    const angle = Math.atan2(canvasDelta[1], canvasDelta[0]);
+    console.warn('angle=', (angle * 180) / Math.PI);
 
     return {
       point,
       angle,
       canvasPoint,
     };
+  }
+
+  public interpolatePoint(viewport, angle, center) {
+    const [cx, cy] = center;
+    const r = this.toolInfo.toolSize;
+
+    const dx = Math.cos(angle) * r;
+    const dy = Math.sin(angle) * r;
+    const newPoint2 = [cx + dx, cy + dy];
+
+    console.warn('Adding point', newPoint2);
+    return viewport.canvasToWorld(newPoint2);
   }
 
   public isInCursor(point, mousePoint) {

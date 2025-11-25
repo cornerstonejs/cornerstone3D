@@ -1,5 +1,7 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
+
 import { BaseTool } from './base';
 import { getAnnotations } from '../stateManagement';
 import type {
@@ -29,6 +31,8 @@ import type { ISculptToolShape } from '../types/ISculptToolShape';
 import { distancePointToContour } from './distancePointToContour';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
 
+const { isEqual } = utilities;
+
 export type Contour = {
   annotationUID: string;
   points: Array<Types.Point3>;
@@ -50,6 +54,8 @@ export type SculptIntersect = {
   point: Types.Point3;
   angle: number;
 };
+
+export type ContourSelection = Array<SculptIntersect>;
 
 type CommonData = {
   activeAnnotationUID: string | null;
@@ -166,13 +172,153 @@ class SculptorTool extends BaseTool {
     };
 
     const intersections = cursorShape.intersect(viewport, this.sculptData);
-    console.warn('intersections=', intersections);
-
-    const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);
-
-    if (pushedHandles.first !== undefined) {
-      this.insertNewHandles(pushedHandles);
+    if (!intersections.length) {
+      return;
     }
+    // console.warn('intersections=', JSON.stringify(intersections, null, 2));
+    const contourSelections = this.getContourSelections(intersections);
+
+    const existingPoints = [...points];
+    points.splice(0, points.length);
+    const [contour] = contourSelections;
+    let lastIndex = 0;
+    let lastEnter;
+    for (const intersection of contour) {
+      if (intersection.isEnter) {
+        points.push(...existingPoints.slice(lastIndex, intersection.index));
+        lastEnter = intersection;
+      } else {
+        this.interpolatePoints(
+          viewport,
+          lastEnter,
+          intersection,
+          existingPoints,
+          points
+        );
+      }
+      lastIndex = intersection.index;
+    }
+    points.push(...existingPoints.slice(lastIndex));
+
+    // const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);
+
+    // if (pushedHandles.first !== undefined) {
+    //   this.insertNewHandles(pushedHandles);
+    // }
+  }
+
+  public interpolatePoints(viewport, enter, exit, existing, points) {
+    const p0 = existing[enter.index];
+    const p1 = existing[exit.index];
+
+    const v = vec3.sub(vec3.create(), p1, p0);
+    if (isEqual(vec3.length(v), 0)) {
+      return;
+    }
+
+    const cursorShape = this.registeredShapes.get(this.selectedShape);
+    const a0 = (enter.angle + 2 * Math.PI) % (Math.PI * 2);
+    const a1 = (exit.angle + 2 * Math.PI) % (Math.PI * 2);
+    const ae = a1 < a0 ? a1 + 2 * Math.PI : a1;
+
+    console.warn('p before', viewport.worldToCanvas(points[points.length - 2]));
+    const cp0 = viewport.worldToCanvas(p0);
+    const cp1 = viewport.worldToCanvas(p1);
+    if (cp1[0] >= cp0[0]) {
+      console.warn('Going right');
+    }
+    console.warn('Within range', cp0, cp1);
+    console.warn(
+      'Around',
+      this.sculptData.mouseCanvasPoint,
+      cursorShape.toolInfo.toolSize
+    );
+    if (a1 >= a0) {
+      console.warn('Normal direction', a0, a1, ae);
+    } else {
+      console.warn('Opposite direction', a0, a1, ae);
+    }
+    const COUNT = 4;
+    for (let i = 0; i <= COUNT; i++) {
+      const a = (a0 * (COUNT - i) + i * ae) / COUNT;
+      points.push(
+        cursorShape.interpolatePoint(
+          viewport,
+          a,
+          this.sculptData.mouseCanvasPoint
+        )
+      );
+    }
+  }
+
+  /**
+   * Creates a set of intersection selection objects
+   */
+  public getContourSelections(intersections) {
+    const result = new Array<ContourSelection>();
+    const enterLength = intersections.length / 2;
+    if (!enterLength) {
+      return result;
+    }
+    let lastAngle = Number.NEGATIVE_INFINITY;
+    for (let enterCount = 0; enterCount < enterLength; enterCount++) {
+      const enter = this.findNext(intersections, lastAngle, true);
+      const exit = this.findNext(intersections, enter.angle, false);
+      result.push([enter, exit]);
+    }
+
+    for (let i = 0; i < result.length - 1; i++) {
+      const testIntersection = result[i];
+      const mergeableResult = this.findMergeable(result, testIntersection, i);
+      if (mergeableResult) {
+        testIntersection.push(...mergeableResult);
+        i--;
+      }
+    }
+
+    if (result.length > 1) {
+      console.warn('************* More than 1 result', result);
+      debugger;
+    }
+
+    return result;
+  }
+
+  public findMergeable(contours, testIntersection, currentIndex) {
+    const lastExit = testIntersection[testIntersection.length - 1];
+    for (let i = currentIndex + 1; i < contours.length; i) {
+      const testResult = contours[i];
+      if (lastExit) {
+        contours.splice(i, 1);
+        return testResult;
+      }
+    }
+  }
+
+  public findNext(intersections, lastAngle, isEnter) {
+    if (intersections.length === 1) {
+      const [intersection] = intersections;
+      intersections.splice(0, 1);
+      return intersection;
+    }
+    let foundItem;
+    for (let i = 0; i < intersections.length; i++) {
+      const intersection = intersections[i];
+      if (intersection.isEnter === isEnter && intersection.angle >= lastAngle) {
+        foundItem =
+          ((!foundItem ||
+            foundItem.intersection.angle > intersection.angle) && {
+            i,
+            intersection,
+          }) ||
+          foundItem;
+      }
+    }
+    if (!foundItem) {
+      debugger;
+    }
+    intersections.splice(foundItem.i, 1);
+    return foundItem.intersection;
   }
 
   /**
@@ -213,7 +359,7 @@ class SculptorTool extends BaseTool {
     const element = eventData.element;
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.commonData.viewportIdsToRender = [viewport.id];
 
