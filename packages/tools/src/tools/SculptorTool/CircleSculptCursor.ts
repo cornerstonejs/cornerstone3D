@@ -276,7 +276,6 @@ class CircleSculptCursor implements ISculptToolShape {
     const canvasPoint = viewport.worldToCanvas(point);
     const canvasDelta = vec2.sub(vec2.create(), canvasPoint, mouseCanvas);
     const angle = Math.atan2(canvasDelta[1], canvasDelta[0]);
-    console.warn('angle=', (angle * 180) / Math.PI);
 
     return {
       point,

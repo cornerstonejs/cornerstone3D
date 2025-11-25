@@ -51,6 +51,7 @@ export type SculptIntersect = {
   annotationUID: string;
   isEnter: boolean;
   index: number;
+  relIndex?: number;
   point: Types.Point3;
   angle: number;
 };
@@ -176,16 +177,24 @@ class SculptorTool extends BaseTool {
       return;
     }
     // console.warn('intersections=', JSON.stringify(intersections, null, 2));
-    const contourSelections = this.getContourSelections(intersections);
+    const contourSelections = this.getContourSelections(
+      intersections,
+      points.length
+    );
+
+    const [contour] = contourSelections;
+    if (!contour) {
+      return;
+    }
 
     const existingPoints = [...points];
     points.splice(0, points.length);
-    const [contour] = contourSelections;
-    let lastIndex = 0;
+    const lastExit = contour[contour.length - 1];
+    let lastIndex = lastExit.relIndex || lastExit.index;
     let lastEnter;
     for (const intersection of contour) {
       if (intersection.isEnter) {
-        points.push(...existingPoints.slice(lastIndex, intersection.index));
+        pushArr(points, existingPoints, lastIndex, intersection.index);
         lastEnter = intersection;
       } else {
         this.interpolatePoints(
@@ -198,7 +207,6 @@ class SculptorTool extends BaseTool {
       }
       lastIndex = intersection.index;
     }
-    points.push(...existingPoints.slice(lastIndex));
 
     // const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);
 
@@ -224,21 +232,13 @@ class SculptorTool extends BaseTool {
     console.warn('p before', viewport.worldToCanvas(points[points.length - 2]));
     const cp0 = viewport.worldToCanvas(p0);
     const cp1 = viewport.worldToCanvas(p1);
-    if (cp1[0] >= cp0[0]) {
-      console.warn('Going right');
-    }
     console.warn('Within range', cp0, cp1);
     console.warn(
       'Around',
       this.sculptData.mouseCanvasPoint,
       cursorShape.toolInfo.toolSize
     );
-    if (a1 >= a0) {
-      console.warn('Normal direction', a0, a1, ae);
-    } else {
-      console.warn('Opposite direction', a0, a1, ae);
-    }
-    const COUNT = 4;
+    const COUNT = 6;
     for (let i = 0; i <= COUNT; i++) {
       const a = (a0 * (COUNT - i) + i * ae) / COUNT;
       points.push(
@@ -254,10 +254,10 @@ class SculptorTool extends BaseTool {
   /**
    * Creates a set of intersection selection objects
    */
-  public getContourSelections(intersections) {
+  public getContourSelections(intersections, pointLength) {
     const result = new Array<ContourSelection>();
     const enterLength = intersections.length / 2;
-    if (!enterLength) {
+    if (!enterLength || intersections.length % 2) {
       return result;
     }
     let lastAngle = Number.NEGATIVE_INFINITY;
@@ -267,30 +267,47 @@ class SculptorTool extends BaseTool {
       result.push([enter, exit]);
     }
 
-    for (let i = 0; i < result.length - 1; i++) {
+    // Sort by increasing index
+    result.sort((a, b) => a[0].index - b[0].index);
+    for (let i = 0; i < result.length - 1; ) {
       const testIntersection = result[i];
+      console.warn('Looking for mergeable at', i);
       const mergeableResult = this.findMergeable(result, testIntersection, i);
       if (mergeableResult) {
         testIntersection.push(...mergeableResult);
-        i--;
+        const end = mergeableResult[1];
+        const start = testIntersection[0];
+        if (end.index < start.index) {
+          debugger;
+        }
+        end.relIndex =
+          end.index < start.index ? end.index + pointLength : end.index;
+      } else {
+        console.warn("Couldn't find mergeable", result);
+        i++;
       }
     }
 
     if (result.length > 1) {
       console.warn('************* More than 1 result', result);
-      debugger;
     }
 
     return result;
   }
 
   public findMergeable(contours, testIntersection, currentIndex) {
-    const lastExit = testIntersection[testIntersection.length - 1];
-    for (let i = currentIndex + 1; i < contours.length; i) {
-      const testResult = contours[i];
-      if (lastExit) {
+    const end = testIntersection[testIntersection.length - 1];
+    for (let i = currentIndex + 1; i < contours.length; i++) {
+      const [enter] = contours[i];
+      if (enter.index >= end.relIndex) {
+        console.warn(
+          'Found mergeable entry',
+          JSON.stringify(testIntersection, null, 2),
+          JSON.stringify(contours[i], null, 2)
+        );
+        const contour = contours[i];
         contours.splice(i, 1);
-        return testResult;
+        return contour;
       }
     }
   }
@@ -302,23 +319,24 @@ class SculptorTool extends BaseTool {
       return intersection;
     }
     let foundItem;
+    let testAngle;
     for (let i = 0; i < intersections.length; i++) {
       const intersection = intersections[i];
-      if (intersection.isEnter === isEnter && intersection.angle >= lastAngle) {
-        foundItem =
-          ((!foundItem ||
-            foundItem.intersection.angle > intersection.angle) && {
-            i,
-            intersection,
-          }) ||
-          foundItem;
+      if (intersection.isEnter === isEnter) {
+        const relativeAngle =
+          (intersection.angle - lastAngle + 2 * Math.PI) % (2 * Math.PI);
+        if (!foundItem || relativeAngle < testAngle) {
+          foundItem = { i, intersection };
+          testAngle = relativeAngle;
+        }
       }
     }
     if (!foundItem) {
       debugger;
     }
     intersections.splice(foundItem.i, 1);
-    return foundItem.intersection;
+    const { intersection } = foundItem;
+    return intersection;
   }
 
   /**
@@ -759,6 +777,15 @@ class SculptorTool extends BaseTool {
     cursorShape.renderShape(svgDrawingHelper, this.commonData.canvasLocation, {
       color,
     });
+  }
+}
+
+function pushArr(dest, src, start = 0, end = src.length) {
+  if (end < start) {
+    end = end + src.length;
+  }
+  for (let i = start; i < end; i++) {
+    dest.push(src[i % src.length]);
   }
 }
 
