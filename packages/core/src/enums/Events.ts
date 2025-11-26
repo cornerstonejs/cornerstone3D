@@ -74,6 +74,10 @@ enum Events {
    */
   IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
   /**
+   * Triggers when a tools annotation has been removed.
+   */
+  ANNOTATION_REMOVED = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED',
+  /**
    * Triggers on the eventTarget when the image volume data is modified. This happens
    * in the streamingImageLoader when each frame is loaded and inserted into a volume.
    *

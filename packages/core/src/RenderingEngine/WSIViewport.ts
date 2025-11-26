@@ -1,5 +1,6 @@
 import { vec3, mat4 } from 'gl-matrix';
-import { Events as EVENTS, MetadataModules } from '../enums';
+import EVENTS from '../enums/Events';
+import MetadataModules from '../enums/MetadataModules';
 import type {
   WSIViewportProperties,
   Point3,
@@ -21,7 +22,6 @@ import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
 import eventTarget from '../eventTarget';
 import imageIdToURI from '../utilities/imageIdToURI';
-import { Events as ToolsEvents } from '@cornerstonejs/tools/enums';
 
 let WSIUtilFunctions = null;
 const EVENT_POSTRENDER = 'postrender';
@@ -171,7 +171,7 @@ class WSIViewport extends Viewport {
       this.elementDisabledHandler
     );
     eventTarget.addEventListener(
-      ToolsEvents.ANNOTATION_REMOVED,
+      EVENTS.ANNOTATION_REMOVED,
       this.annotationRemovedListener
     );
   }
@@ -182,7 +182,7 @@ class WSIViewport extends Viewport {
       this.elementDisabledHandler
     );
     eventTarget.removeEventListener(
-      ToolsEvents.ANNOTATION_REMOVED,
+      EVENTS.ANNOTATION_REMOVED,
       this.annotationRemovedListener
     );
   }
