@@ -18,21 +18,31 @@ interface IVolumeLoader {
 }
 
 /**
- * Enhanced volume loader that creates a StreamingImageVolume with optional decimation
- * capabilities for optimized rendering and memory usage. This loader supports both
- * k-axis (slice) decimation and in-plane (pixel) decimation to reduce volume resolution.
+ * Enhanced volume loader that creates a StreamingImageVolume while delegating
+ * volume mutations to a plugin-style modifier chain. The loader still handles the
+ * responsibilities of preparing imageIds (including optional k-axis decimation),
+ * instantiating the streaming volume, and updating VTK/voxel-manager state, but it
+ * now relies on `enhancedVolumeModifiers` to encapsulate any transformations that
+ * are specific to projection parameters such as decimation.
  *
- * The loader performs the following operations:
- * - **K-axis decimation**: Reduces the number of slices by keeping every Nth slice
- *   (e.g., decimation=2 keeps every other slice). This is applied before volume creation
- *   unless already decimated at the displaySet level.
- * - **In-plane decimation**: Downsamples the resolution of each slice by reducing pixel
- *   dimensions. This is achieved by appending a decimation parameter to imageIds, which
- *   is processed during image loading.
- *   The BaseStreamingVolume has been adjusted to handle the desired dimensions (targetRows and targetColumns)
- *    DecodeImageFrame is used to decode produce the PixelData.
- * - Automatically adjusts volume spacing, dimensions, and DICOM metadata to reflect
- *   the decimated resolution.
+ * The loader currently wires a dedicated modifier set for:
+ * - **K-axis decimation handling**: Removes slices before metadata generation so
+ *   that spacing reflects the decimated stack without manual scaling.
+ * - **In-plane decimation**: Implemented by `InPlaneDecimationModifier`, which
+ *   updates dimensions, spacing, and DICOM metadata in a self-contained class.
+ *
+ * Additional modifiers can be introduced by implementing the shared
+ * `EnhancedVolumeModifier` interface. For example:
+ * ```
+ * const modifiers = [
+ *   inPlaneDecimationModifier,
+ *   orientationModifier,         // rotates the direction matrix or redefines axis order
+ *   partialRangeModifier,        // limits the volume to a subset of frames / slices
+ *   windowingModifier,           // applies window/level or LUT adjustments at load time
+ * ];
+ * ```
+ * Modifiers are executed via `applyEnhancedVolumeModifiers`, so the loader still
+ * just selects the set to run and trusts the chain to mutate props appropriately.
  *
  * @param volumeId - The unique identifier for the volume
  * @param options - Configuration options for volume loading
