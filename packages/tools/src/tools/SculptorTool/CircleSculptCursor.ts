@@ -123,12 +123,14 @@ class CircleSculptCursor implements ISculptToolShape {
     mouseCanvas: Types.Point2
   ) {
     // Approximation is the midpoint
-    const point = vec3.add(vec3.create(), p1, p2) as Types.Point3;
-    vec3.scale(point, point, 0.5);
+    const midPoint = vec3.add(vec3.create(), p1, p2 || p1) as Types.Point3;
+    vec3.scale(midPoint, midPoint, 0.5);
 
-    const canvasPoint = viewport.worldToCanvas(point);
-    const canvasDelta = vec2.sub(vec2.create(), canvasPoint, mouseCanvas);
+    const canvasMidPoint = viewport.worldToCanvas(midPoint);
+    const canvasDelta = vec2.sub(vec2.create(), canvasMidPoint, mouseCanvas);
     const angle = Math.atan2(canvasDelta[1], canvasDelta[0]);
+    const point = this.interpolatePoint(viewport, angle, mouseCanvas);
+    const canvasPoint = viewport.worldToCanvas(point);
 
     return {
       point,

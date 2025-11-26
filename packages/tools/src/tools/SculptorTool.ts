@@ -215,7 +215,7 @@ class SculptorTool extends BaseTool {
           continue;
         }
       }
-      if (!closed) {
+      if (!closed && lastIndex < points.length - 1) {
         pushArr(newPoints, points, lastIndex);
       }
       points.splice(0, points.length);
@@ -230,6 +230,7 @@ class SculptorTool extends BaseTool {
    */
   public intersect(viewport: Types.IViewport, cursorShape): SculptIntersect[] {
     const { contours, mousePoint, mouseCanvasPoint } = this.sculptData;
+    const { closed } = this.commonData;
 
     cursorShape.computeWorldRadius(viewport);
     const result = new Array<SculptIntersect>();
@@ -239,13 +240,48 @@ class SculptorTool extends BaseTool {
       let lastIn = false;
       let anyIn = false;
       let anyOut = false;
-      for (let i = 0; i < points.length; i++) {
-        const point = points[i];
+      const { length } = points;
+      for (let i = 0; i <= length; i++) {
+        const index = i % length;
+        const point = points[index];
         const inCursor = cursorShape.isInCursor(point, mousePoint);
         anyIn ||= inCursor;
         anyOut ||= !inCursor;
         if (i === 0) {
           lastIn = inCursor;
+          if (!closed && inCursor) {
+            const edge = cursorShape.getEdge(
+              viewport,
+              point,
+              null,
+              mouseCanvasPoint
+            );
+            result.push({
+              annotationUID,
+              isEnter: inCursor,
+              index: i,
+              point: edge.point,
+              angle: edge.angle,
+            });
+          }
+          continue;
+        }
+        if (index === 0 && !closed) {
+          if (lastIn) {
+            const edge = cursorShape.getEdge(
+              viewport,
+              points[length - 1],
+              null,
+              mouseCanvasPoint
+            );
+            result.push({
+              annotationUID,
+              isEnter: false,
+              index: length - 1,
+              point: edge.point,
+              angle: edge.angle,
+            });
+          }
           continue;
         }
         if (lastIn === inCursor) {
@@ -273,8 +309,8 @@ class SculptorTool extends BaseTool {
 
   public interpolatePoints(viewport, enter, exit, existing, newPoints) {
     const { external, closed } = this.commonData;
-    const p0 = existing[enter.index];
-    const p1 = existing[exit.index];
+    const p0 = existing[enter.index % existing.length];
+    const p1 = existing[exit.index % existing.length];
 
     const v = vec3.sub(vec3.create(), p1, p0);
     if (isEqual(vec3.length(v), 0)) {
@@ -318,7 +354,15 @@ class SculptorTool extends BaseTool {
     let lastAngle = Number.NEGATIVE_INFINITY;
     for (let enterCount = 0; enterCount < enterLength; enterCount++) {
       const enter = this.findNext(intersections, lastAngle);
-      const exit = this.findNext(intersections, enter.angle, enter);
+      if (!enter) {
+        console.error("Couldnt' find an entry");
+        continue;
+      }
+      const exit = this.findNext(intersections, enter.angle, false);
+      if (!exit) {
+        console.error("Couldn't find an exit for", entry);
+        continue;
+      }
       exit.relIndex ||=
         exit.index < enter.index ? exit.index + pointLength : exit.index;
       result.push([enter, exit]);
@@ -355,7 +399,7 @@ class SculptorTool extends BaseTool {
     }
   }
 
-  public findNext(intersections, lastAngle, enter?) {
+  public findNext(intersections, lastAngle, isEnter = true) {
     if (intersections.length === 1) {
       const [intersection] = intersections;
       intersections.splice(0, 1);
@@ -365,10 +409,7 @@ class SculptorTool extends BaseTool {
     let testAngle;
     for (let i = 0; i < intersections.length; i++) {
       const intersection = intersections[i];
-      if (
-        (intersection.isEnter && !enter) ||
-        (!intersection.isEnter && enter)
-      ) {
+      if (intersection.isEnter == isEnter) {
         const relativeAngle =
           (intersection.angle - lastAngle + 2 * Math.PI) % (2 * Math.PI);
         if (!foundItem || relativeAngle < testAngle) {
@@ -378,8 +419,11 @@ class SculptorTool extends BaseTool {
       }
     }
     if (!foundItem) {
-      console.warn("Couldn't find an exit point for entry", enter);
-      return { ...enter, isEnter: false };
+      console.warn(
+        "Couldn't find an exit point for entry",
+        JSON.stringify(intersections)
+      );
+      return;
     }
     intersections.splice(foundItem.i, 1);
     const { intersection } = foundItem;
