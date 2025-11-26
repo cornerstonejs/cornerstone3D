@@ -150,6 +150,13 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(SculptorTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
 
   addManipulationBindings(toolGroup);
 

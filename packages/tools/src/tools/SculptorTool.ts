@@ -360,7 +360,7 @@ class SculptorTool extends BaseTool {
       }
       const exit = this.findNext(intersections, enter.angle, false);
       if (!exit) {
-        console.error("Couldn't find an exit for", entry);
+        console.error("Couldn't find an exit for", enter);
         continue;
       }
       exit.relIndex ||=
