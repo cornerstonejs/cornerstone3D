@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import { BaseTool } from './base';
-import { getAnnotations } from '../stateManagement';
+import { getAnnotations, getAnnotation } from '../stateManagement';
 import type {
   EventTypes,
   PublicToolProps,
@@ -30,7 +30,7 @@ import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
 import type { ISculptToolShape } from '../types/ISculptToolShape';
 import { distancePointToContour } from './distancePointToContour';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
-import { getSignedArea } from '../utilities/math/polyline';
+import { getSignedArea, containsPoint } from '../utilities/math/polyline';
 
 const { isEqual } = utilities;
 
@@ -64,6 +64,8 @@ type CommonData = {
   viewportIdsToRender: string[];
   isEditingOpenContour: boolean;
   canvasLocation: Types.Point2 | undefined;
+  external: boolean;
+  closed: boolean | undefined;
 };
 
 /**
@@ -80,6 +82,8 @@ class SculptorTool extends BaseTool {
     viewportIdsToRender: [],
     isEditingOpenContour: false,
     canvasLocation: undefined,
+    external: true,
+    closed: false,
   };
   private sculptData?: SculptData;
 
@@ -183,10 +187,11 @@ class SculptorTool extends BaseTool {
       points.length
     );
 
+    const { closed } = this.commonData;
     for (const contour of contourSelections) {
       const newPoints = new Array<Types.Point3>();
       const lastExit = contour[contour.length - 1];
-      let lastIndex = lastExit.relIndex || lastExit.index;
+      let lastIndex = closed ? lastExit.relIndex : 0;
       let lastEnter;
       for (const intersection of contour) {
         if (intersection.isEnter) {
@@ -209,6 +214,9 @@ class SculptorTool extends BaseTool {
           console.warn('Skipping internal area');
           continue;
         }
+      }
+      if (!closed) {
+        pushArr(newPoints, points, lastIndex);
       }
       points.splice(0, points.length);
       pushArr(points, newPoints);
@@ -264,6 +272,7 @@ class SculptorTool extends BaseTool {
   }
 
   public interpolatePoints(viewport, enter, exit, existing, newPoints) {
+    const { external, closed } = this.commonData;
     const p0 = existing[enter.index];
     const p1 = existing[exit.index];
 
@@ -275,8 +284,15 @@ class SculptorTool extends BaseTool {
     const cursorShape = this.registeredShapes.get(this.selectedShape);
     const a0 = (enter.angle + 2 * Math.PI) % (Math.PI * 2);
     const a1 = (exit.angle + 2 * Math.PI) % (Math.PI * 2);
-    const ae = a1 < a0 ? a1 + 2 * Math.PI : a1;
-
+    let ae = a1 < a0 ? a1 + 2 * Math.PI : a1;
+    const aeAlt = a1 > a0 ? a1 - 2 * Math.PI : a1;
+    if (
+      (external && !closed && Math.abs(aeAlt - a0) < Math.abs(ae - a0)) ||
+      (external && closed)
+    ) {
+      // Go the other way round as it is shorter
+      ae = aeAlt;
+    }
     const count = Math.ceil(Math.abs(a0 - ae) / 0.25);
     for (let i = 0; i <= count; i++) {
       const a = (a0 * (count - i) + i * ae) / count;
@@ -473,76 +489,6 @@ class SculptorTool extends BaseTool {
   }
 
   /**
-   * Inserts additional handles in sparsely sampled regions of the contour
-   */
-  private insertNewHandles(pushedHandles: {
-    first: number;
-    last: number | undefined;
-  }): void {
-    const indicesToInsertAfter = this.findNewHandleIndices(pushedHandles);
-    let newIndexModifier = 0;
-    for (let i = 0; i < indicesToInsertAfter?.length; i++) {
-      const insertIndex = indicesToInsertAfter[i] + 1 + newIndexModifier;
-
-      this.insertHandleRadially(insertIndex);
-      newIndexModifier++;
-    }
-  }
-
-  /**
-   * Returns an array of indicies that describe where new handles should be inserted
-   *
-   * @param pushedHandles - The first and last handles that were pushed.
-   */
-  private findNewHandleIndices(pushedHandles: {
-    first: number | undefined;
-    last: number | undefined;
-  }): Array<number> {
-    const { points, maxSpacing } = this.sculptData;
-    const indicesToInsertAfter = [];
-
-    for (let i = pushedHandles.first; i <= pushedHandles.last; i++) {
-      this.interpolatePointsWithinMaxSpacing(
-        i,
-        points,
-        indicesToInsertAfter,
-        maxSpacing
-      );
-    }
-
-    return indicesToInsertAfter;
-  }
-
-  /**
-   * Inserts a handle on the surface of the circle defined by toolSize and the mousePoint.
-   *
-   * @param insertIndex - The index to insert the new handle.
-   */
-  private insertHandleRadially(insertIndex: number): void {
-    const { points } = this.sculptData;
-
-    if (
-      insertIndex > points.length - 1 &&
-      this.commonData.isEditingOpenContour
-    ) {
-      return;
-    }
-
-    const cursorShape = this.registeredShapes.get(this.selectedShape);
-
-    const previousIndex = insertIndex - 1;
-    const nextIndex = contourIndex(insertIndex, points.length);
-    const insertPosition = cursorShape.getInsertPosition(
-      previousIndex,
-      nextIndex,
-      this.sculptData
-    );
-    const handleData = insertPosition;
-
-    points.splice(insertIndex, 0, handleData);
-  }
-
-  /**
    * Select the freehand tool to be edited
    *
    * @param eventData - Data object associated with the event.
@@ -556,7 +502,22 @@ class SculptorTool extends BaseTool {
       return;
     }
 
+    const annotation = getAnnotation(closestAnnotationUID);
     this.commonData.activeAnnotationUID = closestAnnotationUID;
+    this.commonData.closed = annotation.data.contour.closed;
+    this.commonData.external = true;
+    if (this.commonData.closed) {
+      const { element } = eventData;
+      const enabledElement = getEnabledElement(element);
+      const { viewport } = enabledElement;
+      const polyline = annotation.data.contour.polyline.map((p) =>
+        viewport.worldToCanvas(p)
+      );
+      const canvasPoint = eventData.currentPoints.canvas;
+      this.commonData.external = !containsPoint(polyline, canvasPoint, {
+        closed: true,
+      });
+    }
   }
 
   /**
