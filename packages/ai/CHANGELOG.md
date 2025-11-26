@@ -3,6 +3,50 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.1...v4.12.2) (2025-11-21)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.0...v4.12.1) (2025-11-21)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+# [4.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.5...v4.12.0) (2025-11-20)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.4...v4.11.5) (2025-11-20)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.3...v4.11.4) (2025-11-20)
+
+### Bug Fixes
+
+- type error calling function of undefined (segmentAI) ([#2481](https://github.com/cornerstonejs/cornerstone3D/issues/2481)) ([562d48e](https://github.com/cornerstonejs/cornerstone3D/commit/562d48e4bdc7c10441b911bebc38309d962422d2)), closes [OHIF#5547](https://github.com/OHIF/issues/5547)
+
+## [4.11.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.2...v4.11.3) (2025-11-19)
+
+### Bug Fixes
+
+- Save RTSS from contour segmentation and SEG multiframe/singleframe volume save and RTSS save ([#2445](https://github.com/cornerstonejs/cornerstone3D/issues/2445)) ([07e4e8a](https://github.com/cornerstonejs/cornerstone3D/commit/07e4e8ade32859fa04052d97d4f2c4aabbedebef))
+
+## [4.11.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.1...v4.11.2) (2025-11-19)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.0...v4.11.1) (2025-11-19)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+# [4.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.3...v4.11.0) (2025-11-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [4.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.2...v4.10.3) (2025-11-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
 ## [4.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.1...v4.10.2) (2025-11-13)
 
 **Note:** Version bump only for package @cornerstonejs/ai
