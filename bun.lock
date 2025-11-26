@@ -184,7 +184,7 @@
         "uuid": "9.0.1",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.11.5",
+        "@cornerstonejs/core": "4.12.1",
         "dicom-parser": "1.8.21",
       },
     },
@@ -196,8 +196,8 @@
         "itk-wasm": "1.0.0-b.165",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.11.5",
-        "@cornerstonejs/tools": "4.11.5",
+        "@cornerstonejs/core": "4.12.1",
+        "@cornerstonejs/tools": "4.12.1",
         "@kitware/vtk.js": "34.15.1",
       },
     },
@@ -208,7 +208,7 @@
         "nifti-reader-js": "0.6.9",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.11.5",
+        "@cornerstonejs/core": "4.12.1",
       },
     },
     "packages/polymorphic-segmentation": {
@@ -218,8 +218,8 @@
         "@icr/polyseg-wasm": "0.4.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.11.5",
-        "@cornerstonejs/tools": "4.11.5",
+        "@cornerstonejs/core": "4.12.1",
+        "@cornerstonejs/tools": "4.12.1",
         "@kitware/vtk.js": "34.15.1",
       },
     },
@@ -248,7 +248,9 @@
   "overrides": {
     "axios": "1.12.0",
     "body-parser": "1.20.3",
+    "buffer": "6.0.3",
     "canvas": "3.2.0",
+    "dcmjs": "0.45.0",
     "tar-fs": "2.1.4",
     "ws": "8.18.3",
   },
@@ -3643,8 +3645,6 @@
 
     "babel-plugin-polyfill-corejs2/semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
-    "bl/buffer": ["buffer@5.7.1", "", { "dependencies": { "base64-js": "^1.3.1", "ieee754": "^1.1.13" } }, "sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ=="],
-
     "bl/readable-stream": ["readable-stream@3.6.2", "", { "dependencies": { "inherits": "^2.0.3", "string_decoder": "^1.1.1", "util-deprecate": "^1.0.1" } }, "sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA=="],
 
     "body-parser/debug": ["debug@2.6.9", "", { "dependencies": { "ms": "2.0.0" } }, "sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA=="],
@@ -3744,8 +3744,6 @@
     "del/rimraf": ["rimraf@2.7.1", "", { "dependencies": { "glob": "^7.1.3" }, "bin": { "rimraf": "./bin.js" } }, "sha512-uWjbaKIK3T1OSVptzX7Nl6PvQ3qAGtKEtVRjRuazjfL3Bx5eI409VZSqgND+4UNnmzLVdPj9FqFJNPqBZFve4w=="],
 
     "dicom-microscopy-viewer/@cornerstonejs/codec-openjpeg": ["@cornerstonejs/codec-openjpeg@1.2.4", "", {}, "sha512-UT2su6xZZnCPSuWf2ldzKa/2+guQ7BGgfBSKqxanggwJHh48gZqIAzekmsLyJHMMK5YDK+ti+fzvVJhBS3Xi/g=="],
-
-    "dicom-microscopy-viewer/dcmjs": ["dcmjs@0.41.0", "", { "dependencies": { "@babel/runtime-corejs3": "^7.22.5", "adm-zip": "^0.5.10", "gl-matrix": "^3.1.0", "lodash.clonedeep": "^4.5.0", "loglevel": "^1.8.1", "ndarray": "^1.0.19", "pako": "^2.0.4" } }, "sha512-kr46REomItFeWz+0ck4Wif4uS5VVDWVlwdh5GGaCtTYHWfNQmrcCSiQOkrShc7Dc5zP8vNKrHEdORlZXenlg3w=="],
 
     "dicom-microscopy-viewer/dicomweb-client": ["dicomweb-client@0.10.4", "", {}, "sha512-TEt26c0JI37IGmSqoj1k1/Y/ZIyq33/ysVaUwE0/Haosn2IBM55NEIPkT+AnhFss2nFAMVtKKWKWLox4luthVw=="],
 
@@ -4192,8 +4190,6 @@
     "typedoc/minimatch": ["minimatch@9.0.5", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow=="],
 
     "typedoc/yaml": ["yaml@2.7.0", "", { "bin": { "yaml": "bin.mjs" } }, "sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA=="],
-
-    "unbzip2-stream/buffer": ["buffer@5.7.1", "", { "dependencies": { "base64-js": "^1.3.1", "ieee754": "^1.1.13" } }, "sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ=="],
 
     "uri-js/punycode": ["punycode@2.3.1", "", {}, "sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg=="],
 
