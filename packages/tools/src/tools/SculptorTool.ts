@@ -30,6 +30,7 @@ import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
 import type { ISculptToolShape } from '../types/ISculptToolShape';
 import { distancePointToContour } from './distancePointToContour';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
+import { getSignedArea } from '../utilities/math/polyline';
 
 const { isEqual } = utilities;
 
@@ -182,40 +183,38 @@ class SculptorTool extends BaseTool {
       points.length
     );
 
-    const [contour] = contourSelections;
-    if (!contour) {
+    for (const contour of contourSelections) {
+      const newPoints = new Array<Types.Point3>();
+      const lastExit = contour[contour.length - 1];
+      let lastIndex = lastExit.relIndex || lastExit.index;
+      let lastEnter;
+      for (const intersection of contour) {
+        if (intersection.isEnter) {
+          pushArr(newPoints, points, lastIndex, intersection.index);
+          lastEnter = intersection;
+        } else {
+          this.interpolatePoints(
+            viewport,
+            lastEnter,
+            intersection,
+            points,
+            newPoints
+          );
+        }
+        lastIndex = intersection.index;
+      }
+      const signedArea = getSignedArea(newPoints.map(viewport.worldToCanvas));
+      if (signedArea < 0) {
+        console.warn('Skipping internal area');
+        continue;
+      }
+      points.splice(0, points.length);
+      pushArr(points, newPoints);
       return;
     }
-
-    const existingPoints = [...points];
-    points.splice(0, points.length);
-    const lastExit = contour[contour.length - 1];
-    let lastIndex = lastExit.relIndex || lastExit.index;
-    let lastEnter;
-    for (const intersection of contour) {
-      if (intersection.isEnter) {
-        pushArr(points, existingPoints, lastIndex, intersection.index);
-        lastEnter = intersection;
-      } else {
-        this.interpolatePoints(
-          viewport,
-          lastEnter,
-          intersection,
-          existingPoints,
-          points
-        );
-      }
-      lastIndex = intersection.index;
-    }
-
-    // const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);
-
-    // if (pushedHandles.first !== undefined) {
-    //   this.insertNewHandles(pushedHandles);
-    // }
   }
 
-  public interpolatePoints(viewport, enter, exit, existing, points) {
+  public interpolatePoints(viewport, enter, exit, existing, newPoints) {
     const p0 = existing[enter.index];
     const p1 = existing[exit.index];
 
@@ -229,19 +228,10 @@ class SculptorTool extends BaseTool {
     const a1 = (exit.angle + 2 * Math.PI) % (Math.PI * 2);
     const ae = a1 < a0 ? a1 + 2 * Math.PI : a1;
 
-    console.warn('p before', viewport.worldToCanvas(points[points.length - 2]));
-    const cp0 = viewport.worldToCanvas(p0);
-    const cp1 = viewport.worldToCanvas(p1);
-    console.warn('Within range', cp0, cp1);
-    console.warn(
-      'Around',
-      this.sculptData.mouseCanvasPoint,
-      cursorShape.toolInfo.toolSize
-    );
-    const COUNT = 6;
-    for (let i = 0; i <= COUNT; i++) {
-      const a = (a0 * (COUNT - i) + i * ae) / COUNT;
-      points.push(
+    const count = Math.ceil(Math.abs(a0 - ae) / 0.1);
+    for (let i = 0; i <= count; i++) {
+      const a = (a0 * (count - i) + i * ae) / count;
+      newPoints.push(
         cursorShape.interpolatePoint(
           viewport,
           a,
@@ -271,7 +261,6 @@ class SculptorTool extends BaseTool {
     result.sort((a, b) => a[0].index - b[0].index);
     for (let i = 0; i < result.length - 1; ) {
       const testIntersection = result[i];
-      console.warn('Looking for mergeable at', i);
       const mergeableResult = this.findMergeable(result, testIntersection, i);
       if (mergeableResult) {
         testIntersection.push(...mergeableResult);
@@ -283,7 +272,6 @@ class SculptorTool extends BaseTool {
         end.relIndex =
           end.index < start.index ? end.index + pointLength : end.index;
       } else {
-        console.warn("Couldn't find mergeable", result);
         i++;
       }
     }

@@ -52,41 +52,6 @@ class CircleSculptCursor implements ISculptToolShape {
   }
 
   /**
-   * Pushes the points radially away from the mouse if they are
-   * contained within the shape defined by the freehandSculpter tool
-   */
-  pushHandles(
-    viewport: Types.IViewport,
-    sculptData: SculptData
-  ): PushedHandles {
-    const { points, mouseCanvasPoint } = sculptData;
-    const pushedHandles: PushedHandles = { first: undefined, last: undefined };
-
-    for (let i = 0; i < points.length; i++) {
-      const handleCanvasPoint = viewport.worldToCanvas(points[i]);
-      const distanceToHandle = point.distanceToPoint(
-        handleCanvasPoint,
-        mouseCanvasPoint
-      );
-
-      if (distanceToHandle > this.toolInfo.toolSize) {
-        continue;
-      }
-
-      // Push point if inside circle, to edge of circle.
-      this.pushOneHandle(i, distanceToHandle, sculptData);
-      if (pushedHandles.first === undefined) {
-        pushedHandles.first = i;
-        pushedHandles.last = i;
-      } else {
-        pushedHandles.last = i;
-      }
-    }
-
-    return pushedHandles;
-  }
-
-  /**
    * Sets up the basic tool size from the element, where the tool size
    * is set at minimum to 1/12 of the minimum of the width and height.
    */
@@ -132,81 +97,6 @@ class CircleSculptCursor implements ISculptToolShape {
    */
   getMaxSpacing(minSpacing: number): number {
     return Math.max(this.toolInfo.toolSize / 4, minSpacing);
-  }
-
-  /**
-   * Returns the index position of data to start inserting new tool information
-   * into the freeform.
-   */
-  getInsertPosition(
-    previousIndex: number,
-    nextIndex: number,
-    sculptData: SculptData
-  ): Types.Point3 {
-    let insertPosition: Types.Point2;
-    const { points, element, mouseCanvasPoint } = sculptData;
-    const toolSize = this.toolInfo.toolSize;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const previousCanvasPoint = viewport.worldToCanvas(points[previousIndex]);
-    const nextCanvasPoint = viewport.worldToCanvas(points[nextIndex]);
-
-    const midPoint: Types.Point2 = [
-      (previousCanvasPoint[0] + nextCanvasPoint[0]) / 2.0,
-      (previousCanvasPoint[1] + nextCanvasPoint[1]) / 2.0,
-    ];
-
-    const distanceToMidPoint = point.distanceToPoint(
-      mouseCanvasPoint,
-      midPoint
-    );
-
-    if (distanceToMidPoint < toolSize) {
-      const directionUnitVector = {
-        x: (midPoint[0] - mouseCanvasPoint[0]) / distanceToMidPoint,
-        y: (midPoint[1] - mouseCanvasPoint[1]) / distanceToMidPoint,
-      };
-
-      insertPosition = [
-        mouseCanvasPoint[0] + toolSize * directionUnitVector.x,
-        mouseCanvasPoint[1] + toolSize * directionUnitVector.y,
-      ];
-    } else {
-      insertPosition = midPoint;
-    }
-
-    const worldPosition = viewport.canvasToWorld(insertPosition);
-
-    return worldPosition;
-  }
-
-  /**
-   * Adds a new point into the sculpt data.
-   */
-  private pushOneHandle(
-    i: number,
-    distanceToHandle: number,
-    sculptData: SculptData
-  ): void {
-    const { points, mousePoint } = sculptData;
-    const toolSize = this.toolInfo.toolSize;
-    const handle = points[i];
-
-    const directionUnitVector = {
-      x: (handle[0] - mousePoint[0]) / distanceToHandle,
-      y: (handle[1] - mousePoint[1]) / distanceToHandle,
-      z: (handle[2] - mousePoint[2]) / distanceToHandle,
-    };
-
-    const position = {
-      x: mousePoint[0] + toolSize * directionUnitVector.x,
-      y: mousePoint[1] + toolSize * directionUnitVector.y,
-      z: mousePoint[2] + toolSize * directionUnitVector.z,
-    };
-
-    handle[0] = position.x;
-    handle[1] = position.y;
-    handle[2] = position.z;
   }
 
   /**
@@ -292,7 +182,6 @@ class CircleSculptCursor implements ISculptToolShape {
     const dy = Math.sin(angle) * r;
     const newPoint2 = [cx + dx, cy + dy];
 
-    console.warn('Adding point', newPoint2);
     return viewport.canvasToWorld(newPoint2);
   }
 
