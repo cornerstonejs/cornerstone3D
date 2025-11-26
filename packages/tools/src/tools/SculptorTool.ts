@@ -277,8 +277,7 @@ class SculptorTool extends BaseTool {
     const a1 = (exit.angle + 2 * Math.PI) % (Math.PI * 2);
     const ae = a1 < a0 ? a1 + 2 * Math.PI : a1;
 
-    const count = Math.ceil(Math.abs(a0 - ae) / 0.05);
-    console.warn('There are', count, 'new entries');
+    const count = Math.ceil(Math.abs(a0 - ae) / 0.25);
     for (let i = 0; i <= count; i++) {
       const a = (a0 * (count - i) + i * ae) / count;
       newPoints.push(
@@ -333,11 +332,6 @@ class SculptorTool extends BaseTool {
     for (let i = currentIndex + 1; i < contours.length; i++) {
       const [enter] = contours[i];
       if (enter.index >= end.relIndex) {
-        console.warn(
-          'Found mergeable entry',
-          JSON.stringify(testIntersection, null, 2),
-          JSON.stringify(contours[i], null, 2)
-        );
         const contour = contours[i];
         contours.splice(i, 1);
         return contour;
