@@ -3,6 +3,14 @@ import type { IRetrieveConfiguration } from '../types';
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import decimate from '../utilities/decimate';
 import VoxelManager from '../utilities/VoxelManager';
+import {
+  applyEnhancedVolumeModifiers,
+  inPlaneDecimationModifier,
+} from './enhancedVolumeModifiers';
+import type {
+  EnhancedVolumeLoaderOptions,
+  EnhancedVolumeModifierContext,
+} from './enhancedVolumeModifiers';
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
   cancel: () => void;
@@ -35,6 +43,7 @@ interface IVolumeLoader {
  *   in-plane resolution and K affects slice count. Defaults to [1, 1, 1] (no decimation).
  *   Example: [2, 2, 2] reduces dimensions by half in all axes.
  *
+ * *
  * @returns An object containing:
  *   - `promise`: Resolves to the created StreamingImageVolume instance
  *   - `cancel`: Function to cancel ongoing volume loading
@@ -62,19 +71,30 @@ export function enhancedVolumeLoader(
     ijkDecimation?: [number, number, number];
   }
 ): IVolumeLoader {
-  // Use provided decimation or default to [1, 1, 1]
-  // The hanging protocol service is responsible for providing decimation values
-  const decimationValues = options.ijkDecimation || [1, 1, 1];
-
   if (!options || !options.imageIds || !options.imageIds.length) {
     throw new Error(
       'ImageIds must be provided to create a streaming image volume'
     );
   }
 
-  const [iDecimation, _jDecimation, kDecimation] = decimationValues;
-  const inPlaneDecimation = iDecimation > 1 ? iDecimation : 1;
-  const kAxisDecimation = kDecimation > 1 ? kDecimation : 1;
+  // Use provided decimation or default to [1, 1, 1]
+  // The hanging protocol service is responsible for providing decimation values
+  const [iDecimation = 1, jDecimation = iDecimation, kDecimation = 1] =
+    options.ijkDecimation ?? [];
+  const columnDecimation = Math.max(1, Math.floor(iDecimation));
+  const rowDecimation =
+    jDecimation > 1 ? Math.max(1, Math.floor(jDecimation)) : columnDecimation;
+  const kAxisDecimation = Math.max(1, Math.floor(kDecimation));
+  const hasInPlaneDecimation = columnDecimation > 1 || rowDecimation > 1;
+
+  const modifierOptions: EnhancedVolumeLoaderOptions = {
+    ijkDecimation: [columnDecimation, rowDecimation, kAxisDecimation] as [
+      number,
+      number,
+      number,
+    ],
+  };
+  const modifiers = [inPlaneDecimationModifier];
 
   // Function to add decimation parameter to imageId
   function addDecimationToImageId(imageId: string, factor: number): string {
@@ -112,19 +132,31 @@ export function enhancedVolumeLoader(
   }
 
   // Apply in-plane decimation parameter to imageIds
-  if (inPlaneDecimation > 1) {
+  if (columnDecimation > 1) {
     options.imageIds = options.imageIds.map((imageId) =>
-      addDecimationToImageId(imageId, inPlaneDecimation)
+      addDecimationToImageId(imageId, columnDecimation)
     );
   }
 
   async function getStreamingImageVolume() {
-    const volumeProps = generateVolumePropsFromImageIds(
+    const baseVolumeProps = generateVolumePropsFromImageIds(
       options.imageIds,
       volumeId
     );
 
-    let {
+    const modifierContext: EnhancedVolumeModifierContext = {
+      volumeId,
+      imageIds: options.imageIds,
+      options: modifierOptions,
+    };
+
+    const volumeProps = applyEnhancedVolumeModifiers(
+      baseVolumeProps,
+      modifiers,
+      modifierContext
+    );
+
+    const {
       dimensions,
       spacing,
       origin,
@@ -135,33 +167,7 @@ export function enhancedVolumeLoader(
       numberOfComponents,
     } = volumeProps;
 
-    // Start from current props and apply decimations independently
-    let newDimensions = [...dimensions] as typeof dimensions;
-    let newSpacing = [...spacing] as typeof spacing;
-
-    // Apply in‑plane decimation (columns = x = index 0, rows = y = index 1)
-    if (inPlaneDecimation > 1) {
-      newDimensions[0] = Math.floor(newDimensions[0] / inPlaneDecimation);
-      newDimensions[1] = Math.floor(newDimensions[1] / inPlaneDecimation);
-      newSpacing[0] = newSpacing[0] * inPlaneDecimation; // column spacing (x)
-      newSpacing[1] = newSpacing[1] * inPlaneDecimation; // row spacing (y)
-
-      // DICOM: Rows = Y, Columns = X
-      metadata.Rows = newDimensions[1];
-      metadata.Columns = newDimensions[0];
-      // DICOM PixelSpacing = [row, column] = [y, x]
-      metadata.PixelSpacing = [newSpacing[1], newSpacing[0]];
-    }
-
-    // Do NOT scale Z spacing here. We decimated imageIds before
-    // generating volume props, so sortImageIdsAndGetSpacing already
-    // computed the effective z-spacing between the kept frames.
-
-    // Commit any updates
-    dimensions = newDimensions;
-    spacing = newSpacing;
     const streamingImageVolume = new StreamingImageVolume(
-      // ImageVolume properties
       {
         volumeId,
         metadata,
@@ -173,7 +179,6 @@ export function enhancedVolumeLoader(
         dataType,
         numberOfComponents,
       },
-      // Streaming properties
       {
         imageIds,
         loadStatus: {
@@ -186,30 +191,27 @@ export function enhancedVolumeLoader(
       }
     );
 
-    // Update VTK imageData bounds after decimation
-    if (inPlaneDecimation > 1) {
+    if (hasInPlaneDecimation) {
       const vtkImageData = streamingImageVolume.imageData;
       if (vtkImageData) {
-        // Update VTK imageData with new dimensions and spacing
         vtkImageData.setDimensions(streamingImageVolume.dimensions);
         vtkImageData.setSpacing(streamingImageVolume.spacing);
-
-        // Force VTK to recalculate bounds
         vtkImageData.modified();
       }
+
       const newVoxelManager = VoxelManager.createImageVolumeVoxelManager({
         dimensions: streamingImageVolume.dimensions,
         imageIds: streamingImageVolume.imageIds,
         numberOfComponents: numberOfComponents,
       });
 
-      // Update the volume's voxel manager
       streamingImageVolume.voxelManager = newVoxelManager;
 
-      // Update VTK imageData to use new voxel manager
-      vtkImageData.set({
-        voxelManager: newVoxelManager,
-      });
+      if (vtkImageData) {
+        vtkImageData.set({
+          voxelManager: newVoxelManager,
+        });
+      }
     }
 
     return streamingImageVolume;

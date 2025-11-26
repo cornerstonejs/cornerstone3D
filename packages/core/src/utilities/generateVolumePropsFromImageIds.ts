@@ -24,44 +24,16 @@ const constructorToTypedArray: Record<string, PixelDataTypedArrayString> = {
  *
  * @param imageIds - An array of image IDs.
  * @param volumeId - The ID of the volume.
- * @param ijkDecimation - Optional decimation factors [i, j, k] for in-plane and k-axis decimation.
  * @returns The generated ImageVolumeProps object.
  */
 function generateVolumePropsFromImageIds(
   imageIds: string[],
-  volumeId: string,
-  ijkDecimation?: [number, number, number]
+  volumeId: string
 ): ImageVolumeProps {
   const volumeMetadata = makeVolumeMetadata(imageIds);
 
   const { ImageOrientationPatient, PixelSpacing, Columns, Rows } =
     volumeMetadata;
-
-  // Apply decimation if provided
-  const [iDecimation = 1, jDecimation = 1, kDecimation = 1] = ijkDecimation || [1, 1, 1];
-  
-  // Calculate decimated dimensions
-  const decimatedColumns = Math.floor(Columns / iDecimation);
-  const decimatedRows = Math.floor(Rows / jDecimation);
-  
-  // Calculate decimated spacing 
-  // NOTE: When we decimate by factor N, we're taking every Nth pixel
-  // This means the effective spacing between pixels increases by factor N
-  // But we need to be careful about how this affects the coordinate system
-  const decimatedPixelSpacing = [
-    PixelSpacing[0] * iDecimation, // column spacing
-    PixelSpacing[1] * jDecimation   // row spacing
-  ];
-  
-  
-  
-  // Update metadata to reflect decimated dimensions
-  const decimatedMetadata = {
-    ...volumeMetadata,
-    Columns: decimatedColumns,
-    Rows: decimatedRows,
-    PixelSpacing: decimatedPixelSpacing
-  };
 
   const rowCosineVec = vec3.fromValues(
     ImageOrientationPatient[0],
@@ -82,19 +54,13 @@ function generateVolumePropsFromImageIds(
     scanAxisNormal
   );
 
-  const numFrames = Math.floor(imageIds.length / kDecimation);
-
-  // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  // Apply decimation to spacing
   const spacing = [
-    decimatedPixelSpacing[1], // column spacing (x) - decimated
-    decimatedPixelSpacing[0], // row spacing (y) - decimated  
-    zSpacing * kDecimation    // z spacing - decimated
+    PixelSpacing[1], // column spacing (x)
+    PixelSpacing[0], // row spacing (y)
+    zSpacing,
   ] as Point3;
-  
-  
-  
-  const dimensions = [decimatedColumns, decimatedRows, numFrames].map((it) =>
+
+  const dimensions = [Columns, Rows, sortedImageIds.length].map((it) =>
     Math.floor(it)
   ) as Point3;
   const direction = [
@@ -102,20 +68,19 @@ function generateVolumePropsFromImageIds(
     ...colCosineVec,
     ...scanAxisNormal,
   ] as Mat3;
-  
 
   return {
     dimensions,
     spacing,
     origin,
-    dataType: _determineDataType(sortedImageIds, decimatedMetadata),
+    dataType: _determineDataType(sortedImageIds, volumeMetadata),
     direction,
-    metadata: decimatedMetadata,
+    metadata: volumeMetadata,
     imageIds: sortedImageIds,
     volumeId,
     voxelManager: null,
     numberOfComponents:
-      decimatedMetadata.PhotometricInterpretation === 'RGB' ? 3 : 1,
+      volumeMetadata.PhotometricInterpretation === 'RGB' ? 3 : 1,
   };
 }
 
