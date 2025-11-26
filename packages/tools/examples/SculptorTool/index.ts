@@ -42,7 +42,7 @@ setTitleAndDescription(
   'Here we demonstrate how to use the  Sculptor Tool to sculpt planar freehand ROIs and FreehandContourSegmentations '
 );
 
-const size = '500px';
+const size = '48vw';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

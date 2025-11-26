@@ -29,6 +29,8 @@ class CircleSculptCursor implements ISculptToolShape {
 
   private toolInfo = {
     toolSize: null,
+    // Radius in world coordinates
+    radius: null,
     maxToolSize: null,
   };
 
@@ -68,6 +70,7 @@ class CircleSculptCursor implements ISculptToolShape {
     const maxRadius = minDim / 24;
 
     toolInfo.toolSize = maxRadius;
+    toolInfo.radius = null;
     toolInfo.maxToolSize = maxRadius;
   }
 
@@ -89,6 +92,7 @@ class CircleSculptCursor implements ISculptToolShape {
     );
     if (radius > 0) {
       toolInfo.toolSize = Math.min(toolInfo.maxToolSize, radius);
+      this.computeWorldRadius(viewport, true);
     }
   }
 
@@ -99,54 +103,13 @@ class CircleSculptCursor implements ISculptToolShape {
     return Math.max(this.toolInfo.toolSize / 4, minSpacing);
   }
 
-  /**
-   * This will return an array of EVEN length, containing ordered
-   * entry/exit points for where the given contour(s) enter the cursor region
-   * and leave the cursor region.
-   */
-  public intersect(
-    viewport: Types.IViewport,
-    sculptData: SculptData
-  ): SculptIntersect[] {
-    const { contours, mousePoint, mouseCanvasPoint } = sculptData;
-
-    const result = new Array<SculptIntersect>();
-
-    for (const contour of contours) {
-      const { annotationUID, points } = contour;
-      let lastIn = false;
-      let anyIn = false;
-      let anyOut = false;
-      for (let i = 0; i < points.length; i++) {
-        const point = points[i];
-        const inCursor = this.isInCursor(point, mousePoint);
-        anyIn ||= inCursor;
-        anyOut ||= !inCursor;
-        if (i === 0) {
-          lastIn = inCursor;
-          continue;
-        }
-        if (lastIn === inCursor) {
-          continue;
-        }
-        lastIn = inCursor;
-        const edge = this.getEdge(
-          viewport,
-          point,
-          points[i - 1],
-          mouseCanvasPoint
-        );
-        result.push({
-          annotationUID,
-          isEnter: inCursor,
-          index: i,
-          point: edge.point,
-          angle: edge.angle,
-        });
-      }
+  public computeWorldRadius(viewport, clearExisting = false) {
+    if (!this.toolInfo.radius || clearExisting) {
+      const p0 = viewport.canvasToWorld([0, 0]);
+      const p1 = viewport.canvasToWorld([this.toolInfo.toolSize, 0]);
+      this.toolInfo.radius = vec3.length(vec3.sub(vec3.create(), p0, p1));
     }
-
-    return result;
+    return this.toolInfo.radius;
   }
 
   /**
@@ -176,6 +139,7 @@ class CircleSculptCursor implements ISculptToolShape {
 
   public interpolatePoint(viewport, angle, center) {
     const [cx, cy] = center;
+    // This version uses viewport coords
     const r = this.toolInfo.toolSize;
 
     const dx = Math.cos(angle) * r;
@@ -186,7 +150,7 @@ class CircleSculptCursor implements ISculptToolShape {
   }
 
   public isInCursor(point, mousePoint) {
-    return vec3.distance(point, mousePoint) < this.toolInfo.toolSize;
+    return vec3.distance(point, mousePoint) < this.toolInfo.radius;
   }
 }
 
