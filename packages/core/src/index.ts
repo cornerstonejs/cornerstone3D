@@ -89,6 +89,8 @@ import {
   addImageSlicesToViewports,
 } from './RenderingEngine/helpers';
 
+export * from './loaders/enhancedVolumeLoader';
+
 // Add new types here so that they can be imported singly as required.
 export type {
   Types,
