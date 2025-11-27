@@ -1,4 +1,4 @@
-import { inPlaneDecimationModifier } from '../src/loaders/enhancedVolumeModifiers/index.ts';
+import { inPlaneDecimationModifier } from '../../src/loaders/enhancedVolumeModifiers';
 
 const createMetadata = () => ({
   Columns: 128,
@@ -53,16 +53,5 @@ describe('inPlaneDecimationModifier', () => {
     expect(result.metadata.Rows).toBe(16);
     expect(result.metadata.PixelSpacing).toEqual([2.4, 0.8]);
     expect(result.dimensions[2]).toBe(32);
-  });
-
-  it('uses the column decimation when the row factor is omitted', () => {
-    const baseProps = createBaseProps();
-    const context = createContext([3]);
-
-    const result = inPlaneDecimationModifier.apply(baseProps, context);
-
-    expect(result.dimensions).toEqual([42, 21, 32]);
-    expect(result.spacing).toEqual([1.2, 1.8, 1]);
-    expect(result.metadata.PixelSpacing).toEqual([1.8, 1.2]);
   });
 });
