@@ -497,6 +497,20 @@ class SculptorTool extends BaseTool {
   }
 
   /**
+   * Gets the tool instance on the configured tool
+   */
+  protected getToolInstance(element: HTMLDivElement) {
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngineId, viewportId } = enabledElement;
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
+
+    const toolInstance = toolGroup.getToolInstance(
+      this.configuration.referencedToolName
+    );
+    return toolInstance;
+  }
+
+  /**
    * Returns sculptable freehand ROI annotations
    *
    * @param element - The viewport element
@@ -504,16 +518,11 @@ class SculptorTool extends BaseTool {
   private filterSculptableAnnotationsForElement(
     element: HTMLDivElement
   ): ContourAnnotation[] {
-    const config = this.configuration;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngineId, viewportId } = enabledElement;
+    const { configuration } = this;
     const sculptableAnnotations = [];
+    const toolInstance = this.getToolInstance(element);
 
-    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
-
-    const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
-
-    config.referencedToolNames.forEach((referencedToolName: string) => {
+    configuration.referencedToolNames.forEach((referencedToolName: string) => {
       const annotations = getAnnotations(referencedToolName, element);
       if (annotations) {
         sculptableAnnotations.push(...annotations);
@@ -632,18 +641,13 @@ class SculptorTool extends BaseTool {
   ): void => {
     const eventData = evt.detail;
     const { element } = eventData;
-    const config = this.configuration;
-    const enabledElement = getEnabledElement(element);
 
     this.isActive = false;
     this.deactivateModify(element);
     resetElementCursor(element);
 
-    const { renderingEngineId, viewportId } = enabledElement;
-
-    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
-
-    const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
+    const toolInstance = this.getToolInstance(element);
+    toolInstance.doneEditMemo?.();
 
     const annotations = this.filterSculptableAnnotationsForElement(element);
 
@@ -694,6 +698,9 @@ class SculptorTool extends BaseTool {
    * @param element - - The viewport element to attach event listeners to.
    */
   protected activateModify(element: HTMLDivElement): void {
+    const annotation = getAnnotation(this.commonData.activeAnnotationUID);
+    const instance = this.getToolInstance(element);
+    instance.createMemo?.(element, annotation);
     element.addEventListener(
       Events.MOUSE_UP,
       this.endCallback as EventListener

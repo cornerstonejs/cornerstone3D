@@ -1,13 +1,21 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  volumeLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
   addManipulationBindings,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+
+const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
 // This is for debugging purposes
 console.warn(
@@ -34,7 +42,6 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 const segmentationId = `SEGMENTATION_ID`;
-let activeSegmentIndex = 0;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -121,6 +128,22 @@ addDropdownToToolbar({
 });
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
+
+addButtonToToolbar({
+  id: 'Undo',
+  title: 'Undo',
+  onClick() {
+    DefaultHistoryMemo.undo();
+  },
+});
+
+addButtonToToolbar({
+  id: 'Redo',
+  title: 'Redo',
+  onClick() {
+    DefaultHistoryMemo.redo();
+  },
+});
 
 /**
  * Runs the demo
