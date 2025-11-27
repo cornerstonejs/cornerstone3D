@@ -75,6 +75,8 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
+Left mouse button is initially bound to planar freehand and right button to contour segmentation tool
+
 Drawing:
 
 - Select PlanarFreehandROI from dropdown button to draw freehandROIs.
@@ -83,7 +85,8 @@ Drawing:
 
 Editing:
 
-- Select SculptorTool from dropdown ,then adjustable cursor will appear.
+- Sculptor tool is initially configured as the right drag tool, so you can just use it immediately
+- Select SculptorTool from dropdown
 - Nearest freehand ROI/Freehand Contour Segmentation will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation.
 - Moving the cursor closer to the active ROI reduces the tool diameter.
 - Moving the cursor away from the active increases the tool diameter.
@@ -99,6 +102,8 @@ const toolsNames = [
   SculptorTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
+
+let activeSegmentIndex = 0;
 
 function updateActiveSegmentIndex(segmentIndex: number): void {
   activeSegmentIndex = segmentIndex;
