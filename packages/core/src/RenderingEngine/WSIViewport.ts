@@ -631,7 +631,7 @@ class WSIViewport extends Viewport {
       metaData.get(MetadataModules.WADO_WEB_CLIENT, imageIds[0]);
     if (!webClient) {
       throw new Error(
-        `To use setDataIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}`
+        `To use setDataIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}.`
       );
     }
 
