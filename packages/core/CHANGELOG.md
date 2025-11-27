@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.12.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.4...v4.12.5) (2025-11-27)
+
+### Bug Fixes
+
+- US calibrated regions broken ([#2415](https://github.com/cornerstonejs/cornerstone3D/issues/2415)) ([20efd77](https://github.com/cornerstonejs/cornerstone3D/commit/20efd77303d874f1c0a59f3cd859bdbce47d4a67))
+
 ## [4.12.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.3...v4.12.4) (2025-11-27)
 
 **Note:** Version bump only for package @cornerstonejs/core
