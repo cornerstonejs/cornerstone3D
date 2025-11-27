@@ -3,6 +3,108 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.12.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.2...v4.12.3) (2025-11-26)
+
+### Bug Fixes
+
+- Export seg ([#2486](https://github.com/cornerstonejs/cornerstone3D/issues/2486)) ([154945e](https://github.com/cornerstonejs/cornerstone3D/commit/154945e36ede6c8eb14cfb118f8e2e4a75094f37))
+
+## [4.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.1...v4.12.2) (2025-11-21)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.0...v4.12.1) (2025-11-21)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [4.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.5...v4.12.0) (2025-11-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.4...v4.11.5) (2025-11-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.3...v4.11.4) (2025-11-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.11.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.2...v4.11.3) (2025-11-19)
+
+### Bug Fixes
+
+- Save RTSS from contour segmentation and SEG multiframe/singleframe volume save and RTSS save ([#2445](https://github.com/cornerstonejs/cornerstone3D/issues/2445)) ([07e4e8a](https://github.com/cornerstonejs/cornerstone3D/commit/07e4e8ade32859fa04052d97d4f2c4aabbedebef))
+
+## [4.11.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.1...v4.11.2) (2025-11-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.11.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.0...v4.11.1) (2025-11-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [4.11.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.3...v4.11.0) (2025-11-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.10.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.2...v4.10.3) (2025-11-17)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.1...v4.10.2) (2025-11-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.10.0...v4.10.1) (2025-11-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [4.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.3...v4.10.0) (2025-11-12)
+
+### Features
+
+- add scoord bounding box rehydration ([#2389](https://github.com/cornerstonejs/cornerstone3D/issues/2389)) ([a1288d6](https://github.com/cornerstonejs/cornerstone3D/commit/a1288d6548e9e18240f4c89dcfe3dcb0dfce20dd))
+
+## [4.9.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.2...v4.9.3) (2025-11-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.9.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.1...v4.9.2) (2025-11-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.9.0...v4.9.1) (2025-11-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [4.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.5...v4.9.0) (2025-11-05)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.4...v4.8.5) (2025-11-05)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.3...v4.8.4) (2025-11-04)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.2...v4.8.3) (2025-11-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.1...v4.8.2) (2025-11-03)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.8.0...v4.8.1) (2025-10-30)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [4.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.7.1...v4.8.0) (2025-10-29)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [4.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.7.0...v4.7.1) (2025-10-28)
 
 **Note:** Version bump only for package @cornerstonejs/adapters

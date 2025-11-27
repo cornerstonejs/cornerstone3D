@@ -21,10 +21,6 @@ export default function createVolumeMapper(
 ): vtkVolumeMapper {
   const volumeMapper = vtkSharedVolumeMapper.newInstance();
 
-  if (getConfiguration().rendering.preferSizeOverAccuracy) {
-    volumeMapper.setPreferSizeOverAccuracy(true);
-  }
-
   volumeMapper.setInputData(imageData);
 
   const spacing = imageData.getSpacing();

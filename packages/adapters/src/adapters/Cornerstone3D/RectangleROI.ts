@@ -1,94 +1,97 @@
-import { utilities } from "dcmjs";
+import { utilities } from 'dcmjs';
 
-import { toScoords } from "../helpers";
-import MeasurementReport from "./MeasurementReport";
-import BaseAdapter3D from "./BaseAdapter3D";
+import { toScoords } from '../helpers';
+import MeasurementReport from './MeasurementReport';
+import BaseAdapter3D from './BaseAdapter3D';
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
 export class RectangleROI extends BaseAdapter3D {
-    static {
-        this.init("RectangleROI", TID300Polyline);
-        // Register using the Cornerstone 1.x name so this tool is used to load it
-        this.registerLegacy();
-    }
-    public static getMeasurementData(
+  static {
+    this.init('RectangleROI', TID300Polyline);
+    // Register using the Cornerstone 1.x name so this tool is used to load it
+    this.registerLegacy();
+    this.registerType('DCM:111030', 'POLYLINE', 4);
+    this.registerType('DCM:111030', 'POLYLINE', 5);
+  }
+
+  public static isValidMeasurement(measurement) {
+    const graphicItem = this.getGraphicItem(measurement);
+    const pointsCount = this.getPointsCount(graphicItem);
+    return (
+      this.getGraphicType(graphicItem) === 'POLYLINE' &&
+      (pointsCount === 4 || pointsCount === 5)
+    );
+  }
+
+  public static getMeasurementData(
+    MeasurementGroup,
+    sopInstanceUIDToImageIdMap,
+    metadata
+  ) {
+    const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
+      MeasurementReport.getSetupMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
-        metadata
-    ) {
-        const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                this.toolType
-            );
+        metadata,
+        this.toolType
+      );
 
-        const areaGroup = MeasurementGroup.ContentSequence.find(
-            g =>
-                g.ValueType === "NUM" &&
-                g.ConceptNameCodeSequence[0].CodeMeaning === "Area"
-        );
-        const cachedStats = referencedImageId
-            ? {
-                  [`imageId:${referencedImageId}`]: {
-                      area:
-                          areaGroup?.MeasuredValueSequence?.[0]?.NumericValue ||
-                          0,
-                      areaUnit:
-                          areaGroup?.MeasuredValueSequence?.[0]
-                              ?.MeasurementUnitsCodeSequence?.CodeValue
-                  }
-              }
-            : {};
-        state.annotation.data = {
-            ...state.annotation.data,
-            handles: {
-                ...state.annotation.data.handles,
-                points: [
-                    worldCoords[0],
-                    worldCoords[1],
-                    worldCoords[3],
-                    worldCoords[2]
-                ]
-            },
-            cachedStats,
-            frameNumber: ReferencedFrameNumber
-        };
-        return state;
-    }
+    // If the rectangle is closed (5 points with first point repeated), remove the duplicate
+    const points =
+      worldCoords.length === 5 ? worldCoords.slice(0, 4) : worldCoords;
 
-    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
-        const { data, finding, findingSites, metadata } = tool;
+    const areaGroup = MeasurementGroup.ContentSequence.find(
+      (g) =>
+        g.ValueType === 'NUM' &&
+        g.ConceptNameCodeSequence[0].CodeMeaning === 'Area'
+    );
+    const cachedStats = referencedImageId
+      ? {
+          [`imageId:${referencedImageId}`]: {
+            area: areaGroup?.MeasuredValueSequence?.[0]?.NumericValue || 0,
+            areaUnit:
+              areaGroup?.MeasuredValueSequence?.[0]
+                ?.MeasurementUnitsCodeSequence?.CodeValue,
+          },
+        }
+      : {};
+    state.annotation.data = {
+      ...state.annotation.data,
+      handles: {
+        ...state.annotation.data.handles,
+        points: [points[0], points[1], points[3], points[2]],
+      },
+      cachedStats,
+      frameNumber: ReferencedFrameNumber,
+    };
+    return state;
+  }
 
-        const { referencedImageId } = metadata;
-        const scoordProps = {
-            is3DMeasurement,
-            referencedImageId
-        };
+  static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
+    const { data, finding, findingSites, metadata } = tool;
 
-        const corners = toScoords(scoordProps, data.handles.points);
+    const { referencedImageId } = metadata;
+    const scoordProps = {
+      is3DMeasurement,
+      referencedImageId,
+    };
 
-        const { area, perimeter } =
-            data.cachedStats[`imageId:${referencedImageId}`] || {};
+    const corners = toScoords(scoordProps, data.handles.points);
 
-        return {
-            points: [
-                corners[0],
-                corners[1],
-                corners[3],
-                corners[2],
-                corners[0]
-            ],
-            area,
-            perimeter,
-            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
-            finding,
-            findingSites: findingSites || [],
-            use3DSpatialCoordinates: is3DMeasurement
-        };
-    }
+    const { area, perimeter } =
+      data.cachedStats[`imageId:${referencedImageId}`] || {};
+
+    return {
+      points: [corners[0], corners[1], corners[3], corners[2], corners[0]],
+      area,
+      perimeter,
+      trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+      finding,
+      findingSites: findingSites || [],
+      use3DSpatialCoordinates: is3DMeasurement,
+    };
+  }
 }
 
 export default RectangleROI;

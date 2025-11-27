@@ -620,27 +620,20 @@ class StackViewport extends Viewport {
   public getCornerstoneImage = (): IImage => this.csImage;
 
   /**
-   * Creates imageMapper based on the provided vtkImageData and also creates
-   * the imageSliceActor and connects it to the imageMapper.
-   * For color stack images, it sets the independent components to be false which
-   * is required in vtk.
+   * Creates imageMapper based on the provided vtkImageData and also creates the
+   * imageSliceActor and connects it to the imageMapper. For color stack images,
+   * it sets the independent components to be false which is required in vtk.
    *
    * @param imageData - vtkImageData for the viewport
    * @returns actor vtkActor
    */
-  private createActorMapper = (imageData) => {
+  private createActorMapper = (imageData: vtkImageData) => {
     const mapper = vtkImageMapper.newInstance();
     mapper.setInputData(imageData);
 
     const actor = vtkImageSlice.newInstance();
 
     actor.setMapper(mapper);
-
-    const { preferSizeOverAccuracy } = getConfiguration().rendering;
-
-    if (preferSizeOverAccuracy) {
-      mapper.setPreferSizeOverAccuracy(true);
-    }
 
     if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
       actor.getProperty().setIndependentComponents(false);
