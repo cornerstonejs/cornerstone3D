@@ -21,6 +21,8 @@ abstract class BaseTool {
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes;
+  /** Indicator if this tool is currently linked to the primary button/move */
+  public primary = false;
   /**
    * A memo recording the starting state of a tool.  This will be updated
    * as changes are made, and reflects the fact that a memo has been created.

@@ -185,6 +185,7 @@ class BrushTool extends LabelmapBaseTool {
   preMouseDownCallback = (
     evt: EventTypes.MouseDownActivateEventType
   ): boolean => {
+    console.warn('BrushTool preMouseDown', this.getToolName());
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
@@ -249,6 +250,9 @@ class BrushTool extends LabelmapBaseTool {
    * The preview also needs to be cancelled on changing tools.
    */
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (this.primary === false) {
+      return;
+    }
     if (this.mode === ToolModes.Active) {
       this.updateCursor(evt);
       if (!this.configuration.preview.enabled) {
@@ -366,10 +370,6 @@ class BrushTool extends LabelmapBaseTool {
 
     this.updateCursor(evt);
 
-    const { viewportIdsToRender } = this._hoverData;
-
-    triggerAnnotationRenderForViewportUIDs(viewportIdsToRender);
-
     const delta = vec2.distance(
       currentPoints.canvas,
       this._previewData.startPoint
@@ -443,57 +443,54 @@ class BrushTool extends LabelmapBaseTool {
   };
 
   private _calculateCursor(element, centerCanvas) {
+    if (!this._hoverData) {
+      return;
+    }
+
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { canvasToWorld } = viewport;
     const camera = viewport.getCamera();
     const { brushSize } = this.configuration;
 
-    const viewUp = vec3.fromValues(
-      camera.viewUp[0],
-      camera.viewUp[1],
-      camera.viewUp[2]
-    );
-    const viewPlaneNormal = vec3.fromValues(
-      camera.viewPlaneNormal[0],
-      camera.viewPlaneNormal[1],
-      camera.viewPlaneNormal[2]
-    );
+    const { viewUp, viewPlaneNormal } = camera;
     const viewRight = vec3.create();
 
     vec3.cross(viewRight, viewUp, viewPlaneNormal);
 
     // in the world coordinate system, the brushSize is the radius of the circle
     // in mm
-    const centerCursorInWorld: Types.Point3 = canvasToWorld([
-      centerCanvas[0],
-      centerCanvas[1],
-    ]);
+    const centerCursorInWorld = canvasToWorld(centerCanvas);
 
-    const bottomCursorInWorld = vec3.create();
-    const topCursorInWorld = vec3.create();
-    const leftCursorInWorld = vec3.create();
-    const rightCursorInWorld = vec3.create();
-
-    // Calculate the bottom and top points of the circle in world coordinates
-    for (let i = 0; i <= 2; i++) {
-      bottomCursorInWorld[i] = centerCursorInWorld[i] - viewUp[i] * brushSize;
-      topCursorInWorld[i] = centerCursorInWorld[i] + viewUp[i] * brushSize;
-      leftCursorInWorld[i] = centerCursorInWorld[i] - viewRight[i] * brushSize;
-      rightCursorInWorld[i] = centerCursorInWorld[i] + viewRight[i] * brushSize;
-    }
-
-    if (!this._hoverData) {
-      return;
-    }
+    const bottomCursorInWorld = vec3.scaleAndAdd(
+      vec3.create(),
+      centerCursorInWorld,
+      viewUp,
+      -brushSize
+    );
+    const topCursorInWorld = vec3.scaleAndAdd(
+      vec3.create(),
+      centerCursorInWorld,
+      viewUp,
+      brushSize
+    );
+    const leftCursorInWorld = vec3.scaleAndAdd(
+      vec3.create(),
+      centerCursorInWorld,
+      viewRight,
+      -brushSize
+    );
+    const rightCursorInWorld = vec3.scaleAndAdd(
+      vec3.create(),
+      centerCursorInWorld,
+      viewRight,
+      brushSize
+    );
 
     const { brushCursor } = this._hoverData;
     const { data } = brushCursor;
 
-    if (data.handles === undefined) {
-      data.handles = {};
-    }
-
+    data.handles ||= { points: [] };
     data.handles.points = [
       bottomCursorInWorld,
       topCursorInWorld,
@@ -514,6 +511,7 @@ class BrushTool extends LabelmapBaseTool {
     }
 
     data.invalidated = false;
+    data.redraw = true;
   }
 
   /**
@@ -672,6 +670,7 @@ class BrushTool extends LabelmapBaseTool {
     const { viewport } = this._hoverData;
 
     data.invalidated = true;
+    data.redraw = true;
 
     // Todo: figure out if other brush metadata (other than segment color) should get updated
     // during the brush cursor invalidation
@@ -683,7 +682,7 @@ class BrushTool extends LabelmapBaseTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): void {
-    if (!this._hoverData) {
+    if (!this._hoverData || !this._hoverData.brushCursor.data.redraw) {
       return;
     }
 
@@ -694,8 +693,9 @@ class BrushTool extends LabelmapBaseTool {
     if (!viewportIdsToRender.includes(viewport.id)) {
       return;
     }
+    this._hoverData.brushCursor.data.redraw = false;
 
-    const brushCursor = this._hoverData.brushCursor;
+    const { brushCursor } = this._hoverData;
 
     if (brushCursor.data.invalidated === true) {
       const { centerCanvas } = this._hoverData;
@@ -713,12 +713,11 @@ class BrushTool extends LabelmapBaseTool {
 
     const annotationUID = toolMetadata.brushCursorUID;
 
-    const data = brushCursor.data;
+    const { data } = brushCursor;
     const { points } = data.handles;
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-    const bottom = canvasCoordinates[0];
-    const top = canvasCoordinates[1];
+    const [bottom, top] = canvasCoordinates;
 
     const center = [
       Math.floor((bottom[0] + top[0]) / 2),
