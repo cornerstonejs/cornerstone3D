@@ -52,9 +52,10 @@ let viewport;
 const toolGroupId = 'myToolGroup';
 
 function onUpload(files) {
-  const file = files[0];
-  const imageId = dicomImageLoader.wadouri.fileManager.add(file);
-  loadAndViewImages(imageId);
+  imageIds = [...files].map((file) =>
+    dicomImageLoader.wadouri.fileManager.add(file)
+  );
+  loadAndViewImages(imageIds);
 }
 
 addUploadToToolbar({ title: 'Upload', onChange: onUpload });
