@@ -54,7 +54,7 @@
     "@babel/runtime-corejs2": "7.26.10",
     "buffer": "6.0.3",
     "dcmjs": "0.45.0",
-    "gl-matrix": "3.4.4",
+    "gl-matrix": "3.4.3",
     "lodash.clonedeep": "4.5.0",
     "ndarray": "1.0.19",
     "onnxruntime-common": "1.17.1",
