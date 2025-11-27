@@ -35,7 +35,7 @@ export default function getClosestImageId(
   const { direction, spacing, imageIds } = imageVolume;
   const { ignoreSpacing = false } = options || {};
 
-  if (imageIds?.length <= 1) {
+  if (imageIds?.length) {
     return;
   }
 
