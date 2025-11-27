@@ -436,14 +436,14 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     element: HTMLDivElement,
     annotations: Annotations
   ): Annotations | undefined {
-    if (!annotations || !annotations.length) {
-      return;
+    if (!annotations?.length) {
+      return [];
     }
 
     const baseFilteredAnnotations =
       super.filterInteractableAnnotationsForElement(element, annotations);
-    if (!baseFilteredAnnotations || !baseFilteredAnnotations.length) {
-      return;
+    if (!baseFilteredAnnotations?.length) {
+      return [];
     }
 
     const enabledElement = getEnabledElement(element);
