@@ -13,6 +13,10 @@ const { DefaultHistoryMemo } = csUtils.HistoryMemo;
  */
 abstract class BaseTool {
   static toolName;
+
+  /** Set to the tool that is currently drawing the active cursor */
+  public static activeCursorTool;
+
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,8 +25,9 @@ abstract class BaseTool {
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes;
-  /** Indicator if this tool is currently linked to the primary button/move */
+  /** Primary tool - this is set to true when this tool is primary */
   public primary = false;
+
   /**
    * A memo recording the starting state of a tool.  This will be updated
    * as changes are made, and reflects the fact that a memo has been created.
