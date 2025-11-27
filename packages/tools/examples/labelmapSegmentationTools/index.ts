@@ -323,10 +323,19 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
+  toolGroup.setToolActive(brushInstanceNames.CircularEraser, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
+        mouseButton: MouseBindings.Auxiliary, // Shift Middle
         modifierKey: KeyboardBindings.Shift,
       },
     ],
