@@ -122,7 +122,7 @@ class SculptorTool extends BaseTool {
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
     const eventData = evt.detail;
-    const element = eventData.element;
+    const { element } = eventData;
 
     this.configureToolSize(evt);
     this.selectFreehandTool(eventData);
