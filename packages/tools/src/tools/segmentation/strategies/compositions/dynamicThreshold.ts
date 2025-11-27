@@ -94,6 +94,7 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const { configuration, viewport } = operationData;
+    configuration.threshold ||= { dynamicRadius: 2, isDynamic: true };
     const { dynamicRadius = 0, isDynamic } = configuration.threshold;
 
     if (!isDynamic) {
