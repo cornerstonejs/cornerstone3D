@@ -242,9 +242,7 @@ addDropdownToToolbar({
         break;
       case orientationOptions.oblique:
         // Some random oblique value for this dataset
-        viewUp = [
-          0.7070766143169096, 0.009237043481146607, -0.7070766143169096,
-        ];
+        viewUp = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446];
         viewPlaneNormal = [
           -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
         ];
