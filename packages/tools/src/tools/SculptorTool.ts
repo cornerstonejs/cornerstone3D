@@ -1,7 +1,9 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
+
 import { BaseTool } from './base';
-import { getAnnotations } from '../stateManagement';
+import { getAnnotations, getAnnotation } from '../stateManagement';
 import type {
   EventTypes,
   PublicToolProps,
@@ -28,22 +30,42 @@ import CircleSculptCursor from './SculptorTool/CircleSculptCursor';
 import type { ISculptToolShape } from '../types/ISculptToolShape';
 import { distancePointToContour } from './distancePointToContour';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
+import { getSignedArea, containsPoint } from '../utilities/math/polyline';
+
+const { isEqual } = utilities;
+
+export type Contour = {
+  annotationUID: string;
+  points: Array<Types.Point3>;
+};
 
 export type SculptData = {
   mousePoint: Types.Point3;
-  deltaWorld: Types.Point3;
   mouseCanvasPoint: Types.Point2;
   points: Array<Types.Point3>;
   maxSpacing: number;
-  meanDistance?: number; // Optional, used for CircleSculptCursor to calculate the mean distance between points
   element: HTMLDivElement;
+  contours: Contour[];
 };
+
+export type SculptIntersect = {
+  annotationUID: string;
+  isEnter: boolean;
+  index: number;
+  relIndex?: number;
+  point: Types.Point3;
+  angle: number;
+};
+
+export type ContourSelection = Array<SculptIntersect>;
 
 type CommonData = {
   activeAnnotationUID: string | null;
   viewportIdsToRender: string[];
   isEditingOpenContour: boolean;
   canvasLocation: Types.Point2 | undefined;
+  external: boolean;
+  closed: boolean | undefined;
 };
 
 /**
@@ -60,6 +82,8 @@ class SculptorTool extends BaseTool {
     viewportIdsToRender: [],
     isEditingOpenContour: false,
     canvasLocation: undefined,
+    external: true,
+    closed: false,
   };
   private sculptData?: SculptData;
 
@@ -75,7 +99,6 @@ class SculptorTool extends BaseTool {
         ],
         toolShape: 'circle',
         referencedToolName: 'PlanarFreehandROI',
-        updateCursorSize: 'dynamic',
       },
     }
   ) {
@@ -99,7 +122,7 @@ class SculptorTool extends BaseTool {
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
     const eventData = evt.detail;
-    const element = eventData.element;
+    const { element } = eventData;
 
     this.configureToolSize(evt);
     this.selectFreehandTool(eventData);
@@ -143,16 +166,268 @@ class SculptorTool extends BaseTool {
     this.sculptData = {
       mousePoint: eventData.currentPoints.world,
       mouseCanvasPoint: eventData.currentPoints.canvas,
-      deltaWorld: eventData.deltaPoints.world,
       points,
       maxSpacing: cursorShape.getMaxSpacing(config.minSpacing),
       element: element,
+      contours: [
+        {
+          annotationUID: this.commonData.activeAnnotationUID,
+          points,
+        },
+      ],
     };
 
-    const pushedHandles = cursorShape.pushHandles(viewport, this.sculptData);
-    if (pushedHandles.first !== undefined) {
-      this.insertNewHandles(pushedHandles);
+    const intersections = this.intersect(viewport, cursorShape);
+    if (!intersections.length) {
+      return;
     }
+    // console.warn('intersections=', JSON.stringify(intersections, null, 2));
+    const contourSelections = this.getContourSelections(
+      intersections,
+      points.length
+    );
+
+    const { closed } = this.commonData;
+    for (const contour of contourSelections) {
+      const newPoints = new Array<Types.Point3>();
+      const lastExit = contour[contour.length - 1];
+      let lastIndex = closed ? lastExit.relIndex : 0;
+      let lastEnter;
+      for (const intersection of contour) {
+        if (intersection.isEnter) {
+          pushArr(newPoints, points, lastIndex, intersection.index);
+          lastEnter = intersection;
+        } else {
+          this.interpolatePoints(
+            viewport,
+            lastEnter,
+            intersection,
+            points,
+            newPoints
+          );
+        }
+        lastIndex = intersection.index;
+      }
+      if (contourSelections.length > 1) {
+        const signedArea = getSignedArea(newPoints.map(viewport.worldToCanvas));
+        if (signedArea < 0) {
+          console.warn('Skipping internal area');
+          continue;
+        }
+      }
+      if (!closed && lastIndex < points.length - 1) {
+        pushArr(newPoints, points, lastIndex);
+      }
+      points.splice(0, points.length);
+      pushArr(points, newPoints);
+      return;
+    }
+  }
+  /**
+   * This will return an array of EVEN length, containing ordered
+   * entry/exit points for where the given contour(s) enter the cursor region
+   * and leave the cursor region.
+   */
+  public intersect(viewport: Types.IViewport, cursorShape): SculptIntersect[] {
+    const { contours, mousePoint, mouseCanvasPoint } = this.sculptData;
+    const { closed } = this.commonData;
+
+    cursorShape.computeWorldRadius(viewport);
+    const result = new Array<SculptIntersect>();
+
+    for (const contour of contours) {
+      const { annotationUID, points } = contour;
+      let lastIn = false;
+      let anyIn = false;
+      let anyOut = false;
+      const { length } = points;
+      for (let i = 0; i <= length; i++) {
+        const index = i % length;
+        const point = points[index];
+        const inCursor = cursorShape.isInCursor(point, mousePoint);
+        anyIn ||= inCursor;
+        anyOut ||= !inCursor;
+        if (i === 0) {
+          lastIn = inCursor;
+          if (!closed && inCursor) {
+            const edge = cursorShape.getEdge(
+              viewport,
+              point,
+              null,
+              mouseCanvasPoint
+            );
+            result.push({
+              annotationUID,
+              isEnter: inCursor,
+              index: i,
+              point: edge.point,
+              angle: edge.angle,
+            });
+          }
+          continue;
+        }
+        if (index === 0 && !closed) {
+          if (lastIn) {
+            const edge = cursorShape.getEdge(
+              viewport,
+              points[length - 1],
+              null,
+              mouseCanvasPoint
+            );
+            result.push({
+              annotationUID,
+              isEnter: false,
+              index: length - 1,
+              point: edge.point,
+              angle: edge.angle,
+            });
+          }
+          continue;
+        }
+        if (lastIn === inCursor) {
+          continue;
+        }
+        lastIn = inCursor;
+        const edge = cursorShape.getEdge(
+          viewport,
+          point,
+          points[i - 1],
+          mouseCanvasPoint
+        );
+        result.push({
+          annotationUID,
+          isEnter: inCursor,
+          index: i,
+          point: edge.point,
+          angle: edge.angle,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  public interpolatePoints(viewport, enter, exit, existing, newPoints) {
+    const { external, closed } = this.commonData;
+    const p0 = existing[enter.index % existing.length];
+    const p1 = existing[exit.index % existing.length];
+
+    const v = vec3.sub(vec3.create(), p1, p0);
+    if (isEqual(vec3.length(v), 0)) {
+      return;
+    }
+
+    const cursorShape = this.registeredShapes.get(this.selectedShape);
+    const a0 = (enter.angle + 2 * Math.PI) % (Math.PI * 2);
+    const a1 = (exit.angle + 2 * Math.PI) % (Math.PI * 2);
+    let ae = a1 < a0 ? a1 + 2 * Math.PI : a1;
+    const aeAlt = a1 > a0 ? a1 - 2 * Math.PI : a1;
+    if (
+      (external && !closed && Math.abs(aeAlt - a0) < Math.abs(ae - a0)) ||
+      (external && closed)
+    ) {
+      // Go the other way round as it is shorter
+      ae = aeAlt;
+    }
+    const count = Math.ceil(Math.abs(a0 - ae) / 0.25);
+    for (let i = 0; i <= count; i++) {
+      const a = (a0 * (count - i) + i * ae) / count;
+      newPoints.push(
+        cursorShape.interpolatePoint(
+          viewport,
+          a,
+          this.sculptData.mouseCanvasPoint
+        )
+      );
+    }
+  }
+
+  /**
+   * Creates a set of intersection selection objects
+   */
+  public getContourSelections(intersections, pointLength) {
+    const result = new Array<ContourSelection>();
+    const enterLength = intersections.length / 2;
+    if (!enterLength || intersections.length % 2) {
+      return result;
+    }
+    let lastAngle = Number.NEGATIVE_INFINITY;
+    for (let enterCount = 0; enterCount < enterLength; enterCount++) {
+      const enter = this.findNext(intersections, lastAngle);
+      if (!enter) {
+        console.error("Couldnt' find an entry");
+        continue;
+      }
+      const exit = this.findNext(intersections, enter.angle, false);
+      if (!exit) {
+        console.error("Couldn't find an exit for", enter);
+        continue;
+      }
+      exit.relIndex ||=
+        exit.index < enter.index ? exit.index + pointLength : exit.index;
+      result.push([enter, exit]);
+    }
+
+    // Sort by increasing index
+    result.sort((a, b) => a[0].index - b[0].index);
+    for (let i = 0; i < result.length - 1; ) {
+      const testIntersection = result[i];
+      const mergeableResult = this.findMergeable(result, testIntersection, i);
+      if (mergeableResult) {
+        testIntersection.push(...mergeableResult);
+      } else {
+        i++;
+      }
+    }
+
+    if (result.length > 1) {
+      console.warn('************* More than 1 result', result);
+    }
+
+    return result;
+  }
+
+  public findMergeable(contours, testIntersection, currentIndex) {
+    const end = testIntersection[testIntersection.length - 1];
+    for (let i = currentIndex + 1; i < contours.length; i++) {
+      const [enter] = contours[i];
+      if (enter.index >= end.relIndex) {
+        const contour = contours[i];
+        contours.splice(i, 1);
+        return contour;
+      }
+    }
+  }
+
+  public findNext(intersections, lastAngle, isEnter = true) {
+    if (intersections.length === 1) {
+      const [intersection] = intersections;
+      intersections.splice(0, 1);
+      return intersection;
+    }
+    let foundItem;
+    let testAngle;
+    for (let i = 0; i < intersections.length; i++) {
+      const intersection = intersections[i];
+      if (intersection.isEnter == isEnter) {
+        const relativeAngle =
+          (intersection.angle - lastAngle + 2 * Math.PI) % (2 * Math.PI);
+        if (!foundItem || relativeAngle < testAngle) {
+          foundItem = { i, intersection };
+          testAngle = relativeAngle;
+        }
+      }
+    }
+    if (!foundItem) {
+      console.warn(
+        "Couldn't find an exit point for entry",
+        JSON.stringify(intersections)
+      );
+      return;
+    }
+    intersections.splice(foundItem.i, 1);
+    const { intersection } = foundItem;
+    return intersection;
   }
 
   /**
@@ -193,7 +468,7 @@ class SculptorTool extends BaseTool {
     const element = eventData.element;
 
     const enabledElement = getEnabledElement(element);
-    const { renderingEngine, viewport } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.commonData.viewportIdsToRender = [viewport.id];
 
@@ -215,14 +490,24 @@ class SculptorTool extends BaseTool {
     } else {
       const cursorShape = this.registeredShapes.get(this.selectedShape);
       const canvasCoords = eventData.currentPoints.canvas;
-
-      // Only call updateToolSize when updateCursorSize is set to 'dynamic'
-      if (this.configuration.updateCursorSize === 'dynamic') {
-        cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
-      }
+      cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
     }
 
     triggerAnnotationRenderForViewportIds(this.commonData.viewportIdsToRender);
+  }
+
+  /**
+   * Gets the tool instance on the configured tool
+   */
+  protected getToolInstance(element: HTMLDivElement) {
+    const enabledElement = getEnabledElement(element);
+    const { renderingEngineId, viewportId } = enabledElement;
+    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
+
+    const toolInstance = toolGroup.getToolInstance(
+      this.configuration.referencedToolName
+    );
+    return toolInstance;
   }
 
   /**
@@ -233,16 +518,11 @@ class SculptorTool extends BaseTool {
   private filterSculptableAnnotationsForElement(
     element: HTMLDivElement
   ): ContourAnnotation[] {
-    const config = this.configuration;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngineId, viewportId } = enabledElement;
+    const { configuration } = this;
     const sculptableAnnotations = [];
+    const toolInstance = this.getToolInstance(element);
 
-    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
-
-    const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
-
-    config.referencedToolNames.forEach((referencedToolName: string) => {
+    configuration.referencedToolNames.forEach((referencedToolName: string) => {
       const annotations = getAnnotations(referencedToolName, element);
       if (annotations) {
         sculptableAnnotations.push(...annotations);
@@ -262,76 +542,6 @@ class SculptorTool extends BaseTool {
   }
 
   /**
-   * Inserts additional handles in sparsely sampled regions of the contour
-   */
-  private insertNewHandles(pushedHandles: {
-    first: number;
-    last: number | undefined;
-  }): void {
-    const indicesToInsertAfter = this.findNewHandleIndices(pushedHandles);
-    let newIndexModifier = 0;
-    for (let i = 0; i < indicesToInsertAfter?.length; i++) {
-      const insertIndex = indicesToInsertAfter[i] + 1 + newIndexModifier;
-
-      this.insertHandleRadially(insertIndex);
-      newIndexModifier++;
-    }
-  }
-
-  /**
-   * Returns an array of indicies that describe where new handles should be inserted
-   *
-   * @param pushedHandles - The first and last handles that were pushed.
-   */
-  private findNewHandleIndices(pushedHandles: {
-    first: number | undefined;
-    last: number | undefined;
-  }): Array<number> {
-    const { points, maxSpacing } = this.sculptData;
-    const indicesToInsertAfter = [];
-
-    for (let i = pushedHandles.first; i <= pushedHandles.last; i++) {
-      this.interpolatePointsWithinMaxSpacing(
-        i,
-        points,
-        indicesToInsertAfter,
-        maxSpacing
-      );
-    }
-
-    return indicesToInsertAfter;
-  }
-
-  /**
-   * Inserts a handle on the surface of the circle defined by toolSize and the mousePoint.
-   *
-   * @param insertIndex - The index to insert the new handle.
-   */
-  private insertHandleRadially(insertIndex: number): void {
-    const { points } = this.sculptData;
-
-    if (
-      insertIndex > points.length - 1 &&
-      this.commonData.isEditingOpenContour
-    ) {
-      return;
-    }
-
-    const cursorShape = this.registeredShapes.get(this.selectedShape);
-
-    const previousIndex = insertIndex - 1;
-    const nextIndex = contourIndex(insertIndex, points.length);
-    const insertPosition = cursorShape.getInsertPosition(
-      previousIndex,
-      nextIndex,
-      this.sculptData
-    );
-    const handleData = insertPosition;
-
-    points.splice(insertIndex, 0, handleData);
-  }
-
-  /**
    * Select the freehand tool to be edited
    *
    * @param eventData - Data object associated with the event.
@@ -345,7 +555,22 @@ class SculptorTool extends BaseTool {
       return;
     }
 
+    const annotation = getAnnotation(closestAnnotationUID);
     this.commonData.activeAnnotationUID = closestAnnotationUID;
+    this.commonData.closed = annotation.data.contour.closed;
+    this.commonData.external = true;
+    if (this.commonData.closed) {
+      const { element } = eventData;
+      const enabledElement = getEnabledElement(element);
+      const { viewport } = enabledElement;
+      const polyline = annotation.data.contour.polyline.map((p) =>
+        viewport.worldToCanvas(p)
+      );
+      const canvasPoint = eventData.currentPoints.canvas;
+      this.commonData.external = !containsPoint(polyline, canvasPoint, {
+        closed: true,
+      });
+    }
   }
 
   /**
@@ -416,18 +641,13 @@ class SculptorTool extends BaseTool {
   ): void => {
     const eventData = evt.detail;
     const { element } = eventData;
-    const config = this.configuration;
-    const enabledElement = getEnabledElement(element);
 
     this.isActive = false;
     this.deactivateModify(element);
     resetElementCursor(element);
 
-    const { renderingEngineId, viewportId } = enabledElement;
-
-    const toolGroup = getToolGroupForViewport(viewportId, renderingEngineId);
-
-    const toolInstance = toolGroup.getToolInstance(config.referencedToolName);
+    const toolInstance = this.getToolInstance(element);
+    toolInstance.doneEditMemo?.();
 
     const annotations = this.filterSculptableAnnotationsForElement(element);
 
@@ -478,6 +698,9 @@ class SculptorTool extends BaseTool {
    * @param element - - The viewport element to attach event listeners to.
    */
   protected activateModify(element: HTMLDivElement): void {
+    const annotation = getAnnotation(this.commonData.activeAnnotationUID);
+    const instance = this.getToolInstance(element);
+    instance.createMemo?.(element, annotation);
     element.addEventListener(
       Events.MOUSE_UP,
       this.endCallback as EventListener
@@ -597,6 +820,15 @@ class SculptorTool extends BaseTool {
     cursorShape.renderShape(svgDrawingHelper, this.commonData.canvasLocation, {
       color,
     });
+  }
+}
+
+function pushArr(dest, src, start = 0, end = src.length) {
+  if (end < start) {
+    end = end + src.length;
+  }
+  for (let i = start; i < end; i++) {
+    dest.push(src[i % src.length]);
   }
 }
 
