@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.12.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.5...v4.12.6) (2025-11-28)
+
+### Bug Fixes
+
+- **WSIViewport:** add event listener for annotation removal ([#2461](https://github.com/cornerstonejs/cornerstone3D/issues/2461)) ([026c69d](https://github.com/cornerstonejs/cornerstone3D/commit/026c69dfb705d42a28c0db11fec498c777a3ed39))
+
 ## [4.12.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.4...v4.12.5) (2025-11-27)
 
 ### Bug Fixes
