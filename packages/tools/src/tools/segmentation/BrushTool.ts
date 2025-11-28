@@ -216,6 +216,9 @@ class BrushTool extends LabelmapBaseTool {
     triggerAnnotationRenderForViewportUIDs(hoverData.viewportIdsToRender);
 
     const operationData = this.getOperationData(element);
+    if (!operationData) {
+      return false;
+    }
 
     this.applyActiveStrategyCallback(
       enabledElement,
@@ -410,6 +413,9 @@ class BrushTool extends LabelmapBaseTool {
     this._calculateCursor(element, currentCanvas);
 
     const operationData = this.getOperationData(element);
+    if (!operationData) {
+      return;
+    }
     // Hand the strategy the exact stroke segment we just traversed so it can
     // paint a continuous capsule in one pass instead of trying to infer the
     // path from scattered samples.
@@ -521,6 +527,9 @@ class BrushTool extends LabelmapBaseTool {
     const enabledElement = getEnabledElement(element);
 
     const operationData = this.getOperationData(element);
+    if (!operationData) {
+      return;
+    }
     // Don't re-fill when the preview is showing and the user clicks again
     // otherwise the new area of hover may get filled, which is unexpected
     if (!this._previewData.preview && !this._previewData.isDrag) {
