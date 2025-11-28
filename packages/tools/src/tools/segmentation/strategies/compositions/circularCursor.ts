@@ -1,11 +1,9 @@
-
 import { vec3 } from 'gl-matrix';
 
 import type { Types } from '@cornerstonejs/core';
 
 import type { InitializedOperationData } from '../BrushStrategy';
-import type {
-  SVGDrawingHelper } from '../../../../types'
+import type { SVGDrawingHelper } from '../../../../types';
 
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { drawCircle as drawCircleSvg } from '../../../../drawingSvg';
@@ -15,6 +13,9 @@ export default {
     enabledElement,
     operationData: InitializedOperationData
   ) {
+    if (!operationData) {
+      return;
+    }
     const { configuration, activeStrategy, hoverData } = operationData;
     const { viewport } = enabledElement;
 
@@ -34,7 +35,6 @@ export default {
     const viewRight = vec3.create();
 
     vec3.cross(viewRight, viewUp, viewPlaneNormal);
-
 
     const { canvasToWorld } = viewport;
     const { centerCanvas } = hoverData;
@@ -95,6 +95,10 @@ export default {
     operationData: InitializedOperationData,
     svgDrawingHelper: SVGDrawingHelper
   ) {
+    if (!operationData) {
+      return;
+    }
+
     const { configuration, hoverData } = operationData;
     const { viewport } = enabledElement;
     const { brushCursor } = hoverData;
@@ -159,5 +163,5 @@ export default {
         }
       );
     }
-  }
-}
+  },
+};
