@@ -1,6 +1,5 @@
 import { vec3, mat4 } from 'gl-matrix';
-import EVENTS from '../enums/Events';
-import MetadataModules from '../enums/MetadataModules';
+import { Events as EVENTS, MetadataModules } from '../enums';
 import type {
   WSIViewportProperties,
   Point3,
@@ -25,6 +24,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 
 let WSIUtilFunctions = null;
 const EVENT_POSTRENDER = 'postrender';
+const ANNOTATION_REMOVED = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED';
 /**
  * A viewport which shows a microscopy view using the dicom-microscopy-viewer
  * library.  This viewport accepts standard CS3D annotations, and responds
@@ -171,7 +171,7 @@ class WSIViewport extends Viewport {
       this.elementDisabledHandler
     );
     eventTarget.addEventListener(
-      EVENTS.ANNOTATION_REMOVED,
+      ANNOTATION_REMOVED,
       this.annotationRemovedListener
     );
   }
@@ -182,7 +182,7 @@ class WSIViewport extends Viewport {
       this.elementDisabledHandler
     );
     eventTarget.removeEventListener(
-      EVENTS.ANNOTATION_REMOVED,
+      ANNOTATION_REMOVED,
       this.annotationRemovedListener
     );
   }
