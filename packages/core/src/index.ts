@@ -86,6 +86,7 @@ import {
   setVolumesForViewports,
   addVolumesToViewports,
   addImageSlicesToViewports,
+  getProjectionScaleIndices,
 } from './RenderingEngine/helpers';
 
 // Add new types here so that they can be imported singly as required.
@@ -155,6 +156,7 @@ export {
   setVolumesForViewports,
   addVolumesToViewports,
   addImageSlicesToViewports,
+  getProjectionScaleIndices,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
