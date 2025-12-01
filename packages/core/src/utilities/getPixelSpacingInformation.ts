@@ -62,7 +62,10 @@ export function getERMF(instance) {
  *
  * Otherwise it will be undefined (no spacing).
  */
-export function calculateRadiographicPixelSpacing(instance) {
+export function calculateRadiographicPixelSpacing(
+  instance,
+  frameType = instance
+) {
   const { PixelSpacing, ImagerPixelSpacing, PixelSpacingCalibrationType } =
     instance;
 
@@ -136,11 +139,11 @@ export function calculateRadiographicPixelSpacing(instance) {
   };
 }
 
-export function getPixelSpacingInformation(instance) {
+export function getPixelSpacingInformation(instance, frameType = instance) {
   // See http://gdcm.sourceforge.net/wiki/index.php/Imager_Pixel_Spacing
   // TODO: Add manual calibration
 
-  const { PixelSpacing, SOPClassUID } = instance;
+  const { SOPClassUID } = instance;
 
   const isProjection = projectionRadiographSOPClassUIDs.has(SOPClassUID);
 
@@ -149,7 +152,7 @@ export function getPixelSpacingInformation(instance) {
   }
 
   return {
-    PixelSpacing,
+    PixelSpacing: frameType.PixelSpacing,
     type: CalibrationTypes.NOT_APPLICABLE,
     isProjection: false,
   };

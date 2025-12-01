@@ -3537,6 +3537,11 @@ class StackViewport extends Viewport {
       this.calibration?.scale > 0 ||
       this.calibration?.rowPixelSpacing > 0;
 
+    console.warn(
+      '*********** hasPixelSpacing',
+      this.hasPixelSpacing,
+      imagePlaneModule.usingDefaultValues
+    );
     this.calibration ||= imagePlaneModule.calibration;
 
     return imagePlaneModule;

@@ -73,7 +73,7 @@ export function removeAllProviders(): void {
  * @category MetaData
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getMetaData(type: string, ...queries): any {
+export function getMetaData(type: string, ...queries): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
     const result = providers[i].provider(type, ...queries);

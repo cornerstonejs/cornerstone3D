@@ -1,4 +1,3 @@
-import * as dicomParser from 'dicom-parser';
 import {
   Enums,
   utilities,
@@ -135,73 +134,6 @@ function metaDataProvider(type, imageId) {
       numberOfFrames: getNumberValue(metaData['00280008']),
       isNMReconstructable:
         isNMReconstructable(imageSubType) && modality.includes('NM'),
-    };
-  }
-
-  if (type === MetadataModules.IMAGE_PLANE) {
-    //metaData = fixNMMetadata(metaData);
-    let imageOrientationPatient = extractOrientationFromMetadata(metaData);
-    let imagePositionPatient = extractPositionFromMetadata(metaData);
-    const pixelSpacing = getNumberValues(metaData['00280030'], 2);
-
-    let columnPixelSpacing = null;
-    let rowPixelSpacing = null;
-    let rowCosines = null;
-    let columnCosines = null;
-
-    let usingDefaultValues = false;
-    if (pixelSpacing) {
-      rowPixelSpacing = pixelSpacing[0];
-      columnPixelSpacing = pixelSpacing[1];
-    } else {
-      usingDefaultValues = true;
-      rowPixelSpacing = 1;
-      columnPixelSpacing = 1;
-    }
-
-    if (imageOrientationPatient) {
-      rowCosines = [
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[0]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[1]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[2]),
-      ];
-      columnCosines = [
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[3]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[4]),
-        // @ts-expect-error
-        parseFloat(imageOrientationPatient[5]),
-      ];
-    } else {
-      rowCosines = [1, 0, 0];
-      columnCosines = [0, 1, 0];
-      usingDefaultValues = true;
-      imageOrientationPatient = [...rowCosines, ...columnCosines];
-    }
-
-    if (!imagePositionPatient) {
-      imagePositionPatient = [0, 0, 0];
-      usingDefaultValues = true;
-    }
-
-    return {
-      frameOfReferenceUID: getValue<string>(metaData['00200052']),
-      rows: getNumberValue(metaData['00280010']),
-      columns: getNumberValue(metaData['00280011']),
-      imageOrientationPatient,
-      rowCosines,
-      columnCosines,
-      imagePositionPatient,
-      sliceThickness: getNumberValue(metaData['00180050']),
-      sliceLocation: getNumberValue(metaData['00201041']),
-      pixelSpacing,
-      rowPixelSpacing,
-      columnPixelSpacing,
-      usingDefaultValues,
     };
   }
 
@@ -367,7 +299,7 @@ export function getImageUrlModule(imageId, metaData) {
   };
 }
 
-export function getCineModule(imageId, metaData) {
+export function getCineModule(_imageId, metaData) {
   const cineRate = getValue<string>(metaData['00180040']);
   return {
     cineRate,
@@ -375,7 +307,7 @@ export function getCineModule(imageId, metaData) {
   };
 }
 
-export function getTransferSyntax(imageId, metaData) {
+export function getTransferSyntax(_imageId, metaData) {
   // Use either the FMI, which is NOT permitted in the DICOMweb data, but
   // is sometimes found there anyways, or the available transfer syntax, which
   // is the recommended way of getting it.

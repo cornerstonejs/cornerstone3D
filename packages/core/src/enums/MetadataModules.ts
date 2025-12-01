@@ -9,6 +9,7 @@
 enum MetadataModules {
   CALIBRATION = 'calibrationModule',
   CINE = 'cineModule',
+  FRAME_OF_REFERENCE = 'frameOfReferenceModule',
   GENERAL_IMAGE = 'generalImageModule',
   GENERAL_SERIES = 'generalSeriesModule',
   GENERAL_STUDY = 'generalStudyModule',
@@ -27,6 +28,29 @@ enum MetadataModules {
   SOP_COMMON = 'sopCommonModule',
   ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
   VOI_LUT = 'voiLutModule',
+
+  /*
+   * Functional groups are the metadata modules defines for functional group
+   * sequences.  Note these are UPPER camel case to agree with normalized
+   * representations so that the data is directly usable from shared/per frame
+   * sequences.
+   */
+
+  /** Functional group for the plane orientation */
+  PLANE_ORIENTATION = 'PlaneOrientation',
+
+  /** Functional group for the plat position */
+  PLANE_POSITION = 'PlanePosition',
+
+  /** Functional group for pixel measures */
+  PIXEL_MEASURES = 'PixelMeasures',
+
+  /** Functional group for xray geometry */
+  XRAY_GEOMETRY = 'XrayGeometry',
+
+  /** Functional group frame pixel data */
+  FRAME_PIXEL_DATA = 'FramePixelData',
+
   /**
    * The frame module is used to get information on the number of frames
    * in the sop instance, and the current frame number, independently of the
@@ -131,6 +155,20 @@ enum MetadataModules {
   SEG_BIT = 'metaSegBitmap',
   /** Metadata module for RTSS annotations */
   SR_ANNOTATION = 'metaSrAnnotation',
+
+  /**
+   *  Combined modules are sets of data needed for other purposes.
+   * These are always Upper Camel Case so that a normalized instance can
+   * just return the instance object.
+   */
+
+  /**
+   * The image plane base is a combination of:
+   *   FrameOfReferenceUID
+   *   PixelMeasures
+   *   ...
+   */
+  IMAGE_PLANE_BASE = 'ImagePlaneBase',
 }
 
 export default MetadataModules;

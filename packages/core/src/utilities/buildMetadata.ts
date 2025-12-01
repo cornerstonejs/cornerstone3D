@@ -50,35 +50,23 @@ export function getValidVOILUTFunction(
 export function getImagePlaneModule(imageId: string): ImagePlaneModule {
   const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
+  if (imagePlaneModule.usingDefaultValues !== undefined) {
+    // This says that the parsing already got everything
+    return imagePlaneModule;
+  }
   const newImagePlaneModule: ImagePlaneModule = {
     ...imagePlaneModule,
+    usingDefaultValues: true,
   };
 
-  if (!newImagePlaneModule.columnPixelSpacing) {
-    newImagePlaneModule.columnPixelSpacing = 1;
-  }
-
-  if (!newImagePlaneModule.rowPixelSpacing) {
-    newImagePlaneModule.rowPixelSpacing = 1;
-  }
-
-  if (!newImagePlaneModule.columnCosines) {
-    newImagePlaneModule.columnCosines = [0, 1, 0];
-  }
-
-  if (!newImagePlaneModule.rowCosines) {
-    newImagePlaneModule.rowCosines = [1, 0, 0];
-  }
-
-  if (!newImagePlaneModule.imagePositionPatient) {
-    newImagePlaneModule.imagePositionPatient = [0, 0, 0];
-  }
-
-  if (!newImagePlaneModule.imageOrientationPatient) {
-    newImagePlaneModule.imageOrientationPatient = new Float32Array([
-      1, 0, 0, 0, 1, 0,
-    ]);
-  }
+  newImagePlaneModule.columnPixelSpacing ||= 1;
+  newImagePlaneModule.rowPixelSpacing ||= 1;
+  newImagePlaneModule.columnCosines ||= [0, 1, 0];
+  newImagePlaneModule.rowCosines ||= [1, 0, 0];
+  newImagePlaneModule.imagePositionPatient ||= [0, 0, 0];
+  newImagePlaneModule.imageOrientationPatient ||= new Float32Array([
+    1, 0, 0, 0, 1, 0,
+  ]);
 
   return newImagePlaneModule;
 }
