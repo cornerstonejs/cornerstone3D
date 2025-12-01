@@ -150,7 +150,8 @@ export interface MeasurementAdapter {
 
     getTID300RepresentationArguments(
         tool,
-        is3DMeasurement
+        is3DMeasurement,
+        annotationIndex?
     ): Record<string, unknown>;
 }
 
@@ -179,11 +180,13 @@ export default class MeasurementReport {
         tool,
         ReferencedSOPSequence,
         toolClass,
-        is3DMeasurement
+        is3DMeasurement,
+        annotationIndex
     ) {
         const args = toolClass.getTID300RepresentationArguments(
             tool,
-            is3DMeasurement
+            is3DMeasurement,
+            annotationIndex
         );
         args.ReferencedSOPSequence = ReferencedSOPSequence;
         if (args.use3DSpatialCoordinates) {
@@ -215,7 +218,8 @@ export default class MeasurementReport {
         toolType,
         toolData,
         ReferencedSOPSequence,
-        is3DMeasurement
+        is3DMeasurement,
+        counter
     ) {
         const toolTypeData = toolData[toolType];
         const toolClass = this.measurementAdapterByToolType.get(toolType);
@@ -230,12 +234,14 @@ export default class MeasurementReport {
 
         // Loop through the array of tool instances
         // for this tool
-        const Measurements = toolTypeData.data.map(tool => {
+        const Measurements = toolTypeData.data.map((tool) => {
+            const annotationIndex = counter.next().value;
             return this.getTID300ContentItem(
                 tool,
                 ReferencedSOPSequence,
                 toolClass,
-                is3DMeasurement
+                is3DMeasurement,
+                annotationIndex
             );
         });
 
@@ -656,6 +662,8 @@ export default class MeasurementReport {
         const _meta = MeasurementReport.generateDatasetMeta();
         let is3DSR = false;
 
+        const counter = measurementCounter();
+
         // Loop through each image in the toolData
         Object.keys(toolState).forEach(imageId => {
             const toolData = toolState[imageId];
@@ -683,7 +691,8 @@ export default class MeasurementReport {
                     toolType,
                     toolData,
                     ReferencedSOPSequence,
-                    is3DMeasurement
+                    is3DMeasurement,
+                    counter
                 );
                 if (group) {
                     measurementGroups.push(group);
@@ -959,4 +968,19 @@ function appendList(list, appendList) {
         return;
     }
     list.push(...appendList);
+}
+
+/**
+ * Generator function that creates an infinite sequence of measurement indices.
+ * Used for assigning sequential annotation numbers when generating DICOM SR reports.
+ * Each call to next() yields the next integer starting from 1.
+ *
+ * @returns {Generator<number, void, unknown>} An infinite generator yielding 1, 2, 3, ...
+ *
+ */
+function* measurementCounter() {
+  let i = 1;
+  while (true) {
+    yield i++;
+  }
 }

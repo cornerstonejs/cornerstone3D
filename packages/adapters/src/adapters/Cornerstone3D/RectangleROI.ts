@@ -70,7 +70,7 @@ export class RectangleROI extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false, annotationIndex) {
         const { data, finding, findingSites, metadata } = tool;
 
         const { referencedImageId } = metadata;
@@ -102,7 +102,8 @@ export class RectangleROI extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
-            use3DSpatialCoordinates: is3DMeasurement
+            use3DSpatialCoordinates: is3DMeasurement,
+            annotationIndex
         };
     }
 }

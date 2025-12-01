@@ -68,7 +68,11 @@ class CircleROI extends BaseAdapter3D {
      * @param {Object} tool
      * @returns
      */
-    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
+    static getTID300RepresentationArguments(
+        tool,
+        is3DMeasurement = false,
+        annotationIndex
+    ) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
@@ -111,7 +115,8 @@ class CircleROI extends BaseAdapter3D {
             ReferencedFrameOfReferenceUID: is3DMeasurement
                 ? metadata.FrameOfReferenceUID
                 : null,
-            use3DSpatialCoordinates: is3DMeasurement
+            use3DSpatialCoordinates: is3DMeasurement,
+            annotationIndex
         };
     }
 }

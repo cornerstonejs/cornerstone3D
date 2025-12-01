@@ -192,7 +192,8 @@ export default class BaseAdapter3D {
 
     public static getTID300RepresentationArguments(
         tool,
-        is3DMeasurement = false
+        is3DMeasurement = false,
+        annotationIndex
     ): TID300Arguments {
         const { metadata } = tool;
         const { finding, findingSites } = tool;
@@ -212,7 +213,8 @@ export default class BaseAdapter3D {
             finding,
             ReferencedFrameOfReferenceUID: is3DMeasurement
                 ? metadata.FrameOfReferenceUID
-                : null
+                : null,
+            annotationIndex
         };
 
         return tidArguments;

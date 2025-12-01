@@ -77,7 +77,7 @@ class ArrowAnnotate extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false, annotationIndex) {
         const { data, metadata, findingSites } = tool;
         const { finding } = tool;
         const { referencedImageId } = metadata;
@@ -103,7 +103,8 @@ class ArrowAnnotate extends BaseAdapter3D {
             ReferencedFrameOfReferenceUID: is3DMeasurement
                 ? metadata.FrameOfReferenceUID
                 : null,
-            use3DSpatialCoordinates: is3DMeasurement
+            use3DSpatialCoordinates: is3DMeasurement,
+            annotationIndex
         };
 
         return TID300RepresentationArguments;
