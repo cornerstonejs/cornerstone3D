@@ -36,7 +36,7 @@ class UltrasoundDirectional extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, is3DMeasurement) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement, annotationIndex) {
         const { data, finding, findingSites, metadata } = tool;
         const { handles } = data;
 
@@ -59,7 +59,8 @@ class UltrasoundDirectional extends BaseAdapter3D {
             point2,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
-            findingSites: findingSites || []
+            findingSites: findingSites || [],
+            annotationIndex
         };
     }
 }

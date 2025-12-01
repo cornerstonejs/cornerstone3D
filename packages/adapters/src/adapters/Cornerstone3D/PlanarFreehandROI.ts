@@ -81,7 +81,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false, annotationIndex) {
         const { data, finding, findingSites, metadata } = tool;
 
         const { polyline, closed } = data.contour;
@@ -129,7 +129,8 @@ class PlanarFreehandROI extends BaseAdapter3D {
             ReferencedFrameOfReferenceUID: is3DMeasurement
                 ? metadata.FrameOfReferenceUID
                 : null,
-            use3DSpatialCoordinates: is3DMeasurement
+            use3DSpatialCoordinates: is3DMeasurement,
+            annotationIndex
         };
     }
 }
