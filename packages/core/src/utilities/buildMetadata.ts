@@ -51,7 +51,18 @@ export function getImagePlaneModule(imageId: string): ImagePlaneModule {
   const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
   if (imagePlaneModule.usingDefaultValues !== undefined) {
-    // This says that the parsing already got everything
+    // If the usingDefault values is set, then everything is already available
+    return imagePlaneModule;
+  }
+  if (
+    imagePlaneModule.columnPixelSpacing &&
+    imagePlaneModule.rowPixelSpacing &&
+    imagePlaneModule.columnCosines &&
+    imagePlaneModule.rowCosines &&
+    imagePlaneModule.imagePositionPatient &&
+    imagePlaneModule.imageOrientationPatient
+  ) {
+    // Everything is specifically provided, assume it is correct already.
     return imagePlaneModule;
   }
   const newImagePlaneModule: ImagePlaneModule = {
