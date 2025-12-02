@@ -155,6 +155,24 @@ enum MetadataModules {
   SEG_BIT = 'metaSegBitmap',
   /** Metadata module for RTSS annotations */
   SR_ANNOTATION = 'metaSrAnnotation',
+
+  /**
+   * A DICOM_SOURCE data is an instance that can send messages to a destination
+   * listener.  These will typically be in a format like:
+   *    - Part 10 Binary DICOM
+   *    - DICOMweb metadata
+   *    - Naturalized metadata
+   *    - DataSet parsed data
+   *
+   * These will then be iterated over to send messages to the listener that then
+   * goes ahead and creates the final object.
+   *
+   * This is basically an automated way of converting different image types to
+   * the shared/standardized format.
+   */
+  DICOM_SOURCE = 'DICOMSource',
+  /** The InstanceAsync is the asynchronous version of the async creator */
+  INSTANCE_ASYNC = 'instanceAsync',
 }
 
 export default MetadataModules;

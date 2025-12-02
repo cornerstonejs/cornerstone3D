@@ -131,6 +131,8 @@ export const Tags = {
 
 export const mapModuleTags = new Map<string, TagEntry[]>();
 
+export const mapTagInfo = new Map<string, TagEntry>();
+
 /**
  * Adds a tag name/type
  */
@@ -146,6 +148,12 @@ export function addTag(tag: string, value: TagEntry) {
   value.xTag ||= (tag && `x${tag.toLowerCase}`) || undefined;
   value.primaryGroup ||= value.groups?.[0];
   const { primaryGroup } = value;
+  mapTagInfo.set(tag, value);
+  if (value.tag) {
+    // Store both xTag and info values as well
+    mapTagInfo.set(value.xTag, value);
+    mapTagInfo.set(value.tag, value);
+  }
   if (primaryGroup) {
     let moduleEntries = mapModuleTags.get(primaryGroup);
     if (!moduleEntries) {
