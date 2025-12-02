@@ -1,10 +1,15 @@
 import type { ImageVolumeProps } from '../../types';
+import type Point3 from '../../types/Point3';
+
+namespace points {
+  export type points3 = Point3;
+}
 
 /**
  * Shared options for enhanced volume modifiers.
  */
 export interface EnhancedVolumeLoaderOptions {
-  ijkDecimation?: [number, number, number];
+  ijkDecimation?: points.points3;
 }
 
 /**

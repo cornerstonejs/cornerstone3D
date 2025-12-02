@@ -10,6 +10,7 @@ import {
 import type {
   EnhancedVolumeLoaderOptions,
   EnhancedVolumeModifierContext,
+  points,
 } from './enhancedVolumeModifiers';
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -78,7 +79,7 @@ export function enhancedVolumeLoader(
   options: {
     imageIds: string[];
     progressiveRendering?: boolean | IRetrieveConfiguration;
-    ijkDecimation?: [number, number, number];
+    ijkDecimation?: points.points3;
   }
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
@@ -98,11 +99,11 @@ export function enhancedVolumeLoader(
   const hasInPlaneDecimation = columnDecimation > 1 || rowDecimation > 1;
 
   const modifierOptions: EnhancedVolumeLoaderOptions = {
-    ijkDecimation: [columnDecimation, rowDecimation, kAxisDecimation] as [
-      number,
-      number,
-      number,
-    ],
+    ijkDecimation: [
+      columnDecimation,
+      rowDecimation,
+      kAxisDecimation,
+    ] as points.points3,
   };
   const modifiers = [inPlaneDecimationModifier];
 
@@ -127,8 +128,6 @@ export function enhancedVolumeLoader(
     options.imageIds.length <= expectedDecimatedCount + 1;
 
   if (kAxisDecimation > 1 && !isAlreadyDecimated) {
-    // Apply k-decimation to reduce the number of slices
-
     const decimatedResult = decimate(options.imageIds, kAxisDecimation);
 
     const decimatedImageIds =
