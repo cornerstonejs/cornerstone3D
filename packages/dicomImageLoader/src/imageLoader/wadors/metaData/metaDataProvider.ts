@@ -25,6 +25,9 @@ import {
   instanceModuleNames,
 } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import { MetaDataIterator } from './MetaDataIterator';
+
+const { MetadataModules } = Enums;
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
@@ -67,39 +70,6 @@ function metaDataProvider(type, imageId) {
 
   if (!metaData) {
     return;
-  }
-
-  if (type === MetadataModules.GENERAL_STUDY) {
-    return {
-      studyDescription: getValue<string>(metaData['00081030']),
-      studyDate: getValue<string>(metaData['00080020']),
-      studyTime: getValue<string>(metaData['00080030']),
-      accessionNumber: getValue<string>(metaData['00080050']),
-    };
-  }
-
-  if (type === MetadataModules.GENERAL_SERIES) {
-    return {
-      modality: getValue<string>(metaData['00080060']),
-      seriesInstanceUID: getValue<string>(metaData['0020000E']),
-      seriesDescription: getValue<string>(metaData['0008103E']),
-      seriesNumber: getNumberValue(metaData['00200011']),
-      studyInstanceUID: getValue<string>(metaData['0020000D']),
-      seriesDate: getValue<string>(metaData['00080021']),
-      seriesTime: getValue<string>(metaData['00080031']),
-      acquisitionDate: getValue<string>(metaData['00080022']),
-      acquisitionTime: getValue<string>(metaData['00080032']),
-    };
-  }
-
-  if (type === MetadataModules.GENERAL_IMAGE) {
-    return {
-      sopInstanceUID: getValue<string>(metaData['00080018']),
-      instanceNumber: getNumberValue(metaData['00200013']),
-      lossyImageCompression: getValue<string>(metaData['00282110']),
-      lossyImageCompressionRatio: getNumberValue(metaData['00282112']),
-      lossyImageCompressionMethod: getValue<string>(metaData['00282114']),
-    };
   }
 
   if (type === MetadataModules.PATIENT) {
@@ -282,6 +252,22 @@ function metaDataProvider(type, imageId) {
     return coreMetaData.getNormalized(imageId, instanceModuleNames);
   }
 }
+
+export function metadataDicomSource(next, imageId, data, options) {
+  const metaData = metaDataManager.get(imageId);
+
+  if (!metaData) {
+    return next(imageId, data, options);
+  }
+
+  console.warn('Parsing metadata:', metaData);
+  return new MetaDataIterator(metaData, options);
+}
+
+coreMetaData.addTypedProvider(
+  MetadataModules.DICOM_SOURCE,
+  metadataDicomSource
+);
 
 export function getImageUrlModule(imageId, metaData) {
   const { transferSyntaxUID } = getTransferSyntax(imageId, metaData);

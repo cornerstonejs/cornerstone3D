@@ -1,12 +1,12 @@
 import { MetadataModules } from '../../enums';
-import { addTypedProvider, getMetaData } from '../../metaData';
+import { addTypedProvider, typedProviderProvider } from '../../metaData';
 
 /**
  * Creates a function that looks up the given dataType and provides it as "data"
  */
 export function dataLookup(dataType: string) {
   return (next, query, data, options) => {
-    data ||= getMetaData(dataType, query, options?.[dataType]);
+    data ||= typedProviderProvider(dataType, query, options?.[dataType]);
     return next(query, data, options);
   };
 }

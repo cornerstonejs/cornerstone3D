@@ -58,25 +58,23 @@ function insertPriority(
   options
 ): TypedProviderBound {
   const providerValue = { type, ...options, provider };
-  if (list.find((it) => it.provider === provider)) {
-    return;
-  }
+  if (!list.find((it) => it.provider === provider)) {
+    let i;
+    const { priority = 0 } = options;
 
-  let i;
-  const { priority = 0 } = options;
-
-  // Find the right spot to insert this provider based on priority
-  for (i = 0; i < list.length; i++) {
-    if (list[i].priority <= priority) {
-      break;
+    // Find the right spot to insert this provider based on priority
+    for (i = 0; i < list.length; i++) {
+      if (list[i].priority <= priority) {
+        break;
+      }
     }
-  }
 
-  // Insert the decode task at position i
-  list.splice(i, 0, providerValue);
+    // Insert the decode task at position i
+    list.splice(i, 0, providerValue);
+  }
 
   let currentProvider = nullProvider;
-  for (i = list.length - 1; i >= 0; i--) {
+  for (let i = list.length - 1; i >= 0; i--) {
     currentProvider = list[i].provider.bind(null, currentProvider);
   }
   return currentProvider;
@@ -106,12 +104,16 @@ export function addTypedProvider(
   provider: TypedProvider,
   options: TypedProviderOptions = { priority: 0, isDefault: true }
 ) {
+  console.warn('***** Registering', type, provider, options);
   let list = typeProviderValueMap.get(type);
   if (!list) {
     list = new Array<TypedProviderValue>();
     typeProviderValueMap.set(type, list);
   }
   const newProvider = insertPriority(type, list, provider, options);
+  if (!newProvider) {
+    throw new Error(`newProvider is empty for ${type}`);
+  }
   typeProviderMap.set(type, newProvider);
 }
 
@@ -119,7 +121,18 @@ export function addTypedProvider(
  * A provider for the general typed providers.
  */
 export function typedProviderProvider(type: string, query: string, options) {
-  return typeProviderMap.get(type)?.(query, null, options);
+  const typedProvider = typeProviderMap.get(type);
+  if (!typedProvider) {
+    console.warn('No typed provider for', type, query);
+    return;
+  }
+  const result = typedProvider(query, null, options);
+  if (!result) {
+    console.warn('Typed provider called but no result', type, query);
+  } else {
+    console.warn('Typed provider found', type, result);
+  }
+  return result;
 }
 
 addProvider(typedProviderProvider, -1000);
@@ -177,7 +190,12 @@ export function getMetaData(type: string, query: string, options?): any {
   }
 }
 
-export const get = (type: string, query: string) => getMetaData(type, query);
+export const get = (type: string, ...queries: string[]) =>
+  queries.length === 1
+    ? getMetaData(type, queries[0])
+    : queries
+        .map((query) => getMetaData(type, query))
+        .find((it) => it !== undefined);
 
 /**
  * Retrieves metadata from a DICOM image and returns it as an object with capitalized keys.
