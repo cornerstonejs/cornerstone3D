@@ -5,3 +5,4 @@ export type {
   EnhancedVolumeModifier,
   EnhancedVolumeModifierContext,
 } from './types';
+export type { points } from './types';
