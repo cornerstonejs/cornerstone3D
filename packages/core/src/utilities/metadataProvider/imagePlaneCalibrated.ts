@@ -4,58 +4,17 @@ import { toNumber } from '../toNumber';
 import calibratedPixelSpacingMetadataProvider from '../calibratedPixelSpacingMetadataProvider';
 import getPixelSpacingInformation from '../getPixelSpacingInformation';
 
-import { getMetaData, addProvider, getNormalized } from '../../metaData';
-
-console.warn('getMetaData=', getMetaData);
-
-const typeToProviderMap = new Map<string, (imageId: string) => unknown>();
-
-/**
- * The computed metadata provider centralizes providing of metadata that is
- * created from other metadata, either summarizing it, or adding extra
- * information, or formatting the metadata.
- */
-const metadataProvider = {
-  /**
-   * Returns the metadata for an imageId if it exists.
-   * @param type - the type of metadata to enquire about
-   * @param imageId - the imageId to enquire about
-   * @returns the calibrated pixel spacings for the imageId if it exists, otherwise undefined
-   */
-  get: (type: string, imageId: string) => {
-    const provider = typeToProviderMap.get(type);
-    if (provider) {
-      return provider.call(this, imageId);
-    }
-  },
-
-  clearAllProviders: () => {
-    typeToProviderMap.clear();
-  },
-
-  registerDefaultProviders: () => {
-    typeToProviderMap.set(MetadataModules.IMAGE_PLANE, getImagePlaneCalibrated);
-    typeToProviderMap.set(MetadataModules.IMAGE_PLANE_BASE, getImagePlaneBase);
-  },
-};
-
-const IMAGE_PLANE_BASE_MODULES = [
-  MetadataModules.FRAME_OF_REFERENCE,
-  MetadataModules.PIXEL_MEASURES,
-  MetadataModules.FRAME_PIXEL_DATA,
-  MetadataModules.XrayGeometry,
-  MetadataModules.ULTRASOUND_ENHANCED_REGION,
-];
-export function getImagePlaneBase(imageId: string) {
-  const result = getNormalized(imageId, IMAGE_PLANE_BASE_MODULES);
-  console.warn('PLANE_BASE=', JSON.stringify(result, null, 2));
-  return result;
-}
+import { addTypedProvider } from '../../metaData';
 
 export function getImagePlaneCalibrated(
-  imageId: string
+  next,
+  imageId: string,
+  instance,
+  options
 ): ImagePlaneModuleMetadata {
-  const instance = getMetaData(MetadataModules.IMAGE_PLANE_BASE, imageId);
+  if (!instance) {
+    return next(imageId, instance, options);
+  }
   const { ImageOrientationPatient, ImagePositionPatient } = instance;
   const { PixelSpacing, type } = getPixelSpacingInformation(instance);
 
@@ -127,10 +86,8 @@ export function getImagePlaneCalibrated(
   Object.defineProperty(result, 'usingDefaultValues', {
     value: usingDefaultValues,
   });
+
   return result;
 }
 
-metadataProvider.registerDefaultProviders();
-addProvider(metadataProvider.get, 9880);
-
-export default metadataProvider;
+addTypedProvider(MetadataModules.IMAGE_PLANE, getImagePlaneCalibrated);

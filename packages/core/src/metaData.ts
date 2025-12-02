@@ -3,6 +3,25 @@
 
 const providers = [];
 
+const typeProviderValueMap = new Map<string, TypedProviderValue[]>();
+
+const typeProviderMap = new Map<string, TypedProviderBound>();
+
+export type TypedProviderValue = {
+  provider: TypedProvider;
+  priority: number;
+  isDefault: boolean;
+};
+
+export type TypedProvider = (
+  next: TypedProvider,
+  query: string,
+  data?,
+  options?
+) => unknown;
+
+export type TypedProviderBound = (query: string, data?, options?) => unknown;
+
 /**
  * Adds a metadata provider with the specified priority
  * @param provider - Metadata provider function
@@ -29,6 +48,73 @@ export function addProvider(
     provider,
   });
 }
+
+const nullProvider = (_query, _data, options) => options?.defaultValue;
+
+function insertPriority(list, provider, options): TypedProviderBound {
+  const providerValue = { ...options, provider };
+
+  let i;
+  const { priority = 0 } = options;
+
+  // Find the right spot to insert this provider based on priority
+  for (i = 0; i < list.length; i++) {
+    if (list[i].priority <= priority) {
+      break;
+    }
+  }
+
+  // Insert the decode task at position i
+  list.splice(i, 0, providerValue);
+
+  let currentProvider = nullProvider;
+  for (i = list.length - 1; i >= 0; i--) {
+    currentProvider = list[i].provider.bind(null, currentProvider);
+  }
+  return currentProvider;
+}
+
+export interface TypedProviderOptions {
+  priority?: number;
+  requires?: string[];
+  isDefault?: boolean;
+  clear?: () => void;
+  clearQuery?: (query: string) => void;
+}
+
+/**
+ * Adds a typed provider at the given priority level
+ *
+ * Typed providers all run as part of the standard  provider framework at
+ * priority -1000.  They differ from regular providers in that each provider
+ * function handles exactly one type
+ *
+ * Note: All typed providers are included overall at priority "-1000" with the
+ * global priority - that is, at the last item so that the existing non-typed
+ * providers all run first.
+ */
+export function addTypedProvider(
+  type: string,
+  provider: TypedProvider,
+  options: TypedProviderOptions = { priority: 0, isDefault: true }
+) {
+  let list = typeProviderValueMap.get(type);
+  if (!list) {
+    list = new Array<TypedProviderValue>();
+    typeProviderValueMap.set(type, list);
+  }
+  const newProvider = insertPriority(list, provider, options);
+  typeProviderMap.set(type, newProvider);
+}
+
+/**
+ * A provider for the general typed providers.
+ */
+export function typedProviderProvider(type: string, query: string, options) {
+  return typeProviderMap.get(type)?.(query, null, options);
+}
+
+addProvider(typedProviderProvider, -1000);
 
 /**
  * Removes the specified provider
@@ -73,16 +159,18 @@ export function removeAllProviders(): void {
  * @category MetaData
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getMetaData(type: string, ...queries): any {
+export function getMetaData(type: string, query: string, options?): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
-    const result = providers[i].provider(type, ...queries);
+    const result = providers[i].provider(type, query, options);
 
     if (result !== undefined) {
       return result;
     }
   }
 }
+
+export const get = (type: string, query: string) => getMetaData(type, query);
 
 /**
  * Retrieves metadata from a DICOM image and returns it as an object with capitalized keys.
@@ -143,5 +231,3 @@ export const toLowerCamelTag = (tag: string) => {
   }
   return tag.charAt(0).toLowerCase() + tag.slice(1);
 };
-
-export { getMetaData as get };
