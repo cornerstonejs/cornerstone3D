@@ -94,11 +94,17 @@ export default {
     operationData: InitializedOperationData
   ) => {
     const { configuration, viewport } = operationData;
-    configuration.threshold ||= { dynamicRadius: 2, isDynamic: true };
-    const { dynamicRadius = 0, isDynamic } = configuration.threshold;
+
+    const thresholdConfig = configuration?.threshold;
+
+    if (!thresholdConfig) {
+      return;
+    }
+
+    const { dynamicRadius = 0, isDynamic } = thresholdConfig;
 
     if (!isDynamic) {
-      configuration.threshold.dynamicRadiusInCanvas = 0;
+      thresholdConfig.dynamicRadiusInCanvas = 0;
       return;
     }
 
@@ -129,12 +135,12 @@ export default {
       centerCanvas[0] - offSetCenterCanvas[0]
     );
 
-    if (!configuration.threshold.dynamicRadiusInCanvas) {
-      configuration.threshold.dynamicRadiusInCanvas = 0;
+    if (!thresholdConfig.dynamicRadiusInCanvas) {
+      thresholdConfig.dynamicRadiusInCanvas = 0;
     }
 
     // Add a couple of pixels to the radius to make it more obvious what is
     // included.
-    configuration.threshold.dynamicRadiusInCanvas = 3 + dynamicRadiusInCanvas;
+    thresholdConfig.dynamicRadiusInCanvas = 3 + dynamicRadiusInCanvas;
   },
 };
