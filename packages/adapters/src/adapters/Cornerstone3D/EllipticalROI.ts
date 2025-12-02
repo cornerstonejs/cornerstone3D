@@ -61,7 +61,11 @@ class EllipticalROI extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, is3DMeasurement = false, annotationIndex) {
+    static getTID300RepresentationArguments(
+        tool,
+        is3DMeasurement = false,
+        annotationIndex
+    ) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
         const rotation = data.initialRotation || 0;
@@ -106,7 +110,7 @@ class EllipticalROI extends BaseAdapter3D {
             points.push(left, right, top, bottom);
         }
 
-        const { area, max, min, mean, stdDev, modalityUnit } =
+        const { area, max, min, mean, stdDev, modalityUnit, areaUnit } =
             cachedStats[`imageId:${referencedImageId}`] || {};
 
         const convertedPoints = points.map(point =>
@@ -115,6 +119,7 @@ class EllipticalROI extends BaseAdapter3D {
 
         return {
             area,
+            areaUnit,
             max,
             min,
             mean,

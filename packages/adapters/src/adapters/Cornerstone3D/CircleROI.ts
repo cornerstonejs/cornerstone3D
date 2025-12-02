@@ -94,12 +94,14 @@ class CircleROI extends BaseAdapter3D {
             stdDev,
             mean,
             modalityUnit,
-            radiusUnit
+            radiusUnit,
+            areaUnit
         } = cachedStats[`imageId:${referencedImageId}`] || {};
         const perimeter = 2 * Math.PI * radius;
 
         return {
             area,
+            areaUnit,
             perimeter,
             modalityUnit,
             radiusUnit,
