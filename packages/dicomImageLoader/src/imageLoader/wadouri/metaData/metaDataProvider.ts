@@ -69,39 +69,6 @@ export function metadataForDataset(
 ) {
   const { MetadataModules } = Enums;
 
-  if (type === MetadataModules.GENERAL_STUDY) {
-    return {
-      studyDescription: dataSet.string('x00081030'),
-      studyDate: dicomParser.parseDA(dataSet.string('x00080020')),
-      studyTime: dicomParser.parseTM(dataSet.string('x00080030') || ''),
-      accessionNumber: dataSet.string('x00080050'),
-    };
-  }
-
-  if (type === MetadataModules.GENERAL_SERIES) {
-    return {
-      modality: dataSet.string('x00080060'),
-      seriesInstanceUID: dataSet.string('x0020000e'),
-      seriesDescription: dataSet.string('x0008103e'),
-      seriesNumber: dataSet.intString('x00200011'),
-      studyInstanceUID: dataSet.string('x0020000d'),
-      seriesDate: dicomParser.parseDA(dataSet.string('x00080021')),
-      seriesTime: dicomParser.parseTM(dataSet.string('x00080031') || ''),
-      acquisitionDate: dicomParser.parseDA(dataSet.string('x00080022')),
-      acquisitionTime: dicomParser.parseTM(dataSet.string('x00080032') || ''),
-    };
-  }
-
-  if (type === MetadataModules.GENERAL_IMAGE) {
-    return {
-      sopInstanceUID: dataSet.string('x00080018'),
-      instanceNumber: dataSet.intString('x00200013'),
-      lossyImageCompression: dataSet.string('x00282110'),
-      lossyImageCompressionRatio: dataSet.floatString('x00282112'),
-      lossyImageCompressionMethod: dataSet.string('x00282114'),
-    };
-  }
-
   if (type === MetadataModules.PATIENT) {
     return {
       patientID: dataSet.string('x00100020'),

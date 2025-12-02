@@ -21,9 +21,11 @@ export function cacheDataForType(type: string) {
       options?.reCache !== true &&
       valueMap.get(query);
     if (value !== undefined) {
+      console.warn('Cached value:', type, value);
       return value;
     }
     value = next(query, data, options);
+    console.warn('New cached value', type, value);
     if (value !== undefined && !options?.noCache) {
       valueMap.set(query, value);
     }

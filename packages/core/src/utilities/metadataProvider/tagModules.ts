@@ -1,6 +1,6 @@
 import { addTypedProvider, type TypedProvider } from '../../metaData';
 import { mapModuleTags } from '../Tags';
-import { dataLookup, instanceLookup } from './dataLookup';
+import { dataLookup, INSTANCE_PRIORITY, instanceLookup } from './dataLookup';
 
 const mapModules = new Map<string, TypedProvider>();
 
@@ -22,6 +22,12 @@ export function tagModules(module: string, dataLookupName = 'instance') {
     const keys = mapModuleTags.get(module);
     const destName = options?.destName || 'lowerName';
     const result = {};
+    console.warn(
+      'Getting module',
+      module,
+      'keys',
+      keys.map((key) => key.name)
+    );
     for (const key of keys) {
       const value = data[key.name];
       if (value !== undefined) {
@@ -32,9 +38,14 @@ export function tagModules(module: string, dataLookupName = 'instance') {
   };
 
   mapModules.set(module, moduleProvider);
+
+  return moduleProvider;
 }
+
+export const MODULE_PRIORITY = { priority: -1_000 };
 
 for (const module of Object.keys(mapModuleTags)) {
   console.warn('***** Registering', module);
-  addTypedProvider(module, tagModules(module));
+  addTypedProvider(module, tagModules(module), MODULE_PRIORITY);
+  addTypedProvider(module, instanceLookup, INSTANCE_PRIORITY);
 }

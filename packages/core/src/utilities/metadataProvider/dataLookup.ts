@@ -1,5 +1,5 @@
 import { MetadataModules } from '../../enums';
-import { getMetaData } from '../../metaData';
+import { addTypedProvider, getMetaData } from '../../metaData';
 
 /**
  * Creates a function that looks up the given dataType and provides it as "data"
@@ -13,3 +13,11 @@ export function dataLookup(dataType: string) {
 
 /** The data lookup for the instance module */
 export const instanceLookup = dataLookup(MetadataModules.INSTANCE);
+
+export const INSTANCE_PRIORITY = { priority: 5000 };
+
+addTypedProvider(
+  MetadataModules.IMAGE_PLANE,
+  instanceLookup,
+  INSTANCE_PRIORITY
+);

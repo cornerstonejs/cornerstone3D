@@ -155,20 +155,6 @@ enum MetadataModules {
   SEG_BIT = 'metaSegBitmap',
   /** Metadata module for RTSS annotations */
   SR_ANNOTATION = 'metaSrAnnotation',
-
-  /**
-   *  Combined modules are sets of data needed for other purposes.
-   * These are always Upper Camel Case so that a normalized instance can
-   * just return the instance object.
-   */
-
-  /**
-   * The image plane base is a combination of:
-   *   FrameOfReferenceUID
-   *   PixelMeasures
-   *   ...
-   */
-  IMAGE_PLANE_BASE = 'ImagePlaneBase',
 }
 
 export default MetadataModules;

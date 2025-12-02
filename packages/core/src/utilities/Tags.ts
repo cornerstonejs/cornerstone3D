@@ -6,6 +6,8 @@ const {
   SOP_COMMON,
   IMAGE_PLANE,
   ULTRASOUND_ENHANCED_REGION,
+  GENERAL_SERIES,
+  GENERAL_STUDY,
   // These should get added once there is a good way to
   // set default configuration values:
   // CALIBRATION,
@@ -40,6 +42,10 @@ export const vrFD = vr.bind(null, 'FD', 1);
 export const vrUL = vr.bind(null, 'UL', 1);
 export const vrSL = vr.bind(null, 'SL', 1);
 export const vrLO = vr.bind(null, 'LO', 1);
+export const vrDA = vr.bind(null, 'DA', 1);
+export const vrTM = vr.bind(null, 'TM', 1);
+export const vrSH = vr.bind(null, 'SH', 1);
+export const vrIS = vr.bind(null, 'IS', 1);
 
 export interface TagEntry {
   name: string;
@@ -60,14 +66,30 @@ export interface TagEntry {
  *
  */
 export const Tags = {
+  StudyInstanceUID: vrUI('0020000D', GENERAL_STUDY, GENERAL_SERIES),
+  StudyDescription: vrLO('00081030', GENERAL_STUDY),
+  StudyDate: vrDA('00080020', GENERAL_STUDY),
+  StudyTime: vrTM('00080030', GENERAL_STUDY),
+  AccessionNumber: vrSH('00080050', GENERAL_STUDY),
+
+  SeriesInstanceUID: vrUI('0020000E', GENERAL_SERIES),
+  Modality: vrCS('00080060', GENERAL_SERIES),
+  SeriesDescription: vrLO('0008103e', GENERAL_SERIES),
+  SeriesNumber: vrIS('00200011', GENERAL_SERIES),
+  SeriesDate: vrDA('00080021', GENERAL_SERIES),
+  SeriesTime: vrTM('00080031', GENERAL_SERIES),
+  AcquisitionDate: vrDA('00080022', GENERAL_SERIES),
+  AcquisitionTime: vrTM('00080032', GENERAL_SERIES),
+
   SOPInstanceUID: vrUI('00080018', GENERAL_IMAGE, SOP_COMMON),
+  InstanceNumber: vrIS('00200013', GENERAL_IMAGE),
   SOPClassUID: vrUI('00080016', GENERAL_IMAGE, SOP_COMMON),
   LossyImageCompression: vrCS('00282110', GENERAL_IMAGE),
   LossyImageCompressionRatio: vrDS('00282112', GENERAL_IMAGE),
   LossyImageCompressionMethod: vrCS('00282114', GENERAL_IMAGE),
 
   // Image Plane requirements
-  PixelSpacing: vrDS2('00280030'),
+  PixelSpacing: vrDS2('00280030', GENERAL_IMAGE),
   ImagerPixelSpacing: vrDS2('00181164', IMAGE_PLANE),
 
   ImageOrientationPatient: vrDS3('00200037', IMAGE_PLANE),

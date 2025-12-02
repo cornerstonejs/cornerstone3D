@@ -51,8 +51,16 @@ export function addProvider(
 
 const nullProvider = (_query, _data, options) => options?.defaultValue;
 
-function insertPriority(list, provider, options): TypedProviderBound {
-  const providerValue = { ...options, provider };
+function insertPriority(
+  type: string,
+  list,
+  provider,
+  options
+): TypedProviderBound {
+  const providerValue = { type, ...options, provider };
+  if (list.find((it) => it.provider === provider)) {
+    return;
+  }
 
   let i;
   const { priority = 0 } = options;
@@ -103,7 +111,7 @@ export function addTypedProvider(
     list = new Array<TypedProviderValue>();
     typeProviderValueMap.set(type, list);
   }
-  const newProvider = insertPriority(list, provider, options);
+  const newProvider = insertPriority(type, list, provider, options);
   typeProviderMap.set(type, newProvider);
 }
 
@@ -163,7 +171,6 @@ export function getMetaData(type: string, query: string, options?): any {
   // Invoke each provider in priority order until one returns something
   for (let i = 0; i < providers.length; i++) {
     const result = providers[i].provider(type, query, options);
-
     if (result !== undefined) {
       return result;
     }
