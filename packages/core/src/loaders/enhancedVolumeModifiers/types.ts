@@ -1,7 +1,7 @@
 import type { ImageVolumeProps } from '../../types';
 import type Point3 from '../../types/Point3';
 
-namespace points {
+export namespace points {
   export type points3 = Point3;
 }
 
