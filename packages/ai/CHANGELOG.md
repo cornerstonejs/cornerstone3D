@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.13.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.0...v4.13.1) (2025-12-02)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+# [4.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.7...v4.13.0) (2025-12-02)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
 ## [4.12.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.6...v4.12.7) (2025-12-02)
 
 **Note:** Version bump only for package @cornerstonejs/ai

@@ -451,6 +451,7 @@ export default class LabelmapBaseTool extends BaseTool {
       previewColor,
       previewSegmentIndex,
       createMemo: this.createMemo.bind(this),
+      hoverData: this._hoverData,
     };
     return operationData;
   }
