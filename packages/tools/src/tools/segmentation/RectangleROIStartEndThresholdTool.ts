@@ -292,7 +292,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   };
 
-  //Now works for axial, sagitall and coronal
+  //Now works for axial, sagittal and coronal
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume

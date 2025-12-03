@@ -10,7 +10,7 @@ export class MetaDataIterator {
   }
 
   public syncIterator(listener, object = this.metadata) {
-    for (const [key, value] of Object.entries<MetadataValue>(this.metadata)) {
+    for (const [key, value] of Object.entries<MetadataValue>(object)) {
       if (key === '_vrMap' || value === undefined) {
         continue;
       }
@@ -22,7 +22,6 @@ export class MetaDataIterator {
         console.warn("Can't handle yet:", key, value);
         continue;
       }
-      console.log('Delivering', key, value);
       const result = listener.addTag(key, value?.vr, true);
       if (result === 'Skip') {
         continue;

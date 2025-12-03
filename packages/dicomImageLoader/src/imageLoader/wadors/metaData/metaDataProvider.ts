@@ -72,22 +72,6 @@ function metaDataProvider(type, imageId) {
     return;
   }
 
-  if (type === MetadataModules.PATIENT) {
-    return {
-      patientID: getValue<string>(metaData['00100020']),
-      patientName: getValue<string>(metaData['00100010']),
-    };
-  }
-
-  if (type === MetadataModules.PATIENT_STUDY) {
-    return {
-      patientAge: getNumberValue(metaData['00101010']),
-      patientSize: getNumberValue(metaData['00101020']),
-      patientSex: getValue<'M' | 'F'>(metaData['00100040']),
-      patientWeight: getNumberValue(metaData['00101030']),
-    };
-  }
-
   if (type === MetadataModules.NM_MULTIFRAME_GEOMETRY) {
     const modality = getValue(metaData['00080060']) as string;
     const imageSubType = getImageTypeSubItemFromMetadata(metaData, 2);
@@ -105,21 +89,6 @@ function metaDataProvider(type, imageId) {
       isNMReconstructable:
         isNMReconstructable(imageSubType) && modality.includes('NM'),
     };
-  }
-
-  if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
-    return getUSEnhancedRegions(metaData);
-  }
-
-  if (type === MetadataModules.CALIBRATION) {
-    const modality = getValue(metaData['00080060']);
-
-    if (modality === 'US') {
-      const enhancedRegion = getUSEnhancedRegions(metaData);
-      return {
-        sequenceOfUltrasoundRegions: enhancedRegion,
-      };
-    }
   }
 
   if (type === MetadataModules.IMAGE_URL) {
@@ -174,13 +143,6 @@ function metaDataProvider(type, imageId) {
       rescaleIntercept: getNumberValue(metaData['00281052']),
       rescaleSlope: getNumberValue(metaData['00281053']),
       rescaleType: getValue(metaData['00281054']),
-    };
-  }
-
-  if (type === MetadataModules.SOP_COMMON) {
-    return {
-      sopClassUID: getValue<string>(metaData['00080016']),
-      sopInstanceUID: getValue<string>(metaData['00080018']),
     };
   }
 
@@ -246,11 +208,6 @@ function metaDataProvider(type, imageId) {
       actualFrameDuration: getNumberValue(metaData['00181242']),
     };
   }
-
-  // Note: this is not a DICOM module, but rather an aggregation on all others
-  if (type === 'instance') {
-    return coreMetaData.getNormalized(imageId, instanceModuleNames);
-  }
 }
 
 export function metadataDicomSource(next, imageId, data, options) {
@@ -260,7 +217,6 @@ export function metadataDicomSource(next, imageId, data, options) {
     return next(imageId, data, options);
   }
 
-  console.warn('Parsing metadata:', metaData);
   return new MetaDataIterator(metaData, options);
 }
 

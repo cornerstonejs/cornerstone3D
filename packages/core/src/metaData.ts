@@ -104,7 +104,6 @@ export function addTypedProvider(
   provider: TypedProvider,
   options: TypedProviderOptions = { priority: 0, isDefault: true }
 ) {
-  console.warn('***** Registering', type, provider, options);
   let list = typeProviderValueMap.get(type);
   if (!list) {
     list = new Array<TypedProviderValue>();
@@ -123,14 +122,14 @@ export function addTypedProvider(
 export function typedProviderProvider(type: string, query: string, options) {
   const typedProvider = typeProviderMap.get(type);
   if (!typedProvider) {
-    console.warn('No typed provider for', type, query);
+    // console.warn('No typed provider for', type, query);
     return;
   }
   const result = typedProvider(query, null, options);
   if (!result) {
     console.warn('Typed provider called but no result', type, query);
   } else {
-    console.warn('Typed provider found', type, result);
+    // console.warn('Typed provider found', type, result);
   }
   return result;
 }

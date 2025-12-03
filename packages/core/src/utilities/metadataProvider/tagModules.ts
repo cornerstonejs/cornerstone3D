@@ -22,12 +22,6 @@ export function tagModules(module: string, dataLookupName = 'instance') {
     const keys = mapModuleTags.get(module);
     const destName = options?.destName || 'lowerName';
     const result = {};
-    console.warn(
-      'Getting module',
-      module,
-      'keys',
-      keys.map((key) => key.name)
-    );
     for (const key of keys) {
       const value = data[key.name];
       if (value !== undefined) {
@@ -45,7 +39,6 @@ export function tagModules(module: string, dataLookupName = 'instance') {
 export const MODULE_PRIORITY = { priority: -1_000 };
 
 for (const module of mapModuleTags.keys()) {
-  console.warn('***** Registering', module);
   addTypedProvider(module, tagModules(module), MODULE_PRIORITY);
   addTypedProvider(module, instanceLookup, INSTANCE_PRIORITY);
 }

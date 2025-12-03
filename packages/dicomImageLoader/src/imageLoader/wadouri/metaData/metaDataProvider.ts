@@ -17,12 +17,12 @@ import {
   extractSliceThicknessFromDataset,
 } from './extractPositioningFromDataset';
 import isNMReconstructable from '../../isNMReconstructable';
-import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import { DataSetIterator } from './DataSetIterator';
+
+const { MetadataModules } = Enums;
 
 function metaDataProvider(type, imageId) {
-  const { MetadataModules } = Enums;
-
   // Several providers use array queries
   if (Array.isArray(imageId)) {
     return;
@@ -67,24 +67,6 @@ export function metadataForDataset(
   imageId,
   dataSet: dicomParser.DataSet
 ) {
-  const { MetadataModules } = Enums;
-
-  if (type === MetadataModules.PATIENT) {
-    return {
-      patientID: dataSet.string('x00100020'),
-      patientName: dataSet.string('x00100010'),
-    };
-  }
-
-  if (type === MetadataModules.PATIENT_STUDY) {
-    return {
-      patientAge: dataSet.intString('x00101010'),
-      patientSize: dataSet.floatString('x00101020'),
-      patientSex: dataSet.string('x00100040'),
-      patientWeight: dataSet.floatString('x00101030'),
-    };
-  }
-
   if (type === MetadataModules.NM_MULTIFRAME_GEOMETRY) {
     const modality = dataSet.string('x00080060');
     const imageSubType = getImageTypeSubItemFromDataset(dataSet, 2);
@@ -220,11 +202,28 @@ export function metadataForDataset(
       };
     }
   }
-
-  // Note: this is not a DICOM module, but rather an aggregation on all others
-  if (type === 'instance') {
-    return metaData.getNormalized(imageId, instanceModuleNames);
-  }
 }
+
+export function metadataDicomSource(next, imageId, data, options) {
+  const parsedImageId = parseImageId(imageId);
+
+  let url = parsedImageId.url;
+
+  if (parsedImageId.frame) {
+    url = `${url}&frame=${parsedImageId.frame}`;
+  }
+
+  const dataSet = dataSetCacheManager.get(url);
+
+  if (!dataSet) {
+    console.warn('***************** Empty dataset');
+    return next(imageId, data, options);
+  }
+
+  console.warn('Parsing metadata:', dataSet);
+  return new DataSetIterator(dataSet, options);
+}
+
+metaData.addTypedProvider(MetadataModules.DICOM_SOURCE, metadataDicomSource);
 
 export default metaDataProvider;

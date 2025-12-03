@@ -14,8 +14,7 @@ export function instanceFromListener(next, query, data, options) {
   }
   const listener = new NormalListener();
 
-  data.syncIterator(listener, options);
-  console.warn('Created listener instance:', listener.instance);
+  data.syncIterator(listener);
   return listener.instance;
 }
 
@@ -81,6 +80,7 @@ export class Section implements DicomListener {
 
   constructor(parent, dest) {
     this.parent = parent;
+    this.dest = dest;
   }
 }
 export class NormalSection extends Section {}
@@ -90,7 +90,7 @@ export class TagSection extends Section {
   public vr: string;
   public singleton: boolean;
 
-  constructor(parent, destKey, vr, singleton) {
+  constructor(parent, destKey, vr, singleton = false) {
     super(parent, null);
     this.destKey = destKey;
     this.vr = vr;
@@ -106,9 +106,17 @@ export class TagSection extends Section {
     throw new Error('TODO - implement addSection on tag');
   }
 
+  public endSection() {
+    this.parent.dest[this.destKey] = this.dest;
+  }
+
   public valueListener(value) {
-    this.dest ||= [];
-    this.dest.push(value);
+    if (this.singleton) {
+      this.dest = value;
+    } else {
+      this.dest ||= [];
+      this.dest.push(value);
+    }
   }
 }
 
@@ -135,10 +143,18 @@ export class NormalListener {
     this.current = new NormalSection(this.current, this.fmi);
   }
 
+  public valueListener(value) {
+    if (!this.current.valueListener) {
+      console.warn('Value listener is not a listener');
+      return;
+    }
+    this.current.valueListener(value);
+  }
+
   public addTag(tag: string, vr: string, _length: number) {
     const tagInfo = mapTagInfo.get(tag);
     if (!tagInfo) {
-      console.warn('Skipping tag', tag);
+      // console.warn('Skipping tag', tag);
       return DeliverType.Skip;
     }
     vr = tagInfo.vr;
@@ -160,3 +176,5 @@ export class NormalListener {
     return DeliverType.Value;
   }
 }
+
+addTypedProvider(MetadataModules.INSTANCE, instanceFromListener);

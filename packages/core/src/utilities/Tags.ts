@@ -8,6 +8,8 @@ const {
   ULTRASOUND_ENHANCED_REGION,
   GENERAL_SERIES,
   GENERAL_STUDY,
+  PATIENT,
+  PATIENT_STUDY,
   // These should get added once there is a good way to
   // set default configuration values:
   // CALIBRATION,
@@ -46,6 +48,8 @@ export const vrDA = vr.bind(null, 'DA', 1);
 export const vrTM = vr.bind(null, 'TM', 1);
 export const vrSH = vr.bind(null, 'SH', 1);
 export const vrIS = vr.bind(null, 'IS', 1);
+export const vrPN = vr.bind(null, 'PN', 1);
+export const vrAS = vr.bind(null, 'AS', 1);
 
 export interface TagEntry {
   name: string;
@@ -66,6 +70,14 @@ export interface TagEntry {
  *
  */
 export const Tags = {
+  PatientID: vrLO('00100020', PATIENT),
+  PatientName: vrPN('00100010', PATIENT),
+
+  PatientAge: vrAS('00101010', PATIENT_STUDY),
+  PatientSize: vrDS('00101020', PATIENT_STUDY),
+  PatientSex: vrCS('00100040', PATIENT_STUDY),
+  PatientWeight: vrDS('00101030', PATIENT_STUDY),
+
   StudyInstanceUID: vrUI('0020000D', GENERAL_STUDY, GENERAL_SERIES),
   StudyDescription: vrLO('00081030', GENERAL_STUDY),
   StudyDate: vrDA('00080020', GENERAL_STUDY),
@@ -81,9 +93,10 @@ export const Tags = {
   AcquisitionDate: vrDA('00080022', GENERAL_SERIES),
   AcquisitionTime: vrTM('00080032', GENERAL_SERIES),
 
-  SOPInstanceUID: vrUI('00080018', GENERAL_IMAGE, SOP_COMMON),
+  SOPInstanceUID: vrUI('00080018', SOP_COMMON, GENERAL_IMAGE),
+  SOPClassUID: vrUI('00080016', SOP_COMMON, GENERAL_IMAGE),
+
   InstanceNumber: vrIS('00200013', GENERAL_IMAGE),
-  SOPClassUID: vrUI('00080016', GENERAL_IMAGE, SOP_COMMON),
   LossyImageCompression: vrCS('00282110', GENERAL_IMAGE),
   LossyImageCompressionRatio: vrDS('00282112', GENERAL_IMAGE),
   LossyImageCompressionMethod: vrCS('00282114', GENERAL_IMAGE),
@@ -93,7 +106,7 @@ export const Tags = {
   ImagerPixelSpacing: vrDS2('00181164', IMAGE_PLANE),
 
   ImageOrientationPatient: vrDS3('00200037', IMAGE_PLANE),
-  ImagePositionPatient: vrDSs('00200037', IMAGE_PLANE),
+  ImagePositionPatient: vrDSs('00200032', IMAGE_PLANE),
   FrameOfReferenceUID: vrUI('00200052', PIXEL_INSTANCE),
   Rows: vrUS('00280010', PIXEL_INSTANCE),
   Columns: vrUS('00280011', PIXEL_INSTANCE),
@@ -136,21 +149,23 @@ export const mapTagInfo = new Map<string, TagEntry>();
 /**
  * Adds a tag name/type
  */
-export function addTag(tag: string, value: TagEntry) {
-  if (tag && value.name && tag !== value.name) {
+export function addTag(name: string, value: TagEntry) {
+  if (name && value.name && name !== value.name) {
     throw new Error(
-      `Tag name provided and value don't match: ${tag} !== ${value.name}`
+      `Tag name provided and value don't match: ${name} !== ${value.name}`
     );
   }
-  value.name ||= tag;
-  value.lowerName ||= metaData.toLowerCamelTag(tag);
-  Tags[tag] = value;
-  value.xTag ||= (tag && `x${tag.toLowerCase}`) || undefined;
+  value.name ||= name;
+  value.lowerName ||= metaData.toLowerCamelTag(name);
+  Tags[name] = value;
+  const { tag } = value;
   value.primaryGroup ||= value.groups?.[0];
   const { primaryGroup } = value;
-  mapTagInfo.set(tag, value);
-  if (value.tag) {
+  mapTagInfo.set(name, value);
+  if (tag) {
     // Store both xTag and info values as well
+    value.xTag = `x${tag.toLowerCase()}`;
+    value.tag = tag.toUpperCase();
     mapTagInfo.set(value.xTag, value);
     mapTagInfo.set(value.tag, value);
   }
@@ -161,7 +176,7 @@ export function addTag(tag: string, value: TagEntry) {
       mapModuleTags.set(primaryGroup, moduleEntries);
       return;
     }
-    const foundIndex = moduleEntries.findIndex((it) => it.name === tag);
+    const foundIndex = moduleEntries.findIndex((it) => it.name === name);
     if (foundIndex === -1) {
       moduleEntries.push(value);
     } else {
