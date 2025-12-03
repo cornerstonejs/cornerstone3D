@@ -154,7 +154,7 @@ export class NormalListener {
   public addTag(tag: string, vr: string, _length: number) {
     const tagInfo = mapTagInfo.get(tag);
     if (!tagInfo) {
-      // console.warn('Skipping tag', tag);
+      console.warn('No tag info:', tag);
       return DeliverType.Skip;
     }
     vr = tagInfo.vr;

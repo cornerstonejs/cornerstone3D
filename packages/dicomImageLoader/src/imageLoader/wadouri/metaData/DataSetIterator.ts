@@ -48,12 +48,12 @@ export class DataSetIterator {
     for (const [key, value] of Object.entries(object)) {
       const tagInfo = mapTagInfo.get(key);
       if (!tagInfo) {
+        console.warn('Not registered:', key);
         continue;
       }
 
       const result = listener.addTag(tagInfo.tag, tagInfo.vr, value.length);
       if (result === 'Skip') {
-        console.warn('Not registered:', key);
         continue;
       }
       if (result === 'Parse') {

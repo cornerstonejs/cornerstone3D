@@ -62,6 +62,8 @@ export interface TagEntry {
   groups: string[];
 }
 
+export const CLINICAL_TRIAL = 'clinicalTrialModule';
+
 /**
  * The TagsArray is an array of the available standardized tag values which
  * can be read from any of the supported data sources.
@@ -72,6 +74,8 @@ export interface TagEntry {
 export const Tags = {
   PatientID: vrLO('00100020', PATIENT),
   PatientName: vrPN('00100010', PATIENT),
+  PatientBirthDate: vrDA('00100030', PATIENT),
+  PatientBirthTime: vrTM('00100032', PATIENT),
 
   PatientAge: vrAS('00101010', PATIENT_STUDY),
   PatientSize: vrDS('00101020', PATIENT_STUDY),
@@ -93,10 +97,19 @@ export const Tags = {
   AcquisitionDate: vrDA('00080022', GENERAL_SERIES),
   AcquisitionTime: vrTM('00080032', GENERAL_SERIES),
 
+  ClinicalTrialSponsorName: vrLO('00120010', CLINICAL_TRIAL),
+  ClinicalTrialSiteID: vrLO('00120030', CLINICAL_TRIAL),
+  ClinicalTrialSiteName: vrLO('00120031', CLINICAL_TRIAL),
+
   SOPInstanceUID: vrUI('00080018', SOP_COMMON, GENERAL_IMAGE),
   SOPClassUID: vrUI('00080016', SOP_COMMON, GENERAL_IMAGE),
 
+  // ReferencedImageSequence: vrSQs('00081140'),
+
   InstanceNumber: vrIS('00200013', GENERAL_IMAGE),
+  InstanceCreationDate: vrDA('00080012', GENERAL_IMAGE),
+  InstanceCreationTime: vrTM('00080013', GENERAL_IMAGE),
+  ContentTime: vrTM('00080033', GENERAL_IMAGE),
   LossyImageCompression: vrCS('00282110', GENERAL_IMAGE),
   LossyImageCompressionRatio: vrDS('00282112', GENERAL_IMAGE),
   LossyImageCompressionMethod: vrCS('00282114', GENERAL_IMAGE),

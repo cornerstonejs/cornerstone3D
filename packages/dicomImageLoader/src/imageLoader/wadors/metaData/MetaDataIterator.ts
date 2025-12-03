@@ -19,7 +19,6 @@ export class MetaDataIterator {
         continue;
       }
       if (!value?.Value) {
-        console.warn("Can't handle yet:", key, value);
         continue;
       }
       const result = listener.addTag(key, value?.vr, true);
