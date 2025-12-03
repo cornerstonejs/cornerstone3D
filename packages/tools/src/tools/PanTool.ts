@@ -15,6 +15,7 @@ class PanTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         limitToViewport: false,
+        //put ignore in false
         ignoreX: false,
         ignoreY: false,
         ignoreZ: false
@@ -116,13 +117,16 @@ class PanTool extends BaseTool {
     ) {
       return;
     }
-
+    // Block X-axis movement if ignoreX is enabled
     if(this.configuration.ignoreX){
       deltaPointsWorld[0] =  0
     }
+    // Block Y-axis movement if ignoreY is enabled
         if(this.configuration.ignoreY){
       deltaPointsWorld[1] =  0
     }
+
+    // Block Z-axis movement if ignoreZ is enabled
         if(this.configuration.ignoreZ){
       deltaPointsWorld[2] =  0
     }

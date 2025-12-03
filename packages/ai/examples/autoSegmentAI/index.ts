@@ -77,6 +77,7 @@ const toolGroup =
 toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
 toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
 toolGroup.addTool(cornerstoneTools.PanTool.toolName, {
+  //for test on Z axis
   ignoreX :true,
   ignoreY:true,
 });
