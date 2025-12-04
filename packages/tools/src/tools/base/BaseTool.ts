@@ -13,6 +13,24 @@ const { DefaultHistoryMemo } = csUtils.HistoryMemo;
  */
 abstract class BaseTool {
   static toolName;
+
+  /**
+   * Set to the tool that is currently drawing the active cursor.  This
+   * will be either primary mouse button tool if no tool is currently
+   * being directly interacted with, OR the tool that is directly interacted
+   * with.  This logic ensures that there is only a single tool at a time
+   * drawing, which prevents tools not getting mouse updates from over-writing
+   * the cursor.
+   *
+   * - If the tool bound to the primary button is a cursor drawing tool,
+   *   use that tool and there is NOT a tool currently drawing directly
+   * - If there is a tool currently drawing directly, then that tool should
+   *   display a cursor EVEN if it normally doesn't have a custom cursor
+   * - When a tool finishes drawing direct, it should stop being the active
+   *   cursor tool unless it is also the primary tool
+   */
+  public static activeCursorTool;
+
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,6 +39,9 @@ abstract class BaseTool {
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes;
+  /** Primary tool - this is set to true when this tool is primary */
+  public isPrimary = false;
+
   /**
    * A memo recording the starting state of a tool.  This will be updated
    * as changes are made, and reflects the fact that a memo has been created.
