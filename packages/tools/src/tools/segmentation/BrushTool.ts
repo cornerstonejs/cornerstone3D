@@ -22,7 +22,6 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -249,7 +248,7 @@ class BrushTool extends LabelmapBaseTool {
    * The preview also needs to be cancelled on changing tools.
    */
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
-    if (!this.primary) {
+    if (!this.isPrimary) {
       return;
     }
     if (this.mode === ToolModes.Active) {

@@ -404,11 +404,11 @@ export default class ToolGroup {
         const cursor = MouseCursor.getDefinedCursor('default');
         this._setCursorForViewports(cursor);
       }
-      toolInstance.primary = false;
+      toolInstance.isPrimary = false;
     } else {
       // reset the mouse cursor if tool has left click binding
       this.setViewportsCursorByToolName(toolName);
-      toolInstance.primary = true;
+      toolInstance.isPrimary = true;
     }
 
     // if it is a primary tool binding, we should store it as the previous primary tool
@@ -498,7 +498,7 @@ export default class ToolGroup {
 
     this.toolOptions[toolName] = toolOptions;
     toolInstance.mode = mode;
-    toolInstance.primary = false;
+    toolInstance.isPrimary = false;
 
     if (typeof toolInstance.onSetToolPassive === 'function') {
       toolInstance.onSetToolPassive();

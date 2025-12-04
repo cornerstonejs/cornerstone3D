@@ -26,7 +26,7 @@ abstract class BaseTool {
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes;
   /** Primary tool - this is set to true when this tool is primary */
-  public primary = false;
+  public isPrimary = false;
 
   /**
    * A memo recording the starting state of a tool.  This will be updated
