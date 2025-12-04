@@ -21,13 +21,15 @@ const {
 
 export const USRegionChild = 'usRegionChild';
 
-export function vr(vrName, vm: number, tag: string, ...groups) {
+export function vr(vrName, vm: number, tag: string, ...groups): TagEntry {
   return {
     vr: vrName,
     vm,
     tag,
     groups,
     // To be re-assigned later
+    xTag: null,
+    primaryGroup: null,
     name: null,
     lowerName: null,
   };
@@ -237,6 +239,6 @@ export function addTag(name: string, value: TagEntry) {
   }
 }
 
-Object.entries(Tags).forEach(([tag, value]) => {
+Object.entries<TagEntry>(Tags).forEach(([tag, value]) => {
   addTag(tag, value);
 });
