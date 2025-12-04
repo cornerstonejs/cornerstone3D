@@ -104,7 +104,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     // current viewport Id
     if (annotations.length) {
       annotation = annotations.filter(
-        (thisAnnotation) => thisAnnotation.data.viewportId == viewport.id
+        (thisAnnotation) => thisAnnotation.data?.viewportId == viewport.id
       )[0] as ScaleOverlayAnnotation;
     }
 
@@ -185,13 +185,13 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
 
     const annotations = getAnnotations(this.getToolName(), viewport.element);
     const annotation = annotations.filter(
-      (thisAnnotation) => thisAnnotation.data.viewportId == viewport.id
+      (thisAnnotation) => thisAnnotation.data?.viewportId == viewport.id
     )[0];
     const canvas = enabledElement.viewport.canvas;
 
     const renderStatus = false;
 
-    if (!viewport) {
+    if (!viewport || !annotation) {
       return renderStatus;
     }
 
