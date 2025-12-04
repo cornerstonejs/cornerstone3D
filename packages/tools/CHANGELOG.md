@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.13.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.1...v4.13.2) (2025-12-04)
+
+### Bug Fixes
+
+- Cursor disappearing when multiple tools active ([#2493](https://github.com/cornerstonejs/cornerstone3D/issues/2493)) ([9eca500](https://github.com/cornerstonejs/cornerstone3D/commit/9eca500341a8d01e07591cbc8ceeaa006dd05030))
+
 ## [4.13.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.0...v4.13.1) (2025-12-02)
 
 **Note:** Version bump only for package @cornerstonejs/tools
