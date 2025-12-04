@@ -26,11 +26,13 @@ export class MetaDataIterator {
         continue;
       }
       if (result === 'Parse') {
+        console.warn('Start of ITEM', key);
         for (const v of value.Value) {
           listener.startSection('ITEM');
           this.syncIterator(listener, v);
           listener.endSection();
         }
+        console.warn('End of ITEM', key);
         listener.endSection();
         continue;
       }

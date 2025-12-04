@@ -128,24 +128,6 @@ function metaDataProvider(type, imageId) {
     };
   }
 
-  if (type === MetadataModules.VOI_LUT) {
-    return {
-      windowCenter: getNumberValues(metaData['00281050'], 1),
-      windowWidth: getNumberValues(metaData['00281051'], 1),
-      voiLUTFunction: getValue(metaData['00281056']),
-      // TODO VOT LUT Sequence
-    };
-  }
-
-  if (type === MetadataModules.MODALITY_LUT) {
-    return {
-      // TODO VOT LUT Sequence
-      rescaleIntercept: getNumberValue(metaData['00281052']),
-      rescaleSlope: getNumberValue(metaData['00281053']),
-      rescaleType: getValue(metaData['00281054']),
-    };
-  }
-
   if (type === MetadataModules.PET_ISOTOPE) {
     const radiopharmaceuticalInfo = getValue(metaData['00540016']);
 

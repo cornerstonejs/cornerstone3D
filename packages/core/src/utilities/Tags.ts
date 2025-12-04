@@ -5,11 +5,14 @@ const {
   GENERAL_IMAGE,
   SOP_COMMON,
   IMAGE_PLANE,
+  IMAGE_PIXEL,
   ULTRASOUND_ENHANCED_REGION,
   GENERAL_SERIES,
   GENERAL_STUDY,
   PATIENT,
   PATIENT_STUDY,
+  VOI_LUT,
+  MODALITY_LUT,
   // These should get added once there is a good way to
   // set default configuration values:
   // CALIBRATION,
@@ -17,8 +20,6 @@ const {
 } = MetadataModules;
 
 export const USRegionChild = 'usRegionChild';
-
-export const PIXEL_INSTANCE = 'pixelInstance';
 
 export function vr(vrName, vm: number, tag: string, ...groups) {
   return {
@@ -34,20 +35,25 @@ export function vr(vrName, vm: number, tag: string, ...groups) {
 
 export const vrUI = vr.bind(null, 'UI', 1);
 export const vrCS = vr.bind(null, 'CS', 1);
+export const vrCSs = vr.bind(null, 'CS', 0);
 export const vrDS = vr.bind(null, 'DS', 1);
 export const vrDSs = vr.bind(null, 'DS', 0);
 export const vrDS2 = vr.bind(null, 'DS', 2);
 export const vrDS3 = vr.bind(null, 'DS', 3);
 export const vrUS = vr.bind(null, 'US', 1);
+export const vrUS3 = vr.bind(null, 'US', 3);
+export const vrUSs = vr.bind(null, 'US', 0);
 export const vrSQs = vr.bind(null, 'SQ', 0);
 export const vrFD = vr.bind(null, 'FD', 1);
 export const vrUL = vr.bind(null, 'UL', 1);
 export const vrSL = vr.bind(null, 'SL', 1);
 export const vrLO = vr.bind(null, 'LO', 1);
+export const vrLOs = vr.bind(null, 'LO', 0);
 export const vrDA = vr.bind(null, 'DA', 1);
 export const vrTM = vr.bind(null, 'TM', 1);
 export const vrSH = vr.bind(null, 'SH', 1);
 export const vrIS = vr.bind(null, 'IS', 1);
+export const vrISs = vr.bind(null, 'IS', 0);
 export const vrPN = vr.bind(null, 'PN', 1);
 export const vrAS = vr.bind(null, 'AS', 1);
 
@@ -104,7 +110,10 @@ export const Tags = {
   SOPInstanceUID: vrUI('00080018', SOP_COMMON, GENERAL_IMAGE),
   SOPClassUID: vrUI('00080016', SOP_COMMON, GENERAL_IMAGE),
 
-  // ReferencedImageSequence: vrSQs('00081140'),
+  ReferencedImageSequence: vrSQs('00081140'),
+  ReferencedSOPClassUID: vrUI('00081150'),
+  ReferencedSOPInstanceUID: vrUI('00081155'),
+  ReferencedFrameNumber: vrISs('00081160'),
 
   InstanceNumber: vrIS('00200013', GENERAL_IMAGE),
   InstanceCreationDate: vrDA('00080012', GENERAL_IMAGE),
@@ -114,26 +123,56 @@ export const Tags = {
   LossyImageCompressionRatio: vrDS('00282112', GENERAL_IMAGE),
   LossyImageCompressionMethod: vrCS('00282114', GENERAL_IMAGE),
 
-  // Image Plane requirements
-  PixelSpacing: vrDS2('00280030', GENERAL_IMAGE),
   ImagerPixelSpacing: vrDS2('00181164', IMAGE_PLANE),
 
   ImageOrientationPatient: vrDS3('00200037', IMAGE_PLANE),
   ImagePositionPatient: vrDSs('00200032', IMAGE_PLANE),
-  FrameOfReferenceUID: vrUI('00200052', PIXEL_INSTANCE),
-  Rows: vrUS('00280010', PIXEL_INSTANCE),
-  Columns: vrUS('00280011', PIXEL_INSTANCE),
-  SpacingBetweenSlices: vrDS('00180088', PIXEL_INSTANCE),
-  SliceThickness: vrDS('00180050', PIXEL_INSTANCE),
-  SliceLocation: vrDS('00201041', PIXEL_INSTANCE),
-  EstimatedRadiographicMagnificationFactor: vrDS('00181114', PIXEL_INSTANCE),
-  PixelSpacingCalibrationType: vrCS('00280A02', PIXEL_INSTANCE),
-  PixelSpacingCalibrationDescription: vrLO('00280A04', PIXEL_INSTANCE),
+
+  FrameOfReferenceUID: vrUI('00200052', GENERAL_IMAGE),
+
+  SamplesPerPixel: vrUS('00280002', IMAGE_PIXEL),
+  PhotometricInterpretation: vrCS('00280004', IMAGE_PIXEL),
+  PlanarConfiguration: vrUS('00280006', IMAGE_PIXEL),
+  NumberOfFrames: vrIS('00280008', GENERAL_IMAGE),
+  Rows: vrUS('00280010', IMAGE_PIXEL),
+  Columns: vrUS('00280011', IMAGE_PIXEL),
+  PixelSpacing: vrDS2('00280030', GENERAL_IMAGE),
+  BitsAllocated: vrUS('00280100', IMAGE_PIXEL),
+  BitsStored: vrUS('00280101', IMAGE_PIXEL),
+  HighBit: vrUS('00280102', IMAGE_PIXEL),
+  PixelRepresentation: vrUS('00280103', IMAGE_PIXEL),
+  SmallestPixelValue: vrUS('00280106', IMAGE_PIXEL),
+  LargestPixelValue: vrUS('00280107', IMAGE_PIXEL),
+  PixelPaddingValue: vrUS('00280120', IMAGE_PIXEL),
+  PixelPaddingRangeLimit: vrUS('00280121', IMAGE_PIXEL),
+
+  // VOI LUT module
+  WindowCenter: vrDSs('00281050', VOI_LUT),
+  WindowWidth: vrDSs('00281051', VOI_LUT),
+  VOILUTFunction: vrCSs('00281056', VOI_LUT),
+  WindowCenterWidthExplanation: vrLOs('00281055', VOI_LUT),
+
+  // Modality LUT Module
+  RescaleIntercept: vrDS('00281052', MODALITY_LUT),
+  RescaleSlope: vrDS('00280053', MODALITY_LUT),
+
+  RedPaletteColorLookupTableDescriptor: vrUSs('00281101', IMAGE_PIXEL),
+  GreenPaletteColorLookupTableDescriptor: vrUSs('00281102', IMAGE_PIXEL),
+  BluePaletteColorLookupTableDescriptor: vrUSs('00281103', IMAGE_PIXEL),
+  AlphaPaletteColorLookupTableDescriptor: vrUSs('00281104', IMAGE_PIXEL),
+  PaletteColorLookupTableUID: vrUI('00281104', IMAGE_PIXEL),
+
+  SpacingBetweenSlices: vrDS('00180088', IMAGE_PIXEL),
+  SliceThickness: vrDS('00180050', IMAGE_PIXEL),
+  SliceLocation: vrDS('00201041', IMAGE_PIXEL),
+  EstimatedRadiographicMagnificationFactor: vrDS('00181114', IMAGE_PIXEL),
+  PixelSpacingCalibrationType: vrCS('00280A02', IMAGE_PIXEL),
+  PixelSpacingCalibrationDescription: vrLO('00280A04', IMAGE_PIXEL),
 
   SequenceOfUltrasoundRegions: vrSQs(
     '00186011',
     ULTRASOUND_ENHANCED_REGION,
-    PIXEL_INSTANCE
+    IMAGE_PIXEL
   ),
 
   // US Region child group

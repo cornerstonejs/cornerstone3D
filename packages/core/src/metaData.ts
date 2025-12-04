@@ -237,6 +237,9 @@ export const toUpperCamelTag = (tag: string) => {
   if (tag.startsWith('sop')) {
     return `SOP${tag.substring(3)}`;
   }
+  if (tag.startsWith('voi')) {
+    return `VOI${tag.substring(3)}`;
+  }
   if (tag.endsWith('Id')) {
     tag = `${tag.substring(0, tag.length - 2)}ID`;
   }
@@ -249,6 +252,9 @@ export const toUpperCamelTag = (tag: string) => {
 export const toLowerCamelTag = (tag: string) => {
   if (tag.startsWith('SOP')) {
     return `sop${tag.substring(3)}`;
+  }
+  if (tag.startsWith('VOI')) {
+    return `voi${tag.substring(3)}`;
   }
   if (tag.endsWith('ID')) {
     tag = `${tag.substring(0, tag.length - 2)}Id`;

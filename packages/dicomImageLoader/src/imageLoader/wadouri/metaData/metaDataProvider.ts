@@ -17,7 +17,6 @@ import {
   extractSliceThicknessFromDataset,
 } from './extractPositioningFromDataset';
 import isNMReconstructable from '../../isNMReconstructable';
-import { getUSEnhancedRegions } from './USHelpers';
 import { DataSetIterator } from './DataSetIterator';
 
 const { MetadataModules } = Enums;
@@ -187,20 +186,6 @@ export function metadataForDataset(
       ),
       actualFrameDuration: dataSet.intString(dataSet.string('x00181242')),
     };
-  }
-
-  if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
-    return getUSEnhancedRegions(dataSet);
-  }
-
-  if (type === MetadataModules.CALIBRATION) {
-    const modality = dataSet.string('x00080060');
-    if (modality === 'US') {
-      const enhancedRegion = getUSEnhancedRegions(dataSet);
-      return {
-        sequenceOfUltrasoundRegions: enhancedRegion,
-      };
-    }
   }
 }
 

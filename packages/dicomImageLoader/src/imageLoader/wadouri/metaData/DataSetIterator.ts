@@ -44,8 +44,9 @@ export class DataSetIterator {
     this.dataset = dataset;
   }
 
-  public syncIterator(listener, object = this.dataset.elements) {
-    for (const [key, value] of Object.entries(object)) {
+  public syncIterator(listener, dataset = this.dataset) {
+    const { elements } = dataset;
+    for (const [key, value] of Object.entries(elements)) {
       const tagInfo = mapTagInfo.get(key);
       if (!tagInfo) {
         console.warn('Not registered:', key);
@@ -57,12 +58,14 @@ export class DataSetIterator {
         continue;
       }
       if (result === 'Parse') {
-        debugger;
-        // for (const v of value.Value) {
-        //   listener.startSection('ITEM');
-        //   this.syncIterator(listener, v);
-        //   listener.endSection();
-        // }
+        const sequence = dataset.elements[key];
+        if (sequence?.items) {
+          for (const item of sequence.items) {
+            listener.startSection('ITEM');
+            this.syncIterator(listener, item.dataSet);
+            listener.endSection();
+          }
+        }
         listener.endSection();
         continue;
       }
@@ -72,7 +75,7 @@ export class DataSetIterator {
         listener.endSection();
         continue;
       }
-      const parsed = parser(key, value, this.dataset);
+      const parsed = parser(key, value, dataset);
       for (const v of parsed) {
         listener.valueListener(v);
       }
@@ -104,18 +107,18 @@ function int32(xtag, location, dataset) {
 
 function floatSingle(xtag, location, dataset) {
   const result = new Array<number>();
-  const vm = location.length / 4;
+  const vm = location.length / 2;
   for (let i = 0; i < vm; i++) {
-    result[i] = dataset.int32(xtag, i);
+    result[i] = dataset.float(xtag, i);
   }
   return result;
 }
 
 function floatDouble(xtag, location, dataset) {
   const result = new Array<number>();
-  const vm = location.length / 4;
+  const vm = location.length / 8;
   for (let i = 0; i < vm; i++) {
-    result[i] = dataset.int32(xtag, i);
+    result[i] = dataset.double(xtag, i);
   }
   return result;
 }

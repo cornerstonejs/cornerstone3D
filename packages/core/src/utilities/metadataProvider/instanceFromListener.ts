@@ -15,6 +15,7 @@ export function instanceFromListener(next, query, data, options) {
   const listener = new NormalListener();
 
   data.syncIterator(listener);
+  console.warn('New instance:', JSON.stringify(listener.instance, null, 2));
   return listener.instance;
 }
 
@@ -64,7 +65,7 @@ export enum DeliverType {
 export interface DicomListener {
   addTag?(tag: string, vr: string, length: number | boolean): DeliverType;
 
-  addSection?(type: SectionTypes);
+  startSection?(type: SectionTypes);
   endSection?();
 
   rawListener?: (blockdata) => void;
@@ -83,7 +84,15 @@ export class Section implements DicomListener {
     this.dest = dest;
   }
 }
-export class NormalSection extends Section {}
+export class NormalSection extends Section {
+  constructor(parent, dest = {}) {
+    super(parent, dest);
+  }
+
+  public endSection() {
+    this.parent.valueListener(this.dest);
+  }
+}
 
 export class TagSection extends Section {
   public destKey;
@@ -102,7 +111,7 @@ export class TagSection extends Section {
     this.dest.push(blockdata);
   }
 
-  public addSection(type: SectionTypes) {
+  public startSection(type: SectionTypes) {
     throw new Error('TODO - implement addSection on tag');
   }
 
@@ -126,11 +135,11 @@ export class NormalListener {
 
   public current: DicomListener = new NormalSection(null, this.instance);
 
-  public addSection(type: SectionTypes) {
+  public startSection(type: SectionTypes) {
     if (type === SectionTypes.FMI) {
-      return this.addSectionFMI();
+      return this.startSectionFMI();
     }
-    throw new Error(`Unknown section type: ${type}`);
+    this.current = new NormalSection(this.current);
   }
 
   public endSection() {
@@ -138,7 +147,7 @@ export class NormalListener {
     this.current = this.current.parent;
   }
 
-  public addSectionFMI() {
+  public startSectionFMI() {
     this.fmi ||= {};
     this.current = new NormalSection(this.current, this.fmi);
   }
@@ -154,7 +163,7 @@ export class NormalListener {
   public addTag(tag: string, vr: string, _length: number) {
     const tagInfo = mapTagInfo.get(tag);
     if (!tagInfo) {
-      console.warn('No tag info:', tag);
+      console.warn('No tag info:', tag, vr);
       return DeliverType.Skip;
     }
     vr = tagInfo.vr;
