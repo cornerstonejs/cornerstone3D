@@ -206,7 +206,7 @@ export function metadataDicomSource(next, imageId, data, options) {
   }
 
   console.warn('Parsing metadata:', dataSet);
-  return new DataSetIterator(dataSet, options);
+  return new DataSetIterator(dataSet);
 }
 
 metaData.addTypedProvider(MetadataModules.DICOM_SOURCE, metadataDicomSource);

@@ -156,7 +156,8 @@ export const Tags = {
 
   // Modality LUT Module
   RescaleIntercept: vrDS('00281052', MODALITY_LUT),
-  RescaleSlope: vrDS('00280053', MODALITY_LUT),
+  RescaleSlope: vrDS('00281053', MODALITY_LUT),
+  RescaleType: vrLO('00281054', MODALITY_LUT),
 
   RedPaletteColorLookupTableDescriptor: vrUSs('00281101', IMAGE_PIXEL),
   GreenPaletteColorLookupTableDescriptor: vrUSs('00281102', IMAGE_PIXEL),

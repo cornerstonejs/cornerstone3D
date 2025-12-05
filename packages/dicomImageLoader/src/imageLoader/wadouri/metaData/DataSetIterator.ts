@@ -53,7 +53,7 @@ export class DataSetIterator {
         continue;
       }
 
-      const result = listener.addTag(tagInfo.tag, tagInfo.vr, value.length);
+      const result = listener.addTag(tagInfo.tag, tagInfo.vr, null);
       if (result === 'Skip') {
         continue;
       }

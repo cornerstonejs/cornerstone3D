@@ -18,9 +18,12 @@ export function tagModules(module: string, dataLookupName = 'instance') {
     addTypedProvider(module, dataLookup(dataLookupName), { priority: 25_000 });
   }
 
-  const moduleProvider = (query, data, options) => {
+  const moduleProvider = (next, query, data, options) => {
     const keys = mapModuleTags.get(module);
     const destName = options?.destName || 'lowerName';
+    if (!data) {
+      return next(query, data, options);
+    }
     const result = {};
     for (const key of keys) {
       const value = data[key.name];

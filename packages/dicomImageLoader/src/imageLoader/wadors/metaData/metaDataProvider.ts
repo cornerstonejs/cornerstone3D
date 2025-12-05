@@ -199,7 +199,7 @@ export function metadataDicomSource(next, imageId, data, options) {
     return next(imageId, data, options);
   }
 
-  return new MetaDataIterator(metaData, options);
+  return new MetaDataIterator(metaData);
 }
 
 coreMetaData.addTypedProvider(
