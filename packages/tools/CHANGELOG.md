@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.13.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.3...v4.13.4) (2025-12-05)
+
+### Bug Fixes
+
+- pan axis controls ([#2500](https://github.com/cornerstonejs/cornerstone3D/issues/2500)) ([d6d306b](https://github.com/cornerstonejs/cornerstone3D/commit/d6d306b767e001a94e2a4a756bcd81f637764d35))
+
+## [4.13.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.2...v4.13.3) (2025-12-05)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.13.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.1...v4.13.2) (2025-12-04)
+
+### Bug Fixes
+
+- Cursor disappearing when multiple tools active ([#2493](https://github.com/cornerstonejs/cornerstone3D/issues/2493)) ([9eca500](https://github.com/cornerstonejs/cornerstone3D/commit/9eca500341a8d01e07591cbc8ceeaa006dd05030))
+
 ## [4.13.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.0...v4.13.1) (2025-12-02)
 
 **Note:** Version bump only for package @cornerstonejs/tools

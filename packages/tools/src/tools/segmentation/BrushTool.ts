@@ -22,7 +22,6 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -249,6 +248,9 @@ class BrushTool extends LabelmapBaseTool {
    * The preview also needs to be cancelled on changing tools.
    */
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (!this.isPrimary) {
+      return;
+    }
     if (this.mode === ToolModes.Active) {
       this.updateCursor(evt);
       if (!this.configuration.preview.enabled) {
@@ -355,6 +357,7 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
 
+    BrushTool.activeCursorTool = this;
     triggerAnnotationRenderForViewportUIDs(this._hoverData.viewportIdsToRender);
   }
 
@@ -619,7 +622,7 @@ class BrushTool extends LabelmapBaseTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): void {
-    if (!this._hoverData) {
+    if (!this._hoverData || BrushTool.activeCursorTool !== this) {
       return;
     }
 

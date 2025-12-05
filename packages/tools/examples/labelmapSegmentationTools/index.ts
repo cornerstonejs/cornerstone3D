@@ -14,7 +14,6 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
-  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -307,17 +306,17 @@ async function run() {
     }
   );
   toolGroup.addToolInstance(
-    brushInstanceNames.CircularEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularEraser,
-    }
-  );
-  toolGroup.addToolInstance(
     brushInstanceNames.SphereBrush,
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.SphereBrush,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.CircularEraser,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.CircularEraser,
     }
   );
   toolGroup.addToolInstance(
@@ -352,10 +351,19 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
+  toolGroup.setToolActive(brushInstanceNames.CircularEraser, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
+        mouseButton: MouseBindings.Auxiliary, // Shift Middle
         modifierKey: KeyboardBindings.Shift,
       },
     ],
