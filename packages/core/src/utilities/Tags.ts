@@ -167,7 +167,10 @@ export const Tags = {
   SpacingBetweenSlices: vrDS('00180088', IMAGE_PIXEL),
   SliceThickness: vrDS('00180050', IMAGE_PIXEL),
   SliceLocation: vrDS('00201041', IMAGE_PIXEL),
+  DistanceSourceToDetector: vrDS('00181110', IMAGE_PIXEL),
+  DistanceSourceToPatient: vrDS('00181111', IMAGE_PIXEL),
   EstimatedRadiographicMagnificationFactor: vrDS('00181114', IMAGE_PIXEL),
+  DistanceSourceToEntrance: vrDS('00400306', IMAGE_PIXEL),
   PixelSpacingCalibrationType: vrCS('00280A02', IMAGE_PIXEL),
   PixelSpacingCalibrationDescription: vrLO('00280A04', IMAGE_PIXEL),
 
