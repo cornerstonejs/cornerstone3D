@@ -12,8 +12,20 @@ export function applyEnhancedVolumeModifiers(
   modifiers: EnhancedVolumeModifier[],
   context: EnhancedVolumeModifierContext
 ): ImageVolumeProps {
-  return modifiers.reduce(
-    (currentProps, modifier) => modifier.apply(currentProps, context),
-    baseProps
-  );
+  console.log('[applyEnhancedVolumeModifiers] Starting modifier chain:', {
+    modifierCount: modifiers.length,
+    modifierNames: modifiers.map((m) => m.name),
+    volumeId: context.volumeId,
+  });
+
+  return modifiers.reduce((currentProps, modifier, index) => {
+    console.log(
+      `[applyEnhancedVolumeModifiers] Applying modifier ${index + 1}/${modifiers.length}: ${modifier.name}`
+    );
+    const result = modifier.apply(currentProps, context);
+    console.log(
+      `[applyEnhancedVolumeModifiers] Modifier ${modifier.name} completed`
+    );
+    return result;
+  }, baseProps);
 }

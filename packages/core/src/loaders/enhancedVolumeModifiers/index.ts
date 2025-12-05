@@ -1,5 +1,6 @@
 export { applyEnhancedVolumeModifiers } from './applyEnhancedVolumeModifiers';
 export { inPlaneDecimationModifier } from './inPlaneDecimationModifier';
+export { acquisitionPlaneReformatModifier } from './acquisitionPlaneReformatModifier';
 export type {
   EnhancedVolumeLoaderOptions,
   EnhancedVolumeModifier,

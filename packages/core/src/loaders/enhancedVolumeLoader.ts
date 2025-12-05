@@ -6,6 +6,7 @@ import VoxelManager from '../utilities/VoxelManager';
 import {
   applyEnhancedVolumeModifiers,
   inPlaneDecimationModifier,
+  acquisitionPlaneReformatModifier,
 } from './enhancedVolumeModifiers';
 import type {
   EnhancedVolumeLoaderOptions,
@@ -105,7 +106,17 @@ export function enhancedVolumeLoader(
       kAxisDecimation,
     ] as points.points3,
   };
-  const modifiers = [inPlaneDecimationModifier];
+  const modifiers = [
+    acquisitionPlaneReformatModifier, // Apply first to ensure correct acquisition plane orientation
+    inPlaneDecimationModifier,
+  ];
+
+  console.log('[enhancedVolumeLoader] Initializing with modifiers:', {
+    volumeId,
+    modifierCount: modifiers.length,
+    modifierNames: modifiers.map((m) => m.name),
+    ijkDecimation: modifierOptions.ijkDecimation,
+  });
 
   // Function to add decimation parameter to imageId
   function addDecimationToImageId(imageId: string, factor: number): string {
@@ -159,10 +170,21 @@ export function enhancedVolumeLoader(
       options: modifierOptions,
     };
 
+    console.log('[enhancedVolumeLoader] Applying modifiers to volume:', {
+      volumeId,
+      baseDirection: baseVolumeProps.direction,
+      imageIdsCount: options.imageIds.length,
+    });
+
     const volumeProps = applyEnhancedVolumeModifiers(
       baseVolumeProps,
       modifiers,
       modifierContext
+    );
+
+    console.log(
+      '[enhancedVolumeLoader] Modifiers applied, final direction:',
+      volumeProps.direction
     );
 
     const {
