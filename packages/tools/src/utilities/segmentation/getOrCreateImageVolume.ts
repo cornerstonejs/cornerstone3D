@@ -13,7 +13,7 @@ import {
 function getOrCreateImageVolume(
   referencedImageIds: string[]
 ): Types.IImageVolume | undefined {
-  if (!referencedImageIds || referencedImageIds.length <= 1) {
+  if (!referencedImageIds?.length) {
     return;
   }
 
