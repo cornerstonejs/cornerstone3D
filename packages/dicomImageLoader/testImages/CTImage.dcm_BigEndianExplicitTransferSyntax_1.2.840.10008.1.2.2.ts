@@ -102,6 +102,7 @@ const WADO_URI_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
   rows: 512,
   sliceLocation: 4.6999998093,
   sliceThickness: 5,
+  spacingBetweenSlices: 6.5,
   usingDefaultValues: false,
 };
 // Should be `Types.ImagePixelModule` the actual metadata doesn't conform to it.

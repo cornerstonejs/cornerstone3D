@@ -49,7 +49,7 @@ export class DataSetIterator {
     for (const [key, value] of Object.entries(elements)) {
       const tagInfo = mapTagInfo.get(key);
       if (!tagInfo) {
-        console.warn('Not registered:', key);
+        // console.warn('Not registered:', key);
         continue;
       }
 

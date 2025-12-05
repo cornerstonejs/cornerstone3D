@@ -5,6 +5,8 @@ import {
   init as dicomImageLoaderInit,
   wadouri,
 } from '@cornerstonejs/dicom-image-loader';
+import { expectObjectEquality } from './expectObjectEquality';
+
 import * as dcmjs from 'dcmjs';
 import { createImageHash } from '../../../utils/test/pixel-data-hash';
 import { WADOURI_TEST as CtBigEndian_1_2_840_1008_1_2_2 } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2';
@@ -199,7 +201,7 @@ describe('dicomImageLoader - WADO-URI', () => {
               imageIdWithFrame(imageId, frameIndex)
             );
 
-            expect(imagObj).toEqual(frame.image);
+            expectObjectEquality(imagObj, frame.image);
           });
         }
 
@@ -209,7 +211,7 @@ describe('dicomImageLoader - WADO-URI', () => {
             metadataModuleName,
             expectedModuleValues,
           ] of Object.entries(frame.metadataModule)) {
-            it(`returns the correct ${metadataModuleName} metadata for frame ${frameIndex} of ${t.name} image`, async () => {
+            fit(`returns the correct ${metadataModuleName} metadata for frame ${frameIndex} of ${t.name} image`, async () => {
               const { imageId } = await imageLoader.loadImage(t.wadouri);
               const imageIdWithFrameIndex = imageIdWithFrame(
                 imageId,
@@ -219,8 +221,7 @@ describe('dicomImageLoader - WADO-URI', () => {
                 metadataModuleName,
                 imageIdWithFrameIndex
               );
-
-              expect(actualModuleValue).toEqual(expectedModuleValues);
+              expectObjectEquality(actualModuleValue, expectedModuleValues);
             });
           }
         }

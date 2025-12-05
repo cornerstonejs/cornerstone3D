@@ -20,11 +20,6 @@ import {
 } from './extractPositioningFromMetadata';
 import { getImageTypeSubItemFromMetadata } from './NMHelpers';
 import isNMReconstructable from '../../isNMReconstructable';
-import {
-  getInstanceModule,
-  instanceModuleNames,
-} from '../../getInstanceModule';
-import { getUSEnhancedRegions } from './USHelpers';
 import { MetaDataIterator } from './MetaDataIterator';
 
 const { MetadataModules } = Enums;

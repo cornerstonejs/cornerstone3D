@@ -89,7 +89,7 @@ export const Tags = {
   PatientSex: vrCS('00100040', PATIENT_STUDY),
   PatientWeight: vrDS('00101030', PATIENT_STUDY),
 
-  StudyInstanceUID: vrUI('0020000D', GENERAL_STUDY, GENERAL_SERIES),
+  StudyInstanceUID: vrUI('0020000D', GENERAL_SERIES, GENERAL_STUDY),
   StudyDescription: vrLO('00081030', GENERAL_STUDY),
   StudyDate: vrDA('00080020', GENERAL_STUDY),
   StudyTime: vrTM('00080030', GENERAL_STUDY),
@@ -217,7 +217,7 @@ export function addTag(name: string, value: TagEntry) {
   Tags[name] = value;
   const { tag } = value;
   value.primaryGroup ||= value.groups?.[0];
-  const { primaryGroup } = value;
+  const { groups } = value;
   mapTagInfo.set(name, value);
   if (tag) {
     // Store both xTag and info values as well
@@ -226,18 +226,20 @@ export function addTag(name: string, value: TagEntry) {
     mapTagInfo.set(value.xTag, value);
     mapTagInfo.set(value.tag, value);
   }
-  if (primaryGroup) {
-    let moduleEntries = mapModuleTags.get(primaryGroup);
-    if (!moduleEntries) {
-      moduleEntries = [value];
-      mapModuleTags.set(primaryGroup, moduleEntries);
-      return;
-    }
-    const foundIndex = moduleEntries.findIndex((it) => it.name === name);
-    if (foundIndex === -1) {
-      moduleEntries.push(value);
-    } else {
-      moduleEntries[foundIndex] = value;
+  if (groups?.length) {
+    for (const group of groups) {
+      let moduleEntries = mapModuleTags.get(group);
+      if (!moduleEntries) {
+        moduleEntries = [value];
+        mapModuleTags.set(group, moduleEntries);
+        return;
+      }
+      const foundIndex = moduleEntries.findIndex((it) => it.name === name);
+      if (foundIndex === -1) {
+        moduleEntries.push(value);
+      } else {
+        moduleEntries[foundIndex] = value;
+      }
     }
   }
 }

@@ -288,7 +288,7 @@ export const toLowerCamelTag = (tag: string) => {
   if (tag.startsWith('VOI')) {
     return `voi${tag.substring(3)}`;
   }
-  if (tag.endsWith('ID')) {
+  if (tag.endsWith('ID') && !tag.endsWith('UID')) {
     tag = `${tag.substring(0, tag.length - 2)}Id`;
   }
   return tag.charAt(0).toLowerCase() + tag.slice(1);

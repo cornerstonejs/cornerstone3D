@@ -6,15 +6,17 @@ import getPixelSpacingInformation from '../getPixelSpacingInformation';
 
 import { addTypedProvider } from '../../metaData';
 
-export function getImagePlaneCalibrated(
+export const getImagePlaneCalibrated = (
   next,
   imageId: string,
   instance,
   options
-): ImagePlaneModuleMetadata {
+): ImagePlaneModuleMetadata => {
   if (!instance) {
+    console.warn('**** No instance data to get image plane calibrated from');
     return next(imageId, instance, options);
   }
+  console.warn('Getting image plane module from instance', instance);
   const { ImageOrientationPatient, ImagePositionPatient } = instance;
   const { PixelSpacing, type } = getPixelSpacingInformation(instance);
 
@@ -68,17 +70,15 @@ export function getImagePlaneCalibrated(
     frameOfReferenceUID: instance.FrameOfReferenceUID,
     rows: toNumber(instance.Rows),
     columns: toNumber(instance.Columns),
-    spacingBetweenSlices: toNumber(instance.SpacingBetweenSlices),
     imageOrientationPatient,
     rowCosines,
-    isDefaultValueSetForRowCosine,
     columnCosines,
-    isDefaultValueSetForColumnCosine,
     imagePositionPatient,
-    sliceThickness: toNumber(instance.SliceThickness),
     sliceLocation: toNumber(instance.SliceLocation),
-    pixelSpacing: toNumber(PixelSpacing || 1),
+    pixelSpacing: toNumber(PixelSpacing),
     rowPixelSpacing: rowPixelSpacing ? toNumber(rowPixelSpacing) : null,
+    sliceThickness: toNumber(instance.SliceThickness),
+    spacingBetweenSlices: toNumber(instance.SpacingBetweenSlices),
     columnPixelSpacing: columnPixelSpacing
       ? toNumber(columnPixelSpacing)
       : null,
@@ -86,8 +86,16 @@ export function getImagePlaneCalibrated(
   Object.defineProperty(result, 'usingDefaultValues', {
     value: usingDefaultValues,
   });
+  Object.defineProperty(result, 'isDefaultValueSetForRowCosine', {
+    value: isDefaultValueSetForRowCosine,
+  });
+  Object.defineProperty(result, 'isDefaultValueSetForColumnCosine', {
+    value: isDefaultValueSetForColumnCosine,
+  });
 
   return result;
-}
+};
 
 addTypedProvider(MetadataModules.IMAGE_PLANE, getImagePlaneCalibrated);
+
+export default getImagePlaneCalibrated;
