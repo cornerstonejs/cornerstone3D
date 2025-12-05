@@ -18,7 +18,7 @@ export type TypedProviderValue = {
 };
 
 export type TypedProvider = (
-  next: TypedProviderValue,
+  next: TypedProviderBound,
   query: string,
   data?,
   options?
