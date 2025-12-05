@@ -436,7 +436,6 @@ class ProbeTool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -452,6 +451,7 @@ class ProbeTool extends AnnotationTool {
       const point = data.handles.points[0];
       const canvasCoordinates = viewport.worldToCanvas(point);
 
+      const targetId = this.getTargetId(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth } = this.getAnnotationStyle({
