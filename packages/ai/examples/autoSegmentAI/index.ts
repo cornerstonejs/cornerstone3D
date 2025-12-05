@@ -23,7 +23,7 @@ const { ViewportType, OrientationAxis } = Enums;
 
 const { segmentation } = cornerstoneTools;
 const { segmentation: segmentationUtils } = cornerstoneTools.utilities;
-const currentViewportType = ViewportType.ORTHOGRAPHIC;
+const currentViewportType = ViewportType.STACK;
 
 setTitleAndDescription(
   'Segment Assistant',
@@ -76,8 +76,7 @@ const toolGroup =
 
 toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
 toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
-toolGroup.addTool(cornerstoneTools.PanTool.toolName, {
-});
+toolGroup.addTool(cornerstoneTools.PanTool.toolName);
 toolGroup.addTool(cornerstoneTools.ProbeTool.toolName);
 toolGroup.addTool(LabelmapSlicePropagationTool.toolName);
 
