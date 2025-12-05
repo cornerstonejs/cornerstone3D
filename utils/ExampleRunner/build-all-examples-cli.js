@@ -15,7 +15,7 @@ var webpackConfigPath = path.join(
 );
 
 var buildConfig = require('./template-multiexample-config.js');
-const buildExampleIndex = require('./build-example-index.js');
+const buildExampleIndex = require('./build-example-index-styled.js');
 const buildExampleMarkdown = require('./build-example-index-markdown.js');
 const rootPath = path.resolve(path.join(__dirname, '../..'));
 var distDir = path.join(rootPath, '/.static-examples');
