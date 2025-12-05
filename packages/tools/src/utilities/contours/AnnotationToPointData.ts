@@ -1,3 +1,5 @@
+import type { Types } from '@cornerstonejs/core';
+
 import RectangleROIStartEndThreshold from './RectangleROIStartEndThreshold';
 
 function validateAnnotation(annotation) {
@@ -5,19 +7,33 @@ function validateAnnotation(annotation) {
     throw new Error('Tool data is empty');
   }
 
-  if (!annotation.metadata || annotation.metadata.referencedImageId) {
+  if (!annotation.metadata || !annotation.metadata.referencedImageId) {
     throw new Error('Tool data is not associated with any imageId');
   }
 }
 
+type ContourSequence = {
+  NumberOfContourPoints: number;
+  ContourImageSequence: Types.NormalModule[];
+  ContourGeometricType: string;
+  ContourData: string[];
+};
+
+type ContourSequenceProvider = {
+  getContourSequence: (
+    annotation,
+    metadataProvider
+  ) => ContourSequence | ContourSequence[];
+};
+
 class AnnotationToPointData {
-  static TOOL_NAMES: Record<string, unknown> = {};
+  static TOOL_NAMES: Record<string, ContourSequenceProvider> = {};
 
   constructor() {
     // empty
   }
 
-  static convert(annotation, index, metadataProvider) {
+  static convert(annotation, segment, metadataProvider) {
     validateAnnotation(annotation);
 
     const { toolName } = annotation.metadata;
@@ -32,23 +48,24 @@ class AnnotationToPointData {
     // Each toolData should become a list of contours, ContourSequence
     // contains a list of contours with their pointData, their geometry
     // type and their length.
-    // @ts-expect-error
-    const ContourSequence = toolClass.getContourSequence(
+    const contourSequence = toolClass.getContourSequence(
       annotation,
       metadataProvider
     );
 
     // Todo: random rgb color for now, options should be passed in
-    const color = [
+    const color = segment.color?.slice(0, 3) || [
       Math.floor(Math.random() * 255),
       Math.floor(Math.random() * 255),
       Math.floor(Math.random() * 255),
     ];
 
     return {
-      ReferencedROINumber: index + 1,
+      ReferencedROINumber: segment.segmentIndex,
       ROIDisplayColor: color,
-      ContourSequence,
+      ContourSequence: Array.isArray(contourSequence)
+        ? contourSequence
+        : [contourSequence],
     };
   }
 

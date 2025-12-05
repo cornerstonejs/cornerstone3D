@@ -83,6 +83,9 @@ module.exports = {
         },
       ],
     }),
+    new rspack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
   ],
   entry: {
     ${multiExampleEntryPoints}
@@ -95,7 +98,8 @@ module.exports = {
     rules,
   },
   experiments: {
-    asyncWebAssembly: true
+    asyncWebAssembly: true,
+    nativeWatcher: true,
   },
   externals: {
     "dicom-microscopy-viewer": {
@@ -132,6 +136,7 @@ module.exports = {
       fs: false,
       path: require.resolve('path-browserify'),
       events: false,
+      buffer: require.resolve('buffer'),
     },
   },
   devServer: {

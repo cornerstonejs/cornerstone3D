@@ -11,7 +11,19 @@ export class RectangleROI extends BaseAdapter3D {
         this.init("RectangleROI", TID300Polyline);
         // Register using the Cornerstone 1.x name so this tool is used to load it
         this.registerLegacy();
+        this.registerType("DCM:111030", "POLYLINE", 4);
+        this.registerType("DCM:111030", "POLYLINE", 5);
     }
+
+    public static isValidMeasurement(measurement) {
+        const graphicItem = this.getGraphicItem(measurement);
+        const pointsCount = this.getPointsCount(graphicItem);
+        return (
+            this.getGraphicType(graphicItem) === "POLYLINE" &&
+            (pointsCount === 4 || pointsCount === 5)
+        );
+    }
+
     public static getMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -24,6 +36,10 @@ export class RectangleROI extends BaseAdapter3D {
                 metadata,
                 this.toolType
             );
+
+        // If the rectangle is closed (5 points with first point repeated), remove the duplicate
+        const points =
+            worldCoords.length === 5 ? worldCoords.slice(0, 4) : worldCoords;
 
         const areaGroup = MeasurementGroup.ContentSequence.find(
             g =>
@@ -46,12 +62,7 @@ export class RectangleROI extends BaseAdapter3D {
             ...state.annotation.data,
             handles: {
                 ...state.annotation.data.handles,
-                points: [
-                    worldCoords[0],
-                    worldCoords[1],
-                    worldCoords[3],
-                    worldCoords[2]
-                ]
+                points: [points[0], points[1], points[3], points[2]]
             },
             cachedStats,
             frameNumber: ReferencedFrameNumber

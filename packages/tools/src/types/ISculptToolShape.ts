@@ -22,17 +22,24 @@ export interface ISculptToolShape {
     canvasLocation: Types.Point2,
     options
   ): void;
-  /**
-   * Pushes the points radially away from the mouse if they are
-   * contained within the shape defined by the freehandSculpter tool
-   */
-  pushHandles(viewport: Types.IViewport, sculptData: SculptData): PushedHandles;
 
   /**
    * Function configures the tool size
    */
   configureToolSize(evt: EventTypes.InteractionEventType): void;
 
+  interpolatePoint(
+    viewport: Types.IViewport,
+    angle: number,
+    center: Types.Point2
+  ): Types.Point2;
+
+  getEdge(
+    viewport: Types.IViewport,
+    p1: Types.Point3,
+    p2: Types.Point3,
+    mouseCanvas: Types.Point2
+  ): { point: Types.Point3; angle: number; canvasPoint: Types.Point2 };
   /**
    * Updates the tool size
    * @param canvasCoords - Current canvas points
@@ -48,16 +55,4 @@ export interface ISculptToolShape {
    * @param minSpacing -
    */
   getMaxSpacing(minSpacing: number): number;
-
-  /**
-   * Function returns the the position to insert new handle
-   * @param previousIndex - Previous handle index
-   * @param nextIndex - Next handle index
-   * @param sculptData - Sculpt data
-   */
-  getInsertPosition(
-    previousIndex: number,
-    nextIndex: number,
-    sculptData: SculptData
-  ): Types.Point3;
 }
