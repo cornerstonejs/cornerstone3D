@@ -37,7 +37,7 @@ const typedArrayConstructors = {
 };
 type TypedArrayConstructorsMap = typeof typedArrayConstructors;
 
-function postProcessDecodedPixels(
+export function postProcessDecodedPixels(
   imageFrame: CoreTypes.IImageFrame,
   options: DICOMLoaderImageOptions,
   start: number,
