@@ -1,4 +1,4 @@
-import { Events, ChangeTypes } from '../../enums';
+import { Events, ChangeTypes, MeasurementType } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -46,12 +46,11 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
+  Statistics,
 } from '../../types';
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
-
-const { transformWorldToIndex } = csUtils;
 
 /**
  * LengthTool let you draw annotations that measures the length of two drawing
@@ -807,20 +806,10 @@ class LengthTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
     const { element } = enabledElement.viewport;
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
@@ -840,27 +829,29 @@ class LengthTool extends AnnotationTool {
 
       const { imageData, dimensions } = image;
 
-      const index1 = transformWorldToIndex(imageData, worldPos1);
-      const index2 = transformWorldToIndex(imageData, worldPos2);
-      const handles = [index1, index2];
-      const { scale, unit } = getCalibratedLengthUnitsAndScale(image, handles);
+      const handles = data.handles.points.map((point) =>
+        imageData.worldToIndex(point)
+      );
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+      const { unit } = calibrate;
 
-      const length = this._calculateLength(worldPos1, worldPos2) / scale;
+      const length = LengthTool.calculateLengthInIndex(calibrate, handles);
 
-      if (this._isInsideVolume(index1, index2, dimensions)) {
-        this.isHandleOutsideImage = false;
-      } else {
-        this.isHandleOutsideImage = true;
-      }
+      this.isHandleOutsideImage = !LengthTool.isInsideVolume(
+        dimensions,
+        handles
+      );
 
-      // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
-      // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
-      // corner is off the canvas.
-
-      // todo: add insideVolume calculation, for removing tool if outside
+      const namedLength: Statistics = {
+        name: 'length',
+        value: length,
+        unit,
+        type: MeasurementType.Linear,
+      };
       cachedStats[targetId] = {
         length,
         unit,
+        statsArray: [namedLength],
       };
     }
 
@@ -873,13 +864,6 @@ class LengthTool extends AnnotationTool {
     }
 
     return cachedStats;
-  }
-
-  _isInsideVolume(index1, index2, dimensions) {
-    return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions)
-    );
   }
 }
 
