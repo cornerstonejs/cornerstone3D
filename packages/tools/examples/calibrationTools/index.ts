@@ -39,6 +39,7 @@ const {
   ToolGroupManager,
   ArrowAnnotateTool,
   PlanarFreehandROITool,
+  StackScrollTool,
   Enums: csToolsEnums,
   utilities,
 } = cornerstoneTools;
@@ -246,6 +247,7 @@ async function run() {
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -263,6 +265,7 @@ async function run() {
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -273,6 +276,17 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
+
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
   toolGroup.setToolPassive(HeightTool.toolName);

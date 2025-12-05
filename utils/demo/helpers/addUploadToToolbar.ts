@@ -1,4 +1,4 @@
-import { getRenderingEngine } from '@cornerstonejs/core';
+import { getRenderingEngine, imageLoader, metaData } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 
 import createElement, { configElement } from './createElement';
@@ -57,7 +57,7 @@ export function addUploadToToolbar(config: configUpload = {}): void {
 
 export let imageIds = new Array<string>();
 export let loadImageListener = (_viewportInfo) => {
-  console.warn("Loaded", imageIds.length, "images");
+  console.warn('Loaded', imageIds.length, 'images');
 };
 
 export function onUpload(files) {
@@ -76,16 +76,40 @@ export function setLoadImageListener(listener) {
 }
 
 export function getViewport(viewportInfo?) {
-  const renderingEngine = getRenderingEngine(viewportInfo?.renderingEngineId || renderingEngineId);
+  const renderingEngine = getRenderingEngine(
+    viewportInfo?.renderingEngineId || renderingEngineId
+  );
 
-      // Get the volume viewport
+  // Get the volume viewport
   const viewport = renderingEngine.getViewport(
     viewportInfo?.viewportId || viewportId
   );
   return viewport;
 }
 
-export function loadAndViewImages(imageIds, viewportInfo?) {
+export function loadAndViewImages(imageIdsBase, viewportInfo?) {
+  if (imageIdsBase[0]?.startsWith('dicom') !== true) {
+    return loadAndViewImagesSingle(imageIdsBase, viewportInfo);
+  }
+  const promise = Promise.all(imageLoader.loadAndCacheImages(imageIdsBase));
+  promise.then((datasets) => {
+    const result = new Array<string>();
+    for (const imageId of imageIdsBase) {
+      const instance = metaData.get('instance', imageId);
+      const numberOfFrames = instance?.NumberOfFrames;
+      if (numberOfFrames > 1) {
+        for (let frame = 1; frame <= numberOfFrames; frame++) {
+          result.push(`${imageId}?frame=${frame}`);
+        }
+      } else {
+        result.push(imageId);
+      }
+    }
+    loadAndViewImagesSingle(result, viewportInfo);
+  });
+}
+
+export function loadAndViewImagesSingle(imageIds, viewportInfo?) {
   // Set the stack on the viewport
   setImageIds(imageIds);
 
@@ -114,6 +138,5 @@ export function handleFileSelect(evt) {
   );
   loadAndViewImages(imageIds);
 }
-
 
 export default addUploadToToolbar;

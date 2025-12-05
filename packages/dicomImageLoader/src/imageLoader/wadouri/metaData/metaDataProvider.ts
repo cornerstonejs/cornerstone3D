@@ -192,11 +192,7 @@ export function metadataForDataset(
 export function metadataDicomSource(next, imageId, data, options) {
   const parsedImageId = parseImageId(imageId);
 
-  let url = parsedImageId.url;
-
-  if (parsedImageId.frame) {
-    url = `${url}&frame=${parsedImageId.frame}`;
-  }
+  const url = parsedImageId.url;
 
   const dataSet = dataSetCacheManager.get(url);
 
@@ -205,7 +201,6 @@ export function metadataDicomSource(next, imageId, data, options) {
     return next(imageId, data, options);
   }
 
-  console.warn('Parsing metadata:', dataSet);
   return new DataSetIterator(dataSet);
 }
 

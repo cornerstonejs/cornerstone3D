@@ -21,3 +21,8 @@ addTypedProvider(
   instanceLookup,
   INSTANCE_PRIORITY
 );
+addTypedProvider(
+  MetadataModules.CALIBRATION,
+  instanceLookup,
+  INSTANCE_PRIORITY
+);

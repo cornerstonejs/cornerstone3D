@@ -16,7 +16,6 @@ const {
   // These should get added once there is a good way to
   // set default configuration values:
   // CALIBRATION,
-  // ULTRASOUND_ENHANCED_REGION,
 } = MetadataModules;
 
 export const USRegionChild = 'usRegionChild';
@@ -182,7 +181,7 @@ export const Tags = {
   PhysicalDeltaX: vrFD('0018602C', USRegionChild),
   PhysicalDeltaY: vrFD('0018602E', USRegionChild),
   PhysicalUnitsXDirection: vrUS('00186024', USRegionChild),
-  PhysicalUnitsYDirection: vrUS('x00186026', USRegionChild),
+  PhysicalUnitsYDirection: vrUS('00186026', USRegionChild),
   RegionLocationMinY0: vrUL('0018601A', USRegionChild),
   RegionLocationMaxY1: vrUL('0018601E', USRegionChild),
   RegionLocationMinX0: vrUL('00186018', USRegionChild),
