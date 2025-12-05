@@ -1,4 +1,9 @@
-import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
+import {
+  metaData,
+  utilities,
+  registerImageLoader,
+  type Types,
+} from '@cornerstonejs/core';
 import loadImage from './loadImage';
 import { metaDataProvider } from './metaData';
 
