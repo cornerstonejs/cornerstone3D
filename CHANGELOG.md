@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.13.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.3...v4.13.4) (2025-12-05)
+
+### Bug Fixes
+
+- pan axis controls ([#2500](https://github.com/cornerstonejs/cornerstone3D/issues/2500)) ([d6d306b](https://github.com/cornerstonejs/cornerstone3D/commit/d6d306b767e001a94e2a4a756bcd81f637764d35))
+
 ## [4.13.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.2...v4.13.3) (2025-12-05)
 
 ### Bug Fixes
