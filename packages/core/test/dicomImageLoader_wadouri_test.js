@@ -211,7 +211,7 @@ describe('dicomImageLoader - WADO-URI', () => {
             metadataModuleName,
             expectedModuleValues,
           ] of Object.entries(frame.metadataModule)) {
-            fit(`returns the correct ${metadataModuleName} metadata for frame ${frameIndex} of ${t.name} image`, async () => {
+            it(`returns the correct ${metadataModuleName} metadata for frame ${frameIndex} of ${t.name} image`, async () => {
               const { imageId } = await imageLoader.loadImage(t.wadouri);
               const imageIdWithFrameIndex = imageIdWithFrame(
                 imageId,
