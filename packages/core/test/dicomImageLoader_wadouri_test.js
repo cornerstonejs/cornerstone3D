@@ -242,6 +242,9 @@ describe('dicomImageLoader - WADO-URI', () => {
        * causes the extraction to fail. This test ensures that even if
        * .PlanePositionSequence is empty, the ImagePlaneModule metadata is still
        * returned.
+       *
+       * The same can occur for other shared sequences such as
+       * PlaneOrientationSequence, PixelMeasuresSequence, etc.
        */
 
       // Use the US Multiframe Test Images
@@ -261,6 +264,14 @@ describe('dicomImageLoader - WADO-URI', () => {
           PlanePositionSequence: [],
         },
       ];
+      // modify the dataset to set
+      // SharedFunctionalGroupsSequence[0].PlaneOrientationSequence to be empty
+      dataset.SharedFunctionalGroupsSequence[0].PlaneOrientationSequence = [];
+      // modify the dataset to set
+      // SharedFunctionalGroupsSequence[0].PixelMeasuresSequence to be empty
+      dataset.SharedFunctionalGroupsSequence[0].PixelMeasuresSequence = [];
+
+      // Denaturalize the dataset back to dicom format
       const modifiedDicomData =
         dcmjs.data.DicomMetaDictionary.denaturalizeDataset(dataset);
       dicomDataset.dict = modifiedDicomData;
