@@ -54,11 +54,13 @@ function generateVolumePropsFromImageIds(
     scanAxisNormal
   );
 
-  const numFrames = imageIds.length;
+  const spacing = [
+    PixelSpacing[1], // column spacing (x)
+    PixelSpacing[0], // row spacing (y)
+    zSpacing,
+  ] as Point3;
 
-  // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing] as Point3;
-  const dimensions = [Columns, Rows, numFrames].map((it) =>
+  const dimensions = [Columns, Rows, sortedImageIds.length].map((it) =>
     Math.floor(it)
   ) as Point3;
   const direction = [

@@ -32,6 +32,7 @@ import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingIma
 interface VolumeLoaderOptions {
   imageIds: string[];
   progressiveRendering?: boolean;
+  ijkDecimation?: [number, number, number]; // Optional parameter for decimation factors [i, j, k]
 }
 
 interface DerivedVolumeOptions {
