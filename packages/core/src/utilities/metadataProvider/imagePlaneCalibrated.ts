@@ -15,6 +15,7 @@ export function getImagePlaneCalibrated(
   if (!instance) {
     return next(imageId, instance, options);
   }
+  console.warn('Getting image plane calibrated');
   const { ImageOrientationPatient, ImagePositionPatient } = instance;
   const { PixelSpacing, type } = getPixelSpacingInformation(instance);
 

@@ -1,5 +1,7 @@
 import imageIdToURI from './imageIdToURI';
 import type { IImageCalibration } from '../types/IImageCalibration';
+import { MetadataModules } from '../enums';
+import { clearQuery } from '../metaData';
 
 /** Calibrated pixel spacing per imageId */
 const state = new Map<string, IImageCalibration>();
@@ -18,6 +20,7 @@ const metadataProvider = {
   add: (imageId: string, payload: IImageCalibration): void => {
     const imageURI = imageIdToURI(imageId);
     state.set(imageURI, payload);
+    clearQuery(MetadataModules.IMAGE_PLANE, imageId);
   },
 
   /**

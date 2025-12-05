@@ -1,5 +1,9 @@
 import { MetadataModules } from '../../enums';
-import { addTypedProvider, getMetaData } from '../../metaData';
+import {
+  addTypedProvider,
+  getMetaData,
+  typedProviderProvider,
+} from '../../metaData';
 import { mapTagInfo } from '../Tags';
 
 export function instanceFromListener(next, query, data, options) {
@@ -15,11 +19,11 @@ export function instanceFromListener(next, query, data, options) {
   const listener = new NormalListener();
 
   data.syncIterator(listener);
-  console.warn('New instance:', JSON.stringify(listener.instance, null, 2));
+  // console.warn('New instance:', JSON.stringify(listener.instance, null, 2));
   return listener.instance;
 }
 
-addTypedProvider(MetadataModules.INSTANCE, instanceFromListener);
+addTypedProvider(MetadataModules.INSTANCE_ORIG, instanceFromListener);
 
 export enum SectionTypes {
   FMI = 'FMI',
@@ -186,4 +190,11 @@ export class NormalListener {
   }
 }
 
-addTypedProvider(MetadataModules.INSTANCE, instanceFromListener);
+addTypedProvider(MetadataModules.INSTANCE_ORIG, instanceFromListener);
+
+addTypedProvider(MetadataModules.INSTANCE, (next, query, data, options) => {
+  return (
+    typedProviderProvider(MetadataModules.INSTANCE_ORIG, query, options) ||
+    next(query, data, options)
+  );
+});

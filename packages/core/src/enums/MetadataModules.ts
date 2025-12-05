@@ -171,8 +171,15 @@ enum MetadataModules {
    * the shared/standardized format.
    */
   DICOM_SOURCE = 'DICOMSource',
-  /** The InstanceAsync is the asynchronous version of the async creator */
-  INSTANCE_ASYNC = 'instanceAsync',
+  /**
+   * The Instance ORIG is the original version of the instance data
+   * This is used as the source for creating other metadata modules from
+   * the instance data, as opposed to the instance version, which could be
+   * created from the modules.
+   *
+   * Every frame of a multiframe should have the same instanceOrig value.
+   */
+  INSTANCE_ORIG = 'instanceOrig',
 }
 
 export default MetadataModules;

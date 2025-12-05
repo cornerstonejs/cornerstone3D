@@ -3,18 +3,22 @@
 
 const providers = [];
 
-const typeProviderValueMap = new Map<string, TypedProviderValue[]>();
+const typedProviderValueMap = new Map<string, TypedProviderValue[]>();
 
-const typeProviderMap = new Map<string, TypedProviderBound>();
+const typedProviderMap = new Map<string, TypedProviderBound>();
 
 export type TypedProviderValue = {
   provider: TypedProvider;
   priority: number;
   isDefault: boolean;
+  /** Clears any data from this instance */
+  clear?: () => void;
+  /** Clears just this type/query pair */
+  clearQuery?: (query: string) => void;
 };
 
 export type TypedProvider = (
-  next: TypedProvider,
+  next: TypedProviderValue,
   query: string,
   data?,
   options?
@@ -104,23 +108,23 @@ export function addTypedProvider(
   provider: TypedProvider,
   options: TypedProviderOptions = { priority: 0, isDefault: true }
 ) {
-  let list = typeProviderValueMap.get(type);
+  let list = typedProviderValueMap.get(type);
   if (!list) {
     list = new Array<TypedProviderValue>();
-    typeProviderValueMap.set(type, list);
+    typedProviderValueMap.set(type, list);
   }
   const newProvider = insertPriority(type, list, provider, options);
   if (!newProvider) {
     throw new Error(`newProvider is empty for ${type}`);
   }
-  typeProviderMap.set(type, newProvider);
+  typedProviderMap.set(type, newProvider);
 }
 
 /**
  * A provider for the general typed providers.
  */
 export function typedProviderProvider(type: string, query: string, options) {
-  const typedProvider = typeProviderMap.get(type);
+  const typedProvider = typedProviderMap.get(type);
   if (!typedProvider) {
     // console.warn('No typed provider for', type, query);
     return;
@@ -188,6 +192,34 @@ export function getMetaData(type: string, query: string, options?): any {
     }
   }
 }
+
+/**
+ * Clears cached data on the specific type
+ * and query key
+ */
+export const clearQuery = (type: string, query?: string) => {
+  const typedProviders = typedProviderValueMap.get(type);
+  if (!typedProviders) {
+    return;
+  }
+  for (const providerInfo of typedProviders) {
+    providerInfo?.clearQuery?.(query);
+  }
+};
+
+/**
+ * Clears cached data on the specific type
+ * and query key
+ */
+export const clear = (type: string) => {
+  const typedProviders = typedProviderValueMap.get(type);
+  if (!typedProviders) {
+    return;
+  }
+  for (const providerInfo of typedProviders) {
+    providerInfo?.clear?.();
+  }
+};
 
 export const get = (type: string, ...queries: string[]) =>
   queries.length === 1

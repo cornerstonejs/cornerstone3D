@@ -48,12 +48,22 @@ export function clearTypedCacheData(type: string, query?: string) {
 }
 
 addTypedProvider(
-  MetadataModules.INSTANCE,
-  cacheDataForType(MetadataModules.INSTANCE),
+  MetadataModules.INSTANCE_ORIG,
+  cacheDataForType(MetadataModules.INSTANCE_ORIG),
   {
     priority: 50_000,
     clear: clearCacheData,
-    clearQuery: clearTypedCacheData.bind(null, MetadataModules.INSTANCE),
+    clearQuery: clearTypedCacheData.bind(null, MetadataModules.INSTANCE_ORIG),
+  }
+);
+
+addTypedProvider(
+  MetadataModules.IMAGE_PLANE,
+  cacheDataForType(MetadataModules.IMAGE_PLANE),
+  {
+    priority: 50_000,
+    clear: clearCacheData,
+    clearQuery: clearTypedCacheData.bind(null, MetadataModules.IMAGE_PLANE),
   }
 );
 
