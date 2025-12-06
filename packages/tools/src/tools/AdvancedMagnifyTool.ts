@@ -206,7 +206,8 @@ class AdvancedMagnifyTool extends AnnotationTool {
     const { magnifyingGlass: config } = this.configuration;
     const { radius, zoomFactor, autoPan } = config;
 
-    const canvasHandlePoints = this._getCanvasHandlePoints(
+    const worldHandlePoints = this._getWorldHandlePoints(
+      viewport,
       canvasPos,
       radius
     ) as [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
@@ -240,11 +241,9 @@ class AdvancedMagnifyTool extends AnnotationTool {
         sourceViewportId: viewport.id,
         magnifyViewportId,
         zoomFactor,
-        // this means that the last coordinate for the points
-        // is 0 and should not be used for calculations
-        isCanvasAnnotation: true,
+        isCanvasAnnotation: false,
         handles: {
-          points: canvasHandlePoints,
+          points: worldHandlePoints,
           activeHandleIndex: null,
         },
       },
@@ -261,14 +260,16 @@ class AdvancedMagnifyTool extends AnnotationTool {
         padding: autoPan.padding,
         callback: (data: AutoPanCallbackData) => {
           const annotationPoints = annotation.data.handles.points;
-          const { canvas: canvasDelta } = data.delta;
+          const { world: worldDelta } = data.delta;
 
           for (let i = 0, len = annotationPoints.length; i < len; i++) {
             const point = annotationPoints[i];
-            point[0] += canvasDelta[0];
-            point[1] += canvasDelta[1];
-            annotation.invalidated = true;
+            point[0] += worldDelta[0];
+            point[1] += worldDelta[1];
+            point[2] += worldDelta[2];
           }
+
+          annotation.invalidated = true;
         },
       },
     });
@@ -315,21 +316,10 @@ class AdvancedMagnifyTool extends AnnotationTool {
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
-    const { data } = annotation;
-    const { points } = data.handles;
+    const { viewport } = getEnabledElement(element);
+    const { points } = annotation.data.handles;
 
-    // For some reason Typescript doesn't understand this, so we need to be
-    // more specific about the type
-    const canvasCoordinates = points;
-
-    const canvasTop = canvasCoordinates[0];
-    const canvasBottom = canvasCoordinates[2];
-    const canvasLeft = canvasCoordinates[3];
-    const radius = Math.abs(canvasBottom[1] - canvasTop[1]) * 0.5;
-    const center = [
-      canvasLeft[0] + radius,
-      canvasTop[1] + radius,
-    ] as Types.Point2;
+    const { radius, center } = this._getCanvasCircleData(viewport, points);
     const radiusPoint = getCanvasCircleRadius([center, canvasCoords]);
 
     if (Math.abs(radiusPoint - radius) < proximity * 2) {
@@ -427,16 +417,21 @@ class AdvancedMagnifyTool extends AnnotationTool {
   _dragDrawCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const { viewport } = getEnabledElement(element);
     const { deltaPoints } = eventDetail;
     const canvasDelta = deltaPoints?.canvas ?? [0, 0, 0];
 
     const { annotation, viewportIdsToRender } = this.editData;
     const { points } = annotation.data.handles;
 
-    points.forEach((point) => {
-      point[0] += canvasDelta[0];
-      point[1] += canvasDelta[1];
-    });
+    const worldDelta = this._getWorldDeltaFromCanvasDelta(
+      viewport,
+      points,
+      canvasDelta as Types.Point2
+    );
+
+    this._applyWorldDelta(points, worldDelta);
 
     annotation.invalidated = true;
     this.editData.hasMoved = true;
@@ -455,14 +450,16 @@ class AdvancedMagnifyTool extends AnnotationTool {
     if (handleIndex === undefined) {
       // Moving tool
       const { deltaPoints } = eventDetail;
-      const canvasDelta = deltaPoints.canvas;
+      const canvasDelta = deltaPoints.canvas ?? [0, 0, 0];
 
       const points = data.handles.points;
+      const worldDelta = this._getWorldDeltaFromCanvasDelta(
+        getEnabledElement(element).viewport,
+        points,
+        canvasDelta as Types.Point2
+      );
 
-      points.forEach((point) => {
-        point[0] += canvasDelta[0];
-        point[1] += canvasDelta[1];
-      });
+      this._applyWorldDelta(points, worldDelta);
       annotation.invalidated = true;
     } else {
       this._dragHandle(evt);
@@ -474,20 +471,17 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
+    const { element } = eventDetail;
+    const { viewport } = getEnabledElement(element);
 
     const { annotation } = this.editData;
     const { data } = annotation;
     const { points } = data.handles;
 
-    const canvasCoordinates = points;
-    const canvasTop = canvasCoordinates[0];
-    const canvasBottom = canvasCoordinates[2];
-    const canvasLeft = canvasCoordinates[3];
-    const radius = Math.abs(canvasBottom[1] - canvasTop[1]) * 0.5;
-    const canvasCenter: Types.Point2 = [
-      canvasLeft[0] + radius,
-      canvasTop[1] + radius,
-    ];
+    const { center: canvasCenter } = this._getCanvasCircleData(
+      viewport,
+      points
+    );
 
     const { currentPoints } = eventDetail;
     const currentCanvasPoints = currentPoints.canvas;
@@ -500,15 +494,18 @@ class AdvancedMagnifyTool extends AnnotationTool {
       canvasCenter,
       newRadius
     );
+    const newWorldHandlePoints = newCanvasHandlePoints.map((handle) =>
+      viewport.canvasToWorld(handle as Types.Point2)
+    );
 
     // @ts-ignore
-    points[0] = newCanvasHandlePoints[0];
+    points[0] = newWorldHandlePoints[0];
     // @ts-ignore
-    points[1] = newCanvasHandlePoints[1];
+    points[1] = newWorldHandlePoints[1];
     // @ts-ignore
-    points[2] = newCanvasHandlePoints[2];
+    points[2] = newWorldHandlePoints[2];
     // @ts-ignore
-    points[3] = newCanvasHandlePoints[3];
+    points[3] = newWorldHandlePoints[3];
   };
 
   cancel = (element: HTMLDivElement) => {
@@ -610,21 +607,16 @@ class AdvancedMagnifyTool extends AnnotationTool {
       const { magnifyViewportId, zoomFactor, handles } = data;
       const { points, activeHandleIndex } = handles;
 
+      const { center, radius, canvasPoints } = this._getCanvasCircleData(
+        viewport,
+        points
+      );
+
       styleSpecifier.annotationUID = annotationUID;
 
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
-
-      const canvasCoordinates = points;
-      const canvasTop = canvasCoordinates[0];
-      const canvasBottom = canvasCoordinates[2];
-      const canvasLeft = canvasCoordinates[3];
-      const radius = Math.abs(canvasBottom[1] - canvasTop[1]) * 0.5;
-      const center = [
-        canvasLeft[0] + radius,
-        canvasTop[1] + radius,
-      ] as Types.Point2;
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
@@ -644,7 +636,10 @@ class AdvancedMagnifyTool extends AnnotationTool {
         activeHandleIndex !== null
       ) {
         // Not locked or creating and hovering over handle, so render handle.
-        activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
+        const activeHandle = canvasPoints[activeHandleIndex];
+        activeHandleCanvasCoords = [
+          <Types.Point3>[activeHandle[0], activeHandle[1], 0],
+        ];
       }
 
       if (activeHandleCanvasCoords) {
@@ -767,6 +762,77 @@ class AdvancedMagnifyTool extends AnnotationTool {
     });
 
     return dropdown;
+  }
+
+  private _getWorldHandlePoints = (
+    viewport: Types.IViewport,
+    canvasCenterPos: Types.Point2,
+    canvasRadius: number
+  ) => {
+    const canvasHandlePoints = this._getCanvasHandlePoints(
+      canvasCenterPos,
+      canvasRadius
+    );
+
+    return canvasHandlePoints.map((handlePoint) =>
+      viewport.canvasToWorld(handlePoint as Types.Point2)
+    );
+  };
+
+  private _getCanvasCircleData = (
+    viewport: Types.IViewport,
+    points: Array<Types.Point3>
+  ) => {
+    const canvasPoints = points.map((point) => viewport.worldToCanvas(point));
+    const canvasTop = canvasPoints[0];
+    const canvasBottom = canvasPoints[2];
+    const canvasLeft = canvasPoints[3];
+    const radius = Math.abs(canvasBottom[1] - canvasTop[1]) * 0.5;
+    const center: Types.Point2 = [
+      canvasLeft[0] + radius,
+      canvasTop[1] + radius,
+    ];
+
+    return { canvasPoints, center, radius };
+  };
+
+  private _getWorldDeltaFromCanvasDelta(
+    viewport: Types.IViewport,
+    points: Array<Types.Point3>,
+    canvasDelta: Types.Point2
+  ): Types.Point3 {
+    if (!canvasDelta) {
+      return <Types.Point3>[0, 0, 0];
+    }
+
+    const referencePoint = points[0];
+    const referenceCanvasPoint = viewport.worldToCanvas(referencePoint);
+    const movedWorldPoint = viewport.canvasToWorld(<Types.Point2>[
+      referenceCanvasPoint[0] + canvasDelta[0],
+      referenceCanvasPoint[1] + canvasDelta[1],
+    ]);
+
+    return <Types.Point3>[
+      movedWorldPoint[0] - referencePoint[0],
+      movedWorldPoint[1] - referencePoint[1],
+      movedWorldPoint[2] - referencePoint[2],
+    ];
+  }
+
+  private _applyWorldDelta(
+    points: Array<Types.Point3>,
+    worldDelta: Types.Point3
+  ): void {
+    if (!worldDelta) {
+      return;
+    }
+
+    for (let i = 0, len = points.length; i < len; i++) {
+      const point = points[i];
+      point[0] += worldDelta[0];
+      point[1] += worldDelta[1];
+      point[2] += worldDelta[2];
+    }
   }
 
   private _getCanvasHandlePoints = (canvasCenterPos, canvasRadius) => {
