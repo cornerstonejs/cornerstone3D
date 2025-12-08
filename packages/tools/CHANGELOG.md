@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.13.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.5...v4.13.6) (2025-12-08)
+
+### Bug Fixes
+
+- advance magnify tool ([#2504](https://github.com/cornerstonejs/cornerstone3D/issues/2504)) ([0bb311e](https://github.com/cornerstonejs/cornerstone3D/commit/0bb311e5e273f467a37626ddfab2387b485ea630))
+
+## [4.13.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.4...v4.13.5) (2025-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [4.13.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.3...v4.13.4) (2025-12-05)
 
 ### Bug Fixes
