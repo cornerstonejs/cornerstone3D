@@ -107,7 +107,7 @@ export function enhancedVolumeLoader(
     ] as points.points3,
   };
   const modifiers = [
-    acquisitionPlaneReformatModifier, // Apply first to ensure correct acquisition plane orientation
+    //  acquisitionPlaneReformatModifier, // Apply first to ensure correct acquisition plane orientation
     inPlaneDecimationModifier,
   ];
 

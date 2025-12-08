@@ -269,10 +269,31 @@ export const acquisitionPlaneReformatModifier: EnhancedVolumeModifier = {
       JSON.stringify(volumeProps.direction) !== JSON.stringify(direction)
     );
 
-    // Return updated volumeProps with acquisition-aligned direction matrix
+    // Update ImageOrientationPatient in metadata to match the new direction matrix
+    // ImageOrientationPatient is the first 6 elements of the direction matrix:
+    // [rowX, rowY, rowZ, colX, colY, colZ]
+    const newImageOrientationPatient: number[] = [
+      direction[0], // rowX (viewRight X)
+      direction[1], // rowY (viewRight Y)
+      direction[2], // rowZ (viewRight Z)
+      direction[3], // colX (viewUp X)
+      direction[4], // colY (viewUp Y)
+      direction[5], // colZ (viewUp Z)
+    ];
+
+    console.log(
+      '[AcquisitionPlaneReformatModifier] Updated ImageOrientationPatient:',
+      newImageOrientationPatient
+    );
+
+    // Return updated volumeProps with acquisition-aligned direction matrix and metadata
     return {
       ...volumeProps,
       direction,
+      metadata: {
+        ...volumeProps.metadata,
+        //    ImageOrientationPatient: newImageOrientationPatient,
+      },
     };
   },
 };
