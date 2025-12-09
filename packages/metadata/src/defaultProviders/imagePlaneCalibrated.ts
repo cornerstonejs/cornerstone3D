@@ -1,10 +1,9 @@
-import type { ImagePlaneModuleMetadata } from '../../types';
-import { MetadataModules } from '../../enums';
+import type { ImagePlaneModuleMetadata } from '../types';
+import { MetadataModules } from '../enums';
 import { toNumber } from '../toNumber';
-import calibratedPixelSpacingMetadataProvider from '../calibratedPixelSpacingMetadataProvider';
 import getPixelSpacingInformation from '../getPixelSpacingInformation';
 
-import { addTypedProvider } from '../../metaData';
+import { addTypedProvider, setTypedValue, getMetaData } from '../../metaData';
 
 export const getImagePlaneCalibrated = (
   next,
@@ -32,12 +31,12 @@ export const getImagePlaneCalibrated = (
   let imageOrientationPatient;
   if (PixelSpacing) {
     [rowPixelSpacing, columnPixelSpacing] = PixelSpacing;
-    const calibratedPixelSpacing = calibratedPixelSpacingMetadataProvider.get(
+    const calibratedPixelSpacing = getMetaData(
       'calibratedPixelSpacing',
       imageId
     );
     if (!calibratedPixelSpacing) {
-      calibratedPixelSpacingMetadataProvider.add(imageId, {
+      setTypedValue.add('calibratedPixelSpacing', imageId, {
         rowPixelSpacing: parseFloat(PixelSpacing[0]),
         columnPixelSpacing: parseFloat(PixelSpacing[1]),
         type,

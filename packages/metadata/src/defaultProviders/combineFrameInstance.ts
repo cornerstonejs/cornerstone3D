@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import { dicomSplit } from './dicomSplit';
-import { addTypedProvider, getMetaData } from '../../metaData';
-import { MetadataModules } from '../../enums';
+import { dicomSplit } from '../utilities/dicomSplit';
+import { addTypedProvider, getMetaData } from '../metaData';
+import { MetadataModules } from '../enums';
 
 /**
  * Combine the Per instance frame data, the shared frame data

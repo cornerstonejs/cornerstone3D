@@ -1,7 +1,7 @@
 import type CPUFallbackViewportDisplayedArea from './CPUFallbackViewportDisplayedArea';
 import type CPUFallbackColormap from './CPUFallbackColormap';
 import type CPUFallbackLUT from './CPUFallbackLUT';
-import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import type VOILUTFunctionType from '../../../metadata/src/enums/VOILUTFunctionType';
 
 interface CPUFallbackViewport {
   scale?: number;

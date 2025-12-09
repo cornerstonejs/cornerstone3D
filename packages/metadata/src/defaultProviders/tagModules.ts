@@ -1,4 +1,4 @@
-import { addTypedProvider, type TypedProvider } from '../../metaData';
+import { addTypedProvider, type TypedProvider } from '../metaData';
 import { mapModuleTags } from '../Tags';
 import { dataLookup, INSTANCE_PRIORITY, instanceLookup } from './dataLookup';
 

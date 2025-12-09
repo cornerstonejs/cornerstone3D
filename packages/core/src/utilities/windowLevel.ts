@@ -1,4 +1,4 @@
-import VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import VOILUTFunctionType from '../../../metadata/src/enums/VOILUTFunctionType';
 import { logit } from './logit';
 
 /**

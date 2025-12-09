@@ -110,8 +110,8 @@ import type {
   PixelDataTypedArray,
   PixelDataTypedArrayString,
 } from './PixelDataTypedArray';
-import type { ImagePixelModule } from './ImagePixelModule';
-import type { ImagePlaneModule } from './ImagePlaneModule';
+import type { ImagePixelModule } from '../../../metadata/src/types/ImagePixelModule';
+import type { ImagePlaneModule } from '../../../metadata/src/types/ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
 export type * from './IRetrieveConfiguration';
 import type { ImageLoadListener } from './ImageLoadListener';

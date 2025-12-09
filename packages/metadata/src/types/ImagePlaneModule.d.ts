@@ -1,6 +1,6 @@
-import type Point2 from './Point2';
-import type Point3 from './Point3';
-import type IImageCalibration from './IImageCalibration';
+import type Point2 from '../../../core/src/types/Point2';
+import type Point3 from '../../../core/src/types/Point3';
+import type IImageCalibration from '../../../core/src/types/IImageCalibration';
 export interface ImagePlaneModule {
   columnCosines?: Point3;
   columnPixelSpacing?: number;

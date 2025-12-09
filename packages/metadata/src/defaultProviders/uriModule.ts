@@ -1,5 +1,5 @@
-import { MetadataModules } from '../../enums';
-import { addTypedProvider } from '../../metaData';
+import { MetadataModules } from '../enums';
+import { addTypedProvider } from '../metaData';
 
 export interface UriModule {
   baseImageId: string;

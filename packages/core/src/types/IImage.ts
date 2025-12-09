@@ -14,8 +14,8 @@ import type CPUFallbackViewport from './CPUFallbackViewport';
 import type CPUFallbackTransform from './CPUFallbackTransform';
 import type CPUFallbackColormap from './CPUFallbackColormap';
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
-import type { ImagePlaneModule } from './ImagePlaneModule';
-import type { ImagePixelModule } from './ImagePixelModule';
+import type { ImagePlaneModule } from '../../../metadata/src/types/ImagePlaneModule';
+import type { ImagePixelModule } from '../../../metadata/src/types/ImagePixelModule';
 import type { IVoxelManager } from './IVoxelManager';
 
 /**

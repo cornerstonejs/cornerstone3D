@@ -1,5 +1,5 @@
-import { MetadataModules } from '../../enums';
-import { addTypedProvider, typedProviderProvider } from '../../metaData';
+import { MetadataModules } from '../enums';
+import { addTypedProvider, typedProviderProvider } from '../metaData';
 
 /**
  * Creates a function that looks up the given dataType and provides it as "data"

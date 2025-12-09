@@ -7,7 +7,7 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type { VOIRange } from './voi';
-import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import type VOILUTFunctionType from '../../../metadata/src/enums/VOILUTFunctionType';
 import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import type IImageCalibration from './IImageCalibration';

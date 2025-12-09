@@ -7,7 +7,7 @@ import OrientationAxis from './OrientationAxis';
 import GeometryType from './GeometryType';
 import ContourType from './ContourType';
 import MeshType from './MeshType';
-import VOILUTFunctionType from './VOILUTFunctionType';
+import VOILUTFunctionType from '../../../metadata/src/enums/VOILUTFunctionType';
 import DynamicOperatorType from './DynamicOperatorType';
 import CalibrationTypes from './CalibrationTypes';
 import ViewportStatus from './ViewportStatus';

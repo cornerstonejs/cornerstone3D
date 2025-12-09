@@ -1,6 +1,7 @@
 {
   "version": "4.13.6",
   "packages": [
+    "packages/metadata",
     "packages/core",
     "packages/tools",
     "packages/adapters",

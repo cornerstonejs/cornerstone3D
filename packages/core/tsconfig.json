@@ -4,5 +4,10 @@
     "outDir": "./dist/esm",
     "rootDir": "./src"
   },
-  "include": ["./src/**/*"]
+  "include": [
+    "./src/**/*",
+    "../metadata/src/types/ImagePixelModule.ts",
+    "../metadata/src/types/ImagePlaneModule.ts",
+    "../metadata/src/enums/VOILUTFunctionType.ts"
+  ]
 }

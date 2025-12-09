@@ -1,5 +1,5 @@
-import { MetadataModules } from '../../enums';
-import { addTypedProvider, toLowerCamelTag } from '../../metaData';
+import { MetadataModules } from '../enums';
+import { addTypedProvider, toLowerCamelTag } from '../metaData';
 
 /**
  * Converts the calibration object if any to lower case

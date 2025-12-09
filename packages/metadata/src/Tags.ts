@@ -1,5 +1,5 @@
-import { MetadataModules } from '../enums';
-import * as metaData from '../metaData';
+import { MetadataModules } from './enums';
+import * as metaData from './metaData';
 
 const {
   GENERAL_IMAGE,
