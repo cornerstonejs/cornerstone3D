@@ -9,7 +9,7 @@ const vrParse = {
   UN: (xtag, location, dataset) => [],
   AE: string,
   AS: string,
-  AT: int32,
+  AT: signedLong,
   CS: strings,
   DA: string,
   DS: numberString,
@@ -22,6 +22,7 @@ const vrParse = {
   PN: name,
   SH: strings,
   // SQ: sequence,
+  SL: signedLong,
   SS: signedShort,
   ST: string,
   // SV: signedVeryLong,
@@ -143,6 +144,15 @@ function unsignedLong(xtag, location, dataset) {
   const vm = location.length / 4;
   for (let i = 0; i < vm; i++) {
     result[i] = dataset.uint32(xtag, i);
+  }
+  return result;
+}
+
+function signedLong(xtag, location, dataset) {
+  const result = new Array<number>();
+  const vm = location.length / 4;
+  for (let i = 0; i < vm; i++) {
+    result[i] = dataset.int32(xtag, i);
   }
   return result;
 }

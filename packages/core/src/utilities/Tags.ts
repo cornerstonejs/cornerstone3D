@@ -165,9 +165,9 @@ export const Tags = {
   AlphaPaletteColorLookupTableDescriptor: vrUSs('00281104', IMAGE_PIXEL),
   PaletteColorLookupTableUID: vrUI('00281104', IMAGE_PIXEL),
 
-  SpacingBetweenSlices: vrDS('00180088', IMAGE_PIXEL),
-  SliceThickness: vrDS('00180050', IMAGE_PIXEL),
-  SliceLocation: vrDS('00201041', IMAGE_PIXEL),
+  SpacingBetweenSlices: vrDS('00180088', IMAGE_PLANE),
+  SliceThickness: vrDS('00180050', IMAGE_PLANE),
+  SliceLocation: vrDS('00201041', IMAGE_PLANE),
   DistanceSourceToDetector: vrDS('00181110', IMAGE_PIXEL),
   DistanceSourceToPatient: vrDS('00181111', IMAGE_PIXEL),
   EstimatedRadiographicMagnificationFactor: vrDS('00181114', IMAGE_PIXEL),

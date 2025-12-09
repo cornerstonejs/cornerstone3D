@@ -21,15 +21,9 @@ const WADO_RS_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
 };
 
 /**
- * WADO-URI Image Plan Module returns different values for some fields
+ * WADO-URI Image Plan Module returns the exact same values as the RS
  */
-const WADO_URI_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
-  ...WADO_RS_IMAGE_PLANE_MODULE,
-  columnCosines: null,
-  imageOrientationPatient: undefined,
-  imagePositionPatient: undefined,
-  rowCosines: null,
-};
+const WADO_URI_IMAGE_PLANE_MODULE = WADO_RS_IMAGE_PLANE_MODULE;
 
 const WADO_RS_IMAGE_PIXEL_MODULE: Types.ImagePixelModule = {
   bitsAllocated: 8,

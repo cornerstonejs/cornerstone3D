@@ -93,7 +93,6 @@ const WADO_URI_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
   columns: 512,
   frameOfReferenceUID:
     '1.2.840.113619.2.30.1.1762295590.1623.978668949.886.8493.0.12',
-  // @ts-expect-error invalid type in ImagePlaneModule
   imageOrientationPatient: [1, 0, 0, 0, 1, 0],
   imagePositionPatient: [-161.399994, -148.800003, 4.7],
   pixelSpacing: [0.675781, 0.675781],
@@ -127,6 +126,9 @@ const WADO_URI_IMAGE_PIXEL_MODULE = {
  */
 const WADO_RS_IMAGE_PIXEL_MODULE = {
   ...WADO_URI_IMAGE_PIXEL_MODULE,
+  pixelPaddingValue: -32768,
+  distanceSourceToDetector: 1099.3100585938,
+  distanceSourceToPatient: 630,
   bluePaletteColorLookupTableData: undefined,
   bluePaletteColorLookupTableDescriptor: undefined,
   greenPaletteColorLookupTableData: undefined,

@@ -35,30 +35,30 @@ import { WADOURI_TEST as UsMultiframeYbrFull422 } from '../../dicomImageLoader/t
 
 /** @type {import("../../dicomImageLoader/testImages/tests.models").IWadoUriTest[]} */
 const tests = [
-  // CtBigEndian_1_2_840_1008_1_2_2,
-  // CtJpeg2000_1_2_840_10008_1_2_4_91,
-  // CtJpeg2000Lossless_1_2_840_10008_1_2_4_90,
-  // CtJpegLsLossless_1_2_840_10008_1_2_4_80,
-  // CtJpegLsLossless_1_2_840_10008_1_2_4_81,
-  // CtJpegProcess1_1_2_840_10008_1_2_4_50,
-  // CtBigEndian_1_2_840_1008_1_2_2,
-  // CtJpegProcess14_1_2_840_10008_1_2_4_57,
-  // CtJpegProcess14V1_1_2_840_10008_1_2_4_70,
-  // CtLittleEndian_1_2_840_10008_1_2_1,
-  // CtLittleEndian_1_2_840_10008_1_2,
-  // CtRLELossless_1_2_840_10008_1_2_5,
-  // NoPixelSpacing,
-  // ParamapFloatTest,
+  CtBigEndian_1_2_840_1008_1_2_2,
+  CtJpeg2000_1_2_840_10008_1_2_4_91,
+  CtJpeg2000Lossless_1_2_840_10008_1_2_4_90,
+  CtJpegLsLossless_1_2_840_10008_1_2_4_80,
+  CtJpegLsLossless_1_2_840_10008_1_2_4_81,
+  CtJpegProcess1_1_2_840_10008_1_2_4_50,
+  CtBigEndian_1_2_840_1008_1_2_2,
+  CtJpegProcess14_1_2_840_10008_1_2_4_57,
+  CtJpegProcess14V1_1_2_840_10008_1_2_4_70,
+  CtLittleEndian_1_2_840_10008_1_2_1,
+  CtLittleEndian_1_2_840_10008_1_2,
+  CtRLELossless_1_2_840_10008_1_2_5,
+  NoPixelSpacing,
+  ParamapFloatTest,
   ParamapTest,
-  // TestPattern_JpegBaselineYbr422,
-  // TestPatternJpegBaselineYbrFull,
-  // TestPatternJpegLosslessRgb,
-  // TestPatternJpegLsLossless,
-  // TestPatternJpegLsNearLossless,
-  // TestPatternPalette_16,
-  // TestPatternPalette,
-  // TestPatternRGB,
-  // UsMultiframeYbrFull422,
+  TestPattern_JpegBaselineYbr422,
+  TestPatternJpegBaselineYbrFull,
+  TestPatternJpegLosslessRgb,
+  TestPatternJpegLsLossless,
+  TestPatternJpegLsNearLossless,
+  TestPatternPalette_16,
+  TestPatternPalette,
+  TestPatternRGB,
+  UsMultiframeYbrFull422,
 ];
 
 /**
@@ -211,7 +211,7 @@ describe('dicomImageLoader - WADO-URI', () => {
             metadataModuleName,
             expectedModuleValues,
           ] of Object.entries(frame.metadataModule)) {
-            fit(`returns the correct ${metadataModuleName} metadata for frame ${frameIndex} of ${t.name} image`, async () => {
+            it(`returns the correct ${metadataModuleName} metadata for frame ${frameIndex} of ${t.name} image`, async () => {
               const { imageId } = await imageLoader.loadImage(t.wadouri);
               const imageIdWithFrameIndex = imageIdWithFrame(
                 imageId,

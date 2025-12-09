@@ -27,40 +27,6 @@ const { MetadataModules } = Enums;
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
 
-  if (type === MetadataModules.MULTIFRAME) {
-    // the get function removes the PerFrameFunctionalGroupsSequence
-    const { metadata, frame } = retrieveMultiframeMetadataImageId(imageId);
-
-    if (!metadata) {
-      return;
-    }
-    const {
-      PerFrameFunctionalGroupsSequence,
-      SharedFunctionalGroupsSequence,
-      NumberOfFrames,
-    } = getMultiframeInformation(metadata);
-
-    if (PerFrameFunctionalGroupsSequence || NumberOfFrames > 1) {
-      const { shared, perFrame } = getFrameInformation(
-        PerFrameFunctionalGroupsSequence,
-        SharedFunctionalGroupsSequence,
-        frame
-      );
-
-      return {
-        NumberOfFrames,
-        //PerFrameFunctionalGroupsSequence,
-        PerFrameFunctionalInformation: perFrame,
-        SharedFunctionalInformation: shared,
-      };
-    }
-
-    return {
-      NumberOfFrames,
-      //PerFrameFunctionalGroupsSequence,
-    };
-  }
-
   const metaData = metaDataManager.get(imageId);
 
   if (!metaData) {
@@ -92,35 +58,6 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.CINE) {
     return getCineModule(imageId, metaData);
-  }
-
-  if (type === MetadataModules.IMAGE_PIXEL) {
-    return {
-      samplesPerPixel: getNumberValue(metaData['00280002']),
-      photometricInterpretation: getValue(metaData['00280004']),
-      rows: getNumberValue(metaData['00280010']),
-      columns: getNumberValue(metaData['00280011']),
-      bitsAllocated: getNumberValue(metaData['00280100']),
-      bitsStored: getNumberValue(metaData['00280101']),
-      highBit: getValue(metaData['00280102']),
-      pixelRepresentation: getNumberValue(metaData['00280103']),
-      planarConfiguration: getNumberValue(metaData['00280006']),
-      pixelAspectRatio: getValue(metaData['00280034']),
-      smallestPixelValue: getNumberValue(metaData['00280106']),
-      largestPixelValue: getNumberValue(metaData['00280107']),
-      redPaletteColorLookupTableDescriptor: getNumberValues(
-        metaData['00281101']
-      ),
-      greenPaletteColorLookupTableDescriptor: getNumberValues(
-        metaData['00281102']
-      ),
-      bluePaletteColorLookupTableDescriptor: getNumberValues(
-        metaData['00281103']
-      ),
-      redPaletteColorLookupTableData: getNumberValues(metaData['00281201']),
-      greenPaletteColorLookupTableData: getNumberValues(metaData['00281202']),
-      bluePaletteColorLookupTableData: getNumberValues(metaData['00281203']),
-    };
   }
 
   if (type === MetadataModules.PET_ISOTOPE) {

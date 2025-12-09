@@ -10,4 +10,5 @@ export default function (): void {
 
   // add wadouri metadata provider
   metaData.addProvider(metaDataProvider);
+  metaData.addProvider(metaData.typedProviderProvider, -1000);
 }

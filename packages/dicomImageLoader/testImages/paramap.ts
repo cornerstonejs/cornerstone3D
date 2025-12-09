@@ -42,6 +42,15 @@ const CS_IMAGE: Types.IImage = {
     rows: 256,
     samplesPerPixel: 1,
     smallestPixelValue: 0,
+    preScale: {
+      enabled: true,
+      scalingParameters: {
+        rescaleSlope: 1,
+        rescaleIntercept: 0,
+        modality: 'MR',
+      },
+      scaled: true,
+    },
   },
   // @ts-expect-error jasmine matcher
   imageId: jasmine.any(String),
@@ -50,7 +59,17 @@ const CS_IMAGE: Types.IImage = {
   maxPixelValue: 4095,
   minPixelValue: 0,
   numberOfComponents: 1,
-  preScale: undefined,
+  // preScale will be defined since there is a (default) modality LUT
+  // in the shared functional group
+  preScale: {
+    enabled: true,
+    scalingParameters: {
+      rescaleSlope: 1,
+      rescaleIntercept: 0,
+      modality: 'MR',
+    },
+    scaled: true,
+  },
   rgba: false,
   rowPixelSpacing: 0.7031,
   rows: 256,
