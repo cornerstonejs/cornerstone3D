@@ -16,8 +16,8 @@ export interface GeneralSeriesModuleMetadata {
   seriesInstanceUID: string;
   seriesNumber: number;
   studyInstanceUID: string;
-  seriesDate: DicomDateObject;
-  seriesTime: DicomTimeObject;
+  seriesDate: string;
+  seriesTime: string;
 }
 
 export interface PatientStudyModuleMetadata {

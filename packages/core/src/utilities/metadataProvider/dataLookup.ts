@@ -12,15 +12,22 @@ export function dataLookup(dataType: string) {
 }
 
 /** The data lookup for the instance module */
-export const instanceLookup = dataLookup(MetadataModules.INSTANCE_ORIG);
+export const instanceLookup = dataLookup(MetadataModules.INSTANCE);
 
 export const INSTANCE_PRIORITY = { priority: 5000 };
+
+addTypedProvider(
+  MetadataModules.INSTANCE,
+  dataLookup(MetadataModules.INSTANCE_ORIG),
+  INSTANCE_PRIORITY
+);
 
 addTypedProvider(
   MetadataModules.IMAGE_PLANE,
   instanceLookup,
   INSTANCE_PRIORITY
 );
+
 addTypedProvider(
   MetadataModules.CALIBRATION,
   instanceLookup,

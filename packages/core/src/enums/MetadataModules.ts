@@ -58,6 +58,14 @@ enum MetadataModules {
    */
   FRAME_MODULE = 'frameModule',
   /**
+   * The uriModule provides just basic information extractable from the URI.
+   * At a minimum, this shall include the frame number being referenced
+   * This is closely related to the frame module, but the frame module includes
+   * additional information.
+   */
+  URI_MODULE = 'uriModule',
+
+  /**
    * Some modules need direct access to a data services (WADO) web client.
    * This allows getting images and metadata as raw results for display.
    * This is DICOMweb WADO, not base WADO, and should support:

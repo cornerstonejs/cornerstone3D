@@ -5,6 +5,7 @@ import {
   typedProviderProvider,
 } from '../../metaData';
 import { mapTagInfo } from '../Tags';
+import { makeArrayLike } from './makeArrayLike';
 
 export function instanceFromListener(next, query, data, options) {
   data = getMetaData(
@@ -104,7 +105,7 @@ export class TagSection extends Section {
   public singleton: boolean;
 
   constructor(parent, destKey, vr, singleton = false) {
-    super(parent, null);
+    super(parent, singleton ? undefined : []);
     this.destKey = destKey;
     this.vr = vr;
     this.singleton = singleton;
@@ -125,11 +126,21 @@ export class TagSection extends Section {
 
   public valueListener(value) {
     if (this.singleton) {
+      if (this.dest !== undefined) {
+        console.error(
+          'Already created destination for singleton:',
+          this.dest,
+          value
+        );
+      }
       this.dest = value;
-    } else {
-      this.dest ||= [];
-      this.dest.push(value);
+      if (typeof this.dest === 'object') {
+        this.dest = makeArrayLike(this.dest);
+      }
+      return;
     }
+    this.dest ||= [];
+    this.dest.push(value);
   }
 }
 

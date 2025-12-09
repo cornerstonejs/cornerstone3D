@@ -47,27 +47,17 @@ export function clearTypedCacheData(type: string, query?: string) {
   }
 }
 
-addTypedProvider(
-  MetadataModules.INSTANCE_ORIG,
-  cacheDataForType(MetadataModules.INSTANCE_ORIG),
-  {
+export function addCacheForType(type: string, options?) {
+  addTypedProvider(type, cacheDataForType(type), {
     priority: 50_000,
     clear: clearCacheData,
     clearQuery: clearTypedCacheData.bind(null, MetadataModules.INSTANCE_ORIG),
-  }
-);
+    ...options,
+  });
+}
 
-addTypedProvider(
-  MetadataModules.IMAGE_PLANE,
-  cacheDataForType(MetadataModules.IMAGE_PLANE),
-  {
-    priority: 50_000,
-    clear: clearCacheData,
-    clearQuery: clearTypedCacheData.bind(null, MetadataModules.IMAGE_PLANE),
-  }
-);
-
-addTypedProvider(
-  MetadataModules.FRAME_MODULE,
-  cacheDataForType(MetadataModules.FRAME_MODULE)
-);
+addCacheForType(MetadataModules.INSTANCE_ORIG);
+addCacheForType(MetadataModules.INSTANCE);
+addCacheForType(MetadataModules.URI_MODULE);
+addCacheForType(MetadataModules.IMAGE_PLANE);
+addCacheForType(MetadataModules.FRAME_MODULE);

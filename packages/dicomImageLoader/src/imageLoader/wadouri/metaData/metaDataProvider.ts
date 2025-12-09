@@ -94,40 +94,6 @@ export function metadataForDataset(
     return getImagePixelModule(dataSet);
   }
 
-  if (type === MetadataModules.VOI_LUT) {
-    const modalityLUTOutputPixelRepresentation =
-      getModalityLUTOutputPixelRepresentation(dataSet);
-
-    return {
-      windowCenter: getNumberValues(dataSet, 'x00281050', 1),
-      windowWidth: getNumberValues(dataSet, 'x00281051', 1),
-      voiLUTSequence: getLUTs(
-        modalityLUTOutputPixelRepresentation,
-        dataSet.elements.x00283010
-      ),
-      voiLUTFunction: dataSet.string('x00281056'),
-    };
-  }
-
-  if (type === MetadataModules.MODALITY_LUT) {
-    return {
-      rescaleIntercept: dataSet.floatString('x00281052'),
-      rescaleSlope: dataSet.floatString('x00281053'),
-      rescaleType: dataSet.string('x00281054'),
-      modalityLUTSequence: getLUTs(
-        dataSet.uint16('x00280103'),
-        dataSet.elements.x00283000
-      ),
-    };
-  }
-
-  if (type === MetadataModules.SOP_COMMON) {
-    return {
-      sopClassUID: dataSet.string('x00080016'),
-      sopInstanceUID: dataSet.string('x00080018'),
-    };
-  }
-
   if (type === MetadataModules.PET_ISOTOPE) {
     const radiopharmaceuticalInfo = dataSet.elements.x00540016;
 
