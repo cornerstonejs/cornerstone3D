@@ -1,7 +1,7 @@
 import * as metaData from '../metaData';
 import { MetadataModules, VOILUTFunctionType } from '../enums';
 import type IImage from '../types/IImage';
-import type { ImagePlaneModule, ImagePixelModule } from '../types';
+import type { ImagePlaneModule } from '../types';
 import type IImageCalibration from '../types/IImageCalibration';
 
 export interface BuildMetadataResult {

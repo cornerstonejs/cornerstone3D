@@ -160,12 +160,7 @@ export const combineFrameInstance = (frame, instance) => {
       );
       const normal = vec3.cross(vec3.create(), row, col);
 
-      const position = vec3.scaleAndAdd(
-        vec3.create(),
-        vec3.fromValues(...origin),
-        normal,
-        offset
-      );
+      const position = vec3.scaleAndAdd(vec3.create(), origin, normal, offset);
       newInstance.ImagePositionPatient = [
         position[0],
         position[1],

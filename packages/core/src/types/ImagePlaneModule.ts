@@ -4,7 +4,7 @@ import type IImageCalibration from './IImageCalibration';
 export interface ImagePlaneModule {
   columnCosines?: Point3;
   columnPixelSpacing?: number;
-  imageOrientationPatient?: number[];
+  imageOrientationPatient?: number[] | Float32Array;
   imagePositionPatient?: Point3;
   pixelSpacing?: Point2;
   rowCosines?: Point3;
