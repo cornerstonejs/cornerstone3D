@@ -65,7 +65,7 @@
     "nifti-reader-js": "0.6.9"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "4.13.6"
+    "@cornerstonejs/core": "4.13.7"
   },
   "contributors": [
     {
