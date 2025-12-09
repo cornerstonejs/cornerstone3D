@@ -126,7 +126,7 @@ export function addTypedProvider(
 export function typedProviderProvider(type: string, query: string, options) {
   const typedProvider = typedProviderMap.get(type);
   if (!typedProvider) {
-    // console.warn('No typed provider for', type, query);
+    console.warn('No typed provider for', type, query);
     return;
   }
   const result = typedProvider(query, null, options);
@@ -191,6 +191,7 @@ export function getMetaData(type: string, query: string, options?): any {
       return result;
     }
   }
+  console.warn("Didn't find metadata", type, query);
 }
 
 /**

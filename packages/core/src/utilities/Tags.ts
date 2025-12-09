@@ -44,6 +44,7 @@ export const vrDS3 = vr.bind(null, 'DS', 3);
 export const vrUS = vr.bind(null, 'US', 1);
 export const vrUS3 = vr.bind(null, 'US', 3);
 export const vrUSs = vr.bind(null, 'US', 0);
+export const vrSQ = vr.bind(null, 'SQ', 1);
 export const vrSQs = vr.bind(null, 'SQ', 0);
 export const vrFD = vr.bind(null, 'FD', 1);
 export const vrUL = vr.bind(null, 'UL', 1);
@@ -197,6 +198,17 @@ export const Tags = {
   RegionDataType: vrUS('00186014', USRegionChild),
   RegionFlags: vrUL('00186016', USRegionChild),
   TransducerFrequency: vrUL('00186030', USRegionChild),
+
+  // Functional Groups
+  SharedFunctionalGroupsSequence: vrSQ('52009229'),
+  PerFrameFunctionalGroupsSequence: vrSQs('52009230'),
+  PlanePositionSequence: vrSQ('00209113'),
+  AnatomicRegionSequence: vrSQ('00082218'),
+  PlaneOrientationSequence: vrSQ('00209116'),
+  PixelMeasuresSequence: vrSQ('00289110'),
+  PixelValueTransformationSequence: vrSQ('00289145'),
+  ParametricMapFrameTypeSequence: vrSQ('00409092'),
+  RealWorldValueMappingSequence: vrSQ('00409096'),
 };
 
 export const mapModuleTags = new Map<string, TagEntry[]>();
