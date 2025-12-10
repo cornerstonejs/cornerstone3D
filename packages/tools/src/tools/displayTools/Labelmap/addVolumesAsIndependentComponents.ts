@@ -122,7 +122,7 @@ export async function addVolumesAsIndependentComponents({
   actor.getProperty().setIndependentComponents(true);
 
   viewport.addActor({
-    actor: actor as unknown as Types.Actor,
+    actor,
     uid,
     callback,
     referencedId: referenceVolumeId,

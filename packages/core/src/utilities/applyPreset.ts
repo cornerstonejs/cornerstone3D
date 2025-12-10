@@ -8,7 +8,6 @@ import type { VolumeActor } from '../types/IActor';
  *
  * @param actor - The volume actor to apply the preset to.
  * @param preset - The preset to apply.
- * @param volumeId - The volume ID to check for decimation.
  */
 export default function applyPreset(
   actor: VolumeActor,
