@@ -313,7 +313,9 @@ function _setLabelmapColorAndOpacity(
   }
 
   ofun.setClamping(false);
-  const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
+  const labelmapActor = labelmapActorEntry.actor as unknown as
+    | vtkVolume
+    | vtkImageSlice;
 
   // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
