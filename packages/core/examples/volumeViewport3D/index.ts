@@ -87,7 +87,9 @@ addDropdownToToolbar({
     defaultValue: 'CT-Bone',
   },
   onSelectedValueChange: (presetName) => {
-    viewport.setProperties({ preset: presetName });
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    viewport.setProperties({ preset: presetName as string });
     viewport.render();
   },
 });
@@ -98,7 +100,11 @@ addDropdownToToolbar({
     defaultValue: 1,
   },
   onSelectedValueChange: (sampleDistanceMultiplier) => {
-    viewport.setProperties({ sampleDistanceMultiplier });
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    viewport.setProperties({
+      sampleDistanceMultiplier: Number(sampleDistanceMultiplier),
+    });
     viewport.render();
   },
 });
