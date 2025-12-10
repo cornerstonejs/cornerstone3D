@@ -12,8 +12,7 @@ import type { VolumeActor } from '../types/IActor';
  */
 export default function applyPreset(
   actor: VolumeActor,
-  preset: ViewportPreset,
-  _volumeId?: string
+  preset: ViewportPreset
 ) {
   // Create color transfer function
   const colorTransferArray = preset.colorTransfer
