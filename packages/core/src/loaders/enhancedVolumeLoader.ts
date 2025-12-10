@@ -141,6 +141,7 @@ export function enhancedVolumeLoader(
   }
 
   // Apply in-plane decimation parameter to imageIds
+  // row and column decimation are always the same in this implementation so we use column
   if (columnDecimation > 1) {
     options.imageIds = options.imageIds.map((imageId) =>
       addDecimationToImageId(imageId, columnDecimation)
