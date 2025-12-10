@@ -38,7 +38,6 @@ const instanceModuleNames = [
   'generalSeriesModule',
   'patientStudyModule',
   // 'imagePlaneModule',
-  'nmMultiframeGeometryModule',
   'imagePixelModule',
   'modalityLutModule',
   'voiLutModule',

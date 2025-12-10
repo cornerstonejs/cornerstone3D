@@ -3,56 +3,24 @@ import {
   utilities,
   metaData as coreMetaData,
 } from '@cornerstonejs/core';
-import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
 import metaDataManager from '../metaDataManager';
 import getValue from './getValue';
-import {
-  extractOrientationFromMetadata,
-  extractPositionFromMetadata,
-} from './extractPositioningFromMetadata';
-import { getImageTypeSubItemFromMetadata } from './NMHelpers';
-import isNMReconstructable from '../../isNMReconstructable';
 import { MetaDataIterator } from './MetaDataIterator';
 
 const { MetadataModules } = Enums;
+const { addTypedProvider } = coreMetaData;
 
+/**
+ * @deprecated
+ */
 function metaDataProvider(type, imageId) {
-  const { MetadataModules } = Enums;
-
-  const metaData = metaDataManager.get(imageId);
-
-  if (!metaData) {
-    return;
-  }
-
-  if (type === MetadataModules.NM_MULTIFRAME_GEOMETRY) {
-    const modality = getValue(metaData['00080060']) as string;
-    const imageSubType = getImageTypeSubItemFromMetadata(metaData, 2);
-
-    return {
-      modality,
-      imageType: getValue(metaData['00080008']),
-      imageSubType,
-      imageOrientationPatient: extractOrientationFromMetadata(metaData),
-      imagePositionPatient: extractPositionFromMetadata(metaData),
-      sliceThickness: getNumberValue(metaData['00180050']),
-      spacingBetweenSlices: getNumberValue(metaData['00180088']),
-      pixelSpacing: getNumberValues(metaData['00280030'], 2),
-      numberOfFrames: getNumberValue(metaData['00280008']),
-      isNMReconstructable:
-        isNMReconstructable(imageSubType) && modality.includes('NM'),
-    };
-  }
-
-  if (type === MetadataModules.IMAGE_URL) {
-    return getImageUrlModule(imageId, metaData);
-  }
-
-  if (type === MetadataModules.OVERLAY_PLANE) {
-    return getOverlayPlaneModule(metaData);
-  }
+  console.error(
+    'No wadors global metadata provider, please remove registration',
+    type,
+    imageId
+  );
 }
 
 export function metadataDicomSource(next, imageId, data, options) {
@@ -86,6 +54,27 @@ export function getImageUrlModule(imageId, metaData) {
   };
 }
 
+export function bindMetadataProvider(provider) {
+  return (next, imageId, data, options) => {
+    const metaData = metaDataManager.get(imageId);
+    if (!metaData) {
+      return next(imageId, data, options);
+    }
+    return provider(imageId, metaData);
+  };
+}
+addTypedProvider(
+  MetadataModules.OVERLAY_PLANE,
+  bindMetadataProvider((_imageId, metaData) => getOverlayPlaneModule(metaData))
+);
+addTypedProvider(
+  MetadataModules.IMAGE_URL,
+  bindMetadataProvider(getImageUrlModule)
+);
+
+/**
+ * @deprecated
+ */
 export function getCineModule(_imageId, metaData) {
   const cineRate = getValue<string>(metaData['00180040']);
   return {
@@ -94,6 +83,9 @@ export function getCineModule(_imageId, metaData) {
   };
 }
 
+/**
+ * @deprecated
+ */
 export function getTransferSyntax(_imageId, metaData) {
   // Use either the FMI, which is NOT permitted in the DICOMweb data, but
   // is sometimes found there anyways, or the available transfer syntax, which
