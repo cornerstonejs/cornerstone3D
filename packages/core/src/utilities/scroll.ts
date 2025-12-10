@@ -78,6 +78,8 @@ export function scrollVolume(
   const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
     getVolumeViewportScrollInfo(viewport, volumeId, useSlabThickness);
 
+  if (numScrollSteps === 0) return;
+
   if (!sliceRangeInfo) {
     return;
   }
