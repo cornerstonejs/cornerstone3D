@@ -225,7 +225,6 @@ export const combineFrameProvider = (next, query, instance, options) => {
     return next(query, instance, options);
   }
   if (!instance.NumberOfFrames) {
-    console.warn("instance isn't multiframe", instance);
     return instance;
   }
   const uriModule = getMetaData(
@@ -236,7 +235,6 @@ export const combineFrameProvider = (next, query, instance, options) => {
   const { frameNumber = 1 } = uriModule || {};
 
   const combined = combineFrameInstance(frameNumber, instance);
-  console.warn('Created combined instance for:', combined);
   return combined;
 };
 
