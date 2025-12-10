@@ -6,14 +6,8 @@ import {
 import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
-import metaDataManager, {
-  retrieveMultiframeMetadataImageId,
-} from '../metaDataManager';
+import metaDataManager from '../metaDataManager';
 import getValue from './getValue';
-import {
-  getMultiframeInformation,
-  getFrameInformation,
-} from '../combineFrameInstance';
 import {
   extractOrientationFromMetadata,
   extractPositionFromMetadata,
@@ -56,71 +50,8 @@ function metaDataProvider(type, imageId) {
     return getImageUrlModule(imageId, metaData);
   }
 
-  if (type === MetadataModules.CINE) {
-    return getCineModule(imageId, metaData);
-  }
-
-  if (type === MetadataModules.PET_ISOTOPE) {
-    const radiopharmaceuticalInfo = getValue(metaData['00540016']);
-
-    if (radiopharmaceuticalInfo === undefined) {
-      return;
-    }
-
-    return {
-      radiopharmaceuticalInfo: {
-        radiopharmaceuticalStartTime: getValue(
-          radiopharmaceuticalInfo['00181072'],
-          0,
-          ''
-        ),
-        radiopharmaceuticalStartDateTime: getValue(
-          radiopharmaceuticalInfo['00181078'],
-          0,
-          ''
-        ),
-        radionuclideTotalDose: getNumberValue(
-          radiopharmaceuticalInfo['00181074']
-        ),
-        radionuclideHalfLife: getNumberValue(
-          radiopharmaceuticalInfo['00181075']
-        ),
-      },
-    };
-  }
-
   if (type === MetadataModules.OVERLAY_PLANE) {
     return getOverlayPlaneModule(metaData);
-  }
-
-  // Note: this is not a DICOM module, but a useful metadata that can be
-  // retrieved from the image
-  if (type === 'transferSyntax') {
-    return getTransferSyntax(imageId, metaData);
-  }
-
-  if (type === MetadataModules.PET_SERIES) {
-    let correctedImageData = metaData['00280051'];
-    let correctedImage = getValue(metaData['00280051']);
-    if (
-      correctedImageData &&
-      correctedImageData.Value &&
-      Array.isArray(correctedImageData.Value)
-    ) {
-      correctedImage = correctedImageData.Value.join('\\');
-    }
-    return {
-      correctedImage,
-      units: getValue(metaData['00541001']),
-      decayCorrection: getValue(metaData['00541102']),
-    };
-  }
-
-  if (type === MetadataModules.PET_IMAGE) {
-    return {
-      frameReferenceTime: getNumberValue(metaData['00541300']),
-      actualFrameDuration: getNumberValue(metaData['00181242']),
-    };
   }
 }
 

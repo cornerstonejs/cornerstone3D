@@ -118,6 +118,9 @@ const WADO_URI_IMAGE_PIXEL_MODULE = {
   rows: 512,
   samplesPerPixel: 1,
   smallestPixelValue: undefined,
+  pixelPaddingValue: 32768,
+  distanceSourceToDetector: 1099.3100585938,
+  distanceSourceToPatient: 630,
 };
 
 /**
@@ -126,9 +129,6 @@ const WADO_URI_IMAGE_PIXEL_MODULE = {
  */
 const WADO_RS_IMAGE_PIXEL_MODULE = {
   ...WADO_URI_IMAGE_PIXEL_MODULE,
-  pixelPaddingValue: -32768,
-  distanceSourceToDetector: 1099.3100585938,
-  distanceSourceToPatient: 630,
   bluePaletteColorLookupTableData: undefined,
   bluePaletteColorLookupTableDescriptor: undefined,
   greenPaletteColorLookupTableData: undefined,

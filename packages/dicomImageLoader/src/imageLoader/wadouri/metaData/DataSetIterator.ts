@@ -33,6 +33,7 @@ const vrParse = {
   UR: string,
   US: unsignedShort,
   UT: string,
+  OW: int16Buffer,
   // UV: unsignedVeryLong
 };
 /**
@@ -164,4 +165,14 @@ function unsignedShort(xtag, location, dataset) {
     result[i] = dataset.uint16(xtag, i);
   }
   return result;
+}
+
+function int16Buffer(xtag, location, dataset) {
+  const vm = location.length / 2;
+  const result = new ArrayBuffer(location.length);
+  const resultArr = new Uint16Array(result);
+  for (let i = 0; i < vm; i++) {
+    resultArr[i] = dataset.uint16(xtag, i);
+  }
+  return [result];
 }

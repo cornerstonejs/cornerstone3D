@@ -139,11 +139,6 @@ const WADO_RS_IMAGE_PIXEL_MODULE = {
   redPaletteColorLookupTableDescriptor: undefined,
 };
 
-const MULTIFRAME_MODULE = {
-  NumberOfFrames: 78,
-  PerFrameFunctionalInformation: {},
-  SharedFunctionalInformation: {},
-};
 const TEST_NAME = 'US Multiframe YBR Full 422';
 
 const FRAME_1_PIXEL_DATA_HASH =
@@ -163,7 +158,6 @@ export const WADOURI_TEST: IWadoUriTest = {
         [Enums.MetadataModules.CALIBRATION]: CALIBRATION_MODULE,
         [Enums.MetadataModules.IMAGE_PIXEL]: WADO_URI_IMAGE_PIXEL_MODULE,
         [Enums.MetadataModules.IMAGE_PLANE]: WADO_URI_IMAGE_PLANE_MODULE,
-        [Enums.MetadataModules.MULTIFRAME]: MULTIFRAME_MODULE,
       },
     },
     {
@@ -188,7 +182,6 @@ export const WADO_RS_TEST: IWadoRsTest = {
         [Enums.MetadataModules.CALIBRATION]: CALIBRATION_MODULE,
         [Enums.MetadataModules.IMAGE_PLANE]: WADO_URI_IMAGE_PLANE_MODULE,
         [Enums.MetadataModules.IMAGE_PIXEL]: WADO_RS_IMAGE_PIXEL_MODULE,
-        [Enums.MetadataModules.MULTIFRAME]: MULTIFRAME_MODULE,
       },
     },
   ],

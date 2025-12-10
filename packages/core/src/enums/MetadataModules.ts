@@ -29,6 +29,9 @@ enum MetadataModules {
   ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
   VOI_LUT = 'voiLutModule',
 
+  /** Transfer syntax information*/
+  TRANSFER_SYNTAX = 'transferSyntax',
+
   /*
    * Functional groups are the metadata modules defines for functional group
    * sequences.  Note these are UPPER camel case to agree with normalized

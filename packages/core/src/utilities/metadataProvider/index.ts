@@ -6,3 +6,4 @@ export * from './instanceFromListener';
 export * from './calibrationModule';
 export * from './combineFrameInstance';
 export * from './uriModule';
+export * from './pixelDataUpdate';

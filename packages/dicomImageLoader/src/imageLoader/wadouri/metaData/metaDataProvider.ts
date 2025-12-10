@@ -1,14 +1,8 @@
 import { Enums, metaData } from '@cornerstonejs/core';
 import * as dicomParser from 'dicom-parser';
-import getNumberValues from './getNumberValues';
 import parseImageId from '../parseImageId';
 import dataSetCacheManager from '../dataSetCacheManager';
-import getImagePixelModule from './getImagePixelModule';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
-import getLUTs from './getLUTs';
-import getModalityLUTOutputPixelRepresentation from './getModalityLUTOutputPixelRepresentation';
-import { getDirectFrameInformation } from '../combineFrameInstanceDataset';
-import multiframeDataset from '../retrieveMultiframeDataset';
 import {
   getImageTypeSubItemFromDataset,
   extractOrientationFromDataset,
@@ -28,24 +22,6 @@ function metaDataProvider(type, imageId) {
   }
 
   const parsedImageId = parseImageId(imageId);
-
-  if (type === MetadataModules.MULTIFRAME) {
-    const multiframeData = multiframeDataset.retrieveMultiframeDataset(
-      parsedImageId.url
-    );
-
-    if (!multiframeData.dataSet) {
-      return;
-    }
-
-    const multiframeInfo = getDirectFrameInformation(
-      multiframeData.dataSet,
-      multiframeData.frame
-    );
-
-    return multiframeInfo;
-  }
-
   let url = parsedImageId.url;
 
   if (parsedImageId.frame) {
@@ -63,7 +39,7 @@ function metaDataProvider(type, imageId) {
 
 export function metadataForDataset(
   type,
-  imageId,
+  _imageId,
   dataSet: dicomParser.DataSet
 ) {
   if (type === MetadataModules.NM_MULTIFRAME_GEOMETRY) {
@@ -84,74 +60,8 @@ export function metadataForDataset(
     };
   }
 
-  if (type === MetadataModules.CINE) {
-    return {
-      frameTime: dataSet.floatString('x00181063'),
-    };
-  }
-
-  if (type === MetadataModules.IMAGE_PIXEL) {
-    return getImagePixelModule(dataSet);
-  }
-
-  if (type === MetadataModules.PET_ISOTOPE) {
-    const radiopharmaceuticalInfo = dataSet.elements.x00540016;
-
-    if (radiopharmaceuticalInfo === undefined) {
-      return;
-    }
-
-    const firstRadiopharmaceuticalInfoDataSet =
-      radiopharmaceuticalInfo.items[0].dataSet;
-
-    return {
-      radiopharmaceuticalInfo: {
-        radiopharmaceuticalStartTime: dicomParser.parseTM(
-          firstRadiopharmaceuticalInfoDataSet.string('x00181072') || ''
-        ),
-        radionuclideTotalDose:
-          firstRadiopharmaceuticalInfoDataSet.floatString('x00181074'),
-        radionuclideHalfLife:
-          firstRadiopharmaceuticalInfoDataSet.floatString('x00181075'),
-      },
-    };
-  }
-
   if (type === MetadataModules.OVERLAY_PLANE) {
     return getOverlayPlaneModule(dataSet);
-  }
-
-  // Note: this is not a DICOM module, but a useful metadata that can be
-  // retrieved from the image
-  if (type === 'transferSyntax') {
-    let transferSyntaxUID;
-
-    try {
-      transferSyntaxUID = dataSet.string('x00020010');
-    } catch (error) {
-      // Do nothing
-    }
-
-    return {
-      transferSyntaxUID,
-    };
-  }
-
-  if (type === MetadataModules.PET_SERIES) {
-    return {
-      correctedImage: dataSet.string('x00280051'),
-      units: dataSet.string('x00541001'),
-      decayCorrection: dataSet.string('x00541102'),
-    };
-  }
-
-  if (type === MetadataModules.PET_IMAGE) {
-    return {
-      frameReferenceTime: dataSet.floatString(
-        dataSet.string('x00541300') || ''
-      ),
-      actualFrameDuration: dataSet.intString(dataSet.string('x00181242')),
-    };
   }
 }
 

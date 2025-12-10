@@ -56,9 +56,9 @@ const WADO_RS_IMAGE_PIXEL_MODULE: Types.ImagePixelModule = {
  */
 const WADO_URI_IMAGE_PIXEL_MODULE = {
   ...WADO_RS_IMAGE_PIXEL_MODULE,
-  bluePaletteColorLookupTableData: jasmine.any(Array),
-  greenPaletteColorLookupTableData: jasmine.any(Array),
-  redPaletteColorLookupTableData: jasmine.any(Array),
+  bluePaletteColorLookupTableData: jasmine.any(Object),
+  greenPaletteColorLookupTableData: jasmine.any(Object),
+  redPaletteColorLookupTableData: jasmine.any(Object),
 };
 
 const IMAGE_HASH =

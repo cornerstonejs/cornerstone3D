@@ -13,6 +13,11 @@ const {
   PATIENT_STUDY,
   VOI_LUT,
   MODALITY_LUT,
+  TRANSFER_SYNTAX,
+  PET_SERIES,
+  PET_IMAGE,
+  PET_ISOTOPE,
+  CINE,
   // These should get added once there is a good way to
   // set default configuration values:
   // CALIBRATION,
@@ -35,6 +40,7 @@ export function vr(vrName, vm: number, tag: string, ...groups): TagEntry {
 }
 
 export const vrUI = vr.bind(null, 'UI', 1);
+export const vrUIs = vr.bind(null, 'UI', 0);
 export const vrCS = vr.bind(null, 'CS', 1);
 export const vrCSs = vr.bind(null, 'CS', 0);
 export const vrDS = vr.bind(null, 'DS', 1);
@@ -55,6 +61,7 @@ export const vrDA = vr.bind(null, 'DA', 1);
 export const vrTM = vr.bind(null, 'TM', 1);
 export const vrSH = vr.bind(null, 'SH', 1);
 export const vrIS = vr.bind(null, 'IS', 1);
+export const vrOW = vr.bind(null, 'OW', 1);
 export const vrISs = vr.bind(null, 'IS', 0);
 export const vrPN = vr.bind(null, 'PN', 1);
 export const vrAS = vr.bind(null, 'AS', 1);
@@ -80,6 +87,26 @@ export const CLINICAL_TRIAL = 'clinicalTrialModule';
  *
  */
 export const Tags = {
+  // FMI information:
+  TransferSyntaxUID: vrUI('00020010', TRANSFER_SYNTAX),
+  AvailableTransferSyntaxUID: vrUIs('00083002', TRANSFER_SYNTAX),
+
+  FrameTime: vrDS('00181063', CINE),
+  RecommendedDisplayFrameRate: vrIS('00082144', CINE),
+
+  RadiopharmaceuticalInfo: vrSQ('00540016', PET_ISOTOPE),
+  RadiopharmaceuticalStartTime: vrTM('00181072'),
+  RadiopharmaceuticalStopTime: vrTM('00181073'),
+  RadionuclideTotalDose: vrDS('00181074'),
+  RadionuclideHalfLife: vrDS('00181075'),
+
+  FrameReferenceTime: vrDS('00541300', PET_IMAGE),
+  ActualFrameDuration: vrIS('00181242', PET_IMAGE),
+
+  CorrectedImage: vrCSs('00280051', PET_SERIES),
+  Units: vrCS('00541001', PET_SERIES),
+  DelayCorrection: vrCS('00541102', PET_SERIES),
+
   PatientID: vrLO('00100020', PATIENT),
   PatientName: vrPN('00100010', PATIENT),
   PatientBirthDate: vrDA('00100030', PATIENT),
@@ -163,6 +190,10 @@ export const Tags = {
   GreenPaletteColorLookupTableDescriptor: vrUSs('00281102', IMAGE_PIXEL),
   BluePaletteColorLookupTableDescriptor: vrUSs('00281103', IMAGE_PIXEL),
   AlphaPaletteColorLookupTableDescriptor: vrUSs('00281104', IMAGE_PIXEL),
+  RedPaletteColorLookupTableData: vrOW('00281201', IMAGE_PIXEL),
+  GreenPaletteColorLookupTableData: vrOW('00281202', IMAGE_PIXEL),
+  BluePaletteColorLookupTableData: vrOW('00281203', IMAGE_PIXEL),
+  AlphaPaletteColorLookupTableData: vrOW('00281204', IMAGE_PIXEL),
   PaletteColorLookupTableUID: vrUI('00281104', IMAGE_PIXEL),
 
   SpacingBetweenSlices: vrDS('00180088', IMAGE_PLANE),
