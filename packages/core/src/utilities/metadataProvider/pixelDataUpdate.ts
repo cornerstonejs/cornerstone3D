@@ -26,7 +26,10 @@ export function pixelDataUpdate(next, query, data, options) {
 
   const { redPaletteColorLookupTableDescriptor } = basePixelData;
   if (redPaletteColorLookupTableData instanceof ArrayBuffer) {
-    const tableLen = redPaletteColorLookupTableDescriptor[0] || 65536;
+    redPaletteColorLookupTableDescriptor[0] ||= 65536;
+    result.greenPaletteColorLookupTableDescriptor[0] ||= 65536;
+    result.bluePaletteColorLookupTableDescriptor[0] ||= 65536;
+    const tableLen = redPaletteColorLookupTableDescriptor[0];
     if (tableLen === redPaletteColorLookupTableData.byteLength) {
       result.redPaletteColorLookupTableData = new Uint8Array(
         redPaletteColorLookupTableData
