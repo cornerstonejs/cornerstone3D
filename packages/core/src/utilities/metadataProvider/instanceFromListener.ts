@@ -14,13 +14,11 @@ export function instanceFromListener(next, query, data, options) {
     options?.[MetadataModules.DICOM_SOURCE]
   );
   if (!data) {
-    console.warn("Couldn't find instance data for", query);
     return next(query, data, options);
   }
   const listener = new NormalListener();
 
   data.syncIterator(listener);
-  // console.warn('New instance:', JSON.stringify(listener.instance, null, 2));
   return listener.instance;
 }
 

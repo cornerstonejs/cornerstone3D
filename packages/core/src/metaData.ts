@@ -185,6 +185,9 @@ export function removeAllProviders(): void {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMetaData(type: string, query: string, options?): any {
   // Invoke each provider in priority order until one returns something
+  if (query === undefined) {
+    return;
+  }
   for (let i = 0; i < providers.length; i++) {
     const result = providers[i].provider(type, query, options);
     if (result !== undefined) {
@@ -226,7 +229,7 @@ export const get = (type: string, ...queries: string[]) =>
   queries.length === 1
     ? getMetaData(type, queries[0])
     : queries
-        .map((query) => getMetaData(type, query))
+        .map((query) => query && getMetaData(type, query))
         .find((it) => it !== undefined);
 
 /**
