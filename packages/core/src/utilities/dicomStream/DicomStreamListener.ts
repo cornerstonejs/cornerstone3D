@@ -8,13 +8,19 @@ export class DicomStreamListener implements IDicomListener {
 
   public listener: IDicomListener = null;
 
+  constructor(options?) {
+    if (options?.createTagListener) {
+      this.createTagListener = options.createTagListener;
+    }
+  }
+
   /**
    * Creates a new tag listener.  Defaults to creating a metadata tag
    * listener.
    */
-  public createTagListener(tag: string, info?: IListenerInfo) {
+  public createTagListener = (tag: string, info?: IListenerInfo) => {
     return new MetadataTagListener(this.listener, tag, info);
-  }
+  };
 
   public startObject() {
     this.push(new ObjectListener(this.listener));

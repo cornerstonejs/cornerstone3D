@@ -12,4 +12,5 @@ export interface IDicomListener {
 export interface IListenerInfo {
   vr?: string;
   length?: string;
+  name?: string;
 }
