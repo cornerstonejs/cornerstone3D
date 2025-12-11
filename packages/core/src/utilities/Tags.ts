@@ -79,6 +79,7 @@ export interface TagEntry {
 
 export const CLINICAL_TRIAL = 'clinicalTrialModule';
 
+export const RadiopharmaceuticalInfoModule = 'RadiopharmaceuticalInfo';
 /**
  * The TagsArray is an array of the available standardized tag values which
  * can be read from any of the supported data sources.
@@ -95,17 +96,17 @@ export const Tags = {
   RecommendedDisplayFrameRate: vrIS('00082144', CINE),
 
   RadiopharmaceuticalInfo: vrSQ('00540016', PET_ISOTOPE),
-  RadiopharmaceuticalStartTime: vrTM('00181072'),
-  RadiopharmaceuticalStopTime: vrTM('00181073'),
-  RadionuclideTotalDose: vrDS('00181074'),
-  RadionuclideHalfLife: vrDS('00181075'),
+  RadiopharmaceuticalStartTime: vrTM('00181072', RadiopharmaceuticalInfoModule),
+  RadiopharmaceuticalStopTime: vrTM('00181073', RadiopharmaceuticalInfoModule),
+  RadionuclideTotalDose: vrDS('00181074', RadiopharmaceuticalInfoModule),
+  RadionuclideHalfLife: vrDS('00181075', RadiopharmaceuticalInfoModule),
 
   FrameReferenceTime: vrDS('00541300', PET_IMAGE),
   ActualFrameDuration: vrIS('00181242', PET_IMAGE),
 
   CorrectedImage: vrCSs('00280051', PET_SERIES),
   Units: vrCS('00541001', PET_SERIES),
-  DelayCorrection: vrCS('00541102', PET_SERIES),
+  DecayCorrection: vrCS('00541102', PET_SERIES),
 
   PatientID: vrLO('00100020', PATIENT),
   PatientName: vrPN('00100010', PATIENT),

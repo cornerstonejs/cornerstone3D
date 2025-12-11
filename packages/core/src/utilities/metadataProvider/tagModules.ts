@@ -1,6 +1,7 @@
 import { addTypedProvider, type TypedProvider } from '../../metaData';
 import { mapModuleTags } from '../Tags';
 import { dataLookup, INSTANCE_PRIORITY, instanceLookup } from './dataLookup';
+import { makeArrayLike } from './makeArrayLike';
 
 const mapModules = new Map<string, TypedProvider>();
 
@@ -24,10 +25,24 @@ export function tagModules(module: string, dataLookupName = 'instance') {
     if (!data) {
       return next(query, data, options);
     }
+
     const result = {};
     for (const key of keys) {
-      const value = data[key.name];
+      let value = data[key.name];
       if (value !== undefined) {
+        if (mapModules.has(key.name)) {
+          console.warn('Getting nested module', key.name);
+          const newValue = [];
+          for (const entry of value) {
+            if (!entry) {
+              continue;
+            }
+            newValue.push(
+              mapModules.get(key.name)(null, query, entry, options?.[key.name])
+            );
+          }
+          value = newValue.length === 1 ? makeArrayLike(newValue[0]) : newValue;
+        }
         result[key[destName]] = value;
       }
     }

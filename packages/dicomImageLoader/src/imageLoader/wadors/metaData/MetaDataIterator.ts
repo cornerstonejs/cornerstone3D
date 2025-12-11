@@ -34,6 +34,14 @@ export class MetaDataIterator {
         listener.endSection();
         continue;
       }
+      if (
+        value.vr === 'CS' &&
+        value.Value.length === 1 &&
+        String(value.Value[0]).indexOf('\\') !== -1
+      ) {
+        // Fix static dicomweb CS values not split
+        value.Value = String(value.Value[0]).split('\\');
+      }
       for (const v of value.Value) {
         listener.valueListener(v);
       }
