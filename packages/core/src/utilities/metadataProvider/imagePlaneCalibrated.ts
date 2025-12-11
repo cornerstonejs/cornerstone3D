@@ -13,10 +13,8 @@ export const getImagePlaneCalibrated = (
   options
 ): ImagePlaneModuleMetadata => {
   if (!instance) {
-    console.warn('**** No instance data to get image plane calibrated from');
     return next(imageId, instance, options);
   }
-  console.warn('Getting image plane module from instance', instance);
   const { ImageOrientationPatient, ImagePositionPatient } = instance;
   const { PixelSpacing, type } = getPixelSpacingInformation(instance);
 
