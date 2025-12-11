@@ -264,9 +264,11 @@ function createImage(
           windowWidth: voiLutModule.windowWidth
             ? voiLutModule.windowWidth[0]
             : undefined,
-          voiLUTFunction: voiLutModule.voiLUTFunction
-            ? voiLutModule.voiLUTFunction
-            : undefined,
+          voiLUTFunction:
+            (voiLutModule.voiLUTFunction?.length &&
+              voiLutModule.voiLUTFunction[0]) ||
+            voiLutModule.voiLutFunction ||
+            undefined,
           decodeTimeInMS: imageFrame.decodeTimeInMS,
           floatPixelData: undefined,
           imageFrame,

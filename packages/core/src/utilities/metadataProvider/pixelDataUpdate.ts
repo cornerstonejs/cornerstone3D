@@ -26,7 +26,7 @@ export function pixelDataUpdate(next, query, data, options) {
 
   const { redPaletteColorLookupTableDescriptor } = basePixelData;
   if (redPaletteColorLookupTableData instanceof ArrayBuffer) {
-    const [tableLen] = redPaletteColorLookupTableDescriptor;
+    const tableLen = redPaletteColorLookupTableDescriptor[0] || 65536;
     if (tableLen === redPaletteColorLookupTableData.byteLength) {
       result.redPaletteColorLookupTableData = new Uint8Array(
         redPaletteColorLookupTableData
@@ -50,11 +50,20 @@ export function pixelDataUpdate(next, query, data, options) {
     }
   }
 
-  if (pixelRepresentation == 1 && pixelPaddingValue < 0) {
-    result.pixelPaddingValue = pixelPaddingValue & 0xffff;
-  }
-  if (pixelRepresentation == 1 && pixelPaddingRangeLimit < 0) {
-    result.pixelPaddingValue = pixelPaddingRangeLimit & 0xffff;
+  if (pixelRepresentation == 1) {
+    if (pixelPaddingValue < 0) {
+      result.pixelPaddingValue = pixelPaddingValue & 0xffff;
+    }
+    if (pixelPaddingRangeLimit < 0) {
+      result.pixelPaddingValue = pixelPaddingRangeLimit & 0xffff;
+    }
+    const { smallestPixelValue, largestPixelValue } = result;
+    if (smallestPixelValue < 0) {
+      result.smallestPixelValue = smallestPixelValue & 0xffff;
+    }
+    if (largestPixelValue < 0) {
+      result.largestPixelValue = largestPixelValue & 0xffff;
+    }
   }
 
   return result;
