@@ -93,6 +93,9 @@ module.exports = {
         },
       ],
     }),
+    new rspack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+    }),
   ],
   entry: {
     ${multiExampleEntryPoints}
@@ -143,6 +146,7 @@ module.exports = {
       fs: false,
       path: require.resolve('path-browserify'),
       events: false,
+      buffer: require.resolve('buffer'),
     },
   },
   devServer: {

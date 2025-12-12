@@ -3,6 +3,97 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.1...v4.14.2) (2025-12-11)
+
+**Note:** Version bump only for package root
+
+## [4.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.0...v4.14.1) (2025-12-11)
+
+### Bug Fixes
+
+- Fix VoxelManager.numberOfComponents value ([#2512](https://github.com/cornerstonejs/cornerstone3D/issues/2512)) ([bbccda5](https://github.com/cornerstonejs/cornerstone3D/commit/bbccda59ecd3f255163505d2db7d1c15fbf33226))
+
+# [4.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.7...v4.14.0) (2025-12-10)
+
+### Features
+
+- Add types to HTJ2K decoder ([#2503](https://github.com/cornerstonejs/cornerstone3D/issues/2503)) ([ac09f22](https://github.com/cornerstonejs/cornerstone3D/commit/ac09f22d02f9c0fc2fe68a668c4bffcd61f84cdd))
+
+## [4.13.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.6...v4.13.7) (2025-12-09)
+
+### Bug Fixes
+
+- **Volumes:** Allow loading 1-slice volumes ([#2485](https://github.com/cornerstonejs/cornerstone3D/issues/2485)) ([4ee24dd](https://github.com/cornerstonejs/cornerstone3D/commit/4ee24ddeda16b3c2ece5c2fe4cdf5df45e16c23e))
+
+## [4.13.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.5...v4.13.6) (2025-12-08)
+
+### Bug Fixes
+
+- advance magnify tool ([#2504](https://github.com/cornerstonejs/cornerstone3D/issues/2504)) ([0bb311e](https://github.com/cornerstonejs/cornerstone3D/commit/0bb311e5e273f467a37626ddfab2387b485ea630))
+
+## [4.13.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.4...v4.13.5) (2025-12-06)
+
+**Note:** Version bump only for package root
+
+## [4.13.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.3...v4.13.4) (2025-12-05)
+
+### Bug Fixes
+
+- pan axis controls ([#2500](https://github.com/cornerstonejs/cornerstone3D/issues/2500)) ([d6d306b](https://github.com/cornerstonejs/cornerstone3D/commit/d6d306b767e001a94e2a4a756bcd81f637764d35))
+
+## [4.13.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.2...v4.13.3) (2025-12-05)
+
+### Bug Fixes
+
+- **dicomImageLoader:** :bug: Prevent error if ImagePositionPatient can not be read ([#2442](https://github.com/cornerstonejs/cornerstone3D/issues/2442)) ([c819a0c](https://github.com/cornerstonejs/cornerstone3D/commit/c819a0c99acf6ccf0c904a0d71933d8446768bb3))
+
+## [4.13.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.1...v4.13.2) (2025-12-04)
+
+### Bug Fixes
+
+- Cursor disappearing when multiple tools active ([#2493](https://github.com/cornerstonejs/cornerstone3D/issues/2493)) ([9eca500](https://github.com/cornerstonejs/cornerstone3D/commit/9eca500341a8d01e07591cbc8ceeaa006dd05030))
+
+## [4.13.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.0...v4.13.1) (2025-12-02)
+
+**Note:** Version bump only for package root
+
+# [4.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.7...v4.13.0) (2025-12-02)
+
+### Features
+
+- cursor strategies ([#2459](https://github.com/cornerstonejs/cornerstone3D/issues/2459)) ([453451e](https://github.com/cornerstonejs/cornerstone3D/commit/453451ea67507283fc03efbef5e3c77496814f38))
+
+## [4.12.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.6...v4.12.7) (2025-12-02)
+
+### Bug Fixes
+
+- handle missing labelmap image ids in stack labelmap example ([#2497](https://github.com/cornerstonejs/cornerstone3D/issues/2497)) ([9e48c18](https://github.com/cornerstonejs/cornerstone3D/commit/9e48c186276c9662877d71cc59dd50001047677a))
+- initialize ThresholdCircle with threshold config and guard dynamic radius ([#2496](https://github.com/cornerstonejs/cornerstone3D/issues/2496)) ([981fbad](https://github.com/cornerstonejs/cornerstone3D/commit/981fbad341a5dbc0ded01e021b6241ccb7b8903f))
+
+## [4.12.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.5...v4.12.6) (2025-11-28)
+
+### Bug Fixes
+
+- **WSIViewport:** add event listener for annotation removal ([#2461](https://github.com/cornerstonejs/cornerstone3D/issues/2461)) ([026c69d](https://github.com/cornerstonejs/cornerstone3D/commit/026c69dfb705d42a28c0db11fec498c777a3ed39))
+
+## [4.12.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.4...v4.12.5) (2025-11-27)
+
+### Bug Fixes
+
+- US calibrated regions broken ([#2415](https://github.com/cornerstonejs/cornerstone3D/issues/2415)) ([20efd77](https://github.com/cornerstonejs/cornerstone3D/commit/20efd77303d874f1c0a59f3cd859bdbce47d4a67))
+
+## [4.12.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.3...v4.12.4) (2025-11-27)
+
+### Bug Fixes
+
+- sculpt tool whorl effects ([#2484](https://github.com/cornerstonejs/cornerstone3D/issues/2484)) ([c85c44e](https://github.com/cornerstonejs/cornerstone3D/commit/c85c44ebd0d02a7bb4a988096084313c799ed775)), closes [#2101](https://github.com/cornerstonejs/cornerstone3D/issues/2101)
+
+## [4.12.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.2...v4.12.3) (2025-11-26)
+
+### Bug Fixes
+
+- Export seg ([#2486](https://github.com/cornerstonejs/cornerstone3D/issues/2486)) ([154945e](https://github.com/cornerstonejs/cornerstone3D/commit/154945e36ede6c8eb14cfb118f8e2e4a75094f37))
+
 ## [4.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.1...v4.12.2) (2025-11-21)
 
 **Note:** Version bump only for package root

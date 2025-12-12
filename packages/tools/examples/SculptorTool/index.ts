@@ -1,13 +1,21 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  volumeLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
   addManipulationBindings,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+
+const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
 // This is for debugging purposes
 console.warn(
@@ -34,7 +42,6 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
 const segmentationId = `SEGMENTATION_ID`;
-let activeSegmentIndex = 0;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -42,7 +49,7 @@ setTitleAndDescription(
   'Here we demonstrate how to use the  Sculptor Tool to sculpt planar freehand ROIs and FreehandContourSegmentations '
 );
 
-const size = '500px';
+const size = '48vw';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -68,6 +75,8 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
+Left mouse button is initially bound to planar freehand and right button to contour segmentation tool
+
 Drawing:
 
 - Select PlanarFreehandROI from dropdown button to draw freehandROIs.
@@ -76,7 +85,8 @@ Drawing:
 
 Editing:
 
-- Select SculptorTool from dropdown ,then adjustable cursor will appear.
+- Sculptor tool is initially configured as the right drag tool, so you can just use it immediately
+- Select SculptorTool from dropdown
 - Nearest freehand ROI/Freehand Contour Segmentation will be selected while clicking, and toolsize can be adjusted by moving cursor near to selected annotation.
 - Moving the cursor closer to the active ROI reduces the tool diameter.
 - Moving the cursor away from the active increases the tool diameter.
@@ -92,6 +102,8 @@ const toolsNames = [
   SculptorTool.toolName,
 ];
 let selectedToolName = toolsNames[0];
+
+let activeSegmentIndex = 0;
 
 function updateActiveSegmentIndex(segmentIndex: number): void {
   activeSegmentIndex = segmentIndex;
@@ -122,6 +134,22 @@ addDropdownToToolbar({
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
+addButtonToToolbar({
+  id: 'Undo',
+  title: 'Undo',
+  onClick() {
+    DefaultHistoryMemo.undo();
+  },
+});
+
+addButtonToToolbar({
+  id: 'Redo',
+  title: 'Redo',
+  onClick() {
+    DefaultHistoryMemo.redo();
+  },
+});
+
 /**
  * Runs the demo
  */
@@ -147,6 +175,13 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+  toolGroup.setToolActive(SculptorTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });

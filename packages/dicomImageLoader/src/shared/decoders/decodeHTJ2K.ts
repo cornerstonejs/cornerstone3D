@@ -1,6 +1,8 @@
 import type { ByteArray } from 'dicom-parser';
-// @ts-ignore
-import openJphFactory from '@cornerstonejs/codec-openjph/wasmjs';
+import openJphFactory, {
+  type HTJ2KDecoder,
+  type HTJ2KModule,
+} from '@cornerstonejs/codec-openjph/wasmjs';
 // @ts-ignore
 // import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
 const openjphWasm = new URL(
@@ -11,8 +13,8 @@ const openjphWasm = new URL(
 import type { LoaderDecodeOptions } from '../../types';
 
 const local: {
-  codec: unknown;
-  decoder: unknown;
+  codec: HTJ2KModule | undefined;
+  decoder: HTJ2KDecoder | undefined;
   decodeConfig: LoaderDecodeOptions;
 } = {
   codec: undefined,
@@ -64,7 +66,6 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
 async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   await initialize();
   // const decoder = local.decoder; // This is much slower for some reason
-  // @ts-expect-error
   const decoder = new local.codec.HTJ2KDecoder();
 
   // get pointer to the source/encoded bit stream buffer in WASM memory

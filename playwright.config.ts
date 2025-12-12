@@ -77,7 +77,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'cross-env COVERAGE=true nyc yarn build-and-serve-static-examples',
+    command: 'cross-env COVERAGE=true nyc bun build-and-serve-static-examples',
     url: 'http://localhost:3333',
     reuseExistingServer: !process.env.CI,
     timeout: 500 * 1000,
