@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.1...v4.14.2) (2025-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [4.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.0...v4.14.1) (2025-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [4.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.7...v4.14.0) (2025-12-10)
+
+### Features
+
+- Add types to HTJ2K decoder ([#2503](https://github.com/cornerstonejs/cornerstone3D/issues/2503)) ([ac09f22](https://github.com/cornerstonejs/cornerstone3D/commit/ac09f22d02f9c0fc2fe68a668c4bffcd61f84cdd))
+
+## [4.13.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.6...v4.13.7) (2025-12-09)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 ## [4.13.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.5...v4.13.6) (2025-12-08)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader

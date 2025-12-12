@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.1...v4.14.2) (2025-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.0...v4.14.1) (2025-12-11)
+
+### Bug Fixes
+
+- Fix VoxelManager.numberOfComponents value ([#2512](https://github.com/cornerstonejs/cornerstone3D/issues/2512)) ([bbccda5](https://github.com/cornerstonejs/cornerstone3D/commit/bbccda59ecd3f255163505d2db7d1c15fbf33226))
+
+# [4.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.7...v4.14.0) (2025-12-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.13.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.6...v4.13.7) (2025-12-09)
+
+### Bug Fixes
+
+- **Volumes:** Allow loading 1-slice volumes ([#2485](https://github.com/cornerstonejs/cornerstone3D/issues/2485)) ([4ee24dd](https://github.com/cornerstonejs/cornerstone3D/commit/4ee24ddeda16b3c2ece5c2fe4cdf5df45e16c23e))
+
 ## [4.13.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.5...v4.13.6) (2025-12-08)
 
 ### Bug Fixes
