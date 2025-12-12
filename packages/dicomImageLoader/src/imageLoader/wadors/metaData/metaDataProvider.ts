@@ -7,7 +7,10 @@ import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
 import metaDataManager from '../metaDataManager';
 import getValue from './getValue';
-import { MetaDataIterator } from './MetaDataIterator';
+
+const {
+  DicomStream: { MetaDataIterator },
+} = utilities;
 
 const { MetadataModules } = Enums;
 const { addTypedProvider } = coreMetaData;

@@ -2,6 +2,8 @@
  * Delivers metadata from a standard DICOMweb Metadata instance to a listener
  */
 
+import { SkipListener } from './SkipListener';
+
 export class MetaDataIterator {
   public metadata;
 
@@ -15,23 +17,27 @@ export class MetaDataIterator {
         continue;
       }
       if (value === null) {
-        listener.addTag(key, 'UN', 0);
+        listener.addTag(key, { length: 0 });
+        listener.pop();
         continue;
       }
-      if (!value?.Value) {
+      if (!value.Value) {
+        // TODO - handle bulkdata and null data
         continue;
       }
-      const result = listener.addTag(key, value?.vr, true);
-      if (result === 'Skip') {
+      const vr = value.vr;
+      const result = listener.addTag(key, { vr });
+      if (result instanceof SkipListener) {
+        listener.pop();
         continue;
       }
-      if (result === 'Parse') {
+      if (vr === 'SQ') {
         for (const v of value.Value) {
-          listener.startSection('ITEM');
+          listener.startObject();
           this.syncIterator(listener, v);
-          listener.endSection();
+          listener.pop();
         }
-        listener.endSection();
+        listener.pop();
         continue;
       }
       if (
@@ -42,10 +48,7 @@ export class MetaDataIterator {
         // Fix static dicomweb CS values not split
         value.Value = String(value.Value[0]).split('\\');
       }
-      for (const v of value.Value) {
-        listener.valueListener(v);
-      }
-      listener.endSection();
+      listener.values(value.Value);
     }
   }
 }

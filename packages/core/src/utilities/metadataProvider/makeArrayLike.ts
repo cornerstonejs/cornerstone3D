@@ -1,4 +1,10 @@
 export function makeArrayLike(obj) {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  if (typeof obj !== 'object') {
+    return obj;
+  }
   Object.defineProperty(obj, 'length', {
     value: 1,
   });

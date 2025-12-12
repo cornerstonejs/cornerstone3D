@@ -105,7 +105,8 @@ export { updatePlaneRestriction } from './updatePlaneRestriction';
 export * from './toNumber';
 export * from './metadataProvider';
 export * as typedMetadataProviders from './metadataProvider';
-import * as Tag from './Tags';
+export * as Tag from './Tags';
+export * as DicomStream from './dicomStream';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -113,7 +114,6 @@ const getViewportModality = (viewport: IViewport, volumeId?: string) =>
 export * from './isEqual';
 
 export {
-  Tag,
   FrameRange,
   eventListener,
   csUtils as invertRgbTransferFunction,

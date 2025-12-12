@@ -1,17 +1,12 @@
-import { Enums, metaData } from '@cornerstonejs/core';
+import { Enums, metaData, utilities } from '@cornerstonejs/core';
 import * as dicomParser from 'dicom-parser';
 import parseImageId from '../parseImageId';
 import dataSetCacheManager from '../dataSetCacheManager';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
-import {
-  getImageTypeSubItemFromDataset,
-  extractOrientationFromDataset,
-  extractPositionFromDataset,
-  extractSpacingFromDataset,
-  extractSliceThicknessFromDataset,
-} from './extractPositioningFromDataset';
-import isNMReconstructable from '../../isNMReconstructable';
-import { DataSetIterator } from './DataSetIterator';
+
+const {
+  DicomStream: { DataSetIterator },
+} = utilities;
 
 const { MetadataModules } = Enums;
 

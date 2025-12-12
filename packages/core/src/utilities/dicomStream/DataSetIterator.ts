@@ -1,9 +1,5 @@
-import { utilities } from '@cornerstonejs/core';
-
-const {
-  Tag: { mapTagInfo },
-  toNumber,
-} = utilities;
+import { mapTagInfo } from '../Tags';
+import toNumber from '../toNumber';
 
 const vrParse = {
   UN: (xtag, location, dataset) => [],
@@ -55,33 +51,29 @@ export class DataSetIterator {
         continue;
       }
 
-      const result = listener.addTag(tagInfo.tag, tagInfo.vr, null);
-      if (result === 'Skip') {
-        continue;
-      }
-      if (result === 'Parse') {
+      const { vr, name, tag, vm } = tagInfo;
+      listener.addTag(tag, { vr, name, vm });
+
+      if (vr === 'SQ') {
         const sequence = dataset.elements[key];
         if (sequence?.items) {
           for (const item of sequence.items) {
-            listener.startSection('ITEM');
+            listener.startObject();
             this.syncIterator(listener, item.dataSet);
-            listener.endSection();
+            listener.pop();
           }
         }
-        listener.endSection();
-        continue;
+        listener.pop();
+      } else {
+        const parser = vrParse[tagInfo.vr];
+        if (!parser) {
+          console.warn('No parser for', tagInfo.vr);
+          listener.endSection();
+          continue;
+        }
+        const parsed = parser(key, value, dataset);
+        listener.values(parsed);
       }
-      const parser = vrParse[tagInfo.vr];
-      if (!parser) {
-        console.warn('No parser for', tagInfo.vr);
-        listener.endSection();
-        continue;
-      }
-      const parsed = parser(key, value, dataset);
-      for (const v of parsed) {
-        listener.valueListener(v);
-      }
-      listener.endSection();
     }
   }
 }
@@ -96,15 +88,6 @@ function strings(xtag, _location, dataset) {
 
 function numberString(xtag, _location, dataset) {
   return strings(xtag, _location, dataset).map(toNumber);
-}
-
-function int32(xtag, location, dataset) {
-  const result = new Array<number>();
-  const vm = location.length / 4;
-  for (let i = 0; i < vm; i++) {
-    result[i] = dataset.int32(xtag, i);
-  }
-  return result;
 }
 
 function floatSingle(xtag, location, dataset) {

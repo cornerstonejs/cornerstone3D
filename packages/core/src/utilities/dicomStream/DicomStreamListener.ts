@@ -37,6 +37,7 @@ export class DicomStreamListener implements IDicomListener {
   public values(array) {
     if (this.listener.values) {
       this.listener.values(array);
+      this.pop();
       return;
     }
     for (const value of array) {

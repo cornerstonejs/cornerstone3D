@@ -1,5 +1,5 @@
 import { DicomStreamListener } from '../src/utilities/dicomStream/DicomStreamListener';
-import { NormalTagListener } from '../src/utilities/dicomStream/NormalTagListener';
+import { NaturalTagListener } from '../src/utilities/dicomStream/NaturalTagListener';
 import { Tags } from '../src/utilities/Tags';
 
 import { describe, beforeEach, it, test } from '@jest/globals';
@@ -25,10 +25,14 @@ describe('DicomStreamListener', () => {
       abList.forEach((item) => listener.value(item));
       listener.pop();
 
+      listener.addTag(Tags.SOPClassUID.tag, { vr: 'UI' });
+      listener.values(['1.2.3']);
+
       const instance = listener.pop();
 
       expect(instance[Tags.InstanceNumber.tag].Value).toEqual(abList);
       expect(instance[Tags.Units.tag].Value).toEqual(abList);
+      expect(instance[Tags.SOPClassUID.tag].Value).toEqual(['1.2.3']);
     });
 
     it('accepts sequences', () => {
@@ -63,7 +67,7 @@ describe('DicomStreamListener', () => {
   describe('normal listener', () => {
     beforeEach(() => {
       // Default listener should create metadata instances
-      listener = NormalTagListener.newNormalStreamListener();
+      listener = NaturalTagListener.newNaturalStreamListener();
     });
 
     it('accepts simple values', () => {
@@ -77,10 +81,14 @@ describe('DicomStreamListener', () => {
       abList.forEach((item) => listener.value(item));
       listener.pop();
 
+      listener.addTag(Tags.SOPClassUID.tag, { vr: 'UI' });
+      listener.values(['1.2.3']);
+
       const instance = listener.pop();
 
       expect(instance.abList1).toEqual(abList);
       expect(instance.abList2).toEqual(abList);
+      expect(instance.SOPClassUID).toEqual('1.2.3');
     });
 
     it('accepts sequences', () => {
@@ -97,7 +105,9 @@ describe('DicomStreamListener', () => {
       listener.startObject();
       listener.addTag('abList');
       abList.forEach((item) => listener.value(item));
+      // Ends the value array
       listener.pop();
+
       // Ends the start object
       listener.pop();
 

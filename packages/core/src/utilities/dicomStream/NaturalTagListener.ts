@@ -5,21 +5,21 @@ import { DicomStreamListener } from './DicomStreamListener';
 import type { IListenerInfo } from './DicomStreamTypes';
 import type { MetadataValueType } from './MetadataTagListener';
 
-export class NormalTagListener extends BaseDicomListener {
+export class NaturalTagListener extends BaseDicomListener {
   public info: IListenerInfo;
   public tag: string;
   public dest: MetadataValueType | MetadataValueType[];
-  public multiVm: boolean;
+  public singleVm: boolean;
   public name: string;
 
   /**
    * Creates a stream listener which creates the normalized objects
    */
-  public static newNormalStreamListener(options?) {
+  public static newNaturalStreamListener(options?) {
     return new DicomStreamListener({
       ...options,
       createTagListener: function (tag, info) {
-        return new NormalTagListener(this.listener, tag, info, options);
+        return new NaturalTagListener(this.listener, tag, info, options);
       },
     });
   }
@@ -30,24 +30,21 @@ export class NormalTagListener extends BaseDicomListener {
     const tagData = mapTagInfo.get(tag);
     const nameKey = options?.nameKey || 'name';
     this.name = info?.name || tagData?.[nameKey] || tag;
-    this.multiVm = tagData ? tagData.vm === 1 : null;
+    this.singleVm = tagData ? tagData.vm === 1 : null;
     this.info = info;
   }
 
-  public value(value: unknown) {
+  public value(value: MetadataValueType) {
     if (!this.dest) {
-      if (this.multiVm === false) {
-        this.dest = value;
-        if (typeof value === 'object') {
-          this.dest = makeArrayLike(this.dest);
-        }
+      if (this.singleVm) {
+        this.dest = makeArrayLike(value);
         this.parent.dest[this.name] = this.dest;
         return;
       }
       this.dest = [];
       this.parent.dest[this.name] = this.dest;
     }
-    if (this.multiVm === false) {
+    if (this.singleVm) {
       console.error(
         'Storing multiple values into',
         this.name,
@@ -55,7 +52,7 @@ export class NormalTagListener extends BaseDicomListener {
         this.value
       );
       // Clear it so we store as array
-      this.multiVm = null;
+      this.singleVm = null;
       this.dest = [this.dest as MetadataValueType];
       this.parent.dest[this.name] = this.dest;
     }
@@ -65,7 +62,8 @@ export class NormalTagListener extends BaseDicomListener {
   public pop() {
     if (
       (this.dest as MetadataValueType[])?.length === 1 &&
-      this.multiVm === null
+      this.singleVm === null &&
+      typeof this.dest[0] === 'object'
     ) {
       this.dest = makeArrayLike(this.dest[0]);
       this.parent.dest[this.name] = this.dest;
