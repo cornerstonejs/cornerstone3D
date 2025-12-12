@@ -366,15 +366,15 @@ describe('Image Slice Synchronizer:', () => {
 
               // Verify target stack viewport moved to closest slice
               const targetIndex = vp2.getCurrentImageIdIndex();
-              // Should be close to 2 based on imagePositionPatient matching
-              expect(targetIndex).toBeGreaterThanOrEqual(1);
-              expect(targetIndex).toBeLessThanOrEqual(3);
+              // Volume imageIndex 2 in axial view = z-position 7 (since volume is viewed from top)
+              // Stack images are at z = 0,1,2,...,9 so closest to z=7 is stack index 7
+              expect(targetIndex).toBe(7);
               resolve();
             }
           );
         });
 
-        // Scroll source volume viewport to slice 2
+        // Scroll source volume viewport to imageIndex 2 (which is z=7 in axial view)
         await utilities.jumpToSlice(element1, { imageIndex: 2 });
 
         // Wait for sync to complete, then finish test
