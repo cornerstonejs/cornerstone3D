@@ -86,7 +86,8 @@ export class ImageVolume {
   // @deprecated
   get numTimePoints(): number {
     // Return numDimensionGroups if defined, otherwise default to 1
-    return typeof (this as any).numDimensionGroups === 'number'
+    // @ts-expect-error
+    return typeof this.numDimensionGroups === 'number'
       ? (this as any).numDimensionGroups
       : 1;
   }
