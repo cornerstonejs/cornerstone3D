@@ -85,10 +85,10 @@ export class ImageVolume {
 
   // @deprecated
   get numTimePoints(): number {
-    // Return numDimensionGroups if defined, otherwise default to 1
     // @ts-expect-error
     return typeof this.numDimensionGroups === 'number'
-      ? (this as any).numDimensionGroups
+    // @ts-expect-error
+      ? this.numDimensionGroups
       : 1;
   }
   numFrames = null as number;
