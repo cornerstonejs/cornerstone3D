@@ -59,12 +59,16 @@ const SPHEREINDEX = {
  *
  * @remarks
  * This tool creates a complete 3D cropping interface with:
- * - 6 face spheres for individual axis cropping
+ * - 6 face spheres for individual axis cropping (along volume's X, Y, Z axes)
  * - 8 corner spheres for multi-axis cropping
  * - 12 edge lines connecting corner spheres
  * - Real-time clipping plane updates
  * - Synchronization with VolumeCroppingControlTool working on the same series instance UID for cross-viewport interaction
+ * - Support for volumes with any orientation (including oblique/rotated volumes)
  *
+ * The tool automatically adapts to the volume's orientation by using the volume's direction matrix.
+ * Clipping planes are aligned with the volume's intrinsic axes (X, Y, Z) rather than world axes,
+ * ensuring proper cropping regardless of how the volume is oriented in 3D space.
  *
  * @example
  * ```typescript
@@ -78,9 +82,9 @@ const SPHEREINDEX = {
  *   showHandles: true,
  *   initialCropFactor: 0.1,
  *   sphereColors: {
- *     SAGITTAL: [1.0, 1.0, 0.0], // Yellow for sagittal (X-axis) spheres
- *     CORONAL: [0.0, 1.0, 0.0], // Green for coronal (Y-axis) spheres
- *     AXIAL: [1.0, 0.0, 0.0], // Red for axial (Z-axis) spheres
+ *     SAGITTAL: [1.0, 1.0, 0.0], // Yellow for X-axis (typically sagittal) spheres
+ *     CORONAL: [0.0, 1.0, 0.0], // Green for Y-axis (typically coronal) spheres
+ *     AXIAL: [1.0, 0.0, 0.0], // Red for Z-axis (typically axial) spheres
  *     CORNERS: [0.0, 0.0, 1.0] // Blue for corner spheres
  *   },
  *   sphereRadius: 10,
@@ -106,8 +110,6 @@ const SPHEREINDEX = {
  *   // Toggle clipping effect
  *   tool.setClippingPlanesVisible(!planesVisible);
  *
- *   console.log(`Handles: ${!handlesVisible ? 'shown' : 'hidden'}`);
- *   console.log(`Cropping: ${!planesVisible ? 'active' : 'disabled'}`);
  * }
  *
  * // Common UI scenarios
@@ -204,6 +206,12 @@ class VolumeCroppingTool extends BaseTool {
   toolCenter: Types.Point3 = [0, 0, 0];
   cornerDragOffset: [number, number, number] | null = null;
   faceDragOffset: number | null = null;
+  // Store volume direction vectors for non-axis-aligned volumes
+  volumeDirectionVectors: {
+    xDir: Types.Point3; // First axis direction (rows)
+    yDir: Types.Point3; // Second axis direction (columns)
+    zDir: Types.Point3; // Third axis direction (slices)
+  } | null = null;
   // Store  spheres for show/hide actor.
   sphereStates: {
     point: Types.Point3;
@@ -255,16 +263,13 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   onSetToolActive() {
-    // console.debug('Setting tool active: volumeCropping', this.sphereStates);
     if (this.sphereStates && this.sphereStates.length > 0) {
       if (this.configuration.showHandles) {
         this.setHandlesVisible(false);
         this.setClippingPlanesVisible(false);
-        //   console.debug('Setting tool active: hiding controls');
       } else {
         this.setHandlesVisible(true);
         this.setClippingPlanesVisible(true);
-        // console.debug('Setting tool active: showing controls');
       }
     } else {
       const viewportsInfo = this._getViewportsInfo();
@@ -319,7 +324,6 @@ class VolumeCroppingTool extends BaseTool {
       if (this.sphereStates && this.sphereStates.length > 0) {
         this.setHandlesVisible(true);
       } else {
-        //console.warn('Setting tool active: no spheres! trying to initialize');
         this.originalClippingPlanes = [];
         this._initialize3DViewports(viewportsInfo);
       }
@@ -327,7 +331,7 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   onSetToolConfiguration = (): void => {
-    console.debug('Setting tool settoolconfiguration : volumeCropping');
+    console.debug('Setting tool settoolconfiguration : volumeCropping ');
     //this._init();
   };
 
@@ -403,10 +407,20 @@ class VolumeCroppingTool extends BaseTool {
           ];
           this.faceDragOffset = null;
         } else {
-          // For face spheres, only store the offset along the axis of movement
-          const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
+          // For face spheres, store the offset along the volume axis of movement
+          const directionVector = this._getDirectionVectorForAxis(
+            sphereState.axis
+          );
+          const delta = [
+            sphereState.point[0] - mouseWorld[0],
+            sphereState.point[1] - mouseWorld[1],
+            sphereState.point[2] - mouseWorld[2],
+          ];
+          // Project offset onto axis direction
           this.faceDragOffset =
-            sphereState.point[axisIdx] - mouseWorld[axisIdx];
+            delta[0] * directionVector[0] +
+            delta[1] * directionVector[1] +
+            delta[2] * directionVector[2];
           this.cornerDragOffset = null;
         }
 
@@ -492,18 +506,24 @@ class VolumeCroppingTool extends BaseTool {
     // Before showing, update sphere positions to match clipping planes
     if (visible) {
       // Update face spheres from the current clipping planes
-      this.sphereStates[SPHEREINDEX.XMIN].point[0] =
-        this.originalClippingPlanes[PLANEINDEX.XMIN].origin[0];
-      this.sphereStates[SPHEREINDEX.XMAX].point[0] =
-        this.originalClippingPlanes[PLANEINDEX.XMAX].origin[0];
-      this.sphereStates[SPHEREINDEX.YMIN].point[1] =
-        this.originalClippingPlanes[PLANEINDEX.YMIN].origin[1];
-      this.sphereStates[SPHEREINDEX.YMAX].point[1] =
-        this.originalClippingPlanes[PLANEINDEX.YMAX].origin[1];
-      this.sphereStates[SPHEREINDEX.ZMIN].point[2] =
-        this.originalClippingPlanes[PLANEINDEX.ZMIN].origin[2];
-      this.sphereStates[SPHEREINDEX.ZMAX].point[2] =
-        this.originalClippingPlanes[PLANEINDEX.ZMAX].origin[2];
+      this.sphereStates[SPHEREINDEX.XMIN].point = [
+        ...this.originalClippingPlanes[PLANEINDEX.XMIN].origin,
+      ] as Types.Point3;
+      this.sphereStates[SPHEREINDEX.XMAX].point = [
+        ...this.originalClippingPlanes[PLANEINDEX.XMAX].origin,
+      ] as Types.Point3;
+      this.sphereStates[SPHEREINDEX.YMIN].point = [
+        ...this.originalClippingPlanes[PLANEINDEX.YMIN].origin,
+      ] as Types.Point3;
+      this.sphereStates[SPHEREINDEX.YMAX].point = [
+        ...this.originalClippingPlanes[PLANEINDEX.YMAX].origin,
+      ] as Types.Point3;
+      this.sphereStates[SPHEREINDEX.ZMIN].point = [
+        ...this.originalClippingPlanes[PLANEINDEX.ZMIN].origin,
+      ] as Types.Point3;
+      this.sphereStates[SPHEREINDEX.ZMAX].point = [
+        ...this.originalClippingPlanes[PLANEINDEX.ZMAX].origin,
+      ] as Types.Point3;
 
       // Update all sphere actors' positions
       [
@@ -717,25 +737,128 @@ class VolumeCroppingTool extends BaseTool {
 
     // Handle sphere movement based on type WITHOUT updating clipping planes yet
     if (sphereState.isCorner) {
-      // Calculate and update just the dragged corner position
+      // For corner dragging in arbitrarily-oriented volumes:
+      // 1. Calculate the new corner position
+      // 2. Determine which faces this corner belongs to
+      // 3. Update those face spheres by projecting corner movement onto volume axes
+      // 4. Update all corners from the new face positions
+
       const newCorner = this._calculateNewCornerPosition(world);
-      this._updateSpherePosition(sphereState, newCorner);
+      const oldCorner = sphereState.point;
 
-      // Update related corners
+      // Parse which axes this corner belongs to (min or max for each of X, Y, Z)
       const axisFlags = this._parseCornerKey(sphereState.uid);
-      this._updateRelatedCorners(sphereState, newCorner, axisFlags);
 
-      // Update face spheres and corners
-      this._updateFaceSpheresFromCorners();
+      if (!this.volumeDirectionVectors) return false;
+      const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+
+      // Calculate movement delta
+      const delta = [
+        newCorner[0] - oldCorner[0],
+        newCorner[1] - oldCorner[1],
+        newCorner[2] - oldCorner[2],
+      ];
+
+      // Project delta onto each volume axis
+      const deltaX =
+        delta[0] * xDir[0] + delta[1] * xDir[1] + delta[2] * xDir[2];
+      const deltaY =
+        delta[0] * yDir[0] + delta[1] * yDir[1] + delta[2] * yDir[2];
+      const deltaZ =
+        delta[0] * zDir[0] + delta[1] * zDir[1] + delta[2] * zDir[2];
+
+      // Update the appropriate face spheres based on which corner this is
+      if (axisFlags.isXMin) {
+        const faceXMin = this.sphereStates[SPHEREINDEX.XMIN];
+        faceXMin.point = [
+          faceXMin.point[0] + deltaX * xDir[0],
+          faceXMin.point[1] + deltaX * xDir[1],
+          faceXMin.point[2] + deltaX * xDir[2],
+        ];
+        faceXMin.sphereSource.setCenter(...faceXMin.point);
+        faceXMin.sphereSource.modified();
+      } else if (axisFlags.isXMax) {
+        const faceXMax = this.sphereStates[SPHEREINDEX.XMAX];
+        faceXMax.point = [
+          faceXMax.point[0] + deltaX * xDir[0],
+          faceXMax.point[1] + deltaX * xDir[1],
+          faceXMax.point[2] + deltaX * xDir[2],
+        ];
+        faceXMax.sphereSource.setCenter(...faceXMax.point);
+        faceXMax.sphereSource.modified();
+      }
+
+      if (axisFlags.isYMin) {
+        const faceYMin = this.sphereStates[SPHEREINDEX.YMIN];
+        faceYMin.point = [
+          faceYMin.point[0] + deltaY * yDir[0],
+          faceYMin.point[1] + deltaY * yDir[1],
+          faceYMin.point[2] + deltaY * yDir[2],
+        ];
+        faceYMin.sphereSource.setCenter(...faceYMin.point);
+        faceYMin.sphereSource.modified();
+      } else if (axisFlags.isYMax) {
+        const faceYMax = this.sphereStates[SPHEREINDEX.YMAX];
+        faceYMax.point = [
+          faceYMax.point[0] + deltaY * yDir[0],
+          faceYMax.point[1] + deltaY * yDir[1],
+          faceYMax.point[2] + deltaY * yDir[2],
+        ];
+        faceYMax.sphereSource.setCenter(...faceYMax.point);
+        faceYMax.sphereSource.modified();
+      }
+
+      if (axisFlags.isZMin) {
+        const faceZMin = this.sphereStates[SPHEREINDEX.ZMIN];
+        faceZMin.point = [
+          faceZMin.point[0] + deltaZ * zDir[0],
+          faceZMin.point[1] + deltaZ * zDir[1],
+          faceZMin.point[2] + deltaZ * zDir[2],
+        ];
+        faceZMin.sphereSource.setCenter(...faceZMin.point);
+        faceZMin.sphereSource.modified();
+      } else if (axisFlags.isZMax) {
+        const faceZMax = this.sphereStates[SPHEREINDEX.ZMAX];
+        faceZMax.point = [
+          faceZMax.point[0] + deltaZ * zDir[0],
+          faceZMax.point[1] + deltaZ * zDir[1],
+          faceZMax.point[2] + deltaZ * zDir[2],
+        ];
+        faceZMax.sphereSource.setCenter(...faceZMax.point);
+        faceZMax.sphereSource.modified();
+      }
+
+      // Now update all corners from the new face positions
       this._updateCornerSpheres();
     } else {
-      // Update face sphere position
-      const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
-      let newValue = world[axisIdx];
+      // Update face sphere position - project movement onto volume axis
+      const directionVector = this._getDirectionVectorForAxis(sphereState.axis);
+
+      // Project the mouse world position onto the line defined by the sphere's axis
+      const delta = [
+        world[0] - sphereState.point[0],
+        world[1] - sphereState.point[1],
+        world[2] - sphereState.point[2],
+      ];
+
+      // Dot product to get distance along axis
+      const distanceAlongAxis =
+        delta[0] * directionVector[0] +
+        delta[1] * directionVector[1] +
+        delta[2] * directionVector[2];
+
+      // Apply offset if we have one
+      let adjustedDistance = distanceAlongAxis;
       if (this.faceDragOffset !== null) {
-        newValue += this.faceDragOffset;
+        adjustedDistance += this.faceDragOffset;
       }
-      sphereState.point[axisIdx] = newValue;
+
+      // Update sphere position along the axis
+      sphereState.point = [
+        sphereState.point[0] + adjustedDistance * directionVector[0],
+        sphereState.point[1] + adjustedDistance * directionVector[1],
+        sphereState.point[2] + adjustedDistance * directionVector[2],
+      ];
       sphereState.sphereSource.setCenter(...sphereState.point);
       sphereState.sphereSource.modified();
 
@@ -773,16 +896,19 @@ class VolumeCroppingTool extends BaseTool {
       const toolCenter = isMin
         ? evt.detail.toolCenterMin
         : evt.detail.toolCenterMax;
+
+      if (!this.volumeDirectionVectors) {
+        console.warn('Volume direction vectors not initialized ');
+        return;
+      }
+
+      const { xDir, yDir, zDir } = this.volumeDirectionVectors;
       const normals = isMin
-        ? [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-          ]
+        ? [xDir, yDir, zDir]
         : [
-            [-1, 0, 0],
-            [0, -1, 0],
-            [0, 0, -1],
+            [-xDir[0], -xDir[1], -xDir[2]],
+            [-yDir[0], -yDir[1], -yDir[2]],
+            [-zDir[0], -zDir[1], -zDir[2]],
           ];
       const planeIndices = isMin
         ? [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN]
@@ -1007,11 +1133,11 @@ class VolumeCroppingTool extends BaseTool {
     if (cornerKey) {
       color = sphereColors.CORNERS || [0.0, 0.0, 1.0]; // Use corners color from config, fallback to blue
     } else if (axis === 'z') {
-      color = sphereColors.AXIAL || [1.0, 0.0, 0.0]; // Z-axis = AXIAL planes
+      color = sphereColors.AXIAL || [1.0, 0.0, 0.0]; // Z-axis (slice direction) = AXIAL planes
     } else if (axis === 'x') {
-      color = sphereColors.SAGITTAL || [1.0, 1.0, 0.0]; // X-axis = SAGITTAL planes
+      color = sphereColors.SAGITTAL || [1.0, 1.0, 0.0]; // X-axis (row direction) = SAGITTAL planes
     } else if (axis === 'y') {
-      color = sphereColors.CORONAL || [0.0, 1.0, 0.0]; // Y-axis = CORONAL planes
+      color = sphereColors.CORONAL || [0.0, 1.0, 0.0]; // Y-axis (column direction) = CORONAL planes
     }
     // Store or update the sphere position
     const idx = this.sphereStates.findIndex((s) => s.uid === uid);
@@ -1041,6 +1167,82 @@ class VolumeCroppingTool extends BaseTool {
     sphereActor.setVisibility(this.configuration.showHandles);
     viewport.addActor({ actor: sphereActor, uid: uid });
   }
+  /**
+   * Extract volume direction vectors from imageData.
+   * The direction matrix defines the volume's orientation in world space.
+   * @param imageData - The VTK image data
+   * @returns Object containing the three orthogonal direction vectors
+   */
+  _extractVolumeDirectionVectors(imageData): {
+    xDir: Types.Point3;
+    yDir: Types.Point3;
+    zDir: Types.Point3;
+  } {
+    const direction = imageData.getDirection();
+    // Direction is a 9-element array: [x0, x1, x2, y0, y1, y2, z0, z1, z2]
+    // These should already be unit vectors, but let's verify and normalize
+    const xDir: Types.Point3 = [direction[0], direction[1], direction[2]];
+    const yDir: Types.Point3 = [direction[3], direction[4], direction[5]];
+    const zDir: Types.Point3 = [direction[6], direction[7], direction[8]];
+
+    // Normalize to ensure they are unit vectors
+    const xLen = Math.sqrt(
+      xDir[0] * xDir[0] + xDir[1] * xDir[1] + xDir[2] * xDir[2]
+    );
+    const yLen = Math.sqrt(
+      yDir[0] * yDir[0] + yDir[1] * yDir[1] + yDir[2] * yDir[2]
+    );
+    const zLen = Math.sqrt(
+      zDir[0] * zDir[0] + zDir[1] * zDir[1] + zDir[2] * zDir[2]
+    );
+
+    const xDirNorm: Types.Point3 = [
+      xDir[0] / xLen,
+      xDir[1] / xLen,
+      xDir[2] / xLen,
+    ];
+    const yDirNorm: Types.Point3 = [
+      yDir[0] / yLen,
+      yDir[1] / yLen,
+      yDir[2] / yLen,
+    ];
+    const zDirNorm: Types.Point3 = [
+      zDir[0] / zLen,
+      zDir[1] / zLen,
+      zDir[2] / zLen,
+    ];
+
+    return { xDir: xDirNorm, yDir: yDirNorm, zDir: zDirNorm };
+  }
+
+  /**
+   * Get the direction vector for a given axis ('x', 'y', or 'z').
+   * @param axis - The axis identifier
+   * @returns The direction vector in world space
+   */
+  _getDirectionVectorForAxis(axis: string): Types.Point3 {
+    if (!this.volumeDirectionVectors) {
+      console.error('Volume direction vectors not initialized');
+      // Fallback to axis-aligned
+      if (axis === 'x') return [1, 0, 0];
+      if (axis === 'y') return [0, 1, 0];
+      if (axis === 'z') return [0, 0, 1];
+      return [1, 0, 0];
+    }
+
+    switch (axis) {
+      case 'x':
+        return this.volumeDirectionVectors.xDir;
+      case 'y':
+        return this.volumeDirectionVectors.yDir;
+      case 'z':
+        return this.volumeDirectionVectors.zDir;
+      default:
+        console.error(`Unknown axis: ${axis}`);
+        return [1, 0, 0];
+    }
+  }
+
   /**
    * Calculate an adaptive sphere radius based on the diagonal of the volume.
    * This allows the sphere size to scale with the volume size.
@@ -1086,57 +1288,92 @@ class VolumeCroppingTool extends BaseTool {
       return;
     }
     this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
-    const worldBounds = imageData.getBounds(); // Already in world coordinates
+
+    // Extract volume direction vectors
+    this.volumeDirectionVectors =
+      this._extractVolumeDirectionVectors(imageData);
+    const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+
+    // Get volume bounds and dimensions in index space
+    const dimensions = imageData.getDimensions();
+    const spacing = imageData.getSpacing();
+    const origin = imageData.getOrigin();
+
     const cropFactor = this.configuration.initialCropFactor || 0.1;
 
-    // Calculate cropping bounds using world bounds
-    const xRange = worldBounds[1] - worldBounds[0];
-    const yRange = worldBounds[3] - worldBounds[2];
-    const zRange = worldBounds[5] - worldBounds[4];
+    // Calculate cropping range in index space
+    const xMin = cropFactor * dimensions[0];
+    const xMax = (1 - cropFactor) * dimensions[0];
+    const yMin = cropFactor * dimensions[1];
+    const yMax = (1 - cropFactor) * dimensions[1];
+    const zMin = cropFactor * dimensions[2];
+    const zMax = (1 - cropFactor) * dimensions[2];
 
-    const xMin = worldBounds[0] + cropFactor * xRange;
-    const xMax = worldBounds[1] - cropFactor * xRange;
-    const yMin = worldBounds[2] + cropFactor * yRange;
-    const yMax = worldBounds[3] - cropFactor * yRange;
-    const zMin = worldBounds[4] + cropFactor * zRange;
-    const zMax = worldBounds[5] - cropFactor * zRange;
+    // Helper function to convert index to world coordinates
+    const indexToWorld = (i: number, j: number, k: number): Types.Point3 => {
+      return [
+        origin[0] +
+          i * spacing[0] * xDir[0] +
+          j * spacing[1] * yDir[0] +
+          k * spacing[2] * zDir[0],
+        origin[1] +
+          i * spacing[0] * xDir[1] +
+          j * spacing[1] * yDir[1] +
+          k * spacing[2] * zDir[1],
+        origin[2] +
+          i * spacing[0] * xDir[2] +
+          j * spacing[1] * yDir[2] +
+          k * spacing[2] * zDir[2],
+      ];
+    };
 
-    const planes: vtkPlane[] = [];
+    // Calculate center of each face in index space
+    const xCenter = (xMin + xMax) / 2;
+    const yCenter = (yMin + yMax) / 2;
+    const zCenter = (zMin + zMax) / 2;
 
-    // X min plane (cuts everything left of xMin)
-    const planeXmin = vtkPlane.newInstance({
-      origin: [xMin, 0, 0],
-      normal: [1, 0, 0],
+    // Calculate world positions for face centers
+    const faceXMin = indexToWorld(xMin, yCenter, zCenter);
+    const faceXMax = indexToWorld(xMax, yCenter, zCenter);
+    const faceYMin = indexToWorld(xCenter, yMin, zCenter);
+    const faceYMax = indexToWorld(xCenter, yMax, zCenter);
+    const faceZMin = indexToWorld(xCenter, yCenter, zMin);
+    const faceZMax = indexToWorld(xCenter, yCenter, zMax);
+
+    // Create clipping planes with normals based on volume orientation
+    const planeXMin = vtkPlane.newInstance({
+      origin: faceXMin,
+      normal: xDir, // Normal points in +X direction
     });
-    const planeXmax = vtkPlane.newInstance({
-      origin: [xMax, 0, 0],
-      normal: [-1, 0, 0],
+    const planeXMax = vtkPlane.newInstance({
+      origin: faceXMax,
+      normal: [-xDir[0], -xDir[1], -xDir[2]], // Normal points in -X direction
     });
-    const planeYmin = vtkPlane.newInstance({
-      origin: [0, yMin, 0],
-      normal: [0, 1, 0],
+    const planeYMin = vtkPlane.newInstance({
+      origin: faceYMin,
+      normal: yDir, // Normal points in +Y direction
     });
-    const planeYmax = vtkPlane.newInstance({
-      origin: [0, yMax, 0],
-      normal: [0, -1, 0],
+    const planeYMax = vtkPlane.newInstance({
+      origin: faceYMax,
+      normal: [-yDir[0], -yDir[1], -yDir[2]], // Normal points in -Y direction
     });
-    const planeZmin = vtkPlane.newInstance({
-      origin: [0, 0, zMin],
-      normal: [0, 0, 1],
+    const planeZMin = vtkPlane.newInstance({
+      origin: faceZMin,
+      normal: zDir, // Normal points in +Z direction
     });
-    const planeZmax = vtkPlane.newInstance({
-      origin: [0, 0, zMax],
-      normal: [0, 0, -1],
+    const planeZMax = vtkPlane.newInstance({
+      origin: faceZMax,
+      normal: [-zDir[0], -zDir[1], -zDir[2]], // Normal points in -Z direction
     });
-    const mapper = viewport
-      .getDefaultActor()
-      .actor.getMapper() as vtkVolumeMapper;
-    planes.push(planeXmin);
-    planes.push(planeXmax);
-    planes.push(planeYmin);
-    planes.push(planeYmax);
-    planes.push(planeZmin);
-    planes.push(planeZmax);
+
+    const planes: vtkPlane[] = [
+      planeXMin,
+      planeXMax,
+      planeYMin,
+      planeYMax,
+      planeZMin,
+      planeZMax,
+    ];
 
     const originalPlanes = planes.map((plane) => ({
       origin: [...plane.getOrigin()],
@@ -1144,73 +1381,35 @@ class VolumeCroppingTool extends BaseTool {
     }));
 
     this.originalClippingPlanes = originalPlanes;
-    const sphereXminPoint = [xMin, (yMax + yMin) / 2, (zMax + zMin) / 2];
-    const sphereXmaxPoint = [xMax, (yMax + yMin) / 2, (zMax + zMin) / 2];
-    const sphereYminPoint = [(xMax + xMin) / 2, yMin, (zMax + zMin) / 2];
-    const sphereYmaxPoint = [(xMax + xMin) / 2, yMax, (zMax + zMin) / 2];
-    const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMin];
-    const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax];
-    const adaptiveRadius = this._calculateAdaptiveSphereRadius(
-      Math.sqrt(xRange * xRange + yRange * yRange + zRange * zRange)
-    );
-    this._addSphere(
-      viewport,
-      sphereXminPoint,
-      'x',
-      'min',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereXmaxPoint,
-      'x',
-      'max',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereYminPoint,
-      'y',
-      'min',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereYmaxPoint,
-      'y',
-      'max',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereZminPoint,
-      'z',
-      'min',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereZmaxPoint,
-      'z',
-      'max',
-      null,
-      adaptiveRadius
-    );
 
+    // Calculate world diagonal for adaptive sphere radius
+    const diag0 = indexToWorld(0, 0, 0);
+    const diag1 = indexToWorld(dimensions[0], dimensions[1], dimensions[2]);
+    const diagonal = Math.sqrt(
+      Math.pow(diag1[0] - diag0[0], 2) +
+        Math.pow(diag1[1] - diag0[1], 2) +
+        Math.pow(diag1[2] - diag0[2], 2)
+    );
+    const adaptiveRadius = this._calculateAdaptiveSphereRadius(diagonal);
+
+    // Add face spheres - now using 'x', 'y', 'z' instead of 'i', 'j', 'k'
+    this._addSphere(viewport, faceXMin, 'x', 'min', null, adaptiveRadius);
+    this._addSphere(viewport, faceXMax, 'x', 'max', null, adaptiveRadius);
+    this._addSphere(viewport, faceYMin, 'y', 'min', null, adaptiveRadius);
+    this._addSphere(viewport, faceYMax, 'y', 'max', null, adaptiveRadius);
+    this._addSphere(viewport, faceZMin, 'z', 'min', null, adaptiveRadius);
+    this._addSphere(viewport, faceZMax, 'z', 'max', null, adaptiveRadius);
+
+    // Calculate all 8 corners in world space
     const corners = [
-      [xMin, yMin, zMin],
-      [xMin, yMin, zMax],
-      [xMin, yMax, zMin],
-      [xMin, yMax, zMax],
-      [xMax, yMin, zMin],
-      [xMax, yMin, zMax],
-      [xMax, yMax, zMin],
-      [xMax, yMax, zMax],
+      indexToWorld(xMin, yMin, zMin),
+      indexToWorld(xMin, yMin, zMax),
+      indexToWorld(xMin, yMax, zMin),
+      indexToWorld(xMin, yMax, zMax),
+      indexToWorld(xMax, yMin, zMin),
+      indexToWorld(xMax, yMin, zMax),
+      indexToWorld(xMax, yMax, zMin),
+      indexToWorld(xMax, yMax, zMax),
     ];
 
     const cornerKeys = [
@@ -1238,17 +1437,17 @@ class VolumeCroppingTool extends BaseTool {
     // draw the lines between corners
     // All 12 edges as pairs of corner keys
     const edgeCornerPairs = [
-      // X edges
+      // X edges (along first axis)
       ['XMIN_YMIN_ZMIN', 'XMAX_YMIN_ZMIN'],
       ['XMIN_YMIN_ZMAX', 'XMAX_YMIN_ZMAX'],
       ['XMIN_YMAX_ZMIN', 'XMAX_YMAX_ZMIN'],
       ['XMIN_YMAX_ZMAX', 'XMAX_YMAX_ZMAX'],
-      // Y edges
+      // Y edges (along second axis)
       ['XMIN_YMIN_ZMIN', 'XMIN_YMAX_ZMIN'],
       ['XMIN_YMIN_ZMAX', 'XMIN_YMAX_ZMAX'],
       ['XMAX_YMIN_ZMIN', 'XMAX_YMAX_ZMIN'],
       ['XMAX_YMIN_ZMAX', 'XMAX_YMAX_ZMAX'],
-      // Z edges
+      // Z edges (along third axis)
       ['XMIN_YMIN_ZMIN', 'XMIN_YMIN_ZMAX'],
       ['XMIN_YMAX_ZMIN', 'XMIN_YMAX_ZMAX'],
       ['XMAX_YMIN_ZMIN', 'XMAX_YMIN_ZMAX'],
@@ -1271,12 +1470,16 @@ class VolumeCroppingTool extends BaseTool {
       }
     });
 
-    mapper.addClippingPlane(planeXmin);
-    mapper.addClippingPlane(planeXmax);
-    mapper.addClippingPlane(planeYmin);
-    mapper.addClippingPlane(planeYmax);
-    mapper.addClippingPlane(planeZmin);
-    mapper.addClippingPlane(planeZmax);
+    const mapper = viewport
+      .getDefaultActor()
+      .actor.getMapper() as vtkVolumeMapper;
+
+    mapper.addClippingPlane(planeXMin);
+    mapper.addClippingPlane(planeXMax);
+    mapper.addClippingPlane(planeYMin);
+    mapper.addClippingPlane(planeYMax);
+    mapper.addClippingPlane(planeZMin);
+    mapper.addClippingPlane(planeZMax);
 
     eventTarget.addEventListener(
       Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
@@ -1303,35 +1506,34 @@ class VolumeCroppingTool extends BaseTool {
     return renderingEngine.getViewport(viewport3D.viewportId);
   };
 
-  // Handle corner sphere movement
-  _handleCornerSphereMovement = (sphereState, world, viewport) => {
-    // Calculate new position with offset
-    const newCorner = this._calculateNewCornerPosition(world);
-
-    // Update the dragged corner
-    this._updateSpherePosition(sphereState, newCorner);
-
-    // Parse corner key to determine axes
-    const axisFlags = this._parseCornerKey(sphereState.uid);
-
-    // Update related corners efficiently
-    this._updateRelatedCorners(sphereState, newCorner, axisFlags);
-
-    // Update dependent elements
-    this._updateAfterCornerMovement(viewport);
-  };
-
   // Handle face sphere movement
   _handleFaceSphereMovement = (sphereState, world, viewport) => {
-    const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
-    let newValue = world[axisIdx];
+    // Project movement onto the volume axis
+    const directionVector = this._getDirectionVectorForAxis(sphereState.axis);
+
+    // Project the mouse world position onto the line defined by the sphere's axis
+    const delta = [
+      world[0] - sphereState.point[0],
+      world[1] - sphereState.point[1],
+      world[2] - sphereState.point[2],
+    ];
+
+    // Dot product to get distance along axis
+    let distanceAlongAxis =
+      delta[0] * directionVector[0] +
+      delta[1] * directionVector[1] +
+      delta[2] * directionVector[2];
 
     if (this.faceDragOffset !== null) {
-      newValue += this.faceDragOffset;
+      distanceAlongAxis += this.faceDragOffset;
     }
 
-    // Update only the relevant axis
-    sphereState.point[axisIdx] = newValue;
+    // Update sphere position along the axis
+    sphereState.point = [
+      sphereState.point[0] + distanceAlongAxis * directionVector[0],
+      sphereState.point[1] + distanceAlongAxis * directionVector[1],
+      sphereState.point[2] + distanceAlongAxis * directionVector[2],
+    ];
     sphereState.sphereSource.setCenter(...sphereState.point);
     sphereState.sphereSource.modified();
 
@@ -1374,72 +1576,6 @@ class VolumeCroppingTool extends BaseTool {
     sphereState.sphereSource.modified();
   };
 
-  // Update related corners that share axes
-  _updateRelatedCorners = (draggedSphere, newCorner, axisFlags) => {
-    this.sphereStates.forEach((state) => {
-      if (!state.isCorner || state === draggedSphere) {
-        return;
-      }
-
-      const key = state.uid.replace('corner_', '');
-      const shouldUpdate = this._shouldUpdateCorner(key, axisFlags);
-
-      if (shouldUpdate) {
-        this._updateCornerCoordinates(state, newCorner, key, axisFlags);
-      }
-    });
-  };
-
-  // Determine if a corner should be updated
-  _shouldUpdateCorner = (cornerKey, axisFlags) => {
-    return (
-      (axisFlags.isXMin && cornerKey.includes('XMIN')) ||
-      (axisFlags.isXMax && cornerKey.includes('XMAX')) ||
-      (axisFlags.isYMin && cornerKey.includes('YMIN')) ||
-      (axisFlags.isYMax && cornerKey.includes('YMAX')) ||
-      (axisFlags.isZMin && cornerKey.includes('ZMIN')) ||
-      (axisFlags.isZMax && cornerKey.includes('ZMAX'))
-    );
-  };
-
-  // Update individual corner coordinates
-  _updateCornerCoordinates = (state, newCorner, cornerKey, axisFlags) => {
-    // X axis updates
-    if (
-      (axisFlags.isXMin && cornerKey.includes('XMIN')) ||
-      (axisFlags.isXMax && cornerKey.includes('XMAX'))
-    ) {
-      state.point[0] = newCorner[0];
-    }
-
-    // Y axis updates
-    if (
-      (axisFlags.isYMin && cornerKey.includes('YMIN')) ||
-      (axisFlags.isYMax && cornerKey.includes('YMAX'))
-    ) {
-      state.point[1] = newCorner[1];
-    }
-
-    // Z axis updates
-    if (
-      (axisFlags.isZMin && cornerKey.includes('ZMIN')) ||
-      (axisFlags.isZMax && cornerKey.includes('ZMAX'))
-    ) {
-      state.point[2] = newCorner[2];
-    }
-
-    // Apply changes
-    state.sphereSource.setCenter(...state.point);
-    state.sphereSource.modified();
-  };
-
-  // Update after corner movement
-  _updateAfterCornerMovement = (viewport) => {
-    this._updateFaceSpheresFromCorners();
-    this._updateCornerSpheres();
-    this._updateClippingPlanesFromFaceSpheres(viewport);
-  };
-
   // Update after face movement
   _updateAfterFaceMovement = (viewport) => {
     this._updateCornerSpheresFromFaces();
@@ -1461,22 +1597,22 @@ class VolumeCroppingTool extends BaseTool {
   _updateClippingPlanesFromFaceSpheres(viewport) {
     const mapper = viewport.getDefaultActor().actor.getMapper();
     // Update origins in originalClippingPlanes
-    this.originalClippingPlanes[0].origin = [
+    this.originalClippingPlanes[PLANEINDEX.XMIN].origin = [
       ...this.sphereStates[SPHEREINDEX.XMIN].point,
     ];
-    this.originalClippingPlanes[1].origin = [
+    this.originalClippingPlanes[PLANEINDEX.XMAX].origin = [
       ...this.sphereStates[SPHEREINDEX.XMAX].point,
     ];
-    this.originalClippingPlanes[2].origin = [
+    this.originalClippingPlanes[PLANEINDEX.YMIN].origin = [
       ...this.sphereStates[SPHEREINDEX.YMIN].point,
     ];
-    this.originalClippingPlanes[3].origin = [
+    this.originalClippingPlanes[PLANEINDEX.YMAX].origin = [
       ...this.sphereStates[SPHEREINDEX.YMAX].point,
     ];
-    this.originalClippingPlanes[4].origin = [
+    this.originalClippingPlanes[PLANEINDEX.ZMIN].origin = [
       ...this.sphereStates[SPHEREINDEX.ZMIN].point,
     ];
-    this.originalClippingPlanes[5].origin = [
+    this.originalClippingPlanes[PLANEINDEX.ZMAX].origin = [
       ...this.sphereStates[SPHEREINDEX.ZMAX].point,
     ];
 
@@ -1501,23 +1637,63 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateCornerSpheresFromFaces() {
+    if (!this.volumeDirectionVectors) return;
+
     // Get face sphere positions
-    const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
-    const xMax = this.sphereStates[SPHEREINDEX.XMAX].point[0];
-    const yMin = this.sphereStates[SPHEREINDEX.YMIN].point[1];
-    const yMax = this.sphereStates[SPHEREINDEX.YMAX].point[1];
-    const zMin = this.sphereStates[SPHEREINDEX.ZMIN].point[2];
-    const zMax = this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+    const faceXMin = this.sphereStates[SPHEREINDEX.XMIN].point;
+    const faceXMax = this.sphereStates[SPHEREINDEX.XMAX].point;
+    const faceYMin = this.sphereStates[SPHEREINDEX.YMIN].point;
+    const faceYMax = this.sphereStates[SPHEREINDEX.YMAX].point;
+    const faceZMin = this.sphereStates[SPHEREINDEX.ZMIN].point;
+    const faceZMax = this.sphereStates[SPHEREINDEX.ZMAX].point;
+
+    // Helper function to find intersection of three planes
+    // Each corner is at the intersection of three planes (one from each axis)
+    const findCorner = (
+      faceX: Types.Point3,
+      faceY: Types.Point3,
+      faceZ: Types.Point3
+    ) => {
+      // Use face positions as starting points and project to find intersection
+      // Start from faceX position, move along Y and Z directions to match the other faces
+      const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+
+      // Project to find distances
+      // Distance from faceX to faceY plane along Y direction
+      const deltaXY = [
+        faceY[0] - faceX[0],
+        faceY[1] - faceX[1],
+        faceY[2] - faceX[2],
+      ];
+      const distY =
+        deltaXY[0] * yDir[0] + deltaXY[1] * yDir[1] + deltaXY[2] * yDir[2];
+
+      // Distance from faceX to faceZ plane along Z direction
+      const deltaXZ = [
+        faceZ[0] - faceX[0],
+        faceZ[1] - faceX[1],
+        faceZ[2] - faceX[2],
+      ];
+      const distZ =
+        deltaXZ[0] * zDir[0] + deltaXZ[1] * zDir[1] + deltaXZ[2] * zDir[2];
+
+      // Corner position is faceX position plus movements along Y and Z
+      return [
+        faceX[0] + distY * yDir[0] + distZ * zDir[0],
+        faceX[1] + distY * yDir[1] + distZ * zDir[1],
+        faceX[2] + distY * yDir[2] + distZ * zDir[2],
+      ] as Types.Point3;
+    };
 
     const corners = [
-      { key: 'XMIN_YMIN_ZMIN', pos: [xMin, yMin, zMin] },
-      { key: 'XMIN_YMIN_ZMAX', pos: [xMin, yMin, zMax] },
-      { key: 'XMIN_YMAX_ZMIN', pos: [xMin, yMax, zMin] },
-      { key: 'XMIN_YMAX_ZMAX', pos: [xMin, yMax, zMax] },
-      { key: 'XMAX_YMIN_ZMIN', pos: [xMax, yMin, zMin] },
-      { key: 'XMAX_YMIN_ZMAX', pos: [xMax, yMin, zMax] },
-      { key: 'XMAX_YMAX_ZMIN', pos: [xMax, yMax, zMin] },
-      { key: 'XMAX_YMAX_ZMAX', pos: [xMax, yMax, zMax] },
+      { key: 'XMIN_YMIN_ZMIN', pos: findCorner(faceXMin, faceYMin, faceZMin) },
+      { key: 'XMIN_YMIN_ZMAX', pos: findCorner(faceXMin, faceYMin, faceZMax) },
+      { key: 'XMIN_YMAX_ZMIN', pos: findCorner(faceXMin, faceYMax, faceZMin) },
+      { key: 'XMIN_YMAX_ZMAX', pos: findCorner(faceXMin, faceYMax, faceZMax) },
+      { key: 'XMAX_YMIN_ZMIN', pos: findCorner(faceXMax, faceYMin, faceZMin) },
+      { key: 'XMAX_YMIN_ZMAX', pos: findCorner(faceXMax, faceYMin, faceZMax) },
+      { key: 'XMAX_YMAX_ZMIN', pos: findCorner(faceXMax, faceYMax, faceZMin) },
+      { key: 'XMAX_YMAX_ZMAX', pos: findCorner(faceXMax, faceYMax, faceZMax) },
     ];
 
     for (const corner of corners) {
@@ -1525,15 +1701,15 @@ class VolumeCroppingTool extends BaseTool {
         (s) => s.uid === `corner_${corner.key}`
       );
       if (state) {
-        state.point[0] = corner.pos[0];
-        state.point[1] = corner.pos[1];
-        state.point[2] = corner.pos[2];
+        state.point = corner.pos;
         state.sphereSource.setCenter(...state.point);
         state.sphereSource.modified();
       }
     }
   }
   _updateFaceSpheresFromCorners() {
+    if (!this.volumeDirectionVectors) return;
+
     // Get all corner points
     const corners = [
       this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMIN].point,
@@ -1546,48 +1722,134 @@ class VolumeCroppingTool extends BaseTool {
       this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMAX].point,
     ];
 
-    const xs = corners.map((p) => p[0]);
-    const ys = corners.map((p) => p[1]);
-    const zs = corners.map((p) => p[2]);
+    // Calculate face centers by averaging the 4 corners on each face
+    // XMIN face: average of 4 corners with XMIN
+    const xMinCorners = [corners[0], corners[1], corners[2], corners[3]];
+    const faceXMin = [
+      (xMinCorners[0][0] +
+        xMinCorners[1][0] +
+        xMinCorners[2][0] +
+        xMinCorners[3][0]) /
+        4,
+      (xMinCorners[0][1] +
+        xMinCorners[1][1] +
+        xMinCorners[2][1] +
+        xMinCorners[3][1]) /
+        4,
+      (xMinCorners[0][2] +
+        xMinCorners[1][2] +
+        xMinCorners[2][2] +
+        xMinCorners[3][2]) /
+        4,
+    ] as Types.Point3;
 
-    const xMin = Math.min(...xs),
-      xMax = Math.max(...xs);
-    const yMin = Math.min(...ys),
-      yMax = Math.max(...ys);
-    const zMin = Math.min(...zs),
-      zMax = Math.max(...zs);
+    // XMAX face: average of 4 corners with XMAX
+    const xMaxCorners = [corners[4], corners[5], corners[6], corners[7]];
+    const faceXMax = [
+      (xMaxCorners[0][0] +
+        xMaxCorners[1][0] +
+        xMaxCorners[2][0] +
+        xMaxCorners[3][0]) /
+        4,
+      (xMaxCorners[0][1] +
+        xMaxCorners[1][1] +
+        xMaxCorners[2][1] +
+        xMaxCorners[3][1]) /
+        4,
+      (xMaxCorners[0][2] +
+        xMaxCorners[1][2] +
+        xMaxCorners[2][2] +
+        xMaxCorners[3][2]) /
+        4,
+    ] as Types.Point3;
 
-    // Face spheres should always be at the center of their face
-    this.sphereStates[SPHEREINDEX.XMIN].point = [
-      xMin,
-      (yMin + yMax) / 2,
-      (zMin + zMax) / 2,
-    ];
-    this.sphereStates[SPHEREINDEX.XMAX].point = [
-      xMax,
-      (yMin + yMax) / 2,
-      (zMin + zMax) / 2,
-    ];
-    this.sphereStates[SPHEREINDEX.YMIN].point = [
-      (xMin + xMax) / 2,
-      yMin,
-      (zMin + zMax) / 2,
-    ];
-    this.sphereStates[SPHEREINDEX.YMAX].point = [
-      (xMin + xMax) / 2,
-      yMax,
-      (zMin + zMax) / 2,
-    ];
-    this.sphereStates[SPHEREINDEX.ZMIN].point = [
-      (xMin + xMax) / 2,
-      (yMin + yMax) / 2,
-      zMin,
-    ];
-    this.sphereStates[SPHEREINDEX.ZMAX].point = [
-      (xMin + xMax) / 2,
-      (yMin + yMax) / 2,
-      zMax,
-    ];
+    // YMIN face: corners 0, 1, 4, 5
+    const yMinCorners = [corners[0], corners[1], corners[4], corners[5]];
+    const faceYMin = [
+      (yMinCorners[0][0] +
+        yMinCorners[1][0] +
+        yMinCorners[2][0] +
+        yMinCorners[3][0]) /
+        4,
+      (yMinCorners[0][1] +
+        yMinCorners[1][1] +
+        yMinCorners[2][1] +
+        yMinCorners[3][1]) /
+        4,
+      (yMinCorners[0][2] +
+        yMinCorners[1][2] +
+        yMinCorners[2][2] +
+        yMinCorners[3][2]) /
+        4,
+    ] as Types.Point3;
+
+    // YMAX face: corners 2, 3, 6, 7
+    const yMaxCorners = [corners[2], corners[3], corners[6], corners[7]];
+    const faceYMax = [
+      (yMaxCorners[0][0] +
+        yMaxCorners[1][0] +
+        yMaxCorners[2][0] +
+        yMaxCorners[3][0]) /
+        4,
+      (yMaxCorners[0][1] +
+        yMaxCorners[1][1] +
+        yMaxCorners[2][1] +
+        yMaxCorners[3][1]) /
+        4,
+      (yMaxCorners[0][2] +
+        yMaxCorners[1][2] +
+        yMaxCorners[2][2] +
+        yMaxCorners[3][2]) /
+        4,
+    ] as Types.Point3;
+
+    // ZMIN face: corners 0, 2, 4, 6
+    const zMinCorners = [corners[0], corners[2], corners[4], corners[6]];
+    const faceZMin = [
+      (zMinCorners[0][0] +
+        zMinCorners[1][0] +
+        zMinCorners[2][0] +
+        zMinCorners[3][0]) /
+        4,
+      (zMinCorners[0][1] +
+        zMinCorners[1][1] +
+        zMinCorners[2][1] +
+        zMinCorners[3][1]) /
+        4,
+      (zMinCorners[0][2] +
+        zMinCorners[1][2] +
+        zMinCorners[2][2] +
+        zMinCorners[3][2]) /
+        4,
+    ] as Types.Point3;
+
+    // ZMAX face: corners 1, 3, 5, 7
+    const zMaxCorners = [corners[1], corners[3], corners[5], corners[7]];
+    const faceZMax = [
+      (zMaxCorners[0][0] +
+        zMaxCorners[1][0] +
+        zMaxCorners[2][0] +
+        zMaxCorners[3][0]) /
+        4,
+      (zMaxCorners[0][1] +
+        zMaxCorners[1][1] +
+        zMaxCorners[2][1] +
+        zMaxCorners[3][1]) /
+        4,
+      (zMaxCorners[0][2] +
+        zMaxCorners[1][2] +
+        zMaxCorners[2][2] +
+        zMaxCorners[3][2]) /
+        4,
+    ] as Types.Point3;
+
+    // Update face sphere positions
+    this.sphereStates[SPHEREINDEX.XMIN].point = faceXMin;
+    this.sphereStates[SPHEREINDEX.XMAX].point = faceXMax;
+    this.sphereStates[SPHEREINDEX.YMIN].point = faceYMin;
+    this.sphereStates[SPHEREINDEX.YMAX].point = faceYMax;
+    this.sphereStates[SPHEREINDEX.ZMIN].point = faceZMin;
+    this.sphereStates[SPHEREINDEX.ZMAX].point = faceZMax;
 
     [
       SPHEREINDEX.XMIN,
@@ -1604,24 +1866,53 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateCornerSpheres() {
+    if (!this.volumeDirectionVectors) return;
+
     // Get face sphere positions
-    const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
-    const xMax = this.sphereStates[SPHEREINDEX.XMAX].point[0];
-    const yMin = this.sphereStates[SPHEREINDEX.YMIN].point[1];
-    const yMax = this.sphereStates[SPHEREINDEX.YMAX].point[1];
-    const zMin = this.sphereStates[SPHEREINDEX.ZMIN].point[2];
-    const zMax = this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+    const faceXMin = this.sphereStates[SPHEREINDEX.XMIN].point;
+    const faceXMax = this.sphereStates[SPHEREINDEX.XMAX].point;
+    const faceYMin = this.sphereStates[SPHEREINDEX.YMIN].point;
+    const faceYMax = this.sphereStates[SPHEREINDEX.YMAX].point;
+    const faceZMin = this.sphereStates[SPHEREINDEX.ZMIN].point;
+    const faceZMax = this.sphereStates[SPHEREINDEX.ZMAX].point;
+
+    // Helper function to find intersection of three orthogonal planes
+    // Plane X: passes through faceX, normal = xDir
+    // Plane Y: passes through faceY, normal = yDir
+    // Plane Z: passes through faceZ, normal = zDir
+    // For orthogonal planes, we can find the intersection by solving:
+    // (corner - faceX) · xDir = 0  => corner · xDir = faceX · xDir
+    // (corner - faceY) · yDir = 0  => corner · yDir = faceY · yDir
+    // (corner - faceZ) · zDir = 0  => corner · zDir = faceZ · zDir
+    const findCorner = (
+      faceX: Types.Point3,
+      faceY: Types.Point3,
+      faceZ: Types.Point3
+    ) => {
+      const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+
+      // The dot products give us the "signed distances" along each axis
+      const dX = faceX[0] * xDir[0] + faceX[1] * xDir[1] + faceX[2] * xDir[2];
+      const dY = faceY[0] * yDir[0] + faceY[1] * yDir[1] + faceY[2] * yDir[2];
+      const dZ = faceZ[0] * zDir[0] + faceZ[1] * zDir[1] + faceZ[2] * zDir[2];
+
+      return [
+        dX * xDir[0] + dY * yDir[0] + dZ * zDir[0],
+        dX * xDir[1] + dY * yDir[1] + dZ * zDir[1],
+        dX * xDir[2] + dY * yDir[2] + dZ * zDir[2],
+      ] as Types.Point3;
+    };
 
     // Define all 8 corners from face sphere positions
     const corners = [
-      { key: 'XMIN_YMIN_ZMIN', pos: [xMin, yMin, zMin] },
-      { key: 'XMIN_YMIN_ZMAX', pos: [xMin, yMin, zMax] },
-      { key: 'XMIN_YMAX_ZMIN', pos: [xMin, yMax, zMin] },
-      { key: 'XMIN_YMAX_ZMAX', pos: [xMin, yMax, zMax] },
-      { key: 'XMAX_YMIN_ZMIN', pos: [xMax, yMin, zMin] },
-      { key: 'XMAX_YMIN_ZMAX', pos: [xMax, yMin, zMax] },
-      { key: 'XMAX_YMAX_ZMIN', pos: [xMax, yMax, zMin] },
-      { key: 'XMAX_YMAX_ZMAX', pos: [xMax, yMax, zMax] },
+      { key: 'XMIN_YMIN_ZMIN', pos: findCorner(faceXMin, faceYMin, faceZMin) },
+      { key: 'XMIN_YMIN_ZMAX', pos: findCorner(faceXMin, faceYMin, faceZMax) },
+      { key: 'XMIN_YMAX_ZMIN', pos: findCorner(faceXMin, faceYMax, faceZMin) },
+      { key: 'XMIN_YMAX_ZMAX', pos: findCorner(faceXMin, faceYMax, faceZMax) },
+      { key: 'XMAX_YMIN_ZMIN', pos: findCorner(faceXMax, faceYMin, faceZMin) },
+      { key: 'XMAX_YMIN_ZMAX', pos: findCorner(faceXMax, faceYMin, faceZMax) },
+      { key: 'XMAX_YMAX_ZMIN', pos: findCorner(faceXMax, faceYMax, faceZMin) },
+      { key: 'XMAX_YMAX_ZMAX', pos: findCorner(faceXMax, faceYMax, faceZMax) },
     ];
 
     // Update corner spheres
@@ -1630,9 +1921,7 @@ class VolumeCroppingTool extends BaseTool {
         (s) => s.uid === `corner_${corner.key}`
       );
       if (state) {
-        state.point[0] = corner.pos[0];
-        state.point[1] = corner.pos[1];
-        state.point[2] = corner.pos[2];
+        state.point = corner.pos;
         state.sphereSource.setCenter(...state.point);
         state.sphereSource.modified();
       }
