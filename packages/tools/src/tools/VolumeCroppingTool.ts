@@ -174,6 +174,8 @@ const SPHEREINDEX = {
  * @property {number} grabSpherePixelDistance - Pixel distance threshold for sphere selection (default: 20)
  * @property {number} rotateIncrementDegrees - Rotation increment for camera rotation (default: 2)
  * @property {number} rotateSampleDistanceFactor - Sample distance multiplier during rotation for performance (default: 2)
+ * @property {boolean} rotateClippingPlanesOnDrag - If true, dragging rotates clipping planes instead of camera (default: false)
+ * @property {number} rotateClippingPlanesIncrementDegrees - Rotation increment for clipping planes rotation (default: 5)
  *
  * @events
  * @event VOLUMECROPPING_TOOL_CHANGED - Fired when sphere positions change or clipping planes are updated
@@ -254,6 +256,8 @@ class VolumeCroppingTool extends BaseTool {
         grabSpherePixelDistance: 20, //pixels threshold for closeness to the sphere being grabbed
         rotateIncrementDegrees: 2,
         rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
+        rotateClippingPlanesOnDrag: false, // If true, dragging rotates clipping planes instead of camera
+        rotateClippingPlanesIncrementDegrees: 5, // Rotation increment for clipping planes (higher = faster rotation)
       },
     }
   ) {
@@ -645,7 +649,14 @@ class VolumeCroppingTool extends BaseTool {
       // crop handles
       this._onMouseMoveSphere(evt);
     } else {
-      // rotate
+      // Check configuration to determine if we should rotate clipping planes or camera
+      if (this.configuration.rotateClippingPlanesOnDrag) {
+        // Rotate clipping planes instead of camera
+        this._rotateClippingPlanes(evt);
+        return;
+      }
+
+      // Rotate camera (volume view)
       const currentPointsCanvas = currentPoints.canvas;
       const lastPointsCanvas = lastPoints.canvas;
       const { rotateIncrementDegrees } = this.configuration;
@@ -898,7 +909,7 @@ class VolumeCroppingTool extends BaseTool {
         : evt.detail.toolCenterMax;
 
       if (!this.volumeDirectionVectors) {
-        console.warn('Volume direction vectors not initialized ');
+        console.warn('Volume direction vectors not initialized');
         return;
       }
 
@@ -1978,6 +1989,290 @@ class VolumeCroppingTool extends BaseTool {
       );
     });
   }
+
+  _rotateClippingPlanes = (evt: EventTypes.InteractionEventType) => {
+    const { element, currentPoints, lastPoints } = evt.detail;
+    const currentPointsCanvas = currentPoints.canvas;
+    const lastPointsCanvas = lastPoints.canvas;
+    const rotateIncrementDegrees =
+      this.configuration.rotateClippingPlanesIncrementDegrees ??
+      this.configuration.rotateIncrementDegrees ??
+      5;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const camera = viewport.getCamera();
+    const width = element.clientWidth;
+    const height = element.clientHeight;
+
+    const normalizedPosition = [
+      currentPointsCanvas[0] / width,
+      currentPointsCanvas[1] / height,
+    ];
+
+    const normalizedPreviousPosition = [
+      lastPointsCanvas[0] / width,
+      lastPointsCanvas[1] / height,
+    ];
+
+    const center: Types.Point2 = [width * 0.5, height * 0.5];
+    const centerWorld = viewport.canvasToWorld(center);
+    const normalizedCenter = [0.5, 0.5];
+
+    const radsq = (1.0 + Math.abs(normalizedCenter[0])) ** 2.0;
+    const op = [normalizedPreviousPosition[0], 0, 0];
+    const oe = [normalizedPosition[0], 0, 0];
+
+    const opsq = op[0] ** 2;
+    const oesq = oe[0] ** 2;
+
+    const lop = opsq > radsq ? 0 : Math.sqrt(radsq - opsq);
+    const loe = oesq > radsq ? 0 : Math.sqrt(radsq - oesq);
+
+    const nop: Types.Point3 = [op[0], 0, lop];
+    vtkMath.normalize(nop);
+    const noe: Types.Point3 = [oe[0], 0, loe];
+    vtkMath.normalize(noe);
+
+    const dot = vtkMath.dot(nop, noe);
+    if (Math.abs(dot) > 0.0001) {
+      const angleX =
+        -2 *
+        Math.acos(vtkMath.clampValue(dot, -1.0, 1.0)) *
+        Math.sign(normalizedPosition[0] - normalizedPreviousPosition[0]) *
+        rotateIncrementDegrees;
+
+      const upVec = camera.viewUp;
+      const atV = camera.viewPlaneNormal;
+      const rightV: Types.Point3 = [0, 0, 0];
+      const forwardV: Types.Point3 = [0, 0, 0];
+
+      vtkMath.cross(upVec, atV, rightV);
+      vtkMath.normalize(rightV);
+
+      vtkMath.cross(atV, rightV, forwardV);
+      vtkMath.normalize(forwardV);
+
+      const angleY =
+        (normalizedPreviousPosition[1] - normalizedPosition[1]) *
+        rotateIncrementDegrees;
+
+      // Calculate rotation center (tool center or average of face spheres)
+      let rotationCenter: Types.Point3 = this.toolCenter;
+      if (
+        this.sphereStates.length >= 6 &&
+        this.toolCenter[0] === 0 &&
+        this.toolCenter[1] === 0 &&
+        this.toolCenter[2] === 0
+      ) {
+        // Calculate center as average of all face sphere centers
+        // This works correctly for both axis-aligned and rotated volumes
+        const faces = [
+          this.sphereStates[SPHEREINDEX.XMIN],
+          this.sphereStates[SPHEREINDEX.XMAX],
+          this.sphereStates[SPHEREINDEX.YMIN],
+          this.sphereStates[SPHEREINDEX.YMAX],
+          this.sphereStates[SPHEREINDEX.ZMIN],
+          this.sphereStates[SPHEREINDEX.ZMAX],
+        ];
+        rotationCenter = [
+          (faces[0].point[0] +
+            faces[1].point[0] +
+            faces[2].point[0] +
+            faces[3].point[0] +
+            faces[4].point[0] +
+            faces[5].point[0]) /
+            6,
+          (faces[0].point[1] +
+            faces[1].point[1] +
+            faces[2].point[1] +
+            faces[3].point[1] +
+            faces[4].point[1] +
+            faces[5].point[1]) /
+            6,
+          (faces[0].point[2] +
+            faces[1].point[2] +
+            faces[2].point[2] +
+            faces[3].point[2] +
+            faces[4].point[2] +
+            faces[5].point[2]) /
+            6,
+        ] as Types.Point3;
+      }
+
+      // Rotate all clipping planes around the rotation center
+      // First rotate around forward axis (angleX), then around right axis (angleY)
+      const transformX = mat4.identity(new Float32Array(16));
+      mat4.translate(transformX, transformX, rotationCenter);
+      mat4.rotate(transformX, transformX, (angleX * Math.PI) / 180, forwardV);
+      mat4.translate(transformX, transformX, [
+        -rotationCenter[0],
+        -rotationCenter[1],
+        -rotationCenter[2],
+      ]);
+
+      const transformY = mat4.identity(new Float32Array(16));
+      mat4.translate(transformY, transformY, rotationCenter);
+      mat4.rotate(transformY, transformY, (angleY * Math.PI) / 180, rightV);
+      mat4.translate(transformY, transformY, [
+        -rotationCenter[0],
+        -rotationCenter[1],
+        -rotationCenter[2],
+      ]);
+
+      // Combine transformations
+      const transform = mat4.create();
+      mat4.multiply(transform, transformY, transformX);
+
+      // Rotate normals (rotation only, no translation)
+      // Create 4x4 rotation matrices and extract 3x3 for normals
+      const normalTransformX4 = mat4.identity(new Float32Array(16));
+      mat4.rotate(
+        normalTransformX4,
+        normalTransformX4,
+        (angleX * Math.PI) / 180,
+        forwardV
+      );
+      const normalTransformX = mat3.create();
+      mat3.fromMat4(normalTransformX, normalTransformX4);
+
+      const normalTransformY4 = mat4.identity(new Float32Array(16));
+      mat4.rotate(
+        normalTransformY4,
+        normalTransformY4,
+        (angleY * Math.PI) / 180,
+        rightV
+      );
+      const normalTransformY = mat3.create();
+      mat3.fromMat4(normalTransformY, normalTransformY4);
+
+      const normalTransform = mat3.create();
+      mat3.multiply(normalTransform, normalTransformY, normalTransformX);
+
+      // Rotate all original clipping planes
+      for (let i = 0; i < this.originalClippingPlanes.length; ++i) {
+        const plane = this.originalClippingPlanes[i];
+
+        // Transform origin
+        const originVec = vec3.fromValues(
+          plane.origin[0],
+          plane.origin[1],
+          plane.origin[2]
+        );
+        vec3.transformMat4(originVec, originVec, transform);
+        plane.origin = [originVec[0], originVec[1], originVec[2]];
+
+        // Transform normal
+        const normalVec = vec3.fromValues(
+          plane.normal[0],
+          plane.normal[1],
+          plane.normal[2]
+        );
+        vec3.transformMat3(normalVec, normalVec, normalTransform);
+        vec3.normalize(normalVec, normalVec);
+        plane.normal = [normalVec[0], normalVec[1], normalVec[2]];
+      }
+
+      // Update face spheres from rotated planes
+      if (this.sphereStates.length >= 6) {
+        this.sphereStates[SPHEREINDEX.XMIN].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.XMIN].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.XMAX].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.XMAX].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.YMIN].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.YMIN].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.YMAX].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.YMAX].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.ZMIN].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.ZMIN].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.ZMAX].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.ZMAX].origin,
+        ] as Types.Point3;
+
+        // Update sphere actors for face spheres
+        [
+          SPHEREINDEX.XMIN,
+          SPHEREINDEX.XMAX,
+          SPHEREINDEX.YMIN,
+          SPHEREINDEX.YMAX,
+          SPHEREINDEX.ZMIN,
+          SPHEREINDEX.ZMAX,
+        ].forEach((idx) => {
+          const s = this.sphereStates[idx];
+          s.sphereSource.setCenter(...s.point);
+          s.sphereSource.modified();
+        });
+
+        // Rotate corner spheres directly using the same transformation
+        // This ensures they stay consistent with the rotated planes
+        const cornerIndices = [
+          SPHEREINDEX.XMIN_YMIN_ZMIN,
+          SPHEREINDEX.XMIN_YMIN_ZMAX,
+          SPHEREINDEX.XMIN_YMAX_ZMIN,
+          SPHEREINDEX.XMIN_YMAX_ZMAX,
+          SPHEREINDEX.XMAX_YMIN_ZMIN,
+          SPHEREINDEX.XMAX_YMIN_ZMAX,
+          SPHEREINDEX.XMAX_YMAX_ZMIN,
+          SPHEREINDEX.XMAX_YMAX_ZMAX,
+        ];
+
+        cornerIndices.forEach((idx) => {
+          const cornerState = this.sphereStates[idx];
+          if (cornerState) {
+            const cornerVec = vec3.fromValues(
+              cornerState.point[0],
+              cornerState.point[1],
+              cornerState.point[2]
+            );
+            vec3.transformMat4(cornerVec, cornerVec, transform);
+            cornerState.point = [
+              cornerVec[0],
+              cornerVec[1],
+              cornerVec[2],
+            ] as Types.Point3;
+            cornerState.sphereSource.setCenter(...cornerState.point);
+            cornerState.sphereSource.modified();
+          }
+        });
+
+        // Update edge lines to follow the rotated corner spheres
+        Object.values(this.edgeLines).forEach(({ source, key1, key2 }) => {
+          const state1 = this.sphereStates.find(
+            (s) => s.uid === `corner_${key1}`
+          );
+          const state2 = this.sphereStates.find(
+            (s) => s.uid === `corner_${key2}`
+          );
+          if (state1 && state2) {
+            const points = source.getPoints();
+            points.setPoint(
+              0,
+              state1.point[0],
+              state1.point[1],
+              state1.point[2]
+            );
+            points.setPoint(
+              1,
+              state2.point[0],
+              state2.point[1],
+              state2.point[2]
+            );
+            points.modified();
+            source.modified();
+          }
+        });
+      }
+
+      // Update clipping planes in viewport
+      this._updateClippingPlanes(viewport);
+      viewport.render();
+    }
+  };
 
   _rotateCamera = (viewport, centerWorld, axis, angle) => {
     const vtkCamera = viewport.getVtkActiveCamera();
