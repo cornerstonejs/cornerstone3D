@@ -1538,7 +1538,22 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateCornerSpheresFromFaces() {
-    if (!this.volumeDirectionVectors) return;
+    // Get current plane normals (which may have been rotated)
+    // Use plane normals instead of original volume direction vectors
+    const xDir =
+      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        ? (this.originalClippingPlanes[PLANEINDEX.XMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.xDir || [1, 0, 0];
+    const yDir =
+      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        ? (this.originalClippingPlanes[PLANEINDEX.YMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.yDir || [0, 1, 0];
+    const zDir =
+      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        ? (this.originalClippingPlanes[PLANEINDEX.ZMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.zDir || [0, 0, 1];
+
+    if (!xDir || !yDir || !zDir) return;
 
     // Get face sphere positions
     const faceXMin = this.sphereStates[SPHEREINDEX.XMIN].point;
@@ -1557,7 +1572,7 @@ class VolumeCroppingTool extends BaseTool {
     ) => {
       // Use face positions as starting points and project to find intersection
       // Start from faceX position, move along Y and Z directions to match the other faces
-      const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+      // xDir, yDir, zDir are captured from outer scope
 
       // Project to find distances
       // Distance from faceX to faceY plane along Y direction
@@ -1767,7 +1782,22 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateCornerSpheres() {
-    if (!this.volumeDirectionVectors) return;
+    // Get current plane normals (which may have been rotated)
+    // Use plane normals instead of original volume direction vectors
+    const xDir =
+      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        ? (this.originalClippingPlanes[PLANEINDEX.XMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.xDir || [1, 0, 0];
+    const yDir =
+      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        ? (this.originalClippingPlanes[PLANEINDEX.YMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.yDir || [0, 1, 0];
+    const zDir =
+      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        ? (this.originalClippingPlanes[PLANEINDEX.ZMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.zDir || [0, 0, 1];
+
+    if (!xDir || !yDir || !zDir) return;
 
     // Get face sphere positions
     const faceXMin = this.sphereStates[SPHEREINDEX.XMIN].point;
@@ -1790,7 +1820,7 @@ class VolumeCroppingTool extends BaseTool {
       faceY: Types.Point3,
       faceZ: Types.Point3
     ) => {
-      const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+      // xDir, yDir, zDir are captured from outer scope
 
       // The dot products give us the "signed distances" along each axis
       const dX = faceX[0] * xDir[0] + faceX[1] * xDir[1] + faceX[2] * xDir[2];
