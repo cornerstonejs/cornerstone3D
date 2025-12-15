@@ -143,7 +143,7 @@ function _drawTextGroup(
 
     textGroup.appendChild(textElement);
     svgDrawingHelper.appendNode(textGroup, svgNodeHash);
-    textGroupBoundingBox = _drawTextBackground(textGroup, background);
+    textGroupBoundingBox = _drawTextBackground(textGroup, backgroundStyles);
   }
 
   // We translate the group using `position`

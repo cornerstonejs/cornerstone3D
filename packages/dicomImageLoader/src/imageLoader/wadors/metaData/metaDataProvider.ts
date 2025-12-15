@@ -73,10 +73,8 @@ function metaDataProvider(type, imageId) {
   if (type === MetadataModules.GENERAL_STUDY) {
     return {
       studyDescription: getValue<string>(metaData['00081030']),
-      studyDate: dicomParser.parseDA(getValue<string>(metaData['00080020'])),
-      studyTime: dicomParser.parseTM(
-        getValue<string>(metaData['00080030'], 0, '')
-      ),
+      studyDate: getValue<string>(metaData['00080020']),
+      studyTime: getValue<string>(metaData['00080030']),
       accessionNumber: getValue<string>(metaData['00080050']),
     };
   }
@@ -88,16 +86,10 @@ function metaDataProvider(type, imageId) {
       seriesDescription: getValue<string>(metaData['0008103E']),
       seriesNumber: getNumberValue(metaData['00200011']),
       studyInstanceUID: getValue<string>(metaData['0020000D']),
-      seriesDate: dicomParser.parseDA(getValue<string>(metaData['00080021'])),
-      seriesTime: dicomParser.parseTM(
-        getValue<string>(metaData['00080031'], 0, '')
-      ),
-      acquisitionDate: dicomParser.parseDA(
-        getValue<string>(metaData['00080022'])
-      ),
-      acquisitionTime: dicomParser.parseTM(
-        getValue<string>(metaData['00080032'], 0, '')
-      ),
+      seriesDate: getValue<string>(metaData['00080021']),
+      seriesTime: getValue<string>(metaData['00080031']),
+      acquisitionDate: getValue<string>(metaData['00080022']),
+      acquisitionTime: getValue<string>(metaData['00080032']),
     };
   }
 
@@ -299,8 +291,10 @@ function metaDataProvider(type, imageId) {
 
     return {
       radiopharmaceuticalInfo: {
-        radiopharmaceuticalStartTime: dicomParser.parseTM(
-          getValue(radiopharmaceuticalInfo['00181072'], 0, '')
+        radiopharmaceuticalStartTime: getValue(
+          radiopharmaceuticalInfo['00181072'],
+          0,
+          ''
         ),
         radiopharmaceuticalStartDateTime: getValue(
           radiopharmaceuticalInfo['00181078'],

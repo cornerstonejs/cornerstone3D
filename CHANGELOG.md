@@ -3,6 +3,73 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.13.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.0...v4.13.1) (2025-12-02)
+
+**Note:** Version bump only for package root
+
+# [4.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.7...v4.13.0) (2025-12-02)
+
+### Features
+
+- cursor strategies ([#2459](https://github.com/cornerstonejs/cornerstone3D/issues/2459)) ([453451e](https://github.com/cornerstonejs/cornerstone3D/commit/453451ea67507283fc03efbef5e3c77496814f38))
+
+## [4.12.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.6...v4.12.7) (2025-12-02)
+
+### Bug Fixes
+
+- handle missing labelmap image ids in stack labelmap example ([#2497](https://github.com/cornerstonejs/cornerstone3D/issues/2497)) ([9e48c18](https://github.com/cornerstonejs/cornerstone3D/commit/9e48c186276c9662877d71cc59dd50001047677a))
+- initialize ThresholdCircle with threshold config and guard dynamic radius ([#2496](https://github.com/cornerstonejs/cornerstone3D/issues/2496)) ([981fbad](https://github.com/cornerstonejs/cornerstone3D/commit/981fbad341a5dbc0ded01e021b6241ccb7b8903f))
+
+## [4.12.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.5...v4.12.6) (2025-11-28)
+
+### Bug Fixes
+
+- **WSIViewport:** add event listener for annotation removal ([#2461](https://github.com/cornerstonejs/cornerstone3D/issues/2461)) ([026c69d](https://github.com/cornerstonejs/cornerstone3D/commit/026c69dfb705d42a28c0db11fec498c777a3ed39))
+
+## [4.12.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.4...v4.12.5) (2025-11-27)
+
+### Bug Fixes
+
+- US calibrated regions broken ([#2415](https://github.com/cornerstonejs/cornerstone3D/issues/2415)) ([20efd77](https://github.com/cornerstonejs/cornerstone3D/commit/20efd77303d874f1c0a59f3cd859bdbce47d4a67))
+
+## [4.12.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.3...v4.12.4) (2025-11-27)
+
+### Bug Fixes
+
+- sculpt tool whorl effects ([#2484](https://github.com/cornerstonejs/cornerstone3D/issues/2484)) ([c85c44e](https://github.com/cornerstonejs/cornerstone3D/commit/c85c44ebd0d02a7bb4a988096084313c799ed775)), closes [#2101](https://github.com/cornerstonejs/cornerstone3D/issues/2101)
+
+## [4.12.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.2...v4.12.3) (2025-11-26)
+
+### Bug Fixes
+
+- Export seg ([#2486](https://github.com/cornerstonejs/cornerstone3D/issues/2486)) ([154945e](https://github.com/cornerstonejs/cornerstone3D/commit/154945e36ede6c8eb14cfb118f8e2e4a75094f37))
+
+## [4.12.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.1...v4.12.2) (2025-11-21)
+
+**Note:** Version bump only for package root
+
+## [4.12.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.0...v4.12.1) (2025-11-21)
+
+### Bug Fixes
+
+- Display YBR_RCT/ICT/PARTIAL_420 Photometric interpretation uncompressed image data ([6d869b6](https://github.com/cornerstonejs/cornerstone3D/commit/6d869b6812504da1c2372efd5325f7c3ab742b30))
+
+# [4.12.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.5...v4.12.0) (2025-11-20)
+
+### Features
+
+- upgrade to vtk.js 34.x ([#2398](https://github.com/cornerstonejs/cornerstone3D/issues/2398)) ([6db4ab5](https://github.com/cornerstonejs/cornerstone3D/commit/6db4ab5769fcbf8e5adbd39e6016e5ba18ba8794))
+
+## [4.11.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.4...v4.11.5) (2025-11-20)
+
+**Note:** Version bump only for package root
+
+## [4.11.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.3...v4.11.4) (2025-11-20)
+
+### Bug Fixes
+
+- type error calling function of undefined (segmentAI) ([#2481](https://github.com/cornerstonejs/cornerstone3D/issues/2481)) ([562d48e](https://github.com/cornerstonejs/cornerstone3D/commit/562d48e4bdc7c10441b911bebc38309d962422d2)), closes [OHIF#5547](https://github.com/OHIF/issues/5547)
+
 ## [4.11.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.11.2...v4.11.3) (2025-11-19)
 
 ### Bug Fixes

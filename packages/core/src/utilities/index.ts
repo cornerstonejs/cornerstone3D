@@ -99,7 +99,7 @@ import getVolumeDirectionVectors from './getVolumeDirectionVectors';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
-import getPixelSpacingInformation from './getPixelSpacingInformation';
+export * from './getPixelSpacingInformation';
 import { asArray } from './asArray';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
@@ -204,6 +204,5 @@ export {
   getImageDataMetadata,
   buildMetadata,
   calculateNeighborhoodStats,
-  getPixelSpacingInformation,
   asArray,
 };
