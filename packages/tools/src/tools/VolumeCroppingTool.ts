@@ -1,6 +1,4 @@
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
-import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import { mat3, mat4, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -26,32 +24,15 @@ import { Events } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 
-const PLANEINDEX = {
-  XMIN: 0,
-  XMAX: 1,
-  YMIN: 2,
-  YMAX: 3,
-  ZMIN: 4,
-  ZMAX: 5,
-};
-const SPHEREINDEX = {
-  // cube faces
-  XMIN: 0,
-  XMAX: 1,
-  YMIN: 2,
-  YMAX: 3,
-  ZMIN: 4,
-  ZMAX: 5,
-  // cube corners
-  XMIN_YMIN_ZMIN: 6,
-  XMIN_YMIN_ZMAX: 7,
-  XMIN_YMAX_ZMIN: 8,
-  XMIN_YMAX_ZMAX: 9,
-  XMAX_YMIN_ZMIN: 10,
-  XMAX_YMIN_ZMAX: 11,
-  XMAX_YMAX_ZMIN: 12,
-  XMAX_YMAX_ZMAX: 13,
-};
+import {
+  PLANEINDEX,
+  SPHEREINDEX,
+  extractVolumeDirectionVectors,
+  calculateAdaptiveSphereRadius,
+  parseCornerKey,
+  addLine3DBetweenPoints,
+  calculateNewCornerPosition,
+} from '../utilities/volumeCropping';
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -754,14 +735,34 @@ class VolumeCroppingTool extends BaseTool {
       // 3. Update those face spheres by projecting corner movement onto volume axes
       // 4. Update all corners from the new face positions
 
-      const newCorner = this._calculateNewCornerPosition(world);
+      const newCorner = calculateNewCornerPosition(
+        world,
+        this.cornerDragOffset
+      );
       const oldCorner = sphereState.point;
 
       // Parse which axes this corner belongs to (min or max for each of X, Y, Z)
-      const axisFlags = this._parseCornerKey(sphereState.uid);
+      const axisFlags = parseCornerKey(sphereState.uid);
 
-      if (!this.volumeDirectionVectors) return false;
-      const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+      // Get current plane normals (which may have been rotated)
+      // Use plane normals instead of original volume direction vectors
+      const xDir =
+        this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+          ? (this.originalClippingPlanes[PLANEINDEX.XMIN]
+              .normal as Types.Point3)
+          : this.volumeDirectionVectors?.xDir || [1, 0, 0];
+      const yDir =
+        this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+          ? (this.originalClippingPlanes[PLANEINDEX.YMIN]
+              .normal as Types.Point3)
+          : this.volumeDirectionVectors?.yDir || [0, 1, 0];
+      const zDir =
+        this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+          ? (this.originalClippingPlanes[PLANEINDEX.ZMIN]
+              .normal as Types.Point3)
+          : this.volumeDirectionVectors?.zDir || [0, 0, 1];
+
+      if (!xDir || !yDir || !zDir) return false;
 
       // Calculate movement delta
       const delta = [
@@ -1070,47 +1071,6 @@ class VolumeCroppingTool extends BaseTool {
     });
   }
 
-  _addLine3DBetweenPoints(
-    viewport,
-    point1,
-    point2,
-    color: [number, number, number] = [0.7, 0.7, 0.7],
-    uid = ''
-  ) {
-    // Avoid creating a line if the points are the same
-    if (
-      point1[0] === point2[0] &&
-      point1[1] === point2[1] &&
-      point1[2] === point2[2]
-    ) {
-      return { actor: null, source: null };
-    }
-    const points = vtkPoints.newInstance();
-    points.setNumberOfPoints(2);
-    points.setPoint(0, point1[0], point1[1], point1[2]);
-    points.setPoint(1, point2[0], point2[1], point2[2]);
-
-    const lines = vtkCellArray.newInstance({ values: [2, 0, 1] });
-    const polyData = vtkPolyData.newInstance();
-    polyData.setPoints(points);
-    polyData.setLines(lines);
-
-    const mapper = vtkMapper.newInstance();
-    mapper.setInputData(polyData);
-    const actor = vtkActor.newInstance();
-    actor.setMapper(mapper);
-    actor.getProperty().setColor(...color);
-    actor.getProperty().setLineWidth(0.5); // Thinner line
-    actor.getProperty().setOpacity(1.0);
-    actor.getProperty().setInterpolationToFlat(); // No shading
-    actor.getProperty().setAmbient(1.0); // Full ambient
-    actor.getProperty().setDiffuse(0.0); // No diffuse
-    actor.getProperty().setSpecular(0.0); // No specular
-    actor.setVisibility(this.configuration.showHandles);
-    viewport.addActor({ actor, uid });
-    return { actor, source: polyData };
-  }
-
   _getViewportsInfo = () => {
     const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
     return viewports;
@@ -1178,53 +1138,6 @@ class VolumeCroppingTool extends BaseTool {
     sphereActor.setVisibility(this.configuration.showHandles);
     viewport.addActor({ actor: sphereActor, uid: uid });
   }
-  /**
-   * Extract volume direction vectors from imageData.
-   * The direction matrix defines the volume's orientation in world space.
-   * @param imageData - The VTK image data
-   * @returns Object containing the three orthogonal direction vectors
-   */
-  _extractVolumeDirectionVectors(imageData): {
-    xDir: Types.Point3;
-    yDir: Types.Point3;
-    zDir: Types.Point3;
-  } {
-    const direction = imageData.getDirection();
-    // Direction is a 9-element array: [x0, x1, x2, y0, y1, y2, z0, z1, z2]
-    // These should already be unit vectors, but let's verify and normalize
-    const xDir: Types.Point3 = [direction[0], direction[1], direction[2]];
-    const yDir: Types.Point3 = [direction[3], direction[4], direction[5]];
-    const zDir: Types.Point3 = [direction[6], direction[7], direction[8]];
-
-    // Normalize to ensure they are unit vectors
-    const xLen = Math.sqrt(
-      xDir[0] * xDir[0] + xDir[1] * xDir[1] + xDir[2] * xDir[2]
-    );
-    const yLen = Math.sqrt(
-      yDir[0] * yDir[0] + yDir[1] * yDir[1] + yDir[2] * yDir[2]
-    );
-    const zLen = Math.sqrt(
-      zDir[0] * zDir[0] + zDir[1] * zDir[1] + zDir[2] * zDir[2]
-    );
-
-    const xDirNorm: Types.Point3 = [
-      xDir[0] / xLen,
-      xDir[1] / xLen,
-      xDir[2] / xLen,
-    ];
-    const yDirNorm: Types.Point3 = [
-      yDir[0] / yLen,
-      yDir[1] / yLen,
-      yDir[2] / yLen,
-    ];
-    const zDirNorm: Types.Point3 = [
-      zDir[0] / zLen,
-      zDir[1] / zLen,
-      zDir[2] / zLen,
-    ];
-
-    return { xDir: xDirNorm, yDir: yDirNorm, zDir: zDirNorm };
-  }
 
   /**
    * Get the direction vector for a given axis ('x', 'y', or 'z').
@@ -1232,6 +1145,32 @@ class VolumeCroppingTool extends BaseTool {
    * @returns The direction vector in world space
    */
   _getDirectionVectorForAxis(axis: string): Types.Point3 {
+    // After rotation, use the current plane normals instead of original volume direction vectors
+    // This ensures spheres move along the rotated planes
+    if (
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length >= 6
+    ) {
+      switch (axis) {
+        case 'x':
+          // Use XMIN plane normal (points in +X direction)
+          return this.originalClippingPlanes[PLANEINDEX.XMIN]
+            .normal as Types.Point3;
+        case 'y':
+          // Use YMIN plane normal (points in +Y direction)
+          return this.originalClippingPlanes[PLANEINDEX.YMIN]
+            .normal as Types.Point3;
+        case 'z':
+          // Use ZMIN plane normal (points in +Z direction)
+          return this.originalClippingPlanes[PLANEINDEX.ZMIN]
+            .normal as Types.Point3;
+        default:
+          console.error(`Unknown axis: ${axis}`);
+          return [1, 0, 0];
+      }
+    }
+
+    // Fallback to original volume direction vectors if planes not available
     if (!this.volumeDirectionVectors) {
       console.error('Volume direction vectors not initialized');
       // Fallback to axis-aligned
@@ -1252,30 +1191,6 @@ class VolumeCroppingTool extends BaseTool {
         console.error(`Unknown axis: ${axis}`);
         return [1, 0, 0];
     }
-  }
-
-  /**
-   * Calculate an adaptive sphere radius based on the diagonal of the volume.
-   * This allows the sphere size to scale with the volume size.
-   * @param diagonal The diagonal length of the volume in world coordinates.
-   * @returns The calculated adaptive radius, clamped between min and max limits.
-   */
-  _calculateAdaptiveSphereRadius(diagonal): number {
-    // Get base radius from configuration (acts as a scaling factor)
-    const baseRadius =
-      this.configuration.sphereRadius !== undefined
-        ? this.configuration.sphereRadius
-        : 8;
-
-    // Scale radius as a percentage of diagonal (adjustable factor)
-    const scaleFactor = this.configuration.sphereRadiusScale || 0.01; // 1% of diagonal by default
-    const adaptiveRadius = diagonal * scaleFactor;
-
-    // Apply min/max limits to prevent too small or too large spheres
-    const minRadius = this.configuration.minSphereRadius || 2;
-    const maxRadius = this.configuration.maxSphereRadius || 50;
-
-    return Math.max(minRadius, Math.min(maxRadius, adaptiveRadius));
   }
 
   _initialize3DViewports = (viewportsInfo): void => {
@@ -1301,8 +1216,7 @@ class VolumeCroppingTool extends BaseTool {
     this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
 
     // Extract volume direction vectors
-    this.volumeDirectionVectors =
-      this._extractVolumeDirectionVectors(imageData);
+    this.volumeDirectionVectors = extractVolumeDirectionVectors(imageData);
     const { xDir, yDir, zDir } = this.volumeDirectionVectors;
 
     // Get volume bounds and dimensions in index space
@@ -1401,7 +1315,10 @@ class VolumeCroppingTool extends BaseTool {
         Math.pow(diag1[1] - diag0[1], 2) +
         Math.pow(diag1[2] - diag0[2], 2)
     );
-    const adaptiveRadius = this._calculateAdaptiveSphereRadius(diagonal);
+    const adaptiveRadius = calculateAdaptiveSphereRadius(
+      diagonal,
+      this.configuration
+    );
 
     // Add face spheres - now using 'x', 'y', 'z' instead of 'i', 'j', 'k'
     this._addSphere(viewport, faceXMin, 'x', 'min', null, adaptiveRadius);
@@ -1470,12 +1387,13 @@ class VolumeCroppingTool extends BaseTool {
       const state2 = this.sphereStates.find((s) => s.uid === `corner_${key2}`);
       if (state1 && state2) {
         const uid = `edge_${key1}_${key2}`;
-        const { actor, source } = this._addLine3DBetweenPoints(
+        const { actor, source } = addLine3DBetweenPoints(
           viewport,
           state1.point,
           state2.point,
           [0.7, 0.7, 0.7],
-          uid
+          uid,
+          this.configuration.showHandles
         );
         this.edgeLines[uid] = { actor, source, key1, key2 };
       }
@@ -1550,34 +1468,6 @@ class VolumeCroppingTool extends BaseTool {
 
     // Update dependent elements
     this._updateAfterFaceMovement(viewport);
-  };
-
-  // Calculate new corner position with offset
-  _calculateNewCornerPosition = (world) => {
-    let newCorner = [world[0], world[1], world[2]];
-
-    if (this.cornerDragOffset) {
-      newCorner = [
-        world[0] + this.cornerDragOffset[0],
-        world[1] + this.cornerDragOffset[1],
-        world[2] + this.cornerDragOffset[2],
-      ];
-    }
-
-    return newCorner;
-  };
-
-  // Parse corner key to determine which axes are min/max
-  _parseCornerKey = (uid) => {
-    const cornerKey = uid.replace('corner_', '');
-    return {
-      isXMin: cornerKey.includes('XMIN'),
-      isXMax: cornerKey.includes('XMAX'),
-      isYMin: cornerKey.includes('YMIN'),
-      isYMax: cornerKey.includes('YMAX'),
-      isZMin: cornerKey.includes('ZMIN'),
-      isZMax: cornerKey.includes('ZMAX'),
-    };
   };
 
   // Update sphere position
