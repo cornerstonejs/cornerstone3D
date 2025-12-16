@@ -1492,6 +1492,7 @@ class VolumeCroppingTool extends BaseTool {
       axis: sphereState.isCorner ? 'corner' : sphereState.axis,
       draggingSphereIndex: this.draggingSphereIndex,
       seriesInstanceUID: this.seriesInstanceUID,
+      originalClippingPlanes: this.originalClippingPlanes,
     });
   };
 
@@ -2191,6 +2192,14 @@ class VolumeCroppingTool extends BaseTool {
       // Update clipping planes in viewport
       this._updateClippingPlanes(viewport);
       viewport.render();
+
+      // Notify VolumeCroppingControlTool about the rotation
+      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+        originalClippingPlanes: this.originalClippingPlanes,
+        viewportId: viewport.id,
+        renderingEngineId: viewport.renderingEngineId,
+        seriesInstanceUID: this.seriesInstanceUID,
+      });
     }
   };
 
