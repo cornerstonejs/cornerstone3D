@@ -1957,7 +1957,7 @@ class VolumeCroppingTool extends BaseTool {
     const dot = vtkMath.dot(nop, noe);
     if (Math.abs(dot) > 0.0001) {
       const angleX =
-        -2 *
+        2 *
         Math.acos(vtkMath.clampValue(dot, -1.0, 1.0)) *
         Math.sign(normalizedPosition[0] - normalizedPreviousPosition[0]) *
         rotateIncrementDegrees;
@@ -1974,7 +1974,7 @@ class VolumeCroppingTool extends BaseTool {
       vtkMath.normalize(forwardV);
 
       const angleY =
-        (normalizedPreviousPosition[1] - normalizedPosition[1]) *
+        (normalizedPosition[1] - normalizedPreviousPosition[1]) *
         rotateIncrementDegrees;
 
       // Calculate rotation center (tool center or average of face spheres)
