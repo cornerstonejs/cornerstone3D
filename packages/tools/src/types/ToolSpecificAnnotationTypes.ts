@@ -339,6 +339,8 @@ export type PlanarFreehandROIAnnotation = ContourAnnotation & {
     // Present if isOpenUShapeContour is true:
     openUShapeContourVectorToPeak?: Types.Point3[];
     cachedStats?: ROICachedStats;
+    drawingVolumeId?: string;
+    drawingViewportId?: string;
   };
 };
 export type PlanarFreehandContourSegmentationAnnotation =
