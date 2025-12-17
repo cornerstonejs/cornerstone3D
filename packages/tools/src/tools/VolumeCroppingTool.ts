@@ -120,6 +120,7 @@ import {
  * @property {Types.Point3} toolCenter - Center point of the cropping volume in world coordinates [x, y, z]
  * @property {number[]|null} cornerDragOffset - 3D offset vector for corner sphere dragging [dx, dy, dz]
  * @property {number|null} faceDragOffset - 1D offset value for face sphere dragging along single axis
+ * @property {boolean} rotatePlanesOnDrag - If true, dragging rotates clipping planes instead of camera (default: false)
  * @property {Array<SphereState>} sphereStates - Array of sphere state objects containing position, VTK actors, and metadata
  * @property {Object} edgeLines - Dictionary of edge line actors connecting corner spheres for wireframe visualization
  *
@@ -155,7 +156,6 @@ import {
  * @property {number} grabSpherePixelDistance - Pixel distance threshold for sphere selection (default: 20)
  * @property {number} rotateIncrementDegrees - Rotation increment for camera rotation (default: 2)
  * @property {number} rotateSampleDistanceFactor - Sample distance multiplier during rotation for performance (default: 2)
- * @property {boolean} rotateClippingPlanesOnDrag - If true, dragging rotates clipping planes instead of camera (default: false)
  * @property {number} rotateClippingPlanesIncrementDegrees - Rotation increment for clipping planes rotation (default: 5)
  *
  * @events
@@ -169,6 +169,8 @@ import {
  * - **setClippingPlanesVisible(visible: boolean)**: Enable/disable volume clipping planes
  * - **getHandlesVisible()**: Get current handle visibility state
  * - **getClippingPlanesVisible()**: Get current clipping plane visibility state
+ * - **setRotatePlanesOnDrag(enable: boolean)**: Enable/disable rotating clipping planes on drag (default: false)
+ * - **getRotatePlanesOnDrag()**: Get current rotate planes on drag state
  *
  *
  * @see {@link VolumeCroppingControlTool} - Companion tool for 2D viewport reference lines
@@ -186,6 +188,7 @@ class VolumeCroppingTool extends BaseTool {
   _hasResolutionChanged = false;
   originalClippingPlanes: { origin: number[]; normal: number[] }[] = [];
   draggingSphereIndex: number | null = null;
+  rotatePlanesOnDrag: boolean = false; // If true, dragging rotates clipping planes instead of camera
   toolCenter: Types.Point3 = [0, 0, 0];
   cornerDragOffset: [number, number, number] | null = null;
   faceDragOffset: number | null = null;
@@ -237,7 +240,6 @@ class VolumeCroppingTool extends BaseTool {
         grabSpherePixelDistance: 20, //pixels threshold for closeness to the sphere being grabbed
         rotateIncrementDegrees: 2,
         rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
-        rotateClippingPlanesOnDrag: false, // If true, dragging rotates clipping planes instead of camera
         rotateClippingPlanesIncrementDegrees: 5, // Rotation increment for clipping planes (higher = faster rotation)
       },
     }
@@ -623,6 +625,60 @@ class VolumeCroppingTool extends BaseTool {
     viewport.render();
   }
 
+  /**
+   * Gets whether dragging rotates clipping planes instead of the camera.
+   *
+   * @returns {boolean} True if dragging rotates clipping planes, false if it rotates the camera
+   *
+   * @example
+   * ```typescript
+   * const isRotatingPlanes = volumeCroppingTool.getRotatePlanesOnDrag();
+   * if (isRotatingPlanes) {
+   *   console.log('Dragging will rotate clipping planes');
+   * } else {
+   *   console.log('Dragging will rotate camera');
+   * }
+   * ```
+   */
+  getRotatePlanesOnDrag(): boolean {
+    return this.rotatePlanesOnDrag;
+  }
+
+  /**
+   * Sets whether dragging should rotate clipping planes instead of the camera.
+   *
+   * When enabled, dragging the mouse will rotate the clipping planes around the volume.
+   * When disabled, dragging will rotate the camera view (default behavior).
+   *
+   * @param enable - Whether to enable (true) or disable (false) rotating planes on drag
+   *
+   * @example
+   * ```typescript
+   * // Enable rotating clipping planes on drag
+   * volumeCroppingTool.setRotatePlanesOnDrag(true);
+   *
+   * // Disable to use default camera rotation
+   * volumeCroppingTool.setRotatePlanesOnDrag(false);
+   * ```
+   *
+   * @remarks
+   * - Default is false (camera rotation)
+   * - When enabled, the clipping planes rotate around the volume center
+   * - The rotation increment is controlled by rotateClippingPlanesIncrementDegrees configuration
+   */
+  setRotatePlanesOnDrag(enable: boolean): void {
+    this.rotatePlanesOnDrag = enable;
+    // Force a render to ensure the viewport state is updated
+    try {
+      const viewport = this._getViewport();
+      if (viewport) {
+        viewport.render();
+      }
+    } catch (error) {
+      // Viewport might not be available, ignore
+    }
+  }
+
   _dragCallback(evt: EventTypes.InteractionEventType): void {
     const { element, currentPoints, lastPoints } = evt.detail;
 
@@ -630,14 +686,15 @@ class VolumeCroppingTool extends BaseTool {
       // crop handles
       this._onMouseMoveSphere(evt);
     } else {
-      // Check configuration to determine if we should rotate clipping planes or camera
-      if (this.configuration.rotateClippingPlanesOnDrag) {
+      // Check if we should rotate clipping planes or camera
+      // Explicitly check for true to ensure proper evaluation
+      if (this.rotatePlanesOnDrag === true) {
         // Rotate clipping planes instead of camera
         this._rotateClippingPlanes(evt);
         return;
       }
 
-      // Rotate camera (volume view)
+      // Rotate camera (volume view) - this is the default behavior
       const currentPointsCanvas = currentPoints.canvas;
       const lastPointsCanvas = lastPoints.canvas;
       const { rotateIncrementDegrees } = this.configuration;
