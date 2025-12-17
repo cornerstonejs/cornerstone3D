@@ -1,11 +1,11 @@
 import type Point3 from '../../types/Point3';
 import type { ImageVolumeProps } from '../../types';
 import type {
-  EnhancedVolumeModifier,
-  EnhancedVolumeModifierContext,
+  DecimatedVolumeModifier,
+  DecimatedVolumeModifierContext,
 } from './types';
 
-export const inPlaneDecimationModifier: EnhancedVolumeModifier = {
+export const inPlaneDecimationModifier: DecimatedVolumeModifier = {
   name: 'InPlaneDecimationModifier',
   apply(volumeProps, context) {
     const [iDecimation = 1, jDecimation = iDecimation] =

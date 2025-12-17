@@ -2,7 +2,7 @@ import {
   volumeLoader,
   cornerstoneStreamingImageVolumeLoader,
   cornerstoneStreamingDynamicImageVolumeLoader,
-  enhancedVolumeLoader,
+  decimatedVolumeLoader,
 } from '@cornerstonejs/core';
 
 export default function initVolumeLoader() {
@@ -18,7 +18,7 @@ export default function initVolumeLoader() {
     cornerstoneStreamingDynamicImageVolumeLoader
   );
     volumeLoader.registerVolumeLoader(
-    'enhancedVolumeLoader',
-    enhancedVolumeLoader
+    'decimatedVolumeLoader',
+    decimatedVolumeLoader
   );
 }

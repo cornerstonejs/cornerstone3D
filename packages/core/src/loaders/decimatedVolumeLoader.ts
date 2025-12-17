@@ -4,14 +4,14 @@ import { generateVolumePropsFromImageIds } from '../utilities/generateVolumeProp
 import decimate from '../utilities/decimate';
 import VoxelManager from '../utilities/VoxelManager';
 import {
-  applyEnhancedVolumeModifiers,
+  applyDecimatedVolumeModifiers,
   inPlaneDecimationModifier,
-} from './enhancedVolumeModifiers';
+} from './decimatedVolumeModifiers';
 import type {
-  EnhancedVolumeLoaderOptions,
-  EnhancedVolumeModifierContext,
+  DecimatedVolumeLoaderOptions,
+  DecimatedVolumeModifierContext,
   points,
-} from './enhancedVolumeModifiers';
+} from './decimatedVolumeModifiers';
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
   cancel: () => void;
@@ -19,11 +19,11 @@ interface IVolumeLoader {
 }
 
 /**
- * Enhanced volume loader that creates a StreamingImageVolume while delegating
+ * Decimated volume loader that creates a StreamingImageVolume while delegating
  * volume mutations to a plugin-style modifier chain. The loader still handles the
  * responsibilities of preparing imageIds (including optional k-axis decimation),
  * instantiating the streaming volume, and updating VTK/voxel-manager state, but it
- * now relies on `enhancedVolumeModifiers` to encapsulate any transformations that
+ * now relies on `decimatedVolumeModifiers` to encapsulate any transformations that
  * are specific to projection parameters such as decimation.
  *
  * The loader currently wires a dedicated modifier set for:
@@ -33,7 +33,7 @@ interface IVolumeLoader {
  *   updates dimensions, spacing, and DICOM metadata in a self-contained class.
  *
  * Additional modifiers can be introduced by implementing the shared
- * `EnhancedVolumeModifier` interface. For example:
+ * `DecimatedVolumeModifier` interface. For example:
  * ```
  * const modifiers = [
  *   inPlaneDecimationModifier,
@@ -42,7 +42,7 @@ interface IVolumeLoader {
  *   windowingModifier,           // applies window/level or LUT adjustments at load time
  * ];
  * ```
- * Modifiers are executed via `applyEnhancedVolumeModifiers`, so the loader still
+ * Modifiers are executed via `applyDecimatedVolumeModifiers`, so the loader still
  * just selects the set to run and trusts the chain to mutate props appropriately.
  *
  * @param volumeId - The unique identifier for the volume
@@ -64,7 +64,7 @@ interface IVolumeLoader {
  *
  * @example
  * ```typescript
- * const volumeLoader = enhancedVolumeLoader('volumeId', {
+ * const volumeLoader = decimatedVolumeLoader('volumeId', {
  *   imageIds: ['dicomweb:...', 'dicomweb:...'],
  *   ijkDecimation: [2, 2, 2], // Half resolution in all dimensions
  *   progressiveRendering: true
@@ -74,7 +74,7 @@ interface IVolumeLoader {
  * // Later: volumeLoader.cancel() or volumeLoader.decache()
  * ```
  */
-export function enhancedVolumeLoader(
+export function decimatedVolumeLoader(
   volumeId: string,
   options: {
     imageIds: string[];
@@ -84,7 +84,7 @@ export function enhancedVolumeLoader(
 ): IVolumeLoader {
   if (!options || !options.imageIds || !options.imageIds.length) {
     throw new Error(
-      'ImageIds must be provided to create a streaming image volume'
+      'ImageIds must be provided to create a streaming image volume '
     );
   }
 
@@ -98,7 +98,7 @@ export function enhancedVolumeLoader(
   const kAxisDecimation = Math.max(1, Math.floor(kDecimation));
   const hasInPlaneDecimation = columnDecimation > 1 || rowDecimation > 1;
 
-  const modifierOptions: EnhancedVolumeLoaderOptions = {
+  const modifierOptions: DecimatedVolumeLoaderOptions = {
     ijkDecimation: [
       columnDecimation,
       rowDecimation,
@@ -154,13 +154,13 @@ export function enhancedVolumeLoader(
       volumeId
     );
 
-    const modifierContext: EnhancedVolumeModifierContext = {
+    const modifierContext: DecimatedVolumeModifierContext = {
       volumeId,
       imageIds: options.imageIds,
       options: modifierOptions,
     };
 
-    const volumeProps = applyEnhancedVolumeModifiers(
+    const volumeProps = applyDecimatedVolumeModifiers(
       baseVolumeProps,
       modifiers,
       modifierContext
@@ -245,4 +245,4 @@ export function enhancedVolumeLoader(
   };
 }
 
-export default enhancedVolumeLoader;
+export default decimatedVolumeLoader;

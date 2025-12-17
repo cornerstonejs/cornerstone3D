@@ -78,7 +78,7 @@ const { MouseBindings } = csToolsEnums;
 const { ViewportType, InterpolationType, Events, RequestType } = Enums;
 
 // Define volume loader scheme
-const volumeLoaderScheme = 'enhancedVolumeLoader'; // Loader id which defines which volume loader to use
+const volumeLoaderScheme = 'decimatedVolumeLoader'; // Loader id which defines which volume loader to use
 
 // Retrive configuration
 const config = {};
@@ -158,8 +158,8 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 
 setTitleAndDescription(
-  'Enhanced Volume Loading',
-  'Here we demonstrate enhanced volume loading with configurable in-plane (i,j) and axial (k) decimation.'
+  'Decimated Volume Loading',
+  'Here we demonstrate decimated volume loading with configurable in-plane (i,j) and axial (k) decimation.'
 );
 
 const size = '400px';
@@ -612,7 +612,7 @@ async function run() {
   };
 
   addButtonToToolbar({
-    title: 'Load Enhanced Volume (New ID)',
+    title: 'Load Decimated Volume (New ID)',
     onClick: () => {
       console.log(
         '🔄 Load button clicked - creating new volume with current decimation settings with config ',

@@ -1,16 +1,16 @@
 import type { ImageVolumeProps } from '../../types';
 import type {
-  EnhancedVolumeModifier,
-  EnhancedVolumeModifierContext,
+  DecimatedVolumeModifier,
+  DecimatedVolumeModifierContext,
 } from './types';
 
 /**
  * Runs every modifier sequentially and returns the final props.
  */
-export function applyEnhancedVolumeModifiers(
+export function applyDecimatedVolumeModifiers(
   baseProps: ImageVolumeProps,
-  modifiers: EnhancedVolumeModifier[],
-  context: EnhancedVolumeModifierContext
+  modifiers: DecimatedVolumeModifier[],
+  context: DecimatedVolumeModifierContext
 ): ImageVolumeProps {
   return modifiers.reduce(
     (currentProps, modifier) => modifier.apply(currentProps, context),

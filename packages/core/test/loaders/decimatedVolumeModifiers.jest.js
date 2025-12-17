@@ -1,4 +1,4 @@
-import { inPlaneDecimationModifier } from '../../src/loaders/enhancedVolumeModifiers';
+import { inPlaneDecimationModifier } from '../../src/loaders/decimatedVolumeModifiers';
 
 const createMetadata = () => ({
   Columns: 128,

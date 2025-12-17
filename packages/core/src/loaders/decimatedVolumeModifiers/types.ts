@@ -6,28 +6,28 @@ export namespace points {
 }
 
 /**
- * Shared options for enhanced volume modifiers.
+ * Shared options for decimated volume modifiers.
  */
-export interface EnhancedVolumeLoaderOptions {
+export interface DecimatedVolumeLoaderOptions {
   ijkDecimation?: points.points3;
 }
 
 /**
  * Context provided to each modifier in the chain.
  */
-export interface EnhancedVolumeModifierContext {
+export interface DecimatedVolumeModifierContext {
   volumeId: string;
   imageIds: string[];
-  options: EnhancedVolumeLoaderOptions;
+  options: DecimatedVolumeLoaderOptions;
 }
 
 /**
  * A modifier can transform any aspect of an ImageVolumeProps payload.
  */
-export interface EnhancedVolumeModifier {
+export interface DecimatedVolumeModifier {
   name: string;
   apply(
     volumeProps: ImageVolumeProps,
-    context: EnhancedVolumeModifierContext
+    context: DecimatedVolumeModifierContext
   ): ImageVolumeProps;
 }
