@@ -321,8 +321,8 @@ export class BaseStreamingImageVolume
       metaData.get('transferSyntax', imageId) || {};
 
     // Use the actual dimensions for this volume in order to support volumes not the same size as the raw data
-    const targetRows = this.dimensions.[1];
-    const targetCols = this.dimensions.[0];
+    const targetRows = this.dimensions[1];
+    const targetCols = this.dimensions[0];
     const imageIdIndex = this.getImageIdIndex(imageId);
 
     const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
