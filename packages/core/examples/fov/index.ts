@@ -191,6 +191,10 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element4,
       defaultOptions: {
+        // orientation: {
+        //   viewPlaneNormal: [0, 1, 0],
+        //   viewUp: [Math.sqrt(1 - 0.4 * 0.4), 0, 0.4],
+        // },
         orientation: OrientationAxis.CORONAL,
         background: [0.2, 0, 0.2] as Types.Point3,
       },
@@ -200,7 +204,10 @@ async function run() {
       type: ViewportType.VOLUME_3D,
       element: element5,
       defaultOptions: {
-        orientation: OrientationAxis.CORONAL,
+        orientation: {
+          viewPlaneNormal: [0, 1, 0],
+          viewUp: [0, 0, 1],
+        },
         background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
       },
     },
