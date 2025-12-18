@@ -38,22 +38,26 @@ level to check.
 
 ```js
 {
-  color: 'rgb(255, 255, 0)',
-  colorHighlighted: 'rgb(0, 255, 0)',
-  colorSelected: 'rgb(0, 220, 0)',
-  colorLocked: 'rgb(255, 255, 0)',
-  lineWidth: '1',
-  lineDash: '',
-  textBoxVisibility: true,
-  textBoxFontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif',
-  textBoxFontSize: '14px',
-  textBoxColor: 'rgb(255, 255, 0)',
-  textBoxColorHighlighted: 'rgb(0, 255, 0)',
-  textBoxColorSelected: 'rgb(0, 255, 0)',
-  textBoxColorLocked: 'rgb(255, 255, 0)',
-  textBoxBackground: '',
-  textBoxLinkLineWidth: '1',
-  textBoxLinkLineDash: '2,3',
+    colorHighlighted: 'rgb(0, 255, 0)',
+    colorSelected: 'rgb(0, 220, 0)',
+    colorLocked: 'rgb(209, 193, 90)',
+    lineWidth: '1',
+    lineDash: '',
+    shadow: true,
+    textBoxVisibility: true,
+    textBoxFontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif',
+    textBoxFontSize: '14px',
+    textBoxColor: 'rgb(255, 255, 0)',
+    textBoxMargin: '0',
+    textBoxBorderRadius: '0',
+    textBoxColorHighlighted: 'rgb(0, 255, 0)',
+    textBoxColorSelected: 'rgb(0, 255, 0)',
+    textBoxColorLocked: 'rgb(209, 193, 90)',
+    textBoxLinkLineWidth: '1',
+    textBoxLinkLineDash: '2,3',
+    textBoxShadow: true,
+    markerSize: '10',
+    angleArcLineDash: '',
 };
 ```
 
@@ -195,6 +199,30 @@ textBoxColorPassive;
 textBoxColorSelected;
 textBoxColorSelectedActive;
 textBoxColorSelectedPassive;
+textBoxMargin;
+textBoxMarginActive;
+textBoxMarginHighlighted;
+textBoxMarginHighlightedActive;
+textBoxMarginHighlightedPassive;
+textBoxMarginLocked;
+textBoxMarginLockedActive;
+textBoxMarginLockedPassive;
+textBoxMarginPassive;
+textBoxMarginSelected;
+textBoxMarginSelectedActive;
+textBoxMarginSelectedPassive;
+textBoxBorderRadius;
+textBoxBorderRadiusActive;
+textBoxBorderRadiusHighlighted;
+textBoxBorderRadiusHighlightedActive;
+textBoxBorderRadiusHighlightedPassive;
+textBoxBorderRadiusLocked;
+textBoxBorderRadiusLockedActive;
+textBoxBorderRadiusLockedPassive;
+textBoxBorderRadiusPassive;
+textBoxBorderRadiusSelected;
+textBoxBorderRadiusSelectedActive;
+textBoxBorderRadiusSelectedPassive;
 textBoxFontFamily;
 textBoxFontFamilyActive;
 textBoxFontFamilyHighlighted;
@@ -243,4 +271,17 @@ textBoxLinkLineWidthPassive;
 textBoxLinkLineWidthSelected;
 textBoxLinkLineWidthSelectedActive;
 textBoxLinkLineWidthSelectedPassive;
+// nb: textBoxLinkLineColor falls back to the corresponding textBoxColor if not set
+textBoxLinkLineColor;
+textBoxLinkLineColorActive;
+textBoxLinkLineColorHighlighted;
+textBoxLinkLineColorHighlightedActive;
+textBoxLinkLineColorHighlightedPassive;
+textBoxLinkLineColorLocked;
+textBoxLinkLineColorLockedActive;
+textBoxLinkLineColorLockedPassive;
+textBoxLinkLineColorPassive;
+textBoxLinkLineColorSelected;
+textBoxLinkLineColorSelectedActive;
+textBoxLinkLineColorSelectedPassive;
 ```

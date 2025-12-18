@@ -1,90 +1,90 @@
-import { utilities } from "dcmjs";
+import { utilities } from 'dcmjs';
 
-import MeasurementReport from "./MeasurementReport";
-import CORNERSTONE_4_TAG from "./cornerstone4Tag";
+import MeasurementReport from './MeasurementReport';
+import CORNERSTONE_4_TAG from './cornerstone4Tag';
 
 const { Angle: TID300Angle } = utilities.TID300;
 
-const ANGLE = "Angle";
+const ANGLE = 'Angle';
 
 class Angle {
-    /**
-     * Generate TID300 measurement data for a plane angle measurement - use a Angle, but label it as Angle
-     */
-    static getMeasurementData(MeasurementGroup) {
-        const { defaultState, NUMGroup, SCOORDGroup } =
-            MeasurementReport.getSetupMeasurementData(MeasurementGroup);
+  /**
+   * Generate TID300 measurement data for a plane angle measurement - use a Angle, but label it as Angle
+   */
+  static getMeasurementData(MeasurementGroup) {
+    const { defaultState, NUMGroup, SCOORDGroup } =
+      MeasurementReport.getSetupMeasurementData(MeasurementGroup);
 
-        const state = {
-            ...defaultState,
-            rAngle: NUMGroup.MeasuredValueSequence.NumericValue,
-            toolType: Angle.toolType,
-            handles: {
-                start: {},
-                middle: {},
-                end: {},
-                textBox: {
-                    hasMoved: false,
-                    movesIndependently: false,
-                    drawnIndependently: true,
-                    allowedOutsideImage: true,
-                    hasBoundingBox: true
-                }
-            }
-        };
+    const state = {
+      ...defaultState,
+      rAngle: NUMGroup.MeasuredValueSequence.NumericValue,
+      toolType: Angle.toolType,
+      handles: {
+        start: {},
+        middle: {},
+        end: {},
+        textBox: {
+          hasMoved: false,
+          movesIndependently: false,
+          drawnIndependently: true,
+          allowedOutsideImage: true,
+          hasBoundingBox: true,
+        },
+      },
+    };
 
-        [
-            state.handles.start.x,
-            state.handles.start.y,
-            state.handles.middle.x,
-            state.handles.middle.y,
-            state.handles.middle.x,
-            state.handles.middle.y,
-            state.handles.end.x,
-            state.handles.end.y
-        ] = SCOORDGroup.GraphicData;
+    [
+      state.handles.start.x,
+      state.handles.start.y,
+      state.handles.middle.x,
+      state.handles.middle.y,
+      state.handles.middle.x,
+      state.handles.middle.y,
+      state.handles.end.x,
+      state.handles.end.y,
+    ] = SCOORDGroup.GraphicData;
 
-        return state;
-    }
+    return state;
+  }
 
-    static getTID300RepresentationArguments(tool) {
-        const { handles, finding, findingSites } = tool;
-        const point1 = handles.start;
-        const point2 = handles.middle;
-        const point3 = handles.middle;
-        const point4 = handles.end;
-        const rAngle = tool.rAngle;
+  static getTID300RepresentationArguments(tool) {
+    const { handles, finding, findingSites } = tool;
+    const point1 = handles.start;
+    const point2 = handles.middle;
+    const point3 = handles.middle;
+    const point4 = handles.end;
+    const rAngle = tool.rAngle;
 
-        const trackingIdentifierTextValue = "cornerstoneTools@^4.0.0:Angle";
+    const trackingIdentifierTextValue = 'cornerstoneTools@^4.0.0:Angle';
 
-        return {
-            point1,
-            point2,
-            point3,
-            point4,
-            rAngle,
-            trackingIdentifierTextValue,
-            finding,
-            findingSites: findingSites || []
-        };
-    }
+    return {
+      point1,
+      point2,
+      point3,
+      point4,
+      rAngle,
+      trackingIdentifierTextValue,
+      finding,
+      findingSites: findingSites || [],
+    };
+  }
 }
 
 Angle.toolType = ANGLE;
 Angle.utilityToolType = ANGLE;
 Angle.TID300Representation = TID300Angle;
-Angle.isValidCornerstoneTrackingIdentifier = TrackingIdentifier => {
-    if (!TrackingIdentifier.includes(":")) {
-        return false;
-    }
+Angle.isValidCornerstoneTrackingIdentifier = (TrackingIdentifier) => {
+  if (!TrackingIdentifier.includes(':')) {
+    return false;
+  }
 
-    const [cornerstone4Tag, toolType] = TrackingIdentifier.split(":");
+  const [cornerstone4Tag, toolType] = TrackingIdentifier.split(':');
 
-    if (cornerstone4Tag !== CORNERSTONE_4_TAG) {
-        return false;
-    }
+  if (cornerstone4Tag !== CORNERSTONE_4_TAG) {
+    return false;
+  }
 
-    return toolType === ANGLE;
+  return toolType === ANGLE;
 };
 
 MeasurementReport.registerTool(Angle);

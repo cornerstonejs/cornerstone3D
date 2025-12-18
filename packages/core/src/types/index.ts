@@ -1,3 +1,4 @@
+import type IBaseStreamingImageVolume from './IBaseStreamingImageVolume';
 import type Cornerstone3DConfig from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
@@ -112,15 +113,7 @@ import type {
 import type { ImagePixelModule } from './ImagePixelModule';
 import type { ImagePlaneModule } from './ImagePlaneModule';
 import type { AffineMatrix } from './AffineMatrix';
-export type {
-  RetrieveStage,
-  RetrieveOptions,
-  RangeRetrieveOptions,
-  StreamingRetrieveOptions,
-  NearbyFrames,
-  IRetrieveConfiguration,
-  IImagesLoader,
-} from './IRetrieveConfiguration';
+export type * from './IRetrieveConfiguration';
 import type { ImageLoadListener } from './ImageLoadListener';
 import type { Color, ColorLUT } from './Color';
 import type VideoViewportProperties from './VideoViewportProperties';
@@ -142,16 +135,6 @@ import type {
   PolyDataPointConfiguration,
 } from './IPointsManager';
 import type IImageFrame from './IImageFrame';
-import type {
-  DicomDateObject,
-  DicomTimeObject,
-  GeneralSeriesModuleMetadata,
-  ImagePlaneModuleMetadata,
-  SopCommonModuleMetadata,
-  ImagePixelModuleMetadata,
-  PatientStudyModuleMetadata,
-  TransferSyntaxMetadata,
-} from './MetadataModuleTypes';
 import type { IVoxelManager } from './IVoxelManager';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
@@ -164,10 +147,14 @@ import type GeometryLoaderFn from './GeometryLoaderFn';
 import type { RenderingEngineModeType } from './RenderingEngineMode';
 import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
 
+export type * from './MetadataModuleTypes';
+export type * from './InstanceTypes';
+
 export type {
   // config
   Cornerstone3DConfig,
   //
+  IBaseStreamingImageVolume,
   ICamera,
   IStackViewport,
   IVideoViewport,
@@ -294,14 +281,6 @@ export type {
   ColorLUT,
   VolumeProps,
   IImageFrame,
-  DicomDateObject,
-  DicomTimeObject,
-  GeneralSeriesModuleMetadata,
-  ImagePlaneModuleMetadata,
-  SopCommonModuleMetadata,
-  ImagePixelModuleMetadata,
-  PatientStudyModuleMetadata,
-  TransferSyntaxMetadata,
   LocalVolumeOptions,
   IVoxelManager,
   IRLEVoxelMap,

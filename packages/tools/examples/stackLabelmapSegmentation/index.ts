@@ -12,7 +12,6 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addBrushSizeSlider,
-  labelmapTools,
   addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
 const { DefaultHistoryMemo } = utilities.HistoryMemo;

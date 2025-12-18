@@ -190,21 +190,26 @@ class WindowLevelTool extends BaseTool {
 
       const BitsStored = imageVolume?.metadata?.BitsStored;
       const metadataDynamicRange = BitsStored ? 2 ** BitsStored : Infinity;
+      const calculatedRange =
+        calculatedDynamicRange[1] - calculatedDynamicRange[0];
       // Burned in Pixels often use pixel values above the BitsStored.
       // This results in a multiplier which is way higher than what you would
       // want in practice. Thus we take the min between the metadata dynamic
       // range upper value and actual middle slice dynamic range.
-      imageDynamicRange = Math.min(
-        calculatedDynamicRange[1] - calculatedDynamicRange[0],
-        metadataDynamicRange
-      );
+      imageDynamicRange = !Number.isFinite(calculatedRange)
+        ? metadataDynamicRange
+        : Math.min(calculatedRange, metadataDynamicRange);
     } else {
       imageDynamicRange = this._getImageDynamicRangeFromViewport(viewport);
     }
 
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
 
-    return ratio > 1 ? Math.round(ratio) : ratio;
+    return !Number.isFinite(ratio)
+      ? DEFAULT_IMAGE_DYNAMIC_RANGE
+      : ratio > 1
+        ? Math.round(ratio)
+        : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {

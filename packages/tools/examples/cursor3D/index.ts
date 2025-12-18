@@ -613,6 +613,7 @@ function prepareImageDataForPicking(viewport: BaseVolumeViewport) {
   // Set the point data to return the fakeScalars
   imageData.setPointData({
     getScalars: () => fakeScalars,
+    getMTime: () => 0, // Add getMTime to avoid VTK.js error
   });
 }
 

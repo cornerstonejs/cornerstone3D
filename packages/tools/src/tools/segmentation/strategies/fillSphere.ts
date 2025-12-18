@@ -39,7 +39,7 @@ const sphereComposition = {
       center as Types.Point3
     );
 
-    const { boundsIJK: newBoundsIJK } = getSphereBoundsInfoFromViewport(
+    const baseExtent = getSphereBoundsInfoFromViewport(
       points.slice(0, 2) as [Types.Point3, Types.Point3],
       segmentationImageData,
       viewport
@@ -54,8 +54,97 @@ const sphereComposition = {
       viewport.canvasToWorld(corner)
     );
 
-    operationData.isInObjectBoundsIJK = newBoundsIJK;
-    operationData.isInObject = createEllipseInPoint(cornersInWorld);
+    const strokeRadius =
+      points.length >= 2 ? vec3.distance(points[0], points[1]) / 2 : undefined;
+
+    const strokeCenters =
+      operationData.strokePointsWorld &&
+      operationData.strokePointsWorld.length > 0
+        ? operationData.strokePointsWorld
+        : [operationData.centerWorld];
+
+    // The original implementation recalculated the expensive sphere bounds for
+    // every interpolated point. That repeats a handful of world-to-index
+    // conversions per sample, which adds up quickly during fast brushes. We
+    // know each stroke point simply translates the same sphere, so we can reuse
+    // the base bounds and slide them by the delta in IJK space instead.
+    const baseBounds = baseExtent.boundsIJK;
+    const baseCenterIJK = operationData.centerIJK;
+    const boundsForStroke = strokeCenters.reduce<Types.BoundsIJK | null>(
+      (acc, centerPoint) => {
+        if (!centerPoint) {
+          return acc;
+        }
+
+        const translatedCenterIJK = transformWorldToIndex(
+          segmentationImageData,
+          centerPoint as Types.Point3
+        );
+        const deltaIJK = [
+          translatedCenterIJK[0] - baseCenterIJK[0],
+          translatedCenterIJK[1] - baseCenterIJK[1],
+          translatedCenterIJK[2] - baseCenterIJK[2],
+        ];
+
+        const translatedBounds: Types.BoundsIJK = [
+          [baseBounds[0][0] + deltaIJK[0], baseBounds[0][1] + deltaIJK[0]],
+          [baseBounds[1][0] + deltaIJK[1], baseBounds[1][1] + deltaIJK[1]],
+          [baseBounds[2][0] + deltaIJK[2], baseBounds[2][1] + deltaIJK[2]],
+        ];
+
+        if (!acc) {
+          return translatedBounds;
+        }
+
+        return [
+          [
+            Math.min(acc[0][0], translatedBounds[0][0]),
+            Math.max(acc[0][1], translatedBounds[0][1]),
+          ],
+          [
+            Math.min(acc[1][0], translatedBounds[1][0]),
+            Math.max(acc[1][1], translatedBounds[1][1]),
+          ],
+          [
+            Math.min(acc[2][0], translatedBounds[2][0]),
+            Math.max(acc[2][1], translatedBounds[2][1]),
+          ],
+        ] as Types.BoundsIJK;
+      },
+      null
+    );
+
+    const boundsToUse = boundsForStroke ?? baseExtent.boundsIJK;
+
+    if (segmentationImageData) {
+      const dimensions = segmentationImageData.getDimensions();
+      // Clamp once at the end to keep the bounds valid for downstream
+      // iteration. We were clamping each partial result previously, which was
+      // redundant and still left us doing extra work when a drag crossed the
+      // image edges.
+      operationData.isInObjectBoundsIJK = [
+        [
+          Math.max(0, Math.min(boundsToUse[0][0], dimensions[0] - 1)),
+          Math.max(0, Math.min(boundsToUse[0][1], dimensions[0] - 1)),
+        ],
+        [
+          Math.max(0, Math.min(boundsToUse[1][0], dimensions[1] - 1)),
+          Math.max(0, Math.min(boundsToUse[1][1], dimensions[1] - 1)),
+        ],
+        [
+          Math.max(0, Math.min(boundsToUse[2][0], dimensions[2] - 1)),
+          Math.max(0, Math.min(boundsToUse[2][1], dimensions[2] - 1)),
+        ],
+      ] as Types.BoundsIJK;
+    } else {
+      operationData.isInObjectBoundsIJK = boundsToUse;
+    }
+
+    operationData.isInObject = createEllipseInPoint(cornersInWorld, {
+      strokePointsWorld: operationData.strokePointsWorld,
+      segmentationImageData,
+      radius: strokeRadius,
+    });
     // }
   },
 } as Composition;

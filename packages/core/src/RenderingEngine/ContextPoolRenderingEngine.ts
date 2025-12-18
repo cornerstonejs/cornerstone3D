@@ -350,6 +350,16 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
+    const view = renderWindow.getViews()[0];
+
+    const originalRenderPasses = view.getRenderPasses();
+
+    const viewportRenderPasses = this.getViewportRenderPasses(viewport.id);
+
+    if (viewportRenderPasses) {
+      view.setRenderPasses(viewportRenderPasses);
+    }
+
     // Update the offscreen canvas size if needed
     this._resizeOffScreenCanvasForViewport(
       viewport,
@@ -392,6 +402,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     widgetRenderers.forEach((_, renderer) => {
       renderer.setDraw(false);
     });
+
+    if (originalRenderPasses) {
+      view.setRenderPasses(originalRenderPasses);
+    }
 
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
@@ -571,6 +585,16 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     });
 
     return widgetRenderers;
+  }
+
+  /**
+   * Get the render passes for a specific viewport
+   * @param viewportId - The viewport ID
+   * @returns The render passes for the viewport or null
+   */
+  private getViewportRenderPasses(viewportId: string) {
+    const viewport = this.getViewport(viewportId);
+    return viewport?.getRenderPasses ? viewport.getRenderPasses() : null;
   }
 
   /**

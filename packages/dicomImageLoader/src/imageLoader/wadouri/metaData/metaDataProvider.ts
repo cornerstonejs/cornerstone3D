@@ -1,4 +1,4 @@
-import { Enums } from '@cornerstonejs/core';
+import { Enums, metaData } from '@cornerstonejs/core';
 import * as dicomParser from 'dicom-parser';
 import getNumberValues from './getNumberValues';
 import parseImageId from '../parseImageId';
@@ -17,10 +17,7 @@ import {
   extractSliceThicknessFromDataset,
 } from './extractPositioningFromDataset';
 import isNMReconstructable from '../../isNMReconstructable';
-import {
-  getInstanceModule,
-  instanceModuleNames,
-} from '../../getInstanceModule';
+import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
 
 function metaDataProvider(type, imageId) {
@@ -149,9 +146,14 @@ export function metadataForDataset(
 
     let rowPixelSpacing = null;
 
+    let usingDefaultValues = false;
     if (pixelSpacing) {
       rowPixelSpacing = pixelSpacing[0];
       columnPixelSpacing = pixelSpacing[1];
+    } else {
+      usingDefaultValues = true;
+      rowPixelSpacing = 1;
+      columnPixelSpacing = 1;
     }
 
     let rowCosines = null;
@@ -190,6 +192,7 @@ export function metadataForDataset(
       pixelSpacing,
       rowPixelSpacing,
       columnPixelSpacing,
+      usingDefaultValues,
     };
   }
 
@@ -313,7 +316,7 @@ export function metadataForDataset(
 
   // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
-    return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
+    return metaData.getNormalized(imageId, instanceModuleNames);
   }
 }
 

@@ -357,6 +357,17 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         specifications,
         annotation
       ),
+      textBoxBorderRadius: this.getStyle(
+        'textBoxBorderRadius',
+        specifications,
+        annotation
+      ),
+      textBoxMargin: this.getStyle('textBoxMargin', specifications, annotation),
+      textBoxLinkLineColor: this.getStyle(
+        'textBoxLinkLineColor',
+        specifications,
+        annotation
+      ),
     };
   }
 
@@ -628,6 +639,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       annotation,
       options
     );
+  }
+
+  protected startGroupRecording() {
+    DefaultHistoryMemo.startGroupRecording();
+  }
+
+  /** Ends a group recording of history memo */
+  protected endGroupRecording() {
+    DefaultHistoryMemo.endGroupRecording();
   }
 
   protected static hydrateBase<T extends AnnotationTool>(

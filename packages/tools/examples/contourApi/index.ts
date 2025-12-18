@@ -23,6 +23,7 @@ import {
   contourSegmentationToolBindings,
   createInfoSection,
   addSegmentIndexDropdown,
+  addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
 
 const segmentationId = `SEGMENTATION_ID`;
@@ -42,11 +43,12 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const renderingEngineId = 'myRenderingEngine';
 
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
-
+const segmentIndices = [1, 2, 3, 4, 5];
+let convertHolesOutputSegmentIndex = segmentIndices[0];
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Planar Freehand Annotation Tool',
-  'Here we demonstrate how to use the Planar Freehand Annotation Tool to draw 2D open and closed ROIs'
+  'Contour Utility API',
+  'Here we demonstrate how to use various contour utility functions concerning simplification, smoothing, and hole removal.'
 );
 
 const size = '500px';
@@ -104,9 +106,12 @@ createInfoSection(content, { title: 'Contour Utilities' })
   )
   .addInstruction(
     'Decimate Polylines: Simplifies polylines by removing points using Ramer-Douglas-Peucker algorithm with epsilon tolerance of 2.0 units. Shows reduction percentage.'
+  )
+  .addInstruction(
+    'Convert Holes: Converts holes to a new segment. This is useful for removing holes from a segment and adding them to another segment.'
   );
 
-addSegmentIndexDropdown(segmentationId);
+addSegmentIndexDropdown(segmentationId, segmentIndices);
 addButtonToToolbar({
   title: 'Remove Contour Holes',
   onClick: () => {
@@ -148,6 +153,31 @@ addButtonToToolbar({
     const segmentIndex =
       segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
     segmentation.utilities.decimateContours(segmentationId, segmentIndex);
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
+  },
+});
+
+addDropdownToToolbar({
+  id: 'convertHolesOutputSegmentIndex',
+  labelText: 'Convert holes to segment',
+  options: { values: segmentIndices, defaultValue: segmentIndices[1] },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    convertHolesOutputSegmentIndex = Number(nameAsStringOrNumber);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Convert Holes',
+  onClick: () => {
+    const segmentIndex =
+      segmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+    segmentation.utilities.convertContourHoles(
+      segmentationId,
+      segmentIndex,
+      segmentationId,
+      convertHolesOutputSegmentIndex
+    );
     const renderingEngine = getRenderingEngine(renderingEngineId);
     renderingEngine.render();
   },

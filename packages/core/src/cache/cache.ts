@@ -1,4 +1,5 @@
 import type {
+  IBaseStreamingImageVolume,
   ICache,
   IImage,
   IGeometry,
@@ -1193,7 +1194,7 @@ class Cache {
   public getVolume = (
     volumeId: string,
     allowPartialMatch = false
-  ): IImageVolume | undefined => {
+  ): IImageVolume | IBaseStreamingImageVolume | undefined => {
     if (volumeId === undefined) {
       throw new Error('getVolume: volumeId must not be undefined');
     }

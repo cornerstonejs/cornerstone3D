@@ -1,5 +1,9 @@
 import * as dicomParser from 'dicom-parser';
-import { Enums, utilities } from '@cornerstonejs/core';
+import {
+  Enums,
+  utilities,
+  metaData as coreMetaData,
+} from '@cornerstonejs/core';
 import getNumberValues from './getNumberValues';
 import getNumberValue from './getNumberValue';
 import getOverlayPlaneModule from './getOverlayPlaneModule';
@@ -69,10 +73,8 @@ function metaDataProvider(type, imageId) {
   if (type === MetadataModules.GENERAL_STUDY) {
     return {
       studyDescription: getValue<string>(metaData['00081030']),
-      studyDate: dicomParser.parseDA(getValue<string>(metaData['00080020'])),
-      studyTime: dicomParser.parseTM(
-        getValue<string>(metaData['00080030'], 0, '')
-      ),
+      studyDate: getValue<string>(metaData['00080020']),
+      studyTime: getValue<string>(metaData['00080030']),
       accessionNumber: getValue<string>(metaData['00080050']),
     };
   }
@@ -84,16 +86,10 @@ function metaDataProvider(type, imageId) {
       seriesDescription: getValue<string>(metaData['0008103E']),
       seriesNumber: getNumberValue(metaData['00200011']),
       studyInstanceUID: getValue<string>(metaData['0020000D']),
-      seriesDate: dicomParser.parseDA(getValue<string>(metaData['00080021'])),
-      seriesTime: dicomParser.parseTM(
-        getValue<string>(metaData['00080031'], 0, '')
-      ),
-      acquisitionDate: dicomParser.parseDA(
-        getValue<string>(metaData['00080022'])
-      ),
-      acquisitionTime: dicomParser.parseTM(
-        getValue<string>(metaData['00080032'], 0, '')
-      ),
+      seriesDate: getValue<string>(metaData['00080021']),
+      seriesTime: getValue<string>(metaData['00080031']),
+      acquisitionDate: getValue<string>(metaData['00080022']),
+      acquisitionTime: getValue<string>(metaData['00080032']),
     };
   }
 
@@ -295,8 +291,10 @@ function metaDataProvider(type, imageId) {
 
     return {
       radiopharmaceuticalInfo: {
-        radiopharmaceuticalStartTime: dicomParser.parseTM(
-          getValue(radiopharmaceuticalInfo['00181072'], 0, '')
+        radiopharmaceuticalStartTime: getValue(
+          radiopharmaceuticalInfo['00181072'],
+          0,
+          ''
         ),
         radiopharmaceuticalStartDateTime: getValue(
           radiopharmaceuticalInfo['00181078'],
@@ -324,8 +322,17 @@ function metaDataProvider(type, imageId) {
   }
 
   if (type === MetadataModules.PET_SERIES) {
+    let correctedImageData = metaData['00280051'];
+    let correctedImage = getValue(metaData['00280051']);
+    if (
+      correctedImageData &&
+      correctedImageData.Value &&
+      Array.isArray(correctedImageData.Value)
+    ) {
+      correctedImage = correctedImageData.Value.join('\\');
+    }
     return {
-      correctedImage: getValue(metaData['00280051']),
+      correctedImage,
       units: getValue(metaData['00541001']),
       decayCorrection: getValue(metaData['00541102']),
     };
@@ -340,7 +347,7 @@ function metaDataProvider(type, imageId) {
 
   // Note: this is not a DICOM module, but rather an aggregation on all others
   if (type === 'instance') {
-    return getInstanceModule(imageId, metaDataProvider, instanceModuleNames);
+    return coreMetaData.getNormalized(imageId, instanceModuleNames);
   }
 }
 

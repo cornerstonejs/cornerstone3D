@@ -1,13 +1,6 @@
-import { utilities } from "@cornerstonejs/tools";
-import {
-    generateRTSSFromAnnotations,
-    generateRTSSFromSegmentations
-} from "./RTSS";
+import { utilities } from '@cornerstonejs/tools';
+export * from './RTSS';
 
 const { generateContourSetsFromLabelmap } = utilities.contours;
 
-export {
-    generateContourSetsFromLabelmap,
-    generateRTSSFromAnnotations,
-    generateRTSSFromSegmentations
-};
+export { generateContourSetsFromLabelmap };

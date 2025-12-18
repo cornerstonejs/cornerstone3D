@@ -46,7 +46,7 @@ suggest the name of the example you are looking for if you make a typo.
 ```bash
 
 1. Clone the repository
-2. `yarn install`
+2. `yarn install --frozen-lockfile`
 3. `yarn run example petct` \// this should be run from the root of the repository
 
 ```
@@ -54,4 +54,11 @@ suggest the name of the example you are looking for if you make a typo.
 :::note Important
 Use the root of the repository as the working directory when running the example.
 Previously, you had to run the example in each package directory. This is no longer the case.
+:::
+
+:::danger
+In general run `yarn install` with the `--frozen-lockfile` flag to help avoid
+supply chain attacks by enforcing reproducible dependencies. That is, if the
+`yarn.lock` file is clean and does NOT reference compromised packages, then
+no compromised packages should land on your machine by using this flag.
 :::

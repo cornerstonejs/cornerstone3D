@@ -1,4 +1,4 @@
-import { triggerEvent, utilities } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
@@ -109,6 +109,11 @@ function startInterpolation(viewportData: InterpolationViewportData) {
   if (interpolationList.length) {
     triggerEvent(
       viewportData.viewport.element,
+      EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
+      eventDetails
+    );
+    triggerEvent(
+      eventTarget,
       EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
       eventDetails
     );

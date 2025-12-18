@@ -7,6 +7,7 @@ import { triggerAnnotationModified } from '../../stateManagement/annotation/help
 import { ChangeTypes } from '../../enums';
 import type { ContourSegmentationAnnotation } from '../../types';
 import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
+import AnnotationToPointData from '../../utilities/contours/AnnotationToPointData';
 
 class LivewireContourSegmentationTool extends LivewireContourTool {
   static toolName = 'LivewireContourSegmentationTool';
@@ -157,6 +158,10 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
   protected isContourSegmentationTool(): boolean {
     // Re-enable contour segmentation behavior disabled by LivewireContourTool
     return true;
+  }
+
+  static {
+    AnnotationToPointData.register(this);
   }
 }
 

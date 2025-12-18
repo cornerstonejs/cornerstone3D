@@ -40,6 +40,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   configuration?: {
     [key: string]: unknown;
+    brushSize: number;
     centerSegmentIndex?: {
       segmentIndex: number;
     };
@@ -49,6 +50,16 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
       dynamicRadius: number;
       dynamicRadiusInCanvas?: number;
     };
+  };
+  hoverData?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    brushCursor: any;
+    segmentationId: string;
+    segmentIndex: number;
+    segmentColor: [number, number, number, number];
+    viewportIdsToRender: string[];
+    centerCanvas?: Array<number>;
+    viewport: Types.IViewport;
   };
   memo?: LabelmapMemo;
   modified?: boolean;
@@ -146,6 +157,14 @@ export default class BrushStrategy {
     [StrategyCallbacks.GetStatistics]: addSingletonMethod(
       StrategyCallbacks.GetStatistics
     ),
+    [StrategyCallbacks.CalculateCursorGeometry]: addSingletonMethod(
+      StrategyCallbacks.CalculateCursorGeometry,
+      true
+    ),
+    [StrategyCallbacks.RenderCursor]: addSingletonMethod(
+      StrategyCallbacks.RenderCursor,
+      true
+    ),
     // Add other exposed fields below
     // initializers is exposed on the function to allow extension of the composition object
     compositions: null,
@@ -162,6 +181,29 @@ export default class BrushStrategy {
 
   constructor(name, ...initializers: Composition[]) {
     this.configurationName = name;
+
+    // Ensuring backwards compatibility - always have a circular cursor if none is defined
+    const cursorGeometryInitializer = initializers.find((init) =>
+      init.hasOwnProperty(StrategyCallbacks.CalculateCursorGeometry)
+    );
+    const renderCursorInitializer = initializers.find((init) =>
+      init.hasOwnProperty(StrategyCallbacks.RenderCursor)
+    );
+
+    if (!cursorGeometryInitializer) {
+      initializers.push({
+        [StrategyCallbacks.CalculateCursorGeometry]:
+          compositions.circularCursor.calculateCursorGeometry,
+      });
+    }
+
+    if (!renderCursorInitializer) {
+      initializers.push({
+        [StrategyCallbacks.RenderCursor]:
+          compositions.circularCursor.renderCursor,
+      });
+    }
+
     this.compositions = initializers;
     initializers.forEach((initializer) => {
       const result =
@@ -370,8 +412,12 @@ export default class BrushStrategy {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public createIsInThreshold: (operationData: InitializedOperationData) => any;
-}
 
+  public calculateCursorGeometry: (
+    enabledElement: Types.IEnabledElement,
+    operationData: InitializedOperationData
+  ) => void;
+}
 /**
  * Adds a list method to the set of defined methods.
  */
