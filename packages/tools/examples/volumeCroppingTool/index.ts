@@ -351,7 +351,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   toolGroupVRT.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary,
+        mouseButton: MouseBindings.Wheel,
       },
     ],
   });
@@ -359,7 +359,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   toolGroupVRT.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Auxiliary,
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
