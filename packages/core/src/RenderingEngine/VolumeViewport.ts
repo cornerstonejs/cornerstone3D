@@ -3,6 +3,7 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache/cache';
+import * as metaData from '../metaData';
 import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import type { BlendModes } from '../enums';
 import { OrientationAxis, Events } from '../enums';
@@ -36,6 +37,7 @@ import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInf
 import {
   calculateCameraPosition,
   getCameraVectors,
+  getAcquisitionPlaneReformatOrientation,
 } from './helpers/getCameraVectors';
 
 /**
@@ -204,9 +206,30 @@ class VolumeViewport extends BaseVolumeViewport {
         orientation === OrientationAxis.REFORMAT ||
         (orientation as string).includes('_reformat')
       ) {
-        ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
-          useViewportNormal: true,
-        }));
+        // Use acquisition plane reformat logic to find best alignment with standard views
+        const imageIds = this.getImageIds();
+        let reformatOrientation: OrientationVectors | null = null;
+
+        if (imageIds && imageIds.length > 0) {
+          const imagePlaneModule = metaData.get(
+            'imagePlaneModule',
+            imageIds[0]
+          );
+          if (imagePlaneModule?.imageOrientationPatient) {
+            reformatOrientation = getAcquisitionPlaneReformatOrientation(
+              imagePlaneModule.imageOrientationPatient
+            );
+          }
+        }
+
+        if (reformatOrientation) {
+          ({ viewPlaneNormal, viewUp } = reformatOrientation);
+        } else {
+          // Fallback to using viewport normal if acquisition plane reformat fails
+          ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
+            useViewportNormal: true,
+          }));
+        }
       } else if (MPR_CAMERA_VALUES[orientation]) {
         ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
       } else {

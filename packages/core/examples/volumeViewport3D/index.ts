@@ -81,7 +81,8 @@ addButtonToToolbar({
     viewport.render();
   },
 });
-
+let viewport;
+let sampleDistanceMultiplier = 1;
 addDropdownToToolbar({
   options: {
     values: CONSTANTS.VIEWPORT_PRESETS.map((preset) => preset.name),
@@ -105,8 +106,6 @@ addDropdownToToolbar({
 });
 
 // ============================= //
-
-let viewport;
 
 /**
  * Runs the demo
