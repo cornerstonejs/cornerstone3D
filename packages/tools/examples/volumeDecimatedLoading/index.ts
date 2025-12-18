@@ -1,36 +1,37 @@
-// For the low resolution image loader, what is required to do this is to create a new volume with a metadata loader that has a reduced set of images.
-// The reduced set should be specified as "skip" distances in i,j,k pixels.
-// The skip distance for k will REMOVE frames from the dataset.
-// The i distance will remove columns, while the j distance will remove rows.
-// Naturally, that affects the sizing/image positioning.
-
-// There should also be an image loader that re-uses an existing loader but decimates OR fetches the data using the jls reduced resolution endpoint.
-// The ordering should be:
-// 1. See if the reduced resolution version is available in cache -> use it immediately
-// 2. See if the full resolution version is available in cache -> decimate it and put the reduced resolution version in cache
-// 3. Fetch the reduced resolution version if configured against the back end
-// 4. Fetch the full resolution version and decimate it
-
-// The data that is affected is:
-
-// Frames - either the SOP instances or the frames in a multiframe need to be reduce in count.
-// This should occur as an integer fraction such that the spacing is consistent - examples: 1,3,5,7 - distance of two, so start with first image and go up by 2 1,4,7,10 - distance of three - start with first image and go up by 3 OR 2,5,8,11... - starting at 2
-// The starting/end are a bit arbitrary, but centering it to minimize the missed distance at both ends is probably worthwhile - that is, starting at 2 for a skip of 3 is better than starting at 1, since that skips 2 images at the end normally. Start with just using 1 always, and then see if we have time to improve that.
-
-// The DICOM values which need to be reduced are:
-// Pixel Spacing and related tags, including ultrasound enhanced regions (which you can throw an error on initially) slice thickness image position patient for multiframe only (because it is specified overall for the multiframe, and then can be calculated per-frame) number of frames image orientation patient - if these values include distances between pixels (they might be unitized to length 1)
-
-// The way this should work is to fetch the full resolution data, and then to have a metadata loader for partial resolution data.
-// OHIF will need a way to link TWO different volumes into a display set, and to choose between them.
-// The CS3D example will just have a pulldown with various options on a 2+3 layout including a 3d volume, a stack, and 3 mprs below it.
-// The path to the sub-resolution images can be probably left alone and the existing JLS ones re-used.
-
-// Decimate imageIds in the volume.  Maybe need to change pixel sampling
-// new volumeid every time.  update all 4 viewports on reloading.
-//  When off metadata provided that provides data for the decimated images
-//  The metadata provided will return different number of rows and columns
-// Some codecs can decode to partial resolution.
-//
+/**
+ * For the low resolution image loader, what is required to do this is to create a new volume with a metadata loader that has a reduced set of images.
+ * The reduced set should be specified as "skip" distances in i,j,k pixels.
+ * The skip distance for k will REMOVE frames from the dataset.
+ * The i distance will remove columns, while the j distance will remove rows.
+ * Naturally, that affects the sizing/image positioning.
+ *
+ * There should also be an image loader that re-uses an existing loader but decimates OR fetches the data using the jls reduced resolution endpoint.
+ * The ordering should be:
+ * 1. See if the reduced resolution version is available in cache -> use it immediately
+ * 2. See if the full resolution version is available in cache -> decimate it and put the reduced resolution version in cache
+ * 3. Fetch the reduced resolution version if configured against the back end
+ * 4. Fetch the full resolution version and decimate it
+ *
+ * The data that is affected is:
+ *
+ * Frames - either the SOP instances or the frames in a multiframe need to be reduce in count.
+ * This should occur as an integer fraction such that the spacing is consistent - examples: 1,3,5,7 - distance of two, so start with first image and go up by 2 1,4,7,10 - distance of three - start with first image and go up by 3 OR 2,5,8,11... - starting at 2
+ * The starting/end are a bit arbitrary, but centering it to minimize the missed distance at both ends is probably worthwhile - that is, starting at 2 for a skip of 3 is better than starting at 1, since that skips 2 images at the end normally. Start with just using 1 always, and then see if we have time to improve that.
+ *
+ * The DICOM values which need to be reduced are:
+ * Pixel Spacing and related tags, including ultrasound enhanced regions (which you can throw an error on initially) slice thickness image position patient for multiframe only (because it is specified overall for the multiframe, and then can be calculated per-frame) number of frames image orientation patient - if these values include distances between pixels (they might be unitized to length 1)
+ *
+ * The way this should work is to fetch the full resolution data, and then to have a metadata loader for partial resolution data.
+ * OHIF will need a way to link TWO different volumes into a display set, and to choose between them.
+ * The CS3D example will just have a pulldown with various options on a 2+3 layout including a 3d volume, a stack, and 3 mprs below it.
+ * The path to the sub-resolution images can be probably left alone and the existing JLS ones re-used.
+ *
+ * Decimate imageIds in the volume.  Maybe need to change pixel sampling
+ * new volumeid every time.  update all 4 viewports on reloading.
+ *  When off metadata provided that provides data for the decimated images
+ *  The metadata provided will return different number of rows and columns
+ * Some codecs can decode to partial resolution.
+ */
 
 import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
