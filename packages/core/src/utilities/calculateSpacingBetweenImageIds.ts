@@ -3,6 +3,38 @@ import * as metaData from '../metaData';
 import { getConfiguration } from '../init';
 
 /**
+ * Default spacing value (in mm) used as fallback when spacing cannot be calculated
+ * or retrieved from DICOM metadata
+ */
+const DEFAULT_THICKNESS_SINGLE_SLICE = 1;
+
+/**
+ * Gets pixel spacing value for creating cubic voxels with equal side lengths.
+ *
+ * @param metadata - Image plane module metadata
+ * @returns The best available pixel spacing value, or undefined if none available
+ */
+function getPixelSpacingForCubicVoxel(metadata: {
+  columnPixelSpacing?: number;
+  rowPixelSpacing?: number;
+  pixelSpacing?: number[];
+}): number | undefined {
+  if (metadata.columnPixelSpacing !== undefined) {
+    return metadata.columnPixelSpacing;
+  }
+  if (metadata.rowPixelSpacing !== undefined) {
+    return metadata.rowPixelSpacing;
+  }
+  if (metadata.pixelSpacing?.[1] !== undefined) {
+    return metadata.pixelSpacing[1];
+  }
+  if (metadata.pixelSpacing?.[0] !== undefined) {
+    return metadata.pixelSpacing[0];
+  }
+  return undefined;
+}
+
+/**
  * Calculates the spacing between images in a series based on their positions
  *
  * @param imageIds - array of imageIds
@@ -15,6 +47,30 @@ export default function calculateSpacingBetweenImageIds(
     imagePositionPatient: referenceImagePositionPatient,
     imageOrientationPatient,
   } = metaData.get('imagePlaneModule', imageIds[0]);
+
+  if (imageIds.length === 1) {
+    const {
+      sliceThickness,
+      spacingBetweenSlices,
+      columnPixelSpacing,
+      rowPixelSpacing,
+      pixelSpacing,
+    } = metaData.get('imagePlaneModule', imageIds[0]);
+
+    if (sliceThickness) return sliceThickness;
+    if (spacingBetweenSlices) return spacingBetweenSlices;
+
+    const pixelSpacingValue = getPixelSpacingForCubicVoxel({
+      columnPixelSpacing,
+      rowPixelSpacing,
+      pixelSpacing,
+    });
+    if (pixelSpacingValue !== undefined) {
+      return pixelSpacingValue;
+    }
+
+    return DEFAULT_THICKNESS_SINGLE_SLICE;
+  }
 
   // Calculate scan axis normal from image orientation
   const rowCosineVec = vec3.fromValues(
@@ -87,9 +143,6 @@ export default function calculateSpacingBetweenImageIds(
       imageIds[Math.floor(imageIds.length / 2)],
     ];
 
-    const firstImageDistance = getDistance(prefetchedImageIds[0]);
-    const middleImageDistance = getDistance(prefetchedImageIds[1]);
-
     const metadataForMiddleImage = metaData.get(
       'imagePlaneModule',
       prefetchedImageIds[1]
@@ -118,17 +171,21 @@ export default function calculateSpacingBetweenImageIds(
       Math.floor(imageIds.length / 2);
   }
 
-  const { sliceThickness, spacingBetweenSlices } = metaData.get(
-    'imagePlaneModule',
-    imageIds[0]
-  );
+  const {
+    sliceThickness,
+    spacingBetweenSlices,
+    columnPixelSpacing,
+    rowPixelSpacing,
+    pixelSpacing,
+  } = metaData.get('imagePlaneModule', imageIds[0]);
 
   const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
 
   // We implemented these lines for multiframe dicom files that does not have
   // position for each frame, leading to incorrect calculation of spacing = 0
   // If possible, we use the sliceThickness, but we warn about this dicom file
-  // weirdness. If sliceThickness is not available, we set to 1 just to render
+  // weirdness. If sliceThickness is not available, we use pixel spacing for
+  // cubic voxel creation
   if ((spacing === 0 || isNaN(spacing)) && !strictZSpacingForVolumeViewport) {
     if (spacingBetweenSlices) {
       console.debug('Could not calculate spacing. Using spacingBetweenSlices');
@@ -139,10 +196,19 @@ export default function calculateSpacingBetweenImageIds(
       );
       spacing = sliceThickness;
     } else {
-      console.debug(
-        'Could not calculate spacing. The VolumeViewport visualization is compromised. Setting spacing to 1 to render'
-      );
-      spacing = 1;
+      const pixelSpacingValue = getPixelSpacingForCubicVoxel({
+        columnPixelSpacing,
+        rowPixelSpacing,
+        pixelSpacing,
+      });
+      if (pixelSpacingValue) {
+        spacing = pixelSpacingValue;
+      } else {
+        console.debug(
+          `Could not calculate spacing and no pixel spacing found. Using default thickness (${DEFAULT_THICKNESS_SINGLE_SLICE} mm)`
+        );
+        spacing = DEFAULT_THICKNESS_SINGLE_SLICE;
+      }
     }
   }
 

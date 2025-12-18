@@ -22,7 +22,6 @@ import {
   fillInsideCircle,
 } from './strategies/fillCircle';
 import { eraseInsideCircle } from './strategies/eraseCircle';
-import { drawCircle as drawCircleSvg } from '../../drawingSvg';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -249,6 +248,9 @@ class BrushTool extends LabelmapBaseTool {
    * The preview also needs to be cancelled on changing tools.
    */
   mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (!this.isPrimary) {
+      return;
+    }
     if (this.mode === ToolModes.Active) {
       this.updateCursor(evt);
       if (!this.configuration.preview.enabled) {
@@ -355,6 +357,7 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
 
+    BrushTool.activeCursorTool = this;
     triggerAnnotationRenderForViewportUIDs(this._hoverData.viewportIdsToRender);
   }
 
@@ -444,76 +447,12 @@ class BrushTool extends LabelmapBaseTool {
 
   private _calculateCursor(element, centerCanvas) {
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const { canvasToWorld } = viewport;
-    const camera = viewport.getCamera();
-    const { brushSize } = this.configuration;
 
-    const viewUp = vec3.fromValues(
-      camera.viewUp[0],
-      camera.viewUp[1],
-      camera.viewUp[2]
+    this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(element),
+      StrategyCallbacks.CalculateCursorGeometry
     );
-    const viewPlaneNormal = vec3.fromValues(
-      camera.viewPlaneNormal[0],
-      camera.viewPlaneNormal[1],
-      camera.viewPlaneNormal[2]
-    );
-    const viewRight = vec3.create();
-
-    vec3.cross(viewRight, viewUp, viewPlaneNormal);
-
-    // in the world coordinate system, the brushSize is the radius of the circle
-    // in mm
-    const centerCursorInWorld: Types.Point3 = canvasToWorld([
-      centerCanvas[0],
-      centerCanvas[1],
-    ]);
-
-    const bottomCursorInWorld = vec3.create();
-    const topCursorInWorld = vec3.create();
-    const leftCursorInWorld = vec3.create();
-    const rightCursorInWorld = vec3.create();
-
-    // Calculate the bottom and top points of the circle in world coordinates
-    for (let i = 0; i <= 2; i++) {
-      bottomCursorInWorld[i] = centerCursorInWorld[i] - viewUp[i] * brushSize;
-      topCursorInWorld[i] = centerCursorInWorld[i] + viewUp[i] * brushSize;
-      leftCursorInWorld[i] = centerCursorInWorld[i] - viewRight[i] * brushSize;
-      rightCursorInWorld[i] = centerCursorInWorld[i] + viewRight[i] * brushSize;
-    }
-
-    if (!this._hoverData) {
-      return;
-    }
-
-    const { brushCursor } = this._hoverData;
-    const { data } = brushCursor;
-
-    if (data.handles === undefined) {
-      data.handles = {};
-    }
-
-    data.handles.points = [
-      bottomCursorInWorld,
-      topCursorInWorld,
-      leftCursorInWorld,
-      rightCursorInWorld,
-    ];
-
-    const activeStrategy = this.configuration.activeStrategy;
-    const strategy = this.configuration.strategies[activeStrategy];
-
-    // Note: i don't think this is the best way to implement this
-    // but don't think we have a better way to do it for now
-    if (typeof strategy?.computeInnerCircleRadius === 'function') {
-      strategy.computeInnerCircleRadius({
-        configuration: this.configuration,
-        viewport,
-      });
-    }
-
-    data.invalidated = false;
   }
 
   /**
@@ -683,7 +622,7 @@ class BrushTool extends LabelmapBaseTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): void {
-    if (!this._hoverData) {
+    if (!this._hoverData || BrushTool.activeCursorTool !== this) {
       return;
     }
 
@@ -706,66 +645,12 @@ class BrushTool extends LabelmapBaseTool {
       this._calculateCursor(element, centerCanvas);
     }
 
-    const toolMetadata = brushCursor.metadata;
-    if (!toolMetadata) {
-      return;
-    }
-
-    const annotationUID = toolMetadata.brushCursorUID;
-
-    const data = brushCursor.data;
-    const { points } = data.handles;
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-
-    const bottom = canvasCoordinates[0];
-    const top = canvasCoordinates[1];
-
-    const center = [
-      Math.floor((bottom[0] + top[0]) / 2),
-      Math.floor((bottom[1] + top[1]) / 2),
-    ];
-
-    const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
-
-    const color = `rgb(${toolMetadata.segmentColor?.slice(0, 3) || [0, 0, 0]})`;
-
-    // If rendering engine has been destroyed while rendering
-    if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
-      return;
-    }
-
-    const circleUID = '0';
-    drawCircleSvg(
-      svgDrawingHelper,
-      annotationUID,
-      circleUID,
-      center as Types.Point2,
-      radius,
-      {
-        color,
-        lineDash:
-          this.centerSegmentIndexInfo.segmentIndex === 0 ? [1, 2] : null,
-      }
+    this.applyActiveStrategyCallback(
+      enabledElement,
+      this.getOperationData(viewport.element),
+      StrategyCallbacks.RenderCursor,
+      svgDrawingHelper
     );
-
-    const { dynamicRadiusInCanvas } = this.configuration?.threshold || {
-      dynamicRadiusInCanvas: 0,
-    };
-
-    if (dynamicRadiusInCanvas) {
-      const circleUID1 = '1';
-      drawCircleSvg(
-        svgDrawingHelper,
-        annotationUID,
-        circleUID1,
-        center as Types.Point2,
-        dynamicRadiusInCanvas,
-        {
-          color,
-        }
-      );
-    }
   }
 }
 

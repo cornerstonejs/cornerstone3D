@@ -3,6 +3,84 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.14.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.4...v4.14.5) (2025-12-17)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.3...v4.14.4) (2025-12-16)
+
+### Bug Fixes
+
+- **segmentation:** getClosestImageId should proceed to calculate the closest imageId if imageIds is not empty. ([#2518](https://github.com/cornerstonejs/cornerstone3D/issues/2518)) ([3f1d4de](https://github.com/cornerstonejs/cornerstone3D/commit/3f1d4de94e75cf475854051a3dfd6f3d0a70d7f7))
+
+## [4.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.2...v4.14.3) (2025-12-14)
+
+### Bug Fixes
+
+- **ImageVolume:** replace deprecated numTimePoints with a getter and update isDynamicVolume logic ([#2517](https://github.com/cornerstonejs/cornerstone3D/issues/2517)) ([fb2334b](https://github.com/cornerstonejs/cornerstone3D/commit/fb2334bd709f24e2501ec9add15d677e189d2474))
+
+## [4.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.1...v4.14.2) (2025-12-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.14.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.0...v4.14.1) (2025-12-11)
+
+### Bug Fixes
+
+- Fix VoxelManager.numberOfComponents value ([#2512](https://github.com/cornerstonejs/cornerstone3D/issues/2512)) ([bbccda5](https://github.com/cornerstonejs/cornerstone3D/commit/bbccda59ecd3f255163505d2db7d1c15fbf33226))
+
+# [4.14.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.7...v4.14.0) (2025-12-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.13.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.6...v4.13.7) (2025-12-09)
+
+### Bug Fixes
+
+- **Volumes:** Allow loading 1-slice volumes ([#2485](https://github.com/cornerstonejs/cornerstone3D/issues/2485)) ([4ee24dd](https://github.com/cornerstonejs/cornerstone3D/commit/4ee24ddeda16b3c2ece5c2fe4cdf5df45e16c23e))
+
+## [4.13.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.5...v4.13.6) (2025-12-08)
+
+### Bug Fixes
+
+- advance magnify tool ([#2504](https://github.com/cornerstonejs/cornerstone3D/issues/2504)) ([0bb311e](https://github.com/cornerstonejs/cornerstone3D/commit/0bb311e5e273f467a37626ddfab2387b485ea630))
+
+## [4.13.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.4...v4.13.5) (2025-12-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.13.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.3...v4.13.4) (2025-12-05)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.13.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.2...v4.13.3) (2025-12-05)
+
+### Bug Fixes
+
+- **dicomImageLoader:** :bug: Prevent error if ImagePositionPatient can not be read ([#2442](https://github.com/cornerstonejs/cornerstone3D/issues/2442)) ([c819a0c](https://github.com/cornerstonejs/cornerstone3D/commit/c819a0c99acf6ccf0c904a0d71933d8446768bb3))
+
+## [4.13.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.1...v4.13.2) (2025-12-04)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.13.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.13.0...v4.13.1) (2025-12-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [4.13.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.7...v4.13.0) (2025-12-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.12.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.6...v4.12.7) (2025-12-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.12.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.5...v4.12.6) (2025-11-28)
+
+### Bug Fixes
+
+- **WSIViewport:** add event listener for annotation removal ([#2461](https://github.com/cornerstonejs/cornerstone3D/issues/2461)) ([026c69d](https://github.com/cornerstonejs/cornerstone3D/commit/026c69dfb705d42a28c0db11fec498c777a3ed39))
+
 ## [4.12.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.12.4...v4.12.5) (2025-11-27)
 
 ### Bug Fixes
