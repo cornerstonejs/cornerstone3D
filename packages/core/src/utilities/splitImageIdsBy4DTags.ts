@@ -32,7 +32,7 @@ interface MultiframeSplitResult {
  *
  * @param baseImageId - The base imageId that must contain a "/frames/" pattern followed by a digit.
  *   Expected format: e.g., "wadouri:http://example.com/image/frames/1" or "wadors:/path/to/image.dcm/frames/1".
- *   The pattern "/frames/\d+" will be replaced with "/frames/{frameNumber}".
+ *   The pattern "/frames/\d+" will be replaced with "/frames/" + frameNumber.
  * @param frameNumber - The frame number to use (1-based)
  * @returns The imageId with the frame number replaced
  * @throws {Error} If baseImageId does not contain the required "/frames/" pattern, throws an error
