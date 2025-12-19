@@ -42,6 +42,7 @@ import type {
   ImagePixelModule,
   ImagePlaneModule,
   PixelDataTypedArray,
+  ResetCameraOptions,
 } from '../types';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import * as colormapUtils from '../utilities/colormap';
@@ -2687,7 +2688,7 @@ class StackViewport extends Viewport {
     });
   }
 
-  private resetCameraGPU({ resetPan, resetZoom, resetAspectRatio }): boolean {
+  private resetCameraGPU(resetOptions: ResetCameraOptions): boolean {
     // Todo: we need to make the rotation a camera properties so that
     // we can reset it there, right now it is not possible to reset the rotation
     // without this
@@ -2703,12 +2704,7 @@ class StackViewport extends Viewport {
     // For stack Viewport we since we have only one slice
     // it should be enough to reset the camera to the center of the image
     const resetToCenter = true;
-    return super.resetCamera({
-      resetPan,
-      resetZoom,
-      resetToCenter,
-      resetAspectRatio,
-    });
+    return super.resetCamera({ resetToCenter, ...resetOptions });
   }
 
   /**

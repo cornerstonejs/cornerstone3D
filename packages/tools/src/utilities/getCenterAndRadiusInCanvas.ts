@@ -12,9 +12,9 @@ import {
  * viewport's canvas coordinates and returns both the
  * calculated center and radius in canvas coordinates.
  *
- * @param {Types.Point3[]} points - The list of 3D points defining the circle - center and point on circle.
- * @param {Types.IStackViewport | VolumeViewport} viewport - The current viewport.
- * @returns {[Types.Point2, Types.Point2]} An array contains:
+ * @param points - The list of 3D points defining the circle - center and point on circle.
+ * @param viewport - The current viewport.
+ * @returns An array contains:
  *   - The first element: center in canvas coordinate.
  *   - The second element: radius in canvas coordinate.
  */

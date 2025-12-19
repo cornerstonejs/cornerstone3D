@@ -37,4 +37,11 @@ interface ICamera {
   aspectRatio?: Point2;
 }
 
-export type { ICamera as default };
+interface ResetCameraOptions {
+  resetPan?: boolean;
+  resetZoom?: boolean;
+  resetToCenter?: boolean;
+  resetAspectRatio?: boolean;
+}
+
+export type { ICamera as default, ResetCameraOptions };
