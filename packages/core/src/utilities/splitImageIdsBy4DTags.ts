@@ -29,12 +29,25 @@ interface MultiframeSplitResult {
 /**
  * Generates frame-specific imageIds for a multiframe image.
  * Replaces the frame number in the imageId with the specified frame number (1-based).
+ *
+ * @param baseImageId - The base imageId that should contain a "/frames/" pattern
+ * @param frameNumber - The frame number to use (1-based)
+ * @returns The imageId with the frame number replaced, or the original baseImageId if pattern not found
  */
 function generateFrameImageId(
   baseImageId: string,
   frameNumber: number
 ): string {
-  return baseImageId.replace(/\/frames\/\d+/, `/frames/${frameNumber}`);
+  const framePattern = /\/frames\/\d+/;
+
+  if (!framePattern.test(baseImageId)) {
+    console.warn(
+      `generateFrameImageId: Expected baseImageId to contain "/frames/" pattern, but received: ${baseImageId}. Returning original imageId.`
+    );
+    return baseImageId;
+  }
+
+  return baseImageId.replace(framePattern, `/frames/${frameNumber}`);
 }
 
 /**
