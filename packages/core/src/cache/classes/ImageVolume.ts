@@ -223,7 +223,11 @@ export class ImageVolume {
 
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
-    return this.numTimePoints > 1;
+    if (this.numTimePoints) {
+      return this.numTimePoints > 1;
+    }
+
+    return false;
   }
 
   /**

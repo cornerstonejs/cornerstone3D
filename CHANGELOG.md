@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.14.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.5...v4.14.6) (2025-12-18)
+
+### Bug Fixes
+
+- **segmentation:** Set the representation visible when setting segment visible. ([#2525](https://github.com/cornerstonejs/cornerstone3D/issues/2525)) ([ea2e968](https://github.com/cornerstonejs/cornerstone3D/commit/ea2e96829f8082ccacf375a2ddf2c2f053d89b50))
+
+## [4.14.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.4...v4.14.5) (2025-12-17)
+
+**Note:** Version bump only for package root
+
+## [4.14.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.3...v4.14.4) (2025-12-16)
+
+### Bug Fixes
+
+- **segmentation:** getClosestImageId should proceed to calculate the closest imageId if imageIds is not empty. ([#2518](https://github.com/cornerstonejs/cornerstone3D/issues/2518)) ([3f1d4de](https://github.com/cornerstonejs/cornerstone3D/commit/3f1d4de94e75cf475854051a3dfd6f3d0a70d7f7))
+
+## [4.14.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.2...v4.14.3) (2025-12-14)
+
+### Bug Fixes
+
+- **ImageVolume:** replace deprecated numTimePoints with a getter and update isDynamicVolume logic ([#2517](https://github.com/cornerstonejs/cornerstone3D/issues/2517)) ([fb2334b](https://github.com/cornerstonejs/cornerstone3D/commit/fb2334bd709f24e2501ec9add15d677e189d2474))
+
 ## [4.14.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.1...v4.14.2) (2025-12-11)
 
 **Note:** Version bump only for package root
