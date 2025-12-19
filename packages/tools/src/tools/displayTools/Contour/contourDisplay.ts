@@ -40,8 +40,6 @@ function removeRepresentation(
 
   const { viewport } = enabledElement;
 
-  removeContourFromElement(viewportId, segmentationId);
-
   if (!renderImmediate) {
     return;
   }
@@ -82,8 +80,7 @@ async function render(
     contourData = await computeAndAddRepresentation(
       segmentationId,
       Representations.Contour,
-      () => polySeg.computeContourData(segmentationId, { viewport }),
-      () => undefined
+      () => polySeg.computeContourData(segmentationId, { viewport })
     );
 
     polySegConversionInProgressForViewportId.set(viewport.id, false);
@@ -216,20 +213,20 @@ function _checkContourGeometryMatchViewport(
   }
 
   const contours = geometryData.contours;
-  const points = contours[0].points;
-  const point1 = points[0];
-  const point2 = points[1];
-  const point3 = points[2];
-
-  // get the normal from two points
-  let normal = vec3.cross(
-    vec3.create(),
-    vec3.sub(vec3.create(), point2, point1),
-    vec3.sub(vec3.create(), point3, point1)
-  );
-  normal = vec3.normalize(vec3.create(), normal);
-  const dotProduct = vec3.dot(normal, viewportNormal);
-  return Math.abs(dotProduct) > 0.9;
+  const { points } = contours[0];
+  const [point] = points;
+  const delta = vec3.create();
+  const { length } = points;
+  const increment = Math.ceil(length / 25);
+  for (let i = 1; i < length; i += increment) {
+    const point2 = points[i];
+    vec3.sub(delta, point, point2);
+    vec3.normalize(delta, delta);
+    if (vec3.dot(viewportNormal, delta) > 0.1) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function _checkContourNormalsMatchViewport(
@@ -273,7 +270,20 @@ function _checkContourNormalsMatchViewport(
   return true;
 }
 
+/**
+ * Default function to call when segmentation representation is updated
+ *
+ * @param viewport
+ * @returns
+ */
+function getUpdateFunction(
+  viewport: Types.IVolumeViewport | Types.IStackViewport
+): (segmentationId: string) => Promise<void> {
+  return null;
+}
+
 export default {
+  getUpdateFunction,
   render,
   removeRepresentation,
 };

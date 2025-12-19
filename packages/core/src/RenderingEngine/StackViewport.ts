@@ -98,7 +98,10 @@ import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirectio
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
-import { createSharpeningRenderPass } from './renderPasses';
+import {
+  createSharpeningRenderPass,
+  createSmoothingRenderPass,
+} from './renderPasses';
 
 export interface ImageDataMetaData {
   bitsAllocated: number;
@@ -167,6 +170,7 @@ class StackViewport extends Viewport {
   private voiRange: VOIRange;
   private voiUpdatedWithSetProperties = false;
   private sharpening: number = 0;
+  private smoothing: number = 0;
   private VOILUTFunction: VOILUTFunctionType;
   //
   private invert = false;
@@ -439,18 +443,26 @@ class StackViewport extends Viewport {
 
     this.render();
   };
-
+  /**
+   * Sets the smoothing for the current viewport.
+   * @param smoothing - The smoothing configuration to use.
+   */
+  private setSmoothing = (smoothing: number): void => {
+    // Store smoothing settings directly on the class
+    this.smoothing = smoothing;
+    this.render();
+  };
   /**
    * Check if custom render passes should be used for this viewport.
    * @returns True if custom render passes should be used, false otherwise
    */
   protected shouldUseCustomRenderPass(): boolean {
-    return this.sharpening > 0 && !this.useCPURendering;
+    return !this.useCPURendering;
   }
 
   /**
    * Get render passes for this viewport.
-   * If sharpening is enabled, returns appropriate render passes.
+   * If sharpening or smoothing is enabled, returns appropriate render passes.
    * @returns Array of VTK render passes or null if no custom passes are needed
    */
   public getRenderPasses = () => {
@@ -458,10 +470,19 @@ class StackViewport extends Viewport {
       return null;
     }
 
+    const renderPasses = [];
+
     try {
-      return [createSharpeningRenderPass(this.sharpening)];
+      if (this.smoothing > 0) {
+        renderPasses.push(createSmoothingRenderPass(this.smoothing));
+      }
+      if (this.sharpening > 0) {
+        renderPasses.push(createSharpeningRenderPass(this.sharpening));
+      }
+
+      return renderPasses.length ? renderPasses : null;
     } catch (e) {
-      console.warn('Failed to create sharpening render passes:', e);
+      console.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
@@ -599,27 +620,20 @@ class StackViewport extends Viewport {
   public getCornerstoneImage = (): IImage => this.csImage;
 
   /**
-   * Creates imageMapper based on the provided vtkImageData and also creates
-   * the imageSliceActor and connects it to the imageMapper.
-   * For color stack images, it sets the independent components to be false which
-   * is required in vtk.
+   * Creates imageMapper based on the provided vtkImageData and also creates the
+   * imageSliceActor and connects it to the imageMapper. For color stack images,
+   * it sets the independent components to be false which is required in vtk.
    *
    * @param imageData - vtkImageData for the viewport
    * @returns actor vtkActor
    */
-  private createActorMapper = (imageData) => {
+  private createActorMapper = (imageData: vtkImageData) => {
     const mapper = vtkImageMapper.newInstance();
     mapper.setInputData(imageData);
 
     const actor = vtkImageSlice.newInstance();
 
     actor.setMapper(mapper);
-
-    const { preferSizeOverAccuracy } = getConfiguration().rendering;
-
-    if (preferSizeOverAccuracy) {
-      mapper.setPreferSizeOverAccuracy(true);
-    }
 
     if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
       actor.getProperty().setIndependentComponents(false);
@@ -645,8 +659,11 @@ class StackViewport extends Viewport {
   private calibrateIfNecessary(imageId, imagePlaneModule) {
     const calibration = metaData.get('calibratedPixelSpacing', imageId);
     const isUpdated = this.calibration !== calibration;
-    const { scale } = calibration || {};
-    this.hasPixelSpacing = scale > 0 || imagePlaneModule.rowPixelSpacing > 0;
+    const scale = calibration?.scale;
+    this.hasPixelSpacing =
+      scale > 0 ||
+      (!imagePlaneModule.usingDefaultValues &&
+        imagePlaneModule.rowPixelSpacing > 0);
     imagePlaneModule.calibration = calibration;
 
     if (!isUpdated) {
@@ -723,6 +740,7 @@ class StackViewport extends Viewport {
       invert,
       interpolationType,
       sharpening,
+      smoothing,
     }: StackViewportProperties = {},
     suppressEvents = false
   ): void {
@@ -741,6 +759,7 @@ class StackViewport extends Viewport {
       interpolationType:
         this.globalDefaultProperties.interpolationType ?? interpolationType,
       sharpening: this.globalDefaultProperties.sharpening ?? sharpening,
+      smoothing: this.globalDefaultProperties.smoothing ?? smoothing,
     };
 
     if (typeof colormap !== 'undefined') {
@@ -767,6 +786,9 @@ class StackViewport extends Viewport {
 
     if (typeof sharpening !== 'undefined') {
       this.setSharpening(sharpening);
+    }
+    if (typeof smoothing !== 'undefined') {
+      this.setSmoothing(smoothing);
     }
   }
 
@@ -813,6 +835,7 @@ class StackViewport extends Viewport {
       invert,
       isComputedVOI: !voiUpdatedWithSetProperties,
       sharpening: this.sharpening,
+      smoothing: this.smoothing,
     };
   };
 

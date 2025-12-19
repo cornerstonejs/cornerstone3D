@@ -89,7 +89,10 @@ import cache from '../cache/cache';
 import getDynamicVolumeInfo from './getDynamicVolumeInfo';
 import autoLoad from './autoLoad';
 import scaleArray from './scaleArray';
-import splitImageIdsBy4DTags from './splitImageIdsBy4DTags';
+import splitImageIdsBy4DTags, {
+  handleMultiframe4D,
+  generateFrameImageId,
+} from './splitImageIdsBy4DTags';
 import { deepClone } from './deepClone';
 import { jumpToSlice } from './jumpToSlice';
 import scroll from './scroll';
@@ -99,7 +102,7 @@ import getVolumeDirectionVectors from './getVolumeDirectionVectors';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
-import getPixelSpacingInformation from './getPixelSpacingInformation';
+export * from './getPixelSpacingInformation';
 import { asArray } from './asArray';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
@@ -192,6 +195,8 @@ export {
   scaleArray,
   deepClone,
   splitImageIdsBy4DTags,
+  handleMultiframe4D,
+  generateFrameImageId,
   pointInShapeCallback,
   deepEqual,
   jumpToSlice,
@@ -204,6 +209,5 @@ export {
   getImageDataMetadata,
   buildMetadata,
   calculateNeighborhoodStats,
-  getPixelSpacingInformation,
   asArray,
 };

@@ -127,7 +127,7 @@ export default function filterAnnotationsWithinSlice(
 
     const point =
       metadata.planeRestriction?.point ||
-      data.handles.points[0] ||
+      data.handles?.points?.[0] ||
       data.contour?.polyline[0];
 
     // A = point

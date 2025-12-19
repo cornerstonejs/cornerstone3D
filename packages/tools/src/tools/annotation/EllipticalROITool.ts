@@ -1093,7 +1093,7 @@ class EllipticalROITool extends AnnotationTool {
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
 
         const handles = [pos1Index, pos2Index];
-        const { scale, unit, areaUnit } = getCalibratedLengthUnitsAndScale(
+        const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
           image,
           handles
         );

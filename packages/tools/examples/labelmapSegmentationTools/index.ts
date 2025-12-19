@@ -14,7 +14,6 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
-  getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -41,6 +40,14 @@ const {
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
+type ThresholdConfiguration = {
+  range: Types.Point2;
+  isDynamic: boolean;
+  dynamicRadius: number;
+};
+type ThresholdOption = {
+  threshold: ThresholdConfiguration;
+};
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -167,28 +174,48 @@ addDropdownToToolbar({
   },
 });
 
-const thresholdOptions = new Map<string, any>();
+const thresholdOptions = new Map<string, ThresholdOption>();
 thresholdOptions.set('CT Fat: (-150, -70)', {
-  threshold: [-150, -70],
+  threshold: {
+    range: [-150, -70] as Types.Point2,
+    isDynamic: false,
+    dynamicRadius: 0,
+  },
 });
 thresholdOptions.set('CT Bone: (200, 1000)', {
-  threshold: [200, 1000],
+  threshold: {
+    range: [200, 1000] as Types.Point2,
+    isDynamic: false,
+    dynamicRadius: 0,
+  },
 });
+
+const defaultThresholdOption = thresholdOptions.keys().next().value;
+const defaultThresholdConfiguration = thresholdOptions.get(
+  defaultThresholdOption
+)?.threshold ?? {
+  range: [-150, -70] as Types.Point2,
+  isDynamic: false,
+  dynamicRadius: 0,
+};
 
 addDropdownToToolbar({
   options: {
     values: Array.from(thresholdOptions.keys()),
-    defaultValue: thresholdOptions[0],
+    defaultValue: defaultThresholdOption,
   },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
 
     const thresholdArgs = thresholdOptions.get(name);
 
+    if (!thresholdArgs?.threshold) {
+      return;
+    }
+
     segmentationUtils.setBrushThresholdForToolGroup(
       toolGroupId,
-      thresholdArgs.threshold,
-      thresholdArgs
+      thresholdArgs.threshold
     );
   },
 });
@@ -279,17 +306,17 @@ async function run() {
     }
   );
   toolGroup.addToolInstance(
-    brushInstanceNames.CircularEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularEraser,
-    }
-  );
-  toolGroup.addToolInstance(
     brushInstanceNames.SphereBrush,
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.SphereBrush,
+    }
+  );
+  toolGroup.addToolInstance(
+    brushInstanceNames.CircularEraser,
+    BrushTool.toolName,
+    {
+      activeStrategy: brushStrategies.CircularEraser,
     }
   );
   toolGroup.addToolInstance(
@@ -316,6 +343,7 @@ async function run() {
     BrushTool.toolName,
     {
       activeStrategy: brushStrategies.ThresholdCircle,
+      threshold: defaultThresholdConfiguration,
     }
   );
 
@@ -323,10 +351,19 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 
+  toolGroup.setToolActive(brushInstanceNames.CircularEraser, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
+        mouseButton: MouseBindings.Auxiliary, // Shift Middle
         modifierKey: KeyboardBindings.Shift,
       },
     ],

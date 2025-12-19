@@ -28,7 +28,7 @@ yarn install --frozen-lockfile
 yarn run example tutorial
 ```
 
-:::warning
+:::danger
 In general run `yarn install` with the `--frozen-lockfile` flag to help avoid
 supply chain attacks by enforcing reproducible dependencies. That is, if the
 `yarn.lock` file is clean and does NOT reference compromised packages, then

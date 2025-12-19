@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
@@ -9,7 +9,7 @@ import type {
   ToolConfiguration,
 } from '../../types';
 
-const { DefaultHistoryMemo } = utilities.HistoryMemo;
+const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
 /**
  * Abstract base class from which all tools derive.
@@ -18,6 +18,24 @@ const { DefaultHistoryMemo } = utilities.HistoryMemo;
  */
 abstract class BaseTool {
   static toolName;
+
+  /**
+   * Set to the tool that is currently drawing the active cursor.  This
+   * will be either primary mouse button tool if no tool is currently
+   * being directly interacted with, OR the tool that is directly interacted
+   * with.  This logic ensures that there is only a single tool at a time
+   * drawing, which prevents tools not getting mouse updates from over-writing
+   * the cursor.
+   *
+   * - If the tool bound to the primary button is a cursor drawing tool,
+   *   use that tool and there is NOT a tool currently drawing directly
+   * - If there is a tool currently drawing directly, then that tool should
+   *   display a cursor EVEN if it normally doesn't have a custom cursor
+   * - When a tool finishes drawing direct, it should stop being the active
+   *   cursor tool unless it is also the primary tool
+   */
+  public static activeCursorTool;
+
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
   /**
@@ -35,11 +53,14 @@ abstract class BaseTool {
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
   public mode: ToolModes;
+  /** Primary tool - this is set to true when this tool is primary */
+  public isPrimary = false;
+
   /**
    * A memo recording the starting state of a tool.  This will be updated
    * as changes are made, and reflects the fact that a memo has been created.
    */
-  protected memo: utilities.HistoryMemo.Memo;
+  protected memo: csUtils.HistoryMemo.Memo;
 
   /**
    * Has the defaults associated with the base tool.
@@ -59,7 +80,7 @@ abstract class BaseTool {
       defaultToolProps
     );
 
-    const initialProps = utilities.deepMerge(mergedDefaults, toolProps);
+    const initialProps = csUtils.deepMerge(mergedDefaults, toolProps);
 
     const {
       configuration = {},
@@ -87,7 +108,7 @@ abstract class BaseTool {
     if (!additionalProps) {
       return defaultProps;
     }
-    return utilities.deepMerge(defaultProps, additionalProps);
+    return csUtils.deepMerge(defaultProps, additionalProps);
   }
 
   /**
@@ -177,7 +198,7 @@ abstract class BaseTool {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public setConfiguration(newConfiguration: Record<string, any>): void {
-    this.configuration = utilities.deepMerge(
+    this.configuration = csUtils.deepMerge(
       this.configuration,
       newConfiguration
     );
@@ -209,8 +230,8 @@ abstract class BaseTool {
   ): Types.IImageData | Types.CPUIImageData {
     if (targetId.startsWith('imageId:')) {
       const imageId = targetId.split('imageId:')[1];
-      const imageURI = utilities.imageIdToURI(imageId);
-      let viewports = utilities.getViewportsWithImageURI(imageURI);
+      const imageURI = csUtils.imageIdToURI(imageId);
+      let viewports = csUtils.getViewportsWithImageURI(imageURI);
 
       if (!viewports || !viewports.length) {
         return;
@@ -226,8 +247,8 @@ abstract class BaseTool {
 
       return viewports[0].getImageData();
     } else if (targetId.startsWith('volumeId:')) {
-      const volumeId = utilities.getVolumeId(targetId);
-      const viewports = utilities.getViewportsWithVolumeId(volumeId);
+      const volumeId = csUtils.getVolumeId(targetId);
+      const viewports = csUtils.getViewportsWithVolumeId(volumeId);
 
       if (!viewports || !viewports.length) {
         return;
@@ -236,8 +257,8 @@ abstract class BaseTool {
       return viewports[0].getImageData();
     } else if (targetId.startsWith('videoId:')) {
       // Video id can be multi-valued for the frame information
-      const imageURI = utilities.imageIdToURI(targetId);
-      const viewports = utilities.getViewportsWithImageURI(imageURI);
+      const imageURI = csUtils.imageIdToURI(targetId);
+      const viewports = csUtils.getViewportsWithImageURI(imageURI);
 
       if (!viewports || !viewports.length) {
         return;
@@ -361,6 +382,44 @@ abstract class BaseTool {
   /** Ends a group recording of history memo */
   public static endGroupRecording() {
     DefaultHistoryMemo.endGroupRecording();
+  }
+
+  /**
+   * Calculates the length between two index coordinates using the calibrate
+   * information for scaling information.
+   * @param closed - set to true to calculate the closed length,
+   *    including the line between the first/last index
+   */
+  public static calculateLengthInIndex(calibrate, indexPoints, closed = false) {
+    const scale = calibrate?.scale || 1;
+    const scaleY = calibrate?.scaleY || scale;
+    const scaleZ = calibrate?.scaleZ || scale;
+    let length = 0;
+    const count = indexPoints.length;
+    const start = closed ? 0 : 1;
+    let lastPoint = closed ? indexPoints[count - 1] : indexPoints[0];
+    for (let i = start; i < count; i++) {
+      const point = indexPoints[i];
+      const dx = (point[0] - lastPoint[0]) / scale;
+      const dy = (point[1] - lastPoint[1]) / scaleY;
+      const dz = (point[2] - lastPoint[2]) / scaleZ;
+      length += Math.sqrt(dx * dx + dy * dy + dz * dz);
+      lastPoint = point;
+    }
+    return length;
+  }
+
+  /**
+   * Return true if all the index points are within the dimensions provided.
+   */
+  public static isInsideVolume(dimensions, indexPoints) {
+    const { length: count } = indexPoints;
+    for (let i = 0; i < count; i++) {
+      if (!csUtils.indexWithinDimensions(indexPoints[i], dimensions)) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 
