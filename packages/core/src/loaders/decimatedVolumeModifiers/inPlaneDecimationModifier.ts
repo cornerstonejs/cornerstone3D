@@ -9,7 +9,7 @@ import type {
  * In-Plane Decimation Modifier
  *
  * A volume modifier that reduces the resolution of a volume in the in-plane dimensions
- * (i and j axes). 
+ * (i and j axes).
  *
  * The modifier:
  * - Applies decimation factors from `context.options.ijkDecimation` for the i and j dimensions

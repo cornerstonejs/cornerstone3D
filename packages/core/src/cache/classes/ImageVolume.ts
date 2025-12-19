@@ -75,6 +75,11 @@ export class ImageVolume {
   hasPixelSpacing: boolean;
   /** Property to store additional information */
   additionalDetails?: Record<string, unknown>;
+  /**
+   *  Property to store the number of dimension groups.
+   * @deprecated
+   */
+  numDimensionGroups: number;
 
   /**
    * The new volume model which solely relies on the separate image data
@@ -83,11 +88,13 @@ export class ImageVolume {
   voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
-  // @deprecated
+  /**
+   * Calculates the number of time points to be the number of dimension groups
+   * as a fallback for existing handling.
+   * @deprecated
+   */
   get numTimePoints(): number {
-    // @ts-expect-error
     return typeof this.numDimensionGroups === 'number'
-    // @ts-expect-error
       ? this.numDimensionGroups
       : 1;
   }
