@@ -363,3 +363,4 @@ function splitImageIdsBy4DTags(imageIds: string[]): {
 }
 
 export default splitImageIdsBy4DTags;
+export { handleMultiframe4D, generateFrameImageId };
