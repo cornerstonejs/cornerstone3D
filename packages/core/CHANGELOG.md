@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.0...v4.15.1) (2025-12-19)
+
+### Bug Fixes
+
+- 4d for timeslot vector ([#2523](https://github.com/cornerstonejs/cornerstone3D/issues/2523)) ([0ac04dc](https://github.com/cornerstonejs/cornerstone3D/commit/0ac04dcdf5e79a2365d829efdfd44ca660131f9a))
+
 # [4.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.6...v4.15.0) (2025-12-19)
 
 ### Features
