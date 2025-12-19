@@ -99,19 +99,27 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
     return null;
   }
 
-  if (
-    sliceVector &&
-    (!Array.isArray(sliceVector) ||
+  if (sliceVector) {
+    if (!Array.isArray(sliceVector)) {
+      console.warn(
+        'SliceVector exists but is not an array. Expected length:',
+        numberOfFrames
+      );
+      return null;
+    }
+
+    if (
       sliceVector.length !== numberOfFrames ||
-      sliceVector.some((val) => val === undefined))
-  ) {
-    console.warn(
-      'SliceVector exists but has invalid length or undefined entries. Expected length:',
-      numberOfFrames,
-      'Actual length:',
-      sliceVector?.length || 0
-    );
-    return null;
+      sliceVector.some((val) => val === undefined)
+    ) {
+      console.warn(
+        'SliceVector exists but has invalid length or undefined entries. Expected length:',
+        numberOfFrames,
+        'Actual length:',
+        sliceVector.length
+      );
+      return null;
+    }
   }
 
   const timeSlotGroups: Map<

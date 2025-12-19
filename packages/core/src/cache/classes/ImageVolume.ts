@@ -87,8 +87,8 @@ export class ImageVolume {
   get numTimePoints(): number {
     // @ts-expect-error
     return typeof this.numDimensionGroups === 'number'
-    // @ts-expect-error
-      ? this.numDimensionGroups
+      ? // @ts-expect-error
+        this.numDimensionGroups
       : 1;
   }
   numFrames = null as number;
@@ -223,11 +223,7 @@ export class ImageVolume {
 
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
-    if (this.numTimePoints) {
-      return this.numTimePoints > 1;
-    }
-
-    return false;
+    return this.numTimePoints > 1;
   }
 
   /**

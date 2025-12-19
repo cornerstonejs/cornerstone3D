@@ -163,10 +163,8 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
 
       expect(result).toBeNull();
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'SliceVector exists but has invalid length or undefined entries. Expected length:',
-        4,
-        'Actual length:',
-        0
+        'SliceVector exists but is not an array. Expected length:',
+        4
       );
 
       consoleWarnSpy.mockRestore();
