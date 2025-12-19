@@ -30,9 +30,13 @@ interface MultiframeSplitResult {
  * Generates frame-specific imageIds for a multiframe image.
  * Replaces the frame number in the imageId with the specified frame number (1-based).
  *
- * @param baseImageId - The base imageId that should contain a "/frames/" pattern
+ * @param baseImageId - The base imageId that must contain a "/frames/" pattern followed by a digit.
+ *   Expected format: e.g., "wadouri:http://example.com/image/frames/1" or "wadors:/path/to/image.dcm/frames/1".
+ *   The pattern "/frames/\d+" will be replaced with "/frames/{frameNumber}".
  * @param frameNumber - The frame number to use (1-based)
- * @returns The imageId with the frame number replaced, or the original baseImageId if pattern not found
+ * @returns The imageId with the frame number replaced
+ * @throws {Error} If baseImageId does not contain the required "/frames/" pattern, throws an error
+ *   with a clear message indicating the expected format.
  */
 function generateFrameImageId(
   baseImageId: string,
@@ -41,10 +45,11 @@ function generateFrameImageId(
   const framePattern = /\/frames\/\d+/;
 
   if (!framePattern.test(baseImageId)) {
-    console.warn(
-      `generateFrameImageId: Expected baseImageId to contain "/frames/" pattern, but received: ${baseImageId}. Returning original imageId.`
+    throw new Error(
+      `generateFrameImageId: baseImageId must contain a "/frames/" pattern followed by a digit. ` +
+        `Expected format: e.g., "wadouri:http://example.com/image/frames/1" or "wadors:/path/to/image.dcm/frames/1". ` +
+        `Received: ${baseImageId}`
     );
-    return baseImageId;
   }
 
   return baseImageId.replace(framePattern, `/frames/${frameNumber}`);
@@ -54,7 +59,9 @@ function generateFrameImageId(
  * Handles multiframe 4D splitting using TimeSlotVector (0054,0070).
  * For NM Multi-frame images where frames are indexed by time slot and slice.
  *
- * @param imageIds - Array containing the base imageId (typically just one for multiframe)
+ * @param imageIds - Array containing the base imageId (typically just one for multiframe).
+ *   The base imageId must contain a "/frames/" pattern (e.g., "wadouri:http://example.com/image/frames/1").
+ *   See generateFrameImageId for format requirements.
  * @returns Split result if multiframe 4D is detected, null otherwise
  */
 function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
@@ -92,6 +99,21 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
     return null;
   }
 
+  if (
+    sliceVector &&
+    (!Array.isArray(sliceVector) ||
+      sliceVector.length !== numberOfFrames ||
+      sliceVector.some((val) => val === undefined))
+  ) {
+    console.warn(
+      'SliceVector exists but has invalid length or undefined entries. Expected length:',
+      numberOfFrames,
+      'Actual length:',
+      sliceVector?.length || 0
+    );
+    return null;
+  }
+
   const timeSlotGroups: Map<
     number,
     Array<{ frameIndex: number; sliceIndex: number }>
@@ -99,7 +121,7 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
 
   for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
     const timeSlot = timeSlotVector[frameIndex];
-    const sliceIndex = sliceVector ? sliceVector[frameIndex] : frameIndex;
+    const sliceIndex = sliceVector?.[frameIndex] ?? frameIndex;
 
     if (!timeSlotGroups.has(timeSlot)) {
       timeSlotGroups.set(timeSlot, []);

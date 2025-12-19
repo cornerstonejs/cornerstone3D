@@ -35,20 +35,13 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       expect(result).toBe('wadors:/path/to/image.dcm/frames/5');
     });
 
-    it('should return original imageId and warn when /frames/ pattern is missing', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    it('should throw an error when /frames/ pattern is missing', () => {
       const baseImageId = 'wadors:/path/to/image.dcm';
       const frameNumber = 5;
-      const result = generateFrameImageId(baseImageId, frameNumber);
 
-      expect(result).toBe(baseImageId);
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'generateFrameImageId: Expected baseImageId to contain "/frames/" pattern'
-        )
+      expect(() => generateFrameImageId(baseImageId, frameNumber)).toThrow(
+        'baseImageId must contain a "/frames/" pattern followed by a digit'
       );
-
-      consoleWarnSpy.mockRestore();
     });
   });
 
@@ -114,6 +107,66 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
         3,
         'vs',
         4
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should return null when SliceVector length does not match NumberOfFrames', () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      mockMetaDataGet.mockReturnValue({
+        NumberOfFrames: 4,
+        TimeSlotVector: [1, 1, 2, 2],
+        SliceVector: [1, 2, 3],
+      });
+      const result = handleMultiframe4D([baseImageId]);
+
+      expect(result).toBeNull();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'SliceVector exists but has invalid length or undefined entries. Expected length:',
+        4,
+        'Actual length:',
+        3
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should return null when SliceVector has undefined entries', () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      mockMetaDataGet.mockReturnValue({
+        NumberOfFrames: 4,
+        TimeSlotVector: [1, 1, 2, 2],
+        SliceVector: [1, 2, undefined, 4],
+      });
+      const result = handleMultiframe4D([baseImageId]);
+
+      expect(result).toBeNull();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'SliceVector exists but has invalid length or undefined entries. Expected length:',
+        4,
+        'Actual length:',
+        4
+      );
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should return null when SliceVector is not an array', () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      mockMetaDataGet.mockReturnValue({
+        NumberOfFrames: 4,
+        TimeSlotVector: [1, 1, 2, 2],
+        SliceVector: 'not-an-array',
+      });
+      const result = handleMultiframe4D([baseImageId]);
+
+      expect(result).toBeNull();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'SliceVector exists but has invalid length or undefined entries. Expected length:',
+        4,
+        'Actual length:',
+        0
       );
 
       consoleWarnSpy.mockRestore();
