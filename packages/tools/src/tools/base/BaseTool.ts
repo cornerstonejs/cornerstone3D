@@ -115,12 +115,21 @@ abstract class BaseTool {
    * A function generator to test if the target id is the desired one.
    * Used for deciding which set of cached stats is appropriate to display
    * for a given viewport.
+   *
+   * This relies on the fact that the target id contains a substring which is the
+   * desired volume id when the target is a volume.
+   * It is also possible to use series query parameters such as `/series/{seriesUID}/`
+   * to generate specific series selections within a stack viewport.
    */
   public static isSpecifiedTargetId(desiredVolumeId: string) {
     // imageId including the target id is a proxy for testing if the
     // image id is a member of that volume.  This may need to be fixed in the
     // future to add more criteria.
-    return (_viewport, { imageId }) => imageId.includes(desiredVolumeId);
+    return (_viewport, { targetId }) => {
+      // target ids contain the base information for the volume, so allow specifying
+      // preference by desiredVolumeId
+      return targetId.includes(desiredVolumeId);
+    };
   }
 
   /**
@@ -292,9 +301,9 @@ abstract class BaseTool {
 
     // Check if cachedStats is available and contains the preferredVolumeId
     if (isPreferredTargetId && data?.cachedStats) {
-      for (const [imageId, cachedStat] of Object.entries(data.cachedStats)) {
-        if (isPreferredTargetId(viewport, { imageId, cachedStat })) {
-          return imageId;
+      for (const [targetId, cachedStat] of Object.entries(data.cachedStats)) {
+        if (isPreferredTargetId(viewport, { targetId, cachedStat })) {
+          return targetId;
         }
       }
     }
