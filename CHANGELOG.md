@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.14.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.5...v4.14.6) (2025-12-18)
+
+### Bug Fixes
+
+- **segmentation:** Set the representation visible when setting segment visible. ([#2525](https://github.com/cornerstonejs/cornerstone3D/issues/2525)) ([ea2e968](https://github.com/cornerstonejs/cornerstone3D/commit/ea2e96829f8082ccacf375a2ddf2c2f053d89b50))
+
 ## [4.14.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.4...v4.14.5) (2025-12-17)
 
 **Note:** Version bump only for package root
