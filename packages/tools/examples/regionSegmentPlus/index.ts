@@ -14,7 +14,6 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
-// This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
@@ -33,27 +32,42 @@ const {
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'PT_STACK_VIEWPORT';
-const segmentationId = 'MY_SEGMENTATION_ID';
+const viewportId1 = 'PT_STACK_VIEWPORT_1';
+const viewportId2 = 'PT_STACK_VIEWPORT_2';
+const segmentationId1 = 'MY_SEGMENTATION_ID_1';
+const segmentationId2 = 'MY_SEGMENTATION_ID_2';
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 let toolGroup;
-let viewport;
+let viewport1;
+let viewport2;
 
-// ======== Set up page ======== //
 setTitleAndDescription(
   'Region Segment Plus Tool with Stack Viewport',
   'Demonstrates how to create a segmentation with a single click and running grow cut algorithm in the gpu using a stack viewport with PT data'
 );
 
 const content = document.getElementById('content');
-const element = document.createElement('div');
 
-// Disable right click context menu so we can have right click tools
-element.oncontextmenu = (e) => e.preventDefault();
-element.style.width = '500px';
-element.style.height = '500px';
+const viewportGrid = document.createElement('div');
+viewportGrid.style.display = 'grid';
+viewportGrid.style.gridTemplateColumns = '1fr 1fr';
+viewportGrid.style.gap = '10px';
+viewportGrid.style.width = '1010px';
+viewportGrid.style.height = '500px';
 
-content.appendChild(element);
+const element1 = document.createElement('div');
+element1.oncontextmenu = (e) => e.preventDefault();
+element1.style.width = '500px';
+element1.style.height = '500px';
+
+const element2 = document.createElement('div');
+element2.oncontextmenu = (e) => e.preventDefault();
+element2.style.width = '500px';
+element2.style.height = '500px';
+
+viewportGrid.appendChild(element1);
+viewportGrid.appendChild(element2);
+content.appendChild(viewportGrid);
 
 const info = document.createElement('div');
 content.appendChild(info);
@@ -86,15 +100,16 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Clear segmentation',
   onClick: async () => {
-    const labelmapImage = cache.getImageLoadObject(segmentationId);
-    if (labelmapImage && labelmapImage.image) {
-      const voxelManager = labelmapImage.image.voxelManager;
-      voxelManager.clear();
-
-      segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
-        segmentationId
-      );
-    }
+    [segmentationId1, segmentationId2].forEach((segId) => {
+      const labelmapImage = cache.getImageLoadObject(segId);
+      if (labelmapImage && labelmapImage.image) {
+        const voxelManager = labelmapImage.image.voxelManager;
+        voxelManager.clear();
+        segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
+          segId
+        );
+      }
+    });
   },
 });
 
@@ -150,15 +165,13 @@ const updateSeedVariancesConfig = cstUtils.throttle(
   1000
 );
 
-async function addSegmentationToState(imageIds) {
-  // Create segmentation images for each image in the stack
+async function addSegmentationToState(imageIds, segId) {
   const segImages =
     await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
-  // Add the segmentation to state
   segmentation.addSegmentations([
     {
-      segmentationId,
+      segmentationId: segId,
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         data: {
@@ -169,34 +182,25 @@ async function addSegmentationToState(imageIds) {
   ]);
 }
 
-/**
- * Runs the demo
- */
 async function run() {
-  // Init Cornerstone and related libraries
   await initDemo({});
 
-  // Add tools to Cornerstone3D
   cornerstoneTools.addTool(RegionSegmentPlusTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
 
-  // Define a tool group, which defines how mouse events map to tool commands for
-  // Any viewport using the group
   toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  // Add the tools to the tool group
   toolGroup.addTool(RegionSegmentPlusTool.toolName);
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
-  // Set the initial state of the tools
   toolGroup.setToolActive(RegionSegmentPlusTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Primary, // Left Click
+        mouseButton: MouseBindings.Primary,
       },
     ],
   });
@@ -204,7 +208,7 @@ async function run() {
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
+        mouseButton: MouseBindings.Auxiliary,
       },
     ],
   });
@@ -212,7 +216,7 @@ async function run() {
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary, // Right Click
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
@@ -220,78 +224,74 @@ async function run() {
   toolGroup.setToolActive(StackScrollTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Wheel, // Mouse Wheel
+        mouseButton: MouseBindings.Wheel,
       },
     ],
   });
 
-  // Get Cornerstone imageIds for PT data
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const imageIds1 = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.2.826.0.1.3680043.2.1125.1.11608962641993666019702920539307840',
     SeriesInstanceUID:
       '1.2.826.0.1.3680043.2.1125.1.71880611468617661972108550785274516',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-  //   wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
-  // });
 
-  const ctImageIds = await createImageIdsAndCacheMetaData({
+  const imageIds2 = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // MG
-  // const imageIds = await createImageIdsAndCacheMetaData({
-  //   StudyInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.4792.2001.105216574054253895819671475627',
-  //   SeriesInstanceUID:
-  //     '1.3.6.1.4.1.14519.5.2.1.4792.2001.326862698868700146219088322924',
-  //   wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  // });
-  // Create segmentation for the stack
-  await addSegmentationToState(imageIds);
+  await addSegmentationToState(imageIds1, segmentationId1);
+  await addSegmentationToState(imageIds2, segmentationId2);
 
-  // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Create a stack viewport
-  const viewportInput = {
-    viewportId: viewportId,
-    type: ViewportType.STACK,
-    element: element,
-  };
-
-  renderingEngine.setViewports([viewportInput]);
-  viewport = renderingEngine.getViewport(viewportId);
-
-  // Set the stack of images on the viewport
-  // await viewport.setStack(imageIds);
-  await viewport.setStack(imageIds, 80);
-
-  cornerstoneTools.utilities.stackContextPrefetch.enable(element);
-
-  // Add the viewport to the toolgroup
-  toolGroup.addViewport(viewportId, renderingEngineId);
-
-  // Add segmentation representation to the viewport
-  await segmentation.addSegmentationRepresentations(viewportId, [
+  const viewportInputArray = [
     {
-      segmentationId: segmentationId,
+      viewportId: viewportId1,
+      type: ViewportType.STACK,
+      element: element1,
+    },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.STACK,
+      element: element2,
+    },
+  ];
+
+  renderingEngine.setViewports(viewportInputArray);
+
+  viewport1 = renderingEngine.getViewport(viewportId1);
+  viewport2 = renderingEngine.getViewport(viewportId2);
+
+  await viewport1.setStack(imageIds1, 80);
+  await viewport2.setStack(imageIds2, 80);
+
+  cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
+  cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
+
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+
+  await segmentation.addSegmentationRepresentations(viewportId1, [
+    {
+      segmentationId: segmentationId1,
       type: csToolsEnums.SegmentationRepresentations.Labelmap,
     },
   ]);
 
-  // Render the viewport
-  renderingEngine.renderViewports([viewportId]);
+  await segmentation.addSegmentationRepresentations(viewportId2, [
+    {
+      segmentationId: segmentationId2,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+
+  renderingEngine.renderViewports([viewportId1, viewportId2]);
 }
 
 run();
