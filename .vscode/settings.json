@@ -5,11 +5,14 @@
   // ===
   "editor.insertSpaces": true,
   "editor.tabSize": 2,
+  "editor.codeLens": true,
   "editor.trimAutoWhitespace": true,
   "files.trimTrailingWhitespace": true,
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
+  "jestrunner.codeLensSelector": "**/*.{test,spec,jest}.{js,jsx,ts,tsx}",
+
   // ===
   // Event Triggers
   // ===
