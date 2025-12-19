@@ -101,10 +101,17 @@ addButtonToToolbar({
   title: 'Clear segmentation',
   onClick: async () => {
     [segmentationId1, segmentationId2].forEach((segId) => {
-      const labelmapImage = cache.getImageLoadObject(segId);
-      if (labelmapImage && labelmapImage.image) {
-        const voxelManager = labelmapImage.image.voxelManager;
-        voxelManager.clear();
+      const segmentationData = segmentation.state.getSegmentation(segId);
+      if (segmentationData?.representationData?.Labelmap) {
+        const labelmapData = segmentationData.representationData.Labelmap;
+        if ('imageIds' in labelmapData && labelmapData.imageIds) {
+          labelmapData.imageIds.forEach((imageId) => {
+            const image = cache.getImage(imageId);
+            if (image?.voxelManager) {
+              image.voxelManager.clear();
+            }
+          });
+        }
         segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
           segId
         );
