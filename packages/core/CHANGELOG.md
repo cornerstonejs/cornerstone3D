@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.15.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.6...v4.15.0) (2025-12-19)
+
+### Features
+
+- **decimatedVolumeLoader:** optional downsizing and downsampling of volumes. ([#2340](https://github.com/cornerstonejs/cornerstone3D/issues/2340)) ([9b7e311](https://github.com/cornerstonejs/cornerstone3D/commit/9b7e311758e3b28c7a2cbcbdf3f6f9e942be52cb))
+
 ## [4.14.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.14.5...v4.14.6) (2025-12-18)
 
 **Note:** Version bump only for package @cornerstonejs/core
