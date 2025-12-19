@@ -1138,8 +1138,8 @@ class Viewport {
       const extent = imageData.getExtent();
       const spacing = imageData.getSpacing();
 
-      widthWorld = (extent[1] - extent[0]) * spacing[0];
-      heightWorld = (extent[3] - extent[2]) * spacing[1];
+      widthWorld = (1 + extent[1] - extent[0]) * spacing[0];
+      heightWorld = (1 + extent[3] - extent[2]) * spacing[1];
     } else {
       ({ widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
         bounds,
