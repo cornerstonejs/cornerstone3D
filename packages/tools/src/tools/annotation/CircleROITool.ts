@@ -242,7 +242,7 @@ class CircleROITool extends AnnotationTool {
     const { points } = annotation.data.handles;
     // Get the radius in world units from the drag distance
     const ellipseWorldCoordinates = getEllipseWorldCoordinates(
-      [points[0], points[1]],
+      points.slice(0, 2) as [Types.Point3, Types.Point3],
       viewport
     );
 

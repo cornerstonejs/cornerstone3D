@@ -1408,7 +1408,22 @@ class Viewport {
   }
 
   /**
-   * Sets the aspect ratio of the viewport using the provided 2D point `[widthRatio, heightRatio]`.
+   * Sets the aspect ratio of the viewport using the provided 2D point
+   * `[widthRatio, heightRatio]`.
+   *
+   * This updates the VTK camera's **projection matrix** to apply axis-based
+   * stretching during rendering.
+   *
+   * As a result:
+   * - World-to-canvas mapping is updated via the camera projection.
+   * - Canvas-to-world mapping is also updated and remains consistent, as
+   * VTK utilizes the inverse of the same projection matrix for picking and
+   * coordinate transformations.
+   *
+   * Note:
+   * - The camera pose and orientation (position, focal point, and viewPlaneNormal)
+   * remain unchanged.
+   * - Image data, spacing, and world coordinates are not modified.
    *
    * @param value - The aspect ratio to set as `[widthRatio, heightRatio]`.
    * @param storeAsInitialCamera - Whether to store the updated camera state as the initial camera.
@@ -2050,7 +2065,11 @@ class Viewport {
       const currentPan = this.getPan();
       const [aspectX, aspectY] = currentAspectRatio;
 
-      // Normalize pan to remove effect of zoom and stretch
+      // Normalize pan to remove the effects of zoom and projection-based stretching.
+      // Since axis-based stretching is applied via the camera projection matrix,
+      // pan values are captured in post-projection space. Dividing by both the
+      // zoom and aspect ratio ensures the pan state remains consistent across
+      // viewports, regardless of their specific zoom levels or stretching factors.
       const normalizedPanX = currentPan[0] / (initZoom * aspectX);
       const normalizedPanY = currentPan[1] / (initZoom * aspectY);
 

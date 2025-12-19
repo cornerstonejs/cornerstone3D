@@ -18,7 +18,7 @@ import { vec3 } from 'gl-matrix';
  *   - `[0]`: The center of the ellipse in world coordinates.
  *   - `[1]`: A point on the ellipse radius in world coordinates.
  * @param viewport  The viewport instance
- * @returns Returns an array of canvas-space coordinates representing:
+ * @returns Returns an array of world-space coordinates representing:
  *   1. Bottom
  *   2. Top
  *   3. Left
