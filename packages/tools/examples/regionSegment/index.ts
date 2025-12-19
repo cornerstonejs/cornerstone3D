@@ -30,7 +30,7 @@ const {
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { ViewportType } = Enums;
+const { ViewportType, InterpolationType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
@@ -114,7 +114,12 @@ addButtonToToolbar({
   title: 'Clear segmentation',
   onClick: async () => {
     const labelmapVolume = cache.getVolume(segmentationId);
-    labelmapVolume?.voxelManager?.clear();
+    if (labelmapVolume?.voxelManager) {
+      labelmapVolume.voxelManager.clear();
+      segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
+        segmentationId
+      );
+    }
   },
 });
 
@@ -283,6 +288,15 @@ async function run() {
   toolGroup.addViewport(viewportIdAxial, renderingEngineId);
   toolGroup.addViewport(viewportIdCoronal, renderingEngineId);
   toolGroup.addViewport(viewportIdSagittal, renderingEngineId);
+
+  [viewportIdAxial, viewportIdCoronal, viewportIdSagittal].forEach(
+    (viewportId) => {
+      const viewport = renderingEngine.getViewport(viewportId);
+      viewport.setProperties({
+        interpolationType: InterpolationType.NEAREST,
+      });
+    }
+  );
 
   const segMap = {
     [viewportIdAxial]: [{ segmentationId }],
