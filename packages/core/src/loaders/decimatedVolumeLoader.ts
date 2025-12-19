@@ -107,16 +107,14 @@ export function decimatedVolumeLoader(
   };
   const modifiers = [inPlaneDecimationModifier];
 
-  // Function to add decimation parameter to imageId
   function addDecimationToImageId(imageId: string, factor: number): string {
-    // Only add param if decimation is applied
+    // Only add marker if decimation is applied
     if (factor === 1) {
       return imageId;
     }
-
-    // Check if imageId already has query params
-    const separator = imageId.includes('?') ? '&' : '?';
-    return `${imageId}${separator}decimation=${factor}`;
+    // URL fragments (after #) are NOT sent to the server in HTTP requests,
+    // so this keeps decimated imageIds unique for caching without affecting backend requests
+    return `${imageId}#decimation=${factor}`;
   }
 
   // Check if k-decimation has already been applied at the displaySet level
