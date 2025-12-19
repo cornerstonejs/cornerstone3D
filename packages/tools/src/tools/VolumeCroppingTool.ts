@@ -21,6 +21,7 @@ import {
 
 import { getToolGroup } from '../store/ToolGroupManager';
 import { Events } from '../enums';
+import OrientationMarkerTool from './OrientationMarkerTool';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 
@@ -357,6 +358,15 @@ class VolumeCroppingTool extends BaseTool {
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     //console.debug('VolumeCroppingTool.preMouseDownCallback called');
+
+    // Check if mouse is over orientation marker first - if so, let it handle the event
+    if (OrientationMarkerTool.checkOrientationMarkerInteraction(evt)) {
+      console.log(
+        '[VolumeCroppingTool] Orientation marker interaction detected, skipping'
+      );
+      return true; // Let orientation marker handle it
+    }
+
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);

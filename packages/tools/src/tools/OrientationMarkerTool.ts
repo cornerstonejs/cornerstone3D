@@ -5,17 +5,26 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkXMLPolyDataReader from '@kitware/vtk.js/IO/XML/XMLPolyDataReader';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import { mat4, vec3 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from './base';
 import {
   Enums,
   eventTarget,
+  getEnabledElement,
   getEnabledElementByIds,
   getRenderingEngines,
 } from '@cornerstonejs/core';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
-import { getToolGroup } from '../store/ToolGroupManager';
+import {
+  getToolGroup,
+  getToolGroupForViewport,
+} from '../store/ToolGroupManager';
 import { Events } from '../enums';
+import { ToolModes } from '../enums';
+import type { EventTypes } from '../types';
 
 enum OverlayMarkerType {
   ANNOTATED_CUBE = 1,
@@ -72,6 +81,9 @@ class OrientationMarkerTool extends BaseTool {
   updatingOrientationMarker;
   polyDataURL;
   _resizeObservers = new Map();
+  _isDraggingOrientationMarker = false;
+  _draggingViewportId = null;
+  mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
 
   static OVERLAY_MARKER_TYPES = OverlayMarkerType;
 
@@ -85,6 +97,8 @@ class OrientationMarkerTool extends BaseTool {
           viewportSize: 0.15,
           minPixelSize: 100,
           maxPixelSize: 300,
+          interactive: true,
+          rotateIncrementDegrees: 2,
         },
         overlayMarkerType:
           OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
@@ -126,6 +140,7 @@ class OrientationMarkerTool extends BaseTool {
     super(toolProps, defaultToolProps);
     this.orientationMarkers = {};
     this.updatingOrientationMarker = {};
+    this.mouseDragCallback = this._handleMouseDrag.bind(this);
   }
 
   onSetToolEnabled = (): void => {
@@ -142,6 +157,16 @@ class OrientationMarkerTool extends BaseTool {
   onSetToolDisabled = (): void => {
     this.cleanUpData();
     this._unsubscribeToViewportNewVolumeSet();
+    this._isDraggingOrientationMarker = false;
+    this._draggingViewportId = null;
+  };
+
+  mouseUpCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (this._isDraggingOrientationMarker) {
+      console.log('[OrientationMarker] mouseUpCallback - ending drag');
+      this._isDraggingOrientationMarker = false;
+      this._draggingViewportId = null;
+    }
   };
 
   _getViewportsInfo = () => {
@@ -239,6 +264,225 @@ class OrientationMarkerTool extends BaseTool {
     });
   }
 
+  private isPointInOrientationMarker(
+    viewport,
+    canvasPoint: Types.Point2
+  ): boolean {
+    const viewportId = viewport.id;
+    const orientationMarker = this.orientationMarkers[viewportId];
+    if (!orientationMarker) {
+      return false;
+    }
+
+    const { orientationWidget } = orientationMarker;
+    const viewportBounds = orientationWidget.computeViewport();
+    if (!viewportBounds) {
+      return false;
+    }
+
+    const [left, bottom, right, top] = viewportBounds;
+    const element = viewport.element;
+    const width = element.clientWidth;
+    const height = element.clientHeight;
+
+    // Convert canvas point to normalized viewport coordinates
+    const viewportX = canvasPoint[0] / width;
+    const viewportY = 1 - canvasPoint[1] / height; // Flip Y coordinate
+
+    const isWithin =
+      viewportX >= left &&
+      viewportX <= right &&
+      viewportY >= bottom &&
+      viewportY <= top;
+
+    console.log('[OrientationMarker] isPointInOrientationMarker', {
+      canvasPoint,
+      viewportX,
+      viewportY,
+      bounds: { left, bottom, right, top },
+      isWithin,
+    });
+
+    return isWithin;
+  }
+
+  /**
+   * Check if any enabled OrientationMarkerTool in the tool group has the mouse over its marker
+   * This is called from the active tool's preMouseDownCallback to check before other tools consume the event
+   */
+  static checkOrientationMarkerInteraction(
+    evt: EventTypes.InteractionEventType
+  ): boolean {
+    const { element, currentPoints } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    if (!enabledElement) {
+      return false;
+    }
+
+    const { viewport } = enabledElement;
+    const { viewportId } = evt.detail;
+    const toolGroup = getToolGroupForViewport(viewportId);
+
+    if (!toolGroup) {
+      return false;
+    }
+
+    // Check all enabled OrientationMarkerTool instances in this tool group
+    const toolGroupToolNames = Object.keys(toolGroup.toolOptions);
+    for (const toolName of toolGroupToolNames) {
+      if (toolName === OrientationMarkerTool.toolName) {
+        const toolInstance = toolGroup.getToolInstance(toolName);
+        if (toolInstance && toolInstance.mode !== ToolModes.Disabled) {
+          const { interactive } =
+            toolInstance.configuration?.orientationWidget || {};
+
+          if (interactive) {
+            const canvasPoint = currentPoints.canvas;
+            const isInMarker = toolInstance.isPointInOrientationMarker(
+              viewport,
+              canvasPoint
+            );
+
+            if (isInMarker) {
+              console.log(
+                '[OrientationMarker] checkOrientationMarkerInteraction - found interaction'
+              );
+              toolInstance._isDraggingOrientationMarker = true;
+              toolInstance._draggingViewportId = viewport.id;
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
+    const { element, currentPoints } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    if (!enabledElement) {
+      return false;
+    }
+
+    const { viewport } = enabledElement;
+    const { interactive } = this.configuration.orientationWidget || {};
+
+    if (!interactive) {
+      return false;
+    }
+
+    const canvasPoint = currentPoints.canvas;
+    const isInMarker = this.isPointInOrientationMarker(viewport, canvasPoint);
+
+    if (isInMarker) {
+      console.log('[OrientationMarker] preMouseDownCallback - consuming event');
+      this._isDraggingOrientationMarker = true;
+      this._draggingViewportId = viewport.id;
+      return true; // Consume the event to prevent other tools from handling it
+    }
+
+    return false;
+  };
+
+  private _handleMouseDrag(evt: EventTypes.InteractionEventType): void {
+    if (!this._isDraggingOrientationMarker) {
+      return;
+    }
+
+    const { element, currentPoints, lastPoints } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+    if (!enabledElement) {
+      return;
+    }
+
+    const { viewport } = enabledElement;
+
+    if (viewport.id !== this._draggingViewportId) {
+      return;
+    }
+
+    console.log('[OrientationMarker] _handleMouseDrag');
+
+    const currentPointsCanvas = currentPoints.canvas;
+    const lastPointsCanvas = lastPoints.canvas;
+    const { rotateIncrementDegrees = 2 } =
+      this.configuration.orientationWidget || {};
+
+    const camera = viewport.getCamera();
+    const width = element.clientWidth;
+    const height = element.clientHeight;
+
+    const deltaX = currentPointsCanvas[0] - lastPointsCanvas[0];
+    const deltaY = currentPointsCanvas[1] - lastPointsCanvas[1];
+
+    const normalizedDeltaX = deltaX / width;
+    const normalizedDeltaY = deltaY / height;
+
+    const center: Types.Point2 = [width * 0.5, height * 0.5];
+    const centerWorld = viewport.canvasToWorld(center);
+
+    const upVec = camera.viewUp;
+    const atV = camera.viewPlaneNormal;
+    const rightV: Types.Point3 = [0, 0, 0];
+    const forwardV: Types.Point3 = [0, 0, 0];
+
+    vtkMath.cross(upVec, atV, rightV);
+    vtkMath.normalize(rightV);
+
+    vtkMath.cross(atV, rightV, forwardV);
+    vtkMath.normalize(forwardV);
+    vtkMath.normalize(upVec);
+
+    const angleX = -normalizedDeltaX * rotateIncrementDegrees * (Math.PI / 180);
+    const angleY = normalizedDeltaY * rotateIncrementDegrees * (Math.PI / 180);
+
+    console.log('[OrientationMarker] Applying rotation', {
+      deltaX,
+      deltaY,
+      angleX: (angleX * 180) / Math.PI,
+      angleY: (angleY * 180) / Math.PI,
+    });
+
+    this.rotateCamera(viewport, centerWorld, forwardV, angleX);
+    this.rotateCamera(viewport, centerWorld, rightV, angleY);
+
+    viewport.render();
+  }
+
+  private rotateCamera(viewport, centerWorld, axis, angle) {
+    const vtkCamera = viewport.getVtkActiveCamera();
+    const viewUp = vtkCamera.getViewUp();
+    const focalPoint = vtkCamera.getFocalPoint();
+    const position = vtkCamera.getPosition();
+
+    const newPosition: Types.Point3 = [0, 0, 0];
+    const newFocalPoint: Types.Point3 = [0, 0, 0];
+    const newViewUp: Types.Point3 = [0, 0, 0];
+
+    const transform = mat4.identity(new Float32Array(16));
+    mat4.translate(transform, transform, centerWorld);
+    mat4.rotate(transform, transform, angle, axis);
+    mat4.translate(transform, transform, [
+      -centerWorld[0],
+      -centerWorld[1],
+      -centerWorld[2],
+    ]);
+    vec3.transformMat4(newPosition, position, transform);
+    vec3.transformMat4(newFocalPoint, focalPoint, transform);
+
+    mat4.identity(transform);
+    mat4.rotate(transform, transform, angle, axis);
+    vec3.transformMat4(newViewUp, viewUp, transform);
+
+    viewport.setCamera({
+      position: newPosition,
+      viewUp: newViewUp,
+      focalPoint: newFocalPoint,
+    });
+  }
+
   private cleanUpData() {
     const renderingEngines = getRenderingEngines();
     const renderingEngine = renderingEngines[0];
@@ -324,6 +568,7 @@ class OrientationMarkerTool extends BaseTool {
         viewportSize,
         minPixelSize,
         maxPixelSize,
+        interactive = true,
       } = this.configuration.orientationWidget;
 
       const orientationWidget = vtkOrientationMarkerWidget.newInstance({
@@ -344,6 +589,10 @@ class OrientationMarkerTool extends BaseTool {
         actor,
       };
       viewport.addWidget(this.getToolName(), orientationWidget);
+
+      // Interaction is now handled via cornerstone event system (preMouseDownCallback, mouseDragCallback)
+      // No need for direct DOM event listeners
+
       renderWindow.render();
       viewport.getRenderingEngine().render();
       this.updatingOrientationMarker[viewportId] = false;
