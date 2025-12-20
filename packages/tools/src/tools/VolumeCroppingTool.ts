@@ -251,71 +251,97 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   onSetToolActive() {
-    if (this.sphereStates && this.sphereStates.length > 0) {
-      if (this.configuration.showHandles) {
-        this.setHandlesVisible(false);
-        this.setClippingPlanesVisible(false);
-      } else {
-        this.setHandlesVisible(true);
-        this.setClippingPlanesVisible(true);
-      }
-    } else {
-      const viewportsInfo = this._getViewportsInfo();
-      const subscribeToElementResize = () => {
-        viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-          if (!this._resizeObservers.has(viewportId)) {
-            const { viewport } = getEnabledElementByIds(
+    // console.debug('Setting tool active: volumeCropping', this.sphereStates);
+
+    // Always set up the infrastructure (resize observers, event listeners, etc.)
+    // but don't show handles or clipping planes by default
+    // They should only be shown via hotkeys or the VolumeCropping component
+    // Rotation is already enabled via mouseDragCallback, so no additional setup needed
+    const viewportsInfo = this._getViewportsInfo();
+
+    const subscribeToElementResize = () => {
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        if (!this._resizeObservers.has(viewportId)) {
+          const { viewport } = getEnabledElementByIds(
+            viewportId,
+            renderingEngineId
+          ) || { viewport: null };
+          if (!viewport) {
+            return;
+          }
+          const { element } = viewport;
+          const resizeObserver = new ResizeObserver(() => {
+            const element = getEnabledElementByIds(
               viewportId,
               renderingEngineId
-            ) || { viewport: null };
-            if (!viewport) {
+            );
+            if (!element) {
               return;
             }
-            const { element } = viewport;
-            const resizeObserver = new ResizeObserver(() => {
-              const element = getEnabledElementByIds(
-                viewportId,
-                renderingEngineId
-              );
-              if (!element) {
-                return;
-              }
-              const { viewport } = element;
-              const viewPresentation = viewport.getViewPresentation();
-              viewport.resetCamera();
-              viewport.setViewPresentation(viewPresentation);
-              viewport.render();
-            });
-            resizeObserver.observe(element);
-            this._resizeObservers.set(viewportId, resizeObserver);
-          }
-        });
-      };
-
-      subscribeToElementResize();
-
-      this._viewportAddedListener = (evt) => {
-        if (evt.detail.toolGroupId === this.toolGroupId) {
-          subscribeToElementResize();
+            const { viewport } = element;
+            const viewPresentation = viewport.getViewPresentation();
+            viewport.resetCamera();
+            viewport.setViewPresentation(viewPresentation);
+            viewport.render();
+          });
+          resizeObserver.observe(element);
+          this._resizeObservers.set(viewportId, resizeObserver);
         }
-      };
+      });
+    };
 
-      eventTarget.addEventListener(
-        Events.TOOLGROUP_VIEWPORT_ADDED,
-        this._viewportAddedListener
-      );
+    subscribeToElementResize();
 
-      this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
-      this._subscribeToViewportNewVolumeSet(viewportsInfo);
-      this._initialize3DViewports(viewportsInfo);
-
-      if (this.sphereStates && this.sphereStates.length > 0) {
-        this.setHandlesVisible(true);
-      } else {
-        this.originalClippingPlanes = [];
-        this._initialize3DViewports(viewportsInfo);
+    this._viewportAddedListener = (evt) => {
+      if (evt.detail.toolGroupId === this.toolGroupId) {
+        subscribeToElementResize();
       }
+    };
+
+    eventTarget.addEventListener(
+      Events.TOOLGROUP_VIEWPORT_ADDED,
+      this._viewportAddedListener
+    );
+
+    this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+    this._subscribeToViewportNewVolumeSet(viewportsInfo);
+
+    // Initialize 3D viewports if not already initialized
+    if (this.sphereStates && this.sphereStates.length === 0) {
+      this.originalClippingPlanes = [];
+      this._initialize3DViewports(viewportsInfo);
     }
+
+    // Explicitly disable clipping planes and handles after initialization
+    // They should only be shown via hotkeys or the VolumeCropping component
+    // This ensures that even if _initialize3DViewports added clipping planes,
+    // they will be removed if the configuration says they should be hidden
+    this.configuration.showClippingPlanes = false;
+    this.configuration.showHandles = false;
+
+    try {
+      const viewport = this._getViewport();
+      if (
+        viewport &&
+        this.originalClippingPlanes &&
+        this.originalClippingPlanes.length > 0
+      ) {
+        // Remove clipping planes from mapper
+        this._updateClippingPlanes(viewport);
+        // Hide handles if they exist
+        if (this.sphereStates && this.sphereStates.length > 0) {
+          this._updateHandlesVisibility();
+        }
+        viewport.render();
+      }
+    } catch (error) {
+      // Viewport might not be available yet, that's okay
+      // The configuration is set to false, so when it becomes available it will be correct
+    }
+
+    // DO NOT show handles or clipping planes by default
+    // They should only be shown via hotkeys or the VolumeCropping component
+    // Rotation is already enabled via mouseDragCallback, so no additional setup needed
   }
 
   onSetToolConfiguration = (): void => {
@@ -632,6 +658,13 @@ class VolumeCroppingTool extends BaseTool {
     this.configuration.showClippingPlanes = visible;
     const viewport = this._getViewport();
     this._updateClippingPlanes(viewport);
+
+    // When enabling cropping, also enable handles. When disabling, also hide handles.
+    if (this.sphereStates && this.sphereStates.length > 0) {
+      this.configuration.showHandles = visible;
+      this._updateHandlesVisibility();
+    }
+
     viewport.render();
   }
 
