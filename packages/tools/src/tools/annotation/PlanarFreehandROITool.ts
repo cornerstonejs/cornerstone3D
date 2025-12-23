@@ -593,6 +593,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const worldPos = evt.detail.currentPoints.world;
     const contourAnnotation = super.createAnnotation(evt);
 
+    const { element } = evt.detail;
+    const { viewport } = getEnabledElement(element);
+
     const onInterpolationComplete = (annotation) => {
       // Clear out the handles because they aren't used for straight freeform
       annotation.data.handles.points.length = 0;
@@ -607,6 +610,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           },
           label: '',
           cachedStats: {},
+          drawingVolumeId: this.getTargetId(viewport),
+          drawingViewportId: viewport.id,
         },
         onInterpolationComplete,
       }
@@ -619,6 +624,42 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // This method exists only because `super` cannot be called from
     // _getRenderingOptions() which is in an external file.
     return super.getAnnotationStyle(context);
+  }
+
+  /**
+   * Override to prevent interaction with the textbox handle
+   * if we are not on the same viewport as the one it was drawn on.
+   */
+  public getHandleNearImagePoint(
+    element: HTMLDivElement,
+    annotation: PlanarFreehandROIAnnotation,
+    canvasCoords: Types.Point2,
+    proximity: number
+  ): ToolHandle | undefined {
+    const handle = super.getHandleNearImagePoint(
+      element,
+      annotation,
+      canvasCoords,
+      proximity
+    );
+
+    if (!handle) {
+      return undefined;
+    }
+
+    if (handle === annotation.data.handles.textBox) {
+      const { viewport } = getEnabledElement(element);
+      const targetId = this.getTargetId(viewport);
+      //if the drawingVolumeId is defined and different from the current viewport targetId
+      if (
+        annotation.data.drawingVolumeId &&
+        annotation.data.drawingVolumeId !== targetId
+      ) {
+        return undefined;
+      }
+    }
+
+    return handle;
   }
 
   protected renderAnnotationInstance(
@@ -703,13 +744,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     }
 
     if (annotation.invalidated) {
-      this._calculateStatsIfActive(
-        annotation,
-        targetId,
-        viewport,
-        renderingEngine,
-        enabledElement
-      );
+      this._calculateStatsIfActive(annotation, renderingEngine);
     }
 
     this._renderStats(annotation, viewport, enabledElement, svgDrawingHelper);
@@ -719,12 +754,14 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
   _calculateStatsIfActive(
     annotation: PlanarFreehandROIAnnotation,
-    targetId: string,
-    viewport,
-    renderingEngine,
-    enabledElement
+    renderingEngine
   ) {
     const activeAnnotationUID = this.commonData?.annotation.annotationUID;
+    const targetId = annotation.data.drawingVolumeId;
+    const viewport = renderingEngine.getViewport(
+      annotation.data.drawingViewportId
+    );
+    const enableElementForStats = getEnabledElement(viewport.element);
 
     if (
       annotation.annotationUID === activeAnnotationUID &&
@@ -750,14 +787,14 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enableElementForStats
         );
       } else if (annotation.invalidated) {
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
           renderingEngine,
-          enabledElement
+          enableElementForStats
         );
       }
     }
@@ -1102,6 +1139,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const canvasCoordinates = data.contour.polyline.map((p) =>
       viewport.worldToCanvas(p)
     );
+
+    if (canvasCoordinates.length < 2) {
+      return;
+    }
+
     if (!data.handles.textBox.hasMoved) {
       const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
 
