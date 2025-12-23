@@ -1,8 +1,7 @@
-import {
-  getProjectionScaleIndices,
-  type Types,
-  type VolumeViewport,
-} from '@cornerstonejs/core';
+import { type Types, type VolumeViewport } from '@cornerstonejs/core';
+import { vec2, vec3 } from 'gl-matrix';
+
+const EPSILON = 1e-4;
 
 /**
  * Calculates the center point and radius in canvas coordinate of a circle
@@ -23,35 +22,34 @@ export function getCenterAndRadiusInCanvas(
   points: Types.Point3[],
   viewport: Types.IStackViewport | VolumeViewport
 ): { center: Types.Point2; radius: number } {
-  const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-  const bottom = canvasCoordinates[0];
-  const top = canvasCoordinates[1];
-  const right = canvasCoordinates[3];
+  const canvasPoints = points.map((p) => viewport.worldToCanvas(p));
+  const [cBottom, cTop, cLeft, cRight] = canvasPoints;
 
   const center: Types.Point2 = [
-    Math.floor((bottom[0] + top[0]) / 2),
-    Math.floor((bottom[1] + top[1]) / 2),
+    (cBottom[0] + cTop[0]) / 2,
+    (cBottom[1] + cTop[1]) / 2,
   ];
 
-  // Get your aspect ratio values
-  const [sx, sy] = viewport.getAspectRatio?.() || [1, 1];
-  const camera = viewport.getCamera();
-  const { viewUp, viewPlaneNormal } = camera;
+  const worldHeight = vec3.distance(points[0], points[1]);
+  const worldWidth = vec3.distance(points[2], points[3]);
 
-  const { idxX, idxY } = getProjectionScaleIndices(viewUp, viewPlaneNormal);
+  const canvasHeight = vec2.distance(cBottom, cTop);
+  const canvasWidth = vec2.distance(cLeft, cRight);
 
-  // Determine which stretch corresponds to horizontal vs vertical in current orientation
-  const stretchH = idxX === 0 ? sx : sy;
-  const stretchV = idxY === 5 ? sy : sx;
+  const scaleX = canvasWidth / worldWidth;
+  const scaleY = canvasHeight / worldHeight;
 
-  const verticalRadius = Math.abs(bottom[1] - center[1]);
-  const horizontalRadius = Math.abs(right[0] - center[0]);
+  const worldRadius = worldHeight / 2;
 
-  let radius;
-  if (sx !== 1.0 || sy !== 1.0) {
-    radius = Math.min(verticalRadius * stretchV, horizontalRadius * stretchH);
-  } else {
-    radius = verticalRadius;
-  }
-  return { center, radius };
+  const radius =
+    Math.abs(scaleX - scaleY) > EPSILON
+      ? worldRadius * Math.min(scaleX, scaleY)
+      : canvasHeight / 2;
+
+  return {
+    center: center,
+    radius,
+  };
 }
+
+export default getCenterAndRadiusInCanvas;
