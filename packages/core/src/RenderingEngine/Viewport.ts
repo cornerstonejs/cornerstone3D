@@ -1198,6 +1198,8 @@ class Viewport {
       -focalPointToSet[2]
     );
 
+    const initialAspectRatio = this.getAspectRatio();
+
     this.setCamera({
       parallelScale: resetZoom ? parallelScale : previousCamera.parallelScale,
       focalPoint: focalPointToSet,
@@ -1205,7 +1207,7 @@ class Viewport {
       viewAngle: 90,
       viewUp: viewUpToSet,
       clippingRange: clippingRangeToUse,
-      aspectRatio: resetAspectRatio && [1, 1],
+      aspectRatio: resetAspectRatio && initialAspectRatio,
     });
 
     const modifiedCamera = this.getCamera();
@@ -1396,8 +1398,12 @@ class Viewport {
    *          based on the active camera settings.
    */
   public getAspectRatio(): Point2 {
+    if (this.options?.aspectRatio) {
+      return this.options.aspectRatio;
+    }
+
     const { aspectRatio } = this.getCamera();
-    return aspectRatio;
+    return aspectRatio || [1, 1];
   }
 
   /**
@@ -1424,6 +1430,9 @@ class Viewport {
    */
   public setAspectRatio(value: Point2, storeAsInitialCamera = false): void {
     const camera = this.getCamera();
+    if (storeAsInitialCamera) {
+      this.options.aspectRatio = value;
+    }
 
     this.setCamera(
       {
