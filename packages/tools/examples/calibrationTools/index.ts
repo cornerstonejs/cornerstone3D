@@ -191,14 +191,14 @@ const calibrations = [
     },
   },
   {
-    value: 'Aspect 1:2 (breaks existing annotations)',
+    value: 'Size Aspect 1:2 (breaks existing annotations)',
     selected: 'applyMetadata',
     metadata: {
       '00280030': { Value: [0.5 * originalSpacing, originalSpacing] },
     },
   },
   {
-    value: 'Aspect 1:1 (breaks existing annotations)',
+    value: 'Size Aspect 1:1 (breaks existing annotations)',
     selected: 'applyMetadata',
     metadata: {
       '00280030': { Value: [originalSpacing, originalSpacing] },
@@ -221,6 +221,70 @@ addDropdownToToolbar({
       return;
     }
     f.apply(calibration);
+  },
+});
+
+const aspects = ['1:1', '1:2', '2:1', '0.5:1', '1:0.5', '3:17'];
+addDropdownToToolbar({
+  id: 'aspect',
+  options: {
+    values: aspects,
+    defaultValue: aspects[0],
+  },
+  onSelectedValueChange: (value) => {
+    const aspect = (value as string).split(':').map((it) => Number(it));
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    viewport.setAspectRatio(aspect, true);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Random',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    const rotation = Math.random() * 360;
+
+    viewport.setViewPresentation({ rotation });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Absolute 0',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    viewport.setViewPresentation({ rotation: 0 });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Delta 30',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    const { rotation } = viewport.getViewPresentation();
+    viewport.setViewPresentation({ rotation: rotation + 30 });
+
+    viewport.render();
   },
 });
 
