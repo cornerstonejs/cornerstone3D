@@ -1085,11 +1085,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const canvasBox = [0, 0, clientWidth, clientHeight];
 
     otherViewportAnnotations.forEach((annotation) => {
-      const data = annotation.data;
+      const viewportAnnotation = annotation as VolumeCroppingAnnotation;
+      const data = viewportAnnotation.data;
       // Type guard for isVirtual property
       const isVirtual =
-        'isVirtual' in annotation &&
-        (annotation as { isVirtual?: boolean }).isVirtual === true;
+        'isVirtual' in viewportAnnotation &&
+        viewportAnnotation.isVirtual === true;
 
       // Ensure clipping planes are set in annotation handles
       if (
@@ -1146,8 +1147,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           };
         } else {
           // Only one real viewport: use canonical normal from virtual annotation
-          const virtualNormal = (annotation as VolumeCroppingAnnotation)
-            .virtualNormal ?? [0, 0, 1];
+          const virtualNormal = viewportAnnotation.virtualNormal ?? [0, 0, 1];
           otherCamera = {
             viewPlaneNormal: virtualNormal,
             position: annotationCenter,
