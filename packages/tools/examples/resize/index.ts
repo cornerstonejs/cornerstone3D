@@ -284,6 +284,20 @@ addDropdownToToolbar({
   },
 });
 
+const aspects = ['1:1', '1:2', '2:1', '0.5:1', '1:0.5', '3:17'];
+addDropdownToToolbar({
+  id: 'aspect',
+  options: {
+    values: aspects,
+    defaultValue: aspects[0],
+  },
+  onSelectedValueChange: (value) => {
+    const aspect = (value as string).split(':').map((it) => Number(it));
+    viewport.setAspectRatio(aspect, storeAsInitialCamera);
+    viewport.render();
+  },
+});
+
 // ============================= //
 
 addToggleButtonToToolbar({
