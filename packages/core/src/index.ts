@@ -64,6 +64,7 @@ import * as volumeLoader from './loaders/volumeLoader';
 import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
 import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
+import { decimatedVolumeLoader } from './loaders/decimatedVolumeLoader';
 // eslint-disable-next-line import/no-duplicates
 import type * as Types from './types';
 import type {
@@ -88,6 +89,8 @@ import {
   addImageSlicesToViewports,
   getProjectionScaleIndices,
 } from './RenderingEngine/helpers';
+
+export * from './loaders/decimatedVolumeLoader';
 
 // Add new types here so that they can be imported singly as required.
 export type {
@@ -170,6 +173,7 @@ export {
   geometryLoader,
   cornerstoneMeshLoader,
   ProgressiveRetrieveImages,
+  decimatedVolumeLoader,
   cornerstoneStreamingImageVolumeLoader,
   cornerstoneStreamingDynamicImageVolumeLoader,
   StreamingDynamicImageVolume,

@@ -4,11 +4,11 @@
     "": {
       "name": "docs",
       "dependencies": {
-        "@cornerstonejs/adapters": "4.13.3",
-        "@cornerstonejs/core": "4.13.3",
-        "@cornerstonejs/dicom-image-loader": "4.13.3",
-        "@cornerstonejs/nifti-volume-loader": "4.13.3",
-        "@cornerstonejs/tools": "4.13.3",
+        "@cornerstonejs/adapters": "4.15.1",
+        "@cornerstonejs/core": "4.15.1",
+        "@cornerstonejs/dicom-image-loader": "4.15.1",
+        "@cornerstonejs/nifti-volume-loader": "4.15.1",
+        "@cornerstonejs/tools": "4.15.1",
         "@docusaurus/core": "3.6.3",
         "@docusaurus/faster": "3.6.3",
         "@docusaurus/module-type-aliases": "3.6.3",
@@ -50,6 +50,7 @@
   },
   "overrides": {
     "node-forge": "1.3.2",
+    "qs": "6.14.1",
   },
   "packages": {
     "@algolia/autocomplete-core": ["@algolia/autocomplete-core@1.17.9", "", { "dependencies": { "@algolia/autocomplete-plugin-algolia-insights": "1.17.9", "@algolia/autocomplete-shared": "1.17.9" } }, "sha512-O7BxrpLDPJWWHv/DLA9DRFWs+iY1uOJZkqUwjS5HSZAGcl0hIVCQ97LTLewiZmZ402JYUrun+8NqFP+hCknlbQ=="],
@@ -312,7 +313,7 @@
 
     "@colors/colors": ["@colors/colors@1.5.0", "", {}, "sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ=="],
 
-    "@cornerstonejs/adapters": ["@cornerstonejs/adapters@4.13.3", "", { "dependencies": { "@babel/runtime-corejs2": "7.26.10", "buffer": "6.0.3", "dcmjs": "0.45.0", "gl-matrix": "3.4.3", "ndarray": "1.0.19" }, "peerDependencies": { "@cornerstonejs/core": "4.13.3", "@cornerstonejs/tools": "4.13.3" } }, "sha512-gK6L3jQIM/hlgoeQV7BcSRqBgox3zndvn2ibOenDT4ogBuapuKGic2JP5UkeM8RFpZN2HeYvYaJ9HAbsnbVjRg=="],
+    "@cornerstonejs/adapters": ["@cornerstonejs/adapters@4.15.1", "", { "dependencies": { "@babel/runtime-corejs2": "7.26.10", "buffer": "6.0.3", "dcmjs": "0.45.0", "gl-matrix": "3.4.3", "ndarray": "1.0.19" }, "peerDependencies": { "@cornerstonejs/core": "4.15.1", "@cornerstonejs/tools": "4.15.1" } }, "sha512-8wjyuAmeMOY1SaUqkGrm9Q+GaYdojhOs5M9lBq0WP+31SpYmXcv/cPAXTnW7BOc7g23nG291zjjLqtEsXbeAfw=="],
 
     "@cornerstonejs/codec-charls": ["@cornerstonejs/codec-charls@1.2.3", "", {}, "sha512-qKUe6DN0dnGzhhfZLYhH9UZacMcudjxcaLXCrpxJImT/M/PQvZCT2rllu6VGJbWKJWG+dMVV2zmmleZcdJ7/cA=="],
 
@@ -322,13 +323,13 @@
 
     "@cornerstonejs/codec-openjph": ["@cornerstonejs/codec-openjph@2.4.7", "", {}, "sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w=="],
 
-    "@cornerstonejs/core": ["@cornerstonejs/core@4.13.3", "", { "dependencies": { "@kitware/vtk.js": "34.15.1", "comlink": "4.4.2", "gl-matrix": "3.4.3", "loglevel": "1.9.2" } }, "sha512-yXnjnuWqR2xB7wR67iYbCtLXTxxG64n546rGFdtjjo7hMbCg1iIqyMBQUt5J/HZ9sUkXkWhuyG14n2tYpJ0nBQ=="],
+    "@cornerstonejs/core": ["@cornerstonejs/core@4.15.1", "", { "dependencies": { "@kitware/vtk.js": "34.15.1", "comlink": "4.4.2", "gl-matrix": "3.4.3", "loglevel": "1.9.2" } }, "sha512-f8WwizeNk2BjQMcQl5MdAlTZ9IodLw6/r+8xGLjAkkKiPYOKEylt+lzmvqMJ0z6lNBoKAWM6qlI+LkK9+GEWLA=="],
 
-    "@cornerstonejs/dicom-image-loader": ["@cornerstonejs/dicom-image-loader@4.13.3", "", { "dependencies": { "@cornerstonejs/codec-charls": "1.2.3", "@cornerstonejs/codec-libjpeg-turbo-8bit": "1.2.2", "@cornerstonejs/codec-openjpeg": "1.3.0", "@cornerstonejs/codec-openjph": "2.4.7", "comlink": "4.4.2", "dicom-parser": "1.8.21", "jpeg-lossless-decoder-js": "2.1.2", "pako": "2.1.0", "uuid": "9.0.1" }, "peerDependencies": { "@cornerstonejs/core": "4.13.3" } }, "sha512-HWRFJSl/OkOolqTlfp003JYArBxXagxg9xYMHSNA6DVH9N3EH9F8nvF1iauJ881BKD/ERjB5WV3d5laJBQg2WA=="],
+    "@cornerstonejs/dicom-image-loader": ["@cornerstonejs/dicom-image-loader@4.15.1", "", { "dependencies": { "@cornerstonejs/codec-charls": "1.2.3", "@cornerstonejs/codec-libjpeg-turbo-8bit": "1.2.2", "@cornerstonejs/codec-openjpeg": "1.3.0", "@cornerstonejs/codec-openjph": "2.4.7", "comlink": "4.4.2", "dicom-parser": "1.8.21", "jpeg-lossless-decoder-js": "2.1.2", "pako": "2.1.0", "uuid": "9.0.1" }, "peerDependencies": { "@cornerstonejs/core": "4.15.1" } }, "sha512-oRba/lWuQMEXILCzGjFvZisdqczJaHxGclzb0DB/q49HQrvk3AXBHtnjZq15Ts6pF/oNx90xOMJ+RqcTgbV0DA=="],
 
-    "@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@4.13.3", "", { "dependencies": { "nifti-reader-js": "0.6.9" }, "peerDependencies": { "@cornerstonejs/core": "4.13.3" } }, "sha512-jIqR33KHRuCUH1+MHGO/uDwtHG7P+y+3poDkaZaFqORMaLXKxUqpqwkj5V2Gs4grX6iL6m1ymeJfHhRxrGSpnA=="],
+    "@cornerstonejs/nifti-volume-loader": ["@cornerstonejs/nifti-volume-loader@4.15.1", "", { "dependencies": { "nifti-reader-js": "0.6.9" }, "peerDependencies": { "@cornerstonejs/core": "4.15.1" } }, "sha512-grnJSmN+/x6TuiWIs4SozDEF5Pmi9GoVcxpnZFSiEupqsNSLHNtPdkXcUMUJSZSLsNyV0WxZhJ2z+QZAKt2OzQ=="],
 
-    "@cornerstonejs/tools": ["@cornerstonejs/tools@4.13.3", "", { "dependencies": { "@types/offscreencanvas": "2019.7.3", "comlink": "4.4.2", "lodash.get": "4.4.2" }, "peerDependencies": { "@cornerstonejs/core": "4.13.3", "@kitware/vtk.js": "34.15.1", "@types/d3-array": "3.2.1", "@types/d3-interpolate": "3.0.4", "d3-array": "3.2.4", "d3-interpolate": "3.0.1", "gl-matrix": "3.4.3" } }, "sha512-AhAU+6rMEuvIej0yFf5zmSvcIQMU5zz++BCHLJ5zaOhSe0ThZi0ZgC4ZC2M4KrhfiM2bd4wDJ7xAYq8Cn60gWA=="],
+    "@cornerstonejs/tools": ["@cornerstonejs/tools@4.15.1", "", { "dependencies": { "@types/offscreencanvas": "2019.7.3", "comlink": "4.4.2", "lodash.get": "4.4.2" }, "peerDependencies": { "@cornerstonejs/core": "4.15.1", "@kitware/vtk.js": "34.15.1", "@types/d3-array": "3.2.1", "@types/d3-interpolate": "3.0.4", "d3-array": "3.2.4", "d3-interpolate": "3.0.1", "gl-matrix": "3.4.3" } }, "sha512-vAT9bilk8icEW+xOJRsg5zeYfZNDRB5mgt8kfV+Hpx0pHO+l7xh0etHSluqXYLL/3YvU+kwqdzBVYoNLCfk8kA=="],
 
     "@csstools/cascade-layer-name-parser": ["@csstools/cascade-layer-name-parser@2.0.4", "", { "peerDependencies": { "@csstools/css-parser-algorithms": "^3.0.4", "@csstools/css-tokenizer": "^3.0.3" } }, "sha512-7DFHlPuIxviKYZrOiwVU/PiHLm3lLUR23OMuEEtfEOQTOp9hzQ2JjdY6X5H18RVuUPJqSCI+qNnD5iOLMVE0bA=="],
 
@@ -2248,7 +2249,7 @@
 
     "puppeteer-core": ["puppeteer-core@24.27.0", "", { "dependencies": { "@puppeteer/browsers": "2.10.12", "chromium-bidi": "10.5.1", "debug": "^4.4.3", "devtools-protocol": "0.0.1521046", "typed-query-selector": "^2.12.0", "webdriver-bidi-protocol": "0.3.8", "ws": "^8.18.3" } }, "sha512-yubwj2XXmTM3wRIpbhO5nCjbByPgpFHlgrsD4IK+gMPqO7/a5FfnoSXDKjmqi8A2M1Ewusz0rTI/r+IN0GU0MA=="],
 
-    "qs": ["qs@6.13.0", "", { "dependencies": { "side-channel": "^1.0.6" } }, "sha512-+38qI9SOr8tfZ4QmJNplMUxqjbe7LKvvZgWdExBOmd+egZTtjLB67Gu0HRX3u/XOq7UU2Nx6nsjvS16Z9uwfpg=="],
+    "qs": ["qs@6.14.1", "", { "dependencies": { "side-channel": "^1.1.0" } }, "sha512-4EK3+xJl8Ts67nLYNwqw/dsFVnCf+qR7RgXSK9jEEm9unao3njwMDdmsdvoKBKHzxd7tCYz5e5M+SnMjdtXGQQ=="],
 
     "queue": ["queue@6.0.2", "", { "dependencies": { "inherits": "~2.0.3" } }, "sha512-iHZWu+q3IdFZFX36ro/lKBkSvfkztY5Y7HMiPlOUjhupPcG2JMfst2KKEpu5XndviX/3UhFbRngUPNKtgvtZiA=="],
 
