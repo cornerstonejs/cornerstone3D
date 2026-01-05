@@ -405,9 +405,9 @@ class VolumeCroppingTool extends BaseTool {
 
     // Check if mouse is over orientation marker first - if so, let it handle the event
     if (OrientationMarkerTool.checkOrientationMarkerInteraction(evt)) {
-      console.log(
-        '[VolumeCroppingTool] Orientation marker interaction detected, skipping'
-      );
+      // console.log(
+      //   '[VolumeCroppingTool] Orientation marker interaction detected, skipping'
+      // );
       return true; // Let orientation marker handle it
     }
 

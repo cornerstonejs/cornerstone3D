@@ -71,6 +71,7 @@ type ReferenceLine = [
   startPoint: Types.Point2,
   endPoint: Types.Point2,
   type: 'min' | 'max',
+  planeIndex?: number, // 0=XMIN, 1=XMAX, 2=YMIN, 3=YMAX, 4=ZMIN, 5=ZMAX
 ];
 
 interface VolumeCroppingAnnotation extends Annotation {
@@ -78,6 +79,7 @@ interface VolumeCroppingAnnotation extends Annotation {
     handles: {
       activeOperation: number | null; // OPERATION.DRAG, OPERATION.ROTATE, etc.
       activeType?: 'min' | 'max'; // Which plane set is being dragged
+      activePlaneIndex?: number; // Which specific plane is being dragged (0-5)
       // Clipping planes stored directly - ordered as [XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX]
       clippingPlanes: ClippingPlane[];
     };
@@ -321,6 +323,224 @@ class VolumeCroppingControlTool extends AnnotationTool {
       (min[1] + max[1]) / 2,
       (min[2] + max[2]) / 2,
     ];
+  }
+
+  /**
+   * Computes the intersection line between a clipping plane and the viewport's view plane.
+   * Returns the direction vector and a point on the intersection line.
+   */
+  _computePlanePlaneIntersection(
+    clippingPlane: ClippingPlane,
+    viewPlaneNormal: Types.Point3,
+    viewPlanePoint: Types.Point3
+  ): { direction: Types.Point3; point: Types.Point3 } | null {
+    const n1 = clippingPlane.normal;
+    const p1 = clippingPlane.origin;
+    const n2 = viewPlaneNormal;
+    const p2 = viewPlanePoint;
+
+    // Direction of intersection line is cross product of normals
+    const direction = vec3.create();
+    vec3.cross(direction, n1, n2);
+    const dirLength = vec3.length(direction);
+
+    // If planes are parallel, no intersection
+    if (dirLength < 1e-6) {
+      return null;
+    }
+
+    vec3.normalize(direction, direction);
+
+    // Find a point on the intersection line
+    // We need a point that satisfies both plane equations:
+    // n1 · (point - p1) = 0  => n1 · point = n1 · p1 = d1
+    // n2 · (point - p2) = 0  => n2 · point = n2 · p2 = d2
+
+    const d1 = vtkMath.dot(n1, p1);
+    const d2 = vtkMath.dot(n2, p2);
+
+    // Use a more robust method: find a direction vector that's not parallel to either plane
+    // and use it to construct a line that will definitely intersect both planes
+    // We'll use n1 as a direction (since it's perpendicular to plane1, it will intersect plane1 at p1)
+    // But we need to ensure it's not parallel to plane2
+
+    const n1DotN2 = vtkMath.dot(n1, n2);
+    let lineDir: Types.Point3;
+
+    // If n1 is not parallel to plane2 (n1 · n2 != 0), we can use n1 as line direction
+    if (Math.abs(n1DotN2) > 1e-6) {
+      lineDir = n1;
+    } else {
+      // n1 is parallel to plane2, use n2 instead (it's perpendicular to plane2)
+      lineDir = n2;
+    }
+
+    // Create a line through p1 in the direction of lineDir
+    // This line will intersect plane1 at p1, and we'll find where it intersects plane2
+    const plane2Eq = csUtils.planar.planeEquation(n2, p2);
+    const lineStart = p1;
+    const lineEnd: Types.Point3 = [
+      p1[0] + lineDir[0] * 10000,
+      p1[1] + lineDir[1] * 10000,
+      p1[2] + lineDir[2] * 10000,
+    ];
+
+    let intersectionPoint: Types.Point3;
+    try {
+      intersectionPoint = csUtils.planar.linePlaneIntersection(
+        lineStart,
+        lineEnd,
+        plane2Eq
+      );
+
+      // Check if result is valid (not NaN)
+      if (
+        isNaN(intersectionPoint[0]) ||
+        isNaN(intersectionPoint[1]) ||
+        isNaN(intersectionPoint[2])
+      ) {
+        // Fallback: use algebraic method
+        // Find a point on the intersection line by solving the system
+        // We'll use the fact that any point on the line can be written as:
+        // point = p1 + t * direction (for some t)
+        // But we need it to also satisfy n2 · point = d2
+        // So: n2 · (p1 + t * direction) = d2
+        // => n2 · p1 + t * (n2 · direction) = d2
+        // => t = (d2 - n2 · p1) / (n2 · direction)
+
+        const directionArr: Types.Point3 = [
+          direction[0],
+          direction[1],
+          direction[2],
+        ];
+        const n2DotDir = vtkMath.dot(n2, directionArr);
+        if (Math.abs(n2DotDir) > 1e-6) {
+          const t = (d2 - vtkMath.dot(n2, p1)) / n2DotDir;
+          intersectionPoint = [
+            p1[0] + direction[0] * t,
+            p1[1] + direction[1] * t,
+            p1[2] + direction[2] * t,
+          ];
+        } else {
+          // direction is parallel to plane2, use alternative
+          const n1DotDir = vtkMath.dot(n1, directionArr);
+          if (Math.abs(n1DotDir) > 1e-6) {
+            const t = (d1 - vtkMath.dot(n1, p2)) / n1DotDir;
+            intersectionPoint = [
+              p2[0] + direction[0] * t,
+              p2[1] + direction[1] * t,
+              p2[2] + direction[2] * t,
+            ];
+          } else {
+            // Last resort: use midpoint
+            intersectionPoint = [
+              (p1[0] + p2[0]) / 2,
+              (p1[1] + p2[1]) / 2,
+              (p1[2] + p2[2]) / 2,
+            ];
+          }
+        }
+      }
+    } catch (error) {
+      // If line-plane intersection fails, use algebraic method
+      const directionArr: Types.Point3 = [
+        direction[0],
+        direction[1],
+        direction[2],
+      ];
+      const n2DotDir = vtkMath.dot(n2, directionArr);
+      if (Math.abs(n2DotDir) > 1e-6) {
+        const t = (d2 - vtkMath.dot(n2, p1)) / n2DotDir;
+        intersectionPoint = [
+          p1[0] + direction[0] * t,
+          p1[1] + direction[1] * t,
+          p1[2] + direction[2] * t,
+        ];
+      } else {
+        intersectionPoint = p1;
+      }
+    }
+
+    return {
+      direction: direction as Types.Point3,
+      point: intersectionPoint,
+    };
+  }
+
+  /**
+   * Finds where an intersection line crosses the viewport bounds.
+   * Returns two points on the line that are within the viewport bounds.
+   */
+  _findLineBoundsIntersection(
+    linePoint: Types.Point3,
+    lineDirection: Types.Point3,
+    viewport: Types.IViewport,
+    viewPlaneNormal: Types.Point3
+  ): { start: Types.Point2; end: Types.Point2 } | null {
+    // Extend line far in both directions
+    const lineLength = 100000; // Large distance to ensure we cross viewport
+    const lineStart: Types.Point3 = [
+      linePoint[0] - lineDirection[0] * lineLength,
+      linePoint[1] - lineDirection[1] * lineLength,
+      linePoint[2] - lineDirection[2] * lineLength,
+    ];
+    const lineEnd: Types.Point3 = [
+      linePoint[0] + lineDirection[0] * lineLength,
+      linePoint[1] + lineDirection[1] * lineLength,
+      linePoint[2] + lineDirection[2] * lineLength,
+    ];
+
+    // Project two points on the line to canvas coordinates
+    let canvasStart: Types.Point2;
+    let canvasEnd: Types.Point2;
+    try {
+      canvasStart = viewport.worldToCanvas(lineStart);
+      canvasEnd = viewport.worldToCanvas(lineEnd);
+    } catch (error) {
+      // If projection fails, return null
+      return null;
+    }
+
+    // Get viewport dimensions
+    const { clientWidth, clientHeight } = viewport.canvas;
+
+    // Clip to canvas bounds
+    const canvasBox = [0, 0, clientWidth, clientHeight];
+    const clippedStart = vec2.clone(canvasStart);
+    const clippedEnd = vec2.clone(canvasEnd);
+
+    // Check if line is valid before clipping
+    const startValid = !isNaN(clippedStart[0]) && !isNaN(clippedStart[1]);
+    const endValid = !isNaN(clippedEnd[0]) && !isNaN(clippedEnd[1]);
+    if (!startValid || !endValid) {
+      return null;
+    }
+
+    liangBarksyClip(clippedStart, clippedEnd, canvasBox);
+
+    // Check if clipped line is still valid
+    const clippedStartValid =
+      !isNaN(clippedStart[0]) && !isNaN(clippedStart[1]);
+    const clippedEndValid = !isNaN(clippedEnd[0]) && !isNaN(clippedEnd[1]);
+    if (!clippedStartValid || !clippedEndValid) {
+      return null;
+    }
+
+    // Check if the line has zero length after clipping
+    const dx = clippedEnd[0] - clippedStart[0];
+    const dy = clippedEnd[1] - clippedStart[1];
+    const length = Math.sqrt(dx * dx + dy * dy);
+    if (length < 1) {
+      console.log(
+        `[VolumeCroppingControlTool] Line too short after clipping: ${length}, start: [${clippedStart[0]}, ${clippedStart[1]}], end: [${clippedEnd[0]}, ${clippedEnd[1]}]`
+      );
+      return null; // Line is too short to draw
+    }
+
+    return {
+      start: [clippedStart[0], clippedStart[1]] as Types.Point2,
+      end: [clippedEnd[0], clippedEnd[1]] as Types.Point2,
+    };
   }
 
   /**
@@ -1011,6 +1231,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
+    console.log('[VolumeCroppingControlTool] renderAnnotation called', {
+      viewportId: enabledElement.viewport.id,
+    });
+
     function lineIntersection2D(p1, p2, q1, q2) {
       const s1_x = p2[0] - p1[0];
       const s1_y = p2[1] - p1[1];
@@ -1029,25 +1253,37 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
     const viewportsInfo = this._getViewportsInfo();
     if (!viewportsInfo || viewportsInfo.length === 0) {
-      // No viewports available
+      console.log('[VolumeCroppingControlTool] No viewports available');
       return false;
     }
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
     let annotations = this._getAnnotations(enabledElement);
+    console.log(
+      '[VolumeCroppingControlTool] Annotations found:',
+      annotations.length
+    );
     // If we have virtual annotations , always include them
     if (this._virtualAnnotations && this._virtualAnnotations.length) {
       annotations = annotations.concat(this._virtualAnnotations);
+      console.log(
+        '[VolumeCroppingControlTool] Added virtual annotations, total:',
+        annotations.length
+      );
     }
     const camera = viewport.getCamera();
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
+    console.log(
+      '[VolumeCroppingControlTool] Filtered annotations:',
+      filteredToolAnnotations.length
+    );
 
     // viewport Annotation: use the first annotation for the current viewport
     const viewportAnnotation = filteredToolAnnotations[0];
     if (!viewportAnnotation || !viewportAnnotation.data) {
-      // No annotation for this viewport
+      console.log('[VolumeCroppingControlTool] No annotation for viewport');
       return renderStatus;
     }
 
@@ -1064,229 +1300,169 @@ class VolumeCroppingControlTool extends AnnotationTool {
     );
 
     const data = viewportAnnotation.data;
-    // Get all other annotations except the current viewport's
-    const otherViewportAnnotations = annotations;
 
-    // Get min/max from clipping planes in annotation handles
-    const clippingPlanes = viewportAnnotation.data.handles.clippingPlanes;
+    // Get clipping planes from annotation handles, fallback to this.clippingPlanes
+    let clippingPlanes = viewportAnnotation.data.handles.clippingPlanes;
+    console.log(
+      '[VolumeCroppingControlTool] Clipping planes from annotation:',
+      clippingPlanes?.length || 0
+    );
     if (!clippingPlanes || clippingPlanes.length < 6) {
-      return false;
-    }
-
-    const { min, max } = this._getBoundsFromClippingPlanes(clippingPlanes);
-    const center = this._getCenterFromClippingPlanes(clippingPlanes);
-
-    const volumeCroppingCenterCanvasMin = viewport.worldToCanvas(min);
-    const volumeCroppingCenterCanvasMax = viewport.worldToCanvas(max);
-
-    const referenceLines = [];
-
-    // get canvas information for points and lines (canvas box, canvas horizontal distances)
-    const canvasBox = [0, 0, clientWidth, clientHeight];
-
-    otherViewportAnnotations.forEach((annotation) => {
-      const viewportAnnotation = annotation as VolumeCroppingAnnotation;
-      const data = viewportAnnotation.data;
-      // Type guard for isVirtual property
-      const isVirtual =
-        'isVirtual' in viewportAnnotation &&
-        viewportAnnotation.isVirtual === true;
-
-      // Ensure clipping planes are set in annotation handles
-      if (
-        !data.handles.clippingPlanes ||
-        data.handles.clippingPlanes.length < 6
-      ) {
-        data.handles.clippingPlanes = clippingPlanes.map((p) => ({
+      // Try to use this.clippingPlanes if annotation doesn't have them yet
+      if (this.clippingPlanes && this.clippingPlanes.length >= 6) {
+        console.log(
+          '[VolumeCroppingControlTool] Using this.clippingPlanes, count:',
+          this.clippingPlanes.length
+        );
+        clippingPlanes = this.clippingPlanes;
+        // Update annotation with the clipping planes
+        data.handles.clippingPlanes = this.clippingPlanes.map((p) => ({
           origin: [...p.origin] as Types.Point3,
           normal: [...p.normal] as Types.Point3,
         }));
-      }
-
-      // Get center from clipping planes for virtual viewports
-      const annotationCenter = this._getCenterFromClippingPlanes(
-        data.handles.clippingPlanes
-      );
-      let otherViewport,
-        otherCamera,
-        clientWidth,
-        clientHeight,
-        otherCanvasDiagonalLength,
-        otherCanvasCenter,
-        otherViewportCenterWorld;
-      if (isVirtual) {
-        // Synthesize a virtual viewport/camera for any missing orientation
-        const realViewports = viewportsInfo.filter(
-          (vp) => vp.viewportId !== data.viewportId
-        );
-        if (realViewports.length === 2) {
-          const vp1 = renderingEngine.getViewport(realViewports[0].viewportId);
-          const vp2 = renderingEngine.getViewport(realViewports[1].viewportId);
-          const normal1 = vp1.getCamera().viewPlaneNormal;
-          const normal2 = vp2.getCamera().viewPlaneNormal;
-          const virtualNormal = vec3.create();
-          vec3.cross(virtualNormal, normal1, normal2);
-          vec3.normalize(virtualNormal, virtualNormal);
-          otherCamera = {
-            viewPlaneNormal: virtualNormal,
-            position: annotationCenter,
-            focalPoint: annotationCenter,
-            viewUp: [0, 1, 0],
-          };
-          clientWidth = viewport.canvas.clientWidth;
-          clientHeight = viewport.canvas.clientHeight;
-          otherCanvasDiagonalLength = Math.sqrt(
-            clientWidth * clientWidth + clientHeight * clientHeight
-          );
-          otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
-          otherViewportCenterWorld = annotationCenter;
-          otherViewport = {
-            id: data.viewportId,
-            canvas: viewport.canvas,
-            canvasToWorld: () => annotationCenter,
-          };
-        } else {
-          // Only one real viewport: use canonical normal from virtual annotation
-          const virtualNormal = viewportAnnotation.virtualNormal ?? [0, 0, 1];
-          otherCamera = {
-            viewPlaneNormal: virtualNormal,
-            position: annotationCenter,
-            focalPoint: annotationCenter,
-            viewUp: [0, 1, 0],
-          };
-          clientWidth = viewport.canvas.clientWidth;
-          clientHeight = viewport.canvas.clientHeight;
-          otherCanvasDiagonalLength = Math.sqrt(
-            clientWidth * clientWidth + clientHeight * clientHeight
-          );
-          otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
-          otherViewportCenterWorld = annotationCenter;
-          otherViewport = {
-            id: data.viewportId,
-            canvas: viewport.canvas,
-            canvasToWorld: () => annotationCenter,
-          };
-        }
       } else {
-        otherViewport = renderingEngine.getViewport(data.viewportId as string);
-        otherCamera = otherViewport.getCamera();
-        clientWidth = otherViewport.canvas.clientWidth;
-        clientHeight = otherViewport.canvas.clientHeight;
-        otherCanvasDiagonalLength = Math.sqrt(
-          clientWidth * clientWidth + clientHeight * clientHeight
+        console.log(
+          '[VolumeCroppingControlTool] No clipping planes available, returning false'
         );
-        otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
-        otherViewportCenterWorld =
-          otherViewport.canvasToWorld(otherCanvasCenter);
+        return false;
       }
-
-      const otherViewportControllable = this._getReferenceLineControllable(
-        otherViewport.id
+    } else {
+      console.log(
+        '[VolumeCroppingControlTool] Using clipping planes from annotation, count:',
+        clippingPlanes.length
       );
+    }
 
-      const direction = [0, 0, 0];
-      vtkMath.cross(
-        camera.viewPlaneNormal as [number, number, number],
-        otherCamera.viewPlaneNormal as [number, number, number],
-        direction as [number, number, number]
-      );
-      vtkMath.normalize(direction as [number, number, number]);
-      vtkMath.multiplyScalar(
-        direction as [number, number, number],
-        otherCanvasDiagonalLength
-      );
+    const { viewPlaneNormal, focalPoint } = camera;
+    const referenceLines: ReferenceLine[] = [];
+    const planeTypes: Array<'min' | 'max'> = [
+      'min',
+      'max',
+      'min',
+      'max',
+      'min',
+      'max',
+    ];
 
-      const pointWorld0: [number, number, number] = [0, 0, 0];
-      vtkMath.add(
-        otherViewportCenterWorld as [number, number, number],
-        direction as [number, number, number],
-        pointWorld0
-      );
-      const pointWorld1: [number, number, number] = [0, 0, 0];
-      vtkMath.subtract(
-        otherViewportCenterWorld as [number, number, number],
-        direction as [number, number, number],
-        pointWorld1
-      );
-
-      const pointCanvas0 = viewport.worldToCanvas(pointWorld0 as Types.Point3);
-      const otherViewportCenterCanvas = viewport.worldToCanvas([
-        otherViewportCenterWorld[0] ?? 0,
-        otherViewportCenterWorld[1] ?? 0,
-        otherViewportCenterWorld[2] ?? 0,
-      ] as [number, number, number] as Types.Point3);
-
-      const canvasUnitVectorFromCenter = vec2.create();
-      vec2.subtract(
-        canvasUnitVectorFromCenter,
-        pointCanvas0,
-        otherViewportCenterCanvas
-      );
-      vec2.normalize(canvasUnitVectorFromCenter, canvasUnitVectorFromCenter);
-
-      const canvasVectorFromCenterLong = vec2.create();
-      vec2.scale(
-        canvasVectorFromCenterLong,
-        canvasUnitVectorFromCenter,
-        canvasDiagonalLength * 100
+    // Draw all 6 clipping planes as reference lines
+    // PLANEINDEX: XMIN=0, XMAX=1, YMIN=2, YMAX=3, ZMIN=4, ZMAX=5
+    console.log(
+      '[VolumeCroppingControlTool] Processing 6 clipping planes, viewPlaneNormal:',
+      viewPlaneNormal,
+      'focalPoint:',
+      focalPoint
+    );
+    for (let planeIndex = 0; planeIndex < 6; planeIndex++) {
+      const clippingPlane = clippingPlanes[planeIndex];
+      console.log(
+        `[VolumeCroppingControlTool] Processing plane ${planeIndex}:`,
+        {
+          origin: clippingPlane.origin,
+          normal: clippingPlane.normal,
+        }
       );
 
-      // For min
-      const refLinesCenterMin = otherViewportControllable
-        ? vec2.clone(volumeCroppingCenterCanvasMin)
-        : vec2.clone(otherViewportCenterCanvas);
-      const refLinePointMinOne = vec2.create();
-      const refLinePointMinTwo = vec2.create();
-      vec2.add(
-        refLinePointMinOne,
-        refLinesCenterMin,
-        canvasVectorFromCenterLong
+      // Compute intersection of clipping plane with viewport view plane
+      const intersection = this._computePlanePlaneIntersection(
+        clippingPlane,
+        viewPlaneNormal,
+        focalPoint
       );
-      vec2.subtract(
-        refLinePointMinTwo,
-        refLinesCenterMin,
-        canvasVectorFromCenterLong
+
+      if (!intersection) {
+        console.log(
+          `[VolumeCroppingControlTool] Plane ${planeIndex}: Planes are parallel, skipping`
+        );
+        continue; // Planes are parallel, skip
+      }
+      console.log(
+        `[VolumeCroppingControlTool] Plane ${planeIndex}: Intersection found:`,
+        {
+          point: intersection.point,
+          direction: intersection.direction,
+          pointValid:
+            !isNaN(intersection.point[0]) &&
+            !isNaN(intersection.point[1]) &&
+            !isNaN(intersection.point[2]),
+        }
       );
-      liangBarksyClip(refLinePointMinOne, refLinePointMinTwo, canvasBox);
+
+      // Find where the intersection line crosses viewport bounds
+      const lineBounds = this._findLineBoundsIntersection(
+        intersection.point,
+        intersection.direction,
+        viewport,
+        viewPlaneNormal
+      );
+
+      if (!lineBounds) {
+        console.log(
+          `[VolumeCroppingControlTool] Plane ${planeIndex}: Line bounds not found, skipping. Intersection point was:`,
+          intersection.point
+        );
+        continue;
+      }
+      console.log(
+        `[VolumeCroppingControlTool] Plane ${planeIndex}: Line bounds:`,
+        {
+          start: lineBounds.start,
+          end: lineBounds.end,
+        }
+      );
+
+      // Create reference line for this clipping plane
       referenceLines.push([
-        otherViewport,
-        refLinePointMinOne,
-        refLinePointMinTwo,
-        'min',
+        {
+          id: viewport.id,
+          canvas: viewport.canvas,
+        },
+        lineBounds.start,
+        lineBounds.end,
+        planeTypes[planeIndex],
+        planeIndex,
       ]);
+      console.log(
+        `[VolumeCroppingControlTool] Plane ${planeIndex}: Added to referenceLines`
+      );
+    }
 
-      // For max center
-      const refLinesCenterMax = otherViewportControllable
-        ? vec2.clone(volumeCroppingCenterCanvasMax)
-        : vec2.clone(otherViewportCenterCanvas);
-      const refLinePointMaxOne = vec2.create();
-      const refLinePointMaxTwo = vec2.create();
-      vec2.add(
-        refLinePointMaxOne,
-        refLinesCenterMax,
-        canvasVectorFromCenterLong
-      );
-      vec2.subtract(
-        refLinePointMaxTwo,
-        refLinesCenterMax,
-        canvasVectorFromCenterLong
-      );
-      liangBarksyClip(refLinePointMaxOne, refLinePointMaxTwo, canvasBox);
-      referenceLines.push([
-        otherViewport,
-        refLinePointMaxOne,
-        refLinePointMaxTwo,
-        'max',
-      ]);
-    });
+    console.log(
+      '[VolumeCroppingControlTool] Total reference lines created:',
+      referenceLines.length
+    );
+    console.log(
+      '[VolumeCroppingControlTool] Reference lines summary:',
+      referenceLines.map((line, idx) => ({
+        index: idx,
+        planeIndex: line[4],
+        type: line[3],
+        orientation:
+          line[4] < 2 ? 'SAGITTAL' : line[4] < 4 ? 'CORONAL' : 'AXIAL',
+        start: line[1],
+        end: line[2],
+      }))
+    );
 
     data.referenceLines = referenceLines;
 
+    // Draw the reference lines
     const viewportColor = this._getReferenceLineColor(viewport.id);
-    const color =
+    const defaultColor =
       viewportColor !== undefined ? viewportColor : 'rgb(200, 200, 200)';
+    console.log(
+      '[VolumeCroppingControlTool] Drawing',
+      referenceLines.length,
+      'reference lines'
+    );
 
     referenceLines.forEach((line, lineIndex) => {
+      const [otherViewport, startPoint, endPoint, type, planeIndex] = line;
+
+      // Ensure planeIndex is valid
+      if (planeIndex === undefined || planeIndex < 0 || planeIndex >= 6) {
+        return; // Skip invalid lines
+      }
+
       // Calculate intersections with other lines in this viewport
       const intersections = [];
       for (let j = 0; j < referenceLines.length; ++j) {
@@ -1295,8 +1471,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
         }
         const otherLine = referenceLines[j];
         const intersection = lineIntersection2D(
-          line[1],
-          line[2],
+          startPoint,
+          endPoint,
           otherLine[1],
           otherLine[2]
         );
@@ -1308,35 +1484,22 @@ class VolumeCroppingControlTool extends AnnotationTool {
         }
       }
 
-      // get color for the reference line using orientation
-      const otherViewport = line[0];
+      // Get color based on plane index
+      // PLANEINDEX: XMIN=0, XMAX=1, YMIN=2, YMAX=3, ZMIN=4, ZMAX=5
+      // Map to orientations: X->SAGITTAL, Y->CORONAL, Z->AXIAL
       let orientation = null;
-      // Try to get orientation from annotation data or viewportId
-      if (otherViewport && otherViewport.id) {
-        // Try to get from annotation if available
-        const annotationForViewport = annotations.find(
-          (a) => a.data.viewportId === otherViewport.id
-        );
-        if (annotationForViewport && annotationForViewport.data.orientation) {
-          orientation = String(
-            annotationForViewport.data.orientation
-          ).toUpperCase();
-        } else {
-          // Fallback: try to infer from viewportId
-          const idUpper = otherViewport.id.toUpperCase();
-          if (idUpper.includes('AXIAL')) {
-            orientation = 'AXIAL';
-          } else if (idUpper.includes('CORONAL')) {
-            orientation = 'CORONAL';
-          } else if (idUpper.includes('SAGITTAL')) {
-            orientation = 'SAGITTAL';
-          }
-        }
+      if (planeIndex === 0 || planeIndex === 1) {
+        orientation = 'SAGITTAL'; // X planes
+      } else if (planeIndex === 2 || planeIndex === 3) {
+        orientation = 'CORONAL'; // Y planes
+      } else if (planeIndex === 4 || planeIndex === 5) {
+        orientation = 'AXIAL'; // Z planes
       }
+
       // Use lineColors from configuration
       const lineColors = this.configuration.lineColors || {};
       const colorArr = lineColors[orientation] ||
-        lineColors.unknown || [1.0, 0.0, 0.0]; // fallback to red
+        lineColors.UNKNOWN || [1.0, 0.0, 0.0]; // fallback to red
       // Convert [r,g,b] to rgb string if needed
       const color = Array.isArray(colorArr)
         ? `rgb(${colorArr.map((v) => Math.round(v * 255)).join(',')})`
@@ -1358,61 +1521,99 @@ class VolumeCroppingControlTool extends AnnotationTool {
         lineWidth = this.configuration.activeLineWidth ?? 2.5;
       }
 
-      const lineUID = `${lineIndex}`;
-      if (viewportControllable) {
-        if (intersections.length === 2) {
-          drawLineSvg(
-            svgDrawingHelper,
-            annotationUID,
-            lineUID,
-            intersections[0].point,
-            intersections[1].point,
-            {
-              color,
-              lineWidth,
-            }
-          );
+      const lineUID = `plane_${planeIndex}`;
+      console.log(
+        `[VolumeCroppingControlTool] Drawing line ${lineIndex} (plane ${planeIndex}, ${type}, ${orientation}):`,
+        {
+          lineUID,
+          intersections: intersections.length,
+          color,
+          lineWidth,
+          startPoint,
+          endPoint,
+          lineLength: Math.sqrt(
+            Math.pow(endPoint[0] - startPoint[0], 2) +
+              Math.pow(endPoint[1] - startPoint[1], 2)
+          ),
         }
-        if (
-          this.configuration.extendReferenceLines &&
-          intersections.length === 2
-        ) {
-          if (
-            this.configuration.extendReferenceLines &&
-            intersections.length === 2
-          ) {
-            // Sort intersections by distance from line start
-            const sortedIntersections = intersections
-              .map((intersection) => ({
-                ...intersection,
-                distance: vec2.distance(line[1], intersection.point),
-              }))
-              .sort((a, b) => a.distance - b.distance);
-
-            // Draw dashed lines in correct order
-            drawLineSvg(
-              svgDrawingHelper,
-              annotationUID,
-              lineUID + '_dashed_before',
-              line[1],
-              sortedIntersections[0].point,
-              { color, lineWidth, lineDash: [4, 4] }
-            );
-
-            drawLineSvg(
-              svgDrawingHelper,
-              annotationUID,
-              lineUID + '_dashed_after',
-              sortedIntersections[1].point,
-              line[2],
-              { color, lineWidth, lineDash: [4, 4] }
-            );
+      );
+      // Always draw lines, not just if viewportControllable
+      // (viewportControllable only affects whether they can be dragged)
+      if (intersections.length === 2) {
+        // Draw line between intersections
+        console.log(
+          `[VolumeCroppingControlTool] Drawing line between intersections:`,
+          intersections[0].point,
+          intersections[1].point
+        );
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          intersections[0].point,
+          intersections[1].point,
+          {
+            color,
+            lineWidth,
           }
-        }
+        );
+      } else {
+        // Draw full line if no intersections
+        console.log(
+          `[VolumeCroppingControlTool] Drawing full line:`,
+          startPoint,
+          endPoint
+        );
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID,
+          startPoint,
+          endPoint,
+          {
+            color,
+            lineWidth,
+          }
+        );
+      }
+
+      // Draw dashed extensions if configured
+      if (
+        this.configuration.extendReferenceLines &&
+        intersections.length === 2
+      ) {
+        const sortedIntersections = intersections
+          .map((intersection) => ({
+            ...intersection,
+            distance: vec2.distance(startPoint, intersection.point),
+          }))
+          .sort((a, b) => a.distance - b.distance);
+
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID + '_dashed_before',
+          startPoint,
+          sortedIntersections[0].point,
+          { color, lineWidth, lineDash: [4, 4] }
+        );
+
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          lineUID + '_dashed_after',
+          sortedIntersections[1].point,
+          endPoint,
+          { color, lineWidth, lineDash: [4, 4] }
+        );
       }
     });
 
     renderStatus = true;
+    console.log(
+      '[VolumeCroppingControlTool] renderAnnotation complete, renderStatus:',
+      renderStatus
+    );
 
     if (this.configuration.viewportIndicators) {
       const { viewportIndicatorsConfig } = this.configuration;
@@ -1433,7 +1634,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         circleUID,
         referenceColorCoordinates as Types.Point2,
         circleRadius,
-        { color, fill: color }
+        { color: defaultColor, fill: defaultColor }
       );
     }
 
@@ -1693,13 +1894,32 @@ class VolumeCroppingControlTool extends AnnotationTool {
       clippingPlanes &&
       clippingPlanes.length >= 6
     ) {
-      if (handles.activeType === 'min') {
-        // Update XMIN, YMIN, ZMIN planes
+      // If we have a specific plane index, update only that plane
+      if (
+        handles.activePlaneIndex !== undefined &&
+        handles.activePlaneIndex >= 0 &&
+        handles.activePlaneIndex < 6
+      ) {
+        const planeIndex = handles.activePlaneIndex;
+        const plane = clippingPlanes[planeIndex];
+
+        // Move the plane along its normal direction
+        // Project delta onto the plane's normal
+        const normal = plane.normal;
+        const dotProd = vtkMath.dot(delta, normal);
+        const moveDistance = dotProd;
+
+        // Move origin along normal
+        plane.origin[0] += normal[0] * moveDistance;
+        plane.origin[1] += normal[1] * moveDistance;
+        plane.origin[2] += normal[2] * moveDistance;
+      } else if (handles.activeType === 'min') {
+        // Update XMIN, YMIN, ZMIN planes (fallback for backward compatibility)
         clippingPlanes[0].origin[0] += delta[0]; // XMIN
         clippingPlanes[2].origin[1] += delta[1]; // YMIN
         clippingPlanes[4].origin[2] += delta[2]; // ZMIN
       } else if (handles.activeType === 'max') {
-        // Update XMAX, YMAX, ZMAX planes
+        // Update XMAX, YMAX, ZMAX planes (fallback for backward compatibility)
         clippingPlanes[1].origin[0] += delta[0]; // XMAX
         clippingPlanes[3].origin[1] += delta[1]; // YMAX
         clippingPlanes[5].origin[2] += delta[2]; // ZMAX
@@ -1812,31 +2032,26 @@ class VolumeCroppingControlTool extends AnnotationTool {
   _pointNearTool(element, annotation, canvasCoords, proximity) {
     const { data } = annotation;
 
-    // You must have referenceLines available in annotation.data.
-    // If not, you can recompute them here or store them in renderAnnotation.
-    // For this example, let's assume you store them as data.referenceLines.
     const referenceLines = data.referenceLines;
 
     const viewportIdArray = [];
 
     if (referenceLines) {
       for (let i = 0; i < referenceLines.length; ++i) {
-        // Each line: [otherViewport, refLinePointOne, refLinePointMinOne, ...]
-        const otherViewport = referenceLines[i][0];
-        // First segment
-        const start1 = referenceLines[i][1];
-        const end1 = referenceLines[i][2];
-        const type = referenceLines[i][3]; // 'min' or 'max'
+        // Each line: [viewport, startPoint, endPoint, type, planeIndex]
+        const [otherViewport, startPoint, endPoint, type, planeIndex] =
+          referenceLines[i];
 
-        const distance1 = lineSegment.distanceToPoint(start1, end1, [
+        const distance = lineSegment.distanceToPoint(startPoint, endPoint, [
           canvasCoords[0],
           canvasCoords[1],
         ]);
 
-        if (distance1 <= proximity) {
+        if (distance <= proximity) {
           viewportIdArray.push(otherViewport.id);
-          data.handles.activeOperation = 1; // DRAG
+          data.handles.activeOperation = OPERATION.DRAG;
           data.handles.activeType = type;
+          data.handles.activePlaneIndex = planeIndex;
         }
       }
     }
@@ -1846,7 +2061,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     this.editData = {
       annotation,
     };
-    return data.handles.activeOperation === 1 ? true : false;
+    return data.handles.activeOperation === OPERATION.DRAG ? true : false;
   }
 }
 

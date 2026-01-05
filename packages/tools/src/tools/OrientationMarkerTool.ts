@@ -295,13 +295,13 @@ class OrientationMarkerTool extends BaseTool {
       viewportY >= bottom &&
       viewportY <= top;
 
-    console.log('[OrientationMarker] isPointInOrientationMarker', {
-      canvasPoint,
-      viewportX,
-      viewportY,
-      bounds: { left, bottom, right, top },
-      isWithin,
-    });
+    //     console.log('[OrientationMarker] isPointInOrientationMarker', {
+    //       canvasPoint,
+    //       viewportX,
+    //       viewportY,
+    //       bounds: { left, bottom, right, top },
+    //       isWithin,
+    //     });
 
     return isWithin;
   }
