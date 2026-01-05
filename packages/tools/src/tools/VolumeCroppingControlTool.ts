@@ -56,6 +56,12 @@ import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotatio
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
+// Clipping plane structure (matches VolumeCroppingTool)
+type ClippingPlane = {
+  origin: Types.Point3;
+  normal: Types.Point3;
+};
+
 type ReferenceLine = [
   viewport: {
     id: string;
@@ -70,16 +76,14 @@ type ReferenceLine = [
 interface VolumeCroppingAnnotation extends Annotation {
   data: {
     handles: {
-      activeOperation: number | null; // 0 translation, 1 rotation handles, 2 slab thickness handles
-      toolCenter: Types.Point3;
-      toolCenterMin: Types.Point3;
-      toolCenterMax: Types.Point3;
+      activeOperation: number | null; // OPERATION.DRAG, OPERATION.ROTATE, etc.
+      activeType?: 'min' | 'max'; // Which plane set is being dragged
+      // Clipping planes stored directly - ordered as [XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX]
+      clippingPlanes: ClippingPlane[];
     };
     activeViewportIds: string[]; // a list of the viewport ids connected to the reference lines being translated
     viewportId: string;
     referenceLines: ReferenceLine[]; // set in renderAnnotation
-    clippingPlanes?: vtkPlane[]; // clipping planes for the viewport
-    clippingPlaneReferenceLines?: ReferenceLine[];
     orientation?: string; // AXIAL, CORONAL, SAGITTAL
   };
   isVirtual?: boolean;
@@ -143,9 +147,7 @@ const OPERATION = {
  * @property {string} toolName - Static tool identifier: 'VolumeCroppingControl'
  * @property {Array<SphereState>} sphereStates - Array of sphere state objects for 3D volume manipulation handles
  * @property {number|null} draggingSphereIndex - Index of currently dragged sphere, null when not dragging
- * @property {Types.Point3} toolCenter - Center point of the cropping volume in world coordinates [x, y, z]
- * @property {Types.Point3} toolCenterMin - Minimum bounds of the cropping volume in world coordinates [xMin, yMin, zMin]
- * @property {Types.Point3} toolCenterMax - Maximum bounds of the cropping volume in world coordinates [xMax, yMax, zMax]
+ * @property {ClippingPlane[]} clippingPlanes - Array of 6 clipping planes ordered as [XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX]
  * @property {Function} _getReferenceLineColor - Optional callback to determine reference line color per viewport
  * @property {Function} _getReferenceLineControllable - Optional callback to determine if reference lines are interactive per viewport
  *
@@ -195,9 +197,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     sphereActor;
   }[] = [];
   draggingSphereIndex: number | null = null;
-  toolCenter: Types.Point3 = [0, 0, 0];
-  toolCenterMin: Types.Point3 = [0, 0, 0];
-  toolCenterMax: Types.Point3 = [0, 0, 0];
+  clippingPlanes: ClippingPlane[] = [];
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   constructor(
@@ -267,23 +267,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         const spacing = imageData.getSpacing();
         const origin = imageData.getOrigin();
         this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
-        const cropFactor = this.configuration.initialCropFactor ?? 0.2;
-        this.toolCenter = [
-          origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
-          origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1],
-          origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2],
-        ];
-        const maxCropFactor = 1 - cropFactor;
-        this.toolCenterMin = [
-          origin[0] + cropFactor * (dimensions[0] - 1) * spacing[0],
-          origin[1] + cropFactor * (dimensions[1] - 1) * spacing[1],
-          origin[2] + cropFactor * (dimensions[2] - 1) * spacing[2],
-        ];
-        this.toolCenterMax = [
-          origin[0] + maxCropFactor * (dimensions[0] - 1) * spacing[0],
-          origin[1] + maxCropFactor * (dimensions[1] - 1) * spacing[1],
-          origin[2] + maxCropFactor * (dimensions[2] - 1) * spacing[2],
-        ];
+        // Clipping planes will be initialized from VolumeCroppingTool via events
       }
     }
   }
@@ -298,31 +282,47 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
     this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
-    const dimensions = imageData.getDimensions();
-    const spacing = imageData.getSpacing();
-    const origin = imageData.getOrigin();
-    const cropFactor = this.configuration.initialCropFactor ?? 0.2;
-    const cropStart = cropFactor / 2;
-    const cropEnd = 1 - cropFactor / 2;
-    this.toolCenter = [
-      origin[0] +
-        ((cropStart + cropEnd) / 2) * (dimensions[0] - 1) * spacing[0],
-      origin[1] +
-        ((cropStart + cropEnd) / 2) * (dimensions[1] - 1) * spacing[1],
-      origin[2] +
-        ((cropStart + cropEnd) / 2) * (dimensions[2] - 1) * spacing[2],
-    ];
-    this.toolCenterMin = [
-      origin[0] + cropStart * (dimensions[0] - 1) * spacing[0],
-      origin[1] + cropStart * (dimensions[1] - 1) * spacing[1],
-      origin[2] + cropStart * (dimensions[2] - 1) * spacing[2],
-    ];
-    this.toolCenterMax = [
-      origin[0] + cropEnd * (dimensions[0] - 1) * spacing[0],
-      origin[1] + cropEnd * (dimensions[1] - 1) * spacing[1],
-      origin[2] + cropEnd * (dimensions[2] - 1) * spacing[2],
+    // Clipping planes will be initialized from VolumeCroppingTool via events
+  }
+
+  /**
+   * Helper to extract min/max bounds from clipping planes
+   * PLANEINDEX: XMIN=0, XMAX=1, YMIN=2, YMAX=3, ZMIN=4, ZMAX=5
+   */
+  _getBoundsFromClippingPlanes(planes: ClippingPlane[]): {
+    min: Types.Point3;
+    max: Types.Point3;
+  } {
+    if (!planes || planes.length < 6) {
+      return { min: [0, 0, 0], max: [0, 0, 0] };
+    }
+
+    return {
+      min: [
+        planes[0].origin[0], // XMIN
+        planes[2].origin[1], // YMIN
+        planes[4].origin[2], // ZMIN
+      ],
+      max: [
+        planes[1].origin[0], // XMAX
+        planes[3].origin[1], // YMAX
+        planes[5].origin[2], // ZMAX
+      ],
+    };
+  }
+
+  /**
+   * Helper to get center point from clipping planes (if needed for virtual viewports)
+   */
+  _getCenterFromClippingPlanes(planes: ClippingPlane[]): Types.Point3 {
+    const { min, max } = this._getBoundsFromClippingPlanes(planes);
+    return [
+      (min[0] + max[0]) / 2,
+      (min[1] + max[1]) / 2,
+      (min[2] + max[2]) / 2,
     ];
   }
+
   /**
    * Gets the camera from the viewport, and adds  annotation for the viewport
    * to the annotationManager. If any annotation is found in the annotationManager, it
@@ -382,11 +382,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
       },
       data: {
         handles: {
-          toolCenter: this.toolCenter,
-          toolCenterMin: this.toolCenterMin,
-          toolCenterMax: this.toolCenterMax,
+          activeOperation: null, // OPERATION.DRAG, OPERATION.ROTATE, etc.
+          clippingPlanes:
+            this.clippingPlanes.length > 0
+              ? this.clippingPlanes.map((p) => ({
+                  origin: [...p.origin] as Types.Point3,
+                  normal: [...p.normal] as Types.Point3,
+                }))
+              : [], // Will be populated from VolumeCroppingTool
         },
-        activeOperation: null, // 0 translation, 1 rotation handles, 2 slab thickness handles
         activeViewportIds: [], // a list of the viewport ids connected to the reference lines being translated
         viewportId,
         referenceLines: [], // set in renderAnnotation
@@ -625,9 +629,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
         data: {
           handles: {
             activeOperation: null,
-            toolCenter: this.toolCenter,
-            toolCenterMin: this.toolCenterMin,
-            toolCenterMax: this.toolCenterMax,
+            clippingPlanes:
+              this.clippingPlanes.length > 0
+                ? this.clippingPlanes.map((p) => ({
+                    origin: [...p.origin] as Types.Point3,
+                    normal: [...p.normal] as Types.Point3,
+                  }))
+                : [],
           },
           activeViewportIds: [],
           viewportId: missingOrientation,
@@ -677,9 +685,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
             data: {
               handles: {
                 activeOperation: null,
-                toolCenter: this.toolCenter,
-                toolCenterMin: this.toolCenterMin,
-                toolCenterMax: this.toolCenterMax,
+                clippingPlanes:
+                  this.clippingPlanes.length > 0
+                    ? this.clippingPlanes.map((p) => ({
+                        origin: [...p.origin] as Types.Point3,
+                        normal: [...p.normal] as Types.Point3,
+                      }))
+                    : [],
               },
               activeViewportIds: [],
               viewportId: orientation, // Use orientation string for virtual annotation
@@ -737,176 +749,54 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
     return null;
   }
-  _syncWithVolumeCroppingTool(originalClippingPlanes) {
-    // Sync our tool centers with the clipping plane bounds
-    const planes = originalClippingPlanes;
-    if (planes.length >= 6) {
-      this.toolCenterMin = [
-        planes[0].origin[0], // XMIN
-        planes[2].origin[1], // YMIN
-        planes[4].origin[2], // ZMIN
-      ];
-      this.toolCenterMax = [
-        planes[1].origin[0], // XMAX
-        planes[3].origin[1], // YMAX
-        planes[5].origin[2], // ZMAX
-      ];
-      this.toolCenter = [
-        (this.toolCenterMin[0] + this.toolCenterMax[0]) / 2,
-        (this.toolCenterMin[1] + this.toolCenterMax[1]) / 2,
-        (this.toolCenterMin[2] + this.toolCenterMax[2]) / 2,
-      ];
+  _syncWithVolumeCroppingTool(originalClippingPlanes: ClippingPlane[]) {
+    if (!originalClippingPlanes || originalClippingPlanes.length < 6) {
+      return;
+    }
 
-      // Update annotations based on their specific orientation
-      const viewportsInfo = this._getViewportsInfo();
-      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-        const enabledElement = getEnabledElementByIds(
-          viewportId,
-          renderingEngineId
-        );
-        if (enabledElement) {
-          const annotations = this._getAnnotations(enabledElement);
-          annotations.forEach((annotation) => {
-            if (
-              annotation.data &&
-              annotation.data.handles &&
-              annotation.data.orientation
-            ) {
-              const orientation = annotation.data.orientation;
+    // Store clipping planes directly
+    this.clippingPlanes = originalClippingPlanes.map((plane) => ({
+      origin: [...plane.origin] as Types.Point3,
+      normal: [...plane.normal] as Types.Point3,
+    }));
 
-              // Update tool centers based on the specific orientation
-              if (orientation === 'AXIAL') {
-                // Axial views see X and Y clipping planes
-                annotation.data.handles.toolCenterMin = [
-                  planes[0].origin[0], // XMIN
-                  planes[2].origin[1], // YMIN
-                  annotation.data.handles.toolCenterMin[2], // Keep existing Z
-                ];
-                annotation.data.handles.toolCenterMax = [
-                  planes[1].origin[0], // XMAX
-                  planes[3].origin[1], // YMAX
-                  annotation.data.handles.toolCenterMax[2], // Keep existing Z
-                ];
-              } else if (orientation === 'CORONAL') {
-                // Coronal views see X and Z clipping planes
-                annotation.data.handles.toolCenterMin = [
-                  planes[0].origin[0], // XMIN
-                  annotation.data.handles.toolCenterMin[1], // Keep existing Y
-                  planes[4].origin[2], // ZMIN
-                ];
-                annotation.data.handles.toolCenterMax = [
-                  planes[1].origin[0], // XMAX
-                  annotation.data.handles.toolCenterMax[1], // Keep existing Y
-                  planes[5].origin[2], // ZMAX
-                ];
-              } else if (orientation === 'SAGITTAL') {
-                // Sagittal views see Y and Z clipping planes
-                annotation.data.handles.toolCenterMin = [
-                  annotation.data.handles.toolCenterMin[0], // Keep existing X
-                  planes[2].origin[1], // YMIN
-                  planes[4].origin[2], // ZMIN
-                ];
-                annotation.data.handles.toolCenterMax = [
-                  annotation.data.handles.toolCenterMax[0], // Keep existing X
-                  planes[3].origin[1], // YMAX
-                  planes[5].origin[2], // ZMAX
-                ];
-              }
-
-              // Update the tool center as midpoint
-              annotation.data.handles.toolCenter = [
-                (annotation.data.handles.toolCenterMin[0] +
-                  annotation.data.handles.toolCenterMax[0]) /
-                  2,
-                (annotation.data.handles.toolCenterMin[1] +
-                  annotation.data.handles.toolCenterMax[1]) /
-                  2,
-                (annotation.data.handles.toolCenterMin[2] +
-                  annotation.data.handles.toolCenterMax[2]) /
-                  2,
-              ];
-            }
-          });
-        }
-      });
-
-      // Update virtual annotations as well
-      if (this._virtualAnnotations && this._virtualAnnotations.length > 0) {
-        this._virtualAnnotations.forEach((annotation) => {
-          if (
-            annotation.data &&
-            annotation.data.handles &&
-            annotation.data.orientation
-          ) {
-            const orientation = annotation.data.orientation.toUpperCase();
-
-            // Apply the same orientation-specific logic to virtual annotations
-            if (orientation === 'AXIAL') {
-              annotation.data.handles.toolCenterMin = [
-                planes[0].origin[0], // XMIN
-                planes[2].origin[1], // YMIN
-                annotation.data.handles.toolCenterMin[2],
-              ];
-              annotation.data.handles.toolCenterMax = [
-                planes[1].origin[0], // XMAX
-                planes[3].origin[1], // YMAX
-                annotation.data.handles.toolCenterMax[2],
-              ];
-            } else if (orientation === 'CORONAL') {
-              annotation.data.handles.toolCenterMin = [
-                planes[0].origin[0], // XMIN
-                annotation.data.handles.toolCenterMin[1],
-                planes[4].origin[2], // ZMIN
-              ];
-              annotation.data.handles.toolCenterMax = [
-                planes[1].origin[0], // XMAX
-                annotation.data.handles.toolCenterMax[1],
-                planes[5].origin[2], // ZMAX
-              ];
-            } else if (orientation === 'SAGITTAL') {
-              annotation.data.handles.toolCenterMin = [
-                annotation.data.handles.toolCenterMin[0],
-                planes[2].origin[1], // YMIN
-                planes[4].origin[2], // ZMIN
-              ];
-              annotation.data.handles.toolCenterMax = [
-                annotation.data.handles.toolCenterMax[0],
-                planes[3].origin[1], // YMAX
-                planes[5].origin[2], // ZMAX
-              ];
-            }
-
-            annotation.data.handles.toolCenter = [
-              (annotation.data.handles.toolCenterMin[0] +
-                annotation.data.handles.toolCenterMax[0]) /
-                2,
-              (annotation.data.handles.toolCenterMin[1] +
-                annotation.data.handles.toolCenterMax[1]) /
-                2,
-              (annotation.data.handles.toolCenterMin[2] +
-                annotation.data.handles.toolCenterMax[2]) /
-                2,
-            ];
+    // Update all annotations with the new clipping planes
+    const viewportsInfo = this._getViewportsInfo();
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      if (enabledElement) {
+        const annotations = this._getAnnotations(enabledElement);
+        annotations.forEach((annotation) => {
+          if (annotation.data?.handles) {
+            annotation.data.handles.clippingPlanes = this.clippingPlanes.map(
+              (p) => ({
+                origin: [...p.origin] as Types.Point3,
+                normal: [...p.normal] as Types.Point3,
+              })
+            );
           }
         });
       }
+    });
 
-      // Trigger re-render to show updated reference lines
-      triggerAnnotationRenderForViewportIds(
-        viewportsInfo.map(({ viewportId }) => viewportId)
-      );
+    // Update virtual annotations
+    if (this._virtualAnnotations?.length > 0) {
+      this._virtualAnnotations.forEach((annotation) => {
+        if (annotation.data?.handles) {
+          annotation.data.handles.clippingPlanes = this.clippingPlanes.map(
+            (p) => ({
+              origin: [...p.origin] as Types.Point3,
+              normal: [...p.normal] as Types.Point3,
+            })
+          );
+        }
+      });
     }
-  }
 
-  setToolCenter(toolCenter: Types.Point3, handleType): void {
-    if (handleType === 'min') {
-      this.toolCenterMin = [...toolCenter];
-    } else if (handleType === 'max') {
-      this.toolCenterMax = [...toolCenter];
-    }
-    const viewportsInfo = this._getViewportsInfo();
-
-    // assuming all viewports are in the same rendering engine
+    // Trigger re-render to show updated reference lines
     triggerAnnotationRenderForViewportIds(
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
@@ -1177,12 +1067,17 @@ class VolumeCroppingControlTool extends AnnotationTool {
     // Get all other annotations except the current viewport's
     const otherViewportAnnotations = annotations;
 
-    const volumeCroppingCenterCanvasMin = viewport.worldToCanvas(
-      this.toolCenterMin
-    );
-    const volumeCroppingCenterCanvasMax = viewport.worldToCanvas(
-      this.toolCenterMax
-    );
+    // Get min/max from clipping planes in annotation handles
+    const clippingPlanes = viewportAnnotation.data.handles.clippingPlanes;
+    if (!clippingPlanes || clippingPlanes.length < 6) {
+      return false;
+    }
+
+    const { min, max } = this._getBoundsFromClippingPlanes(clippingPlanes);
+    const center = this._getCenterFromClippingPlanes(clippingPlanes);
+
+    const volumeCroppingCenterCanvasMin = viewport.worldToCanvas(min);
+    const volumeCroppingCenterCanvasMax = viewport.worldToCanvas(max);
 
     const referenceLines = [];
 
@@ -1195,7 +1090,22 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const isVirtual =
         'isVirtual' in annotation &&
         (annotation as { isVirtual?: boolean }).isVirtual === true;
-      data.handles.toolCenter = this.toolCenter;
+
+      // Ensure clipping planes are set in annotation handles
+      if (
+        !data.handles.clippingPlanes ||
+        data.handles.clippingPlanes.length < 6
+      ) {
+        data.handles.clippingPlanes = clippingPlanes.map((p) => ({
+          origin: [...p.origin] as Types.Point3,
+          normal: [...p.normal] as Types.Point3,
+        }));
+      }
+
+      // Get center from clipping planes for virtual viewports
+      const annotationCenter = this._getCenterFromClippingPlanes(
+        data.handles.clippingPlanes
+      );
       let otherViewport,
         otherCamera,
         clientWidth,
@@ -1218,8 +1128,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
           vec3.normalize(virtualNormal, virtualNormal);
           otherCamera = {
             viewPlaneNormal: virtualNormal,
-            position: data.handles.toolCenter,
-            focalPoint: data.handles.toolCenter,
+            position: annotationCenter,
+            focalPoint: annotationCenter,
             viewUp: [0, 1, 0],
           };
           clientWidth = viewport.canvas.clientWidth;
@@ -1228,11 +1138,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
             clientWidth * clientWidth + clientHeight * clientHeight
           );
           otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
-          otherViewportCenterWorld = data.handles.toolCenter;
+          otherViewportCenterWorld = annotationCenter;
           otherViewport = {
             id: data.viewportId,
             canvas: viewport.canvas,
-            canvasToWorld: () => data.handles.toolCenter,
+            canvasToWorld: () => annotationCenter,
           };
         } else {
           // Only one real viewport: use canonical normal from virtual annotation
@@ -1240,8 +1150,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
             .virtualNormal ?? [0, 0, 1];
           otherCamera = {
             viewPlaneNormal: virtualNormal,
-            position: data.handles.toolCenter,
-            focalPoint: data.handles.toolCenter,
+            position: annotationCenter,
+            focalPoint: annotationCenter,
             viewUp: [0, 1, 0],
           };
           clientWidth = viewport.canvas.clientWidth;
@@ -1250,11 +1160,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
             clientWidth * clientWidth + clientHeight * clientHeight
           );
           otherCanvasCenter = [clientWidth * 0.5, clientHeight * 0.5];
-          otherViewportCenterWorld = data.handles.toolCenter;
+          otherViewportCenterWorld = annotationCenter;
           otherViewport = {
             id: data.viewportId,
             canvas: viewport.canvas,
-            canvasToWorld: () => data.handles.toolCenter,
+            canvasToWorld: () => annotationCenter,
           };
         }
       } else {
@@ -1551,43 +1461,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (evt.detail.originalClippingPlanes) {
       this._syncWithVolumeCroppingTool(evt.detail.originalClippingPlanes);
     } else {
+      // If no originalClippingPlanes, wait for VolumeCroppingTool to send them
+      // This branch should not be needed once VolumeCroppingTool always sends originalClippingPlanes
       if (evt.detail.seriesInstanceUID !== this.seriesInstanceUID) {
         return;
       }
-      // This is called when a sphere is moved
-      const { draggingSphereIndex, toolCenter } = evt.detail;
-      const newMin: [number, number, number] = [...this.toolCenterMin];
-      const newMax: [number, number, number] = [...this.toolCenterMax];
-      // face spheres
-      if (draggingSphereIndex >= 0 && draggingSphereIndex <= 5) {
-        const axis = Math.floor(draggingSphereIndex / 2);
-        const isMin = draggingSphereIndex % 2 === 0;
-        (isMin ? newMin : newMax)[axis] = toolCenter[axis];
-        this.setToolCenter(newMin, 'min');
-        this.setToolCenter(newMax, 'max');
-        return;
-      }
-      // corner spheres
-      if (draggingSphereIndex >= 6 && draggingSphereIndex <= 13) {
-        const idx = draggingSphereIndex;
-        if (idx < 10) {
-          newMin[0] = toolCenter[0];
-        } else {
-          newMax[0] = toolCenter[0];
-        }
-        if ([6, 7, 10, 11].includes(idx)) {
-          newMin[1] = toolCenter[1];
-        } else {
-          newMax[1] = toolCenter[1];
-        }
-        if (idx % 2 === 0) {
-          newMin[2] = toolCenter[2];
-        } else {
-          newMax[2] = toolCenter[2];
-        }
-        this.setToolCenter(newMin, 'min');
-        this.setToolCenter(newMax, 'max');
-      }
+      // For now, just return - we need clipping planes to update
+      return;
     }
   };
 
@@ -1603,14 +1483,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         if (imageData) {
           this.seriesInstanceUID = imageData.seriesInstanceUID;
           this._updateToolCentersFromViewport(viewport);
-          // Update all annotations' handles.toolCenter
-          const annotations =
-            getAnnotations(this.getToolName(), viewportId) || [];
-          annotations.forEach((annotation) => {
-            if (annotation.data && annotation.data.handles) {
-              annotation.data.handles.toolCenter = [...this.toolCenter];
-            }
-          });
+          // Clipping planes will be updated from VolumeCroppingTool via events
         }
       }
     }
@@ -1813,32 +1686,76 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     const { handles } = viewportAnnotation.data;
+    const clippingPlanes = handles.clippingPlanes;
 
-    if (handles.activeOperation === OPERATION.DRAG) {
+    if (
+      handles.activeOperation === OPERATION.DRAG &&
+      clippingPlanes &&
+      clippingPlanes.length >= 6
+    ) {
       if (handles.activeType === 'min') {
-        this.toolCenterMin[0] += delta[0];
-        this.toolCenterMin[1] += delta[1];
-        this.toolCenterMin[2] += delta[2];
+        // Update XMIN, YMIN, ZMIN planes
+        clippingPlanes[0].origin[0] += delta[0]; // XMIN
+        clippingPlanes[2].origin[1] += delta[1]; // YMIN
+        clippingPlanes[4].origin[2] += delta[2]; // ZMIN
       } else if (handles.activeType === 'max') {
-        this.toolCenterMax[0] += delta[0];
-        this.toolCenterMax[1] += delta[1];
-        this.toolCenterMax[2] += delta[2];
-      } else {
-        this.toolCenter[0] += delta[0];
-        this.toolCenter[1] += delta[1];
-        this.toolCenter[2] += delta[2];
+        // Update XMAX, YMAX, ZMAX planes
+        clippingPlanes[1].origin[0] += delta[0]; // XMAX
+        clippingPlanes[3].origin[1] += delta[1]; // YMAX
+        clippingPlanes[5].origin[2] += delta[2]; // ZMAX
       }
+
+      // Update this.clippingPlanes to keep in sync
+      this.clippingPlanes = clippingPlanes.map((p) => ({
+        origin: [...p.origin] as Types.Point3,
+        normal: [...p.normal] as Types.Point3,
+      }));
+
+      // Update all annotations with the new clipping planes
       const viewportsInfo = this._getViewportsInfo();
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        const enabledElement = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+        if (enabledElement) {
+          const annotations = this._getAnnotations(enabledElement);
+          annotations.forEach((annotation) => {
+            if (annotation.data?.handles) {
+              annotation.data.handles.clippingPlanes = this.clippingPlanes.map(
+                (p) => ({
+                  origin: [...p.origin] as Types.Point3,
+                  normal: [...p.normal] as Types.Point3,
+                })
+              );
+            }
+          });
+        }
+      });
+
+      // Update virtual annotations
+      if (this._virtualAnnotations?.length > 0) {
+        this._virtualAnnotations.forEach((annotation) => {
+          if (annotation.data?.handles) {
+            annotation.data.handles.clippingPlanes = this.clippingPlanes.map(
+              (p) => ({
+                origin: [...p.origin] as Types.Point3,
+                normal: [...p.normal] as Types.Point3,
+              })
+            );
+          }
+        });
+      }
+
       triggerAnnotationRenderForViewportIds(
         viewportsInfo.map(({ viewportId }) => viewportId)
       );
+
+      // Send event with clipping planes instead of toolCenter
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
-        toolCenter: this.toolCenter,
-        toolCenterMin: this.toolCenterMin,
-        toolCenterMax: this.toolCenterMax,
+        clippingPlanes: this.clippingPlanes,
         handleType: handles.activeType,
-        viewportOrientation: [],
         seriesInstanceUID: this.seriesInstanceUID,
       });
     }

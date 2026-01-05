@@ -242,6 +242,12 @@ class VolumeCroppingTool extends BaseTool {
         rotateIncrementDegrees: 2,
         rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
         rotateClippingPlanesIncrementDegrees: 5, // Rotation increment for clipping planes (higher = faster rotation)
+        orientationMarker: {
+          enabled: false,
+          size: 80, // Size in pixels
+          position: 'bottom-right', // 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+          interactive: true,
+        },
       },
     }
   ) {
@@ -2333,6 +2339,315 @@ class VolumeCroppingTool extends BaseTool {
       viewUp: newViewUp,
       focalPoint: newFocalPoint,
     });
+  };
+
+  /**
+   * Initialize SVG orientation marker for a viewport
+   */
+  _initializeSvgOrientationMarker = (viewport): void => {
+    if (!this.configuration.orientationMarker?.enabled) {
+      return;
+    }
+
+    const viewportId = viewport.id;
+    if (this.svgOrientationMarkers[viewportId]) {
+      return; // Already initialized
+    }
+
+    const { element } = viewport;
+    if (!element) {
+      return;
+    }
+
+    // Create container for SVG
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.pointerEvents = 'auto';
+    container.style.zIndex = '1000';
+
+    const size = this.configuration.orientationMarker.size || 80;
+    const position =
+      this.configuration.orientationMarker.position || 'bottom-right';
+
+    // Position container based on configuration
+    switch (position) {
+      case 'top-left':
+        container.style.top = '10px';
+        container.style.left = '10px';
+        break;
+      case 'top-right':
+        container.style.top = '50px'; // Moved down to avoid window level control
+        container.style.right = '10px';
+        break;
+      case 'bottom-left':
+        container.style.bottom = '10px';
+        container.style.left = '10px';
+        break;
+      case 'bottom-right':
+      default:
+        container.style.bottom = '130px'; // Positioned above the OrientationMarkerTool
+        container.style.right = '35px';
+        break;
+    }
+
+    // Create SVG element
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', size.toString());
+    svg.setAttribute('height', size.toString());
+    svg.style.display = 'block';
+    svg.style.cursor = 'pointer';
+
+    // Render truncated cube
+    this._renderSvgTruncatedCube(svg, size);
+
+    // Add click handler
+    if (this.configuration.orientationMarker.interactive) {
+      svg.addEventListener('click', (e) => {
+        this._handleSvgOrientationMarkerClick(e, viewport);
+      });
+    }
+
+    container.appendChild(svg);
+    element.appendChild(container);
+
+    this.svgOrientationMarkers[viewportId] = {
+      svgElement: svg,
+      container,
+      size,
+      position: {
+        x: position.includes('right') ? element.clientWidth - size - 10 : 10,
+        y: position.includes('bottom') ? element.clientHeight - size - 10 : 10,
+      },
+    };
+  };
+
+  /**
+   * Render orientation marker with central dot and radiating lines
+   * Design: Central blue dot with 6 white lines radiating outward, each labeled
+   */
+  _renderSvgTruncatedCube = (svg: SVGElement, size: number): void => {
+    const svgns = 'http://www.w3.org/2000/svg';
+
+    // Clear existing content
+    svg.innerHTML = '';
+
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const lineLength = size * 0.35; // Lines extend 35% of the size
+    const lineWidth = 2;
+
+    // Define the six directions with their labels, angles, and colors
+    // Colors match the sphereColors: Yellow (SAGITTAL/X), Green (CORONAL/Y), Red (AXIAL/Z)
+    const directions = [
+      { label: 'S', angle: -90, id: 'face-zPlus', color: '#FF0000' }, // Up (Superior) - Red (AXIAL/Z)
+      { label: 'I', angle: 90, id: 'face-zMinus', color: '#FF0000' }, // Down (Inferior) - Red (AXIAL/Z)
+      { label: 'R', angle: 180, id: 'face-xMinus', color: '#FFFF00' }, // Left (Right) - Yellow (SAGITTAL/X)
+      { label: 'L', angle: 0, id: 'face-xPlus', color: '#FFFF00' }, // Right (Left) - Yellow (SAGITTAL/X)
+      { label: 'P', angle: -135, id: 'face-yPlus', color: '#00FF00' }, // Diagonal up-left (Posterior) - Green (CORONAL/Y)
+      { label: 'A', angle: 45, id: 'face-yMinus', color: '#00FF00' }, // Diagonal down-right (Anterior) - Green (CORONAL/Y)
+    ];
+
+    // Draw central blue dot
+    const centerDot = document.createElementNS(svgns, 'circle');
+    centerDot.setAttribute('cx', centerX.toString());
+    centerDot.setAttribute('cy', centerY.toString());
+    centerDot.setAttribute('r', '4');
+    centerDot.setAttribute('fill', '#4A90E2'); // Blue color
+    centerDot.setAttribute('pointer-events', 'none');
+    svg.appendChild(centerDot);
+
+    // Draw lines and labels
+    directions.forEach((dir) => {
+      const angleRad = (dir.angle * Math.PI) / 180;
+      const endX = centerX + Math.cos(angleRad) * lineLength;
+      const endY = centerY + Math.sin(angleRad) * lineLength;
+
+      // Create clickable area (invisible line with larger hit area)
+      const clickableLine = document.createElementNS(svgns, 'line');
+      clickableLine.setAttribute('x1', centerX.toString());
+      clickableLine.setAttribute('y1', centerY.toString());
+      clickableLine.setAttribute('x2', endX.toString());
+      clickableLine.setAttribute('y2', endY.toString());
+      clickableLine.setAttribute('stroke', 'transparent');
+      clickableLine.setAttribute('stroke-width', '20'); // Large hit area
+      clickableLine.setAttribute('data-face-id', dir.id);
+      clickableLine.setAttribute('data-face-label', dir.label);
+      clickableLine.style.cursor = 'pointer';
+      svg.appendChild(clickableLine);
+
+      // Draw visible white line
+      const visibleLine = document.createElementNS(svgns, 'line');
+      visibleLine.setAttribute('x1', centerX.toString());
+      visibleLine.setAttribute('y1', centerY.toString());
+      visibleLine.setAttribute('x2', endX.toString());
+      visibleLine.setAttribute('y2', endY.toString());
+      visibleLine.setAttribute('stroke', '#FFFFFF');
+      visibleLine.setAttribute('stroke-width', lineWidth.toString());
+      visibleLine.setAttribute('pointer-events', 'none');
+      svg.appendChild(visibleLine);
+
+      // Draw label at the end of the line with color matching the axis
+      const labelX = centerX + Math.cos(angleRad) * (lineLength + size * 0.08);
+      const labelY = centerY + Math.sin(angleRad) * (lineLength + size * 0.08);
+      const text = document.createElementNS(svgns, 'text');
+      text.setAttribute('x', labelX.toString());
+      text.setAttribute('y', labelY.toString());
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'middle');
+      text.setAttribute('fill', dir.color);
+      text.setAttribute('font-size', '16');
+      text.setAttribute('font-weight', 'bold');
+      text.setAttribute('pointer-events', 'none');
+      text.textContent = dir.label;
+      svg.appendChild(text);
+
+      // Create clickable area around the label
+      const labelClickArea = document.createElementNS(svgns, 'circle');
+      labelClickArea.setAttribute('cx', labelX.toString());
+      labelClickArea.setAttribute('cy', labelY.toString());
+      labelClickArea.setAttribute('r', '12');
+      labelClickArea.setAttribute('fill', 'transparent');
+      labelClickArea.setAttribute('data-face-id', dir.id);
+      labelClickArea.setAttribute('data-face-label', dir.label);
+      labelClickArea.style.cursor = 'pointer';
+      svg.appendChild(labelClickArea);
+    });
+  };
+
+  /**
+   * Handle click on SVG orientation marker
+   */
+  _handleSvgOrientationMarkerClick = (e: MouseEvent, viewport): void => {
+    const target = e.target as SVGElement;
+    if (!target) {
+      return;
+    }
+
+    // Check if clicked on a line or label (both have data-face-id)
+    const faceId = target.getAttribute('data-face-id');
+    if (faceId) {
+      const faceLabel = target.getAttribute('data-face-label');
+      if (faceLabel) {
+        this._setCameraOrientationFromMarker(viewport, faceId, faceLabel);
+        return;
+      }
+    }
+  };
+
+  /**
+   * Set camera orientation based on clicked face/edge/corner
+   */
+  _setCameraOrientationFromMarker = (
+    viewport,
+    faceId: string,
+    faceLabel: string
+  ): void => {
+    if (!this.volumeDirectionVectors) {
+      return;
+    }
+
+    const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+    const camera = viewport.getCamera();
+    const { focalPoint } = camera;
+
+    let targetNormal: Types.Point3;
+    let targetViewUp: Types.Point3;
+
+    // Map face ID to orientation
+    if (faceId === 'face-zPlus' || faceLabel === 'S') {
+      // Superior - look from top down
+      targetNormal = [zDir[0], zDir[1], zDir[2]] as Types.Point3;
+      targetViewUp = [-yDir[0], -yDir[1], -yDir[2]] as Types.Point3;
+    } else if (faceId === 'face-zMinus' || faceLabel === 'I') {
+      // Inferior - look from bottom up
+      targetNormal = [-zDir[0], -zDir[1], -zDir[2]] as Types.Point3;
+      targetViewUp = [-yDir[0], -yDir[1], -yDir[2]] as Types.Point3;
+    } else if (faceId === 'face-xPlus' || faceLabel === 'L') {
+      // Left - look from left
+      targetNormal = [xDir[0], xDir[1], xDir[2]] as Types.Point3;
+      targetViewUp = [zDir[0], zDir[1], zDir[2]] as Types.Point3;
+    } else if (faceId === 'face-xMinus' || faceLabel === 'R') {
+      // Right - look from right
+      targetNormal = [-xDir[0], -xDir[1], -xDir[2]] as Types.Point3;
+      targetViewUp = [zDir[0], zDir[1], zDir[2]] as Types.Point3;
+    } else if (faceId === 'face-yMinus' || faceLabel === 'A') {
+      // Anterior - look from front
+      targetNormal = [-yDir[0], -yDir[1], -yDir[2]] as Types.Point3;
+      targetViewUp = [zDir[0], zDir[1], zDir[2]] as Types.Point3;
+    } else if (faceId === 'face-yPlus' || faceLabel === 'P') {
+      // Posterior - look from back
+      targetNormal = [yDir[0], yDir[1], yDir[2]] as Types.Point3;
+      targetViewUp = [zDir[0], zDir[1], zDir[2]] as Types.Point3;
+    } else {
+      return;
+    }
+
+    // Calculate rotation to align camera with target normal
+    const currentNormal = camera.viewPlaneNormal;
+    const currentNormalVec = vec3.fromValues(
+      currentNormal[0],
+      currentNormal[1],
+      currentNormal[2]
+    );
+    const targetNormalVec = vec3.fromValues(
+      targetNormal[0],
+      targetNormal[1],
+      targetNormal[2]
+    );
+
+    vec3.normalize(currentNormalVec, currentNormalVec);
+    vec3.normalize(targetNormalVec, targetNormalVec);
+
+    const rotationAxis = vec3.create();
+    vec3.cross(rotationAxis, currentNormalVec, targetNormalVec);
+    const axisLength = vec3.length(rotationAxis);
+
+    if (axisLength < 0.001) {
+      // Already aligned or opposite
+      const dot = vec3.dot(currentNormalVec, targetNormalVec);
+      if (Math.abs(dot - 1.0) < 0.001) {
+        viewport.setCamera({
+          viewPlaneNormal: targetNormal,
+          viewUp: targetViewUp,
+        });
+        viewport.resetCamera();
+        viewport.render();
+        return;
+      }
+    }
+
+    vec3.normalize(rotationAxis, rotationAxis);
+    const dot = vec3.dot(currentNormalVec, targetNormalVec);
+    const angle = Math.acos(vtkMath.clampValue(dot, -1.0, 1.0));
+
+    this._rotateCamera(
+      viewport,
+      focalPoint,
+      [rotationAxis[0], rotationAxis[1], rotationAxis[2]] as Types.Point3,
+      angle
+    );
+
+    viewport.setCamera({
+      viewUp: targetViewUp,
+    });
+    viewport.resetCamera();
+    viewport.render();
+  };
+
+  /**
+   * Clean up SVG orientation marker for a viewport
+   */
+  _cleanupSvgOrientationMarker = (viewportId: string): void => {
+    const marker = this.svgOrientationMarkers[viewportId];
+    if (!marker) {
+      return;
+    }
+
+    if (marker.container && marker.container.parentNode) {
+      marker.container.parentNode.removeChild(marker.container);
+    }
+
+    delete this.svgOrientationMarkers[viewportId];
   };
 }
 
