@@ -127,9 +127,9 @@ const OPERATION = {
  * // Configure with custom colors and settings
  * toolGroup.setToolConfiguration(VolumeCroppingControlTool.toolName, {
  *   lineColors: {
- *     AXIAL: [1.0, 0.0, 0.0],    // Red for axial views
- *     CORONAL: [0.0, 1.0, 0.0],  // Green for coronal views
- *     SAGITTAL: [1.0, 1.0, 0.0], // Yellow for sagittal views
+ *     AXIAL: [1.0, 0.0, 0.0],    // Red for Z-axis planes
+ *     CORONAL: [0.0, 1.0, 0.0],  // Green for Y-axis planes
+ *     SAGITTAL: [1.0, 1.0, 0.0], // Yellow for X-axis planes
  *   },
  *   lineWidth: 2.0,
  *   extendReferenceLines: true,
@@ -168,9 +168,10 @@ const OPERATION = {
  * @property {boolean} mobile.enabled - Enable mobile touch interactions (default: false)
  * @property {number} mobile.opacity - Opacity for mobile interactions (default: 0.8)
  * @property {Object} lineColors - Color configuration for different viewport orientations
- * @property {number[]} lineColors.AXIAL - RGB color array for axial viewport lines [r, g, b] (default: [1.0, 0.0, 0.0])
- * @property {number[]} lineColors.CORONAL - RGB color array for coronal viewport lines [r, g, b] (default: [0.0, 1.0, 0.0])
- * @property {number[]} lineColors.SAGITTAL - RGB color array for sagittal viewport lines [r, g, b] (default: [1.0, 1.0, 0.0])
+ * @property {number[]} lineColors.AXIAL - RGB color array for Z-axis planes [r, g, b] (default: [1.0, 0.0, 0.0])
+ * @property {number[]} lineColors.CORONAL - RGB color array for Y-axis planes [r, g, b] (default: [0.0, 1.0, 0.0])
+ * @property {number[]} lineColors.SAGITTAL - RGB color array for X-axis planes [r, g, b] (default: [1.0, 1.0, 0.0])
+ * Note: These keys use orientation names for API compatibility, but refer to volume axes (X, Y, Z), not viewport orientations.
  * @property {number[]} lineColors.UNKNOWN - RGB color array for unknown orientation lines [r, g, b] (default: [0.0, 0.0, 1.0])
  * @property {number} lineWidth - Default width of reference lines in pixels (default: 1.5)
  * @property {number} lineWidthActive - Width of reference lines when actively dragging in pixels (default: 2.5)
@@ -222,9 +223,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
           opacity: 0.8,
         },
         lineColors: {
-          AXIAL: [1.0, 0.0, 0.0], //  Red for axial
-          CORONAL: [0.0, 1.0, 0.0], // Green for coronal
-          SAGITTAL: [1.0, 1.0, 0.0], // Yellow for sagittal
+          AXIAL: [1.0, 0.0, 0.0], //  Red for Z-axis planes
+          CORONAL: [0.0, 1.0, 0.0], // Green for Y-axis planes
+          SAGITTAL: [1.0, 1.0, 0.0], // Yellow for X-axis planes
           UNKNOWN: [0.0, 0.0, 1.0], // Blue for unknown
         },
         lineWidth: 1.5,
@@ -496,8 +497,17 @@ class VolumeCroppingControlTool extends AnnotationTool {
     try {
       canvasStart = viewport.worldToCanvas(lineStart);
       canvasEnd = viewport.worldToCanvas(lineEnd);
+      console.log(
+        `[VolumeCroppingControlTool] _findLineBoundsIntersection: canvasStart:`,
+        canvasStart,
+        `canvasEnd:`,
+        canvasEnd
+      );
     } catch (error) {
-      // If projection fails, return null
+      console.log(
+        `[VolumeCroppingControlTool] _findLineBoundsIntersection: worldToCanvas failed:`,
+        error
+      );
       return null;
     }
 
@@ -509,20 +519,63 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const clippedStart = vec2.clone(canvasStart);
     const clippedEnd = vec2.clone(canvasEnd);
 
+    console.log(
+      `[VolumeCroppingControlTool] _findLineBoundsIntersection: Before clipping - start: [${clippedStart[0]}, ${clippedStart[1]}], end: [${clippedEnd[0]}, ${clippedEnd[1]}], canvasBox: [${canvasBox[0]}, ${canvasBox[1]}, ${canvasBox[2]}, ${canvasBox[3]}]`
+    );
+
     // Check if line is valid before clipping
     const startValid = !isNaN(clippedStart[0]) && !isNaN(clippedStart[1]);
     const endValid = !isNaN(clippedEnd[0]) && !isNaN(clippedEnd[1]);
     if (!startValid || !endValid) {
+      console.log(
+        `[VolumeCroppingControlTool] _findLineBoundsIntersection: Invalid canvas coordinates before clipping`
+      );
       return null;
     }
 
-    liangBarksyClip(clippedStart, clippedEnd, canvasBox);
+    const clipResult = liangBarksyClip(clippedStart, clippedEnd, canvasBox);
+
+    console.log(
+      `[VolumeCroppingControlTool] _findLineBoundsIntersection: After clipping - start: [${clippedStart[0]}, ${clippedStart[1]}], end: [${clippedEnd[0]}, ${clippedEnd[1]}], clipResult: ${clipResult}`
+    );
+
+    // Check if line actually intersects the viewport bounds
+    // liangBarksyClip returns 1 (INSIDE) if line intersects, 0 (OUTSIDE) if it doesn't
+    if (clipResult === 0) {
+      console.log(
+        `[VolumeCroppingControlTool] _findLineBoundsIntersection: Line does not intersect viewport bounds`
+      );
+      return null;
+    }
 
     // Check if clipped line is still valid
     const clippedStartValid =
       !isNaN(clippedStart[0]) && !isNaN(clippedStart[1]);
     const clippedEndValid = !isNaN(clippedEnd[0]) && !isNaN(clippedEnd[1]);
     if (!clippedStartValid || !clippedEndValid) {
+      console.log(
+        `[VolumeCroppingControlTool] _findLineBoundsIntersection: Invalid coordinates after clipping`
+      );
+      return null;
+    }
+
+    // Verify that clipped coordinates are actually within the viewport bounds
+    const [xMin, yMin, xMax, yMax] = canvasBox;
+    const startInBounds =
+      clippedStart[0] >= xMin - 1 &&
+      clippedStart[0] <= xMax + 1 &&
+      clippedStart[1] >= yMin - 1 &&
+      clippedStart[1] <= yMax + 1;
+    const endInBounds =
+      clippedEnd[0] >= xMin - 1 &&
+      clippedEnd[0] <= xMax + 1 &&
+      clippedEnd[1] >= yMin - 1 &&
+      clippedEnd[1] <= yMax + 1;
+
+    if (!startInBounds || !endInBounds) {
+      console.log(
+        `[VolumeCroppingControlTool] _findLineBoundsIntersection: Clipped coordinates outside viewport bounds. start: [${clippedStart[0]}, ${clippedStart[1]}], end: [${clippedEnd[0]}, ${clippedEnd[1]}], bounds: [${xMin}, ${yMin}, ${xMax}, ${yMax}]`
+      );
       return null;
     }
 
@@ -1432,15 +1485,21 @@ class VolumeCroppingControlTool extends AnnotationTool {
     );
     console.log(
       '[VolumeCroppingControlTool] Reference lines summary:',
-      referenceLines.map((line, idx) => ({
-        index: idx,
-        planeIndex: line[4],
-        type: line[3],
-        orientation:
-          line[4] < 2 ? 'SAGITTAL' : line[4] < 4 ? 'CORONAL' : 'AXIAL',
-        start: line[1],
-        end: line[2],
-      }))
+      referenceLines.map((line, idx) => {
+        const planeIndex = line[4];
+        const axis = planeIndex < 2 ? 'X' : planeIndex < 4 ? 'Y' : 'Z';
+        const colorKey =
+          planeIndex < 2 ? 'SAGITTAL' : planeIndex < 4 ? 'CORONAL' : 'AXIAL';
+        return {
+          index: idx,
+          planeIndex: planeIndex,
+          type: line[3],
+          axis: axis,
+          colorKey: colorKey,
+          start: line[1],
+          end: line[2],
+        };
+      })
     );
 
     data.referenceLines = referenceLines;
@@ -1484,22 +1543,24 @@ class VolumeCroppingControlTool extends AnnotationTool {
         }
       }
 
-      // Get color based on plane index
+      // Get color based on plane axis (X, Y, or Z)
       // PLANEINDEX: XMIN=0, XMAX=1, YMIN=2, YMAX=3, ZMIN=4, ZMAX=5
-      // Map to orientations: X->SAGITTAL, Y->CORONAL, Z->AXIAL
-      let orientation = null;
+      // Note: Color configuration uses orientation names (SAGITTAL, CORONAL, AXIAL) as keys
+      // for historical/API compatibility, but these refer to the volume's X, Y, Z axes, not viewport orientations
+      let colorKey: 'SAGITTAL' | 'CORONAL' | 'AXIAL' | null = null;
       if (planeIndex === 0 || planeIndex === 1) {
-        orientation = 'SAGITTAL'; // X planes
+        colorKey = 'SAGITTAL'; // X-axis planes (maps to SAGITTAL color config)
       } else if (planeIndex === 2 || planeIndex === 3) {
-        orientation = 'CORONAL'; // Y planes
+        colorKey = 'CORONAL'; // Y-axis planes (maps to CORONAL color config)
       } else if (planeIndex === 4 || planeIndex === 5) {
-        orientation = 'AXIAL'; // Z planes
+        colorKey = 'AXIAL'; // Z-axis planes (maps to AXIAL color config)
       }
 
-      // Use lineColors from configuration
+      // Use lineColors from configuration (keys are orientation names for API compatibility)
       const lineColors = this.configuration.lineColors || {};
-      const colorArr = lineColors[orientation] ||
-        lineColors.UNKNOWN || [1.0, 0.0, 0.0]; // fallback to red
+      const colorArr = colorKey
+        ? lineColors[colorKey] || lineColors.UNKNOWN || [1.0, 0.0, 0.0]
+        : [1.0, 0.0, 0.0]; // fallback to red
       // Convert [r,g,b] to rgb string if needed
       const color = Array.isArray(colorArr)
         ? `rgb(${colorArr.map((v) => Math.round(v * 255)).join(',')})`
@@ -1522,8 +1583,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
 
       const lineUID = `plane_${planeIndex}`;
+      const axisName = planeIndex < 2 ? 'X' : planeIndex < 4 ? 'Y' : 'Z';
       console.log(
-        `[VolumeCroppingControlTool] Drawing line ${lineIndex} (plane ${planeIndex}, ${type}, ${orientation}):`,
+        `[VolumeCroppingControlTool] Drawing line ${lineIndex} (plane ${planeIndex}, ${type}, axis ${axisName}, colorKey ${colorKey}):`,
         {
           lineUID,
           intersections: intersections.length,
