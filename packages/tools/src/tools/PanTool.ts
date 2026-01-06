@@ -18,7 +18,7 @@ class PanTool extends BaseTool {
         //put ignore in false
         ignoreX: false,
         ignoreY: false,
-        ignoreZ: false,
+        ignoreZ: false
       },
     }
   ) {
@@ -107,6 +107,8 @@ class PanTool extends BaseTool {
     const deltaPointsWorld = deltaPoints.world;
     const deltaPointsCanvas = deltaPoints.canvas;
 
+
+
     // This occurs when the mouse event is fired but the mouse hasn't moved a full pixel yet (high resolution mice)
     if (
       deltaPointsWorld[0] === 0 &&
@@ -116,17 +118,17 @@ class PanTool extends BaseTool {
       return;
     }
     // Block X-axis movement if ignoreX is enabled
-    if (this.configuration.ignoreX) {
-      deltaPointsWorld[0] = 0;
+    if(this.configuration.ignoreX){
+      deltaPointsWorld[0] =  0
     }
     // Block Y-axis movement if ignoreY is enabled
-    if (this.configuration.ignoreY) {
-      deltaPointsWorld[1] = 0;
+        if(this.configuration.ignoreY){
+      deltaPointsWorld[1] =  0
     }
 
     // Block Z-axis movement if ignoreZ is enabled
-    if (this.configuration.ignoreZ) {
-      deltaPointsWorld[2] = 0;
+        if(this.configuration.ignoreZ){
+      deltaPointsWorld[2] =  0
     }
     const viewport = enabledElement.viewport;
     const camera = viewport.getCamera();

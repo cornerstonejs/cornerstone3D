@@ -29,10 +29,7 @@ import type { Types } from '@cornerstonejs/core';
 const { StrategyCallbacks } = Enums;
 
 export const hexCursorComposition = {
-  [StrategyCallbacks.CalculateCursorGeometry]: (
-    enabledElement,
-    operationData
-  ) => {
+  [StrategyCallbacks.CalculateCursorGeometry]: (enabledElement, operationData) => {
     const { viewport } = enabledElement;
     const { configuration, hoverData } = operationData;
     const { brushCursor, centerCanvas } = hoverData;
@@ -94,9 +91,7 @@ hexCursorComposition[StrategyCallbacks.RenderCursor] = (
   drawPolylineSvg(svgDrawingHelper, annotationUID, 'hexagon', polygonCanvas, {
     color: `rgb(${brushCursor.metadata.segmentColor?.slice(0, 3) ?? [0, 255, 0]})`,
     lineDash:
-      operationData.centerSegmentIndexInfo.segmentIndex === 0
-        ? [1, 2]
-        : undefined,
+      operationData.centerSegmentIndexInfo.segmentIndex === 0 ? [1, 2] : undefined,
     closed: true,
   });
 };
@@ -137,10 +132,7 @@ const initializeHexagon = {
       transformWorldToIndex(segmentationImageData, worldPoint)
     );
 
-    operationData.isInObject = createPointInPolygon(
-      worldPolygon,
-      segmentationImageData
-    );
+    operationData.isInObject = createPointInPolygon(worldPolygon, segmentationImageData);
     operationData.isInObjectBoundsIJK = getBoundingBoxAroundShapeIJK(
       polygonIJK,
       segmentationImageData.getDimensions()
@@ -182,19 +174,15 @@ Important details:
 Register the new strategy function with the `BrushTool` configuration inside your `ToolGroup`:
 
 ```ts
-import {
-  addTool,
-  BrushTool,
-  ToolGroupManager,
-  Enums,
-} from '@cornerstonejs/tools';
+import { addTool, BrushTool, ToolGroupManager, Enums } from '@cornerstonejs/tools';
 import { fillInsideHexagon } from './strategies/fillHexagon';
 
 addTool(BrushTool);
 const toolGroup = ToolGroupManager.createToolGroup('segmentationGroup');
 toolGroup.addTool(BrushTool.toolName);
 
-const brushConfig = toolGroup.getToolConfiguration(BrushTool.toolName) ?? {};
+const brushConfig =
+  toolGroup.getToolConfiguration(BrushTool.toolName) ?? {};
 
 toolGroup.setToolConfiguration(
   BrushTool.toolName,

@@ -1,5 +1,5 @@
-import { utilities } from '@cornerstonejs/tools';
-export * from './RTSS';
+import { utilities } from "@cornerstonejs/tools";
+export * from "./RTSS";
 
 const { generateContourSetsFromLabelmap } = utilities.contours;
 
