@@ -1405,16 +1405,12 @@ class Viewport {
    *          based on the active camera settings.
    */
   public getAspectRatio(): Point2 {
-    if (this.options?.aspectRatio) {
-      return this.options.aspectRatio;
-    }
-
     const { aspectRatio } = this.getCamera();
-    return aspectRatio || [1, 1];
+    return aspectRatio ?? this.options?.aspectRatio ?? [1, 1];
   }
 
   /**
-   * Sets the aspect ratio of the viewport using the provided 2D point
+   * Sets the aspect ratio of the viewport (canvas) using the provided 2D point
    * `[widthRatio, heightRatio]`.
    *
    * This updates the VTK camera's **projection matrix** to apply axis-based
@@ -1513,7 +1509,7 @@ class Viewport {
   }
 
   protected getCameraNoRotation(): ICamera {
-    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
+    const vtkCamera = this.getVtkActiveCamera();
 
     // Helper function to replace NaN vectors with defaults
     const sanitizeVector = (vector: Point3, defaultValue: Point3): Point3 => {
@@ -1575,7 +1571,7 @@ class Viewport {
     cameraInterface: ICamera,
     storeAsInitialCamera = false
   ): void {
-    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
+    const vtkCamera = this.getVtkActiveCamera();
     const previousCamera = this.getCamera();
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
