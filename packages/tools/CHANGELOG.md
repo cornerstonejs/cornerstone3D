@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.3...v4.15.4) (2026-01-06)
+
+### Bug Fixes
+
+- **segmentation:** Added null check for viewport in onLabelmapSegmentationDataModified. ([#2536](https://github.com/cornerstonejs/cornerstone3D/issues/2536)) ([e4cf1d9](https://github.com/cornerstonejs/cornerstone3D/commit/e4cf1d9e5463d1033c338475ef1b4d9e1b75239c))
+
 ## [4.15.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.2...v4.15.3) (2026-01-06)
 
 **Note:** Version bump only for package @cornerstonejs/tools
