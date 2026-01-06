@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
   await visitExample(page, 'mprReformat', 2000);
 });
 
-test.describe('MPR Reformat Visual Tests shouldUpdateThis', () => {
+test.describe('MPR Reformat Visual Tests', () => {
   test('should match screenshot before interaction', async ({ page }) => {
     const screenshotLocator = page.locator('#content > div');
 
