@@ -1,6 +1,5 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
-import type { vtkCamera as cameraType } from '@kitware/vtk.js/Rendering/Core/Camera';
 import { getProjectionScaleIndices } from '../helpers/getProjectionScaleIndices';
 
 interface ICameraInitialValues {
@@ -27,19 +26,23 @@ interface ICameraInitialValues {
   aspectRatio?: number[];
 }
 
-export interface extendedVtkCamera extends cameraType {
-  /**
-   * Get the aspectRatio of the viewport
-   *  @defaultValue [1, 1]
-   */
-  getAspectRatio(): [x: number, y: number];
+declare module '@kitware/vtk.js/Rendering/Core/Camera' {
+  export interface vtkCamera {
+    /**
+     * Get the aspectRatio of the viewport
+     *  @defaultValue [1, 1]
+     */
+    getAspectRatio(): [x: number, y: number];
 
-  /**
-   * Set the aspectRatio of the viewport
-   * @param aspectRatio - aspectRatio of the viewport in x and y axis
-   */
-  setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
+    /**
+     * Set the aspectRatio of the viewport
+     * @param aspectRatio - aspectRatio of the viewport in x and y axis
+     */
+    setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
+  }
 }
+
+export type extendedVtkCamera = vtkCamera;
 
 /**
  * extendedVtkCamera - A derived class of the core vtkCamera class
