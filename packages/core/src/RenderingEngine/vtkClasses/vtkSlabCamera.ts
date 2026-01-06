@@ -747,6 +747,17 @@ export interface vtkSlabCamera extends vtkObject {
   setIsPerformingCoordinateTransformation(status: boolean): void;
 
   computeCameraLightTransform(): void;
+  /**
+   * Get the aspectRatio of the viewport
+   *  @defaultValue [1, 1]
+   */
+  getAspectRatio(): [x: number, y: number];
+
+  /**
+   * Set the aspectRatio of the viewport
+   * @param aspectRatio - aspectRatio of the viewport in x and y axis
+   */
+  setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
 }
 
 const DEFAULT_VALUES = {
