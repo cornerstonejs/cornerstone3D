@@ -208,8 +208,8 @@ class WindowLevelTool extends BaseTool {
     return !Number.isFinite(ratio)
       ? DEFAULT_IMAGE_DYNAMIC_RANGE
       : ratio > 1
-        ? Math.round(ratio)
-        : ratio;
+      ? Math.round(ratio)
+      : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {

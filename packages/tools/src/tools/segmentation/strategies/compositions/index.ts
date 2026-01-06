@@ -23,5 +23,5 @@ export default {
   labelmapStatistics,
   ensureSegmentationVolumeFor3DManipulation,
   ensureImageVolumeFor3DManipulation,
-  circularCursor,
+  circularCursor
 };

@@ -60,7 +60,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
     viewportIdsToRender: string[];
     centerCanvas?: Array<number>;
     viewport: Types.IViewport;
-  };
+  }
   memo?: LabelmapMemo;
   modified?: boolean;
 };
@@ -183,24 +183,18 @@ export default class BrushStrategy {
     this.configurationName = name;
 
     // Ensuring backwards compatibility - always have a circular cursor if none is defined
-    const cursorGeometryInitializer = initializers.find((init) =>
-      init.hasOwnProperty(StrategyCallbacks.CalculateCursorGeometry)
-    );
-    const renderCursorInitializer = initializers.find((init) =>
-      init.hasOwnProperty(StrategyCallbacks.RenderCursor)
-    );
+    const cursorGeometryInitializer = initializers.find(init => init.hasOwnProperty(StrategyCallbacks.CalculateCursorGeometry))
+    const renderCursorInitializer = initializers.find(init => init.hasOwnProperty(StrategyCallbacks.RenderCursor));
 
-    if (!cursorGeometryInitializer) {
+    if(!cursorGeometryInitializer) {
       initializers.push({
-        [StrategyCallbacks.CalculateCursorGeometry]:
-          compositions.circularCursor.calculateCursorGeometry,
+        [StrategyCallbacks.CalculateCursorGeometry]: compositions.circularCursor.calculateCursorGeometry
       });
     }
 
-    if (!renderCursorInitializer) {
+    if(!renderCursorInitializer) {
       initializers.push({
-        [StrategyCallbacks.RenderCursor]:
-          compositions.circularCursor.renderCursor,
+        [StrategyCallbacks.RenderCursor]: compositions.circularCursor.renderCursor
       });
     }
 
@@ -417,6 +411,7 @@ export default class BrushStrategy {
     enabledElement: Types.IEnabledElement,
     operationData: InitializedOperationData
   ) => void;
+
 }
 /**
  * Adds a list method to the set of defined methods.
