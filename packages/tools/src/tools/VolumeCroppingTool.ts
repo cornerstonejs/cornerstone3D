@@ -683,6 +683,16 @@ class VolumeCroppingTool extends BaseTool {
       this._updateHandlesVisibility();
     }
 
+    // When turning clipping planes on, notify the control tool so it can initialize
+    if (visible && viewport && this.originalClippingPlanes?.length >= 6) {
+      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+        originalClippingPlanes: this.originalClippingPlanes,
+        viewportId: viewport.id,
+        renderingEngineId: viewport.renderingEngineId,
+        seriesInstanceUID: this.seriesInstanceUID,
+      });
+    }
+
     viewport.render();
   }
 
