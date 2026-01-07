@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.4...v4.15.5) (2026-01-07)
+
+### Bug Fixes
+
+- **Annotation Tools:** Fix active volume to show correct cachedStats (especially on fusion viewport) ([#2418](https://github.com/cornerstonejs/cornerstone3D/issues/2418)) ([ec1d3dd](https://github.com/cornerstonejs/cornerstone3D/commit/ec1d3ddbea46666aa361711910a4745577e8d301))
+
 ## [4.15.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.3...v4.15.4) (2026-01-06)
 
 ### Bug Fixes
