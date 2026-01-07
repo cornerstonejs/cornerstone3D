@@ -758,6 +758,25 @@ class SplineROITool extends ContourSegmentationBaseTool {
     element.removeEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
   };
 
+  // Compare polylines in canvas space with a small tolerance
+  private _arePolylinesEqual = (
+    a: Types.Point2[] | undefined,
+    b: Types.Point2[] | undefined,
+    eps = 0.001
+  ) => {
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (
+        Math.abs(a[i][0] - b[i][0]) > eps ||
+        Math.abs(a[i][1] - b[i][1]) > eps
+      ) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   protected isContourSegmentationTool(): boolean {
     // Disable contour segmentation behavior because it shall be activated only
     // for SplineContourSegmentationTool
@@ -816,16 +835,26 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const spline = this._updateSplineInstance(element, annotation);
       const splinePolylineCanvas = spline.getPolylinePoints();
 
-      this.updateContourPolyline(
-        annotation,
-        {
-          points: splinePolylineCanvas,
-          closed: data.contour.closed,
-          targetWindingDirection: ContourWindingDirection.Clockwise,
-        },
-        viewport,
-        { updateWindingDirection: data.contour.closed }
-      );
+      // Compare with existing contour polyline (converted to canvas)
+      const existingPolylineCanvas =
+        annotation.data.contour.polyline?.map(worldToCanvas) || [];
+
+      // Only update/invalidate if geometry actually changed
+      if (
+        !this._arePolylinesEqual(existingPolylineCanvas, splinePolylineCanvas)
+      ) {
+        const isClosed = data.contour.closed;
+        this.updateContourPolyline(
+          annotation,
+          {
+            points: splinePolylineCanvas,
+            closed: isClosed,
+            targetWindingDirection: ContourWindingDirection.Clockwise,
+          },
+          viewport,
+          { updateWindingDirection: isClosed }
+        );
+      }
     });
 
     // Let the base class render the contour
