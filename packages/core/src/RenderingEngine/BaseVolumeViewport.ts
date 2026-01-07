@@ -11,10 +11,11 @@ import {
   RENDERING_DEFAULTS,
   VIEWPORT_PRESETS,
 } from '../constants';
-import type { BlendModes, InterpolationType, OrientationAxis } from '../enums';
+import type { BlendModes, InterpolationType } from '../enums';
 import {
   Events,
   MetadataModules,
+  OrientationAxis,
   ViewportStatus,
   VOILUTFunctionType,
 } from '../enums';
@@ -2200,10 +2201,10 @@ abstract class BaseVolumeViewport extends Viewport {
         );
       }
     } else if (typeof orientation === 'string') {
-      if (orientation === 'acquisition') {
+      if (orientation === OrientationAxis.ACQUISITION) {
         return this._getAcquisitionPlaneOrientation();
       } else if (
-        orientation === 'reformat' ||
+        orientation === OrientationAxis.REFORMAT ||
         (orientation as string).includes('_reformat')
       ) {
         return getCameraVectors(this, {
@@ -2218,7 +2219,9 @@ abstract class BaseVolumeViewport extends Viewport {
     throw new Error(
       `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
         MPR_CAMERA_VALUES
-      ).join(', ')}`
+      ).join(
+        ', '
+      )}, ${OrientationAxis.ACQUISITION}, ${OrientationAxis.REFORMAT}`
     );
   }
 
