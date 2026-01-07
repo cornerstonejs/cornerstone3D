@@ -179,6 +179,27 @@ addToggleButtonToToolbar({
   },
 });
 
+addToggleButtonToToolbar({
+  title: 'Rotate Clipping Planes',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    // Get the tool group for the 3D viewport
+    const toolGroupVRT =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+    // Get the VolumeCroppingTool instance from the tool group
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+    // Toggle the rotate planes on drag setting
+    if (
+      croppingTool &&
+      typeof croppingTool.setRotatePlanesOnDrag === 'function' &&
+      typeof croppingTool.getRotatePlanesOnDrag === 'function'
+    ) {
+      const currentState = croppingTool.getRotatePlanesOnDrag();
+      croppingTool.setRotatePlanesOnDrag(!currentState);
+    }
+  },
+});
+
 const viewportColors = {
   [viewportId1]: 'rgb(200, 0, 0)',
   [viewportId2]: 'rgb(0, 200, 0)',
