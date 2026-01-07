@@ -340,131 +340,43 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const n2 = viewPlaneNormal;
     const p2 = viewPlanePoint;
 
-    // Direction of intersection line is cross product of normals
-    const direction = vec3.create();
-    vec3.cross(direction, n1, n2);
-    const dirLength = vec3.length(direction);
+    const dir = vec3.create();
+    vec3.cross(dir, n1, n2);
+    const dirLenSq = vec3.squaredLength(dir);
 
-    // If planes are parallel, no intersection
-    if (dirLength < 1e-6) {
-      return null;
+    if (dirLenSq < 1e-10) {
+      return null; // planes effectively parallel
     }
-
-    vec3.normalize(direction, direction);
-
-    // Find a point on the intersection line
-    // We need a point that satisfies both plane equations:
-    // n1 · (point - p1) = 0  => n1 · point = n1 · p1 = d1
-    // n2 · (point - p2) = 0  => n2 · point = n2 · p2 = d2
 
     const d1 = vtkMath.dot(n1, p1);
     const d2 = vtkMath.dot(n2, p2);
 
-    // Use a more robust method: find a direction vector that's not parallel to either plane
-    // and use it to construct a line that will definitely intersect both planes
-    // We'll use n1 as a direction (since it's perpendicular to plane1, it will intersect plane1 at p1)
-    // But we need to ensure it's not parallel to plane2
+    // point = (d1 (n2 × dir) + d2 (dir × n1)) / |dir|^2
+    const term1 = vec3.create();
+    const term2 = vec3.create();
+    vec3.cross(term1, n2, dir);
+    vec3.scale(term1, term1, d1);
+    vec3.cross(term2, dir, n1);
+    vec3.scale(term2, term2, d2);
 
-    const n1DotN2 = vtkMath.dot(n1, n2);
-    let lineDir: Types.Point3;
+    const point = vec3.create();
+    vec3.add(point, term1, term2);
+    vec3.scale(point, point, 1 / dirLenSq);
 
-    // If n1 is not parallel to plane2 (n1 · n2 != 0), we can use n1 as line direction
-    if (Math.abs(n1DotN2) > 1e-6) {
-      lineDir = n1;
-    } else {
-      // n1 is parallel to plane2, use n2 instead (it's perpendicular to plane2)
-      lineDir = n2;
+    if (
+      !Number.isFinite(point[0]) ||
+      !Number.isFinite(point[1]) ||
+      !Number.isFinite(point[2])
+    ) {
+      return null;
     }
 
-    // Create a line through p1 in the direction of lineDir
-    // This line will intersect plane1 at p1, and we'll find where it intersects plane2
-    const plane2Eq = csUtils.planar.planeEquation(n2, p2);
-    const lineStart = p1;
-    const lineEnd: Types.Point3 = [
-      p1[0] + lineDir[0] * 10000,
-      p1[1] + lineDir[1] * 10000,
-      p1[2] + lineDir[2] * 10000,
-    ];
-
-    let intersectionPoint: Types.Point3;
-    try {
-      intersectionPoint = csUtils.planar.linePlaneIntersection(
-        lineStart,
-        lineEnd,
-        plane2Eq
-      );
-
-      // Check if result is valid (not NaN)
-      if (
-        isNaN(intersectionPoint[0]) ||
-        isNaN(intersectionPoint[1]) ||
-        isNaN(intersectionPoint[2])
-      ) {
-        // Fallback: use algebraic method
-        // Find a point on the intersection line by solving the system
-        // We'll use the fact that any point on the line can be written as:
-        // point = p1 + t * direction (for some t)
-        // But we need it to also satisfy n2 · point = d2
-        // So: n2 · (p1 + t * direction) = d2
-        // => n2 · p1 + t * (n2 · direction) = d2
-        // => t = (d2 - n2 · p1) / (n2 · direction)
-
-        const directionArr: Types.Point3 = [
-          direction[0],
-          direction[1],
-          direction[2],
-        ];
-        const n2DotDir = vtkMath.dot(n2, directionArr);
-        if (Math.abs(n2DotDir) > 1e-6) {
-          const t = (d2 - vtkMath.dot(n2, p1)) / n2DotDir;
-          intersectionPoint = [
-            p1[0] + direction[0] * t,
-            p1[1] + direction[1] * t,
-            p1[2] + direction[2] * t,
-          ];
-        } else {
-          // direction is parallel to plane2, use alternative
-          const n1DotDir = vtkMath.dot(n1, directionArr);
-          if (Math.abs(n1DotDir) > 1e-6) {
-            const t = (d1 - vtkMath.dot(n1, p2)) / n1DotDir;
-            intersectionPoint = [
-              p2[0] + direction[0] * t,
-              p2[1] + direction[1] * t,
-              p2[2] + direction[2] * t,
-            ];
-          } else {
-            // Last resort: use midpoint
-            intersectionPoint = [
-              (p1[0] + p2[0]) / 2,
-              (p1[1] + p2[1]) / 2,
-              (p1[2] + p2[2]) / 2,
-            ];
-          }
-        }
-      }
-    } catch (error) {
-      // If line-plane intersection fails, use algebraic method
-      const directionArr: Types.Point3 = [
-        direction[0],
-        direction[1],
-        direction[2],
-      ];
-      const n2DotDir = vtkMath.dot(n2, directionArr);
-      if (Math.abs(n2DotDir) > 1e-6) {
-        const t = (d2 - vtkMath.dot(n2, p1)) / n2DotDir;
-        intersectionPoint = [
-          p1[0] + direction[0] * t,
-          p1[1] + direction[1] * t,
-          p1[2] + direction[2] * t,
-        ];
-      } else {
-        intersectionPoint = p1;
-      }
-    }
+    const direction = vec3.create();
+    vec3.scale(direction, dir, 1 / Math.sqrt(dirLenSq));
 
     return {
       direction: direction as Types.Point3,
-      point: intersectionPoint,
+      point: point as Types.Point3,
     };
   }
 
