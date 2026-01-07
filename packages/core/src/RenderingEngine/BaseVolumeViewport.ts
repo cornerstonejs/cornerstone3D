@@ -797,7 +797,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * a new view plane normal as the referenced plane normal, or else the
    * cross product of the existing view plane normal and the inPlaneVector1
    */
-  public setViewPlane(planeRestriction: PlaneRestriction) {
+  public setViewPlane(planeRestriction: PlaneRestriction , referencedImageId?: string) {
     const { point, inPlaneVector1, inPlaneVector2, FrameOfReferenceUID } =
       planeRestriction;
 
@@ -807,6 +807,7 @@ abstract class BaseVolumeViewport extends Viewport {
       FrameOfReferenceUID,
       cameraFocalPoint: point,
       viewPlaneNormal: this.getCamera().viewPlaneNormal,
+      referencedImageId,
     });
   }
 
@@ -829,7 +830,7 @@ abstract class BaseVolumeViewport extends Viewport {
     let { sliceIndex } = viewRef;
 
     if (planeRestriction && !refViewPlaneNormal) {
-      return this.setViewPlane(planeRestriction);
+      return this.setViewPlane(planeRestriction , referencedImageId);
     }
 
     const { focalPoint, viewPlaneNormal, position } = this.getCamera();
