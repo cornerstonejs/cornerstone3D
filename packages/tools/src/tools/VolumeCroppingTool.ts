@@ -990,10 +990,8 @@ class VolumeCroppingTool extends BaseTool {
       this._updateCornerSpheres();
     }
 
-    // // THEN update clipping planes
     this._updateClippingPlanesFromFaceSpheres(viewport);
 
-    // Final render and event trigger
     viewport.render();
 
     triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
@@ -2016,7 +2014,6 @@ class VolumeCroppingTool extends BaseTool {
         rotateIncrementDegrees;
 
       // Calculate rotation center as average of all face sphere centers
-      // This works correctly for both axis-aligned and rotated volumes
       let rotationCenter: Types.Point3;
       if (this.sphereStates.length >= NUM_CLIPPING_PLANES) {
         const faces = [
