@@ -970,6 +970,7 @@ class VolumeCroppingTool extends BaseTool {
 
       // Now update all corners from the new face positions
       this._updateCornerSpheres();
+      this._updateFaceSpheresFromCorners();
     } else {
       // Update face sphere position - project movement onto volume axis
       const directionVector = this._getDirectionVectorForAxis(sphereState.axis);
