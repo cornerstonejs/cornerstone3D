@@ -33,6 +33,10 @@ import {
   parseCornerKey,
   addLine3DBetweenPoints,
   calculateNewCornerPosition,
+  type ClippingPlane,
+  copyClippingPlanes,
+  getColorKeyForPlaneIndex,
+  convertColorArrayToRgbString,
 } from '../utilities/volumeCropping';
 
 /**
@@ -1009,10 +1013,9 @@ class VolumeCroppingTool extends BaseTool {
     // Use clippingPlanes if provided (new approach from VolumeCroppingControlTool)
     if (evt.detail.clippingPlanes && evt.detail.clippingPlanes.length >= 6) {
       // Update clipping planes directly from the event
-      this.originalClippingPlanes = evt.detail.clippingPlanes.map((plane) => ({
-        origin: [...plane.origin] as Types.Point3,
-        normal: [...plane.normal] as Types.Point3,
-      }));
+      this.originalClippingPlanes = copyClippingPlanes(
+        evt.detail.clippingPlanes
+      );
 
       // Update face spheres from clipping plane origins
       this.sphereStates[SPHEREINDEX.XMIN].point = [
