@@ -1,4 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
+import { ORIENTATION_TOLERANCE } from './constants';
 
 /**
  * Maps a camera normal vector to an orientation string.
@@ -22,7 +23,7 @@ export function getOrientationFromNormal(
   };
 
   // Use a tolerance for floating point comparison
-  const tol = 1e-2;
+  const tol = ORIENTATION_TOLERANCE;
 
   for (const [key, value] of Object.entries(canonical)) {
     // Check positive direction

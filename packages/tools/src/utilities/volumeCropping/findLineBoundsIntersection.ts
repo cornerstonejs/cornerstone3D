@@ -1,6 +1,7 @@
 import { vec2 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
 import liangBarksyClip from '../math/vec2/liangBarksyClip';
+import { LINE_EXTENSION_DISTANCE, MIN_LINE_LENGTH_PIXELS } from './constants';
 
 /**
  * Finds where an intersection line crosses the viewport bounds.
@@ -17,7 +18,7 @@ export function findLineBoundsIntersection(
   viewport: Types.IViewport
 ): { start: Types.Point2; end: Types.Point2 } | null {
   // Extend line far in both directions
-  const lineLength = 100000; // Large distance to ensure we cross viewport
+  const lineLength = LINE_EXTENSION_DISTANCE;
   const lineStart: Types.Point3 = [
     linePoint[0] - lineDirection[0] * lineLength,
     linePoint[1] - lineDirection[1] * lineLength,
@@ -90,7 +91,7 @@ export function findLineBoundsIntersection(
   const dx = clippedEnd[0] - clippedStart[0];
   const dy = clippedEnd[1] - clippedStart[1];
   const length = Math.sqrt(dx * dx + dy * dy);
-  if (length < 1) {
+  if (length < MIN_LINE_LENGTH_PIXELS) {
     return null; // Line is too short to draw
   }
 

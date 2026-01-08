@@ -54,6 +54,9 @@ import { isAnnotationLocked } from '../stateManagement/annotation/annotationLock
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import {
   type ClippingPlane,
+  NUM_CLIPPING_PLANES,
+  LINE_INTERSECTION_TOLERANCE,
+  POINT_PROXIMITY_THRESHOLD_PIXELS,
   copyClippingPlanes,
   getColorKeyForPlaneIndex,
   getOrientationFromNormal,
@@ -650,7 +653,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
   };
   _syncWithVolumeCroppingTool(originalClippingPlanes: ClippingPlane[]) {
-    if (!originalClippingPlanes || originalClippingPlanes.length < 6) {
+    if (
+      !originalClippingPlanes ||
+      originalClippingPlanes.length < NUM_CLIPPING_PLANES
+    ) {
       return;
     }
 
@@ -743,7 +749,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         continue;
       }
       viewportIdArray.push(otherViewport.id);
-      i++;
+      //i++;
     }
 
     data.activeViewportIds = [...viewportIdArray];
@@ -779,7 +785,14 @@ class VolumeCroppingControlTool extends AnnotationTool {
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
-    if (this._pointNearTool(element, annotation, canvasCoords, 6)) {
+    if (
+      this._pointNearTool(
+        element,
+        annotation,
+        canvasCoords,
+        POINT_PROXIMITY_THRESHOLD_PIXELS
+      )
+    ) {
       return true;
     }
 
@@ -848,7 +861,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
       // This init are necessary, because when we move the mouse they are not cleaned by _endCallback
       data.activeViewportIds = [];
       let near = false;
-      near = this._pointNearTool(element, annotation, canvasCoords, 6);
+      near = this._pointNearTool(
+        element,
+        annotation,
+        canvasCoords,
+        POINT_PROXIMITY_THRESHOLD_PIXELS
+      );
 
       const nearToolAndNotMarkedActive = near && !highlighted;
       const notNearToolAndMarkedActive = !near && highlighted;
@@ -911,7 +929,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const s2_x = q2[0] - q1[0];
       const s2_y = q2[1] - q1[1];
       const denom = -s2_x * s1_y + s1_x * s2_y;
-      if (Math.abs(denom) < 1e-8) {
+      if (Math.abs(denom) < LINE_INTERSECTION_TOLERANCE) {
         return null;
       } // Parallel
       const s = (-s1_y * (p1[0] - q1[0]) + s1_x * (p1[1] - q1[1])) / denom;
@@ -959,9 +977,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     // Get clipping planes from annotation handles, fallback to this.clippingPlanes
     let clippingPlanes = viewportAnnotation.data.handles.clippingPlanes;
-    if (!clippingPlanes || clippingPlanes.length < 6) {
+    if (!clippingPlanes || clippingPlanes.length < NUM_CLIPPING_PLANES) {
       // Try to use this.clippingPlanes if annotation doesn't have them yet
-      if (this.clippingPlanes && this.clippingPlanes.length >= 6) {
+      if (
+        this.clippingPlanes &&
+        this.clippingPlanes.length >= NUM_CLIPPING_PLANES
+      ) {
         clippingPlanes = this.clippingPlanes;
         // Update annotation with the clipping planes
         data.handles.clippingPlanes = copyClippingPlanes(this.clippingPlanes);
@@ -981,9 +1002,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
       'max',
     ];
 
-    // Draw all 6 clipping planes as reference lines
+    // Draw all clipping planes as reference lines
     // PLANEINDEX: XMIN=0, XMAX=1, YMIN=2, YMAX=3, ZMIN=4, ZMAX=5
-    for (let planeIndex = 0; planeIndex < 6; planeIndex++) {
+    for (let planeIndex = 0; planeIndex < NUM_CLIPPING_PLANES; planeIndex++) {
       const clippingPlane = clippingPlanes[planeIndex];
 
       // Compute intersection of clipping plane with viewport view plane
@@ -1032,7 +1053,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const [otherViewport, startPoint, endPoint, type, planeIndex] = line;
 
       // Ensure planeIndex is valid
-      if (planeIndex === undefined || planeIndex < 0 || planeIndex >= 6) {
+      if (
+        planeIndex === undefined ||
+        planeIndex < 0 ||
+        planeIndex >= NUM_CLIPPING_PLANES
+      ) {
         return; // Skip invalid lines
       }
 
@@ -1348,13 +1373,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (
       handles.activeOperation === OPERATION.DRAG &&
       clippingPlanes &&
-      clippingPlanes.length >= 6
+      clippingPlanes.length >= NUM_CLIPPING_PLANES
     ) {
       // If we have a specific plane index, update only that plane
       if (
         handles.activePlaneIndex !== undefined &&
         handles.activePlaneIndex >= 0 &&
-        handles.activePlaneIndex < 6
+        handles.activePlaneIndex < NUM_CLIPPING_PLANES
       ) {
         const planeIndex = handles.activePlaneIndex;
         const plane = clippingPlanes[planeIndex];

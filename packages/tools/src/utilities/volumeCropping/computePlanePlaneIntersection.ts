@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import type { Types } from '@cornerstonejs/core';
 import type { ClippingPlane } from './types';
+import { PARALLEL_PLANE_TOLERANCE } from './constants';
 
 /**
  * Computes the intersection line between a clipping plane and a viewport's view plane.
@@ -26,7 +27,7 @@ export function computePlanePlaneIntersection(
   vec3.cross(dir, n1, n2);
   const dirLenSq = vec3.squaredLength(dir);
 
-  if (dirLenSq < 1e-10) {
+  if (dirLenSq < PARALLEL_PLANE_TOLERANCE) {
     return null; // planes effectively parallel
   }
 

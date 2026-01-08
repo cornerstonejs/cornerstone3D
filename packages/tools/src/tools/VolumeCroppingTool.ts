@@ -28,6 +28,7 @@ import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import {
   PLANEINDEX,
   SPHEREINDEX,
+  NUM_CLIPPING_PLANES,
   extractVolumeDirectionVectors,
   calculateAdaptiveSphereRadius,
   parseCornerKey,
@@ -120,7 +121,7 @@ import {
  * @property {Map} _resizeObservers - Map of ResizeObserver instances for viewport resize handling
  * @property {Function} _viewportAddedListener - Event listener for new viewport additions
  * @property {boolean} _hasResolutionChanged - Flag tracking if rendering resolution has been modified during interaction
- * @property {Array<Object>} originalClippingPlanes - Array of clipping plane objects with origin and normal vectors
+ * @property {ClippingPlane[]} originalClippingPlanes - Array of clipping plane objects with origin and normal vectors
  * @property {number|null} draggingSphereIndex - Index of currently dragged sphere, null when not dragging
  * @property {number[]|null} cornerDragOffset - 3D offset vector for corner sphere dragging [dx, dy, dz]
  * @property {number|null} faceDragOffset - 1D offset value for face sphere dragging along single axis
@@ -195,7 +196,7 @@ class VolumeCroppingTool extends BaseTool {
   _resizeObservers = new Map();
   _viewportAddedListener: (evt) => void;
   _hasResolutionChanged = false;
-  originalClippingPlanes: { origin: number[]; normal: number[] }[] = [];
+  originalClippingPlanes: ClippingPlane[] = [];
   draggingSphereIndex: number | null = null;
   rotatePlanesOnDrag: boolean = false; // If true, dragging rotates clipping planes instead of camera
   cornerDragOffset: [number, number, number] | null = null;
@@ -664,7 +665,11 @@ class VolumeCroppingTool extends BaseTool {
     }
 
     // When turning clipping planes on, notify the control tool so it can initialize
-    if (visible && viewport && this.originalClippingPlanes?.length >= 6) {
+    if (
+      visible &&
+      viewport &&
+      this.originalClippingPlanes?.length >= NUM_CLIPPING_PLANES
+    ) {
       triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
         originalClippingPlanes: this.originalClippingPlanes,
         viewportId: viewport.id,
@@ -855,17 +860,20 @@ class VolumeCroppingTool extends BaseTool {
       // Get current plane normals (which may have been rotated)
       // Use plane normals instead of original volume direction vectors
       const xDir =
-        this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        this.originalClippingPlanes &&
+        this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
           ? (this.originalClippingPlanes[PLANEINDEX.XMIN]
               .normal as Types.Point3)
           : this.volumeDirectionVectors?.xDir || [1, 0, 0];
       const yDir =
-        this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        this.originalClippingPlanes &&
+        this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
           ? (this.originalClippingPlanes[PLANEINDEX.YMIN]
               .normal as Types.Point3)
           : this.volumeDirectionVectors?.yDir || [0, 1, 0];
       const zDir =
-        this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+        this.originalClippingPlanes &&
+        this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
           ? (this.originalClippingPlanes[PLANEINDEX.ZMIN]
               .normal as Types.Point3)
           : this.volumeDirectionVectors?.zDir || [0, 0, 1];
@@ -1011,7 +1019,10 @@ class VolumeCroppingTool extends BaseTool {
     }
 
     // Use clippingPlanes if provided (new approach from VolumeCroppingControlTool)
-    if (evt.detail.clippingPlanes && evt.detail.clippingPlanes.length >= 6) {
+    if (
+      evt.detail.clippingPlanes &&
+      evt.detail.clippingPlanes.length >= NUM_CLIPPING_PLANES
+    ) {
       // Update clipping planes directly from the event
       this.originalClippingPlanes = copyClippingPlanes(
         evt.detail.clippingPlanes
@@ -1064,7 +1075,7 @@ class VolumeCroppingTool extends BaseTool {
       if (volumeActor) {
         const mapper = volumeActor.getMapper() as vtkVolumeMapper;
         mapper.removeAllClippingPlanes();
-        for (let i = 0; i < 6; ++i) {
+        for (let i = 0; i < NUM_CLIPPING_PLANES; ++i) {
           const plane = vtkPlane.newInstance({
             origin: this.originalClippingPlanes[i].origin as [
               number,
@@ -1102,16 +1113,16 @@ class VolumeCroppingTool extends BaseTool {
   _updateClippingPlanes(viewport) {
     // Get the actor and transformation matrix
     const actorEntry = viewport.getDefaultActor();
-    if (!actorEntry || !actorEntry.actor) {
-      // Only warn once per session for missing actor
-      if (!viewport._missingActorWarned) {
-        console.warn(
-          'VolumeCroppingTool._updateClippingPlanes: No default actor found in viewport.'
-        );
-        viewport._missingActorWarned = true;
-      }
-      return;
-    }
+    // if (!actorEntry || !actorEntry.actor) {
+    //   // Only warn once per session for missing actor
+    //   if (!viewport._missingActorWarned) {
+    //     console.warn(
+    //       'VolumeCroppingTool._updateClippingPlanes: No default actor found in viewport.'
+    //     );
+    //     viewport._missingActorWarned = true;
+    //   }
+    //   return;
+    // }
     const actor = actorEntry.actor;
     const mapper = actor.getMapper();
     const matrix = actor.getMatrix();
@@ -1257,7 +1268,7 @@ class VolumeCroppingTool extends BaseTool {
     // This ensures spheres move along the rotated planes
     if (
       this.originalClippingPlanes &&
-      this.originalClippingPlanes.length >= 6
+      this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
     ) {
       switch (axis) {
         case 'x':
@@ -1408,9 +1419,9 @@ class VolumeCroppingTool extends BaseTool {
       planeZMax,
     ];
 
-    const originalPlanes = planes.map((plane) => ({
-      origin: [...plane.getOrigin()],
-      normal: [...plane.getNormal()],
+    const originalPlanes: ClippingPlane[] = planes.map((plane) => ({
+      origin: [...plane.getOrigin()] as Types.Point3,
+      normal: [...plane.getNormal()] as Types.Point3,
     }));
 
     this.originalClippingPlanes = originalPlanes;
@@ -1566,7 +1577,7 @@ class VolumeCroppingTool extends BaseTool {
     ];
 
     mapper.removeAllClippingPlanes();
-    for (let i = 0; i < 6; ++i) {
+    for (let i = 0; i < NUM_CLIPPING_PLANES; ++i) {
       const origin = this.originalClippingPlanes[i].origin as [
         number,
         number,
@@ -1589,15 +1600,18 @@ class VolumeCroppingTool extends BaseTool {
     // Get current plane normals (which may have been rotated)
     // Use plane normals instead of original volume direction vectors
     const xDir =
-      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
         ? (this.originalClippingPlanes[PLANEINDEX.XMIN].normal as Types.Point3)
         : this.volumeDirectionVectors?.xDir || [1, 0, 0];
     const yDir =
-      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
         ? (this.originalClippingPlanes[PLANEINDEX.YMIN].normal as Types.Point3)
         : this.volumeDirectionVectors?.yDir || [0, 1, 0];
     const zDir =
-      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
         ? (this.originalClippingPlanes[PLANEINDEX.ZMIN].normal as Types.Point3)
         : this.volumeDirectionVectors?.zDir || [0, 0, 1];
 
@@ -1830,24 +1844,24 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateCornerSpheres() {
-    // Get current plane normals (which may have been rotated)
-    // Use plane normals instead of original volume direction vectors
     const xDir =
-      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
         ? (this.originalClippingPlanes[PLANEINDEX.XMIN].normal as Types.Point3)
         : this.volumeDirectionVectors?.xDir || [1, 0, 0];
     const yDir =
-      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
         ? (this.originalClippingPlanes[PLANEINDEX.YMIN].normal as Types.Point3)
         : this.volumeDirectionVectors?.yDir || [0, 1, 0];
     const zDir =
-      this.originalClippingPlanes && this.originalClippingPlanes.length >= 6
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
         ? (this.originalClippingPlanes[PLANEINDEX.ZMIN].normal as Types.Point3)
         : this.volumeDirectionVectors?.zDir || [0, 0, 1];
 
     if (!xDir || !yDir || !zDir) return;
 
-    // Get face sphere positions
     const faceXMin = this.sphereStates[SPHEREINDEX.XMIN].point;
     const faceXMax = this.sphereStates[SPHEREINDEX.XMAX].point;
     const faceYMin = this.sphereStates[SPHEREINDEX.YMIN].point;
@@ -1855,14 +1869,6 @@ class VolumeCroppingTool extends BaseTool {
     const faceZMin = this.sphereStates[SPHEREINDEX.ZMIN].point;
     const faceZMax = this.sphereStates[SPHEREINDEX.ZMAX].point;
 
-    // Helper function to find intersection of three orthogonal planes
-    // Plane X: passes through faceX, normal = xDir
-    // Plane Y: passes through faceY, normal = yDir
-    // Plane Z: passes through faceZ, normal = zDir
-    // For orthogonal planes, we can find the intersection by solving:
-    // (corner - faceX) · xDir = 0  => corner · xDir = faceX · xDir
-    // (corner - faceY) · yDir = 0  => corner · yDir = faceY · yDir
-    // (corner - faceZ) · zDir = 0  => corner · zDir = faceZ · zDir
     const findCorner = (
       faceX: Types.Point3,
       faceY: Types.Point3,
@@ -2029,7 +2035,7 @@ class VolumeCroppingTool extends BaseTool {
       // Calculate rotation center as average of all face sphere centers
       // This works correctly for both axis-aligned and rotated volumes
       let rotationCenter: Types.Point3;
-      if (this.sphereStates.length >= 6) {
+      if (this.sphereStates.length >= NUM_CLIPPING_PLANES) {
         const faces = [
           this.sphereStates[SPHEREINDEX.XMIN],
           this.sphereStates[SPHEREINDEX.XMAX],
@@ -2045,21 +2051,21 @@ class VolumeCroppingTool extends BaseTool {
             faces[3].point[0] +
             faces[4].point[0] +
             faces[5].point[0]) /
-            6,
+            NUM_CLIPPING_PLANES,
           (faces[0].point[1] +
             faces[1].point[1] +
             faces[2].point[1] +
             faces[3].point[1] +
             faces[4].point[1] +
             faces[5].point[1]) /
-            6,
+            NUM_CLIPPING_PLANES,
           (faces[0].point[2] +
             faces[1].point[2] +
             faces[2].point[2] +
             faces[3].point[2] +
             faces[4].point[2] +
             faces[5].point[2]) /
-            6,
+            NUM_CLIPPING_PLANES,
         ] as Types.Point3;
       } else {
         // Fallback if spheres aren't initialized yet
@@ -2140,7 +2146,7 @@ class VolumeCroppingTool extends BaseTool {
       }
 
       // Update face spheres from rotated planes
-      if (this.sphereStates.length >= 6) {
+      if (this.sphereStates.length >= NUM_CLIPPING_PLANES) {
         this.sphereStates[SPHEREINDEX.XMIN].point = [
           ...this.originalClippingPlanes[PLANEINDEX.XMIN].origin,
         ] as Types.Point3;
