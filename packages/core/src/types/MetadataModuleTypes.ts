@@ -16,8 +16,8 @@ export interface GeneralSeriesModuleMetadata {
   seriesInstanceUID: string;
   seriesNumber: number;
   studyInstanceUID: string;
-  seriesDate: DicomDateObject;
-  seriesTime: DicomTimeObject;
+  seriesDate: string;
+  seriesTime: string;
 }
 
 export interface PatientStudyModuleMetadata {
@@ -34,12 +34,12 @@ export interface ImagePlaneModuleMetadata {
   rowCosines: number[];
   columnCosines: number[];
   imagePositionPatient: number[];
-  sliceThickness: number;
+  sliceThickness?: number;
   sliceLocation: number;
   pixelSpacing: number[];
   rowPixelSpacing: number | null;
   columnPixelSpacing: number | null;
-  usingDefaultValues: boolean;
+  usingDefaultValues?: boolean;
 }
 
 export interface ImagePixelModuleMetadata {
