@@ -36,8 +36,6 @@ import {
   calculateNewCornerPosition,
   type ClippingPlane,
   copyClippingPlanes,
-  getColorKeyForPlaneIndex,
-  convertColorArrayToRgbString,
 } from '../utilities/volumeCropping';
 
 /**

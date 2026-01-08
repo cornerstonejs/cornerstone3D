@@ -1,6 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
 import { AnnotationTool } from './base';
 
@@ -16,10 +15,7 @@ import {
   eventTarget,
 } from '@cornerstonejs/core';
 
-import {
-  getToolGroup,
-  getToolGroupForViewport,
-} from '../store/ToolGroupManager';
+import { getToolGroup } from '../store/ToolGroupManager';
 
 import {
   addAnnotation,
@@ -63,7 +59,6 @@ import {
   computePlanePlaneIntersection,
   findLineBoundsIntersection,
   convertColorArrayToRgbString,
-  getAxisNameFromPlaneIndex,
 } from '../utilities/volumeCropping';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
@@ -247,10 +242,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     if (viewportsInfo && viewportsInfo.length > 0) {
       const { viewportId, renderingEngineId } = viewportsInfo[0];
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
       const renderingEngine = getRenderingEngine(renderingEngineId);
       const viewport = renderingEngine.getViewport(viewportId);
       const volumeActors = viewport.getActors();
@@ -262,11 +253,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
       const imageData = volumeActors[0].actor.getMapper().getInputData();
       if (imageData) {
-        const dimensions = imageData.getDimensions();
-        const spacing = imageData.getSpacing();
-        const origin = imageData.getOrigin();
         this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
-        // Clipping planes will be initialized from VolumeCroppingTool via events
       }
     }
   }
@@ -392,7 +379,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
       this._subscribeToViewportNewVolumeSet(viewportsInfo);
       // Request the volume cropping tool to send current planes
-      this._computeToolCenter(viewportsInfo);
+      this._initializeViewportsAndVirtualAnnotations(viewportsInfo);
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
         viewportsInfo: viewportsInfo,
@@ -489,13 +476,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
       viewport.render();
     }
 
-    this._computeToolCenter(viewportsInfo);
+    this._initializeViewportsAndVirtualAnnotations(viewportsInfo);
   };
 
-  _computeToolCenter = (viewportsInfo): void => {
+  _initializeViewportsAndVirtualAnnotations = (viewportsInfo): void => {
     if (!viewportsInfo || !viewportsInfo[0]) {
       console.warn(
-        '  _computeToolCenter : No valid viewportsInfo for computeToolCenter.'
+        '  _initializeViewportsAndVirtualAnnotations : No valid viewportsInfo for initialization.'
       );
       return;
     }
@@ -1249,7 +1236,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         }
       }
     }
-    this._computeToolCenter(viewportsInfo);
+    this._initializeViewportsAndVirtualAnnotations(viewportsInfo);
     triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
       toolGroupId: this.toolGroupId,
       viewportsInfo: viewportsInfo,
