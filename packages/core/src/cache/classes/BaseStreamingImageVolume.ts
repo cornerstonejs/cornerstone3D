@@ -320,8 +320,9 @@ export class BaseStreamingImageVolume
     const { transferSyntaxUID: transferSyntaxUID } =
       metaData.get('transferSyntax', imageId) || {};
 
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
-    const { rows, columns } = imagePlaneModule;
+    // Use the actual dimensions for this volume in order to support volumes not the same size as the raw data
+    const targetRows = this.dimensions[1];
+    const targetCols = this.dimensions[0];
     const imageIdIndex = this.getImageIdIndex(imageId);
 
     const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
@@ -380,8 +381,8 @@ export class BaseStreamingImageVolume
 
     const targetBuffer = {
       type: this.dataType,
-      rows,
-      columns,
+      rows: targetRows,
+      columns: targetCols,
     };
 
     return {

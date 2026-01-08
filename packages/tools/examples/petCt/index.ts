@@ -390,7 +390,9 @@ function setUpToolGroups() {
     // Only set CT volume to MIP in the fusion viewport
     filterActorUIDsToSetSlabThickness: [ctVolumeId],
   });
-  fusionToolGroup.addTool(RectangleROITool.toolName);
+  fusionToolGroup.addTool(RectangleROITool.toolName, {
+    isPreferredTargetId: RectangleROITool.isSpecifiedTargetId(ptVolumeId),
+  });
 
   // Here is the difference in the toolGroups used, that we need to specify the
   // volume to use for the WindowLevelTool for the fusion viewports

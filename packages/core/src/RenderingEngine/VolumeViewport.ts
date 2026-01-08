@@ -190,7 +190,8 @@ class VolumeViewport extends BaseVolumeViewport {
    */
   public setOrientation(
     orientation: OrientationAxis | OrientationVectors,
-    immediate = true
+    immediate = true,
+    suppressEvents = false
   ): void {
     let viewPlaneNormal, viewUp;
 
@@ -223,7 +224,7 @@ class VolumeViewport extends BaseVolumeViewport {
       this.resetCamera();
     } else {
       ({ viewPlaneNormal, viewUp } = orientation);
-      this.applyViewOrientation(orientation);
+      this.applyViewOrientation(orientation, true, suppressEvents);
     }
 
     if (immediate) {
