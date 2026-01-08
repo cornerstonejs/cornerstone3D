@@ -34,6 +34,7 @@ const {
   RectangleROITool,
   CircleROIStartEndThresholdTool,
   RectangleROIStartEndThresholdTool,
+  PlanarFreehandROITool,
   segmentation,
 } = cornerstoneTools;
 
@@ -171,6 +172,7 @@ const optionsValues = [
   RectangleROITool.toolName,
   CircleROIStartEndThresholdTool.toolName,
   RectangleROIStartEndThresholdTool.toolName,
+  PlanarFreehandROITool.toolName,
 ];
 
 addButtonToToolbar({
@@ -178,7 +180,6 @@ addButtonToToolbar({
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
     const labelmapVolume = cache.getVolume(segmentationId);
-    console.debug(annotations);
     annotations.map((annotation, i) => {
       // @ts-ignore
       const pointsInVolume = annotation.data.cachedStats.pointsInVolume;
@@ -215,7 +216,6 @@ addDropdownToToolbar({
         studyToolGroupIds.fusion,
       ].forEach((toolGroupId) => {
         const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
         if (toolName === ZoomTool.toolName) {
           // Check if viewports are initialized before setting tools
           if (renderingEngine && renderingEngine.getViewports().length > 0) {
@@ -240,6 +240,9 @@ addDropdownToToolbar({
           toolGroup.setToolDisabled(ZoomTool.toolName);
           toolGroup.setToolDisabled(WindowLevelTool.toolName);
           toolGroup.setToolDisabled(RectangleROITool.toolName);
+          toolGroup.setToolDisabled(PlanarFreehandROITool.toolName);
+          toolGroup.setToolDisabled(CircleROIStartEndThresholdTool.toolName);
+          toolGroup.setToolDisabled(RectangleROIStartEndThresholdTool.toolName);
           toolGroup.setToolActive(CrosshairsTool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
@@ -248,6 +251,8 @@ addDropdownToToolbar({
           toolGroup.setToolDisabled(WindowLevelTool.toolName);
           toolGroup.setToolDisabled(CrosshairsTool.toolName);
           toolGroup.setToolDisabled(RectangleROITool.toolName);
+          toolGroup.setToolDisabled(PlanarFreehandROITool.toolName);
+          toolGroup.setToolDisabled(RectangleROIStartEndThresholdTool.toolName);
           toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
@@ -257,7 +262,18 @@ addDropdownToToolbar({
           toolGroup.setToolDisabled(CrosshairsTool.toolName);
           toolGroup.setToolDisabled(RectangleROITool.toolName);
           toolGroup.setToolDisabled(CircleROIStartEndThresholdTool.toolName);
+          toolGroup.setToolDisabled(PlanarFreehandROITool.toolName);
           toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
+            bindings: [{ mouseButton: MouseBindings.Primary }],
+          });
+        } else if (toolName === PlanarFreehandROITool.toolName) {
+          toolGroup.setToolDisabled(ZoomTool.toolName);
+          toolGroup.setToolDisabled(WindowLevelTool.toolName);
+          toolGroup.setToolDisabled(CrosshairsTool.toolName);
+          toolGroup.setToolDisabled(RectangleROITool.toolName);
+          toolGroup.setToolDisabled(CircleROIStartEndThresholdTool.toolName);
+          toolGroup.setToolDisabled(RectangleROIStartEndThresholdTool.toolName);
+          toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
         } else {
@@ -392,7 +408,6 @@ function setUpToolGroupsForStudy(studyKey) {
     studyViewportIds.FUSION.CORONAL,
     renderingEngineId
   );
-
   // Add tools to CT and PT groups
   [ctToolGroup, ptToolGroup].forEach((toolGroup) => {
     toolGroup.addTool(WindowLevelTool.toolName);
@@ -418,14 +433,14 @@ function setUpToolGroupsForStudy(studyKey) {
     });
     toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
       calculatePointsInsideVolume: true,
-      showTextBox: false,
+      showTextBox: true,
       storePointData: true,
       /* Set a custom wait time */
       throttleTimeout: 100,
       /* Simplified handles */
       simplified: false,
     });
-    // }
+    toolGroup.addTool(PlanarFreehandROITool.toolName, { cachedStats: true });
   });
 
   // Add tools to fusion group
@@ -452,12 +467,15 @@ function setUpToolGroupsForStudy(studyKey) {
   });
   fusionToolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
-    showTextBox: false,
+    showTextBox: true,
     storePointData: true,
     /* Set a custom wait time */
     throttleTimeout: 100,
     /* Simplified handles */
     simplified: false,
+  });
+  fusionToolGroup.addTool(PlanarFreehandROITool.toolName, {
+    cachedStats: true,
   });
 
   // Set active tools
@@ -890,6 +908,7 @@ async function run() {
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
   cornerstoneTools.addTool(RectangleROIStartEndThresholdTool);
+  cornerstoneTools.addTool(PlanarFreehandROITool);
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
