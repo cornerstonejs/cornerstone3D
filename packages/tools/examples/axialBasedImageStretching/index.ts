@@ -220,16 +220,30 @@ const setStretch = (value) => {
   const viewport = renderingEngine.getViewport(viewportId1);
   const { aspectRatio } = viewport.getCamera();
   if (selectedAxis === 'Stretch X') {
-    viewport.setCamera({
-      aspectRatio: [value, aspectRatio[1]],
-    });
+    viewport.setAspectRatio([value, aspectRatio[1]]);
   } else {
-    viewport.setCamera({
-      aspectRatio: [aspectRatio[0], value],
-    });
+    viewport.setAspectRatio([aspectRatio[0], value]);
   }
   viewport.render();
 };
+
+const aspects = ['1:1', '1:2', '2:1', '0.5:1', '1:0.5', '3:17'];
+addDropdownToToolbar({
+  id: 'aspect',
+  options: {
+    values: aspects,
+    defaultValue: aspects[0],
+  },
+  onSelectedValueChange: (value) => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId1);
+    const aspect = (value as string)
+      .split(':')
+      .map((it) => Number(it)) as Types.Point2;
+    viewport.setAspectRatio(aspect);
+    viewport.render();
+  },
+});
 
 addDropdownToToolbar({
   options: {

@@ -10,7 +10,7 @@ import {
   createEllipseInPoint,
   getEllipseCornersFromCanvasCoordinates,
 } from './fillCircle';
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndex, getNormalizedAspectRatio } = csUtils;
 import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
 import type { CanvasCoordinates } from '../../../types';
 
@@ -54,7 +54,7 @@ const sphereComposition = {
       viewport.canvasToWorld(corner)
     );
 
-    const aspectRatio = viewport?.getAspectRatio?.() || [1, 1];
+    const aspectRatio = getNormalizedAspectRatio(viewport.getAspectRatio());
 
     const yRadius =
       points.length >= 2

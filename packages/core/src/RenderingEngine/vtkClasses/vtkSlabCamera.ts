@@ -5,6 +5,7 @@ import { vec3, mat4 } from 'gl-matrix';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import type { Range } from '@kitware/vtk.js/types';
 import { getProjectionScaleIndices } from '../helpers/getProjectionScaleIndices';
+import { getNormalizedAspectRatio } from '../../utilities/getNormalizedAspectRatio';
 
 /**
  *
@@ -921,7 +922,7 @@ function vtkSlabCamera(publicAPI, model) {
       tmpMatrix[15] = 0.0;
     }
 
-    const [sx, sy] = model.aspectRatio;
+    const [sx, sy] = getNormalizedAspectRatio(model.aspectRatio);
 
     if (sx !== 1.0 || sy !== 1.0) {
       const viewUp = publicAPI.getViewUp();
