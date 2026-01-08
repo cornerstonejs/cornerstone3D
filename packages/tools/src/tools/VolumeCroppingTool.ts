@@ -1054,13 +1054,27 @@ class VolumeCroppingTool extends BaseTool {
         ...this.originalClippingPlanes[PLANEINDEX.ZMAX].origin,
       ] as Types.Point3;
 
-      // Update sphere sources
-      this.sphereStates.forEach((state) => {
-        if (!state.isCorner) {
+      // Update face sphere sources FIRST
+      [
+        SPHEREINDEX.XMIN,
+        SPHEREINDEX.XMAX,
+        SPHEREINDEX.YMIN,
+        SPHEREINDEX.YMAX,
+        SPHEREINDEX.ZMIN,
+        SPHEREINDEX.ZMAX,
+      ].forEach((idx) => {
+        const state = this.sphereStates[idx];
+        if (state && state.sphereSource) {
           state.sphereSource.setCenter(...state.point);
           state.sphereSource.modified();
         }
       });
+
+      // Follow the same sync sequence as direct dragging (matching lines 1005-1008)
+      // This ensures proper synchronization of corners and edges when planes are rotated
+      this._updateCornerSpheresFromFaces();
+      this._updateFaceSpheresFromCorners();
+      this._updateCornerSpheres();
 
       // Update VTK clipping planes
       const volumeActor = viewport.getDefaultActor()?.actor;
@@ -1083,8 +1097,6 @@ class VolumeCroppingTool extends BaseTool {
           mapper.addClippingPlane(plane);
         }
       }
-
-      this._updateCornerSpheres();
       viewport.render();
 
       // Echo back the updated planes to VolumeCroppingControlTool
