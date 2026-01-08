@@ -107,6 +107,7 @@ export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
+import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
@@ -214,4 +215,5 @@ export {
   buildMetadata,
   calculateNeighborhoodStats,
   asArray,
+  getNormalizedAspectRatio,
 };
