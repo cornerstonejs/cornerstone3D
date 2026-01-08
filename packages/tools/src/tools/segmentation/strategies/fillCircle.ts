@@ -12,7 +12,12 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 
-const { transformWorldToIndex, transformIndexToWorld, isEqual } = csUtils;
+const {
+  transformWorldToIndex,
+  transformIndexToWorld,
+  isEqual,
+  getNormalizedAspectRatio,
+} = csUtils;
 
 /**
  * Returns the corners of an ellipse in canvas coordinates.
@@ -179,7 +184,7 @@ const initializeCircle = {
     );
 
     // Get your aspect ratio values
-    const aspectRatio = viewport?.getAspectRatio?.() || [1, 1];
+    const aspectRatio = getNormalizedAspectRatio(viewport.getAspectRatio());
 
     const yRadius =
       points.length >= 2
