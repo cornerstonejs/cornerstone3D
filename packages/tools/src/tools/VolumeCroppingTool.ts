@@ -1113,16 +1113,6 @@ class VolumeCroppingTool extends BaseTool {
   _updateClippingPlanes(viewport) {
     // Get the actor and transformation matrix
     const actorEntry = viewport.getDefaultActor();
-    // if (!actorEntry || !actorEntry.actor) {
-    //   // Only warn once per session for missing actor
-    //   if (!viewport._missingActorWarned) {
-    //     console.warn(
-    //       'VolumeCroppingTool._updateClippingPlanes: No default actor found in viewport.'
-    //     );
-    //     viewport._missingActorWarned = true;
-    //   }
-    //   return;
-    // }
     const actor = actorEntry.actor;
     const mapper = actor.getMapper();
     const matrix = actor.getMatrix();

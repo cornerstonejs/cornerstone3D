@@ -70,7 +70,7 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Volume Cropping',
-  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes.'
+  'Here we demonstrate how to crop a  volume with 6 clipping planes.'
 );
 
 const size = '400px';
@@ -138,12 +138,13 @@ instructions.innerText = `
   - Click/Drag the spheres in VRT or reference lines in the orthographic viewports.
   - Rotate , pan or zoom the 3D viewport using the mouse.
   - Use the scroll wheel to scroll through the slices in the orthographic viewports.
+  - Toggle the clipping planes, handles, and rotate clipping planes on drag.
   `;
 
 content.append(instructions);
 
 addToggleButtonToToolbar({
-  title: 'Toggle Cropping Planes',
+  title: 'Toggle Clipping Planes',
   defaultToggle: true,
   onClick: (toggle) => {
     // Get the tool group for the 3D viewport
@@ -164,7 +165,7 @@ addToggleButtonToToolbar({
 });
 
 addToggleButtonToToolbar({
-  title: 'Toggle Rotate Cropping Planes',
+  title: 'Toggle Rotate Clipping Planes',
   defaultToggle: false,
   onClick: (toggle) => {
     // Get the tool group for the 3D viewport
@@ -185,7 +186,7 @@ addToggleButtonToToolbar({
 });
 
 addToggleButtonToToolbar({
-  title: 'Toggle 3D handles',
+  title: 'Toggle Handles',
   defaultToggle: false,
   onClick: (toggle) => {
     // Get the tool group for the 3D viewport
