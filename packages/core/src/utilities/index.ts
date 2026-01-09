@@ -104,6 +104,7 @@ export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 export * from './getPixelSpacingInformation';
 import { asArray } from './asArray';
+import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
@@ -210,4 +211,5 @@ export {
   buildMetadata,
   calculateNeighborhoodStats,
   asArray,
+  getNormalizedAspectRatio,
 };
