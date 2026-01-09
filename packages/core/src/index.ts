@@ -89,7 +89,7 @@ import {
   setVolumesForViewports,
   addVolumesToViewports,
   addImageSlicesToViewports,
-  getProjectionScaleIndices,
+  getProjectionScaleMatrix,
 } from './RenderingEngine/helpers';
 
 export * from './loaders/decimatedVolumeLoader';
@@ -163,7 +163,7 @@ export {
   setVolumesForViewports,
   addVolumesToViewports,
   addImageSlicesToViewports,
-  getProjectionScaleIndices,
+  getProjectionScaleMatrix,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

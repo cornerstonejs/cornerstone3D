@@ -111,7 +111,10 @@ function createStrokePredicate(
       const dx = worldPoint[0] - centerVec[0];
       const dy = worldPoint[1] - centerVec[1];
       const dz = worldPoint[2] - centerVec[2];
-      if ((dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared <= 1) {
+      if (
+        (dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared + dz * dz <=
+        1
+      ) {
         return true;
       }
     }
@@ -121,7 +124,10 @@ function createStrokePredicate(
         const dx = worldPoint[0] - start[0];
         const dy = worldPoint[1] - start[1];
         const dz = worldPoint[2] - start[2];
-        if ((dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared <= 1) {
+        if (
+          (dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared + dz * dz <=
+          1
+        ) {
           return true;
         }
         continue;
@@ -140,7 +146,9 @@ function createStrokePredicate(
       const distZ = worldPoint[2] - projZ;
 
       if (
-        (distX * distX) / xRadiusSquared + (distY * distY) / yRadiusSquared <=
+        (distX * distX) / xRadiusSquared +
+          (distY * distY) / yRadiusSquared +
+          distZ * distZ <=
         1
       ) {
         return true;
