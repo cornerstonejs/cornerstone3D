@@ -1,0 +1,1014 @@
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
+import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import { BaseTool } from './base';
+import {
+  getEnabledElementByIds,
+  getRenderingEngines,
+  Enums,
+  Types,
+  eventTarget,
+} from '@cornerstonejs/core';
+import { getToolGroup } from '../store/ToolGroupManager';
+import { Events } from '../enums';
+import { vec3, mat4 } from 'gl-matrix';
+
+/**
+ * OrientationControlTool provides an interactive orientation marker
+ * in the form of a translucent rhombicuboctahedron with 26 clickable surfaces
+ * (6 faces, 8 corners, 12 edges) that can be used to reorient the volume in 3D viewports.
+ *
+ * @public
+ * @class OrientationControlTool
+ * @extends BaseTool
+ */
+class OrientationControlTool extends BaseTool {
+  static toolName = 'OrientationControl';
+
+  private markerActors = new Map<string, vtkActor>();
+  private pickers = new Map<string, vtkCellPicker>();
+  private clickHandlers = new Map<string, (evt: MouseEvent) => void>();
+  private resizeObservers = new Map<string, ResizeObserver>();
+  private cameraHandlers = new Map<string, (evt: CustomEvent) => void>();
+
+  constructor(
+    toolProps = {},
+    defaultToolProps = {
+      supportedInteractionTypes: ['Mouse'],
+      configuration: {
+        enabled: true,
+        opacity: 0.3,
+        size: 0.075, // Relative size of marker (7.5% of viewport)
+        position: 'bottom-right', // Position in viewport
+        color: [0.8, 0.8, 0.8],
+        hoverColor: [1.0, 0.8, 0.0], // Orange when hovering
+      },
+    }
+  ) {
+    super(toolProps, defaultToolProps);
+  }
+
+  onSetToolActive = (): void => {
+    this._subscribeToViewportEvents();
+    this.initViewports();
+  };
+
+  onSetToolEnabled = (): void => {
+    this._subscribeToViewportEvents();
+    this.initViewports();
+  };
+
+  onSetToolDisabled = (): void => {
+    this.cleanUpData();
+    this._unsubscribeToViewportEvents();
+  };
+
+  onSetToolInactive = (): void => {
+    this.cleanUpData();
+    this._unsubscribeToViewportEvents();
+  };
+
+  private _getViewportsInfo = () => {
+    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
+    return viewports || [];
+  };
+
+  private _subscribeToViewportEvents = (): void => {
+    const viewportsInfo = this._getViewportsInfo();
+
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+
+      if (!enabledElement) {
+        return;
+      }
+
+      const { viewport } = enabledElement;
+
+      // Only add to volume3d viewports
+      if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+        return;
+      }
+
+      // For volume3d viewports, element is on the viewport
+      const { element } = viewport;
+
+      // Check if element exists
+      if (!element) {
+        return;
+      }
+
+      // Listen for new volumes
+      element.addEventListener(
+        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        this.initViewports.bind(this)
+      );
+
+      // Listen for camera changes to update marker position and orientation
+      const cameraHandler = (evt: CustomEvent) => {
+        this.onCameraModified(evt);
+      };
+      element.addEventListener(Enums.Events.CAMERA_MODIFIED, cameraHandler);
+      this.cameraHandlers.set(viewportId, cameraHandler);
+
+      // Handle resize
+      const resizeObserver = new ResizeObserver(() => {
+        setTimeout(() => {
+          const element = getEnabledElementByIds(viewportId, renderingEngineId);
+          if (!element) {
+            return;
+          }
+          this.updateMarkerPosition(viewportId, renderingEngineId);
+          element.viewport.render();
+        }, 100);
+      });
+
+      resizeObserver.observe(element);
+      this.resizeObservers.set(viewportId, resizeObserver);
+    });
+
+    eventTarget.addEventListener(Events.TOOLGROUP_VIEWPORT_ADDED, (evt) => {
+      if (evt.detail.toolGroupId !== this.toolGroupId) {
+        return;
+      }
+      this._subscribeToViewportEvents();
+      this.initViewports();
+    });
+  };
+
+  private _unsubscribeToViewportEvents = (): void => {
+    const viewportsInfo = this._getViewportsInfo();
+
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+
+      if (!enabledElement) {
+        return;
+      }
+
+      const { viewport } = enabledElement;
+
+      // Only handle volume3d viewports
+      if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+        return;
+      }
+
+      const { element } = viewport;
+
+      if (!element) {
+        return;
+      }
+
+      // Remove camera handler
+      const cameraHandler = this.cameraHandlers.get(viewportId);
+      if (cameraHandler) {
+        element.removeEventListener(
+          Enums.Events.CAMERA_MODIFIED,
+          cameraHandler
+        );
+        this.cameraHandlers.delete(viewportId);
+      }
+
+      // Remove click handler
+      const clickHandler = this.clickHandlers.get(viewportId);
+      if (clickHandler) {
+        element.removeEventListener('click', clickHandler);
+        this.clickHandlers.delete(viewportId);
+      }
+
+      // Remove resize observer
+      const resizeObserver = this.resizeObservers.get(viewportId);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+        this.resizeObservers.delete(viewportId);
+      }
+    });
+
+    this.resizeObservers.clear();
+    this.cameraHandlers.clear();
+    this.clickHandlers.clear();
+  };
+
+  private initViewports = (): void => {
+    const renderingEngines = getRenderingEngines();
+    if (!renderingEngines || renderingEngines.length === 0) {
+      return;
+    }
+
+    const viewportsInfo = this._getViewportsInfo();
+
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+
+      if (!enabledElement) {
+        return;
+      }
+
+      const { viewport } = enabledElement;
+
+      // Only add to volume3d viewports
+      if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+        return;
+      }
+
+      // Check if marker already exists
+      if (this.markerActors.has(viewportId)) {
+        return;
+      }
+
+      // Wait a bit to ensure volume is loaded and bounds are available
+      setTimeout(() => {
+        console.log(
+          'OrientationControlTool: Attempting to add marker to viewport',
+          viewportId
+        );
+        this.addMarkerToViewport(viewportId, renderingEngineId);
+      }, 500); // Increased delay to 500ms
+    });
+  };
+
+  private createRhombicuboctahedronGeometry(): vtkPolyData {
+    // Create a beveled cube (modified rhombicuboctahedron)
+    // A rhombicuboctahedron has 24 vertices, 26 faces (8 triangular, 18 square), and 48 edges
+    // Using a smaller phi value to make it look more cube-like with beveled edges
+
+    const scale = 0.3;
+    const phi = 1.4; // Reduced from 1+√2 (≈2.414) to make faces larger and shape more cube-like
+
+    // 24 vertices of a rhombicuboctahedron
+    const vertices: number[] = [];
+
+    // Group 1: (±1, ±1, ±phi) - 8 vertices
+    vertices.push(-1, -1, -phi); // 0
+    vertices.push(1, -1, -phi); // 1
+    vertices.push(1, 1, -phi); // 2
+    vertices.push(-1, 1, -phi); // 3
+    vertices.push(-1, -1, phi); // 4
+    vertices.push(1, -1, phi); // 5
+    vertices.push(1, 1, phi); // 6
+    vertices.push(-1, 1, phi); // 7
+
+    // Group 2: (±1, ±phi, ±1) - 8 vertices
+    vertices.push(-1, -phi, -1); // 8
+    vertices.push(1, -phi, -1); // 9
+    vertices.push(1, -phi, 1); // 10
+    vertices.push(-1, -phi, 1); // 11
+    vertices.push(-1, phi, -1); // 12
+    vertices.push(1, phi, -1); // 13
+    vertices.push(1, phi, 1); // 14
+    vertices.push(-1, phi, 1); // 15
+
+    // Group 3: (±phi, ±1, ±1) - 8 vertices
+    vertices.push(-phi, -1, -1); // 16
+    vertices.push(-phi, -1, 1); // 17
+    vertices.push(-phi, 1, 1); // 18
+    vertices.push(-phi, 1, -1); // 19
+    vertices.push(phi, -1, -1); // 20
+    vertices.push(phi, -1, 1); // 21
+    vertices.push(phi, 1, 1); // 22
+    vertices.push(phi, 1, -1); // 23
+
+    // Scale all vertices
+    for (let i = 0; i < vertices.length; i++) {
+      vertices[i] *= scale;
+    }
+
+    // Create polyData
+    const polyData = vtkPolyData.newInstance();
+    polyData.getPoints().setData(vertices, 3);
+
+    // Generate 26 faces
+    const faces: number[] = [];
+
+    // 6 large square faces on main axes
+    // Face 0: Bottom (z = -phi)
+    faces.push(4, 0, 3, 2, 1);
+    // Face 1: Top (z = +phi)
+    faces.push(4, 4, 5, 6, 7);
+    // Face 2: Front (y = -phi)
+    faces.push(4, 8, 11, 10, 9);
+    // Face 3: Back (y = +phi)
+    faces.push(4, 12, 13, 14, 15);
+    // Face 4: Left (x = -phi)
+    faces.push(4, 16, 19, 18, 17);
+    // Face 5: Right (x = +phi)
+    faces.push(4, 20, 21, 22, 23);
+
+    // 8 triangular corner faces
+    // Corner (-,-,-)
+    faces.push(3, 0, 16, 8); // Face 6
+    // Corner (+,-,-)
+    faces.push(3, 1, 9, 20); // Face 7
+    // Corner (+,+,-)
+    faces.push(3, 2, 23, 13); // Face 8
+    // Corner (-,+,-)
+    faces.push(3, 3, 12, 19); // Face 9
+    // Corner (-,-,+)
+    faces.push(3, 4, 17, 11); // Face 10
+    // Corner (+,-,+)
+    faces.push(3, 5, 10, 21); // Face 11
+    // Corner (+,+,+)
+    faces.push(3, 6, 14, 22); // Face 12
+    // Corner (-,+,+)
+    faces.push(3, 7, 18, 15); // Face 13
+
+    // 12 square edge faces - carefully selected 4-vertex quads
+    // Edges around bottom face (between bottom and other faces)
+    faces.push(4, 0, 1, 9, 8); // Edge 14: bottom-front
+    faces.push(4, 1, 2, 23, 20); // Edge 15: bottom-right
+    faces.push(4, 2, 3, 12, 13); // Edge 16: bottom-back
+    faces.push(4, 3, 0, 16, 19); // Edge 17: bottom-left
+
+    // Edges around top face (between top and other faces)
+    faces.push(4, 4, 5, 10, 11); // Edge 18: top-front
+    faces.push(4, 5, 6, 22, 21); // Edge 19: top-right
+    faces.push(4, 6, 7, 15, 14); // Edge 20: top-back
+    faces.push(4, 7, 4, 17, 18); // Edge 21: top-left
+
+    // Vertical edges (between front/back/left/right faces)
+    faces.push(4, 8, 11, 17, 16); // Edge 22: front-left
+    faces.push(4, 9, 20, 21, 10); // Edge 23: front-right
+    faces.push(4, 13, 23, 22, 14); // Edge 24: back-right
+    faces.push(4, 12, 19, 18, 15); // Edge 25: back-left
+
+    const cellArray = vtkCellArray.newInstance({
+      values: new Uint32Array(faces),
+    });
+
+    polyData.setPolys(cellArray);
+
+    // Build links and compute normals for proper rendering
+    polyData.buildLinks();
+
+    // Add cell colors: 26 cells total
+    // Faces 0-5: 6 square faces - Red, Yellow, Green (2 each)
+    // Faces 6-13: 8 triangular corner faces - Blue
+    // Faces 14-25: 12 rectangular edge faces - Grey
+    const cellColors = new Uint8Array(26 * 3); // RGB for each cell
+
+    // Define colors (RGB 0-255)
+    const red = [255, 0, 0];
+    const yellow = [255, 255, 0];
+    const green = [0, 255, 0];
+    const blue = [0, 0, 255];
+    const grey = [128, 128, 128];
+
+    // 6 square faces: Red (0-1), Green (2-3), Yellow (4-5)
+    for (let i = 0; i < 2; i++) {
+      cellColors[i * 3] = red[0];
+      cellColors[i * 3 + 1] = red[1];
+      cellColors[i * 3 + 2] = red[2];
+    }
+    for (let i = 2; i < 4; i++) {
+      cellColors[i * 3] = green[0];
+      cellColors[i * 3 + 1] = green[1];
+      cellColors[i * 3 + 2] = green[2];
+    }
+    for (let i = 4; i < 6; i++) {
+      cellColors[i * 3] = yellow[0];
+      cellColors[i * 3 + 1] = yellow[1];
+      cellColors[i * 3 + 2] = yellow[2];
+    }
+
+    // 8 triangular corner faces: Blue (6-13)
+    for (let i = 6; i < 14; i++) {
+      cellColors[i * 3] = blue[0];
+      cellColors[i * 3 + 1] = blue[1];
+      cellColors[i * 3 + 2] = blue[2];
+    }
+
+    // 12 rectangular edge faces: Grey (14-25)
+    for (let i = 14; i < 26; i++) {
+      cellColors[i * 3] = grey[0];
+      cellColors[i * 3 + 1] = grey[1];
+      cellColors[i * 3 + 2] = grey[2];
+    }
+
+    const colorArray = vtkDataArray.newInstance({
+      name: 'Colors',
+      numberOfComponents: 3,
+      values: cellColors,
+    });
+
+    polyData.getCellData().setScalars(colorArray);
+
+    // Debug: Log face count
+    console.log(
+      'OrientationControlTool: Created polyData with',
+      polyData.getNumberOfCells(),
+      'faces'
+    );
+    console.log(
+      'OrientationControlTool: Face types - 6 main squares (0-5), 8 triangular corners (6-13), 12 edge squares (14-25)'
+    );
+    console.log(
+      'OrientationControlTool: Colors - Red top/bottom (0-1), Green front/back (2-3), Yellow left/right (4-5), Blue corners (6-13), Grey edges (14-25)'
+    );
+
+    return polyData;
+  }
+
+  private getOrientationForSurface(cellId: number): {
+    viewPlaneNormal: number[];
+    viewUp: number[];
+  } | null {
+    // Map each of the 26 surfaces to camera orientations
+    // 0-5: 6 square faces (main axes)
+    // 6-13: 8 triangular corner faces
+    // 14-25: 12 rectangular edge faces
+
+    const orientations: Map<
+      number,
+      { viewPlaneNormal: number[]; viewUp: number[] }
+    > = new Map();
+
+    // 6 square faces - main axes
+    orientations.set(0, { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] }); // Bottom
+    orientations.set(1, { viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] }); // Top
+    orientations.set(2, { viewPlaneNormal: [0, -1, 0], viewUp: [0, 0, 1] }); // Front
+    orientations.set(3, { viewPlaneNormal: [0, 1, 0], viewUp: [0, 0, 1] }); // Back
+    orientations.set(4, { viewPlaneNormal: [-1, 0, 0], viewUp: [0, 0, 1] }); // Left
+    orientations.set(5, { viewPlaneNormal: [1, 0, 0], viewUp: [0, 0, 1] }); // Right
+
+    // 8 triangular corner faces - diagonal views
+    const sqrt3 = 1 / Math.sqrt(3);
+    orientations.set(6, {
+      viewPlaneNormal: [-sqrt3, -sqrt3, -sqrt3],
+      viewUp: [0, 0, 1],
+    }); // -X, -Y, -Z
+    orientations.set(7, {
+      viewPlaneNormal: [sqrt3, -sqrt3, -sqrt3],
+      viewUp: [0, 0, 1],
+    }); // +X, -Y, -Z
+    orientations.set(8, {
+      viewPlaneNormal: [sqrt3, sqrt3, -sqrt3],
+      viewUp: [0, 0, 1],
+    }); // +X, +Y, -Z
+    orientations.set(9, {
+      viewPlaneNormal: [-sqrt3, sqrt3, -sqrt3],
+      viewUp: [0, 0, 1],
+    }); // -X, +Y, -Z
+    orientations.set(10, {
+      viewPlaneNormal: [-sqrt3, -sqrt3, sqrt3],
+      viewUp: [0, 0, 1],
+    }); // -X, -Y, +Z
+    orientations.set(11, {
+      viewPlaneNormal: [sqrt3, -sqrt3, sqrt3],
+      viewUp: [0, 0, 1],
+    }); // +X, -Y, +Z
+    orientations.set(12, {
+      viewPlaneNormal: [sqrt3, sqrt3, sqrt3],
+      viewUp: [0, 0, 1],
+    }); // +X, +Y, +Z
+    orientations.set(13, {
+      viewPlaneNormal: [-sqrt3, sqrt3, sqrt3],
+      viewUp: [0, 0, 1],
+    }); // -X, +Y, +Z
+
+    // 12 square edge faces - edge views
+    const sqrt2 = 1 / Math.sqrt(2);
+
+    // Bottom edges (14-17)
+    orientations.set(14, {
+      viewPlaneNormal: [0, -sqrt2, -sqrt2],
+      viewUp: [-1, 0, 0],
+    }); // Front-Bottom edge
+    orientations.set(15, {
+      viewPlaneNormal: [sqrt2, 0, -sqrt2],
+      viewUp: [0, 1, 0],
+    }); // Right-Bottom edge
+    orientations.set(16, {
+      viewPlaneNormal: [0, sqrt2, -sqrt2],
+      viewUp: [1, 0, 0],
+    }); // Back-Bottom edge
+    orientations.set(17, {
+      viewPlaneNormal: [-sqrt2, 0, -sqrt2],
+      viewUp: [0, -1, 0],
+    }); // Left-Bottom edge
+
+    // Top edges (18-21)
+    orientations.set(18, {
+      viewPlaneNormal: [-sqrt2, 0, sqrt2],
+      viewUp: [0, 1, 0],
+    }); // Left-Top edge
+    orientations.set(19, {
+      viewPlaneNormal: [0, -sqrt2, sqrt2],
+      viewUp: [1, 0, 0],
+    }); // Front-Top edge
+    orientations.set(20, {
+      viewPlaneNormal: [sqrt2, 0, sqrt2],
+      viewUp: [0, -1, 0],
+    }); // Right-Top edge
+    orientations.set(21, {
+      viewPlaneNormal: [0, sqrt2, sqrt2],
+      viewUp: [-1, 0, 0],
+    }); // Back-Top edge
+
+    // Middle edges (22-25)
+    orientations.set(22, {
+      viewPlaneNormal: [-1, 0, 0],
+      viewUp: [0, 0, 1],
+    }); // Left face (same as face 4)
+    orientations.set(23, {
+      viewPlaneNormal: [1, 0, 0],
+      viewUp: [0, 0, 1],
+    }); // Right face (same as face 5)
+    orientations.set(24, {
+      viewPlaneNormal: [0, -1, 0],
+      viewUp: [0, 0, 1],
+    }); // Front face (same as face 2)
+    orientations.set(25, {
+      viewPlaneNormal: [0, 1, 0],
+      viewUp: [0, 0, 1],
+    }); // Back face (same as face 3)
+
+    return orientations.get(cellId) || null;
+  }
+
+  private addMarkerToViewport(
+    viewportId: string,
+    renderingEngineId: string
+  ): void {
+    console.log(
+      'OrientationControlTool: addMarkerToViewport called for',
+      viewportId
+    );
+    const enabledElement = getEnabledElementByIds(
+      viewportId,
+      renderingEngineId
+    );
+
+    if (!enabledElement) {
+      console.warn(
+        'OrientationControlTool: enabledElement not found for',
+        viewportId
+      );
+      return;
+    }
+
+    const { viewport } = enabledElement;
+    console.log(
+      'OrientationControlTool: viewport type:',
+      viewport?.type,
+      'expected:',
+      Enums.ViewportType.VOLUME_3D
+    );
+
+    if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+      console.warn(
+        'OrientationControlTool: viewport is not VOLUME_3D, it is:',
+        viewport.type
+      );
+      return;
+    }
+
+    // For volume3d viewports, element is on the viewport
+    const { element } = viewport;
+
+    if (!element) {
+      console.warn(
+        'OrientationControlTool: element is null/undefined on viewport'
+      );
+      return;
+    }
+
+    console.log('OrientationControlTool: Creating marker geometry...');
+
+    // Create geometry
+    const polyData = this.createRhombicuboctahedronGeometry();
+
+    // Create mapper
+    const mapper = vtkMapper.newInstance();
+    mapper.setInputData(polyData);
+    mapper.setScalarModeToUseCellData(); // Use cell colors
+    mapper.setColorModeToDirectScalars(); // Use RGB values directly
+
+    // Create actor
+    const actor = vtkActor.newInstance();
+    actor.setMapper(mapper);
+
+    // Set properties - fully opaque with cell colors
+    const property = actor.getProperty();
+    property.setOpacity(1.0); // Fully opaque
+    property.setRepresentationToSurface();
+    property.setEdgeVisibility(false); // No edges needed with colored surfaces
+    property.setBackfaceCulling(false); // Render both sides of faces
+    property.setFrontfaceCulling(false); // Ensure all faces are visible
+    actor.setVisibility(true);
+
+    // Add actor to viewport first
+    const actorUID = `orientation-control-${viewportId}`;
+    viewport.addActor({ actor, uid: actorUID });
+    this.markerActors.set(viewportId, actor);
+
+    // Verify actor was added
+    const actors = viewport.getActors();
+    const addedActor = actors.find((a) => a.uid === actorUID);
+    console.log(
+      'OrientationControlTool: Actor added?',
+      !!addedActor,
+      'Total actors:',
+      actors.length
+    );
+
+    // Position marker in viewport corner (after adding to viewport so bounds are available)
+    const positioned = this.positionMarkerInViewport(
+      viewport as Types.IVolumeViewport3D,
+      actor
+    );
+    if (!positioned) {
+      console.warn(
+        'OrientationControlTool: Could not position marker, bounds not available'
+      );
+      // Try again after a delay
+      setTimeout(() => {
+        const repositioned = this.positionMarkerInViewport(
+          viewport as Types.IVolumeViewport3D,
+          actor
+        );
+        if (repositioned) {
+          viewport.render();
+        }
+      }, 1000);
+    } else {
+      console.log(
+        'OrientationControlTool: Marker added and positioned to viewport',
+        viewportId
+      );
+    }
+
+    // Setup picker
+    const picker = vtkCellPicker.newInstance({ opacityThreshold: 0.0001 });
+    picker.setPickFromList(1);
+    picker.setTolerance(0.001);
+    picker.initializePickList();
+    picker.addPickList(actor);
+    this.pickers.set(viewportId, picker);
+
+    // Setup click handler
+    this.setupClickHandler(viewportId, renderingEngineId, element, actor);
+
+    viewport.render();
+  }
+
+  private positionMarkerInViewport(
+    viewport: Types.IVolumeViewport3D,
+    actor: vtkActor
+  ): boolean {
+    // Get viewport bounds for size calculation
+    const bounds = viewport.getBounds();
+    if (!bounds || bounds.length < 6) {
+      console.warn('OrientationControlTool: Bounds not available yet');
+      return false;
+    }
+
+    const size = this.configuration.size || 0.125;
+    const position = this.configuration.position || 'bottom-right';
+
+    // Calculate marker size based on viewport bounds
+    const diagonal = Math.sqrt(
+      Math.pow(bounds[1] - bounds[0], 2) +
+        Math.pow(bounds[3] - bounds[2], 2) +
+        Math.pow(bounds[5] - bounds[4], 2)
+    );
+    const markerSize = diagonal * size;
+
+    // Scale actor
+    actor.setScale(markerSize, markerSize, markerSize);
+
+    // Position marker in fixed screen space (canvas corner)
+    const worldPos = this.getMarkerPositionInScreenSpace(viewport, position);
+    if (!worldPos) {
+      return false;
+    }
+    actor.setPosition(worldPos[0], worldPos[1], worldPos[2]);
+
+    // Update marker orientation to match camera (so it rotates with the view)
+    this.updateMarkerOrientation(viewport, actor);
+
+    return true;
+  }
+
+  private getMarkerPositionInScreenSpace(
+    viewport: Types.IVolumeViewport3D,
+    position: string
+  ): [number, number, number] | null {
+    // Get canvas dimensions
+    const canvas = viewport.canvas;
+    if (!canvas) {
+      return null;
+    }
+
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    // Define fixed screen position (in canvas pixels, closer to corner)
+    const cornerOffset = 80; // pixels from corner
+    let canvasX = 0;
+    let canvasY = 0;
+
+    switch (position) {
+      case 'bottom-right':
+        canvasX = canvasWidth - cornerOffset;
+        canvasY = canvasHeight - cornerOffset;
+        break;
+      case 'bottom-left':
+        canvasX = cornerOffset;
+        canvasY = canvasHeight - cornerOffset;
+        break;
+      case 'top-right':
+        canvasX = canvasWidth - cornerOffset;
+        canvasY = cornerOffset;
+        break;
+      case 'top-left':
+        canvasX = cornerOffset;
+        canvasY = cornerOffset;
+        break;
+      default:
+        canvasX = canvasWidth - cornerOffset;
+        canvasY = canvasHeight - cornerOffset;
+    }
+
+    // Convert canvas coordinates to world coordinates
+    // This ensures the marker stays in the same screen position
+    const canvasPos: Types.Point2 = [canvasX, canvasY];
+    const worldPos = viewport.canvasToWorld(canvasPos);
+
+    return [worldPos[0], worldPos[1], worldPos[2]];
+  }
+
+  private updateMarkerOrientation(
+    viewport: Types.IVolumeViewport3D,
+    actor: vtkActor
+  ): void {
+    // Get camera orientation vectors
+    const camera = viewport.getVtkActiveCamera();
+    const viewPlaneNormal = camera.getDirectionOfProjection();
+    const viewUp = camera.getViewUp();
+
+    // The marker should rotate to show the current orientation
+    // We align the marker's axes with the camera's view coordinate system
+    // Forward is toward the camera (opposite of viewPlaneNormal)
+    const forward = vec3.create();
+    vec3.scale(forward, viewPlaneNormal, -1);
+    vec3.normalize(forward, forward);
+
+    // Right vector (cross product of up and forward, normalized)
+    const right = vec3.create();
+    vec3.cross(right, viewUp, forward);
+    vec3.normalize(right, right);
+
+    // Recalculate up to ensure orthogonality
+    const up = vec3.create();
+    vec3.cross(up, forward, right);
+    vec3.normalize(up, up);
+
+    // Build rotation matrix from the three orthonormal vectors
+    // The matrix columns are right, up, forward (in world space)
+    const rotationMatrix = mat4.create();
+    rotationMatrix[0] = right[0];
+    rotationMatrix[1] = right[1];
+    rotationMatrix[2] = right[2];
+    rotationMatrix[4] = up[0];
+    rotationMatrix[5] = up[1];
+    rotationMatrix[6] = up[2];
+    rotationMatrix[8] = forward[0];
+    rotationMatrix[9] = forward[1];
+    rotationMatrix[10] = forward[2];
+    rotationMatrix[15] = 1.0;
+
+    // Extract Euler angles from rotation matrix (ZYX convention)
+    // Roll (around Z), Pitch (around Y), Yaw (around X)
+    const sy = Math.sqrt(
+      rotationMatrix[0] * rotationMatrix[0] +
+        rotationMatrix[1] * rotationMatrix[1]
+    );
+    const singular = sy < 1e-6;
+
+    let roll, pitch, yaw;
+    if (!singular) {
+      roll = Math.atan2(rotationMatrix[4], rotationMatrix[5]);
+      pitch = Math.atan2(-rotationMatrix[2], sy);
+      yaw = Math.atan2(rotationMatrix[1], rotationMatrix[0]);
+    } else {
+      roll = Math.atan2(-rotationMatrix[6], rotationMatrix[10]);
+      pitch = Math.atan2(-rotationMatrix[2], sy);
+      yaw = 0;
+    }
+
+    // Set actor orientation (in degrees) - VTK uses X, Y, Z rotation order
+    actor.setOrientation(
+      (yaw * 180) / Math.PI,
+      (pitch * 180) / Math.PI,
+      (roll * 180) / Math.PI
+    );
+  }
+
+  private onCameraModified = (evt: CustomEvent): void => {
+    const { viewportId } = evt.detail as { viewportId: string };
+    if (!viewportId) {
+      return;
+    }
+
+    const actor = this.markerActors.get(viewportId);
+    if (!actor) {
+      return;
+    }
+
+    const viewportsInfo = this._getViewportsInfo();
+    const viewportInfo = viewportsInfo.find(
+      (vp) => vp.viewportId === viewportId
+    );
+
+    if (!viewportInfo) {
+      return;
+    }
+
+    const enabledElement = getEnabledElementByIds(
+      viewportId,
+      viewportInfo.renderingEngineId
+    );
+
+    if (!enabledElement) {
+      return;
+    }
+
+    const { viewport } = enabledElement;
+    if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+      return;
+    }
+
+    // Update marker position (to stay in fixed screen space) and orientation
+    this.positionMarkerInViewport(viewport as Types.IVolumeViewport3D, actor);
+  };
+
+  private updateMarkerPosition(
+    viewportId: string,
+    renderingEngineId: string
+  ): void {
+    const enabledElement = getEnabledElementByIds(
+      viewportId,
+      renderingEngineId
+    );
+
+    if (!enabledElement) {
+      return;
+    }
+
+    const actor = this.markerActors.get(viewportId);
+    if (!actor) {
+      return;
+    }
+
+    const { viewport } = enabledElement;
+    if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+      return;
+    }
+
+    this.positionMarkerInViewport(viewport as Types.IVolumeViewport3D, actor);
+  }
+
+  private setupClickHandler(
+    viewportId: string,
+    renderingEngineId: string,
+    element: HTMLDivElement,
+    actor: vtkActor
+  ): void {
+    const clickHandler = (evt: MouseEvent) => {
+      // Only handle left clicks
+      if (evt.button !== 0) {
+        return;
+      }
+
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+
+      if (!enabledElement) {
+        return;
+      }
+
+      const { viewport } = enabledElement;
+
+      if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+        return;
+      }
+
+      const picker = this.pickers.get(viewportId);
+      if (!picker) {
+        return;
+      }
+
+      // Get mouse position relative to element
+      const rect = element.getBoundingClientRect();
+      const x = evt.clientX - rect.left;
+      const y = evt.clientY - rect.top;
+
+      // Convert to VTK display coordinates
+      const displayCoords = (
+        viewport as Types.IVolumeViewport3D
+      ).getVtkDisplayCoords([x, y]);
+
+      // Pick
+      picker.pick(displayCoords, viewport.getRenderer());
+
+      // Check if we picked the marker actor
+      const pickedActors = picker.getActors();
+      if (pickedActors.length === 0 || pickedActors[0] !== actor) {
+        return;
+      }
+
+      // Get picked cell ID
+      const cellId = picker.getCellId();
+      if (cellId === -1) {
+        return;
+      }
+
+      // Get orientation for this surface
+      const orientation = this.getOrientationForSurface(cellId);
+      if (!orientation) {
+        return;
+      }
+
+      // Reorient viewport
+      viewport.setCamera({
+        viewPlaneNormal: orientation.viewPlaneNormal,
+        viewUp: orientation.viewUp,
+      });
+      viewport.resetCamera();
+      viewport.render();
+
+      evt.preventDefault();
+      evt.stopPropagation();
+    };
+
+    element.addEventListener('mousedown', clickHandler);
+    this.clickHandlers.set(viewportId, clickHandler);
+  }
+
+  private cleanUpData = (): void => {
+    const renderingEngines = getRenderingEngines();
+    if (!renderingEngines || renderingEngines.length === 0) {
+      return;
+    }
+
+    this.markerActors.forEach((actor, viewportId) => {
+      const viewportsInfo = this._getViewportsInfo();
+      const viewportInfo = viewportsInfo.find(
+        (vp) => vp.viewportId === viewportId
+      );
+
+      if (viewportInfo) {
+        const enabledElement = getEnabledElementByIds(
+          viewportId,
+          viewportInfo.renderingEngineId
+        );
+
+        if (enabledElement) {
+          const { viewport, element } = enabledElement;
+
+          // Remove click handler
+          const clickHandler = this.clickHandlers.get(viewportId);
+          if (clickHandler) {
+            element.removeEventListener('mousedown', clickHandler);
+            this.clickHandlers.delete(viewportId);
+          }
+
+          // Remove camera handler
+          const cameraHandler = this.cameraHandlers.get(viewportId);
+          if (cameraHandler) {
+            element.removeEventListener(
+              Enums.Events.CAMERA_MODIFIED,
+              cameraHandler
+            );
+            this.cameraHandlers.delete(viewportId);
+          }
+
+          // Remove actor
+          viewport.removeActor(`orientation-control-${viewportId}`);
+          actor.delete();
+        }
+      }
+    });
+
+    this.markerActors.clear();
+    this.pickers.clear();
+    this.cameraHandlers.clear();
+  };
+}
+
+OrientationControlTool.toolName = 'OrientationControl';
+export default OrientationControlTool;

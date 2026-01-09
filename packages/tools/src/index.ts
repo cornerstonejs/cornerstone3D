@@ -73,6 +73,7 @@ import {
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,
+  OrientationControlTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
   EraserTool,
@@ -159,6 +160,7 @@ export {
   CircleROIStartEndThresholdTool,
   BrushTool,
   OrientationMarkerTool,
+  OrientationControlTool,
   SegmentSelectTool,
   SegmentLabelTool,
   // Synchronizers

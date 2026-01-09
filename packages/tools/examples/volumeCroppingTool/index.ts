@@ -31,6 +31,7 @@ const {
   ZoomTool,
   PanTool,
   OrientationMarkerTool,
+  OrientationControlTool,
   StackScrollTool,
   CrosshairsTool,
 } = cornerstoneTools;
@@ -221,6 +222,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
+  cornerstoneTools.addTool(OrientationControlTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(CrosshairsTool);
 
@@ -369,6 +371,9 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   });
   // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
+  // Add OrientationControlTool with default settings (will be enabled after volume is loaded)
+  toolGroupVRT.addTool(OrientationControlTool.toolName);
+
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
   renderingEngine.renderViewports(activeViewportIds);
@@ -399,6 +404,8 @@ async function run(numViewports = getNumViewportsFromUrl()) {
         },
       ],
     });
+    // Enable OrientationControlTool after viewport is added and volume is loaded
+    toolGroupVRT.setToolEnabled(OrientationControlTool.toolName);
     viewport.setZoom(1.2);
     viewport.render();
   });
