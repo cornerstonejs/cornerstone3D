@@ -166,7 +166,7 @@
     "stylelint-config-recommended": "12.0.0",
     "ts-loader": "9.5.1",
     "ts-node": "10.9.2",
-    "typedoc": "0.26.11",
+    "typedoc": "0.28.15",
     "typescript": "5.5.4",
     "unzipper": "0.10.14",
     "url-loader": "4.1.1",

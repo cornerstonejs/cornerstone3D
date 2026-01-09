@@ -136,7 +136,6 @@ class DragProbeTool extends ProbeTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -151,6 +150,7 @@ class DragProbeTool extends ProbeTool {
     const point = data.handles.points[0];
     const canvasCoordinates = viewport.worldToCanvas(point);
 
+    const targetId = this.getTargetId(viewport, data);
     styleSpecifier.annotationUID = annotationUID;
 
     const { color } = this.getAnnotationStyle({
