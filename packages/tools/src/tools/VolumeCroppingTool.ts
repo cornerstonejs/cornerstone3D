@@ -919,25 +919,9 @@ class VolumeCroppingTool extends BaseTool {
       this._updateFaceSpheresFromCorners();
       this._updateCornerSpheres();
 
-      const volumeActor = viewport.getDefaultActor()?.actor;
-      if (volumeActor) {
-        const mapper = volumeActor.getMapper() as vtkVolumeMapper;
-        mapper.removeAllClippingPlanes();
-        for (let i = 0; i < NUM_CLIPPING_PLANES; ++i) {
-          const plane = vtkPlane.newInstance({
-            origin: this.originalClippingPlanes[i].origin as [
-              number,
-              number,
-              number,
-            ],
-            normal: this.originalClippingPlanes[i].normal as [
-              number,
-              number,
-              number,
-            ],
-          });
-          mapper.addClippingPlane(plane);
-        }
+      const mapper = this._getVolumeMapper(viewport);
+      if (mapper) {
+        this._applyClippingPlanesToMapper(mapper);
       }
       viewport.render();
       this._notifyClippingPlanesChanged(viewport);
@@ -1023,8 +1007,8 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _getViewportsInfo = () => {
-    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
-    return viewports;
+    const toolGroup = getToolGroup(this.toolGroupId);
+    return toolGroup?.viewportsInfo || [];
   };
 
   _addSphere(
@@ -1373,11 +1357,49 @@ class VolumeCroppingTool extends BaseTool {
     return { viewport, world };
   };
 
-  _getViewport = () => {
-    const [viewport3D] = this._getViewportsInfo();
+  _getViewport = (): Types.IVolumeViewport | null => {
+    const viewportsInfo = this._getViewportsInfo();
+    if (!viewportsInfo || viewportsInfo.length === 0) {
+      return null;
+    }
+    const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    return renderingEngine.getViewport(viewport3D.viewportId);
+    const viewport = renderingEngine?.getViewport(viewport3D.viewportId);
+    return (viewport as Types.IVolumeViewport) || null;
   };
+
+  _getVolumeActor(
+    viewport?: Types.IVolumeViewport
+  ): Types.VolumeActor | undefined {
+    const vp = viewport || this._getViewport();
+    return vp?.getDefaultActor()?.actor as Types.VolumeActor | undefined;
+  }
+
+  _getVolumeMapper(
+    viewport?: Types.IVolumeViewport
+  ): vtkVolumeMapper | undefined {
+    const actor = this._getVolumeActor(viewport);
+    return actor?.getMapper() as vtkVolumeMapper | undefined;
+  }
+
+  _applyClippingPlanesToMapper(mapper: vtkVolumeMapper): void {
+    mapper.removeAllClippingPlanes();
+    for (let i = 0; i < NUM_CLIPPING_PLANES; ++i) {
+      const plane = vtkPlane.newInstance({
+        origin: this.originalClippingPlanes[i].origin as [
+          number,
+          number,
+          number,
+        ],
+        normal: this.originalClippingPlanes[i].normal as [
+          number,
+          number,
+          number,
+        ],
+      });
+      mapper.addClippingPlane(plane);
+    }
+  }
 
   _updateClippingPlanesFromFaceSpheres(viewport) {
     const mapper = viewport.getDefaultActor().actor.getMapper();
@@ -1401,24 +1423,7 @@ class VolumeCroppingTool extends BaseTool {
       ...this.sphereStates[SPHEREINDEX.ZMAX].point,
     ];
 
-    mapper.removeAllClippingPlanes();
-    for (let i = 0; i < NUM_CLIPPING_PLANES; ++i) {
-      const origin = this.originalClippingPlanes[i].origin as [
-        number,
-        number,
-        number,
-      ];
-      const normal = this.originalClippingPlanes[i].normal as [
-        number,
-        number,
-        number,
-      ];
-      const plane = vtkPlane.newInstance({
-        origin,
-        normal,
-      });
-      mapper.addClippingPlane(plane);
-    }
+    this._applyClippingPlanesToMapper(mapper);
   }
 
   _updateCornerSpheresFromFaces() {
