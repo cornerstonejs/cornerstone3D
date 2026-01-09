@@ -1205,7 +1205,7 @@ class Viewport {
       -focalPointToSet[2]
     );
 
-    const initialAspectRatio = this.getAspectRatio();
+    const initialAspectRatio = this.options?.aspectRatio || [1, 1];
 
     this.setCamera({
       parallelScale: resetZoom ? parallelScale : previousCamera.parallelScale,

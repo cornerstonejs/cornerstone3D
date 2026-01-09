@@ -1,7 +1,8 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
-import { getProjectionScaleIndices } from '../helpers/getProjectionScaleIndices';
+import { getProjectionScaleMatrix } from '../helpers/getProjectionScaleMatrix';
 import { getNormalizedAspectRatio } from '../../utilities/getNormalizedAspectRatio';
+import { mat4 } from 'gl-matrix';
 
 interface ICameraInitialValues {
   position?: number[];
@@ -71,9 +72,11 @@ function extendedVtkCamera(publicAPI, model) {
     if (sx !== 1.0 || sy !== 1.0) {
       const viewUp = publicAPI.getViewUp();
       const viewPlaneNormal = publicAPI.getViewPlaneNormal();
-      const { idxX, idxY } = getProjectionScaleIndices(viewUp, viewPlaneNormal);
-      matrix[idxX] *= sx;
-      matrix[idxY] *= sy;
+      const scaleMatrix = getProjectionScaleMatrix(viewUp, viewPlaneNormal, [
+        sx,
+        sy,
+      ]);
+      mat4.multiply(matrix, scaleMatrix, matrix);
     }
 
     return matrix;
