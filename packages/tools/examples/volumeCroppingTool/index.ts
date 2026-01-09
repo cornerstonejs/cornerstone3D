@@ -147,12 +147,9 @@ addToggleButtonToToolbar({
   title: 'Toggle Clipping Planes',
   defaultToggle: true,
   onClick: (toggle) => {
-    // Get the tool group for the 3D viewport
     const toolGroupVRT =
       cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
-    // Get the VolumeCroppingTool instance from the tool group
     const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
-    // Call setClippingPlanesVisible on the tool instance
     if (
       croppingTool &&
       typeof croppingTool.setClippingPlanesVisible === 'function'
@@ -168,12 +165,9 @@ addToggleButtonToToolbar({
   title: 'Toggle Rotate Clipping Planes',
   defaultToggle: false,
   onClick: (toggle) => {
-    // Get the tool group for the 3D viewport
     const toolGroupVRT =
       cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
-    // Get the VolumeCroppingTool instance from the tool group
     const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
-    // Toggle the rotate planes on drag setting
     if (
       croppingTool &&
       typeof croppingTool.setRotatePlanesOnDrag === 'function' &&
@@ -189,12 +183,9 @@ addToggleButtonToToolbar({
   title: 'Toggle Handles',
   defaultToggle: false,
   onClick: (toggle) => {
-    // Get the tool group for the 3D viewport
     const toolGroupVRT =
       cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
-    // Get the VolumeCroppingTool instance from the tool group
     const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
-    // Call setHandlesVisible on the tool instance
     if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
       croppingTool.setHandlesVisible(!croppingTool.getHandlesVisible());
     }
@@ -389,9 +380,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     overlayMarkerType:
       OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
   });
-  // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
-  const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
   renderingEngine.renderViewports(activeViewportIds);
   await setVolumesForViewports(
