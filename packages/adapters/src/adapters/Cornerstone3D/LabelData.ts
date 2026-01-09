@@ -77,11 +77,18 @@ export default class LabelData {
      * characters
      */
     public createQualitativeLabel(label: string) {
-        const relationshipType = valueTypes.RelationshipTypes.CONTAINS;
-        return new valueTypes.TextContentItem({
-            name: new coding.CodedConcept(COMMENT_CODE),
-            relationshipType,
-            value: label
+        return new valueTypes.CodeContentItem({
+            name: new coding.CodedConcept({
+                value: "121071",
+                meaning: "Finding",
+                schemeDesignator: "DCM"
+            }),
+            relationshipType: valueTypes.RelationshipTypes.CONTAINS,
+            value: new coding.CodedConcept({
+                value: "CORNERSTONEFREETEXT",
+                meaning: label,
+                schemeDesignator: "CORNERSTONEJS"
+            })
         });
     }
 
@@ -94,32 +101,39 @@ export default class LabelData {
         const { referencedImageId, FrameOfReferenceUID: frameOfReferenceUID } =
             annotation.metadata;
         const is3DMeasurement = !referencedImageId;
-        const { worldPosition } = textBox;
         const { x, y, z } = toScoord(
             { is3DMeasurement, referencedImageId },
-            worldPosition
+            textBox.worldPosition
         );
+
         const graphicType = valueTypes.GraphicTypes.POINT;
         const relationshipType = valueTypes.RelationshipTypes.CONTAINS;
         const name = new coding.CodedConcept(TEXT_ANNOTATION_POSITION);
 
-        if (is3DMeasurement) {
-            const graphicData = [x, y, z];
-            return new valueTypes.Scoord3DContentItem({
-                name,
-                relationshipType,
-                graphicType,
-                frameOfReferenceUID,
-                graphicData
-            });
-        }
+        const scoord = is3DMeasurement
+            ? new valueTypes.Scoord3DContentItem({
+                  name,
+                  relationshipType,
+                  graphicType,
+                  graphicData: [x, y, z],
+                  frameOfReferenceUID
+              })
+            : new valueTypes.ScoordContentItem({
+                  name,
+                  relationshipType,
+                  graphicType,
+                  graphicData: [x, y]
+              });
 
-        const graphicData = [x, y];
-        return new valueTypes.ScoordContentItem({
-            name,
-            relationshipType,
-            graphicType,
-            graphicData
-        });
+        // Required by TID 1501
+        scoord.ContentSequence = [
+            {
+                RelationshipType: valueTypes.RelationshipTypes.SELECTED_FROM,
+                ValueType: valueTypes.ValueTypes.IMAGE,
+                ReferencedSOPSequence: this.ReferencedSOPSequence
+            }
+        ];
+
+        return scoord;
     }
 }

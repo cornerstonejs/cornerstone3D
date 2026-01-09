@@ -58,7 +58,7 @@ export default class Length extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, is3DMeasurement = false, annotationIndex) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
 
@@ -82,8 +82,7 @@ export default class Length extends BaseAdapter3D {
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],
-            use3DSpatialCoordinates: is3DMeasurement,
-            annotationIndex
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

@@ -3,16 +3,14 @@ import { utilities as csUtilities } from "@cornerstonejs/core";
 
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
-import CodingScheme from "./CodingScheme";
 import { toScoord } from "../helpers";
 
-const { Point: TID300Point } = utilities.TID300;
+const { ArrowAnnotate: TID300ArrowAnnotate } = utilities.TID300;
 const { imageToWorldCoords } = csUtilities;
-const { codeValues } = CodingScheme;
 
 class ArrowAnnotate extends BaseAdapter3D {
     static {
-        this.init("ArrowAnnotate", TID300Point);
+        this.init("ArrowAnnotate", TID300ArrowAnnotate);
         this.registerLegacy();
     }
 
@@ -77,7 +75,7 @@ class ArrowAnnotate extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(tool, is3DMeasurement = false, annotationIndex) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, metadata, findingSites } = tool;
         const { finding } = tool;
         const { referencedImageId } = metadata;
@@ -103,8 +101,7 @@ class ArrowAnnotate extends BaseAdapter3D {
             ReferencedFrameOfReferenceUID: is3DMeasurement
                 ? metadata.FrameOfReferenceUID
                 : null,
-            use3DSpatialCoordinates: is3DMeasurement,
-            annotationIndex
+            use3DSpatialCoordinates: is3DMeasurement
         };
 
         return TID300RepresentationArguments;
