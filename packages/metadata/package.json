@@ -1,0 +1,77 @@
+{
+  "name": "@cornerstonejs/metadata",
+  "version": "4.15.5",
+  "description": "Cornerstone3D Metadata",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "repository": "https://github.com/cornerstonejs/cornerstone3D",
+  "files": [
+    "./dist/"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "node": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    },
+    "./utilities": {
+      "import": "./dist/esm/utilities/index.js",
+      "node": "./dist/esm/utilities/index.js",
+      "types": "./dist/esm/utilities/index.d.ts"
+    },
+    "./utilities/*": {
+      "import": "./dist/esm/utilities/*.js",
+      "node": "./dist/esm/utilities/*.js",
+      "types": "./dist/esm/utilities/*.d.ts"
+    },
+    "./enums": {
+      "import": "./dist/esm/enums/index.js",
+      "node": "./dist/esm/enums/index.js",
+      "types": "./dist/esm/enums/index.d.ts"
+    },
+    "./enums/*": {
+      "import": "./dist/esm/enums/*.js",
+      "node": "./dist/esm/enums/*.js",
+      "types": "./dist/esm/enums/*.d.ts"
+    },
+    "./types": {
+      "types": "./dist/esm/types/index.d.ts"
+    },
+    "./types/*": {
+      "types": "./dist/esm/types/*.d.ts"
+    },
+    "./version": {
+      "import": "./dist/esm/version.js",
+      "node": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts"
+    }
+  },
+  "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
+    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
+    "build": "yarn run build:esm",
+    "build:all": "yarn run build:esm",
+    "dev": "tsc --project ./tsconfig.json --watch",
+    "api-check": "api-extractor --debug run ",
+    "lint": "oxlint .",
+    "prepublishOnly": "yarn run build"
+  },
+  "dependencies": {
+    "loglevel": "1.9.2"
+  },
+  "contributors": [
+    {
+      "name": "Cornerstone.js Contributors",
+      "url": "https://github.com/orgs/cornerstonejs/people"
+    }
+  ],
+  "license": "MIT",
+  "funding": {
+    "type": "individual",
+    "url": "https://ohif.org/donate"
+  }
+}

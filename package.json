@@ -6,6 +6,7 @@
     "packages/adapters",
     "packages/core",
     "packages/dicomImageLoader",
+    "packages/metadata",
     "packages/nifti-volume-loader",
     "packages/polymorphic-segmentation",
     "packages/tools",
