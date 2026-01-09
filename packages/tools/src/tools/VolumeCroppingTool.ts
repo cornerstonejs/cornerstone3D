@@ -936,7 +936,6 @@ class VolumeCroppingTool extends BaseTool {
     const mapper = actor.getMapper();
     const matrix = actor.getMatrix();
 
-    // Only update if clipping planes are visible
     if (!this.configuration.showClippingPlanes) {
       mapper.removeAllClippingPlanes();
       return;
@@ -956,8 +955,6 @@ class VolumeCroppingTool extends BaseTool {
       return;
     }
 
-    // Only remove/add if the number of planes has changed or matrix has changed
-    // (Assume matrix changes frequently, so always update for now)
     mapper.removeAllClippingPlanes();
 
     // Preallocate arrays for transformed origins/normals
@@ -1020,7 +1017,6 @@ class VolumeCroppingTool extends BaseTool {
     adaptiveRadius
   ) {
     // Generate a unique UID for each sphere based on its axis and position
-    // Use cornerKey for corners, otherwise axis+position for faces
     const uid = cornerKey ? `corner_${cornerKey}` : `${axis}_${position}`;
     const sphereState = this.sphereStates.find((s) => s.uid === uid);
     if (sphereState) {
@@ -1045,7 +1041,7 @@ class VolumeCroppingTool extends BaseTool {
     } else if (axis === 'y') {
       color = sphereColors.CORONAL || [0.0, 1.0, 0.0]; // Y-axis (column direction) = CORONAL planes
     }
-    // Store or update the sphere position
+
     const idx = this.sphereStates.findIndex((s) => s.uid === uid);
     if (idx === -1) {
       this.sphereStates.push({
@@ -1143,7 +1139,6 @@ class VolumeCroppingTool extends BaseTool {
     }
     this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
 
-    // Extract volume direction vectors
     this.volumeDirectionVectors = extractVolumeDirectionVectors(imageData);
     const { xDir, yDir, zDir } = this.volumeDirectionVectors;
 
@@ -1162,7 +1157,6 @@ class VolumeCroppingTool extends BaseTool {
     const zMin = cropFactor * dimensions[2];
     const zMax = (1 - cropFactor) * dimensions[2];
 
-    // Helper function to convert index to world coordinates
     const indexToWorld = (i: number, j: number, k: number): Types.Point3 => {
       return [
         origin[0] +
@@ -1248,7 +1242,6 @@ class VolumeCroppingTool extends BaseTool {
       this.configuration
     );
 
-    // Add face spheres - now using 'x', 'y', 'z' instead of 'i', 'j', 'k'
     this._addSphere(viewport, faceXMin, 'x', 'min', null, adaptiveRadius);
     this._addSphere(viewport, faceXMax, 'x', 'max', null, adaptiveRadius);
     this._addSphere(viewport, faceYMin, 'y', 'min', null, adaptiveRadius);
@@ -1962,7 +1955,6 @@ class VolumeCroppingTool extends BaseTool {
         });
 
         // Rotate corner spheres directly using the same transformation
-        // This ensures they stay consistent with the rotated planes
         const cornerIndices = [
           SPHEREINDEX.XMIN_YMIN_ZMIN,
           SPHEREINDEX.XMIN_YMIN_ZMAX,
@@ -2021,11 +2013,9 @@ class VolumeCroppingTool extends BaseTool {
         });
       }
 
-      // Update clipping planes in viewport
       this._updateClippingPlanes(viewport);
       viewport.render();
 
-      // Notify VolumeCroppingControlTool about the rotation
       triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
         originalClippingPlanes: this.originalClippingPlanes,
         viewportId: viewport.id,

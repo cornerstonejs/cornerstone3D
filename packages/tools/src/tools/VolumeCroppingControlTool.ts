@@ -343,7 +343,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
   onSetToolActive() {
     const viewportsInfo = this._getViewportsInfo();
 
-    // Check if any annotation exists before proceeding
     let anyAnnotationExists = false;
     for (const vpInfo of viewportsInfo) {
       const enabledElement = getEnabledElementByIds(
@@ -385,14 +384,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
           });
         }
 
-        // Render after removing annotations to clear reference lines
         enabledElement.viewport.render();
       }
     }
   }
 
   onSetToolEnabled() {
-    // Re-add event listener when tool is enabled
     eventTarget.addEventListener(
       Events.VOLUMECROPPING_TOOL_CHANGED,
       this._onSphereMoved
@@ -404,16 +401,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
 
-    // Remove event listener to prevent memory leaks
     eventTarget.removeEventListener(
       Events.VOLUMECROPPING_TOOL_CHANGED,
       this._onSphereMoved
     );
 
-    // has no value when the tool is disabled
-    // since viewports can change (zoom, pan, scroll)
-    // between disabled and enabled/active states.
-    // so we just remove the annotations from the state
     viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
       const enabledElement = getEnabledElementByIds(
         viewportId,
@@ -496,10 +488,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
 
-    // Store clipping planes directly
     this.clippingPlanes = copyClippingPlanes(originalClippingPlanes);
 
-    // Update all annotations with the new clipping planes
     const viewportsInfo = this._getViewportsInfo();
     viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
       const enabledElement = getEnabledElementByIds(
@@ -518,7 +508,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
     });
 
-    // Trigger re-render to show updated reference lines
     triggerAnnotationRenderForViewportIds(
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
@@ -558,7 +547,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const { data } = filteredAnnotations[0];
 
     const viewportIdArray = [];
-    // put all the draggable reference lines in the viewportIdArray
 
     const referenceLines = data.referenceLines || [];
     for (let i = 0; i < referenceLines.length; ++i) {
@@ -670,7 +658,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         continue;
       }
 
-      // This init are necessary, because when we move the mouse they are not cleaned by _endCallback
       data.activeViewportIds = [];
       const near = this._pointNearTool(
         element,
@@ -706,7 +693,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     // Filter annotations for this orientation
     const filtered = annotations.filter((annotation) => {
-      // Match by orientation property
       if (
         annotation.data.orientation &&
         orientation &&
@@ -778,7 +764,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     const data = viewportAnnotation.data;
 
-    // Get clipping planes from annotation handles, fallback to this.clippingPlanes
     let clippingPlanes = viewportAnnotation.data.handles.clippingPlanes;
     if (!clippingPlanes || clippingPlanes.length < NUM_CLIPPING_PLANES) {
       // Try to use this.clippingPlanes if annotation doesn't have them yet
@@ -787,7 +772,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         this.clippingPlanes.length >= NUM_CLIPPING_PLANES
       ) {
         clippingPlanes = this.clippingPlanes;
-        // Update annotation with the clipping planes
         data.handles.clippingPlanes = copyClippingPlanes(this.clippingPlanes);
       } else {
         return false;
@@ -855,13 +839,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
     referenceLines.forEach((line, lineIndex) => {
       const [otherViewport, startPoint, endPoint, type, planeIndex] = line;
 
-      // Ensure planeIndex is valid
       if (
         planeIndex === undefined ||
         planeIndex < 0 ||
         planeIndex >= NUM_CLIPPING_PLANES
       ) {
-        return; // Skip invalid lines
+        return;
       }
 
       // Calculate intersections with other lines in this viewport
@@ -885,12 +868,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
         }
       }
 
-      // Get color based on plane axis (X, Y, or Z)
-      // Note: Color configuration uses orientation names (SAGITTAL, CORONAL, AXIAL) as keys
-      // for historical/API compatibility, but these refer to the volume's X, Y, Z axes, not viewport orientations
       const colorKey = getColorKeyForPlaneIndex(planeIndex);
 
-      // Use lineColors from configuration (keys are orientation names for API compatibility)
       const lineColors = this.configuration.lineColors || {};
       const colorArr = colorKey
         ? lineColors[colorKey] || lineColors.UNKNOWN || [1.0, 0.0, 0.0]
@@ -915,8 +894,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
 
       const lineUID = `plane_${planeIndex}`;
-      // Always draw lines, not just if viewportControllable
-      // (viewportControllable only affects whether they can be dragged)
       if (intersections.length === 2) {
         // Draw line between intersections
         drawLineSvg(
@@ -1026,12 +1003,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (evt.detail.originalClippingPlanes) {
       this._syncWithVolumeCroppingTool(evt.detail.originalClippingPlanes);
     } else {
-      // If no originalClippingPlanes, wait for VolumeCroppingTool to send them
-      // This branch should not be needed once VolumeCroppingTool always sends originalClippingPlanes
       if (evt.detail.seriesInstanceUID !== this.seriesInstanceUID) {
         return;
       }
-      // For now, just return - we need clipping planes to update
       return;
     }
   };
@@ -1090,9 +1064,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }
 
   _activateModify = (element) => {
-    // mobile sometimes has lingering interaction even when touchEnd triggers
-    // this check allows for multiple handles to be active which doesn't affect
-    // tool usage.
     state.isInteractingWithTool = !this.configuration.mobile?.enabled;
 
     element.addEventListener(Events.MOUSE_UP, this._endCallback);
@@ -1197,18 +1168,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
         plane.origin[1] += normal[1] * moveDistance;
         plane.origin[2] += normal[2] * moveDistance;
       } else if (handles.activeType === 'min') {
-        // Update XMIN, YMIN, ZMIN planes (fallback for backward compatibility)
         clippingPlanes[0].origin[0] += delta[0]; // XMIN
         clippingPlanes[2].origin[1] += delta[1]; // YMIN
         clippingPlanes[4].origin[2] += delta[2]; // ZMIN
       } else if (handles.activeType === 'max') {
-        // Update XMAX, YMAX, ZMAX planes (fallback for backward compatibility)
         clippingPlanes[1].origin[0] += delta[0]; // XMAX
         clippingPlanes[3].origin[1] += delta[1]; // YMAX
         clippingPlanes[5].origin[2] += delta[2]; // ZMAX
       }
 
-      // Update this.clippingPlanes to keep in sync
       this.clippingPlanes = copyClippingPlanes(clippingPlanes);
 
       // Update all annotations with the new clipping planes
@@ -1234,7 +1202,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         viewportsInfo.map(({ viewportId }) => viewportId)
       );
 
-      // Send event with clipping planes instead of toolCenter
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
         clippingPlanes: this.clippingPlanes,
@@ -1253,7 +1220,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     if (referenceLines) {
       for (let i = 0; i < referenceLines.length; ++i) {
-        // Each line: [viewport, startPoint, endPoint, type, planeIndex]
         const [otherViewport, startPoint, endPoint, type, planeIndex] =
           referenceLines[i];
 
