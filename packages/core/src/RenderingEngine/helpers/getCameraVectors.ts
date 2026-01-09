@@ -87,6 +87,24 @@ export function calculateCameraPosition(
     case OrientationAxis.CORONAL_REFORMAT:
       referenceCameraValues = MPR_CAMERA_VALUES.coronal;
       break;
+    case OrientationAxis.REFORMAT:
+      // For generic REFORMAT, auto-detect the best matching orientation
+      // This is a fallback case - normally orientation is auto-detected before calling this
+      const autoDetected = getOrientationFromScanAxisNormal(scanAxisNormal);
+      switch (autoDetected) {
+        case OrientationAxis.AXIAL:
+          referenceCameraValues = MPR_CAMERA_VALUES.axial;
+          break;
+        case OrientationAxis.SAGITTAL:
+          referenceCameraValues = MPR_CAMERA_VALUES.sagittal;
+          break;
+        case OrientationAxis.CORONAL:
+          referenceCameraValues = MPR_CAMERA_VALUES.coronal;
+          break;
+        default:
+          referenceCameraValues = MPR_CAMERA_VALUES.axial;
+      }
+      break;
     default:
       // Default to axial if orientation is not recognized
       referenceCameraValues = MPR_CAMERA_VALUES.axial;
@@ -262,7 +280,8 @@ export function getCameraVectors(
     normalPlaneForOrientation = viewport.getCamera().viewPlaneNormal;
   }
 
-  if (!orientation) {
+  // Auto-detect orientation if not provided or if REFORMAT is specified
+  if (!orientation || orientation === OrientationAxis.REFORMAT) {
     orientation = getOrientationFromScanAxisNormal(normalPlaneForOrientation);
   }
 
