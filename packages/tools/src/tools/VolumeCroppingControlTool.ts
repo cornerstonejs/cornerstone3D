@@ -89,8 +89,6 @@ interface VolumeCroppingAnnotation extends Annotation {
     referenceLines: ReferenceLine[]; // set in renderAnnotation
     orientation?: string; // AXIAL, CORONAL, SAGITTAL
   };
-  isVirtual?: boolean;
-  virtualNormal?: Types.Point3;
 }
 
 function defaultReferenceLineColor() {
@@ -146,7 +144,6 @@ const OPERATION = {
  * @extends AnnotationTool
  *
  * @property {string} seriesInstanceUID - Frame of reference for the tool
- * @property {VolumeCroppingAnnotation[]} _virtualAnnotations - Store virtual annotations for missing viewport orientations (e.g., CT_CORONAL when only axial and sagittal are present)
  * @property {string} toolName - Static tool identifier: 'VolumeCroppingControl'
  * @property {ClippingPlane[]} clippingPlanes - Array of 6 clipping planes ordered as [XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX]
  * @property {Function} _getReferenceLineColor - Optional callback to determine reference line color per viewport
@@ -187,8 +184,6 @@ const OPERATION = {
  * - Limited to orthogonal viewport orientations (axial, coronal, sagittal)l
  */
 class VolumeCroppingControlTool extends AnnotationTool {
-  // Store virtual annotations (e.g., for missing orientations like CT_CORONAL)
-  _virtualAnnotations: VolumeCroppingAnnotation[] = [];
   static toolName;
   seriesInstanceUID?: string;
   clippingPlanes: ClippingPlane[] = [];
@@ -379,7 +374,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
       this._subscribeToViewportNewVolumeSet(viewportsInfo);
       // Request the volume cropping tool to send current planes
-      this._initializeViewportsAndVirtualAnnotations(viewportsInfo);
+      this._initializeViewports(viewportsInfo);
       triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
         toolGroupId: this.toolGroupId,
         viewportsInfo: viewportsInfo,
@@ -476,162 +471,21 @@ class VolumeCroppingControlTool extends AnnotationTool {
       viewport.render();
     }
 
-    this._initializeViewportsAndVirtualAnnotations(viewportsInfo);
+    this._initializeViewports(viewportsInfo);
   };
 
-  _initializeViewportsAndVirtualAnnotations = (viewportsInfo): void => {
+  _initializeViewports = (viewportsInfo): void => {
     if (!viewportsInfo || !viewportsInfo[0]) {
       console.warn(
-        '  _initializeViewportsAndVirtualAnnotations : No valid viewportsInfo for initialization.'
+        'VolumeCroppingControlTool: No valid viewportsInfo for initialization.'
       );
       return;
     }
-    // Support any missing orientation
-    const orientationIds = ['AXIAL', 'CORONAL', 'SAGITTAL'];
-    // Get present orientations from viewportsInfo
-    const presentOrientations = viewportsInfo
-      .map((vp) => {
-        if (vp.renderingEngineId) {
-          const renderingEngine = getRenderingEngine(vp.renderingEngineId);
-          const viewport = renderingEngine.getViewport(vp.viewportId);
-          if (viewport && viewport.getCamera) {
-            const orientation = getOrientationFromNormal(
-              viewport.getCamera().viewPlaneNormal
-            );
-            if (orientation) {
-              return orientation;
-            }
-          }
-        }
-        return null;
-      })
-      .filter(Boolean);
 
-    const missingOrientation = orientationIds.find(
-      (id) => !presentOrientations.includes(id)
-    );
-
-    // Initialize present viewports
-
-    const presentNormals: Types.Point3[] = [];
-    const presentCenters: Types.Point3[] = [];
-    // Find present viewport infos by matching orientation, not viewportId
-    const presentViewportInfos = viewportsInfo.filter((vp) => {
-      let orientation = null;
-      if (vp.renderingEngineId) {
-        const renderingEngine = getRenderingEngine(vp.renderingEngineId);
-        const viewport = renderingEngine.getViewport(vp.viewportId);
-        if (viewport && viewport.getCamera) {
-          orientation = getOrientationFromNormal(
-            viewport.getCamera().viewPlaneNormal
-          );
-        }
-      }
-      return orientation && orientationIds.includes(orientation);
+    // Initialize all present viewports
+    viewportsInfo.forEach((vpInfo) => {
+      this.initializeViewport(vpInfo);
     });
-    presentViewportInfos.forEach((vpInfo) => {
-      const { normal, point } = this.initializeViewport(vpInfo);
-      presentNormals.push(normal);
-      presentCenters.push(point);
-    });
-
-    // If all three orientations are present, nothing to synthesize
-    if (presentViewportInfos.length === 2 && missingOrientation) {
-      // Synthesize virtual annotation for the missing orientation
-      const virtualNormal: Types.Point3 = [0, 0, 0];
-      vec3.cross(virtualNormal, presentNormals[0], presentNormals[1]);
-      vec3.normalize(virtualNormal, virtualNormal);
-      const virtualCenter: Types.Point3 = [
-        (presentCenters[0][0] + presentCenters[1][0]) / 2,
-        (presentCenters[0][1] + presentCenters[1][1]) / 2,
-        (presentCenters[0][2] + presentCenters[1][2]) / 2,
-      ];
-      const orientation = null;
-      const virtualAnnotation: VolumeCroppingAnnotation = {
-        highlighted: false,
-        metadata: {
-          cameraPosition: <Types.Point3>[...virtualCenter],
-          cameraFocalPoint: <Types.Point3>[...virtualCenter],
-          toolName: this.getToolName(),
-        },
-        data: {
-          handles: {
-            activeOperation: null,
-            clippingPlanes:
-              this.clippingPlanes.length > 0
-                ? copyClippingPlanes(this.clippingPlanes)
-                : [],
-          },
-          activeViewportIds: [],
-          viewportId: missingOrientation,
-          referenceLines: [],
-          orientation,
-        },
-        isVirtual: true,
-        virtualNormal,
-      };
-      this._virtualAnnotations = [virtualAnnotation];
-    } else if (presentViewportInfos.length === 1) {
-      // Synthesize two virtual annotations for the two missing orientations
-      // Get present orientation from camera normal
-      let presentOrientation = null;
-      const vpInfo = presentViewportInfos[0];
-      if (vpInfo.renderingEngineId) {
-        const renderingEngine = getRenderingEngine(vpInfo.renderingEngineId);
-        const viewport = renderingEngine.getViewport(vpInfo.viewportId);
-        if (viewport && viewport.getCamera) {
-          presentOrientation = getOrientationFromNormal(
-            viewport.getCamera().viewPlaneNormal
-          );
-        }
-      }
-      const presentCenter = presentCenters[0];
-      // Map canonical normals to orientation strings
-      const canonicalNormals = {
-        AXIAL: [0, 0, 1],
-        CORONAL: [0, 1, 0],
-        SAGITTAL: [1, 0, 0],
-      };
-      // missingIds: AXIAL, CORONAL, SAGITTAL
-      const missingIds = orientationIds.filter(
-        (id) => id !== presentOrientation
-      );
-      const virtualAnnotations: VolumeCroppingAnnotation[] = missingIds.map(
-        (orientation) => {
-          // Use orientation string to get canonical normal
-          const normal = canonicalNormals[orientation];
-          const virtualAnnotation = {
-            highlighted: false,
-            metadata: {
-              cameraPosition: <Types.Point3>[...presentCenter],
-              cameraFocalPoint: <Types.Point3>[...presentCenter],
-              toolName: this.getToolName(),
-            },
-            data: {
-              handles: {
-                activeOperation: null,
-                clippingPlanes:
-                  this.clippingPlanes.length > 0
-                    ? this.clippingPlanes.map((p) => ({
-                        origin: [...p.origin] as Types.Point3,
-                        normal: [...p.normal] as Types.Point3,
-                      }))
-                    : [],
-              },
-              activeViewportIds: [],
-              viewportId: orientation, // Use orientation string for virtual annotation
-              referenceLines: [],
-              orientation,
-            },
-            isVirtual: true,
-            virtualNormal: normal,
-          };
-
-          return virtualAnnotation;
-        }
-      );
-      this._virtualAnnotations = virtualAnnotations;
-    }
 
     if (viewportsInfo && viewportsInfo.length) {
       triggerAnnotationRenderForViewportIds(
@@ -668,20 +522,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         });
       }
     });
-
-    // Update virtual annotations
-    if (this._virtualAnnotations?.length > 0) {
-      this._virtualAnnotations.forEach((annotation) => {
-        if (annotation.data?.handles) {
-          annotation.data.handles.clippingPlanes = this.clippingPlanes.map(
-            (p) => ({
-              origin: [...p.origin] as Types.Point3,
-              normal: [...p.normal] as Types.Point3,
-            })
-          );
-        }
-      });
-    }
 
     // Trigger re-render to show updated reference lines
     triggerAnnotationRenderForViewportIds(
@@ -880,12 +720,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       );
     }
 
-    // Filter annotations for this orientation, including virtual annotations
+    // Filter annotations for this orientation
     const filtered = annotations.filter((annotation) => {
-      // Always include virtual annotations for reference line rendering
-      if (annotation.isVirtual) {
-        return true;
-      }
       // Match by orientation property
       if (
         annotation.data.orientation &&
@@ -933,11 +769,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     let renderStatus = false;
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
-    let annotations = this._getAnnotations(enabledElement);
-    // If we have virtual annotations , always include them
-    if (this._virtualAnnotations && this._virtualAnnotations.length) {
-      annotations = annotations.concat(this._virtualAnnotations);
-    }
+    const annotations = this._getAnnotations(enabledElement);
     const camera = viewport.getCamera();
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
@@ -1236,7 +1068,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
         }
       }
     }
-    this._initializeViewportsAndVirtualAnnotations(viewportsInfo);
+    this._initializeViewports(viewportsInfo);
     triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
       toolGroupId: this.toolGroupId,
       viewportsInfo: viewportsInfo,
@@ -1417,17 +1249,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
           });
         }
       });
-
-      // Update virtual annotations
-      if (this._virtualAnnotations?.length > 0) {
-        this._virtualAnnotations.forEach((annotation) => {
-          if (annotation.data?.handles) {
-            annotation.data.handles.clippingPlanes = copyClippingPlanes(
-              this.clippingPlanes
-            );
-          }
-        });
-      }
 
       triggerAnnotationRenderForViewportIds(
         viewportsInfo.map(({ viewportId }) => viewportId)
