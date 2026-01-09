@@ -30,13 +30,22 @@ module.exports = {
   devtool: 'inline-source-map',
   plugins: [
     new rspack.HtmlRspackPlugin({
-      template: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/template.html',
+      template: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/template-styled.html',
     }),
     new rspack.DefinePlugin({
       __BASE_PATH__: "''",
+      'window.CURRENT_EXAMPLE': JSON.stringify('${name}'),
     }),
     new rspack.CopyRspackPlugin({
       patterns: [
+        {
+          from: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/example-styles.css',
+          to: '${destPath.replace(/\\/g, '/')}',
+        },
+        {
+          from: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/example-info.js',
+          to: '${destPath.replace(/\\/g, '/')}',
+        },
         {
           from:
           '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/',
