@@ -61,11 +61,7 @@ class EllipticalROI extends BaseAdapter3D {
         return state;
     }
 
-    static getTID300RepresentationArguments(
-        tool,
-        is3DMeasurement = false,
-        annotationIndex
-    ) {
+    static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
         const { data, finding, findingSites, metadata } = tool;
         const { cachedStats = {}, handles } = data;
         const rotation = data.initialRotation || 0;
@@ -132,8 +128,7 @@ class EllipticalROI extends BaseAdapter3D {
             ReferencedFrameOfReferenceUID: is3DMeasurement
                 ? metadata.FrameOfReferenceUID
                 : null,
-            use3DSpatialCoordinates: is3DMeasurement,
-            annotationIndex
+            use3DSpatialCoordinates: is3DMeasurement
         };
     }
 }

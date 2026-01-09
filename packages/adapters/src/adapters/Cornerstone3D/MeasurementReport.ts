@@ -150,8 +150,7 @@ export interface MeasurementAdapter {
 
     getTID300RepresentationArguments(
         tool,
-        is3DMeasurement,
-        annotationIndex?
+        is3DMeasurement
     ): Record<string, unknown>;
 }
 
@@ -180,13 +179,11 @@ export default class MeasurementReport {
         tool,
         ReferencedSOPSequence,
         toolClass,
-        is3DMeasurement,
-        annotationIndex
+        is3DMeasurement
     ) {
         const args = toolClass.getTID300RepresentationArguments(
             tool,
-            is3DMeasurement,
-            annotationIndex
+            is3DMeasurement
         );
         args.ReferencedSOPSequence = ReferencedSOPSequence;
         if (args.use3DSpatialCoordinates) {
@@ -234,14 +231,12 @@ export default class MeasurementReport {
 
         // Loop through the array of tool instances
         // for this tool
-        const Measurements = toolTypeData.data.map((tool) => {
-            const annotationIndex = counter.next().value;
+        const Measurements = toolTypeData.data.map(tool => {
             return this.getTID300ContentItem(
                 tool,
                 ReferencedSOPSequence,
                 toolClass,
-                is3DMeasurement,
-                annotationIndex
+                is3DMeasurement
             );
         });
 
@@ -979,8 +974,8 @@ function appendList(list, appendList) {
  *
  */
 function* measurementCounter() {
-  let i = 1;
-  while (true) {
-    yield i++;
-  }
+    let i = 1;
+    while (true) {
+        yield i++;
+    }
 }
