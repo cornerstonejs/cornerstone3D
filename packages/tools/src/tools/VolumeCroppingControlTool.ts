@@ -392,13 +392,23 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }
 
   onSetToolEnabled() {
-    // Tool enabled state is managed by BaseTool
+    // Re-add event listener when tool is enabled
+    eventTarget.addEventListener(
+      Events.VOLUMECROPPING_TOOL_CHANGED,
+      this._onSphereMoved
+    );
   }
 
   onSetToolDisabled() {
     const viewportsInfo = this._getViewportsInfo();
 
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+
+    // Remove event listener to prevent memory leaks
+    eventTarget.removeEventListener(
+      Events.VOLUMECROPPING_TOOL_CHANGED,
+      this._onSphereMoved
+    );
 
     // has no value when the tool is disabled
     // since viewports can change (zoom, pan, scroll)
@@ -468,7 +478,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
 
-    // Initialize all present viewports
     viewportsInfo.forEach((vpInfo) => {
       this.initializeViewport(vpInfo);
     });
@@ -562,11 +571,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
         continue;
       }
       viewportIdArray.push(otherViewport.id);
-      //i++;
     }
 
     data.activeViewportIds = [...viewportIdArray];
-    // set translation operation
     data.handles.activeOperation = OPERATION.DRAG;
 
     evt.preventDefault();
@@ -633,8 +640,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     handle: ToolHandle,
     interactionType: InteractionTypes
   ): void {
-    // You can customize this logic as needed
-    // For now, just call toolSelectedCallback if you want default behavior
     this.toolSelectedCallback(evt, annotation, interactionType);
   }
 
@@ -1217,11 +1222,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
           const annotations = this._getAnnotations(enabledElement);
           annotations.forEach((annotation) => {
             if (annotation.data?.handles) {
-              annotation.data.handles.clippingPlanes = this.clippingPlanes.map(
-                (p) => ({
-                  origin: [...p.origin] as Types.Point3,
-                  normal: [...p.normal] as Types.Point3,
-                })
+              annotation.data.handles.clippingPlanes = copyClippingPlanes(
+                this.clippingPlanes
               );
             }
           });
