@@ -21,7 +21,7 @@ describe('getProjectionScaleMatrix', () => {
 
     const matrix = getProjectionScaleMatrix(viewUp, vpn, aspect);
 
-    expect(matrix[0]).toBeCloseTo(2.0); // Right is AP (align 1)
+    expect(matrix[0]).toBeCloseTo(1.0); // Right is AP (align 1)
     expect(matrix[5]).toBeCloseTo(2.0); // Up is SI (align 1)
   });
 

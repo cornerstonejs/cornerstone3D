@@ -43,7 +43,7 @@ export function getProjectionScaleMatrix(
     const alignmentZ = Math.abs(vec3.dot(screenVec, vec3.fromValues(0, 0, 1)));
     const alignmentY = Math.abs(vec3.dot(screenVec, vec3.fromValues(0, 1, 0)));
 
-    // Axial view → use AP, otherwise SI
+    // Axial view: use AP, otherwise SI
     const absVpn = [Math.abs(vpn[0]), Math.abs(vpn[1]), Math.abs(vpn[2])];
     const isAxial = Math.abs(vpn[2]) === Math.max(...absVpn);
     const alignFactor = isAxial ? alignmentY : alignmentZ;
