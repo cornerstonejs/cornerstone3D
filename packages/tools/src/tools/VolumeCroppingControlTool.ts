@@ -1,4 +1,4 @@
-import { vec2, vec3 } from 'gl-matrix';
+import { vec2 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
 import { AnnotationTool } from './base';
@@ -8,7 +8,6 @@ import {
   getRenderingEngine,
   getEnabledElementByIds,
   getEnabledElement,
-  utilities as csUtils,
   Enums,
   CONSTANTS,
   triggerEvent,
@@ -60,8 +59,6 @@ import {
   findLineBoundsIntersection,
   convertColorArrayToRgbString,
 } from '../utilities/volumeCropping';
-
-const { RENDERING_DEFAULTS } = CONSTANTS;
 
 type ReferenceLine = [
   viewport: {
@@ -253,19 +250,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
   }
 
-  _updateToolCentersFromViewport(viewport) {
-    const volumeActors = viewport.getActors();
-    if (!volumeActors || !volumeActors.length) {
-      return;
-    }
-    const imageData = volumeActors[0].actor.getMapper().getInputData();
-    if (!imageData) {
-      return;
-    }
-    this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
-    // Clipping planes will be initialized from VolumeCroppingTool via events
-  }
-
   /**
    * Gets the camera from the viewport, and adds  annotation for the viewport
    * to the annotationManager. If any annotation is found in the annotationManager, it
@@ -276,10 +260,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   initializeViewport = ({
     renderingEngineId,
     viewportId,
-  }: Types.IViewportId): {
-    normal: Types.Point3;
-    point: Types.Point3;
-  } => {
+  }: Types.IViewportId): void => {
     if (!renderingEngineId || !viewportId) {
       console.warn(
         'VolumeCroppingControlTool: Missing renderingEngineId or viewportId'
@@ -295,9 +276,18 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     const { viewport } = enabledElement;
-    this._updateToolCentersFromViewport(viewport);
+
+    // Update seriesInstanceUID from viewport
+    const volumeActors = viewport.getActors();
+    if (volumeActors && volumeActors.length > 0) {
+      const imageData = volumeActors[0].actor.getMapper().getInputData();
+      if (imageData) {
+        this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
+      }
+    }
+
     const { element } = viewport;
-    const { position, focalPoint, viewPlaneNormal } = viewport.getCamera();
+    const { position, focalPoint } = viewport.getCamera();
 
     // Check if there is already annotation for this viewport
     let annotations = this._getAnnotations(enabledElement);
@@ -339,10 +329,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
     };
 
     addAnnotation(annotation, element);
-    return {
-      normal: viewPlaneNormal,
-      point: viewport.canvasToWorld([100, 100]),
-    };
   };
 
   _getViewportsInfo = () => {
@@ -679,16 +665,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
         continue;
       }
 
-      const previousActiveOperation = data.handles.activeOperation;
-      const previousActiveViewportIds =
-        data.activeViewportIds && data.activeViewportIds.length > 0
-          ? [...data.activeViewportIds]
-          : [];
-
       // This init are necessary, because when we move the mouse they are not cleaned by _endCallback
       data.activeViewportIds = [];
-      let near = false;
-      near = this._pointNearTool(
+      const near = this._pointNearTool(
         element,
         annotation,
         canvasCoords,
@@ -1063,7 +1042,6 @@ class VolumeCroppingControlTool extends AnnotationTool {
         const imageData = volumeActors[0].actor.getMapper().getInputData();
         if (imageData) {
           this.seriesInstanceUID = imageData.seriesInstanceUID;
-          this._updateToolCentersFromViewport(viewport);
           // Clipping planes will be updated from VolumeCroppingTool via events
         }
       }
