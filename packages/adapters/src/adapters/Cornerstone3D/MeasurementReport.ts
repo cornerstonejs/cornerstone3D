@@ -215,8 +215,7 @@ export default class MeasurementReport {
         toolType,
         toolData,
         ReferencedSOPSequence,
-        is3DMeasurement,
-        counter
+        is3DMeasurement
     ) {
         const toolTypeData = toolData[toolType];
         const toolClass = this.measurementAdapterByToolType.get(toolType);
@@ -657,8 +656,6 @@ export default class MeasurementReport {
         const _meta = MeasurementReport.generateDatasetMeta();
         let is3DSR = false;
 
-        const counter = measurementCounter();
-
         // Loop through each image in the toolData
         Object.keys(toolState).forEach(imageId => {
             const toolData = toolState[imageId];
@@ -963,19 +960,4 @@ function appendList(list, appendList) {
         return;
     }
     list.push(...appendList);
-}
-
-/**
- * Generator function that creates an infinite sequence of measurement indices.
- * Used for assigning sequential annotation numbers when generating DICOM SR reports.
- * Each call to next() yields the next integer starting from 1.
- *
- * @returns {Generator<number, void, unknown>} An infinite generator yielding 1, 2, 3, ...
- *
- */
-function* measurementCounter() {
-    let i = 1;
-    while (true) {
-        yield i++;
-    }
 }
