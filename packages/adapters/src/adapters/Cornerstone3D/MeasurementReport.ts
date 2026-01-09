@@ -683,8 +683,7 @@ export default class MeasurementReport {
                     toolType,
                     toolData,
                     ReferencedSOPSequence,
-                    is3DMeasurement,
-                    counter
+                    is3DMeasurement
                 );
                 if (group) {
                     measurementGroups.push(group);
