@@ -171,6 +171,119 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
   };
 }
 
+function getFiniteNumberTagValue(imageId: string, tag: string): number {
+  const value = getTagValue(imageId, tag);
+  return Number.isFinite(value) ? value : undefined;
+}
+
+function handleCardiac4D(imageIds: string[]): MultiframeSplitResult | null {
+  if (!imageIds || imageIds.length === 0) {
+    return null;
+  }
+
+  const cardiacNumberOfImages = getFiniteNumberTagValue(
+    imageIds[0],
+    'CardiacNumberOfImages'
+  );
+
+  if (!Number.isFinite(cardiacNumberOfImages)) {
+    return null;
+  }
+
+  const stacks: Map<
+    string,
+    Map<number, Array<{ imageId: string; triggerTime: number }>>
+  > = new Map();
+
+  for (const imageId of imageIds) {
+    const stackId = metaData.get('StackID', imageId);
+    const inStackPositionNumber = getFiniteNumberTagValue(
+      imageId,
+      'InStackPositionNumber'
+    );
+    const triggerTime = getFiniteNumberTagValue(imageId, 'TriggerTime');
+
+    if (
+      stackId === undefined ||
+      inStackPositionNumber === undefined ||
+      triggerTime === undefined
+    ) {
+      return null;
+    }
+
+    const stackKey = String(stackId);
+    if (!stacks.has(stackKey)) {
+      stacks.set(stackKey, new Map());
+    }
+
+    const positions = stacks.get(stackKey);
+    if (!positions.has(inStackPositionNumber)) {
+      positions.set(inStackPositionNumber, []);
+    }
+
+    positions.get(inStackPositionNumber).push({ imageId, triggerTime });
+  }
+
+  const sortedStackIds = Array.from(stacks.keys()).sort();
+  if (sortedStackIds.length === 0) {
+    return null;
+  }
+
+  const preparedStacks: Array<{
+    stackId: string;
+    positions: number[];
+    framesByPosition: Map<
+      number,
+      Array<{ imageId: string; triggerTime: number }>
+    >;
+  }> = [];
+
+  let timeCount: number | undefined;
+
+  for (const stackId of sortedStackIds) {
+    const positions = stacks.get(stackId);
+    const sortedPositions = Array.from(positions.keys()).sort((a, b) => a - b);
+
+    for (const position of sortedPositions) {
+      const frames = positions.get(position);
+      frames.sort((a, b) => a.triggerTime - b.triggerTime);
+
+      if (timeCount === undefined) {
+        timeCount = frames.length;
+      } else if (frames.length !== timeCount) {
+        return null;
+      }
+    }
+
+    preparedStacks.push({
+      stackId,
+      positions: sortedPositions,
+      framesByPosition: positions,
+    });
+  }
+
+  if (!timeCount) {
+    return null;
+  }
+
+  const imageIdGroups: string[][] = [];
+  for (let timeIndex = 0; timeIndex < timeCount; timeIndex++) {
+    const group: string[] = [];
+    for (const stack of preparedStacks) {
+      for (const position of stack.positions) {
+        const frames = stack.framesByPosition.get(position);
+        group.push(frames[timeIndex].imageId);
+      }
+    }
+    imageIdGroups.push(group);
+  }
+
+  return {
+    imageIdGroups,
+    splittingTag: 'CardiacTriggerTime',
+  };
+}
+
 const groupBy = (array, key) => {
   return array.reduce((rv, x) => {
     (rv[x[key]] = rv[x[key]] || []).push(x);
@@ -343,6 +456,11 @@ function splitImageIdsBy4DTags(imageIds: string[]): {
   const multiframeResult = handleMultiframe4D(imageIds);
   if (multiframeResult) {
     return multiframeResult;
+  }
+
+  const cardiacResult = handleCardiac4D(imageIds);
+  if (cardiacResult) {
+    return cardiacResult;
   }
 
   const positionGroups = getIPPGroups(imageIds);
