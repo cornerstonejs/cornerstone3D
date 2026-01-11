@@ -536,7 +536,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { canvas: canvasPos, world: worldPosOriginal } = currentPoints;
     let worldPos = worldPosOriginal;
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
     let closePath = controlPoints.length >= 2 && doubleClick;
 
@@ -621,7 +621,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   private _mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     const { element, currentPoints } = evt.detail;
     const { world: worldPos, canvas: canvasPos } = currentPoints;
-    const { renderingEngine } = getEnabledElement(element);
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
@@ -794,9 +793,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     }
 
     this.editData.hasMoved = true;
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
@@ -1015,7 +1011,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     }
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
     const targetIds = Object.keys(cachedStats);
