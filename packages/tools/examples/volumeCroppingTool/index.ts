@@ -369,10 +369,12 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     overlayMarkerType:
       OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
   });
-  // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
+  toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
   // Add OrientationControlTool with default settings (will be enabled after volume is loaded)
   toolGroupVRT.addTool(OrientationControlTool.toolName);
+  // Enable OrientationControlTool after viewport is added and volume is loaded
+  toolGroupVRT.setToolEnabled(OrientationControlTool.toolName);
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
@@ -404,8 +406,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
         },
       ],
     });
-    // Enable OrientationControlTool after viewport is added and volume is loaded
-    toolGroupVRT.setToolEnabled(OrientationControlTool.toolName);
+
     viewport.setZoom(1.2);
     viewport.render();
   });

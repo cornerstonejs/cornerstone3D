@@ -246,39 +246,40 @@ class OrientationControlTool extends BaseTool {
 
     const scale = 0.3;
     const phi = 1.4; // Reduced from 1+√2 (≈2.414) to make faces larger and shape more cube-like
+    const faceSize = 0.95; // Make main faces 5% smaller (95% of original size) - balanced size
 
     // 24 vertices of a rhombicuboctahedron
     const vertices: number[] = [];
 
-    // Group 1: (±1, ±1, ±phi) - 8 vertices
-    vertices.push(-1, -1, -phi); // 0
-    vertices.push(1, -1, -phi); // 1
-    vertices.push(1, 1, -phi); // 2
-    vertices.push(-1, 1, -phi); // 3
-    vertices.push(-1, -1, phi); // 4
-    vertices.push(1, -1, phi); // 5
-    vertices.push(1, 1, phi); // 6
-    vertices.push(-1, 1, phi); // 7
+    // Group 1: (±faceSize, ±faceSize, ±phi) - 8 vertices forming top/bottom faces
+    vertices.push(-faceSize, -faceSize, -phi); // 0
+    vertices.push(faceSize, -faceSize, -phi); // 1
+    vertices.push(faceSize, faceSize, -phi); // 2
+    vertices.push(-faceSize, faceSize, -phi); // 3
+    vertices.push(-faceSize, -faceSize, phi); // 4
+    vertices.push(faceSize, -faceSize, phi); // 5
+    vertices.push(faceSize, faceSize, phi); // 6
+    vertices.push(-faceSize, faceSize, phi); // 7
 
-    // Group 2: (±1, ±phi, ±1) - 8 vertices
-    vertices.push(-1, -phi, -1); // 8
-    vertices.push(1, -phi, -1); // 9
-    vertices.push(1, -phi, 1); // 10
-    vertices.push(-1, -phi, 1); // 11
-    vertices.push(-1, phi, -1); // 12
-    vertices.push(1, phi, -1); // 13
-    vertices.push(1, phi, 1); // 14
-    vertices.push(-1, phi, 1); // 15
+    // Group 2: (±faceSize, ±phi, ±faceSize) - 8 vertices forming front/back faces
+    vertices.push(-faceSize, -phi, -faceSize); // 8
+    vertices.push(faceSize, -phi, -faceSize); // 9
+    vertices.push(faceSize, -phi, faceSize); // 10
+    vertices.push(-faceSize, -phi, faceSize); // 11
+    vertices.push(-faceSize, phi, -faceSize); // 12
+    vertices.push(faceSize, phi, -faceSize); // 13
+    vertices.push(faceSize, phi, faceSize); // 14
+    vertices.push(-faceSize, phi, faceSize); // 15
 
-    // Group 3: (±phi, ±1, ±1) - 8 vertices
-    vertices.push(-phi, -1, -1); // 16
-    vertices.push(-phi, -1, 1); // 17
-    vertices.push(-phi, 1, 1); // 18
-    vertices.push(-phi, 1, -1); // 19
-    vertices.push(phi, -1, -1); // 20
-    vertices.push(phi, -1, 1); // 21
-    vertices.push(phi, 1, 1); // 22
-    vertices.push(phi, 1, -1); // 23
+    // Group 3: (±phi, ±faceSize, ±faceSize) - 8 vertices forming left/right faces
+    vertices.push(-phi, -faceSize, -faceSize); // 16
+    vertices.push(-phi, -faceSize, faceSize); // 17
+    vertices.push(-phi, faceSize, faceSize); // 18
+    vertices.push(-phi, faceSize, -faceSize); // 19
+    vertices.push(phi, -faceSize, -faceSize); // 20
+    vertices.push(phi, -faceSize, faceSize); // 21
+    vertices.push(phi, faceSize, faceSize); // 22
+    vertices.push(phi, faceSize, -faceSize); // 23
 
     // Scale all vertices
     for (let i = 0; i < vertices.length; i++) {
@@ -893,6 +894,130 @@ class OrientationControlTool extends BaseTool {
     this.positionMarkerInViewport(viewport as Types.IVolumeViewport3D, actor);
   }
 
+  private animateCameraToOrientation(
+    viewport: Types.IVolumeViewport3D,
+    targetViewPlaneNormal: number[],
+    targetViewUp: number[]
+  ): void {
+    const camera = viewport.getVtkActiveCamera();
+    const startViewPlaneNormalArray = camera.getDirectionOfProjection();
+    const startViewUpArray = camera.getViewUp();
+
+    // Build rotation matrices from camera orientations
+    // Start orientation matrix
+    const startForward = vec3.fromValues(
+      startViewPlaneNormalArray[0],
+      startViewPlaneNormalArray[1],
+      startViewPlaneNormalArray[2]
+    );
+    const startUp = vec3.fromValues(
+      startViewUpArray[0],
+      startViewUpArray[1],
+      startViewUpArray[2]
+    );
+    const startRight = vec3.create();
+    vec3.cross(startRight, startUp, startForward);
+    vec3.normalize(startRight, startRight);
+
+    const startMatrix = mat4.create();
+    startMatrix[0] = startRight[0];
+    startMatrix[1] = startRight[1];
+    startMatrix[2] = startRight[2];
+    startMatrix[4] = startUp[0];
+    startMatrix[5] = startUp[1];
+    startMatrix[6] = startUp[2];
+    startMatrix[8] = startForward[0];
+    startMatrix[9] = startForward[1];
+    startMatrix[10] = startForward[2];
+    startMatrix[15] = 1;
+
+    // Target orientation matrix
+    const targetForward = vec3.fromValues(
+      targetViewPlaneNormal[0],
+      targetViewPlaneNormal[1],
+      targetViewPlaneNormal[2]
+    );
+    const targetUp = vec3.fromValues(
+      targetViewUp[0],
+      targetViewUp[1],
+      targetViewUp[2]
+    );
+    const targetRight = vec3.create();
+    vec3.cross(targetRight, targetUp, targetForward);
+    vec3.normalize(targetRight, targetRight);
+
+    const targetMatrix = mat4.create();
+    targetMatrix[0] = targetRight[0];
+    targetMatrix[1] = targetRight[1];
+    targetMatrix[2] = targetRight[2];
+    targetMatrix[4] = targetUp[0];
+    targetMatrix[5] = targetUp[1];
+    targetMatrix[6] = targetUp[2];
+    targetMatrix[8] = targetForward[0];
+    targetMatrix[9] = targetForward[1];
+    targetMatrix[10] = targetForward[2];
+    targetMatrix[15] = 1;
+
+    // Convert matrices to quaternions
+    const startQuat = quat.create();
+    const targetQuat = quat.create();
+    mat4.getRotation(startQuat, startMatrix);
+    mat4.getRotation(targetQuat, targetMatrix);
+
+    const steps = 10;
+    const duration = 300; // milliseconds
+    const stepDuration = duration / steps;
+    let currentStep = 0;
+
+    const animate = () => {
+      currentStep++;
+      const t = currentStep / steps;
+
+      // Use ease-in-out interpolation for smoother animation
+      const easedT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+      // Use SLERP (spherical linear interpolation) for shortest path rotation
+      const interpolatedQuat = quat.create();
+      quat.slerp(interpolatedQuat, startQuat, targetQuat, easedT);
+
+      // Convert quaternion back to rotation matrix
+      const interpolatedMatrix = mat4.create();
+      mat4.fromQuat(interpolatedMatrix, interpolatedQuat);
+
+      // Extract viewPlaneNormal and viewUp from the matrix
+      const interpolatedForward = vec3.fromValues(
+        interpolatedMatrix[8],
+        interpolatedMatrix[9],
+        interpolatedMatrix[10]
+      );
+      const interpolatedUp = vec3.fromValues(
+        interpolatedMatrix[4],
+        interpolatedMatrix[5],
+        interpolatedMatrix[6]
+      );
+
+      // Set camera orientation
+      viewport.setCamera({
+        viewPlaneNormal: Array.from(interpolatedForward) as [
+          number,
+          number,
+          number,
+        ],
+        viewUp: Array.from(interpolatedUp) as [number, number, number],
+      });
+      viewport.resetCamera();
+      viewport.render();
+
+      // Continue animation or finish
+      if (currentStep < steps) {
+        setTimeout(animate, stepDuration);
+      }
+    };
+
+    // Start animation
+    animate();
+  }
+
   private setupClickHandler(
     viewportId: string,
     renderingEngineId: string,
@@ -965,13 +1090,12 @@ class OrientationControlTool extends BaseTool {
         return;
       }
 
-      // Reorient viewport
-      viewport.setCamera({
-        viewPlaneNormal: orientation.viewPlaneNormal,
-        viewUp: orientation.viewUp,
-      });
-      viewport.resetCamera();
-      viewport.render();
+      // Animate camera rotation to new orientation
+      this.animateCameraToOrientation(
+        viewport as Types.IVolumeViewport3D,
+        orientation.viewPlaneNormal,
+        orientation.viewUp
+      );
 
       evt.preventDefault();
       evt.stopPropagation();
