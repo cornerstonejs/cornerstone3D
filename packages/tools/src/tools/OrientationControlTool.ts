@@ -537,6 +537,40 @@ class OrientationControlTool extends BaseTool {
     return orientations.get(cellId) || null;
   }
 
+  private getSurfaceLabel(cellId: number): string {
+    // 0-5: main faces, 6-13: corners, 14-25: edges
+    const labels: Record<number, string> = {
+      0: 'Face 0: Bottom (Z-)',
+      1: 'Face 1: Top (Z+)',
+      2: 'Face 2: Front (Y-)',
+      3: 'Face 3: Back (Y+)',
+      4: 'Face 4: Left (X-)',
+      5: 'Face 5: Right (X+)',
+      6: 'Face 6: Corner (-X,-Y,-Z)',
+      7: 'Face 7: Corner (+X,-Y,-Z)',
+      8: 'Face 8: Corner (+X,+Y,-Z)',
+      9: 'Face 9: Corner (-X,+Y,-Z)',
+      10: 'Face 10: Corner (-X,-Y,+Z)',
+      11: 'Face 11: Corner (+X,-Y,+Z)',
+      12: 'Face 12: Corner (+X,+Y,+Z)',
+      13: 'Face 13: Corner (-X,+Y,+Z)',
+      14: 'Face 14: Edge (Bottom-Front)',
+      15: 'Face 15: Edge (Bottom-Right)',
+      16: 'Face 16: Edge (Bottom-Back)',
+      17: 'Face 17: Edge (Bottom-Left)',
+      18: 'Face 18: Edge (Top-Front)',
+      19: 'Face 19: Edge (Top-Right)',
+      20: 'Face 20: Edge (Top-Back)',
+      21: 'Face 21: Edge (Top-Left)',
+      22: 'Face 22: Edge (Front-Left)',
+      23: 'Face 23: Edge (Front-Right)',
+      24: 'Face 24: Edge (Back-Right)',
+      25: 'Face 25: Edge (Back-Left)',
+    };
+
+    return labels[cellId] ?? `Face ${cellId}: (Unknown)`;
+  }
+
   private addMarkerToViewport(
     viewportId: string,
     renderingEngineId: string
@@ -936,6 +970,15 @@ class OrientationControlTool extends BaseTool {
       if (cellId === -1) {
         return;
       }
+
+      // Log which of the 26 surfaces was clicked
+      const label = this.getSurfaceLabel(cellId);
+      console.info(
+        'OrientationControlTool: Clicked surface',
+        cellId,
+        '-',
+        label
+      );
 
       // Get orientation for this surface
       const orientation = this.getOrientationForSurface(cellId);
