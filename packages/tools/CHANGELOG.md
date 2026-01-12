@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.5...v4.15.6) (2026-01-11)
+
+### Bug Fixes
+
+- **null-safety:** Add null checks in various segmentation related code. ([#2550](https://github.com/cornerstonejs/cornerstone3D/issues/2550)) ([aeee51b](https://github.com/cornerstonejs/cornerstone3D/commit/aeee51bdbf6c8ee7ecf4978f73ff1f962acd5d3c))
+
 ## [4.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.4...v4.15.5) (2026-01-07)
 
 ### Bug Fixes
