@@ -1,4 +1,5 @@
 import * as metaData from '../metaData';
+import { toFiniteNumber } from './toNumber';
 
 // TODO: Test remaining implemented tags
 // Supported 4D Tags
@@ -171,17 +172,12 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
   };
 }
 
-function getFiniteNumberTagValue(imageId: string, tag: string): number {
-  const value = getTagValue(imageId, tag);
-  return Number.isFinite(value) ? value : undefined;
-}
-
 function handleCardiac4D(imageIds: string[]): MultiframeSplitResult | null {
   if (!imageIds || imageIds.length === 0) {
     return null;
   }
 
-  const cardiacNumberOfImages = getFiniteNumberTagValue(
+  const cardiacNumberOfImages = getFiniteValue(
     imageIds[0],
     'CardiacNumberOfImages'
   );
@@ -197,11 +193,11 @@ function handleCardiac4D(imageIds: string[]): MultiframeSplitResult | null {
 
   for (const imageId of imageIds) {
     const stackId = metaData.get('StackID', imageId);
-    const inStackPositionNumber = getFiniteNumberTagValue(
+    const inStackPositionNumber = getFiniteValue(
       imageId,
       'InStackPositionNumber'
     );
-    const triggerTime = getFiniteNumberTagValue(imageId, 'TriggerTime');
+    const triggerTime = getFiniteValue(imageId, 'TriggerTime');
 
     if (
       stackId === undefined ||
@@ -360,6 +356,10 @@ function getTagValue(imageId: string, tag: string): number {
   } catch {
     return undefined;
   }
+}
+
+function getFiniteValue(imageId: string, tag: string): number | undefined {
+  return toFiniteNumber(getTagValue(imageId, tag));
 }
 
 function getPhilipsPrivateBValue(imageId: string) {
