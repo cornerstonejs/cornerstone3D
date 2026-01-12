@@ -480,59 +480,71 @@ class OrientationControlTool extends BaseTool {
     // 12 square edge faces - edge views
     const sqrt2 = 1 / Math.sqrt(2);
 
-    // Bottom edges (14-17)
+    // Bottom edges (14-17) - for these, viewUp points generally away from center horizontally
+    // Edge 14: bottom-front - between Bottom (0,0,-1) and Front (0,-1,0)
     orientations.set(14, {
       viewPlaneNormal: [0, -sqrt2, -sqrt2],
-      viewUp: [-1, 0, 0],
-    }); // Front-Bottom edge
+      viewUp: [0, sqrt2, -sqrt2], // Points up-back
+    });
+    // Edge 15: bottom-right - between Bottom (0,0,-1) and Right (+1,0,0)
     orientations.set(15, {
       viewPlaneNormal: [sqrt2, 0, -sqrt2],
-      viewUp: [0, 1, 0],
-    }); // Right-Bottom edge
+      viewUp: [-sqrt2, 0, -sqrt2], // Points up-left
+    });
+    // Edge 16: bottom-back - between Bottom (0,0,-1) and Back (0,+1,0)
     orientations.set(16, {
       viewPlaneNormal: [0, sqrt2, -sqrt2],
-      viewUp: [1, 0, 0],
-    }); // Back-Bottom edge
+      viewUp: [0, -sqrt2, -sqrt2], // Points up-front
+    });
+    // Edge 17: bottom-left - between Bottom (0,0,-1) and Left (-1,0,0)
     orientations.set(17, {
       viewPlaneNormal: [-sqrt2, 0, -sqrt2],
-      viewUp: [0, -1, 0],
-    }); // Left-Bottom edge
+      viewUp: [sqrt2, 0, -sqrt2], // Points up-right
+    });
 
-    // Top edges (18-21)
+    // Top edges (18-21) - for these, viewUp points generally away from center horizontally
+    // Edge 18: top-front - between Top (0,0,+1) and Front (0,-1,0)
     orientations.set(18, {
-      viewPlaneNormal: [-sqrt2, 0, sqrt2],
-      viewUp: [0, 1, 0],
-    }); // Left-Top edge
-    orientations.set(19, {
       viewPlaneNormal: [0, -sqrt2, sqrt2],
-      viewUp: [1, 0, 0],
-    }); // Front-Top edge
-    orientations.set(20, {
+      viewUp: [0, -sqrt2, -sqrt2], // Points down-front
+    });
+    // Edge 19: top-right - between Top (0,0,+1) and Right (+1,0,0)
+    orientations.set(19, {
       viewPlaneNormal: [sqrt2, 0, sqrt2],
-      viewUp: [0, -1, 0],
-    }); // Right-Top edge
-    orientations.set(21, {
+      viewUp: [sqrt2, 0, -sqrt2], // Points down-right
+    });
+    // Edge 20: top-back - between Top (0,0,+1) and Back (0,+1,0)
+    orientations.set(20, {
       viewPlaneNormal: [0, sqrt2, sqrt2],
-      viewUp: [-1, 0, 0],
-    }); // Back-Top edge
+      viewUp: [0, sqrt2, -sqrt2], // Points down-back
+    });
+    // Edge 21: top-left - between Top (0,0,+1) and Left (-1,0,0)
+    orientations.set(21, {
+      viewPlaneNormal: [-sqrt2, 0, sqrt2],
+      viewUp: [-sqrt2, 0, -sqrt2], // Points down-left
+    });
 
-    // Middle edges (22-25)
+    // Vertical edges (22-25) - between vertical faces
+    // Edge 22: front-left - between Front (0,-1,0) and Left (-1,0,0)
     orientations.set(22, {
-      viewPlaneNormal: [-1, 0, 0],
+      viewPlaneNormal: [-sqrt2, -sqrt2, 0],
       viewUp: [0, 0, 1],
-    }); // Left face (same as face 4)
+    });
+    // Edge 23: front-right - between Front (0,-1,0) and Right (+1,0,0)
     orientations.set(23, {
-      viewPlaneNormal: [1, 0, 0],
+      viewPlaneNormal: [sqrt2, -sqrt2, 0],
       viewUp: [0, 0, 1],
-    }); // Right face (same as face 5)
+    });
+    // Edge 24: back-right - between Back (0,+1,0) and Right (+1,0,0)
     orientations.set(24, {
-      viewPlaneNormal: [0, -1, 0],
+      viewPlaneNormal: [sqrt2, sqrt2, 0],
       viewUp: [0, 0, 1],
-    }); // Front face (same as face 2)
+    });
+    // Edge 25: back-left - between Back (0,+1,0) and Left (-1,0,0)
     orientations.set(25, {
-      viewPlaneNormal: [0, 1, 0],
+      viewPlaneNormal: [-sqrt2, sqrt2, 0],
       viewUp: [0, 0, 1],
-    }); // Back face (same as face 3)
+    });
 
     return orientations.get(cellId) || null;
   }
