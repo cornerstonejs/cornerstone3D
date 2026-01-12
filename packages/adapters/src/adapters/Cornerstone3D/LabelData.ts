@@ -4,10 +4,9 @@ import { toScoord } from "../helpers";
 import dcmjs from "dcmjs";
 
 const {
-    sr: { valueTypes, coding }
+    sr: { valueTypes, coding },
+    adapters: { Cornerstone3D }
 } = dcmjs;
-
-const CORNERSTONEFREETEXT = "CORNERSTONEFREETEXT";
 
 /**
  * Wrap a dcmjs TID.1501 content item creator with a label text/position store
@@ -50,16 +49,26 @@ export default class LabelData {
 
     /**
      * Remove the incorrect finding sites entry for the text label.
+     * Updated to support the new coding scheme with legacy fallback.
      */
     public filterCornerstoneFreeText(contentEntries) {
+        const { codeValues } = Cornerstone3D.CodeScheme;
+
+        const freeTextCodes = [
+            codeValues.FREE_TEXT_CODE_VALUE,
+            codeValues.CORNERSTONEFREETEXT // legacy support
+        ];
+
         for (let i = 0; i < contentEntries.length; i++) {
             const group = contentEntries[i];
             if (!group.ConceptCodeSequence) {
                 continue;
             }
-            const csLabel = group.ConceptCodeSequence.find(
-                item => item.CodeValue === CORNERSTONEFREETEXT
+
+            const csLabel = group.ConceptCodeSequence.findIndex(item =>
+                freeTextCodes.includes(item.CodeValue)
             );
+
             if (csLabel !== -1) {
                 group.ConceptCodeSequence.splice(csLabel, 1);
                 if (group.ConceptCodeSequence.length === 0) {
@@ -77,18 +86,11 @@ export default class LabelData {
      * characters
      */
     public createQualitativeLabel(label: string) {
-        return new valueTypes.CodeContentItem({
-            name: new coding.CodedConcept({
-                value: "121071",
-                meaning: "Finding",
-                schemeDesignator: "DCM"
-            }),
-            relationshipType: valueTypes.RelationshipTypes.CONTAINS,
-            value: new coding.CodedConcept({
-                value: "CORNERSTONEFREETEXT",
-                meaning: label,
-                schemeDesignator: "CORNERSTONEJS"
-            })
+        const relationshipType = valueTypes.RelationshipTypes.CONTAINS;
+        return new valueTypes.TextContentItem({
+            name: new coding.CodedConcept(COMMENT_CODE),
+            relationshipType,
+            value: label
         });
     }
 
