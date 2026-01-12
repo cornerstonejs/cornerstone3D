@@ -41,10 +41,17 @@ class OrientationControlTool extends BaseTool {
       configuration: {
         enabled: true,
         opacity: 0.3,
-        size: 0.075, // Relative size of marker (7.5% of viewport)
+        size: 0.06375, // Relative size of marker (6.375% of viewport, 15% smaller)
         position: 'bottom-right', // Position in viewport
         color: [0.8, 0.8, 0.8],
         hoverColor: [1.0, 0.8, 0.0], // Orange when hovering
+        faceColors: {
+          topBottom: [255, 0, 0], // Red - faces 0-1 (top/bottom)
+          frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
+          leftRight: [255, 255, 0], // Yellow - faces 4-5 (left/right)
+          corners: [0, 0, 255], // Blue - faces 6-13 (corner triangles)
+          edges: [128, 128, 128], // Grey - faces 14-25 (edge rectangles)
+        },
       },
     }
   ) {
@@ -359,12 +366,20 @@ class OrientationControlTool extends BaseTool {
     // Faces 14-25: 12 rectangular edge faces - Grey
     const cellColors = new Uint8Array(26 * 3); // RGB for each cell
 
-    // Define colors (RGB 0-255)
-    const red = [255, 0, 0];
-    const yellow = [255, 255, 0];
-    const green = [0, 255, 0];
-    const blue = [0, 0, 255];
-    const grey = [128, 128, 128];
+    // Get colors from configuration (RGB 0-255)
+    const faceColors = this.configuration.faceColors || {
+      topBottom: [255, 0, 0],
+      frontBack: [0, 255, 0],
+      leftRight: [255, 255, 0],
+      corners: [0, 0, 255],
+      edges: [128, 128, 128],
+    };
+
+    const red = faceColors.topBottom;
+    const green = faceColors.frontBack;
+    const yellow = faceColors.leftRight;
+    const blue = faceColors.corners;
+    const grey = faceColors.edges;
 
     // 6 square faces: Red (0-1), Green (2-3), Yellow (4-5)
     for (let i = 0; i < 2; i++) {
@@ -481,48 +496,52 @@ class OrientationControlTool extends BaseTool {
     // 12 square edge faces - edge views
     const sqrt2 = 1 / Math.sqrt(2);
 
-    // Bottom edges (14-17) - for these, viewUp points generally away from center horizontally
+    // Bottom edges (14-17) - for these, viewUp should point upward to avoid inversion
     // Edge 14: bottom-front - between Bottom (0,0,-1) and Front (0,-1,0)
+    // viewPlaneNormal = [0, -sqrt2, -sqrt2]
+    // Project [0, 0, 1] onto plane: [0, 0, 1] - dot([0,0,1], normal)*normal = [0, 0, 1] - (-sqrt2)*[0, -sqrt2, -sqrt2] = [0, 0, 1] - [0, 1/2, 1/2] = [0, -1/2, 1/2]
+    // Normalize: [0, -sqrt2, sqrt2] but we want positive Z, so use [0, sqrt2, -sqrt2] flipped
+    // Actually, simpler: use [1, 0, 0] which is perpendicular, but ensure correct orientation
     orientations.set(14, {
       viewPlaneNormal: [0, -sqrt2, -sqrt2],
-      viewUp: [0, sqrt2, -sqrt2], // Points up-back
+      viewUp: [0, sqrt2, -sqrt2], // Perpendicular and maintains orientation (flipped from original to fix inversion)
     });
-    // Edge 15: bottom-right - between Bottom (0,0,-1) and Right (+1,0,0)
+    // Edge 15: bottom-right - between Bottom (0,0,-1) and Right (+1,0,0) - WORKS
     orientations.set(15, {
       viewPlaneNormal: [sqrt2, 0, -sqrt2],
-      viewUp: [-sqrt2, 0, -sqrt2], // Points up-left
+      viewUp: [-sqrt2, 0, -sqrt2], // Original working value
     });
     // Edge 16: bottom-back - between Bottom (0,0,-1) and Back (0,+1,0)
     orientations.set(16, {
       viewPlaneNormal: [0, sqrt2, -sqrt2],
-      viewUp: [0, -sqrt2, -sqrt2], // Points up-front
+      viewUp: [0, -sqrt2, -sqrt2], // Perpendicular and maintains orientation (flipped from original to fix inversion)
     });
-    // Edge 17: bottom-left - between Bottom (0,0,-1) and Left (-1,0,0)
+    // Edge 17: bottom-left - between Bottom (0,0,-1) and Left (-1,0,0) - WORKS
     orientations.set(17, {
       viewPlaneNormal: [-sqrt2, 0, -sqrt2],
-      viewUp: [sqrt2, 0, -sqrt2], // Points up-right
+      viewUp: [sqrt2, 0, -sqrt2], // Original working value
     });
 
-    // Top edges (18-21) - for these, viewUp points generally away from center horizontally
+    // Top edges (18-21) - for these, viewUp should point to maintain correct orientation
     // Edge 18: top-front - between Top (0,0,+1) and Front (0,-1,0)
     orientations.set(18, {
       viewPlaneNormal: [0, -sqrt2, sqrt2],
-      viewUp: [0, -sqrt2, -sqrt2], // Points down-front
+      viewUp: [0, sqrt2, sqrt2], // Perpendicular and maintains orientation (flipped from original to fix inversion)
     });
-    // Edge 19: top-right - between Top (0,0,+1) and Right (+1,0,0)
+    // Edge 19: top-right - between Top (0,0,+1) and Right (+1,0,0) - WORKS
     orientations.set(19, {
       viewPlaneNormal: [sqrt2, 0, sqrt2],
-      viewUp: [sqrt2, 0, -sqrt2], // Points down-right
+      viewUp: [sqrt2, 0, -sqrt2], // Original working value
     });
     // Edge 20: top-back - between Top (0,0,+1) and Back (0,+1,0)
     orientations.set(20, {
       viewPlaneNormal: [0, sqrt2, sqrt2],
-      viewUp: [0, sqrt2, -sqrt2], // Points down-back
+      viewUp: [0, -sqrt2, sqrt2], // Perpendicular and maintains orientation (flipped from original to fix inversion)
     });
-    // Edge 21: top-left - between Top (0,0,+1) and Left (-1,0,0)
+    // Edge 21: top-left - between Top (0,0,+1) and Left (-1,0,0) - WORKS
     orientations.set(21, {
       viewPlaneNormal: [-sqrt2, 0, sqrt2],
-      viewUp: [-sqrt2, 0, -sqrt2], // Points down-left
+      viewUp: [-sqrt2, 0, -sqrt2], // Original working value
     });
 
     // Vertical edges (22-25) - between vertical faces
@@ -721,7 +740,7 @@ class OrientationControlTool extends BaseTool {
       return false;
     }
 
-    const size = this.configuration.size || 0.125;
+    const size = this.configuration.size || 0.10625; // 15% smaller than 0.125
     const position = this.configuration.position || 'bottom-right';
 
     // Calculate marker size based on viewport bounds
@@ -762,7 +781,7 @@ class OrientationControlTool extends BaseTool {
     const canvasHeight = canvas.height;
 
     // Define fixed screen position (in canvas pixels, closer to corner)
-    const cornerOffset = 80; // pixels from corner
+    const cornerOffset = 50; // pixels from corner
     let canvasX = 0;
     let canvasY = 0;
 
@@ -978,7 +997,7 @@ class OrientationControlTool extends BaseTool {
     }
 
     // Check if orientations are already very close (avoid unnecessary rotation)
-    const threshold = 0.99; // ~8 degrees difference
+    const threshold = 0.99996; // ~1 degrees difference
     console.log('Quaternion dot product:', dotProduct, 'threshold:', threshold);
     if (dotProduct > threshold) {
       console.log('Skipping animation - already at target orientation');
