@@ -900,15 +900,17 @@ class OrientationControlTool extends BaseTool {
     targetViewUp: number[]
   ): void {
     const camera = viewport.getVtkActiveCamera();
-    const startViewPlaneNormalArray = camera.getDirectionOfProjection();
+    const directionOfProjection = camera.getDirectionOfProjection();
     const startViewUpArray = camera.getViewUp();
 
     // Build rotation matrices from camera orientations
     // Start orientation matrix
+    // Note: DirectionOfProjection points FROM camera TO scene,
+    // but viewPlaneNormal points FROM scene TO camera, so we negate
     const startForward = vec3.fromValues(
-      startViewPlaneNormalArray[0],
-      startViewPlaneNormalArray[1],
-      startViewPlaneNormalArray[2]
+      -directionOfProjection[0],
+      -directionOfProjection[1],
+      -directionOfProjection[2]
     );
     const startUp = vec3.fromValues(
       startViewUpArray[0],
@@ -963,6 +965,26 @@ class OrientationControlTool extends BaseTool {
     const targetQuat = quat.create();
     mat4.getRotation(startQuat, startMatrix);
     mat4.getRotation(targetQuat, targetMatrix);
+
+    // Ensure we take the shortest path (handle quaternion double-cover)
+    let dotProduct = quat.dot(startQuat, targetQuat);
+    if (dotProduct < 0) {
+      // Negate target quaternion to take shorter path
+      targetQuat[0] = -targetQuat[0];
+      targetQuat[1] = -targetQuat[1];
+      targetQuat[2] = -targetQuat[2];
+      targetQuat[3] = -targetQuat[3];
+      dotProduct = -dotProduct;
+    }
+
+    // Check if orientations are already very close (avoid unnecessary rotation)
+    const threshold = 0.99; // ~8 degrees difference
+    console.log('Quaternion dot product:', dotProduct, 'threshold:', threshold);
+    if (dotProduct > threshold) {
+      console.log('Skipping animation - already at target orientation');
+      // Already at target orientation, no animation needed
+      return;
+    }
 
     const steps = 10;
     const duration = 300; // milliseconds
