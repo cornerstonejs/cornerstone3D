@@ -787,55 +787,13 @@ class OrientationControlTool extends BaseTool {
     viewport: Types.IVolumeViewport3D,
     actor: vtkActor
   ): void {
-    const camera = viewport.getVtkActiveCamera();
-
-    // Build a stable orthonormal basis from the camera vectors. Using a
-    // quaternion conversion keeps the marker aligned with the volume without
-    // the gimbal flips observed with the previous ZYX decomposition.
-    const cameraForward = vec3.create();
-    vec3.copy(cameraForward, camera.getDirectionOfProjection());
-    vec3.normalize(cameraForward, cameraForward);
-
-    const [upX, upY, upZ] = camera.getViewUp();
-    const cameraUp = vec3.fromValues(upX, upY, upZ);
-    const cameraRight = vec3.create();
-    // Use a right-handed basis: right = forward x up
-    vec3.cross(cameraRight, cameraForward, cameraUp);
-
-    if (vec3.length(cameraRight) < 1e-5) {
-      vec3.cross(cameraRight, cameraForward, [0, 0, 1]);
-      if (vec3.length(cameraRight) < 1e-5) {
-        vec3.cross(cameraRight, cameraForward, [0, 1, 0]);
-      }
-    }
-    vec3.normalize(cameraRight, cameraRight);
-
-    // Recompute up to enforce orthogonality
-    const orthonormalUp = vec3.create();
-    vec3.cross(orthonormalUp, cameraRight, cameraForward);
-    vec3.normalize(orthonormalUp, orthonormalUp);
-
-    const rotationMatrix = mat4.create();
-    rotationMatrix[0] = cameraRight[0];
-    rotationMatrix[1] = cameraRight[1];
-    rotationMatrix[2] = cameraRight[2];
-    rotationMatrix[4] = orthonormalUp[0];
-    rotationMatrix[5] = orthonormalUp[1];
-    rotationMatrix[6] = orthonormalUp[2];
-    rotationMatrix[8] = cameraForward[0];
-    rotationMatrix[9] = cameraForward[1];
-    rotationMatrix[10] = cameraForward[2];
-    rotationMatrix[15] = 1;
-
-    const orientationQuat = quat.create();
-    mat4.getRotation(orientationQuat, rotationMatrix);
-    const [x, y, z] = this.quaternionToEulerXYZ(orientationQuat);
-
-    actor.setOrientation(
-      (x * 180) / Math.PI,
-      (y * 180) / Math.PI,
-      (z * 180) / Math.PI
-    );
+    // Keep the marker in world-aligned orientation (no rotation).
+    // This allows it to naturally show the world axes as the camera rotates.
+    // The marker geometry itself represents world directions:
+    // - Green faces (2-3): Front/Back (Y axis)
+    // - Yellow faces (4-5): Left/Right (X axis)
+    // - Red faces (0-1): Bottom/Top (Z axis)
+    actor.setOrientation(0, 0, 0);
   }
 
   private quaternionToEulerXYZ(q: quat): [number, number, number] {
