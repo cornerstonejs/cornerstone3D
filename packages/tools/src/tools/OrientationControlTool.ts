@@ -14,7 +14,7 @@ import {
 } from '@cornerstonejs/core';
 import { getToolGroup } from '../store/ToolGroupManager';
 import { Events } from '../enums';
-import { vec3, mat4 } from 'gl-matrix';
+import { vec3, mat4, quat } from 'gl-matrix';
 
 /**
  * OrientationControlTool provides an interactive orientation marker
@@ -181,7 +181,7 @@ class OrientationControlTool extends BaseTool {
       // Remove click handler
       const clickHandler = this.clickHandlers.get(viewportId);
       if (clickHandler) {
-        element.removeEventListener('click', clickHandler);
+        element.removeEventListener('mousedown', clickHandler);
         this.clickHandlers.delete(viewportId);
       }
 
@@ -787,67 +787,76 @@ class OrientationControlTool extends BaseTool {
     viewport: Types.IVolumeViewport3D,
     actor: vtkActor
   ): void {
-    // Get camera orientation vectors
     const camera = viewport.getVtkActiveCamera();
-    const viewPlaneNormal = camera.getDirectionOfProjection();
-    const viewUp = camera.getViewUp();
 
-    // The marker should rotate to show the current orientation
-    // We align the marker's axes with the camera's view coordinate system
-    // Forward is toward the camera (opposite of viewPlaneNormal)
-    const forward = vec3.create();
-    vec3.scale(forward, viewPlaneNormal, -1);
-    vec3.normalize(forward, forward);
+    // Build a stable orthonormal basis from the camera vectors. Using a
+    // quaternion conversion keeps the marker aligned with the volume without
+    // the gimbal flips observed with the previous ZYX decomposition.
+    const cameraForward = vec3.create();
+    vec3.copy(cameraForward, camera.getDirectionOfProjection());
+    vec3.normalize(cameraForward, cameraForward);
 
-    // Right vector (cross product of up and forward, normalized)
-    const right = vec3.create();
-    vec3.cross(right, viewUp, forward);
-    vec3.normalize(right, right);
+    const [upX, upY, upZ] = camera.getViewUp();
+    const cameraUp = vec3.fromValues(upX, upY, upZ);
+    const cameraRight = vec3.create();
+    // Use a right-handed basis: right = forward x up
+    vec3.cross(cameraRight, cameraForward, cameraUp);
 
-    // Recalculate up to ensure orthogonality
-    const up = vec3.create();
-    vec3.cross(up, forward, right);
-    vec3.normalize(up, up);
-
-    // Build rotation matrix from the three orthonormal vectors
-    // The matrix columns are right, up, forward (in world space)
-    const rotationMatrix = mat4.create();
-    rotationMatrix[0] = right[0];
-    rotationMatrix[1] = right[1];
-    rotationMatrix[2] = right[2];
-    rotationMatrix[4] = up[0];
-    rotationMatrix[5] = up[1];
-    rotationMatrix[6] = up[2];
-    rotationMatrix[8] = forward[0];
-    rotationMatrix[9] = forward[1];
-    rotationMatrix[10] = forward[2];
-    rotationMatrix[15] = 1.0;
-
-    // Extract Euler angles from rotation matrix (ZYX convention)
-    // Roll (around Z), Pitch (around Y), Yaw (around X)
-    const sy = Math.sqrt(
-      rotationMatrix[0] * rotationMatrix[0] +
-        rotationMatrix[1] * rotationMatrix[1]
-    );
-    const singular = sy < 1e-6;
-
-    let roll, pitch, yaw;
-    if (!singular) {
-      roll = Math.atan2(rotationMatrix[4], rotationMatrix[5]);
-      pitch = Math.atan2(-rotationMatrix[2], sy);
-      yaw = Math.atan2(rotationMatrix[1], rotationMatrix[0]);
-    } else {
-      roll = Math.atan2(-rotationMatrix[6], rotationMatrix[10]);
-      pitch = Math.atan2(-rotationMatrix[2], sy);
-      yaw = 0;
+    if (vec3.length(cameraRight) < 1e-5) {
+      vec3.cross(cameraRight, cameraForward, [0, 0, 1]);
+      if (vec3.length(cameraRight) < 1e-5) {
+        vec3.cross(cameraRight, cameraForward, [0, 1, 0]);
+      }
     }
+    vec3.normalize(cameraRight, cameraRight);
 
-    // Set actor orientation (in degrees) - VTK uses X, Y, Z rotation order
+    // Recompute up to enforce orthogonality
+    const orthonormalUp = vec3.create();
+    vec3.cross(orthonormalUp, cameraRight, cameraForward);
+    vec3.normalize(orthonormalUp, orthonormalUp);
+
+    const rotationMatrix = mat4.create();
+    rotationMatrix[0] = cameraRight[0];
+    rotationMatrix[1] = cameraRight[1];
+    rotationMatrix[2] = cameraRight[2];
+    rotationMatrix[4] = orthonormalUp[0];
+    rotationMatrix[5] = orthonormalUp[1];
+    rotationMatrix[6] = orthonormalUp[2];
+    rotationMatrix[8] = cameraForward[0];
+    rotationMatrix[9] = cameraForward[1];
+    rotationMatrix[10] = cameraForward[2];
+    rotationMatrix[15] = 1;
+
+    const orientationQuat = quat.create();
+    mat4.getRotation(orientationQuat, rotationMatrix);
+    const [x, y, z] = this.quaternionToEulerXYZ(orientationQuat);
+
     actor.setOrientation(
-      (yaw * 180) / Math.PI,
-      (pitch * 180) / Math.PI,
-      (roll * 180) / Math.PI
+      (x * 180) / Math.PI,
+      (y * 180) / Math.PI,
+      (z * 180) / Math.PI
     );
+  }
+
+  private quaternionToEulerXYZ(q: quat): [number, number, number] {
+    const x = q[0];
+    const y = q[1];
+    const z = q[2];
+    const w = q[3];
+
+    const sinrCosp = 2 * (w * x + y * z);
+    const cosrCosp = 1 - 2 * (x * x + y * y);
+    const roll = Math.atan2(sinrCosp, cosrCosp);
+
+    const sinp = 2 * (w * y - z * x);
+    const pitch =
+      Math.abs(sinp) >= 1 ? (Math.sign(sinp) * Math.PI) / 2 : Math.asin(sinp);
+
+    const sinyCosp = 2 * (w * z + x * y);
+    const cosyCosp = 1 - 2 * (y * y + z * z);
+    const yaw = Math.atan2(sinyCosp, cosyCosp);
+
+    return [roll, pitch, yaw];
   }
 
   private onCameraModified = (evt: CustomEvent): void => {
