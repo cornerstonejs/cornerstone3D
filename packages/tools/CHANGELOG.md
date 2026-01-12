@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.6...v4.15.7) (2026-01-12)
+
+### Bug Fixes
+
+- **LabelmapBaseTool:** Added null check for a label map representation in getEditData. ([#2552](https://github.com/cornerstonejs/cornerstone3D/issues/2552)) ([8f56a66](https://github.com/cornerstonejs/cornerstone3D/commit/8f56a66e8a167cc9a0bb64fc82d7bc637b166bbe))
+
 ## [4.15.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.5...v4.15.6) (2026-01-11)
 
 ### Bug Fixes
