@@ -52,6 +52,7 @@ import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import { defaultAreaGetTextLines } from '../../utilities/defaultGetTextLines';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -119,7 +120,7 @@ class RectangleROITool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         calculateStats: true,
-        getTextLines: defaultGetTextLines,
+        getTextLines: defaultAreaGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
     }
@@ -1049,43 +1050,6 @@ class RectangleROITool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds([viewport.id]);
   };
-}
-
-/**
- * _getTextLines - Returns the Area, mean and std deviation of the area of the
- * target volume enclosed by the rectangle.
- *
- * @param data - The annotation tool-specific data.
- * @param targetId - The volumeId of the volume to display the stats for.
- */
-function defaultGetTextLines(data, targetId: string): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit, min } =
-    cachedVolumeStats;
-
-  if (mean === undefined || mean === null) {
-    return;
-  }
-
-  const textLines: string[] = [];
-
-  if (csUtils.isNumber(area)) {
-    textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  }
-  if (csUtils.isNumber(mean)) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(max)) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(min)) {
-    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(stdDev)) {
-    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
-  }
-
-  return textLines;
 }
 
 export default RectangleROITool;

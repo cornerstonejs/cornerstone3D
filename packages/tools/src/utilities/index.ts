@@ -59,6 +59,7 @@ import setAnnotationLabel from './setAnnotationLabel';
 import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
+export * from './defaultGetTextLines';
 
 export {
   math,
