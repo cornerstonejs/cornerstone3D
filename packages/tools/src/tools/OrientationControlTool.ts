@@ -40,7 +40,7 @@ class OrientationControlTool extends BaseTool {
       supportedInteractionTypes: ['Mouse'],
       configuration: {
         enabled: true,
-        opacity: 0.3,
+        opacity: 1,
         size: 0.06375, // Relative size of marker (6.375% of viewport, 15% smaller)
         position: 'bottom-right', // Position in viewport
         color: [0.8, 0.8, 0.8],
@@ -50,7 +50,7 @@ class OrientationControlTool extends BaseTool {
           frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
           leftRight: [255, 255, 0], // Yellow - faces 4-5 (left/right)
           corners: [0, 0, 255], // Blue - faces 6-13 (corner triangles)
-          edges: [128, 128, 128], // Grey - faces 14-25 (edge rectangles)
+          edges: [200, 100, 255], // Light purple/magenta - faces 14-25 (edge rectangles)
         },
       },
     }
@@ -372,7 +372,7 @@ class OrientationControlTool extends BaseTool {
       frontBack: [0, 255, 0],
       leftRight: [255, 255, 0],
       corners: [0, 0, 255],
-      edges: [128, 128, 128],
+      edges: [200, 100, 255], // Light purple/magenta
     };
 
     const red = faceColors.topBottom;
@@ -665,9 +665,10 @@ class OrientationControlTool extends BaseTool {
     const actor = vtkActor.newInstance();
     actor.setMapper(mapper);
 
-    // Set properties - fully opaque with cell colors
+    // Set properties - translucent with cell colors
     const property = actor.getProperty();
-    property.setOpacity(1.0); // Fully opaque
+    const opacity = this.configuration.opacity ?? 0.95; // Use configured opacity or default to 0.3
+    property.setOpacity(opacity); // Translucent to see inside
     property.setRepresentationToSurface();
     property.setEdgeVisibility(false); // No edges needed with colored surfaces
     property.setBackfaceCulling(false); // Render both sides of faces
