@@ -623,6 +623,7 @@ class RectangleROITool extends AnnotationTool {
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       const targetId = this.getTargetId(viewport, data);
+      const targetIds = this.getMeasurementTargets(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -770,8 +771,8 @@ class RectangleROITool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this.configuration.getTextLines(data, targetId);
-      if (!textLines || textLines.length === 0) {
+      const textLines = this.configuration.getTextLines(data, targetIds);
+      if (!textLines?.length) {
         continue;
       }
 

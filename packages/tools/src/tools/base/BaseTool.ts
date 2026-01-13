@@ -320,6 +320,37 @@ abstract class BaseTool {
   }
 
   /**
+   * Gets an array of targetIds to display measurements for.
+   *
+   */
+  protected getMeasurementTargets(
+    viewport: Types.IViewport,
+    data?: unknown & { cachedStats?: Record<string, unknown> }
+  ) {
+    const { showAllTargets } = this.configurationTyped;
+    if (showAllTargets === false) {
+      return [this.getTargetId(viewport, data)];
+    }
+    const actors = viewport.getActors();
+    const references = [];
+    for (const actor of actors) {
+      const volumeId = actor.referencedId;
+      if (!volumeId) {
+        continue;
+      }
+      const ref = viewport.getViewReferenceId({ volumeId });
+      console.warn('targetId', ref, actor);
+      if (ref) {
+        references.push(ref);
+      }
+    }
+    if (references.length) {
+      return references;
+    }
+    return [this.getTargetId(viewport, data)];
+  }
+
+  /**
    * Undoes an action
    */
   public undo() {

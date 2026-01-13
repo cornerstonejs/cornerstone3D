@@ -32,6 +32,7 @@ const {
   TrackballRotateTool,
   VolumeRotateTool,
   RectangleROITool,
+  CircleROITool,
   CircleROIStartEndThresholdTool,
   RectangleROIStartEndThresholdTool,
   segmentation,
@@ -45,19 +46,15 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
 
 // Study IDs
 const FirstStudyID = `1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339`;
-const SecondStudyID =
-  '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
-const ThirdStudyID = `1.3.6.1.4.1.9328.50.17.15423521354819720574322014551955370036`;
+// const SecondStudyID =
+//   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
+// const ThirdStudyID = `1.3.6.1.4.1.9328.50.17.15423521354819720574322014551955370036`;
 
 // Common configuration
 let renderingEngine;
 const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const renderingEngineId = 'myRenderingEngine';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-
-// Define a unique id for the volume
-const volumeName = 'labelmap'; // Id of the volume less loader prefix
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 
@@ -160,8 +157,8 @@ const viewportColors = {};
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Multi-Monitor PET-CT',
-  'Three studies displayed with PET-CT fusion layout, each with separate tool groups but shared rendering engine'
+  'TMTV Mode with Tools',
+  'Two series fused for TMTV with tools available to show how they interact with each other'
 );
 
 const optionsValues = [
@@ -169,6 +166,7 @@ const optionsValues = [
   WindowLevelTool.toolName,
   CrosshairsTool.toolName,
   RectangleROITool.toolName,
+  CircleROITool.toolName,
   CircleROIStartEndThresholdTool.toolName,
   RectangleROIStartEndThresholdTool.toolName,
 ];
@@ -264,7 +262,9 @@ addDropdownToToolbar({
           toolGroup.setToolDisabled(ZoomTool.toolName);
           toolGroup.setToolDisabled(WindowLevelTool.toolName);
           toolGroup.setToolDisabled(CrosshairsTool.toolName);
-          toolGroup.setToolActive(RectangleROITool.toolName, {
+          toolGroup.setToolPassive(CircleROITool.toolName);
+          toolGroup.setToolPassive(RectangleROITool.toolName);
+          toolGroup.setToolActive(toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
         }
@@ -406,6 +406,7 @@ function setUpToolGroupsForStudy(studyKey) {
       getReferenceLineSlabThicknessControlsOn,
     });
     toolGroup.addTool(RectangleROITool.toolName);
+    toolGroup.addTool(CircleROITool.toolName);
     // if (toolGroup === ptToolGroup) {
     toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
       calculatePointsInsideVolume: true,
@@ -441,6 +442,7 @@ function setUpToolGroupsForStudy(studyKey) {
     filterActorUIDsToSetSlabThickness: [studyVolumeIds.ct],
   });
   fusionToolGroup.addTool(RectangleROITool.toolName);
+  fusionToolGroup.addTool(CircleROITool.toolName);
   fusionToolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
     showTextBox: false,
@@ -888,6 +890,7 @@ async function run() {
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(VolumeRotateTool);
   cornerstoneTools.addTool(RectangleROITool);
+  cornerstoneTools.addTool(CircleROITool);
   cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
   cornerstoneTools.addTool(RectangleROIStartEndThresholdTool);
 
