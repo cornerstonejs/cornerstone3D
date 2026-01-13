@@ -3,13 +3,14 @@ import { mat4, vec3 } from 'gl-matrix';
 const EPSILON = 1e-6;
 
 /**
- * Computes a projection scaling matrix that adaptively blends aspect ratios
- * based on the alignment of screen axes with patient anatomical directions.
+ * Computes a projection scaling matrix with rotation-invariant scaling in patient
+ * coordinate space. The stretch follows patient anatomical directions (AP or SI)
+ * rather than screen axes, maintaining consistent scaling after view rotations.
  *
- * @param viewUp - [ux, uy, uz] camera viewUp (patient-space)
- * @param viewPlaneNormal - [dx, dy, dz] camera viewPlaneNormal (patient-space)
- * @param aspectRatio - [scaleX, scaleY].
- * @returns Projection scaling matrix.
+ * @param viewUp - Camera viewUp vector in patient space
+ * @param viewPlaneNormal - Camera viewPlaneNormal vector in patient space
+ * @param aspectRatio - [scaleX, scaleY]. scaleY applies to dominant anatomical axis
+ * @returns Projection scaling matrix
  */
 export function getProjectionScaleMatrix(
   viewUp: vec3,
@@ -34,24 +35,29 @@ export function getProjectionScaleMatrix(
     vec3.cross(viewRight, tmp, up);
   }
   vec3.normalize(viewRight, viewRight);
-
   const [scaleX, scaleY] = aspectRatio;
 
-  // Blend scale based on anatomical axis alignment
+  // Project patient anatomical axes onto view plane to determine stretch direction
+  const projectToPlane = (axis: vec3) => {
+    const dot = vec3.dot(axis, vpn);
+    const projection = vec3.create();
+    vec3.scaleAndAdd(projection, axis, vpn, -dot);
+    return projection;
+  };
+
+  const projY = projectToPlane(vec3.fromValues(0, 1, 0));
+  const projZ = projectToPlane(vec3.fromValues(0, 0, 1));
+
+  // Use most visible anatomical axis as stretch direction
+  const stretchAxis = vec3.length(projY) > vec3.length(projZ) ? projY : projZ;
+  vec3.normalize(stretchAxis, stretchAxis);
+
+  // Scale based on alignment: aligned -> scaleY, perpendicular -> scaleX
   function getScaleFactor(screenVec: vec3): number {
-    // SI (Z) and AP (Y) alignment
-    const alignmentZ = Math.abs(vec3.dot(screenVec, vec3.fromValues(0, 0, 1)));
-    const alignmentY = Math.abs(vec3.dot(screenVec, vec3.fromValues(0, 1, 0)));
-
-    // Axial view: use AP, otherwise SI
-    const absVpn = [Math.abs(vpn[0]), Math.abs(vpn[1]), Math.abs(vpn[2])];
-    const isAxial = Math.abs(vpn[2]) === Math.max(...absVpn);
-    const alignFactor = isAxial ? alignmentY : alignmentZ;
-
-    return alignFactor * scaleY + (1 - alignFactor) * scaleX;
+    const alignment = Math.abs(vec3.dot(screenVec, stretchAxis));
+    return alignment * scaleY + (1 - alignment) * scaleX;
   }
 
-  // Apply scaling to Right (X) and Up (Y)
   const out = mat4.create();
   return mat4.fromScaling(out, [
     getScaleFactor(viewRight),
