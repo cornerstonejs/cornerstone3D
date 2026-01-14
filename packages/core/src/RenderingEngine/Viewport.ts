@@ -1134,7 +1134,13 @@ class Viewport {
     const config = getConfiguration();
     const useLegacyMethod = config.rendering?.useLegacyCameraFOV ?? false;
 
-    if (imageData && !useLegacyMethod) {
+    // Note: Force the legacy method for orthographic views as the current method
+    // does not provide correct FOV estimates for reformatted orientations.
+    if (
+      imageData &&
+      !useLegacyMethod &&
+      this.type !== ViewportType.ORTHOGRAPHIC
+    ) {
       const extent = imageData.getExtent();
       const spacing = imageData.getSpacing();
 
