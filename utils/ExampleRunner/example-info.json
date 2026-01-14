@@ -165,6 +165,15 @@
         "name": "PET-CT Multi-Monitor Layout",
         "description": "Demonstrates how to create a multi-monitor layout with PET-CT fusion using the ContextPoolRenderingEngine"
       },
+,
+      "fov": {
+        "name": "Field of View (FOV)",
+        "description": "Demonstrates we set and display the correct Field of View (FOV) for Stack, Volume and 3D viewports"
+
+
+
+
+      },
       "webGLContextPooling": {
         "name": "WebGL Context Pooling",
         "description": "Demonstrates how to use WebGL context pooling to render many viewports in sync using ContextPoolRenderingEngine"

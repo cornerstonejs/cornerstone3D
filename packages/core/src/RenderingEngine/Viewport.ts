@@ -1129,24 +1129,45 @@ class Viewport {
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    let widthWorld;
-    let heightWorld;
-    const config = getConfiguration();
-    const useLegacyMethod = config.rendering?.useLegacyCameraFOV ?? false;
-
-    if (imageData && !useLegacyMethod) {
+    let widthWorld2;
+    let heightWorld2;
+    if (imageData) {
       const extent = imageData.getExtent();
+
       const spacing = imageData.getSpacing();
 
-      widthWorld = (extent[1] - extent[0]) * spacing[0];
-      heightWorld = (extent[3] - extent[2]) * spacing[1];
-    } else {
-      ({ widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
-        bounds,
-        viewUp,
-        viewPlaneNormal
-      ));
+      // Determine which dimensions to use based on view plane normal
+      // The view plane normal tells us which axis we're looking along
+      const absNormal = viewPlaneNormal.map(Math.abs);
+      const maxIndex = absNormal.indexOf(Math.max(...absNormal));
+
+      // Based on which axis we're looking along, use the appropriate extents
+      if (maxIndex === 0) {
+        // Sagittal view (looking along X axis) - use Y for width, Z for height
+        widthWorld2 = (extent[3] - extent[2]) * spacing[1];
+        heightWorld2 = (extent[5] - extent[4]) * spacing[2];
+      } else if (maxIndex === 1) {
+        // Coronal view (looking along Y axis) - use X for width, Z for height
+        widthWorld2 = (extent[1] - extent[0]) * spacing[0];
+        heightWorld2 = (extent[5] - extent[4]) * spacing[2];
+      } else {
+        // Axial view (looking along Z axis) - use X for width, Y for height
+        widthWorld2 = (extent[1] - extent[0]) * spacing[0];
+        heightWorld2 = (extent[3] - extent[2]) * spacing[1];
+      }
+      console.warn('width,height new method', widthWorld2, heightWorld2);
     }
+
+    let widthWorld;
+    let heightWorld;
+
+    ({ widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
+      bounds,
+      viewUp,
+      viewPlaneNormal
+    ));
+    console.warn('legacy method width,height', widthWorld, heightWorld);
+    console.warn('Delta', widthWorld2 - widthWorld, heightWorld2 - heightWorld);
 
     const canvasSize = [this.sWidth, this.sHeight];
 
