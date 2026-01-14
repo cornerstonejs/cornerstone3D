@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.8...v4.15.9) (2026-01-14)
+
+### Bug Fixes
+
+- **SculptorTool:** Restored the dynamic cursor size functionality that was undone by PR 2484. ([#2554](https://github.com/cornerstonejs/cornerstone3D/issues/2554)) ([e61642b](https://github.com/cornerstonejs/cornerstone3D/commit/e61642bd7c16b709968370cce001c9ecab401e2d))
+
+## [4.15.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.7...v4.15.8) (2026-01-13)
+
+### Bug Fixes
+
+- **synchronizers:** Use default event source of 'element' if not provided for auxiliary events. ([#2555](https://github.com/cornerstonejs/cornerstone3D/issues/2555)) ([1363388](https://github.com/cornerstonejs/cornerstone3D/commit/1363388d25162642b0c0cfbf5fc59942996362dc))
+
+## [4.15.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.6...v4.15.7) (2026-01-12)
+
+### Bug Fixes
+
+- **LabelmapBaseTool:** Added null check for a label map representation in getEditData. ([#2552](https://github.com/cornerstonejs/cornerstone3D/issues/2552)) ([8f56a66](https://github.com/cornerstonejs/cornerstone3D/commit/8f56a66e8a167cc9a0bb64fc82d7bc637b166bbe))
+
+## [4.15.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.5...v4.15.6) (2026-01-11)
+
+### Bug Fixes
+
+- **null-safety:** Add null checks in various segmentation related code. ([#2550](https://github.com/cornerstonejs/cornerstone3D/issues/2550)) ([aeee51b](https://github.com/cornerstonejs/cornerstone3D/commit/aeee51bdbf6c8ee7ecf4978f73ff1f962acd5d3c))
+
 ## [4.15.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.4...v4.15.5) (2026-01-07)
 
 ### Bug Fixes
