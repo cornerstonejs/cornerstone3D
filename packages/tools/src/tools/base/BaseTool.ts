@@ -339,7 +339,6 @@ abstract class BaseTool {
         continue;
       }
       const ref = viewport.getViewReferenceId({ volumeId });
-      console.warn('targetId', ref, actor);
       if (ref) {
         references.push(ref);
       }

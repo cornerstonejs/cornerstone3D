@@ -870,6 +870,7 @@ class RectangleROITool extends AnnotationTool {
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
+        console.warn('Image does not exist for targetId:', targetId);
         continue;
       }
 
