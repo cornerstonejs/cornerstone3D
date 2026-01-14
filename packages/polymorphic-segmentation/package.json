@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/polymorphic-segmentation",
-  "version": "4.15.10",
+  "version": "4.15.11",
   "description": "Polymorphic Segmentation utility for Cornerstone3D",
   "files": [
     "dist"
