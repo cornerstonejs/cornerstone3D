@@ -141,6 +141,7 @@ function _linearlyInterpolateBetween(
   const annotation1 = interpolationData.get(annotationPair[1])[0];
   const c1 = _generateClosedContour(annotation0.data.contour.polyline);
   const c2 = _generateClosedContour(annotation1.data.contour.polyline);
+  console.warn('annotation0=', annotation0);
 
   const { c1Interp, c2Interp } = _generateInterpolationContourPair(c1, c2);
   c1Interp.kIndex = annotationPair[0];
@@ -158,16 +159,6 @@ function _linearlyInterpolateBetween(
       eventData
     );
   });
-}
-
-function getPointCount(pointArray) {
-  let sum = 0;
-  for (let i = 0; i < pointArray.I.length; i++) {
-    if (pointArray.I[i]) {
-      sum++;
-    }
-  }
-  return sum;
 }
 
 /**
@@ -206,7 +197,10 @@ function _linearlyInterpolateContour(
 
   const nearestAnnotation = zInterp > 0.5 ? annotation1 : annotation0;
 
-  const handlePoints = selectHandles(interpolated3DPoints);
+  const isOpenUShapeContour = nearestAnnotation.data.isOpenUShapeContour;
+  const handlePoints = selectHandles(interpolated3DPoints, {
+    isOpenUShapeContour,
+  });
 
   if (interpolationData.has(sliceIndex)) {
     _editInterpolatedContour(
