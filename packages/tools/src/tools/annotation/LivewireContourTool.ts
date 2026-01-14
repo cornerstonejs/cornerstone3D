@@ -384,9 +384,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       movingTextBox: false,
     };
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     this._activateModify(element);
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
@@ -427,9 +424,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       movingTextBox,
     };
     this._activateModify(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -610,6 +604,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (this.editData.closed) {
+      // Set isOpenUShapeContour to 'lineSegment' when the tool ends with a double-click
+      if (closePath) {
+        annotation.data.isOpenUShapeContour = 'lineSegment';
+      }
       // Update the annotation because `editData` will be set to null
       this.updateAnnotation(this.editData.confirmedPath);
       this._endCallback(evt);
