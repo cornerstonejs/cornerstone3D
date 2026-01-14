@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.9...v4.15.10) (2026-01-14)
+
+### Bug Fixes
+
+- One size calculation to address various FOV issues. ([#2537](https://github.com/cornerstonejs/cornerstone3D/issues/2537)) ([dc0fb7d](https://github.com/cornerstonejs/cornerstone3D/commit/dc0fb7d7054ee9b667b7e7ad97e4e2edef47b491))
+
 ## [4.15.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.8...v4.15.9) (2026-01-14)
 
 **Note:** Version bump only for package @cornerstonejs/core
