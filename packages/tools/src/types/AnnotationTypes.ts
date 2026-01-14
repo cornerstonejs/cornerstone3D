@@ -40,6 +40,14 @@ export type AnnotationData = {
   contour?: Contour;
 
   /**
+   * The object is closed by connecting start/end points of the contour.
+   * Can be true (boolean), meaning 'farthestT'
+   * or a specific style: 'farthestT', 'lineSegment', or 'orthogonalT'
+   * to specify the rendering style
+   */
+  isOpenUShapeContour?: boolean | 'farthestT' | 'lineSegment' | 'orthogonalT';
+
+  /**
    * Other data/keys
    */
   [key: string]: unknown;

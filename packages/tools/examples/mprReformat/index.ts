@@ -117,8 +117,6 @@ const viewportColors = {
   [viewportId3]: 'rgb(0, 200, 0)',
 };
 
-let synchronizer;
-
 const viewportReferenceLineControllable = [
   viewportId1,
   viewportId2,
