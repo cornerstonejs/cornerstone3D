@@ -31,6 +31,8 @@ class OrientationControlTool extends BaseTool {
   private markerActors = new Map<string, vtkActor>();
   private pickers = new Map<string, vtkCellPicker>();
   private clickHandlers = new Map<string, (evt: MouseEvent) => void>();
+  private dragHandlers = new Map<string, (evt: MouseEvent) => void>();
+  private mouseUpHandlers = new Map<string, () => void>();
   private resizeObservers = new Map<string, ResizeObserver>();
   private cameraHandlers = new Map<string, (evt: CustomEvent) => void>();
 
@@ -40,7 +42,7 @@ class OrientationControlTool extends BaseTool {
       supportedInteractionTypes: ['Mouse'],
       configuration: {
         enabled: true,
-        opacity: 1,
+        opacity: 0.3,
         size: 0.06375, // Relative size of marker (6.375% of viewport, 15% smaller)
         position: 'bottom-right', // Position in viewport
         color: [0.8, 0.8, 0.8],
@@ -50,7 +52,7 @@ class OrientationControlTool extends BaseTool {
           frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
           leftRight: [255, 255, 0], // Yellow - faces 4-5 (left/right)
           corners: [0, 0, 255], // Blue - faces 6-13 (corner triangles)
-          edges: [200, 100, 255], // Light purple/magenta - faces 14-25 (edge rectangles)
+          edges: [128, 128, 128], // Grey - faces 14-25 (edge rectangles)
         },
       },
     }
@@ -187,9 +189,24 @@ class OrientationControlTool extends BaseTool {
 
       // Remove click handler
       const clickHandler = this.clickHandlers.get(viewportId);
-      if (clickHandler) {
+      if (clickHandler && element) {
         element.removeEventListener('mousedown', clickHandler);
         this.clickHandlers.delete(viewportId);
+      }
+
+      // Remove drag handler
+      const dragHandler = this.dragHandlers.get(viewportId);
+      if (dragHandler && element) {
+        element.removeEventListener('mousemove', dragHandler);
+        this.dragHandlers.delete(viewportId);
+      }
+
+      // Remove mouse up handler
+      const mouseUpHandler = this.mouseUpHandlers.get(viewportId);
+      if (mouseUpHandler && element) {
+        element.removeEventListener('mouseup', mouseUpHandler);
+        element.removeEventListener('mouseleave', mouseUpHandler);
+        this.mouseUpHandlers.delete(viewportId);
       }
 
       // Remove resize observer
@@ -203,6 +220,8 @@ class OrientationControlTool extends BaseTool {
     this.resizeObservers.clear();
     this.cameraHandlers.clear();
     this.clickHandlers.clear();
+    this.dragHandlers.clear();
+    this.mouseUpHandlers.clear();
   };
 
   private initViewports = (): void => {
@@ -372,7 +391,7 @@ class OrientationControlTool extends BaseTool {
       frontBack: [0, 255, 0],
       leftRight: [255, 255, 0],
       corners: [0, 0, 255],
-      edges: [200, 100, 255], // Light purple/magenta
+      edges: [128, 128, 128],
     };
 
     const red = faceColors.topBottom;
@@ -665,10 +684,9 @@ class OrientationControlTool extends BaseTool {
     const actor = vtkActor.newInstance();
     actor.setMapper(mapper);
 
-    // Set properties - translucent with cell colors
+    // Set properties - fully opaque with cell colors
     const property = actor.getProperty();
-    const opacity = this.configuration.opacity ?? 0.95; // Use configured opacity or default to 0.3
-    property.setOpacity(opacity); // Translucent to see inside
+    property.setOpacity(1.0); // Fully opaque
     property.setRepresentationToSurface();
     property.setEdgeVisibility(false); // No edges needed with colored surfaces
     property.setBackfaceCulling(false); // Render both sides of faces
@@ -782,7 +800,7 @@ class OrientationControlTool extends BaseTool {
     const canvasHeight = canvas.height;
 
     // Define fixed screen position (in canvas pixels, closer to corner)
-    const cornerOffset = 50; // pixels from corner
+    const cornerOffset = 35; // pixels from corner
     let canvasX = 0;
     let canvasY = 0;
 
@@ -1066,6 +1084,8 @@ class OrientationControlTool extends BaseTool {
     element: HTMLDivElement,
     actor: vtkActor
   ): void {
+    let isMouseDown = false;
+
     const clickHandler = (evt: MouseEvent) => {
       // Only handle left clicks
       if (evt.button !== 0) {
@@ -1117,6 +1137,9 @@ class OrientationControlTool extends BaseTool {
         return;
       }
 
+      // Mark mouse as down
+      isMouseDown = true;
+
       // Log which of the 26 surfaces was clicked
       const label = this.getSurfaceLabel(cellId);
       console.info(
@@ -1143,8 +1166,74 @@ class OrientationControlTool extends BaseTool {
       evt.stopPropagation();
     };
 
+    // Handle mouse move to detect dragging
+    const dragHandler = (evt: MouseEvent) => {
+      if (!isMouseDown) {
+        return;
+      }
+
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+
+      if (!enabledElement) {
+        return;
+      }
+
+      const { viewport } = enabledElement;
+
+      if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+        return;
+      }
+
+      const picker = this.pickers.get(viewportId);
+      if (!picker) {
+        return;
+      }
+
+      // Get mouse position relative to element
+      const rect = element.getBoundingClientRect();
+      const x = evt.clientX - rect.left;
+      const y = evt.clientY - rect.top;
+
+      // Convert to VTK display coordinates
+      const displayCoords = (
+        viewport as Types.IVolumeViewport3D
+      ).getVtkDisplayCoords([x, y]);
+
+      // Pick
+      picker.pick(displayCoords, viewport.getRenderer());
+
+      // Check if we're still over the marker actor
+      const pickedActors = picker.getActors();
+      if (pickedActors.length > 0 && pickedActors[0] === actor) {
+        const cellId = picker.getCellId();
+        if (cellId !== -1) {
+          const label = this.getSurfaceLabel(cellId);
+          console.log(
+            'OrientationControlTool: Dragging over control - surface',
+            cellId,
+            '-',
+            label
+          );
+        }
+      }
+    };
+
+    // Handle mouse up to stop drag detection
+    const mouseUpHandler = () => {
+      isMouseDown = false;
+    };
+
     element.addEventListener('mousedown', clickHandler);
+    element.addEventListener('mousemove', dragHandler);
+    element.addEventListener('mouseup', mouseUpHandler);
+    element.addEventListener('mouseleave', mouseUpHandler); // Also stop on mouse leave
+
     this.clickHandlers.set(viewportId, clickHandler);
+    this.dragHandlers.set(viewportId, dragHandler);
+    this.mouseUpHandlers.set(viewportId, mouseUpHandler);
   }
 
   private cleanUpData = (): void => {
@@ -1168,25 +1257,45 @@ class OrientationControlTool extends BaseTool {
         if (enabledElement) {
           const { viewport, element } = enabledElement;
 
-          // Remove click handler
-          const clickHandler = this.clickHandlers.get(viewportId);
-          if (clickHandler) {
-            element.removeEventListener('mousedown', clickHandler);
-            this.clickHandlers.delete(viewportId);
-          }
+          // Only remove event listeners if element exists
+          if (element) {
+            // Remove click handler
+            const clickHandler = this.clickHandlers.get(viewportId);
+            if (clickHandler) {
+              element.removeEventListener('mousedown', clickHandler);
+              this.clickHandlers.delete(viewportId);
+            }
 
-          // Remove camera handler
-          const cameraHandler = this.cameraHandlers.get(viewportId);
-          if (cameraHandler) {
-            element.removeEventListener(
-              Enums.Events.CAMERA_MODIFIED,
-              cameraHandler
-            );
-            this.cameraHandlers.delete(viewportId);
+            // Remove drag handler
+            const dragHandler = this.dragHandlers.get(viewportId);
+            if (dragHandler) {
+              element.removeEventListener('mousemove', dragHandler);
+              this.dragHandlers.delete(viewportId);
+            }
+
+            // Remove mouse up handler
+            const mouseUpHandler = this.mouseUpHandlers.get(viewportId);
+            if (mouseUpHandler) {
+              element.removeEventListener('mouseup', mouseUpHandler);
+              element.removeEventListener('mouseleave', mouseUpHandler);
+              this.mouseUpHandlers.delete(viewportId);
+            }
+
+            // Remove camera handler
+            const cameraHandler = this.cameraHandlers.get(viewportId);
+            if (cameraHandler) {
+              element.removeEventListener(
+                Enums.Events.CAMERA_MODIFIED,
+                cameraHandler
+              );
+              this.cameraHandlers.delete(viewportId);
+            }
           }
 
           // Remove actor
-          viewport.removeActor(`orientation-control-${viewportId}`);
+          if (viewport && typeof viewport.removeActor === 'function') {
+            viewport.removeActor(`orientation-control-${viewportId}`);
+          }
           actor.delete();
         }
       }
@@ -1194,6 +1303,9 @@ class OrientationControlTool extends BaseTool {
 
     this.markerActors.clear();
     this.pickers.clear();
+    this.clickHandlers.clear();
+    this.dragHandlers.clear();
+    this.mouseUpHandlers.clear();
     this.cameraHandlers.clear();
   };
 }

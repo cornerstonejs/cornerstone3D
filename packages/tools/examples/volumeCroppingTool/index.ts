@@ -211,6 +211,15 @@ function getNumViewportsFromUrl() {
 }
 
 /**
+ * Get the gray colors state from the URL (?grayColors=true|false)
+ */
+function getGrayColorsFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('grayColors');
+  return value === 'true';
+}
+
+/**
  * Runs the demo with a configurable number of orthographic viewports
  */
 async function run(numViewports = getNumViewportsFromUrl()) {
@@ -371,10 +380,45 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   });
   toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
-  // Add OrientationControlTool with default settings (will be enabled after volume is loaded)
-  toolGroupVRT.addTool(OrientationControlTool.toolName);
+  // Get gray colors state from URL
+  const isGrayColors = getGrayColorsFromUrl();
+
+  // Configure face colors based on URL parameter
+  const faceColors = isGrayColors
+    ? {
+        // All gray
+        topBottom: [180, 180, 180],
+        frontBack: [180, 180, 180],
+        leftRight: [180, 180, 180],
+        corners: [180, 180, 180],
+        edges: [180, 180, 180],
+      }
+    : {
+        // Default colors
+        topBottom: [255, 0, 0], // Red
+        frontBack: [0, 255, 0], // Green
+        leftRight: [255, 255, 0], // Yellow
+        corners: [0, 0, 255], // Blue
+        edges: [128, 128, 128], // Grey
+      };
+
+  // Add OrientationControlTool with color configuration from URL
+  toolGroupVRT.addTool(OrientationControlTool.toolName, {
+    faceColors,
+  });
   // Enable OrientationControlTool after viewport is added and volume is loaded
   toolGroupVRT.setToolEnabled(OrientationControlTool.toolName);
+
+  // Add toggle button for orientation control colors (reloads page with URL param)
+  addToggleButtonToToolbar({
+    title: 'Toggle Orientation Control Colors',
+    defaultToggle: isGrayColors,
+    onClick: (toggle) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('grayColors', toggle.toString());
+      window.location.href = url.toString();
+    },
+  });
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
