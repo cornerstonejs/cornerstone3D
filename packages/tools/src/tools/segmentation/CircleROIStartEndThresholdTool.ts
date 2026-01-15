@@ -118,7 +118,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     // Check if cachedStats is available and contains the preferredVolumeId
     if (isPreferredTargetId) {
-      for (const volumeId of viewport.volumeIds) {
+      for (const volumeId of viewport.getAllVolumeIds()) {
         if (isPreferredTargetId(viewport, { targetId: volumeId }))
           return 'volumeId:' + volumeId;
       }
