@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.11...v4.15.12) (2026-01-15)
+
+### Bug Fixes
+
+- Livewire unit test failure ([#2558](https://github.com/cornerstonejs/cornerstone3D/issues/2558)) ([b21925d](https://github.com/cornerstonejs/cornerstone3D/commit/b21925d0a72a50724f68cbc6da12e4d07992a82e))
+
 ## [4.15.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.10...v4.15.11) (2026-01-14)
 
 ### Bug Fixes
