@@ -328,10 +328,10 @@ abstract class BaseTool {
     data?: unknown & { cachedStats?: Record<string, unknown> }
   ) {
     const { showAllTargets } = this.configurationTyped;
-    if (showAllTargets === false) {
+    const actors = viewport.getActors();
+    if (showAllTargets === false || !actors?.length) {
       return [this.getTargetId(viewport, data)];
     }
-    const actors = viewport.getActors();
     const references = [];
     for (const actor of actors) {
       const volumeId = actor.referencedId;
