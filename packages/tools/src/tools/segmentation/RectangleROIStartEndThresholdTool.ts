@@ -111,6 +111,28 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   }
 
+  protected getTargetId(viewport: Types.IViewport): string | undefined {
+    const { isPreferredTargetId } = this.configurationTyped; // Get preferred ID from config
+
+    // Check if cachedStats is available and contains the preferredVolumeId
+    if (isPreferredTargetId) {
+      for (const volumeId of viewport.volumeIds) {
+        if (isPreferredTargetId(viewport, { targetId: volumeId }))
+          return 'volumeId:' + volumeId;
+      }
+    }
+
+    // If not found or not applicable, use the viewport's default method
+    const defaultTargetId = viewport.getViewReferenceId?.();
+    if (defaultTargetId) {
+      return defaultTargetId;
+    }
+
+    throw new Error(
+      'getTargetId: viewport must have a getViewReferenceId method'
+    );
+  }
+
   /**
    * Based on the current position of the mouse and the enabledElement it creates
    * the edit data for the tool.
