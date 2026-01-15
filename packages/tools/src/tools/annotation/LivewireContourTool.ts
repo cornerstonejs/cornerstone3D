@@ -384,9 +384,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       movingTextBox: false,
     };
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     this._activateModify(element);
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
@@ -427,9 +424,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       movingTextBox,
     };
     this._activateModify(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -536,7 +530,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { canvas: canvasPos, world: worldPosOriginal } = currentPoints;
     let worldPos = worldPosOriginal;
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
     let closePath = controlPoints.length >= 2 && doubleClick;
 
@@ -610,6 +604,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (this.editData.closed) {
+      // Set isOpenUShapeContour to 'lineSegment' when the tool ends with a double-click
+      if (closePath) {
+        annotation.data.isOpenUShapeContour = 'lineSegment';
+      }
       // Update the annotation because `editData` will be set to null
       this.updateAnnotation(this.editData.confirmedPath);
       this._endCallback(evt);
@@ -621,7 +619,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   private _mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     const { element, currentPoints } = evt.detail;
     const { world: worldPos, canvas: canvasPos } = currentPoints;
-    const { renderingEngine } = getEnabledElement(element);
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
@@ -794,9 +791,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     }
 
     this.editData.hasMoved = true;
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
@@ -1015,7 +1009,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     }
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
     const targetIds = Object.keys(cachedStats);

@@ -286,6 +286,10 @@ export default class LabelmapBaseTool extends BaseTool {
     segmentationId,
   }): EditDataReturnType {
     if (viewport instanceof BaseVolumeViewport) {
+      if (!representationData[SegmentationRepresentations.Labelmap]) {
+        return;
+      }
+
       const { volumeId } = representationData[
         SegmentationRepresentations.Labelmap
       ] as LabelmapSegmentationDataVolume;

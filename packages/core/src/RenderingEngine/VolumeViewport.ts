@@ -560,12 +560,15 @@ class VolumeViewport extends BaseVolumeViewport {
    * have the same affect, excluding end/looping conditions.
    */
   public getCurrentImageIdIndex = (
-    volumeId?: string,
+    volumeId: string = this.getVolumeId(),
     useSlabThickness = true
   ): number => {
+    if (!volumeId) {
+      return 0;
+    }
     const { currentStepIndex } = getVolumeViewportScrollInfo(
       this,
-      volumeId || this.getVolumeId(),
+      volumeId,
       useSlabThickness
     );
     return currentStepIndex;
