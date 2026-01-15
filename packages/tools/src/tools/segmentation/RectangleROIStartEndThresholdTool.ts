@@ -111,7 +111,9 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   }
 
-  protected getTargetId(viewport: Types.IViewport): string | undefined {
+  protected getTargetId(
+    viewport: Types.IBaseVolumeViewport
+  ): string | undefined {
     const { isPreferredTargetId } = this.configurationTyped; // Get preferred ID from config
 
     // Check if cachedStats is available and contains the preferredVolumeId
