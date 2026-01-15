@@ -276,9 +276,6 @@ class RectangleROITool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -319,9 +316,6 @@ class RectangleROITool extends AnnotationTool {
     this._activateModify(element);
 
     hideElementCursor(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -624,6 +618,7 @@ class RectangleROITool extends AnnotationTool {
 
       const targetId = this.getTargetId(viewport, data);
       const targetIds = this.getMeasurementTargets(viewport, data);
+      console.warn('Target IDs:', viewport.id, targetIds);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -652,7 +647,6 @@ class RectangleROITool extends AnnotationTool {
           annotation,
           viewPlaneNormal,
           viewUp,
-          renderingEngine,
           enabledElement
         );
       } else if (annotation.invalidated) {
@@ -660,7 +654,6 @@ class RectangleROITool extends AnnotationTool {
           annotation,
           viewPlaneNormal,
           viewUp,
-          renderingEngine,
           enabledElement
         );
 
@@ -845,7 +838,6 @@ class RectangleROITool extends AnnotationTool {
     annotation,
     viewPlaneNormal,
     viewUp,
-    renderingEngine,
     enabledElement
   ) => {
     if (!this.configuration.calculateStats) {

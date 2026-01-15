@@ -21,6 +21,34 @@ export type AnnotationMetadata = Types.ViewReference & {
   enabledElement?: Types.IEnabledElement;
 };
 
+export type StatItem = {
+  /** The name/key of the statistic */
+  name: string;
+  /** The display label for the statistic */
+  label: string;
+  /** The value of the statistic (can be a single value or array) */
+  value: number | number[];
+  /** Optional unit for the statistic */
+  unit?: string;
+  /** The IJK coordinate point for the statistic location */
+  pointIJK?: Types.Point3;
+  /** The LPS coordinate point for the statistic location */
+  pointLPS?: Types.Point3;
+};
+
+export type CachedStats = {
+  Modality?: string;
+  area?: number | number[];
+  length?: number | number[];
+  areaUnit?: string;
+  max?: number | number[];
+  mean?: number | number[];
+  min?: number | number[];
+  /** Array of detailed statistics with location information */
+  statsArray?: StatItem[];
+  [key: string]: unknown;
+};
+
 export type AnnotationData = {
   /**
    * Annotation handles that are grabbable for manipulation
@@ -29,7 +57,7 @@ export type AnnotationData = {
   /**
    * Cached Annotation statistics which is specific to the tool
    */
-  cachedStats?: Record<string, unknown>;
+  cachedStats?: Record<string, CachedStats>;
   /**
    * Label of an annotation
    */
