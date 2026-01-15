@@ -42,13 +42,13 @@ describe('SelectHandles:', function () {
   it('Should select 5 handles for too small array', () => {
     const array = PointsManager.create3(5);
     array.push([0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], [4, 0, 0]);
-    const handles = selectHandles(array, 3);
+    const handles = selectHandles(array, { handleCount: 3 });
     expect(handles.length).toBe(3);
   });
 
   it.skip('Should select corner handles for square', () => {
     const array = createSquare(9);
-    const handles = selectHandles(array, 4);
+    const handles = selectHandles(array, { handleCount: 4 });
     expect(handles.getPointArray(3)).toEqual([0, 0, 0]);
     expect(handles.getPointArray(0)).toEqual([9, 0, 0]);
     expect(handles.getPointArray(1)).toEqual([9, 9, 0]);
@@ -58,7 +58,7 @@ describe('SelectHandles:', function () {
   // TODO - figure this one out to have the right settings
   it.skip('Should select corner and center handles for big square', () => {
     const array = createSquare(99);
-    const handles = selectHandles(array, 8);
+    const handles = selectHandles(array, { handleCount: 8 });
     expect(handles.getPointArray(1)).toEqual([0, 0, 0]);
     expect(handles.getPointArray(3)).toEqual([99, 0, 0]);
     expect(handles.getPointArray(5)).toEqual([99, 99, 0]);
