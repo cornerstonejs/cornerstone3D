@@ -296,7 +296,7 @@ abstract class BaseTool {
    */
   protected getTargetId(
     viewport: Types.IViewport,
-    data?: unknown & { cachedStats?: Record<string, unknown> }
+    data?: AnnotationData
   ): string | undefined {
     const { isPreferredTargetId } = this.configurationTyped; // Get preferred ID from config
 

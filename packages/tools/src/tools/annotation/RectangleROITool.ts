@@ -45,6 +45,7 @@ import type {
   PublicToolProps,
   SVGDrawingHelper,
   Annotation,
+  AnnotationData,
 } from '../../types';
 import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -142,9 +143,7 @@ class RectangleROITool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): RectangleROIAnnotation => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -618,7 +617,6 @@ class RectangleROITool extends AnnotationTool {
 
       const targetId = this.getTargetId(viewport, data);
       const targetIds = this.getMeasurementTargets(viewport, data);
-      console.warn('Target IDs:', viewport.id, targetIds);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({

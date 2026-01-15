@@ -92,7 +92,6 @@ export function createMultiResultLine(
   attribute: string,
   unitAttribute: string
 ) {
-  console.warn('Create multi result line');
   const result = [`${name}:`];
   let lastValue = null;
   let lastUnit = null;

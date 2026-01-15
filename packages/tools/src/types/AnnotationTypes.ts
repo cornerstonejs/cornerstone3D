@@ -36,18 +36,37 @@ export type StatItem = {
   pointLPS?: Types.Point3;
 };
 
-export type CachedStats = {
+export interface CachedStats {
   Modality?: string;
   area?: number | number[];
   length?: number | number[];
+  width?: number | number[];
+  unit?: string;
   areaUnit?: string;
   max?: number | number[];
   mean?: number | number[];
   min?: number | number[];
+  /** Radius for circular annotations */
+  radius?: number;
+  /** Unit for radius measurements */
+  radiusUnit?: string;
+  /** Perimeter for closed contour annotations */
+  perimeter?: number;
   /** Array of detailed statistics with location information */
   statsArray?: StatItem[];
   [key: string]: unknown;
-};
+}
+
+export interface VolumeStats {
+  /** Points in volume for projection-based annotations */
+  pointsInVolume: Types.Point3[];
+  /** Projection points for multi-slice annotations */
+  projectionPoints: Types.Point3[] | Types.Point3[][];
+  /** Image IDs for projection points */
+  projectionPointsImageIds?: string[];
+  /** Nested statistics for complex annotations */
+  statistics?: unknown;
+}
 
 export type AnnotationData = {
   /**
@@ -57,7 +76,8 @@ export type AnnotationData = {
   /**
    * Cached Annotation statistics which is specific to the tool
    */
-  cachedStats?: Record<string, CachedStats>;
+  cachedStats?: Record<string, CachedStats> | VolumeStats;
+
   /**
    * Label of an annotation
    */
@@ -79,6 +99,10 @@ export type AnnotationData = {
    * Other data/keys
    */
   [key: string]: unknown;
+};
+
+export type AnnotationDataStatsByTargetId = AnnotationData & {
+  cachedStats: Record<string, CachedStats>;
 };
 
 /**
