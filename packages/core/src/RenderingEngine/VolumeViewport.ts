@@ -239,7 +239,8 @@ class VolumeViewport extends BaseVolumeViewport {
       });
 
       this.viewportProperties.orientation = orientation;
-      this.resetCamera();
+      // Suppress events to prevent CAMERA_RESET from triggering render before camera is ready
+      this.resetCamera({ suppressEvents: true });
     } else {
       ({ viewPlaneNormal, viewUp } = orientation);
       this.applyViewOrientation(orientation, true, suppressEvents);
