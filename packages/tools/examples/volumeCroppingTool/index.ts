@@ -383,28 +383,84 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   // Get gray colors state from URL
   const isGrayColors = getGrayColorsFromUrl();
 
-  // Configure face colors based on URL parameter
-  const faceColors = isGrayColors
+  // Configure overlayConfiguration based on URL parameter
+  const overlayConfiguration = isGrayColors
     ? {
-        // All gray
-        topBottom: [180, 180, 180],
-        frontBack: [180, 180, 180],
-        leftRight: [180, 180, 180],
-        corners: [180, 180, 180],
-        edges: [180, 180, 180],
+        faceProperties: {
+          top: { faceColor: [180, 180, 180] },
+          bottom: { faceColor: [180, 180, 180] },
+          front: { faceColor: [180, 180, 180] },
+          back: { faceColor: [180, 180, 180] },
+          left: { faceColor: [180, 180, 180] },
+          right: { faceColor: [180, 180, 180] },
+          corners: { faceColor: [180, 180, 180] },
+          edges: { faceColor: [180, 180, 180] },
+        },
+        defaultStyle: {
+          fontStyle: 'bold',
+          fontFamily: 'Arial',
+          fontColor: '#000000',
+          fontSizeScale: (res) => res / 2,
+          faceColor: [180, 180, 180],
+          edgeThickness: 0.1,
+          edgeColor: '#000000',
+          resolution: 400,
+        },
       }
     : {
-        // Default colors
-        topBottom: [255, 0, 0], // Red
-        frontBack: [0, 255, 0], // Green
-        leftRight: [255, 255, 0], // Yellow
-        corners: [0, 0, 255], // Blue
-        edges: [128, 128, 128], // Grey
+        faceProperties: {
+          top: {
+            text: 'S',
+            faceColor: [255, 0, 0],
+            fontColor: '#ffffff',
+          },
+          bottom: {
+            text: 'I',
+            faceColor: [255, 0, 0],
+            fontColor: '#ffffff',
+          },
+          front: {
+            text: 'A',
+            faceColor: [0, 255, 0],
+            fontColor: '#ffffff',
+          },
+          back: {
+            text: 'P',
+            faceColor: [0, 255, 0],
+            fontColor: '#ffffff',
+          },
+          left: {
+            text: 'L',
+            faceColor: [255, 255, 0],
+            fontColor: '#000000',
+          },
+          right: {
+            text: 'R',
+            faceColor: [255, 255, 0],
+            fontColor: '#000000',
+          },
+          corners: {
+            faceColor: [0, 0, 255],
+          },
+          edges: {
+            faceColor: [128, 128, 128],
+          },
+        },
+        defaultStyle: {
+          fontStyle: 'bold',
+          fontFamily: 'Arial',
+          fontColor: '#000000',
+          fontSizeScale: (res) => res / 2,
+          faceColor: [200, 200, 200],
+          edgeThickness: 0.1,
+          edgeColor: '#000000',
+          resolution: 400,
+        },
       };
 
-  // Add OrientationControlTool with color configuration from URL
+  // Add OrientationControlTool with overlayConfiguration from URL
   toolGroupVRT.addTool(OrientationControlTool.toolName, {
-    faceColors,
+    overlayConfiguration,
   });
   // Enable OrientationControlTool after viewport is added and volume is loaded
   toolGroupVRT.setToolEnabled(OrientationControlTool.toolName);
