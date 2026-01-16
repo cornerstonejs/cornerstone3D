@@ -239,7 +239,7 @@ function completeDrawClosedContour(
 
   const { annotation, viewportIdsToRender } = this.commonData;
   const enabledElement = getEnabledElement(element);
-  const { viewport, renderingEngine } = enabledElement;
+  const { viewport } = enabledElement;
 
   // Convert annotation to world coordinates
   addCanvasPointsToArray(
@@ -332,7 +332,7 @@ function completeDrawOpenContour(
 
   const { annotation, viewportIdsToRender } = this.commonData;
   const enabledElement = getEnabledElement(element);
-  const { viewport, renderingEngine } = enabledElement;
+  const { viewport } = enabledElement;
 
   const updatedPoints = shouldSmooth(this.configuration, annotation)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
@@ -361,8 +361,12 @@ function completeDrawOpenContour(
     worldPoints[worldPoints.length - 1],
   ];
 
-  // If the annotation is an open U-shaped annotation, find the annotation vector.
-  if (annotation.data.isOpenUShapeContour) {
+  // If the annotation is an open U-shaped annotation, find the annotation vector
+  // to the farthest point from the mid point of the closure
+  if (
+    annotation.data.isOpenUShapeContour === true ||
+    annotation.data.isOpenUShapeContour === 'farthestT'
+  ) {
     annotation.data.openUShapeContourVectorToPeak =
       findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
   }
@@ -517,8 +521,6 @@ function haltDrawing(
   if (shouldHaltDrawing(canvasPoints, subPixelResolution)) {
     // Remove annotation instead of completing it.
     const { annotation, viewportIdsToRender } = this.commonData;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     removeAnnotation(annotation.annotationUID);
 
