@@ -228,6 +228,21 @@ function getColorSchemeFromUrl(): 'gray' | 'rgb' | 'marker' {
 }
 
 /**
+ * Get the keepOrientationUp value from the URL (?keepOrientationUp=true|false)
+ */
+function getKeepOrientationUpFromUrl(): boolean {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('keepOrientationUp');
+  if (value === 'true') {
+    return true;
+  }
+  if (value === 'false') {
+    return false;
+  }
+  return true; // default
+}
+
+/**
  * Runs the demo with a configurable number of orthographic viewports
  */
 async function run(numViewports = getNumViewportsFromUrl()) {
@@ -392,6 +407,9 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   const colorScheme = getColorSchemeFromUrl();
   console.log('Color scheme from URL:', colorScheme);
 
+  // Get keepOrientationUp from URL
+  const keepOrientationUp = getKeepOrientationUpFromUrl();
+
   // Configure faceColors based on URL parameter
   let faceColors;
   if (colorScheme === 'gray') {
@@ -430,11 +448,10 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     toolGroupVRT.setToolDisabled(OrientationControlTool.toolName);
   }
 
-  // Add OrientationControlTool with faceColors from URL
+  // Add OrientationControlTool with faceColors and keepOrientationUp from URL
   console.log('Color scheme selected:', colorScheme);
+  console.log('Keep orientation up from URL:', keepOrientationUp);
   console.log('FaceColors being passed to tool:', JSON.stringify(faceColors));
-  console.log('FaceColors object:', faceColors);
-  console.log('Adding OrientationControlTool with faceColors:', faceColors);
 
   if (toolGroupVRT.hasTool(OrientationControlTool.toolName)) {
     console.warn(
@@ -444,6 +461,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
 
   toolGroupVRT.addTool(OrientationControlTool.toolName, {
     faceColors,
+    keepOrientationUp,
   });
 
   const toolInstance = toolGroupVRT.getToolInstance(
@@ -484,13 +502,24 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
   });
 
-  // Add toggle button for "Keep orientation up"
-  let keepOrientationUp = true; // Default value
-  addToggleButtonToToolbar({
-    title: 'Toggle Keep orientation up',
-    defaultToggle: keepOrientationUp,
-    onClick: (toggle) => {
-      keepOrientationUp = toggle;
+  // Add dropdown for "Keep orientation up"
+  const keepOrientationUpValues: string[] = ['true', 'false'];
+  const keepOrientationUpLabels = ['True', 'False'];
+
+  addDropdownToToolbar({
+    labelText: 'Keep Orientation Up',
+    options: {
+      values: keepOrientationUpValues,
+      defaultValue: String(keepOrientationUp),
+      labels: keepOrientationUpLabels,
+    },
+    onSelectedValueChange: (selectedValue) => {
+      const newValue = selectedValue === 'true';
+      // Update URL parameter
+      const url = new URL(window.location.href);
+      url.searchParams.set('keepOrientationUp', String(newValue));
+      window.history.replaceState({}, '', url);
+
       // Get the tool group for the 3D viewport
       const toolGroupVRT =
         cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
@@ -500,7 +529,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       );
       if (orientationControlTool) {
         // Update configuration
-        orientationControlTool.configuration.keepOrientationUp = toggle;
+        orientationControlTool.configuration.keepOrientationUp = newValue;
         // Reinitialize viewports to apply the change
         orientationControlTool.onSetToolDisabled();
         orientationControlTool.onSetToolEnabled();

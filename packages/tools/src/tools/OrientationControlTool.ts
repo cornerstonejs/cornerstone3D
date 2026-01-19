@@ -929,36 +929,55 @@ class OrientationControlTool extends BaseTool {
       const viewportId = viewport.id;
       this.previousOrientations.delete(viewportId);
     } else {
-      // Rotate marker with camera
-      // Get camera orientation and apply rotation to keep marker aligned with camera
+      // Rotate marker with camera - keep it screen-aligned (billboard effect)
+      // Get camera orientation
       const camera = viewport.getCamera();
       const viewPlaneNormal = camera.viewPlaneNormal;
       const viewUp = camera.viewUp;
 
-      // Calculate rotation matrix from camera orientation
+      // Calculate the rotation needed to align marker with camera
+      // We want the marker's forward to point along -viewPlaneNormal (toward camera)
+      // and its up to align with viewUp
       const forward = vec3.fromValues(
         -viewPlaneNormal[0],
         -viewPlaneNormal[1],
         -viewPlaneNormal[2]
       );
-      const up = vec3.fromValues(viewUp[0], viewUp[1], viewUp[2]);
-      const right = vec3.create();
-      vec3.cross(right, up, forward);
-      vec3.normalize(right, right);
       vec3.normalize(forward, forward);
+
+      const up = vec3.fromValues(viewUp[0], viewUp[1], viewUp[2]);
       vec3.normalize(up, up);
 
-      // Build rotation matrix
+      // Calculate right vector
+      const right = vec3.create();
+      vec3.cross(right, forward, up);
+      vec3.normalize(right, right);
+
+      // Recalculate up to ensure orthogonality
+      vec3.cross(up, right, forward);
+      vec3.normalize(up, up);
+
+      // Build rotation matrix (column-major for VTK)
       const rotationMatrix = mat4.create();
+      // First column: right vector
       rotationMatrix[0] = right[0];
       rotationMatrix[1] = right[1];
       rotationMatrix[2] = right[2];
+      rotationMatrix[3] = 0;
+      // Second column: up vector
       rotationMatrix[4] = up[0];
       rotationMatrix[5] = up[1];
       rotationMatrix[6] = up[2];
-      rotationMatrix[8] = forward[0];
-      rotationMatrix[9] = forward[1];
-      rotationMatrix[10] = forward[2];
+      rotationMatrix[7] = 0;
+      // Third column: forward vector (negated to point toward camera)
+      rotationMatrix[8] = -forward[0];
+      rotationMatrix[9] = -forward[1];
+      rotationMatrix[10] = -forward[2];
+      rotationMatrix[11] = 0;
+      // Fourth column: translation (identity)
+      rotationMatrix[12] = 0;
+      rotationMatrix[13] = 0;
+      rotationMatrix[14] = 0;
       rotationMatrix[15] = 1;
 
       // Convert to quaternion
