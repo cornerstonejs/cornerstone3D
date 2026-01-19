@@ -196,6 +196,7 @@ export async function addVolumesAsIndependentComponents({
       const { element, id } = viewport;
       viewport.removeActors([uid]);
 
+      //Here throw error when removed segmentation representation on MIP viewport
       const actor = await createVolumeActor(
         {
           volumeId: uid,
