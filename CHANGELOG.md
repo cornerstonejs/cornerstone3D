@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.12...v4.15.13) (2026-01-19)
+
+### Bug Fixes
+
+- **security:** Update tar dependency to fix CVE-2024-28863 ([#2565](https://github.com/cornerstonejs/cornerstone3D/issues/2565)) ([1db96cf](https://github.com/cornerstonejs/cornerstone3D/commit/1db96cf8ac463ecf6ad96412834df2d2462a6c13))
+
 ## [4.15.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.11...v4.15.12) (2026-01-15)
 
 ### Bug Fixes
