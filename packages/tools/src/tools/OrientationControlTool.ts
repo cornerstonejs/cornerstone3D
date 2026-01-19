@@ -4,14 +4,15 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkAnnotatedCubeActor from '@kitware/vtk.js/Rendering/Core/AnnotatedCubeActor';
 import { BaseTool } from './base';
 import {
   getEnabledElementByIds,
   getRenderingEngines,
   Enums,
-  Types,
   eventTarget,
 } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { getToolGroup } from '../store/ToolGroupManager';
 import { Events } from '../enums';
 import { vec3, mat4, quat } from 'gl-matrix';
@@ -29,6 +30,7 @@ class OrientationControlTool extends BaseTool {
   static toolName = 'OrientationControl';
 
   private markerActors = new Map<string, vtkActor>();
+  private annotatedCubeActors = new Map<string, vtkAnnotatedCubeActor>();
   private pickers = new Map<string, vtkCellPicker>();
   private clickHandlers = new Map<string, (evt: MouseEvent) => void>();
   private dragHandlers = new Map<string, (evt: MouseEvent) => void>();
@@ -265,6 +267,82 @@ class OrientationControlTool extends BaseTool {
     });
   };
 
+  private createAnnotatedCubeActor(): vtkAnnotatedCubeActor {
+    const actor = vtkAnnotatedCubeActor.newInstance();
+
+    // Use default style matching AnnotatedCubeActor documentation
+    const defaultStyle = {
+      fontStyle: 'bold',
+      fontFamily: 'Arial',
+      fontColor: 'black',
+      fontSizeScale: (res: number) => res / 2,
+      faceColor: 'white',
+      edgeThickness: 0.1,
+      edgeColor: 'black',
+      resolution: 400,
+    };
+
+    actor.setDefaultStyle(defaultStyle);
+
+    // Get face colors from configuration
+    const faceColors = this.configuration.faceColors || {
+      topBottom: [255, 0, 0],
+      frontBack: [0, 255, 0],
+      leftRight: [255, 255, 0],
+      corners: [0, 0, 255],
+      edges: [128, 128, 128],
+    };
+
+    // Convert RGB arrays to hex strings for face colors
+    const rgbToHex = (rgb: number[]) => {
+      return `#${rgb
+        .map((x) => {
+          const hex = x.toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        })
+        .join('')}`;
+    };
+
+    // Set face properties with letters matching default AnnotatedCubeActor
+    // X+ face (Right)
+    actor.setXPlusFaceProperty({
+      text: 'X+',
+      faceColor: rgbToHex(faceColors.leftRight),
+    });
+
+    // X- face (Left)
+    actor.setXMinusFaceProperty({
+      text: 'X-',
+      faceColor: rgbToHex(faceColors.leftRight),
+    });
+
+    // Y+ face (Back)
+    actor.setYPlusFaceProperty({
+      text: 'Y+',
+      faceColor: rgbToHex(faceColors.frontBack),
+    });
+
+    // Y- face (Front)
+    actor.setYMinusFaceProperty({
+      text: 'Y-',
+      faceColor: rgbToHex(faceColors.frontBack),
+    });
+
+    // Z+ face (Top)
+    actor.setZPlusFaceProperty({
+      text: 'Z+',
+      faceColor: rgbToHex(faceColors.topBottom),
+    });
+
+    // Z- face (Bottom)
+    actor.setZMinusFaceProperty({
+      text: 'Z-',
+      faceColor: rgbToHex(faceColors.topBottom),
+    });
+
+    return actor;
+  }
+
   private createRhombicuboctahedronGeometry(): vtkPolyData {
     // Create a beveled cube (modified rhombicuboctahedron)
     // A rhombicuboctahedron has 24 vertices, 26 faces (8 triangular, 18 square), and 48 edges
@@ -316,59 +394,53 @@ class OrientationControlTool extends BaseTool {
     const polyData = vtkPolyData.newInstance();
     polyData.getPoints().setData(vertices, 3);
 
-    // Generate 26 faces
+    // Generate faces - SKIP the 6 main square faces (0-5), they will be handled by AnnotatedCubeActor
     const faces: number[] = [];
 
-    // 6 large square faces on main axes
-    // Face 0: Bottom (z = -phi)
-    faces.push(4, 0, 3, 2, 1);
-    // Face 1: Top (z = +phi)
-    faces.push(4, 4, 5, 6, 7);
-    // Face 2: Front (y = -phi)
-    faces.push(4, 8, 11, 10, 9);
-    // Face 3: Back (y = +phi)
-    faces.push(4, 12, 13, 14, 15);
-    // Face 4: Left (x = -phi)
-    faces.push(4, 16, 19, 18, 17);
-    // Face 5: Right (x = +phi)
-    faces.push(4, 20, 21, 22, 23);
+    // Skip the 6 main square faces (0-5) - these will be handled by AnnotatedCubeActor
+    // Face 0: Bottom (z = -phi) - SKIPPED
+    // Face 1: Top (z = +phi) - SKIPPED
+    // Face 2: Front (y = -phi) - SKIPPED
+    // Face 3: Back (y = +phi) - SKIPPED
+    // Face 4: Left (x = -phi) - SKIPPED
+    // Face 5: Right (x = +phi) - SKIPPED
 
-    // 8 triangular corner faces
+    // 8 triangular corner faces (now indexed as 0-7 instead of 6-13)
     // Corner (-,-,-)
-    faces.push(3, 0, 16, 8); // Face 6
+    faces.push(3, 0, 16, 8); // Face 0 (was 6)
     // Corner (+,-,-)
-    faces.push(3, 1, 9, 20); // Face 7
+    faces.push(3, 1, 9, 20); // Face 1 (was 7)
     // Corner (+,+,-)
-    faces.push(3, 2, 23, 13); // Face 8
+    faces.push(3, 2, 23, 13); // Face 2 (was 8)
     // Corner (-,+,-)
-    faces.push(3, 3, 12, 19); // Face 9
+    faces.push(3, 3, 12, 19); // Face 3 (was 9)
     // Corner (-,-,+)
-    faces.push(3, 4, 17, 11); // Face 10
+    faces.push(3, 4, 17, 11); // Face 4 (was 10)
     // Corner (+,-,+)
-    faces.push(3, 5, 10, 21); // Face 11
+    faces.push(3, 5, 10, 21); // Face 5 (was 11)
     // Corner (+,+,+)
-    faces.push(3, 6, 14, 22); // Face 12
+    faces.push(3, 6, 14, 22); // Face 6 (was 12)
     // Corner (-,+,+)
-    faces.push(3, 7, 18, 15); // Face 13
+    faces.push(3, 7, 18, 15); // Face 7 (was 13)
 
-    // 12 square edge faces - carefully selected 4-vertex quads
+    // 12 square edge faces (now indexed as 8-19 instead of 14-25)
     // Edges around bottom face (between bottom and other faces)
-    faces.push(4, 0, 1, 9, 8); // Edge 14: bottom-front
-    faces.push(4, 1, 2, 23, 20); // Edge 15: bottom-right
-    faces.push(4, 2, 3, 12, 13); // Edge 16: bottom-back
-    faces.push(4, 3, 0, 16, 19); // Edge 17: bottom-left
+    faces.push(4, 0, 1, 9, 8); // Edge 8 (was 14): bottom-front
+    faces.push(4, 1, 2, 23, 20); // Edge 9 (was 15): bottom-right
+    faces.push(4, 2, 3, 12, 13); // Edge 10 (was 16): bottom-back
+    faces.push(4, 3, 0, 16, 19); // Edge 11 (was 17): bottom-left
 
     // Edges around top face (between top and other faces)
-    faces.push(4, 4, 5, 10, 11); // Edge 18: top-front
-    faces.push(4, 5, 6, 22, 21); // Edge 19: top-right
-    faces.push(4, 6, 7, 15, 14); // Edge 20: top-back
-    faces.push(4, 7, 4, 17, 18); // Edge 21: top-left
+    faces.push(4, 4, 5, 10, 11); // Edge 12 (was 18): top-front
+    faces.push(4, 5, 6, 22, 21); // Edge 13 (was 19): top-right
+    faces.push(4, 6, 7, 15, 14); // Edge 14 (was 20): top-back
+    faces.push(4, 7, 4, 17, 18); // Edge 15 (was 21): top-left
 
     // Vertical edges (between front/back/left/right faces)
-    faces.push(4, 8, 11, 17, 16); // Edge 22: front-left
-    faces.push(4, 9, 20, 21, 10); // Edge 23: front-right
-    faces.push(4, 13, 23, 22, 14); // Edge 24: back-right
-    faces.push(4, 12, 19, 18, 15); // Edge 25: back-left
+    faces.push(4, 8, 11, 17, 16); // Edge 16 (was 22): front-left
+    faces.push(4, 9, 20, 21, 10); // Edge 17 (was 23): front-right
+    faces.push(4, 13, 23, 22, 14); // Edge 18 (was 24): back-right
+    faces.push(4, 12, 19, 18, 15); // Edge 19 (was 25): back-left
 
     const cellArray = vtkCellArray.newInstance({
       values: new Uint32Array(faces),
@@ -379,11 +451,8 @@ class OrientationControlTool extends BaseTool {
     // Build links and compute normals for proper rendering
     polyData.buildLinks();
 
-    // Add cell colors: 26 cells total
-    // Faces 0-5: 6 square faces - Red, Yellow, Green (2 each)
-    // Faces 6-13: 8 triangular corner faces - Blue
-    // Faces 14-25: 12 rectangular edge faces - Grey
-    const cellColors = new Uint8Array(26 * 3); // RGB for each cell
+    // Add cell colors: 20 cells total (8 corners + 12 edges)
+    const cellColors = new Uint8Array(20 * 3); // RGB for each cell
 
     // Get colors from configuration (RGB 0-255)
     const faceColors = this.configuration.faceColors || {
@@ -394,56 +463,18 @@ class OrientationControlTool extends BaseTool {
       edges: [128, 128, 128],
     };
 
-    console.log(
-      'OrientationControlTool: Using faceColors from configuration:',
-      JSON.stringify(faceColors)
-    );
-    console.log(
-      'OrientationControlTool: this.configuration.faceColors:',
-      this.configuration.faceColors
-    );
-
-    const red = faceColors.topBottom;
-    const green = faceColors.frontBack;
-    const yellow = faceColors.leftRight;
     const blue = faceColors.corners;
     const grey = faceColors.edges;
 
-    console.log(
-      'OrientationControlTool: Color variables -',
-      `red(topBottom): [${red.join(',')}],`,
-      `green(frontBack): [${green.join(',')}],`,
-      `yellow(leftRight): [${yellow.join(',')}],`,
-      `blue(corners): [${blue.join(',')}],`,
-      `grey(edges): [${grey.join(',')}]`
-    );
-
-    // 6 square faces: Red (0-1), Green (2-3), Yellow (4-5)
-    for (let i = 0; i < 2; i++) {
-      cellColors[i * 3] = red[0];
-      cellColors[i * 3 + 1] = red[1];
-      cellColors[i * 3 + 2] = red[2];
-    }
-    for (let i = 2; i < 4; i++) {
-      cellColors[i * 3] = green[0];
-      cellColors[i * 3 + 1] = green[1];
-      cellColors[i * 3 + 2] = green[2];
-    }
-    for (let i = 4; i < 6; i++) {
-      cellColors[i * 3] = yellow[0];
-      cellColors[i * 3 + 1] = yellow[1];
-      cellColors[i * 3 + 2] = yellow[2];
-    }
-
-    // 8 triangular corner faces: Blue (6-13)
-    for (let i = 6; i < 14; i++) {
+    // 8 triangular corner faces: Blue (0-7)
+    for (let i = 0; i < 8; i++) {
       cellColors[i * 3] = blue[0];
       cellColors[i * 3 + 1] = blue[1];
       cellColors[i * 3 + 2] = blue[2];
     }
 
-    // 12 rectangular edge faces: Grey (14-25)
-    for (let i = 14; i < 26; i++) {
+    // 12 rectangular edge faces: Grey (8-19)
+    for (let i = 8; i < 20; i++) {
       cellColors[i * 3] = grey[0];
       cellColors[i * 3 + 1] = grey[1];
       cellColors[i * 3 + 2] = grey[2];
@@ -461,18 +492,7 @@ class OrientationControlTool extends BaseTool {
     console.log(
       'OrientationControlTool: Created polyData with',
       polyData.getNumberOfCells(),
-      'faces'
-    );
-    console.log(
-      'OrientationControlTool: Face types - 6 main squares (0-5), 8 triangular corners (6-13), 12 edge squares (14-25)'
-    );
-    console.log(
-      'OrientationControlTool: Colors -',
-      `top/bottom: [${faceColors.topBottom.join(',')}],`,
-      `front/back: [${faceColors.frontBack.join(',')}],`,
-      `left/right: [${faceColors.leftRight.join(',')}],`,
-      `corners: [${faceColors.corners.join(',')}],`,
-      `edges: [${faceColors.edges.join(',')}]`
+      'faces (8 corners + 12 edges)'
     );
 
     return polyData;
@@ -482,164 +502,136 @@ class OrientationControlTool extends BaseTool {
     viewPlaneNormal: number[];
     viewUp: number[];
   } | null {
-    // Map each of the 26 surfaces to camera orientations
-    // 0-5: 6 square faces (main axes)
-    // 6-13: 8 triangular corner faces
-    // 14-25: 12 rectangular edge faces
+    // Map surfaces to camera orientations
+    // 0-7: 8 triangular corner faces (was 6-13)
+    // 8-19: 12 rectangular edge faces (was 14-25)
+    // Main faces (0-5) are now handled by AnnotatedCubeActor
 
     const orientations: Map<
       number,
       { viewPlaneNormal: number[]; viewUp: number[] }
     > = new Map();
 
-    // 6 square faces - main axes
-    orientations.set(0, { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] }); // Bottom
-    orientations.set(1, { viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] }); // Top
-    orientations.set(2, { viewPlaneNormal: [0, -1, 0], viewUp: [0, 0, 1] }); // Front
-    orientations.set(3, { viewPlaneNormal: [0, 1, 0], viewUp: [0, 0, 1] }); // Back
-    orientations.set(4, { viewPlaneNormal: [-1, 0, 0], viewUp: [0, 0, 1] }); // Left
-    orientations.set(5, { viewPlaneNormal: [1, 0, 0], viewUp: [0, 0, 1] }); // Right
-
     // 8 triangular corner faces - diagonal views
     const sqrt3 = 1 / Math.sqrt(3);
-    orientations.set(6, {
+    orientations.set(0, {
       viewPlaneNormal: [-sqrt3, -sqrt3, -sqrt3],
       viewUp: [0, 0, 1],
-    }); // -X, -Y, -Z
-    orientations.set(7, {
+    }); // -X, -Y, -Z (was 6)
+    orientations.set(1, {
       viewPlaneNormal: [sqrt3, -sqrt3, -sqrt3],
       viewUp: [0, 0, 1],
-    }); // +X, -Y, -Z
-    orientations.set(8, {
+    }); // +X, -Y, -Z (was 7)
+    orientations.set(2, {
       viewPlaneNormal: [sqrt3, sqrt3, -sqrt3],
       viewUp: [0, 0, 1],
-    }); // +X, +Y, -Z
-    orientations.set(9, {
+    }); // +X, +Y, -Z (was 8)
+    orientations.set(3, {
       viewPlaneNormal: [-sqrt3, sqrt3, -sqrt3],
       viewUp: [0, 0, 1],
-    }); // -X, +Y, -Z
-    orientations.set(10, {
+    }); // -X, +Y, -Z (was 9)
+    orientations.set(4, {
       viewPlaneNormal: [-sqrt3, -sqrt3, sqrt3],
       viewUp: [0, 0, 1],
-    }); // -X, -Y, +Z
-    orientations.set(11, {
+    }); // -X, -Y, +Z (was 10)
+    orientations.set(5, {
       viewPlaneNormal: [sqrt3, -sqrt3, sqrt3],
       viewUp: [0, 0, 1],
-    }); // +X, -Y, +Z
-    orientations.set(12, {
+    }); // +X, -Y, +Z (was 11)
+    orientations.set(6, {
       viewPlaneNormal: [sqrt3, sqrt3, sqrt3],
       viewUp: [0, 0, 1],
-    }); // +X, +Y, +Z
-    orientations.set(13, {
+    }); // +X, +Y, +Z (was 12)
+    orientations.set(7, {
       viewPlaneNormal: [-sqrt3, sqrt3, sqrt3],
       viewUp: [0, 0, 1],
-    }); // -X, +Y, +Z
+    }); // -X, +Y, +Z (was 13)
 
     // 12 square edge faces - edge views
     const sqrt2 = 1 / Math.sqrt(2);
 
-    // Bottom edges (14-17) - for these, viewUp should point upward to avoid inversion
-    // Edge 14: bottom-front - between Bottom (0,0,-1) and Front (0,-1,0)
-    // viewPlaneNormal = [0, -sqrt2, -sqrt2]
-    // Project [0, 0, 1] onto plane: [0, 0, 1] - dot([0,0,1], normal)*normal = [0, 0, 1] - (-sqrt2)*[0, -sqrt2, -sqrt2] = [0, 0, 1] - [0, 1/2, 1/2] = [0, -1/2, 1/2]
-    // Normalize: [0, -sqrt2, sqrt2] but we want positive Z, so use [0, sqrt2, -sqrt2] flipped
-    // Actually, simpler: use [1, 0, 0] which is perpendicular, but ensure correct orientation
-    orientations.set(14, {
+    // Bottom edges (8-11)
+    orientations.set(8, {
       viewPlaneNormal: [0, -sqrt2, -sqrt2],
-      viewUp: [0, sqrt2, -sqrt2], // Perpendicular and maintains orientation (flipped from original to fix inversion)
-    });
-    // Edge 15: bottom-right - between Bottom (0,0,-1) and Right (+1,0,0) - WORKS
-    orientations.set(15, {
+      viewUp: [0, sqrt2, -sqrt2],
+    }); // (was 14)
+    orientations.set(9, {
       viewPlaneNormal: [sqrt2, 0, -sqrt2],
-      viewUp: [-sqrt2, 0, -sqrt2], // Original working value
-    });
-    // Edge 16: bottom-back - between Bottom (0,0,-1) and Back (0,+1,0)
-    orientations.set(16, {
+      viewUp: [-sqrt2, 0, -sqrt2],
+    }); // (was 15)
+    orientations.set(10, {
       viewPlaneNormal: [0, sqrt2, -sqrt2],
-      viewUp: [0, -sqrt2, -sqrt2], // Perpendicular and maintains orientation (flipped from original to fix inversion)
-    });
-    // Edge 17: bottom-left - between Bottom (0,0,-1) and Left (-1,0,0) - WORKS
-    orientations.set(17, {
+      viewUp: [0, -sqrt2, -sqrt2],
+    }); // (was 16)
+    orientations.set(11, {
       viewPlaneNormal: [-sqrt2, 0, -sqrt2],
-      viewUp: [sqrt2, 0, -sqrt2], // Original working value
-    });
+      viewUp: [sqrt2, 0, -sqrt2],
+    }); // (was 17)
 
-    // Top edges (18-21) - for these, viewUp should point to maintain correct orientation
-    // Edge 18: top-front - between Top (0,0,+1) and Front (0,-1,0)
-    orientations.set(18, {
+    // Top edges (12-15)
+    orientations.set(12, {
       viewPlaneNormal: [0, -sqrt2, sqrt2],
-      viewUp: [0, sqrt2, sqrt2], // Perpendicular and maintains orientation (flipped from original to fix inversion)
-    });
-    // Edge 19: top-right - between Top (0,0,+1) and Right (+1,0,0) - WORKS
-    orientations.set(19, {
+      viewUp: [0, sqrt2, sqrt2],
+    }); // (was 18)
+    orientations.set(13, {
       viewPlaneNormal: [sqrt2, 0, sqrt2],
-      viewUp: [sqrt2, 0, -sqrt2], // Original working value
-    });
-    // Edge 20: top-back - between Top (0,0,+1) and Back (0,+1,0)
-    orientations.set(20, {
+      viewUp: [sqrt2, 0, -sqrt2],
+    }); // (was 19)
+    orientations.set(14, {
       viewPlaneNormal: [0, sqrt2, sqrt2],
-      viewUp: [0, -sqrt2, sqrt2], // Perpendicular and maintains orientation (flipped from original to fix inversion)
-    });
-    // Edge 21: top-left - between Top (0,0,+1) and Left (-1,0,0) - WORKS
-    orientations.set(21, {
+      viewUp: [0, -sqrt2, sqrt2],
+    }); // (was 20)
+    orientations.set(15, {
       viewPlaneNormal: [-sqrt2, 0, sqrt2],
-      viewUp: [-sqrt2, 0, -sqrt2], // Original working value
-    });
+      viewUp: [-sqrt2, 0, -sqrt2],
+    }); // (was 21)
 
-    // Vertical edges (22-25) - between vertical faces
-    // Edge 22: front-left - between Front (0,-1,0) and Left (-1,0,0)
-    orientations.set(22, {
+    // Vertical edges (16-19)
+    orientations.set(16, {
       viewPlaneNormal: [-sqrt2, -sqrt2, 0],
       viewUp: [0, 0, 1],
-    });
-    // Edge 23: front-right - between Front (0,-1,0) and Right (+1,0,0)
-    orientations.set(23, {
+    }); // (was 22)
+    orientations.set(17, {
       viewPlaneNormal: [sqrt2, -sqrt2, 0],
       viewUp: [0, 0, 1],
-    });
-    // Edge 24: back-right - between Back (0,+1,0) and Right (+1,0,0)
-    orientations.set(24, {
+    }); // (was 23)
+    orientations.set(18, {
       viewPlaneNormal: [sqrt2, sqrt2, 0],
       viewUp: [0, 0, 1],
-    });
-    // Edge 25: back-left - between Back (0,+1,0) and Left (-1,0,0)
-    orientations.set(25, {
+    }); // (was 24)
+    orientations.set(19, {
       viewPlaneNormal: [-sqrt2, sqrt2, 0],
       viewUp: [0, 0, 1],
-    });
+    }); // (was 25)
 
     return orientations.get(cellId) || null;
   }
 
   private getSurfaceLabel(cellId: number): string {
-    // 0-5: main faces, 6-13: corners, 14-25: edges
+    // 0-7: corner faces, 8-19: edge faces
     const labels: Record<number, string> = {
-      0: 'Face 0: Bottom (Z-)',
-      1: 'Face 1: Top (Z+)',
-      2: 'Face 2: Front (Y-)',
-      3: 'Face 3: Back (Y+)',
-      4: 'Face 4: Left (X-)',
-      5: 'Face 5: Right (X+)',
-      6: 'Face 6: Corner (-X,-Y,-Z)',
-      7: 'Face 7: Corner (+X,-Y,-Z)',
-      8: 'Face 8: Corner (+X,+Y,-Z)',
-      9: 'Face 9: Corner (-X,+Y,-Z)',
-      10: 'Face 10: Corner (-X,-Y,+Z)',
-      11: 'Face 11: Corner (+X,-Y,+Z)',
-      12: 'Face 12: Corner (+X,+Y,+Z)',
-      13: 'Face 13: Corner (-X,+Y,+Z)',
-      14: 'Face 14: Edge (Bottom-Front)',
-      15: 'Face 15: Edge (Bottom-Right)',
-      16: 'Face 16: Edge (Bottom-Back)',
-      17: 'Face 17: Edge (Bottom-Left)',
-      18: 'Face 18: Edge (Top-Front)',
-      19: 'Face 19: Edge (Top-Right)',
-      20: 'Face 20: Edge (Top-Back)',
-      21: 'Face 21: Edge (Top-Left)',
-      22: 'Face 22: Edge (Front-Left)',
-      23: 'Face 23: Edge (Front-Right)',
-      24: 'Face 24: Edge (Back-Right)',
-      25: 'Face 25: Edge (Back-Left)',
+      // 0-7: corner faces
+      0: 'Corner (-X,-Y,-Z)',
+      1: 'Corner (+X,-Y,-Z)',
+      2: 'Corner (+X,+Y,-Z)',
+      3: 'Corner (-X,+Y,-Z)',
+      4: 'Corner (-X,-Y,+Z)',
+      5: 'Corner (+X,-Y,+Z)',
+      6: 'Corner (+X,+Y,+Z)',
+      7: 'Corner (-X,+Y,+Z)',
+      // 8-19: edge faces
+      8: 'Edge (Bottom-Front)',
+      9: 'Edge (Bottom-Right)',
+      10: 'Edge (Bottom-Back)',
+      11: 'Edge (Bottom-Left)',
+      12: 'Edge (Top-Front)',
+      13: 'Edge (Top-Right)',
+      14: 'Edge (Top-Back)',
+      15: 'Edge (Top-Left)',
+      16: 'Edge (Front-Left)',
+      17: 'Edge (Front-Right)',
+      18: 'Edge (Back-Right)',
+      19: 'Edge (Back-Left)',
     };
 
     return labels[cellId] ?? `Face ${cellId}: (Unknown)`;
@@ -694,57 +686,57 @@ class OrientationControlTool extends BaseTool {
 
     console.log('OrientationControlTool: Creating marker geometry...');
 
-    // Create geometry
+    // Create AnnotatedCubeActor for the 6 main faces
+    const cubeActor = this.createAnnotatedCubeActor();
+
+    // Create geometry for corners and edges only
     const polyData = this.createRhombicuboctahedronGeometry();
 
-    // Create mapper
+    // Create mapper for corners/edges
     const mapper = vtkMapper.newInstance();
     mapper.setInputData(polyData);
-    mapper.setScalarModeToUseCellData(); // Use cell colors
-    mapper.setColorModeToDirectScalars(); // Use RGB values directly
+    mapper.setScalarModeToUseCellData();
+    mapper.setColorModeToDirectScalars();
 
-    // Create actor
-    const actor = vtkActor.newInstance();
-    actor.setMapper(mapper);
+    // Create actor for corners/edges
+    const cornersActor = vtkActor.newInstance();
+    cornersActor.setMapper(mapper);
 
-    // Set properties - fully opaque with cell colors
-    const property = actor.getProperty();
-    property.setOpacity(1.0); // Fully opaque
+    const property = cornersActor.getProperty();
+    property.setOpacity(1.0);
     property.setRepresentationToSurface();
-    property.setEdgeVisibility(false); // No edges needed with colored surfaces
-    property.setBackfaceCulling(false); // Render both sides of faces
-    property.setFrontfaceCulling(false); // Ensure all faces are visible
-    actor.setVisibility(true);
+    property.setEdgeVisibility(false);
+    property.setBackfaceCulling(false);
+    property.setFrontfaceCulling(false);
+    cornersActor.setVisibility(true);
 
-    // Add actor to viewport first
-    const actorUID = `orientation-control-${viewportId}`;
-    viewport.addActor({ actor, uid: actorUID });
-    this.markerActors.set(viewportId, actor);
+    // Add both actors to viewport
+    // Add cube actor first so it renders behind, then corners/edges on top
+    const cornersActorUID = `orientation-control-corners-${viewportId}`;
+    const cubeActorUID = `orientation-control-cube-${viewportId}`;
 
-    // Verify actor was added
-    const actors = viewport.getActors();
-    const addedActor = actors.find((a) => a.uid === actorUID);
-    console.log(
-      'OrientationControlTool: Actor added?',
-      !!addedActor,
-      'Total actors:',
-      actors.length
-    );
+    viewport.addActor({ actor: cubeActor, uid: cubeActorUID });
+    viewport.addActor({ actor: cornersActor, uid: cornersActorUID });
 
-    // Position marker in viewport corner (after adding to viewport so bounds are available)
+    this.markerActors.set(viewportId, cornersActor);
+    this.annotatedCubeActors.set(viewportId, cubeActor);
+
+    // Position both markers
     const positioned = this.positionMarkerInViewport(
-      viewport as Types.IVolumeViewport3D,
-      actor
+      viewport as Types.IVolumeViewport,
+      cornersActor,
+      cubeActor
     );
+
     if (!positioned) {
       console.warn(
         'OrientationControlTool: Could not position marker, bounds not available'
       );
-      // Try again after a delay
       setTimeout(() => {
         const repositioned = this.positionMarkerInViewport(
-          viewport as Types.IVolumeViewport3D,
-          actor
+          viewport as Types.IVolumeViewport,
+          cornersActor,
+          cubeActor
         );
         if (repositioned) {
           viewport.render();
@@ -757,23 +749,31 @@ class OrientationControlTool extends BaseTool {
       );
     }
 
-    // Setup picker
+    // Setup picker - add both actors
     const picker = vtkCellPicker.newInstance({ opacityThreshold: 0.0001 });
-    picker.setPickFromList(1);
+    picker.setPickFromList(true);
     picker.setTolerance(0.001);
     picker.initializePickList();
-    picker.addPickList(actor);
+    picker.addPickList(cornersActor);
+    picker.addPickList(cubeActor);
     this.pickers.set(viewportId, picker);
 
-    // Setup click handler
-    this.setupClickHandler(viewportId, renderingEngineId, element, actor);
+    // Setup click handler - pass both actors
+    this.setupClickHandler(
+      viewportId,
+      renderingEngineId,
+      element,
+      cornersActor,
+      cubeActor
+    );
 
     viewport.render();
   }
 
   private positionMarkerInViewport(
-    viewport: Types.IVolumeViewport3D,
-    actor: vtkActor
+    viewport: Types.IVolumeViewport,
+    cornersActor: vtkActor,
+    cubeActor: vtkAnnotatedCubeActor
   ): boolean {
     // Get viewport bounds for size calculation
     const bounds = viewport.getBounds();
@@ -782,7 +782,7 @@ class OrientationControlTool extends BaseTool {
       return false;
     }
 
-    const size = this.configuration.size || 0.10625; // 15% smaller than 0.125
+    const size = this.configuration.size || 0.06375;
     const position = this.configuration.position || 'bottom-right';
 
     // Calculate marker size based on viewport bounds
@@ -793,24 +793,38 @@ class OrientationControlTool extends BaseTool {
     );
     const markerSize = diagonal * size;
 
-    // Scale actor
-    actor.setScale(markerSize, markerSize, markerSize);
+    // Scale both actors
+    // The corners/edges geometry has a scale factor of 0.3 applied to vertices,
+    // and main faces are at ±faceSize (0.95) * scale = ±0.285.
+    // The AnnotatedCubeActor is a unit cube from -1 to 1 (2 units wide).
+    // To match the main face size, scale cube by: scale * faceSize = 0.3 * 0.95 = 0.285
+    // Make it bigger to fill the black square border: 0.285 * 2.458125 = 0.7006 (50% bigger twice, then 15% more, then 5% less)
+    const geometryScale = 0.3; // Match the scale used in geometry creation
+    const faceSize = 0.95; // Match the faceSize used in geometry creation
+    const cubeScaleFactor = geometryScale * faceSize * 2.458125; // 0.285 * 2.458125 = 0.7006
+    cornersActor.setScale(markerSize, markerSize, markerSize);
+    cubeActor.setScale(
+      markerSize * cubeScaleFactor,
+      markerSize * cubeScaleFactor,
+      markerSize * cubeScaleFactor
+    );
 
-    // Position marker in fixed screen space (canvas corner)
+    // Position both actors at the same location
     const worldPos = this.getMarkerPositionInScreenSpace(viewport, position);
     if (!worldPos) {
       return false;
     }
-    actor.setPosition(worldPos[0], worldPos[1], worldPos[2]);
+    cornersActor.setPosition(worldPos[0], worldPos[1], worldPos[2]);
+    cubeActor.setPosition(worldPos[0], worldPos[1], worldPos[2]);
 
     // Update marker orientation to match camera (so it rotates with the view)
-    this.updateMarkerOrientation(viewport, actor);
+    this.updateMarkerOrientation(viewport, cornersActor, cubeActor);
 
     return true;
   }
 
   private getMarkerPositionInScreenSpace(
-    viewport: Types.IVolumeViewport3D,
+    viewport: Types.IVolumeViewport,
     position: string
   ): [number, number, number] | null {
     // Get canvas dimensions
@@ -858,16 +872,14 @@ class OrientationControlTool extends BaseTool {
   }
 
   private updateMarkerOrientation(
-    viewport: Types.IVolumeViewport3D,
-    actor: vtkActor
+    viewport: Types.IVolumeViewport,
+    cornersActor: vtkActor,
+    cubeActor: vtkAnnotatedCubeActor
   ): void {
     // Keep the marker in world-aligned orientation (no rotation).
     // This allows it to naturally show the world axes as the camera rotates.
-    // The marker geometry itself represents world directions:
-    // - Green faces (2-3): Front/Back (Y axis)
-    // - Yellow faces (4-5): Left/Right (X axis)
-    // - Red faces (0-1): Bottom/Top (Z axis)
-    actor.setOrientation(0, 0, 0);
+    cornersActor.setOrientation(0, 0, 0);
+    cubeActor.setOrientation(0, 0, 0);
   }
 
   private quaternionToEulerXYZ(q: quat): [number, number, number] {
@@ -897,8 +909,10 @@ class OrientationControlTool extends BaseTool {
       return;
     }
 
-    const actor = this.markerActors.get(viewportId);
-    if (!actor) {
+    const cornersActor = this.markerActors.get(viewportId);
+    const cubeActor = this.annotatedCubeActors.get(viewportId);
+
+    if (!cornersActor || !cubeActor) {
       return;
     }
 
@@ -926,7 +940,11 @@ class OrientationControlTool extends BaseTool {
     }
 
     // Update marker position (to stay in fixed screen space) and orientation
-    this.positionMarkerInViewport(viewport as Types.IVolumeViewport3D, actor);
+    this.positionMarkerInViewport(
+      viewport as Types.IVolumeViewport,
+      cornersActor,
+      cubeActor
+    );
   };
 
   private updateMarkerPosition(
@@ -942,8 +960,10 @@ class OrientationControlTool extends BaseTool {
       return;
     }
 
-    const actor = this.markerActors.get(viewportId);
-    if (!actor) {
+    const cornersActor = this.markerActors.get(viewportId);
+    const cubeActor = this.annotatedCubeActors.get(viewportId);
+
+    if (!cornersActor || !cubeActor) {
       return;
     }
 
@@ -952,11 +972,15 @@ class OrientationControlTool extends BaseTool {
       return;
     }
 
-    this.positionMarkerInViewport(viewport as Types.IVolumeViewport3D, actor);
+    this.positionMarkerInViewport(
+      viewport as Types.IVolumeViewport,
+      cornersActor,
+      cubeActor
+    );
   }
 
   private animateCameraToOrientation(
-    viewport: Types.IVolumeViewport3D,
+    viewport: Types.IVolumeViewport,
     targetViewPlaneNormal: number[],
     targetViewUp: number[]
   ): void {
@@ -1105,7 +1129,8 @@ class OrientationControlTool extends BaseTool {
     viewportId: string,
     renderingEngineId: string,
     element: HTMLDivElement,
-    actor: vtkActor
+    cornersActor: vtkActor,
+    cubeActor: vtkAnnotatedCubeActor
   ): void {
     let isMouseDown = false;
 
@@ -1142,51 +1167,133 @@ class OrientationControlTool extends BaseTool {
 
       // Convert to VTK display coordinates
       const displayCoords = (
-        viewport as Types.IVolumeViewport3D
+        viewport as Types.IVolumeViewport
       ).getVtkDisplayCoords([x, y]);
 
       // Pick
       picker.pick(displayCoords, viewport.getRenderer());
 
-      // Check if we picked the marker actor
       const pickedActors = picker.getActors();
-      if (pickedActors.length === 0 || pickedActors[0] !== actor) {
+      if (pickedActors.length === 0) {
         return;
       }
 
-      // Get picked cell ID
+      const pickedActor = pickedActors[0];
       const cellId = picker.getCellId();
-      if (cellId === -1) {
-        return;
-      }
 
-      // Mark mouse as down
       isMouseDown = true;
 
-      // Log which of the 26 surfaces was clicked
-      const label = this.getSurfaceLabel(cellId);
-      console.info(
-        'OrientationControlTool: Clicked surface',
-        cellId,
-        '-',
-        label
-      );
+      // Handle clicks on cube actor (main faces)
+      if (pickedActor === cubeActor) {
+        // Get the picked position to determine which face was clicked
+        const pickedPositions = picker.getPickedPositions();
+        if (pickedPositions && pickedPositions.length > 0) {
+          const pickedPoint = pickedPositions[0];
 
-      // Get orientation for this surface
-      const orientation = this.getOrientationForSurface(cellId);
-      if (!orientation) {
+          // Get the cube actor's position (center)
+          const cubePosition = cubeActor.getPosition();
+
+          // Calculate the direction from cube center to picked point
+          const direction = [
+            pickedPoint[0] - cubePosition[0],
+            pickedPoint[1] - cubePosition[1],
+            pickedPoint[2] - cubePosition[2],
+          ];
+
+          // Normalize the direction
+          const length = Math.sqrt(
+            direction[0] * direction[0] +
+              direction[1] * direction[1] +
+              direction[2] * direction[2]
+          );
+
+          if (length > 0) {
+            const normalizedDir = [
+              direction[0] / length,
+              direction[1] / length,
+              direction[2] / length,
+            ];
+
+            // Determine which face was clicked based on the dominant axis
+            // Find the axis with the largest absolute value
+            const absX = Math.abs(normalizedDir[0]);
+            const absY = Math.abs(normalizedDir[1]);
+            const absZ = Math.abs(normalizedDir[2]);
+
+            let viewPlaneNormal: number[];
+            let viewUp: number[];
+
+            if (absX >= absY && absX >= absZ) {
+              // X axis face
+              if (normalizedDir[0] > 0) {
+                // X+ face (Right)
+                viewPlaneNormal = [1, 0, 0];
+                viewUp = [0, 0, 1];
+              } else {
+                // X- face (Left)
+                viewPlaneNormal = [-1, 0, 0];
+                viewUp = [0, 0, 1];
+              }
+            } else if (absY >= absX && absY >= absZ) {
+              // Y axis face
+              if (normalizedDir[1] > 0) {
+                // Y+ face (Back)
+                viewPlaneNormal = [0, 1, 0];
+                viewUp = [0, 0, 1];
+              } else {
+                // Y- face (Front)
+                viewPlaneNormal = [0, -1, 0];
+                viewUp = [0, 0, 1];
+              }
+            } else {
+              // Z axis face
+              if (normalizedDir[2] > 0) {
+                // Z+ face (Top)
+                viewPlaneNormal = [0, 0, 1];
+                viewUp = [0, -1, 0];
+              } else {
+                // Z- face (Bottom)
+                viewPlaneNormal = [0, 0, -1];
+                viewUp = [0, -1, 0];
+              }
+            }
+
+            // Animate camera to the clicked face orientation
+            this.animateCameraToOrientation(
+              viewport as Types.IVolumeViewport,
+              viewPlaneNormal,
+              viewUp
+            );
+          }
+        }
+
+        evt.preventDefault();
+        evt.stopPropagation();
         return;
       }
 
-      // Animate camera rotation to new orientation
-      this.animateCameraToOrientation(
-        viewport as Types.IVolumeViewport3D,
-        orientation.viewPlaneNormal,
-        orientation.viewUp
-      );
+      // Handle clicks on corners/edges actor
+      if (pickedActor === cornersActor && cellId !== -1) {
+        const label = this.getSurfaceLabel(cellId);
+        console.info(
+          'OrientationControlTool: Clicked surface',
+          cellId,
+          '-',
+          label
+        );
 
-      evt.preventDefault();
-      evt.stopPropagation();
+        const orientation = this.getOrientationForSurface(cellId);
+        if (orientation) {
+          this.animateCameraToOrientation(
+            viewport as Types.IVolumeViewport,
+            orientation.viewPlaneNormal,
+            orientation.viewUp
+          );
+        }
+
+        evt.preventDefault();
+        evt.stopPropagation();
+      }
     };
 
     // Handle mouse move to detect dragging
@@ -1222,24 +1329,29 @@ class OrientationControlTool extends BaseTool {
 
       // Convert to VTK display coordinates
       const displayCoords = (
-        viewport as Types.IVolumeViewport3D
+        viewport as Types.IVolumeViewport
       ).getVtkDisplayCoords([x, y]);
 
       // Pick
       picker.pick(displayCoords, viewport.getRenderer());
 
-      // Check if we're still over the marker actor
+      // Check if we're still over the marker actors
       const pickedActors = picker.getActors();
-      if (pickedActors.length > 0 && pickedActors[0] === actor) {
-        const cellId = picker.getCellId();
-        if (cellId !== -1) {
-          const label = this.getSurfaceLabel(cellId);
-          console.log(
-            'OrientationControlTool: Dragging over control - surface',
-            cellId,
-            '-',
-            label
-          );
+      if (pickedActors.length > 0) {
+        const pickedActor = pickedActors[0];
+        if (pickedActor === cornersActor) {
+          const cellId = picker.getCellId();
+          if (cellId !== -1) {
+            const label = this.getSurfaceLabel(cellId);
+            console.log(
+              'OrientationControlTool: Dragging over control - surface',
+              cellId,
+              '-',
+              label
+            );
+          }
+        } else if (pickedActor === cubeActor) {
+          console.log('OrientationControlTool: Dragging over cube face');
         }
       }
     };
@@ -1252,7 +1364,7 @@ class OrientationControlTool extends BaseTool {
     element.addEventListener('mousedown', clickHandler);
     element.addEventListener('mousemove', dragHandler);
     element.addEventListener('mouseup', mouseUpHandler);
-    element.addEventListener('mouseleave', mouseUpHandler); // Also stop on mouse leave
+    element.addEventListener('mouseleave', mouseUpHandler);
 
     this.clickHandlers.set(viewportId, clickHandler);
     this.dragHandlers.set(viewportId, dragHandler);
@@ -1278,7 +1390,13 @@ class OrientationControlTool extends BaseTool {
         );
 
         if (enabledElement) {
-          const { viewport, element } = enabledElement;
+          const { viewport } = enabledElement;
+
+          // For volume3d viewports, element is on the viewport
+          const element =
+            viewport.type === Enums.ViewportType.VOLUME_3D
+              ? (viewport as Types.IVolumeViewport).element
+              : enabledElement.element;
 
           // Only remove event listeners if element exists
           if (element) {
@@ -1315,16 +1433,24 @@ class OrientationControlTool extends BaseTool {
             }
           }
 
-          // Remove actor
-          if (viewport && typeof viewport.removeActor === 'function') {
-            viewport.removeActor(`orientation-control-${viewportId}`);
+          // Remove actors
+          if (viewport && typeof viewport.removeActors === 'function') {
+            viewport.removeActors([
+              `orientation-control-corners-${viewportId}`,
+              `orientation-control-cube-${viewportId}`,
+            ]);
           }
           actor.delete();
         }
       }
     });
 
+    this.annotatedCubeActors.forEach((actor, viewportId) => {
+      actor.delete();
+    });
+
     this.markerActors.clear();
+    this.annotatedCubeActors.clear();
     this.pickers.clear();
     this.clickHandlers.clear();
     this.dragHandlers.clear();
