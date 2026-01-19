@@ -49,6 +49,7 @@ class OrientationControlTool extends BaseTool {
         position: 'bottom-right', // Position in viewport
         color: [0.8, 0.8, 0.8],
         hoverColor: [1.0, 0.8, 0.0], // Orange when hovering
+        colorScheme: 'rgb', // 'marker', 'rgb', or 'gray'
         faceColors: {
           topBottom: [255, 0, 0], // Red - faces 0-1 (top/bottom)
           frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
@@ -60,6 +61,53 @@ class OrientationControlTool extends BaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+  }
+
+  // Helper method to get face colors based on color scheme
+  private getFaceColors(): {
+    topBottom: number[];
+    frontBack: number[];
+    leftRight: number[];
+    corners: number[];
+    edges: number[];
+  } {
+    const colorScheme = this.configuration.colorScheme || 'rgb';
+
+    // If faceColors are explicitly provided, use them
+    if (this.configuration.faceColors) {
+      return this.configuration.faceColors;
+    }
+
+    // Otherwise, derive from color scheme
+    switch (colorScheme) {
+      case 'marker':
+        // OrientationMarkerTool colors
+        return {
+          topBottom: [0, 0, 255], // Blue #0000ff - Z axis (superior/inferior)
+          frontBack: [0, 255, 255], // Cyan #00ffff - Y axis (posterior/anterior)
+          leftRight: [255, 255, 0], // Yellow #ffff00 - X axis (left/right)
+          corners: [0, 0, 255], // Blue #0000ff - same as Z axis
+          edges: [128, 128, 128], // Grey - edges
+        };
+      case 'gray':
+        return {
+          topBottom: [180, 180, 180],
+          frontBack: [180, 180, 180],
+          leftRight: [180, 180, 180],
+          corners: [180, 180, 180],
+          edges: [180, 180, 180],
+        };
+      case 'rgb':
+      default:
+        // RGB scheme (default)
+        return {
+          topBottom: [255, 0, 0], // Red - faces 0-1 (top/bottom)
+          frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
+          leftRight: [255, 255, 0], // Yellow - faces 4-5 (left/right)
+          corners: [0, 0, 255], // Blue - faces 6-13 (corner triangles)
+          edges: [128, 128, 128], // Grey - faces 14-25 (edge rectangles)
+        };
+    }
   }
 
   onSetToolActive = (): void => {
@@ -270,28 +318,8 @@ class OrientationControlTool extends BaseTool {
   private createAnnotatedCubeActor(): vtkAnnotatedCubeActor {
     const actor = vtkAnnotatedCubeActor.newInstance();
 
-    // Use default style matching AnnotatedCubeActor documentation
-    const defaultStyle = {
-      fontStyle: 'bold',
-      fontFamily: 'Arial',
-      fontColor: 'black',
-      fontSizeScale: (res: number) => res / 2,
-      faceColor: 'white',
-      edgeThickness: 0.1,
-      edgeColor: 'black',
-      resolution: 400,
-    };
-
-    actor.setDefaultStyle(defaultStyle);
-
-    // Get face colors from configuration
-    const faceColors = this.configuration.faceColors || {
-      topBottom: [255, 0, 0],
-      frontBack: [0, 255, 0],
-      leftRight: [255, 255, 0],
-      corners: [0, 0, 255],
-      edges: [128, 128, 128],
-    };
+    // Get face colors based on color scheme
+    const faceColors = this.getFaceColors();
 
     // Convert RGB arrays to hex strings for face colors
     const rgbToHex = (rgb: number[]) => {
@@ -303,41 +331,59 @@ class OrientationControlTool extends BaseTool {
         .join('')}`;
     };
 
-    // Set face properties with letters matching default AnnotatedCubeActor
-    // X+ face (Right)
+    // Use default style matching OrientationMarkerTool
+    // Default face color is for Z axis (topBottom)
+    const defaultStyle = {
+      fontStyle: 'bold',
+      fontFamily: 'Arial',
+      fontColor: 'black',
+      fontSizeScale: (res: number) => res / 2,
+      faceColor: rgbToHex(faceColors.topBottom),
+      edgeThickness: 0.1,
+      edgeColor: 'black',
+      resolution: 400,
+    };
+
+    actor.setDefaultStyle(defaultStyle);
+
+    // Set face properties with letters matching OrientationMarkerTool (LPS coordinate system)
+    // X+ face (Right) -> 'L' (Left) with rotation 90
     actor.setXPlusFaceProperty({
-      text: 'X+',
+      text: 'L',
       faceColor: rgbToHex(faceColors.leftRight),
+      faceRotation: 90,
     });
 
-    // X- face (Left)
+    // X- face (Left) -> 'R' (Right) with rotation 270
     actor.setXMinusFaceProperty({
-      text: 'X-',
+      text: 'R',
       faceColor: rgbToHex(faceColors.leftRight),
+      faceRotation: 270,
     });
 
-    // Y+ face (Back)
+    // Y+ face (Back) -> 'P' (Posterior) with rotation 180
     actor.setYPlusFaceProperty({
-      text: 'Y+',
+      text: 'P',
       faceColor: rgbToHex(faceColors.frontBack),
+      fontColor: 'white',
+      faceRotation: 180,
     });
 
-    // Y- face (Front)
+    // Y- face (Front) -> 'A' (Anterior)
     actor.setYMinusFaceProperty({
-      text: 'Y-',
+      text: 'A',
       faceColor: rgbToHex(faceColors.frontBack),
+      fontColor: 'white',
     });
 
-    // Z+ face (Top)
+    // Z+ face (Top) -> 'S' (Superior) - uses default style (topBottom color)
     actor.setZPlusFaceProperty({
-      text: 'Z+',
-      faceColor: rgbToHex(faceColors.topBottom),
+      text: 'S',
     });
 
-    // Z- face (Bottom)
+    // Z- face (Bottom) -> 'I' (Inferior) - uses default style (topBottom color)
     actor.setZMinusFaceProperty({
-      text: 'Z-',
-      faceColor: rgbToHex(faceColors.topBottom),
+      text: 'I',
     });
 
     return actor;
@@ -454,14 +500,8 @@ class OrientationControlTool extends BaseTool {
     // Add cell colors: 20 cells total (8 corners + 12 edges)
     const cellColors = new Uint8Array(20 * 3); // RGB for each cell
 
-    // Get colors from configuration (RGB 0-255)
-    const faceColors = this.configuration.faceColors || {
-      topBottom: [255, 0, 0],
-      frontBack: [0, 255, 0],
-      leftRight: [255, 255, 0],
-      corners: [0, 0, 255],
-      edges: [128, 128, 128],
-    };
+    // Get colors from configuration using color scheme
+    const faceColors = this.getFaceColors();
 
     const blue = faceColors.corners;
     const grey = faceColors.edges;
