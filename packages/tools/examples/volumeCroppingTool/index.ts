@@ -484,6 +484,30 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
   });
 
+  // Add toggle button for "Keep orientation up"
+  let keepOrientationUp = true; // Default value
+  addToggleButtonToToolbar({
+    title: 'Toggle Keep orientation up',
+    defaultToggle: keepOrientationUp,
+    onClick: (toggle) => {
+      keepOrientationUp = toggle;
+      // Get the tool group for the 3D viewport
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      // Get the OrientationControlTool instance from the tool group
+      const orientationControlTool = toolGroupVRT.getToolInstance(
+        OrientationControlTool.toolName
+      );
+      if (orientationControlTool) {
+        // Update configuration
+        orientationControlTool.configuration.keepOrientationUp = toggle;
+        // Reinitialize viewports to apply the change
+        orientationControlTool.onSetToolDisabled();
+        orientationControlTool.onSetToolEnabled();
+      }
+    },
+  });
+
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
   renderingEngine.renderViewports(activeViewportIds);

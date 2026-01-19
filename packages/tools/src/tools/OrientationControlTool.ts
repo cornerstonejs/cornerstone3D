@@ -31,6 +31,7 @@ class OrientationControlTool extends BaseTool {
 
   private markerActors = new Map<string, vtkActor>();
   private annotatedCubeActors = new Map<string, vtkAnnotatedCubeActor>();
+  private previousOrientations = new Map<string, quat>(); // Store previous quaternions to prevent flipping
   private pickers = new Map<string, vtkCellPicker>();
   private clickHandlers = new Map<string, (evt: MouseEvent) => void>();
   private dragHandlers = new Map<string, (evt: MouseEvent) => void>();
@@ -50,6 +51,7 @@ class OrientationControlTool extends BaseTool {
         color: [0.8, 0.8, 0.8],
         hoverColor: [1.0, 0.8, 0.0], // Orange when hovering
         colorScheme: 'rgb', // 'marker', 'rgb', or 'gray'
+        keepOrientationUp: true, // If true, marker stays world-aligned. If false, rotates with camera.
         faceColors: {
           topBottom: [255, 0, 0], // Red - faces 0-1 (top/bottom)
           frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
@@ -838,10 +840,10 @@ class OrientationControlTool extends BaseTool {
     // and main faces are at ±faceSize (0.95) * scale = ±0.285.
     // The AnnotatedCubeActor is a unit cube from -1 to 1 (2 units wide).
     // To match the main face size, scale cube by: scale * faceSize = 0.3 * 0.95 = 0.285
-    // Make it bigger to fill the black square border: 0.285 * 2.458125 = 0.7006 (50% bigger twice, then 15% more, then 5% less)
+    // Make it bigger to fill the black square border: 0.285 * 2.33521875 = 0.6655 (50% bigger twice, then 15% more, then 5% less, then 5% less)
     const geometryScale = 0.3; // Match the scale used in geometry creation
     const faceSize = 0.95; // Match the faceSize used in geometry creation
-    const cubeScaleFactor = geometryScale * faceSize * 2.458125; // 0.285 * 2.458125 = 0.7006
+    const cubeScaleFactor = geometryScale * faceSize * 2.33521875; // 0.285 * 2.33521875 = 0.6655
     cornersActor.setScale(markerSize, markerSize, markerSize);
     cubeActor.setScale(
       markerSize * cubeScaleFactor,
@@ -916,10 +918,91 @@ class OrientationControlTool extends BaseTool {
     cornersActor: vtkActor,
     cubeActor: vtkAnnotatedCubeActor
   ): void {
-    // Keep the marker in world-aligned orientation (no rotation).
-    // This allows it to naturally show the world axes as the camera rotates.
-    cornersActor.setOrientation(0, 0, 0);
-    cubeActor.setOrientation(0, 0, 0);
+    const keepOrientationUp = this.configuration.keepOrientationUp !== false; // Default to true
+
+    if (keepOrientationUp) {
+      // Keep the marker in world-aligned orientation (no rotation).
+      // This allows it to naturally show the world axes as the camera rotates.
+      cornersActor.setOrientation(0, 0, 0);
+      cubeActor.setOrientation(0, 0, 0);
+      // Clear previous orientation when keeping world-aligned
+      const viewportId = viewport.id;
+      this.previousOrientations.delete(viewportId);
+    } else {
+      // Rotate marker with camera
+      // Get camera orientation and apply rotation to keep marker aligned with camera
+      const camera = viewport.getCamera();
+      const viewPlaneNormal = camera.viewPlaneNormal;
+      const viewUp = camera.viewUp;
+
+      // Calculate rotation matrix from camera orientation
+      const forward = vec3.fromValues(
+        -viewPlaneNormal[0],
+        -viewPlaneNormal[1],
+        -viewPlaneNormal[2]
+      );
+      const up = vec3.fromValues(viewUp[0], viewUp[1], viewUp[2]);
+      const right = vec3.create();
+      vec3.cross(right, up, forward);
+      vec3.normalize(right, right);
+      vec3.normalize(forward, forward);
+      vec3.normalize(up, up);
+
+      // Build rotation matrix
+      const rotationMatrix = mat4.create();
+      rotationMatrix[0] = right[0];
+      rotationMatrix[1] = right[1];
+      rotationMatrix[2] = right[2];
+      rotationMatrix[4] = up[0];
+      rotationMatrix[5] = up[1];
+      rotationMatrix[6] = up[2];
+      rotationMatrix[8] = forward[0];
+      rotationMatrix[9] = forward[1];
+      rotationMatrix[10] = forward[2];
+      rotationMatrix[15] = 1;
+
+      // Convert to quaternion
+      const currentQuat = quat.create();
+      mat4.getRotation(currentQuat, rotationMatrix);
+
+      // Get previous quaternion for this viewport
+      const viewportId = viewport.id;
+      const previousQuat = this.previousOrientations.get(viewportId);
+
+      // If we have a previous orientation, ensure we take the shortest path
+      if (previousQuat) {
+        const dot = quat.dot(previousQuat, currentQuat);
+        // If dot product is negative, quaternions represent opposite rotations
+        // Negate one to take the shorter path
+        if (dot < 0) {
+          quat.scale(currentQuat, currentQuat, -1);
+        }
+      }
+
+      // Store current quaternion for next time
+      this.previousOrientations.set(viewportId, quat.clone(currentQuat));
+
+      // Convert to Euler angles
+      const euler = this.quaternionToEulerXYZ(currentQuat);
+
+      // Convert from radians to degrees
+      const eulerDegrees = [
+        (euler[0] * 180) / Math.PI,
+        (euler[1] * 180) / Math.PI,
+        (euler[2] * 180) / Math.PI,
+      ];
+
+      cornersActor.setOrientation(
+        eulerDegrees[0],
+        eulerDegrees[1],
+        eulerDegrees[2]
+      );
+      cubeActor.setOrientation(
+        eulerDegrees[0],
+        eulerDegrees[1],
+        eulerDegrees[2]
+      );
+    }
   }
 
   private quaternionToEulerXYZ(q: quat): [number, number, number] {
@@ -1491,6 +1574,7 @@ class OrientationControlTool extends BaseTool {
 
     this.markerActors.clear();
     this.annotatedCubeActors.clear();
+    this.previousOrientations.clear();
     this.pickers.clear();
     this.clickHandlers.clear();
     this.dragHandlers.clear();
