@@ -61,7 +61,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (selectedValue) => {
     const url = new URL(window.location.href);
-    url.searchParams.set('numViewports', selectedValue);
+    url.searchParams.set('numViewports', String(selectedValue));
     window.location.href = url.toString();
   },
 });
@@ -211,12 +211,20 @@ function getNumViewportsFromUrl() {
 }
 
 /**
- * Get the gray colors state from the URL (?grayColors=true|false)
+ * Get the color scheme from the URL (?colorScheme=gray|rgb|marker)
  */
-function getGrayColorsFromUrl() {
+function getColorSchemeFromUrl(): 'gray' | 'rgb' | 'marker' {
   const params = new URLSearchParams(window.location.search);
-  const value = params.get('grayColors');
-  return value === 'true';
+  const value = params.get('colorScheme');
+  if (value === 'gray' || value === 'rgb' || value === 'marker') {
+    return value;
+  }
+  // Check for legacy grayColors parameter for backward compatibility
+  const grayColors = params.get('grayColors');
+  if (grayColors === 'true') {
+    return 'gray';
+  }
+  return 'rgb'; // default
 }
 
 /**
@@ -230,7 +238,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(OrientationMarkerTool);
+  //cornerstoneTools.addTool(OrientationMarkerTool);
   cornerstoneTools.addTool(OrientationControlTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(CrosshairsTool);
@@ -374,104 +382,104 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       },
     ],
   });
-  toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
-    overlayMarkerType:
-      OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
-  });
-  toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
+  // toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
+  //   overlayMarkerType:
+  //     OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
+  // });
+  // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
-  // Get gray colors state from URL
-  const isGrayColors = getGrayColorsFromUrl();
+  // Get color scheme from URL
+  const colorScheme = getColorSchemeFromUrl();
+  console.log('Color scheme from URL:', colorScheme);
 
-  // Configure overlayConfiguration based on URL parameter
-  const overlayConfiguration = isGrayColors
-    ? {
-        faceProperties: {
-          top: { faceColor: [180, 180, 180] },
-          bottom: { faceColor: [180, 180, 180] },
-          front: { faceColor: [180, 180, 180] },
-          back: { faceColor: [180, 180, 180] },
-          left: { faceColor: [180, 180, 180] },
-          right: { faceColor: [180, 180, 180] },
-          corners: { faceColor: [180, 180, 180] },
-          edges: { faceColor: [180, 180, 180] },
-        },
-        defaultStyle: {
-          fontStyle: 'bold',
-          fontFamily: 'Arial',
-          fontColor: '#000000',
-          fontSizeScale: (res) => res / 2,
-          faceColor: [180, 180, 180],
-          edgeThickness: 0.1,
-          edgeColor: '#000000',
-          resolution: 400,
-        },
-      }
-    : {
-        faceProperties: {
-          top: {
-            text: 'S',
-            faceColor: [255, 0, 0],
-            fontColor: '#ffffff',
-          },
-          bottom: {
-            text: 'I',
-            faceColor: [255, 0, 0],
-            fontColor: '#ffffff',
-          },
-          front: {
-            text: 'A',
-            faceColor: [0, 255, 0],
-            fontColor: '#ffffff',
-          },
-          back: {
-            text: 'P',
-            faceColor: [0, 255, 0],
-            fontColor: '#ffffff',
-          },
-          left: {
-            text: 'L',
-            faceColor: [255, 255, 0],
-            fontColor: '#000000',
-          },
-          right: {
-            text: 'R',
-            faceColor: [255, 255, 0],
-            fontColor: '#000000',
-          },
-          corners: {
-            faceColor: [0, 0, 255],
-          },
-          edges: {
-            faceColor: [128, 128, 128],
-          },
-        },
-        defaultStyle: {
-          fontStyle: 'bold',
-          fontFamily: 'Arial',
-          fontColor: '#000000',
-          fontSizeScale: (res) => res / 2,
-          faceColor: [200, 200, 200],
-          edgeThickness: 0.1,
-          edgeColor: '#000000',
-          resolution: 400,
-        },
-      };
+  // Configure faceColors based on URL parameter
+  let faceColors;
+  if (colorScheme === 'gray') {
+    faceColors = {
+      topBottom: [180, 180, 180],
+      frontBack: [180, 180, 180],
+      leftRight: [180, 180, 180],
+      corners: [180, 180, 180],
+      edges: [180, 180, 180],
+    };
+  } else if (colorScheme === 'marker') {
+    // OrientationMarkerTool colors matching exact hex values:
+    // X axis (left/right): Yellow #ffff00 - both xPlus (L) and xMinus (R)
+    // Y axis (posterior/anterior): Cyan #00ffff - both yPlus (P) and yMinus (A)
+    // Z axis (superior/inferior): Blue #0000ff - from defaultStyle.faceColor
+    faceColors = {
+      topBottom: [0, 0, 255], // Blue #0000ff - Z axis (superior/inferior)
+      frontBack: [0, 255, 255], // Cyan #00ffff - Y axis (posterior/anterior)
+      leftRight: [255, 255, 0], // Yellow #ffff00 - X axis (left/right)
+      corners: [0, 0, 255], // Blue #0000ff - same as Z axis
+      edges: [128, 128, 128], // Grey - edges
+    };
+  } else {
+    // RGB scheme (default)
+    faceColors = {
+      topBottom: [255, 0, 0], // Red - faces 0-1 (top/bottom)
+      frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
+      leftRight: [255, 255, 0], // Yellow - faces 4-5 (left/right)
+      corners: [0, 0, 255], // Blue - faces 6-13 (corner triangles)
+      edges: [128, 128, 128], // Grey - faces 14-25 (edge rectangles)
+    };
+  }
 
-  // Add OrientationControlTool with overlayConfiguration from URL
+  // Disable tool if it already exists to ensure fresh configuration
+  if (toolGroupVRT.hasTool(OrientationControlTool.toolName)) {
+    toolGroupVRT.setToolDisabled(OrientationControlTool.toolName);
+  }
+
+  // Add OrientationControlTool with faceColors from URL
+  console.log('Color scheme selected:', colorScheme);
+  console.log('FaceColors being passed to tool:', JSON.stringify(faceColors));
+  console.log('FaceColors object:', faceColors);
+  console.log('Adding OrientationControlTool with faceColors:', faceColors);
+
+  if (toolGroupVRT.hasTool(OrientationControlTool.toolName)) {
+    console.warn(
+      'OrientationControlTool already exists! Configuration may not be applied.'
+    );
+  }
+
   toolGroupVRT.addTool(OrientationControlTool.toolName, {
-    overlayConfiguration,
+    faceColors,
   });
+
+  const toolInstance = toolGroupVRT.getToolInstance(
+    OrientationControlTool.toolName
+  );
+  if (toolInstance) {
+    console.log(
+      'Tool instance configuration after addTool:',
+      JSON.stringify(toolInstance.configuration.faceColors)
+    );
+  }
   // Enable OrientationControlTool after viewport is added and volume is loaded
   toolGroupVRT.setToolEnabled(OrientationControlTool.toolName);
 
-  // Add toggle button for orientation control colors (reloads page with URL param)
-  addToggleButtonToToolbar({
-    title: 'Toggle Orientation Control Colors',
-    defaultToggle: isGrayColors,
-    onClick: (toggle) => {
+  // Add dropdown for orientation control colors (reloads page with URL param)
+  const colorSchemeValues: string[] = ['rgb', 'gray', 'marker'];
+  const colorSchemeLabels = ['RGB', 'Gray', 'Marker'];
+  // Ensure colorScheme is valid, default to 'rgb' if not
+  const validColorScheme = colorSchemeValues.includes(colorScheme)
+    ? colorScheme
+    : 'rgb';
+  console.log('Setting dropdown defaultValue to:', validColorScheme);
+
+  addDropdownToToolbar({
+    labelText: 'Orientation Control Colors',
+    options: {
+      values: colorSchemeValues,
+      defaultValue: validColorScheme,
+      labels: colorSchemeLabels,
+    },
+    onSelectedValueChange: (selectedValue) => {
+      console.log('Color scheme changed to:', selectedValue);
       const url = new URL(window.location.href);
-      url.searchParams.set('grayColors', toggle.toString());
+      url.searchParams.set('colorScheme', String(selectedValue));
+      // Remove legacy parameter if present
+      url.searchParams.delete('grayColors');
       window.location.href = url.toString();
     },
   });

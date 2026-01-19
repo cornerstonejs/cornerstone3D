@@ -394,11 +394,29 @@ class OrientationControlTool extends BaseTool {
       edges: [128, 128, 128],
     };
 
+    console.log(
+      'OrientationControlTool: Using faceColors from configuration:',
+      JSON.stringify(faceColors)
+    );
+    console.log(
+      'OrientationControlTool: this.configuration.faceColors:',
+      this.configuration.faceColors
+    );
+
     const red = faceColors.topBottom;
     const green = faceColors.frontBack;
     const yellow = faceColors.leftRight;
     const blue = faceColors.corners;
     const grey = faceColors.edges;
+
+    console.log(
+      'OrientationControlTool: Color variables -',
+      `red(topBottom): [${red.join(',')}],`,
+      `green(frontBack): [${green.join(',')}],`,
+      `yellow(leftRight): [${yellow.join(',')}],`,
+      `blue(corners): [${blue.join(',')}],`,
+      `grey(edges): [${grey.join(',')}]`
+    );
 
     // 6 square faces: Red (0-1), Green (2-3), Yellow (4-5)
     for (let i = 0; i < 2; i++) {
@@ -449,7 +467,12 @@ class OrientationControlTool extends BaseTool {
       'OrientationControlTool: Face types - 6 main squares (0-5), 8 triangular corners (6-13), 12 edge squares (14-25)'
     );
     console.log(
-      'OrientationControlTool: Colors - Red top/bottom (0-1), Green front/back (2-3), Yellow left/right (4-5), Blue corners (6-13), Grey edges (14-25)'
+      'OrientationControlTool: Colors -',
+      `top/bottom: [${faceColors.topBottom.join(',')}],`,
+      `front/back: [${faceColors.frontBack.join(',')}],`,
+      `left/right: [${faceColors.leftRight.join(',')}],`,
+      `corners: [${faceColors.corners.join(',')}],`,
+      `edges: [${faceColors.edges.join(',')}]`
     );
 
     return polyData;
