@@ -18,7 +18,7 @@ import {
 /**
  * This is the default annotation manager. It stores annotations by default
  * based on the FrameOfReferenceUID. However, it is possible to override the
- * getAnnotationStateKey function to store annotations based on any other
+ * getGroupKey function to store annotations based on any other
  * property of the element. When you write your custom annotation manager, you
  * can use the setAnnotationManager function to set your custom annotation.
  *
@@ -109,10 +109,11 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
   };
 
   /**
-   * Returns all the available frameOfReferences inside the state manager
-   * @returns - All the added frames of references inside the manager
+   * Returns all the available group keys inside the state manager (by default,
+   * FrameOfReferenceUID)
+   * @returns - All the added group keys inside the manager
    */
-  getFramesOfReference = (): Array<string> => {
+  getGroupKeys = (): Array<string> => {
     return Object.keys(this.annotations);
   };
 
