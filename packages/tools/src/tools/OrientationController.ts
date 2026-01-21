@@ -1021,7 +1021,11 @@ class OrientationController extends BaseTool {
       // Handle clicks on the rhombicuboctahedron actors
       if (actors.includes(pickedActor) && cellId !== -1) {
         // Add visual feedback by highlighting the clicked face
-        this.highlightFace(pickedActor, cellId, viewport);
+        this.highlightFace(
+          pickedActor,
+          cellId,
+          viewport as Types.IVolumeViewport
+        );
 
         const orientation = this.getOrientationForFace(cellId);
         if (orientation) {

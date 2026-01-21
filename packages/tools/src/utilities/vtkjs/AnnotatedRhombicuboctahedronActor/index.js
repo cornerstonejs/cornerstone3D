@@ -2,6 +2,8 @@ import macro from '@kitware/vtk.js/macros';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkTexture from '@kitware/vtk.js/Rendering/Core/Texture';
+import ImageHelper from '@kitware/vtk.js/Common/Core/ImageHelper';
 import vtkRhombicuboctahedronSource from '../RhombicuboctahedronSource';
 
 // Face connectivity arrays for reference
@@ -136,7 +138,7 @@ function generateTextureCoordinates() {
 }
 
 // Create separate meshes for different face types
-function createMainFacesMesh(scale, faceColors) {
+function createMainFacesMesh(scale, faceColors, faceTextures) {
   const source = vtkRhombicuboctahedronSource.newInstance({
     generate3DTextureCoordinates: false,
     generateMainFaces: true,
@@ -149,33 +151,38 @@ function createMainFacesMesh(scale, faceColors) {
   const data = source.getOutputData();
 
   if (data) {
-    // Assign cell colors to each main face for solid color display
-    const colors = [];
+    // Generate 2D texture coordinates for each vertex
+    // Texture atlas layout: 3x2 grid (3 columns, 2 rows)
+    // [0][1][2]
+    // [3][4][5]
+    // Each cell is 1/3 wide and 1/2 tall
+    const tcoords = [];
 
-    // MAIN_FACES order: Bottom, Top, Front, Back, Left, Right
-    // Map to: Z-, Z+, Y-, Y+, X-, X+
-    const orderedFaceColors = [
-      faceColors.zMinus, // 0: Bottom (Z-) - Inferior
-      faceColors.zPlus, // 1: Top (Z+) - Superior
-      faceColors.yMinus, // 2: Front (Y-) - Anterior
-      faceColors.yPlus, // 3: Back (Y+) - Posterior
-      faceColors.xMinus, // 4: Left (X-)
-      faceColors.xPlus, // 5: Right (X+)
-    ];
+    // For each of the 6 faces (24 vertices total, 4 per face)
+    for (let faceIdx = 0; faceIdx < 6; faceIdx++) {
+      const col = faceIdx % 3;
+      const row = Math.floor(faceIdx / 3);
 
-    // VTK expects colors in 0-255 range for Uint8Array
-    for (let i = 0; i < 6; i++) {
-      const color = orderedFaceColors[i];
-      colors.push(color[0], color[1], color[2], 255);
+      // Calculate texture coordinates for this face's section
+      const u0 = col / 3.0; // Left
+      const u1 = (col + 1) / 3.0; // Right
+      const v0 = row / 2.0; // Bottom
+      const v1 = (row + 1) / 2.0; // Top
+
+      // Map quad vertices to this section of the atlas
+      tcoords.push(u0, v0); // Bottom-left
+      tcoords.push(u1, v0); // Bottom-right
+      tcoords.push(u1, v1); // Top-right
+      tcoords.push(u0, v1); // Top-left
     }
 
-    const colorsArray = vtkDataArray.newInstance({
-      name: 'Colors',
-      values: new Uint8Array(colors),
-      numberOfComponents: 4,
+    const tcoordsArray = vtkDataArray.newInstance({
+      name: 'TextureCoordinates',
+      values: new Float32Array(tcoords),
+      numberOfComponents: 2,
     });
 
-    data.getCellData().setScalars(colorsArray);
+    data.getPointData().setTCoords(tcoordsArray);
     data.modified();
   }
 
@@ -249,6 +256,60 @@ function createCornerFacesMesh(scale, color) {
 // ----------------------------------------------------------------------------
 // vtkAnnotatedRhombicuboctahedronActor
 // ----------------------------------------------------------------------------
+// Helper function to create texture atlas with all 6 faces
+// ----------------------------------------------------------------------------
+
+function createTextureAtlas(faceTextureData) {
+  // Create a 3x2 grid for 6 faces (3 columns, 2 rows)
+  const faceSize = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = faceSize * 3; // 3 columns
+  canvas.height = faceSize * 2; // 2 rows
+  const ctx = canvas.getContext('2d');
+
+  // Draw each face in the grid
+  // Layout: [0][1][2]
+  //         [3][4][5]
+  faceTextureData.forEach((data, index) => {
+    const col = index % 3;
+    const row = Math.floor(index / 3);
+    const x = col * faceSize;
+    const y = row * faceSize;
+
+    // Draw background color
+    ctx.fillStyle = `rgb(${data.faceColor[0]}, ${data.faceColor[1]}, ${data.faceColor[2]})`;
+    ctx.fillRect(x, y, faceSize, faceSize);
+
+    // Draw text if provided with rotation and flip
+    if (data.text) {
+      ctx.save();
+      ctx.translate(x + faceSize / 2, y + faceSize / 2);
+
+      // Apply flip if specified
+      if (data.flipVertical) {
+        ctx.scale(1, -1);
+      }
+      if (data.flipHorizontal) {
+        ctx.scale(-1, 1);
+      }
+
+      // Apply rotation
+      ctx.rotate(((data.rotation || 0) * Math.PI) / 180);
+
+      ctx.fillStyle = `rgb(${data.textColor[0]}, ${data.textColor[1]}, ${data.textColor[2]})`;
+      ctx.font = 'bold 180px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(data.text, 0, 0);
+      ctx.restore();
+    }
+  });
+
+  // Convert to VTK image
+  return ImageHelper.canvasToImageData(canvas);
+}
+
+// ----------------------------------------------------------------------------
 
 function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
   model.classHierarchy.push('vtkAnnotatedRhombicuboctahedronActor');
@@ -303,23 +364,74 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
       ),
     };
 
-    // Create main faces actor with solid colors
+    // Create main faces actor with texture atlas (includes text)
     if (model.showMainFaces !== false) {
-      const mainData = createMainFacesMesh(sourceScale, faceColors);
+      // Create texture atlas with all 6 faces
+      // MAIN_FACES order: Bottom, Top, Front, Back, Left, Right
+      // Map to: Z-, Z+, Y-, Y+, X-, X+
+      // Atlas layout: 3x2 grid [0][1][2]
+      //                        [3][4][5]
+      const faceTextureData = [
+        {
+          faceColor: faceColors.zMinus,
+          text: model.zMinusFaceProperty.text || 'I',
+          textColor: [0, 0, 0],
+          rotation: 0,
+        },
+        {
+          faceColor: faceColors.zPlus,
+          text: model.zPlusFaceProperty.text || 'S',
+          textColor: [0, 0, 0],
+          rotation: 0,
+          flipVertical: true,
+        },
+        {
+          faceColor: faceColors.yMinus,
+          text: model.yMinusFaceProperty.text || 'A',
+          textColor: [255, 255, 255],
+          rotation: 180,
+        },
+        {
+          faceColor: faceColors.yPlus,
+          text: model.yPlusFaceProperty.text || 'P',
+          textColor: [255, 255, 255],
+          rotation: 180,
+        },
+        {
+          faceColor: faceColors.xMinus,
+          text: model.xMinusFaceProperty.text || 'L',
+          textColor: [0, 0, 0],
+          rotation: 90,
+          flipVertical: true,
+        },
+        {
+          faceColor: faceColors.xPlus,
+          text: model.xPlusFaceProperty.text || 'R',
+          textColor: [0, 0, 0],
+          rotation: 90,
+        },
+      ];
+
+      const atlasImageData = createTextureAtlas(faceTextureData);
+
+      const mainData = createMainFacesMesh(sourceScale, faceColors, null);
       if (mainData) {
         const mainFacesActor = vtkActor.newInstance();
         const mainMapper = vtkMapper.newInstance();
         mainMapper.setInputData(mainData);
-        mainMapper.setScalarModeToUseCellData();
-        mainMapper.setScalarVisibility(true);
-        mainMapper.setColorModeToDirectScalars(); // Use colors directly, not through lookup table
         mainFacesActor.setMapper(mainMapper);
 
-        // Disable backface culling and lighting so all faces show their true colors
+        // Add single texture atlas
+        const texture = vtkTexture.newInstance();
+        texture.setInputData(atlasImageData);
+        texture.setInterpolate(true);
+        mainFacesActor.addTexture(texture);
+
+        // Disable backface culling and lighting
         const property = mainFacesActor.getProperty();
         property.setBackfaceCulling(false);
         property.setFrontfaceCulling(false);
-        property.setLighting(false); // Disable lighting to show true colors
+        property.setLighting(false);
         property.setAmbient(1.0);
         property.setDiffuse(0.0);
         property.setSpecular(0.0);
