@@ -1020,6 +1020,22 @@ class OrientationController extends BaseTool {
 
       // Handle clicks on the rhombicuboctahedron actors
       if (actors.includes(pickedActor) && cellId !== -1) {
+        // Determine which actor was clicked and adjust cellId
+        // actors[0] = main faces (0-5)
+        // actors[1] = edge faces (6-17)
+        // actors[2] = corner faces (18-25)
+        const actorIndex = actors.indexOf(pickedActor);
+        let globalCellId = cellId;
+
+        if (actorIndex === 1) {
+          // Edge faces: add 6 to convert local cellId to global
+          globalCellId = cellId + 6;
+        } else if (actorIndex === 2) {
+          // Corner faces: add 18 to convert local cellId to global
+          globalCellId = cellId + 18;
+        }
+        // actorIndex === 0 (main faces): cellId stays as is
+
         // Add visual feedback by highlighting the clicked face
         this.highlightFace(
           pickedActor,
@@ -1027,7 +1043,7 @@ class OrientationController extends BaseTool {
           viewport as Types.IVolumeViewport
         );
 
-        const orientation = this.getOrientationForFace(cellId);
+        const orientation = this.getOrientationForFace(globalCellId);
         if (orientation) {
           this.animateCameraToOrientation(
             viewport as Types.IVolumeViewport,
