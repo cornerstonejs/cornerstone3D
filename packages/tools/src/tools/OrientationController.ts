@@ -31,7 +31,7 @@ import vtkAnnotatedRhombicuboctahedronActor from '../utilities/vtkjs/AnnotatedRh
 class OrientationController extends BaseTool {
   static toolName = 'OrientationController';
 
-  private actors = new Map<string, vtkActor>();
+  private actors = new Map<string, vtkActor[]>();
   private pickers = new Map<string, vtkCellPicker>();
   private clickHandlers = new Map<string, (evt: MouseEvent) => void>();
   private dragHandlers = new Map<string, (evt: MouseEvent) => void>();
@@ -146,7 +146,7 @@ class OrientationController extends BaseTool {
   };
 
   private removeMarkers(): void {
-    this.actors.forEach((actor, viewportId) => {
+    this.actors.forEach((actors, viewportId) => {
       const viewportsInfo = this._getViewportsInfo();
       const viewportInfo = viewportsInfo.find(
         (vp) => vp.viewportId === viewportId
@@ -160,8 +160,11 @@ class OrientationController extends BaseTool {
 
         if (enabledElement) {
           const { viewport } = enabledElement;
-          const uid = `orientation-controller-${viewportId}`;
-          viewport.removeActors([uid]);
+          // Remove all actors for this viewport
+          const uids = actors.map(
+            (_, index) => `orientation-controller-${viewportId}-${index}`
+          );
+          viewport.removeActors(uids);
         }
       }
     });
@@ -259,7 +262,7 @@ class OrientationController extends BaseTool {
     });
   };
 
-  private createAnnotatedRhombActor(): vtkActor {
+  private createAnnotatedRhombActor(): vtkActor[] {
     const faceColors = this.getFaceColors();
     const rgbToHex = (rgb: number[]) => {
       return `#${rgb
@@ -270,7 +273,14 @@ class OrientationController extends BaseTool {
         .join('')}`;
     };
 
-    const actor = vtkAnnotatedRhombicuboctahedronActor.newInstance();
+    const actorFactory = vtkAnnotatedRhombicuboctahedronActor.newInstance();
+
+    console.log('OrientationController face colors (RGB):', faceColors);
+    console.log('OrientationController face colors (Hex):', {
+      topBottom: rgbToHex(faceColors.topBottom),
+      frontBack: rgbToHex(faceColors.frontBack),
+      leftRight: rgbToHex(faceColors.leftRight),
+    });
 
     const defaultStyle = {
       fontStyle: 'bold',
@@ -283,77 +293,65 @@ class OrientationController extends BaseTool {
       resolution: 400,
     };
 
-    actor.setDefaultStyle(defaultStyle);
+    actorFactory.setDefaultStyle(defaultStyle);
 
     // LPS coordinate system labels for the 6 main faces
-    actor.setXPlusFaceProperty({
-      text: 'L',
-      faceColor: rgbToHex(faceColors.leftRight),
-      faceRotation: 90,
-    });
-
-    actor.setXMinusFaceProperty({
+    actorFactory.setXPlusFaceProperty({
       text: 'R',
       faceColor: rgbToHex(faceColors.leftRight),
-      faceRotation: 270,
+      faceRotation: 0,
     });
 
-    actor.setYPlusFaceProperty({
+    actorFactory.setXMinusFaceProperty({
+      text: 'L',
+      faceColor: rgbToHex(faceColors.leftRight),
+      faceRotation: 0,
+    });
+
+    actorFactory.setYPlusFaceProperty({
       text: 'P',
       faceColor: rgbToHex(faceColors.frontBack),
       fontColor: 'white',
       faceRotation: 180,
     });
 
-    actor.setYMinusFaceProperty({
+    actorFactory.setYMinusFaceProperty({
       text: 'A',
       faceColor: rgbToHex(faceColors.frontBack),
       fontColor: 'white',
+      faceRotation: 0,
     });
 
-    actor.setZPlusFaceProperty({
+    actorFactory.setZPlusFaceProperty({
       text: 'S',
+      faceColor: rgbToHex(faceColors.topBottom),
     });
 
-    actor.setZMinusFaceProperty({
+    actorFactory.setZMinusFaceProperty({
       text: 'I',
+      faceColor: rgbToHex(faceColors.topBottom),
     });
 
     // Configure which faces to show
-    actor.setShowMainFaces(true);
-    actor.setShowEdgeFaces(this.configuration.showEdgeFaces !== false);
-    actor.setShowCornerFaces(this.configuration.showCornerFaces !== false);
+    actorFactory.setShowMainFaces(true);
+    actorFactory.setShowEdgeFaces(this.configuration.showEdgeFaces !== false);
+    actorFactory.setShowCornerFaces(
+      this.configuration.showCornerFaces !== false
+    );
 
-    // Set opacity and default color for edge/corner faces
-    const property = actor.getProperty();
+    // Don't set scale on factory - we'll scale the actors directly in positionMarker
+
+    const actors = actorFactory.getActors();
+
+    // Set opacity for all actors
     const opacity = this.configuration.opacity ?? 1.0;
-    property.setOpacity(opacity);
+    actors.forEach((actor) => {
+      const property = actor.getProperty();
+      property.setOpacity(opacity);
+      actor.setVisibility(true);
+    });
 
-    // Set default color for edge and corner faces (they don't have texture coordinates)
-    // Use edge color from configuration if available, otherwise use a lighter gray for visibility
-    const configFaceColors = this.configuration.faceColors as
-      | { edges?: number[] }
-      | undefined;
-    const edgeColor = configFaceColors?.edges || [200, 200, 200]; // Lighter gray for better visibility
-    property.setColor(
-      edgeColor[0] / 255,
-      edgeColor[1] / 255,
-      edgeColor[2] / 255
-    );
-
-    actor.setVisibility(true);
-
-    console.log(
-      'AnnotatedRhombicuboctahedronActor: Actor created with properties:',
-      {
-        visibility: actor.getVisibility(),
-        opacity: property.getOpacity(),
-        color: property.getColor(),
-        representation: property.getRepresentation(),
-      }
-    );
-
-    return actor;
+    return actors;
   }
 
   private addMarkerToViewport(
@@ -381,85 +379,36 @@ class OrientationController extends BaseTool {
 
     const element = viewport.element;
 
-    // Remove existing actor if it exists to ensure clean recreation
-    const existingActor = this.actors.get(viewportId);
-    if (existingActor) {
-      const uid = `orientation-controller-${viewportId}`;
-      viewport.removeActors([uid]);
+    // Remove existing actors if they exist to ensure clean recreation
+    const existingActors = this.actors.get(viewportId);
+    if (existingActors) {
+      const uids = existingActors.map(
+        (_, index) => `orientation-controller-${viewportId}-${index}`
+      );
+      viewport.removeActors(uids);
       this.actors.delete(viewportId);
     }
 
-    const actor = this.createAnnotatedRhombActor();
-
-    const uid = `orientation-controller-${viewportId}`;
+    const actors = this.createAnnotatedRhombActor();
 
     console.log(
-      'OrientationController: Created actor for viewport',
+      `OrientationController: Created ${actors.length} actors for viewport`,
       viewportId
     );
 
-    // Ensure actor is visible before adding
-    actor.setVisibility(true);
-    const prop = actor.getProperty();
-    prop.setOpacity(this.configuration.opacity ?? 1.0);
+    // Add each actor with unique UID
+    const uids: string[] = [];
+    actors.forEach((actor, index) => {
+      const uid = `orientation-controller-${viewportId}-${index}`;
+      viewport.addActor({ actor, uid });
+      uids.push(uid);
+    });
 
-    viewport.addActor({ actor, uid });
-
-    this.actors.set(viewportId, actor);
-
-    // Force bounds computation on the mapper's input
-    const mapper = actor.getMapper();
-    const mapperInput = mapper?.getInputData();
-    if (mapperInput) {
-      const points = mapperInput.getPoints();
-      if (points) {
-        const pointData = points.getData();
-        console.log('First 9 point values:', Array.from(pointData.slice(0, 9)));
-        console.log('Point count:', points.getNumberOfPoints());
-      }
-
-      mapperInput.computeBounds();
-      mapperInput.modified();
-      const computedBounds = mapperInput.getBounds();
-      console.log('Computed bounds after adding:', computedBounds);
-
-      // Try manual bounds calculation
-      if (points && points.getNumberOfPoints() > 0) {
-        const pointData = points.getData();
-        let minX = Infinity,
-          maxX = -Infinity;
-        let minY = Infinity,
-          maxY = -Infinity;
-        let minZ = Infinity,
-          maxZ = -Infinity;
-
-        for (let i = 0; i < points.getNumberOfPoints(); i++) {
-          const x = pointData[i * 3];
-          const y = pointData[i * 3 + 1];
-          const z = pointData[i * 3 + 2];
-          minX = Math.min(minX, x);
-          maxX = Math.max(maxX, x);
-          minY = Math.min(minY, y);
-          maxY = Math.max(maxY, y);
-          minZ = Math.min(minZ, z);
-          maxZ = Math.max(maxZ, z);
-        }
-        console.log('Manual bounds calculation:', [
-          minX,
-          maxX,
-          minY,
-          maxY,
-          minZ,
-          maxZ,
-        ]);
-      }
-
-      console.log('Actor bounds after compute:', actor.getBounds());
-    }
+    this.actors.set(viewportId, actors);
 
     const positioned = this.positionMarker(
       viewport as Types.IVolumeViewport,
-      actor
+      actors
     );
 
     if (!positioned) {
@@ -469,7 +418,7 @@ class OrientationController extends BaseTool {
       setTimeout(() => {
         const repositioned = this.positionMarker(
           viewport as Types.IVolumeViewport,
-          actor
+          actors
         );
         if (repositioned) {
           console.log('OrientationController: Retry positioning succeeded');
@@ -486,10 +435,13 @@ class OrientationController extends BaseTool {
     picker.setPickFromList(true);
     picker.setTolerance(0.001);
     picker.initializePickList();
-    picker.addPickList(actor);
+    // Add all actors to the pick list
+    actors.forEach((actor) => {
+      picker.addPickList(actor);
+    });
     this.pickers.set(viewportId, picker);
 
-    this.setupClickHandler(viewportId, renderingEngineId, element, actor);
+    this.setupClickHandler(viewportId, renderingEngineId, element, actors);
 
     const resizeObserver = new ResizeObserver(() => {
       this.updateMarkerPosition(viewportId, renderingEngineId);
@@ -512,7 +464,7 @@ class OrientationController extends BaseTool {
 
   private positionMarker(
     viewport: Types.IVolumeViewport,
-    actor: vtkActor
+    actors: vtkActor[]
   ): boolean {
     const bounds = viewport.getBounds();
     if (!bounds || bounds.length < 6) {
@@ -520,7 +472,7 @@ class OrientationController extends BaseTool {
       return false;
     }
 
-    const size = this.configuration.size || 0.02;
+    const size = this.configuration.size || 0.15;
     const position = this.configuration.position || 'bottom-right';
 
     const diagonal = Math.sqrt(
@@ -530,18 +482,20 @@ class OrientationController extends BaseTool {
     );
     const markerSize = diagonal * size;
 
-    // Scale actor
-    actor.setScale(markerSize, markerSize, markerSize);
+    // Scale and position all actors
+    actors.forEach((actor) => {
+      actor.setScale(markerSize, markerSize, markerSize);
 
-    const worldPos = this.getMarkerPositionInScreenSpace(viewport, position);
-    if (!worldPos) {
-      console.warn('OrientationController: Could not get world position');
-      return false;
-    }
+      const worldPos = this.getMarkerPositionInScreenSpace(viewport, position);
+      if (!worldPos) {
+        console.warn('OrientationController: Could not get world position');
+        return false;
+      }
 
-    actor.setPosition(worldPos[0], worldPos[1], worldPos[2]);
+      actor.setPosition(worldPos[0], worldPos[1], worldPos[2]);
 
-    this.updateMarkerOrientation(viewport, actor);
+      this.updateMarkerOrientation(viewport, actor);
+    });
 
     return true;
   }
@@ -599,9 +553,9 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    const actor = this.actors.get(viewportId);
+    const actors = this.actors.get(viewportId);
 
-    if (!actor) {
+    if (!actors) {
       return;
     }
 
@@ -628,7 +582,7 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    this.positionMarker(viewport as Types.IVolumeViewport, actor);
+    this.positionMarker(viewport as Types.IVolumeViewport, actors);
   };
 
   private updateMarkerPosition(
@@ -644,9 +598,9 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    const actor = this.actors.get(viewportId);
+    const actors = this.actors.get(viewportId);
 
-    if (!actor) {
+    if (!actors) {
       return;
     }
 
@@ -655,7 +609,7 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    this.positionMarker(viewport as Types.IVolumeViewport, actor);
+    this.positionMarker(viewport as Types.IVolumeViewport, actors);
   }
 
   private animateCameraToOrientation(
@@ -901,7 +855,7 @@ class OrientationController extends BaseTool {
     viewportId: string,
     renderingEngineId: string,
     element: HTMLDivElement,
-    actor: vtkActor
+    actors: vtkActor[]
   ): void {
     let isMouseDown = false;
 
@@ -973,8 +927,8 @@ class OrientationController extends BaseTool {
 
       isMouseDown = true;
 
-      // Handle clicks on the rhombicuboctahedron actor
-      if (pickedActor === actor && cellId !== -1) {
+      // Handle clicks on the rhombicuboctahedron actors
+      if (actors.includes(pickedActor) && cellId !== -1) {
         const orientation = this.getOrientationForFace(cellId);
         if (orientation) {
           this.animateCameraToOrientation(
