@@ -39,6 +39,14 @@ class OrientationController extends BaseTool {
   private resizeObservers = new Map<string, ResizeObserver>();
   private cameraHandlers = new Map<string, (evt: CustomEvent) => void>();
 
+  // Store highlighted face info for mouse up reset
+  private highlightedFace: {
+    actor: vtkActor;
+    cellId: number;
+    originalColor: number[];
+    viewport: Types.IVolumeViewport;
+  } | null = null;
+
   constructor(
     toolProps = {},
     defaultToolProps = {
@@ -540,6 +548,96 @@ class OrientationController extends BaseTool {
     actor.setOrientation(0, 0, 0);
   }
 
+  private highlightFace(
+    actor: vtkActor,
+    cellId: number,
+    viewport: Types.IVolumeViewport
+  ): void {
+    // Clear any existing highlight first
+    this.clearHighlight();
+
+    const mapper = actor.getMapper();
+    const inputData = mapper.getInputData();
+
+    if (!inputData) {
+      return;
+    }
+
+    const cellData = inputData.getCellData();
+    const colors = cellData.getScalars();
+
+    if (!colors) {
+      return;
+    }
+
+    // Store original color
+    const colorArray = colors.getData();
+    const offset = cellId * 4;
+    const originalColor = [
+      colorArray[offset],
+      colorArray[offset + 1],
+      colorArray[offset + 2],
+      colorArray[offset + 3],
+    ];
+
+    // Store highlight info for later reset
+    this.highlightedFace = {
+      actor,
+      cellId,
+      originalColor,
+      viewport,
+    };
+
+    // Set highlight color (bright white)
+    colorArray[offset] = 255;
+    colorArray[offset + 1] = 255;
+    colorArray[offset + 2] = 255;
+    colorArray[offset + 3] = 255;
+
+    // Mark as modified and render
+    colors.modified();
+    inputData.modified();
+    viewport.render();
+  }
+
+  private clearHighlight(): void {
+    if (!this.highlightedFace) {
+      return;
+    }
+
+    const { actor, cellId, originalColor, viewport } = this.highlightedFace;
+    const mapper = actor.getMapper();
+    const inputData = mapper.getInputData();
+
+    if (!inputData) {
+      this.highlightedFace = null;
+      return;
+    }
+
+    const cellData = inputData.getCellData();
+    const colors = cellData.getScalars();
+
+    if (!colors) {
+      this.highlightedFace = null;
+      return;
+    }
+
+    // Reset to original color
+    const colorArray = colors.getData();
+    const offset = cellId * 4;
+    colorArray[offset] = originalColor[0];
+    colorArray[offset + 1] = originalColor[1];
+    colorArray[offset + 2] = originalColor[2];
+    colorArray[offset + 3] = originalColor[3];
+
+    // Mark as modified and render
+    colors.modified();
+    inputData.modified();
+    viewport.render();
+
+    this.highlightedFace = null;
+  }
+
   private onCameraModified = (evt: CustomEvent): void => {
     const { viewportId } = evt.detail as { viewportId: string };
     if (!viewportId) {
@@ -922,6 +1020,9 @@ class OrientationController extends BaseTool {
 
       // Handle clicks on the rhombicuboctahedron actors
       if (actors.includes(pickedActor) && cellId !== -1) {
+        // Add visual feedback by highlighting the clicked face
+        this.highlightFace(pickedActor, cellId, viewport);
+
         const orientation = this.getOrientationForFace(cellId);
         if (orientation) {
           this.animateCameraToOrientation(
@@ -944,6 +1045,8 @@ class OrientationController extends BaseTool {
 
     const mouseUpHandler = () => {
       isMouseDown = false;
+      // Clear highlight when mouse is released
+      this.clearHighlight();
     };
 
     element.addEventListener('mousedown', clickHandler);
