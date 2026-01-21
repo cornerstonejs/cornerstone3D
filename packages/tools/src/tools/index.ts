@@ -60,6 +60,7 @@ import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
 import OrientationControlTool from './OrientationControlTool';
+import OrientationController from './OrientationController';
 import SegmentSelectTool from './segmentation/SegmentSelectTool';
 import SegmentBidirectionalTool from './segmentation/SegmentBidirectionalTool';
 
@@ -128,6 +129,7 @@ export {
   ScaleOverlayTool,
   OrientationMarkerTool,
   OrientationControlTool,
+  OrientationController,
   SculptorTool,
   SegmentSelectTool,
   VolumeRotateTool,

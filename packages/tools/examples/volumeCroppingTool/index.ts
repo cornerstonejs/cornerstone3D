@@ -31,7 +31,7 @@ const {
   ZoomTool,
   PanTool,
   OrientationMarkerTool,
-  OrientationControlTool,
+  OrientationController,
   StackScrollTool,
   CrosshairsTool,
 } = cornerstoneTools;
@@ -254,7 +254,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
   //cornerstoneTools.addTool(OrientationMarkerTool);
-  cornerstoneTools.addTool(OrientationControlTool);
+  cornerstoneTools.addTool(OrientationController);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(CrosshairsTool);
 
@@ -444,28 +444,28 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   }
 
   // Disable tool if it already exists to ensure fresh configuration
-  if (toolGroupVRT.hasTool(OrientationControlTool.toolName)) {
-    toolGroupVRT.setToolDisabled(OrientationControlTool.toolName);
+  if (toolGroupVRT.hasTool(OrientationController.toolName)) {
+    toolGroupVRT.setToolDisabled(OrientationController.toolName);
   }
 
-  // Add OrientationControlTool with faceColors and keepOrientationUp from URL
+  // Add OrientationController with faceColors and keepOrientationUp from URL
   console.log('Color scheme selected:', colorScheme);
   console.log('Keep orientation up from URL:', keepOrientationUp);
   console.log('FaceColors being passed to tool:', JSON.stringify(faceColors));
 
-  if (toolGroupVRT.hasTool(OrientationControlTool.toolName)) {
+  if (toolGroupVRT.hasTool(OrientationController.toolName)) {
     console.warn(
-      'OrientationControlTool already exists! Configuration may not be applied.'
+      'OrientationController already exists! Configuration may not be applied.'
     );
   }
 
-  toolGroupVRT.addTool(OrientationControlTool.toolName, {
+  toolGroupVRT.addTool(OrientationController.toolName, {
     faceColors,
     keepOrientationUp,
   });
 
   const toolInstance = toolGroupVRT.getToolInstance(
-    OrientationControlTool.toolName
+    OrientationController.toolName
   );
   if (toolInstance) {
     console.log(
@@ -473,8 +473,8 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       JSON.stringify(toolInstance.configuration.faceColors)
     );
   }
-  // Enable OrientationControlTool after viewport is added and volume is loaded
-  toolGroupVRT.setToolEnabled(OrientationControlTool.toolName);
+  // Enable OrientationController after viewport is added and volume is loaded
+  toolGroupVRT.setToolEnabled(OrientationController.toolName);
 
   // Add dropdown for orientation control colors (reloads page with URL param)
   const colorSchemeValues: string[] = ['rgb', 'gray', 'marker'];
@@ -523,16 +523,16 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       // Get the tool group for the 3D viewport
       const toolGroupVRT =
         cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
-      // Get the OrientationControlTool instance from the tool group
-      const orientationControlTool = toolGroupVRT.getToolInstance(
-        OrientationControlTool.toolName
+      // Get the OrientationController instance from the tool group
+      const orientationController = toolGroupVRT.getToolInstance(
+        OrientationController.toolName
       );
-      if (orientationControlTool) {
+      if (orientationController) {
         // Update configuration
-        orientationControlTool.configuration.keepOrientationUp = newValue;
+        orientationController.configuration.keepOrientationUp = newValue;
         // Reinitialize viewports to apply the change
-        orientationControlTool.onSetToolDisabled();
-        orientationControlTool.onSetToolEnabled();
+        orientationController.onSetToolDisabled();
+        orientationController.onSetToolEnabled();
       }
     },
   });
