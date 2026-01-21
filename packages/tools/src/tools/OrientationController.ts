@@ -275,13 +275,6 @@ class OrientationController extends BaseTool {
 
     const actorFactory = vtkAnnotatedRhombicuboctahedronActor.newInstance();
 
-    console.log('OrientationController face colors (RGB):', faceColors);
-    console.log('OrientationController face colors (Hex):', {
-      topBottom: rgbToHex(faceColors.topBottom),
-      frontBack: rgbToHex(faceColors.frontBack),
-      leftRight: rgbToHex(faceColors.leftRight),
-    });
-
     const defaultStyle = {
       fontStyle: 'bold',
       fontFamily: 'Arial',

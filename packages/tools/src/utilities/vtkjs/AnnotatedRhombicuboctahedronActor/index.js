@@ -163,18 +163,11 @@ function createMainFacesMesh(scale, faceColors) {
       faceColors.xPlus, // 5: Right (X+)
     ];
 
-    console.log(
-      'Main face colors being applied to mesh:',
-      orderedFaceColors.map((c, i) => `${i}: [${c}]`)
-    );
-
     // VTK expects colors in 0-255 range for Uint8Array
     for (let i = 0; i < 6; i++) {
       const color = orderedFaceColors[i];
       colors.push(color[0], color[1], color[2], 255);
     }
-
-    console.log('Color array length:', colors.length, 'values:', colors);
 
     const colorsArray = vtkDataArray.newInstance({
       name: 'Colors',
@@ -182,7 +175,6 @@ function createMainFacesMesh(scale, faceColors) {
       numberOfComponents: 4,
     });
 
-    console.log('Setting cell scalars with', data.getNumberOfCells(), 'cells');
     data.getCellData().setScalars(colorsArray);
     data.modified();
   }
@@ -290,16 +282,6 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
         : [255, 255, 255];
     };
 
-    console.log('Face properties:', {
-      xPlus: model.xPlusFaceProperty,
-      xMinus: model.xMinusFaceProperty,
-      yPlus: model.yPlusFaceProperty,
-      yMinus: model.yMinusFaceProperty,
-      zPlus: model.zPlusFaceProperty,
-      zMinus: model.zMinusFaceProperty,
-      defaultStyle: model.defaultStyle,
-    });
-
     const faceColors = {
       zMinus: hexToRgb(
         model.zMinusFaceProperty.faceColor || model.defaultStyle.faceColor
@@ -321,15 +303,6 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
       ),
     };
 
-    console.log('Extracted face colors (RGB):', {
-      zMinus: `[${faceColors.zMinus}]`,
-      zPlus: `[${faceColors.zPlus}]`,
-      yMinus: `[${faceColors.yMinus}]`,
-      yPlus: `[${faceColors.yPlus}]`,
-      xMinus: `[${faceColors.xMinus}]`,
-      xPlus: `[${faceColors.xPlus}]`,
-    });
-
     // Create main faces actor with solid colors
     if (model.showMainFaces !== false) {
       const mainData = createMainFacesMesh(sourceScale, faceColors);
@@ -342,11 +315,14 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
         mainMapper.setColorModeToDirectScalars(); // Use colors directly, not through lookup table
         mainFacesActor.setMapper(mainMapper);
 
-        console.log('Main faces actor created with mapper settings:', {
-          scalarVisibility: mainMapper.getScalarVisibility(),
-          colorMode: mainMapper.getColorMode(),
-          scalarMode: mainMapper.getScalarMode(),
-        });
+        // Disable backface culling and lighting so all faces show their true colors
+        const property = mainFacesActor.getProperty();
+        property.setBackfaceCulling(false);
+        property.setFrontfaceCulling(false);
+        property.setLighting(false); // Disable lighting to show true colors
+        property.setAmbient(1.0);
+        property.setDiffuse(0.0);
+        property.setSpecular(0.0);
 
         actors.push(mainFacesActor);
       }
@@ -364,6 +340,16 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
         edgeMapper.setScalarVisibility(true);
         edgeMapper.setColorModeToDirectScalars();
         edgeFacesActor.setMapper(edgeMapper);
+
+        // Disable backface culling and lighting
+        const edgeProperty = edgeFacesActor.getProperty();
+        edgeProperty.setBackfaceCulling(false);
+        edgeProperty.setFrontfaceCulling(false);
+        edgeProperty.setLighting(false);
+        edgeProperty.setAmbient(1.0);
+        edgeProperty.setDiffuse(0.0);
+        edgeProperty.setSpecular(0.0);
+
         actors.push(edgeFacesActor);
       }
     }
@@ -380,6 +366,16 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
         cornerMapper.setScalarVisibility(true);
         cornerMapper.setColorModeToDirectScalars();
         cornerFacesActor.setMapper(cornerMapper);
+
+        // Disable backface culling and lighting
+        const cornerProperty = cornerFacesActor.getProperty();
+        cornerProperty.setBackfaceCulling(false);
+        cornerProperty.setFrontfaceCulling(false);
+        cornerProperty.setLighting(false);
+        cornerProperty.setAmbient(1.0);
+        cornerProperty.setDiffuse(0.0);
+        cornerProperty.setSpecular(0.0);
+
         actors.push(cornerFacesActor);
       }
     }
