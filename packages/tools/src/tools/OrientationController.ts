@@ -430,6 +430,7 @@ class OrientationController extends BaseTool {
       }, 1000);
     } else {
       console.log('OrientationController: Initial positioning succeeded');
+      viewport.render();
     }
 
     const picker = vtkCellPicker.newInstance({ opacityThreshold: 0.0001 });
@@ -847,7 +848,7 @@ class OrientationController extends BaseTool {
 
     // Main 6 faces
     orientations.set(0, { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] }); // Bottom
-    orientations.set(1, { viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] }); // Top
+    orientations.set(1, { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] }); // Top
     orientations.set(2, { viewPlaneNormal: [0, -1, 0], viewUp: [0, 0, 1] }); // Front
     orientations.set(3, { viewPlaneNormal: [0, 1, 0], viewUp: [0, 0, 1] }); // Back
     orientations.set(4, { viewPlaneNormal: [-1, 0, 0], viewUp: [0, 0, 1] }); // Left

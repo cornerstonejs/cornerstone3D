@@ -330,7 +330,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  volume.load();
+  await volume.load();
 
   // Only set volumes for the active viewport IDs
   const activeViewportIds = [
@@ -539,38 +539,66 @@ async function run(numViewports = getNumViewportsFromUrl()) {
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
-  renderingEngine.renderViewports(activeViewportIds);
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId4]
-  ).then(() => {
-    viewport.setProperties({
-      preset: 'CT-Bone',
-    });
-    toolGroupVRT.addViewport(viewportId4, renderingEngineId);
-    toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
-      sphereRadius: 7,
-      sphereColors: {
-        x: [1, 1, 0],
-        y: [0, 1, 0],
-        z: [1, 0, 0],
-        corners: [0, 0, 1],
-      },
-      showCornerSpheres: true,
-      initialCropFactor: 0.2,
-    });
-    toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
 
-    viewport.setZoom(1.2);
-    viewport.render();
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId4]);
+
+  viewport.setProperties({
+    preset: 'CT-Bone',
   });
+
+  toolGroupVRT.addViewport(viewportId4, renderingEngineId);
+
+  // First render the viewport BEFORE adding cropping tool
+  viewport.resetCamera();
+  viewport.setZoom(1.2);
+
+  // Manually trigger camera modified to initialize VTK rendering state
+  const camera = viewport.getCamera();
+  const { position, focalPoint, viewUp } = camera;
+  viewport.setCamera({
+    position: [...position],
+    focalPoint: [...focalPoint],
+    viewUp: [...viewUp],
+  });
+
+  viewport.render();
+
+  // Now add and activate the cropping tool
+  toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
+    showHandles: false,
+    showClippingPlanes: false,
+    sphereRadius: 7,
+    sphereColors: {
+      x: [1, 1, 0],
+      y: [0, 1, 0],
+      z: [1, 0, 0],
+      corners: [0, 0, 1],
+    },
+    showCornerSpheres: true,
+    initialCropFactor: 0.2,
+  });
+  toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+      },
+    ],
+  });
+
+  // Hide 3D handles by default (same as toggle button does)
+  const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+  if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
+    croppingTool.setHandlesVisible(false);
+  }
+
+  // Render again after cropping tool is initialized
+  viewport.render();
+  renderingEngine.renderViewports(activeViewportIds);
+
+  // Force another render after a brief moment to ensure everything is visible
+  setTimeout(() => {
+    renderingEngine.render();
+  }, 100);
 }
 
 run();
