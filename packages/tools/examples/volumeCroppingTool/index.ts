@@ -117,7 +117,7 @@ const element4 = document.createElement('div'); // 3D Volume
 const rightViewportsContainer = document.createElement('div');
 rightViewportsContainer.style.display = 'flex';
 rightViewportsContainer.style.flexDirection = 'column';
-rightViewportsContainer.style.width = '20%';
+rightViewportsContainer.style.width = '25%';
 rightViewportsContainer.style.height = '100%';
 
 // Set styles for the 2D viewports (stacked vertically on the right)

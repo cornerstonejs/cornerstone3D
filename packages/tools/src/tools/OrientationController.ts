@@ -203,11 +203,11 @@ class OrientationController extends BaseTool {
           const element = enabledElement.viewport.element;
           element.removeEventListener('mousedown', handler);
 
-          const dragHandler = this.dragHandlers.get(viewportId);
+          const hoverHandler = this.dragHandlers.get(viewportId);
           const mouseUpHandler = this.mouseUpHandlers.get(viewportId);
 
-          if (dragHandler) {
-            element.removeEventListener('mousemove', dragHandler);
+          if (hoverHandler) {
+            element.removeEventListener('mousemove', hoverHandler);
           }
           if (mouseUpHandler) {
             element.removeEventListener('mouseup', mouseUpHandler);
@@ -535,35 +535,23 @@ class OrientationController extends BaseTool {
     viewport: Types.IVolumeViewport,
     isMainFace: boolean = false
   ): void {
+    // Check if we're already highlighting this exact face
+    if (
+      this.highlightedFace &&
+      this.highlightedFace.actor === actor &&
+      this.highlightedFace.cellId === cellId &&
+      this.highlightedFace.isMainFace === isMainFace
+    ) {
+      return; // Already highlighting this face, no need to re-highlight
+    }
+
     // Clear any existing highlight first
     this.clearHighlight();
 
-    // For main faces (texture-based), use scale change for highlight
+    // For main faces (texture-based), we can't easily highlight individual faces
+    // since they're all on the same actor. Scaling the actor would affect all 6 main faces.
+    // Skip highlighting for main faces on hover to avoid highlighting multiple faces.
     if (isMainFace) {
-      const originalScale = actor.getScale();
-
-      // Store highlight info for later reset
-      this.highlightedFace = {
-        actor,
-        cellId,
-        originalColor: [],
-        viewport,
-        isMainFace: true,
-        originalDiffuseColor: [0, 0, 0],
-        originalLighting: false,
-        originalDiffuse: 0,
-        originalAmbient: 0,
-        originalScale: [...originalScale],
-      };
-
-      // Slightly increase scale to make the face stand out
-      actor.setScale(
-        originalScale[0] * 1.1,
-        originalScale[1] * 1.1,
-        originalScale[2] * 1.1
-      );
-
-      viewport.render();
       return;
     }
 
@@ -1012,6 +1000,83 @@ class OrientationController extends BaseTool {
     return orientations.get(cellId) || null;
   }
 
+  private pickFaceAtPosition(
+    evt: MouseEvent,
+    viewportId: string,
+    renderingEngineId: string,
+    element: HTMLDivElement,
+    actors: vtkActor[]
+  ): { pickedActor: vtkActor; cellId: number; actorIndex: number } | null {
+    const enabledElement = getEnabledElementByIds(
+      viewportId,
+      renderingEngineId
+    );
+
+    if (!enabledElement) {
+      return null;
+    }
+
+    const { viewport } = enabledElement;
+
+    if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
+      return null;
+    }
+
+    const picker = this.pickers.get(viewportId);
+    if (!picker) {
+      return null;
+    }
+
+    const rect = element.getBoundingClientRect();
+    const x = evt.clientX - rect.left;
+    const y = evt.clientY - rect.top;
+
+    // Calculate VTK display coordinates manually (works for all rendering engines)
+    const renderer = viewport.getRenderer();
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasPosWithDPR = [x * devicePixelRatio, y * devicePixelRatio];
+
+    const canvas = viewport.canvas;
+    const { width, height } = canvas;
+
+    // Get the actual renderer viewport bounds
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
+    // Scale the canvas position to the actual viewport size
+    const scaledX = (canvasPosWithDPR[0] / width) * viewportWidth * width;
+    const scaledY = (canvasPosWithDPR[1] / height) * viewportHeight * height;
+
+    // Canvas coordinates with origin at top-left
+    // VTK display coordinates have origin at bottom-left
+    const displayCoord = [scaledX, viewportHeight * height - scaledY];
+    const displayCoords: [number, number, number] = [
+      displayCoord[0],
+      displayCoord[1],
+      0,
+    ];
+
+    picker.pick(displayCoords, renderer);
+
+    const pickedActors = picker.getActors();
+    if (pickedActors.length === 0) {
+      return null;
+    }
+
+    const pickedActor = pickedActors[0];
+    const cellId = picker.getCellId();
+
+    // Handle picks on the rhombicuboctahedron actors
+    if (actors.includes(pickedActor) && cellId !== -1) {
+      const actorIndex = actors.indexOf(pickedActor);
+      return { pickedActor, cellId, actorIndex };
+    }
+
+    return null;
+  }
+
   private setupClickHandler(
     viewportId: string,
     renderingEngineId: string,
@@ -1020,10 +1085,62 @@ class OrientationController extends BaseTool {
   ): void {
     let isMouseDown = false;
 
+    const hoverHandler = (evt: MouseEvent) => {
+      if (isMouseDown) {
+        return;
+      }
+
+      const pickResult = this.pickFaceAtPosition(
+        evt,
+        viewportId,
+        renderingEngineId,
+        element,
+        actors
+      );
+
+      if (pickResult) {
+        const { pickedActor, cellId, actorIndex } = pickResult;
+        const enabledElement = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+        if (enabledElement) {
+          const { viewport } = enabledElement;
+          // Only highlight edge/corner faces on hover (not main faces)
+          // Main faces are all on the same actor, so highlighting would affect all of them
+          if (actorIndex !== 0) {
+            this.highlightFace(
+              pickedActor,
+              cellId,
+              viewport as Types.IVolumeViewport,
+              false // isMainFace = false for edge/corner faces
+            );
+          }
+        }
+      } else {
+        this.clearHighlight();
+      }
+    };
+
     const clickHandler = (evt: MouseEvent) => {
       if (evt.button !== 0) {
         return;
       }
+
+      const pickResult = this.pickFaceAtPosition(
+        evt,
+        viewportId,
+        renderingEngineId,
+        element,
+        actors
+      );
+
+      if (!pickResult) {
+        return;
+      }
+
+      const { pickedActor, cellId, actorIndex } = pickResult;
+      isMouseDown = true;
 
       const enabledElement = getEnabledElementByIds(
         viewportId,
@@ -1036,117 +1153,42 @@ class OrientationController extends BaseTool {
 
       const { viewport } = enabledElement;
 
-      if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
-        return;
+      // Determine global cellId
+      let globalCellId = cellId;
+      if (actorIndex === 1) {
+        // Edge faces: add 6 to convert local cellId to global
+        globalCellId = cellId + 6;
+      } else if (actorIndex === 2) {
+        // Corner faces: add 18 to convert local cellId to global
+        globalCellId = cellId + 18;
       }
+      // actorIndex === 0 (main faces): cellId stays as is
 
-      const picker = this.pickers.get(viewportId);
-      if (!picker) {
-        return;
-      }
-
-      const rect = element.getBoundingClientRect();
-      const x = evt.clientX - rect.left;
-      const y = evt.clientY - rect.top;
-
-      // Calculate VTK display coordinates manually (works for all rendering engines)
-      const renderer = viewport.getRenderer();
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      const canvasPosWithDPR = [x * devicePixelRatio, y * devicePixelRatio];
-
-      const canvas = viewport.canvas;
-      const { width, height } = canvas;
-
-      // Get the actual renderer viewport bounds
-      const [xMin, yMin, xMax, yMax] =
-        renderer.getViewport() as unknown as number[];
-      const viewportWidth = xMax - xMin;
-      const viewportHeight = yMax - yMin;
-
-      // Scale the canvas position to the actual viewport size
-      const scaledX = (canvasPosWithDPR[0] / width) * viewportWidth * width;
-      const scaledY = (canvasPosWithDPR[1] / height) * viewportHeight * height;
-
-      // Canvas coordinates with origin at top-left
-      // VTK display coordinates have origin at bottom-left
-      const displayCoord = [scaledX, viewportHeight * height - scaledY];
-      const displayCoords: [number, number, number] = [
-        displayCoord[0],
-        displayCoord[1],
-        0,
-      ];
-
-      picker.pick(displayCoords, renderer);
-
-      const pickedActors = picker.getActors();
-      if (pickedActors.length === 0) {
-        return;
-      }
-
-      const pickedActor = pickedActors[0];
-      const cellId = picker.getCellId();
-
-      isMouseDown = true;
-
-      // Handle clicks on the rhombicuboctahedron actors
-      if (actors.includes(pickedActor) && cellId !== -1) {
-        // Determine which actor was clicked and adjust cellId
-        // actors[0] = main faces (0-5)
-        // actors[1] = edge faces (6-17)
-        // actors[2] = corner faces (18-25)
-        const actorIndex = actors.indexOf(pickedActor);
-        let globalCellId = cellId;
-
-        if (actorIndex === 1) {
-          // Edge faces: add 6 to convert local cellId to global
-          globalCellId = cellId + 6;
-        } else if (actorIndex === 2) {
-          // Corner faces: add 18 to convert local cellId to global
-          globalCellId = cellId + 18;
-        }
-        // actorIndex === 0 (main faces): cellId stays as is
-
-        // Add visual feedback by highlighting the clicked face
-        this.highlightFace(
-          pickedActor,
-          cellId,
+      const orientation = this.getOrientationForFace(globalCellId);
+      if (orientation) {
+        this.animateCameraToOrientation(
           viewport as Types.IVolumeViewport,
-          actorIndex === 0 // isMainFace
+          orientation.viewPlaneNormal,
+          orientation.viewUp
         );
-
-        const orientation = this.getOrientationForFace(globalCellId);
-        if (orientation) {
-          this.animateCameraToOrientation(
-            viewport as Types.IVolumeViewport,
-            orientation.viewPlaneNormal,
-            orientation.viewUp
-          );
-        }
-
-        evt.preventDefault();
-        evt.stopPropagation();
       }
-    };
 
-    const dragHandler = (_evt: MouseEvent) => {
-      if (!isMouseDown) {
-        return;
-      }
+      evt.preventDefault();
+      evt.stopPropagation();
     };
 
     const mouseUpHandler = () => {
       isMouseDown = false;
-      // Clear highlight when mouse is released
       this.clearHighlight();
     };
 
+    element.addEventListener('mousemove', hoverHandler);
     element.addEventListener('mousedown', clickHandler);
-    element.addEventListener('mousemove', dragHandler);
     element.addEventListener('mouseup', mouseUpHandler);
     element.addEventListener('mouseleave', mouseUpHandler);
 
     this.clickHandlers.set(viewportId, clickHandler);
-    this.dragHandlers.set(viewportId, dragHandler);
+    this.dragHandlers.set(viewportId, hoverHandler);
     this.mouseUpHandlers.set(viewportId, mouseUpHandler);
   }
 }
