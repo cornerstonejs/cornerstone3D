@@ -42,6 +42,15 @@ const CS_IMAGE: Types.IImage = {
     rows: 256,
     samplesPerPixel: 1,
     smallestPixelValue: 0,
+    preScale: {
+      enabled: true,
+      scalingParameters: {
+        rescaleSlope: 1,
+        rescaleIntercept: 0,
+        modality: 'MR',
+      },
+      scaled: true,
+    },
   },
   // @ts-expect-error jasmine matcher
   imageId: jasmine.any(String),
@@ -50,7 +59,17 @@ const CS_IMAGE: Types.IImage = {
   maxPixelValue: 4095,
   minPixelValue: 0,
   numberOfComponents: 1,
-  preScale: undefined,
+  // preScale will be defined since there is a (default) modality LUT
+  // in the shared functional group
+  preScale: {
+    enabled: true,
+    scalingParameters: {
+      rescaleSlope: 1,
+      rescaleIntercept: 0,
+      modality: 'MR',
+    },
+    scaled: true,
+  },
   rgba: false,
   rowPixelSpacing: 0.7031,
   rows: 256,
@@ -86,6 +105,7 @@ const WADO_URI_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
   rows: 256,
   sliceLocation: undefined,
   sliceThickness: 2.999902,
+  spacingBetweenSlices: 2.999902,
   usingDefaultValues: false,
 };
 // Should be `Types.ImagePixelModule` the actual metadata doesn't conform to it.
@@ -120,15 +140,10 @@ const WADO_RS_IMAGE_PIXEL_MODULE = {
 
 const SERIES_MODULE: Types.GeneralSeriesModuleMetadata = {
   modality: 'MR',
-  seriesDate: { year: 2016, month: 9, day: 29 },
+  seriesDate: '20160929',
   seriesInstanceUID: '1.2.276.0.7230010.3.1.3.0.50782.1475186871.424076',
   seriesNumber: 701,
-  seriesTime: {
-    hours: 18,
-    minutes: 7,
-    seconds: 51,
-    fractionalSeconds: undefined,
-  },
+  seriesTime: '180751',
   studyInstanceUID:
     '1.3.6.1.4.1.14519.5.2.1.3671.7001.133687106572018334063091507027',
   // @ts-expect-error The following fields are not defined in GeneralSeriesModuleMetadata

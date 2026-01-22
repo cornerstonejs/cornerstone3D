@@ -5,6 +5,8 @@ import {
   init as dicomImageLoaderInit,
   wadouri,
 } from '@cornerstonejs/dicom-image-loader';
+import { expectObjectEquality } from './expectObjectEquality';
+
 import * as dcmjs from 'dcmjs';
 import { createImageHash } from '../../../utils/test/pixel-data-hash';
 import { WADOURI_TEST as CtBigEndian_1_2_840_1008_1_2_2 } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2';
@@ -219,8 +221,7 @@ describe('dicomImageLoader - WADO-URI', () => {
                 metadataModuleName,
                 imageIdWithFrameIndex
               );
-
-              expect(actualModuleValue).toEqual(expectedModuleValues);
+              expectObjectEquality(actualModuleValue, expectedModuleValues);
             });
           }
         }

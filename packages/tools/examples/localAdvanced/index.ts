@@ -6,7 +6,6 @@ import {
   setUseCPURendering,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import htmlSetup from '../local/htmlSetup';
 import uids from '../local/uids';
 
@@ -19,7 +18,15 @@ import {
   addDropdownToToolbar,
   annotationTools,
   createImageIdsAndCacheMetaData,
+  imageIds,
+  setImageIds,
+  handleFileSelect,
+  setLoadImageListener,
+  loadAndViewImages,
+  viewportId,
+  renderingEngineId,
 } from '../../../../utils/demo/helpers';
+import { toolGroupId } from '../../../../utils/demo/helpers/constants';
 
 const { ToolGroupManager } = cornerstoneTools;
 
@@ -49,21 +56,12 @@ dropZone.addEventListener('drop', handleFileSelect, false);
 
 let viewport;
 
-const toolGroupId = 'myToolGroup';
+addUploadToToolbar();
 
-function onUpload(files) {
-  imageIds = [...files].map((file) =>
-    dicomImageLoader.wadouri.fileManager.add(file)
-  );
-  loadAndViewImages(imageIds);
-}
-
-addUploadToToolbar({ title: 'Upload', onChange: onUpload });
-
-function createToolGroup(toolGroupId = 'default') {
+function createToolGroup(newToolGroupId = toolGroupId) {
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  const toolGroup = ToolGroupManager.createToolGroup(newToolGroupId);
   addManipulationBindings(toolGroup, { toolMap });
 
   return toolGroup;
@@ -85,7 +83,7 @@ const defaultTool = 'Length';
 
 addDropdownToToolbar({
   options: { map: toolMap, defaultValue: defaultTool },
-  onSelectedValueChange: (newSelectedToolName, data) => {
+  onSelectedValueChange: (newSelectedToolName, _data) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     // Set the old tool passive
@@ -170,8 +168,6 @@ webSeries.set('', {
 });
 */
 
-let imageIds = [];
-
 addDropdownToToolbar({
   options: { map: webSeries, defaultValue: '' },
   onSelectedValueChange: async (newSelectedSeries, data) => {
@@ -179,7 +175,7 @@ addDropdownToToolbar({
     if (!data?.wadoRsRoot) {
       return;
     }
-    imageIds = await createImageIdsAndCacheMetaData(data);
+    setImageIds(await createImageIdsAndCacheMetaData(data));
     loadAndViewImages(imageIds);
   },
 });
@@ -196,11 +192,9 @@ async function run() {
   // Get Cornerstone imageIds and fetch metadata into RAM
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
-  const viewportId = 'VIEWPORT_ID';
   const viewportInput = {
     viewportId,
     type: ViewportType.STACK,
@@ -218,82 +212,58 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 }
 
-// this function gets called once the user drops the file onto the div
-function handleFileSelect(evt) {
-  evt.stopPropagation();
-  evt.preventDefault();
-
-  // Get the FileList object that contains the list of files that were dropped
-  const files = [...evt.dataTransfer.files];
-
-  // this UI is only built for a single file so just dump the first one
-  imageIds = files.map((file) =>
-    dicomImageLoader.wadouri.fileManager.add(file)
-  );
-  loadAndViewImages(imageIds);
-}
-
 function handleDragOver(evt) {
   evt.stopPropagation();
   evt.preventDefault();
   evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
 }
 
-function loadAndViewImages(imageIds) {
-  // Set the stack on the viewport
-  viewport.setStack(imageIds).then(() => {
-    // Set the VOI of the stack
-    // viewport.setProperties({ voiRange: ctVoiRange });
-    // Render the image
-    viewport.render();
+setLoadImageListener(() => {
+  const imageData = viewport.getImageData();
 
-    const imageData = viewport.getImageData();
+  const [imageId] = imageIds;
+  const {
+    pixelRepresentation,
+    bitsAllocated,
+    bitsStored,
+    highBit,
+    photometricInterpretation,
+  } = metaData.get('imagePixelModule', imageId);
 
-    const [imageId] = imageIds;
-    const {
-      pixelRepresentation,
-      bitsAllocated,
-      bitsStored,
-      highBit,
-      photometricInterpretation,
-    } = metaData.get('imagePixelModule', imageId);
+  const voiLutModule = metaData.get('voiLutModule', imageId);
 
-    const voiLutModule = metaData.get('voiLutModule', imageId);
+  const sopCommonModule = metaData.get('sopCommonModule', imageId);
+  const transferSyntax = metaData.get('transferSyntax', imageId);
 
-    const sopCommonModule = metaData.get('sopCommonModule', imageId);
-    const transferSyntax = metaData.get('transferSyntax', imageId);
+  document.getElementById('numberofimages').innerHTML = String(imageIds.length);
+  document.getElementById('transfersyntax').innerHTML =
+    transferSyntax.transferSyntaxUID;
+  document.getElementById('sopclassuid').innerHTML = `${
+    sopCommonModule.sopClassUID
+  } [${uids[sopCommonModule.sopClassUID]}]`;
+  document.getElementById('sopinstanceuid').innerHTML =
+    sopCommonModule.sopInstanceUID;
+  document.getElementById('rows').innerHTML = imageData.dimensions[0];
+  document.getElementById('columns').innerHTML = imageData.dimensions[1];
+  document.getElementById('spacing').innerHTML = imageData.spacing.join('\\');
+  document.getElementById('direction').innerHTML = imageData.direction
+    .map((x) => Math.round(x * 100) / 100)
+    .join(',');
 
-    document.getElementById('numberofimages').innerHTML = imageIds.length;
-    document.getElementById('transfersyntax').innerHTML =
-      transferSyntax.transferSyntaxUID;
-    document.getElementById('sopclassuid').innerHTML = `${
-      sopCommonModule.sopClassUID
-    } [${uids[sopCommonModule.sopClassUID]}]`;
-    document.getElementById('sopinstanceuid').innerHTML =
-      sopCommonModule.sopInstanceUID;
-    document.getElementById('rows').innerHTML = imageData.dimensions[0];
-    document.getElementById('columns').innerHTML = imageData.dimensions[1];
-    document.getElementById('spacing').innerHTML = imageData.spacing.join('\\');
-    document.getElementById('direction').innerHTML = imageData.direction
-      .map((x) => Math.round(x * 100) / 100)
-      .join(',');
+  document.getElementById('origin').innerHTML = imageData.origin
+    .map((x) => Math.round(x * 100) / 100)
+    .join(',');
+  document.getElementById('modality').innerHTML = imageData.metadata.Modality;
 
-    document.getElementById('origin').innerHTML = imageData.origin
-      .map((x) => Math.round(x * 100) / 100)
-      .join(',');
-    document.getElementById('modality').innerHTML = imageData.metadata.Modality;
-
-    document.getElementById('pixelrepresentation').innerHTML =
-      pixelRepresentation;
-    document.getElementById('bitsallocated').innerHTML = bitsAllocated;
-    document.getElementById('bitsstored').innerHTML = bitsStored;
-    document.getElementById('highbit').innerHTML = highBit;
-    document.getElementById('photometricinterpretation').innerHTML =
-      photometricInterpretation;
-    document.getElementById('windowcenter').innerHTML =
-      voiLutModule.windowCenter;
-    document.getElementById('windowwidth').innerHTML = voiLutModule.windowWidth;
-  });
-}
+  document.getElementById('pixelrepresentation').innerHTML =
+    pixelRepresentation;
+  document.getElementById('bitsallocated').innerHTML = bitsAllocated;
+  document.getElementById('bitsstored').innerHTML = bitsStored;
+  document.getElementById('highbit').innerHTML = highBit;
+  document.getElementById('photometricinterpretation').innerHTML =
+    photometricInterpretation;
+  document.getElementById('windowcenter').innerHTML = voiLutModule.windowCenter;
+  document.getElementById('windowwidth').innerHTML = voiLutModule.windowWidth;
+});
 
 run();

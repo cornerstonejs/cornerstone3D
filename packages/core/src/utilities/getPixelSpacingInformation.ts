@@ -32,9 +32,10 @@ export function getERMF(instance) {
     EstimatedRadiographicMagnificationFactor: ermf,
     // Naming is traditionally sid/sod here
     DistanceSourceToDetector: sid,
-    DistanceSourceToPatient: sod,
+    DistanceSourceToEntrance: soe,
+    DistanceSourceToPatient: sod = soe,
   } = instance;
-  if (ermf) {
+  if (ermf > 1) {
     return ermf;
   }
   if (sod < sid) {
