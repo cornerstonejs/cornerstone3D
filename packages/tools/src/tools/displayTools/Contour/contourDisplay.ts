@@ -77,11 +77,19 @@ async function render(
   ) {
     polySegConversionInProgressForViewportId.set(viewport.id, true);
 
-    contourData = await computeAndAddRepresentation(
-      segmentationId,
-      Representations.Contour,
-      () => polySeg.computeContourData(segmentationId, { viewport })
-    );
+    try {
+      contourData = await computeAndAddRepresentation(
+        segmentationId,
+        Representations.Contour,
+        () => polySeg.computeContourData(segmentationId, { viewport })
+      );
+    } catch (error) {
+      console.warn(
+        'Unable to compute contour data for segmentationId',
+        segmentationId,
+        error
+      );
+    }
 
     polySegConversionInProgressForViewportId.set(viewport.id, false);
   } else if (!contourData && !getPolySeg()) {

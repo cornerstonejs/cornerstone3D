@@ -78,6 +78,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     }
 
     const volume = cache.getVolume(volumeId);
+
+    if (!volume) {
+      return;
+    }
+
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
     publicAPI.bind();
