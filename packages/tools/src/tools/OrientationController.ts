@@ -63,6 +63,7 @@ class OrientationController extends BaseTool {
         size: 0.02,
         position: 'bottom-right',
         colorScheme: 'marker',
+        letterColorScheme: 'rgb',
         showEdgeFaces: true,
         showCornerFaces: true,
         keepOrientationUp: true,
@@ -122,6 +123,62 @@ class OrientationController extends BaseTool {
           topBottom: [0, 0, 255],
           frontBack: [0, 255, 255],
           leftRight: [255, 255, 0],
+        };
+    }
+  }
+
+  private getLetterColors(): {
+    zMinus: number[];
+    zPlus: number[];
+    yMinus: number[];
+    yPlus: number[];
+    xMinus: number[];
+    xPlus: number[];
+  } {
+    const letterColorScheme = this.configuration.letterColorScheme || 'rgb';
+    const faceColors = this.getFaceColors();
+
+    switch (letterColorScheme) {
+      case 'rgb':
+        // Match the face color scheme logic - choose contrasting colors based on face colors
+        // For rgb face scheme: topBottom=Red, frontBack=Green, leftRight=Yellow
+        // Red and Green backgrounds: use white letters for contrast
+        // Yellow background: use black letters for contrast
+        return {
+          zMinus: [255, 255, 255], // White for I (on red background - topBottom)
+          zPlus: [255, 255, 255], // White for S (on red background - topBottom)
+          yMinus: [255, 255, 255], // White for A (on green background - frontBack)
+          yPlus: [255, 255, 255], // White for P (on green background - frontBack)
+          xMinus: [0, 0, 0], // Black for L (on yellow background - leftRight)
+          xPlus: [0, 0, 0], // Black for R (on yellow background - leftRight)
+        };
+      case 'all-white':
+        return {
+          zMinus: [255, 255, 255],
+          zPlus: [255, 255, 255],
+          yMinus: [255, 255, 255],
+          yPlus: [255, 255, 255],
+          xMinus: [255, 255, 255],
+          xPlus: [255, 255, 255],
+        };
+      case 'all-black':
+        return {
+          zMinus: [0, 0, 0],
+          zPlus: [0, 0, 0],
+          yMinus: [0, 0, 0],
+          yPlus: [0, 0, 0],
+          xMinus: [0, 0, 0],
+          xPlus: [0, 0, 0],
+        };
+      default:
+        // Default matches rgb scheme
+        return {
+          zMinus: [255, 255, 255],
+          zPlus: [255, 255, 255],
+          yMinus: [255, 255, 255],
+          yPlus: [255, 255, 255],
+          xMinus: [0, 0, 0],
+          xPlus: [0, 0, 0],
         };
     }
   }
@@ -261,6 +318,7 @@ class OrientationController extends BaseTool {
 
   private createAnnotatedRhombActor(): vtkActor[] {
     const faceColors = this.getFaceColors();
+    const letterColors = this.getLetterColors();
     const rgbToHex = (rgb: number[]) => {
       return `#${rgb
         .map((x) => {
@@ -268,6 +326,10 @@ class OrientationController extends BaseTool {
           return hex.length === 1 ? '0' + hex : hex;
         })
         .join('')}`;
+    };
+
+    const rgbToHexColor = (rgb: number[]) => {
+      return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
     };
 
     const actorFactory = vtkAnnotatedRhombicuboctahedronActor.newInstance();
@@ -287,39 +349,43 @@ class OrientationController extends BaseTool {
 
     // LPS coordinate system labels for the 6 main faces
     actorFactory.setXPlusFaceProperty({
-      text: 'R',
+      text: 'L',
       faceColor: rgbToHex(faceColors.leftRight),
+      fontColor: rgbToHexColor(letterColors.xPlus),
       faceRotation: 0,
     });
 
     actorFactory.setXMinusFaceProperty({
-      text: 'L',
+      text: 'R',
       faceColor: rgbToHex(faceColors.leftRight),
+      fontColor: rgbToHexColor(letterColors.xMinus),
       faceRotation: 0,
     });
 
     actorFactory.setYPlusFaceProperty({
       text: 'P',
       faceColor: rgbToHex(faceColors.frontBack),
-      fontColor: 'white',
+      fontColor: rgbToHexColor(letterColors.yPlus),
       faceRotation: 180,
     });
 
     actorFactory.setYMinusFaceProperty({
       text: 'A',
       faceColor: rgbToHex(faceColors.frontBack),
-      fontColor: 'white',
+      fontColor: rgbToHexColor(letterColors.yMinus),
       faceRotation: 0,
     });
 
     actorFactory.setZPlusFaceProperty({
       text: 'S',
       faceColor: rgbToHex(faceColors.topBottom),
+      fontColor: rgbToHexColor(letterColors.zPlus),
     });
 
     actorFactory.setZMinusFaceProperty({
       text: 'I',
       faceColor: rgbToHex(faceColors.topBottom),
+      fontColor: rgbToHexColor(letterColors.zMinus),
     });
 
     // Configure which faces to show

@@ -269,6 +269,18 @@ function getKeepOrientationUpFromUrl(): boolean {
 }
 
 /**
+ * Get the letter color scheme from the URL (?letterColorScheme=rgb|all-white|all-black)
+ */
+function getLetterColorSchemeFromUrl(): 'rgb' | 'all-white' | 'all-black' {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('letterColorScheme');
+  if (value === 'rgb' || value === 'all-white' || value === 'all-black') {
+    return value;
+  }
+  return 'rgb'; // default
+}
+
+/**
  * Runs the demo with a configurable number of orthographic viewports
  */
 async function run(numViewports = getNumViewportsFromUrl()) {
@@ -438,6 +450,9 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   // Get keepOrientationUp from URL
   const keepOrientationUp = getKeepOrientationUpFromUrl();
 
+  // Get letter color scheme from URL
+  const letterColorScheme = getLetterColorSchemeFromUrl();
+
   // Configure faceColors based on URL parameter
   let faceColors;
   if (colorScheme === 'gray') {
@@ -476,11 +491,12 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     toolGroupVRT.setToolDisabled(OrientationController.toolName);
   }
 
-  // Add OrientationController with faceColors and keepOrientationUp from URL
+  // Add OrientationController with faceColors, keepOrientationUp, and letterColorScheme from URL
   toolGroupVRT.addTool(OrientationController.toolName, {
     colorScheme,
     faceColors,
     keepOrientationUp,
+    letterColorScheme,
   });
   // Enable OrientationController after viewport is added and volume is loaded
   toolGroupVRT.setToolEnabled(OrientationController.toolName);
@@ -506,6 +522,30 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       url.searchParams.set('colorScheme', String(selectedValue));
       // Remove legacy parameter if present
       url.searchParams.delete('grayColors');
+      window.location.href = url.toString();
+    },
+  });
+
+  // Add dropdown for letter color scheme (reloads page with URL param)
+  const letterColorSchemeValues: string[] = ['rgb', 'all-white', 'all-black'];
+  const letterColorSchemeLabels = ['RGB', 'All White', 'All Black'];
+  const validLetterColorScheme = letterColorSchemeValues.includes(
+    letterColorScheme
+  )
+    ? letterColorScheme
+    : 'rgb';
+
+  addDropdownToToolbar({
+    labelText: 'Letter Colors',
+    options: {
+      values: letterColorSchemeValues,
+      defaultValue: validLetterColorScheme,
+      labels: letterColorSchemeLabels,
+    },
+    container: rightToolbarContainer,
+    onSelectedValueChange: (selectedValue) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('letterColorScheme', String(selectedValue));
       window.location.href = url.toString();
     },
   });
