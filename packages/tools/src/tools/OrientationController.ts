@@ -65,6 +65,7 @@ class OrientationController extends BaseTool {
         colorScheme: 'rgb',
         showEdgeFaces: true,
         showCornerFaces: true,
+        keepOrientationUp: true,
         faceColors: {
           topBottom: [255, 0, 0],
           frontBack: [0, 255, 0],
@@ -765,6 +766,8 @@ class OrientationController extends BaseTool {
     targetViewPlaneNormal: number[],
     targetViewUp: number[]
   ): void {
+    const keepOrientationUp = this.configuration.keepOrientationUp !== false; // Default to true
+
     // Get the VTK camera from the renderer
     const renderer = viewport.getRenderer();
     const camera = renderer.getActiveCamera();
@@ -802,11 +805,48 @@ class OrientationController extends BaseTool {
       targetViewPlaneNormal[1],
       targetViewPlaneNormal[2]
     );
-    const targetUp = vec3.fromValues(
-      targetViewUp[0],
-      targetViewUp[1],
-      targetViewUp[2]
-    );
+
+    let targetUp: vec3;
+    if (keepOrientationUp) {
+      // Use the target viewUp as specified (original behavior)
+      targetUp = vec3.fromValues(
+        targetViewUp[0],
+        targetViewUp[1],
+        targetViewUp[2]
+      );
+    } else {
+      // Keep current viewUp, but project it onto the plane perpendicular to targetForward
+      // to ensure orthogonality
+      const currentUp = vec3.fromValues(startUp[0], startUp[1], startUp[2]);
+      vec3.normalize(currentUp, currentUp);
+
+      // Normalize targetForward for projection
+      const normalizedForward = vec3.create();
+      vec3.normalize(normalizedForward, targetForward);
+
+      // Project currentUp onto the plane perpendicular to targetForward
+      // Remove the component of currentUp that's parallel to targetForward
+      const dot = vec3.dot(currentUp, normalizedForward);
+      targetUp = vec3.create();
+      vec3.scaleAndAdd(targetUp, currentUp, normalizedForward, -dot);
+      vec3.normalize(targetUp, targetUp);
+
+      // If the projection results in a zero vector (currentUp was parallel to targetForward),
+      // use a default up vector
+      if (vec3.length(targetUp) < 0.001) {
+        // Use a default up vector perpendicular to targetForward
+        if (Math.abs(normalizedForward[2]) < 0.9) {
+          targetUp = vec3.fromValues(0, 0, 1);
+        } else {
+          targetUp = vec3.fromValues(0, 1, 0);
+        }
+        // Project and normalize
+        const dot2 = vec3.dot(targetUp, normalizedForward);
+        vec3.scaleAndAdd(targetUp, targetUp, normalizedForward, -dot2);
+        vec3.normalize(targetUp, targetUp);
+      }
+    }
+
     const targetRight = vec3.create();
     vec3.cross(targetRight, targetUp, targetForward);
     vec3.normalize(targetRight, targetRight);
