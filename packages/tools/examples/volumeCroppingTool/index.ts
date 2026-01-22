@@ -250,7 +250,7 @@ function getColorSchemeFromUrl(): 'gray' | 'rgb' | 'marker' {
   if (grayColors === 'true') {
     return 'gray';
   }
-  return 'rgb'; // default
+  return 'marker'; // default - matches OrientationMarkerTool colors
 }
 
 /**
@@ -279,7 +279,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
-  //cornerstoneTools.addTool(OrientationMarkerTool);
+  cornerstoneTools.addTool(OrientationMarkerTool);
   cornerstoneTools.addTool(OrientationController);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(CrosshairsTool);
@@ -426,12 +426,14 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   // toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
   //   overlayMarkerType:
   //     OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
+  //   orientationWidget: {
+  //       viewportCorner: 2, // 3 = BOTTOM_RIGHT
+  //     },
   // });
   // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
   // Get color scheme from URL
   const colorScheme = getColorSchemeFromUrl();
-  console.log('Color scheme from URL:', colorScheme);
 
   // Get keepOrientationUp from URL
   const keepOrientationUp = getKeepOrientationUpFromUrl();
@@ -475,41 +477,21 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   }
 
   // Add OrientationController with faceColors and keepOrientationUp from URL
-  console.log('Color scheme selected:', colorScheme);
-  console.log('Keep orientation up from URL:', keepOrientationUp);
-  console.log('FaceColors being passed to tool:', JSON.stringify(faceColors));
-
-  if (toolGroupVRT.hasTool(OrientationController.toolName)) {
-    console.warn(
-      'OrientationController already exists! Configuration may not be applied.'
-    );
-  }
-
   toolGroupVRT.addTool(OrientationController.toolName, {
+    colorScheme,
     faceColors,
     keepOrientationUp,
   });
-
-  const toolInstance = toolGroupVRT.getToolInstance(
-    OrientationController.toolName
-  );
-  if (toolInstance) {
-    console.log(
-      'Tool instance configuration after addTool:',
-      JSON.stringify(toolInstance.configuration.faceColors)
-    );
-  }
   // Enable OrientationController after viewport is added and volume is loaded
   toolGroupVRT.setToolEnabled(OrientationController.toolName);
 
   // Add dropdown for orientation control colors (reloads page with URL param)
   const colorSchemeValues: string[] = ['rgb', 'gray', 'marker'];
   const colorSchemeLabels = ['RGB', 'Gray', 'Marker'];
-  // Ensure colorScheme is valid, default to 'rgb' if not
+  // Ensure colorScheme is valid, default to 'marker' if not
   const validColorScheme = colorSchemeValues.includes(colorScheme)
     ? colorScheme
-    : 'rgb';
-  console.log('Setting dropdown defaultValue to:', validColorScheme);
+    : 'marker';
 
   addDropdownToToolbar({
     labelText: 'Orientation Control Colors',
@@ -520,7 +502,6 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
     container: rightToolbarContainer,
     onSelectedValueChange: (selectedValue) => {
-      console.log('Color scheme changed to:', selectedValue);
       const url = new URL(window.location.href);
       url.searchParams.set('colorScheme', String(selectedValue));
       // Remove legacy parameter if present

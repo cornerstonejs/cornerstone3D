@@ -62,15 +62,11 @@ class OrientationController extends BaseTool {
         opacity: 1.0,
         size: 0.02,
         position: 'bottom-right',
-        colorScheme: 'rgb',
+        colorScheme: 'marker',
         showEdgeFaces: true,
         showCornerFaces: true,
         keepOrientationUp: true,
-        faceColors: {
-          topBottom: [255, 0, 0],
-          frontBack: [0, 255, 0],
-          leftRight: [255, 255, 0],
-        },
+        // Don't set default faceColors - let getFaceColors() determine them from colorScheme
       },
     }
   ) {
@@ -87,12 +83,21 @@ class OrientationController extends BaseTool {
     frontBack: number[];
     leftRight: number[];
   } {
-    const colorScheme = this.configuration.colorScheme || 'rgb';
+    const colorScheme = this.configuration.colorScheme || 'marker';
 
+    // If faceColors are explicitly provided, use them (but ensure they have the required properties)
     if (this.configuration.faceColors) {
-      return this.configuration.faceColors;
+      const provided = this.configuration.faceColors;
+      if (provided.topBottom && provided.frontBack && provided.leftRight) {
+        return {
+          topBottom: provided.topBottom,
+          frontBack: provided.frontBack,
+          leftRight: provided.leftRight,
+        };
+      }
     }
 
+    // Otherwise, use colorScheme to determine colors
     switch (colorScheme) {
       case 'marker':
         return {
@@ -106,17 +111,22 @@ class OrientationController extends BaseTool {
           frontBack: [180, 180, 180],
           leftRight: [180, 180, 180],
         };
-      default:
+      case 'rgb':
         return {
           topBottom: [255, 0, 0],
           frontBack: [0, 255, 0],
+          leftRight: [255, 255, 0],
+        };
+      default:
+        return {
+          topBottom: [0, 0, 255],
+          frontBack: [0, 255, 255],
           leftRight: [255, 255, 0],
         };
     }
   }
 
   onSetToolEnabled(): void {
-    console.log('OrientationController: Tool enabled');
     // Remove any existing markers first to ensure clean recreation
     this.removeMarkers();
     this.addMarkers();
@@ -129,7 +139,6 @@ class OrientationController extends BaseTool {
   }
 
   onSetToolDisabled(): void {
-    console.log('OrientationController: Tool disabled');
     this.removeMarkers();
 
     eventTarget.removeEventListener(
@@ -145,13 +154,7 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    console.log(
-      'OrientationController: Viewport added to tool group',
-      viewportId
-    );
-
     if (this.actors.has(viewportId)) {
-      console.log('OrientationController: Marker already exists for viewport');
       return;
     }
 
@@ -229,11 +232,6 @@ class OrientationController extends BaseTool {
 
   private addMarkers = (): void => {
     const viewportsInfo = this._getViewportsInfo();
-    console.log(
-      'OrientationController: addMarkers called, found',
-      viewportsInfo.length,
-      'viewports'
-    );
 
     viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
       const enabledElement = getEnabledElementByIds(
@@ -242,35 +240,19 @@ class OrientationController extends BaseTool {
       );
 
       if (!enabledElement) {
-        console.log(
-          'OrientationController: No enabled element for',
-          viewportId
-        );
         return;
       }
 
       const { viewport } = enabledElement;
 
       if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
-        console.log(
-          'OrientationController: Viewport is not VOLUME_3D:',
-          viewport.type
-        );
         return;
       }
 
       if (this.actors.has(viewportId)) {
-        console.log(
-          'OrientationController: Marker already exists for',
-          viewportId
-        );
         return;
       }
 
-      console.log(
-        'OrientationController: Scheduling marker creation for',
-        viewportId
-      );
       setTimeout(() => {
         this.addMarkerToViewport(viewportId, renderingEngineId);
       }, 500);
@@ -366,8 +348,6 @@ class OrientationController extends BaseTool {
     viewportId: string,
     renderingEngineId: string
   ): void {
-    console.log('OrientationController: Adding marker to viewport', viewportId);
-
     const enabledElement = getEnabledElementByIds(
       viewportId,
       renderingEngineId
@@ -399,11 +379,6 @@ class OrientationController extends BaseTool {
 
     const actors = this.createAnnotatedRhombActor();
 
-    console.log(
-      `OrientationController: Created ${actors.length} actors for viewport`,
-      viewportId
-    );
-
     // Add each actor with unique UID
     const uids: string[] = [];
     actors.forEach((actor, index) => {
@@ -429,14 +404,12 @@ class OrientationController extends BaseTool {
           actors
         );
         if (repositioned) {
-          console.log('OrientationController: Retry positioning succeeded');
           viewport.render();
         } else {
           console.error('OrientationController: Retry positioning also failed');
         }
       }, 1000);
     } else {
-      console.log('OrientationController: Initial positioning succeeded');
       viewport.render();
     }
 
