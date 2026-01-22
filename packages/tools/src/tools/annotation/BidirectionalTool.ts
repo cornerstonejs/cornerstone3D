@@ -27,7 +27,7 @@ import {
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { ChangeTypes, Events } from '../../enums';
+import { ChangeTypes, Events, MeasurementType } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as lineSegment from '../../utilities/math/line';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
@@ -1289,14 +1289,6 @@ class BidirectionalTool extends AnnotationTool {
     return wouldPutThroughShortAxis;
   };
 
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-
   _calculateCachedStats = (annotation, renderingEngine, enabledElement) => {
     const { data } = annotation;
     const { element } = enabledElement.viewport;
@@ -1322,41 +1314,56 @@ class BidirectionalTool extends AnnotationTool {
       }
 
       const { imageData, dimensions } = image;
-      const index1 = transformWorldToIndex(imageData, worldPos1);
-      const index2 = transformWorldToIndex(imageData, worldPos2);
-      const index3 = transformWorldToIndex(imageData, worldPos3);
-      const index4 = transformWorldToIndex(imageData, worldPos4);
+      const handles = data.handles.points.map((point) =>
+        imageData.worldToIndex(point)
+      );
 
-      const handles1 = [index1, index2];
-      const handles2 = [index3, index4];
+      const handles1 = handles.slice(0, 2);
+      const handles2 = handles.slice(2, 4);
 
-      const { scale: scale1, unit: units1 } = getCalibratedLengthUnitsAndScale(
-        image,
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+
+      const dist1 = BidirectionalTool.calculateLengthInIndex(
+        calibrate,
         handles1
       );
-
-      const { scale: scale2, unit: units2 } = getCalibratedLengthUnitsAndScale(
-        image,
+      const dist2 = BidirectionalTool.calculateLengthInIndex(
+        calibrate,
         handles2
       );
-
-      const dist1 = this._calculateLength(worldPos1, worldPos2) / scale1;
-      const dist2 = this._calculateLength(worldPos3, worldPos4) / scale2;
+      const { unit } = calibrate;
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
 
-      const unit = dist1 > dist2 ? units1 : units2;
-      const widthUnit = dist1 > dist2 ? units2 : units1;
+      // Previously the width could end up with a different unit - that is a really
+      // bad idea because it means that US measurements can be very weird, so
+      // just use a single unit now based on all the coordinates.
+      const widthUnit = unit;
 
-      this._isInsideVolume(index1, index2, index3, index4, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
+      this.isHandleOutsideImage = !BidirectionalTool.isInsideVolume(
+        dimensions,
+        handles
+      );
 
       cachedStats[targetId] = {
         length,
         width,
         unit,
         widthUnit,
+        statsArray: [
+          {
+            value: length,
+            name: 'height',
+            unit,
+            type: MeasurementType.Linear,
+          },
+          {
+            value: width,
+            name: 'width',
+            unit,
+            type: MeasurementType.Linear,
+          },
+        ],
       };
     }
 
@@ -1369,15 +1376,6 @@ class BidirectionalTool extends AnnotationTool {
     }
 
     return cachedStats;
-  };
-
-  _isInsideVolume = (index1, index2, index3, index4, dimensions): boolean => {
-    return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions) &&
-      csUtils.indexWithinDimensions(index3, dimensions) &&
-      csUtils.indexWithinDimensions(index4, dimensions)
-    );
   };
 
   _getSignedAngle = (vector1, vector2) => {

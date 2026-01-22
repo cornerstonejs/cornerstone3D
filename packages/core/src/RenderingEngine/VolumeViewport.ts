@@ -190,7 +190,8 @@ class VolumeViewport extends BaseVolumeViewport {
    */
   public setOrientation(
     orientation: OrientationAxis | OrientationVectors,
-    immediate = true
+    immediate = true,
+    suppressEvents = false
   ): void {
     let viewPlaneNormal, viewUp;
 
@@ -223,7 +224,7 @@ class VolumeViewport extends BaseVolumeViewport {
       this.resetCamera();
     } else {
       ({ viewPlaneNormal, viewUp } = orientation);
-      this.applyViewOrientation(orientation);
+      this.applyViewOrientation(orientation, true, suppressEvents);
     }
 
     if (immediate) {
@@ -541,12 +542,15 @@ class VolumeViewport extends BaseVolumeViewport {
    * have the same affect, excluding end/looping conditions.
    */
   public getCurrentImageIdIndex = (
-    volumeId?: string,
+    volumeId: string = this.getVolumeId(),
     useSlabThickness = true
   ): number => {
+    if (!volumeId) {
+      return 0;
+    }
     const { currentStepIndex } = getVolumeViewportScrollInfo(
       this,
-      volumeId || this.getVolumeId(),
+      volumeId,
       useSlabThickness
     );
     return currentStepIndex;

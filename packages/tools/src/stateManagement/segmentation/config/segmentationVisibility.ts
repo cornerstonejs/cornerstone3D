@@ -101,6 +101,8 @@ function setSegmentIndexVisibility(
     if (!representation.segments || !representation.segments[segmentIndex]) {
       return;
     }
+    // Setting one segment visible will set the representation visible.
+    representation.visible ||= visibility;
     representation.segments[segmentIndex].visible = visibility;
   });
 

@@ -161,7 +161,10 @@ function addAnnotation(
 
   // if the annotation manager selector is an element, trigger the
   // annotation added event for that element.
-  if (annotationGroupSelector instanceof HTMLDivElement) {
+  if (
+    annotationGroupSelector instanceof HTMLDivElement &&
+    !annotation.metadata?.FrameOfReferenceUID
+  ) {
     const groupKey = manager.getGroupKey(annotationGroupSelector);
     manager.addAnnotation(annotation, groupKey);
     triggerAnnotationAddedForElement(annotation, annotationGroupSelector);

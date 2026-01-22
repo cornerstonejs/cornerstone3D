@@ -10,7 +10,7 @@ test.beforeEach(async ({ page, context }) => {
   await context.addInitScript(() => (window.IS_TILED = true));
 });
 
-test.describe('Labelmap Rendering shouldUpdateThis', async () => {
+test.describe('Labelmap Rendering', async () => {
   test('should render the labelmap in axial/coronal/sagittal orientations', async ({
     page,
   }) => {

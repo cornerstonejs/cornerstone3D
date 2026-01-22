@@ -22,7 +22,6 @@ export function downloadDICOMData(
     if (!bufferOrDataset._meta) {
       throw new Error('Dataset must have a _meta property');
     }
-
     blob = datasetToBlob(bufferOrDataset);
   }
 
@@ -30,5 +29,4 @@ export function downloadDICOMData(
   link.href = window.URL.createObjectURL(blob);
   link.download = filename;
   link.click();
-  URL.revokeObjectURL(link.href);
 }

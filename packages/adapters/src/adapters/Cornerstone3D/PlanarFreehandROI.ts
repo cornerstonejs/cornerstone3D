@@ -3,6 +3,7 @@ import { utilities } from "dcmjs";
 import { vec3 } from "gl-matrix";
 import BaseAdapter3D from "./BaseAdapter3D";
 import { toScoords } from "../helpers";
+import { extractAllNUMGroups, restoreAdditionalMetrics } from "./metricHandler";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
@@ -50,7 +51,13 @@ class PlanarFreehandROI extends BaseAdapter3D {
         if (isOpenContour) {
             points.push(worldCoords[0], worldCoords[worldCoords.length - 1]);
         }
-
+        const referencedSOPInstanceUID = state.sopInstanceUid;
+        const allNUMGroups = extractAllNUMGroups(
+            MeasurementGroup,
+            referencedSOPInstanceUID
+        );
+        const measurementNUMGroups =
+            allNUMGroups[referencedSOPInstanceUID] || {};
         state.annotation.data = {
             ...state.annotation.data,
             contour: { polyline: worldCoords, closed: !isOpenContour },
@@ -66,7 +73,8 @@ class PlanarFreehandROI extends BaseAdapter3D {
                 [`imageId:${referencedImageId}`]: {
                     area: NUMGroup
                         ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : null
+                        : null,
+                    ...restoreAdditionalMetrics(measurementNUMGroups)
                 }
             };
         }
@@ -93,15 +101,23 @@ class PlanarFreehandROI extends BaseAdapter3D {
             points.push(firstPoint);
         }
 
-        const { area, areaUnit, modalityUnit, perimeter, mean, max, stdDev } =
-            data.cachedStats[`imageId:${referencedImageId}`] || {};
+        const {
+            area,
+            areaUnit,
+            modalityUnit,
+            perimeter,
+            mean,
+            max,
+            stdDev,
+            length
+        } = data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
             /** From cachedStats */
             points,
             area,
             areaUnit,
-            perimeter,
+            perimeter: perimeter ?? length,
             modalityUnit,
             mean,
             max,

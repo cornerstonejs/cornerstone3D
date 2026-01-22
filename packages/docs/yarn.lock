@@ -1138,19 +1138,17 @@
     core-js-pure "^3.30.2"
     regenerator-runtime "^0.14.0"
 
-"@babel/runtime@7.22.11":
-  version "7.22.11"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.22.11.tgz#7a9ba3bbe406ad6f9e8dd4da2ece453eb23a77a4"
-  integrity sha512-ee7jVNlWN09+KftVOu9n7S8gQzD/Z6hN/I8VBRXW4P1+Xe7kJGXMwu8vds4aGIMHZnNbdpSWCfZZtinytpcAvA==
-  dependencies:
-    regenerator-runtime "^0.14.0"
-
 "@babel/runtime@^7.1.2", "@babel/runtime@^7.10.3", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.25.9", "@babel/runtime@^7.8.4":
   version "7.26.10"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.26.10.tgz#a07b4d8fa27af131a633d7b3524db803eb4764c2"
   integrity sha512-2WJMeRQPHKSPemqk/awGrAiuFfzBmOIPXKizAsVhWH9YJqLZ0H+HS4c8loHGgW6utJ3E/ejXQUsiGaQy2NZ9Fw==
   dependencies:
     regenerator-runtime "^0.14.0"
+
+"@babel/runtime@^7.28.2":
+  version "7.28.4"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.28.4.tgz#a70226016fabe25c5783b2f22d3e1c9bc5ca3326"
+  integrity sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==
 
 "@babel/template@^7.25.9", "@babel/template@^7.26.9":
   version "7.26.9"
@@ -1187,14 +1185,14 @@
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.5.0.tgz#bb504579c1cae923e6576a4f5da43d25f97bdbd9"
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
-"@cornerstonejs/adapters@4.11.0":
-  version "4.11.0"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/adapters/-/adapters-4.11.0.tgz#30f90dde64613b61a2ae493384514985494d9e4d"
-  integrity sha512-xTLdMOKOnbHxnioCqRq+iPRdYbBetlmMJNDvbOrUm30/5oKFi7rKKkSOWU5kS/YbCykQijS/AZQCXOJ2d/p2WA==
+"@cornerstonejs/adapters@4.15.2":
+  version "4.15.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/adapters/-/adapters-4.15.2.tgz#7d5955f29757b57baf40afc4e8adafefd4f9f31a"
+  integrity sha512-5ZSB/2cXaewn+8pFLZS/o/znkYOdTtgDJ9k5XjOny3gzarTszcaVr7aTiTayN8TkTyra5TgAC4jc6XOkQV+YeQ==
   dependencies:
     "@babel/runtime-corejs2" "7.26.10"
     buffer "6.0.3"
-    dcmjs "0.43.1"
+    dcmjs "0.45.0"
     gl-matrix "3.4.3"
     ndarray "1.0.19"
 
@@ -1218,20 +1216,20 @@
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjph/-/codec-openjph-2.4.7.tgz#784394d05d8cf735640e9c3baa206535ee8e0376"
   integrity sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w==
 
-"@cornerstonejs/core@4.11.0":
-  version "4.11.0"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/core/-/core-4.11.0.tgz#2978d64f4429b34c9758391e362e32ed294d3e14"
-  integrity sha512-V5Lpq/q+SrHxJK/GnJb3BfKKwcgh3XBoNxlZP65U7EN/GukUce9Jhdciaxk8SamqVyV+BYZtQa98XkH8zrf5wg==
+"@cornerstonejs/core@4.15.2":
+  version "4.15.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/core/-/core-4.15.2.tgz#5cdc8fcc94caaf36e161d7697d14890741cab352"
+  integrity sha512-99Iz0JQIGjKu+d6SeVi8q5syCGxqLMkkYsBRpIzOuPnI/IiXIbtn+91p6Um6JHsyw5Omyby4rbQ2f+eb0iwKCA==
   dependencies:
-    "@kitware/vtk.js" "32.12.1"
+    "@kitware/vtk.js" "34.15.1"
     comlink "4.4.2"
     gl-matrix "3.4.3"
     loglevel "1.9.2"
 
-"@cornerstonejs/dicom-image-loader@4.11.0":
-  version "4.11.0"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/dicom-image-loader/-/dicom-image-loader-4.11.0.tgz#fa8f4a90ad540de925df10631c86c9eed662368d"
-  integrity sha512-aAUCxbSu1PAqU0phKbBj0AI6qKb0UA0c34A3q9S1qf/rGb+L7BUZf4/dkXl3hT9T9lFLSsYbMhhpAG58Irzt8Q==
+"@cornerstonejs/dicom-image-loader@4.15.2":
+  version "4.15.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/dicom-image-loader/-/dicom-image-loader-4.15.2.tgz#5987d475e2f76e0ebcaf74deebe649891678cc78"
+  integrity sha512-k/hzd2xXkHHah2oWo0HGQrvDIIcFotuS9mwblQf5PsMANeLK4VkaQ5FpHm4H/zPkE6cpeygyy1nQgEsaYww0NQ==
   dependencies:
     "@cornerstonejs/codec-charls" "1.2.3"
     "@cornerstonejs/codec-libjpeg-turbo-8bit" "1.2.2"
@@ -1243,17 +1241,17 @@
     pako "2.1.0"
     uuid "9.0.1"
 
-"@cornerstonejs/nifti-volume-loader@4.11.0":
-  version "4.11.0"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/nifti-volume-loader/-/nifti-volume-loader-4.11.0.tgz#99126658eefb806527c8590c23069db9835a4149"
-  integrity sha512-xyhLYGccwtqWkybZeZXkVI+X0WwuWYwvPusbJnG2Nx6ePz5M0/os2KSa1EKQFEbRZ9ss3q1+nb1pigjrDfF6hA==
+"@cornerstonejs/nifti-volume-loader@4.15.2":
+  version "4.15.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/nifti-volume-loader/-/nifti-volume-loader-4.15.2.tgz#98f52fb8c6e5461aad3b821a5833afa148b1c1a4"
+  integrity sha512-RbA6iC27LTo3EYLBQhUUi9edRAtjxQeK22218syN1xALNgLc+wfHT3sSPJ8CShwMTvRAwtdX15C/pzfnq7a4pg==
   dependencies:
     nifti-reader-js "0.6.9"
 
-"@cornerstonejs/tools@4.11.0":
-  version "4.11.0"
-  resolved "https://registry.yarnpkg.com/@cornerstonejs/tools/-/tools-4.11.0.tgz#cd93c249043385f52d76bc5f1da13ce2c6f3d76c"
-  integrity sha512-yjSZjR7KZB3+vLhvtcLlaP+B64pTRtTiX2AgLE+08B+icSfotlBDiQpwAcaar5FK6Ulb2mVwoJBCI01DeeUjgQ==
+"@cornerstonejs/tools@4.15.2":
+  version "4.15.2"
+  resolved "https://registry.yarnpkg.com/@cornerstonejs/tools/-/tools-4.15.2.tgz#243f2dfdaa66c6f497a074c28e485388ec014a31"
+  integrity sha512-vf8KMisfUzZMLWr3YH97Pv6DmCZSVg23Qt2GqhnXjLnRqvE+mMFBUXR9GhKlG63cNgbBSbRC2EHWjQM2paVp4A==
   dependencies:
     "@types/offscreencanvas" "2019.7.3"
     comlink "4.4.2"
@@ -2148,12 +2146,12 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@kitware/vtk.js@32.12.1":
-  version "32.12.1"
-  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-32.12.1.tgz#426fe65112c36c4bf312044dee0aeb641616d09b"
-  integrity sha512-IF8WK7WDu84035ws3HZXz8wys8O81mmeFayYFbdBEfKjgZ4k0EGCK25YCGc6Q47Zxq1iutjs3Zs2xAgGjTgGQg==
+"@kitware/vtk.js@34.15.1":
+  version "34.15.1"
+  resolved "https://registry.yarnpkg.com/@kitware/vtk.js/-/vtk.js-34.15.1.tgz#3a292488ca3b985ec217bd45837c0eb1fd73cbf0"
+  integrity sha512-9BH/a++drhclknBKNVzVpcOzDK95nc/OflKpQE8nY+IlaXTB1+Z6WXS6IwkEEUkRRUqSVskcW4ksgWdxihB49w==
   dependencies:
-    "@babel/runtime" "7.22.11"
+    "@babel/runtime" "^7.28.2"
     "@types/webxr" "^0.5.5"
     commander "9.2.0"
     d3-scale "4.0.2"
@@ -4643,10 +4641,10 @@ data-uri-to-buffer@^6.0.2:
   resolved "https://registry.yarnpkg.com/data-uri-to-buffer/-/data-uri-to-buffer-6.0.2.tgz#8a58bb67384b261a38ef18bea1810cb01badd28b"
   integrity sha512-7hvf7/GW8e86rW0ptuwS3OcBGDjIi6SZva7hCyWC0yYry2cOPmLIjXAUHI6DK2HsnwJd9ifmt57i8eV2n4YNpw==
 
-dcmjs@0.43.1:
-  version "0.43.1"
-  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.43.1.tgz#03223e56d52e9ec2c3b8c10afe9200d754befe62"
-  integrity sha512-7IAB2cs2F8QYINbfhA7PV+IDraqBuHn8N31xJc6HsyNxZXyGUPQRujcq732ACqjLhl7oJi1z8PJJgLdblQtD3Q==
+dcmjs@0.45.0:
+  version "0.45.0"
+  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.45.0.tgz#ce53dd06fc345e8231e28c340a36a8094a62422a"
+  integrity sha512-MFtACBLQB6vj/3lzHEf6iGBLFC8f/QysoDO+DVUJeLrKYQi4mXYzzBbHmZCpMXqIpj8qXXLvnP/u2ugd9DVu7Q==
   dependencies:
     "@babel/runtime-corejs3" "^7.22.5"
     adm-zip "^0.5.10"
@@ -7392,10 +7390,10 @@ mdast-util-phrasing@^4.0.0:
     "@types/mdast" "^4.0.0"
     unist-util-is "^6.0.0"
 
-mdast-util-to-hast@^13.0.0:
-  version "13.2.0"
-  resolved "https://registry.yarnpkg.com/mdast-util-to-hast/-/mdast-util-to-hast-13.2.0.tgz#5ca58e5b921cc0a3ded1bc02eed79a4fe4fe41f4"
-  integrity sha512-QGYKEuUsYT9ykKBCMOEDLsU5JRObWQusAolFMeko/tYPufNkRffBAQjIE+99jbA87xv6FgmjLtwjh9wBWajwAA==
+mdast-util-to-hast@13.2.1, mdast-util-to-hast@^13.0.0:
+  version "13.2.1"
+  resolved "https://registry.yarnpkg.com/mdast-util-to-hast/-/mdast-util-to-hast-13.2.1.tgz#d7ff84ca499a57e2c060ae67548ad950e689a053"
+  integrity sha512-cctsq2wp5vTsLIcaymblUriiTcZd0CwWtCbLvrOzYCDZoWyMNV8sZ7krj09FSnsiJi3WVsHLM4k6Dq/yaPyCXA==
   dependencies:
     "@types/hast" "^3.0.0"
     "@types/mdast" "^4.0.0"
@@ -8119,10 +8117,10 @@ node-emoji@^2.1.0:
     emojilib "^2.4.0"
     skin-tone "^2.0.0"
 
-node-forge@^1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-1.3.1.tgz#be8da2af243b2417d5f646a770663a92b7e9ded3"
-  integrity sha512-dPEtOeMvF9VMcYV/1Wb8CPoVAXtp6MKMlcbAt4ddqmGqUJ6fQZFXkNZNkNlfevtNkGtaSoXf/vNNNSvgrdXwtA==
+node-forge@1.3.2, node-forge@^1:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/node-forge/-/node-forge-1.3.2.tgz#d0d2659a26eef778bf84d73e7f55c08144ee7750"
+  integrity sha512-6xKiQ+cph9KImrRh0VsjH2d8/GXA4FIMlgU4B757iI1ApvcyA9VlouP0yZJha01V+huImO+kKMU7ih+2+E14fw==
 
 node-releases@^2.0.19:
   version "2.0.19"
@@ -9342,12 +9340,12 @@ puppeteer@24.27.0:
     puppeteer-core "24.27.0"
     typed-query-selector "^2.12.0"
 
-qs@6.13.0:
-  version "6.13.0"
-  resolved "https://registry.yarnpkg.com/qs/-/qs-6.13.0.tgz#6ca3bd58439f7e245655798997787b0d88a51906"
-  integrity sha512-+38qI9SOr8tfZ4QmJNplMUxqjbe7LKvvZgWdExBOmd+egZTtjLB67Gu0HRX3u/XOq7UU2Nx6nsjvS16Z9uwfpg==
+qs@6.13.0, qs@6.14.1:
+  version "6.14.1"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.14.1.tgz#a41d85b9d3902f31d27861790506294881871159"
+  integrity sha512-4EK3+xJl8Ts67nLYNwqw/dsFVnCf+qR7RgXSK9jEEm9unao3njwMDdmsdvoKBKHzxd7tCYz5e5M+SnMjdtXGQQ==
   dependencies:
-    side-channel "^1.0.6"
+    side-channel "^1.1.0"
 
 queue-microtask@^1.2.2:
   version "1.2.3"
@@ -10259,7 +10257,7 @@ side-channel-weakmap@^1.0.2:
     object-inspect "^1.13.3"
     side-channel-map "^1.0.1"
 
-side-channel@^1.0.6:
+side-channel@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/side-channel/-/side-channel-1.1.0.tgz#c3fcff9c4da932784873335ec9765fa94ff66bc9"
   integrity sha512-ZX99e6tRweoUXqR+VBrslhda51Nh5MTQwou5tnUDgbtyM0dBgmhEDtWGP/xbKn6hqfPRHujUNwz5fy/wbbhnpw==
@@ -11431,10 +11429,15 @@ yaml@^1.7.2:
   resolved "https://registry.yarnpkg.com/yaml/-/yaml-1.10.2.tgz#2301c5ffbf12b467de8da2333a459e29e7920e4b"
   integrity sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==
 
-yaml@^2.2.2, yaml@^2.5.1:
+yaml@^2.2.2:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.7.0.tgz#aef9bb617a64c937a9a748803786ad8d3ffe1e98"
   integrity sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA==
+
+yaml@^2.5.1:
+  version "2.8.2"
+  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.8.2.tgz#5694f25eca0ce9c3e7a9d9e00ce0ddabbd9e35c5"
+  integrity sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==
 
 yargs-parser@^20.2.2:
   version "20.2.9"

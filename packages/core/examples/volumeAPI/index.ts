@@ -164,7 +164,7 @@ addButtonToToolbar({
     ) as Types.IVolumeViewport;
 
     // Apply the rotation to the camera of the viewport
-    viewport.getViewPresentation({ rotation: Math.random() * 360 });
+    viewport.setViewPresentation({ rotation: Math.random() * 360 });
     viewport.render();
   },
 });
@@ -198,8 +198,7 @@ addButtonToToolbar({
       viewportId
     ) as Types.IVolumeViewport;
 
-    // TODO reset the viewport properties, we don't have API for this.
-    viewport.resetProperties(volumeId);
+    viewport.resetProperties();
     viewport.render();
   },
 });

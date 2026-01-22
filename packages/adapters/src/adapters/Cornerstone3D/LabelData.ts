@@ -4,10 +4,9 @@ import { toScoord } from "../helpers";
 import dcmjs from "dcmjs";
 
 const {
-    sr: { valueTypes, coding }
+    sr: { valueTypes, coding },
+    adapters: { Cornerstone3D }
 } = dcmjs;
-
-const CORNERSTONEFREETEXT = "CORNERSTONEFREETEXT";
 
 /**
  * Wrap a dcmjs TID.1501 content item creator with a label text/position store
@@ -50,16 +49,26 @@ export default class LabelData {
 
     /**
      * Remove the incorrect finding sites entry for the text label.
+     * Updated to support the new coding scheme with legacy fallback.
      */
     public filterCornerstoneFreeText(contentEntries) {
+        const { codeValues } = Cornerstone3D.CodeScheme;
+
+        const freeTextCodes = [
+            codeValues.FREE_TEXT_CODE_VALUE,
+            codeValues.CORNERSTONEFREETEXT // legacy support
+        ];
+
         for (let i = 0; i < contentEntries.length; i++) {
             const group = contentEntries[i];
             if (!group.ConceptCodeSequence) {
                 continue;
             }
-            const csLabel = group.ConceptCodeSequence.find(
-                item => item.CodeValue === CORNERSTONEFREETEXT
+
+            const csLabel = group.ConceptCodeSequence.findIndex(item =>
+                freeTextCodes.includes(item.CodeValue)
             );
+
             if (csLabel !== -1) {
                 group.ConceptCodeSequence.splice(csLabel, 1);
                 if (group.ConceptCodeSequence.length === 0) {
@@ -94,32 +103,39 @@ export default class LabelData {
         const { referencedImageId, FrameOfReferenceUID: frameOfReferenceUID } =
             annotation.metadata;
         const is3DMeasurement = !referencedImageId;
-        const { worldPosition } = textBox;
         const { x, y, z } = toScoord(
             { is3DMeasurement, referencedImageId },
-            worldPosition
+            textBox.worldPosition
         );
+
         const graphicType = valueTypes.GraphicTypes.POINT;
         const relationshipType = valueTypes.RelationshipTypes.CONTAINS;
         const name = new coding.CodedConcept(TEXT_ANNOTATION_POSITION);
 
-        if (is3DMeasurement) {
-            const graphicData = [x, y, z];
-            return new valueTypes.Scoord3DContentItem({
-                name,
-                relationshipType,
-                graphicType,
-                frameOfReferenceUID,
-                graphicData
-            });
-        }
+        const scoord = is3DMeasurement
+            ? new valueTypes.Scoord3DContentItem({
+                  name,
+                  relationshipType,
+                  graphicType,
+                  graphicData: [x, y, z],
+                  frameOfReferenceUID
+              })
+            : new valueTypes.ScoordContentItem({
+                  name,
+                  relationshipType,
+                  graphicType,
+                  graphicData: [x, y]
+              });
 
-        const graphicData = [x, y];
-        return new valueTypes.ScoordContentItem({
-            name,
-            relationshipType,
-            graphicType,
-            graphicData
-        });
+        // Required by TID 1501
+        scoord.ContentSequence = [
+            {
+                RelationshipType: valueTypes.RelationshipTypes.SELECTED_FROM,
+                ValueType: valueTypes.ValueTypes.IMAGE,
+                ReferencedSOPSequence: this.ReferencedSOPSequence
+            }
+        ];
+
+        return scoord;
     }
 }

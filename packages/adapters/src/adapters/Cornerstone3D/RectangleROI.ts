@@ -3,6 +3,7 @@ import { utilities } from "dcmjs";
 import { toScoords } from "../helpers";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
+import { extractAllNUMGroups, restoreAdditionalMetrics } from "./metricHandler";
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
@@ -46,6 +47,15 @@ export class RectangleROI extends BaseAdapter3D {
                 g.ValueType === "NUM" &&
                 g.ConceptNameCodeSequence[0].CodeMeaning === "Area"
         );
+
+        const referencedSOPInstanceUID = state.sopInstanceUid;
+        const allNUMGroups = extractAllNUMGroups(
+            MeasurementGroup,
+            referencedSOPInstanceUID
+        );
+        const measurementNUMGroups =
+            allNUMGroups[referencedSOPInstanceUID] || {};
+
         const cachedStats = referencedImageId
             ? {
                   [`imageId:${referencedImageId}`]: {
@@ -54,7 +64,8 @@ export class RectangleROI extends BaseAdapter3D {
                           0,
                       areaUnit:
                           areaGroup?.MeasuredValueSequence?.[0]
-                              ?.MeasurementUnitsCodeSequence?.CodeValue
+                              ?.MeasurementUnitsCodeSequence?.CodeValue,
+                      ...restoreAdditionalMetrics(measurementNUMGroups)
                   }
               }
             : {};
@@ -81,7 +92,7 @@ export class RectangleROI extends BaseAdapter3D {
 
         const corners = toScoords(scoordProps, data.handles.points);
 
-        const { area, perimeter } =
+        const { area, perimeter, max, mean, stdDev, areaUnit, modalityUnit } =
             data.cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
@@ -94,6 +105,11 @@ export class RectangleROI extends BaseAdapter3D {
             ],
             area,
             perimeter,
+            max,
+            mean,
+            stdDev,
+            areaUnit,
+            modalityUnit,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
             findingSites: findingSites || [],

@@ -19,6 +19,7 @@ export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setUpdatedFrame: (frame: number) => void;
   setVolumeId: (volumeId: string) => void;
   releaseGraphicsResources: () => void;
+  hasUpdatedFrames: () => boolean;
 }
 
 /** The base class for volume data. It includes the volume metadata
@@ -75,6 +76,11 @@ export class ImageVolume {
   hasPixelSpacing: boolean;
   /** Property to store additional information */
   additionalDetails?: Record<string, unknown>;
+  /**
+   *  Property to store the number of dimension groups.
+   * @deprecated
+   */
+  numDimensionGroups: number;
 
   /**
    * The new volume model which solely relies on the separate image data
@@ -83,8 +89,16 @@ export class ImageVolume {
   voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
 
-  // @deprecated
-  numTimePoints? = null as number;
+  /**
+   * Calculates the number of time points to be the number of dimension groups
+   * as a fallback for existing handling.
+   * @deprecated
+   */
+  get numTimePoints(): number {
+    return typeof this.numDimensionGroups === 'number'
+      ? this.numDimensionGroups
+      : 1;
+  }
   numFrames = null as number;
   suppressWarnings: boolean;
 
@@ -217,7 +231,11 @@ export class ImageVolume {
 
   /** return true if it is a 4D volume or false if it is 3D volume */
   public isDynamicVolume(): boolean {
-    return this.numTimePoints > 1;
+    if (this.numTimePoints) {
+      return this.numTimePoints > 1;
+    }
+
+    return false;
   }
 
   /**

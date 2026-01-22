@@ -773,8 +773,6 @@ class EllipticalROITool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
-
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -789,6 +787,7 @@ class EllipticalROITool extends AnnotationTool {
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
+      const targetId = this.getTargetId(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -1094,7 +1093,7 @@ class EllipticalROITool extends AnnotationTool {
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
 
         const handles = [pos1Index, pos2Index];
-        const { scale, unit, areaUnit } = getCalibratedLengthUnitsAndScale(
+        const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
           image,
           handles
         );

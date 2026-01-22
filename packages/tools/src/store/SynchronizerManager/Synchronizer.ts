@@ -130,7 +130,8 @@ class Synchronizer {
 
     eventSource.addEventListener(this._eventName, this._onEvent.bind(this));
 
-    this._auxiliaryEvents.forEach(({ name, source }) => {
+    // Use a default source of 'element' if not provided just like we do for the main event.
+    this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
       const target = source === 'element' ? viewport.element : eventTarget;
       target.addEventListener(name, this._onEvent.bind(this));
     });

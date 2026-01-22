@@ -40,6 +40,14 @@ export type AnnotationData = {
   contour?: Contour;
 
   /**
+   * The object is closed by connecting start/end points of the contour.
+   * Can be true (boolean), meaning 'farthestT'
+   * or a specific style: 'farthestT', 'lineSegment', or 'orthogonalT'
+   * to specify the rendering style
+   */
+  isOpenUShapeContour?: boolean | 'farthestT' | 'lineSegment' | 'orthogonalT';
+
+  /**
    * Other data/keys
    */
   [key: string]: unknown;
@@ -88,6 +96,14 @@ export type Annotation = {
    * Data for annotation, Derivatives need to define their own data types.
    */
   data: AnnotationData;
+  /**
+   * The predecessorImageId is the image id this instance object was loaded
+   * from.  It is the predecessor since the current annotation state may not
+   * reflect the current state and this object is in fact not the loaded object.
+   *
+   * This can be set to distinguish annotation sources externally to CS3D.
+   */
+  predecessorImageId?: string;
 };
 
 export type Contour = {

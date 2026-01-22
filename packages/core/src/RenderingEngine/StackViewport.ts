@@ -659,8 +659,11 @@ class StackViewport extends Viewport {
   private calibrateIfNecessary(imageId, imagePlaneModule) {
     const calibration = metaData.get('calibratedPixelSpacing', imageId);
     const isUpdated = this.calibration !== calibration;
-    const { scale } = calibration || {};
-    this.hasPixelSpacing = scale > 0 || imagePlaneModule.rowPixelSpacing > 0;
+    const scale = calibration?.scale;
+    this.hasPixelSpacing =
+      scale > 0 ||
+      (!imagePlaneModule.usingDefaultValues &&
+        imagePlaneModule.rowPixelSpacing > 0);
     imagePlaneModule.calibration = calibration;
 
     if (!isUpdated) {

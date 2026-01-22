@@ -1,23 +1,23 @@
-import { log, utilities, normalizers, derivations } from "dcmjs";
-import ndarray from "ndarray";
-import getDatasetsFromImages from "../helpers/getDatasetsFromImages";
+import { log, utilities, normalizers, derivations } from 'dcmjs';
+import ndarray from 'ndarray';
+import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 
 const {
-    rotateDirectionCosinesInPlane,
-    flipImageOrientationPatient: flipIOP,
-    flipMatrix2D,
-    rotateMatrix902D
+  rotateDirectionCosinesInPlane,
+  flipImageOrientationPatient: flipIOP,
+  flipMatrix2D,
+  rotateMatrix902D,
 } = utilities.orientation;
 
 const { datasetToBlob, BitArray, DicomMessage, DicomMetaDictionary } =
-    utilities;
+  utilities;
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 
 const Segmentation = {
-    generateSegmentation,
-    generateToolState
+  generateSegmentation,
+  generateToolState,
 };
 
 export default Segmentation;
@@ -39,149 +39,149 @@ export default Segmentation;
  * @returns {type}           description
  */
 function generateSegmentation(
-    images,
-    brushData,
-    options = { includeSliceSpacing: true }
+  images,
+  brushData,
+  options = { includeSliceSpacing: true }
 ) {
-    const { toolState, segments } = brushData;
+  const { toolState, segments } = brushData;
 
-    // Calculate the dimensions of the data cube.
-    const image0 = images[0];
+  // Calculate the dimensions of the data cube.
+  const image0 = images[0];
 
-    const dims = {
-        x: image0.columns,
-        y: image0.rows,
-        z: images.length
-    };
+  const dims = {
+    x: image0.columns,
+    y: image0.rows,
+    z: images.length,
+  };
 
-    dims.xy = dims.x * dims.y;
+  dims.xy = dims.x * dims.y;
 
-    const numSegments = _getSegCount(seg, segments);
+  const numSegments = _getSegCount(seg, segments);
 
-    if (!numSegments) {
-        throw new Error("No segments to export!");
-    }
+  if (!numSegments) {
+    throw new Error('No segments to export!');
+  }
 
-    const isMultiframe = image0.imageId.includes("?frame");
-    const seg = _createSegFromImages(images, isMultiframe, options);
+  const isMultiframe = image0.imageId.includes('?frame');
+  const seg = _createSegFromImages(images, isMultiframe, options);
 
-    const { referencedFramesPerSegment, segmentIndicies } =
-        _getNumberOfFramesPerSegment(toolState, images, segments);
+  const { referencedFramesPerSegment, segmentIndicies } =
+    _getNumberOfFramesPerSegment(toolState, images, segments);
 
-    let NumberOfFrames = 0;
+  let NumberOfFrames = 0;
 
-    for (let i = 0; i < referencedFramesPerSegment.length; i++) {
-        NumberOfFrames += referencedFramesPerSegment[i].length;
-    }
+  for (let i = 0; i < referencedFramesPerSegment.length; i++) {
+    NumberOfFrames += referencedFramesPerSegment[i].length;
+  }
 
-    seg.setNumberOfFrames(NumberOfFrames);
+  seg.setNumberOfFrames(NumberOfFrames);
 
-    for (let i = 0; i < segmentIndicies.length; i++) {
-        const segmentIndex = segmentIndicies[i];
-        const referencedFrameIndicies = referencedFramesPerSegment[i];
+  for (let i = 0; i < segmentIndicies.length; i++) {
+    const segmentIndex = segmentIndicies[i];
+    const referencedFrameIndicies = referencedFramesPerSegment[i];
 
-        // Frame numbers start from 1.
-        const referencedFrameNumbers = referencedFrameIndicies.map(element => {
-            return element + 1;
-        });
+    // Frame numbers start from 1.
+    const referencedFrameNumbers = referencedFrameIndicies.map((element) => {
+      return element + 1;
+    });
 
-        const segment = segments[segmentIndex];
+    const segment = segments[segmentIndex];
 
-        seg.addSegment(
-            segment,
-            _extractCornerstoneToolsPixelData(
-                segmentIndex,
-                referencedFrameIndicies,
-                toolState,
-                images,
-                dims
-            ),
-            referencedFrameNumbers
-        );
-    }
+    seg.addSegment(
+      segment,
+      _extractCornerstoneToolsPixelData(
+        segmentIndex,
+        referencedFrameIndicies,
+        toolState,
+        images,
+        dims
+      ),
+      referencedFrameNumbers
+    );
+  }
 
-    seg.bitPackPixelData();
+  seg.bitPackPixelData();
 
-    const segBlob = datasetToBlob(seg.dataset);
+  const segBlob = datasetToBlob(seg.dataset);
 
-    return segBlob;
+  return segBlob;
 }
 
 function _extractCornerstoneToolsPixelData(
-    segmentIndex,
-    referencedFrames,
-    toolState,
-    images,
-    dims
+  segmentIndex,
+  referencedFrames,
+  toolState,
+  images,
+  dims
 ) {
-    const pixelData = new Uint8Array(dims.xy * referencedFrames.length);
+  const pixelData = new Uint8Array(dims.xy * referencedFrames.length);
 
-    let pixelDataIndex = 0;
+  let pixelDataIndex = 0;
 
-    for (let i = 0; i < referencedFrames.length; i++) {
-        const frame = referencedFrames[i];
+  for (let i = 0; i < referencedFrames.length; i++) {
+    const frame = referencedFrames[i];
 
-        const imageId = images[frame].imageId;
-        const imageIdSpecificToolState = toolState[imageId];
+    const imageId = images[frame].imageId;
+    const imageIdSpecificToolState = toolState[imageId];
 
-        const brushPixelData =
-            imageIdSpecificToolState.brush.data[segmentIndex].pixelData;
+    const brushPixelData =
+      imageIdSpecificToolState.brush.data[segmentIndex].pixelData;
 
-        for (let p = 0; p < brushPixelData.length; p++) {
-            pixelData[pixelDataIndex] = brushPixelData[p];
-            pixelDataIndex++;
-        }
+    for (let p = 0; p < brushPixelData.length; p++) {
+      pixelData[pixelDataIndex] = brushPixelData[p];
+      pixelDataIndex++;
     }
+  }
 
-    return pixelData;
+  return pixelData;
 }
 
 function _getNumberOfFramesPerSegment(toolState, images, segments) {
-    const segmentIndicies = [];
-    const referencedFramesPerSegment = [];
+  const segmentIndicies = [];
+  const referencedFramesPerSegment = [];
 
-    for (let i = 0; i < segments.length; i++) {
-        if (segments[i]) {
-            segmentIndicies.push(i);
-            referencedFramesPerSegment.push([]);
-        }
+  for (let i = 0; i < segments.length; i++) {
+    if (segments[i]) {
+      segmentIndicies.push(i);
+      referencedFramesPerSegment.push([]);
     }
+  }
 
-    for (let z = 0; z < images.length; z++) {
-        const imageId = images[z].imageId;
-        const imageIdSpecificToolState = toolState[imageId];
+  for (let z = 0; z < images.length; z++) {
+    const imageId = images[z].imageId;
+    const imageIdSpecificToolState = toolState[imageId];
 
-        for (let i = 0; i < segmentIndicies.length; i++) {
-            const segIdx = segmentIndicies[i];
+    for (let i = 0; i < segmentIndicies.length; i++) {
+      const segIdx = segmentIndicies[i];
 
-            if (
-                imageIdSpecificToolState &&
-                imageIdSpecificToolState.brush &&
-                imageIdSpecificToolState.brush.data &&
-                imageIdSpecificToolState.brush.data[segIdx] &&
-                imageIdSpecificToolState.brush.data[segIdx].pixelData
-            ) {
-                referencedFramesPerSegment[i].push(z);
-            }
-        }
+      if (
+        imageIdSpecificToolState &&
+        imageIdSpecificToolState.brush &&
+        imageIdSpecificToolState.brush.data &&
+        imageIdSpecificToolState.brush.data[segIdx] &&
+        imageIdSpecificToolState.brush.data[segIdx].pixelData
+      ) {
+        referencedFramesPerSegment[i].push(z);
+      }
     }
+  }
 
-    return {
-        referencedFramesPerSegment,
-        segmentIndicies
-    };
+  return {
+    referencedFramesPerSegment,
+    segmentIndicies,
+  };
 }
 
 function _getSegCount(seg, segments) {
-    let numSegments = 0;
+  let numSegments = 0;
 
-    for (let i = 0; i < segments.length; i++) {
-        if (segments[i]) {
-            numSegments++;
-        }
+  for (let i = 0; i < segments.length; i++) {
+    if (segments[i]) {
+      numSegments++;
     }
+  }
 
-    return numSegments;
+  return numSegments;
 }
 
 /**
@@ -192,9 +192,9 @@ function _getSegCount(seg, segments) {
  * @returns {Object}              The Seg derived dataSet.
  */
 function _createSegFromImages(images, isMultiframe, options) {
-    const multiframe = getDatasetsFromImages(images, isMultiframe);
+  const multiframe = getDatasetsFromImages(images, isMultiframe);
 
-    return new SegmentationDerivation([multiframe], options);
+  return new SegmentationDerivation([multiframe], options);
 }
 
 /**
@@ -208,119 +208,116 @@ function _createSegFromImages(images, isMultiframe, options) {
  *                    segment metadata can be derived.
  */
 function generateToolState(imageIds, arrayBuffer, metadataProvider) {
-    const dicomData = DicomMessage.readFile(arrayBuffer);
-    const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-    dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-    const multiframe = Normalizer.normalizeToDataset([dataset]);
+  const dicomData = DicomMessage.readFile(arrayBuffer);
+  const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+  dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+  const multiframe = Normalizer.normalizeToDataset([dataset]);
 
-    const imagePlaneModule = metadataProvider.get(
-        "imagePlaneModule",
-        imageIds[0]
+  const imagePlaneModule = metadataProvider.get(
+    'imagePlaneModule',
+    imageIds[0]
+  );
+
+  if (!imagePlaneModule) {
+    console.warn('Insufficient metadata, imagePlaneModule missing.');
+  }
+
+  const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
+    ? [...imagePlaneModule.rowCosines, ...imagePlaneModule.columnCosines]
+    : [
+        imagePlaneModule.rowCosines.x,
+        imagePlaneModule.rowCosines.y,
+        imagePlaneModule.rowCosines.z,
+        imagePlaneModule.columnCosines.x,
+        imagePlaneModule.columnCosines.y,
+        imagePlaneModule.columnCosines.z,
+      ];
+
+  // Get IOP from ref series, compute supported orientations:
+  const validOrientations = getValidOrientations(ImageOrientationPatient);
+
+  const SharedFunctionalGroupsSequence =
+    multiframe.SharedFunctionalGroupsSequence;
+
+  const sharedImageOrientationPatient =
+    SharedFunctionalGroupsSequence.PlaneOrientationSequence
+      ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
+          .ImageOrientationPatient
+      : undefined;
+
+  const sliceLength = multiframe.Columns * multiframe.Rows;
+  const segMetadata = getSegmentMetadata(multiframe);
+  const pixelData = unpackPixelData(multiframe);
+
+  const PerFrameFunctionalGroupsSequence =
+    multiframe.PerFrameFunctionalGroupsSequence;
+
+  const toolState = {};
+
+  let inPlane = true;
+
+  for (let i = 0; i < PerFrameFunctionalGroupsSequence.length; i++) {
+    const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[i];
+
+    const ImageOrientationPatientI =
+      sharedImageOrientationPatient ||
+      PerFrameFunctionalGroups.PlaneOrientationSequence.ImageOrientationPatient;
+
+    const pixelDataI2D = ndarray(
+      new Uint8Array(pixelData.buffer, i * sliceLength, sliceLength),
+      [multiframe.Rows, multiframe.Columns]
     );
 
-    if (!imagePlaneModule) {
-        console.warn("Insufficient metadata, imagePlaneModule missing.");
+    const alignedPixelDataI = alignPixelDataWithSourceData(
+      pixelDataI2D,
+      ImageOrientationPatientI,
+      validOrientations
+    );
+
+    if (!alignedPixelDataI) {
+      console.warn(
+        "This segmentation object is not in-plane with the source data. Bailing out of IO. It'd be better to render this with vtkjs. "
+      );
+      inPlane = false;
+      break;
     }
 
-    const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
-        ? [...imagePlaneModule.rowCosines, ...imagePlaneModule.columnCosines]
-        : [
-              imagePlaneModule.rowCosines.x,
-              imagePlaneModule.rowCosines.y,
-              imagePlaneModule.rowCosines.z,
-              imagePlaneModule.columnCosines.x,
-              imagePlaneModule.columnCosines.y,
-              imagePlaneModule.columnCosines.z
-          ];
+    const segmentIndex =
+      PerFrameFunctionalGroups.SegmentIdentificationSequence
+        .ReferencedSegmentNumber - 1;
 
-    // Get IOP from ref series, compute supported orientations:
-    const validOrientations = getValidOrientations(ImageOrientationPatient);
-
-    const SharedFunctionalGroupsSequence =
-        multiframe.SharedFunctionalGroupsSequence;
-
-    const sharedImageOrientationPatient =
-        SharedFunctionalGroupsSequence.PlaneOrientationSequence
-            ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
-                  .ImageOrientationPatient
-            : undefined;
-
-    const sliceLength = multiframe.Columns * multiframe.Rows;
-    const segMetadata = getSegmentMetadata(multiframe);
-    const pixelData = unpackPixelData(multiframe);
-
-    const PerFrameFunctionalGroupsSequence =
-        multiframe.PerFrameFunctionalGroupsSequence;
-
-    const toolState = {};
-
-    let inPlane = true;
-
-    for (let i = 0; i < PerFrameFunctionalGroupsSequence.length; i++) {
-        const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[i];
-
-        const ImageOrientationPatientI =
-            sharedImageOrientationPatient ||
-            PerFrameFunctionalGroups.PlaneOrientationSequence
-                .ImageOrientationPatient;
-
-        const pixelDataI2D = ndarray(
-            new Uint8Array(pixelData.buffer, i * sliceLength, sliceLength),
-            [multiframe.Rows, multiframe.Columns]
-        );
-
-        const alignedPixelDataI = alignPixelDataWithSourceData(
-            pixelDataI2D,
-            ImageOrientationPatientI,
-            validOrientations
-        );
-
-        if (!alignedPixelDataI) {
-            console.warn(
-                "This segmentation object is not in-plane with the source data. Bailing out of IO. It'd be better to render this with vtkjs. "
-            );
-            inPlane = false;
-            break;
-        }
-
-        const segmentIndex =
-            PerFrameFunctionalGroups.SegmentIdentificationSequence
-                .ReferencedSegmentNumber - 1;
-
-        let SourceImageSequence;
-        if (
-            SharedFunctionalGroupsSequence.DerivationImageSequence &&
-            SharedFunctionalGroupsSequence.DerivationImageSequence
-                .SourceImageSequence
-        ) {
-            SourceImageSequence =
-                SharedFunctionalGroupsSequence.DerivationImageSequence
-                    .SourceImageSequence[i];
-        } else {
-            SourceImageSequence =
-                PerFrameFunctionalGroups.DerivationImageSequence
-                    .SourceImageSequence;
-        }
-
-        const imageId = getImageIdOfSourceImage(
-            SourceImageSequence,
-            imageIds,
-            metadataProvider
-        );
-
-        addImageIdSpecificBrushToolState(
-            toolState,
-            imageId,
-            segmentIndex,
-            alignedPixelDataI
-        );
+    let SourceImageSequence;
+    if (
+      SharedFunctionalGroupsSequence.DerivationImageSequence &&
+      SharedFunctionalGroupsSequence.DerivationImageSequence.SourceImageSequence
+    ) {
+      SourceImageSequence =
+        SharedFunctionalGroupsSequence.DerivationImageSequence
+          .SourceImageSequence[i];
+    } else {
+      SourceImageSequence =
+        PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence;
     }
 
-    if (!inPlane) {
-        return;
-    }
+    const imageId = getImageIdOfSourceImage(
+      SourceImageSequence,
+      imageIds,
+      metadataProvider
+    );
 
-    return { toolState, segMetadata };
+    addImageIdSpecificBrushToolState(
+      toolState,
+      imageId,
+      segmentIndex,
+      alignedPixelDataI
+    );
+  }
+
+  if (!inPlane) {
+    return;
+  }
+
+  return { toolState, segMetadata };
 }
 
 /**
@@ -330,31 +327,30 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
  * @return {Uint8Array}      The unpacked pixelData.
  */
 function unpackPixelData(multiframe) {
-    const segType = multiframe.SegmentationType;
+  const segType = multiframe.SegmentationType;
 
-    if (segType === "BINARY") {
-        return BitArray.unpack(multiframe.PixelData);
-    }
+  if (segType === 'BINARY') {
+    return BitArray.unpack(multiframe.PixelData);
+  }
 
-    const pixelData = new Uint8Array(multiframe.PixelData);
+  const pixelData = new Uint8Array(multiframe.PixelData);
 
-    const max = multiframe.MaximumFractionalValue;
-    const onlyMaxAndZero =
-        pixelData.find(element => element !== 0 && element !== max) ===
-        undefined;
+  const max = multiframe.MaximumFractionalValue;
+  const onlyMaxAndZero =
+    pixelData.find((element) => element !== 0 && element !== max) === undefined;
 
-    if (!onlyMaxAndZero) {
-        log.warn(
-            "This is a fractional segmentation, which is not currently supported."
-        );
-        return;
-    }
-
+  if (!onlyMaxAndZero) {
     log.warn(
-        "This segmentation object is actually binary... processing as such."
+      'This is a fractional segmentation, which is not currently supported.'
     );
+    return;
+  }
 
-    return pixelData;
+  log.warn(
+    'This segmentation object is actually binary... processing as such.'
+  );
+
+  return pixelData;
 }
 
 /**
@@ -367,37 +363,37 @@ function unpackPixelData(multiframe) {
  * @param  {Ndarray} pixelData2D  The pixelData in Ndarry 2D format.
  */
 function addImageIdSpecificBrushToolState(
-    toolState,
-    imageId,
-    segmentIndex,
-    pixelData2D
+  toolState,
+  imageId,
+  segmentIndex,
+  pixelData2D
 ) {
-    if (!toolState[imageId]) {
-        toolState[imageId] = {};
-        toolState[imageId].brush = {};
-        toolState[imageId].brush.data = [];
-    } else if (!toolState[imageId].brush) {
-        toolState[imageId].brush = {};
-        toolState[imageId].brush.data = [];
-    } else if (!toolState[imageId].brush.data) {
-        toolState[imageId].brush.data = [];
+  if (!toolState[imageId]) {
+    toolState[imageId] = {};
+    toolState[imageId].brush = {};
+    toolState[imageId].brush.data = [];
+  } else if (!toolState[imageId].brush) {
+    toolState[imageId].brush = {};
+    toolState[imageId].brush.data = [];
+  } else if (!toolState[imageId].brush.data) {
+    toolState[imageId].brush.data = [];
+  }
+
+  toolState[imageId].brush.data[segmentIndex] = {};
+
+  const brushDataI = toolState[imageId].brush.data[segmentIndex];
+
+  brushDataI.pixelData = new Uint8Array(pixelData2D.data.length);
+
+  const cToolsPixelData = brushDataI.pixelData;
+
+  for (let p = 0; p < cToolsPixelData.length; p++) {
+    if (pixelData2D.data[p]) {
+      cToolsPixelData[p] = 1;
+    } else {
+      cToolsPixelData[p] = 0;
     }
-
-    toolState[imageId].brush.data[segmentIndex] = {};
-
-    const brushDataI = toolState[imageId].brush.data[segmentIndex];
-
-    brushDataI.pixelData = new Uint8Array(pixelData2D.data.length);
-
-    const cToolsPixelData = brushDataI.pixelData;
-
-    for (let p = 0; p < cToolsPixelData.length; p++) {
-        if (pixelData2D.data[p]) {
-            cToolsPixelData[p] = 1;
-        } else {
-            cToolsPixelData[p] = 0;
-        }
-    }
+  }
 }
 
 /**
@@ -410,25 +406,25 @@ function addImageIdSpecificBrushToolState(
  * @return {String}                     The corresponding imageId.
  */
 function getImageIdOfSourceImage(
-    SourceImageSequence,
-    imageIds,
-    metadataProvider
+  SourceImageSequence,
+  imageIds,
+  metadataProvider
 ) {
-    const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-        SourceImageSequence;
+  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
+    SourceImageSequence;
 
-    return ReferencedFrameNumber
-        ? getImageIdOfReferencedFrame(
-              ReferencedSOPInstanceUID,
-              ReferencedFrameNumber,
-              imageIds,
-              metadataProvider
-          )
-        : getImageIdOfReferencedSingleFramedSOPInstance(
-              ReferencedSOPInstanceUID,
-              imageIds,
-              metadataProvider
-          );
+  return ReferencedFrameNumber
+    ? getImageIdOfReferencedFrame(
+        ReferencedSOPInstanceUID,
+        ReferencedFrameNumber,
+        imageIds,
+        metadataProvider
+      )
+    : getImageIdOfReferencedSingleFramedSOPInstance(
+        ReferencedSOPInstanceUID,
+        imageIds,
+        metadataProvider
+      );
 }
 
 /**
@@ -442,21 +438,18 @@ function getImageIdOfSourceImage(
  * @return {String}                  The imageId that corresponds to the sopInstanceUid.
  */
 function getImageIdOfReferencedSingleFramedSOPInstance(
-    sopInstanceUid,
-    imageIds,
-    metadataProvider
+  sopInstanceUid,
+  imageIds,
+  metadataProvider
 ) {
-    return imageIds.find(imageId => {
-        const sopCommonModule = metadataProvider.get(
-            "sopCommonModule",
-            imageId
-        );
-        if (!sopCommonModule) {
-            return;
-        }
+  return imageIds.find((imageId) => {
+    const sopCommonModule = metadataProvider.get('sopCommonModule', imageId);
+    if (!sopCommonModule) {
+      return;
+    }
 
-        return sopCommonModule.sopInstanceUID === sopInstanceUid;
-    });
+    return sopCommonModule.sopInstanceUID === sopInstanceUid;
+  });
 }
 
 /**
@@ -471,30 +464,27 @@ function getImageIdOfReferencedSingleFramedSOPInstance(
  * @return {String}                  The imageId that corresponds to the sopInstanceUid.
  */
 function getImageIdOfReferencedFrame(
-    sopInstanceUid,
-    frameNumber,
-    imageIds,
-    metadataProvider
+  sopInstanceUid,
+  frameNumber,
+  imageIds,
+  metadataProvider
 ) {
-    const imageId = imageIds.find(imageId => {
-        const sopCommonModule = metadataProvider.get(
-            "sopCommonModule",
-            imageId
-        );
-        if (!sopCommonModule) {
-            return;
-        }
+  const imageId = imageIds.find((imageId) => {
+    const sopCommonModule = metadataProvider.get('sopCommonModule', imageId);
+    if (!sopCommonModule) {
+      return;
+    }
 
-        const imageIdFrameNumber = Number(imageId.split("frame=")[1]);
+    const imageIdFrameNumber = Number(imageId.split('frame=')[1]);
 
-        return (
-            //frameNumber is zero indexed for cornerstoneDICOMImageLoader image Ids.
-            sopCommonModule.sopInstanceUID === sopInstanceUid &&
-            imageIdFrameNumber === frameNumber - 1
-        );
-    });
+    return (
+      //frameNumber is zero indexed for cornerstoneDICOMImageLoader image Ids.
+      sopCommonModule.sopInstanceUID === sopInstanceUid &&
+      imageIdFrameNumber === frameNumber - 1
+    );
+  });
 
-    return imageId;
+  return imageId;
 }
 
 /**
@@ -504,26 +494,26 @@ function getImageIdOfReferencedFrame(
  * @return  An array of valid orientations.
  */
 function getValidOrientations(iop) {
-    const orientations = [];
+  const orientations = [];
 
-    // [0,  1,  2]: 0,   0hf,   0vf
-    // [3,  4,  5]: 90,  90hf,  90vf
-    // [6, 7]:      180, 270
+  // [0,  1,  2]: 0,   0hf,   0vf
+  // [3,  4,  5]: 90,  90hf,  90vf
+  // [6, 7]:      180, 270
 
-    orientations[0] = iop;
-    orientations[1] = flipIOP.h(iop);
-    orientations[2] = flipIOP.v(iop);
+  orientations[0] = iop;
+  orientations[1] = flipIOP.h(iop);
+  orientations[2] = flipIOP.v(iop);
 
-    const iop90 = rotateDirectionCosinesInPlane(iop, Math.PI / 2);
+  const iop90 = rotateDirectionCosinesInPlane(iop, Math.PI / 2);
 
-    orientations[3] = iop90;
-    orientations[4] = flipIOP.h(iop90);
-    orientations[5] = flipIOP.v(iop90);
+  orientations[3] = iop90;
+  orientations[4] = flipIOP.h(iop90);
+  orientations[5] = flipIOP.v(iop90);
 
-    orientations[6] = rotateDirectionCosinesInPlane(iop, Math.PI);
-    orientations[7] = rotateDirectionCosinesInPlane(iop, 1.5 * Math.PI);
+  orientations[6] = rotateDirectionCosinesInPlane(iop, Math.PI);
+  orientations[7] = rotateDirectionCosinesInPlane(iop, 1.5 * Math.PI);
 
-    return orientations;
+  return orientations;
 }
 
 /**
@@ -535,33 +525,31 @@ function getValidOrientations(iop) {
  * @return The aligned pixelData.
  */
 function alignPixelDataWithSourceData(pixelData2D, iop, orientations) {
-    if (compareIOP(iop, orientations[0])) {
-        //Same orientation.
-        return pixelData2D;
-    } else if (compareIOP(iop, orientations[1])) {
-        //Flipped vertically.
-        return flipMatrix2D.v(pixelData2D);
-    } else if (compareIOP(iop, orientations[2])) {
-        //Flipped horizontally.
-        return flipMatrix2D.h(pixelData2D);
-    } else if (compareIOP(iop, orientations[3])) {
-        //Rotated 90 degrees.
-        return rotateMatrix902D(pixelData2D);
-    } else if (compareIOP(iop, orientations[4])) {
-        //Rotated 90 degrees and fliped horizontally.
-        return flipMatrix2D.h(rotateMatrix902D(pixelData2D));
-    } else if (compareIOP(iop, orientations[5])) {
-        //Rotated 90 degrees and fliped vertically.
-        return flipMatrix2D.v(rotateMatrix902D(pixelData2D));
-    } else if (compareIOP(iop, orientations[6])) {
-        //Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
-        return rotateMatrix902D(rotateMatrix902D(pixelData2D));
-    } else if (compareIOP(iop, orientations[7])) {
-        //Rotated 270 degrees.  // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
-        return rotateMatrix902D(
-            rotateMatrix902D(rotateMatrix902D(pixelData2D))
-        );
-    }
+  if (compareIOP(iop, orientations[0])) {
+    //Same orientation.
+    return pixelData2D;
+  } else if (compareIOP(iop, orientations[1])) {
+    //Flipped vertically.
+    return flipMatrix2D.v(pixelData2D);
+  } else if (compareIOP(iop, orientations[2])) {
+    //Flipped horizontally.
+    return flipMatrix2D.h(pixelData2D);
+  } else if (compareIOP(iop, orientations[3])) {
+    //Rotated 90 degrees.
+    return rotateMatrix902D(pixelData2D);
+  } else if (compareIOP(iop, orientations[4])) {
+    //Rotated 90 degrees and fliped horizontally.
+    return flipMatrix2D.h(rotateMatrix902D(pixelData2D));
+  } else if (compareIOP(iop, orientations[5])) {
+    //Rotated 90 degrees and fliped vertically.
+    return flipMatrix2D.v(rotateMatrix902D(pixelData2D));
+  } else if (compareIOP(iop, orientations[6])) {
+    //Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
+    return rotateMatrix902D(rotateMatrix902D(pixelData2D));
+  } else if (compareIOP(iop, orientations[7])) {
+    //Rotated 270 degrees.  // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
+    return rotateMatrix902D(rotateMatrix902D(rotateMatrix902D(pixelData2D)));
+  }
 }
 
 const dx = 1e-5;
@@ -575,33 +563,32 @@ const dx = 1e-5;
  * @return True if iop1 and iop2 are equal.
  */
 function compareIOP(iop1, iop2) {
-    return (
-        Math.abs(iop1[0] - iop2[0]) < dx &&
-        Math.abs(iop1[1] - iop2[1]) < dx &&
-        Math.abs(iop1[2] - iop2[2]) < dx &&
-        Math.abs(iop1[3] - iop2[3]) < dx &&
-        Math.abs(iop1[4] - iop2[4]) < dx &&
-        Math.abs(iop1[5] - iop2[5]) < dx
-    );
+  return (
+    Math.abs(iop1[0] - iop2[0]) < dx &&
+    Math.abs(iop1[1] - iop2[1]) < dx &&
+    Math.abs(iop1[2] - iop2[2]) < dx &&
+    Math.abs(iop1[3] - iop2[3]) < dx &&
+    Math.abs(iop1[4] - iop2[4]) < dx &&
+    Math.abs(iop1[5] - iop2[5]) < dx
+  );
 }
 
 function getSegmentMetadata(multiframe) {
-    const data = [];
+  const data = [];
 
-    const segmentSequence = multiframe.SegmentSequence;
+  const segmentSequence = multiframe.SegmentSequence;
 
-    if (Array.isArray(segmentSequence)) {
-        for (let segIdx = 0; segIdx < segmentSequence.length; segIdx++) {
-            data.push(segmentSequence[segIdx]);
-        }
-    } else {
-        // Only one segment, will be stored as an object.
-        data.push(segmentSequence);
+  if (Array.isArray(segmentSequence)) {
+    for (let segIdx = 0; segIdx < segmentSequence.length; segIdx++) {
+      data.push(segmentSequence[segIdx]);
     }
+  } else {
+    // Only one segment, will be stored as an object.
+    data.push(segmentSequence);
+  }
 
-    return {
-        seriesInstanceUid:
-            multiframe.ReferencedSeriesSequence.SeriesInstanceUID,
-        data
-    };
+  return {
+    seriesInstanceUid: multiframe.ReferencedSeriesSequence.SeriesInstanceUID,
+    data,
+  };
 }
