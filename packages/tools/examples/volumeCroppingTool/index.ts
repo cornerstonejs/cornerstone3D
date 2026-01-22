@@ -52,6 +52,29 @@ const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
+// Set up toolbar with left and right containers
+const toolbar = document.getElementById('demo-toolbar');
+if (toolbar) {
+  toolbar.style.display = 'flex';
+  toolbar.style.justifyContent = 'space-between';
+  toolbar.style.alignItems = 'center';
+}
+
+const leftToolbarContainer = document.createElement('div');
+leftToolbarContainer.style.display = 'flex';
+leftToolbarContainer.style.gap = '0';
+leftToolbarContainer.style.alignItems = 'center';
+
+const rightToolbarContainer = document.createElement('div');
+rightToolbarContainer.style.display = 'flex';
+rightToolbarContainer.style.gap = '10px';
+rightToolbarContainer.style.alignItems = 'center';
+
+// Add left container to toolbar first
+if (toolbar) {
+  toolbar.appendChild(leftToolbarContainer);
+}
+
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
   labelText: 'Number of Orthographic Viewports',
@@ -59,6 +82,7 @@ addDropdownToToolbar({
     values: [1, 2, 3],
     defaultValue: getNumViewportsFromUrl(),
   },
+  container: leftToolbarContainer,
   onSelectedValueChange: (selectedValue) => {
     const url = new URL(window.location.href);
     url.searchParams.set('numViewports', String(selectedValue));
@@ -146,6 +170,7 @@ content.append(instructions);
 addToggleButtonToToolbar({
   title: 'Toggle 3D handles',
   defaultToggle: false,
+  container: leftToolbarContainer,
   onClick: (toggle) => {
     // Get the tool group for the 3D viewport
     const toolGroupVRT =
@@ -162,6 +187,7 @@ addToggleButtonToToolbar({
 addToggleButtonToToolbar({
   title: 'Toggle Cropping Planes',
   defaultToggle: false,
+  container: leftToolbarContainer,
   onClick: (toggle) => {
     // Get the tool group for the 3D viewport
     const toolGroupVRT =
@@ -492,6 +518,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       defaultValue: validColorScheme,
       labels: colorSchemeLabels,
     },
+    container: rightToolbarContainer,
     onSelectedValueChange: (selectedValue) => {
       console.log('Color scheme changed to:', selectedValue);
       const url = new URL(window.location.href);
@@ -513,6 +540,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       defaultValue: String(keepOrientationUp),
       labels: keepOrientationUpLabels,
     },
+    container: rightToolbarContainer,
     onSelectedValueChange: (selectedValue) => {
       const newValue = selectedValue === 'true';
       // Update URL parameter
@@ -536,6 +564,11 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       }
     },
   });
+
+  // Append the right container to the toolbar
+  if (toolbar) {
+    toolbar.appendChild(rightToolbarContainer);
+  }
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;

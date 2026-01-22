@@ -45,6 +45,12 @@ class OrientationController extends BaseTool {
     cellId: number;
     originalColor: number[];
     viewport: Types.IVolumeViewport;
+    isMainFace: boolean;
+    originalDiffuseColor?: number[];
+    originalLighting?: boolean;
+    originalDiffuse?: number;
+    originalAmbient?: number;
+    originalScale?: number[];
   } | null = null;
 
   constructor(
@@ -552,11 +558,42 @@ class OrientationController extends BaseTool {
   private highlightFace(
     actor: vtkActor,
     cellId: number,
-    viewport: Types.IVolumeViewport
+    viewport: Types.IVolumeViewport,
+    isMainFace: boolean = false
   ): void {
     // Clear any existing highlight first
     this.clearHighlight();
 
+    // For main faces (texture-based), use scale change for highlight
+    if (isMainFace) {
+      const originalScale = actor.getScale();
+
+      // Store highlight info for later reset
+      this.highlightedFace = {
+        actor,
+        cellId,
+        originalColor: [],
+        viewport,
+        isMainFace: true,
+        originalDiffuseColor: [0, 0, 0],
+        originalLighting: false,
+        originalDiffuse: 0,
+        originalAmbient: 0,
+        originalScale: [...originalScale],
+      };
+
+      // Slightly increase scale to make the face stand out
+      actor.setScale(
+        originalScale[0] * 1.1,
+        originalScale[1] * 1.1,
+        originalScale[2] * 1.1
+      );
+
+      viewport.render();
+      return;
+    }
+
+    // For edge/corner faces (cell data colors)
     const mapper = actor.getMapper();
     const inputData = mapper.getInputData();
 
@@ -587,6 +624,7 @@ class OrientationController extends BaseTool {
       cellId,
       originalColor,
       viewport,
+      isMainFace: false,
     };
 
     // Set highlight color (bright white)
@@ -606,7 +644,25 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    const { actor, cellId, originalColor, viewport } = this.highlightedFace;
+    const {
+      actor,
+      cellId,
+      originalColor,
+      viewport,
+      isMainFace,
+      originalDiffuseColor,
+    } = this.highlightedFace;
+
+    // For main faces, reset the actor's scale
+    if (isMainFace && this.highlightedFace.originalScale) {
+      const scale = this.highlightedFace.originalScale;
+      actor.setScale(scale[0], scale[1], scale[2]);
+      viewport.render();
+      this.highlightedFace = null;
+      return;
+    }
+
+    // For edge/corner faces, reset cell data colors
     const mapper = actor.getMapper();
     const inputData = mapper.getInputData();
 
@@ -1041,7 +1097,8 @@ class OrientationController extends BaseTool {
         this.highlightFace(
           pickedActor,
           cellId,
-          viewport as Types.IVolumeViewport
+          viewport as Types.IVolumeViewport,
+          actorIndex === 0 // isMainFace
         );
 
         const orientation = this.getOrientationForFace(globalCellId);

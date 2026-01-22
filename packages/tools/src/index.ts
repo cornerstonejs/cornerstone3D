@@ -74,6 +74,7 @@ import {
   ScaleOverlayTool,
   OrientationMarkerTool,
   OrientationControlTool,
+  OrientationController,
   OverlayGridTool,
   SegmentationIntersectionTool,
   EraserTool,
@@ -161,6 +162,7 @@ export {
   BrushTool,
   OrientationMarkerTool,
   OrientationControlTool,
+  OrientationController,
   SegmentSelectTool,
   SegmentLabelTool,
   // Synchronizers
