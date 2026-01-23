@@ -318,6 +318,12 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
 
   // Private methods
 
+  // No-op function since actors are created on demand
+  function updateAllFaceTextures() {
+    // Actors are created fresh each time getActors() is called
+    // so no update is needed here
+  }
+
   function createActors() {
     // Extract scale value
     let sourceScale = 1.0;
@@ -341,6 +347,43 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
             parseInt(result[3], 16),
           ]
         : [255, 255, 255];
+    };
+
+    // Parse fontColor from various formats (rgb(r,g,b), hex, named colors)
+    const parseFontColor = (color) => {
+      if (!color) {
+        return [0, 0, 0]; // Default to black
+      }
+
+      // Handle rgb(r, g, b) format
+      const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      if (rgbMatch) {
+        return [
+          parseInt(rgbMatch[1], 10),
+          parseInt(rgbMatch[2], 10),
+          parseInt(rgbMatch[3], 10),
+        ];
+      }
+
+      // Handle hex format
+      if (color.startsWith('#')) {
+        return hexToRgb(color);
+      }
+
+      // Handle named colors
+      const namedColors = {
+        black: [0, 0, 0],
+        white: [255, 255, 255],
+        red: [255, 0, 0],
+        green: [0, 255, 0],
+        blue: [0, 0, 255],
+      };
+      if (namedColors[color.toLowerCase()]) {
+        return namedColors[color.toLowerCase()];
+      }
+
+      // Default to black
+      return [0, 0, 0];
     };
 
     const faceColors = {
@@ -375,39 +418,51 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
         {
           faceColor: faceColors.zMinus,
           text: model.zMinusFaceProperty.text || 'I',
-          textColor: [0, 0, 0],
+          textColor: parseFontColor(
+            model.zMinusFaceProperty.fontColor || model.defaultStyle.fontColor
+          ),
           rotation: 0,
         },
         {
           faceColor: faceColors.zPlus,
           text: model.zPlusFaceProperty.text || 'S',
-          textColor: [0, 0, 0],
+          textColor: parseFontColor(
+            model.zPlusFaceProperty.fontColor || model.defaultStyle.fontColor
+          ),
           rotation: 0,
           flipVertical: true,
         },
         {
           faceColor: faceColors.yMinus,
           text: model.yMinusFaceProperty.text || 'A',
-          textColor: [255, 255, 255],
+          textColor: parseFontColor(
+            model.yMinusFaceProperty.fontColor || model.defaultStyle.fontColor
+          ),
           rotation: 180,
         },
         {
           faceColor: faceColors.yPlus,
           text: model.yPlusFaceProperty.text || 'P',
-          textColor: [255, 255, 255],
+          textColor: parseFontColor(
+            model.yPlusFaceProperty.fontColor || model.defaultStyle.fontColor
+          ),
           rotation: 180,
         },
         {
           faceColor: faceColors.xMinus,
           text: model.xMinusFaceProperty.text || 'L',
-          textColor: [0, 0, 0],
+          textColor: parseFontColor(
+            model.xMinusFaceProperty.fontColor || model.defaultStyle.fontColor
+          ),
           rotation: 90,
           flipVertical: true,
         },
         {
           faceColor: faceColors.xPlus,
           text: model.xPlusFaceProperty.text || 'R',
-          textColor: [0, 0, 0],
+          textColor: parseFontColor(
+            model.xPlusFaceProperty.fontColor || model.defaultStyle.fontColor
+          ),
           rotation: 90,
         },
       ];

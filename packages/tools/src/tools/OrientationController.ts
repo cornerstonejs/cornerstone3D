@@ -1,5 +1,3 @@
-import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import { BaseTool } from './base';
 import {
   getEnabledElementByIds,
@@ -10,7 +8,10 @@ import type { Types } from '@cornerstonejs/core';
 import { getToolGroup } from '../store/ToolGroupManager';
 import * as ToolsEnums from '../enums';
 import { vec3, mat4, quat } from 'gl-matrix';
-import vtkAnnotatedRhombicuboctahedronActor from '../utilities/vtkjs/AnnotatedRhombicuboctahedronActor';
+import {
+  vtkOrientationControllerWidget,
+  type OrientationControllerConfig,
+} from '../utilities/vtkjs/OrientationControllerWidget';
 
 /**
  * OrientationController provides an interactive orientation marker
@@ -31,27 +32,9 @@ import vtkAnnotatedRhombicuboctahedronActor from '../utilities/vtkjs/AnnotatedRh
 class OrientationController extends BaseTool {
   static toolName = 'OrientationController';
 
-  private actors = new Map<string, vtkActor[]>();
-  private pickers = new Map<string, vtkCellPicker>();
-  private clickHandlers = new Map<string, (evt: MouseEvent) => void>();
-  private dragHandlers = new Map<string, (evt: MouseEvent) => void>();
-  private mouseUpHandlers = new Map<string, () => void>();
+  private widget = new vtkOrientationControllerWidget();
   private resizeObservers = new Map<string, ResizeObserver>();
   private cameraHandlers = new Map<string, (evt: CustomEvent) => void>();
-
-  // Store highlighted face info for mouse up reset
-  private highlightedFace: {
-    actor: vtkActor;
-    cellId: number;
-    originalColor: number[];
-    viewport: Types.IVolumeViewport;
-    isMainFace: boolean;
-    originalDiffuseColor?: number[];
-    originalLighting?: boolean;
-    originalDiffuse?: number;
-    originalAmbient?: number;
-    originalScale?: number[];
-  } | null = null;
 
   constructor(
     toolProps = {},
@@ -211,7 +194,7 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    if (this.actors.has(viewportId)) {
+    if (this.widget.getActors(viewportId)) {
       return;
     }
 
@@ -221,68 +204,27 @@ class OrientationController extends BaseTool {
   };
 
   private removeMarkers(): void {
-    this.actors.forEach((actors, viewportId) => {
-      const viewportsInfo = this._getViewportsInfo();
-      const viewportInfo = viewportsInfo.find(
-        (vp) => vp.viewportId === viewportId
+    const viewportsInfo = this._getViewportsInfo();
+
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
       );
 
-      if (viewportInfo) {
-        const enabledElement = getEnabledElementByIds(
-          viewportId,
-          viewportInfo.renderingEngineId
-        );
-
-        if (enabledElement) {
-          const { viewport } = enabledElement;
-          // Remove all actors for this viewport
-          const uids = actors.map(
-            (_, index) => `orientation-controller-${viewportId}-${index}`
+      if (enabledElement) {
+        const { viewport } = enabledElement;
+        if (viewport.type === Enums.ViewportType.VOLUME_3D) {
+          this.widget.removeActorsFromViewport(
+            viewportId,
+            viewport as Types.IVolumeViewport
           );
-          viewport.removeActors(uids);
         }
       }
     });
 
-    this.clickHandlers.forEach((handler, viewportId) => {
-      const viewportsInfo = this._getViewportsInfo();
-      const viewportInfo = viewportsInfo.find(
-        (vp) => vp.viewportId === viewportId
-      );
-
-      if (viewportInfo) {
-        const enabledElement = getEnabledElementByIds(
-          viewportId,
-          viewportInfo.renderingEngineId
-        );
-
-        if (enabledElement?.viewport?.element) {
-          const element = enabledElement.viewport.element;
-          element.removeEventListener('mousedown', handler);
-
-          const hoverHandler = this.dragHandlers.get(viewportId);
-          const mouseUpHandler = this.mouseUpHandlers.get(viewportId);
-
-          if (hoverHandler) {
-            element.removeEventListener('mousemove', hoverHandler);
-          }
-          if (mouseUpHandler) {
-            element.removeEventListener('mouseup', mouseUpHandler);
-            element.removeEventListener('mouseleave', mouseUpHandler);
-          }
-        }
-      }
-    });
-
+    this.widget.cleanup();
     this.resizeObservers.forEach((observer) => observer.disconnect());
-    // Note: camera handlers are added to elements, which are removed when actors are removed
-    // so we don't need to explicitly remove them
-
-    this.actors.clear();
-    this.pickers.clear();
-    this.clickHandlers.clear();
-    this.dragHandlers.clear();
-    this.mouseUpHandlers.clear();
     this.resizeObservers.clear();
     this.cameraHandlers.clear();
   }
@@ -306,7 +248,7 @@ class OrientationController extends BaseTool {
         return;
       }
 
-      if (this.actors.has(viewportId)) {
+      if (this.widget.getActors(viewportId)) {
         return;
       }
 
@@ -316,98 +258,19 @@ class OrientationController extends BaseTool {
     });
   };
 
-  private createAnnotatedRhombActor(): vtkActor[] {
+  private createAnnotatedRhombActor(): ReturnType<
+    vtkOrientationControllerWidget['createActors']
+  > {
     const faceColors = this.getFaceColors();
     const letterColors = this.getLetterColors();
-    const rgbToHex = (rgb: number[]) => {
-      return `#${rgb
-        .map((x) => {
-          const hex = Math.round(x).toString(16);
-          return hex.length === 1 ? '0' + hex : hex;
-        })
-        .join('')}`;
-    };
 
-    const rgbToHexColor = (rgb: number[]) => {
-      return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-    };
-
-    const actorFactory = vtkAnnotatedRhombicuboctahedronActor.newInstance();
-
-    const defaultStyle = {
-      fontStyle: 'bold',
-      fontFamily: 'Arial',
-      fontColor: 'black',
-      fontSizeScale: (res: number) => res / 2,
-      faceColor: rgbToHex(faceColors.topBottom),
-      edgeThickness: 0.1,
-      edgeColor: 'black',
-      resolution: 400,
-    };
-
-    actorFactory.setDefaultStyle(defaultStyle);
-
-    // LPS coordinate system labels for the 6 main faces
-    actorFactory.setXPlusFaceProperty({
-      text: 'L',
-      faceColor: rgbToHex(faceColors.leftRight),
-      fontColor: rgbToHexColor(letterColors.xPlus),
-      faceRotation: 0,
+    return this.widget.createActors({
+      faceColors,
+      letterColors,
+      opacity: this.configuration.opacity ?? 1.0,
+      showEdgeFaces: this.configuration.showEdgeFaces !== false,
+      showCornerFaces: this.configuration.showCornerFaces !== false,
     });
-
-    actorFactory.setXMinusFaceProperty({
-      text: 'R',
-      faceColor: rgbToHex(faceColors.leftRight),
-      fontColor: rgbToHexColor(letterColors.xMinus),
-      faceRotation: 0,
-    });
-
-    actorFactory.setYPlusFaceProperty({
-      text: 'P',
-      faceColor: rgbToHex(faceColors.frontBack),
-      fontColor: rgbToHexColor(letterColors.yPlus),
-      faceRotation: 180,
-    });
-
-    actorFactory.setYMinusFaceProperty({
-      text: 'A',
-      faceColor: rgbToHex(faceColors.frontBack),
-      fontColor: rgbToHexColor(letterColors.yMinus),
-      faceRotation: 0,
-    });
-
-    actorFactory.setZPlusFaceProperty({
-      text: 'S',
-      faceColor: rgbToHex(faceColors.topBottom),
-      fontColor: rgbToHexColor(letterColors.zPlus),
-    });
-
-    actorFactory.setZMinusFaceProperty({
-      text: 'I',
-      faceColor: rgbToHex(faceColors.topBottom),
-      fontColor: rgbToHexColor(letterColors.zMinus),
-    });
-
-    // Configure which faces to show
-    actorFactory.setShowMainFaces(true);
-    actorFactory.setShowEdgeFaces(this.configuration.showEdgeFaces !== false);
-    actorFactory.setShowCornerFaces(
-      this.configuration.showCornerFaces !== false
-    );
-
-    // Don't set scale on factory - we'll scale the actors directly in positionMarker
-
-    const actors = actorFactory.getActors();
-
-    // Set opacity for all actors
-    const opacity = this.configuration.opacity ?? 1.0;
-    actors.forEach((actor) => {
-      const property = actor.getProperty();
-      property.setOpacity(opacity);
-      actor.setVisibility(true);
-    });
-
-    return actors;
   }
 
   private addMarkerToViewport(
@@ -432,42 +295,29 @@ class OrientationController extends BaseTool {
     }
 
     const element = viewport.element;
-
-    // Remove existing actors if they exist to ensure clean recreation
-    const existingActors = this.actors.get(viewportId);
-    if (existingActors) {
-      const uids = existingActors.map(
-        (_, index) => `orientation-controller-${viewportId}-${index}`
-      );
-      viewport.removeActors(uids);
-      this.actors.delete(viewportId);
-    }
+    const volumeViewport = viewport as Types.IVolumeViewport;
 
     const actors = this.createAnnotatedRhombActor();
 
-    // Add each actor with unique UID
-    const uids: string[] = [];
-    actors.forEach((actor, index) => {
-      const uid = `orientation-controller-${viewportId}-${index}`;
-      viewport.addActor({ actor, uid });
-      uids.push(uid);
+    this.widget.addActorsToViewport(viewportId, volumeViewport, actors);
+
+    const positioned = this.widget.positionActors(volumeViewport, actors, {
+      position: this.configuration.position || 'bottom-right',
+      size: this.configuration.size || 0.15,
     });
-
-    this.actors.set(viewportId, actors);
-
-    const positioned = this.positionMarker(
-      viewport as Types.IVolumeViewport,
-      actors
-    );
 
     if (!positioned) {
       console.warn(
         'OrientationController: Initial positioning failed, retrying...'
       );
       setTimeout(() => {
-        const repositioned = this.positionMarker(
-          viewport as Types.IVolumeViewport,
-          actors
+        const repositioned = this.widget.positionActors(
+          volumeViewport,
+          actors,
+          {
+            position: this.configuration.position || 'bottom-right',
+            size: this.configuration.size || 0.15,
+          }
         );
         if (repositioned) {
           viewport.render();
@@ -479,17 +329,38 @@ class OrientationController extends BaseTool {
       viewport.render();
     }
 
-    const picker = vtkCellPicker.newInstance({ opacityThreshold: 0.0001 });
-    picker.setPickFromList(true);
-    picker.setTolerance(0.001);
-    picker.initializePickList();
-    // Add all actors to the pick list
-    actors.forEach((actor) => {
-      picker.addPickList(actor);
-    });
-    this.pickers.set(viewportId, picker);
+    this.widget.setupPicker(viewportId, actors);
 
-    this.setupClickHandler(viewportId, renderingEngineId, element, actors);
+    this.widget.setupMouseHandlers(
+      viewportId,
+      element,
+      volumeViewport,
+      actors,
+      {
+        onFacePicked: (result) => {
+          const orientation = this.getOrientationForFace(result.cellId);
+          if (orientation) {
+            this.animateCameraToOrientation(
+              volumeViewport,
+              orientation.viewPlaneNormal,
+              orientation.viewUp
+            );
+          }
+        },
+        onFaceHover: (result) => {
+          if (result && result.actorIndex !== 0) {
+            this.widget.highlightFace(
+              result.pickedActor,
+              result.cellId,
+              volumeViewport,
+              false
+            );
+          } else {
+            this.widget.clearHighlight();
+          }
+        },
+      }
+    );
 
     const resizeObserver = new ResizeObserver(() => {
       this.updateMarkerPosition(viewportId, renderingEngineId);
@@ -510,226 +381,13 @@ class OrientationController extends BaseTool {
     this.cameraHandlers.set(viewportId, cameraHandler);
   }
 
-  private positionMarker(
-    viewport: Types.IVolumeViewport,
-    actors: vtkActor[]
-  ): boolean {
-    const bounds = viewport.getBounds();
-    if (!bounds || bounds.length < 6) {
-      console.warn('OrientationController: No bounds available');
-      return false;
-    }
-
-    const size = this.configuration.size || 0.15;
-    const position = this.configuration.position || 'bottom-right';
-
-    const diagonal = Math.sqrt(
-      Math.pow(bounds[1] - bounds[0], 2) +
-        Math.pow(bounds[3] - bounds[2], 2) +
-        Math.pow(bounds[5] - bounds[4], 2)
-    );
-    const markerSize = diagonal * size;
-
-    // Scale and position all actors
-    actors.forEach((actor) => {
-      actor.setScale(markerSize, markerSize, markerSize);
-
-      const worldPos = this.getMarkerPositionInScreenSpace(viewport, position);
-      if (!worldPos) {
-        console.warn('OrientationController: Could not get world position');
-        return false;
-      }
-
-      actor.setPosition(worldPos[0], worldPos[1], worldPos[2]);
-
-      this.updateMarkerOrientation(viewport, actor);
-    });
-
-    return true;
-  }
-
-  private getMarkerPositionInScreenSpace(
-    viewport: Types.IVolumeViewport,
-    position: string
-  ): [number, number, number] | null {
-    const canvas = viewport.canvas;
-    if (!canvas) {
-      return null;
-    }
-
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const cornerOffset = 35; // pixels from corner (match OrientationControlTool)
-
-    let canvasX: number;
-    let canvasY: number;
-
-    switch (position) {
-      case 'top-left':
-        canvasX = cornerOffset;
-        canvasY = cornerOffset;
-        break;
-      case 'top-right':
-        canvasX = canvasWidth - cornerOffset;
-        canvasY = cornerOffset;
-        break;
-      case 'bottom-left':
-        canvasX = cornerOffset;
-        canvasY = canvasHeight - cornerOffset;
-        break;
-      default: // bottom-right
-        canvasX = canvasWidth - cornerOffset;
-        canvasY = canvasHeight - cornerOffset;
-    }
-
-    const canvasPos: Types.Point2 = [canvasX, canvasY];
-    const worldPos = viewport.canvasToWorld(canvasPos);
-
-    return [worldPos[0], worldPos[1], worldPos[2]];
-  }
-
-  private updateMarkerOrientation(
-    viewport: Types.IVolumeViewport,
-    actor: vtkActor
-  ): void {
-    actor.setOrientation(0, 0, 0);
-  }
-
-  private highlightFace(
-    actor: vtkActor,
-    cellId: number,
-    viewport: Types.IVolumeViewport,
-    isMainFace: boolean = false
-  ): void {
-    // Check if we're already highlighting this exact face
-    if (
-      this.highlightedFace &&
-      this.highlightedFace.actor === actor &&
-      this.highlightedFace.cellId === cellId &&
-      this.highlightedFace.isMainFace === isMainFace
-    ) {
-      return; // Already highlighting this face, no need to re-highlight
-    }
-
-    // Clear any existing highlight first
-    this.clearHighlight();
-
-    // For main faces (texture-based), we can't easily highlight individual faces
-    // since they're all on the same actor. Scaling the actor would affect all 6 main faces.
-    // Skip highlighting for main faces on hover to avoid highlighting multiple faces.
-    if (isMainFace) {
-      return;
-    }
-
-    // For edge/corner faces (cell data colors)
-    const mapper = actor.getMapper();
-    const inputData = mapper.getInputData();
-
-    if (!inputData) {
-      return;
-    }
-
-    const cellData = inputData.getCellData();
-    const colors = cellData.getScalars();
-
-    if (!colors) {
-      return;
-    }
-
-    // Store original color
-    const colorArray = colors.getData();
-    const offset = cellId * 4;
-    const originalColor = [
-      colorArray[offset],
-      colorArray[offset + 1],
-      colorArray[offset + 2],
-      colorArray[offset + 3],
-    ];
-
-    // Store highlight info for later reset
-    this.highlightedFace = {
-      actor,
-      cellId,
-      originalColor,
-      viewport,
-      isMainFace: false,
-    };
-
-    // Set highlight color (bright white)
-    colorArray[offset] = 255;
-    colorArray[offset + 1] = 255;
-    colorArray[offset + 2] = 255;
-    colorArray[offset + 3] = 255;
-
-    // Mark as modified and render
-    colors.modified();
-    inputData.modified();
-    viewport.render();
-  }
-
-  private clearHighlight(): void {
-    if (!this.highlightedFace) {
-      return;
-    }
-
-    const {
-      actor,
-      cellId,
-      originalColor,
-      viewport,
-      isMainFace,
-      originalDiffuseColor,
-    } = this.highlightedFace;
-
-    // For main faces, reset the actor's scale
-    if (isMainFace && this.highlightedFace.originalScale) {
-      const scale = this.highlightedFace.originalScale;
-      actor.setScale(scale[0], scale[1], scale[2]);
-      viewport.render();
-      this.highlightedFace = null;
-      return;
-    }
-
-    // For edge/corner faces, reset cell data colors
-    const mapper = actor.getMapper();
-    const inputData = mapper.getInputData();
-
-    if (!inputData) {
-      this.highlightedFace = null;
-      return;
-    }
-
-    const cellData = inputData.getCellData();
-    const colors = cellData.getScalars();
-
-    if (!colors) {
-      this.highlightedFace = null;
-      return;
-    }
-
-    // Reset to original color
-    const colorArray = colors.getData();
-    const offset = cellId * 4;
-    colorArray[offset] = originalColor[0];
-    colorArray[offset + 1] = originalColor[1];
-    colorArray[offset + 2] = originalColor[2];
-    colorArray[offset + 3] = originalColor[3];
-
-    // Mark as modified and render
-    colors.modified();
-    inputData.modified();
-    viewport.render();
-
-    this.highlightedFace = null;
-  }
-
   private onCameraModified = (evt: CustomEvent): void => {
     const { viewportId } = evt.detail as { viewportId: string };
     if (!viewportId) {
       return;
     }
 
-    const actors = this.actors.get(viewportId);
+    const actors = this.widget.getActors(viewportId);
 
     if (!actors) {
       return;
@@ -758,7 +416,10 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    this.positionMarker(viewport as Types.IVolumeViewport, actors);
+    this.widget.positionActors(viewport as Types.IVolumeViewport, actors, {
+      position: this.configuration.position || 'bottom-right',
+      size: this.configuration.size || 0.15,
+    });
   };
 
   private updateMarkerPosition(
@@ -774,7 +435,7 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    const actors = this.actors.get(viewportId);
+    const actors = this.widget.getActors(viewportId);
 
     if (!actors) {
       return;
@@ -785,7 +446,10 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    this.positionMarker(viewport as Types.IVolumeViewport, actors);
+    this.widget.positionActors(viewport as Types.IVolumeViewport, actors, {
+      position: this.configuration.position || 'bottom-right',
+      size: this.configuration.size || 0.15,
+    });
   }
 
   private animateCameraToOrientation(
@@ -1064,198 +728,6 @@ class OrientationController extends BaseTool {
     });
 
     return orientations.get(cellId) || null;
-  }
-
-  private pickFaceAtPosition(
-    evt: MouseEvent,
-    viewportId: string,
-    renderingEngineId: string,
-    element: HTMLDivElement,
-    actors: vtkActor[]
-  ): { pickedActor: vtkActor; cellId: number; actorIndex: number } | null {
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-
-    if (!enabledElement) {
-      return null;
-    }
-
-    const { viewport } = enabledElement;
-
-    if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
-      return null;
-    }
-
-    const picker = this.pickers.get(viewportId);
-    if (!picker) {
-      return null;
-    }
-
-    const rect = element.getBoundingClientRect();
-    const x = evt.clientX - rect.left;
-    const y = evt.clientY - rect.top;
-
-    // Calculate VTK display coordinates manually (works for all rendering engines)
-    const renderer = viewport.getRenderer();
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const canvasPosWithDPR = [x * devicePixelRatio, y * devicePixelRatio];
-
-    const canvas = viewport.canvas;
-    const { width, height } = canvas;
-
-    // Get the actual renderer viewport bounds
-    const [xMin, yMin, xMax, yMax] =
-      renderer.getViewport() as unknown as number[];
-    const viewportWidth = xMax - xMin;
-    const viewportHeight = yMax - yMin;
-
-    // Scale the canvas position to the actual viewport size
-    const scaledX = (canvasPosWithDPR[0] / width) * viewportWidth * width;
-    const scaledY = (canvasPosWithDPR[1] / height) * viewportHeight * height;
-
-    // Canvas coordinates with origin at top-left
-    // VTK display coordinates have origin at bottom-left
-    const displayCoord = [scaledX, viewportHeight * height - scaledY];
-    const displayCoords: [number, number, number] = [
-      displayCoord[0],
-      displayCoord[1],
-      0,
-    ];
-
-    picker.pick(displayCoords, renderer);
-
-    const pickedActors = picker.getActors();
-    if (pickedActors.length === 0) {
-      return null;
-    }
-
-    const pickedActor = pickedActors[0];
-    const cellId = picker.getCellId();
-
-    // Handle picks on the rhombicuboctahedron actors
-    if (actors.includes(pickedActor) && cellId !== -1) {
-      const actorIndex = actors.indexOf(pickedActor);
-      return { pickedActor, cellId, actorIndex };
-    }
-
-    return null;
-  }
-
-  private setupClickHandler(
-    viewportId: string,
-    renderingEngineId: string,
-    element: HTMLDivElement,
-    actors: vtkActor[]
-  ): void {
-    let isMouseDown = false;
-
-    const hoverHandler = (evt: MouseEvent) => {
-      if (isMouseDown) {
-        return;
-      }
-
-      const pickResult = this.pickFaceAtPosition(
-        evt,
-        viewportId,
-        renderingEngineId,
-        element,
-        actors
-      );
-
-      if (pickResult) {
-        const { pickedActor, cellId, actorIndex } = pickResult;
-        const enabledElement = getEnabledElementByIds(
-          viewportId,
-          renderingEngineId
-        );
-        if (enabledElement) {
-          const { viewport } = enabledElement;
-          // Only highlight edge/corner faces on hover (not main faces)
-          // Main faces are all on the same actor, so highlighting would affect all of them
-          if (actorIndex !== 0) {
-            this.highlightFace(
-              pickedActor,
-              cellId,
-              viewport as Types.IVolumeViewport,
-              false // isMainFace = false for edge/corner faces
-            );
-          }
-        }
-      } else {
-        this.clearHighlight();
-      }
-    };
-
-    const clickHandler = (evt: MouseEvent) => {
-      if (evt.button !== 0) {
-        return;
-      }
-
-      const pickResult = this.pickFaceAtPosition(
-        evt,
-        viewportId,
-        renderingEngineId,
-        element,
-        actors
-      );
-
-      if (!pickResult) {
-        return;
-      }
-
-      const { pickedActor, cellId, actorIndex } = pickResult;
-      isMouseDown = true;
-
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-
-      if (!enabledElement) {
-        return;
-      }
-
-      const { viewport } = enabledElement;
-
-      // Determine global cellId
-      let globalCellId = cellId;
-      if (actorIndex === 1) {
-        // Edge faces: add 6 to convert local cellId to global
-        globalCellId = cellId + 6;
-      } else if (actorIndex === 2) {
-        // Corner faces: add 18 to convert local cellId to global
-        globalCellId = cellId + 18;
-      }
-      // actorIndex === 0 (main faces): cellId stays as is
-
-      const orientation = this.getOrientationForFace(globalCellId);
-      if (orientation) {
-        this.animateCameraToOrientation(
-          viewport as Types.IVolumeViewport,
-          orientation.viewPlaneNormal,
-          orientation.viewUp
-        );
-      }
-
-      evt.preventDefault();
-      evt.stopPropagation();
-    };
-
-    const mouseUpHandler = () => {
-      isMouseDown = false;
-      this.clearHighlight();
-    };
-
-    element.addEventListener('mousemove', hoverHandler);
-    element.addEventListener('mousedown', clickHandler);
-    element.addEventListener('mouseup', mouseUpHandler);
-    element.addEventListener('mouseleave', mouseUpHandler);
-
-    this.clickHandlers.set(viewportId, clickHandler);
-    this.dragHandlers.set(viewportId, hoverHandler);
-    this.mouseUpHandlers.set(viewportId, mouseUpHandler);
   }
 }
 
