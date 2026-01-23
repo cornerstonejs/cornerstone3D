@@ -182,7 +182,8 @@ function handleCardiac4D(imageIds: string[]): MultiframeSplitResult | null {
     'CardiacNumberOfImages'
   );
 
-  if (!Number.isFinite(cardiacNumberOfImages)) {
+  // Check if CardiacNumberOfImages exists as a detection flag for cardiac 4D data
+  if (cardiacNumberOfImages === undefined) {
     return null;
   }
 
@@ -220,7 +221,9 @@ function handleCardiac4D(imageIds: string[]): MultiframeSplitResult | null {
     positions.get(inStackPositionNumber).push({ imageId, triggerTime });
   }
 
-  const sortedStackIds = Array.from(stacks.keys()).sort();
+  const sortedStackIds = Array.from(stacks.keys()).sort(
+    (a, b) => Number(a) - Number(b)
+  );
   if (sortedStackIds.length === 0) {
     return null;
   }
@@ -349,7 +352,7 @@ function test4DTag(
   return frame_groups;
 }
 
-function getTagValue(imageId: string, tag: string): number {
+function getTagValue(imageId: string, tag: string): number | undefined {
   const value = metaData.get(tag, imageId);
   try {
     return parseFloat(value);
