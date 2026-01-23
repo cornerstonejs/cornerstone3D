@@ -43,7 +43,7 @@ class OrientationController extends BaseTool {
       configuration: {
         enabled: true,
         opacity: 1.0,
-        size: 0.02,
+        size: 0.04,
         position: 'bottom-right',
         colorScheme: 'marker',
         letterColorScheme: 'rgb',
@@ -303,7 +303,7 @@ class OrientationController extends BaseTool {
 
     const positioned = this.widget.positionActors(volumeViewport, actors, {
       position: this.configuration.position || 'bottom-right',
-      size: this.configuration.size || 0.15,
+      size: this.configuration.size || 0.04,
     });
 
     if (!positioned) {
@@ -316,7 +316,7 @@ class OrientationController extends BaseTool {
           actors,
           {
             position: this.configuration.position || 'bottom-right',
-            size: this.configuration.size || 0.15,
+            size: this.configuration.size || 0.04,
           }
         );
         if (repositioned) {
@@ -338,7 +338,7 @@ class OrientationController extends BaseTool {
       actors,
       {
         onFacePicked: (result) => {
-          const orientation = this.getOrientationForFace(result.cellId);
+          const orientation = this.widget.getOrientationForFace(result.cellId);
           if (orientation) {
             this.animateCameraToOrientation(
               volumeViewport,
@@ -416,10 +416,14 @@ class OrientationController extends BaseTool {
       return;
     }
 
-    this.widget.positionActors(viewport as Types.IVolumeViewport, actors, {
+    // Recalculate both size and position to maintain fixed screen size
+    // Size needs to be recalculated because parallel scale changes with zoom
+    const volumeViewport = viewport as Types.IVolumeViewport;
+    this.widget.positionActors(volumeViewport, actors, {
       position: this.configuration.position || 'bottom-right',
-      size: this.configuration.size || 0.15,
+      size: this.configuration.size || 0.04,
     });
+    viewport.render();
   };
 
   private updateMarkerPosition(
@@ -448,7 +452,7 @@ class OrientationController extends BaseTool {
 
     this.widget.positionActors(viewport as Types.IVolumeViewport, actors, {
       position: this.configuration.position || 'bottom-right',
-      size: this.configuration.size || 0.15,
+      size: this.configuration.size || 0.04,
     });
   }
 
@@ -617,117 +621,6 @@ class OrientationController extends BaseTool {
     };
 
     animate();
-  }
-
-  private getOrientationForFace(cellId: number): {
-    viewPlaneNormal: number[];
-    viewUp: number[];
-  } | null {
-    // Cell IDs for rhombicuboctahedron:
-    // 0-5: Main square faces
-    // 6-17: Edge square faces
-    // 18-25: Corner triangular faces
-
-    const orientations = new Map<
-      number,
-      { viewPlaneNormal: number[]; viewUp: number[] }
-    >();
-
-    // Main 6 faces
-    orientations.set(0, { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] }); // Bottom
-    orientations.set(1, { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] }); // Top
-    orientations.set(2, { viewPlaneNormal: [0, -1, 0], viewUp: [0, 0, 1] }); // Front
-    orientations.set(3, { viewPlaneNormal: [0, 1, 0], viewUp: [0, 0, 1] }); // Back
-    orientations.set(4, { viewPlaneNormal: [-1, 0, 0], viewUp: [0, 0, 1] }); // Left
-    orientations.set(5, { viewPlaneNormal: [1, 0, 0], viewUp: [0, 0, 1] }); // Right
-
-    // 12 edge faces - diagonal views
-    const sqrt2 = 1 / Math.sqrt(2);
-    orientations.set(6, {
-      viewPlaneNormal: [0, -sqrt2, -sqrt2],
-      viewUp: [0, -sqrt2, sqrt2],
-    });
-    orientations.set(7, {
-      viewPlaneNormal: [sqrt2, 0, -sqrt2],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(8, {
-      viewPlaneNormal: [0, sqrt2, -sqrt2],
-      viewUp: [0, -sqrt2, -sqrt2],
-    });
-    orientations.set(9, {
-      viewPlaneNormal: [-sqrt2, 0, -sqrt2],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(10, {
-      viewPlaneNormal: [0, -sqrt2, sqrt2],
-      viewUp: [0, sqrt2, sqrt2],
-    });
-    orientations.set(11, {
-      viewPlaneNormal: [sqrt2, 0, sqrt2],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(12, {
-      viewPlaneNormal: [0, sqrt2, sqrt2],
-      viewUp: [0, sqrt2, -sqrt2],
-    });
-    orientations.set(13, {
-      viewPlaneNormal: [-sqrt2, 0, sqrt2],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(14, {
-      viewPlaneNormal: [-sqrt2, -sqrt2, 0],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(15, {
-      viewPlaneNormal: [sqrt2, -sqrt2, 0],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(16, {
-      viewPlaneNormal: [sqrt2, sqrt2, 0],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(17, {
-      viewPlaneNormal: [-sqrt2, sqrt2, 0],
-      viewUp: [0, 0, 1],
-    });
-
-    // 8 corner faces - tri-axial views
-    const sqrt3 = 1 / Math.sqrt(3);
-    orientations.set(18, {
-      viewPlaneNormal: [-sqrt3, -sqrt3, -sqrt3],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(19, {
-      viewPlaneNormal: [sqrt3, -sqrt3, -sqrt3],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(20, {
-      viewPlaneNormal: [sqrt3, sqrt3, -sqrt3],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(21, {
-      viewPlaneNormal: [-sqrt3, sqrt3, -sqrt3],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(22, {
-      viewPlaneNormal: [-sqrt3, -sqrt3, sqrt3],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(23, {
-      viewPlaneNormal: [sqrt3, -sqrt3, sqrt3],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(24, {
-      viewPlaneNormal: [sqrt3, sqrt3, sqrt3],
-      viewUp: [0, 0, 1],
-    });
-    orientations.set(25, {
-      viewPlaneNormal: [-sqrt3, sqrt3, sqrt3],
-      viewUp: [0, 0, 1],
-    });
-
-    return orientations.get(cellId) || null;
   }
 }
 

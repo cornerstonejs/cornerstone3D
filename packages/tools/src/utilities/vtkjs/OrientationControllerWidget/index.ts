@@ -301,18 +301,33 @@ export class vtkOrientationControllerWidget {
     actors: vtkActor[],
     config: PositionConfig
   ): boolean {
-    const bounds = viewport.getBounds();
-    if (!bounds || bounds.length < 6) {
-      console.warn('OrientationControllerWidget: No bounds available');
+    // Calculate marker size in world units to maintain fixed screen size
+    // This keeps the marker at a constant screen size regardless of zoom
+    const canvas = viewport.canvas;
+    if (!canvas) {
+      console.warn('OrientationControllerWidget: No canvas available');
       return false;
     }
 
-    const diagonal = Math.sqrt(
-      Math.pow(bounds[1] - bounds[0], 2) +
-        Math.pow(bounds[3] - bounds[2], 2) +
-        Math.pow(bounds[5] - bounds[4], 2)
-    );
-    const markerSize = diagonal * config.size;
+    // Get the camera to calculate world-to-screen ratio
+    const camera = viewport.getVtkActiveCamera();
+    const parallelScale = camera.getParallelScale();
+
+    // parallelScale is half the height of the view in world coordinates
+    // So the full height in world units is parallelScale * 2
+    const worldHeight = parallelScale * 2;
+
+    // Calculate world units per pixel
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasHeight = canvas.height / devicePixelRatio;
+    const worldUnitsPerPixel = worldHeight / canvasHeight;
+
+    // Calculate desired screen size in pixels
+    const canvasSize = Math.min(canvas.width, canvas.height) / devicePixelRatio;
+    const screenSizePixels = canvasSize * config.size;
+
+    // Convert to world units
+    const markerSize = screenSizePixels * worldUnitsPerPixel;
 
     // Scale and position all actors
     actors.forEach((actor) => {
@@ -563,6 +578,117 @@ export class vtkOrientationControllerWidget {
 
   getActors(viewportId: string): vtkActor[] | undefined {
     return this.actors.get(viewportId);
+  }
+
+  getOrientationForFace(cellId: number): {
+    viewPlaneNormal: number[];
+    viewUp: number[];
+  } | null {
+    // Cell IDs for rhombicuboctahedron:
+    // 0-5: Main square faces
+    // 6-17: Edge square faces
+    // 18-25: Corner triangular faces
+
+    const orientations = new Map<
+      number,
+      { viewPlaneNormal: number[]; viewUp: number[] }
+    >();
+
+    // Main 6 faces
+    orientations.set(0, { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] }); // Bottom
+    orientations.set(1, { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] }); // Top
+    orientations.set(2, { viewPlaneNormal: [0, -1, 0], viewUp: [0, 0, 1] }); // Front
+    orientations.set(3, { viewPlaneNormal: [0, 1, 0], viewUp: [0, 0, 1] }); // Back
+    orientations.set(4, { viewPlaneNormal: [-1, 0, 0], viewUp: [0, 0, 1] }); // Left
+    orientations.set(5, { viewPlaneNormal: [1, 0, 0], viewUp: [0, 0, 1] }); // Right
+
+    // 12 edge faces - diagonal views
+    const sqrt2 = 1 / Math.sqrt(2);
+    orientations.set(6, {
+      viewPlaneNormal: [0, -sqrt2, -sqrt2],
+      viewUp: [0, -sqrt2, sqrt2],
+    });
+    orientations.set(7, {
+      viewPlaneNormal: [sqrt2, 0, -sqrt2],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(8, {
+      viewPlaneNormal: [0, sqrt2, -sqrt2],
+      viewUp: [0, -sqrt2, -sqrt2],
+    });
+    orientations.set(9, {
+      viewPlaneNormal: [-sqrt2, 0, -sqrt2],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(10, {
+      viewPlaneNormal: [0, -sqrt2, sqrt2],
+      viewUp: [0, sqrt2, sqrt2],
+    });
+    orientations.set(11, {
+      viewPlaneNormal: [sqrt2, 0, sqrt2],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(12, {
+      viewPlaneNormal: [0, sqrt2, sqrt2],
+      viewUp: [0, sqrt2, -sqrt2],
+    });
+    orientations.set(13, {
+      viewPlaneNormal: [-sqrt2, 0, sqrt2],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(14, {
+      viewPlaneNormal: [-sqrt2, -sqrt2, 0],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(15, {
+      viewPlaneNormal: [sqrt2, -sqrt2, 0],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(16, {
+      viewPlaneNormal: [sqrt2, sqrt2, 0],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(17, {
+      viewPlaneNormal: [-sqrt2, sqrt2, 0],
+      viewUp: [0, 0, 1],
+    });
+
+    // 8 corner faces - tri-axial views
+    const sqrt3 = 1 / Math.sqrt(3);
+    orientations.set(18, {
+      viewPlaneNormal: [-sqrt3, -sqrt3, -sqrt3],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(19, {
+      viewPlaneNormal: [sqrt3, -sqrt3, -sqrt3],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(20, {
+      viewPlaneNormal: [sqrt3, sqrt3, -sqrt3],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(21, {
+      viewPlaneNormal: [-sqrt3, sqrt3, -sqrt3],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(22, {
+      viewPlaneNormal: [-sqrt3, -sqrt3, sqrt3],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(23, {
+      viewPlaneNormal: [sqrt3, -sqrt3, sqrt3],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(24, {
+      viewPlaneNormal: [sqrt3, sqrt3, sqrt3],
+      viewUp: [0, 0, 1],
+    });
+    orientations.set(25, {
+      viewPlaneNormal: [-sqrt3, sqrt3, sqrt3],
+      viewUp: [0, 0, 1],
+    });
+
+    return orientations.get(cellId) || null;
   }
 
   cleanup(viewportId?: string): void {
