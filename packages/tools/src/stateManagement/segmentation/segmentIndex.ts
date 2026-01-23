@@ -69,6 +69,9 @@ function setActiveSegmentIndex(
 
   viewportIds.forEach((viewportId) => {
     const toolGroup = getToolGroupForViewport(viewportId);
+    if (!toolGroup) {
+      return;
+    }
     invalidateBrushCursor(toolGroup.id);
   });
 }
