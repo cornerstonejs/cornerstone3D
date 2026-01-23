@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.19](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.18...v4.15.19) (2026-01-23)
+
+### Bug Fixes
+
+- Avoid exception when the structure data is empty ([#2573](https://github.com/cornerstonejs/cornerstone3D/issues/2573)) ([97b3313](https://github.com/cornerstonejs/cornerstone3D/commit/97b33133a2e27260f3dce735673c7920ab9da9e4))
+
 ## [4.15.18](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.17...v4.15.18) (2026-01-22)
 
 ### Bug Fixes
