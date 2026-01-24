@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from '@jest/globals';
 import { vec3 } from 'gl-matrix';
+import { getPlaneCubeIntersectionDimensions } from '../../src/utilities/getPlaneCubeIntersectionDimensions';
 
 /**
  * Creates a mock vtkImageData with a transform following DICOM mapping convention.
@@ -109,7 +110,7 @@ const testDataArray = [
   {
     name: 'Real-world DICOM image data',
     extent: [0, 255, 0, 255, 0, 0],
-    spacing: [1, 1, 0.001],
+    spacing: [1, 1, 1],
     origin: [1.9022881388664, -123.8693759574, 159.93407607185],
     direction: [
       0,
@@ -291,6 +292,99 @@ describe('getPlaneCubeIntersectionDimensions', () => {
 
         // Verify spacing[1] matches the length
         expect(index1DirectionLength).toBeCloseTo(testData.spacing[1]);
+      });
+
+      // Test orthogonal views
+      // direction array format: [yDir(0-2), xDir(3-5), zDir(6-8)]
+      // where yDir maps to index[0] (column), xDir maps to index[1] (row), zDir maps to index[2] (slice)
+      it('Should compute correct dimensions for orthogonal view aligned with x-axis (y-z plane)', () => {
+        // For x-axis view (y-z plane): viewPlaneNormal = yDir (indices 0-2), viewUp = zDir (indices 6-8)
+        // This gives viewRight along xDir (indices 3-5) for width along y dimension
+        const viewPlaneNormal = vec3.normalize(
+          vec3.create(),
+          testData.direction.slice(0, 3)
+        );
+        const viewUp = vec3.normalize(
+          vec3.create(),
+          testData.direction.slice(6, 9)
+        );
+
+        const { widthWorld, heightWorld } = getPlaneCubeIntersectionDimensions(
+          mockImageData,
+          viewPlaneNormal,
+          viewUp
+        );
+
+        // For x-axis view, we see the y-z plane
+        // Width should be y dimension: (extent[3] - extent[2] + 1) * spacing[1]
+        // Height should be z dimension: (extent[5] - extent[4] + 1) * spacing[2]
+        const expectedWidth =
+          (testData.extent[3] - testData.extent[2] + 1) * testData.spacing[1];
+        const expectedHeight =
+          (testData.extent[5] - testData.extent[4] + 1) * testData.spacing[2];
+
+        expect(widthWorld).toBeCloseTo(expectedWidth);
+        expect(heightWorld).toBeCloseTo(expectedHeight);
+      });
+
+      it('Should compute correct dimensions for orthogonal view aligned with y-axis (x-z plane)', () => {
+        // For y-axis view (x-z plane): viewPlaneNormal = xDir (indices 3-5), viewUp = zDir (indices 6-8)
+        // This gives viewRight along yDir (indices 0-2) for width along x dimension
+        const viewPlaneNormal = vec3.normalize(
+          vec3.create(),
+          testData.direction.slice(3, 6)
+        );
+        const viewUp = vec3.normalize(
+          vec3.create(),
+          testData.direction.slice(6, 9)
+        );
+
+        const { widthWorld, heightWorld } = getPlaneCubeIntersectionDimensions(
+          mockImageData,
+          viewPlaneNormal,
+          viewUp
+        );
+
+        // For y-axis view, we see the x-z plane
+        // Width should be x dimension: (extent[1] - extent[0] + 1) * spacing[0]
+        // Height should be z dimension: (extent[5] - extent[4] + 1) * spacing[2]
+        const expectedWidth =
+          (testData.extent[1] - testData.extent[0] + 1) * testData.spacing[0];
+        const expectedHeight =
+          (testData.extent[5] - testData.extent[4] + 1) * testData.spacing[2];
+
+        expect(widthWorld).toBeCloseTo(expectedWidth);
+        expect(heightWorld).toBeCloseTo(expectedHeight);
+      });
+
+      it('Should compute correct dimensions for orthogonal view aligned with z-axis (x-y plane)', () => {
+        // For z-axis view (x-y plane): viewPlaneNormal = zDir (indices 6-8), viewUp = xDir (indices 3-5)
+        // This gives viewRight along yDir (indices 0-2) for width along x dimension
+        const viewPlaneNormal = vec3.normalize(
+          vec3.create(),
+          testData.direction.slice(6, 9)
+        );
+        const viewUp = vec3.normalize(
+          vec3.create(),
+          testData.direction.slice(3, 6)
+        );
+
+        const { widthWorld, heightWorld } = getPlaneCubeIntersectionDimensions(
+          mockImageData,
+          viewPlaneNormal,
+          viewUp
+        );
+
+        // For z-axis view, we see the x-y plane
+        // Width should be x dimension: (extent[1] - extent[0] + 1) * spacing[0]
+        // Height should be y dimension: (extent[3] - extent[2] + 1) * spacing[1]
+        const expectedWidth =
+          (testData.extent[1] - testData.extent[0] + 1) * testData.spacing[0];
+        const expectedHeight =
+          (testData.extent[3] - testData.extent[2] + 1) * testData.spacing[1];
+
+        expect(widthWorld).toBeCloseTo(expectedWidth);
+        expect(heightWorld).toBeCloseTo(expectedHeight);
       });
     });
   });

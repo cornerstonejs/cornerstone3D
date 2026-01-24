@@ -103,7 +103,6 @@ import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 export * from './getPixelSpacingInformation';
-export * from './getPlaneCubeIntersection';
 export * from './getPlaneCubeIntersectionDimensions';
 import { asArray } from './asArray';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
