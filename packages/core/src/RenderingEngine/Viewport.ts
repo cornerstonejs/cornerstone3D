@@ -48,6 +48,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { getPlaneCubeIntersectionDimensions } from '../utilities/getPlaneCubeIntersectionDimensions';
 import { getConfiguration } from '../init';
 
 /**
@@ -1114,12 +1115,20 @@ class Viewport {
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    let { widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
-      bounds,
-      viewUp,
-      viewPlaneNormal
-    );
+    let { widthWorld, heightWorld } = imageData
+      ? getPlaneCubeIntersectionDimensions(
+          imageData,
+          focalPoint,
+          viewPlaneNormal,
+          viewUp
+        )
+      : this._getWorldDistanceViewUpAndViewRight(
+          bounds,
+          viewUp,
+          viewPlaneNormal
+        );
 
+    console.warn('************** Setting widthWorld', widthWorld, heightWorld);
     if (imageData) {
       const spacing = imageData.getSpacing();
       // This change corresponds to the spacing calculation for previous version
@@ -1127,6 +1136,36 @@ class Viewport {
       // a tiny bit too large for the viewport.
       widthWorld = Math.max(spacing[0], widthWorld - spacing[0]);
       heightWorld = Math.max(spacing[1], heightWorld - spacing[1]);
+
+      // Test code to show old version
+      const extent = imageData.getExtent();
+      console.warn('spacing', spacing);
+      console.warn('extent', extent);
+      console.warn('origin', imageData.getOrigin());
+      console.warn('direction', imageData.getDirection());
+      console.warn('view up', viewUp);
+      console.warn('focal point', focalPoint);
+      console.warn('view plane normal', viewPlaneNormal);
+      // Calculate what the view plane normal would be if it were in the z index direction
+      // by computing the difference between world coordinates of (0,0,0) and (0,0,1)
+      const worldAtOrigin = imageData.indexToWorld([0, 0, 0]) as Point3;
+      const worldAtZ1 = imageData.indexToWorld([0, 0, 1]) as Point3;
+      const zIndexDirection = vec3.sub(vec3.create(), worldAtOrigin, worldAtZ1);
+      vec3.normalize(zIndexDirection, zIndexDirection);
+      console.warn('zDelta:', zIndexDirection);
+
+      const widthWorld2 = (extent[1] - extent[0]) * spacing[0];
+      const heightWorld2 = (extent[3] - extent[2]) * spacing[1];
+      console.log(
+        'New method would produce:',
+        this.id,
+        widthWorld2,
+        heightWorld2,
+        widthWorld,
+        heightWorld,
+        widthWorld2 - widthWorld,
+        heightWorld2 - heightWorld
+      );
     }
 
     const canvasSize = [this.sWidth, this.sHeight];
@@ -1770,6 +1809,12 @@ class Viewport {
   }
 
   private _getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal) {
+    console.warn(
+      '************** _getWorldDistanceViewUpAndViewRight',
+      bounds,
+      viewUp,
+      viewPlaneNormal
+    );
     const viewUpCorners = this._getCorners(bounds);
     const viewRightCorners = this._getCorners(bounds);
 
