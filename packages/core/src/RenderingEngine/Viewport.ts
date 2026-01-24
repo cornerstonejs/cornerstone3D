@@ -1773,12 +1773,6 @@ class Viewport {
   }
 
   private _getWorldDistanceViewUpAndViewRight(bounds, viewUp, viewPlaneNormal) {
-    console.warn(
-      '************** _getWorldDistanceViewUpAndViewRight',
-      bounds,
-      viewUp,
-      viewPlaneNormal
-    );
     const viewUpCorners = this._getCorners(bounds);
     const viewRightCorners = this._getCorners(bounds);
 
