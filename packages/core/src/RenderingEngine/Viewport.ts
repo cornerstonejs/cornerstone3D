@@ -48,7 +48,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
-import { getPlaneCubeIntersectionDimensions } from '../utilities/getPlaneCubeIntersectionDimensions';
+import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensions';
 import { getConfiguration } from '../init';
 
 /**
@@ -1116,7 +1116,7 @@ class Viewport {
     }
 
     let { widthWorld, heightWorld } = imageData
-      ? getPlaneCubeIntersectionDimensions(imageData, viewPlaneNormal, viewUp)
+      ? getCubeSizeInView(imageData, viewPlaneNormal, viewUp)
       : this._getWorldDistanceViewUpAndViewRight(
           bounds,
           viewUp,

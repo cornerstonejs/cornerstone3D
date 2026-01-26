@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from '@jest/globals';
 import { vec3 } from 'gl-matrix';
-import { getPlaneCubeIntersectionDimensions } from '../../src/utilities/getPlaneCubeIntersectionDimensions';
+import { getCubeSizeInView } from '../../src/utilities/getPlaneCubeIntersectionDimensions';
 
 /**
  * Creates a mock vtkImageData with a transform following DICOM mapping convention.
@@ -41,8 +41,8 @@ function createMockImageData(extent, spacing, origin, direction) {
     c = vec3.fromValues(direction[3], direction[4], direction[5]); // column unit vector (last 3 values)
   } else if (direction.length === 9) {
     // 9-value format: [yDir, xDir, zDir] where yDir maps to column and xDir maps to row
-    c = vec3.fromValues(direction[0], direction[1], direction[2]); // column unit vector (yDir, maps to index[0])
-    r = vec3.fromValues(direction[3], direction[4], direction[5]); // row unit vector (xDir, maps to index[1])
+    c = direction.slice(0, 3); // column unit vector (yDir, maps to index[0])
+    r = direction.slice(3, 6); // row unit vector (xDir, maps to index[1])
   } else {
     throw new Error(
       `Invalid direction array length: ${direction.length}. Expected 6 (IOP) or 9 (3x3 matrix) values.`
@@ -50,17 +50,13 @@ function createMockImageData(extent, spacing, origin, direction) {
   }
 
   // Compute slice direction as s = r × c per DICOM convention
-  const s = vec3.create();
-  vec3.cross(s, r, c);
-  vec3.normalize(s, s); // Ensure it's a unit vector
+  const s = vec3.cross([0, 0, 0], r, c);
 
   // DICOM spacing mapping:
   // spacing[0] = Δc (column spacing, PixelSpacing[1]) - for index[0] (x/column)
   // spacing[1] = Δr (row spacing, PixelSpacing[0]) - for index[1] (y/row)
   // spacing[2] = Δs (slice spacing) - for index[2] (z/slice)
-  const deltaC = spacing[0]; // column spacing (for x/column index)
-  const deltaR = spacing[1]; // row spacing (for y/row index)
-  const deltaS = spacing[2]; // slice spacing (for z/slice index)
+  const [deltaC, deltaR, deltaS] = spacing; // column spacing (for x/column index)
 
   return {
     getExtent: () => extent,
@@ -71,27 +67,22 @@ function createMockImageData(extent, spacing, origin, direction) {
       // index[0] = x = column index → maps to column direction (c) with spacing[0] (Δc)
       // index[1] = y = row index → maps to row direction (r) with spacing[1] (Δr)
       // index[2] = z = slice index → maps to slice direction (s) with spacing[2] (Δs)
-      const x = index[0] || 0; // column index
-      const y = index[1] || 0; // row index
-      const z = index[2] || 0; // slice index
+      const [x, y, z] = index;
 
       // Apply DICOM formula: P(x,y,z) = O + (x·Δc)·c + (y·Δr)·r + (z·Δs)·s
       // Start with origin
-      const world = vec3.fromValues(origin[0], origin[1], origin[2]);
+      const world = origin.slice(0, 3);
 
       // Add column component: (x·Δc)·c
-      const colComponent = vec3.create();
-      vec3.scale(colComponent, c, x * deltaC);
+      const colComponent = vec3.scale([0, 0, 0], c, x * deltaC);
       vec3.add(world, world, colComponent);
 
       // Add row component: (y·Δr)·r
-      const rowComponent = vec3.create();
-      vec3.scale(rowComponent, r, y * deltaR);
+      const rowComponent = vec3.scale([0, 0, 0], r, y * deltaR);
       vec3.add(world, world, rowComponent);
 
       // Add slice component: (z·Δs)·s
-      const sliceComponent = vec3.create();
-      vec3.scale(sliceComponent, s, z * deltaS);
+      const sliceComponent = vec3.scale([0, 0, 0], s, z * deltaS);
       vec3.add(world, world, sliceComponent);
 
       if (out) {
@@ -100,7 +91,7 @@ function createMockImageData(extent, spacing, origin, direction) {
         out[2] = world[2];
         return out;
       }
-      return [world[0], world[1], world[2]];
+      return world;
     },
   };
 }
@@ -309,7 +300,7 @@ describe('getPlaneCubeIntersectionDimensions', () => {
           testData.direction.slice(6, 9)
         );
 
-        const { widthWorld, heightWorld } = getPlaneCubeIntersectionDimensions(
+        const { widthWorld, heightWorld } = getCubeSizeInView(
           mockImageData,
           viewPlaneNormal,
           viewUp
@@ -339,7 +330,7 @@ describe('getPlaneCubeIntersectionDimensions', () => {
           testData.direction.slice(6, 9)
         );
 
-        const { widthWorld, heightWorld } = getPlaneCubeIntersectionDimensions(
+        const { widthWorld, heightWorld } = getCubeSizeInView(
           mockImageData,
           viewPlaneNormal,
           viewUp
@@ -369,7 +360,7 @@ describe('getPlaneCubeIntersectionDimensions', () => {
           testData.direction.slice(3, 6)
         );
 
-        const { widthWorld, heightWorld } = getPlaneCubeIntersectionDimensions(
+        const { widthWorld, heightWorld } = getCubeSizeInView(
           mockImageData,
           viewPlaneNormal,
           viewUp
@@ -386,6 +377,51 @@ describe('getPlaneCubeIntersectionDimensions', () => {
         expect(widthWorld).toBeCloseTo(expectedWidth);
         expect(heightWorld).toBeCloseTo(expectedHeight);
       });
+    });
+  });
+
+  describe('Custom cuboid test case', () => {
+    let mockImageData;
+
+    beforeAll(() => {
+      // Cuboid with origin [1,2,3] and side vectors [1,0,0], [0,-2,0], [0,0,3]
+      // extent: [0, 1, 0, 2, 0, 3] actual, but note -1 on max value to conform
+      // spacing: [1, 1, 1] (lengths of side vectors)
+      // origin: [1, 2, 3]
+      // direction: normalized side vectors as [columnDir, rowDir, sliceDir]
+      //   columnDir = [1, 0, 0] (normalized [1,0,0])
+      //   rowDir = [0, -1, 0] (normalized [0,-2,0])
+      //   sliceDir = [0, 0, 1] (normalized [0,0,3])
+      mockImageData = createMockImageData(
+        [0, 0, 0, 1, 0, 2], // extent
+        [1, 1, 1], // spacing: lengths of side vectors
+        [4, 4, 4], // origin
+        [1, 0, 0, 0, -1, 0, 0, 0, 1] // direction: [columnDir, rowDir, sliceDir]
+      );
+    });
+
+    it('Should compute correct widthWorld and heightWorld for cuboid with custom view orientation', () => {
+      // From the code: viewRight = viewPlaneNormal × viewUp
+      //   So: viewPlaneNormal = viewUp × viewRight
+      const viewRight = vec3.normalize(vec3.create(), [1, -2, 3]);
+      const viewUp = vec3.normalize(vec3.create(), [0, -3, -2]);
+      // Compute viewPlaneNormal such that viewRight = viewPlaneNormal × viewUp
+      // Since A × B = -(B × A), we have: viewPlaneNormal = viewUp × viewRight
+      const viewPlaneNormal = vec3.cross(vec3.create(), viewUp, viewRight);
+      vec3.normalize(viewPlaneNormal, viewPlaneNormal);
+
+      const { widthWorld, heightWorld } = getCubeSizeInView(
+        mockImageData,
+        viewPlaneNormal,
+        viewUp
+      );
+
+      // Expected width: Projection of cuboid corners onto viewRight = [1, -2, 3] normalized
+      // The width is the difference between max and min projections of all 8 corners, which
+      // have lengths 1,2,3 so sqrt(1+2*2+3*3) = sqrt(14)
+      const expectedWidth = Math.sqrt(14);
+
+      expect(widthWorld).toBeCloseTo(expectedWidth);
     });
   });
 });

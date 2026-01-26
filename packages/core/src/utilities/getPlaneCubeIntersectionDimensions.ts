@@ -67,11 +67,11 @@ function calculateSize(viewCorners: Point3[], dimension: number): number {
  * @param viewUp - The up vector in world coordinates (assumed to be unit vector)
  * @returns An object with widthWorld and heightWorld
  */
-export function getPlaneCubeIntersectionDimensions(
+export function getCubeSizeInView(
   imageData: vtkImageData,
   viewPlaneNormal: Point3,
   viewUp: Point3
-): { widthWorld: number; heightWorld: number } {
+): { widthWorld: number; heightWorld: number; depthWorld: number } {
   const viewCorners = rotateToViewCoordinates(
     imageData,
     viewPlaneNormal,
@@ -84,8 +84,11 @@ export function getPlaneCubeIntersectionDimensions(
   // Calculate height (dimension 1 = viewUp)
   const maxHeight = calculateSize(viewCorners, 1);
 
+  const maxDepth = calculateSize(viewCorners, 2);
+
   return {
     widthWorld: maxWidth,
     heightWorld: maxHeight,
+    depthWorld: maxDepth,
   };
 }
