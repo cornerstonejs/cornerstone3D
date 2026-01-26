@@ -104,6 +104,7 @@ export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
+export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 

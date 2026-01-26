@@ -1,18 +1,66 @@
-import { vec3 } from 'gl-matrix';
 import type { Point3 } from '../types';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { rotateToViewCoordinates } from './rotateToViewCoordinates';
 
 /**
- * Computes the world width and height of the plane intersection with the cube
- * by calculating distances between all 8 corners in view up and view right directions.
+ * Finds the index of the corner with the smallest value in the specified dimension.
+ * The corner with the largest value in that dimension will be at index (minIndex ^ 7).
  *
- * Algorithm:
- * 1. Compute the view right unit vector (cross product of viewPlaneNormal and viewUp, normalized)
- * 2. Get the 8 corners of the cube from the extent
- * 3. Convert all 8 corners to world coordinates
- * 4. Calculate the distance between each pair of corners in viewUp direction (height)
- *    and viewRight direction (width)
- * 5. The maximum of these distances is the overall value
+ * @param viewCorners - Array of Point3 objects in view coordinates [viewRight, viewUp, viewNormal]
+ * @param dimension - The dimension index (0 = viewRight, 1 = viewUp, 2 = viewNormal)
+ * @returns The index of the corner with the minimum value in the specified dimension
+ */
+function findMinCornerIndex(viewCorners: Point3[], dimension: number): number {
+  let minIndex = 0;
+  let minValue = viewCorners[0][dimension];
+
+  for (let i = 1; i < viewCorners.length; i++) {
+    if (viewCorners[i][dimension] < minValue) {
+      minValue = viewCorners[i][dimension];
+      minIndex = i;
+    }
+  }
+
+  return minIndex;
+}
+
+/**
+ * Calculates the size (width or height) in a given dimension, accounting for thickness.
+ * Uses intersection points with a plane offset by thickness in the z direction.
+ *
+ * @param viewCorners - Array of Point3 objects in view coordinates [viewRight, viewUp, viewNormal]
+ * @param dimension - The dimension to calculate size for (0 = viewRight/width, 1 = viewUp/height)
+ * @param thickness - The thickness to apply in the viewNormal direction
+ * @returns The maximum size in the specified dimension
+ */
+function calculateSize(viewCorners: Point3[], dimension: number): number {
+  // Find min and max vertices in the target dimension
+  const minIndex = findMinCornerIndex(viewCorners, dimension);
+  const maxIndex = minIndex ^ 7;
+
+  // If direction is approximately zero, just use the max vertex
+  return viewCorners[maxIndex][dimension] - viewCorners[minIndex][dimension];
+}
+
+/**
+ * Gets the view width and height of the overall volume as displayable in the given
+ * orientation.
+ *
+ * This ensures that the views in the MPR view orthogonal to the view plane will
+ * in the volume touch two opposite edges of the viewport.  This may not occur
+ * for any single image, but allows navigation through the MPR views to see
+ * the entire volume without panning or zooming.
+ *
+ * This is also the required size to display a 3d volume representation in the given
+ * orientation without panning or zooming.
+ *
+ * A similar, related algorithm that can be used to provide a slightly larger
+ * view is to compute the intersection of the plane parallel to the view plane
+ * but thickness distance towards the maximum vertex in the z direction with
+ * the volume.  This slightly larger view will contain all frames from the given
+ * volume not thicker than the thickness, but will require navigation of the
+ * focal point to use a vector in the direction of the acquisition orientation
+ * nearest the view plane normal rather than directly in the view plane normal direction.
  *
  * @param imageData - The vtkImageData object used for index-to-world coordinate transformation and to get the extent
  * @param viewPlaneNormal - The normal vector of the plane in world coordinates (assumed to be unit vector)
@@ -24,62 +72,17 @@ export function getPlaneCubeIntersectionDimensions(
   viewPlaneNormal: Point3,
   viewUp: Point3
 ): { widthWorld: number; heightWorld: number } {
-  // Step 1: Compute viewRight as cross product of viewPlaneNormal and viewUp
-  const viewRight = vec3.create();
-  vec3.cross(viewRight, viewPlaneNormal, viewUp);
-  vec3.normalize(viewRight, viewRight);
+  const viewCorners = rotateToViewCoordinates(
+    imageData,
+    viewPlaneNormal,
+    viewUp
+  );
 
-  // Step 2: Get the 8 corners of the cube from the extent
-  const extent = imageData.getExtent();
-  // extent format: [xMin, xMax, yMin, yMax, zMin, zMax]
-  // Max extent values are inside dimensions, so add 1 to get outside dimensions
-  const xMin = extent[0];
-  const xMax = extent[1] + 1;
-  const yMin = extent[2];
-  const yMax = extent[3] + 1;
-  const zMin = extent[4];
-  const zMax = extent[5] + 1;
+  // Calculate width (dimension 0 = viewRight)
+  const maxWidth = calculateSize(viewCorners, 0);
 
-  // Generate all 8 corners in index space
-  const corners: Point3[] = [
-    [xMin, yMin, zMin],
-    [xMax, yMin, zMin],
-    [xMin, yMax, zMin],
-    [xMax, yMax, zMin],
-    [xMin, yMin, zMax],
-    [xMax, yMin, zMax],
-    [xMin, yMax, zMax],
-    [xMax, yMax, zMax],
-  ];
-
-  // Step 3: Convert all 8 corners to world coordinates
-  const worldCorners: Point3[] = corners.map((corner) => {
-    const worldPoint = [0, 0, 0] as Point3;
-    imageData.indexToWorld(corner, worldPoint);
-    return worldPoint;
-  });
-
-  // Step 4 & 5: Calculate distances between each pair of corners in viewUp and viewRight directions
-  let maxHeight = 0;
-  let maxWidth = 0;
-
-  for (let i = 0; i < worldCorners.length; i++) {
-    for (let j = i + 1; j < worldCorners.length; j++) {
-      const p1 = worldCorners[i];
-      const p2 = worldCorners[j];
-
-      // Vector from p1 to p2
-      const diff = vec3.sub(vec3.create(), p2, p1);
-
-      // Project onto viewUp direction for height
-      const height = Math.abs(vec3.dot(diff, viewUp));
-      maxHeight = Math.max(maxHeight, height);
-
-      // Project onto viewRight direction for width
-      const width = Math.abs(vec3.dot(diff, viewRight));
-      maxWidth = Math.max(maxWidth, width);
-    }
-  }
+  // Calculate height (dimension 1 = viewUp)
+  const maxHeight = calculateSize(viewCorners, 1);
 
   return {
     widthWorld: maxWidth,
