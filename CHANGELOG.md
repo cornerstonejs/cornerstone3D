@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.20](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.19...v4.15.20) (2026-01-26)
+
+### Bug Fixes
+
+- fov second fix ([#2578](https://github.com/cornerstonejs/cornerstone3D/issues/2578)) ([94d374c](https://github.com/cornerstonejs/cornerstone3D/commit/94d374cb5bf6d5fa5cf9e0c26070933ef17a3a96))
+
+## [4.15.19](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.18...v4.15.19) (2026-01-23)
+
+### Bug Fixes
+
+- Avoid exception when the structure data is empty ([#2573](https://github.com/cornerstonejs/cornerstone3D/issues/2573)) ([97b3313](https://github.com/cornerstonejs/cornerstone3D/commit/97b33133a2e27260f3dce735673c7920ab9da9e4))
+- implement cardiac 4D image handling in splitImageIdsBy4DTags utility ([#2551](https://github.com/cornerstonejs/cornerstone3D/issues/2551)) ([167ac2d](https://github.com/cornerstonejs/cornerstone3D/commit/167ac2db3a19638e6bcd8c9ca1aaff7ebb9f24ea))
+
+## [4.15.18](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.17...v4.15.18) (2026-01-22)
+
+### Bug Fixes
+
+- Several exceptions loading rtstruct ([#2563](https://github.com/cornerstonejs/cornerstone3D/issues/2563)) ([1c923f7](https://github.com/cornerstonejs/cornerstone3D/commit/1c923f7890012880616bc54e39b82ed0c8e0e7c7))
+
+## [4.15.17](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.16...v4.15.17) (2026-01-22)
+
+**Note:** Version bump only for package root
+
 ## [4.15.16](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.15...v4.15.16) (2026-01-21)
 
 ### Bug Fixes
