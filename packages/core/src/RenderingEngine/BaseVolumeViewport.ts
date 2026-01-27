@@ -1719,7 +1719,7 @@ abstract class BaseVolumeViewport extends Viewport {
       (actor) => actor.referencedId === volumeId
     );
 
-    if (!actorIsA(actorEntry, 'vtkVolume')) {
+    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
