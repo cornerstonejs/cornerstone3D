@@ -167,7 +167,7 @@ export class vtkOrientationControllerWidget {
 
       mrw.addRenderer({
         id: overlayId,
-        viewport: viewportBounds,
+        viewport: viewportBounds as [number, number, number, number],
         background: [0, 0, 0],
       });
 
@@ -348,7 +348,7 @@ export class vtkOrientationControllerWidget {
     }
 
     // Get the camera to calculate world-to-screen ratio
-    const camera = viewport.getVtkActiveCamera();
+    const camera = (viewport.getRenderer() as vtkRenderer).getActiveCamera();
     const parallelScale = camera.getParallelScale();
 
     // parallelScale is half the height of the view in world coordinates
@@ -597,16 +597,32 @@ export class vtkOrientationControllerWidget {
       this.clearHighlight();
     };
 
+    const dblclickHandler = (evt: MouseEvent) => {
+      const pickResult = this.pickAtPosition(
+        evt,
+        viewportId,
+        viewport,
+        element,
+        actors
+      );
+      if (pickResult) {
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+      }
+    };
+
     element.addEventListener('mousemove', hoverHandler);
     element.addEventListener('mousedown', clickHandler);
     element.addEventListener('mouseup', mouseUpHandler);
     element.addEventListener('mouseleave', mouseUpHandler);
+    element.addEventListener('dblclick', dblclickHandler, true);
 
     const cleanup = () => {
       element.removeEventListener('mousemove', hoverHandler);
       element.removeEventListener('mousedown', clickHandler);
       element.removeEventListener('mouseup', mouseUpHandler);
       element.removeEventListener('mouseleave', mouseUpHandler);
+      element.removeEventListener('dblclick', dblclickHandler, true);
     };
 
     this.mouseHandlers.set(viewportId, { cleanup });
@@ -630,7 +646,9 @@ export class vtkOrientationControllerWidget {
     const overlay = mrw.getRenderer(overlayId) as vtkRenderer;
     const main = viewport.getRenderer() as vtkRenderer;
     if (overlay && main) {
-      overlay.setViewport(...(main.getViewport() as unknown as number[]));
+      overlay.setViewport(
+        ...(main.getViewport() as unknown as [number, number, number, number])
+      );
     }
   }
 
