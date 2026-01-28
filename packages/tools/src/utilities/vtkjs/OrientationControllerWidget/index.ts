@@ -39,11 +39,8 @@ export interface MouseHandlersCallbacks {
   onFaceHover?: (result: PickResult | null) => void;
 }
 
-const OVERLAY_RENDERER_ID_SUFFIX = '-orientation-controller-overlay';
-
 export class vtkOrientationControllerWidget {
   private actors = new Map<string, vtkActor[]>();
-  private overlayRendererIds = new Map<string, string>();
   private pickers = new Map<string, vtkCellPicker>();
   private highlightedFace: {
     actor: vtkActor;
@@ -147,6 +144,11 @@ export class vtkOrientationControllerWidget {
     return actors;
   }
 
+  /**
+   * Adds orientation controller actors to the viewport's main scene so they
+   * are always visible without requiring any rendering engine changes. Actors
+   * are positioned in the viewport corner and rendered with the rest of the scene.
+   */
   addActorsToViewport(
     viewportId: string,
     viewport: Types.IVolumeViewport,
@@ -157,56 +159,19 @@ export class vtkOrientationControllerWidget {
       this.removeActorsFromViewport(viewportId, viewport);
     }
 
-    const renderingEngine = (viewport as Types.IViewport).getRenderingEngine();
-    const mrw = renderingEngine?.offscreenMultiRenderWindow;
-
-    if (mrw) {
-      const mainRenderer = viewport.getRenderer();
-      const viewportBounds = mainRenderer.getViewport() as unknown as number[];
-      const overlayId = `${viewportId}${OVERLAY_RENDERER_ID_SUFFIX}`;
-
-      mrw.addRenderer({
-        id: overlayId,
-        viewport: viewportBounds as [number, number, number, number],
-        background: [0, 0, 0],
-      });
-
-      const overlayRenderer = mrw.getRenderer(overlayId) as vtkRenderer;
-      overlayRenderer.setLayer(1);
-      overlayRenderer.setActiveCamera(mainRenderer.getActiveCamera());
-
-      actors.forEach((actor) => overlayRenderer.addActor(actor));
-      this.actors.set(viewportId, actors);
-      this.overlayRendererIds.set(viewportId, overlayId);
-    } else {
-      actors.forEach((actor, index) => {
-        const uid = `orientation-controller-${viewportId}-${index}`;
-        viewport.addActor({ actor, uid });
-      });
-      this.actors.set(viewportId, actors);
-    }
+    actors.forEach((actor, index) => {
+      const uid = `orientation-controller-${viewportId}-${index}`;
+      viewport.addActor({ actor, uid });
+    });
+    this.actors.set(viewportId, actors);
   }
 
   removeActorsFromViewport(
     viewportId: string,
     viewport: Types.IVolumeViewport
   ): void {
-    const overlayId = this.overlayRendererIds.get(viewportId);
     const actors = this.actors.get(viewportId);
-
-    if (overlayId && actors) {
-      const mrw = (viewport as Types.IViewport).getRenderingEngine()
-        ?.offscreenMultiRenderWindow;
-      if (mrw) {
-        const overlayRenderer = mrw.getRenderer(overlayId) as vtkRenderer;
-        if (overlayRenderer) {
-          actors.forEach((a) => overlayRenderer.removeActor(a));
-        }
-        mrw.removeRenderer(overlayId);
-      }
-      this.overlayRendererIds.delete(viewportId);
-      this.actors.delete(viewportId);
-    } else if (actors) {
+    if (actors) {
       const uids = actors.map(
         (_, index) => `orientation-controller-${viewportId}-${index}`
       );
@@ -240,15 +205,13 @@ export class vtkOrientationControllerWidget {
       return null;
     }
 
-    const overlayId = this.overlayRendererIds.get(viewportId);
-    let renderer: vtkRenderer = viewport.getRenderer() as vtkRenderer;
-    if (overlayId) {
-      const mrw = (viewport as Types.IViewport).getRenderingEngine()
-        ?.offscreenMultiRenderWindow;
-      if (mrw) {
-        const overlay = mrw.getRenderer(overlayId) as vtkRenderer;
-        if (overlay) renderer = overlay;
-      }
+    const mainRenderer =
+      (viewport as Types.IViewport)
+        .getRenderingEngine()
+        ?.getRenderer(viewportId) ?? viewport.getRenderer();
+    const renderer: vtkRenderer | null = mainRenderer as vtkRenderer | null;
+    if (!renderer) {
+      return null;
     }
 
     const rect = element.getBoundingClientRect();
@@ -347,8 +310,15 @@ export class vtkOrientationControllerWidget {
       return false;
     }
 
-    // Get the camera to calculate world-to-screen ratio
-    const camera = (viewport.getRenderer() as vtkRenderer).getActiveCamera();
+    // Get the camera to calculate world-to-screen ratio (use engine so it works with RenderingEngine facade)
+    const mainRenderer =
+      (viewport as Types.IViewport)
+        .getRenderingEngine()
+        ?.getRenderer(viewport.id) ?? viewport.getRenderer();
+    const camera = (mainRenderer as vtkRenderer)?.getActiveCamera();
+    if (!camera) {
+      return false;
+    }
     const parallelScale = camera.getParallelScale();
 
     // parallelScale is half the height of the view in world coordinates
@@ -635,21 +605,10 @@ export class vtkOrientationControllerWidget {
   }
 
   syncOverlayViewport(
-    viewportId: string,
-    viewport: Types.IVolumeViewport
+    _viewportId: string,
+    _viewport: Types.IVolumeViewport
   ): void {
-    const overlayId = this.overlayRendererIds.get(viewportId);
-    if (!overlayId) return;
-    const mrw = (viewport as Types.IViewport).getRenderingEngine()
-      ?.offscreenMultiRenderWindow;
-    if (!mrw) return;
-    const overlay = mrw.getRenderer(overlayId) as vtkRenderer;
-    const main = viewport.getRenderer() as vtkRenderer;
-    if (overlay && main) {
-      overlay.setViewport(
-        ...(main.getViewport() as unknown as [number, number, number, number])
-      );
-    }
+    // No overlay when using main scene only; keep for API compatibility.
   }
 
   getOrientationForFace(cellId: number): {
@@ -771,13 +730,11 @@ export class vtkOrientationControllerWidget {
         this.mouseHandlers.delete(viewportId);
       }
       this.actors.delete(viewportId);
-      this.overlayRendererIds.delete(viewportId);
       this.pickers.delete(viewportId);
     } else {
       this.mouseHandlers.forEach((handler) => handler.cleanup());
       this.mouseHandlers.clear();
       this.actors.clear();
-      this.overlayRendererIds.clear();
       this.pickers.clear();
     }
     this.clearHighlight();
