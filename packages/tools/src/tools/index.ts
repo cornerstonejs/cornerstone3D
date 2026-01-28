@@ -59,8 +59,7 @@ import CircleROIStartEndThresholdTool from './segmentation/CircleROIStartEndThre
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
-import OrientationControlTool from './OrientationControlTool';
-import OrientationController from './OrientationController';
+import OrientationControllerTool from './OrientationControllerTool';
 import SegmentSelectTool from './segmentation/SegmentSelectTool';
 import SegmentBidirectionalTool from './segmentation/SegmentBidirectionalTool';
 
@@ -128,8 +127,7 @@ export {
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,
-  OrientationControlTool,
-  OrientationController,
+  OrientationControllerTool,
   SculptorTool,
   SegmentSelectTool,
   VolumeRotateTool,

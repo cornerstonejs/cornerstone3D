@@ -14,7 +14,7 @@ import {
 } from '../utilities/vtkjs/OrientationControllerWidget';
 
 /**
- * OrientationController provides an interactive orientation marker
+ * OrientationControllerTool provides an interactive orientation marker
  * using a rhombicuboctahedron (26-faced polyhedron) with clickable surfaces
  * for intuitive 3D volume reorientation.
  *
@@ -26,11 +26,11 @@ import {
  * - Configurable appearance and positioning
  *
  * @public
- * @class OrientationController
+ * @class OrientationControllerTool
  * @extends BaseTool
  */
-class OrientationController extends BaseTool {
-  static toolName = 'OrientationController';
+class OrientationControllerTool extends BaseTool {
+  static toolName = 'OrientationControllerTool';
 
   private widget = new vtkOrientationControllerWidget();
   private resizeObservers = new Map<string, ResizeObserver>();
@@ -300,14 +300,14 @@ class OrientationController extends BaseTool {
     );
 
     if (!enabledElement) {
-      console.warn('OrientationController: No enabled element found');
+      console.warn('OrientationControllerTool: No enabled element found');
       return;
     }
 
     const { viewport } = enabledElement;
 
     if (viewport.type !== Enums.ViewportType.VOLUME_3D) {
-      console.warn('OrientationController: Viewport is not VOLUME_3D');
+      console.warn('OrientationControllerTool: Viewport is not VOLUME_3D');
       return;
     }
 
@@ -325,7 +325,7 @@ class OrientationController extends BaseTool {
 
     if (!positioned) {
       console.warn(
-        'OrientationController: Initial positioning failed, retrying...'
+        'OrientationControllerTool: Initial positioning failed, retrying...'
       );
       setTimeout(() => {
         const repositioned = this.widget.positionActors(
@@ -339,13 +339,16 @@ class OrientationController extends BaseTool {
         if (repositioned) {
           viewport.render();
         } else {
-          console.error('OrientationController: Retry positioning also failed');
+          console.error(
+            'OrientationControllerTool: Retry positioning also failed'
+          );
         }
       }, 1000);
     } else {
       viewport.render();
     }
 
+    this.widget.syncOverlayViewport(viewportId, volumeViewport);
     this.widget.setupPicker(viewportId, actors);
 
     this.widget.setupMouseHandlers(
@@ -471,6 +474,11 @@ class OrientationController extends BaseTool {
       position: this.configuration.position || 'bottom-right',
       size: this.configuration.size || 0.04,
     });
+    this.widget.syncOverlayViewport(
+      viewportId,
+      viewport as Types.IVolumeViewport
+    );
+    viewport.render();
   }
 
   private animateCameraToOrientation(
@@ -641,4 +649,4 @@ class OrientationController extends BaseTool {
   }
 }
 
-export default OrientationController;
+export default OrientationControllerTool;

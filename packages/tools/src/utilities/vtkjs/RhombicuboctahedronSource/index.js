@@ -9,7 +9,7 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 // Face connectivity arrays
 // Format: [numPoints, index1, index2, ...]
 
-// 6 main square faces aligned with axes (match OrientationControlTool - these are SKIPPED in edges/corners mode)
+// 6 main square faces aligned with axes (match OrientationControllerTool - these are SKIPPED in edges/corners mode)
 const MAIN_FACES = [
   4,
   0,
@@ -43,7 +43,7 @@ const MAIN_FACES = [
   23, // Right (x = +phi)
 ];
 
-// 8 triangular corner faces (from OrientationControlTool)
+// 8 triangular corner faces (from OrientationControllerTool)
 const CORNER_FACES = [
   3,
   0,
@@ -79,7 +79,7 @@ const CORNER_FACES = [
   15, // Corner (-,+,+)
 ];
 
-// 12 square edge faces (from OrientationControlTool)
+// 12 square edge faces (from OrientationControllerTool)
 const EDGE_FACES = [
   // Edges around bottom face
   4,
@@ -168,10 +168,10 @@ function vtkRhombicuboctahedronSource(publicAPI, model) {
       }
     }
 
-    const phi = 1.4; // Match OrientationControlTool
+    const phi = 1.4; // Match OrientationControllerTool
     const faceSize = 0.95;
 
-    // Generate 24 vertices - exact same as OrientationControlTool
+    // Generate 24 vertices - exact same as OrientationControllerTool
     const vertices = [];
 
     // Group 1: (±faceSize, ±faceSize, ±phi) - 8 vertices forming top/bottom faces

@@ -1,5 +1,6 @@
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type { Types } from '@cornerstonejs/core';
 import vtkAnnotatedRhombicuboctahedronActor from '../AnnotatedRhombicuboctahedronActor';
 
@@ -38,8 +39,11 @@ export interface MouseHandlersCallbacks {
   onFaceHover?: (result: PickResult | null) => void;
 }
 
+const OVERLAY_RENDERER_ID_SUFFIX = '-orientation-controller-overlay';
+
 export class vtkOrientationControllerWidget {
   private actors = new Map<string, vtkActor[]>();
+  private overlayRendererIds = new Map<string, string>();
   private pickers = new Map<string, vtkCellPicker>();
   private highlightedFace: {
     actor: vtkActor;
@@ -148,31 +152,61 @@ export class vtkOrientationControllerWidget {
     viewport: Types.IVolumeViewport,
     actors: vtkActor[]
   ): void {
-    // Remove existing actors if they exist to ensure clean recreation
     const existingActors = this.actors.get(viewportId);
     if (existingActors) {
-      const uids = existingActors.map(
-        (_, index) => `orientation-controller-${viewportId}-${index}`
-      );
-      viewport.removeActors(uids);
-      this.actors.delete(viewportId);
+      this.removeActorsFromViewport(viewportId, viewport);
     }
 
-    // Add each actor with unique UID
-    actors.forEach((actor, index) => {
-      const uid = `orientation-controller-${viewportId}-${index}`;
-      viewport.addActor({ actor, uid });
-    });
+    const renderingEngine = (viewport as Types.IViewport).getRenderingEngine();
+    const mrw = renderingEngine?.offscreenMultiRenderWindow;
 
-    this.actors.set(viewportId, actors);
+    if (mrw) {
+      const mainRenderer = viewport.getRenderer();
+      const viewportBounds = mainRenderer.getViewport() as unknown as number[];
+      const overlayId = `${viewportId}${OVERLAY_RENDERER_ID_SUFFIX}`;
+
+      mrw.addRenderer({
+        id: overlayId,
+        viewport: viewportBounds,
+        background: [0, 0, 0],
+      });
+
+      const overlayRenderer = mrw.getRenderer(overlayId) as vtkRenderer;
+      overlayRenderer.setLayer(1);
+      overlayRenderer.setActiveCamera(mainRenderer.getActiveCamera());
+
+      actors.forEach((actor) => overlayRenderer.addActor(actor));
+      this.actors.set(viewportId, actors);
+      this.overlayRendererIds.set(viewportId, overlayId);
+    } else {
+      actors.forEach((actor, index) => {
+        const uid = `orientation-controller-${viewportId}-${index}`;
+        viewport.addActor({ actor, uid });
+      });
+      this.actors.set(viewportId, actors);
+    }
   }
 
   removeActorsFromViewport(
     viewportId: string,
     viewport: Types.IVolumeViewport
   ): void {
+    const overlayId = this.overlayRendererIds.get(viewportId);
     const actors = this.actors.get(viewportId);
-    if (actors) {
+
+    if (overlayId && actors) {
+      const mrw = (viewport as Types.IViewport).getRenderingEngine()
+        ?.offscreenMultiRenderWindow;
+      if (mrw) {
+        const overlayRenderer = mrw.getRenderer(overlayId) as vtkRenderer;
+        if (overlayRenderer) {
+          actors.forEach((a) => overlayRenderer.removeActor(a));
+        }
+        mrw.removeRenderer(overlayId);
+      }
+      this.overlayRendererIds.delete(viewportId);
+      this.actors.delete(viewportId);
+    } else if (actors) {
       const uids = actors.map(
         (_, index) => `orientation-controller-${viewportId}-${index}`
       );
@@ -206,30 +240,35 @@ export class vtkOrientationControllerWidget {
       return null;
     }
 
+    const overlayId = this.overlayRendererIds.get(viewportId);
+    let renderer: vtkRenderer = viewport.getRenderer() as vtkRenderer;
+    if (overlayId) {
+      const mrw = (viewport as Types.IViewport).getRenderingEngine()
+        ?.offscreenMultiRenderWindow;
+      if (mrw) {
+        const overlay = mrw.getRenderer(overlayId) as vtkRenderer;
+        if (overlay) renderer = overlay;
+      }
+    }
+
     const rect = element.getBoundingClientRect();
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
 
-    // Calculate VTK display coordinates manually (works for all rendering engines)
-    const renderer = viewport.getRenderer();
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasPosWithDPR = [x * devicePixelRatio, y * devicePixelRatio];
 
     const canvas = viewport.canvas;
     const { width, height } = canvas;
 
-    // Get the actual renderer viewport bounds
     const [xMin, yMin, xMax, yMax] =
       renderer.getViewport() as unknown as number[];
     const viewportWidth = xMax - xMin;
     const viewportHeight = yMax - yMin;
 
-    // Scale the canvas position to the actual viewport size
     const scaledX = (canvasPosWithDPR[0] / width) * viewportWidth * width;
     const scaledY = (canvasPosWithDPR[1] / height) * viewportHeight * height;
 
-    // Canvas coordinates with origin at top-left
-    // VTK display coordinates have origin at bottom-left
     const displayCoord = [scaledX, viewportHeight * height - scaledY];
     const displayCoords: [number, number, number] = [
       displayCoord[0],
@@ -247,7 +286,6 @@ export class vtkOrientationControllerWidget {
     const pickedActor = pickedActors[0];
     const cellId = picker.getCellId();
 
-    // Handle picks on the rhombicuboctahedron actors
     if (actors.includes(pickedActor) && cellId !== -1) {
       const actorIndex = actors.indexOf(pickedActor);
       return { pickedActor, cellId, actorIndex };
@@ -267,7 +305,7 @@ export class vtkOrientationControllerWidget {
 
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
-    const cornerOffset = 35; // pixels from corner (match OrientationControlTool)
+    const cornerOffset = 35; // pixels from corner (match OrientationControllerTool)
 
     let canvasX: number;
     let canvasY: number;
@@ -580,6 +618,22 @@ export class vtkOrientationControllerWidget {
     return this.actors.get(viewportId);
   }
 
+  syncOverlayViewport(
+    viewportId: string,
+    viewport: Types.IVolumeViewport
+  ): void {
+    const overlayId = this.overlayRendererIds.get(viewportId);
+    if (!overlayId) return;
+    const mrw = (viewport as Types.IViewport).getRenderingEngine()
+      ?.offscreenMultiRenderWindow;
+    if (!mrw) return;
+    const overlay = mrw.getRenderer(overlayId) as vtkRenderer;
+    const main = viewport.getRenderer() as vtkRenderer;
+    if (overlay && main) {
+      overlay.setViewport(...(main.getViewport() as unknown as number[]));
+    }
+  }
+
   getOrientationForFace(cellId: number): {
     viewPlaneNormal: number[];
     viewUp: number[];
@@ -699,11 +753,13 @@ export class vtkOrientationControllerWidget {
         this.mouseHandlers.delete(viewportId);
       }
       this.actors.delete(viewportId);
+      this.overlayRendererIds.delete(viewportId);
       this.pickers.delete(viewportId);
     } else {
       this.mouseHandlers.forEach((handler) => handler.cleanup());
       this.mouseHandlers.clear();
       this.actors.clear();
+      this.overlayRendererIds.clear();
       this.pickers.clear();
     }
     this.clearHighlight();

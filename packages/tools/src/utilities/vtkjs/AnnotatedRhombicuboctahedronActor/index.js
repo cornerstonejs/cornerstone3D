@@ -42,7 +42,7 @@ const MAIN_FACES = [
 
 // Vertex positions for the rhombicuboctahedron (same as RhombicuboctahedronSource)
 function getRhombicuboctahedronVertices(scale = 1.0) {
-  const phi = 1.4; // Match OrientationControlTool
+  const phi = 1.4; // Match OrientationControllerTool
   const faceSize = 0.95;
 
   const vertices = [];

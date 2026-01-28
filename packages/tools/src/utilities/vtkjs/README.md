@@ -75,7 +75,7 @@ These sources follow vtk.js conventions:
 
 ## Integration with Cornerstone3D
 
-The `OrientationController` tool demonstrates how to use these sources in a Cornerstone3D context, providing:
+The `OrientationControllerTool` tool demonstrates how to use these sources in a Cornerstone3D context, providing:
 
 - Interactive 3D orientation control
 - Clickable faces for camera reorientation
