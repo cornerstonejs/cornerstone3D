@@ -46,7 +46,7 @@ class OrientationController extends BaseTool {
         size: 0.04,
         position: 'bottom-right',
         colorScheme: 'marker',
-        letterColorScheme: 'rgb',
+        letterColorScheme: 'mixed',
         showEdgeFaces: true,
         showCornerFaces: true,
         keepOrientationUp: true,
@@ -118,11 +118,12 @@ class OrientationController extends BaseTool {
     xMinus: number[];
     xPlus: number[];
   } {
-    const letterColorScheme = this.configuration.letterColorScheme || 'rgb';
+    const letterColorScheme = this.configuration.letterColorScheme || 'mixed';
     const faceColors = this.getFaceColors();
 
     switch (letterColorScheme) {
-      case 'rgb':
+      case 'mixed':
+      case 'rgb': // Backward compatibility
         // Match the face color scheme logic - choose contrasting colors based on face colors
         // For rgb face scheme: topBottom=Red, frontBack=Green, leftRight=Yellow
         // Red and Green backgrounds: use white letters for contrast
@@ -135,7 +136,8 @@ class OrientationController extends BaseTool {
           xMinus: [0, 0, 0], // Black for L (on yellow background - leftRight)
           xPlus: [0, 0, 0], // Black for R (on yellow background - leftRight)
         };
-      case 'all-white':
+      case 'white':
+      case 'all-white': // Backward compatibility
         return {
           zMinus: [255, 255, 255],
           zPlus: [255, 255, 255],
@@ -144,7 +146,8 @@ class OrientationController extends BaseTool {
           xMinus: [255, 255, 255],
           xPlus: [255, 255, 255],
         };
-      case 'all-black':
+      case 'black':
+      case 'all-black': // Backward compatibility
         return {
           zMinus: [0, 0, 0],
           zPlus: [0, 0, 0],
@@ -154,7 +157,7 @@ class OrientationController extends BaseTool {
           xPlus: [0, 0, 0],
         };
       default:
-        // Default matches rgb scheme
+        // Default matches mixed scheme
         return {
           zMinus: [255, 255, 255],
           zPlus: [255, 255, 255],
@@ -186,6 +189,20 @@ class OrientationController extends BaseTool {
       this.onViewportAdded
     );
   }
+
+  onSetToolConfiguration = (): void => {
+    // If tool is enabled, recreate markers with new configuration
+    const viewportsInfo = this._getViewportsInfo();
+    const hasActiveMarkers = viewportsInfo.some(({ viewportId }) => {
+      return this.widget.getActors(viewportId) !== null;
+    });
+
+    if (hasActiveMarkers) {
+      // Remove existing markers and recreate with new configuration
+      this.removeMarkers();
+      this.addMarkers();
+    }
+  };
 
   private onViewportAdded = (evt: CustomEvent): void => {
     const { viewportId, renderingEngineId, toolGroupId } = evt.detail;
@@ -578,7 +595,7 @@ class OrientationController extends BaseTool {
     }
 
     const steps = 10;
-    const duration = 300;
+    const duration = 150;
     const stepDuration = duration / steps;
     let currentStep = 0;
 
