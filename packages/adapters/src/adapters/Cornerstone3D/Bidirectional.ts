@@ -73,7 +73,12 @@ class Bidirectional extends BaseAdapter3D {
             state.annotation.data.cachedStats = {
                 [`imageId:${referencedImageId}`]: {
                     length: longAxisNUMGroup.MeasuredValueSequence.NumericValue,
-                    width: shortAxisNUMGroup.MeasuredValueSequence.NumericValue
+                    width: shortAxisNUMGroup.MeasuredValueSequence.NumericValue,
+                    unit: longAxisNUMGroup.MeasuredValueSequence
+                        .MeasurementUnitsCodeSequence.CodeValue,
+                    widthUnit:
+                        shortAxisNUMGroup.MeasuredValueSequence
+                            .MeasurementUnitsCodeSequence.CodeValue
                 }
             };
         }
@@ -124,7 +129,7 @@ class Bidirectional extends BaseAdapter3D {
         const shortAxisStartImage = toScoord(scoordProps, longAxisPoints[0]);
         const shortAxisEndImage = toScoord(scoordProps, longAxisPoints[1]);
 
-        const { length, width } =
+        const { length, width, unit } =
             cachedStats[`imageId:${referencedImageId}`] || {};
 
         return {
@@ -138,6 +143,7 @@ class Bidirectional extends BaseAdapter3D {
             },
             longAxisLength: length,
             shortAxisLength: width,
+            unit,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding: finding,
             findingSites: findingSites || [],
