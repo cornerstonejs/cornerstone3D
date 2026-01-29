@@ -2,7 +2,6 @@ import * as metaData from '../../metaData';
 import * as CONSTANTS from '../../constants';
 import * as Enums from '../../enums';
 import type * as Types from '../../types';
-import type OrientationVectors from '../../types/OrientationVectors';
 
 import { vec3 } from 'gl-matrix';
 
