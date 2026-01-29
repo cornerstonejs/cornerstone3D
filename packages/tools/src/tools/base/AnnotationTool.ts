@@ -37,6 +37,7 @@ import { triggerAnnotationModified } from '../../stateManagement/annotation/help
 import ChangeTypes from '../../enums/ChangeTypes';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
+import { safeStructuredClone } from '../../utilities/safeStructuredClone';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 const { PointsManager } = csUtils;
@@ -493,17 +494,9 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   ) {
     const { data, annotationUID } = annotation;
 
-    const cloneData = {
-      ...data,
-      cachedStats: {},
-    } as typeof data;
-
-    delete cloneData.contour;
-    delete cloneData.spline;
-
     const state = {
       annotationUID,
-      data: structuredClone(cloneData),
+      data: safeStructuredClone(data),
       deleting,
     };
 
