@@ -95,7 +95,7 @@ class OrientationControllerTool extends BaseTool {
           frontBack: [180, 180, 180],
           leftRight: [180, 180, 180],
         };
-      case 'rgb':
+      case 'rgy':
         return {
           topBottom: [255, 0, 0],
           frontBack: [0, 255, 0],
@@ -123,9 +123,9 @@ class OrientationControllerTool extends BaseTool {
 
     switch (letterColorScheme) {
       case 'mixed':
-      case 'rgb': // Backward compatibility
+      case 'rgy':
         // Match the face color scheme logic - choose contrasting colors based on face colors
-        // For rgb face scheme: topBottom=Red, frontBack=Green, leftRight=Yellow
+        // For rgy face scheme: topBottom=Red, frontBack=Green, leftRight=Yellow
         // Red and Green backgrounds: use white letters for contrast
         // Yellow background: use black letters for contrast
         return {

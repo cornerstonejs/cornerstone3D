@@ -237,12 +237,12 @@ function getNumViewportsFromUrl() {
 }
 
 /**
- * Get the color scheme from the URL (?colorScheme=gray|rgb|marker)
+ * Get the color scheme from the URL (?colorScheme=gray|rgy|marker)
  */
-function getColorSchemeFromUrl(): 'gray' | 'rgb' | 'marker' {
+function getColorSchemeFromUrl(): 'gray' | 'rgy' | 'marker' {
   const params = new URLSearchParams(window.location.search);
   const value = params.get('colorScheme');
-  if (value === 'gray' || value === 'rgb' || value === 'marker') {
+  if (value === 'gray' || value === 'rgy' || value === 'marker') {
     return value;
   }
   // Check for legacy grayColors parameter for backward compatibility
@@ -269,15 +269,15 @@ function getKeepOrientationUpFromUrl(): boolean {
 }
 
 /**
- * Get the letter color scheme from the URL (?letterColorScheme=rgb|all-white|all-black)
+ * Get the letter color scheme from the URL (?letterColorScheme=mixed|all-white|all-black)
  */
-function getLetterColorSchemeFromUrl(): 'rgb' | 'all-white' | 'all-black' {
+function getLetterColorSchemeFromUrl(): 'mixed' | 'all-white' | 'all-black' {
   const params = new URLSearchParams(window.location.search);
   const value = params.get('letterColorScheme');
-  if (value === 'rgb' || value === 'all-white' || value === 'all-black') {
+  if (value === 'mixed' || value === 'all-white' || value === 'all-black') {
     return value;
   }
-  return 'rgb'; // default
+  return 'mixed'; // default
 }
 
 /**
@@ -476,7 +476,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       edges: [128, 128, 128], // Grey - edges
     };
   } else {
-    // RGB scheme (default)
+    // RGY scheme (red, green, yellow)
     faceColors = {
       topBottom: [255, 0, 0], // Red - faces 0-1 (top/bottom)
       frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
@@ -502,8 +502,8 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   toolGroupVRT.setToolEnabled(OrientationControllerTool.toolName);
 
   // Add dropdown for orientation control colors (reloads page with URL param)
-  const colorSchemeValues: string[] = ['rgb', 'gray', 'marker'];
-  const colorSchemeLabels = ['RGB', 'Gray', 'Marker'];
+  const colorSchemeValues: string[] = ['rgy', 'gray', 'marker'];
+  const colorSchemeLabels = ['RGY', 'Gray', 'Marker'];
   // Ensure colorScheme is valid, default to 'marker' if not
   const validColorScheme = colorSchemeValues.includes(colorScheme)
     ? colorScheme
@@ -527,13 +527,13 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   });
 
   // Add dropdown for letter color scheme (reloads page with URL param)
-  const letterColorSchemeValues: string[] = ['rgb', 'all-white', 'all-black'];
-  const letterColorSchemeLabels = ['RGB', 'All White', 'All Black'];
+  const letterColorSchemeValues: string[] = ['mixed', 'all-white', 'all-black'];
+  const letterColorSchemeLabels = ['Mixed', 'All White', 'All Black'];
   const validLetterColorScheme = letterColorSchemeValues.includes(
     letterColorScheme
   )
     ? letterColorScheme
-    : 'rgb';
+    : 'mixed';
 
   addDropdownToToolbar({
     labelText: 'Letter Colors',
