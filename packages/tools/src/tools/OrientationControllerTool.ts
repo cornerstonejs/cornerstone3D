@@ -53,7 +53,6 @@ class OrientationControllerTool extends BaseTool {
         showEdgeFaces: true,
         showCornerFaces: true,
         keepOrientationUp: true,
-        // Don't set default faceColors - let getFaceColors() determine them from colorScheme
       },
     }
   ) {

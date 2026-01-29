@@ -13,6 +13,7 @@ import {
   addDropdownToToolbar,
   getLocalUrl,
   addToggleButtonToToolbar,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -94,8 +95,8 @@ const renderingEngineId = 'myRenderingEngine';
 /////////////////////////////////////////
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Volume Cropping',
-  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes aligned on the x,y and z axes.'
+  'Volume Cropping with Orientation Controller',
+  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes aligned on the x,y and z axes and an orientation controller.'
 );
 
 const size = '400px';
@@ -583,6 +584,30 @@ async function run(numViewports = getNumViewportsFromUrl()) {
         orientationControllerTool.onSetToolDisabled();
         orientationControllerTool.onSetToolEnabled();
       }
+    },
+  });
+
+  addSliderToToolbar({
+    title: 'Orientation marker size',
+    range: [0.01, 0.05],
+    defaultValue: 0.04,
+    step: 0.01,
+    container: rightToolbarContainer,
+    onSelectedValueChange: (value) => {
+      const size = Number(value);
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.size = size;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+    updateLabelOnChange: (value, label) => {
+      label.textContent = `Orientation marker size: ${value}`;
     },
   });
 
