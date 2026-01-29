@@ -1172,6 +1172,9 @@ class Cache {
       cachedImage.sizeInBytes = 0;
       cachedImage.image = partialImage || cachedImage.image;
     } else {
+      // Also clear imageLoadObject when not loaded - this allows a new
+      // stage/request to proceed when the previous stage failed to decode
+      cachedImage.imageLoadObject = null;
       cachedImage.image = partialImage || cachedImage.image;
     }
   }
