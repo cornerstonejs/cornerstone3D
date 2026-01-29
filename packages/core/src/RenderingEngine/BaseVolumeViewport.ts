@@ -797,17 +797,30 @@ abstract class BaseVolumeViewport extends Viewport {
    * a new view plane normal as the referenced plane normal, or else the
    * cross product of the existing view plane normal and the inPlaneVector1
    */
-  public setViewPlane(planeRestriction: PlaneRestriction , referencedImageId?: string) {
+  public setViewPlane(planeRestriction: PlaneRestriction) {
     const { point, inPlaneVector1, inPlaneVector2, FrameOfReferenceUID } =
       planeRestriction;
 
     this.setBestOrentation(inPlaneVector1, inPlaneVector2);
 
+    const { focalPoint, viewPlaneNormal } = this.getCamera();
+    const normalizedViewPlaneNormal = vec3.normalize(
+      vec3.create(),
+      viewPlaneNormal
+    );
+    const deltaFocal = vec3.subtract(vec3.create(), point, focalPoint);
+    const alongNormal = vec3.dot(deltaFocal, normalizedViewPlaneNormal);
+    const deltaNormal = vec3.scaleAndAdd(
+      vec3.create(),
+      focalPoint,
+      normalizedViewPlaneNormal,
+      alongNormal
+    ) as Point3;
+
     this.setViewReference({
       FrameOfReferenceUID,
-      cameraFocalPoint: point,
-      viewPlaneNormal: this.getCamera().viewPlaneNormal,
-      referencedImageId,
+      cameraFocalPoint: deltaNormal,
+      viewPlaneNormal: viewPlaneNormal,
     });
   }
 
@@ -830,7 +843,7 @@ abstract class BaseVolumeViewport extends Viewport {
     let { sliceIndex } = viewRef;
 
     if (planeRestriction && !refViewPlaneNormal) {
-      return this.setViewPlane(planeRestriction , referencedImageId);
+      return this.setViewPlane(planeRestriction);
     }
 
     const { focalPoint, viewPlaneNormal, position } = this.getCamera();
