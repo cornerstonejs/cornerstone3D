@@ -29,6 +29,9 @@ import {
  * @class OrientationControllerTool
  * @extends BaseTool
  */
+const ADD_MARKER_DELAY_MS = 500;
+const POSITION_RETRY_DELAY_MS = 1000;
+
 class OrientationControllerTool extends BaseTool {
   static toolName = 'OrientationControllerTool';
 
@@ -61,6 +64,13 @@ class OrientationControllerTool extends BaseTool {
     const viewports = getToolGroup(this.toolGroupId)?.viewportsInfo;
     return viewports || [];
   };
+
+  private getPositionConfig() {
+    return {
+      position: this.configuration.position || 'bottom-right',
+      size: this.configuration.size || 0.04,
+    };
+  }
 
   private getFaceColors(): {
     topBottom: number[];
@@ -174,10 +184,13 @@ class OrientationControllerTool extends BaseTool {
     this.removeMarkers();
     this.addMarkers();
 
-    // Also listen for viewports being added to the tool group
     eventTarget.addEventListener(
       ToolsEnums.Events.TOOLGROUP_VIEWPORT_ADDED,
       this.onViewportAdded
+    );
+    eventTarget.addEventListener(
+      ToolsEnums.Events.TOOLGROUP_VIEWPORT_REMOVED,
+      this.onViewportRemoved
     );
   }
 
@@ -187,6 +200,10 @@ class OrientationControllerTool extends BaseTool {
     eventTarget.removeEventListener(
       ToolsEnums.Events.TOOLGROUP_VIEWPORT_ADDED,
       this.onViewportAdded
+    );
+    eventTarget.removeEventListener(
+      ToolsEnums.Events.TOOLGROUP_VIEWPORT_REMOVED,
+      this.onViewportRemoved
     );
   }
 
@@ -217,7 +234,46 @@ class OrientationControllerTool extends BaseTool {
 
     setTimeout(() => {
       this.addMarkerToViewport(viewportId, renderingEngineId);
-    }, 500);
+    }, ADD_MARKER_DELAY_MS);
+  };
+
+  private onViewportRemoved = (evt: CustomEvent): void => {
+    const { viewportId, renderingEngineId, toolGroupId } = evt.detail;
+
+    if (toolGroupId !== this.toolGroupId) {
+      return;
+    }
+
+    const enabledElement = getEnabledElementByIds(
+      viewportId,
+      renderingEngineId
+    );
+
+    if (enabledElement) {
+      const { viewport } = enabledElement;
+      if (viewport.type === Enums.ViewportType.VOLUME_3D) {
+        this.widget.removeActorsFromViewport(
+          viewportId,
+          viewport as Types.IVolumeViewport
+        );
+      }
+      const cameraHandler = this.cameraHandlers.get(viewportId);
+      if (cameraHandler) {
+        viewport.element.removeEventListener(
+          Enums.Events.CAMERA_MODIFIED,
+          cameraHandler as EventListener
+        );
+        this.cameraHandlers.delete(viewportId);
+      }
+    }
+
+    this.widget.cleanup(viewportId);
+
+    const resizeObserver = this.resizeObservers.get(viewportId);
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+      this.resizeObservers.delete(viewportId);
+    }
   };
 
   private removeMarkers(): void {
@@ -237,6 +293,19 @@ class OrientationControllerTool extends BaseTool {
             viewport as Types.IVolumeViewport
           );
         }
+        const cameraHandler = this.cameraHandlers.get(viewportId);
+        if (cameraHandler) {
+          viewport.element.removeEventListener(
+            Enums.Events.CAMERA_MODIFIED,
+            cameraHandler as EventListener
+          );
+          this.cameraHandlers.delete(viewportId);
+        }
+      }
+      const resizeObserver = this.resizeObservers.get(viewportId);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+        this.resizeObservers.delete(viewportId);
       }
     });
 
@@ -271,7 +340,7 @@ class OrientationControllerTool extends BaseTool {
 
       setTimeout(() => {
         this.addMarkerToViewport(viewportId, renderingEngineId);
-      }, 500);
+      }, ADD_MARKER_DELAY_MS);
     });
   };
 
@@ -318,10 +387,11 @@ class OrientationControllerTool extends BaseTool {
 
     this.widget.addActorsToViewport(viewportId, volumeViewport, actors);
 
-    const positioned = this.widget.positionActors(volumeViewport, actors, {
-      position: this.configuration.position || 'bottom-right',
-      size: this.configuration.size || 0.04,
-    });
+    const positioned = this.widget.positionActors(
+      volumeViewport,
+      actors,
+      this.getPositionConfig()
+    );
 
     if (!positioned) {
       console.warn(
@@ -331,10 +401,7 @@ class OrientationControllerTool extends BaseTool {
         const repositioned = this.widget.positionActors(
           volumeViewport,
           actors,
-          {
-            position: this.configuration.position || 'bottom-right',
-            size: this.configuration.size || 0.04,
-          }
+          this.getPositionConfig()
         );
         if (repositioned) {
           viewport.render();
@@ -343,7 +410,7 @@ class OrientationControllerTool extends BaseTool {
             'OrientationControllerTool: Retry positioning also failed'
           );
         }
-      }, 1000);
+      }, POSITION_RETRY_DELAY_MS);
     } else {
       viewport.render();
     }
@@ -439,10 +506,11 @@ class OrientationControllerTool extends BaseTool {
     // Recalculate both size and position to maintain fixed screen size
     // Size needs to be recalculated because parallel scale changes with zoom
     const volumeViewport = viewport as Types.IVolumeViewport;
-    this.widget.positionActors(volumeViewport, actors, {
-      position: this.configuration.position || 'bottom-right',
-      size: this.configuration.size || 0.04,
-    });
+    this.widget.positionActors(
+      volumeViewport,
+      actors,
+      this.getPositionConfig()
+    );
     viewport.render();
   };
 
@@ -470,10 +538,11 @@ class OrientationControllerTool extends BaseTool {
       return;
     }
 
-    this.widget.positionActors(viewport as Types.IVolumeViewport, actors, {
-      position: this.configuration.position || 'bottom-right',
-      size: this.configuration.size || 0.04,
-    });
+    this.widget.positionActors(
+      viewport as Types.IVolumeViewport,
+      actors,
+      this.getPositionConfig()
+    );
     this.widget.syncOverlayViewport(
       viewportId,
       viewport as Types.IVolumeViewport
@@ -637,7 +706,11 @@ class OrientationControllerTool extends BaseTool {
         ],
         viewUp: Array.from(interpolatedUp) as [number, number, number],
       });
-      viewport.resetCamera();
+      viewport.resetCamera({
+        resetZoom: false,
+        resetPan: true,
+        resetToCenter: true,
+      });
       viewport.render();
 
       if (currentStep < steps) {
