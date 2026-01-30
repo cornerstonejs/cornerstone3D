@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.24](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.23...v4.15.24) (2026-01-30)
+
+### Bug Fixes
+
+- redo not restoring cachedStats ([#2588](https://github.com/cornerstonejs/cornerstone3D/issues/2588)) ([fe86fbf](https://github.com/cornerstonejs/cornerstone3D/commit/fe86fbff75b91347a951d9b3d4d1e2d9b90cb1cf))
+
 ## [4.15.23](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.22...v4.15.23) (2026-01-30)
 
 ### Bug Fixes
