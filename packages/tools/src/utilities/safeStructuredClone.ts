@@ -27,6 +27,7 @@ function omitUncloneableKeys(
     if (value === null || value === undefined || typeof value !== 'object') {
       result[key] = value;
     } else if (Array.isArray(value)) {
+      // The omit keys is not inside objects in arrays right now, so just copy the array as is
       result[key] = value;
     } else {
       result[key] = omitUncloneableKeys(value as Record<string, unknown>);
@@ -67,7 +68,7 @@ function cloneRecursiveWithFallback(
     if (value === null || value === undefined || typeof value !== 'object') {
       result[key] = value;
     } else if (Array.isArray(value)) {
-      result[key] = tryCloneValue(value);
+      result[key] = value.map((value) => cloneRecursiveWithFallback(value));
     } else {
       const cloned = tryCloneValue(value);
       result[key] =
@@ -100,7 +101,9 @@ export function safeStructuredClone<T>(value: T): T {
     try {
       return structuredClone(value) as T;
     } catch {
-      return [] as T;
+      return value.map((item) =>
+        cloneRecursiveWithFallback(item as Record<string, unknown>)
+      ) as T;
     }
   }
   const obj = value as Record<string, unknown>;
