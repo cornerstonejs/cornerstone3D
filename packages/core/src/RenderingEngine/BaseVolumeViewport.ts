@@ -804,19 +804,14 @@ abstract class BaseVolumeViewport extends Viewport {
     this.setBestOrentation(inPlaneVector1, inPlaneVector2);
 
     const { focalPoint, viewPlaneNormal } = this.getCamera();
-    const normalizedViewPlaneNormal = vec3.normalize(
-      vec3.create(),
-      viewPlaneNormal
-    );
     const deltaFocal = vec3.subtract(vec3.create(), point, focalPoint);
-    const alongNormal = vec3.dot(deltaFocal, normalizedViewPlaneNormal);
+    const alongNormal = vec3.dot(deltaFocal, viewPlaneNormal);
     const deltaNormal = vec3.scaleAndAdd(
       vec3.create(),
       focalPoint,
-      normalizedViewPlaneNormal,
+      viewPlaneNormal,
       alongNormal
     ) as Point3;
-
     this.setViewReference({
       FrameOfReferenceUID,
       cameraFocalPoint: deltaNormal,
