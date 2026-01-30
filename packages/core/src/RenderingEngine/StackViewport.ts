@@ -3532,10 +3532,7 @@ class StackViewport extends Viewport {
   private _getImagePlaneModule(imageId: string): ImagePlaneModule {
     const imagePlaneModule = getImagePlaneModule(imageId);
 
-    this.hasPixelSpacing =
-      !imagePlaneModule.usingDefaultValues ||
-      this.calibration?.scale > 0 ||
-      this.calibration?.rowPixelSpacing > 0;
+    this.hasPixelSpacing = this.calibration?.scale > 0 || imagePlaneModule?.rowPixelSpacing > 0;
 
     this.calibration ||= imagePlaneModule.calibration;
 
