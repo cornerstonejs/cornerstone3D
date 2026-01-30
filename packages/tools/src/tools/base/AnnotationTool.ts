@@ -40,7 +40,6 @@ import { addContourSegmentationAnnotation } from '../../utilities/contourSegment
 import { safeStructuredClone } from '../../utilities/safeStructuredClone';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
-const { PointsManager } = csUtils;
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -479,9 +478,8 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
   /**
    * Creates an annotation state copy to allow storing the current state of
-   * an annotation.  This class has knowledge about the contour and spline
-   * implementations in order to copy the contour object efficiently, and to
-   * allow copying the spline object (which has member variables etc).
+   * an annotation. Contour and other special keys are handled by safeStructuredClone.
+   * Spline is omitted (non-cloneable refs).
    *
    * @param annotation - the annotation to create a clone of
    * @param deleting - a flag to indicate that this object is about to be deleted (deleting true),
@@ -494,26 +492,11 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   ) {
     const { data, annotationUID } = annotation;
 
-    const state = {
+    return {
       annotationUID,
       data: safeStructuredClone(data),
       deleting,
     };
-
-    const contour = (data as ContourAnnotationData['data']).contour;
-
-    if (contour) {
-      state.data.contour = {
-        ...contour,
-        polyline: null,
-        pointsManager: PointsManager.create3(
-          contour.polyline.length,
-          contour.polyline
-        ),
-      };
-    }
-
-    return state;
   }
 
   /**
