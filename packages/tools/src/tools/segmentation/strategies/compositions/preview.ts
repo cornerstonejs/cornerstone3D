@@ -110,6 +110,10 @@ export default {
       return;
     }
 
+    if (operationData.previewSegmentIndex == null) {
+      return; // no preview to reject
+    }
+
     // check if the preview has value, if not we should not undo
     // since it might be an actual brush stroke or an accept preview
     utilities.HistoryMemo.DefaultHistoryMemo.undoIf((memo) => {
