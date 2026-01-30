@@ -464,7 +464,7 @@ class VolumeViewport extends BaseVolumeViewport {
   public setSlabThickness(slabThickness: number, filterActorUIDs = []): void {
     if (slabThickness < 0.1) {
       // Cannot render zero thickness
-      slabThickness = 0.1;
+      slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     }
 
     let actorEntries = this.getActors();
