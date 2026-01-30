@@ -32,6 +32,7 @@ const {
   TrackballRotateTool,
   VolumeRotateTool,
   RectangleROITool,
+  CircleROITool,
   CircleROIStartEndThresholdTool,
   RectangleROIStartEndThresholdTool,
   segmentation,
@@ -45,19 +46,15 @@ const { createCameraPositionSynchronizer, createVOISynchronizer } =
 
 // Study IDs
 const FirstStudyID = `1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339`;
-const SecondStudyID =
-  '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
-const ThirdStudyID = `1.3.6.1.4.1.9328.50.17.15423521354819720574322014551955370036`;
+// const SecondStudyID =
+//   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
+// const ThirdStudyID = `1.3.6.1.4.1.9328.50.17.15423521354819720574322014551955370036`;
 
 // Common configuration
 let renderingEngine;
 const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const renderingEngineId = 'myRenderingEngine';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-
-// Define a unique id for the volume
-const volumeName = 'labelmap'; // Id of the volume less loader prefix
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 
@@ -169,6 +166,7 @@ const optionsValues = [
   WindowLevelTool.toolName,
   CrosshairsTool.toolName,
   RectangleROITool.toolName,
+  CircleROITool.toolName,
   CircleROIStartEndThresholdTool.toolName,
   RectangleROIStartEndThresholdTool.toolName,
 ];
@@ -223,6 +221,7 @@ addDropdownToToolbar({
           }
           toolGroup.setToolDisabled(WindowLevelTool.toolName);
           toolGroup.setToolDisabled(RectangleROITool.toolName);
+          toolGroup.setToolDisabled(CircleROITool.toolName);
           toolGroup.setToolActive(ZoomTool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
@@ -240,6 +239,7 @@ addDropdownToToolbar({
           toolGroup.setToolDisabled(ZoomTool.toolName);
           toolGroup.setToolDisabled(WindowLevelTool.toolName);
           toolGroup.setToolDisabled(RectangleROITool.toolName);
+          toolGroup.setToolDisabled(CircleROITool.toolName);
           toolGroup.setToolActive(CrosshairsTool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
@@ -248,6 +248,7 @@ addDropdownToToolbar({
           toolGroup.setToolDisabled(WindowLevelTool.toolName);
           toolGroup.setToolDisabled(CrosshairsTool.toolName);
           toolGroup.setToolDisabled(RectangleROITool.toolName);
+          toolGroup.setToolDisabled(CircleROITool.toolName);
           toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
@@ -256,14 +257,26 @@ addDropdownToToolbar({
           toolGroup.setToolDisabled(WindowLevelTool.toolName);
           toolGroup.setToolDisabled(CrosshairsTool.toolName);
           toolGroup.setToolDisabled(RectangleROITool.toolName);
+          toolGroup.setToolDisabled(CircleROITool.toolName);
           toolGroup.setToolDisabled(CircleROIStartEndThresholdTool.toolName);
           toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
+            bindings: [{ mouseButton: MouseBindings.Primary }],
+          });
+        } else if (toolName === CircleROITool.toolName) {
+          toolGroup.setToolDisabled(ZoomTool.toolName);
+          toolGroup.setToolDisabled(WindowLevelTool.toolName);
+          toolGroup.setToolDisabled(CrosshairsTool.toolName);
+          toolGroup.setToolDisabled(RectangleROITool.toolName);
+          toolGroup.setToolDisabled(CircleROIStartEndThresholdTool.toolName);
+          toolGroup.setToolDisabled(RectangleROIStartEndThresholdTool.toolName);
+          toolGroup.setToolActive(CircleROITool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
         } else {
           toolGroup.setToolDisabled(ZoomTool.toolName);
           toolGroup.setToolDisabled(WindowLevelTool.toolName);
           toolGroup.setToolDisabled(CrosshairsTool.toolName);
+          toolGroup.setToolDisabled(CircleROITool.toolName);
           toolGroup.setToolActive(RectangleROITool.toolName, {
             bindings: [{ mouseButton: MouseBindings.Primary }],
           });
@@ -406,6 +419,7 @@ function setUpToolGroupsForStudy(studyKey) {
       getReferenceLineSlabThicknessControlsOn,
     });
     toolGroup.addTool(RectangleROITool.toolName);
+    toolGroup.addTool(CircleROITool.toolName);
     // if (toolGroup === ptToolGroup) {
     toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
       calculatePointsInsideVolume: true,
@@ -888,6 +902,7 @@ async function run() {
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(VolumeRotateTool);
   cornerstoneTools.addTool(RectangleROITool);
+  cornerstoneTools.addTool(CircleROITool);
   cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
   cornerstoneTools.addTool(RectangleROIStartEndThresholdTool);
 

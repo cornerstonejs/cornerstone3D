@@ -6,6 +6,7 @@ import {
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import throttle from '../../utilities/throttle';
@@ -30,7 +31,6 @@ import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as rectangle from '../../utilities/math/rectangle';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -853,8 +853,7 @@ class RectangleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[3];
+    const worldHandles = data.handles.points;
     const { cachedStats } = data;
 
     const targetIds = Object.keys(cachedStats);
@@ -863,6 +862,7 @@ class RectangleROITool extends AnnotationTool {
       const targetId = targetIds[i];
 
       const image = this.getTargetImageData(targetId);
+      console.warn('target cached stats', targetId, image);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -873,17 +873,11 @@ class RectangleROITool extends AnnotationTool {
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const pos1Index = transformWorldToIndex(imageData, worldPos1);
-
-      pos1Index[0] = Math.floor(pos1Index[0]);
-      pos1Index[1] = Math.floor(pos1Index[1]);
-      pos1Index[2] = Math.floor(pos1Index[2]);
-
-      const pos2Index = transformWorldToIndex(imageData, worldPos2);
-
-      pos2Index[0] = Math.floor(pos2Index[0]);
-      pos2Index[1] = Math.floor(pos2Index[1]);
-      pos2Index[2] = Math.floor(pos2Index[2]);
+      const indexHandles = worldHandles.map((worldHandle) =>
+        transformWorldToIndex(imageData, worldHandle)
+      );
+      const pos1Index = indexHandles[0].map(Math.floor);
+      const pos2Index = indexHandles[3].map(Math.floor);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
@@ -908,20 +902,19 @@ class RectangleROITool extends AnnotationTool {
           [kMin, kMax],
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
-          viewPlaneNormal,
-          viewUp,
-          worldPos1,
-          worldPos2
-        );
-
         const handles = [pos1Index, pos2Index];
         const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
           image,
           handles
         );
 
-        const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
+        const width = vec3.length(
+          vec3.subtract(vec3.create(), indexHandles[0], indexHandles[1])
+        );
+        const height = vec3.length(
+          vec3.subtract(vec3.create(), indexHandles[2], indexHandles[3])
+        );
+        const area = Math.abs(width * height) / (scale * scale);
 
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
