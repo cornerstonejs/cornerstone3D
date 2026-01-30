@@ -1,4 +1,5 @@
 import { HistoryMemo } from '../../src/utilities/historyMemo';
+import eventTarget from '../../src/eventTarget';
 
 import { describe, it, expect } from '@jest/globals';
 
@@ -51,5 +52,29 @@ describe('HistoryMemo', function () {
     expect(defaultHistoryMemo.canUndo).toBe(true);
     defaultHistoryMemo.undo();
     expect(defaultHistoryMemo.canRedo).toBe(true);
+  });
+
+  it('dispatches HISTORY_PUSHED event on push', () => {
+    const eventType = 'CORNERSTONE_TOOLS_HISTORY_PUSHED';
+    let receivedEvent = null;
+
+    const handler = (evt) => {
+      receivedEvent = evt.detail;
+    };
+    eventTarget.addEventListener(eventType, handler);
+
+    const memo = {
+      id: 'test-id',
+      operationType: 'labelmap',
+      restoreMemo: () => {},
+    };
+    historyMemo.push(memo);
+
+    eventTarget.removeEventListener(eventType, handler);
+
+    expect(receivedEvent).not.toBeNull();
+    expect(receivedEvent.id).toBe('test-id');
+    expect(receivedEvent.operationType).toBe('labelmap');
+    expect(receivedEvent.memo).toBe(memo);
   });
 });
