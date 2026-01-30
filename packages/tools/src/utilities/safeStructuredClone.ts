@@ -55,9 +55,8 @@ function omitUncloneableKeys(
     if (value === null || value === undefined || typeof value !== 'object') {
       result[key] = value;
     } else if (Array.isArray(value)) {
-      // The omit keys is not inside objects in arrays right now, so just copy the array as is
       result[key] = value.map((value) =>
-        omitUncloneableKeys(value as Record<string, unknown>)
+        safeStructuredClone(value as Record<string, unknown>)
       );
     } else {
       result[key] = omitUncloneableKeys(value as Record<string, unknown>);
@@ -82,6 +81,9 @@ export function safeStructuredClone<T>(value: T): T {
   }
   if (typeof value !== 'object') {
     return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => safeStructuredClone(item)) as unknown as T;
   }
   return omitUncloneableKeys(value as Record<string, unknown>) as T;
 }
