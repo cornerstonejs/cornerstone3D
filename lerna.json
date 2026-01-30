@@ -1,5 +1,5 @@
 {
-  "version": "4.15.23",
+  "version": "4.15.24",
   "packages": [
     "packages/core",
     "packages/tools",
