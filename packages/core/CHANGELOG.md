@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.22](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.21...v4.15.22) (2026-01-30)
+
+### Bug Fixes
+
+- **Volume viewport:** Image shift in mpr when measurement is loaded. ([#2539](https://github.com/cornerstonejs/cornerstone3D/issues/2539)) ([cd9a217](https://github.com/cornerstonejs/cornerstone3D/commit/cd9a217341de963b77e801396140671c3d1336b1))
+
 ## [4.15.21](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.20...v4.15.21) (2026-01-28)
 
 **Note:** Version bump only for package @cornerstonejs/core
