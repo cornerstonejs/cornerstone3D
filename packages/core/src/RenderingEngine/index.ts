@@ -4,8 +4,10 @@ import TiledRenderingEngine from './TiledRenderingEngine';
 import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
 import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
+import VolumeSliceViewport from './VolumeSliceViewport';
 import StackViewport from './StackViewport';
 import VolumeViewport3D from './VolumeViewport3D';
+import DirectRenderingEngine from './DirectRenderingEngine';
 export * from './helpers';
 
 export {
@@ -14,7 +16,9 @@ export {
   BaseRenderingEngine,
   TiledRenderingEngine,
   ContextPoolRenderingEngine,
+  DirectRenderingEngine,
   VolumeViewport,
+  VolumeSliceViewport,
   VolumeViewport3D,
   StackViewport,
 };

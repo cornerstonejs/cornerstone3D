@@ -6,6 +6,7 @@ import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import ViewportType from '../enums/ViewportType';
 import VolumeViewport from './VolumeViewport';
+import VolumeSliceViewport from './VolumeSliceViewport';
 import StackViewport from './StackViewport';
 import VolumeViewport3D from './VolumeViewport3D';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
@@ -138,6 +139,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       type === ViewportType.PERSPECTIVE
     ) {
       viewport = new VolumeViewport(viewportInput);
+    } else if (type === ViewportType.VOLUME_SLICE) {
+      viewport = new VolumeSliceViewport(viewportInput);
     } else if (type === ViewportType.VOLUME_3D) {
       viewport = new VolumeViewport3D(viewportInput);
     } else {

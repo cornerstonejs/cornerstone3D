@@ -61,6 +61,10 @@
         "name": "Basic Volume Viewport Usage",
         "description": "Displays a set of DICOM images in a Volume Viewport."
       },
+      "volumeResliceViewport": {
+        "name": "Volume Reslice Viewport",
+        "description": "Displays axial, sagittal, and coronal slice viewports using the ImageResliceMapper."
+      },
       "volumeAPI": {
         "name": "Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"

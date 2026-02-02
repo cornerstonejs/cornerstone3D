@@ -512,7 +512,10 @@ abstract class BaseRenderingEngine {
         displayArea: null,
       };
 
-      if (type === ViewportType.ORTHOGRAPHIC) {
+      if (
+        type === ViewportType.ORTHOGRAPHIC ||
+        type === ViewportType.VOLUME_SLICE
+      ) {
         options = {
           ...options,
           orientation: OrientationAxis.AXIAL,
@@ -744,7 +747,9 @@ abstract class BaseRenderingEngine {
 
     // clear drawing
     const context = canvas.getContext('2d');
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    if (context) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }
   }
 
   private _clearAnimationFrame() {
