@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.24](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.23...v4.15.24) (2026-01-30)
+
+### Bug Fixes
+
+- redo not restoring cachedStats ([#2588](https://github.com/cornerstonejs/cornerstone3D/issues/2588)) ([fe86fbf](https://github.com/cornerstonejs/cornerstone3D/commit/fe86fbff75b91347a951d9b3d4d1e2d9b90cb1cf))
+
+## [4.15.23](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.22...v4.15.23) (2026-01-30)
+
+### Bug Fixes
+
+- **statistics:** Added null check for strategyData when calculating volume statistics for labelmap segmentations. ([#2587](https://github.com/cornerstonejs/cornerstone3D/issues/2587)) ([87e1c7e](https://github.com/cornerstonejs/cornerstone3D/commit/87e1c7e4898f127bf29c17244d1ddbb5fbbbd39c))
+
+## [4.15.22](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.21...v4.15.22) (2026-01-30)
+
+### Bug Fixes
+
+- **Volume viewport:** Image shift in mpr when measurement is loaded. ([#2539](https://github.com/cornerstonejs/cornerstone3D/issues/2539)) ([cd9a217](https://github.com/cornerstonejs/cornerstone3D/commit/cd9a217341de963b77e801396140671c3d1336b1))
+
+## [4.15.21](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.20...v4.15.21) (2026-01-28)
+
+**Note:** Version bump only for package root
+
 ## [4.15.20](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.19...v4.15.20) (2026-01-26)
 
 ### Bug Fixes
