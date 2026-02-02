@@ -2373,6 +2373,9 @@ abstract class BaseVolumeViewport extends Viewport {
       volumeId = actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       )?.referencedId;
+      if (!volumeId) {
+        return;
+      }
     }
 
     const currentIndex = this.getSliceIndex();
