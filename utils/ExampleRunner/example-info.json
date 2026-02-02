@@ -65,6 +65,10 @@
         "name": "Volume Reslice Viewport",
         "description": "Displays axial, sagittal, and coronal slice viewports using the ImageResliceMapper."
       },
+      "volumeViewportLegacy": {
+        "name": "Legacy Volume Viewport",
+        "description": "Displays axial, sagittal, and coronal volume viewports using the legacy VolumeMapper with annotation tools."
+      },
       "volumeAPI": {
         "name": "Volume Viewport API",
         "description": "Demonstrates how to interact with a Volume viewport  (e.g. Set VOI Range, Change Camera Position / Orientation, Change Slab Thickness, Flip H/V, Rotate, Invert, Zoom/Pan, Reset)"

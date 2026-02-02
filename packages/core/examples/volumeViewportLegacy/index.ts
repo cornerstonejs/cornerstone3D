@@ -52,8 +52,8 @@ const viewportIds = {
 };
 
 setTitleAndDescription(
-  'Volume Reslice Viewport with Tools',
-  'Displays axial, sagittal, and coronal slice viewports using ImageResliceMapper with annotation and manipulation tools.'
+  'Legacy Volume Viewport with Tools',
+  'Displays axial, sagittal, and coronal volume viewports using the legacy VolumeMapper with annotation and manipulation tools.'
 );
 
 const toolsNames = [
@@ -131,7 +131,7 @@ async function run() {
   await initDemo({
     core: {
       rendering: {
-        renderingEngineMode: Enums.RenderingEngineModeEnum.Direct,
+        renderingEngineMode: Enums.RenderingEngineModeEnum.ContextPool,
       },
     },
   });
@@ -207,9 +207,9 @@ async function run() {
 
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
     SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
@@ -218,7 +218,7 @@ async function run() {
   const viewportInputs = [
     {
       viewportId: viewportIds.axial,
-      type: ViewportType.VOLUME_SLICE,
+      type: ViewportType.ORTHOGRAPHIC,
       element: axialElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -227,7 +227,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.sagittal,
-      type: ViewportType.VOLUME_SLICE,
+      type: ViewportType.ORTHOGRAPHIC,
       element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -236,7 +236,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.coronal,
-      type: ViewportType.VOLUME_SLICE,
+      type: ViewportType.ORTHOGRAPHIC,
       element: coronalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,

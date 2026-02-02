@@ -8,6 +8,7 @@ import { MPR_CAMERA_VALUES } from '../constants';
 import type {
   ActorEntry,
   IVolumeInput,
+  Point2,
   Point3,
   EventTypes,
   ICamera,
@@ -27,6 +28,9 @@ class VolumeSliceViewport extends VolumeViewport {
 
   constructor(props: ViewportInput) {
     super(props);
+
+    this.canvasToWorld = this.canvasToWorldVolumeSlice;
+    this.worldToCanvas = this.worldToCanvasVolumeSlice;
   }
 
   public render(): void {
@@ -59,7 +63,10 @@ class VolumeSliceViewport extends VolumeViewport {
           const focalPoint = cameraInterface.focalPoint as Point3;
           const toPlane = vec3.subtract(vec3.create(), focalPoint, origin);
           const distance = vec3.dot(toPlane, normalizedNormal);
-          if (distance !== 0) {
+          const spacing = this.getDefaultImageData()?.spacing;
+          const epsilon =
+            spacing && spacing.length ? Math.min(...spacing) * 0.01 : 1e-3;
+          if (Math.abs(distance) > epsilon) {
             const offset = vec3.scale(
               vec3.create(),
               normalizedNormal,
@@ -72,23 +79,23 @@ class VolumeSliceViewport extends VolumeViewport {
             ) as Point3;
             adjustedCamera.focalPoint = projectedFocalPoint;
 
-            const delta = vec3.subtract(
+            const deltaAlongNormal = vec3.scale(
               vec3.create(),
-              projectedFocalPoint,
-              focalPoint
+              normalizedNormal,
+              -distance
             ) as Point3;
 
             if (cameraInterface.position) {
               adjustedCamera.position = vec3.add(
                 vec3.create(),
                 cameraInterface.position as Point3,
-                delta
+                deltaAlongNormal
               ) as Point3;
             } else if (this.getCamera()?.position) {
               adjustedCamera.position = vec3.add(
                 vec3.create(),
                 this.getCamera().position as Point3,
-                delta
+                deltaAlongNormal
               ) as Point3;
             }
           }
@@ -342,6 +349,106 @@ class VolumeSliceViewport extends VolumeViewport {
     const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
     return mapper.getSlicePlane?.();
   }
+
+  private canvasToWorldVolumeSlice = (canvasPos: Point2): Point3 => {
+    const renderer = this.getRenderer();
+    const vtkCamera = this.getVtkActiveCamera();
+    const clippingRange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
+    const canvasPosWithDPR = [
+      canvasPos[0] * devicePixelRatio,
+      canvasPos[1] * devicePixelRatio,
+    ];
+
+    const normalizedDisplay = [
+      xMin + (canvasPosWithDPR[0] / width) * viewportWidth,
+      yMin + (1 - canvasPosWithDPR[1] / height) * viewportHeight,
+      0,
+    ];
+
+    const projCoords = renderer.normalizedDisplayToProjection(
+      normalizedDisplay[0],
+      normalizedDisplay[1],
+      normalizedDisplay[2]
+    );
+    const viewCoords = renderer.projectionToView(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2],
+      aspectRatio
+    );
+    const worldCoord = renderer.viewToWorld(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2]
+    );
+
+    vtkCamera.setClippingRange(clippingRange[0], clippingRange[1]);
+
+    return [worldCoord[0], worldCoord[1], worldCoord[2]];
+  };
+
+  private worldToCanvasVolumeSlice = (worldPos: Point3): Point2 => {
+    const renderer = this.getRenderer();
+    const vtkCamera = this.getVtkActiveCamera();
+    const clippingRange = vtkCamera.getClippingRange();
+    const distance = vtkCamera.getDistance();
+    vtkCamera.setClippingRange(distance, distance + 0.1);
+
+    const { width, height } = this.canvas;
+    const aspectRatio = width / height;
+
+    const [xMin, yMin, xMax, yMax] =
+      renderer.getViewport() as unknown as number[];
+    const viewportWidth = xMax - xMin;
+    const viewportHeight = yMax - yMin;
+
+    const viewCoords = renderer.worldToView(
+      worldPos[0],
+      worldPos[1],
+      worldPos[2]
+    );
+
+    const projCoords = renderer.viewToProjection(
+      viewCoords[0],
+      viewCoords[1],
+      viewCoords[2],
+      aspectRatio
+    );
+
+    const normalizedDisplay = renderer.projectionToNormalizedDisplay(
+      projCoords[0],
+      projCoords[1],
+      projCoords[2]
+    );
+
+    const canvasNormalizedX = (normalizedDisplay[0] - xMin) / viewportWidth;
+    const canvasNormalizedY = (normalizedDisplay[1] - yMin) / viewportHeight;
+
+    const canvasX = canvasNormalizedX * width;
+    const canvasY = (1 - canvasNormalizedY) * height;
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasCoordWithDPR = [
+      canvasX / devicePixelRatio,
+      canvasY / devicePixelRatio,
+    ] as Point2;
+
+    vtkCamera.setClippingRange(clippingRange[0], clippingRange[1]);
+
+    return canvasCoordWithDPR;
+  };
 
   private _attachStreamingVolumeCallbacks(
     volumeInputArray: IVolumeInput[]
