@@ -20,8 +20,16 @@ import Viewport from './Viewport';
 import createVolumeSliceActor from './helpers/createVolumeSliceActor';
 
 class VolumeSliceViewport extends VolumeViewport {
+  private _syncedFramesByVolumeId = new Map<string, Set<number>>();
+  private _volumeLoadCallbacks = new Map<string, (evt: unknown) => void>();
+
   constructor(props: ViewportInput) {
     super(props);
+  }
+
+  public render(): void {
+    this._syncStreamingTextureUpdates();
+    super.render();
   }
 
   public async setVolumes(
@@ -29,6 +37,7 @@ class VolumeSliceViewport extends VolumeViewport {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
+    this._syncedFramesByVolumeId.clear();
     const volumeId = volumeInputArray[0].volumeId;
     const firstImageVolume = cache.getVolume(volumeId);
 
@@ -97,6 +106,8 @@ class VolumeSliceViewport extends VolumeViewport {
     this.initializeColorTransferFunction(volumeInputArray);
     this.updateClippingPlanesForActors(this.getCamera());
     this.getRenderer()?.resetCamera();
+    this._attachStreamingVolumeCallbacks(volumeInputArray);
+    this._syncStreamingTextureUpdates();
 
     triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
       viewportId: this.id,
@@ -165,6 +176,8 @@ class VolumeSliceViewport extends VolumeViewport {
     this.initializeColorTransferFunction(volumeInputArray);
     this.updateClippingPlanesForActors(this.getCamera());
     this.getRenderer()?.resetCamera();
+    this._attachStreamingVolumeCallbacks(volumeInputArray);
+    this._syncStreamingTextureUpdates();
 
     if (immediate) {
       this.render();
@@ -196,6 +209,126 @@ class VolumeSliceViewport extends VolumeViewport {
 
   public resetSlabThickness(): void {
     // No-op for single-slice rendering.
+  }
+
+  private _syncStreamingTextureUpdates(): void {
+    const actorEntries = this.getActors();
+    if (!actorEntries?.length) {
+      return;
+    }
+
+    actorEntries.forEach((actorEntry) => {
+      if (!isImageActor(actorEntry)) {
+        return;
+      }
+
+      const volumeId = actorEntry.referencedId;
+      if (!volumeId) {
+        return;
+      }
+
+      const imageVolume = cache.getVolume(volumeId);
+      const sourceTexture = imageVolume?.vtkOpenGLTexture;
+      const updatedFrames = sourceTexture?.getUpdatedFrames?.();
+
+      if (!updatedFrames || !updatedFrames.length) {
+        return;
+      }
+
+      const mapper = actorEntry.actor.getMapper() as {
+        getScalarTexture?: () => {
+          setUpdatedFrame?: (frameIndex: number) => void;
+        };
+      };
+
+      const targetTexture = mapper?.getScalarTexture?.();
+      if (!targetTexture?.setUpdatedFrame) {
+        return;
+      }
+
+      let syncedFrames = this._syncedFramesByVolumeId.get(volumeId);
+      if (!syncedFrames) {
+        syncedFrames = new Set<number>();
+        this._syncedFramesByVolumeId.set(volumeId, syncedFrames);
+      }
+
+      for (let i = 0; i < updatedFrames.length; i++) {
+        if (updatedFrames[i] && !syncedFrames.has(i)) {
+          targetTexture.setUpdatedFrame(i);
+          syncedFrames.add(i);
+        }
+      }
+    });
+  }
+
+  private _attachStreamingVolumeCallbacks(
+    volumeInputArray: IVolumeInput[]
+  ): void {
+    volumeInputArray.forEach(({ volumeId }) => {
+      const imageVolume = cache.getVolume(volumeId);
+      const loadStatus = imageVolume?.loadStatus as
+        | { callbacks?: Array<(...args: unknown[]) => void>; loading?: boolean }
+        | undefined;
+
+      if (!loadStatus?.callbacks) {
+        return;
+      }
+
+      const existingCallback = this._volumeLoadCallbacks.get(volumeId);
+      if (existingCallback) {
+        loadStatus.callbacks = loadStatus.callbacks.filter(
+          (cb) => cb !== existingCallback
+        );
+      }
+
+      const callback = (evt: { imageIdIndex?: number }) => {
+        const imageIdIndex = evt?.imageIdIndex;
+        if (typeof imageIdIndex !== 'number') {
+          return;
+        }
+        this._markStreamingTextureFrameUpdated(volumeId, imageIdIndex);
+        this.render();
+      };
+
+      loadStatus.callbacks.push(callback);
+      this._volumeLoadCallbacks.set(volumeId, callback);
+
+      if (!loadStatus.loading && typeof imageVolume?.load === 'function') {
+        imageVolume.load(() => {});
+      }
+    });
+  }
+
+  private _markStreamingTextureFrameUpdated(
+    volumeId: string,
+    frameIndex: number
+  ): void {
+    const actorEntries = this.getActors();
+    if (!actorEntries?.length) {
+      return;
+    }
+
+    actorEntries.forEach((actorEntry) => {
+      if (!isImageActor(actorEntry) || actorEntry.referencedId !== volumeId) {
+        return;
+      }
+
+      const mapper = actorEntry.actor.getMapper() as {
+        getScalarTexture?: () => {
+          setUpdatedFrame?: (frameIndex: number) => void;
+        };
+      };
+
+      const texture = mapper?.getScalarTexture?.();
+      texture?.setUpdatedFrame?.(frameIndex);
+
+      let syncedFrames = this._syncedFramesByVolumeId.get(volumeId);
+      if (!syncedFrames) {
+        syncedFrames = new Set<number>();
+        this._syncedFramesByVolumeId.set(volumeId, syncedFrames);
+      }
+      syncedFrames.add(frameIndex);
+    });
   }
 
   public resetCamera(options?): boolean {

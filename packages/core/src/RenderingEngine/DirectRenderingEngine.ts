@@ -1,11 +1,12 @@
 import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow';
-import vtkOpenGLRenderWindow from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import type vtkOpenGLRenderWindow from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow';
 
 import BaseRenderingEngine, { VIEWPORT_MIN_SIZE } from './BaseRenderingEngine';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
+import { vtkStreamingOpenGLRenderWindow } from './vtkClasses';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
@@ -55,7 +56,7 @@ class DirectRenderingEngine extends BaseRenderingEngine {
     element.tabIndex = -1;
 
     const renderWindow = vtkRenderWindow.newInstance();
-    const openGLRenderWindow = vtkOpenGLRenderWindow.newInstance();
+    const openGLRenderWindow = vtkStreamingOpenGLRenderWindow.newInstance();
     const renderer = vtkRenderer.newInstance();
 
     renderWindow.addView(openGLRenderWindow);

@@ -18,6 +18,7 @@ import vtkOpenGLVolume from '@kitware/vtk.js/Rendering/OpenGL/Volume';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import vtkViewNodeFactory from '@kitware/vtk.js/Rendering/SceneGraph/ViewNodeFactory';
 import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper';
+import vtkStreamingOpenGLImageResliceMapper from './vtkStreamingOpenGLImageResliceMapper';
 
 const CLASS_MAPPING = Object.create(null);
 
@@ -90,6 +91,9 @@ function vtkStreamingOpenGLViewNodeFactory(publicAPI, model) {
     if (className === 'vtkSharedVolumeMapper') {
       initialValues.scalarTexture = dataObject.getScalarTexture();
     }
+    if (className === 'vtkSharedImageResliceMapper') {
+      initialValues.scalarTexture = dataObject.getScalarTexture();
+    }
 
     return initialValues;
   };
@@ -135,6 +139,10 @@ export function extend(publicAPI, model, initialValues = {}) {
   registerOverride(
     'vtkSharedVolumeMapper',
     vtkStreamingOpenGLVolumeMapper.newInstance
+  );
+  registerOverride(
+    'vtkImageResliceMapper',
+    vtkStreamingOpenGLImageResliceMapper.newInstance
   );
   // registerOverride(
   //   'vtkWidgetRepresentation',
