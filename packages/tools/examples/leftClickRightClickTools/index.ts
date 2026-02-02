@@ -14,16 +14,20 @@ console.warn(
 const {
   LengthTool,
   BidirectionalTool,
+  RectangleROITool,
+  CircleROITool,
+  ZoomTool,
+  PanTool,
   ToolGroupManager,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
 setTitleAndDescription(
   'Left Click and Right Click Tools',
-  'This example demonstrates how to bind different annotation tools to left and right mouse buttons. Left click uses the Length tool, and right click uses the Bidirectional tool.'
+  'This example demonstrates how to bind different annotation tools to left and right mouse buttons. Left click uses the Length tool, and right click uses the Bidirectional tool.  Center/wheel+shift pan/zoom, and shift/left or right click to draw a rectangle or circle.'
 );
 
 const content = document.getElementById('content');
@@ -67,6 +71,10 @@ async function run() {
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
   cornerstoneTools.addTool(BidirectionalTool);
+  cornerstoneTools.addTool(RectangleROITool);
+  cornerstoneTools.addTool(CircleROITool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(PanTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // any viewport using the group
@@ -75,6 +83,10 @@ async function run() {
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
   toolGroup.addTool(BidirectionalTool.toolName);
+  toolGroup.addTool(RectangleROITool.toolName);
+  toolGroup.addTool(CircleROITool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
 
   // Set Length tool active on left click
   toolGroup.setToolActive(LengthTool.toolName, {
@@ -85,11 +97,49 @@ async function run() {
     ],
   });
 
+  toolGroup.setToolActive(CircleROITool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
   // Set Bidirectional tool active on right click
   toolGroup.setToolActive(BidirectionalTool.toolName, {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+  toolGroup.setToolActive(RectangleROITool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+      {
+        mouseButton: MouseBindings.Auxiliary,
+        modifierKey: KeyboardBindings.Shift,
       },
     ],
   });
