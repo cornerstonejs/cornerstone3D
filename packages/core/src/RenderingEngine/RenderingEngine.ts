@@ -1,7 +1,6 @@
 import { getConfiguration } from '../init';
 import TiledRenderingEngine from './TiledRenderingEngine';
 import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
-import DirectRenderingEngine from './DirectRenderingEngine';
 import type BaseRenderingEngine from './BaseRenderingEngine';
 import type {
   IStackViewport,
@@ -27,17 +26,8 @@ class RenderingEngine {
       case RenderingEngineModeEnum.Tiled:
         this._implementation = new TiledRenderingEngine(id);
         break;
-      case RenderingEngineModeEnum.ContextPool:
-        this._implementation = new ContextPoolRenderingEngine(id);
-        break;
-      case RenderingEngineModeEnum.Direct:
-        this._implementation = new DirectRenderingEngine(id);
-        break;
       default:
-        console.warn(
-          `RenderingEngine: Unknown rendering engine mode "${renderingEngineMode}". Defaulting to direct rendering engine.`
-        );
-        this._implementation = new DirectRenderingEngine(id);
+        this._implementation = new ContextPoolRenderingEngine(id);
         break;
     }
   }

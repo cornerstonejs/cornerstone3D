@@ -5,7 +5,6 @@ import RenderingEngine, {
   BaseRenderingEngine,
   TiledRenderingEngine,
   ContextPoolRenderingEngine,
-  DirectRenderingEngine,
 } from './RenderingEngine';
 import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
@@ -133,7 +132,6 @@ export {
   BaseRenderingEngine,
   TiledRenderingEngine,
   ContextPoolRenderingEngine,
-  DirectRenderingEngine,
   ImageVolume,
   Surface,
   // Helpers
