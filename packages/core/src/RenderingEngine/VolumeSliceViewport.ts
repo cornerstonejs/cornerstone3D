@@ -1,4 +1,6 @@
 import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
+import { vec3 } from 'gl-matrix';
 
 import cache from '../cache/cache';
 import { Events, BlendModes, ViewportStatus } from '../enums';
@@ -30,6 +32,71 @@ class VolumeSliceViewport extends VolumeViewport {
   public render(): void {
     this._syncStreamingTextureUpdates();
     super.render();
+  }
+
+  public setCamera(
+    cameraInterface: ICamera,
+    storeAsInitialCamera?: boolean
+  ): void {
+    const adjustedCamera = { ...cameraInterface };
+
+    if (
+      cameraInterface.parallelScale !== undefined &&
+      (cameraInterface.focalPoint || cameraInterface.position)
+    ) {
+      const slicePlane = this._getDefaultSlicePlane();
+      const viewPlaneNormal =
+        cameraInterface.viewPlaneNormal || this.getCamera().viewPlaneNormal;
+
+      if (slicePlane && viewPlaneNormal) {
+        const origin = slicePlane.getOrigin() as Point3;
+        const normalizedNormal = vec3.normalize(
+          vec3.create(),
+          viewPlaneNormal as Point3
+        ) as Point3;
+
+        if (cameraInterface.focalPoint) {
+          const focalPoint = cameraInterface.focalPoint as Point3;
+          const toPlane = vec3.subtract(vec3.create(), focalPoint, origin);
+          const distance = vec3.dot(toPlane, normalizedNormal);
+          if (distance !== 0) {
+            const offset = vec3.scale(
+              vec3.create(),
+              normalizedNormal,
+              distance
+            );
+            const projectedFocalPoint = vec3.subtract(
+              vec3.create(),
+              focalPoint,
+              offset
+            ) as Point3;
+            adjustedCamera.focalPoint = projectedFocalPoint;
+
+            const delta = vec3.subtract(
+              vec3.create(),
+              projectedFocalPoint,
+              focalPoint
+            ) as Point3;
+
+            if (cameraInterface.position) {
+              adjustedCamera.position = vec3.add(
+                vec3.create(),
+                cameraInterface.position as Point3,
+                delta
+              ) as Point3;
+            } else if (this.getCamera()?.position) {
+              adjustedCamera.position = vec3.add(
+                vec3.create(),
+                this.getCamera().position as Point3,
+                delta
+              ) as Point3;
+            }
+          }
+        }
+      }
+    }
+
+    super.setCamera(adjustedCamera, storeAsInitialCamera);
   }
 
   public async setVolumes(
@@ -259,6 +326,21 @@ class VolumeSliceViewport extends VolumeViewport {
         }
       }
     });
+  }
+
+  private _getDefaultSlicePlane(): vtkPlane | undefined {
+    const actorEntry = this.getDefaultActor();
+    if (!actorEntry || !isImageActor(actorEntry)) {
+      return;
+    }
+
+    const entryWithPlane = actorEntry as ActorEntry & { slicePlane?: vtkPlane };
+    if (entryWithPlane.slicePlane) {
+      return entryWithPlane.slicePlane;
+    }
+
+    const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
+    return mapper.getSlicePlane?.();
   }
 
   private _attachStreamingVolumeCallbacks(
