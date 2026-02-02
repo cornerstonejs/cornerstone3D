@@ -862,7 +862,6 @@ class RectangleROITool extends AnnotationTool {
       const targetId = targetIds[i];
 
       const image = this.getTargetImageData(targetId);
-      console.warn('target cached stats', targetId, image);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
@@ -903,18 +902,18 @@ class RectangleROITool extends AnnotationTool {
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
         const handles = [pos1Index, pos2Index];
-        const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
+        const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
-        const width = vec3.length(
-          vec3.subtract(vec3.create(), indexHandles[0], indexHandles[1])
+        const width = RectangleROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(0, 2)
         );
-        const height = vec3.length(
-          vec3.subtract(vec3.create(), indexHandles[2], indexHandles[3])
+        const height = RectangleROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(2, 4)
         );
-        const area = Math.abs(width * height) / (scale * scale);
+        const area = Math.abs(width * height);
+        const { areaUnit } = calibrate;
 
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
