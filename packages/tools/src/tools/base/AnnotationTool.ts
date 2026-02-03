@@ -517,7 +517,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @returns Memo containing the annotation data.
    */
   public static createAnnotationMemo(
-    element,
+    element: HTMLDivElement | null | undefined,
     annotation: Annotation,
     options?: { newAnnotation?: boolean; deleting?: boolean }
   ) {
@@ -528,6 +528,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       options || {};
     const { annotationUID } = annotation;
     const state = AnnotationTool.createAnnotationState(annotation, deleting);
+    const annotationGroupSelector = element || undefined;
 
     const annotationMemo = {
       restoreMemo: () => {
@@ -562,7 +563,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
             }
           }
           state.data = newState.data;
-          addAnnotation(annotation, element);
+          addAnnotation(annotation, annotationGroupSelector);
           setAnnotationSelected(annotation.annotationUID, true);
           viewport?.render();
           return;
@@ -593,11 +594,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         }
         state.data = newState.data;
         currentAnnotation.invalidated = true;
-        triggerAnnotationModified(
-          currentAnnotation,
-          element,
-          ChangeTypes.History
-        );
+        if (element) {
+          triggerAnnotationModified(
+            currentAnnotation,
+            element,
+            ChangeTypes.History
+          );
+        }
       },
       id: annotationUID,
       operationType: 'annotation',

@@ -1,7 +1,6 @@
-import { utilities, eventTarget } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import type { Types } from '@cornerstonejs/core';
-import Events from '../../enums/Events';
 
 const { VoxelManager, RLEVoxelMap } = utilities;
 
@@ -27,9 +26,14 @@ export type LabelmapMemo = Types.Memo & {
  */
 export function createLabelmapMemo<T>(
   segmentationId: string,
-  segmentationVoxelManager: Types.IVoxelManager<T>
+  segmentationVoxelManager: Types.IVoxelManager<T>,
+  segmentIndexInfo?
 ) {
-  return createRleMemo(segmentationId, segmentationVoxelManager);
+  return createRleMemo(
+    segmentationId,
+    segmentationVoxelManager,
+    segmentIndexInfo
+  );
 }
 
 /**
@@ -38,9 +42,16 @@ export function createLabelmapMemo<T>(
  * modified.
  */
 export function restoreMemo(isUndo?: boolean) {
-  const { segmentationVoxelManager, undoVoxelManager, redoVoxelManager } = this;
+  const {
+    segmentationVoxelManager,
+    undoVoxelManager,
+    redoVoxelManager,
+    segmentIndexInfo,
+  } = this;
   const useVoxelManager =
     isUndo === false ? redoVoxelManager : undoVoxelManager;
+  if (segmentIndexInfo) {
+  }
   useVoxelManager.forEach(({ value, pointIJK }) => {
     segmentationVoxelManager.setAtIJKPoint(pointIJK, value);
   });
@@ -56,7 +67,8 @@ export function restoreMemo(isUndo?: boolean) {
  */
 export function createRleMemo<T>(
   segmentationId: string,
-  segmentationVoxelManager: Types.IVoxelManager<T>
+  segmentationVoxelManager: Types.IVoxelManager<T>,
+  segmentIndexInfo?
 ) {
   const voxelManager = VoxelManager.createRLEHistoryVoxelManager(
     segmentationVoxelManager
@@ -67,6 +79,7 @@ export function createRleMemo<T>(
     commitMemo,
     segmentationVoxelManager,
     voxelManager,
+    segmentIndexInfo,
     id: utilities.uuidv4(),
     operationType: 'labelmap',
   };
