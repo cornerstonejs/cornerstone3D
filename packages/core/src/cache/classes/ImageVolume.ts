@@ -19,6 +19,7 @@ export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setUpdatedFrame: (frame: number) => void;
   setVolumeId: (volumeId: string) => void;
   releaseGraphicsResources: () => void;
+  hasUpdatedFrames: () => boolean;
 }
 
 /** The base class for volume data. It includes the volume metadata

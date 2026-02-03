@@ -48,6 +48,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensions';
 import { getConfiguration } from '../init';
 
 /**
@@ -1114,34 +1115,21 @@ class Viewport {
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    let { widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
-      bounds,
-      viewUp,
-      viewPlaneNormal
-    );
+    let { widthWorld, heightWorld } = imageData
+      ? getCubeSizeInView(imageData, viewPlaneNormal, viewUp)
+      : this._getWorldDistanceViewUpAndViewRight(
+          bounds,
+          viewUp,
+          viewPlaneNormal
+        );
 
     if (imageData) {
       const spacing = imageData.getSpacing();
-      // This change corresponds to the spacing calculation for previous verison
-      // stack viewports, but is technically incorrect.
+      // This change corresponds to the spacing calculation for previous version
+      // stack viewports, but is technically incorrect and results in an image
+      // a tiny bit too large for the viewport.
       widthWorld = Math.max(spacing[0], widthWorld - spacing[0]);
       heightWorld = Math.max(spacing[1], heightWorld - spacing[1]);
-
-      const extent = imageData.getExtent();
-
-      const widthWorld2 = (extent[1] - extent[0]) * spacing[0];
-      const heightWorld2 = (extent[3] - extent[2]) * spacing[1];
-      console.warn('extent=', extent, spacing);
-      console.log(
-        'New method would produce:',
-        this.id,
-        widthWorld2,
-        heightWorld2,
-        widthWorld,
-        heightWorld,
-        widthWorld2 - widthWorld,
-        heightWorld2 - heightWorld
-      );
     }
 
     const canvasSize = [this.sWidth, this.sHeight];

@@ -3,6 +3,76 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.25](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.24...v4.15.25) (2026-02-02)
+
+### Bug Fixes
+
+- **tools:** add left and right click tools example with annotation functionality ([#2581](https://github.com/cornerstonejs/cornerstone3D/issues/2581)) ([294ee28](https://github.com/cornerstonejs/cornerstone3D/commit/294ee2829a0cd168a0ceac7edb0e5832b06aa5fb))
+
+## [4.15.24](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.23...v4.15.24) (2026-01-30)
+
+### Bug Fixes
+
+- redo not restoring cachedStats ([#2588](https://github.com/cornerstonejs/cornerstone3D/issues/2588)) ([fe86fbf](https://github.com/cornerstonejs/cornerstone3D/commit/fe86fbff75b91347a951d9b3d4d1e2d9b90cb1cf))
+
+## [4.15.23](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.22...v4.15.23) (2026-01-30)
+
+### Bug Fixes
+
+- **statistics:** Added null check for strategyData when calculating volume statistics for labelmap segmentations. ([#2587](https://github.com/cornerstonejs/cornerstone3D/issues/2587)) ([87e1c7e](https://github.com/cornerstonejs/cornerstone3D/commit/87e1c7e4898f127bf29c17244d1ddbb5fbbbd39c))
+
+## [4.15.22](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.21...v4.15.22) (2026-01-30)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.15.21](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.20...v4.15.21) (2026-01-28)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.15.20](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.19...v4.15.20) (2026-01-26)
+
+### Bug Fixes
+
+- fov second fix ([#2578](https://github.com/cornerstonejs/cornerstone3D/issues/2578)) ([94d374c](https://github.com/cornerstonejs/cornerstone3D/commit/94d374cb5bf6d5fa5cf9e0c26070933ef17a3a96))
+
+## [4.15.19](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.18...v4.15.19) (2026-01-23)
+
+### Bug Fixes
+
+- Avoid exception when the structure data is empty ([#2573](https://github.com/cornerstonejs/cornerstone3D/issues/2573)) ([97b3313](https://github.com/cornerstonejs/cornerstone3D/commit/97b33133a2e27260f3dce735673c7920ab9da9e4))
+
+## [4.15.18](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.17...v4.15.18) (2026-01-22)
+
+### Bug Fixes
+
+- Several exceptions loading rtstruct ([#2563](https://github.com/cornerstonejs/cornerstone3D/issues/2563)) ([1c923f7](https://github.com/cornerstonejs/cornerstone3D/commit/1c923f7890012880616bc54e39b82ed0c8e0e7c7))
+
+## [4.15.17](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.16...v4.15.17) (2026-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.15.16](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.15...v4.15.16) (2026-01-21)
+
+### Bug Fixes
+
+- **segmentation:** Fixed issues with adding label map segmentation as independent components. ([#2568](https://github.com/cornerstonejs/cornerstone3D/issues/2568)) ([469cd1a](https://github.com/cornerstonejs/cornerstone3D/commit/469cd1a822291d725ad4cda8b932d1d001f46ced))
+
+## [4.15.15](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.14...v4.15.15) (2026-01-21)
+
+### Bug Fixes
+
+- **security:** Ignore CVE-2026-23745, CVE-2026-23950 and CVE-2024-28863 because they are limited to build/dev environments. ([#2571](https://github.com/cornerstonejs/cornerstone3D/issues/2571)) ([b271046](https://github.com/cornerstonejs/cornerstone3D/commit/b2710468312162839085c86c31e358c9e0232e61))
+
+## [4.15.14](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.13...v4.15.14) (2026-01-21)
+
+### Bug Fixes
+
+- **security:** Fix CVE-2024-28863 and CVE-2026-23745. Also updated lerna to fix circleci npm publish error. ([#2567](https://github.com/cornerstonejs/cornerstone3D/issues/2567)) ([221f6f3](https://github.com/cornerstonejs/cornerstone3D/commit/221f6f36d522352536f7f76f91f322a231efc8c2))
+
+## [4.15.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.12...v4.15.13) (2026-01-19)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [4.15.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.11...v4.15.12) (2026-01-15)
 
 ### Bug Fixes
