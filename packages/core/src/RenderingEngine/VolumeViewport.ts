@@ -146,10 +146,23 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   public jumpToWorld(worldPos: Point3): boolean {
+    let targetWorldPos = worldPos;
+
+    const imageData = this.getImageData();
+    if (imageData?.imageData) {
+      const bounds = imageData.imageData.getBounds();
+      // bounds: [xMin, xMax, yMin, yMax, zMin, zMax]
+      targetWorldPos = [
+        Math.max(bounds[0], Math.min(bounds[1], worldPos[0])),
+        Math.max(bounds[2], Math.min(bounds[3], worldPos[1])),
+        Math.max(bounds[4], Math.min(bounds[5], worldPos[2])),
+      ] as Point3;
+    }
+
     const { focalPoint } = this.getCamera();
 
     const delta: Point3 = [0, 0, 0];
-    vec3.sub(delta, worldPos, focalPoint);
+    vec3.sub(delta, targetWorldPos, focalPoint);
 
     const camera = this.getCamera();
     const normal = camera.viewPlaneNormal;
