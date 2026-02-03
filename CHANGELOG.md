@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.26](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.25...v4.15.26) (2026-02-03)
+
+### Bug Fixes
+
+- **patient sex:** add patient sex O in allowed values ([#2532](https://github.com/cornerstonejs/cornerstone3D/issues/2532)) ([8726515](https://github.com/cornerstonejs/cornerstone3D/commit/87265154cb3525bd44a1187ae661ededec12f5ac))
+
 ## [4.15.25](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.24...v4.15.25) (2026-02-02)
 
 ### Bug Fixes
