@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.28](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.27...v4.15.28) (2026-02-04)
+
+### Bug Fixes
+
+- **jump-to-label-map:** Handle case in `getReferenceVolumeForSegmentationVolume` where the volume is built from the segmentation's image IDs. ([#2592](https://github.com/cornerstonejs/cornerstone3D/issues/2592)) ([753e212](https://github.com/cornerstonejs/cornerstone3D/commit/753e21214f5cb48d5516117a58afbdde5668d9c9))
+
 ## [4.15.27](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.26...v4.15.27) (2026-02-03)
 
 ### Bug Fixes
