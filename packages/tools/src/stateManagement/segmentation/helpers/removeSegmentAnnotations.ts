@@ -47,26 +47,15 @@ export function removeContourSegmentAnnotations(
     return;
   }
 
-  if (options?.recordHistory) {
-    const uids = new Set(annotations.map((a) => a.annotationUID));
-    // The annotations need to be processed in order of children to parents to avoid
-    // restoring issues when there are holes
-    annotations.sort((a, b) => {
-      const aIsChild = a.parentAnnotationUID && uids.has(a.parentAnnotationUID);
-      const bIsChild = b.parentAnnotationUID && uids.has(b.parentAnnotationUID);
-      if (aIsChild && !bIsChild) return -1;
-      if (!aIsChild && bIsChild) return 1;
-      return 0;
-    });
-    for (const annotation of annotations) {
+  for (const annotation of annotations) {
+    if (annotation.parentAnnotationUID) {
+      continue; // Skip child annotations
+    }
+    if (options?.recordHistory) {
       AnnotationTool.createAnnotationMemo(null, annotation, {
         deleting: true,
       });
-      removeCompleteContourAnnotation(annotation);
     }
-  } else {
-    for (const annotation of annotations) {
-      removeCompleteContourAnnotation(annotation);
-    }
+    removeCompleteContourAnnotation(annotation);
   }
 }
