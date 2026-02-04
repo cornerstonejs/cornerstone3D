@@ -151,7 +151,7 @@ class VolumeViewport extends BaseVolumeViewport {
     const imageData = this.getImageData();
     if (imageData?.imageData) {
       const bounds = imageData.imageData.getBounds();
-      // bounds: [xMin, xMax, yMin, yMax, zMin, zMax]
+      // Ensure the target world position is within the bounds of the image data
       targetWorldPos = [
         Math.max(bounds[0], Math.min(bounds[1], worldPos[0])),
         Math.max(bounds[2], Math.min(bounds[3], worldPos[1])),
