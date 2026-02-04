@@ -26,14 +26,9 @@ export type LabelmapMemo = Types.Memo & {
  */
 export function createLabelmapMemo<T>(
   segmentationId: string,
-  segmentationVoxelManager: Types.IVoxelManager<T>,
-  segmentIndexInfo?
+  segmentationVoxelManager: Types.IVoxelManager<T>
 ) {
-  return createRleMemo(
-    segmentationId,
-    segmentationVoxelManager,
-    segmentIndexInfo
-  );
+  return createRleMemo(segmentationId, segmentationVoxelManager);
 }
 
 /**
@@ -42,16 +37,9 @@ export function createLabelmapMemo<T>(
  * modified.
  */
 export function restoreMemo(isUndo?: boolean) {
-  const {
-    segmentationVoxelManager,
-    undoVoxelManager,
-    redoVoxelManager,
-    segmentIndexInfo,
-  } = this;
+  const { segmentationVoxelManager, undoVoxelManager, redoVoxelManager } = this;
   const useVoxelManager =
     isUndo === false ? redoVoxelManager : undoVoxelManager;
-  if (segmentIndexInfo) {
-  }
   useVoxelManager.forEach(({ value, pointIJK }) => {
     segmentationVoxelManager.setAtIJKPoint(pointIJK, value);
   });
@@ -67,8 +55,7 @@ export function restoreMemo(isUndo?: boolean) {
  */
 export function createRleMemo<T>(
   segmentationId: string,
-  segmentationVoxelManager: Types.IVoxelManager<T>,
-  segmentIndexInfo?
+  segmentationVoxelManager: Types.IVoxelManager<T>
 ) {
   const voxelManager = VoxelManager.createRLEHistoryVoxelManager(
     segmentationVoxelManager
@@ -79,7 +66,6 @@ export function createRleMemo<T>(
     commitMemo,
     segmentationVoxelManager,
     voxelManager,
-    segmentIndexInfo,
     id: utilities.uuidv4(),
     operationType: 'labelmap',
   };

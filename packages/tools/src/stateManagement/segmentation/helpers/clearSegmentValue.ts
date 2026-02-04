@@ -45,7 +45,7 @@ export function clearSegmentValue(
         const memo = options?.recordHistory
           ? createLabelmapMemo(segmentationId, voxelManager)
           : null;
-        const useVoxelManager = memo ? memo.voxelManager : voxelManager;
+        const useVoxelManager = memo?.voxelManager ?? voxelManager;
 
         voxelManager.forEach(({ value, index }) => {
           if (value === segmentIndex) {

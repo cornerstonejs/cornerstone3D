@@ -49,6 +49,8 @@ export function removeContourSegmentAnnotations(
 
   if (options?.recordHistory) {
     const uids = new Set(annotations.map((a) => a.annotationUID));
+    // The annotations need to be processed in order of children to parents to avoid
+    // restoring issues when there are holes
     annotations.sort((a, b) => {
       const aIsChild = a.parentAnnotationUID && uids.has(a.parentAnnotationUID);
       const bIsChild = b.parentAnnotationUID && uids.has(b.parentAnnotationUID);

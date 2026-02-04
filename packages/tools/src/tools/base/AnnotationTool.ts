@@ -528,7 +528,6 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       options || {};
     const { annotationUID } = annotation;
     const state = AnnotationTool.createAnnotationState(annotation, deleting);
-    const annotationGroupSelector = element || undefined;
 
     const annotationMemo = {
       restoreMemo: () => {
@@ -563,7 +562,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
             }
           }
           state.data = newState.data;
-          addAnnotation(annotation, annotationGroupSelector);
+          addAnnotation(annotation, element);
           setAnnotationSelected(annotation.annotationUID, true);
           viewport?.render();
           return;
