@@ -14,6 +14,7 @@ import { updateSegmentations } from './updateSegmentations';
  * @param segmentIndex - The index of the segment to be removed.
  * @param options - Additional options for segment removal.
  * @param options.setNextSegmentAsActive - Whether to set the next available segment as active after removal. Defaults to true.
+ * @param options.recordHistory - When true, record this removal in history. Set by caller when group recording is active.
  *
  * @remarks
  * This function performs the following steps:
@@ -27,7 +28,8 @@ export function removeSegment(
   segmentationId: string,
   segmentIndex: number,
   options: {
-    setNextSegmentAsActive: boolean;
+    setNextSegmentAsActive?: boolean;
+    recordHistory?: boolean;
   } = {
     setNextSegmentAsActive: true,
   }
@@ -35,9 +37,13 @@ export function removeSegment(
   const segmentation = getSegmentation(segmentationId);
 
   if (segmentation?.representationData.Contour) {
-    removeContourSegmentAnnotations(segmentationId, segmentIndex);
+    removeContourSegmentAnnotations(segmentationId, segmentIndex, {
+      recordHistory: options.recordHistory,
+    });
   } else if (segmentation?.representationData.Labelmap) {
-    clearSegmentValue(segmentationId, segmentIndex);
+    clearSegmentValue(segmentationId, segmentIndex, {
+      recordHistory: options.recordHistory,
+    });
   } else {
     throw new Error('Invalid segmentation type');
   }
@@ -63,7 +69,7 @@ export function removeSegment(
     },
   ]);
 
-  if (isThisSegmentActive && options.setNextSegmentAsActive) {
+  if (isThisSegmentActive && options.setNextSegmentAsActive !== false) {
     // set the next or previous segment as active
     const segmentIndices = Object.keys(segments)
       .map(Number)
