@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.27](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.26...v4.15.27) (2026-02-03)
+
+### Bug Fixes
+
+- Wrong calculation of rectangle size using indexes ([#2591](https://github.com/cornerstonejs/cornerstone3D/issues/2591)) ([e51a7bb](https://github.com/cornerstonejs/cornerstone3D/commit/e51a7bbb5d4c4a8d61066b6c02a866a3d325feee))
+
 ## [4.15.26](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.25...v4.15.26) (2026-02-03)
 
 **Note:** Version bump only for package @cornerstonejs/core
