@@ -1,5 +1,6 @@
 import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
+import { SlabTypes } from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper/Constants';
 import { vec3 } from 'gl-matrix';
 
 import cache from '../cache/cache';
@@ -159,13 +160,16 @@ class VolumeSliceViewport extends VolumeViewport {
       }
 
       const uid = actorUID || uuidv4();
-      volumeActors.push({
+      const actorEntry = {
         uid,
         actor,
         referencedId: volumeId,
         slicePlane,
         ...rest,
-      });
+      } as ActorEntry;
+
+      this._applyResliceProperties(actorEntry);
+      volumeActors.push(actorEntry);
     }
 
     this._setVolumeActors(volumeActors);
@@ -228,13 +232,16 @@ class VolumeSliceViewport extends VolumeViewport {
       }
 
       const uid = actorUID || uuidv4();
-      volumeActors.push({
+      const actorEntry = {
         uid,
         actor,
         referencedId: volumeId,
         slicePlane,
         ...rest,
-      });
+      } as ActorEntry;
+
+      this._applyResliceProperties(actorEntry);
+      volumeActors.push(actorEntry);
     }
 
     this.addActors(volumeActors);
@@ -249,30 +256,79 @@ class VolumeSliceViewport extends VolumeViewport {
   }
 
   public setBlendMode(
-    _blendMode: BlendModes,
-    _filterActorUIDs = [],
+    blendMode: BlendModes,
+    filterActorUIDs = [],
     immediate = false
   ): void {
-    console.warn(
-      'VolumeSliceViewport does not support blend modes. Ignoring setBlendMode.'
-    );
+    let actorEntries = this.getActors();
+
+    if (filterActorUIDs?.length > 0) {
+      actorEntries = actorEntries.filter((actorEntry: ActorEntry) => {
+        return filterActorUIDs.includes(actorEntry.uid);
+      });
+    }
+
+    actorEntries.forEach((actorEntry) => {
+      if (!isImageActor(actorEntry)) {
+        return;
+      }
+
+      const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
+      const slabType = this._mapBlendModeToSlabType(blendMode);
+      if (slabType !== undefined) {
+        mapper.setSlabType?.(slabType);
+        mapper.modified?.();
+        actorEntry.blendMode = blendMode;
+      }
+    });
+
     if (immediate) {
       this.render();
     }
   }
 
   public getBlendMode(): BlendModes {
-    return BlendModes.COMPOSITE;
+    const actorEntry = this.getDefaultActor();
+    if (!actorEntry || !isImageActor(actorEntry)) {
+      return BlendModes.COMPOSITE;
+    }
+
+    if (actorEntry.blendMode !== undefined) {
+      return actorEntry.blendMode;
+    }
+
+    const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
+    const slabType = mapper.getSlabType?.();
+    return this._mapSlabTypeToBlendMode(slabType);
   }
 
   public setSlabThickness(slabThickness: number, filterActorUIDs = []): void {
-    console.warn(
-      'VolumeSliceViewport renders a single slice. Ignoring setSlabThickness.'
-    );
+    const clampedThickness = Math.max(0, slabThickness ?? 0);
+
+    let actorEntries = this.getActors();
+    if (filterActorUIDs?.length > 0) {
+      actorEntries = actorEntries.filter((actorEntry) =>
+        filterActorUIDs.includes(actorEntry.uid)
+      );
+    }
+
+    actorEntries.forEach((actorEntry) => {
+      if (!isImageActor(actorEntry)) {
+        return;
+      }
+
+      const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
+      mapper.setSlabThickness?.(clampedThickness);
+      mapper.modified?.();
+      actorEntry.slabThickness = clampedThickness;
+    });
+
+    this.viewportProperties.slabThickness = clampedThickness;
   }
 
   public resetSlabThickness(): void {
-    // No-op for single-slice rendering.
+    this.setSlabThickness(0);
+    this.viewportProperties.slabThickness = undefined;
   }
 
   private _getDefaultSlicePlane(): vtkPlane | undefined {
@@ -288,6 +344,61 @@ class VolumeSliceViewport extends VolumeViewport {
 
     const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
     return mapper.getSlicePlane?.();
+  }
+
+  private _applyResliceProperties(actorEntry: ActorEntry): void {
+    if (!isImageActor(actorEntry)) {
+      return;
+    }
+
+    const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
+
+    if (actorEntry.slabThickness !== undefined) {
+      const clampedThickness = Math.max(0, actorEntry.slabThickness);
+      mapper.setSlabThickness?.(clampedThickness);
+      mapper.modified?.();
+      actorEntry.slabThickness = clampedThickness;
+    }
+
+    if (actorEntry.blendMode !== undefined) {
+      const slabType = this._mapBlendModeToSlabType(actorEntry.blendMode);
+      if (slabType !== undefined) {
+        mapper.setSlabType?.(slabType);
+        mapper.modified?.();
+      }
+    }
+  }
+
+  private _mapBlendModeToSlabType(
+    blendMode: BlendModes | undefined
+  ): number | undefined {
+    switch (blendMode) {
+      case BlendModes.MAXIMUM_INTENSITY_BLEND:
+        return SlabTypes.MAX;
+      case BlendModes.MINIMUM_INTENSITY_BLEND:
+        return SlabTypes.MIN;
+      case BlendModes.AVERAGE_INTENSITY_BLEND:
+        return SlabTypes.MEAN;
+      case BlendModes.COMPOSITE:
+        return SlabTypes.MEAN;
+      case BlendModes.LABELMAP_EDGE_PROJECTION_BLEND:
+        return SlabTypes.MAX;
+      default:
+        return undefined;
+    }
+  }
+
+  private _mapSlabTypeToBlendMode(slabType: number | undefined): BlendModes {
+    switch (slabType) {
+      case SlabTypes.MAX:
+        return BlendModes.MAXIMUM_INTENSITY_BLEND;
+      case SlabTypes.MIN:
+        return BlendModes.MINIMUM_INTENSITY_BLEND;
+      case SlabTypes.MEAN:
+        return BlendModes.AVERAGE_INTENSITY_BLEND;
+      default:
+        return BlendModes.COMPOSITE;
+    }
   }
 
   private canvasToWorldVolumeSlice = (canvasPos: Point2): Point3 => {
