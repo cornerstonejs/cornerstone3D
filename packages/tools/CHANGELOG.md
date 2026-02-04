@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.29](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.28...v4.15.29) (2026-02-04)
+
+### Bug Fixes
+
+- **HistoryMemo:** Fix the undo/redo of labelmap and contour delete ([#2593](https://github.com/cornerstonejs/cornerstone3D/issues/2593)) ([0f683a8](https://github.com/cornerstonejs/cornerstone3D/commit/0f683a84c7187746ad3179021b89207d4b8d1221))
+
 ## [4.15.28](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.27...v4.15.28) (2026-02-04)
 
 ### Bug Fixes
