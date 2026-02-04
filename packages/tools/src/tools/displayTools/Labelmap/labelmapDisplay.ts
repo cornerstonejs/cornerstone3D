@@ -318,12 +318,19 @@ function _setLabelmapColorAndOpacity(
   // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
 
+  // cfun.setMappingRange(0, numColors - 1);
+
   if (preLoad) {
     preLoad({ cfun, ofun, actor: labelmapActor });
   } else {
     labelmapActor.getProperty().setRGBTransferFunction(0, cfun);
     labelmapActor.getProperty().setScalarOpacity(0, ofun);
     labelmapActor.getProperty().setInterpolationTypeToNearest();
+    if (labelmapActor.getClassName?.() === 'vtkImageSlice') {
+      labelmapActor.getProperty().setUseLookupTableScalarRange(true);
+      labelmapActor.getProperty().setColorWindow(numColors - 1);
+      labelmapActor.getProperty().setColorLevel((numColors - 1) / 2);
+    }
   }
 
   if (renderOutline) {

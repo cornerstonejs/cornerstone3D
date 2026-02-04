@@ -23,7 +23,6 @@ import Viewport from './Viewport';
 import createVolumeSliceActor from './helpers/createVolumeSliceActor';
 
 class VolumeSliceViewport extends VolumeViewport {
-  private _syncedFramesByVolumeId = new Map<string, Set<number>>();
   private _volumeLoadCallbacks = new Map<string, (evt: unknown) => void>();
 
   constructor(props: ViewportInput) {
@@ -31,11 +30,6 @@ class VolumeSliceViewport extends VolumeViewport {
 
     this.canvasToWorld = this.canvasToWorldVolumeSlice;
     this.worldToCanvas = this.worldToCanvasVolumeSlice;
-  }
-
-  public render(): void {
-    this._syncStreamingTextureUpdates();
-    super.render();
   }
 
   public setCamera(
@@ -104,6 +98,7 @@ class VolumeSliceViewport extends VolumeViewport {
     }
 
     super.setCamera(adjustedCamera, storeAsInitialCamera);
+    this._updateSlicePlaneFromCamera(this.getCamera());
   }
 
   public async setVolumes(
@@ -111,7 +106,6 @@ class VolumeSliceViewport extends VolumeViewport {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    this._syncedFramesByVolumeId.clear();
     const volumeId = volumeInputArray[0].volumeId;
     const firstImageVolume = cache.getVolume(volumeId);
 
@@ -178,10 +172,8 @@ class VolumeSliceViewport extends VolumeViewport {
     this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     this.initializeColorTransferFunction(volumeInputArray);
-    this.updateClippingPlanesForActors(this.getCamera());
-    this.getRenderer()?.resetCamera();
+    this.resetCamera({ suppressEvents });
     this._attachStreamingVolumeCallbacks(volumeInputArray);
-    this._syncStreamingTextureUpdates();
 
     triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
       viewportId: this.id,
@@ -248,10 +240,8 @@ class VolumeSliceViewport extends VolumeViewport {
     this.addActors(volumeActors);
 
     this.initializeColorTransferFunction(volumeInputArray);
-    this.updateClippingPlanesForActors(this.getCamera());
-    this.getRenderer()?.resetCamera();
+    this.resetCamera({ suppressEvents });
     this._attachStreamingVolumeCallbacks(volumeInputArray);
-    this._syncStreamingTextureUpdates();
 
     if (immediate) {
       this.render();
@@ -283,56 +273,6 @@ class VolumeSliceViewport extends VolumeViewport {
 
   public resetSlabThickness(): void {
     // No-op for single-slice rendering.
-  }
-
-  private _syncStreamingTextureUpdates(): void {
-    const actorEntries = this.getActors();
-    if (!actorEntries?.length) {
-      return;
-    }
-
-    actorEntries.forEach((actorEntry) => {
-      if (!isImageActor(actorEntry)) {
-        return;
-      }
-
-      const volumeId = actorEntry.referencedId;
-      if (!volumeId) {
-        return;
-      }
-
-      const imageVolume = cache.getVolume(volumeId);
-      const sourceTexture = imageVolume?.vtkOpenGLTexture;
-      const updatedFrames = sourceTexture?.getUpdatedFrames?.();
-
-      if (!updatedFrames || !updatedFrames.length) {
-        return;
-      }
-
-      const mapper = actorEntry.actor.getMapper() as {
-        getScalarTexture?: () => {
-          setUpdatedFrame?: (frameIndex: number) => void;
-        };
-      };
-
-      const targetTexture = mapper?.getScalarTexture?.();
-      if (!targetTexture?.setUpdatedFrame) {
-        return;
-      }
-
-      let syncedFrames = this._syncedFramesByVolumeId.get(volumeId);
-      if (!syncedFrames) {
-        syncedFrames = new Set<number>();
-        this._syncedFramesByVolumeId.set(volumeId, syncedFrames);
-      }
-
-      for (let i = 0; i < updatedFrames.length; i++) {
-        if (updatedFrames[i] && !syncedFrames.has(i)) {
-          targetTexture.setUpdatedFrame(i);
-          syncedFrames.add(i);
-        }
-      }
-    });
   }
 
   private _getDefaultSlicePlane(): vtkPlane | undefined {
@@ -470,12 +410,7 @@ class VolumeSliceViewport extends VolumeViewport {
         );
       }
 
-      const callback = (evt: { imageIdIndex?: number }) => {
-        const imageIdIndex = evt?.imageIdIndex;
-        if (typeof imageIdIndex !== 'number') {
-          return;
-        }
-        this._markStreamingTextureFrameUpdated(volumeId, imageIdIndex);
+      const callback = () => {
         this.render();
       };
 
@@ -488,35 +423,26 @@ class VolumeSliceViewport extends VolumeViewport {
     });
   }
 
-  private _markStreamingTextureFrameUpdated(
-    volumeId: string,
-    frameIndex: number
-  ): void {
+  private _updateSlicePlaneFromCamera(updatedCamera: ICamera): void {
     const actorEntries = this.getActors();
-    if (!actorEntries?.length) {
-      return;
-    }
+    const { viewPlaneNormal, focalPoint } = updatedCamera;
 
     actorEntries.forEach((actorEntry) => {
-      if (!isImageActor(actorEntry) || actorEntry.referencedId !== volumeId) {
+      if (!isImageActor(actorEntry)) {
         return;
       }
 
-      const mapper = actorEntry.actor.getMapper() as {
-        getScalarTexture?: () => {
-          setUpdatedFrame?: (frameIndex: number) => void;
-        };
-      };
+      const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
+      const slicePlane =
+        (actorEntry as ActorEntry & { slicePlane?: vtkPlane }).slicePlane ||
+        mapper.getSlicePlane?.();
 
-      const texture = mapper?.getScalarTexture?.();
-      texture?.setUpdatedFrame?.(frameIndex);
-
-      let syncedFrames = this._syncedFramesByVolumeId.get(volumeId);
-      if (!syncedFrames) {
-        syncedFrames = new Set<number>();
-        this._syncedFramesByVolumeId.set(volumeId, syncedFrames);
+      if (!slicePlane) {
+        return;
       }
-      syncedFrames.add(frameIndex);
+
+      slicePlane.setNormal(viewPlaneNormal as Point3);
+      slicePlane.setOrigin(focalPoint as Point3);
     });
   }
 
@@ -569,33 +495,7 @@ class VolumeSliceViewport extends VolumeViewport {
   protected async updateClippingPlanesForActors(
     updatedCamera: ICamera
   ): Promise<void> {
-    const actorEntries = this.getActors();
-    const { viewPlaneNormal, focalPoint } = updatedCamera;
-
-    actorEntries.forEach((actorEntry) => {
-      if (!isImageActor(actorEntry)) {
-        return;
-      }
-
-      const mapper = actorEntry.actor.getMapper() as vtkImageResliceMapper;
-      const slicePlane =
-        (actorEntry as ActorEntry & { slicePlane?: vtkPlane }).slicePlane ||
-        mapper.getSlicePlane?.();
-
-      if (!slicePlane) {
-        return;
-      }
-
-      slicePlane.setNormal(viewPlaneNormal as Point3);
-      slicePlane.setOrigin(focalPoint as Point3);
-
-      triggerEvent(this.element, Events.CLIPPING_PLANES_UPDATED, {
-        actorEntry,
-        focalPoint,
-        vtkPlanes: [slicePlane],
-        viewport: this,
-      });
-    });
+    this._updateSlicePlaneFromCamera(updatedCamera);
   }
 }
 

@@ -1,9 +1,6 @@
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import {
-  vtkSharedImageResliceMapper,
-  vtkStreamingOpenGLTexture,
-} from '../vtkClasses';
+import { vtkSharedImageResliceMapper } from '../vtkClasses';
 
 import type { ImageActor } from './../../types/IActor';
 import type { VoiModifiedEventDetail } from './../../types/EventTypes';
@@ -37,17 +34,18 @@ async function createVolumeSliceActor(
     throw new Error(`imageVolume with id: ${volumeId} does not exist`);
   }
 
-  const { imageData } = imageVolume;
+  const { imageData, vtkOpenGLTexture } = imageVolume;
+  const loadStatus = imageVolume.loadStatus as { loaded?: boolean } | undefined;
 
   const slicePlane = vtkPlane.newInstance();
   const mapper = vtkSharedImageResliceMapper.newInstance();
-  const streamingTexture = vtkStreamingOpenGLTexture.newInstance();
-  streamingTexture.setVolumeId(volumeId);
-  streamingTexture.modified();
+  if (!loadStatus || loadStatus.loaded) {
+    vtkOpenGLTexture.modified();
+  }
   mapper.setInputData(imageData);
   mapper.setSlicePlane(slicePlane);
   mapper.setSlabThickness(0);
-  mapper.setScalarTexture?.(streamingTexture);
+  mapper.setScalarTexture?.(vtkOpenGLTexture);
   mapper.modified();
 
   const actor = vtkImageSlice.newInstance();
