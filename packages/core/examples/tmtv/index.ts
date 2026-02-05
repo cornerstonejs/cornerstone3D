@@ -33,12 +33,14 @@ const {
   VolumeRotateTool,
   RectangleROITool,
   CircleROITool,
+  LengthTool,
+  BidirectionalTool,
   CircleROIStartEndThresholdTool,
   RectangleROIStartEndThresholdTool,
   segmentation,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType, BlendModes } = Enums;
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
@@ -162,10 +164,12 @@ setTitleAndDescription(
 );
 
 const optionsValues = [
-  ZoomTool.toolName,
+  RectangleROITool.toolName,
+  CircleROITool.toolName,
+  LengthTool.toolName,
+  BidirectionalTool.toolName,
   WindowLevelTool.toolName,
   CrosshairsTool.toolName,
-  RectangleROITool.toolName,
   CircleROITool.toolName,
   CircleROIStartEndThresholdTool.toolName,
   RectangleROIStartEndThresholdTool.toolName,
@@ -214,60 +218,15 @@ addDropdownToToolbar({
       ].forEach((toolGroupId) => {
         const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-        if (toolName === ZoomTool.toolName) {
-          // Check if viewports are initialized before setting tools
-          if (renderingEngine && renderingEngine.getViewports().length > 0) {
-            toolGroup.setToolPassive(CrosshairsTool.toolName);
-          }
-          toolGroup.setToolDisabled(WindowLevelTool.toolName);
-          toolGroup.setToolDisabled(RectangleROITool.toolName);
-          toolGroup.setToolActive(ZoomTool.toolName, {
-            bindings: [{ mouseButton: MouseBindings.Primary }],
-          });
-        } else if (toolName === WindowLevelTool.toolName) {
-          // Check if viewports are initialized before setting tools
-          if (renderingEngine && renderingEngine.getViewports().length > 0) {
-            toolGroup.setToolPassive(CrosshairsTool.toolName);
-          }
-          toolGroup.setToolDisabled(ZoomTool.toolName);
-          toolGroup.setToolDisabled(RectangleROITool.toolName);
-          toolGroup.setToolActive(WindowLevelTool.toolName, {
-            bindings: [{ mouseButton: MouseBindings.Primary }],
-          });
-        } else if (toolName === CrosshairsTool.toolName) {
-          toolGroup.setToolDisabled(ZoomTool.toolName);
-          toolGroup.setToolDisabled(WindowLevelTool.toolName);
-          toolGroup.setToolDisabled(RectangleROITool.toolName);
-          toolGroup.setToolActive(CrosshairsTool.toolName, {
-            bindings: [{ mouseButton: MouseBindings.Primary }],
-          });
-        } else if (toolName === CircleROIStartEndThresholdTool.toolName) {
-          toolGroup.setToolDisabled(ZoomTool.toolName);
-          toolGroup.setToolDisabled(WindowLevelTool.toolName);
-          toolGroup.setToolDisabled(CrosshairsTool.toolName);
-          toolGroup.setToolDisabled(RectangleROITool.toolName);
-          toolGroup.setToolActive(CircleROIStartEndThresholdTool.toolName, {
-            bindings: [{ mouseButton: MouseBindings.Primary }],
-          });
-        } else if (toolName === RectangleROIStartEndThresholdTool.toolName) {
-          toolGroup.setToolDisabled(ZoomTool.toolName);
-          toolGroup.setToolDisabled(WindowLevelTool.toolName);
-          toolGroup.setToolDisabled(CrosshairsTool.toolName);
-          toolGroup.setToolDisabled(RectangleROITool.toolName);
-          toolGroup.setToolDisabled(CircleROIStartEndThresholdTool.toolName);
-          toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
-            bindings: [{ mouseButton: MouseBindings.Primary }],
-          });
-        } else {
-          toolGroup.setToolDisabled(ZoomTool.toolName);
-          toolGroup.setToolDisabled(WindowLevelTool.toolName);
-          toolGroup.setToolDisabled(CrosshairsTool.toolName);
-          toolGroup.setToolPassive(CircleROITool.toolName);
-          toolGroup.setToolPassive(RectangleROITool.toolName);
-          toolGroup.setToolActive(toolName, {
-            bindings: [{ mouseButton: MouseBindings.Primary }],
-          });
-        }
+        toolGroup.setToolDisabled(WindowLevelTool.toolName);
+        toolGroup.setToolDisabled(CrosshairsTool.toolName);
+        toolGroup.setToolPassive(CircleROITool.toolName);
+        toolGroup.setToolPassive(RectangleROITool.toolName);
+        toolGroup.setToolPassive(LengthTool.toolName);
+        toolGroup.setToolPassive(BidirectionalTool.toolName);
+        toolGroup.setToolActive(toolName, {
+          bindings: [{ mouseButton: MouseBindings.Primary }],
+        });
       });
     });
   },
@@ -407,6 +366,8 @@ function setUpToolGroupsForStudy(studyKey) {
     });
     toolGroup.addTool(RectangleROITool.toolName);
     toolGroup.addTool(CircleROITool.toolName);
+    toolGroup.addTool(LengthTool.toolName);
+    toolGroup.addTool(BidirectionalTool.toolName);
     // if (toolGroup === ptToolGroup) {
     toolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
       calculatePointsInsideVolume: true,
@@ -465,10 +426,18 @@ function setUpToolGroupsForStudy(studyKey) {
   // Set active tools
   [ctToolGroup, ptToolGroup, fusionToolGroup].forEach((toolGroup) => {
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
+      bindings: [
+        {
+          mouseButton: MouseBindings.Auxiliary,
+          modifierKey: KeyboardBindings.Shift,
+        },
+      ],
     });
     toolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: MouseBindings.Auxiliary }],
+    });
+    toolGroup.setToolActive(RectangleROITool.toolName, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
     });
     toolGroup.setToolActive(WindowLevelTool.toolName, {
       bindings: [{ mouseButton: MouseBindings.Secondary }],
@@ -891,6 +860,8 @@ async function run() {
   cornerstoneTools.addTool(VolumeRotateTool);
   cornerstoneTools.addTool(RectangleROITool);
   cornerstoneTools.addTool(CircleROITool);
+  cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(BidirectionalTool);
   cornerstoneTools.addTool(CircleROIStartEndThresholdTool);
   cornerstoneTools.addTool(RectangleROIStartEndThresholdTool);
 

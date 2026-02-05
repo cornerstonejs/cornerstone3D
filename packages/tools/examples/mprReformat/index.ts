@@ -191,7 +191,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>[127, 0, 0],
       },
     },
     {
@@ -200,7 +200,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>[0, 127, 0],
       },
     },
     {
@@ -209,7 +209,7 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>[0, 0, 127],
       },
     },
   ];
