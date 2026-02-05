@@ -66,8 +66,6 @@
     "webpack:watch": "npx lerna run webpack:watch"
   },
   "devDependencies": {
-    "baseline-browser-mapping": "^2.9.19",
-    "caniuse-lite": "^1.0.30001767",
     "@babel/core": "7.26.10",
     "@babel/plugin-external-helpers": "7.25.9",
     "@babel/plugin-proposal-class-properties": "7.18.6",
