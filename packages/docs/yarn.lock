@@ -4641,20 +4641,7 @@ data-uri-to-buffer@^6.0.2:
   resolved "https://registry.yarnpkg.com/data-uri-to-buffer/-/data-uri-to-buffer-6.0.2.tgz#8a58bb67384b261a38ef18bea1810cb01badd28b"
   integrity sha512-7hvf7/GW8e86rW0ptuwS3OcBGDjIi6SZva7hCyWC0yYry2cOPmLIjXAUHI6DK2HsnwJd9ifmt57i8eV2n4YNpw==
 
-dcmjs@0.48.0:
-  version "0.48.0"
-  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.48.0.tgz#002349d6acc7ff325bef57b660caa6f90c31bb89"
-  integrity sha512-hxDxLkfs3roAx3KaDue4aexeFUXCT073wuepvQ7FdS6gZs+WfYYSv/IDW/ejMfVAazs8lLgRfit2reEbKmQYsQ==
-  dependencies:
-    "@babel/runtime-corejs3" "^7.22.5"
-    adm-zip "^0.5.10"
-    gl-matrix "^3.1.0"
-    lodash.clonedeep "^4.5.0"
-    loglevel "^1.8.1"
-    ndarray "^1.0.19"
-    pako "^2.0.4"
-
-dcmjs@0.49.4:
+dcmjs@0.48.0, dcmjs@0.49.4:
   version "0.49.4"
   resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.49.4.tgz#833c014eb9e36a6859c80a860b0fb231d9bfeaf8"
   integrity sha512-w77Gde5JvLjg37FyGIAsTB+oWZIqkO/5NvBeheEVKy6k9XjBgeGsoAbVAByjuGAFLpGqRbf9iWI0edBq87yu/g==

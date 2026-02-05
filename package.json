@@ -39,7 +39,6 @@
     "docs": "npx lerna run docs",
     "docs:watch": "npx lerna run docs:watch",
     "install:update-lockfile": "yarn install && bun install --config=./bunfig.update-lockfile.toml",
-    "install:update": "echo Use for faster dev deploy, do not commit yarn lock file && bun install --config=./bunfig.update-lockfile.toml --yarn",
     "install:yarn:frozen-lockfile": "echo Deprecated in favor of install:frozen && yarn install:frozen",
     "install:frozen": "yarn install --frozen-lockfile",
     "audit": "bun audit --ignore=GHSA-5j98-mcp5-4vw2",
