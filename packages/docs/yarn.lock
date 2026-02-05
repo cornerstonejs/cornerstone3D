@@ -4656,13 +4656,13 @@ dcmjs@0.48.0:
   resolved "https://registry.npmjs.org/dcmjs/-/dcmjs-0.48.0.tgz"
   integrity sha512-hxDxLkfs3roAx3KaDue4aexeFUXCT073wuepvQ7FdS6gZs+WfYYSv/IDW/ejMfVAazs8lLgRfit2reEbKmQYsQ==
   dependencies:
-    pako "^2.0.4"
+    "@babel/runtime-corejs3" "^7.22.5"
     adm-zip "^0.5.10"
-    ndarray "^1.0.19"
-    loglevel "^1.8.1"
     gl-matrix "^3.1.0"
     lodash.clonedeep "^4.5.0"
-    "@babel/runtime-corejs3" "^7.22.5"
+    loglevel "^1.8.1"
+    ndarray "^1.0.19"
+    pako "^2.0.4"
 
 dcmjs@0.49.4:
   version "0.49.4"

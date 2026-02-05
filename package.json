@@ -39,6 +39,7 @@
     "docs": "npx lerna run docs",
     "docs:watch": "npx lerna run docs:watch",
     "install:update-lockfile": "yarn install && bun install --config=./bunfig.update-lockfile.toml",
+    "install:update": "bun install --config=./bunfig.update-lockfile.toml --yarn",
     "install:yarn:frozen-lockfile": "echo Deprecated in favor of install:frozen && yarn install:frozen",
     "install:frozen": "yarn install --frozen-lockfile",
     "audit": "bun audit --ignore=GHSA-5j98-mcp5-4vw2",
@@ -192,7 +193,7 @@
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "resolutions": {
     "@babel/helper-create-class-features-plugin": "7.28.3",
-    "caniuse-lite": "^1.0.30001767",
+    "caniuse-lite": "1.0.30001767",
     "axios": "1.12.0",
     "buffer": "6.0.3",
     "node-forge": "1.3.2",
