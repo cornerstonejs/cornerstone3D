@@ -21,7 +21,7 @@
     "docs:ci": "cross-env NODE_OPTIONS=--max_old_space_size=16384 && yarn run build:docs",
     "docs:ci-no-tests": "cross-env NODE_OPTIONS=--max_old_space_size=16384 && yarn run prep-no-tests && yarn run build:docs",
     "dev:watch": "cross-env NODE_OPTIONS=--max_old_space_size=16384 TYPEDOC_WATCH=true docusaurus start",
-    "install:update-lockfile": "bun install --yarn",
+    "install:update-lockfile": "yarn install && bun install",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist && yarn run clear",
