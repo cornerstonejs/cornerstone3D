@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.30](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29...v4.15.30) (2026-02-05)
+
+### Bug Fixes
+
+- Newer dcmjs version for seg save ([#2595](https://github.com/cornerstonejs/cornerstone3D/issues/2595)) ([43a7cfd](https://github.com/cornerstonejs/cornerstone3D/commit/43a7cfd200b1cafd878c630e73f2a5d31ed7f4b8))
+
 ## [4.15.29](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.28...v4.15.29) (2026-02-04)
 
 **Note:** Version bump only for package @cornerstonejs/ai
