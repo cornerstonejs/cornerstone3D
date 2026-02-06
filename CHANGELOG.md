@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.31](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.30...v4.15.31) (2026-02-06)
+
+### Bug Fixes
+
+- Remove the CS3D dependencies ([#2600](https://github.com/cornerstonejs/cornerstone3D/issues/2600)) ([51c3bec](https://github.com/cornerstonejs/cornerstone3D/commit/51c3becf45b62fbe8d6a6839d396152633739e94))
+
 ## [4.15.30](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29...v4.15.30) (2026-02-05)
 
 ### Bug Fixes
