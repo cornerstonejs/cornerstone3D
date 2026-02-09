@@ -3,6 +3,99 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.31](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.30...v4.15.31) (2026-02-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.30](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29...v4.15.30) (2026-02-05)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.29](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.28...v4.15.29) (2026-02-04)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.28](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.27...v4.15.28) (2026-02-04)
+
+### Bug Fixes
+
+- **jump-to-label-map:** Handle case in `getReferenceVolumeForSegmentationVolume` where the volume is built from the segmentation's image IDs. ([#2592](https://github.com/cornerstonejs/cornerstone3D/issues/2592)) ([753e212](https://github.com/cornerstonejs/cornerstone3D/commit/753e21214f5cb48d5516117a58afbdde5668d9c9))
+
+## [4.15.27](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.26...v4.15.27) (2026-02-03)
+
+### Bug Fixes
+
+- Wrong calculation of rectangle size using indexes ([#2591](https://github.com/cornerstonejs/cornerstone3D/issues/2591)) ([e51a7bb](https://github.com/cornerstonejs/cornerstone3D/commit/e51a7bbb5d4c4a8d61066b6c02a866a3d325feee))
+
+## [4.15.26](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.25...v4.15.26) (2026-02-03)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.25](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.24...v4.15.25) (2026-02-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.24](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.23...v4.15.24) (2026-01-30)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.23](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.22...v4.15.23) (2026-01-30)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.22](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.21...v4.15.22) (2026-01-30)
+
+### Bug Fixes
+
+- **Volume viewport:** Image shift in mpr when measurement is loaded. ([#2539](https://github.com/cornerstonejs/cornerstone3D/issues/2539)) ([cd9a217](https://github.com/cornerstonejs/cornerstone3D/commit/cd9a217341de963b77e801396140671c3d1336b1))
+
+## [4.15.21](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.20...v4.15.21) (2026-01-28)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.20](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.19...v4.15.20) (2026-01-26)
+
+### Bug Fixes
+
+- fov second fix ([#2578](https://github.com/cornerstonejs/cornerstone3D/issues/2578)) ([94d374c](https://github.com/cornerstonejs/cornerstone3D/commit/94d374cb5bf6d5fa5cf9e0c26070933ef17a3a96))
+
+## [4.15.19](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.18...v4.15.19) (2026-01-23)
+
+### Bug Fixes
+
+- Avoid exception when the structure data is empty ([#2573](https://github.com/cornerstonejs/cornerstone3D/issues/2573)) ([97b3313](https://github.com/cornerstonejs/cornerstone3D/commit/97b33133a2e27260f3dce735673c7920ab9da9e4))
+- implement cardiac 4D image handling in splitImageIdsBy4DTags utility ([#2551](https://github.com/cornerstonejs/cornerstone3D/issues/2551)) ([167ac2d](https://github.com/cornerstonejs/cornerstone3D/commit/167ac2db3a19638e6bcd8c9ca1aaff7ebb9f24ea))
+
+## [4.15.18](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.17...v4.15.18) (2026-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.17](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.16...v4.15.17) (2026-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.15.16](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.15...v4.15.16) (2026-01-21)
+
+### Bug Fixes
+
+- **segmentation:** Fixed issues with adding label map segmentation as independent components. ([#2568](https://github.com/cornerstonejs/cornerstone3D/issues/2568)) ([469cd1a](https://github.com/cornerstonejs/cornerstone3D/commit/469cd1a822291d725ad4cda8b932d1d001f46ced))
+
+## [4.15.15](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.14...v4.15.15) (2026-01-21)
+
+### Bug Fixes
+
+- **security:** Ignore CVE-2026-23745, CVE-2026-23950 and CVE-2024-28863 because they are limited to build/dev environments. ([#2571](https://github.com/cornerstonejs/cornerstone3D/issues/2571)) ([b271046](https://github.com/cornerstonejs/cornerstone3D/commit/b2710468312162839085c86c31e358c9e0232e61))
+
+## [4.15.14](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.13...v4.15.14) (2026-01-21)
+
+### Bug Fixes
+
+- **security:** Fix CVE-2024-28863 and CVE-2026-23745. Also updated lerna to fix circleci npm publish error. ([#2567](https://github.com/cornerstonejs/cornerstone3D/issues/2567)) ([221f6f3](https://github.com/cornerstonejs/cornerstone3D/commit/221f6f36d522352536f7f76f91f322a231efc8c2))
+
+## [4.15.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.12...v4.15.13) (2026-01-19)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [4.15.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.11...v4.15.12) (2026-01-15)
 
 **Note:** Version bump only for package @cornerstonejs/core

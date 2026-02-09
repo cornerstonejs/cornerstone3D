@@ -2,6 +2,7 @@ import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 import { toScoord } from "../helpers";
+import { extractAllNUMGroups, restoreAdditionalMetrics } from "./metricHandler";
 
 const { Circle: TID300Circle } = utilities.TID300;
 
@@ -29,7 +30,13 @@ class CircleROI extends BaseAdapter3D {
             metadata,
             this.toolType
         );
-
+        const referencedSOPInstanceUID = state.sopInstanceUid;
+        const allNUMGroups = extractAllNUMGroups(
+            MeasurementGroup,
+            referencedSOPInstanceUID
+        );
+        const measurementNUMGroups =
+            allNUMGroups[referencedSOPInstanceUID] || {};
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
@@ -46,7 +53,8 @@ class CircleROI extends BaseAdapter3D {
                         : 0,
                     // Dummy values to be updated by cornerstone
                     radius: 0,
-                    perimeter: 0
+                    perimeter: 0,
+                    ...restoreAdditionalMetrics(measurementNUMGroups)
                 }
             };
         }
@@ -74,14 +82,30 @@ class CircleROI extends BaseAdapter3D {
         const center = toScoord(scoordProps, handles.points[0]);
         const end = toScoord(scoordProps, handles.points[1]);
 
-        const { area, radius } =
-            cachedStats[`imageId:${referencedImageId}`] || {};
+        const {
+            area,
+            radius,
+            max,
+            min,
+            stdDev,
+            mean,
+            modalityUnit,
+            radiusUnit,
+            areaUnit
+        } = cachedStats[`imageId:${referencedImageId}`] || {};
         const perimeter = 2 * Math.PI * radius;
 
         return {
             area,
+            areaUnit,
             perimeter,
+            modalityUnit,
+            radiusUnit,
             radius,
+            max,
+            min,
+            stdDev,
+            mean,
             points: [center, end],
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,
