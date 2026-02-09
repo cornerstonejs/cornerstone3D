@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.32](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.31...v4.15.32) (2026-02-09)
+
+### Bug Fixes
+
+- **security:** Use a resolution for axios to address CVE-2026-25639. ([#2606](https://github.com/cornerstonejs/cornerstone3D/issues/2606)) ([d0e0e37](https://github.com/cornerstonejs/cornerstone3D/commit/d0e0e37510e27a2f7070475fedf7a1fc7cff204a))
+
 ## [4.15.31](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.30...v4.15.31) (2026-02-06)
 
 ### Bug Fixes
