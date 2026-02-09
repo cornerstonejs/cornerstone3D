@@ -1,7 +1,6 @@
-import { utilities, eventTarget } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import type { Types } from '@cornerstonejs/core';
-import Events from '../../enums/Events';
 
 const { VoxelManager, RLEVoxelMap } = utilities;
 

@@ -803,10 +803,19 @@ abstract class BaseVolumeViewport extends Viewport {
 
     this.setBestOrentation(inPlaneVector1, inPlaneVector2);
 
+    const { focalPoint, viewPlaneNormal } = this.getCamera();
+    const deltaFocal = vec3.subtract(vec3.create(), point, focalPoint);
+    const alongNormal = vec3.dot(deltaFocal, viewPlaneNormal);
+    const deltaNormal = vec3.scaleAndAdd(
+      vec3.create(),
+      focalPoint,
+      viewPlaneNormal,
+      alongNormal
+    ) as Point3;
     this.setViewReference({
       FrameOfReferenceUID,
-      cameraFocalPoint: point,
-      viewPlaneNormal: this.getCamera().viewPlaneNormal,
+      cameraFocalPoint: deltaNormal,
+      viewPlaneNormal: viewPlaneNormal,
     });
   }
 
@@ -2364,6 +2373,9 @@ abstract class BaseVolumeViewport extends Viewport {
       volumeId = actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       )?.referencedId;
+      if (!volumeId) {
+        return;
+      }
     }
 
     const currentIndex = this.getSliceIndex();
