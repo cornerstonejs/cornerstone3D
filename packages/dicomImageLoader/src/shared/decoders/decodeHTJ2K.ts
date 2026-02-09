@@ -1,11 +1,10 @@
-import openJphFactory from '@cornerstonejs/codec-openjph/wasmjs'; // @ts-ignore
 import type { ByteArray } from 'dicom-parser';
 import openJphFactory, {
   type HTJ2KDecoder,
   type HTJ2KModule,
 } from '@cornerstonejs/codec-openjph/wasmjs';
-// @ts-ignore
-// import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
+import LoaderDecodeOptions from '../../types/LoaderDecodeOptions';
+
 const openjphWasm = new URL(
   '@cornerstonejs/codec-openjph/wasm',
   import.meta.url
