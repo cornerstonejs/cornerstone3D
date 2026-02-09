@@ -1,21 +1,19 @@
 import openJphFactory from '@cornerstonejs/codec-openjph/wasmjs'; // @ts-ignore
 import type { ByteArray } from 'dicom-parser';
-import type { LoaderDecodeOptions } from '../../types';
-
-/**
- * Default URL to load the OpenJPH codec from.
- *
- * In order for this to be loaded correctly, you will need to configure your
- * bundler to treat `.wasm` files as an asset/resource.
- */
+import openJphFactory, {
+  type HTJ2KDecoder,
+  type HTJ2KModule,
+} from '@cornerstonejs/codec-openjph/wasmjs';
+// @ts-ignore
+// import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
 const openjphWasm = new URL(
   '@cornerstonejs/codec-openjph/wasm',
   import.meta.url
 );
 
 const local: {
-  codec: unknown;
-  decoder: unknown;
+  codec: HTJ2KModule | undefined;
+  decoder: HTJ2KDecoder | undefined;
   decodeConfig: LoaderDecodeOptions;
 } = {
   codec: undefined,
@@ -84,7 +82,6 @@ async function decodeAsync(
 ) {
   await initialize(undefined, wasmUrlCodecOpenJph);
   // const decoder = local.decoder; // This is much slower for some reason
-  // @ts-expect-error
   const decoder = new local.codec.HTJ2KDecoder();
 
   // get pointer to the source/encoded bit stream buffer in WASM memory

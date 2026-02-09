@@ -2,7 +2,12 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
-import type { InteractionTypes, ToolProps, PublicToolProps } from '../../types';
+import type {
+  InteractionTypes,
+  ToolProps,
+  PublicToolProps,
+  ToolConfiguration,
+} from '../../types';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
@@ -33,8 +38,17 @@ abstract class BaseTool {
 
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
+  /**
+   * The configuration for this tool.
+   * IBaseTool contains some default configuration values, and you can use
+   * configurationTyped to get the typed version of this.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public configuration: Record<string, any>;
+  public get configurationTyped() {
+    return <ToolConfiguration>this.configuration;
+  }
+
   /** ToolGroup ID the tool instance belongs to */
   public toolGroupId: string;
   /** Tool Mode - Active/Passive/Enabled/Disabled/ */
@@ -95,6 +109,27 @@ abstract class BaseTool {
       return defaultProps;
     }
     return csUtils.deepMerge(defaultProps, additionalProps);
+  }
+
+  /**
+   * A function generator to test if the target id is the desired one.
+   * Used for deciding which set of cached stats is appropriate to display
+   * for a given viewport.
+   *
+   * This relies on the fact that the target id contains a substring which is the
+   * desired volume id when the target is a volume.
+   * It is also possible to use series query parameters such as `/series/{seriesUID}/`
+   * to generate specific series selections within a stack viewport.
+   */
+  public static isSpecifiedTargetId(desiredVolumeId: string) {
+    // imageId including the target id is a proxy for testing if the
+    // image id is a member of that volume.  This may need to be fixed in the
+    // future to add more criteria.
+    return (_viewport, { targetId }) => {
+      // target ids contain the base information for the volume, so allow specifying
+      // preference by desiredVolumeId
+      return targetId.includes(desiredVolumeId);
+    };
   }
 
   /**
@@ -249,18 +284,36 @@ abstract class BaseTool {
   /**
    * Get the target Id for the viewport which will be used to store the cached
    * statistics scoped to that target in the annotations.
-   * For StackViewport, targetId is the viewportId, but for the volume viewport,
-   * the targetId will be grabbed from the volumeId if particularly specified
-   * in the tool configuration, or if not, the first actorUID in the viewport.
+   * For StackViewport, targetId is usually derived from the imageId.
+   * For VolumeViewport, it's derived from the volumeId.
+   * This method allows prioritizing a specific volumeId from the tool's
+   * configuration if available in the cachedStats.
    *
    * @param viewport - viewport to get the targetId for
+   * @param data - Optional: The annotation's data object, containing cachedStats.
    * @returns targetId
    */
-  protected getTargetId(viewport: Types.IViewport): string | undefined {
-    const targetId = viewport.getViewReferenceId?.();
-    if (targetId) {
-      return targetId;
+  protected getTargetId(
+    viewport: Types.IViewport,
+    data?: unknown & { cachedStats?: Record<string, unknown> }
+  ): string | undefined {
+    const { isPreferredTargetId } = this.configurationTyped; // Get preferred ID from config
+
+    // Check if cachedStats is available and contains the preferredVolumeId
+    if (isPreferredTargetId && data?.cachedStats) {
+      for (const [targetId, cachedStat] of Object.entries(data.cachedStats)) {
+        if (isPreferredTargetId(viewport, { targetId, cachedStat })) {
+          return targetId;
+        }
+      }
     }
+
+    // If not found or not applicable, use the viewport's default method
+    const defaultTargetId = viewport.getViewReferenceId?.();
+    if (defaultTargetId) {
+      return defaultTargetId;
+    }
+
     throw new Error(
       'getTargetId: viewport must have a getViewReferenceId method'
     );

@@ -146,10 +146,23 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   public jumpToWorld(worldPos: Point3): boolean {
+    let targetWorldPos = worldPos;
+
+    const imageData = this.getImageData();
+    if (imageData?.imageData) {
+      const bounds = imageData.imageData.getBounds();
+      // Ensure the target world position is within the bounds of the image data
+      targetWorldPos = [
+        Math.max(bounds[0], Math.min(bounds[1], worldPos[0])),
+        Math.max(bounds[2], Math.min(bounds[3], worldPos[1])),
+        Math.max(bounds[4], Math.min(bounds[5], worldPos[2])),
+      ] as Point3;
+    }
+
     const { focalPoint } = this.getCamera();
 
     const delta: Point3 = [0, 0, 0];
-    vec3.sub(delta, worldPos, focalPoint);
+    vec3.sub(delta, targetWorldPos, focalPoint);
 
     const camera = this.getCamera();
     const normal = camera.viewPlaneNormal;
@@ -190,7 +203,8 @@ class VolumeViewport extends BaseVolumeViewport {
    */
   public setOrientation(
     orientation: OrientationAxis | OrientationVectors,
-    immediate = true
+    immediate = true,
+    suppressEvents = false
   ): void {
     let viewPlaneNormal, viewUp;
 
@@ -223,7 +237,7 @@ class VolumeViewport extends BaseVolumeViewport {
       this.resetCamera();
     } else {
       ({ viewPlaneNormal, viewUp } = orientation);
-      this.applyViewOrientation(orientation);
+      this.applyViewOrientation(orientation, true, suppressEvents);
     }
 
     if (immediate) {
@@ -541,12 +555,15 @@ class VolumeViewport extends BaseVolumeViewport {
    * have the same affect, excluding end/looping conditions.
    */
   public getCurrentImageIdIndex = (
-    volumeId?: string,
+    volumeId: string = this.getVolumeId(),
     useSlabThickness = true
   ): number => {
+    if (!volumeId) {
+      return 0;
+    }
     const { currentStepIndex } = getVolumeViewportScrollInfo(
       this,
-      volumeId || this.getVolumeId(),
+      volumeId,
       useSlabThickness
     );
     return currentStepIndex;

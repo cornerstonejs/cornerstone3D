@@ -160,7 +160,8 @@ abstract class BaseVolumeViewport extends Viewport {
 
   protected applyViewOrientation(
     orientation: OrientationAxis | OrientationVectors,
-    resetCamera = true
+    resetCamera = true,
+    suppressEvents = false
   ) {
     const { viewPlaneNormal, viewUp } =
       this._getOrientationVectors(orientation) || {};
@@ -178,7 +179,11 @@ abstract class BaseVolumeViewport extends Viewport {
 
     if (resetCamera) {
       const t = this as unknown as IVolumeViewport;
-      t.resetCamera({ resetOrientation: false, resetRotation: false });
+      t.resetCamera({
+        resetOrientation: false,
+        resetRotation: false,
+        suppressEvents,
+      });
     }
   }
 
@@ -798,10 +803,19 @@ abstract class BaseVolumeViewport extends Viewport {
 
     this.setBestOrentation(inPlaneVector1, inPlaneVector2);
 
+    const { focalPoint, viewPlaneNormal } = this.getCamera();
+    const deltaFocal = vec3.subtract(vec3.create(), point, focalPoint);
+    const alongNormal = vec3.dot(deltaFocal, viewPlaneNormal);
+    const deltaNormal = vec3.scaleAndAdd(
+      vec3.create(),
+      focalPoint,
+      viewPlaneNormal,
+      alongNormal
+    ) as Point3;
     this.setViewReference({
       FrameOfReferenceUID,
-      cameraFocalPoint: point,
-      viewPlaneNormal: this.getCamera().viewPlaneNormal,
+      cameraFocalPoint: deltaNormal,
+      viewPlaneNormal: viewPlaneNormal,
     });
   }
 
@@ -870,7 +884,11 @@ abstract class BaseVolumeViewport extends Viewport {
       if (refViewPlaneNormal && !isNegativeNormal && !isSameNormal) {
         // Need to update the orientation vectors correctly for this case
         // this.setCameraNoEvent({ viewPlaneNormal: refViewPlaneNormal, viewUp });
-        this.setOrientation({ viewPlaneNormal: refViewPlaneNormal, viewUp });
+        this.setOrientation(
+          { viewPlaneNormal: refViewPlaneNormal, viewUp },
+          true,
+          true
+        );
         this.setViewReference(viewRef);
         return;
       }
@@ -1015,6 +1033,7 @@ abstract class BaseVolumeViewport extends Viewport {
         colormap,
         preset,
         slabThickness,
+        sampleDistanceMultiplier,
       });
     }
 
@@ -1510,7 +1529,8 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public setOrientation(
     _orientation: OrientationAxis | OrientationVectors,
-    _immediate = true
+    _immediate = true,
+    _suppressEvents = false
   ): void {
     console.warn('Method "setOrientation" needs implementation');
   }
@@ -1707,7 +1727,7 @@ abstract class BaseVolumeViewport extends Viewport {
       (actor) => actor.referencedId === volumeId
     );
 
-    if (!actorIsA(actorEntry, 'vtkVolume')) {
+    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
       return;
     }
 
@@ -2353,6 +2373,9 @@ abstract class BaseVolumeViewport extends Viewport {
       volumeId = actorEntries.find(
         (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
       )?.referencedId;
+      if (!volumeId) {
+        return;
+      }
     }
 
     const currentIndex = this.getSliceIndex();

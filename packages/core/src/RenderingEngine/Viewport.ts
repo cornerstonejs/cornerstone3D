@@ -48,6 +48,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensions';
 import { getConfiguration } from '../init';
 
 /**
@@ -1094,21 +1095,6 @@ class Viewport {
     const focalPoint = [0, 0, 0] as Point3;
     const imageData = this.getDefaultImageData();
 
-    // The bounds are used to set the clipping view, which is then used to
-    // figure out the center point of each image.  This needs to be the depth
-    // center, so the bounds need to be extended by the spacing such that the
-    // depth center is in the middle of each image.
-    if (imageData) {
-      const spc = imageData.getSpacing();
-
-      bounds[0] = bounds[0] + spc[0] / 2;
-      bounds[1] = bounds[1] - spc[0] / 2;
-      bounds[2] = bounds[2] + spc[1] / 2;
-      bounds[3] = bounds[3] - spc[1] / 2;
-      bounds[4] = bounds[4] + spc[2] / 2;
-      bounds[5] = bounds[5] - spc[2] / 2;
-    }
-
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
     const viewUp = activeCamera.getViewUp() as Point3;
@@ -1129,23 +1115,21 @@ class Viewport {
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    let widthWorld;
-    let heightWorld;
-    const config = getConfiguration();
-    const useLegacyMethod = config.rendering?.useLegacyCameraFOV ?? false;
+    let { widthWorld, heightWorld } = imageData
+      ? getCubeSizeInView(imageData, viewPlaneNormal, viewUp)
+      : this._getWorldDistanceViewUpAndViewRight(
+          bounds,
+          viewUp,
+          viewPlaneNormal
+        );
 
-    if (imageData && !useLegacyMethod) {
-      const extent = imageData.getExtent();
+    if (imageData) {
       const spacing = imageData.getSpacing();
-
-      widthWorld = (extent[1] - extent[0]) * spacing[0];
-      heightWorld = (extent[3] - extent[2]) * spacing[1];
-    } else {
-      ({ widthWorld, heightWorld } = this._getWorldDistanceViewUpAndViewRight(
-        bounds,
-        viewUp,
-        viewPlaneNormal
-      ));
+      // This change corresponds to the spacing calculation for previous version
+      // stack viewports, but is technically incorrect and results in an image
+      // a tiny bit too large for the viewport.
+      widthWorld = Math.max(spacing[0], widthWorld - spacing[0]);
+      heightWorld = Math.max(spacing[1], heightWorld - spacing[1]);
     }
 
     const canvasSize = [this.sWidth, this.sHeight];
