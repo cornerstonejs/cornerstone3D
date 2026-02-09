@@ -41,7 +41,6 @@ interface Cornerstone3DConfig {
 
     /**
      * The rendering engine mode to use.
-     * 'direct' renders directly to each viewport canvas without offscreen compositing.
      * 'contextPool' uses sequential rendering with parallelization for multi-monitor/high resolution.
      * 'tiled' uses tiled offscreen rendering.
      */

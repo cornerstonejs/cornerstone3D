@@ -227,7 +227,7 @@ async function run() {
   await initDemo({
     core: {
       rendering: {
-        renderingEngineMode: Enums.RenderingEngineModeEnum.Direct,
+        renderingEngineMode: Enums.RenderingEngineModeEnum.ContextPool,
       },
     },
   });

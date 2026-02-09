@@ -19,11 +19,10 @@ const defaultConfig: Cornerstone3DConfig = {
     strictZSpacingForVolumeViewport: true,
     /**
      * The rendering engine mode to use.
-     * 'direct' renders directly to each viewport canvas without offscreen compositing.
      * 'contextPool' uses sequential rendering with parallelization for multi-monitor/high resolution.
      * 'tiled' uses tiled offscreen rendering.
      */
-    renderingEngineMode: RenderingEngineModeEnum.Direct,
+    renderingEngineMode: RenderingEngineModeEnum.ContextPool,
 
     /**
      * The number of WebGL contexts to create. This is used for parallel rendering.
