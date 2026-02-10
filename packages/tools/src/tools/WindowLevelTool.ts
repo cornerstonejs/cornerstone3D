@@ -24,6 +24,10 @@ class WindowLevelTool extends BaseTool {
     toolProps = {},
     defaultToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
+      configuration: {
+        invertWidth: false,
+        invertCenter: false,
+      },
     }
   ) {
     super(toolProps, defaultToolProps);
@@ -69,11 +73,11 @@ class WindowLevelTool extends BaseTool {
       throw new Error('Viewport is not a valid type');
     }
 
-    // If modality is PT an the viewport is pre-scaled (SUV),
-    // treat it special to not include the canvas delta in
-    // the x direction. For other modalities, use the canvas delta in both
+    // If modality is PT and the viewport is pre-scaled (SUV),
+    // treat it special to not include the canvas delta in the
+    // x direction. For other modalities, use the canvas delta in both
     // directions, and if the viewport is a volumeViewport, the multiplier
-    // is calculate using the volume min and max.
+    // is calculated using the volume min and max.
     if (modality === PT && isPreScaled) {
       newRange = this.getPTScaledNewRange({
         deltaPointsCanvas: deltaPoints.canvas,
@@ -135,7 +139,8 @@ class WindowLevelTool extends BaseTool {
     }
 
     const deltaY = deltaPointsCanvas[1];
-    const wcDelta = deltaY * multiplier;
+    const wcDelta =
+      deltaY * multiplier * (this.configuration.invertCenter ? -1 : 1);
 
     upper -= wcDelta;
     upper = isPreScaled ? Math.max(upper, 0.1) : upper;
@@ -148,8 +153,14 @@ class WindowLevelTool extends BaseTool {
       this._getMultiplierFromDynamicRange(viewport, volumeId) ||
       DEFAULT_MULTIPLIER;
 
-    const wwDelta = deltaPointsCanvas[0] * multiplier;
-    const wcDelta = deltaPointsCanvas[1] * multiplier;
+    const wwDelta =
+      deltaPointsCanvas[0] *
+      multiplier *
+      (this.configuration.invertWidth ? -1 : 1);
+    const wcDelta =
+      deltaPointsCanvas[1] *
+      multiplier *
+      (this.configuration.invertCenter ? -1 : 1);
 
     let { windowWidth, windowCenter } = utilities.windowLevel.toWindowLevel(
       lower,
@@ -208,8 +219,8 @@ class WindowLevelTool extends BaseTool {
     return !Number.isFinite(ratio)
       ? DEFAULT_IMAGE_DYNAMIC_RANGE
       : ratio > 1
-      ? Math.round(ratio)
-      : ratio;
+        ? Math.round(ratio)
+        : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {
