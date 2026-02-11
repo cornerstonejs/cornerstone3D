@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.16.0...v4.16.1) (2026-02-11)
+
+### Bug Fixes
+
+- CS3D version commits to single version ([#2612](https://github.com/cornerstonejs/cornerstone3D/issues/2612)) ([68b475b](https://github.com/cornerstonejs/cornerstone3D/commit/68b475b3eca38236ac124c78b37b72217cfbd6a6))
+
 # [4.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.33...v4.16.0) (2026-02-11)
 
 ### Features
