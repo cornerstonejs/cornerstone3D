@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.33...v4.16.0) (2026-02-11)
+
+### Features
+
+- **MPR:** add reformat orientation ([#2540](https://github.com/cornerstonejs/cornerstone3D/issues/2540)) ([4a6cd35](https://github.com/cornerstonejs/cornerstone3D/commit/4a6cd35c906c96a4480d9c1aa79a6267ad8f08bd))
+
 ## [4.15.33](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.32...v4.15.33) (2026-02-10)
 
 **Note:** Version bump only for package @cornerstonejs/core
