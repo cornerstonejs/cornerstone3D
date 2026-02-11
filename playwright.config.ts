@@ -12,14 +12,16 @@ export default defineConfig({
   outputDir: './tests/test-results',
   reporter: [
     [
-      process.env.CI ? 'blob' : 'html',
-      { outputFolder: './packages/docs/static/playwright-report' },
+      process.env.CI ? 'json' : 'html',
+      process.env.CI
+        ? { outputFile: './tests/playwright-report.json' }
+        : { outputFolder: './tests/playwright-report' },
     ],
   ],
   use: {
     baseURL: 'http://localhost:3333',
     trace: 'on-first-retry',
-    video: 'on',
+    video: 'on-first-retry',
   },
 
   projects: [
