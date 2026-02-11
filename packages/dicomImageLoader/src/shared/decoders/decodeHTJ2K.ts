@@ -1,24 +1,27 @@
 import type { ByteArray } from 'dicom-parser';
-import openJphFactory, {
-  type HTJ2KDecoder,
-  type HTJ2KModule,
+import type {
+  HTJ2KDecoder,
+  HTJ2KModule,
 } from '@cornerstonejs/codec-openjph/wasmjs';
-import LoaderDecodeOptions from '../../types/LoaderDecodeOptions';
+import { createInitializeDecoder } from '../createInitializeDecoder';
 
-const openjphWasm = new URL(
-  '@cornerstonejs/codec-openjph/wasm',
-  import.meta.url
-);
-
-const local: {
-  codec: HTJ2KModule | undefined;
-  decoder: HTJ2KDecoder | undefined;
-  decodeConfig: LoaderDecodeOptions;
-} = {
-  codec: undefined,
-  decoder: undefined,
-  decodeConfig: {},
+const { initialize, state } = createInitializeDecoder({
+  library: '@cornerstonejs/codec-openjph/wasmjs',
+  libraryFallback: () => import('@cornerstonejs/codec-openjph/wasmjs'),
+  wasm: '@cornerstonejs/codec-openjph/wasm',
+  wasmDefaultUrl: new URL(
+    '@cornerstonejs/codec-openjph/wasm',
+    import.meta.url
+  ).toString(),
+  constructor: 'HTJ2KDecoder',
+});
+const local = state as {
+  codec: HTJ2KModule;
+  decoder: HTJ2KDecoder;
+  decodeConfig: typeof state.decodeConfig;
 };
+
+export { initialize };
 
 function calculateSizeAtDecompositionLevel(
   decompositionLevel: number,
@@ -34,52 +37,9 @@ function calculateSizeAtDecompositionLevel(
   return result;
 }
 
-/**
- *
- * @param decodeConfig
- * @param wasmUrlCodecOpenJph Optional path to load the OpenJPH WASM codec from.
- * If not given, it will default to using the default `openjphWasm`
- * @returns
- */
-export function initialize(
-  decodeConfig?: LoaderDecodeOptions,
-  wasmUrlCodecOpenJph?: string
-): Promise<void> {
-  local.decodeConfig = decodeConfig;
-
-  if (local.codec) {
-    return Promise.resolve();
-  }
-
-  const openJphModule = openJphFactory({
-    locateFile: (f) => {
-      if (f.endsWith('.wasm')) {
-        if (wasmUrlCodecOpenJph) {
-          return wasmUrlCodecOpenJph;
-        }
-        return openjphWasm.toString();
-      }
-
-      return f;
-    },
-  });
-
-  return new Promise<void>((resolve, reject) => {
-    openJphModule.then((instance) => {
-      local.codec = instance;
-      local.decoder = new instance.HTJ2KDecoder();
-      resolve();
-    }, reject);
-  });
-}
-
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
-async function decodeAsync(
-  compressedImageFrame: ByteArray,
-  imageInfo,
-  wasmUrlCodecOpenJph?: string
-) {
-  await initialize(undefined, wasmUrlCodecOpenJph);
+async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
+  await initialize();
   // const decoder = local.decoder; // This is much slower for some reason
   const decoder = new local.codec.HTJ2KDecoder();
 

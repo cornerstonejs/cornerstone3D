@@ -415,19 +415,10 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGBaseline8Bit(
-        pixelData,
-        opts,
-        decodeConfig?.wasmUrlCodecLibJpegTurbo8bit
-      );
+      decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.51':
       // JPEG Baseline lossy process 2 & 4 (12 bit)
-      // opts = {
-      //   ...imageFrame,
-      // };
-      // decodePromise = decodeJPEGBaseline12Bit(pixelData, opts);
-      //throw new Error('Currently unsupported: 1.2.840.10008.1.2.4.51');
       decodePromise = decodeJPEGBaseline12Bit(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.4.57':
@@ -447,11 +438,7 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGLS(
-        pixelData,
-        opts,
-        decodeConfig?.wasmUrlCodecCharls
-      );
+      decodePromise = decodeJPEGLS(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.81':
       // JPEG-LS Lossy (Near-Lossless) Image Compression
@@ -462,11 +449,7 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGLS(
-        pixelData,
-        opts,
-        decodeConfig?.wasmUrlCodecCharls
-      );
+      decodePromise = decodeJPEGLS(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.90':
       opts = {
@@ -474,12 +457,7 @@ export async function decodeImageFrame(
       };
 
       // JPEG 2000 Lossless
-      // imageFrame, pixelData, decodeConfig, options
-      decodePromise = decodeJPEG2000(
-        pixelData,
-        opts,
-        decodeConfig?.wasmUrlCodecOpenJpeg
-      );
+      decodePromise = decodeJPEG2000(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.91':
       // JPEG 2000 Lossy
@@ -487,13 +465,7 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      // JPEG 2000 Lossy
-      // imageFrame, pixelData, decodeConfig, options
-      decodePromise = decodeJPEG2000(
-        pixelData,
-        opts,
-        decodeConfig?.wasmUrlCodecOpenJpeg
-      );
+      decodePromise = decodeJPEG2000(pixelData, opts);
       break;
     case '3.2.840.10008.1.2.4.96':
     case '1.2.840.10008.1.2.4.201':
@@ -504,11 +476,7 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeHTJ2K(
-        pixelData,
-        opts,
-        decodeConfig?.wasmUrlCodecOpenJph
-      );
+      decodePromise = decodeHTJ2K(pixelData, opts);
       break;
     default:
       throw new Error(`no decoder for transfer syntax ${transferSyntax}`);

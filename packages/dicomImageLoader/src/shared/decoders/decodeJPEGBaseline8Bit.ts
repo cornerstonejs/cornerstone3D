@@ -1,68 +1,27 @@
-// @ts-ignore
-import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs';
 import type {
   LibJpegTurbo8Bit,
   OpenJpegModule,
 } from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
 import type { Types } from '@cornerstonejs/core';
+import { createInitializeDecoder } from '../createInitializeDecoder';
 import type { ByteArray } from 'dicom-parser';
 
-/**
- * Default URL to load the LibJpeg Turbo 8bit codec from.
- *
- * In order for this to be loaded correctly, you will need to configure your
- * bundler to treat `.wasm` files as an asset/resource.
- */
-const libjpegTurboWasm = new URL(
-  '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
-  import.meta.url
-);
-
-const local: {
+const { initialize, state } = createInitializeDecoder({
+  library: '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs',
+  libraryFallback: () =>
+    import('@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs'),
+  wasm: '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
+  wasmDefaultUrl: new URL(
+    '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
+    import.meta.url
+  ).toString(),
+  constructor: 'JPEGDecoder',
+});
+const local = state as {
   codec: OpenJpegModule;
   decoder: LibJpegTurbo8Bit;
-} = {
-  codec: undefined,
-  decoder: undefined,
+  decodeConfig: typeof state.decodeConfig;
 };
-
-/**
- *
- * @param [wasmUrlCodecLibjpegTurbo8bit] - Optional URL for the codec WASM file.
- * If not provided, it will default to the `libjpegTurboWasm` URL.
- * @returns
- */
-function initLibjpegTurbo(
-  wasmUrlCodecLibjpegTurbo8bit?: string
-): Promise<void> {
-  if (local.codec) {
-    return Promise.resolve();
-  }
-
-  const libjpegTurboModule = libjpegTurboFactory({
-    locateFile: (f: string) => {
-      if (f.endsWith('.wasm')) {
-        /**
-         * If a custom URL is provided, use that instead of the default one.
-         */
-        if (wasmUrlCodecLibjpegTurbo8bit) {
-          return wasmUrlCodecLibjpegTurbo8bit;
-        }
-        return libjpegTurboWasm.toString();
-      }
-
-      return f;
-    },
-  });
-
-  return new Promise((resolve, reject) => {
-    libjpegTurboModule.then((instance) => {
-      local.codec = instance;
-      local.decoder = new instance.JPEGDecoder();
-      resolve();
-    }, reject);
-  });
-}
 
 // imageFrame.pixelRepresentation === 1 <-- Signed
 /**
@@ -73,10 +32,9 @@ function initLibjpegTurbo(
  */
 async function decodeAsync(
   compressedImageFrame,
-  imageInfo,
-  wasmUrlCodecLibjpegTurbo8bit?: string
+  imageInfo
 ): Promise<Types.IImageFrame> {
-  await initLibjpegTurbo(wasmUrlCodecLibjpegTurbo8bit);
+  await initialize();
   const decoder = local.decoder;
 
   // get pointer to the source/encoded bit stream buffer in WASM memory
@@ -137,8 +95,6 @@ function getPixelData(frameInfo, decodedBuffer: ByteArray) {
     decodedBuffer.byteLength
   );
 }
-
-const initialize = initLibjpegTurbo;
 
 export { initialize };
 

@@ -59,8 +59,13 @@ export default async function initDemo(config: any = {}) {
  * This is one example of how to import peer modules that works with webpack
  * It in fact just uses the default import from the browser, so it should work
  * on any standards compliant ecmascript environment.
+ * When this handler does not support the moduleId, it may call the optional
+ * fallback (second argument) and return its result.
  */
-export async function peerImport(moduleId) {
+export async function peerImport(
+  moduleId: string,
+  fallback?: () => Promise<unknown>
+): Promise<unknown> {
   if (moduleId === 'dicom-microscopy-viewer') {
     // The microscopy viewer loads relative to the public URL
     window.PUBLIC_URL ||= '/';
@@ -71,6 +76,10 @@ export async function peerImport(moduleId) {
       'dicomMicroscopyViewer'
     );
   }
+  if (fallback) {
+    return fallback();
+  }
+  return null;
 }
 
 async function importGlobal(path, globalName) {
