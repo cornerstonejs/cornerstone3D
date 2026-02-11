@@ -21,7 +21,7 @@ import setPixelDataType from './setPixelDataType';
 
 let lastImageIdDrawn = '';
 
-function createImage(
+async function createImage(
   imageId: string,
   pixelData: ByteArray,
   transferSyntax: string,
@@ -50,6 +50,25 @@ function createImage(
   imageFrame.decodeLevel = options.decodeLevel;
 
   options.allowFloatRendering = canRenderFloatTextures();
+
+  // For PALETTE COLOR images, ensure palette bulkdata is loaded before decoding
+  if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+    const imagePixelModule = metaData.get('imagePixelModule', imageId);
+
+    // If the metadata returns a promise, await it to ensure bulkdata is loaded
+    if (imagePixelModule && typeof imagePixelModule.then === 'function') {
+      await imagePixelModule.then((module) => {
+        if (module) {
+          imageFrame.redPaletteColorLookupTableData =
+            module.redPaletteColorLookupTableData;
+          imageFrame.greenPaletteColorLookupTableData =
+            module.greenPaletteColorLookupTableData;
+          imageFrame.bluePaletteColorLookupTableData =
+            module.bluePaletteColorLookupTableData;
+        }
+      });
+    }
+  }
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {
