@@ -1,6 +1,6 @@
 import type { ByteArray } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
-import { fetchPaletteData } from './fetchPaletteData';
+import { fetchLUTForInstance } from './fetchLUTForInstance';
 
 function convertLUTto8Bit(lut: number[], shift: number) {
   const numEntries = lut.length;
@@ -22,7 +22,7 @@ function convertLUTto8Bit(lut: number[], shift: number) {
  * @param useRGBA - Whether to output RGBA (true) or RGB (false)
  * @returns
  */
-export default function convertPALETTECOLOR(
+export default function convertPaletteColor(
   imageFrame: Types.IImageFrame,
   colorBuffer: ByteArray,
   useRGBA: boolean
@@ -101,23 +101,14 @@ export default function convertPALETTECOLOR(
  * @param useRGBA - Whether to output RGBA (true) or RGB (false)
  * @returns Promise that resolves when conversion is complete
  */
-export async function convertPALETTECOLORWithFetch(
+export async function convertPaletteColorWithFetch(
   imageFrame: Types.IImageFrame,
   colorBuffer: ByteArray,
   useRGBA: boolean
 ): Promise<void> {
-  // Fetch palette data if not already loaded
-  const [redData, greenData, blueData] = await Promise.all([
-    fetchPaletteData(imageFrame, 'red', null),
-    fetchPaletteData(imageFrame, 'green', null),
-    fetchPaletteData(imageFrame, 'blue', null),
-  ]);
-
-  // Attach palette data to imageFrame
-  imageFrame.redPaletteColorLookupTableData = redData;
-  imageFrame.greenPaletteColorLookupTableData = greenData;
-  imageFrame.bluePaletteColorLookupTableData = blueData;
+  // Fetch LUT data if needed (palette, modality, VOI)
+  await fetchLUTForInstance(imageFrame);
 
   // Call the synchronous conversion function
-  convertPALETTECOLOR(imageFrame, colorBuffer, useRGBA);
+  convertPaletteColor(imageFrame, colorBuffer, useRGBA);
 }
