@@ -18,7 +18,7 @@ import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
 import setPixelDataType from './setPixelDataType';
-import { fetchPaletteData } from './colorSpaceConverters/convertPALETTECOLOR';
+import { fetchPaletteData } from './colorSpaceConverters/fetchPaletteData';
 
 let lastImageIdDrawn = '';
 
