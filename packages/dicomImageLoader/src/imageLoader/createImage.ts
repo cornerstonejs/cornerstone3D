@@ -18,27 +18,9 @@ import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
 import setPixelDataType from './setPixelDataType';
+import { fetchPaletteData } from './colorSpaceConverters/convertPALETTECOLOR';
 
 let lastImageIdDrawn = '';
-
-function fetchPaletteData(imageFrame, color, fallback) {
-  const data = imageFrame[`${color}PaletteColorLookupTableData`];
-  if (data) {
-    return Promise.resolve(data);
-  }
-
-  const result = metaData.get('imagePixelModule', imageFrame.imageId);
-
-  if (result && typeof result.then === 'function') {
-    return result.then((module) =>
-      module ? module[`${color}PaletteColorLookupTableData`] : fallback
-    );
-  } else {
-    return Promise.resolve(
-      result ? result[`${color}PaletteColorLookupTableData`] : fallback
-    );
-  }
-}
 
 async function createImage(
   imageId: string,
@@ -70,17 +52,14 @@ async function createImage(
 
   options.allowFloatRendering = canRenderFloatTextures();
 
+  let redData, greenData, blueData;
   // For PALETTE COLOR images, ensure palette bulkdata is loaded before decoding
   if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
-    const [redData, greenData, blueData] = await Promise.all([
+    [redData, greenData, blueData] = await Promise.all([
       fetchPaletteData(imageFrame, 'red', null),
       fetchPaletteData(imageFrame, 'green', null),
       fetchPaletteData(imageFrame, 'blue', null),
     ]);
-
-    imageFrame.redPaletteColorLookupTableData = redData;
-    imageFrame.greenPaletteColorLookupTableData = greenData;
-    imageFrame.bluePaletteColorLookupTableData = blueData;
   }
 
   // Get the scaling parameters from the metadata
@@ -195,6 +174,14 @@ async function createImage(
         const calibrationModule =
           metaData.get(MetadataModules.CALIBRATION, imageId) || {};
         const { rows, columns } = imageFrame;
+
+        // For PALETTE COLOR images, assign palette bulkdata after decoding
+        // to avoid copying unnecessary memory to/from the worker
+        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          imageFrame.redPaletteColorLookupTableData = redData;
+          imageFrame.greenPaletteColorLookupTableData = greenData;
+          imageFrame.bluePaletteColorLookupTableData = blueData;
+        }
 
         if (isColorImage) {
           if (isColorConversionRequired(imageFrame)) {
