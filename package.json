@@ -140,7 +140,6 @@
     "karma-webpack": "5.0.1",
     "lerna": "8.2.1",
     "lint-staged": "13.3.0",
-    "lodash": "4.17.21",
     "mocha": "10.8.2",
     "nyc": "17.1.0",
     "open-cli": "7.2.0",
@@ -190,18 +189,18 @@
     "not op_mini all"
   ],
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-  "dependencies": {
-    "caniuse-lite": "1.0.30001734"
-  },
   "resolutions": {
-    "axios": "1.12.0",
+    "@babel/helper-create-class-features-plugin": "7.28.3",
+    "caniuse-lite": "1.0.30001767",
+    "axios": "1.13.5",
     "buffer": "6.0.3",
     "node-forge": "1.3.2",
     "canvas": "3.2.0",
-    "dcmjs": "0.48.0",
+    "dcmjs": "0.49.4",
     "tar-fs": "2.1.4",
     "body-parser": "1.20.3",
     "ws": "8.18.3",
-    "qs": "6.14.1"
+    "qs": "6.14.1",
+    "lodash": "4.17.23"
   }
 }

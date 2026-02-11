@@ -3,6 +3,52 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.15.33](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.32...v4.15.33) (2026-02-10)
+
+**Note:** Version bump only for package root
+
+## [4.15.32](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.31...v4.15.32) (2026-02-09)
+
+### Bug Fixes
+
+- **security:** Use a resolution for axios to address CVE-2026-25639. ([#2606](https://github.com/cornerstonejs/cornerstone3D/issues/2606)) ([d0e0e37](https://github.com/cornerstonejs/cornerstone3D/commit/d0e0e37510e27a2f7070475fedf7a1fc7cff204a))
+
+## [4.15.31](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.30...v4.15.31) (2026-02-06)
+
+### Bug Fixes
+
+- Remove the CS3D dependencies ([#2600](https://github.com/cornerstonejs/cornerstone3D/issues/2600)) ([51c3bec](https://github.com/cornerstonejs/cornerstone3D/commit/51c3becf45b62fbe8d6a6839d396152633739e94))
+
+## [4.15.30](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29...v4.15.30) (2026-02-05)
+
+### Bug Fixes
+
+- Newer dcmjs version for seg save ([#2595](https://github.com/cornerstonejs/cornerstone3D/issues/2595)) ([43a7cfd](https://github.com/cornerstonejs/cornerstone3D/commit/43a7cfd200b1cafd878c630e73f2a5d31ed7f4b8))
+
+## [4.15.29](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.28...v4.15.29) (2026-02-04)
+
+### Bug Fixes
+
+- **HistoryMemo:** Fix the undo/redo of labelmap and contour delete ([#2593](https://github.com/cornerstonejs/cornerstone3D/issues/2593)) ([0f683a8](https://github.com/cornerstonejs/cornerstone3D/commit/0f683a84c7187746ad3179021b89207d4b8d1221))
+
+## [4.15.28](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.27...v4.15.28) (2026-02-04)
+
+### Bug Fixes
+
+- **jump-to-label-map:** Handle case in `getReferenceVolumeForSegmentationVolume` where the volume is built from the segmentation's image IDs. ([#2592](https://github.com/cornerstonejs/cornerstone3D/issues/2592)) ([753e212](https://github.com/cornerstonejs/cornerstone3D/commit/753e21214f5cb48d5516117a58afbdde5668d9c9))
+
+## [4.15.27](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.26...v4.15.27) (2026-02-03)
+
+### Bug Fixes
+
+- Wrong calculation of rectangle size using indexes ([#2591](https://github.com/cornerstonejs/cornerstone3D/issues/2591)) ([e51a7bb](https://github.com/cornerstonejs/cornerstone3D/commit/e51a7bbb5d4c4a8d61066b6c02a866a3d325feee))
+
+## [4.15.26](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.25...v4.15.26) (2026-02-03)
+
+### Bug Fixes
+
+- **patient sex:** add patient sex O in allowed values ([#2532](https://github.com/cornerstonejs/cornerstone3D/issues/2532)) ([8726515](https://github.com/cornerstonejs/cornerstone3D/commit/87265154cb3525bd44a1187ae661ededec12f5ac))
+
 ## [4.15.25](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.24...v4.15.25) (2026-02-02)
 
 ### Bug Fixes
