@@ -213,12 +213,30 @@ class VolumeViewport extends BaseVolumeViewport {
       if (orientation === OrientationAxis.ACQUISITION) {
         // Acquisition orientation is determined from the volume data
         ({ viewPlaneNormal, viewUp } = super._getAcquisitionPlaneOrientation());
-      } else if (
-        orientation === OrientationAxis.REFORMAT ||
-        (orientation as string).includes('_reformat')
-      ) {
+      } else if (orientation === OrientationAxis.REFORMAT) {
+        // Generic reformat - auto-detect closest orientation
         ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
           useViewportNormal: true,
+        }));
+      } else if (
+        orientation === OrientationAxis.AXIAL_REFORMAT ||
+        orientation === OrientationAxis.SAGITTAL_REFORMAT ||
+        orientation === OrientationAxis.CORONAL_REFORMAT
+      ) {
+        // Extract base orientation from reformat type
+        let baseOrientation: OrientationAxis;
+        if (orientation === OrientationAxis.AXIAL_REFORMAT) {
+          baseOrientation = OrientationAxis.AXIAL;
+        } else if (orientation === OrientationAxis.SAGITTAL_REFORMAT) {
+          baseOrientation = OrientationAxis.SAGITTAL;
+        } else {
+          baseOrientation = OrientationAxis.CORONAL;
+        }
+
+        // Use viewport normal (for reformat) but specify base orientation (for reference)
+        ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
+          useViewportNormal: true,
+          orientation: baseOrientation,
         }));
       } else if (MPR_CAMERA_VALUES[orientation]) {
         ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
@@ -234,7 +252,8 @@ class VolumeViewport extends BaseVolumeViewport {
       });
 
       this.viewportProperties.orientation = orientation;
-      this.resetCamera();
+      // Suppress events to prevent CAMERA_RESET from triggering render before camera is ready
+      this.resetCamera({ suppressEvents: true });
     } else {
       ({ viewPlaneNormal, viewUp } = orientation);
       this.applyViewOrientation(orientation, true, suppressEvents);

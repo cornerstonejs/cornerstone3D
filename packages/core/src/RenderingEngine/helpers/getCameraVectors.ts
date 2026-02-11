@@ -2,6 +2,7 @@ import * as metaData from '../../metaData';
 import * as CONSTANTS from '../../constants';
 import * as Enums from '../../enums';
 import type * as Types from '../../types';
+import type OrientationVectors from '../../types/OrientationVectors';
 
 import { vec3 } from 'gl-matrix';
 
@@ -86,6 +87,24 @@ export function calculateCameraPosition(
     case OrientationAxis.CORONAL:
     case OrientationAxis.CORONAL_REFORMAT:
       referenceCameraValues = MPR_CAMERA_VALUES.coronal;
+      break;
+    case OrientationAxis.REFORMAT:
+      // For generic REFORMAT, auto-detect the best matching orientation
+      // This is a fallback case - normally orientation is auto-detected before calling this
+      const autoDetected = getOrientationFromScanAxisNormal(scanAxisNormal);
+      switch (autoDetected) {
+        case OrientationAxis.AXIAL:
+          referenceCameraValues = MPR_CAMERA_VALUES.axial;
+          break;
+        case OrientationAxis.SAGITTAL:
+          referenceCameraValues = MPR_CAMERA_VALUES.sagittal;
+          break;
+        case OrientationAxis.CORONAL:
+          referenceCameraValues = MPR_CAMERA_VALUES.coronal;
+          break;
+        default:
+          referenceCameraValues = MPR_CAMERA_VALUES.axial;
+      }
       break;
     default:
       // Default to axial if orientation is not recognized
@@ -262,7 +281,8 @@ export function getCameraVectors(
     normalPlaneForOrientation = viewport.getCamera().viewPlaneNormal;
   }
 
-  if (!orientation) {
+  // Auto-detect orientation if not provided or if REFORMAT is specified
+  if (!orientation || orientation === OrientationAxis.REFORMAT) {
     orientation = getOrientationFromScanAxisNormal(normalPlaneForOrientation);
   }
 
@@ -354,4 +374,187 @@ export function getOrientationFromScanAxisNormal(
   } else {
     return OrientationAxis.CORONAL;
   }
+}
+
+/**
+ * Calculate the best reformat orientation based on acquisition plane vectors.
+ * This function finds the best alignment with standard views (axial, sagittal, coronal)
+ * by matching acquisition plane vectors with standard MPR camera values.
+ *
+ * Algorithm:
+ * 1. Extract 6 possible vectors from acquisition: row, column, scanAxisNormal, and their negatives
+ * 2. For each standard view (axial, sagittal, coronal), find the best orthogonal pair
+ *    (viewPlaneNormal, viewUp) from the 6 vectors that maximizes dot product alignment
+ * 3. Choose the reformat view with the best overall alignment
+ *
+ * @param imageOrientationPatient - Array of 6 numbers representing the image orientation patient values.
+ *                                  [rowX, rowY, rowZ, colX, colY, colZ]
+ * @returns Object containing the best-matched viewPlaneNormal and viewUp vectors, or null if no valid match
+ */
+export function getAcquisitionPlaneReformatOrientation(
+  imageOrientationPatient: number[]
+): OrientationVectors | null {
+  if (!imageOrientationPatient || imageOrientationPatient.length !== 6) {
+    return null;
+  }
+
+  // Extract row and column direction cosines
+  const rowVec = vec3.fromValues(
+    imageOrientationPatient[0],
+    imageOrientationPatient[1],
+    imageOrientationPatient[2]
+  );
+  const colVec = vec3.fromValues(
+    imageOrientationPatient[3],
+    imageOrientationPatient[4],
+    imageOrientationPatient[5]
+  );
+
+  // Calculate scan axis normal (perpendicular to the acquisition plane)
+  const scanAxisNormal = vec3.create();
+  vec3.cross(scanAxisNormal, rowVec, colVec);
+
+  // Normalize all vectors
+  vec3.normalize(rowVec, rowVec);
+  vec3.normalize(colVec, colVec);
+  vec3.normalize(scanAxisNormal, scanAxisNormal);
+
+  // Create the 6 possible vectors: row, col, scanAxisNormal, and their negatives
+  const negRowVec = vec3.create();
+  vec3.negate(negRowVec, rowVec);
+  const negColVec = vec3.create();
+  vec3.negate(negColVec, colVec);
+  const negScanAxisNormal = vec3.create();
+  vec3.negate(negScanAxisNormal, scanAxisNormal);
+
+  const acquisitionVectors = [
+    { vec: rowVec, name: 'row' },
+    { vec: colVec, name: 'col' },
+    { vec: scanAxisNormal, name: 'scanAxis' },
+    { vec: negRowVec, name: '-row' },
+    { vec: negColVec, name: '-col' },
+    { vec: negScanAxisNormal, name: '-scanAxis' },
+  ];
+
+  // Standard anatomical views
+  const standardViews = [
+    {
+      name: 'axial',
+      viewPlaneNormal: vec3.fromValues(
+        MPR_CAMERA_VALUES.axial.viewPlaneNormal[0],
+        MPR_CAMERA_VALUES.axial.viewPlaneNormal[1],
+        MPR_CAMERA_VALUES.axial.viewPlaneNormal[2]
+      ),
+      viewUp: vec3.fromValues(
+        MPR_CAMERA_VALUES.axial.viewUp[0],
+        MPR_CAMERA_VALUES.axial.viewUp[1],
+        MPR_CAMERA_VALUES.axial.viewUp[2]
+      ),
+    },
+    {
+      name: 'sagittal',
+      viewPlaneNormal: vec3.fromValues(
+        MPR_CAMERA_VALUES.sagittal.viewPlaneNormal[0],
+        MPR_CAMERA_VALUES.sagittal.viewPlaneNormal[1],
+        MPR_CAMERA_VALUES.sagittal.viewPlaneNormal[2]
+      ),
+      viewUp: vec3.fromValues(
+        MPR_CAMERA_VALUES.sagittal.viewUp[0],
+        MPR_CAMERA_VALUES.sagittal.viewUp[1],
+        MPR_CAMERA_VALUES.sagittal.viewUp[2]
+      ),
+    },
+    {
+      name: 'coronal',
+      viewPlaneNormal: vec3.fromValues(
+        MPR_CAMERA_VALUES.coronal.viewPlaneNormal[0],
+        MPR_CAMERA_VALUES.coronal.viewPlaneNormal[1],
+        MPR_CAMERA_VALUES.coronal.viewPlaneNormal[2]
+      ),
+      viewUp: vec3.fromValues(
+        MPR_CAMERA_VALUES.coronal.viewUp[0],
+        MPR_CAMERA_VALUES.coronal.viewUp[1],
+        MPR_CAMERA_VALUES.coronal.viewUp[2]
+      ),
+    },
+  ];
+
+  // Find best orthogonal pair for each standard view
+  let bestAlignment = -Infinity;
+  let bestViewPlaneNormal: vec3 | null = null;
+  let bestViewUp: vec3 | null = null;
+
+  for (const standardView of standardViews) {
+    // Find the best orthogonal pair from acquisition vectors
+    let bestPairScore = -Infinity;
+    let bestPairViewPlaneNormal: vec3 | null = null;
+    let bestPairViewUp: vec3 | null = null;
+
+    // Try all pairs of acquisition vectors that are orthogonal
+    for (let i = 0; i < acquisitionVectors.length; i++) {
+      for (let j = 0; j < acquisitionVectors.length; j++) {
+        if (i === j) continue;
+
+        const v1 = acquisitionVectors[i].vec;
+        const v2 = acquisitionVectors[j].vec;
+
+        // Check if vectors are orthogonal (dot product should be close to 0)
+        const dotProduct = Math.abs(vec3.dot(v1, v2));
+        if (dotProduct > 0.1) continue; // Not orthogonal enough
+
+        // Calculate alignment score: dot product of v1 with viewPlaneNormal + dot product of v2 with viewUp
+        const score1 = Math.abs(vec3.dot(v1, standardView.viewPlaneNormal));
+        const score2 = Math.abs(vec3.dot(v2, standardView.viewUp));
+        const totalScore = score1 + score2;
+
+        // Also try swapping v1 and v2
+        const score1Swapped = Math.abs(
+          vec3.dot(v2, standardView.viewPlaneNormal)
+        );
+        const score2Swapped = Math.abs(vec3.dot(v1, standardView.viewUp));
+        const totalScoreSwapped = score1Swapped + score2Swapped;
+
+        if (
+          totalScoreSwapped > totalScore &&
+          totalScoreSwapped > bestPairScore
+        ) {
+          bestPairScore = totalScoreSwapped;
+          bestPairViewPlaneNormal = v2;
+          bestPairViewUp = v1;
+        } else if (totalScore > bestPairScore) {
+          bestPairScore = totalScore;
+          bestPairViewPlaneNormal = v1;
+          bestPairViewUp = v2;
+        }
+      }
+    }
+
+    if (
+      bestPairScore > bestAlignment &&
+      bestPairViewPlaneNormal &&
+      bestPairViewUp
+    ) {
+      bestAlignment = bestPairScore;
+      bestViewPlaneNormal = bestPairViewPlaneNormal;
+      bestViewUp = bestPairViewUp;
+    }
+  }
+
+  if (!bestViewPlaneNormal || !bestViewUp) {
+    return null;
+  }
+
+  // Return the orientation vectors
+  return {
+    viewPlaneNormal: [
+      bestViewPlaneNormal[0],
+      bestViewPlaneNormal[1],
+      bestViewPlaneNormal[2],
+    ] as [number, number, number],
+    viewUp: [bestViewUp[0], bestViewUp[1], bestViewUp[2]] as [
+      number,
+      number,
+      number,
+    ],
+  };
 }
