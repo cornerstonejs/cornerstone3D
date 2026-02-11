@@ -21,6 +21,25 @@ import setPixelDataType from './setPixelDataType';
 
 let lastImageIdDrawn = '';
 
+function fetchPaletteData(imageFrame, color, fallback) {
+  const data = imageFrame[`${color}PaletteColorLookupTableData`];
+  if (data) {
+    return Promise.resolve(data);
+  }
+
+  const result = metaData.get('imagePixelModule', imageFrame.imageId);
+
+  if (result && typeof result.then === 'function') {
+    return result.then((module) =>
+      module ? module[`${color}PaletteColorLookupTableData`] : fallback
+    );
+  } else {
+    return Promise.resolve(
+      result ? result[`${color}PaletteColorLookupTableData`] : fallback
+    );
+  }
+}
+
 async function createImage(
   imageId: string,
   pixelData: ByteArray,
@@ -53,21 +72,15 @@ async function createImage(
 
   // For PALETTE COLOR images, ensure palette bulkdata is loaded before decoding
   if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
-    const imagePixelModule = metaData.get('imagePixelModule', imageId);
+    const [redData, greenData, blueData] = await Promise.all([
+      fetchPaletteData(imageFrame, 'red', null),
+      fetchPaletteData(imageFrame, 'green', null),
+      fetchPaletteData(imageFrame, 'blue', null),
+    ]);
 
-    // If the metadata returns a promise, await it to ensure bulkdata is loaded
-    if (imagePixelModule && typeof imagePixelModule.then === 'function') {
-      await imagePixelModule.then((module) => {
-        if (module) {
-          imageFrame.redPaletteColorLookupTableData =
-            module.redPaletteColorLookupTableData;
-          imageFrame.greenPaletteColorLookupTableData =
-            module.greenPaletteColorLookupTableData;
-          imageFrame.bluePaletteColorLookupTableData =
-            module.bluePaletteColorLookupTableData;
-        }
-      });
-    }
+    imageFrame.redPaletteColorLookupTableData = redData;
+    imageFrame.greenPaletteColorLookupTableData = greenData;
+    imageFrame.bluePaletteColorLookupTableData = blueData;
   }
 
   // Get the scaling parameters from the metadata
