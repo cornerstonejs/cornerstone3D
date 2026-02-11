@@ -18,10 +18,11 @@ import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
 import setPixelDataType from './setPixelDataType';
+import { fetchPaletteData } from './colorSpaceConverters/fetchPaletteData';
 
 let lastImageIdDrawn = '';
 
-function createImage(
+async function createImage(
   imageId: string,
   pixelData: ByteArray,
   transferSyntax: string,
@@ -50,6 +51,16 @@ function createImage(
   imageFrame.decodeLevel = options.decodeLevel;
 
   options.allowFloatRendering = canRenderFloatTextures();
+
+  let redData, greenData, blueData;
+  // For PALETTE COLOR images, ensure palette bulkdata is loaded before decoding
+  if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+    [redData, greenData, blueData] = await Promise.all([
+      fetchPaletteData(imageFrame, 'red', null),
+      fetchPaletteData(imageFrame, 'green', null),
+      fetchPaletteData(imageFrame, 'blue', null),
+    ]);
+  }
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {
@@ -163,6 +174,14 @@ function createImage(
         const calibrationModule =
           metaData.get(MetadataModules.CALIBRATION, imageId) || {};
         const { rows, columns } = imageFrame;
+
+        // For PALETTE COLOR images, assign palette bulkdata after decoding
+        // to avoid copying unnecessary memory to/from the worker
+        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          imageFrame.redPaletteColorLookupTableData = redData;
+          imageFrame.greenPaletteColorLookupTableData = greenData;
+          imageFrame.bluePaletteColorLookupTableData = blueData;
+        }
 
         if (isColorImage) {
           if (isColorConversionRequired(imageFrame)) {
