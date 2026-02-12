@@ -7,6 +7,7 @@ import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
 import decodeBigEndian from './shared/decoders/decodeBigEndian';
 import decodeRLE from './shared/decoders/decodeRLE';
 import decodeJPEGBaseline8Bit from './shared/decoders/decodeJPEGBaseline8Bit';
+import decodeJPEGBaseline8BitColorOffscreen from './shared/decoders/decodeJPEGBaseline8BitColorOffscreen';
 // import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit';
 import decodeJPEGBaseline12Bit from './shared/decoders/decodeJPEGBaseline12Bit-js';
 import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
@@ -395,7 +396,21 @@ export async function decodeImageFrame(
         ...imageFrame,
       };
 
-      decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
+      const bitsAllocated = imageFrame.bitsAllocated ?? imageFrame.BitsAllocated;
+      const samplesPerPixel =
+        imageFrame.samplesPerPixel ?? imageFrame.SamplesPerPixel;
+
+      if (
+        bitsAllocated === 8 &&
+        (samplesPerPixel === 3 || samplesPerPixel === 4)
+      ) {
+        decodePromise = decodeJPEGBaseline8BitColorOffscreen(
+          imageFrame,
+          pixelData
+        );
+      } else {
+        decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
+      }
       break;
     case '1.2.840.10008.1.2.4.51':
       // JPEG Baseline lossy process 2 & 4 (12 bit)
