@@ -101,6 +101,18 @@ module.exports = {
     },
     {
       type: 'category',
+      label: 'Requirements',
+      collapsed: true,
+      link: {
+        type: 'generated-index',
+        title: 'Requirements',
+        description:
+          'In this section you will find some requirements for certain parts of the system',
+      },
+      items: ['requirements/intro', 'requirements/spacing'],
+    },
+    {
+      type: 'category',
       label: 'How-to Guides',
       collapsed: true,
       link: {
