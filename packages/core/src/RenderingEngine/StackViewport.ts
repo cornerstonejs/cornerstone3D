@@ -2475,6 +2475,12 @@ class StackViewport extends Viewport {
     // or the size has changed), create a new one
 
     const pixelArray = image.voxelManager.getScalarData();
+
+    if (this.modality === 'US') {
+            spacing[1] = 1
+            spacing[0] = 1
+    }
+    
     this._createVTKImageData({
       origin,
       direction,
