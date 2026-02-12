@@ -3,8 +3,6 @@ import { RenderingEngineModeEnum } from '../../enums';
 
 export function isContextPoolRenderingEngine(): boolean {
   const config = getConfiguration();
-  return (
-    config?.rendering?.renderingEngineMode ===
-    RenderingEngineModeEnum.ContextPool
-  );
+  const mode = config?.rendering?.renderingEngineMode;
+  return mode === RenderingEngineModeEnum.ContextPool;
 }

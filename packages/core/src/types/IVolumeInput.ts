@@ -1,4 +1,4 @@
-import type { VolumeActor } from './IActor';
+import type { VolumeActor, ImageActor } from './IActor';
 import type BlendModes from '../enums/BlendModes';
 
 /**
@@ -7,7 +7,7 @@ import type BlendModes from '../enums/BlendModes';
  */
 type VolumeInputCallback = (params: {
   /** vtk volume actor */
-  volumeActor: VolumeActor;
+  volumeActor: VolumeActor | ImageActor;
   /** unique volume Id in the cache */
   volumeId: string;
 }) => unknown;

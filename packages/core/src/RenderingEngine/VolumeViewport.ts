@@ -48,7 +48,7 @@ import {
  * which will add volumes to the specified viewports.
  */
 class VolumeViewport extends BaseVolumeViewport {
-  private _useAcquisitionPlaneForViewPlane = false;
+  protected _useAcquisitionPlaneForViewPlane = false;
   constructor(props: ViewportInput) {
     super(props);
 
@@ -287,7 +287,7 @@ class VolumeViewport extends BaseVolumeViewport {
     }
   }
 
-  private _setViewPlaneToReformatOrientation(
+  protected _setViewPlaneToReformatOrientation(
     orientation: OrientationAxis,
     imageVolume: IImageVolume
   ): void {
@@ -314,7 +314,7 @@ class VolumeViewport extends BaseVolumeViewport {
     this.resetCamera();
   }
 
-  private _setViewPlaneToAcquisitionPlane(imageVolume: IImageVolume): void {
+  protected _setViewPlaneToAcquisitionPlane(imageVolume: IImageVolume): void {
     let viewPlaneNormal, viewUp;
 
     if (imageVolume) {
@@ -764,7 +764,7 @@ class VolumeViewport extends BaseVolumeViewport {
   public getCurrentImageId = (): string | undefined => {
     const actorEntry = this.getDefaultActor();
 
-    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
+    if (!actorEntry || !isImageActor(actorEntry)) {
       return;
     }
 

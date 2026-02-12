@@ -1,4 +1,3 @@
-import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
@@ -24,6 +23,8 @@ import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
 import type {
   ActorEntry,
+  VolumeActor,
+  ImageActor,
   ColormapPublic,
   FlipDirection,
   IImageData,
@@ -56,7 +57,8 @@ import {
 } from '../utilities/colormap';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
-import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+import vtkCameraClass from '@kitware/vtk.js/Rendering/Core/Camera';
+import type vtkCameraType from '@kitware/vtk.js/Rendering/Core/Camera';
 
 import createVolumeActor from './helpers/createVolumeActor';
 import volumeNewImageEventDispatcher, {
@@ -66,7 +68,7 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
-import { actorIsA } from '../utilities/actorCheck';
+import { isImageActor } from '../utilities/actorCheck';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import isEqual, { isEqualAbs, isEqualNegative } from '../utilities/isEqual';
@@ -93,7 +95,7 @@ import {
  */
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
-  private _FrameOfReferenceUID: string;
+  protected _FrameOfReferenceUID: string;
   private sharpening: number = 0;
   private smoothing: number = 0;
 
@@ -124,11 +126,15 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const renderer = this.getRenderer();
 
-    const camera = vtkSlabCamera.newInstance();
-    renderer.setActiveCamera(camera as unknown as vtkCamera);
+    const camera =
+      this.type === ViewportType.VOLUME_SLICE
+        ? vtkCameraClass.newInstance()
+        : vtkSlabCamera.newInstance();
+    renderer.setActiveCamera(camera as unknown as vtkCameraType);
 
     switch (this.type) {
       case ViewportType.ORTHOGRAPHIC:
+      case ViewportType.VOLUME_SLICE:
         camera.setParallelProjection(true);
         break;
       case ViewportType.VOLUME_3D:
@@ -1212,7 +1218,17 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    applyPreset(volumeActor, preset);
+    if (
+      volumeActor.getClassName &&
+      volumeActor.getClassName() !== 'vtkVolume'
+    ) {
+      console.warn(
+        'Presets are only supported for volume rendering. Ignoring setPreset.'
+      );
+      return;
+    }
+
+    applyPreset(volumeActor as VolumeActor, preset);
 
     this.viewportProperties.preset = preset;
     this.render();
@@ -1287,7 +1303,7 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    const volumeActor = volumeActorEntry.actor as vtkVolume;
+    const volumeActor = volumeActorEntry.actor as ImageActor;
     const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
     const [lower, upper] =
       this.viewportProperties?.VOILUTFunction === 'SIGMOID'
@@ -1543,7 +1559,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @param getTransferFunctionNodes - Function to get the transfer function nodes.
    * @returns void
    */
-  private initializeColorTransferFunction(volumeInputArray) {
+  protected initializeColorTransferFunction(volumeInputArray) {
     const selectedVolumeId = volumeInputArray[0].volumeId;
     const colorTransferFunction =
       this._getOrCreateColorTransferFunction(selectedVolumeId);
@@ -1572,7 +1588,7 @@ abstract class BaseVolumeViewport extends Viewport {
       }
 
       return {
-        volumeActor: actorEntry.actor as vtkVolume,
+        volumeActor: actorEntry.actor as ImageActor | VolumeActor,
         volumeId,
         actorUID: actorEntry.uid,
       };
@@ -1581,13 +1597,13 @@ abstract class BaseVolumeViewport extends Viewport {
     const defaultActorEntry = actorEntries[0];
 
     return {
-      volumeActor: defaultActorEntry.actor as vtkVolume,
+      volumeActor: defaultActorEntry.actor as ImageActor | VolumeActor,
       volumeId: defaultActorEntry.referencedId,
       actorUID: defaultActorEntry.uid,
     };
   }
 
-  private async _isValidVolumeInputArray(
+  protected async _isValidVolumeInputArray(
     volumeInputArray: IVolumeInput[],
     FrameOfReferenceUID: string
   ): Promise<boolean> {
@@ -1728,7 +1744,7 @@ abstract class BaseVolumeViewport extends Viewport {
       (actor) => actor.referencedId === volumeId
     );
 
-    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
+    if (!actorEntry || !isImageActor(actorEntry)) {
       return;
     }
 
@@ -1780,7 +1796,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @param volumeActorEntries - The volume actors to add the viewport.
    *
    */
-  private _setVolumeActors(volumeActorEntries: ActorEntry[]): void {
+  protected _setVolumeActors(volumeActorEntries: ActorEntry[]): void {
     // New volume actors implies resetting the inverted flag (i.e. like starting from scratch).
 
     for (let i = 0; i < volumeActorEntries.length; i++) {
@@ -2148,7 +2164,7 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public hasImageURI = (imageURI: string): boolean => {
     const volumeActors = this.getActors().filter((actorEntry) =>
-      actorIsA(actorEntry, 'vtkVolume')
+      isImageActor(actorEntry)
     );
 
     return volumeActors.some(({ uid, referencedId }) => {
@@ -2305,7 +2321,7 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public getIntensityFromWorld(point: Point3): number {
     const actorEntry = this.getDefaultActor();
-    if (!actorIsA(actorEntry, 'vtkVolume')) {
+    if (!isImageActor(actorEntry)) {
       return;
     }
 
@@ -2356,9 +2372,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     if (!specifier?.volumeId) {
       // find the first image actor of instance type vtkVolume
-      const found = actorEntries.find(
-        (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
-      );
+      const found = actorEntries.find((actorEntry) => isImageActor(actorEntry));
 
       return found?.referencedId || found?.uid;
     }
@@ -2368,7 +2382,7 @@ abstract class BaseVolumeViewport extends Viewport {
     // volumeId isn't currently shown in this viewport.
     const found = actorEntries.find(
       (actorEntry) =>
-        actorEntry.actor.getClassName() === 'vtkVolume' &&
+        isImageActor(actorEntry) &&
         actorEntry.referencedId === specifier?.volumeId
     );
 
@@ -2391,8 +2405,8 @@ abstract class BaseVolumeViewport extends Viewport {
         return;
       }
       // find the first image actor of instance type vtkVolume
-      volumeId = actorEntries.find(
-        (actorEntry) => actorEntry.actor.getClassName() === 'vtkVolume'
+      volumeId = actorEntries.find((actorEntry) =>
+        isImageActor(actorEntry)
       )?.referencedId;
       if (!volumeId) {
         return;
@@ -2409,7 +2423,7 @@ abstract class BaseVolumeViewport extends Viewport {
     return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${formattedNormal}`;
   }
 
-  private _addVolumeId(volumeId: string): void {
+  protected _addVolumeId(volumeId: string): void {
     this.volumeIds.add(volumeId);
   }
 

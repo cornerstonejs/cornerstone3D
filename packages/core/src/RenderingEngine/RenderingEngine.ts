@@ -26,13 +26,7 @@ class RenderingEngine {
       case RenderingEngineModeEnum.Tiled:
         this._implementation = new TiledRenderingEngine(id);
         break;
-      case RenderingEngineModeEnum.ContextPool:
-        this._implementation = new ContextPoolRenderingEngine(id);
-        break;
       default:
-        console.warn(
-          `RenderingEngine: Unknown rendering engine mode "${renderingEngineMode}". Defaulting to Next rendering engine.`
-        );
         this._implementation = new ContextPoolRenderingEngine(id);
         break;
     }
