@@ -51,7 +51,7 @@ const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'MPR reformat',
-  'Here we demonstrate howe to set up the mpr so it aligns with acquisition directions'
+  'Here we demonstrate how to set up the MPR with reformat orientations. Each viewport (axial, sagittal, coronal) can be reformatted while maintaining its relationship to its base orientation using REFORMAT_AXIAL, REFORMAT_SAGITTAL, and REFORMAT_CORONAL.'
 );
 
 const size = '500px';
@@ -97,13 +97,54 @@ instructions.innerText = `
 content.append(instructions);
 
 addButtonToToolbar({
-  title: 'Reformat viewports',
+  title: 'Set orientation non-reformat',
   onClick: () => {
+    // Map each viewport to its corresponding non-reformat type
+    const viewportOrientationMap = {
+      [viewportId1]: Enums.OrientationAxis.AXIAL,
+      [viewportId2]: Enums.OrientationAxis.SAGITTAL,
+      [viewportId3]: Enums.OrientationAxis.CORONAL,
+    };
+
     viewportIds.forEach((viewportId) => {
       const viewport = getRenderingEngine(renderingEngineId).getViewport(
         viewportId
       ) as Types.IVolumeViewport;
-      viewport.setOrientation(Enums.OrientationAxis.REFORMAT);
+      viewport.setOrientation(viewportOrientationMap[viewportId]);
+    });
+    getRenderingEngine(renderingEngineId).render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Set orientation reformat',
+  onClick: () => {
+    // Map each viewport to its corresponding reformat type
+    const viewportReformatMap = {
+      [viewportId1]: Enums.OrientationAxis.AXIAL_REFORMAT,
+      [viewportId2]: Enums.OrientationAxis.SAGITTAL_REFORMAT,
+      [viewportId3]: Enums.OrientationAxis.CORONAL_REFORMAT,
+    };
+
+    viewportIds.forEach((viewportId) => {
+      const viewport = getRenderingEngine(renderingEngineId).getViewport(
+        viewportId
+      ) as Types.IVolumeViewport;
+      viewport.setOrientation(viewportReformatMap[viewportId]);
+    });
+    getRenderingEngine(renderingEngineId).render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Set all orientation acquisition',
+  onClick: () => {
+    // Set all viewports to acquisition orientation
+    viewportIds.forEach((viewportId) => {
+      const viewport = getRenderingEngine(renderingEngineId).getViewport(
+        viewportId
+      ) as Types.IVolumeViewport;
+      viewport.setOrientation(Enums.OrientationAxis.ACQUISITION);
     });
     getRenderingEngine(renderingEngineId).render();
   },
