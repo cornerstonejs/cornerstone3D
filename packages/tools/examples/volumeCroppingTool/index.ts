@@ -13,6 +13,7 @@ import {
   addDropdownToToolbar,
   getLocalUrl,
   addToggleButtonToToolbar,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -31,6 +32,7 @@ const {
   ZoomTool,
   PanTool,
   OrientationMarkerTool,
+  OrientationControllerTool,
   StackScrollTool,
   CrosshairsTool,
 } = cornerstoneTools;
@@ -51,6 +53,29 @@ const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
+// Set up toolbar with left and right containers
+const toolbar = document.getElementById('demo-toolbar');
+if (toolbar) {
+  toolbar.style.display = 'flex';
+  toolbar.style.justifyContent = 'space-between';
+  toolbar.style.alignItems = 'center';
+}
+
+const leftToolbarContainer = document.createElement('div');
+leftToolbarContainer.style.display = 'flex';
+leftToolbarContainer.style.gap = '0';
+leftToolbarContainer.style.alignItems = 'center';
+
+const rightToolbarContainer = document.createElement('div');
+rightToolbarContainer.style.display = 'flex';
+rightToolbarContainer.style.gap = '10px';
+rightToolbarContainer.style.alignItems = 'center';
+
+// Add left container to toolbar first
+if (toolbar) {
+  toolbar.appendChild(leftToolbarContainer);
+}
+
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
   labelText: 'Number of Orthographic Viewports',
@@ -58,9 +83,10 @@ addDropdownToToolbar({
     values: [1, 2, 3],
     defaultValue: getNumViewportsFromUrl(),
   },
+  container: leftToolbarContainer,
   onSelectedValueChange: (selectedValue) => {
     const url = new URL(window.location.href);
-    url.searchParams.set('numViewports', selectedValue);
+    url.searchParams.set('numViewports', String(selectedValue));
     window.location.href = url.toString();
   },
 });
@@ -69,8 +95,8 @@ const renderingEngineId = 'myRenderingEngine';
 /////////////////////////////////////////
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Volume Cropping',
-  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes aligned on the x,y and z axes.'
+  'Volume Cropping with Orientation Controller',
+  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes aligned on the x,y and z axes and an orientation controller.'
 );
 
 const size = '400px';
@@ -92,7 +118,7 @@ const element4 = document.createElement('div'); // 3D Volume
 const rightViewportsContainer = document.createElement('div');
 rightViewportsContainer.style.display = 'flex';
 rightViewportsContainer.style.flexDirection = 'column';
-rightViewportsContainer.style.width = '20%';
+rightViewportsContainer.style.width = '25%';
 rightViewportsContainer.style.height = '100%';
 
 // Set styles for the 2D viewports (stacked vertically on the right)
@@ -145,6 +171,7 @@ content.append(instructions);
 addToggleButtonToToolbar({
   title: 'Toggle 3D handles',
   defaultToggle: false,
+  container: leftToolbarContainer,
   onClick: (toggle) => {
     // Get the tool group for the 3D viewport
     const toolGroupVRT =
@@ -161,6 +188,7 @@ addToggleButtonToToolbar({
 addToggleButtonToToolbar({
   title: 'Toggle Cropping Planes',
   defaultToggle: false,
+  container: leftToolbarContainer,
   onClick: (toggle) => {
     // Get the tool group for the 3D viewport
     const toolGroupVRT =
@@ -210,6 +238,50 @@ function getNumViewportsFromUrl() {
 }
 
 /**
+ * Get the color scheme from the URL (?colorScheme=gray|rgy|marker)
+ */
+function getColorSchemeFromUrl(): 'gray' | 'rgy' | 'marker' {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('colorScheme');
+  if (value === 'gray' || value === 'rgy' || value === 'marker') {
+    return value;
+  }
+  // Check for legacy grayColors parameter for backward compatibility
+  const grayColors = params.get('grayColors');
+  if (grayColors === 'true') {
+    return 'gray';
+  }
+  return 'marker'; // default - matches OrientationMarkerTool colors
+}
+
+/**
+ * Get the keepOrientationUp value from the URL (?keepOrientationUp=true|false)
+ */
+function getKeepOrientationUpFromUrl(): boolean {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('keepOrientationUp');
+  if (value === 'true') {
+    return true;
+  }
+  if (value === 'false') {
+    return false;
+  }
+  return true; // default
+}
+
+/**
+ * Get the letter color scheme from the URL (?letterColorScheme=mixed|all-white|all-black)
+ */
+function getLetterColorSchemeFromUrl(): 'mixed' | 'all-white' | 'all-black' {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('letterColorScheme');
+  if (value === 'mixed' || value === 'all-white' || value === 'all-black') {
+    return value;
+  }
+  return 'mixed'; // default
+}
+
+/**
  * Runs the demo with a configurable number of orthographic viewports
  */
 async function run(numViewports = getNumViewportsFromUrl()) {
@@ -221,6 +293,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
+  cornerstoneTools.addTool(OrientationControllerTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(CrosshairsTool);
 
@@ -296,7 +369,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  volume.load();
+  await volume.load();
 
   // Only set volumes for the active viewport IDs
   const activeViewportIds = [
@@ -363,45 +436,248 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       },
     ],
   });
-  toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
-    overlayMarkerType:
-      OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
-  });
+  // toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
+  //   overlayMarkerType:
+  //     OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
+  //   orientationWidget: {
+  //       viewportCorner: 2, // 3 = BOTTOM_RIGHT
+  //     },
+  // });
   // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
+
+  // Get color scheme from URL
+  const colorScheme = getColorSchemeFromUrl();
+
+  // Get keepOrientationUp from URL
+  const keepOrientationUp = getKeepOrientationUpFromUrl();
+
+  // Get letter color scheme from URL
+  const letterColorScheme = getLetterColorSchemeFromUrl();
+
+  // Configure faceColors based on URL parameter
+  let faceColors;
+  if (colorScheme === 'gray') {
+    faceColors = {
+      topBottom: [180, 180, 180],
+      frontBack: [180, 180, 180],
+      leftRight: [180, 180, 180],
+      corners: [180, 180, 180],
+      edges: [180, 180, 180],
+    };
+  } else if (colorScheme === 'marker') {
+    // OrientationMarkerTool colors matching exact hex values:
+    // X axis (left/right): Yellow #ffff00 - both xPlus (L) and xMinus (R)
+    // Y axis (posterior/anterior): Cyan #00ffff - both yPlus (P) and yMinus (A)
+    // Z axis (superior/inferior): Blue #0000ff - from defaultStyle.faceColor
+    faceColors = {
+      topBottom: [0, 0, 255], // Blue #0000ff - Z axis (superior/inferior)
+      frontBack: [0, 255, 255], // Cyan #00ffff - Y axis (posterior/anterior)
+      leftRight: [255, 255, 0], // Yellow #ffff00 - X axis (left/right)
+      corners: [0, 0, 255], // Blue #0000ff - same as Z axis
+      edges: [128, 128, 128], // Grey - edges
+    };
+  } else {
+    // RGY scheme (red, green, yellow)
+    faceColors = {
+      topBottom: [255, 0, 0], // Red - faces 0-1 (top/bottom)
+      frontBack: [0, 255, 0], // Green - faces 2-3 (front/back)
+      leftRight: [255, 255, 0], // Yellow - faces 4-5 (left/right)
+      corners: [0, 0, 255], // Blue - faces 6-13 (corner triangles)
+      edges: [128, 128, 128], // Grey - faces 14-25 (edge rectangles)
+    };
+  }
+
+  // Disable tool if it already exists to ensure fresh configuration
+  if (toolGroupVRT.hasTool(OrientationControllerTool.toolName)) {
+    toolGroupVRT.setToolDisabled(OrientationControllerTool.toolName);
+  }
+
+  // Add OrientationControllerTool with faceColors, keepOrientationUp, and letterColorScheme from URL
+  toolGroupVRT.addTool(OrientationControllerTool.toolName, {
+    colorScheme,
+    faceColors,
+    keepOrientationUp,
+    letterColorScheme,
+  });
+  // Enable OrientationControllerTool after viewport is added and volume is loaded
+  toolGroupVRT.setToolEnabled(OrientationControllerTool.toolName);
+
+  // Add dropdown for orientation control colors (reloads page with URL param)
+  const colorSchemeValues: string[] = ['rgy', 'gray', 'marker'];
+  const colorSchemeLabels = ['RGY', 'Gray', 'Marker'];
+  // Ensure colorScheme is valid, default to 'marker' if not
+  const validColorScheme = colorSchemeValues.includes(colorScheme)
+    ? colorScheme
+    : 'marker';
+
+  addDropdownToToolbar({
+    labelText: 'Orientation Control Colors',
+    options: {
+      values: colorSchemeValues,
+      defaultValue: validColorScheme,
+      labels: colorSchemeLabels,
+    },
+    container: rightToolbarContainer,
+    onSelectedValueChange: (selectedValue) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('colorScheme', String(selectedValue));
+      // Remove legacy parameter if present
+      url.searchParams.delete('grayColors');
+      window.location.href = url.toString();
+    },
+  });
+
+  // Add dropdown for letter color scheme (reloads page with URL param)
+  const letterColorSchemeValues: string[] = ['mixed', 'all-white', 'all-black'];
+  const letterColorSchemeLabels = ['Mixed', 'All White', 'All Black'];
+  const validLetterColorScheme = letterColorSchemeValues.includes(
+    letterColorScheme
+  )
+    ? letterColorScheme
+    : 'mixed';
+
+  addDropdownToToolbar({
+    labelText: 'Letter Colors',
+    options: {
+      values: letterColorSchemeValues,
+      defaultValue: validLetterColorScheme,
+      labels: letterColorSchemeLabels,
+    },
+    container: rightToolbarContainer,
+    onSelectedValueChange: (selectedValue) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('letterColorScheme', String(selectedValue));
+      window.location.href = url.toString();
+    },
+  });
+
+  // Add dropdown for "Keep orientation up"
+  const keepOrientationUpValues: string[] = ['true', 'false'];
+  const keepOrientationUpLabels = ['True', 'False'];
+
+  addDropdownToToolbar({
+    labelText: 'Keep Orientation Up',
+    options: {
+      values: keepOrientationUpValues,
+      defaultValue: String(keepOrientationUp),
+      labels: keepOrientationUpLabels,
+    },
+    container: rightToolbarContainer,
+    onSelectedValueChange: (selectedValue) => {
+      const newValue = selectedValue === 'true';
+      // Update URL parameter
+      const url = new URL(window.location.href);
+      url.searchParams.set('keepOrientationUp', String(newValue));
+      window.history.replaceState({}, '', url);
+
+      // Get the tool group for the 3D viewport
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      // Get the OrientationControllerTool instance from the tool group
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+      if (orientationControllerTool) {
+        // Update configuration
+        orientationControllerTool.configuration.keepOrientationUp = newValue;
+        // Reinitialize viewports to apply the change
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  addSliderToToolbar({
+    title: 'Orientation marker size',
+    range: [0.01, 0.05],
+    defaultValue: 0.04,
+    step: 0.01,
+    container: rightToolbarContainer,
+    onSelectedValueChange: (value) => {
+      const size = Number(value);
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.size = size;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+    updateLabelOnChange: (value, label) => {
+      label.textContent = `Orientation marker size: ${value}`;
+    },
+  });
+
+  // Append the right container to the toolbar
+  if (toolbar) {
+    toolbar.appendChild(rightToolbarContainer);
+  }
 
   const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
-  renderingEngine.renderViewports(activeViewportIds);
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId4]
-  ).then(() => {
-    viewport.setProperties({
-      preset: 'CT-Bone',
-    });
-    toolGroupVRT.addViewport(viewportId4, renderingEngineId);
-    toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
-      sphereRadius: 7,
-      sphereColors: {
-        x: [1, 1, 0],
-        y: [0, 1, 0],
-        z: [1, 0, 0],
-        corners: [0, 0, 1],
-      },
-      showCornerSpheres: true,
-      initialCropFactor: 0.2,
-    });
-    toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
-    viewport.setZoom(1.2);
-    viewport.render();
+
+  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId4]);
+
+  viewport.setProperties({
+    preset: 'CT-Bone',
   });
+
+  toolGroupVRT.addViewport(viewportId4, renderingEngineId);
+
+  // First render the viewport BEFORE adding cropping tool
+  viewport.resetCamera();
+  viewport.setZoom(1.2);
+
+  // Manually trigger camera modified to initialize VTK rendering state
+  const camera = viewport.getCamera();
+  const { position, focalPoint, viewUp } = camera;
+  viewport.setCamera({
+    position: [...position],
+    focalPoint: [...focalPoint],
+    viewUp: [...viewUp],
+  });
+
+  viewport.render();
+
+  // Now add and activate the cropping tool
+  toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
+    showHandles: false,
+    showClippingPlanes: false,
+    sphereRadius: 7,
+    sphereColors: {
+      x: [1, 1, 0],
+      y: [0, 1, 0],
+      z: [1, 0, 0],
+      corners: [0, 0, 1],
+    },
+    showCornerSpheres: true,
+    initialCropFactor: 0.2,
+  });
+  toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+      },
+    ],
+  });
+
+  // Hide 3D handles by default (same as toggle button does)
+  const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+  if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
+    croppingTool.setHandlesVisible(false);
+  }
+
+  // Render again after cropping tool is initialized
+  viewport.render();
+  renderingEngine.renderViewports(activeViewportIds);
+
+  // Force another render after a brief moment to ensure everything is visible
+  setTimeout(() => {
+    renderingEngine.render();
+  }, 100);
 }
 
 run();
