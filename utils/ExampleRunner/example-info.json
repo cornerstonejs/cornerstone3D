@@ -411,9 +411,9 @@
         "name": "Stack Labelmap creation/edit for stack viewports",
         "description": "Demonstrates how to create and edit a segmentation labelmap for stack viewports"
       },
-      "stackViewportsWithSegmentationSync": {
-        "name": "Stack Viewports with Segmentation Sync",
-        "description": "Demonstrates how to synchronize two stack viewports with a segmentation on one of them"
+      "stackViewportsSegmentationFlipCine": {
+        "name": "Stack Viewports with Segmentation Cine",
+        "description": "Showcases a varity of viewports with segmentation, flip, and cine applied"
       },
       "splineROITools": {
         "name": "Spline ROI Tools",
