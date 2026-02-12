@@ -159,3 +159,16 @@ interactions.
     </td>
   </tr>
 </table>
+
+### Annotation in stretched viewport
+
+The tool prioritizes physical distance in World Coordinates.
+The **Circle ROI** is defined by a center point and a radius. If the viewport is stretched, the tool will automatically render as an ellipse. This ensures that if you draw a circle in stretched view, it still represents a true physical circle in patient's body.
+
+### Segmentation Circular Brush Cursor in stretched viewport
+
+When you move your mouse, the tool calculates the cursor shape in Canvas Coordinates. It draws a circle with a radius defined in pixels. The cursor remains a perfect circle even if the image behind it is stretched 2x vertically.
+
+### Segmentation Circular/Sphere Brush/Eraser/Scissor Tools in stretched viewport
+
+The tool maps the Canvas-space circle to the underlying image pixels. The brush should draw perfect circles, not ellipses, regardless of image stretching. When the image is stretched or shrunk, the drawn segments should stretch or shrink proportionally with the image.

@@ -1,9 +1,11 @@
 import macro from '@kitware/vtk.js/macros';
-import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+import extendedVtkCamera from './extendedVtkCamera';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { vec3, mat4 } from 'gl-matrix';
 import type { vtkObject } from '@kitware/vtk.js/interfaces';
 import type { Range } from '@kitware/vtk.js/types';
+import { getProjectionScaleMatrix } from '../helpers/getProjectionScaleMatrix';
+import { getNormalizedAspectRatio } from '../../utilities/getNormalizedAspectRatio';
 
 /**
  *
@@ -746,6 +748,17 @@ export interface vtkSlabCamera extends vtkObject {
   setIsPerformingCoordinateTransformation(status: boolean): void;
 
   computeCameraLightTransform(): void;
+  /**
+   * Get the aspectRatio of the viewport
+   *  @defaultValue [1, 1]
+   */
+  getAspectRatio(): [x: number, y: number];
+
+  /**
+   * Set the aspectRatio of the viewport
+   * @param aspectRatio - aspectRatio of the viewport in x and y axis
+   */
+  setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
 }
 
 const DEFAULT_VALUES = {
@@ -768,7 +781,7 @@ function extend(
 ): void {
   Object.assign(model, DEFAULT_VALUES, initialValues);
 
-  vtkCamera.extend(publicAPI, model, initialValues);
+  extendedVtkCamera.extend(publicAPI, model, initialValues);
 
   macro.setGet(publicAPI, model, ['isPerformingCoordinateTransformation']);
 
@@ -907,6 +920,18 @@ function vtkSlabCamera(publicAPI, model) {
       tmpMatrix[14] = -1.0;
       tmpMatrix[11] = (-2.0 * znear * zfar) / (zfar - znear);
       tmpMatrix[15] = 0.0;
+    }
+
+    const [sx, sy] = getNormalizedAspectRatio(model.aspectRatio);
+
+    if (sx !== 1.0 || sy !== 1.0) {
+      const viewUp = publicAPI.getViewUp();
+      const viewPlaneNormal = publicAPI.getViewPlaneNormal();
+      const scaleMatrix = getProjectionScaleMatrix(viewUp, viewPlaneNormal, [
+        sx,
+        sy,
+      ]);
+      mat4.multiply(tmpMatrix, scaleMatrix, tmpMatrix);
     }
 
     mat4.copy(result, tmpMatrix);

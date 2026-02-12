@@ -12,7 +12,12 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 
-const { transformWorldToIndex, transformIndexToWorld, isEqual } = csUtils;
+const {
+  transformWorldToIndex,
+  transformIndexToWorld,
+  isEqual,
+  getNormalizedAspectRatio,
+} = csUtils;
 
 /**
  * Returns the corners of an ellipse in canvas coordinates.
@@ -36,21 +41,22 @@ function createCircleCornersForCenter(
   center: Types.Point3,
   viewUp: ReadonlyVec3,
   viewRight: ReadonlyVec3,
-  radius: number
+  yRadius: number,
+  xRadius: number
 ): Types.Point3[] {
   const centerVec = vec3.fromValues(center[0], center[1], center[2]);
 
   const top = vec3.create();
-  vec3.scaleAndAdd(top, centerVec, viewUp, radius);
+  vec3.scaleAndAdd(top, centerVec, viewUp, yRadius);
 
   const bottom = vec3.create();
-  vec3.scaleAndAdd(bottom, centerVec, viewUp, -radius);
+  vec3.scaleAndAdd(bottom, centerVec, viewUp, -yRadius);
 
   const right = vec3.create();
-  vec3.scaleAndAdd(right, centerVec, viewRight, radius);
+  vec3.scaleAndAdd(right, centerVec, viewRight, xRadius);
 
   const left = vec3.create();
-  vec3.scaleAndAdd(left, centerVec, viewRight, -radius);
+  vec3.scaleAndAdd(left, centerVec, viewRight, -xRadius);
 
   return [
     bottom as Types.Point3,
@@ -65,12 +71,17 @@ function createCircleCornersForCenter(
 // strategy for many intermediate samples, which was unnecessarily expensive
 // and still missed fast mouse moves. This predicate lets us describe the full
 // swept volume in constant time per segment when the strategy runs.
-function createStrokePredicate(centers: Types.Point3[], radius: number) {
-  if (!centers.length || radius <= 0) {
+function createStrokePredicate(
+  centers: Types.Point3[],
+  xRadius: number,
+  yRadius: number
+) {
+  if (!centers.length || xRadius <= 0 || yRadius <= 0) {
     return null;
   }
 
-  const radiusSquared = radius * radius;
+  const xRadiusSquared = xRadius * xRadius;
+  const yRadiusSquared = yRadius * yRadius;
   const centerVecs = centers.map(
     (point) => [point[0], point[1], point[2]] as Types.Point3
   );
@@ -100,7 +111,10 @@ function createStrokePredicate(centers: Types.Point3[], radius: number) {
       const dx = worldPoint[0] - centerVec[0];
       const dy = worldPoint[1] - centerVec[1];
       const dz = worldPoint[2] - centerVec[2];
-      if (dx * dx + dy * dy + dz * dz <= radiusSquared) {
+      if (
+        (dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared + dz * dz <=
+        1
+      ) {
         return true;
       }
     }
@@ -110,7 +124,10 @@ function createStrokePredicate(centers: Types.Point3[], radius: number) {
         const dx = worldPoint[0] - start[0];
         const dy = worldPoint[1] - start[1];
         const dz = worldPoint[2] - start[2];
-        if (dx * dx + dy * dy + dz * dz <= radiusSquared) {
+        if (
+          (dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared + dz * dz <=
+          1
+        ) {
           return true;
         }
         continue;
@@ -128,7 +145,12 @@ function createStrokePredicate(centers: Types.Point3[], radius: number) {
       const distY = worldPoint[1] - projY;
       const distZ = worldPoint[2] - projZ;
 
-      if (distX * distX + distY * distY + distZ * distZ <= radiusSquared) {
+      if (
+        (distX * distX) / xRadiusSquared +
+          (distY * distY) / yRadiusSquared +
+          distZ * distZ <=
+        1
+      ) {
         return true;
       }
     }
@@ -169,8 +191,18 @@ const initializeCircle = {
       center as Types.Point3
     );
 
-    const brushRadius =
-      points.length >= 2 ? vec3.distance(points[0], points[1]) / 2 : 0;
+    // Get your aspect ratio values
+    const aspectRatio = getNormalizedAspectRatio(viewport.getAspectRatio());
+
+    const yRadius =
+      points.length >= 2
+        ? vec3.distance(points[0], points[1]) / 2 / aspectRatio[1]
+        : 0;
+
+    const xRadius =
+      points.length >= 2
+        ? vec3.distance(points[2], points[3]) / 2 / aspectRatio[0]
+        : 0;
 
     const canvasCoordinates = points.map((p) =>
       viewport.worldToCanvas(p)
@@ -214,7 +246,8 @@ const initializeCircle = {
         centerPoint,
         normalizedViewUp,
         viewRight,
-        brushRadius
+        yRadius,
+        xRadius
       )
     );
 
@@ -231,7 +264,9 @@ const initializeCircle = {
     operationData.isInObject = createPointInEllipse(cornersInWorld, {
       strokePointsWorld: strokeCenters,
       segmentationImageData,
-      radius: brushRadius,
+      xRadius,
+      yRadius,
+      aspectRatio,
     });
 
     operationData.isInObjectBoundsIJK = boundsIJK;
@@ -251,7 +286,9 @@ function createPointInEllipse(
   options: {
     strokePointsWorld?: Types.Point3[];
     segmentationImageData?: vtkImageData;
-    radius?: number;
+    xRadius?: number;
+    yRadius?: number;
+    aspectRatio?: [number, number];
   } = {}
 ) {
   if (!cornersInWorld || cornersInWorld.length !== 4) {
@@ -259,33 +296,38 @@ function createPointInEllipse(
   }
   const [topLeft, bottomRight, bottomLeft, topRight] = cornersInWorld;
 
+  const aspectRatio = options.aspectRatio || [1, 1];
+
   // Center is the midpoint of the diagonal
   const center = vec3.create();
   vec3.add(center, topLeft, bottomRight);
   vec3.scale(center, center, 0.5);
 
-  // Major axis: from topLeft to topRight
+  //Calculate a SINGLE original radius to ensure the base shape is a circle.
+  // We'll use the width (major axis) as the definitive diameter.
   const majorAxisVec = vec3.create();
   vec3.subtract(majorAxisVec, topRight, topLeft);
-  const xRadius = vec3.length(majorAxisVec) / 2;
-  vec3.normalize(majorAxisVec, majorAxisVec);
+  const originalRadius = vec3.length(majorAxisVec) / 2;
+  vec3.normalize(majorAxisVec, majorAxisVec); // This is the 'X' direction vector
 
-  // Minor axis: from topLeft to bottomLeft
+  // We still need the minor axis for its direction, but not its length.
   const minorAxisVec = vec3.create();
   vec3.subtract(minorAxisVec, bottomLeft, topLeft);
-  const yRadius = vec3.length(minorAxisVec) / 2;
-  vec3.normalize(minorAxisVec, minorAxisVec);
+  vec3.normalize(minorAxisVec, minorAxisVec); // This is the 'Y' direction vector
 
-  // Plane normal
-  const normal = vec3.create();
-  vec3.cross(normal, majorAxisVec, minorAxisVec);
-  vec3.normalize(normal, normal);
+  //Apply the inverse aspect ratio stretch CORRECTLY and ALWAYS the same way.
+  // To counteract the viewport's stretching and make the shape appear circular,
+  // we must "pre-squash" it in world space.
+  const xRadius = originalRadius / aspectRatio[0];
+  const yRadius = originalRadius / aspectRatio[1];
 
   // If radii are equal, treat as sphere
-  const radiusForStroke = options.radius ?? Math.max(xRadius, yRadius);
+  const xRadiusForStroke = options.xRadius ?? xRadius;
+  const yRadiusForStroke = options.yRadius ?? yRadius;
   const strokePredicate = createStrokePredicate(
     options.strokePointsWorld || [],
-    radiusForStroke
+    xRadiusForStroke,
+    yRadiusForStroke
   );
 
   if (isEqual(xRadius, yRadius)) {
@@ -344,19 +386,8 @@ function createPointInEllipse(
     // conversions happened on callers for every interpolated point.
     const pointVec = vec3.create();
     vec3.subtract(pointVec, worldPoint, center);
-    // Remove component along normal
-    const distToPlane = vec3.dot(pointVec, normal);
-    const proj = vec3.create();
-    vec3.scaleAndAdd(proj, pointVec, normal, -distToPlane);
-
-    // Express proj in (majorAxis, minorAxis) coordinates
-    // Project from center, so shift origin to topLeft
-    const fromTopLeft = vec3.create();
-    const centerToTopLeft = vec3.create();
-    vec3.subtract(centerToTopLeft, center, topLeft);
-    vec3.subtract(fromTopLeft, proj, centerToTopLeft);
-    const x = vec3.dot(fromTopLeft, majorAxisVec);
-    const y = vec3.dot(fromTopLeft, minorAxisVec);
+    const x = vec3.dot(pointVec, majorAxisVec);
+    const y = vec3.dot(pointVec, minorAxisVec);
 
     // Ellipse equation: (x/xRadius)^2 + (y/yRadius)^2 <= 1
     return (x * x) / (xRadius * xRadius) + (y * y) / (yRadius * yRadius) <= 1;

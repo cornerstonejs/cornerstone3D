@@ -10,7 +10,7 @@ import {
   createEllipseInPoint,
   getEllipseCornersFromCanvasCoordinates,
 } from './fillCircle';
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndex, getNormalizedAspectRatio } = csUtils;
 import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
 import type { CanvasCoordinates } from '../../../types';
 
@@ -54,8 +54,17 @@ const sphereComposition = {
       viewport.canvasToWorld(corner)
     );
 
-    const strokeRadius =
-      points.length >= 2 ? vec3.distance(points[0], points[1]) / 2 : undefined;
+    const aspectRatio = getNormalizedAspectRatio(viewport.getAspectRatio());
+
+    const yRadius =
+      points.length >= 2
+        ? vec3.distance(points[0], points[1]) / 2 / aspectRatio[1]
+        : 0;
+
+    const xRadius =
+      points.length >= 2
+        ? vec3.distance(points[2], points[3]) / 2 / aspectRatio[0]
+        : 0;
 
     const strokeCenters =
       operationData.strokePointsWorld &&
@@ -143,7 +152,9 @@ const sphereComposition = {
     operationData.isInObject = createEllipseInPoint(cornersInWorld, {
       strokePointsWorld: operationData.strokePointsWorld,
       segmentationImageData,
-      radius: strokeRadius,
+      xRadius,
+      yRadius,
+      aspectRatio,
     });
     // }
   },

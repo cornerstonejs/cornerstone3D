@@ -146,6 +146,7 @@ import type GeometryLoaderFn from './GeometryLoaderFn';
 
 import type { RenderingEngineModeType } from './RenderingEngineMode';
 import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
+import type { ResetCameraOptions } from './ICamera';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -156,6 +157,7 @@ export type {
   //
   IBaseStreamingImageVolume,
   ICamera,
+  ResetCameraOptions,
   IStackViewport,
   IVideoViewport,
   IWSIViewport,
