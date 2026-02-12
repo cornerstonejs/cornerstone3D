@@ -21,6 +21,53 @@ export type AnnotationMetadata = Types.ViewReference & {
   enabledElement?: Types.IEnabledElement;
 };
 
+export type StatItem = {
+  /** The name/key of the statistic */
+  name: string;
+  /** The display label for the statistic */
+  label: string;
+  /** The value of the statistic (can be a single value or array) */
+  value: number | number[];
+  /** Optional unit for the statistic */
+  unit?: string;
+  /** The IJK coordinate point for the statistic location */
+  pointIJK?: Types.Point3;
+  /** The LPS coordinate point for the statistic location */
+  pointLPS?: Types.Point3;
+};
+
+export interface CachedStats {
+  Modality?: string;
+  area?: number | number[];
+  length?: number | number[];
+  width?: number | number[];
+  unit?: string;
+  areaUnit?: string;
+  max?: number | number[];
+  mean?: number | number[];
+  min?: number | number[];
+  /** Radius for circular annotations */
+  radius?: number;
+  /** Unit for radius measurements */
+  radiusUnit?: string;
+  /** Perimeter for closed contour annotations */
+  perimeter?: number;
+  /** Array of detailed statistics with location information */
+  statsArray?: StatItem[];
+  [key: string]: unknown;
+}
+
+export interface VolumeStats {
+  /** Points in volume for projection-based annotations */
+  pointsInVolume: Types.Point3[];
+  /** Projection points for multi-slice annotations */
+  projectionPoints: Types.Point3[] | Types.Point3[][];
+  /** Image IDs for projection points */
+  projectionPointsImageIds?: string[];
+  /** Nested statistics for complex annotations */
+  statistics?: unknown;
+}
+
 export type AnnotationData = {
   /**
    * Annotation handles that are grabbable for manipulation
@@ -29,7 +76,8 @@ export type AnnotationData = {
   /**
    * Cached Annotation statistics which is specific to the tool
    */
-  cachedStats?: Record<string, unknown>;
+  cachedStats?: Record<string, CachedStats> | VolumeStats;
+
   /**
    * Label of an annotation
    */
@@ -51,6 +99,10 @@ export type AnnotationData = {
    * Other data/keys
    */
   [key: string]: unknown;
+};
+
+export type AnnotationDataStatsByTargetId = AnnotationData & {
+  cachedStats: Record<string, CachedStats>;
 };
 
 /**

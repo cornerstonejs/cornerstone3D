@@ -40,7 +40,6 @@ import type {
   EventTypes,
   SVGDrawingHelper,
   Annotation,
-  AnnotationMetadata,
 } from '../../types';
 import type {
   CircleROIStartEndThresholdAnnotation,
@@ -121,13 +120,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (evt: EventTypes.InteractionEventType) => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
 
@@ -191,7 +190,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ];
     }
 
-    const annotation = {
+    const annotation: CircleROIStartEndThresholdAnnotation = {
       highlighted: true,
       invalidated: true,
       metadata: {
@@ -226,7 +225,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         cachedStats: {
           pointsInVolume: [],
           projectionPoints: [],
-          statistics: [] as unknown as ROICachedStats,
+          statistics: [],
         },
         labelmapUID: null,
       },

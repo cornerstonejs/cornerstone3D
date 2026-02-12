@@ -76,8 +76,9 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     viewport,
     ...annotationBaseData
   ): T {
+    // MPR based annotations will be cross FOR by default, while stack will be per-frame
     return this.createAnnotation(
-      { metadata: viewport.getViewReference() },
+      { metadata: viewport.getViewReference({ forFrameOfReference: true }) },
       ...annotationBaseData
     ) as T;
   }

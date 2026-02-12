@@ -50,8 +50,6 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
-const { transformWorldToIndex } = csUtils;
-
 /**
  * BidirectionalTool let you draw annotations that measures the length and
  * width at the same time in `mm` unit. It is consisted of two perpendicular lines and
@@ -210,7 +208,7 @@ class BidirectionalTool extends AnnotationTool {
     // Exclude toolInstance from the options passed into the metadata
     const { toolInstance, ...serializableOptions } = options || {};
 
-    const annotation = {
+    const annotation: BidirectionalAnnotation = {
       annotationUID: options?.annotationUID || utilities.uuidv4(),
       data: {
         handles: {
@@ -246,7 +244,7 @@ class BidirectionalTool extends AnnotationTool {
     addAnnotation(annotation, viewport.element);
     triggerAnnotationRenderForViewportIds([viewport.id]);
 
-    return annotation as BidirectionalAnnotation;
+    return annotation;
   };
 
   /**
@@ -1083,7 +1081,7 @@ class BidirectionalTool extends AnnotationTool {
     };
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as BidirectionalAnnotation;
+      const annotation = annotations[i];
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));

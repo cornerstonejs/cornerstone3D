@@ -45,6 +45,7 @@ import type {
   PublicToolProps,
   SVGDrawingHelper,
   Annotation,
+  AnnotationData,
 } from '../../types';
 import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -52,6 +53,7 @@ import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import { defaultAreaGetTextLines } from '../../utilities/defaultGetTextLines';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -119,7 +121,7 @@ class RectangleROITool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         calculateStats: true,
-        getTextLines: defaultGetTextLines,
+        getTextLines: defaultAreaGetTextLines,
         statsCalculator: BasicStatsCalculator,
       },
     }
@@ -141,9 +143,7 @@ class RectangleROITool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): RectangleROIAnnotation => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -275,9 +275,6 @@ class RectangleROITool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -318,9 +315,6 @@ class RectangleROITool extends AnnotationTool {
     this._activateModify(element);
 
     hideElementCursor(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -622,6 +616,7 @@ class RectangleROITool extends AnnotationTool {
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       const targetId = this.getTargetId(viewport, data);
+      const targetIds = this.getMeasurementTargets(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -650,7 +645,6 @@ class RectangleROITool extends AnnotationTool {
           annotation,
           viewPlaneNormal,
           viewUp,
-          renderingEngine,
           enabledElement
         );
       } else if (annotation.invalidated) {
@@ -658,7 +652,6 @@ class RectangleROITool extends AnnotationTool {
           annotation,
           viewPlaneNormal,
           viewUp,
-          renderingEngine,
           enabledElement
         );
 
@@ -769,8 +762,8 @@ class RectangleROITool extends AnnotationTool {
         continue;
       }
 
-      const textLines = this.configuration.getTextLines(data, targetId);
-      if (!textLines || textLines.length === 0) {
+      const textLines = this.configuration.getTextLines(data, targetIds);
+      if (!textLines?.length) {
         continue;
       }
 
@@ -843,7 +836,6 @@ class RectangleROITool extends AnnotationTool {
     annotation,
     viewPlaneNormal,
     viewUp,
-    renderingEngine,
     enabledElement
   ) => {
     if (!this.configuration.calculateStats) {
@@ -867,6 +859,7 @@ class RectangleROITool extends AnnotationTool {
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
+        console.warn('Image does not exist for targetId:', targetId);
         continue;
       }
 
@@ -1041,43 +1034,6 @@ class RectangleROITool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds([viewport.id]);
   };
-}
-
-/**
- * _getTextLines - Returns the Area, mean and std deviation of the area of the
- * target volume enclosed by the rectangle.
- *
- * @param data - The annotation tool-specific data.
- * @param targetId - The volumeId of the volume to display the stats for.
- */
-function defaultGetTextLines(data, targetId: string): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit, min } =
-    cachedVolumeStats;
-
-  if (mean === undefined || mean === null) {
-    return;
-  }
-
-  const textLines: string[] = [];
-
-  if (csUtils.isNumber(area)) {
-    textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  }
-  if (csUtils.isNumber(mean)) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(max)) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(min)) {
-    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(stdDev)) {
-    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
-  }
-
-  return textLines;
 }
 
 export default RectangleROITool;

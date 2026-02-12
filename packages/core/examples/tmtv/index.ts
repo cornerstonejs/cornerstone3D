@@ -159,8 +159,8 @@ const viewportColors = {};
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Multi-Monitor PET-CT',
-  'Three studies displayed with PET-CT fusion layout, each with separate tool groups but shared rendering engine'
+  'TMTV Mode with Tools',
+  'Two series fused for TMTV with tools available to show how they interact with each other'
 );
 
 const optionsValues = [
@@ -170,6 +170,7 @@ const optionsValues = [
   BidirectionalTool.toolName,
   WindowLevelTool.toolName,
   CrosshairsTool.toolName,
+  CircleROITool.toolName,
   CircleROIStartEndThresholdTool.toolName,
   RectangleROIStartEndThresholdTool.toolName,
 ];
@@ -402,6 +403,7 @@ function setUpToolGroupsForStudy(studyKey) {
     filterActorUIDsToSetSlabThickness: [studyVolumeIds.ct],
   });
   fusionToolGroup.addTool(RectangleROITool.toolName);
+  fusionToolGroup.addTool(CircleROITool.toolName);
   fusionToolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
     showTextBox: false,

@@ -7,6 +7,7 @@ import type {
   ToolProps,
   PublicToolProps,
   ToolConfiguration,
+  AnnotationData,
 } from '../../types';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
@@ -295,7 +296,7 @@ abstract class BaseTool {
    */
   protected getTargetId(
     viewport: Types.IViewport,
-    data?: unknown & { cachedStats?: Record<string, unknown> }
+    data?: AnnotationData
   ): string | undefined {
     const { isPreferredTargetId } = this.configurationTyped; // Get preferred ID from config
 
@@ -317,6 +318,50 @@ abstract class BaseTool {
     throw new Error(
       'getTargetId: viewport must have a getViewReferenceId method'
     );
+  }
+
+  /**
+   * Gets an array of targetIds to display measurements for.
+   * This will use the tool configuration "showAllTargets", which
+   * if true will return an array of targets when on a volume viewport
+   * that uses data ids containing the volume id.
+   * Otherwise it will default to getTargetId, which will show the
+   * default data id for the first element found.
+   *
+   * **This only works for volumes with the annotation displayed on screen for multiple volumes**
+   *
+   * TODO: Fix this for other fusion types on stack and also for inclusion
+   * of annotation measurements which are not currently on screen.
+   */
+  protected getMeasurementTargets(
+    viewport: Types.IViewport,
+    data?: AnnotationData
+  ) {
+    const { showAllTargets } = this.configurationTyped;
+    const actors = viewport.getActors();
+    if (showAllTargets === false || !actors?.length) {
+      return [this.getTargetId(viewport, data)];
+    }
+    const references = [];
+    const keys = Object.keys(data?.cachedStats);
+    for (const actor of actors) {
+      const volumeId = actor.referencedId;
+      if (!volumeId) {
+        continue;
+      }
+      const volumeIdQuery = volumeId + '?';
+      const ref = keys.find((key) => key.indexOf(volumeIdQuery) !== -1);
+      if (!ref) {
+        continue;
+      }
+      if (ref) {
+        references.push(ref);
+      }
+    }
+    if (references.length) {
+      return references;
+    }
+    return [this.getTargetId(viewport, data)];
   }
 
   /**
