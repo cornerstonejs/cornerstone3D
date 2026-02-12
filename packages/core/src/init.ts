@@ -50,7 +50,7 @@ const defaultConfig: Cornerstone3DConfig = {
    * This may just fallback to the default import, but many packaging
    * systems don't deal with peer imports properly.
    */
-  peerImport: (moduleId) => null,
+  peerImport: (_moduleId, fallback) => fallback?.() ?? null,
 };
 
 let config: Cornerstone3DConfig = {
@@ -270,8 +270,8 @@ function getWebWorkerManager() {
   return webWorkerManager;
 }
 
-async function peerImport(moduleId: string) {
-  return config.peerImport(moduleId);
+function peerImport(moduleId: string, fallback?) {
+  return config.peerImport(moduleId, fallback);
 }
 
 export {

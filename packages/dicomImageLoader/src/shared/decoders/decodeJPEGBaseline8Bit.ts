@@ -2,49 +2,26 @@ import type {
   LibJpegTurbo8Bit,
   OpenJpegModule,
 } from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
-import type { ByteArray } from 'dicom-parser';
-// @ts-ignore
-import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs';
-
-// @ts-ignore
-// import libjpegTurboWasm from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm';
-const libjpegTurboWasm = new URL(
-  '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
-  import.meta.url
-);
 import type { Types } from '@cornerstonejs/core';
+import { createInitializeDecoder } from '../createInitializeDecoder';
+import type { ByteArray } from 'dicom-parser';
 
-const local: {
+const { initialize, state } = createInitializeDecoder({
+  library: '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs',
+  libraryFallback: () =>
+    import('@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs'),
+  wasm: '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
+  wasmDefaultUrl: new URL(
+    '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
+    import.meta.url
+  ).toString(),
+  constructor: 'JPEGDecoder',
+});
+const local = state as {
   codec: OpenJpegModule;
   decoder: LibJpegTurbo8Bit;
-} = {
-  codec: undefined,
-  decoder: undefined,
+  decodeConfig: typeof state.decodeConfig;
 };
-
-function initLibjpegTurbo(): Promise<void> {
-  if (local.codec) {
-    return Promise.resolve();
-  }
-
-  const libjpegTurboModule = libjpegTurboFactory({
-    locateFile: (f) => {
-      if (f.endsWith('.wasm')) {
-        return libjpegTurboWasm.toString();
-      }
-
-      return f;
-    },
-  });
-
-  return new Promise((resolve, reject) => {
-    libjpegTurboModule.then((instance) => {
-      local.codec = instance;
-      local.decoder = new instance.JPEGDecoder();
-      resolve();
-    }, reject);
-  });
-}
 
 // imageFrame.pixelRepresentation === 1 <-- Signed
 /**
@@ -57,7 +34,7 @@ async function decodeAsync(
   compressedImageFrame,
   imageInfo
 ): Promise<Types.IImageFrame> {
-  await initLibjpegTurbo();
+  await initialize();
   const decoder = local.decoder;
 
   // get pointer to the source/encoded bit stream buffer in WASM memory
@@ -118,8 +95,6 @@ function getPixelData(frameInfo, decodedBuffer: ByteArray) {
     decodedBuffer.byteLength
   );
 }
-
-const initialize = initLibjpegTurbo;
 
 export { initialize };
 

@@ -2,60 +2,32 @@ import type {
   CharlsModule,
   JpegLSDecoder,
 } from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
-// @ts-ignore
-import charlsFactory from '@cornerstonejs/codec-charls/decodewasmjs';
-// @ts-ignore
-// import charlsWasm from '@cornerstonejs/codec-charls/decodewasm';
-const charlsWasm = new URL(
-  '@cornerstonejs/codec-charls/decodewasm',
-  import.meta.url
-);
-import type { ByteArray } from 'dicom-parser';
-import type { WebWorkerDecodeConfig } from '../../types';
 import type { Types } from '@cornerstonejs/core';
+import type { ByteArray } from 'dicom-parser';
+import { createInitializeDecoder } from '../createInitializeDecoder';
 
-const local: {
+const { initialize, state } = createInitializeDecoder({
+  library: '@cornerstonejs/codec-charls/decodewasmjs',
+  libraryFallback: () => import('@cornerstonejs/codec-charls/decodewasmjs'),
+  wasm: '@cornerstonejs/codec-charls/decodewasm',
+  wasmDefaultUrl: new URL(
+    '@cornerstonejs/codec-charls/decodewasm',
+    import.meta.url
+  ).toString(),
+  constructor: 'JpegLSDecoder',
+});
+const local = state as {
   codec: CharlsModule;
   decoder: JpegLSDecoder;
-  decodeConfig: WebWorkerDecodeConfig;
-} = {
-  codec: undefined,
-  decoder: undefined,
-  decodeConfig: {} as WebWorkerDecodeConfig,
+  decodeConfig: typeof state.decodeConfig;
 };
+
+export { initialize };
 
 function getExceptionMessage(exception) {
   return typeof exception === 'number'
     ? local.codec.getExceptionMessage(exception)
     : exception;
-}
-
-export function initialize(
-  decodeConfig?: WebWorkerDecodeConfig
-): Promise<void> {
-  local.decodeConfig = decodeConfig;
-
-  if (local.codec) {
-    return Promise.resolve();
-  }
-
-  const charlsModule = charlsFactory({
-    locateFile: (f) => {
-      if (f.endsWith('.wasm')) {
-        return charlsWasm.toString();
-      }
-
-      return f;
-    },
-  });
-
-  return new Promise((resolve, reject) => {
-    charlsModule.then((instance) => {
-      local.codec = instance;
-      local.decoder = new instance.JpegLSDecoder();
-      resolve();
-    }, reject);
-  });
 }
 
 /**

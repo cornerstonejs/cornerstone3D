@@ -1,26 +1,27 @@
 import type { ByteArray } from 'dicom-parser';
-import openJphFactory, {
-  type HTJ2KDecoder,
-  type HTJ2KModule,
+import type {
+  HTJ2KDecoder,
+  HTJ2KModule,
 } from '@cornerstonejs/codec-openjph/wasmjs';
-// @ts-ignore
-// import openjphWasm from '@cornerstonejs/codec-openjph/wasm';
-const openjphWasm = new URL(
-  '@cornerstonejs/codec-openjph/wasm',
-  import.meta.url
-);
+import { createInitializeDecoder } from '../createInitializeDecoder';
 
-import type { LoaderDecodeOptions } from '../../types';
-
-const local: {
-  codec: HTJ2KModule | undefined;
-  decoder: HTJ2KDecoder | undefined;
-  decodeConfig: LoaderDecodeOptions;
-} = {
-  codec: undefined,
-  decoder: undefined,
-  decodeConfig: {},
+const { initialize, state } = createInitializeDecoder({
+  library: '@cornerstonejs/codec-openjph/wasmjs',
+  libraryFallback: () => import('@cornerstonejs/codec-openjph/wasmjs'),
+  wasm: '@cornerstonejs/codec-openjph/wasm',
+  wasmDefaultUrl: new URL(
+    '@cornerstonejs/codec-openjph/wasm',
+    import.meta.url
+  ).toString(),
+  constructor: 'HTJ2KDecoder',
+});
+const local = state as {
+  codec: HTJ2KModule;
+  decoder: HTJ2KDecoder;
+  decodeConfig: typeof state.decodeConfig;
 };
+
+export { initialize };
 
 function calculateSizeAtDecompositionLevel(
   decompositionLevel: number,
@@ -34,32 +35,6 @@ function calculateSizeAtDecompositionLevel(
     decompositionLevel--;
   }
   return result;
-}
-
-export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
-  local.decodeConfig = decodeConfig;
-
-  if (local.codec) {
-    return Promise.resolve();
-  }
-
-  const openJphModule = openJphFactory({
-    locateFile: (f) => {
-      if (f.endsWith('.wasm')) {
-        return openjphWasm.toString();
-      }
-
-      return f;
-    },
-  });
-
-  return new Promise<void>((resolve, reject) => {
-    openJphModule.then((instance) => {
-      local.codec = instance;
-      local.decoder = new instance.HTJ2KDecoder();
-      resolve();
-    }, reject);
-  });
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html

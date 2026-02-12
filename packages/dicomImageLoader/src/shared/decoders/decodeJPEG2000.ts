@@ -3,61 +3,26 @@ import type {
   J2KDecoder,
   OpenJpegModule,
 } from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
-// @ts-ignore
-import openJpegFactory from '@cornerstonejs/codec-openjpeg/decodewasmjs';
-
-// Webpack asset/resource copies this to our output folder
-
-// TODO: At some point maybe we can use this instead.
-// This is closer to what Webpack 5 wants but it doesn't seem to work now
-// const wasm = new URL('./blah.wasm', import.meta.url)
-// @ts-ignore
-// import openjpegWasm from '@cornerstonejs/codec-openjpeg/decodewasm';
-const openjpegWasm = new URL(
-  '@cornerstonejs/codec-openjpeg/decodewasm',
-  import.meta.url
-);
-
 import type { Types } from '@cornerstonejs/core';
-import type { WebWorkerDecodeConfig } from '../../types';
+import { createInitializeDecoder } from '../createInitializeDecoder';
 
-const local: {
+const { initialize, state } = createInitializeDecoder({
+  library: '@cornerstonejs/codec-openjpeg/decodewasmjs',
+  libraryFallback: () => import('@cornerstonejs/codec-openjpeg/decodewasmjs'),
+  wasm: '@cornerstonejs/codec-openjpeg/decodewasm',
+  wasmDefaultUrl: new URL(
+    '@cornerstonejs/codec-openjpeg/decodewasm',
+    import.meta.url
+  ).toString(),
+  constructor: 'J2KDecoder',
+});
+const local = state as {
   codec: OpenJpegModule;
   decoder: J2KDecoder;
-  decodeConfig: WebWorkerDecodeConfig;
-} = {
-  codec: undefined,
-  decoder: undefined,
-  decodeConfig: {} as WebWorkerDecodeConfig,
+  decodeConfig: typeof state.decodeConfig;
 };
 
-export function initialize(
-  decodeConfig?: WebWorkerDecodeConfig
-): Promise<void> {
-  local.decodeConfig = decodeConfig;
-
-  if (local.codec) {
-    return Promise.resolve();
-  }
-
-  const openJpegModule = openJpegFactory({
-    locateFile: (f) => {
-      if (f.endsWith('.wasm')) {
-        return openjpegWasm.toString();
-      }
-
-      return f;
-    },
-  });
-
-  return new Promise((resolve, reject) => {
-    openJpegModule.then((instance) => {
-      local.codec = instance;
-      local.decoder = new instance.J2KDecoder();
-      resolve();
-    }, reject);
-  });
-}
+export { initialize };
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
 async function decodeAsync(
