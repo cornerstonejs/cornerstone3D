@@ -113,18 +113,21 @@ addDropdownToToolbar({
         // Set crosshairs passive so they are still interactable
         toolGroup.setToolPassive(CrosshairsTool.toolName);
         toolGroup.setToolDisabled(RectangleROITool.toolName);
+        toolGroup.setToolDisabled(PlanarFreehandROITool.toolName);
         toolGroup.setToolActive(WindowLevelTool.toolName, {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         });
       } else if (toolName === CrosshairsTool.toolName) {
         toolGroup.setToolDisabled(WindowLevelTool.toolName);
         toolGroup.setToolDisabled(RectangleROITool.toolName);
+        toolGroup.setToolDisabled(PlanarFreehandROITool.toolName);
         toolGroup.setToolActive(CrosshairsTool.toolName, {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         });
       } else if (toolName === RectangleROITool.toolName) {
         toolGroup.setToolDisabled(WindowLevelTool.toolName);
         toolGroup.setToolDisabled(CrosshairsTool.toolName);
+        toolGroup.setToolDisabled(PlanarFreehandROITool.toolName);
         toolGroup.setToolActive(RectangleROITool.toolName, {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         });
@@ -250,6 +253,9 @@ instructions.innerText = `
 
   Rectangle ROI Tool:
   - Left click and drag to draw a rectangle ROI.
+
+  PlanarFreeHand ROI Tool:
+  - Left click and drag to draw a ROI.
 
   Crosshairs:
   - When the tool is active: Click/Drag anywhere in the viewport to move the center of the crosshairs.
