@@ -3,6 +3,102 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.16.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.16.0...v4.16.1) (2026-02-11)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+# [4.16.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.33...v4.16.0) (2026-02-11)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.33](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.32...v4.15.33) (2026-02-10)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.32](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.31...v4.15.32) (2026-02-09)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.31](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.30...v4.15.31) (2026-02-06)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.30](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.29...v4.15.30) (2026-02-05)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.29](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.28...v4.15.29) (2026-02-04)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.28](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.27...v4.15.28) (2026-02-04)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.27](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.26...v4.15.27) (2026-02-03)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.26](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.25...v4.15.26) (2026-02-03)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.25](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.24...v4.15.25) (2026-02-02)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.24](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.23...v4.15.24) (2026-01-30)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.23](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.22...v4.15.23) (2026-01-30)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.22](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.21...v4.15.22) (2026-01-30)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.21](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.20...v4.15.21) (2026-01-28)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.20](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.19...v4.15.20) (2026-01-26)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.19](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.18...v4.15.19) (2026-01-23)
+
+### Bug Fixes
+
+- Avoid exception when the structure data is empty ([#2573](https://github.com/cornerstonejs/cornerstone3D/issues/2573)) ([97b3313](https://github.com/cornerstonejs/cornerstone3D/commit/97b33133a2e27260f3dce735673c7920ab9da9e4))
+
+## [4.15.18](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.17...v4.15.18) (2026-01-22)
+
+### Bug Fixes
+
+- Several exceptions loading rtstruct ([#2563](https://github.com/cornerstonejs/cornerstone3D/issues/2563)) ([1c923f7](https://github.com/cornerstonejs/cornerstone3D/commit/1c923f7890012880616bc54e39b82ed0c8e0e7c7))
+
+## [4.15.17](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.16...v4.15.17) (2026-01-22)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.16](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.15...v4.15.16) (2026-01-21)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.15.15](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.14...v4.15.15) (2026-01-21)
+
+### Bug Fixes
+
+- **security:** Ignore CVE-2026-23745, CVE-2026-23950 and CVE-2024-28863 because they are limited to build/dev environments. ([#2571](https://github.com/cornerstonejs/cornerstone3D/issues/2571)) ([b271046](https://github.com/cornerstonejs/cornerstone3D/commit/b2710468312162839085c86c31e358c9e0232e61))
+
+## [4.15.14](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.13...v4.15.14) (2026-01-21)
+
+### Bug Fixes
+
+- **security:** Fix CVE-2024-28863 and CVE-2026-23745. Also updated lerna to fix circleci npm publish error. ([#2567](https://github.com/cornerstonejs/cornerstone3D/issues/2567)) ([221f6f3](https://github.com/cornerstonejs/cornerstone3D/commit/221f6f36d522352536f7f76f91f322a231efc8c2))
+
 ## [4.15.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.15.12...v4.15.13) (2026-01-19)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
