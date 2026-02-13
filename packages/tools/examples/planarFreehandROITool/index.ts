@@ -11,6 +11,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  addDropdownToToolbar,
   createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -117,8 +118,25 @@ createInfoSection(content, {
     'The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.'
   );
 
+let selectedUShapeMode: boolean | string = true;
+
+addDropdownToToolbar({
+  labelText: 'U-Shape Mode',
+  options: {
+    values: ['farthestT', 'orthogonalT', 'lineSegment'],
+    defaultValue: 'farthestT',
+  },
+  onSelectedValueChange: (value) => {
+    if (value === 'farthestT') {
+      selectedUShapeMode = true;
+    } else {
+      selectedUShapeMode = value as string;
+    }
+  },
+});
+
 addButtonToToolbar({
-  title: 'Render selected open contour with joined ends and midpoint line',
+  title: 'Apply U-Shape to selected open contour',
   onClick: () => {
     const annotationUIDs = selection.getAnnotationsSelected();
 
@@ -129,7 +147,9 @@ addButtonToToolbar({
           annotationUID
         );
 
-      annotation.data.isOpenUShapeContour = true;
+      // Clear cached peak so it gets recalculated with the new mode
+      annotation.data.openUShapeContourVectorToPeak = null;
+      annotation.data.isOpenUShapeContour = selectedUShapeMode;
 
       // Render the image to see it was selected
       const renderingEngine = getRenderingEngine(renderingEngineId);
