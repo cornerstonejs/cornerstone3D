@@ -31,6 +31,7 @@ const {
   TrackballRotateTool,
   VolumeRotateTool,
   RectangleROITool,
+  PlanarFreehandROITool
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -93,6 +94,7 @@ const optionsValues = [
   WindowLevelTool.toolName,
   CrosshairsTool.toolName,
   RectangleROITool.toolName,
+  PlanarFreehandROITool.toolName,
 ];
 
 // ============================= //
@@ -120,10 +122,18 @@ addDropdownToToolbar({
         toolGroup.setToolActive(CrosshairsTool.toolName, {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         });
+      } else if ((toolName === RectangleROITool.toolName)){
+        toolGroup.setToolDisabled(WindowLevelTool.toolName);
+        toolGroup.setToolDisabled(CrosshairsTool.toolName);
+        toolGroup.setToolDisabled(PlanarFreehandROITool.toolName);
+        toolGroup.setToolActive(RectangleROITool.toolName, {
+          bindings: [{ mouseButton: MouseBindings.Primary }],
+        });
       } else {
         toolGroup.setToolDisabled(WindowLevelTool.toolName);
         toolGroup.setToolDisabled(CrosshairsTool.toolName);
-        toolGroup.setToolActive(RectangleROITool.toolName, {
+        toolGroup.setToolDisabled(RectangleROITool.toolName);
+        toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
           bindings: [{ mouseButton: MouseBindings.Primary }],
         });
       }
@@ -346,6 +356,7 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(VolumeRotateTool);
   cornerstoneTools.addTool(RectangleROITool);
+  cornerstoneTools.addTool(PlanarFreehandROITool);
 
   // Define tool groups for the main 9 viewports.
   // Crosshairs currently only supports 3 viewports for a toolgroup due to the
@@ -377,6 +388,7 @@ function setUpToolGroups() {
       getReferenceLineSlabThicknessControlsOn,
     });
     toolGroup.addTool(RectangleROITool.toolName);
+    toolGroup.addTool(PlanarFreehandROITool.toolName);
   });
 
   fusionToolGroup.addTool(PanTool.toolName);
@@ -393,7 +405,9 @@ function setUpToolGroups() {
   fusionToolGroup.addTool(RectangleROITool.toolName, {
     isPreferredTargetId: RectangleROITool.isSpecifiedTargetId(ptVolumeId),
   });
-
+  fusionToolGroup.addTool(PlanarFreehandROITool.toolName, {
+    isPreferredTargetId: PlanarFreehandROITool.isSpecifiedTargetId(ptVolumeId),
+  });
   // Here is the difference in the toolGroups used, that we need to specify the
   // volume to use for the WindowLevelTool for the fusion viewports
   ctToolGroup.addTool(WindowLevelTool.toolName);
