@@ -322,24 +322,17 @@ class VolumeCroppingTool extends BaseTool {
     this.configuration.showClippingPlanes = false;
     this.configuration.showHandles = false;
 
-    try {
-      const viewport = this._getViewport();
-      if (
-        viewport &&
-        this.originalClippingPlanes &&
-        this.originalClippingPlanes.length > 0
-      ) {
-        // Remove clipping planes from mapper
-        this._updateClippingPlanes(viewport);
-        // Hide handles if they exist
-        if (this.sphereStates && this.sphereStates.length > 0) {
-          this._updateHandlesVisibility();
-        }
-        viewport.render();
+    const viewport = this._getViewport();
+    if (
+      viewport &&
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length > 0
+    ) {
+      this._updateClippingPlanes(viewport);
+      if (this.sphereStates && this.sphereStates.length > 0) {
+        this._updateHandlesVisibility();
       }
-    } catch (_error) {
-      // Viewport might not be available yet, that's okay
-      // The configuration is set to false, so when it becomes available it will be correct
+      viewport.render();
     }
 
     // DO NOT show handles or clipping planes by default
@@ -672,14 +665,9 @@ class VolumeCroppingTool extends BaseTool {
    */
   setRotatePlanesOnDrag(enable: boolean): void {
     this.rotatePlanesOnDrag = enable;
-    // Force a render to ensure the viewport state is updated
-    try {
-      const viewport = this._getViewport();
-      if (viewport) {
-        viewport.render();
-      }
-    } catch (_error) {
-      // Viewport might not be available, ignore
+    const viewport = this._getViewport();
+    if (viewport) {
+      viewport.render();
     }
   }
 
@@ -1009,13 +997,13 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   _addSphere(
-    viewport,
-    point,
-    axis,
-    position,
-    cornerKey = null,
-    adaptiveRadius
-  ) {
+    viewport: Types.IVolumeViewport,
+    point: Types.Point3,
+    axis: string,
+    position: string,
+    cornerKey: string | null = null,
+    adaptiveRadius: number
+  ): void {
     // Generate a unique UID for each sphere based on its axis and position
     const uid = cornerKey ? `corner_${cornerKey}` : `${axis}_${position}`;
     const sphereState = this.sphereStates.find((s) => s.uid === uid);
@@ -1043,9 +1031,10 @@ class VolumeCroppingTool extends BaseTool {
     }
 
     const idx = this.sphereStates.findIndex((s) => s.uid === uid);
+    const pointCopy: Types.Point3 = [point[0], point[1], point[2]];
     if (idx === -1) {
       this.sphereStates.push({
-        point: point.slice(),
+        point: pointCopy,
         axis,
         uid,
         sphereSource,
@@ -1054,7 +1043,7 @@ class VolumeCroppingTool extends BaseTool {
         color,
       });
     } else {
-      this.sphereStates[idx].point = point.slice();
+      this.sphereStates[idx].point = pointCopy;
       this.sphereStates[idx].sphereSource = sphereSource;
     }
 
@@ -1089,15 +1078,11 @@ class VolumeCroppingTool extends BaseTool {
           return this.originalClippingPlanes[PLANEINDEX.ZMIN]
             .normal as Types.Point3;
         default:
-          console.error(`Unknown axis: ${axis}`);
           return [1, 0, 0];
       }
     }
 
-    // Fallback to original volume direction vectors if planes not available
     if (!this.volumeDirectionVectors) {
-      console.error('Volume direction vectors not initialized');
-      // Fallback to axis-aligned
       if (axis === 'x') return [1, 0, 0];
       if (axis === 'y') return [0, 1, 0];
       if (axis === 'z') return [0, 0, 1];
@@ -1112,19 +1097,21 @@ class VolumeCroppingTool extends BaseTool {
       case 'z':
         return this.volumeDirectionVectors.zDir;
       default:
-        console.error(`Unknown axis: ${axis}`);
         return [1, 0, 0];
     }
   }
 
-  _initialize3DViewports = (viewportsInfo): void => {
-    if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
+  _initialize3DViewports = (viewportsInfo: Types.IViewportId[]): void => {
+    if (!viewportsInfo?.length || !viewportsInfo[0]) {
       console.warn(
         'VolumeCroppingTool: No viewportsInfo available for initialization of volumecroppingtool.'
       );
       return;
     }
     const viewport = this._getViewport();
+    if (!viewport) {
+      return;
+    }
     const volumeActors = viewport.getActors();
     if (!volumeActors || volumeActors.length === 0) {
       console.warn(

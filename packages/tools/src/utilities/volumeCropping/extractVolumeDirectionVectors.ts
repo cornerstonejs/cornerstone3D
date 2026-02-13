@@ -1,12 +1,18 @@
 import type { Types } from '@cornerstonejs/core';
 
+export interface ImageDataWithDirection {
+  getDirection(): number[];
+}
+
 /**
  * Extract volume direction vectors from imageData.
  * The direction matrix defines the volume's orientation in world space.
  * @param imageData - The VTK image data
  * @returns Object containing the three orthogonal direction vectors
  */
-export function extractVolumeDirectionVectors(imageData): {
+export function extractVolumeDirectionVectors(
+  imageData: ImageDataWithDirection
+): {
   xDir: Types.Point3;
   yDir: Types.Point3;
   zDir: Types.Point3;

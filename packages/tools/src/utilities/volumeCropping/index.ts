@@ -11,4 +11,3 @@ export * from './getOrientationFromNormal';
 export * from './computePlanePlaneIntersection';
 export * from './findLineBoundsIntersection';
 export * from './convertColorArrayToRgbString';
-export * from './getAxisNameFromPlaneIndex';

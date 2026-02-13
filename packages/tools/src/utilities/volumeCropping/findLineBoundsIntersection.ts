@@ -30,15 +30,8 @@ export function findLineBoundsIntersection(
     linePoint[2] + lineDirection[2] * lineLength,
   ];
 
-  // Project two points on the line to canvas coordinates
-  let canvasStart: Types.Point2;
-  let canvasEnd: Types.Point2;
-  try {
-    canvasStart = viewport.worldToCanvas(lineStart);
-    canvasEnd = viewport.worldToCanvas(lineEnd);
-  } catch (error) {
-    return null;
-  }
+  const canvasStart = viewport.worldToCanvas(lineStart);
+  const canvasEnd = viewport.worldToCanvas(lineEnd);
 
   // Get viewport dimensions
   const { clientWidth, clientHeight } = viewport.canvas;

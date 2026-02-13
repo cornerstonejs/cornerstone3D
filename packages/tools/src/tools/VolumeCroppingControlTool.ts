@@ -88,14 +88,6 @@ interface VolumeCroppingAnnotation extends Annotation {
   };
 }
 
-function defaultReferenceLineColor() {
-  return 'rgb(0, 200, 0)';
-}
-
-function defaultReferenceLineControllable() {
-  return true;
-}
-
 const OPERATION = {
   DRAG: 1,
   ROTATE: 2,
@@ -220,10 +212,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     this._getReferenceLineColor =
       toolProps.configuration?.getReferenceLineColor ||
-      defaultReferenceLineColor;
+      (() => 'rgb(0, 200, 0)');
     this._getReferenceLineControllable =
-      toolProps.configuration?.getReferenceLineControllable ||
-      defaultReferenceLineControllable;
+      toolProps.configuration?.getReferenceLineControllable || (() => true);
 
     const viewportsInfo = getToolGroup(this.toolGroupId)?.viewportsInfo;
 
@@ -235,7 +226,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (viewportsInfo && viewportsInfo.length > 0) {
       const { viewportId, renderingEngineId } = viewportsInfo[0];
       const renderingEngine = getRenderingEngine(renderingEngineId);
+      if (!renderingEngine) {
+        return;
+      }
       const viewport = renderingEngine.getViewport(viewportId);
+      if (!viewport) {
+        return;
+      }
       const volumeActors = viewport.getActors();
       if (!volumeActors || !volumeActors.length) {
         console.warn(
@@ -462,8 +459,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
     this._initializeViewports(viewportsInfo);
   };
 
-  _initializeViewports = (viewportsInfo): void => {
-    if (!viewportsInfo || !viewportsInfo[0]) {
+  _initializeViewports = (viewportsInfo: Types.IViewportId[]): void => {
+    if (!viewportsInfo?.length || !viewportsInfo[0]) {
       console.warn(
         'VolumeCroppingControlTool: No valid viewportsInfo for initialization.'
       );
@@ -474,11 +471,9 @@ class VolumeCroppingControlTool extends AnnotationTool {
       this.initializeViewport(vpInfo);
     });
 
-    if (viewportsInfo && viewportsInfo.length) {
-      triggerAnnotationRenderForViewportIds(
-        viewportsInfo.map(({ viewportId }) => viewportId)
-      );
-    }
+    triggerAnnotationRenderForViewportIds(
+      viewportsInfo.map(({ viewportId }) => viewportId)
+    );
   };
   _syncWithVolumeCroppingTool(originalClippingPlanes: ClippingPlane[]) {
     if (
@@ -1015,7 +1010,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
     if (viewportsInfo && viewportsInfo.length > 0) {
       const { viewportId, renderingEngineId } = viewportsInfo[0];
       const renderingEngine = getRenderingEngine(renderingEngineId);
+      if (!renderingEngine) {
+        return;
+      }
       const viewport = renderingEngine.getViewport(viewportId);
+      if (!viewport) {
+        return;
+      }
       const volumeActors = viewport.getActors();
       if (volumeActors.length > 0) {
         const imageData = volumeActors[0].actor.getMapper().getInputData();

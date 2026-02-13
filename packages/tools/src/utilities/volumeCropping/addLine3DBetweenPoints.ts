@@ -16,7 +16,7 @@ import type { Types } from '@cornerstonejs/core';
  * @returns Object with actor and source
  */
 export function addLine3DBetweenPoints(
-  viewport,
+  viewport: Types.IVolumeViewport,
   point1: Types.Point3,
   point2: Types.Point3,
   color: [number, number, number] = [0.7, 0.7, 0.7],
