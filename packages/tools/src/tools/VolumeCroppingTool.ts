@@ -1,6 +1,4 @@
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
-import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import { mat3, mat4, vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -26,32 +24,18 @@ import { Events } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 
-const PLANEINDEX = {
-  XMIN: 0,
-  XMAX: 1,
-  YMIN: 2,
-  YMAX: 3,
-  ZMIN: 4,
-  ZMAX: 5,
-};
-const SPHEREINDEX = {
-  // cube faces
-  XMIN: 0,
-  XMAX: 1,
-  YMIN: 2,
-  YMAX: 3,
-  ZMIN: 4,
-  ZMAX: 5,
-  // cube corners
-  XMIN_YMIN_ZMIN: 6,
-  XMIN_YMIN_ZMAX: 7,
-  XMIN_YMAX_ZMIN: 8,
-  XMIN_YMAX_ZMAX: 9,
-  XMAX_YMIN_ZMIN: 10,
-  XMAX_YMIN_ZMAX: 11,
-  XMAX_YMAX_ZMIN: 12,
-  XMAX_YMAX_ZMAX: 13,
-};
+import {
+  PLANEINDEX,
+  SPHEREINDEX,
+  NUM_CLIPPING_PLANES,
+  extractVolumeDirectionVectors,
+  calculateAdaptiveSphereRadius,
+  parseCornerKey,
+  addLine3DBetweenPoints,
+  calculateNewCornerPosition,
+  type ClippingPlane,
+  copyClippingPlanes,
+} from '../utilities/volumeCropping';
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -59,12 +43,16 @@ const SPHEREINDEX = {
  *
  * @remarks
  * This tool creates a complete 3D cropping interface with:
- * - 6 face spheres for individual axis cropping
+ * - 6 face spheres for individual axis cropping (along volume's X, Y, Z axes)
  * - 8 corner spheres for multi-axis cropping
  * - 12 edge lines connecting corner spheres
  * - Real-time clipping plane updates
  * - Synchronization with VolumeCroppingControlTool working on the same series instance UID for cross-viewport interaction
+ * - Support for volumes with any orientation (including oblique/rotated volumes)
  *
+ * The tool automatically adapts to the volume's orientation by using the volume's direction matrix.
+ * Clipping planes are aligned with the volume's intrinsic axes (X, Y, Z) rather than world axes,
+ * ensuring proper cropping regardless of how the volume is oriented in 3D space.
  *
  * @example
  * ```typescript
@@ -78,9 +66,9 @@ const SPHEREINDEX = {
  *   showHandles: true,
  *   initialCropFactor: 0.1,
  *   sphereColors: {
- *     SAGITTAL: [1.0, 1.0, 0.0], // Yellow for sagittal (X-axis) spheres
- *     CORONAL: [0.0, 1.0, 0.0], // Green for coronal (Y-axis) spheres
- *     AXIAL: [1.0, 0.0, 0.0], // Red for axial (Z-axis) spheres
+ *     SAGITTAL: [1.0, 1.0, 0.0], // Yellow for X-axis (typically sagittal) spheres
+ *     CORONAL: [0.0, 1.0, 0.0], // Green for Y-axis (typically coronal) spheres
+ *     AXIAL: [1.0, 0.0, 0.0], // Red for Z-axis (typically axial) spheres
  *     CORNERS: [0.0, 0.0, 1.0] // Blue for corner spheres
  *   },
  *   sphereRadius: 10,
@@ -106,8 +94,6 @@ const SPHEREINDEX = {
  *   // Toggle clipping effect
  *   tool.setClippingPlanesVisible(!planesVisible);
  *
- *   console.log(`Handles: ${!handlesVisible ? 'shown' : 'hidden'}`);
- *   console.log(`Cropping: ${!planesVisible ? 'active' : 'disabled'}`);
  * }
  *
  * // Common UI scenarios
@@ -132,11 +118,11 @@ const SPHEREINDEX = {
  * @property {Map} _resizeObservers - Map of ResizeObserver instances for viewport resize handling
  * @property {Function} _viewportAddedListener - Event listener for new viewport additions
  * @property {boolean} _hasResolutionChanged - Flag tracking if rendering resolution has been modified during interaction
- * @property {Array<Object>} originalClippingPlanes - Array of clipping plane objects with origin and normal vectors
+ * @property {ClippingPlane[]} originalClippingPlanes - Array of clipping plane objects with origin and normal vectors
  * @property {number|null} draggingSphereIndex - Index of currently dragged sphere, null when not dragging
- * @property {Types.Point3} toolCenter - Center point of the cropping volume in world coordinates [x, y, z]
  * @property {number[]|null} cornerDragOffset - 3D offset vector for corner sphere dragging [dx, dy, dz]
  * @property {number|null} faceDragOffset - 1D offset value for face sphere dragging along single axis
+ * @property {boolean} rotatePlanesOnDrag - If true, dragging rotates clipping planes instead of camera (default: false)
  * @property {Array<SphereState>} sphereStates - Array of sphere state objects containing position, VTK actors, and metadata
  * @property {Object} edgeLines - Dictionary of edge line actors connecting corner spheres for wireframe visualization
  *
@@ -172,9 +158,15 @@ const SPHEREINDEX = {
  * @property {number} grabSpherePixelDistance - Pixel distance threshold for sphere selection (default: 20)
  * @property {number} rotateIncrementDegrees - Rotation increment for camera rotation (default: 2)
  * @property {number} rotateSampleDistanceFactor - Sample distance multiplier during rotation for performance (default: 2)
+ * @property {number} rotateClippingPlanesIncrementDegrees - Rotation increment for clipping planes rotation (default: 5)
  *
  * @events
- * @event VOLUMECROPPING_TOOL_CHANGED - Fired when sphere positions change or clipping planes are updated
+ * @event VOLUMECROPPING_TOOL_CHANGED - Fired when sphere positions change or clipping planes are updated.
+ *   Event detail includes:
+ *   - originalClippingPlanes: ClippingPlane[] - Array of 6 clipping planes [XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX]
+ *   - seriesInstanceUID: string - Series instance UID for event filtering
+ *   - viewportId?: string - Optional viewport ID
+ *   - renderingEngineId?: string - Optional rendering engine ID
  * @event VOLUMECROPPINGCONTROL_TOOL_CHANGED - Listens for changes from VolumeCroppingControlTool
  * @event VOLUME_VIEWPORT_NEW_VOLUME - Listens for new volume loading to reinitialize cropping bounds
  * @event TOOLGROUP_VIEWPORT_ADDED - Listens for new viewport additions to extend resize observation
@@ -184,6 +176,8 @@ const SPHEREINDEX = {
  * - **setClippingPlanesVisible(visible: boolean)**: Enable/disable volume clipping planes
  * - **getHandlesVisible()**: Get current handle visibility state
  * - **getClippingPlanesVisible()**: Get current clipping plane visibility state
+ * - **setRotatePlanesOnDrag(enable: boolean)**: Enable/disable rotating clipping planes on drag (default: false)
+ * - **getRotatePlanesOnDrag()**: Get current rotate planes on drag state
  *
  *
  * @see {@link VolumeCroppingControlTool} - Companion tool for 2D viewport reference lines
@@ -199,11 +193,17 @@ class VolumeCroppingTool extends BaseTool {
   _resizeObservers = new Map();
   _viewportAddedListener: (evt) => void;
   _hasResolutionChanged = false;
-  originalClippingPlanes: { origin: number[]; normal: number[] }[] = [];
+  originalClippingPlanes: ClippingPlane[] = [];
   draggingSphereIndex: number | null = null;
-  toolCenter: Types.Point3 = [0, 0, 0];
+  rotatePlanesOnDrag: boolean = false; // If true, dragging rotates clipping planes instead of camera
   cornerDragOffset: [number, number, number] | null = null;
   faceDragOffset: number | null = null;
+  // Store volume direction vectors for non-axis-aligned volumes
+  volumeDirectionVectors: {
+    xDir: Types.Point3; // First axis direction (rows)
+    yDir: Types.Point3; // Second axis direction (columns)
+    zDir: Types.Point3; // Third axis direction (slices)
+  } | null = null;
   // Store  spheres for show/hide actor.
   sphereStates: {
     point: Types.Point3;
@@ -246,6 +246,7 @@ class VolumeCroppingTool extends BaseTool {
         grabSpherePixelDistance: 20, //pixels threshold for closeness to the sphere being grabbed
         rotateIncrementDegrees: 2,
         rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
+        rotateClippingPlanesIncrementDegrees: 5, // Rotation increment for clipping planes (higher = faster rotation)
       },
     }
   ) {
@@ -255,88 +256,99 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   onSetToolActive() {
-    // console.debug('Setting tool active: volumeCropping', this.sphereStates);
-    if (this.sphereStates && this.sphereStates.length > 0) {
-      if (this.configuration.showHandles) {
-        this.setHandlesVisible(false);
-        this.setClippingPlanesVisible(false);
-        //   console.debug('Setting tool active: hiding controls');
-      } else {
-        this.setHandlesVisible(true);
-        this.setClippingPlanesVisible(true);
-        // console.debug('Setting tool active: showing controls');
-      }
-    } else {
-      const viewportsInfo = this._getViewportsInfo();
-      const subscribeToElementResize = () => {
-        viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-          if (!this._resizeObservers.has(viewportId)) {
-            const { viewport } = getEnabledElementByIds(
+    // Always set up the infrastructure (resize observers, event listeners, etc.)
+    // but don't show handles or clipping planes by default
+    // They should only be shown via hotkeys or the VolumeCropping component
+    // Rotation is already enabled via mouseDragCallback, so no additional setup needed
+    const viewportsInfo = this._getViewportsInfo();
+
+    const subscribeToElementResize = () => {
+      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+        if (!this._resizeObservers.has(viewportId)) {
+          const { viewport } = getEnabledElementByIds(
+            viewportId,
+            renderingEngineId
+          ) || { viewport: null };
+          if (!viewport) {
+            return;
+          }
+          const { element } = viewport;
+          const resizeObserver = new ResizeObserver(() => {
+            const element = getEnabledElementByIds(
               viewportId,
               renderingEngineId
-            ) || { viewport: null };
-            if (!viewport) {
+            );
+            if (!element) {
               return;
             }
-            const { element } = viewport;
-            const resizeObserver = new ResizeObserver(() => {
-              const element = getEnabledElementByIds(
-                viewportId,
-                renderingEngineId
-              );
-              if (!element) {
-                return;
-              }
-              const { viewport } = element;
-              const viewPresentation = viewport.getViewPresentation();
-              viewport.resetCamera();
-              viewport.setViewPresentation(viewPresentation);
-              viewport.render();
-            });
-            resizeObserver.observe(element);
-            this._resizeObservers.set(viewportId, resizeObserver);
-          }
-        });
-      };
-
-      subscribeToElementResize();
-
-      this._viewportAddedListener = (evt) => {
-        if (evt.detail.toolGroupId === this.toolGroupId) {
-          subscribeToElementResize();
+            const { viewport } = element;
+            const viewPresentation = viewport.getViewPresentation();
+            viewport.resetCamera();
+            viewport.setViewPresentation(viewPresentation);
+            viewport.render();
+          });
+          resizeObserver.observe(element);
+          this._resizeObservers.set(viewportId, resizeObserver);
         }
-      };
+      });
+    };
 
-      eventTarget.addEventListener(
-        Events.TOOLGROUP_VIEWPORT_ADDED,
-        this._viewportAddedListener
-      );
+    subscribeToElementResize();
 
-      this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
-      this._subscribeToViewportNewVolumeSet(viewportsInfo);
-      this._initialize3DViewports(viewportsInfo);
-
-      if (this.sphereStates && this.sphereStates.length > 0) {
-        this.setHandlesVisible(true);
-      } else {
-        //console.warn('Setting tool active: no spheres! trying to initialize');
-        this.originalClippingPlanes = [];
-        this._initialize3DViewports(viewportsInfo);
+    this._viewportAddedListener = (evt) => {
+      if (evt.detail.toolGroupId === this.toolGroupId) {
+        subscribeToElementResize();
       }
+    };
+
+    eventTarget.addEventListener(
+      Events.TOOLGROUP_VIEWPORT_ADDED,
+      this._viewportAddedListener
+    );
+
+    this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+    this._subscribeToViewportNewVolumeSet(viewportsInfo);
+
+    // Initialize 3D viewports if not already initialized
+    if (this.sphereStates && this.sphereStates.length === 0) {
+      this.originalClippingPlanes = [];
+      this._initialize3DViewports(viewportsInfo);
     }
+
+    // Explicitly disable clipping planes and handles after initialization
+    // They should only be shown via hotkeys or the VolumeCropping component
+    // This ensures that even if _initialize3DViewports added clipping planes,
+    // they will be removed if the configuration says they should be hidden
+    this.configuration.showClippingPlanes = false;
+    this.configuration.showHandles = false;
+
+    const viewport = this._getViewport();
+    if (
+      viewport &&
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length > 0
+    ) {
+      this._updateClippingPlanes(viewport);
+      if (this.sphereStates && this.sphereStates.length > 0) {
+        this._updateHandlesVisibility();
+      }
+      viewport.render();
+    }
+
+    // DO NOT show handles or clipping planes by default
+    // They should only be shown via hotkeys or the VolumeCropping component
+    // Rotation is already enabled via mouseDragCallback, so no additional setup needed
   }
 
   onSetToolConfiguration = (): void => {
-    console.debug('Setting tool settoolconfiguration : volumeCropping');
-    //this._init();
+    // Configuration is handled in constructor and onSetToolActive
   };
 
   onSetToolEnabled = (): void => {
-    console.debug('Setting tool enabled: volumeCropping');
+    // Tool enabled state is managed by BaseTool
   };
 
   onSetToolDisabled() {
-    // console.debug('Setting tool disabled: volumeCropping');
     // Disconnect all resize observers
     this._resizeObservers.forEach((resizeObserver, viewportId) => {
       resizeObserver.disconnect();
@@ -365,7 +377,6 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
-    //console.debug('VolumeCroppingTool.preMouseDownCallback called');
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
@@ -403,10 +414,20 @@ class VolumeCroppingTool extends BaseTool {
           ];
           this.faceDragOffset = null;
         } else {
-          // For face spheres, only store the offset along the axis of movement
-          const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
+          // For face spheres, store the offset along the volume axis of movement
+          const directionVector = this._getDirectionVectorForAxis(
+            sphereState.axis
+          );
+          const delta = [
+            sphereState.point[0] - mouseWorld[0],
+            sphereState.point[1] - mouseWorld[1],
+            sphereState.point[2] - mouseWorld[2],
+          ];
+          // Project offset onto axis direction
           this.faceDragOffset =
-            sphereState.point[axisIdx] - mouseWorld[axisIdx];
+            delta[0] * directionVector[0] +
+            delta[1] * directionVector[1] +
+            delta[2] * directionVector[2];
           this.cornerDragOffset = null;
         }
 
@@ -489,44 +510,13 @@ class VolumeCroppingTool extends BaseTool {
    */
   setHandlesVisible(visible: boolean) {
     this.configuration.showHandles = visible;
-    // Before showing, update sphere positions to match clipping planes
     if (visible) {
-      // Update face spheres from the current clipping planes
-      this.sphereStates[SPHEREINDEX.XMIN].point[0] =
-        this.originalClippingPlanes[PLANEINDEX.XMIN].origin[0];
-      this.sphereStates[SPHEREINDEX.XMAX].point[0] =
-        this.originalClippingPlanes[PLANEINDEX.XMAX].origin[0];
-      this.sphereStates[SPHEREINDEX.YMIN].point[1] =
-        this.originalClippingPlanes[PLANEINDEX.YMIN].origin[1];
-      this.sphereStates[SPHEREINDEX.YMAX].point[1] =
-        this.originalClippingPlanes[PLANEINDEX.YMAX].origin[1];
-      this.sphereStates[SPHEREINDEX.ZMIN].point[2] =
-        this.originalClippingPlanes[PLANEINDEX.ZMIN].origin[2];
-      this.sphereStates[SPHEREINDEX.ZMAX].point[2] =
-        this.originalClippingPlanes[PLANEINDEX.ZMAX].origin[2];
-
-      // Update all sphere actors' positions
-      [
-        SPHEREINDEX.XMIN,
-        SPHEREINDEX.XMAX,
-        SPHEREINDEX.YMIN,
-        SPHEREINDEX.YMAX,
-        SPHEREINDEX.ZMIN,
-        SPHEREINDEX.ZMAX,
-      ].forEach((idx) => {
-        const s = this.sphereStates[idx];
-        s.sphereSource.setCenter(...s.point);
-        s.sphereSource.modified();
-      });
-
-      // Update corners and edges as well
+      this._updateFaceSpheresFromClippingPlanes();
       this._updateCornerSpheres();
     }
 
-    // Show/hide actors
     this._updateHandlesVisibility();
 
-    // Render
     const viewportsInfo = this._getViewportsInfo();
     const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
@@ -615,17 +605,82 @@ class VolumeCroppingTool extends BaseTool {
     this.configuration.showClippingPlanes = visible;
     const viewport = this._getViewport();
     this._updateClippingPlanes(viewport);
+
+    if (this.sphereStates && this.sphereStates.length > 0) {
+      this.configuration.showHandles = visible;
+      this._updateHandlesVisibility();
+    }
+
+    if (
+      visible &&
+      viewport &&
+      this.originalClippingPlanes?.length >= NUM_CLIPPING_PLANES
+    ) {
+      this._notifyClippingPlanesChanged(viewport);
+    }
+
     viewport.render();
+  }
+
+  /**
+   * Gets whether dragging rotates clipping planes instead of the camera.
+   *
+   * @returns {boolean} True if dragging rotates clipping planes, false if it rotates the camera
+   *
+   * @example
+   * ```typescript
+   * const isRotatingPlanes = volumeCroppingTool.getRotatePlanesOnDrag();
+   * if (isRotatingPlanes) {
+   *   console.log('Dragging will rotate clipping planes');
+   * } else {
+   *   console.log('Dragging will rotate camera');
+   * }
+   * ```
+   */
+  getRotatePlanesOnDrag(): boolean {
+    return this.rotatePlanesOnDrag;
+  }
+
+  /**
+   * Sets whether dragging should rotate clipping planes instead of the camera.
+   *
+   * When enabled, dragging the mouse will rotate the clipping planes around the volume.
+   * When disabled, dragging will rotate the camera view (default behavior).
+   *
+   * @param enable - Whether to enable (true) or disable (false) rotating planes on drag
+   *
+   * @example
+   * ```typescript
+   * // Enable rotating clipping planes on drag
+   * volumeCroppingTool.setRotatePlanesOnDrag(true);
+   *
+   * // Disable to use default camera rotation
+   * volumeCroppingTool.setRotatePlanesOnDrag(false);
+   * ```
+   *
+   * @remarks
+   * - Default is false (camera rotation)
+   * - When enabled, the clipping planes rotate around the volume center
+   * - The rotation increment is controlled by rotateClippingPlanesIncrementDegrees configuration
+   */
+  setRotatePlanesOnDrag(enable: boolean): void {
+    this.rotatePlanesOnDrag = enable;
+    const viewport = this._getViewport();
+    if (viewport) {
+      viewport.render();
+    }
   }
 
   _dragCallback(evt: EventTypes.InteractionEventType): void {
     const { element, currentPoints, lastPoints } = evt.detail;
 
     if (this.draggingSphereIndex !== null) {
-      // crop handles
       this._onMouseMoveSphere(evt);
     } else {
-      // rotate
+      if (this.rotatePlanesOnDrag === true) {
+        this._rotateClippingPlanes(evt);
+        return;
+      }
       const currentPointsCanvas = currentPoints.canvas;
       const lastPointsCanvas = lastPoints.canvas;
       const { rotateIncrementDegrees } = this.configuration;
@@ -647,7 +702,6 @@ class VolumeCroppingTool extends BaseTool {
       ];
 
       const center: Types.Point2 = [width * 0.5, height * 0.5];
-      // NOTE: centerWorld corresponds to the focal point in cornerstone3D
       const centerWorld = viewport.canvasToWorld(center);
       const normalizedCenter = [0.5, 0.5];
 
@@ -709,161 +763,167 @@ class VolumeCroppingTool extends BaseTool {
       return false;
     }
 
-    // Get viewport and world coordinates
     const { viewport, world } = this._getViewportAndWorldCoords(evt);
     if (!viewport || !world) {
       return false;
     }
 
-    // Handle sphere movement based on type WITHOUT updating clipping planes yet
     if (sphereState.isCorner) {
-      // Calculate and update just the dragged corner position
-      const newCorner = this._calculateNewCornerPosition(world);
-      this._updateSpherePosition(sphereState, newCorner);
+      const newCorner = calculateNewCornerPosition(
+        world,
+        this.cornerDragOffset
+      );
+      const oldCorner = sphereState.point;
 
-      // Update related corners
-      const axisFlags = this._parseCornerKey(sphereState.uid);
-      this._updateRelatedCorners(sphereState, newCorner, axisFlags);
+      const axisFlags = parseCornerKey(sphereState.uid);
+      const { xDir, yDir, zDir } = this._getDirectionVectors();
 
-      // Update face spheres and corners
-      this._updateFaceSpheresFromCorners();
-      this._updateCornerSpheres();
-    } else {
-      // Update face sphere position
-      const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
-      let newValue = world[axisIdx];
-      if (this.faceDragOffset !== null) {
-        newValue += this.faceDragOffset;
+      if (!xDir || !yDir || !zDir) return false;
+
+      const delta = [
+        newCorner[0] - oldCorner[0],
+        newCorner[1] - oldCorner[1],
+        newCorner[2] - oldCorner[2],
+      ];
+
+      const deltaX =
+        delta[0] * xDir[0] + delta[1] * xDir[1] + delta[2] * xDir[2];
+      const deltaY =
+        delta[0] * yDir[0] + delta[1] * yDir[1] + delta[2] * yDir[2];
+      const deltaZ =
+        delta[0] * zDir[0] + delta[1] * zDir[1] + delta[2] * zDir[2];
+
+      if (axisFlags.isXMin) {
+        const faceXMin = this.sphereStates[SPHEREINDEX.XMIN];
+        const newPoint: Types.Point3 = [
+          faceXMin.point[0] + deltaX * xDir[0],
+          faceXMin.point[1] + deltaX * xDir[1],
+          faceXMin.point[2] + deltaX * xDir[2],
+        ];
+        this._updateSpherePosition(SPHEREINDEX.XMIN, newPoint);
+      } else if (axisFlags.isXMax) {
+        const faceXMax = this.sphereStates[SPHEREINDEX.XMAX];
+        const newPoint: Types.Point3 = [
+          faceXMax.point[0] + deltaX * xDir[0],
+          faceXMax.point[1] + deltaX * xDir[1],
+          faceXMax.point[2] + deltaX * xDir[2],
+        ];
+        this._updateSpherePosition(SPHEREINDEX.XMAX, newPoint);
       }
-      sphereState.point[axisIdx] = newValue;
-      sphereState.sphereSource.setCenter(...sphereState.point);
-      sphereState.sphereSource.modified();
 
-      // Update corners from face spheres
+      if (axisFlags.isYMin) {
+        const faceYMin = this.sphereStates[SPHEREINDEX.YMIN];
+        const newPoint: Types.Point3 = [
+          faceYMin.point[0] + deltaY * yDir[0],
+          faceYMin.point[1] + deltaY * yDir[1],
+          faceYMin.point[2] + deltaY * yDir[2],
+        ];
+        this._updateSpherePosition(SPHEREINDEX.YMIN, newPoint);
+      } else if (axisFlags.isYMax) {
+        const faceYMax = this.sphereStates[SPHEREINDEX.YMAX];
+        const newPoint: Types.Point3 = [
+          faceYMax.point[0] + deltaY * yDir[0],
+          faceYMax.point[1] + deltaY * yDir[1],
+          faceYMax.point[2] + deltaY * yDir[2],
+        ];
+        this._updateSpherePosition(SPHEREINDEX.YMAX, newPoint);
+      }
+
+      if (axisFlags.isZMin) {
+        const faceZMin = this.sphereStates[SPHEREINDEX.ZMIN];
+        const newPoint: Types.Point3 = [
+          faceZMin.point[0] + deltaZ * zDir[0],
+          faceZMin.point[1] + deltaZ * zDir[1],
+          faceZMin.point[2] + deltaZ * zDir[2],
+        ];
+        this._updateSpherePosition(SPHEREINDEX.ZMIN, newPoint);
+      } else if (axisFlags.isZMax) {
+        const faceZMax = this.sphereStates[SPHEREINDEX.ZMAX];
+        const newPoint: Types.Point3 = [
+          faceZMax.point[0] + deltaZ * zDir[0],
+          faceZMax.point[1] + deltaZ * zDir[1],
+          faceZMax.point[2] + deltaZ * zDir[2],
+        ];
+        this._updateSpherePosition(SPHEREINDEX.ZMAX, newPoint);
+      }
+
+      this._updateCornerSpheres();
+      this._updateFaceSpheresFromCorners();
+    } else {
+      const directionVector = this._getDirectionVectorForAxis(sphereState.axis);
+
+      const delta = [
+        world[0] - sphereState.point[0],
+        world[1] - sphereState.point[1],
+        world[2] - sphereState.point[2],
+      ];
+
+      const distanceAlongAxis =
+        delta[0] * directionVector[0] +
+        delta[1] * directionVector[1] +
+        delta[2] * directionVector[2];
+
+      const adjustedDistance =
+        this.faceDragOffset !== null
+          ? distanceAlongAxis + this.faceDragOffset
+          : distanceAlongAxis;
+
+      const newPoint: Types.Point3 = [
+        sphereState.point[0] + adjustedDistance * directionVector[0],
+        sphereState.point[1] + adjustedDistance * directionVector[1],
+        sphereState.point[2] + adjustedDistance * directionVector[2],
+      ];
+      this._updateSpherePosition(this.draggingSphereIndex, newPoint);
+
       this._updateCornerSpheresFromFaces();
       this._updateFaceSpheresFromCorners();
       this._updateCornerSpheres();
     }
 
-    // // THEN update clipping planes
     this._updateClippingPlanesFromFaceSpheres(viewport);
-
-    // Final render and event trigger
     viewport.render();
-
-    this._triggerToolChangedEvent(sphereState);
+    this._notifyClippingPlanesChanged();
 
     return true;
   };
 
   _onControlToolChange = (evt) => {
     const viewport = this._getViewport();
-    if (!evt.detail.toolCenter) {
-      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
-        originalClippingPlanes: this.originalClippingPlanes,
-        viewportId: viewport.id,
-        renderingEngineId: viewport.renderingEngineId,
-        seriesInstanceUID: this.seriesInstanceUID,
-      });
-    } else {
-      if (evt.detail.seriesInstanceUID !== this.seriesInstanceUID) {
-        return;
-      }
-      const isMin = evt.detail.handleType === 'min';
-      const toolCenter = isMin
-        ? evt.detail.toolCenterMin
-        : evt.detail.toolCenterMax;
-      const normals = isMin
-        ? [
-            [1, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-          ]
-        : [
-            [-1, 0, 0],
-            [0, -1, 0],
-            [0, 0, -1],
-          ];
-      const planeIndices = isMin
-        ? [PLANEINDEX.XMIN, PLANEINDEX.YMIN, PLANEINDEX.ZMIN]
-        : [PLANEINDEX.XMAX, PLANEINDEX.YMAX, PLANEINDEX.ZMAX];
-      const sphereIndices = isMin
-        ? [SPHEREINDEX.XMIN, SPHEREINDEX.YMIN, SPHEREINDEX.ZMIN]
-        : [SPHEREINDEX.XMAX, SPHEREINDEX.YMAX, SPHEREINDEX.ZMAX];
-      const axes = ['x', 'y', 'z'];
-      const orientationAxes = [
-        Enums.OrientationAxis.SAGITTAL,
-        Enums.OrientationAxis.CORONAL,
-        Enums.OrientationAxis.AXIAL,
-      ];
 
-      // Update planes and spheres for each axis
-      for (let i = 0; i < 3; ++i) {
-        const origin: [number, number, number] = [0, 0, 0];
-        origin[i] = toolCenter[i];
-        const plane = vtkPlane.newInstance({
-          origin,
-          normal: normals[i] as [number, number, number],
-        });
-        this.originalClippingPlanes[planeIndices[i]].origin = plane.getOrigin();
-
-        // Update face sphere
-        this.sphereStates[sphereIndices[i]].point[i] = plane.getOrigin()[i];
-        this.sphereStates[sphereIndices[i]].sphereSource.setCenter(
-          ...this.sphereStates[sphereIndices[i]].point
-        );
-        this.sphereStates[sphereIndices[i]].sphereSource.modified();
-
-        // Update center for other face spheres (not on this axis)
-        const otherSphere = this.sphereStates.find(
-          (s, idx) => s.axis === axes[i] && idx !== sphereIndices[i]
-        );
-        const newCenter = (otherSphere.point[i] + plane.getOrigin()[i]) / 2;
-        this.sphereStates.forEach((state) => {
-          if (
-            !state.isCorner &&
-            state.axis !== axes[i] &&
-            !evt.detail.viewportOrientation.includes(orientationAxes[i])
-          ) {
-            state.point[i] = newCenter;
-            state.sphereSource.setCenter(state.point);
-            state.sphereActor.getProperty().setColor(state.color);
-            state.sphereSource.modified();
-          }
-        });
-
-        // Update vtk clipping plane origin
-        const volumeActor = viewport.getDefaultActor()?.actor;
-        if (volumeActor) {
-          const mapper = volumeActor.getMapper() as vtkVolumeMapper;
-          const clippingPlanes = mapper.getClippingPlanes();
-          if (clippingPlanes) {
-            clippingPlanes[planeIndices[i]].setOrigin(plane.getOrigin());
-          }
-        }
-      }
-      this._updateCornerSpheres();
-      viewport.render();
-    }
-  };
-  _updateClippingPlanes(viewport) {
-    // Get the actor and transformation matrix
-    const actorEntry = viewport.getDefaultActor();
-    if (!actorEntry || !actorEntry.actor) {
-      // Only warn once per session for missing actor
-      if (!viewport._missingActorWarned) {
-        console.warn(
-          'VolumeCroppingTool._updateClippingPlanes: No default actor found in viewport.'
-        );
-        viewport._missingActorWarned = true;
-      }
+    if (evt.detail.seriesInstanceUID !== this.seriesInstanceUID) {
       return;
     }
+
+    if (
+      evt.detail.clippingPlanes &&
+      evt.detail.clippingPlanes.length >= NUM_CLIPPING_PLANES
+    ) {
+      this.originalClippingPlanes = copyClippingPlanes(
+        evt.detail.clippingPlanes
+      );
+
+      this._updateFaceSpheresFromClippingPlanes();
+      this._updateCornerSpheresFromFaces();
+      this._updateFaceSpheresFromCorners();
+      this._updateCornerSpheres();
+
+      const mapper = this._getVolumeMapper(viewport);
+      if (mapper) {
+        this._applyClippingPlanesToMapper(mapper);
+      }
+      viewport.render();
+      this._notifyClippingPlanesChanged(viewport);
+    } else {
+      this._notifyClippingPlanesChanged(viewport);
+    }
+  };
+
+  _updateClippingPlanes(viewport) {
+    const actorEntry = viewport.getDefaultActor();
     const actor = actorEntry.actor;
     const mapper = actor.getMapper();
     const matrix = actor.getMatrix();
 
-    // Only update if clipping planes are visible
     if (!this.configuration.showClippingPlanes) {
       mapper.removeAllClippingPlanes();
       return;
@@ -883,8 +943,6 @@ class VolumeCroppingTool extends BaseTool {
       return;
     }
 
-    // Only remove/add if the number of planes has changed or matrix has changed
-    // (Assume matrix changes frequently, so always update for now)
     mapper.removeAllClippingPlanes();
 
     // Preallocate arrays for transformed origins/normals
@@ -933,62 +991,20 @@ class VolumeCroppingTool extends BaseTool {
     });
   }
 
-  _addLine3DBetweenPoints(
-    viewport,
-    point1,
-    point2,
-    color: [number, number, number] = [0.7, 0.7, 0.7],
-    uid = ''
-  ) {
-    // Avoid creating a line if the points are the same
-    if (
-      point1[0] === point2[0] &&
-      point1[1] === point2[1] &&
-      point1[2] === point2[2]
-    ) {
-      return { actor: null, source: null };
-    }
-    const points = vtkPoints.newInstance();
-    points.setNumberOfPoints(2);
-    points.setPoint(0, point1[0], point1[1], point1[2]);
-    points.setPoint(1, point2[0], point2[1], point2[2]);
-
-    const lines = vtkCellArray.newInstance({ values: [2, 0, 1] });
-    const polyData = vtkPolyData.newInstance();
-    polyData.setPoints(points);
-    polyData.setLines(lines);
-
-    const mapper = vtkMapper.newInstance();
-    mapper.setInputData(polyData);
-    const actor = vtkActor.newInstance();
-    actor.setMapper(mapper);
-    actor.getProperty().setColor(...color);
-    actor.getProperty().setLineWidth(0.5); // Thinner line
-    actor.getProperty().setOpacity(1.0);
-    actor.getProperty().setInterpolationToFlat(); // No shading
-    actor.getProperty().setAmbient(1.0); // Full ambient
-    actor.getProperty().setDiffuse(0.0); // No diffuse
-    actor.getProperty().setSpecular(0.0); // No specular
-    actor.setVisibility(this.configuration.showHandles);
-    viewport.addActor({ actor, uid });
-    return { actor, source: polyData };
-  }
-
   _getViewportsInfo = () => {
-    const viewports = getToolGroup(this.toolGroupId).viewportsInfo;
-    return viewports;
+    const toolGroup = getToolGroup(this.toolGroupId);
+    return toolGroup?.viewportsInfo || [];
   };
 
   _addSphere(
-    viewport,
-    point,
-    axis,
-    position,
-    cornerKey = null,
-    adaptiveRadius
-  ) {
+    viewport: Types.IVolumeViewport,
+    point: Types.Point3,
+    axis: string,
+    position: string,
+    cornerKey: string | null = null,
+    adaptiveRadius: number
+  ): void {
     // Generate a unique UID for each sphere based on its axis and position
-    // Use cornerKey for corners, otherwise axis+position for faces
     const uid = cornerKey ? `corner_${cornerKey}` : `${axis}_${position}`;
     const sphereState = this.sphereStates.find((s) => s.uid === uid);
     if (sphereState) {
@@ -1007,17 +1023,18 @@ class VolumeCroppingTool extends BaseTool {
     if (cornerKey) {
       color = sphereColors.CORNERS || [0.0, 0.0, 1.0]; // Use corners color from config, fallback to blue
     } else if (axis === 'z') {
-      color = sphereColors.AXIAL || [1.0, 0.0, 0.0]; // Z-axis = AXIAL planes
+      color = sphereColors.AXIAL || [1.0, 0.0, 0.0]; // Z-axis (slice direction) = AXIAL planes
     } else if (axis === 'x') {
-      color = sphereColors.SAGITTAL || [1.0, 1.0, 0.0]; // X-axis = SAGITTAL planes
+      color = sphereColors.SAGITTAL || [1.0, 1.0, 0.0]; // X-axis (row direction) = SAGITTAL planes
     } else if (axis === 'y') {
-      color = sphereColors.CORONAL || [0.0, 1.0, 0.0]; // Y-axis = CORONAL planes
+      color = sphereColors.CORONAL || [0.0, 1.0, 0.0]; // Y-axis (column direction) = CORONAL planes
     }
-    // Store or update the sphere position
+
     const idx = this.sphereStates.findIndex((s) => s.uid === uid);
+    const pointCopy: Types.Point3 = [point[0], point[1], point[2]];
     if (idx === -1) {
       this.sphereStates.push({
-        point: point.slice(),
+        point: pointCopy,
         axis,
         uid,
         sphereSource,
@@ -1026,53 +1043,75 @@ class VolumeCroppingTool extends BaseTool {
         color,
       });
     } else {
-      this.sphereStates[idx].point = point.slice();
+      this.sphereStates[idx].point = pointCopy;
       this.sphereStates[idx].sphereSource = sphereSource;
     }
 
-    // Remove existing actor with this UID if present
-    const existingActors = viewport.getActors();
-    const existing = existingActors.find((a) => a.uid === uid);
-    if (existing) {
-      //viewport.removeActor(uid);
-      return;
-    }
     sphereActor.getProperty().setColor(color);
     sphereActor.setVisibility(this.configuration.showHandles);
     viewport.addActor({ actor: sphereActor, uid: uid });
   }
+
   /**
-   * Calculate an adaptive sphere radius based on the diagonal of the volume.
-   * This allows the sphere size to scale with the volume size.
-   * @param diagonal The diagonal length of the volume in world coordinates.
-   * @returns The calculated adaptive radius, clamped between min and max limits.
+   * Get the direction vector for a given axis ('x', 'y', or 'z').
+   * @param axis - The axis identifier
+   * @returns The direction vector in world space
    */
-  _calculateAdaptiveSphereRadius(diagonal): number {
-    // Get base radius from configuration (acts as a scaling factor)
-    const baseRadius =
-      this.configuration.sphereRadius !== undefined
-        ? this.configuration.sphereRadius
-        : 8;
+  _getDirectionVectorForAxis(axis: string): Types.Point3 {
+    // After rotation, use the current plane normals instead of original volume direction vectors
+    // This ensures spheres move along the rotated planes
+    if (
+      this.originalClippingPlanes &&
+      this.originalClippingPlanes.length >= NUM_CLIPPING_PLANES
+    ) {
+      switch (axis) {
+        case 'x':
+          // Use XMIN plane normal (points in +X direction)
+          return this.originalClippingPlanes[PLANEINDEX.XMIN]
+            .normal as Types.Point3;
+        case 'y':
+          // Use YMIN plane normal (points in +Y direction)
+          return this.originalClippingPlanes[PLANEINDEX.YMIN]
+            .normal as Types.Point3;
+        case 'z':
+          // Use ZMIN plane normal (points in +Z direction)
+          return this.originalClippingPlanes[PLANEINDEX.ZMIN]
+            .normal as Types.Point3;
+        default:
+          return [1, 0, 0];
+      }
+    }
 
-    // Scale radius as a percentage of diagonal (adjustable factor)
-    const scaleFactor = this.configuration.sphereRadiusScale || 0.01; // 1% of diagonal by default
-    const adaptiveRadius = diagonal * scaleFactor;
+    if (!this.volumeDirectionVectors) {
+      if (axis === 'x') return [1, 0, 0];
+      if (axis === 'y') return [0, 1, 0];
+      if (axis === 'z') return [0, 0, 1];
+      return [1, 0, 0];
+    }
 
-    // Apply min/max limits to prevent too small or too large spheres
-    const minRadius = this.configuration.minSphereRadius || 2;
-    const maxRadius = this.configuration.maxSphereRadius || 50;
-
-    return Math.max(minRadius, Math.min(maxRadius, adaptiveRadius));
+    switch (axis) {
+      case 'x':
+        return this.volumeDirectionVectors.xDir;
+      case 'y':
+        return this.volumeDirectionVectors.yDir;
+      case 'z':
+        return this.volumeDirectionVectors.zDir;
+      default:
+        return [1, 0, 0];
+    }
   }
 
-  _initialize3DViewports = (viewportsInfo): void => {
-    if (!viewportsInfo || !viewportsInfo.length || !viewportsInfo[0]) {
+  _initialize3DViewports = (viewportsInfo: Types.IViewportId[]): void => {
+    if (!viewportsInfo?.length || !viewportsInfo[0]) {
       console.warn(
         'VolumeCroppingTool: No viewportsInfo available for initialization of volumecroppingtool.'
       );
       return;
     }
     const viewport = this._getViewport();
+    if (!viewport) {
+      return;
+    }
     const volumeActors = viewport.getActors();
     if (!volumeActors || volumeActors.length === 0) {
       console.warn(
@@ -1086,131 +1125,127 @@ class VolumeCroppingTool extends BaseTool {
       return;
     }
     this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
-    const worldBounds = imageData.getBounds(); // Already in world coordinates
+
+    this.volumeDirectionVectors = extractVolumeDirectionVectors(imageData);
+    const { xDir, yDir, zDir } = this.volumeDirectionVectors;
+
+    // Get volume bounds and dimensions in index space
+    const dimensions = imageData.getDimensions();
+    const spacing = imageData.getSpacing();
+    const origin = imageData.getOrigin();
+
     const cropFactor = this.configuration.initialCropFactor || 0.1;
 
-    // Calculate cropping bounds using world bounds
-    const xRange = worldBounds[1] - worldBounds[0];
-    const yRange = worldBounds[3] - worldBounds[2];
-    const zRange = worldBounds[5] - worldBounds[4];
+    // Calculate cropping range in index space
+    const xMin = cropFactor * dimensions[0];
+    const xMax = (1 - cropFactor) * dimensions[0];
+    const yMin = cropFactor * dimensions[1];
+    const yMax = (1 - cropFactor) * dimensions[1];
+    const zMin = cropFactor * dimensions[2];
+    const zMax = (1 - cropFactor) * dimensions[2];
 
-    const xMin = worldBounds[0] + cropFactor * xRange;
-    const xMax = worldBounds[1] - cropFactor * xRange;
-    const yMin = worldBounds[2] + cropFactor * yRange;
-    const yMax = worldBounds[3] - cropFactor * yRange;
-    const zMin = worldBounds[4] + cropFactor * zRange;
-    const zMax = worldBounds[5] - cropFactor * zRange;
+    const indexToWorld = (i: number, j: number, k: number): Types.Point3 => {
+      return [
+        origin[0] +
+          i * spacing[0] * xDir[0] +
+          j * spacing[1] * yDir[0] +
+          k * spacing[2] * zDir[0],
+        origin[1] +
+          i * spacing[0] * xDir[1] +
+          j * spacing[1] * yDir[1] +
+          k * spacing[2] * zDir[1],
+        origin[2] +
+          i * spacing[0] * xDir[2] +
+          j * spacing[1] * yDir[2] +
+          k * spacing[2] * zDir[2],
+      ];
+    };
 
-    const planes: vtkPlane[] = [];
+    // Calculate center of each face in index space
+    const xCenter = (xMin + xMax) / 2;
+    const yCenter = (yMin + yMax) / 2;
+    const zCenter = (zMin + zMax) / 2;
 
-    // X min plane (cuts everything left of xMin)
-    const planeXmin = vtkPlane.newInstance({
-      origin: [xMin, 0, 0],
-      normal: [1, 0, 0],
-    });
-    const planeXmax = vtkPlane.newInstance({
-      origin: [xMax, 0, 0],
-      normal: [-1, 0, 0],
-    });
-    const planeYmin = vtkPlane.newInstance({
-      origin: [0, yMin, 0],
-      normal: [0, 1, 0],
-    });
-    const planeYmax = vtkPlane.newInstance({
-      origin: [0, yMax, 0],
-      normal: [0, -1, 0],
-    });
-    const planeZmin = vtkPlane.newInstance({
-      origin: [0, 0, zMin],
-      normal: [0, 0, 1],
-    });
-    const planeZmax = vtkPlane.newInstance({
-      origin: [0, 0, zMax],
-      normal: [0, 0, -1],
-    });
-    const mapper = viewport
-      .getDefaultActor()
-      .actor.getMapper() as vtkVolumeMapper;
-    planes.push(planeXmin);
-    planes.push(planeXmax);
-    planes.push(planeYmin);
-    planes.push(planeYmax);
-    planes.push(planeZmin);
-    planes.push(planeZmax);
+    // Calculate world positions for face centers
+    const faceXMin = indexToWorld(xMin, yCenter, zCenter);
+    const faceXMax = indexToWorld(xMax, yCenter, zCenter);
+    const faceYMin = indexToWorld(xCenter, yMin, zCenter);
+    const faceYMax = indexToWorld(xCenter, yMax, zCenter);
+    const faceZMin = indexToWorld(xCenter, yCenter, zMin);
+    const faceZMax = indexToWorld(xCenter, yCenter, zMax);
 
-    const originalPlanes = planes.map((plane) => ({
-      origin: [...plane.getOrigin()],
-      normal: [...plane.getNormal()],
+    // Create clipping planes with normals based on volume orientation
+    const planeXMin = vtkPlane.newInstance({
+      origin: faceXMin,
+      normal: xDir, // Normal points in +X direction
+    });
+    const planeXMax = vtkPlane.newInstance({
+      origin: faceXMax,
+      normal: [-xDir[0], -xDir[1], -xDir[2]], // Normal points in -X direction
+    });
+    const planeYMin = vtkPlane.newInstance({
+      origin: faceYMin,
+      normal: yDir, // Normal points in +Y direction
+    });
+    const planeYMax = vtkPlane.newInstance({
+      origin: faceYMax,
+      normal: [-yDir[0], -yDir[1], -yDir[2]], // Normal points in -Y direction
+    });
+    const planeZMin = vtkPlane.newInstance({
+      origin: faceZMin,
+      normal: zDir, // Normal points in +Z direction
+    });
+    const planeZMax = vtkPlane.newInstance({
+      origin: faceZMax,
+      normal: [-zDir[0], -zDir[1], -zDir[2]], // Normal points in -Z direction
+    });
+
+    const planes: vtkPlane[] = [
+      planeXMin,
+      planeXMax,
+      planeYMin,
+      planeYMax,
+      planeZMin,
+      planeZMax,
+    ];
+
+    const originalPlanes: ClippingPlane[] = planes.map((plane) => ({
+      origin: [...plane.getOrigin()] as Types.Point3,
+      normal: [...plane.getNormal()] as Types.Point3,
     }));
 
     this.originalClippingPlanes = originalPlanes;
-    const sphereXminPoint = [xMin, (yMax + yMin) / 2, (zMax + zMin) / 2];
-    const sphereXmaxPoint = [xMax, (yMax + yMin) / 2, (zMax + zMin) / 2];
-    const sphereYminPoint = [(xMax + xMin) / 2, yMin, (zMax + zMin) / 2];
-    const sphereYmaxPoint = [(xMax + xMin) / 2, yMax, (zMax + zMin) / 2];
-    const sphereZminPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMin];
-    const sphereZmaxPoint = [(xMax + xMin) / 2, (yMax + yMin) / 2, zMax];
-    const adaptiveRadius = this._calculateAdaptiveSphereRadius(
-      Math.sqrt(xRange * xRange + yRange * yRange + zRange * zRange)
+
+    // Calculate world diagonal for adaptive sphere radius
+    const diag0 = indexToWorld(0, 0, 0);
+    const diag1 = indexToWorld(dimensions[0], dimensions[1], dimensions[2]);
+    const diagonal = Math.sqrt(
+      Math.pow(diag1[0] - diag0[0], 2) +
+        Math.pow(diag1[1] - diag0[1], 2) +
+        Math.pow(diag1[2] - diag0[2], 2)
     );
-    this._addSphere(
-      viewport,
-      sphereXminPoint,
-      'x',
-      'min',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereXmaxPoint,
-      'x',
-      'max',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereYminPoint,
-      'y',
-      'min',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereYmaxPoint,
-      'y',
-      'max',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereZminPoint,
-      'z',
-      'min',
-      null,
-      adaptiveRadius
-    );
-    this._addSphere(
-      viewport,
-      sphereZmaxPoint,
-      'z',
-      'max',
-      null,
-      adaptiveRadius
+    const adaptiveRadius = calculateAdaptiveSphereRadius(
+      diagonal,
+      this.configuration
     );
 
+    this._addSphere(viewport, faceXMin, 'x', 'min', null, adaptiveRadius);
+    this._addSphere(viewport, faceXMax, 'x', 'max', null, adaptiveRadius);
+    this._addSphere(viewport, faceYMin, 'y', 'min', null, adaptiveRadius);
+    this._addSphere(viewport, faceYMax, 'y', 'max', null, adaptiveRadius);
+    this._addSphere(viewport, faceZMin, 'z', 'min', null, adaptiveRadius);
+    this._addSphere(viewport, faceZMax, 'z', 'max', null, adaptiveRadius);
+
+    // Calculate all 8 corners in world space
     const corners = [
-      [xMin, yMin, zMin],
-      [xMin, yMin, zMax],
-      [xMin, yMax, zMin],
-      [xMin, yMax, zMax],
-      [xMax, yMin, zMin],
-      [xMax, yMin, zMax],
-      [xMax, yMax, zMin],
-      [xMax, yMax, zMax],
+      indexToWorld(xMin, yMin, zMin),
+      indexToWorld(xMin, yMin, zMax),
+      indexToWorld(xMin, yMax, zMin),
+      indexToWorld(xMin, yMax, zMax),
+      indexToWorld(xMax, yMin, zMin),
+      indexToWorld(xMax, yMin, zMax),
+      indexToWorld(xMax, yMax, zMin),
+      indexToWorld(xMax, yMax, zMax),
     ];
 
     const cornerKeys = [
@@ -1238,45 +1273,50 @@ class VolumeCroppingTool extends BaseTool {
     // draw the lines between corners
     // All 12 edges as pairs of corner keys
     const edgeCornerPairs = [
-      // X edges
+      // X edges (along first axis)
       ['XMIN_YMIN_ZMIN', 'XMAX_YMIN_ZMIN'],
       ['XMIN_YMIN_ZMAX', 'XMAX_YMIN_ZMAX'],
       ['XMIN_YMAX_ZMIN', 'XMAX_YMAX_ZMIN'],
       ['XMIN_YMAX_ZMAX', 'XMAX_YMAX_ZMAX'],
-      // Y edges
+      // Y edges (along second axis)
       ['XMIN_YMIN_ZMIN', 'XMIN_YMAX_ZMIN'],
       ['XMIN_YMIN_ZMAX', 'XMIN_YMAX_ZMAX'],
       ['XMAX_YMIN_ZMIN', 'XMAX_YMAX_ZMIN'],
       ['XMAX_YMIN_ZMAX', 'XMAX_YMAX_ZMAX'],
-      // Z edges
+      // Z edges (along third axis)
       ['XMIN_YMIN_ZMIN', 'XMIN_YMIN_ZMAX'],
       ['XMIN_YMAX_ZMIN', 'XMIN_YMAX_ZMAX'],
       ['XMAX_YMIN_ZMIN', 'XMAX_YMIN_ZMAX'],
       ['XMAX_YMAX_ZMIN', 'XMAX_YMAX_ZMAX'],
     ];
 
-    edgeCornerPairs.forEach(([key1, key2], i) => {
+    edgeCornerPairs.forEach(([key1, key2]) => {
       const state1 = this.sphereStates.find((s) => s.uid === `corner_${key1}`);
       const state2 = this.sphereStates.find((s) => s.uid === `corner_${key2}`);
       if (state1 && state2) {
         const uid = `edge_${key1}_${key2}`;
-        const { actor, source } = this._addLine3DBetweenPoints(
+        const { actor, source } = addLine3DBetweenPoints(
           viewport,
           state1.point,
           state2.point,
           [0.7, 0.7, 0.7],
-          uid
+          uid,
+          this.configuration.showHandles
         );
         this.edgeLines[uid] = { actor, source, key1, key2 };
       }
     });
 
-    mapper.addClippingPlane(planeXmin);
-    mapper.addClippingPlane(planeXmax);
-    mapper.addClippingPlane(planeYmin);
-    mapper.addClippingPlane(planeYmax);
-    mapper.addClippingPlane(planeZmin);
-    mapper.addClippingPlane(planeZmax);
+    const mapper = viewport
+      .getDefaultActor()
+      .actor.getMapper() as vtkVolumeMapper;
+
+    mapper.addClippingPlane(planeXMin);
+    mapper.addClippingPlane(planeXMax);
+    mapper.addClippingPlane(planeYMin);
+    mapper.addClippingPlane(planeYMax);
+    mapper.addClippingPlane(planeZMin);
+    mapper.addClippingPlane(planeZMax);
 
     eventTarget.addEventListener(
       Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
@@ -1297,244 +1337,189 @@ class VolumeCroppingTool extends BaseTool {
     return { viewport, world };
   };
 
-  _getViewport = () => {
-    const [viewport3D] = this._getViewportsInfo();
+  _getViewport = (): Types.IVolumeViewport | null => {
+    const viewportsInfo = this._getViewportsInfo();
+    if (!viewportsInfo || viewportsInfo.length === 0) {
+      return null;
+    }
+    const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
-    return renderingEngine.getViewport(viewport3D.viewportId);
+    const viewport = renderingEngine?.getViewport(viewport3D.viewportId);
+    return (viewport as Types.IVolumeViewport) || null;
   };
 
-  // Handle corner sphere movement
-  _handleCornerSphereMovement = (sphereState, world, viewport) => {
-    // Calculate new position with offset
-    const newCorner = this._calculateNewCornerPosition(world);
+  _getVolumeActor(
+    viewport?: Types.IVolumeViewport
+  ): Types.VolumeActor | undefined {
+    const vp = viewport || this._getViewport();
+    return vp?.getDefaultActor()?.actor as Types.VolumeActor | undefined;
+  }
 
-    // Update the dragged corner
-    this._updateSpherePosition(sphereState, newCorner);
+  _getVolumeMapper(
+    viewport?: Types.IVolumeViewport
+  ): vtkVolumeMapper | undefined {
+    const actor = this._getVolumeActor(viewport);
+    return actor?.getMapper() as vtkVolumeMapper | undefined;
+  }
 
-    // Parse corner key to determine axes
-    const axisFlags = this._parseCornerKey(sphereState.uid);
-
-    // Update related corners efficiently
-    this._updateRelatedCorners(sphereState, newCorner, axisFlags);
-
-    // Update dependent elements
-    this._updateAfterCornerMovement(viewport);
-  };
-
-  // Handle face sphere movement
-  _handleFaceSphereMovement = (sphereState, world, viewport) => {
-    const axisIdx = { x: 0, y: 1, z: 2 }[sphereState.axis];
-    let newValue = world[axisIdx];
-
-    if (this.faceDragOffset !== null) {
-      newValue += this.faceDragOffset;
-    }
-
-    // Update only the relevant axis
-    sphereState.point[axisIdx] = newValue;
-    sphereState.sphereSource.setCenter(...sphereState.point);
-    sphereState.sphereSource.modified();
-
-    // Update dependent elements
-    this._updateAfterFaceMovement(viewport);
-  };
-
-  // Calculate new corner position with offset
-  _calculateNewCornerPosition = (world) => {
-    let newCorner = [world[0], world[1], world[2]];
-
-    if (this.cornerDragOffset) {
-      newCorner = [
-        world[0] + this.cornerDragOffset[0],
-        world[1] + this.cornerDragOffset[1],
-        world[2] + this.cornerDragOffset[2],
-      ];
-    }
-
-    return newCorner;
-  };
-
-  // Parse corner key to determine which axes are min/max
-  _parseCornerKey = (uid) => {
-    const cornerKey = uid.replace('corner_', '');
-    return {
-      isXMin: cornerKey.includes('XMIN'),
-      isXMax: cornerKey.includes('XMAX'),
-      isYMin: cornerKey.includes('YMIN'),
-      isYMax: cornerKey.includes('YMAX'),
-      isZMin: cornerKey.includes('ZMIN'),
-      isZMax: cornerKey.includes('ZMAX'),
-    };
-  };
-
-  // Update sphere position
-  _updateSpherePosition = (sphereState, newPosition) => {
-    sphereState.point = newPosition;
-    sphereState.sphereSource.setCenter(...newPosition);
-    sphereState.sphereSource.modified();
-  };
-
-  // Update related corners that share axes
-  _updateRelatedCorners = (draggedSphere, newCorner, axisFlags) => {
-    this.sphereStates.forEach((state) => {
-      if (!state.isCorner || state === draggedSphere) {
-        return;
-      }
-
-      const key = state.uid.replace('corner_', '');
-      const shouldUpdate = this._shouldUpdateCorner(key, axisFlags);
-
-      if (shouldUpdate) {
-        this._updateCornerCoordinates(state, newCorner, key, axisFlags);
-      }
-    });
-  };
-
-  // Determine if a corner should be updated
-  _shouldUpdateCorner = (cornerKey, axisFlags) => {
-    return (
-      (axisFlags.isXMin && cornerKey.includes('XMIN')) ||
-      (axisFlags.isXMax && cornerKey.includes('XMAX')) ||
-      (axisFlags.isYMin && cornerKey.includes('YMIN')) ||
-      (axisFlags.isYMax && cornerKey.includes('YMAX')) ||
-      (axisFlags.isZMin && cornerKey.includes('ZMIN')) ||
-      (axisFlags.isZMax && cornerKey.includes('ZMAX'))
-    );
-  };
-
-  // Update individual corner coordinates
-  _updateCornerCoordinates = (state, newCorner, cornerKey, axisFlags) => {
-    // X axis updates
-    if (
-      (axisFlags.isXMin && cornerKey.includes('XMIN')) ||
-      (axisFlags.isXMax && cornerKey.includes('XMAX'))
-    ) {
-      state.point[0] = newCorner[0];
-    }
-
-    // Y axis updates
-    if (
-      (axisFlags.isYMin && cornerKey.includes('YMIN')) ||
-      (axisFlags.isYMax && cornerKey.includes('YMAX'))
-    ) {
-      state.point[1] = newCorner[1];
-    }
-
-    // Z axis updates
-    if (
-      (axisFlags.isZMin && cornerKey.includes('ZMIN')) ||
-      (axisFlags.isZMax && cornerKey.includes('ZMAX'))
-    ) {
-      state.point[2] = newCorner[2];
-    }
-
-    // Apply changes
-    state.sphereSource.setCenter(...state.point);
-    state.sphereSource.modified();
-  };
-
-  // Update after corner movement
-  _updateAfterCornerMovement = (viewport) => {
-    this._updateFaceSpheresFromCorners();
-    this._updateCornerSpheres();
-    this._updateClippingPlanesFromFaceSpheres(viewport);
-  };
-
-  // Update after face movement
-  _updateAfterFaceMovement = (viewport) => {
-    this._updateCornerSpheresFromFaces();
-    // this._updateFaceSpheresFromCorners();
-    // this._updateCornerSpheres();
-    this._updateClippingPlanesFromFaceSpheres(viewport);
-  };
-
-  // Trigger tool changed event
-  _triggerToolChangedEvent = (sphereState) => {
-    triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
-      toolCenter: sphereState.point,
-      axis: sphereState.isCorner ? 'corner' : sphereState.axis,
-      draggingSphereIndex: this.draggingSphereIndex,
-      seriesInstanceUID: this.seriesInstanceUID,
-    });
-  };
-
-  _updateClippingPlanesFromFaceSpheres(viewport) {
-    const mapper = viewport.getDefaultActor().actor.getMapper();
-    // Update origins in originalClippingPlanes
-    this.originalClippingPlanes[0].origin = [
-      ...this.sphereStates[SPHEREINDEX.XMIN].point,
-    ];
-    this.originalClippingPlanes[1].origin = [
-      ...this.sphereStates[SPHEREINDEX.XMAX].point,
-    ];
-    this.originalClippingPlanes[2].origin = [
-      ...this.sphereStates[SPHEREINDEX.YMIN].point,
-    ];
-    this.originalClippingPlanes[3].origin = [
-      ...this.sphereStates[SPHEREINDEX.YMAX].point,
-    ];
-    this.originalClippingPlanes[4].origin = [
-      ...this.sphereStates[SPHEREINDEX.ZMIN].point,
-    ];
-    this.originalClippingPlanes[5].origin = [
-      ...this.sphereStates[SPHEREINDEX.ZMAX].point,
-    ];
-
+  _applyClippingPlanesToMapper(mapper: vtkVolumeMapper): void {
     mapper.removeAllClippingPlanes();
-    for (let i = 0; i < 6; ++i) {
-      const origin = this.originalClippingPlanes[i].origin as [
-        number,
-        number,
-        number,
-      ];
-      const normal = this.originalClippingPlanes[i].normal as [
-        number,
-        number,
-        number,
-      ];
+    for (let i = 0; i < NUM_CLIPPING_PLANES; ++i) {
       const plane = vtkPlane.newInstance({
-        origin,
-        normal,
+        origin: this.originalClippingPlanes[i].origin as [
+          number,
+          number,
+          number,
+        ],
+        normal: this.originalClippingPlanes[i].normal as [
+          number,
+          number,
+          number,
+        ],
       });
       mapper.addClippingPlane(plane);
     }
   }
 
+  _updateClippingPlanesFromFaceSpheres(viewport) {
+    const mapper = viewport.getDefaultActor().actor.getMapper();
+    // Update origins in originalClippingPlanes
+    this.originalClippingPlanes[PLANEINDEX.XMIN].origin = [
+      ...this.sphereStates[SPHEREINDEX.XMIN].point,
+    ];
+    this.originalClippingPlanes[PLANEINDEX.XMAX].origin = [
+      ...this.sphereStates[SPHEREINDEX.XMAX].point,
+    ];
+    this.originalClippingPlanes[PLANEINDEX.YMIN].origin = [
+      ...this.sphereStates[SPHEREINDEX.YMIN].point,
+    ];
+    this.originalClippingPlanes[PLANEINDEX.YMAX].origin = [
+      ...this.sphereStates[SPHEREINDEX.YMAX].point,
+    ];
+    this.originalClippingPlanes[PLANEINDEX.ZMIN].origin = [
+      ...this.sphereStates[SPHEREINDEX.ZMIN].point,
+    ];
+    this.originalClippingPlanes[PLANEINDEX.ZMAX].origin = [
+      ...this.sphereStates[SPHEREINDEX.ZMAX].point,
+    ];
+
+    this._applyClippingPlanesToMapper(mapper);
+  }
+
   _updateCornerSpheresFromFaces() {
-    // Get face sphere positions
-    const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
-    const xMax = this.sphereStates[SPHEREINDEX.XMAX].point[0];
-    const yMin = this.sphereStates[SPHEREINDEX.YMIN].point[1];
-    const yMax = this.sphereStates[SPHEREINDEX.YMAX].point[1];
-    const zMin = this.sphereStates[SPHEREINDEX.ZMIN].point[2];
-    const zMax = this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+    const { xDir, yDir, zDir } = this._getDirectionVectors();
+    if (!xDir || !yDir || !zDir) return;
+
+    const faceXMin = this.sphereStates[SPHEREINDEX.XMIN].point;
+    const faceXMax = this.sphereStates[SPHEREINDEX.XMAX].point;
+    const faceYMin = this.sphereStates[SPHEREINDEX.YMIN].point;
+    const faceYMax = this.sphereStates[SPHEREINDEX.YMAX].point;
+    const faceZMin = this.sphereStates[SPHEREINDEX.ZMIN].point;
+    const faceZMax = this.sphereStates[SPHEREINDEX.ZMAX].point;
 
     const corners = [
-      { key: 'XMIN_YMIN_ZMIN', pos: [xMin, yMin, zMin] },
-      { key: 'XMIN_YMIN_ZMAX', pos: [xMin, yMin, zMax] },
-      { key: 'XMIN_YMAX_ZMIN', pos: [xMin, yMax, zMin] },
-      { key: 'XMIN_YMAX_ZMAX', pos: [xMin, yMax, zMax] },
-      { key: 'XMAX_YMIN_ZMIN', pos: [xMax, yMin, zMin] },
-      { key: 'XMAX_YMIN_ZMAX', pos: [xMax, yMin, zMax] },
-      { key: 'XMAX_YMAX_ZMIN', pos: [xMax, yMax, zMin] },
-      { key: 'XMAX_YMAX_ZMAX', pos: [xMax, yMax, zMax] },
+      {
+        key: 'XMIN_YMIN_ZMIN',
+        pos: this._calculateCornerFromFaces(
+          faceXMin,
+          faceYMin,
+          faceZMin,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMIN_YMIN_ZMAX',
+        pos: this._calculateCornerFromFaces(
+          faceXMin,
+          faceYMin,
+          faceZMax,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMIN_YMAX_ZMIN',
+        pos: this._calculateCornerFromFaces(
+          faceXMin,
+          faceYMax,
+          faceZMin,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMIN_YMAX_ZMAX',
+        pos: this._calculateCornerFromFaces(
+          faceXMin,
+          faceYMax,
+          faceZMax,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMAX_YMIN_ZMIN',
+        pos: this._calculateCornerFromFaces(
+          faceXMax,
+          faceYMin,
+          faceZMin,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMAX_YMIN_ZMAX',
+        pos: this._calculateCornerFromFaces(
+          faceXMax,
+          faceYMin,
+          faceZMax,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMAX_YMAX_ZMIN',
+        pos: this._calculateCornerFromFaces(
+          faceXMax,
+          faceYMax,
+          faceZMin,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMAX_YMAX_ZMAX',
+        pos: this._calculateCornerFromFaces(
+          faceXMax,
+          faceYMax,
+          faceZMax,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
     ];
 
     for (const corner of corners) {
-      const state = this.sphereStates.find(
+      const stateIndex = this.sphereStates.findIndex(
         (s) => s.uid === `corner_${corner.key}`
       );
-      if (state) {
-        state.point[0] = corner.pos[0];
-        state.point[1] = corner.pos[1];
-        state.point[2] = corner.pos[2];
-        state.sphereSource.setCenter(...state.point);
-        state.sphereSource.modified();
+      if (stateIndex !== -1) {
+        this._updateSpherePosition(stateIndex, corner.pos);
       }
     }
   }
   _updateFaceSpheresFromCorners() {
-    // Get all corner points
+    if (!this.volumeDirectionVectors) return;
+
     const corners = [
       this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMIN].point,
       this.sphereStates[SPHEREINDEX.XMIN_YMIN_ZMAX].point,
@@ -1546,110 +1531,163 @@ class VolumeCroppingTool extends BaseTool {
       this.sphereStates[SPHEREINDEX.XMAX_YMAX_ZMAX].point,
     ];
 
-    const xs = corners.map((p) => p[0]);
-    const ys = corners.map((p) => p[1]);
-    const zs = corners.map((p) => p[2]);
+    const faceXMin = this._averagePoints([
+      corners[0],
+      corners[1],
+      corners[2],
+      corners[3],
+    ]);
+    const faceXMax = this._averagePoints([
+      corners[4],
+      corners[5],
+      corners[6],
+      corners[7],
+    ]);
+    const faceYMin = this._averagePoints([
+      corners[0],
+      corners[1],
+      corners[4],
+      corners[5],
+    ]);
+    const faceYMax = this._averagePoints([
+      corners[2],
+      corners[3],
+      corners[6],
+      corners[7],
+    ]);
+    const faceZMin = this._averagePoints([
+      corners[0],
+      corners[2],
+      corners[4],
+      corners[6],
+    ]);
+    const faceZMax = this._averagePoints([
+      corners[1],
+      corners[3],
+      corners[5],
+      corners[7],
+    ]);
 
-    const xMin = Math.min(...xs),
-      xMax = Math.max(...xs);
-    const yMin = Math.min(...ys),
-      yMax = Math.max(...ys);
-    const zMin = Math.min(...zs),
-      zMax = Math.max(...zs);
-
-    // Face spheres should always be at the center of their face
-    this.sphereStates[SPHEREINDEX.XMIN].point = [
-      xMin,
-      (yMin + yMax) / 2,
-      (zMin + zMax) / 2,
-    ];
-    this.sphereStates[SPHEREINDEX.XMAX].point = [
-      xMax,
-      (yMin + yMax) / 2,
-      (zMin + zMax) / 2,
-    ];
-    this.sphereStates[SPHEREINDEX.YMIN].point = [
-      (xMin + xMax) / 2,
-      yMin,
-      (zMin + zMax) / 2,
-    ];
-    this.sphereStates[SPHEREINDEX.YMAX].point = [
-      (xMin + xMax) / 2,
-      yMax,
-      (zMin + zMax) / 2,
-    ];
-    this.sphereStates[SPHEREINDEX.ZMIN].point = [
-      (xMin + xMax) / 2,
-      (yMin + yMax) / 2,
-      zMin,
-    ];
-    this.sphereStates[SPHEREINDEX.ZMAX].point = [
-      (xMin + xMax) / 2,
-      (yMin + yMax) / 2,
-      zMax,
-    ];
-
-    [
-      SPHEREINDEX.XMIN,
-      SPHEREINDEX.XMAX,
-      SPHEREINDEX.YMIN,
-      SPHEREINDEX.YMAX,
-      SPHEREINDEX.ZMIN,
-      SPHEREINDEX.ZMAX,
-    ].forEach((idx) => {
-      const s = this.sphereStates[idx];
-      s.sphereSource.setCenter(...s.point);
-      s.sphereSource.modified();
-    });
+    this._updateSpherePosition(SPHEREINDEX.XMIN, faceXMin);
+    this._updateSpherePosition(SPHEREINDEX.XMAX, faceXMax);
+    this._updateSpherePosition(SPHEREINDEX.YMIN, faceYMin);
+    this._updateSpherePosition(SPHEREINDEX.YMAX, faceYMax);
+    this._updateSpherePosition(SPHEREINDEX.ZMIN, faceZMin);
+    this._updateSpherePosition(SPHEREINDEX.ZMAX, faceZMax);
   }
 
   _updateCornerSpheres() {
-    // Get face sphere positions
-    const xMin = this.sphereStates[SPHEREINDEX.XMIN].point[0];
-    const xMax = this.sphereStates[SPHEREINDEX.XMAX].point[0];
-    const yMin = this.sphereStates[SPHEREINDEX.YMIN].point[1];
-    const yMax = this.sphereStates[SPHEREINDEX.YMAX].point[1];
-    const zMin = this.sphereStates[SPHEREINDEX.ZMIN].point[2];
-    const zMax = this.sphereStates[SPHEREINDEX.ZMAX].point[2];
+    const { xDir, yDir, zDir } = this._getDirectionVectors();
+    if (!xDir || !yDir || !zDir) return;
 
-    // Define all 8 corners from face sphere positions
+    const faceXMin = this.sphereStates[SPHEREINDEX.XMIN].point;
+    const faceXMax = this.sphereStates[SPHEREINDEX.XMAX].point;
+    const faceYMin = this.sphereStates[SPHEREINDEX.YMIN].point;
+    const faceYMax = this.sphereStates[SPHEREINDEX.YMAX].point;
+    const faceZMin = this.sphereStates[SPHEREINDEX.ZMIN].point;
+    const faceZMax = this.sphereStates[SPHEREINDEX.ZMAX].point;
+
     const corners = [
-      { key: 'XMIN_YMIN_ZMIN', pos: [xMin, yMin, zMin] },
-      { key: 'XMIN_YMIN_ZMAX', pos: [xMin, yMin, zMax] },
-      { key: 'XMIN_YMAX_ZMIN', pos: [xMin, yMax, zMin] },
-      { key: 'XMIN_YMAX_ZMAX', pos: [xMin, yMax, zMax] },
-      { key: 'XMAX_YMIN_ZMIN', pos: [xMax, yMin, zMin] },
-      { key: 'XMAX_YMIN_ZMAX', pos: [xMax, yMin, zMax] },
-      { key: 'XMAX_YMAX_ZMIN', pos: [xMax, yMax, zMin] },
-      { key: 'XMAX_YMAX_ZMAX', pos: [xMax, yMax, zMax] },
+      {
+        key: 'XMIN_YMIN_ZMIN',
+        pos: this._calculateCornerFromProjection(
+          faceXMin,
+          faceYMin,
+          faceZMin,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMIN_YMIN_ZMAX',
+        pos: this._calculateCornerFromProjection(
+          faceXMin,
+          faceYMin,
+          faceZMax,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMIN_YMAX_ZMIN',
+        pos: this._calculateCornerFromProjection(
+          faceXMin,
+          faceYMax,
+          faceZMin,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMIN_YMAX_ZMAX',
+        pos: this._calculateCornerFromProjection(
+          faceXMin,
+          faceYMax,
+          faceZMax,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMAX_YMIN_ZMIN',
+        pos: this._calculateCornerFromProjection(
+          faceXMax,
+          faceYMin,
+          faceZMin,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMAX_YMIN_ZMAX',
+        pos: this._calculateCornerFromProjection(
+          faceXMax,
+          faceYMin,
+          faceZMax,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMAX_YMAX_ZMIN',
+        pos: this._calculateCornerFromProjection(
+          faceXMax,
+          faceYMax,
+          faceZMin,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
+      {
+        key: 'XMAX_YMAX_ZMAX',
+        pos: this._calculateCornerFromProjection(
+          faceXMax,
+          faceYMax,
+          faceZMax,
+          xDir,
+          yDir,
+          zDir
+        ),
+      },
     ];
 
-    // Update corner spheres
     for (const corner of corners) {
-      const state = this.sphereStates.find(
+      const stateIndex = this.sphereStates.findIndex(
         (s) => s.uid === `corner_${corner.key}`
       );
-      if (state) {
-        state.point[0] = corner.pos[0];
-        state.point[1] = corner.pos[1];
-        state.point[2] = corner.pos[2];
-        state.sphereSource.setCenter(...state.point);
-        state.sphereSource.modified();
+      if (stateIndex !== -1) {
+        this._updateSpherePosition(stateIndex, corner.pos);
       }
     }
 
-    // Update edge lines to follow the corner spheres
-    Object.values(this.edgeLines).forEach(({ source, key1, key2 }) => {
-      const state1 = this.sphereStates.find((s) => s.uid === `corner_${key1}`);
-      const state2 = this.sphereStates.find((s) => s.uid === `corner_${key2}`);
-      if (state1 && state2) {
-        const points = source.getPoints();
-        points.setPoint(0, state1.point[0], state1.point[1], state1.point[2]);
-        points.setPoint(1, state2.point[0], state2.point[1], state2.point[2]);
-        points.modified();
-        source.modified();
-      }
-    });
+    this._updateEdgeLines();
   }
 
   _onNewVolume = () => {
@@ -1687,6 +1725,433 @@ class VolumeCroppingTool extends BaseTool {
         Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
         this._onNewVolume
       );
+    });
+  }
+
+  _rotateClippingPlanes = (evt: EventTypes.InteractionEventType) => {
+    const { element, currentPoints, lastPoints } = evt.detail;
+    const currentPointsCanvas = currentPoints.canvas;
+    const lastPointsCanvas = lastPoints.canvas;
+    const rotateIncrementDegrees =
+      this.configuration.rotateClippingPlanesIncrementDegrees ??
+      this.configuration.rotateIncrementDegrees ??
+      5;
+    const enabledElement = getEnabledElement(element);
+    const { viewport } = enabledElement;
+
+    const camera = viewport.getCamera();
+    const width = element.clientWidth;
+    const height = element.clientHeight;
+
+    const normalizedPosition = [
+      currentPointsCanvas[0] / width,
+      currentPointsCanvas[1] / height,
+    ];
+
+    const normalizedPreviousPosition = [
+      lastPointsCanvas[0] / width,
+      lastPointsCanvas[1] / height,
+    ];
+
+    const normalizedCenter = [0.5, 0.5];
+
+    const radsq = (1.0 + Math.abs(normalizedCenter[0])) ** 2.0;
+    const op = [normalizedPreviousPosition[0], 0, 0];
+    const oe = [normalizedPosition[0], 0, 0];
+
+    const opsq = op[0] ** 2;
+    const oesq = oe[0] ** 2;
+
+    const lop = opsq > radsq ? 0 : Math.sqrt(radsq - opsq);
+    const loe = oesq > radsq ? 0 : Math.sqrt(radsq - oesq);
+
+    const nop: Types.Point3 = [op[0], 0, lop];
+    vtkMath.normalize(nop);
+    const noe: Types.Point3 = [oe[0], 0, loe];
+    vtkMath.normalize(noe);
+
+    const dot = vtkMath.dot(nop, noe);
+    if (Math.abs(dot) > 0.0001) {
+      const angleX =
+        20 *
+        Math.acos(vtkMath.clampValue(dot, -1.0, 1.0)) *
+        Math.sign(normalizedPosition[0] - normalizedPreviousPosition[0]) *
+        rotateIncrementDegrees;
+
+      const upVec = camera.viewUp;
+      const atV = camera.viewPlaneNormal;
+      const rightV: Types.Point3 = [0, 0, 0];
+      const forwardV: Types.Point3 = [0, 0, 0];
+
+      vtkMath.cross(upVec, atV, rightV);
+      vtkMath.normalize(rightV);
+
+      vtkMath.cross(atV, rightV, forwardV);
+      vtkMath.normalize(forwardV);
+
+      const angleY =
+        20 *
+        (normalizedPosition[1] - normalizedPreviousPosition[1]) *
+        rotateIncrementDegrees;
+
+      // Calculate rotation center as average of all face sphere centers
+      let rotationCenter: Types.Point3;
+      if (this.sphereStates.length >= NUM_CLIPPING_PLANES) {
+        const faces = [
+          this.sphereStates[SPHEREINDEX.XMIN],
+          this.sphereStates[SPHEREINDEX.XMAX],
+          this.sphereStates[SPHEREINDEX.YMIN],
+          this.sphereStates[SPHEREINDEX.YMAX],
+          this.sphereStates[SPHEREINDEX.ZMIN],
+          this.sphereStates[SPHEREINDEX.ZMAX],
+        ];
+        rotationCenter = [
+          (faces[0].point[0] +
+            faces[1].point[0] +
+            faces[2].point[0] +
+            faces[3].point[0] +
+            faces[4].point[0] +
+            faces[5].point[0]) /
+            NUM_CLIPPING_PLANES,
+          (faces[0].point[1] +
+            faces[1].point[1] +
+            faces[2].point[1] +
+            faces[3].point[1] +
+            faces[4].point[1] +
+            faces[5].point[1]) /
+            NUM_CLIPPING_PLANES,
+          (faces[0].point[2] +
+            faces[1].point[2] +
+            faces[2].point[2] +
+            faces[3].point[2] +
+            faces[4].point[2] +
+            faces[5].point[2]) /
+            NUM_CLIPPING_PLANES,
+        ] as Types.Point3;
+      } else {
+        // Fallback if spheres aren't initialized yet
+        rotationCenter = [0, 0, 0] as Types.Point3;
+      }
+
+      // Rotate all clipping planes around the rotation center
+      // First rotate around forward axis (angleX), then around right axis (angleY)
+      const transformX = mat4.identity(new Float32Array(16));
+      mat4.translate(transformX, transformX, rotationCenter);
+      mat4.rotate(transformX, transformX, (angleX * Math.PI) / 180, forwardV);
+      mat4.translate(transformX, transformX, [
+        -rotationCenter[0],
+        -rotationCenter[1],
+        -rotationCenter[2],
+      ]);
+
+      const transformY = mat4.identity(new Float32Array(16));
+      mat4.translate(transformY, transformY, rotationCenter);
+      mat4.rotate(transformY, transformY, (angleY * Math.PI) / 180, rightV);
+      mat4.translate(transformY, transformY, [
+        -rotationCenter[0],
+        -rotationCenter[1],
+        -rotationCenter[2],
+      ]);
+
+      // Combine transformations
+      const transform = mat4.create();
+      mat4.multiply(transform, transformY, transformX);
+
+      // Rotate normals (rotation only, no translation)
+      // Create 4x4 rotation matrices and extract 3x3 for normals
+      const normalTransformX4 = mat4.identity(new Float32Array(16));
+      mat4.rotate(
+        normalTransformX4,
+        normalTransformX4,
+        (angleX * Math.PI) / 180,
+        forwardV
+      );
+      const normalTransformX = mat3.create();
+      mat3.fromMat4(normalTransformX, normalTransformX4);
+
+      const normalTransformY4 = mat4.identity(new Float32Array(16));
+      mat4.rotate(
+        normalTransformY4,
+        normalTransformY4,
+        (angleY * Math.PI) / 180,
+        rightV
+      );
+      const normalTransformY = mat3.create();
+      mat3.fromMat4(normalTransformY, normalTransformY4);
+
+      const normalTransform = mat3.create();
+      mat3.multiply(normalTransform, normalTransformY, normalTransformX);
+
+      // Rotate all original clipping planes
+      for (let i = 0; i < this.originalClippingPlanes.length; ++i) {
+        const plane = this.originalClippingPlanes[i];
+
+        // Transform origin
+        const originVec = vec3.fromValues(
+          plane.origin[0],
+          plane.origin[1],
+          plane.origin[2]
+        );
+        vec3.transformMat4(originVec, originVec, transform);
+        plane.origin = [originVec[0], originVec[1], originVec[2]];
+
+        // Transform normal
+        const normalVec = vec3.fromValues(
+          plane.normal[0],
+          plane.normal[1],
+          plane.normal[2]
+        );
+        vec3.transformMat3(normalVec, normalVec, normalTransform);
+        vec3.normalize(normalVec, normalVec);
+        plane.normal = [normalVec[0], normalVec[1], normalVec[2]];
+      }
+
+      // Update face spheres from rotated planes
+      if (this.sphereStates.length >= NUM_CLIPPING_PLANES) {
+        this.sphereStates[SPHEREINDEX.XMIN].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.XMIN].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.XMAX].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.XMAX].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.YMIN].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.YMIN].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.YMAX].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.YMAX].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.ZMIN].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.ZMIN].origin,
+        ] as Types.Point3;
+        this.sphereStates[SPHEREINDEX.ZMAX].point = [
+          ...this.originalClippingPlanes[PLANEINDEX.ZMAX].origin,
+        ] as Types.Point3;
+
+        // Update sphere actors for face spheres
+        [
+          SPHEREINDEX.XMIN,
+          SPHEREINDEX.XMAX,
+          SPHEREINDEX.YMIN,
+          SPHEREINDEX.YMAX,
+          SPHEREINDEX.ZMIN,
+          SPHEREINDEX.ZMAX,
+        ].forEach((idx) => {
+          const s = this.sphereStates[idx];
+          s.sphereSource.setCenter(...s.point);
+          s.sphereSource.modified();
+        });
+
+        // Rotate corner spheres directly using the same transformation
+        const cornerIndices = [
+          SPHEREINDEX.XMIN_YMIN_ZMIN,
+          SPHEREINDEX.XMIN_YMIN_ZMAX,
+          SPHEREINDEX.XMIN_YMAX_ZMIN,
+          SPHEREINDEX.XMIN_YMAX_ZMAX,
+          SPHEREINDEX.XMAX_YMIN_ZMIN,
+          SPHEREINDEX.XMAX_YMIN_ZMAX,
+          SPHEREINDEX.XMAX_YMAX_ZMIN,
+          SPHEREINDEX.XMAX_YMAX_ZMAX,
+        ];
+
+        cornerIndices.forEach((idx) => {
+          const cornerState = this.sphereStates[idx];
+          if (cornerState) {
+            const cornerVec = vec3.fromValues(
+              cornerState.point[0],
+              cornerState.point[1],
+              cornerState.point[2]
+            );
+            vec3.transformMat4(cornerVec, cornerVec, transform);
+            cornerState.point = [
+              cornerVec[0],
+              cornerVec[1],
+              cornerVec[2],
+            ] as Types.Point3;
+            cornerState.sphereSource.setCenter(...cornerState.point);
+            cornerState.sphereSource.modified();
+          }
+        });
+
+        // Update edge lines to follow the rotated corner spheres
+        Object.values(this.edgeLines).forEach(({ source, key1, key2 }) => {
+          const state1 = this.sphereStates.find(
+            (s) => s.uid === `corner_${key1}`
+          );
+          const state2 = this.sphereStates.find(
+            (s) => s.uid === `corner_${key2}`
+          );
+          if (state1 && state2) {
+            const points = source.getPoints();
+            points.setPoint(
+              0,
+              state1.point[0],
+              state1.point[1],
+              state1.point[2]
+            );
+            points.setPoint(
+              1,
+              state2.point[0],
+              state2.point[1],
+              state2.point[2]
+            );
+            points.modified();
+            source.modified();
+          }
+        });
+      }
+
+      this._updateClippingPlanes(viewport);
+      viewport.render();
+
+      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
+        originalClippingPlanes: this.originalClippingPlanes,
+        viewportId: viewport.id,
+        renderingEngineId: viewport.renderingEngineId,
+        seriesInstanceUID: this.seriesInstanceUID,
+      });
+    }
+  };
+
+  _getDirectionVectors(): {
+    xDir: Types.Point3;
+    yDir: Types.Point3;
+    zDir: Types.Point3;
+  } {
+    const hasPlanes =
+      this.originalClippingPlanes?.length >= NUM_CLIPPING_PLANES;
+
+    return {
+      xDir: hasPlanes
+        ? (this.originalClippingPlanes[PLANEINDEX.XMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.xDir || [1, 0, 0],
+      yDir: hasPlanes
+        ? (this.originalClippingPlanes[PLANEINDEX.YMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.yDir || [0, 1, 0],
+      zDir: hasPlanes
+        ? (this.originalClippingPlanes[PLANEINDEX.ZMIN].normal as Types.Point3)
+        : this.volumeDirectionVectors?.zDir || [0, 0, 1],
+    };
+  }
+
+  _updateSpherePosition(sphereIndex: number, newPoint: Types.Point3): void {
+    const state = this.sphereStates[sphereIndex];
+    if (state) {
+      state.point = newPoint;
+      state.sphereSource.setCenter(...newPoint);
+      state.sphereSource.modified();
+    }
+  }
+
+  _updateFaceSpheresFromClippingPlanes(): void {
+    const faceMappings = [
+      { sphereIdx: SPHEREINDEX.XMIN, planeIdx: PLANEINDEX.XMIN },
+      { sphereIdx: SPHEREINDEX.XMAX, planeIdx: PLANEINDEX.XMAX },
+      { sphereIdx: SPHEREINDEX.YMIN, planeIdx: PLANEINDEX.YMIN },
+      { sphereIdx: SPHEREINDEX.YMAX, planeIdx: PLANEINDEX.YMAX },
+      { sphereIdx: SPHEREINDEX.ZMIN, planeIdx: PLANEINDEX.ZMIN },
+      { sphereIdx: SPHEREINDEX.ZMAX, planeIdx: PLANEINDEX.ZMAX },
+    ];
+
+    faceMappings.forEach(({ sphereIdx, planeIdx }) => {
+      const newPoint = [
+        ...this.originalClippingPlanes[planeIdx].origin,
+      ] as Types.Point3;
+      this._updateSpherePosition(sphereIdx, newPoint);
+    });
+  }
+
+  _averagePoints(points: Types.Point3[]): Types.Point3 {
+    const sum = points.reduce(
+      (acc, p) => [acc[0] + p[0], acc[1] + p[1], acc[2] + p[2]],
+      [0, 0, 0]
+    );
+    return [
+      sum[0] / points.length,
+      sum[1] / points.length,
+      sum[2] / points.length,
+    ] as Types.Point3;
+  }
+
+  _notifyClippingPlanesChanged(viewport?): void {
+    const eventData: {
+      originalClippingPlanes: ClippingPlane[];
+      seriesInstanceUID?: string;
+      viewportId?: string;
+      renderingEngineId?: string;
+    } = {
+      originalClippingPlanes: this.originalClippingPlanes,
+      seriesInstanceUID: this.seriesInstanceUID,
+    };
+
+    if (viewport) {
+      eventData.viewportId = viewport.id;
+      eventData.renderingEngineId = viewport.renderingEngineId;
+    }
+
+    triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, eventData);
+  }
+
+  _calculateCornerFromFaces(
+    faceX: Types.Point3,
+    faceY: Types.Point3,
+    faceZ: Types.Point3,
+    xDir: Types.Point3,
+    yDir: Types.Point3,
+    zDir: Types.Point3
+  ): Types.Point3 {
+    const deltaXY = [
+      faceY[0] - faceX[0],
+      faceY[1] - faceX[1],
+      faceY[2] - faceX[2],
+    ];
+    const distY =
+      deltaXY[0] * yDir[0] + deltaXY[1] * yDir[1] + deltaXY[2] * yDir[2];
+
+    const deltaXZ = [
+      faceZ[0] - faceX[0],
+      faceZ[1] - faceX[1],
+      faceZ[2] - faceX[2],
+    ];
+    const distZ =
+      deltaXZ[0] * zDir[0] + deltaXZ[1] * zDir[1] + deltaXZ[2] * zDir[2];
+
+    return [
+      faceX[0] + distY * yDir[0] + distZ * zDir[0],
+      faceX[1] + distY * yDir[1] + distZ * zDir[1],
+      faceX[2] + distY * yDir[2] + distZ * zDir[2],
+    ] as Types.Point3;
+  }
+
+  _calculateCornerFromProjection(
+    faceX: Types.Point3,
+    faceY: Types.Point3,
+    faceZ: Types.Point3,
+    xDir: Types.Point3,
+    yDir: Types.Point3,
+    zDir: Types.Point3
+  ): Types.Point3 {
+    const dX = faceX[0] * xDir[0] + faceX[1] * xDir[1] + faceX[2] * xDir[2];
+    const dY = faceY[0] * yDir[0] + faceY[1] * yDir[1] + faceY[2] * yDir[2];
+    const dZ = faceZ[0] * zDir[0] + faceZ[1] * zDir[1] + faceZ[2] * zDir[2];
+
+    return [
+      dX * xDir[0] + dY * yDir[0] + dZ * zDir[0],
+      dX * xDir[1] + dY * yDir[1] + dZ * zDir[1],
+      dX * xDir[2] + dY * yDir[2] + dZ * zDir[2],
+    ] as Types.Point3;
+  }
+
+  _updateEdgeLines(): void {
+    Object.values(this.edgeLines).forEach(({ source, key1, key2 }) => {
+      const state1 = this.sphereStates.find((s) => s.uid === `corner_${key1}`);
+      const state2 = this.sphereStates.find((s) => s.uid === `corner_${key2}`);
+      if (state1 && state2) {
+        const points = source.getPoints();
+        points.setPoint(0, state1.point[0], state1.point[1], state1.point[2]);
+        points.setPoint(1, state2.point[0], state2.point[1], state2.point[2]);
+        points.modified();
+        source.modified();
+      }
     });
   }
 
