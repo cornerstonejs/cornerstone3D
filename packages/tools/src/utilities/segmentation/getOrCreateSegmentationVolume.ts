@@ -15,6 +15,10 @@ function getOrCreateSegmentationVolume(
   segmentationId: string
 ): Types.IImageVolume | undefined {
   const { representationData } = getSegmentation(segmentationId);
+  if (!representationData.Labelmap) {
+    return;
+  }
+
   let { volumeId } =
     representationData.Labelmap as LabelmapSegmentationDataVolume;
 

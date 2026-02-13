@@ -1117,7 +1117,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     svgDrawingHelper
   ) => {
     const { data } = <PlanarFreehandROIAnnotation>annotation;
-    const targetId = this.getTargetId(viewport);
+    const targetId = this.getTargetId(viewport, data);
 
     const styleSpecifier: AnnotationStyle.StyleSpecifier = {
       toolGroupId: this.toolGroupId,
