@@ -702,7 +702,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
-    if (annotation.invalidated) {
+    const { data } = annotation as PlanarFreehandROIAnnotation;
+    if (annotation.invalidated || !data.cachedStats[targetId]) {
       this._calculateStatsIfActive(
         annotation,
         targetId,
@@ -724,7 +725,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     renderingEngine,
     enabledElement
   ) {
-    const activeAnnotationUID = this.commonData?.annotation.annotationUID;
+    //Avoid crash at the begining of drawing
+    const polylinePoints = annotation.data?.contour?.polyline;
+    if (!polylinePoints || polylinePoints.length < 3) {
+      return;
+    }
+
+    const activeAnnotationUID = this.commonData?.annotation?.annotationUID;
 
     if (
       annotation.annotationUID === activeAnnotationUID &&
