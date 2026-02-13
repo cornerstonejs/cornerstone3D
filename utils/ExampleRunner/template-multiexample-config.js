@@ -27,6 +27,8 @@ module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
   });
 
   let multiTemplates = '';
+  let definePluginValues = '';
+  
   names.forEach((name) => {
     multiTemplates += `
       new rspack.HtmlRspackPlugin({
@@ -36,7 +38,7 @@ module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
         template: '${root.replace(
           /\\/g,
           '/'
-        )}/utils/ExampleRunner/template.html',
+        )}/utils/ExampleRunner/template-styled.html',
       }),`;
   });
 
@@ -69,6 +71,14 @@ module.exports = {
       patterns: [
         {
           from: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/serve.json',
+          to: "${destPath.replace(/\\/g, '/')}"
+        },
+        {
+          from: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/example-styles.css',
+          to: "${destPath.replace(/\\/g, '/')}"
+        },
+        {
+          from: '${root.replace(/\\/g, '/')}/utils/ExampleRunner/example-info.js',
           to: "${destPath.replace(/\\/g, '/')}"
         },
         {

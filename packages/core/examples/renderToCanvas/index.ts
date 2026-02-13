@@ -44,9 +44,9 @@ viewportGrid.style.flexDirection = 'row';
 const viewportTypes = new Map();
 
 const element1 = document.createElement('div');
+element1.className = 'example-bg-success';
 element1.style.width = size;
 element1.style.height = size;
-element1.style.background = 'green';
 
 const viewportInput = {
   viewportId,

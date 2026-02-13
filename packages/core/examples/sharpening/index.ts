@@ -121,10 +121,8 @@ sharpeningInfo.innerText = 'Sharpening: 0%';
 
 // Add interaction instructions
 const instructionsContainer = document.createElement('div');
+instructionsContainer.className = 'example-content-area';
 instructionsContainer.style.marginTop = '20px';
-instructionsContainer.style.padding = '10px';
-instructionsContainer.style.backgroundColor = '#f0f0f0';
-instructionsContainer.style.borderRadius = '5px';
 content.appendChild(instructionsContainer);
 
 const instructionsTitle = document.createElement('h3');

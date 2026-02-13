@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <title>Cornerstone3D Example</title>
+    <link rel="icon" href="https://www.cornerstonejs.org/img/favicon.ico" />
+    <link rel="stylesheet" href="example-styles.css" />
+    <script src="example-info.js"></script>
+  </head>
+  <body>
+    <!-- Header with Navigation -->
+    <header id="example-header">
+      <div id="example-header-content">
+        <a href="https://www.cornerstonejs.org/" target="_blank" rel="noopener noreferrer" id="example-logo">
+          <img src="https://www.cornerstonejs.org/img/cornerstone-light.png" alt="Cornerstone3D" id="example-logo-img" />
+        </a>
+        <nav id="example-navigation">
+          <button id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">
+            <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <!-- Sun icon (default for light mode) -->
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </button>
+          <a href="https://www.cornerstonejs.org/docs/examples" target="_blank" rel="noopener noreferrer" class="examples-link">
+            Examples
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="example-container">
+      <!-- Example Information -->
+      <section id="example-info">
+        <div id="demo-title-container">
+          <h1 id="demo-title">
+            <!-- Example title will be inserted here -->
+          </h1>
+        </div>
+        <div id="demo-description-container">
+          <p id="demo-description">
+            <!-- Example description will be inserted here -->
+          </p>
+        </div>
+      </section>
+
+      <!-- Example Toolbar (for controls) -->
+      <div id="demo-toolbar">
+        <!-- Example-specific controls will be inserted here -->
+      </div>
+
+      <!-- Example Content (where the example renders) -->
+      <div id="content"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer id="example-footer">
+      <div id="example-footer-content">
+        <div class="footer-columns">
+          <div class="footer-column">
+            <h4>Learn</h4>
+            <ul>
+              <li><a href="https://www.cornerstonejs.org/" target="_blank" rel="noopener noreferrer">Documentation</a></li>
+              <li><a href="https://www.cornerstonejs.org/docs/getting-started" target="_blank" rel="noopener noreferrer">Getting Started</a></li>
+              <li><a href="https://www.cornerstonejs.org/docs/faq" target="_blank" rel="noopener noreferrer">FAQ</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>Community</h4>
+            <ul>
+              <li><a href="https://github.com/cornerstonejs/cornerstone3D/discussions" target="_blank" rel="noopener noreferrer">Discussion Board</a></li>
+              <li><a href="https://github.com/cornerstonejs/cornerstone3D/issues" target="_blank" rel="noopener noreferrer">Help</a></li>
+              <li><a href="https://discord.gg/zNMGVFxNtv" target="_blank" rel="noopener noreferrer">Discord</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>More</h4>
+            <ul>
+              <li><a href="https://github.com/cornerstonejs/cornerstone3D" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+              <li><a href="https://twitter.com/cornerstonejs" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+              <li><a href="https://www.ohif.org/" target="_blank" rel="noopener noreferrer">OHIF Viewer</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>Cornerstone is open source software released under the MIT license.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Navigation Script -->
+    <script>
+      // This script handles example navigation without modifying example code
+      (function() {
+        // Get example info from the global scope if available
+        const exampleInfo = window.EXAMPLE_INFO || null;
+        const currentExample = window.CURRENT_EXAMPLE || null;
+
+        // Add category badge if available
+        function addCategoryBadge() {
+          if (!exampleInfo || !currentExample) return;
+
+          const examplesByCategory = exampleInfo.examplesByCategory || {};
+          const categories = exampleInfo.categories || {};
+
+          // Find which category this example belongs to
+          for (const categoryId in examplesByCategory) {
+            const examples = examplesByCategory[categoryId];
+            if (examples && examples[currentExample]) {
+              const category = categories[categoryId] || { description: categoryId };
+              const titleContainer = document.getElementById('demo-title-container');
+              
+              if (titleContainer) {
+                const badge = document.createElement('div');
+                badge.className = 'category-badge';
+                badge.textContent = category.description;
+                titleContainer.insertBefore(badge, titleContainer.firstChild);
+              }
+              break;
+            }
+          }
+        }
+
+        // Add category badge on load
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', addCategoryBadge);
+        } else {
+          addCategoryBadge();
+        }
+      })();
+    </script>
+    
+    <!-- Theme Toggle Script -->
+    <script>
+      (function() {
+        // Get stored theme or default to light
+        const getStoredTheme = () => localStorage.getItem('theme') || 'light';
+        const setStoredTheme = (theme) => localStorage.setItem('theme', theme);
+        
+        // Apply theme to document
+        const applyTheme = (theme) => {
+          document.documentElement.setAttribute('data-theme', theme);
+          const themeIcon = document.getElementById('theme-icon');
+          if (themeIcon) {
+            // Update SVG icon based on theme
+            if (theme === 'dark') {
+              // Moon icon for dark mode
+              themeIcon.innerHTML = `
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              `;
+            } else {
+              // Sun icon for light mode
+              themeIcon.innerHTML = `
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              `;
+            }
+          }
+          // Update logo image based on theme
+          const logoImg = document.getElementById('example-logo-img');
+          if (logoImg) {
+            logoImg.src = theme === 'dark' 
+              ? 'https://www.cornerstonejs.org/img/cornerstone-dark.png'
+              : 'https://www.cornerstonejs.org/img/cornerstone-light.png';
+          }
+        };
+        
+        // Toggle theme
+        const toggleTheme = () => {
+          const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+          setStoredTheme(newTheme);
+          applyTheme(newTheme);
+        };
+        
+        // Initialize theme on load
+        const initTheme = () => {
+          const theme = getStoredTheme();
+          applyTheme(theme);
+          
+          // Attach event listener to toggle button
+          const themeToggle = document.getElementById('theme-toggle');
+          if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+          }
+        };
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initTheme);
+        } else {
+          initTheme();
+        }
+      })();
+    </script>
+  </body>
+</html>
+

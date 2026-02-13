@@ -52,11 +52,8 @@ content.appendChild(element);
 // Create element to display colormap event details
 const eventDetailsElement = document.createElement('div');
 eventDetailsElement.id = 'event-details';
+eventDetailsElement.className = 'example-log-area';
 eventDetailsElement.style.margin = '10px';
-eventDetailsElement.style.padding = '10px';
-eventDetailsElement.style.border = '1px solid #ccc';
-eventDetailsElement.style.backgroundColor = '#f8f8f8';
-eventDetailsElement.style.fontFamily = 'monospace';
 eventDetailsElement.style.maxHeight = '150px';
 eventDetailsElement.style.overflow = 'auto';
 eventDetailsElement.innerText = 'Colormap modification events will appear here';
