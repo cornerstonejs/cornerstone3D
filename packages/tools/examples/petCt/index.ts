@@ -280,7 +280,7 @@ instructions.style.gridRowEnd = 'span 3';
 
 viewportGrid.append(instructions);
 
-// ============================= //
+// ============================== //
 
 const viewportColors = {
   [viewportIds.CT.AXIAL]: 'rgb(200, 0, 0)',
