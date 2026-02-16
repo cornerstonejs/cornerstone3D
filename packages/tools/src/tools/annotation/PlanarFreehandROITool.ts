@@ -781,9 +781,15 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const { polyline: points, closed } = data.contour;
 
     const targetIds = Object.keys(cachedStats);
+    const currentTargetId = this.getTargetId(viewport);
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
+
+      if (targetId !== currentTargetId) {
+        continue;
+      }
+
       const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
