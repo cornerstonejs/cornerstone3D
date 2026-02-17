@@ -45,8 +45,8 @@ export default function convertPaletteColor(
   let bufferIndex = 0;
 
   const start = imageFrame.redPaletteColorLookupTableDescriptor[1];
-  const shift =
-    imageFrame.redPaletteColorLookupTableDescriptor[2] === 8 ? 0 : 8;
+  const bitsStored = imageFrame.redPaletteColorLookupTableDescriptor[2];
+  const shift = bitsStored > 8 || rData.every((num) => num < 256) ? 0 : 8;
 
   const rDataCleaned = convertLUTto8Bit(rData, shift);
   const gDataCleaned = convertLUTto8Bit(gData, shift);
