@@ -146,14 +146,14 @@ function _drawTextGroup(
     textGroupBoundingBox = _drawTextBackground(textGroup, backgroundStyles);
   }
 
-  // We translate the group using `position`
-  // which means we also need to pluck those values when returning
-  // the bounding box
+  // `getBBox()` is returned in the group's local coordinates and does not include
+  // the group's translate transform, so we offset x/y manually. Keep width/height
+  // as-is to reflect the actual rendered text box size for link anchoring.
   return Object.assign({}, textGroupBoundingBox, {
-    x,
-    y,
-    height: textGroupBoundingBox.height + padding,
-    width: textGroupBoundingBox.width + padding,
+    x: x + textGroupBoundingBox.x,
+    y: y + textGroupBoundingBox.y,
+    height: textGroupBoundingBox.height,
+    width: textGroupBoundingBox.width,
   });
 }
 
