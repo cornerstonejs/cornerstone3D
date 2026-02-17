@@ -48,7 +48,11 @@ describe('getTextBoxCoordsCanvas', () => {
       height: 67,
     });
 
-    const coords = getTextBoxCoordsCanvas(annotationPoints as any, element, textLines);
+    const coords = getTextBoxCoordsCanvas(
+      annotationPoints as any,
+      element,
+      textLines
+    );
 
     // blocker.y + blocker.height + gap(6)
     expect(coords[0]).toBe(120);
@@ -69,7 +73,11 @@ describe('getTextBoxCoordsCanvas', () => {
       height: 67,
     });
 
-    const coords = getTextBoxCoordsCanvas(lowerPoints as any, element, textLines);
+    const coords = getTextBoxCoordsCanvas(
+      lowerPoints as any,
+      element,
+      textLines
+    );
 
     // blocker.y - candidate.height - gap(6)
     expect(coords[0]).toBe(120);
