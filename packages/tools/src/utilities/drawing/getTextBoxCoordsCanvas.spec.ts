@@ -32,7 +32,7 @@ describe('getTextBoxCoordsCanvas', () => {
   const textLines = ['0123456789']; // width: 130, height: 67 by estimator
 
   it('returns the default right-side midpoint when no element is provided', () => {
-    const coords = getTextBoxCoordsCanvas(annotationPoints as any);
+    const coords = getTextBoxCoordsCanvas(annotationPoints as unknown);
 
     expect(coords[0]).toBe(120);
     expect(coords[1]).toBe(110);
@@ -49,7 +49,7 @@ describe('getTextBoxCoordsCanvas', () => {
     });
 
     const coords = getTextBoxCoordsCanvas(
-      annotationPoints as any,
+      annotationPoints as unknown,
       element,
       textLines
     );
@@ -74,7 +74,7 @@ describe('getTextBoxCoordsCanvas', () => {
     });
 
     const coords = getTextBoxCoordsCanvas(
-      lowerPoints as any,
+      lowerPoints as unknown,
       element,
       textLines
     );
@@ -98,7 +98,7 @@ describe('getTextBoxCoordsCanvas', () => {
       height: 67,
     });
 
-    const coords = getTextBoxCoordsCanvas(topPoints as any, element, textLines);
+    const coords = getTextBoxCoordsCanvas(topPoints as unknown, element, textLines);
 
     // original candidate y = center(70) - h/2(33.5) = 36.5
     expect(coords[0]).toBe(120);
