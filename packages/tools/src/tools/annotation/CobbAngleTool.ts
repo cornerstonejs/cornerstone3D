@@ -881,7 +881,11 @@ class CobbAngleTool extends AnnotationTool {
       const textLines = this.configuration.getTextLines(data, targetId);
 
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        const canvasTextBoxCoords = getTextBoxCoordsCanvas(
+          canvasCoordinates,
+          element,
+          textLines
+        );
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);

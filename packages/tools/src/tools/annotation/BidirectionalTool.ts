@@ -1214,7 +1214,11 @@ class BidirectionalTool extends AnnotationTool {
       let canvasTextBoxCoords;
 
       if (!data.handles.textBox.hasMoved) {
-        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        canvasTextBoxCoords = getTextBoxCoordsCanvas(
+          canvasCoordinates,
+          element,
+          textLines
+        );
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);

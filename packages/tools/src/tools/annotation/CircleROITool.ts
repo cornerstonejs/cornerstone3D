@@ -805,7 +805,11 @@ class CircleROITool extends AnnotationTool {
         let canvasTextBoxCoords;
 
         if (!data.handles.textBox.hasMoved) {
-          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
+          canvasTextBoxCoords = getTextBoxCoordsCanvas(
+            canvasCorners,
+            element,
+            textLines
+          );
 
           data.handles.textBox.worldPosition =
             viewport.canvasToWorld(canvasTextBoxCoords);

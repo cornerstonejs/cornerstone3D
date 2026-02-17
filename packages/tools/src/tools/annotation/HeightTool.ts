@@ -338,8 +338,13 @@ class HeightTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox,newAnnotation } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
     this.createMemo(element, annotation, { newAnnotation });
     if (movingTextBox) {
@@ -693,7 +698,11 @@ class HeightTool extends AnnotationTool {
 
       // Need to update to sync with annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        const canvasTextBoxCoords = getTextBoxCoordsCanvas(
+          canvasCoordinates,
+          element,
+          textLines
+        );
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);

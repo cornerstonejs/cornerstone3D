@@ -1103,7 +1103,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       viewport.worldToCanvas(p)
     );
     if (!data.handles.textBox.hasMoved) {
-      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(
+        canvasCoordinates,
+        viewport.element,
+        textLines
+      );
 
       data.handles.textBox.worldPosition =
         viewport.canvasToWorld(canvasTextBoxCoords);

@@ -559,7 +559,11 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         let canvasTextBoxCoords;
 
         if (!data.handles.textBox.hasMoved) {
-          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
+          canvasTextBoxCoords = getTextBoxCoordsCanvas(
+            canvasCorners,
+            viewport.element,
+            textLines
+          );
 
           data.handles.textBox.worldPosition =
             viewport.canvasToWorld(canvasTextBoxCoords);

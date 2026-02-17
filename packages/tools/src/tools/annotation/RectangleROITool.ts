@@ -775,7 +775,11 @@ class RectangleROITool extends AnnotationTool {
       }
 
       if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
+        const canvasTextBoxCoords = getTextBoxCoordsCanvas(
+          canvasCoordinates,
+          element,
+          textLines
+        );
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);
