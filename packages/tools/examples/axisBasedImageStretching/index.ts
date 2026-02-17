@@ -334,10 +334,9 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.STACK,
       element: element1,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
@@ -346,7 +345,7 @@ async function run() {
       type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
-        orientation: Enums.OrientationAxis.SAGITTAL,
+        orientation: Enums.OrientationAxis.ACQUISITION_AXIAL,
         background: <Types.Point3>[0, 0, 0],
       },
     },
@@ -371,8 +370,9 @@ async function run() {
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
+    [viewportId2, viewportId3]
   );
+  await renderingEngine.getViewport(viewportId1).setStack(imageIds);
 
   // Add the segmentation representation to the viewports
   const segmentationRepresentation = {
