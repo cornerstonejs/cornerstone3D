@@ -57,6 +57,7 @@ import {
 import * as geometricSurfaceUtils from './geometricSurfaceUtils';
 import setAnnotationLabel from './setAnnotationLabel';
 import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
+import { safeStructuredClone } from './safeStructuredClone';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
 
@@ -109,5 +110,6 @@ export {
   usFanExtraction,
   setAnnotationLabel,
   moveAnnotationToViewPlane,
+  safeStructuredClone,
   getOrCreateImageVolume,
 };
