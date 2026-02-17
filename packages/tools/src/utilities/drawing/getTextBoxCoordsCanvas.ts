@@ -3,6 +3,7 @@ import {
   getRegisteredTextBoxes,
   type TextBoxRect,
 } from './textBoxOverlapRegistry';
+import intersectAABB from '../math/aabb/intersectAABB';
 
 const VIEWPORT_ELEMENT = 'viewport-element';
 
@@ -165,7 +166,11 @@ function _overlapsAny(
   h: number,
   boxes: TextBoxRect[]
 ): boolean {
-  return boxes.some((b) => _rectsOverlap(x, y, w, h, b));
+  const candidate = _toTextBoxAABB({ x, y, width: w, height: h });
+
+  return boxes.some((box) =>
+    intersectAABB(candidate, _toTextBoxAABB(box, TEXT_BOX_GAP / 2))
+  );
 }
 
 /**
@@ -178,27 +183,20 @@ function _findFirstOverlap(
   h: number,
   boxes: TextBoxRect[]
 ): TextBoxRect | undefined {
-  return boxes.find((b) => _rectsOverlap(x, y, w, h, b));
+  const candidate = _toTextBoxAABB({ x, y, width: w, height: h });
+
+  return boxes.find((box) =>
+    intersectAABB(candidate, _toTextBoxAABB(box, TEXT_BOX_GAP / 2))
+  );
 }
 
-/**
- * Axis-aligned rectangle overlap test with a small gap tolerance so that
- * boxes don't end up directly touching.
- */
-function _rectsOverlap(
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  b: TextBoxRect
-): boolean {
-  const gap = TEXT_BOX_GAP / 2;
-  return (
-    x < b.x + b.width + gap &&
-    x + w + gap > b.x &&
-    y < b.y + b.height + gap &&
-    y + h + gap > b.y
-  );
+function _toTextBoxAABB(rect: TextBoxRect, inflate = 0): Types.AABB2 {
+  return {
+    minX: rect.x - inflate,
+    minY: rect.y - inflate,
+    maxX: rect.x + rect.width + inflate,
+    maxY: rect.y + rect.height + inflate,
+  };
 }
 
 /**
