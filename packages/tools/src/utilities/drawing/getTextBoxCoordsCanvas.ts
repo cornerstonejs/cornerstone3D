@@ -1,8 +1,21 @@
 import type { Types } from '@cornerstonejs/core';
+import {
+  getRegisteredTextBoxes,
+  type TextBoxRect,
+} from './textBoxOverlapRegistry';
+
+const VIEWPORT_ELEMENT = 'viewport-element';
+
+// Minimum gap (px) between adjacent text boxes
+const TEXT_BOX_GAP = 6;
 
 /**
  * Determine the coordinates that will place the textbox to the right of the
  * annotation while keeping it inside viewport bounds when an element is provided.
+ *
+ * When an element is supplied the function also checks for overlap with
+ * previously-rendered text boxes (tracked via the textBoxOverlapRegistry) and
+ * nudges the new box vertically so that it does not occlude existing labels.
  *
  * @param annotationCanvasPoints - The canvas points of the annotation's handles.
  * @param element - Viewport HTML element used to clamp textbox placement.
@@ -37,14 +50,168 @@ export default function getTextBoxCoordsCanvas(
   x = Math.max(margin, Math.min(x, maxX - textBoxWidth));
   y = Math.max(margin, Math.min(y, maxY - textBoxHeight));
 
+  // Overlap avoidance
+  const svgLayer = _findSvgLayer(element);
+  if (svgLayer) {
+    const existingBoxes = getRegisteredTextBoxes(svgLayer);
+    if (existingBoxes.length > 0) {
+      const resolved = _resolveOverlap(
+        x,
+        y,
+        textBoxWidth,
+        textBoxHeight,
+        existingBoxes,
+        margin,
+        maxX,
+        maxY
+      );
+      x = resolved[0];
+      y = resolved[1];
+    }
+  }
+
   return <Types.Point2>[x, y];
 }
 
 /**
+ * If the proposed rectangle overlaps any existing text box, try to nudge it
+ * vertically (downward first, then upward) until a clear slot is found.  Falls
+ * back to the original position when the viewport is too crowded.
+ */
+function _resolveOverlap(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  existingBoxes: TextBoxRect[],
+  margin: number,
+  maxX: number,
+  maxY: number
+): Types.Point2 {
+  if (!_overlapsAny(x, y, width, height, existingBoxes)) {
+    return <Types.Point2>[x, y];
+  }
+
+  // scan downward – push below each overlapping box in turn.
+  let candidateY = y;
+  for (let i = 0; i < 30; i++) {
+    const blocker = _findFirstOverlap(
+      x,
+      candidateY,
+      width,
+      height,
+      existingBoxes
+    );
+    if (!blocker) {
+      break;
+    }
+    candidateY = blocker.y + blocker.height + TEXT_BOX_GAP;
+    if (candidateY + height > maxY) {
+      candidateY = Infinity;
+      break;
+    }
+  }
+  if (
+    candidateY !== Infinity &&
+    !_overlapsAny(x, candidateY, width, height, existingBoxes)
+  ) {
+    return <Types.Point2>[
+      x,
+      Math.max(margin, Math.min(candidateY, maxY - height)),
+    ];
+  }
+
+  // Strategy 2: scan upward – push above each overlapping box in turn.
+  candidateY = y;
+  for (let i = 0; i < 30; i++) {
+    const blocker = _findFirstOverlap(
+      x,
+      candidateY,
+      width,
+      height,
+      existingBoxes
+    );
+    if (!blocker) {
+      break;
+    }
+    candidateY = blocker.y - height - TEXT_BOX_GAP;
+    if (candidateY < margin) {
+      candidateY = -Infinity;
+      break;
+    }
+  }
+  if (
+    candidateY !== -Infinity &&
+    !_overlapsAny(x, candidateY, width, height, existingBoxes)
+  ) {
+    return <Types.Point2>[
+      x,
+      Math.max(margin, Math.min(candidateY, maxY - height)),
+    ];
+  }
+
+  // All vertical slots exhausted – return the original position.
+  return <Types.Point2>[x, y];
+}
+
+/**
+ * Returns `true` when the candidate rectangle intersects (or nearly touches)
+ * any rectangle in `boxes`.
+ */
+function _overlapsAny(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  boxes: TextBoxRect[]
+): boolean {
+  return boxes.some((b) => _rectsOverlap(x, y, w, h, b));
+}
+
+/**
+ * Returns the first existing box that overlaps the candidate, or `undefined`.
+ */
+function _findFirstOverlap(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  boxes: TextBoxRect[]
+): TextBoxRect | undefined {
+  return boxes.find((b) => _rectsOverlap(x, y, w, h, b));
+}
+
+/**
+ * Axis-aligned rectangle overlap test with a small gap tolerance so that
+ * boxes don't end up directly touching.
+ */
+function _rectsOverlap(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  b: TextBoxRect
+): boolean {
+  const gap = TEXT_BOX_GAP / 2;
+  return (
+    x < b.x + b.width + gap &&
+    x + w + gap > b.x &&
+    y < b.y + b.height + gap &&
+    y + h + gap > b.y
+  );
+}
+
+/**
+ * Locate the SVG drawing layer for a viewport element.
+ * Mirrors the lookup in getSvgDrawingHelper.ts.
+ */
+function _findSvgLayer(element: HTMLDivElement): Element | null {
+  const internalDiv = element.querySelector(`.${VIEWPORT_ELEMENT}`);
+  return internalDiv?.querySelector(':scope > .svg-layer') || null;
+}
+
+/**
  * Determine the handles that have the min/max x and y values.
- *
- * @param canvasPoints - The canvas points of the annotation's handles.
- * @returns - The top, left, bottom, and right handles.
  */
 function _determineCorners(canvasPoints: Array<Types.Point2>) {
   const handlesLeftToRight = [canvasPoints[0], canvasPoints[1]].sort(_compareX);

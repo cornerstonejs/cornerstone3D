@@ -3,6 +3,7 @@ import type { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
+import { registerTextBox } from '../utilities/drawing/textBoxOverlapRegistry';
 
 /**
  * Draws a textBox.
@@ -42,6 +43,11 @@ function drawTextBox(
     position,
     mergedOptions
   );
+
+  // Register this text box so future placements can avoid overlapping it.
+  if (svgDrawingHelper.svgLayerElement) {
+    registerTextBox(svgDrawingHelper.svgLayerElement, textGroupBoundingBox);
+  }
 
   return textGroupBoundingBox;
 }
