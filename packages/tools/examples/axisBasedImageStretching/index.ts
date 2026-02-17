@@ -14,8 +14,11 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
+  addManipulationBindings,
   setCtTransferFunctionForVolumeActor,
-  getLocalUrl,
+  annotationTools,
+  contourTools,
+  labelmapTools,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -28,25 +31,21 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
-  LengthTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  RectangleScissorsTool,
-  SphereScissorsTool,
-  CircleScissorsTool,
-  BrushTool,
-  PaintFillTool,
-  PanTool,
-  ZoomTool,
-  StackScrollTool,
   utilities: cstUtils,
 } = cornerstoneTools;
 
-const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
+
+// Combined tool map: annotationTools first, then labelmapTools, then contourTools
+const toolMap = new Map(annotationTools);
+for (const [key, value] of labelmapTools.toolMap) {
+  toolMap.set(key, value);
+}
+for (const [key, value] of contourTools.toolMap) {
+  toolMap.set(key, value);
+}
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -61,8 +60,8 @@ const viewportId3 = 'CT_CORONAL';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Axial-based Image Stretching',
-  'Here we demonstrate axial based stretching with annotation and segmentation tools'
+  'Axis-based Image Stretching',
+  'Here we demonstrate axis based stretching with annotation and segmentation tools'
 );
 
 const size = '500px';
@@ -100,79 +99,30 @@ instructions.innerText = `
   Middle Click: Pan
   Right Click: Zoom
   Mouse wheel: Scroll Stack
+  Shift Left Click: Zoom
+  Alt Left Click: Stack Scroll
   `;
 
 content.append(instructions);
 
-const brushInstanceNames = {
-  CircularBrush: 'CircularBrush',
-  CircularEraser: 'CircularEraser',
-  SphereBrush: 'SphereBrush',
-  SphereEraser: 'SphereEraser',
-  ThresholdCircle: 'ThresholdCircle',
-  ScissorsEraser: 'ScissorsEraser',
-};
-
-const brushStrategies = {
-  [brushInstanceNames.CircularBrush]: 'FILL_INSIDE_CIRCLE',
-  [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
-  [brushInstanceNames.SphereBrush]: 'FILL_INSIDE_SPHERE',
-  [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
-  [brushInstanceNames.ThresholdCircle]: 'THRESHOLD_INSIDE_CIRCLE',
-  [brushInstanceNames.ScissorsEraser]: 'ERASE_INSIDE',
-};
-
-const brushValues = [
-  brushInstanceNames.CircularBrush,
-  brushInstanceNames.CircularEraser,
-  brushInstanceNames.SphereBrush,
-  brushInstanceNames.SphereEraser,
-  brushInstanceNames.ThresholdCircle,
-];
-
-const toolsNames = [
-  LengthTool.toolName,
-  RectangleROITool.toolName,
-  EllipticalROITool.toolName,
-  CircleROITool.toolName,
-  BidirectionalTool.toolName,
-];
-
-const optionsValues = [
-  ...brushValues,
-  RectangleScissorsTool.toolName,
-  CircleScissorsTool.toolName,
-  SphereScissorsTool.toolName,
-  brushInstanceNames.ScissorsEraser,
-  PaintFillTool.toolName,
-  ...toolsNames,
-];
+const defaultTool = 'CircularBrush';
 
 // ============================= //
 addDropdownToToolbar({
-  options: { values: optionsValues, defaultValue: BrushTool.toolName },
-  onSelectedValueChange: (nameAsStringOrNumber) => {
-    const name = String(nameAsStringOrNumber);
+  options: { map: toolMap, defaultValue: defaultTool },
+  onSelectedValueChange: (newSelectedToolName) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-    // Set the currently active tool disabled
-    const toolName = toolGroup.getActivePrimaryMouseButtonTool();
-
-    if (toolName) {
-      toolGroup.setToolDisabled(toolName);
+    // Set the old tool passive
+    const selectedToolName = toolGroup.getActivePrimaryMouseButtonTool();
+    if (selectedToolName) {
+      toolGroup.setToolPassive(selectedToolName);
     }
 
-    if (brushValues.includes(name)) {
-      toolGroup.setToolActive(name, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
-    } else {
-      const toolName = name;
-
-      toolGroup.setToolActive(toolName, {
-        bindings: [{ mouseButton: MouseBindings.Primary }],
-      });
-    }
+    // Set the new tool active
+    toolGroup.setToolActive(newSelectedToolName as string, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
   },
 });
 
@@ -187,7 +137,7 @@ thresholdOptions.set('CT Bone: (200, 1000)', {
 addDropdownToToolbar({
   options: {
     values: Array.from(thresholdOptions.keys()),
-    defaultValue: thresholdOptions[0],
+    defaultValue: Array.from(thresholdOptions.keys())[0],
   },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
@@ -260,7 +210,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
-    document.getElementById('stretchSlider').value = 1;
+    (document.getElementById('stretchSlider') as HTMLInputElement).value = '10';
     setStretch(1);
     selectedAxis = name;
   },
@@ -269,11 +219,11 @@ addDropdownToToolbar({
 addSliderToToolbar({
   id: 'stretchSlider',
   title: 'Stretch Value',
-  range: [1, 10],
-  defaultValue: 1,
+  range: [1, 100],
+  defaultValue: 10,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
-    setStretch(value);
+    setStretch(value / 10);
   },
 });
 
@@ -315,117 +265,11 @@ async function run() {
     ProgressiveRetrieveImages.interleavedRetrieveStages
   );
 
-  // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(RectangleROITool);
-  cornerstoneTools.addTool(EllipticalROITool);
-  cornerstoneTools.addTool(CircleROITool);
-  cornerstoneTools.addTool(BidirectionalTool);
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-  cornerstoneTools.addTool(StackScrollTool);
-  cornerstoneTools.addTool(RectangleScissorsTool);
-  cornerstoneTools.addTool(CircleScissorsTool);
-  cornerstoneTools.addTool(SphereScissorsTool);
-  cornerstoneTools.addTool(PaintFillTool);
-  cornerstoneTools.addTool(BrushTool);
-
-  // Define tool groups to add the segmentation display tool to
+  // Define tool groups
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-
-  // Manipulation Tools
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-
-  // Annotation Tools
-  toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(RectangleROITool.toolName);
-  toolGroup.addTool(EllipticalROITool.toolName);
-  toolGroup.addTool(CircleROITool.toolName);
-  toolGroup.addTool(BidirectionalTool.toolName);
-
-  // Segmentation Tools
-  toolGroup.addTool(RectangleScissorsTool.toolName);
-  toolGroup.addTool(CircleScissorsTool.toolName);
-  toolGroup.addTool(SphereScissorsTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.ScissorsEraser,
-    SphereScissorsTool.toolName,
-    {
-      activeStrategy: brushStrategies.ScissorsEraser,
-    }
-  );
-  toolGroup.addTool(PaintFillTool.toolName);
-  toolGroup.addTool(StackScrollTool.toolName);
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularBrush,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.CircularEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.CircularEraser,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.SphereBrush,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.SphereBrush,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.SphereEraser,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.SphereEraser,
-    }
-  );
-  toolGroup.addToolInstance(
-    brushInstanceNames.ThresholdCircle,
-    BrushTool.toolName,
-    {
-      activeStrategy: brushStrategies.ThresholdCircle,
-    }
-  );
-
-  toolGroup.setToolActive(brushInstanceNames.CircularBrush, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
-
-  toolGroup.setToolActive(StackScrollTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Wheel }],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Primary, // Shift Left Click
-        modifierKey: KeyboardBindings.Shift,
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
+  addManipulationBindings(toolGroup, {
+    toolMap,
+    enableShiftClickZoom: true,
   });
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
@@ -486,9 +330,6 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
-
-  // Set the volume to load
-  // volume.load();
 
   // Set volumes on the viewports
   await setVolumesForViewports(
