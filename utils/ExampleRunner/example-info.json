@@ -177,9 +177,9 @@
         "name": "Image Smoothing For Stack & Volume Viewports",
         "description": "Demonstrates how to apply image smoothing to stack and volume viewports"
       },
-      "axialBasedImageStretching": {
-        "name": "Axial-based Image Stretching",
-        "description": "Here we demonstrate axial based stretching with annotation and segmentation tools"
+      "axisBasedImageStretching": {
+        "name": "Axis-based Image Stretching",
+        "description": "Here we demonstrate axis based stretching with annotation and segmentation tools"
       }
     },
     "tools-basic": {
