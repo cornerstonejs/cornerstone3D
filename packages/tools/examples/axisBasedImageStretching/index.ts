@@ -14,6 +14,7 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
+  addButtonToToolbar,
   addManipulationBindings,
   setCtTransferFunctionForVolumeActor,
   annotationTools,
@@ -224,6 +225,41 @@ addSliderToToolbar({
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
     setStretch(value / 10);
+  },
+});
+
+const rotationValues = [0, 10, 20, 30, 40, 45, 60, 90, 120, 180];
+addDropdownToToolbar({
+  id: 'rotation',
+  labelText: 'Rotation',
+  options: {
+    values: rotationValues.map(String),
+    defaultValue: '0',
+  },
+  onSelectedValueChange: (valueAsStringOrNumber) => {
+    const rotation = Number(valueAsStringOrNumber);
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    [viewportId1, viewportId2, viewportId3].forEach((id) => {
+      const vp = renderingEngine.getViewport(id) as Types.IVolumeViewport;
+      vp.setViewPresentation({ rotation });
+      vp.render();
+    });
+  },
+});
+
+addButtonToToolbar({
+  title: 'Flip',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    [viewportId1, viewportId2, viewportId3].forEach((id) => {
+      const vp = renderingEngine.getViewport(id) as Types.IVolumeViewport;
+      const { flipHorizontal, flipVertical } = vp.getCamera();
+      vp.setCamera({
+        flipHorizontal: !flipHorizontal,
+        flipVertical: !flipVertical,
+      });
+      vp.render();
+    });
   },
 });
 
