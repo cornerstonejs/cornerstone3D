@@ -4,14 +4,14 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  getEnabledElement,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-  addDropdownToToolbar,
+  addFillOpacityDropdownToToolbar,
+  addUShapeModeDropdownToToolbar,
   createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -28,20 +28,17 @@ const {
   ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
-  annotation,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
-const { selection } = annotation;
-const defaultFrameOfReferenceSpecificAnnotationManager =
-  annotation.state.getAnnotationManager();
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
+const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
@@ -118,67 +115,20 @@ createInfoSection(content, {
     'The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.'
   );
 
-addDropdownToToolbar({
-  labelText: 'U-Shape Mode',
-  options: {
-    values: ['none', 'farthestT', 'orthogonalT', 'lineSegment'],
-    defaultValue: 'none',
-  },
-  onSelectedValueChange: (value) => {
-    let mode: boolean | string = false;
-
-    if (value === 'farthestT') {
-      mode = true;
-    } else if (value !== 'none') {
-      mode = value as string;
-    }
-
-    // Set on tool configuration so newly drawn contours get this mode
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    if (toolGroup) {
-      toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-        openUShapeContour: mode,
-      });
-    }
-
-    // Also apply to currently selected annotation
-    const annotationUIDs = selection.getAnnotationsSelected();
-
-    if (annotationUIDs && annotationUIDs.length) {
-      const annotationUID = annotationUIDs[0];
-      const ann =
-        defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
-          annotationUID
-        );
-
-      ann.data.openUShapeContourVectorToPeak = null;
-      ann.data.isOpenUShapeContour = mode;
-
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-      renderingEngine.renderViewports(viewportIds);
-    }
-  },
+addUShapeModeDropdownToToolbar({
+  toolGroupId,
+  toolNames: [PlanarFreehandROITool.toolName],
+  renderingEngineId,
+  viewportIds,
+  getRenderingEngine,
 });
 
-addDropdownToToolbar({
-  labelText: 'Fill Opacity',
-  options: {
-    values: ['0', '0.2', '0.5', '0.8'],
-    defaultValue: '0',
-  },
-  onSelectedValueChange: (value) => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    if (toolGroup) {
-      toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
-        fillOpacity: parseFloat(value as string),
-      });
-    }
-
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    renderingEngine.renderViewports(viewportIds);
-  },
+addFillOpacityDropdownToToolbar({
+  toolGroupId,
+  toolNames: [PlanarFreehandROITool.toolName],
+  renderingEngineId,
+  viewportIds,
+  getRenderingEngine,
 });
 
 let shouldInterpolate = false;
@@ -230,8 +180,6 @@ function addToggleCalculateStatsButton(toolGroup) {
   });
 }
 // ============================= //
-
-const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 /**
  * Runs the demo
