@@ -2,6 +2,8 @@ import addBrushSizeSlider from './addBrushSizeSlider';
 import addButtonToToolbar from './addButtonToToolbar';
 import addCheckboxToToolbar from './addCheckboxToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
+import addFillOpacityDropdownToToolbar from './addFillOpacityDropdownToToolbar';
+import addUShapeModeDropdownToToolbar from './addUShapeModeDropdownToToolbar';
 import addInputToToolbar from './addInputToToolbar';
 import addLabelToToolbar from './addLabelToToolbar';
 import addManipulationBindings from './addManipulationBindings';
@@ -42,6 +44,8 @@ export {
   addButtonToToolbar,
   addCheckboxToToolbar,
   addDropdownToToolbar,
+  addFillOpacityDropdownToToolbar,
+  addUShapeModeDropdownToToolbar,
   addInputToToolbar,
   addLabelToToolbar,
   addManipulationBindings,
