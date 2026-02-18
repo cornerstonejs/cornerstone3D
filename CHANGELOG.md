@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.16.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.16.3...v4.16.4) (2026-02-18)
+
+### Bug Fixes
+
+- **security:** Bump tar to 7.5.9 and lerna to 9.0.4 to fix CVE-2026-26960 ([#2618](https://github.com/cornerstonejs/cornerstone3D/issues/2618)) ([811c326](https://github.com/cornerstonejs/cornerstone3D/commit/811c3264d86dfea0f6b7d62d68b0a8e2791fde0b))
+
 ## [4.16.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.16.2...v4.16.3) (2026-02-17)
 
 **Note:** Version bump only for package root
