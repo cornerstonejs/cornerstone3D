@@ -9,6 +9,7 @@ defaults: &defaults
       environment:
         TERM: xterm # Enable colors in term
 
+
 commands:
   install_bun:
     steps:
@@ -72,7 +73,7 @@ jobs:
       - persist_to_workspace:
           root: ~/repo
           paths:
-            - '.'
+            - "."
 
   BUILD:
     <<: *defaults
@@ -110,7 +111,7 @@ jobs:
             no\n" > ~/.ssh/config
       - add_ssh_keys:
           fingerprints:
-            - '7e:0f:5b:bb:e3:7a:2e:2f:b4:85:bd:66:09:69:cb:f2'
+            - "7e:0f:5b:bb:e3:7a:2e:2f:b4:85:bd:66:09:69:cb:f2"
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
       - run: git config --global user.email "contact@ohif.org"
       - run: git config --global user.name "ohif-bot"
@@ -120,7 +121,8 @@ jobs:
             bun ./publish-version.mjs
       - run:
           name: Again set the NPM registry (was deleted in the version script)
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+          command:
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
       - run:
           name: publish package dist
           command: |
@@ -158,4 +160,5 @@ workflows:
       - NPM_PUBLISH:
           requires:
             - BUILD
+
 # VS Code Extension Version: 1.5.1
