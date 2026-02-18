@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.16.4...v4.17.0) (2026-02-18)
+
+### Features
+
+- **tools:** implement orthogonalT and lineSegment modes for PlanarFreehandROI open U-shape contours ([#2615](https://github.com/cornerstonejs/cornerstone3D/issues/2615)) ([de1a72a](https://github.com/cornerstonejs/cornerstone3D/commit/de1a72a0a0da368e87666cdc61ed605058ec982a))
+
 ## [4.16.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.16.3...v4.16.4) (2026-02-18)
 
 **Note:** Version bump only for package @cornerstonejs/tools
