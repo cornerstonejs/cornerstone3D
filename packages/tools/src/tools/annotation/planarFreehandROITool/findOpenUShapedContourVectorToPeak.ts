@@ -150,8 +150,7 @@ function findOpenUShapedContourVectorToPeakOrthogonal(
 
   for (const p of canvasPoints) {
     vec2.sub(delta, p, centerOfFirstToLast);
-    const dp =
-      (delta[0] as number) * chordDir[0] + (delta[1] as number) * chordDir[1];
+    const dp = vec2.dot(chordDir, delta);
 
     if (prevDp !== null && prevDp * dp < 0) {
       // Sign change — interpolate between prevPoint and p
