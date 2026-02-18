@@ -361,6 +361,14 @@ function completeDrawOpenContour(
     worldPoints[worldPoints.length - 1],
   ];
 
+  // Apply configured U-shape mode if the annotation doesn't already have one.
+  if (
+    !annotation.data.isOpenUShapeContour &&
+    this.configuration?.openUShapeContour
+  ) {
+    annotation.data.isOpenUShapeContour = this.configuration.openUShapeContour;
+  }
+
   // If the annotation is an open U-shaped annotation, find the annotation vector
   // to the peak point (variant-dependent).
   if (annotation.data.isOpenUShapeContour) {

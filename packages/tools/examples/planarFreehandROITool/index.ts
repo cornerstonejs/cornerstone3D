@@ -118,44 +118,66 @@ createInfoSection(content, {
     'The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.'
   );
 
-let selectedUShapeMode: boolean | string = true;
-
 addDropdownToToolbar({
   labelText: 'U-Shape Mode',
   options: {
-    values: ['farthestT', 'orthogonalT', 'lineSegment'],
-    defaultValue: 'farthestT',
+    values: ['none', 'farthestT', 'orthogonalT', 'lineSegment'],
+    defaultValue: 'none',
   },
   onSelectedValueChange: (value) => {
-    if (value === 'farthestT') {
-      selectedUShapeMode = true;
-    } else {
-      selectedUShapeMode = value as string;
-    }
-  },
-});
+    let mode: boolean | string = false;
 
-addButtonToToolbar({
-  title: 'Apply U-Shape to selected open contour',
-  onClick: () => {
+    if (value === 'farthestT') {
+      mode = true;
+    } else if (value !== 'none') {
+      mode = value as string;
+    }
+
+    // Set on tool configuration so newly drawn contours get this mode
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    if (toolGroup) {
+      toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
+        openUShapeContour: mode,
+      });
+    }
+
+    // Also apply to currently selected annotation
     const annotationUIDs = selection.getAnnotationsSelected();
 
     if (annotationUIDs && annotationUIDs.length) {
       const annotationUID = annotationUIDs[0];
-      const annotation =
+      const ann =
         defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
           annotationUID
         );
 
-      // Clear cached peak so it gets recalculated with the new mode
-      annotation.data.openUShapeContourVectorToPeak = null;
-      annotation.data.isOpenUShapeContour = selectedUShapeMode;
+      ann.data.openUShapeContourVectorToPeak = null;
+      ann.data.isOpenUShapeContour = mode;
 
-      // Render the image to see it was selected
       const renderingEngine = getRenderingEngine(renderingEngineId);
-
       renderingEngine.renderViewports(viewportIds);
     }
+  },
+});
+
+addDropdownToToolbar({
+  labelText: 'Fill Opacity',
+  options: {
+    values: ['0', '0.2', '0.5', '0.8'],
+    defaultValue: '0',
+  },
+  onSelectedValueChange: (value) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    if (toolGroup) {
+      toolGroup.setToolConfiguration(PlanarFreehandROITool.toolName, {
+        fillOpacity: parseFloat(value as string),
+      });
+    }
+
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.renderViewports(viewportIds);
   },
 });
 

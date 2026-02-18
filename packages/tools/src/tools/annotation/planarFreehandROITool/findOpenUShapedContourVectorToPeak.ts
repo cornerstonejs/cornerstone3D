@@ -117,24 +117,20 @@ export function resolveVectorToPeakOnRender(
 function findOpenUShapedContourVectorToPeakOrthogonal(
   canvasPoints: Types.Point2[],
   viewport: Types.IStackViewport | Types.IVolumeViewport
-): Types.Point3[] {
+): Types.Point3[] | null {
   // Find chord from first to last point.
   const first = canvasPoints[0];
   const last = canvasPoints[canvasPoints.length - 1];
 
-  const firstToLastUnitVector = vec2.create();
-
-  vec2.set(firstToLastUnitVector, last[0] - first[0], last[1] - first[1]);
+  const firstToLastUnitVector = vec2.sub(vec2.create(), last, first);
   vec2.normalize(firstToLastUnitVector, firstToLastUnitVector);
 
-  // Get the two possible normal vectors to the chord
-  const normalVector1: Types.Point2 = [
-    -firstToLastUnitVector[1],
-    firstToLastUnitVector[0],
-  ];
-  const normalVector2: Types.Point2 = [
-    firstToLastUnitVector[1],
-    -firstToLastUnitVector[0],
+  // The chord direction is used for the dot-product test: a point is
+  // orthogonal to the chord when its displacement from the center has
+  // zero dot product with the chord direction.
+  const chordDir: Types.Point2 = [
+    firstToLastUnitVector[0] as number,
+    firstToLastUnitVector[1] as number,
   ];
 
   // Find the center of the chord.
@@ -143,55 +139,46 @@ function findOpenUShapedContourVectorToPeakOrthogonal(
     (first[1] + last[1]) / 2,
   ];
 
-  // Cast rays in both normal directions and find the farthest intersection
-  // with the contour segments.
-  let bestT = -1;
-  let bestIntersection: Types.Point2 | null = null;
+  // Single-pass: walk the contour and look for where the dot product of
+  // (point - center) with the chord direction changes sign — that's where
+  // the perpendicular from the midpoint crosses the contour. Interpolate
+  // between the two bracketing points for a precise intersection.
+  const delta = vec2.create();
+  let prevDp: number | null = null;
+  let prevPoint: Types.Point2 | null = null;
+  let orthogonalPoint: Types.Point2 | null = null;
 
-  for (const dir of [normalVector1, normalVector2]) {
-    for (let i = 0; i < canvasPoints.length - 1; i++) {
-      const p1 = canvasPoints[i];
-      const p2 = canvasPoints[i + 1];
+  for (const p of canvasPoints) {
+    vec2.sub(delta, p, centerOfFirstToLast);
+    const dp =
+      (delta[0] as number) * chordDir[0] + (delta[1] as number) * chordDir[1];
 
-      // Solve: centerOfFirstToLast + t * dir = p1 + u * (p2 - p1)
-      // Using the standard ray-segment intersection formula.
-      const dx = p2[0] - p1[0];
-      const dy = p2[1] - p1[1];
-
-      const denom = dir[0] * dy - dir[1] * dx;
-
-      if (Math.abs(denom) < 1e-10) {
-        continue; // Parallel
-      }
-
-      const t =
-        ((p1[0] - centerOfFirstToLast[0]) * dy -
-          (p1[1] - centerOfFirstToLast[1]) * dx) /
-        denom;
-      const u =
-        ((p1[0] - centerOfFirstToLast[0]) * dir[1] -
-          (p1[1] - centerOfFirstToLast[1]) * dir[0]) /
-        denom;
-
-      if (t > 0 && u >= 0 && u <= 1) {
-        if (t > bestT) {
-          bestT = t;
-          bestIntersection = [
-            centerOfFirstToLast[0] + t * dir[0],
-            centerOfFirstToLast[1] + t * dir[1],
-          ];
-        }
-      }
+    if (prevDp !== null && prevDp * dp < 0) {
+      // Sign change — interpolate between prevPoint and p
+      const t = Math.abs(prevDp) / (Math.abs(prevDp) + Math.abs(dp));
+      orthogonalPoint = [
+        prevPoint[0] + t * (p[0] - prevPoint[0]),
+        prevPoint[1] + t * (p[1] - prevPoint[1]),
+      ];
+      break;
     }
+
+    if (Math.abs(dp) < 1e-10) {
+      orthogonalPoint = p;
+      break;
+    }
+
+    prevDp = dp;
+    prevPoint = p;
   }
 
-  // If no intersection found, fall back to the existing farthest-point logic.
-  if (!bestIntersection) {
-    return findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
+  if (!orthogonalPoint) {
+    console.warn('No orthogonal intersection found for open U-shaped contour');
+    return null;
   }
 
   const toOrthogonal: [Types.Point2, Types.Point2] = [
-    bestIntersection,
+    orthogonalPoint,
     centerOfFirstToLast,
   ];
   const toOrthogonalWorld = toOrthogonal.map(viewport.canvasToWorld);

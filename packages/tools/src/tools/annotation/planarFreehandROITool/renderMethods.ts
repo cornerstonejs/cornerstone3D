@@ -43,7 +43,10 @@ function _getRenderingOptions(
     width: lineWidth,
     lineDash,
     fillColor,
-    fillOpacity,
+    fillOpacity:
+      this.configuration?.fillOpacity !== undefined
+        ? this.configuration.fillOpacity
+        : fillOpacity,
     closePath: isClosedContour,
   };
 
