@@ -4,13 +4,14 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  getEnabledElement,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  addFillOpacityDropdownToToolbar,
+  addUShapeModeDropdownToToolbar,
   createInfoSection,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -27,20 +28,17 @@ const {
   ZoomTool,
   ToolGroupManager,
   Enums: csToolsEnums,
-  annotation,
 } = cornerstoneTools;
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
-const { selection } = annotation;
-const defaultFrameOfReferenceSpecificAnnotationManager =
-  annotation.state.getAnnotationManager();
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
+const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 
@@ -117,26 +115,20 @@ createInfoSection(content, {
     'The two open ends will be drawn with a dotted line, and the midpoint of the line to the tip of the horseshoe shall be calculated and displayed.'
   );
 
-addButtonToToolbar({
-  title: 'Render selected open contour with joined ends and midpoint line',
-  onClick: () => {
-    const annotationUIDs = selection.getAnnotationsSelected();
+addUShapeModeDropdownToToolbar({
+  toolGroupId,
+  toolNames: [PlanarFreehandROITool.toolName],
+  renderingEngineId,
+  viewportIds,
+  getRenderingEngine,
+});
 
-    if (annotationUIDs && annotationUIDs.length) {
-      const annotationUID = annotationUIDs[0];
-      const annotation =
-        defaultFrameOfReferenceSpecificAnnotationManager.getAnnotation(
-          annotationUID
-        );
-
-      annotation.data.isOpenUShapeContour = true;
-
-      // Render the image to see it was selected
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-
-      renderingEngine.renderViewports(viewportIds);
-    }
-  },
+addFillOpacityDropdownToToolbar({
+  toolGroupId,
+  toolNames: [PlanarFreehandROITool.toolName],
+  renderingEngineId,
+  viewportIds,
+  getRenderingEngine,
 });
 
 let shouldInterpolate = false;
@@ -188,8 +180,6 @@ function addToggleCalculateStatsButton(toolGroup) {
   });
 }
 // ============================= //
-
-const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 /**
  * Runs the demo
