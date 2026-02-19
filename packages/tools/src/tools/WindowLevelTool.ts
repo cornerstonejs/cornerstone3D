@@ -174,6 +174,7 @@ class WindowLevelTool extends BaseTool {
 
   _getMultiplierFromDynamicRange(viewport, volumeId) {
     let imageDynamicRange;
+    let BitsStored;
 
     if (volumeId) {
       const imageVolume = cache.getVolume(volumeId);
@@ -189,29 +190,26 @@ class WindowLevelTool extends BaseTool {
           [Infinity, -Infinity]
         );
 
-      const BitsStored = imageVolume?.metadata?.BitsStored;
-      const metadataDynamicRange = BitsStored ? 2 ** BitsStored : Infinity;
-      const calculatedRange =
-        calculatedDynamicRange[1] - calculatedDynamicRange[0];
-      // Burned in Pixels often use pixel values above the BitsStored.
-      // This results in a multiplier which is way higher than what you would
-      // want in practice. Thus we take the min between the metadata dynamic
-      // range upper value and actual middle slice dynamic range.
-      imageDynamicRange = !Number.isFinite(calculatedRange)
-        ? metadataDynamicRange
-        : Math.min(calculatedRange, metadataDynamicRange);
+      imageDynamicRange = calculatedDynamicRange[1] - calculatedDynamicRange[0];
+      BitsStored = imageVolume?.metadata?.BitsStored;
     } else {
       imageDynamicRange = this._getImageDynamicRangeFromViewport(viewport);
-      // Cap using BitsStored metadata (same logic as the volume viewport path above)
       const imageId = viewport.getCurrentImageId?.();
       if (imageId) {
         const imagePixelModule = metaData.get('imagePixelModule', imageId);
-        const BitsStored = imagePixelModule?.bitsStored;
-        if (BitsStored) {
-          const metadataDynamicRange = 2 ** BitsStored;
-          imageDynamicRange = Math.min(imageDynamicRange, metadataDynamicRange);
-        }
+        BitsStored = imagePixelModule?.bitsStored;
       }
+    }
+
+    // Burned in Pixels often use pixel values above the BitsStored.
+    // This results in a multiplier which is way higher than what you would
+    // want in practice. Thus we take the min between the metadata dynamic
+    // range upper value and actual middle slice dynamic range.
+    if (BitsStored) {
+      const metadataDynamicRange = 2 ** BitsStored;
+      imageDynamicRange = !Number.isFinite(imageDynamicRange)
+        ? metadataDynamicRange
+        : Math.min(imageDynamicRange, metadataDynamicRange);
     }
 
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
@@ -219,8 +217,8 @@ class WindowLevelTool extends BaseTool {
     return !Number.isFinite(ratio)
       ? DEFAULT_IMAGE_DYNAMIC_RANGE
       : ratio > 1
-      ? Math.round(ratio)
-      : ratio;
+        ? Math.round(ratio)
+        : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {
