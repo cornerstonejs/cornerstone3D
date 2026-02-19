@@ -4,6 +4,7 @@ import {
   VolumeViewport,
   cache,
   utilities,
+  metaData,
 } from '@cornerstonejs/core';
 import type { EventTypes } from '../types';
 
@@ -201,6 +202,20 @@ class WindowLevelTool extends BaseTool {
         : Math.min(calculatedRange, metadataDynamicRange);
     } else {
       imageDynamicRange = this._getImageDynamicRangeFromViewport(viewport);
+      // Cap using BitsStored metadata (same logic as the volume viewport path above)
+      const imageId = viewport.getCurrentImageId?.();
+      if (imageId) {
+        const imagePixelModule = metaData.get('imagePixelModule', imageId);
+        const BitsStored = imagePixelModule?.bitsStored;
+        console.log('[WL-FIX] Stack viewport BitsStored capping:', { imageId: imageId?.substring(0, 50), BitsStored, rawDynamicRange: imageDynamicRange, imagePixelModule });
+        if (BitsStored) {
+          const metadataDynamicRange = 2 ** BitsStored;
+          imageDynamicRange = Math.min(imageDynamicRange, metadataDynamicRange);
+          console.log('[WL-FIX] Capped dynamic range:', { metadataDynamicRange, cappedDynamicRange: imageDynamicRange });
+        }
+      } else {
+        console.log('[WL-FIX] No imageId found on viewport');
+      }
     }
 
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
