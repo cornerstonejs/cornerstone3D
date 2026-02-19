@@ -7,8 +7,11 @@ import {
   setTitleAndDescription,
   addCheckboxToToolbar,
   addButtonToToolbar,
+  addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
+  addManipulationBindings,
+  annotationTools,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -17,13 +20,7 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
-const {
-  PanTool,
-  ZoomTool,
-  ToolGroupManager,
-  Enums: csToolsEnums,
-} = cornerstoneTools;
-const { MouseBindings } = csToolsEnums;
+const { ToolGroupManager } = cornerstoneTools;
 
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
@@ -168,26 +165,9 @@ async function run() {
     return;
   }
 
-  // ======== Set up tools (Pan + Zoom) ======== //
-  cornerstoneTools.addTool(PanTool);
-  cornerstoneTools.addTool(ZoomTool);
-
+  // ======== Set up tools ======== //
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName, {
-    minZoomScale: 0.1,
-    maxZoomScale: 20,
-  });
-
-  // Left-drag = Pan
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
-
-  // Right-drag = Zoom
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Secondary }],
-  });
+  addManipulationBindings(toolGroup, { toolMap: annotationTools });
 
   // ======== Create rendering engine and ECG viewport ======== //
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -220,6 +200,24 @@ async function run() {
   renderingEngine.resize();
 
   // ======== UI Controls ======== //
+
+  // Annotation tool dropdown bound to right click
+  let activeRightClickTool: string | null = null;
+  addDropdownToToolbar({
+    options: { map: annotationTools },
+    onSelectedValueChange: (newToolName) => {
+      const tg = ToolGroupManager.getToolGroup(toolGroupId);
+      if (activeRightClickTool) {
+        tg.setToolPassive(activeRightClickTool);
+      }
+      tg.setToolActive(newToolName as string, {
+        bindings: [
+          { mouseButton: cornerstoneTools.Enums.MouseBindings.Secondary },
+        ],
+      });
+      activeRightClickTool = newToolName as string;
+    },
+  });
 
   // Reset camera button
   addButtonToToolbar({
