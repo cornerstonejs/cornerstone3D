@@ -166,6 +166,8 @@ async function run() {
   }
 
   // ======== Set up tools ======== //
+  // Make UltrasoundDirectionalTool the default active tool for this example
+  annotationTools.get('UltrasoundDirectionalTool').selected = true;
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
   addManipulationBindings(toolGroup, { toolMap: annotationTools });
 
