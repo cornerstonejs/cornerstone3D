@@ -789,7 +789,7 @@ class VolumeViewport extends BaseVolumeViewport {
   ): ViewReference {
     const viewRef = super.getViewReference(viewRefSpecifier);
     if (!viewRef?.volumeId) {
-      return;
+      return viewRef;
     }
     const volume = cache.getVolume(viewRef.volumeId);
     viewRef.referencedImageId = getClosestImageId(

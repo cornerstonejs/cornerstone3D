@@ -640,7 +640,7 @@ abstract class BaseVolumeViewport extends Viewport {
   ): ViewReference {
     const target = super.getViewReference(viewRefSpecifier);
     const volumeId = this.getVolumeId(viewRefSpecifier);
-    if (viewRefSpecifier?.forFrameOfReference !== false) {
+    if (viewRefSpecifier?.forFrameOfReference !== true) {
       target.volumeId = volumeId;
     }
     if (typeof viewRefSpecifier?.sliceIndex !== 'number') {

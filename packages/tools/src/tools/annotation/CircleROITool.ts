@@ -59,6 +59,10 @@ import {
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import {
+  createGetTextLines,
+  type MetricDefinition,
+} from '../../utilities/defaultGetTextLines';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -160,9 +164,7 @@ class CircleROITool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): CircleROIAnnotation => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -796,7 +798,10 @@ class CircleROITool extends AnnotationTool {
           continue;
         }
 
-        const textLines = this.configuration.getTextLines(data, targetId);
+        const textLines = this.configuration.getTextLines(
+          data,
+          this.getMeasurementTargets(viewport, data)
+        );
         if (!textLines || textLines.length === 0) {
           continue;
         }
@@ -1094,23 +1099,24 @@ class CircleROITool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds([viewport.id]);
   };
+
+  static readonly CIRCLE_ROI_METRICS: MetricDefinition[] = [
+    { name: 'Mean', attribute: 'mean', unitAttribute: 'modalityUnit' },
+    { name: 'Max', attribute: 'max', unitAttribute: 'modalityUnit' },
+    { name: 'Min', attribute: 'min', unitAttribute: 'modalityUnit' },
+    { name: 'Std Dev', attribute: 'stdDev', unitAttribute: 'modalityUnit' },
+  ];
+
+  static getTextLines = createGetTextLines(CircleROITool.CIRCLE_ROI_METRICS);
 }
 
-function defaultGetTextLines(data, targetId): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const {
-    radius,
-    radiusUnit,
-    area,
-    mean,
-    stdDev,
-    max,
-    min,
-    isEmptyArea,
-    areaUnit,
-    modalityUnit,
-  } = cachedVolumeStats;
+function defaultGetTextLines(data, targetIds: string[]): string[] {
+  const cachedVolumeStats = data.cachedStats[targetIds[0]];
   const textLines: string[] = [];
+  if (!cachedVolumeStats) {
+    return textLines;
+  }
+  const { radius, radiusUnit, area, isEmptyArea, areaUnit } = cachedVolumeStats;
 
   if (csUtils.isNumber(radius)) {
     const radiusLine = isEmptyArea
@@ -1126,19 +1132,9 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(areaLine);
   }
 
-  if (csUtils.isNumber(mean)) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  }
-
-  if (csUtils.isNumber(max)) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(min)) {
-    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
-  }
-
-  if (csUtils.isNumber(stdDev)) {
-    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  const standardTextLines = CircleROITool.getTextLines(data, targetIds);
+  if (standardTextLines) {
+    textLines.push(...standardTextLines);
   }
 
   return textLines;
