@@ -34,7 +34,7 @@ const EXPECTED_IMAGE: Types.IImage = {
     imageData: { data: jasmine.any(Uint8ClampedArray) },
     // @ts-expect-error jasmine matcher
     imageId: jasmine.any(String),
-    largestPixelValue: 0,
+    largestPixelValue: 255,
     photometricInterpretation: 'PALETTE COLOR',
     // @ts-expect-error jasmine matcher
     pixelData: jasmine.any(Uint8ClampedArray),
@@ -52,7 +52,7 @@ const EXPECTED_IMAGE: Types.IImage = {
   imageId: jasmine.any(String),
   intercept: 0,
   invert: false,
-  maxPixelValue: 0,
+  maxPixelValue: 255,
   minPixelValue: 0,
   numberOfComponents: 3,
   preScale: undefined,

@@ -18,7 +18,7 @@ import {
   triggerContourAnnotationCompleted,
 } from '../../../stateManagement/annotation/helpers/state';
 import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
+import { resolveVectorToPeak } from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
 import { ContourWindingDirection } from '../../../types/ContourAnnotation';
@@ -361,14 +361,22 @@ function completeDrawOpenContour(
     worldPoints[worldPoints.length - 1],
   ];
 
-  // If the annotation is an open U-shaped annotation, find the annotation vector
-  // to the farthest point from the mid point of the closure
+  // Apply configured U-shape mode if the annotation doesn't already have one.
   if (
-    annotation.data.isOpenUShapeContour === true ||
-    annotation.data.isOpenUShapeContour === 'farthestT'
+    !annotation.data.isOpenUShapeContour &&
+    this.configuration?.openUShapeContour
   ) {
-    annotation.data.openUShapeContourVectorToPeak =
-      findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
+    annotation.data.isOpenUShapeContour = this.configuration.openUShapeContour;
+  }
+
+  // If the annotation is an open U-shaped annotation, find the annotation vector
+  // to the peak point (variant-dependent).
+  if (annotation.data.isOpenUShapeContour) {
+    annotation.data.openUShapeContourVectorToPeak = resolveVectorToPeak(
+      canvasPoints,
+      viewport,
+      annotation.data.isOpenUShapeContour
+    );
   }
 
   if (!textBox.hasMoved) {
