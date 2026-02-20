@@ -3,6 +3,7 @@
   "description": "Cornerstone.js Monorepo Root",
   "private": true,
   "workspaces": [
+    "packages/metadata",
     "packages/adapters",
     "packages/core",
     "packages/dicomImageLoader",

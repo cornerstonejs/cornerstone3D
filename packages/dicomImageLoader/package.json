@@ -113,6 +113,7 @@
   },
   "peerDependencies": {
     "@cornerstonejs/core": "5.0.0-beta.1",
+    "@cornerstonejs/metadata": "5.0.0-beta.1",
     "dicom-parser": "1.8.21"
   },
   "config": {
