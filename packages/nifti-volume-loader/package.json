@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/nifti-volume-loader",
-  "version": "4.17.0",
+  "version": "4.17.1",
   "description": "Nifti Image Loader for Cornerstone3D",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -65,7 +65,7 @@
     "nifti-reader-js": "0.6.9"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "4.17.0"
+    "@cornerstonejs/core": "4.17.1"
   },
   "contributors": [
     {
