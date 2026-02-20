@@ -36,6 +36,8 @@ export function uriModuleProvider(next, imageId, data, options) {
   return getUriModule(imageId) || next(imageId, data, options);
 }
 
-addTypedProvider(MetadataModules.URI_MODULE, uriModuleProvider);
+export function registerUriModule() {
+  addTypedProvider(MetadataModules.URI_MODULE, uriModuleProvider);
+}
 
 export default getUriModule;

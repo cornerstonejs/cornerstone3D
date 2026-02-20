@@ -215,10 +215,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       const displayedHeight = Math.round(
         canvas.clientHeight * devicePixelRatio
       );
-
-      if (displayedWidth === 0 || displayedHeight === 0) {
-        continue;
-      }
       const renderedWidth = canvas.width;
       const renderedHeight = canvas.height;
 
@@ -234,6 +230,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     if (viewportsNeedingResize.length === 0) {
       return;
     }
+<<<<<<< HEAD
 
     if (this._animationFrameSet) {
       return;
@@ -248,6 +245,22 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       const targetWidth = Math.max(VIEWPORT_MIN_SIZE, displayedWidth);
       const targetHeight = Math.max(VIEWPORT_MIN_SIZE, displayedHeight);
 
+=======
+
+    if (this._animationFrameSet) {
+      return;
+    }
+
+    for (const vp of viewportsNeedingResize) {
+      const canvas = getOrCreateCanvas(vp.element);
+      const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
+      const displayedHeight = Math.round(
+        canvas.clientHeight * devicePixelRatio
+      );
+      const targetWidth = Math.max(VIEWPORT_MIN_SIZE, displayedWidth);
+      const targetHeight = Math.max(VIEWPORT_MIN_SIZE, displayedHeight);
+
+>>>>>>> fece135708 (Revert some of hte changes to dicom image loader in favour of deprecation)
       vp.sWidth = targetWidth;
       vp.sHeight = targetHeight;
     }
@@ -531,7 +544,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     // Update on-screen canvas size only when the VTK render result is available,
     // so the displayed size matches the rendered size and aspect ratio without flicker.
-    updateCanvasSizeAndAspectRatio(canvas, { width: dWidth, height: dHeight });
+    if (canvas.width !== dWidth || canvas.height !== dHeight) {
+      canvas.width = dWidth;
+      canvas.height = dHeight;
+    }
 
     const onScreenContext = canvas.getContext('2d');
 

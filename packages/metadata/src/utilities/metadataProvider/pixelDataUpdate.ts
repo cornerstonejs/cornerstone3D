@@ -72,4 +72,6 @@ export function pixelDataUpdate(next, query, data, options) {
   return result;
 }
 
-addTypedProvider(MetadataModules.IMAGE_PIXEL, pixelDataUpdate);
+export function registerPixelDataUpdate() {
+  addTypedProvider(MetadataModules.IMAGE_PIXEL, pixelDataUpdate);
+}

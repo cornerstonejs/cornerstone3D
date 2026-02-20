@@ -56,7 +56,9 @@ export function tagModules(module: string, dataLookupName = 'instance') {
 
 export const MODULE_PRIORITY = { priority: -1_000 };
 
-for (const module of mapModuleTags.keys()) {
-  addTypedProvider(module, tagModules(module), MODULE_PRIORITY);
-  addTypedProvider(module, instanceLookup, INSTANCE_PRIORITY);
+export function registerTagModules() {
+  for (const module of mapModuleTags.keys()) {
+    addTypedProvider(module, tagModules(module), MODULE_PRIORITY);
+    addTypedProvider(module, instanceLookup, INSTANCE_PRIORITY);
+  }
 }

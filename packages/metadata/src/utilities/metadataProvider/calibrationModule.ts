@@ -26,4 +26,6 @@ export function calibrationModuleProvider(next, query, data, options) {
   };
 }
 
-addTypedProvider(MetadataModules.CALIBRATION, calibrationModuleProvider);
+export function registerCalibrationModule() {
+  addTypedProvider(MetadataModules.CALIBRATION, calibrationModuleProvider);
+}

@@ -238,6 +238,8 @@ export const combineFrameProvider = (next, query, instance, options) => {
   return combined;
 };
 
-addTypedProvider(MetadataModules.INSTANCE, combineFrameProvider);
+export function registerCombineFrameProvider() {
+  addTypedProvider(MetadataModules.INSTANCE, combineFrameProvider);
+}
 
 export default combineFrameInstance;

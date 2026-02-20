@@ -22,11 +22,14 @@ export function instanceFromListener(next, query, data, options) {
   return listener.pop();
 }
 
-addTypedProvider(MetadataModules.INSTANCE_ORIG, instanceFromListener);
-
-addTypedProvider(MetadataModules.INSTANCE, (next, query, data, options) => {
+export const instanceOrigToInstanceProvider = (next, query, data, options) => {
   return (
     typedProviderProvider(MetadataModules.INSTANCE_ORIG, query, options) ||
     next(query, data, options)
   );
-});
+};
+
+export function registerInstanceFromListener() {
+  addTypedProvider(MetadataModules.INSTANCE_ORIG, instanceFromListener);
+  addTypedProvider(MetadataModules.INSTANCE, instanceOrigToInstanceProvider);
+}

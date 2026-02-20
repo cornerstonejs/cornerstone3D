@@ -1,6 +1,6 @@
-import { registerImageLoader, type Types } from '@cornerstonejs/core';
-import { metaData } from '@cornerstonejs/metadata';
+import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
 import { loadImage } from './loadImage';
+import { metaDataProvider } from './metaData/index';
 
 export default function (): void {
   // register dicomweb and wadouri image loader prefixes
@@ -9,5 +9,5 @@ export default function (): void {
   registerImageLoader('dicomfile', loadImage as unknown as Types.ImageLoaderFn);
 
   // add wadouri metadata provider
-  metaData.addProvider(metaData.typedProviderProvider, -1000);
+  metaData.addProvider(metaDataProvider);
 }
