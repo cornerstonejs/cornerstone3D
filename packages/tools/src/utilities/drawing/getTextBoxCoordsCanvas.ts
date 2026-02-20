@@ -28,6 +28,9 @@ export default function getTextBoxCoordsCanvas(
   element?: HTMLDivElement,
   textLines: Array<string> = []
 ): Types.Point2 {
+  if (!annotationCanvasPoints?.length || !annotationCanvasPoints[0]) {
+    return <Types.Point2>[0, 0];
+  }
   const corners = _determineCorners(annotationCanvasPoints);
   const centerY = (corners.top[1] + corners.bottom[1]) / 2;
   const defaultTextBoxCanvas = <Types.Point2>[corners.right[0], centerY];
@@ -210,8 +213,13 @@ function _findSvgLayer(element: HTMLDivElement): Element | null {
 
 /**
  * Determine the handles that have the min/max x and y values.
+ * Handles single-point annotations (e.g. Probe): left/right/top/bottom all equal that point.
  */
 function _determineCorners(canvasPoints: Array<Types.Point2>) {
+  const p0 = canvasPoints[0];
+  if (!p0 || canvasPoints.length < 2) {
+    return { left: p0, right: p0, top: p0, bottom: p0 };
+  }
   const handlesLeftToRight = [canvasPoints[0], canvasPoints[1]].sort(_compareX);
   const handlesTopToBottom = [canvasPoints[0], canvasPoints[1]].sort(_compareY);
   const left = handlesLeftToRight[0];
