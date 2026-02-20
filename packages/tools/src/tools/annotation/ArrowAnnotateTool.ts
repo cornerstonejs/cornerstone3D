@@ -20,6 +20,7 @@ import {
   drawArrow as drawArrowSvg,
   drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
+import getTextBoxCoordsCanvas from '../../utilities/drawing/getTextBoxCoordsCanvas';
 import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -822,8 +823,11 @@ class ArrowAnnotateTool extends AnnotationTool {
 
       // Need to update to sync w/ annotation while unlinked/not moved
       if (!data.handles.textBox.hasMoved) {
-        // linked to the point that doesn't have the arrowhead by default
-        const canvasTextBoxCoords = canvasCoordinates[1];
+        const canvasTextBoxCoords = getTextBoxCoordsCanvas(
+          canvasCoordinates,
+          element,
+          [label]
+        );
 
         data.handles.textBox.worldPosition =
           viewport.canvasToWorld(canvasTextBoxCoords);
