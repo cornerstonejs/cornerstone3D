@@ -3,6 +3,7 @@ import type { SVGDrawingHelper } from '../types';
 
 import _getHash from './_getHash';
 import setAttributesIfNecessary from './setAttributesIfNecessary';
+import { registerTextBox } from '../utilities/drawing/textBoxOverlapRegistry';
 
 /**
  * Draws a textBox.
@@ -42,6 +43,11 @@ function drawTextBox(
     position,
     mergedOptions
   );
+
+  // Register this text box so future placements can avoid overlapping it.
+  if (svgDrawingHelper.svgLayerElement) {
+    registerTextBox(svgDrawingHelper.svgLayerElement, textGroupBoundingBox);
+  }
 
   return textGroupBoundingBox;
 }
@@ -146,14 +152,14 @@ function _drawTextGroup(
     textGroupBoundingBox = _drawTextBackground(textGroup, backgroundStyles);
   }
 
-  // We translate the group using `position`
-  // which means we also need to pluck those values when returning
-  // the bounding box
+  // `getBBox()` is returned in the group's local coordinates and does not include
+  // the group's translate transform, so we offset x/y manually. Keep width/height
+  // as-is to reflect the actual rendered text box size for link anchoring.
   return Object.assign({}, textGroupBoundingBox, {
-    x,
-    y,
-    height: textGroupBoundingBox.height + padding,
-    width: textGroupBoundingBox.width + padding,
+    x: x + textGroupBoundingBox.x,
+    y: y + textGroupBoundingBox.y,
+    height: textGroupBoundingBox.height,
+    width: textGroupBoundingBox.width,
   });
 }
 
