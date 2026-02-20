@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.0...v4.17.1) (2026-02-20)
+
+### Bug Fixes
+
+- **security:** Changes in response to CVE-2026-26996 ([#2622](https://github.com/cornerstonejs/cornerstone3D/issues/2622)) ([97df707](https://github.com/cornerstonejs/cornerstone3D/commit/97df707a1035c7bd77545c54df8d1bef9cfab603))
+
 # [4.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.16.4...v4.17.0) (2026-02-18)
 
 ### Features
