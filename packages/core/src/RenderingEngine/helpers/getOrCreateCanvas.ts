@@ -107,6 +107,9 @@ export function getOrCreateCanvas(element: HTMLDivElement): HTMLCanvasElement {
   const height = Math.ceil(rect.height * devicePixelRatio);
   canvas.width = width;
   canvas.height = height;
+  if (width > 0 && height > 0) {
+    canvas.style.aspectRatio = `${width} / ${height}`;
+  }
   // Reset the size of the canvas to be the number of physical pixels,
   // expressed as CSS pixels, with a tiny extra amount to prevent clipping
   // to the next lower size in the physical display.
