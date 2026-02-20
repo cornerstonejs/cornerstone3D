@@ -94,6 +94,8 @@ export const getImagePlaneCalibrated = (
   return result;
 };
 
-addTypedProvider(MetadataModules.IMAGE_PLANE, getImagePlaneCalibrated);
+export function registerImagePlaneCalibrated() {
+  addTypedProvider(MetadataModules.IMAGE_PLANE, getImagePlaneCalibrated);
+}
 
 export default getImagePlaneCalibrated;

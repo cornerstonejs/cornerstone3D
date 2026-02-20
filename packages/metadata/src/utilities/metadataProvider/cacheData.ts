@@ -56,8 +56,10 @@ export function addCacheForType(type: string, options?) {
   });
 }
 
-addCacheForType(MetadataModules.INSTANCE_ORIG);
-addCacheForType(MetadataModules.INSTANCE);
-addCacheForType(MetadataModules.URI_MODULE);
-addCacheForType(MetadataModules.IMAGE_PLANE);
-addCacheForType(MetadataModules.FRAME_MODULE);
+export function registerCacheProviders() {
+  addCacheForType(MetadataModules.INSTANCE_ORIG);
+  addCacheForType(MetadataModules.INSTANCE);
+  addCacheForType(MetadataModules.URI_MODULE);
+  addCacheForType(MetadataModules.IMAGE_PLANE);
+  addCacheForType(MetadataModules.FRAME_MODULE);
+}

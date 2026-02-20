@@ -16,4 +16,6 @@ export function transferSyntaxProvider(next, query, data, options) {
   }
 }
 
-addTypedProvider(MetadataModules.TRANSFER_SYNTAX, transferSyntaxProvider);
+export function registerTransferSyntaxProvider() {
+  addTypedProvider(MetadataModules.TRANSFER_SYNTAX, transferSyntaxProvider);
+}

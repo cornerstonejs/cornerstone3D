@@ -132,8 +132,6 @@ export function typedProviderProvider(type: string, query: string, options) {
   return result;
 }
 
-addProvider(typedProviderProvider, -1000);
-
 /**
  * Removes the specified provider
  *
