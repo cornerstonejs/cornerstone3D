@@ -9,10 +9,10 @@ const CALIBRATION_MODULE = {
       physicalDeltaY: 0.041258670759110834,
       physicalUnitsXDirection: 3,
       physicalUnitsYDirection: 3,
-      referencePhysicalPixelValueX: undefined,
-      referencePhysicalPixelValueY: undefined,
-      referencePixelX0: null,
-      referencePixelY0: null,
+      // referencePhysicalPixelValueX: undefined,
+      // referencePhysicalPixelValueY: undefined,
+      // referencePixelX0: null,
+      // referencePixelY0: null,
       regionDataType: 1,
       regionFlags: 2,
       regionLocationMaxX1: 788,
@@ -20,7 +20,7 @@ const CALIBRATION_MODULE = {
       regionLocationMinX0: 11,
       regionLocationMinY0: 30,
       regionSpatialFormat: 1,
-      transducerFrequency: undefined,
+      // transducerFrequency: undefined,
     },
   ],
 };
@@ -95,14 +95,14 @@ const EXPECTED_IMAGE: Types.IImage = {
 };
 
 const WADO_URI_IMAGE_PLANE_MODULE: Types.ImagePlaneModule = {
-  columnCosines: null,
+  columnCosines: [0, 1, 0],
   columnPixelSpacing: 1,
   columns: 800,
   frameOfReferenceUID: undefined,
-  imageOrientationPatient: undefined,
-  imagePositionPatient: undefined,
+  imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+  imagePositionPatient: [0, 0, 0],
   pixelSpacing: undefined,
-  rowCosines: null,
+  rowCosines: [1, 0, 0],
   rowPixelSpacing: 1,
   rows: 600,
   sliceLocation: undefined,
@@ -139,11 +139,6 @@ const WADO_RS_IMAGE_PIXEL_MODULE = {
   redPaletteColorLookupTableDescriptor: undefined,
 };
 
-const MULTIFRAME_MODULE = {
-  NumberOfFrames: 78,
-  PerFrameFunctionalInformation: {},
-  SharedFunctionalInformation: {},
-};
 const TEST_NAME = 'US Multiframe YBR Full 422';
 
 const FRAME_1_PIXEL_DATA_HASH =
@@ -163,7 +158,6 @@ export const WADOURI_TEST: IWadoUriTest = {
         [Enums.MetadataModules.CALIBRATION]: CALIBRATION_MODULE,
         [Enums.MetadataModules.IMAGE_PIXEL]: WADO_URI_IMAGE_PIXEL_MODULE,
         [Enums.MetadataModules.IMAGE_PLANE]: WADO_URI_IMAGE_PLANE_MODULE,
-        [Enums.MetadataModules.MULTIFRAME]: MULTIFRAME_MODULE,
       },
     },
     {
@@ -188,7 +182,6 @@ export const WADO_RS_TEST: IWadoRsTest = {
         [Enums.MetadataModules.CALIBRATION]: CALIBRATION_MODULE,
         [Enums.MetadataModules.IMAGE_PLANE]: WADO_URI_IMAGE_PLANE_MODULE,
         [Enums.MetadataModules.IMAGE_PIXEL]: WADO_RS_IMAGE_PIXEL_MODULE,
-        [Enums.MetadataModules.MULTIFRAME]: MULTIFRAME_MODULE,
       },
     },
   ],

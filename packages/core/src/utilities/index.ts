@@ -107,7 +107,6 @@ export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
-
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 
