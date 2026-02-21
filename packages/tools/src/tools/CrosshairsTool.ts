@@ -272,35 +272,24 @@ class CrosshairsTool extends AnnotationTool {
     return viewports;
   };
 
-  onSetToolActive() {
-    const viewportsInfo = this._getViewportsInfo();
-
+  _reinitializeListenersAndCenter = (): void => {
     this._unbindToolGroupViewportListeners();
     this._clearAllVolumeListenersAndViewportState();
     this._bindToolGroupViewportListeners();
     this._syncVolumeListenersWithToolGroup();
+    this._computeToolCenter(this._getViewportsInfo());
+  };
 
-    this._computeToolCenter(viewportsInfo);
+  onSetToolActive() {
+    this._reinitializeListenersAndCenter();
   }
 
   onSetToolPassive() {
-    const viewportsInfo = this._getViewportsInfo();
-
-    this._unbindToolGroupViewportListeners();
-    this._clearAllVolumeListenersAndViewportState();
-    this._bindToolGroupViewportListeners();
-    this._syncVolumeListenersWithToolGroup();
-    this._computeToolCenter(viewportsInfo);
+    this._reinitializeListenersAndCenter();
   }
 
   onSetToolEnabled() {
-    const viewportsInfo = this._getViewportsInfo();
-
-    this._unbindToolGroupViewportListeners();
-    this._clearAllVolumeListenersAndViewportState();
-    this._bindToolGroupViewportListeners();
-    this._syncVolumeListenersWithToolGroup();
-    this._computeToolCenter(viewportsInfo);
+    this._reinitializeListenersAndCenter();
   }
 
   onSetToolDisabled() {
@@ -1559,8 +1548,7 @@ class CrosshairsTool extends AnnotationTool {
     return toolGroupAnnotations;
   };
 
-  _onNewVolume = (evt?: Event) => {
-    void evt;
+  _onNewVolume = (_evt?: Event) => {
     this._syncVolumeListenersWithToolGroup();
     this._recomputeToolCenterFromAbsoluteCameras({
       emitEvent: true,
@@ -1568,13 +1556,21 @@ class CrosshairsTool extends AnnotationTool {
     });
   };
 
-  _unsubscribeToViewportNewVolumeSet(viewportsInfo) {
-    void viewportsInfo;
+  /**
+   * @deprecated No longer manages per-viewport listeners directly.
+   * Listener lifecycle is now handled by _syncVolumeListenersWithToolGroup.
+   * Will be removed in a future version.
+   */
+  _unsubscribeToViewportNewVolumeSet(_viewportsInfo) {
     this._syncVolumeListenersWithToolGroup();
   }
 
-  _subscribeToViewportNewVolumeSet(viewports) {
-    void viewports;
+  /**
+   * @deprecated No longer manages per-viewport listeners directly.
+   * Listener lifecycle is now handled by _syncVolumeListenersWithToolGroup.
+   * Will be removed in a future version.
+   */
+  _subscribeToViewportNewVolumeSet(_viewports) {
     this._syncVolumeListenersWithToolGroup();
   }
 
