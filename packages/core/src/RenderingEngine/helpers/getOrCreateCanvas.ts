@@ -105,9 +105,11 @@ export function getOrCreateCanvas(element: HTMLDivElement): HTMLCanvasElement {
   // this hasn't been observed.
   const width = Math.ceil(rect.width * devicePixelRatio);
   const height = Math.ceil(rect.height * devicePixelRatio);
-  canvas.width = width;
-  canvas.height = height;
+  // does weird things given 0 or NaN for the division
+  // Also weird when the canvas size is zero
   if (width > 0 && height > 0) {
+    canvas.width = width;
+    canvas.height = height;
     canvas.style.aspectRatio = `${width} / ${height}`;
   }
   // Reset the size of the canvas to be the number of physical pixels,
