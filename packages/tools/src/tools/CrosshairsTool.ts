@@ -272,278 +272,6 @@ class CrosshairsTool extends AnnotationTool {
     return viewports;
   };
 
-  _toViewportKey = (renderingEngineId: string, viewportId: string): string => {
-    return `${renderingEngineId}::${viewportId}`;
-  };
-
-  _isFinitePoint3 = (point: Types.Point3): boolean => {
-    if (!point || point.length !== 3) {
-      return false;
-    }
-
-    return (
-      Number.isFinite(point[0]) &&
-      Number.isFinite(point[1]) &&
-      Number.isFinite(point[2])
-    );
-  };
-
-  _bindToolGroupViewportListeners = (): void => {
-    if (!this._toolGroupViewportAddedListener) {
-      this._toolGroupViewportAddedListener = ((evt: CustomEvent) => {
-        if (evt.detail?.toolGroupId !== this.toolGroupId) {
-          return;
-        }
-
-        this._syncVolumeListenersWithToolGroup();
-        this._computeToolCenter(this._getViewportsInfo());
-      }) as EventListener;
-      eventTarget.addEventListener(
-        Events.TOOLGROUP_VIEWPORT_ADDED,
-        this._toolGroupViewportAddedListener
-      );
-    }
-
-    if (!this._toolGroupViewportRemovedListener) {
-      this._toolGroupViewportRemovedListener = ((evt: CustomEvent) => {
-        if (evt.detail?.toolGroupId !== this.toolGroupId) {
-          return;
-        }
-
-        this._syncVolumeListenersWithToolGroup();
-        this._recomputeToolCenterFromAbsoluteCameras({
-          emitEvent: true,
-          updateViewportCameras: false,
-        });
-      }) as EventListener;
-      eventTarget.addEventListener(
-        Events.TOOLGROUP_VIEWPORT_REMOVED,
-        this._toolGroupViewportRemovedListener
-      );
-    }
-  };
-
-  _unbindToolGroupViewportListeners = (): void => {
-    if (this._toolGroupViewportAddedListener) {
-      eventTarget.removeEventListener(
-        Events.TOOLGROUP_VIEWPORT_ADDED,
-        this._toolGroupViewportAddedListener
-      );
-      this._toolGroupViewportAddedListener = null;
-    }
-
-    if (this._toolGroupViewportRemovedListener) {
-      eventTarget.removeEventListener(
-        Events.TOOLGROUP_VIEWPORT_REMOVED,
-        this._toolGroupViewportRemovedListener
-      );
-      this._toolGroupViewportRemovedListener = null;
-    }
-  };
-
-  _syncVolumeListenersWithToolGroup = (): void => {
-    const viewportsInfo = this._getViewportsInfo();
-    const activeViewportKeys = new Set<string>();
-
-    viewportsInfo.forEach((viewportInfo) => {
-      const { viewportId, renderingEngineId } = viewportInfo;
-      const viewportKey = this._toViewportKey(renderingEngineId, viewportId);
-      activeViewportKeys.add(viewportKey);
-
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-      const existingListenerInfo =
-        this._volumeViewportNewVolumeListeners.get(viewportKey);
-
-      if (!enabledElement) {
-        if (existingListenerInfo) {
-          existingListenerInfo.element.removeEventListener(
-            Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-            existingListenerInfo.handler
-          );
-          this._volumeViewportNewVolumeListeners.delete(viewportKey);
-        }
-        return;
-      }
-
-      const { viewport } = enabledElement;
-      const { element } = viewport;
-
-      if (existingListenerInfo && existingListenerInfo.element !== element) {
-        existingListenerInfo.element.removeEventListener(
-          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-          existingListenerInfo.handler
-        );
-        this._volumeViewportNewVolumeListeners.delete(viewportKey);
-      }
-
-      if (this._volumeViewportNewVolumeListeners.has(viewportKey)) {
-        return;
-      }
-
-      const handler = ((evt: Event) => this._onNewVolume(evt)) as EventListener;
-      element.addEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        handler
-      );
-
-      this._volumeViewportNewVolumeListeners.set(viewportKey, {
-        element,
-        handler,
-      });
-    });
-
-    Array.from(this._volumeViewportNewVolumeListeners.entries()).forEach(
-      ([viewportKey, listenerInfo]) => {
-        if (activeViewportKeys.has(viewportKey)) {
-          return;
-        }
-
-        listenerInfo.element.removeEventListener(
-          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-          listenerInfo.handler
-        );
-        this._volumeViewportNewVolumeListeners.delete(viewportKey);
-      }
-    );
-  };
-
-  _clearAllVolumeListenersAndViewportState = (): void => {
-    this._volumeViewportNewVolumeListeners.forEach((listenerInfo) => {
-      listenerInfo.element.removeEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        listenerInfo.handler
-      );
-    });
-
-    this._volumeViewportNewVolumeListeners.clear();
-  };
-
-  _calculateToolCenterFromAbsoluteCameras = (): Types.Point3 | null => {
-    const viewportsInfo = this._getViewportsInfo();
-    const uniquePlanes: Array<{
-      normal: Types.Point3;
-      point: Types.Point3;
-    }> = [];
-
-    for (let i = 0; i < viewportsInfo.length; i++) {
-      const viewportInfo = viewportsInfo[i];
-      const enabledElement = getEnabledElementByIds(
-        viewportInfo.viewportId,
-        viewportInfo.renderingEngineId
-      );
-
-      if (!enabledElement) {
-        continue;
-      }
-
-      const camera = enabledElement.viewport.getCamera();
-
-      const normal = [...camera.viewPlaneNormal] as Types.Point3;
-      const point = [...camera.focalPoint] as Types.Point3;
-
-      if (!this._isFinitePoint3(normal) || !this._isFinitePoint3(point)) {
-        continue;
-      }
-
-      vec3.normalize(normal, normal);
-
-      const alreadyTracked = uniquePlanes.some(
-        (plane) =>
-          csUtils.isEqual(plane.normal, normal, 1e-3) ||
-          csUtils.isOpposite(plane.normal, normal, 1e-3)
-      );
-
-      if (!alreadyTracked) {
-        uniquePlanes.push({ normal, point });
-      }
-    }
-
-    if (uniquePlanes.length < 2) {
-      return null;
-    }
-
-    const firstPlane = csUtils.planar.planeEquation(
-      uniquePlanes[0].normal,
-      uniquePlanes[0].point
-    );
-    const secondPlane = csUtils.planar.planeEquation(
-      uniquePlanes[1].normal,
-      uniquePlanes[1].point
-    );
-
-    let thirdPlane;
-    if (uniquePlanes.length >= 3) {
-      thirdPlane = csUtils.planar.planeEquation(
-        uniquePlanes[2].normal,
-        uniquePlanes[2].point
-      );
-    } else {
-      const thirdNormal = vec3.create() as Types.Point3;
-      vec3.cross(thirdNormal, uniquePlanes[0].normal, uniquePlanes[1].normal);
-
-      if (vec3.length(thirdNormal) < 1e-6) {
-        return null;
-      }
-
-      vec3.normalize(thirdNormal, thirdNormal);
-
-      const thirdPoint = this._isFinitePoint3(this.toolCenter)
-        ? ([...this.toolCenter] as Types.Point3)
-        : ([
-            (uniquePlanes[0].point[0] + uniquePlanes[1].point[0]) * 0.5,
-            (uniquePlanes[0].point[1] + uniquePlanes[1].point[1]) * 0.5,
-            (uniquePlanes[0].point[2] + uniquePlanes[1].point[2]) * 0.5,
-          ] as Types.Point3);
-
-      thirdPlane = csUtils.planar.planeEquation(thirdNormal, thirdPoint);
-    }
-
-    const center = csUtils.planar.threePlaneIntersection(
-      firstPlane,
-      secondPlane,
-      thirdPlane
-    ) as Types.Point3;
-
-    return this._isFinitePoint3(center) ? center : null;
-  };
-
-  _recomputeToolCenterFromAbsoluteCameras = ({
-    emitEvent = true,
-    updateViewportCameras = false,
-  }: {
-    emitEvent?: boolean;
-    updateViewportCameras?: boolean;
-  } = {}): Types.Point3 | null => {
-    const toolCenter = this._calculateToolCenterFromAbsoluteCameras();
-
-    if (!toolCenter) {
-      return null;
-    }
-
-    const hasChanged = !csUtils.isEqual(this.toolCenter, toolCenter, 1e-3);
-    if (!hasChanged) {
-      return toolCenter;
-    }
-
-    if (updateViewportCameras) {
-      this.setToolCenter(toolCenter, !emitEvent);
-    } else {
-      this.toolCenter = toolCenter;
-
-      if (emitEvent) {
-        triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
-          toolGroupId: this.toolGroupId,
-          toolCenter: this.toolCenter,
-        });
-      }
-    }
-
-    return toolCenter;
-  };
-
   onSetToolActive() {
     const viewportsInfo = this._getViewportsInfo();
 
@@ -3127,6 +2855,278 @@ class CrosshairsTool extends AnnotationTool {
 
     return data.handles.activeOperation === OPERATION.DRAG ? true : false;
   }
+
+  _toViewportKey = (renderingEngineId: string, viewportId: string): string => {
+    return `${renderingEngineId}::${viewportId}`;
+  };
+
+  _isFinitePoint3 = (point: Types.Point3): boolean => {
+    if (!point || point.length !== 3) {
+      return false;
+    }
+
+    return (
+      Number.isFinite(point[0]) &&
+      Number.isFinite(point[1]) &&
+      Number.isFinite(point[2])
+    );
+  };
+
+  _bindToolGroupViewportListeners = (): void => {
+    if (!this._toolGroupViewportAddedListener) {
+      this._toolGroupViewportAddedListener = ((evt: CustomEvent) => {
+        if (evt.detail?.toolGroupId !== this.toolGroupId) {
+          return;
+        }
+
+        this._syncVolumeListenersWithToolGroup();
+        this._computeToolCenter(this._getViewportsInfo());
+      }) as EventListener;
+      eventTarget.addEventListener(
+        Events.TOOLGROUP_VIEWPORT_ADDED,
+        this._toolGroupViewportAddedListener
+      );
+    }
+
+    if (!this._toolGroupViewportRemovedListener) {
+      this._toolGroupViewportRemovedListener = ((evt: CustomEvent) => {
+        if (evt.detail?.toolGroupId !== this.toolGroupId) {
+          return;
+        }
+
+        this._syncVolumeListenersWithToolGroup();
+        this._recomputeToolCenterFromAbsoluteCameras({
+          emitEvent: true,
+          updateViewportCameras: false,
+        });
+      }) as EventListener;
+      eventTarget.addEventListener(
+        Events.TOOLGROUP_VIEWPORT_REMOVED,
+        this._toolGroupViewportRemovedListener
+      );
+    }
+  };
+
+  _unbindToolGroupViewportListeners = (): void => {
+    if (this._toolGroupViewportAddedListener) {
+      eventTarget.removeEventListener(
+        Events.TOOLGROUP_VIEWPORT_ADDED,
+        this._toolGroupViewportAddedListener
+      );
+      this._toolGroupViewportAddedListener = null;
+    }
+
+    if (this._toolGroupViewportRemovedListener) {
+      eventTarget.removeEventListener(
+        Events.TOOLGROUP_VIEWPORT_REMOVED,
+        this._toolGroupViewportRemovedListener
+      );
+      this._toolGroupViewportRemovedListener = null;
+    }
+  };
+
+  _syncVolumeListenersWithToolGroup = (): void => {
+    const viewportsInfo = this._getViewportsInfo();
+    const activeViewportKeys = new Set<string>();
+
+    viewportsInfo.forEach((viewportInfo) => {
+      const { viewportId, renderingEngineId } = viewportInfo;
+      const viewportKey = this._toViewportKey(renderingEngineId, viewportId);
+      activeViewportKeys.add(viewportKey);
+
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      const existingListenerInfo =
+        this._volumeViewportNewVolumeListeners.get(viewportKey);
+
+      if (!enabledElement) {
+        if (existingListenerInfo) {
+          existingListenerInfo.element.removeEventListener(
+            Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+            existingListenerInfo.handler
+          );
+          this._volumeViewportNewVolumeListeners.delete(viewportKey);
+        }
+        return;
+      }
+
+      const { viewport } = enabledElement;
+      const { element } = viewport;
+
+      if (existingListenerInfo && existingListenerInfo.element !== element) {
+        existingListenerInfo.element.removeEventListener(
+          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          existingListenerInfo.handler
+        );
+        this._volumeViewportNewVolumeListeners.delete(viewportKey);
+      }
+
+      if (this._volumeViewportNewVolumeListeners.has(viewportKey)) {
+        return;
+      }
+
+      const handler = ((evt: Event) => this._onNewVolume(evt)) as EventListener;
+      element.addEventListener(
+        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        handler
+      );
+
+      this._volumeViewportNewVolumeListeners.set(viewportKey, {
+        element,
+        handler,
+      });
+    });
+
+    Array.from(this._volumeViewportNewVolumeListeners.entries()).forEach(
+      ([viewportKey, listenerInfo]) => {
+        if (activeViewportKeys.has(viewportKey)) {
+          return;
+        }
+
+        listenerInfo.element.removeEventListener(
+          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          listenerInfo.handler
+        );
+        this._volumeViewportNewVolumeListeners.delete(viewportKey);
+      }
+    );
+  };
+
+  _clearAllVolumeListenersAndViewportState = (): void => {
+    this._volumeViewportNewVolumeListeners.forEach((listenerInfo) => {
+      listenerInfo.element.removeEventListener(
+        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        listenerInfo.handler
+      );
+    });
+
+    this._volumeViewportNewVolumeListeners.clear();
+  };
+
+  _calculateToolCenterFromAbsoluteCameras = (): Types.Point3 | null => {
+    const viewportsInfo = this._getViewportsInfo();
+    const uniquePlanes: Array<{
+      normal: Types.Point3;
+      point: Types.Point3;
+    }> = [];
+
+    for (let i = 0; i < viewportsInfo.length; i++) {
+      const viewportInfo = viewportsInfo[i];
+      const enabledElement = getEnabledElementByIds(
+        viewportInfo.viewportId,
+        viewportInfo.renderingEngineId
+      );
+
+      if (!enabledElement) {
+        continue;
+      }
+
+      const camera = enabledElement.viewport.getCamera();
+
+      const normal = [...camera.viewPlaneNormal] as Types.Point3;
+      const point = [...camera.focalPoint] as Types.Point3;
+
+      if (!this._isFinitePoint3(normal) || !this._isFinitePoint3(point)) {
+        continue;
+      }
+
+      vec3.normalize(normal, normal);
+
+      const alreadyTracked = uniquePlanes.some(
+        (plane) =>
+          csUtils.isEqual(plane.normal, normal, 1e-3) ||
+          csUtils.isOpposite(plane.normal, normal, 1e-3)
+      );
+
+      if (!alreadyTracked) {
+        uniquePlanes.push({ normal, point });
+      }
+    }
+
+    if (uniquePlanes.length < 2) {
+      return null;
+    }
+
+    const firstPlane = csUtils.planar.planeEquation(
+      uniquePlanes[0].normal,
+      uniquePlanes[0].point
+    );
+    const secondPlane = csUtils.planar.planeEquation(
+      uniquePlanes[1].normal,
+      uniquePlanes[1].point
+    );
+
+    let thirdPlane;
+    if (uniquePlanes.length >= 3) {
+      thirdPlane = csUtils.planar.planeEquation(
+        uniquePlanes[2].normal,
+        uniquePlanes[2].point
+      );
+    } else {
+      const thirdNormal = vec3.create() as Types.Point3;
+      vec3.cross(thirdNormal, uniquePlanes[0].normal, uniquePlanes[1].normal);
+
+      if (vec3.length(thirdNormal) < 1e-6) {
+        return null;
+      }
+
+      vec3.normalize(thirdNormal, thirdNormal);
+
+      const thirdPoint = this._isFinitePoint3(this.toolCenter)
+        ? ([...this.toolCenter] as Types.Point3)
+        : ([
+            (uniquePlanes[0].point[0] + uniquePlanes[1].point[0]) * 0.5,
+            (uniquePlanes[0].point[1] + uniquePlanes[1].point[1]) * 0.5,
+            (uniquePlanes[0].point[2] + uniquePlanes[1].point[2]) * 0.5,
+          ] as Types.Point3);
+
+      thirdPlane = csUtils.planar.planeEquation(thirdNormal, thirdPoint);
+    }
+
+    const center = csUtils.planar.threePlaneIntersection(
+      firstPlane,
+      secondPlane,
+      thirdPlane
+    ) as Types.Point3;
+
+    return this._isFinitePoint3(center) ? center : null;
+  };
+
+  _recomputeToolCenterFromAbsoluteCameras = ({
+    emitEvent = true,
+    updateViewportCameras = false,
+  }: {
+    emitEvent?: boolean;
+    updateViewportCameras?: boolean;
+  } = {}): Types.Point3 | null => {
+    const toolCenter = this._calculateToolCenterFromAbsoluteCameras();
+
+    if (!toolCenter) {
+      return null;
+    }
+
+    const hasChanged = !csUtils.isEqual(this.toolCenter, toolCenter, 1e-3);
+    if (!hasChanged) {
+      return toolCenter;
+    }
+
+    if (updateViewportCameras) {
+      this.setToolCenter(toolCenter, !emitEvent);
+    } else {
+      this.toolCenter = toolCenter;
+
+      if (emitEvent) {
+        triggerEvent(eventTarget, Events.CROSSHAIR_TOOL_CENTER_CHANGED, {
+          toolGroupId: this.toolGroupId,
+          toolCenter: this.toolCenter,
+        });
+      }
+    }
+
+    return toolCenter;
+  };
 }
 
 CrosshairsTool.toolName = 'Crosshairs';
