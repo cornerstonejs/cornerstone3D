@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.17.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.2...v4.17.3) (2026-02-22)
+
+### Bug Fixes
+
+- Continuous flicker on viewer redraw ([#2626](https://github.com/cornerstonejs/cornerstone3D/issues/2626)) ([ed3398d](https://github.com/cornerstonejs/cornerstone3D/commit/ed3398d0877da109644fb5273cc163d01068f90d))
+
 ## [4.17.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.1...v4.17.2) (2026-02-20)
 
 ### Bug Fixes
