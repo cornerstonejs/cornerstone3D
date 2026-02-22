@@ -341,6 +341,10 @@
         "name": "Whole Slide Imaging",
         "description": "Display WSI Series"
       },
+      "ecg": {
+        "name": "ECG Viewport",
+        "description": "Displays a 12-lead ECG from DICOM Waveform data."
+      },
       "wsiAnnotationTools": {
         "name": "WSI Annotation Tools",
         "description": "WSI with length and other annotation tools"

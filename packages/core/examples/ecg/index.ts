@@ -1,7 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, metaData } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
   initDemo,
   setTitleAndDescription,
@@ -10,7 +9,6 @@ import {
   addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
-  addManipulationBindings,
   annotationTools,
 } from '../../../../utils/demo/helpers';
 
@@ -32,25 +30,10 @@ const SeriesInstanceUID = '1.3.6.1.4.1.20029.40.20130125105919.5407.1';
 const wadoRsRoot =
   getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 
-// DICOM tags for the Waveform module (used to parse raw DICOM JSON metadata)
-const TAG = {
-  WaveformSequence: '54000100',
-  NumberOfWaveformChannels: '003A0005',
-  NumberOfWaveformSamples: '003A0010',
-  SamplingFrequency: '003A001A',
-  MultiplexGroupLabel: '003A0020',
-  ChannelDefinitionSequence: '003A0200',
-  ChannelSourceSequence: '003A0208',
-  CodeMeaning: '00080104',
-  WaveformBitsAllocated: '54001004',
-  WaveformSampleInterpretation: '54001006',
-  WaveformData: '54001010',
-} as const;
-
 // ======== Set up page ======== //
 setTitleAndDescription(
   'ECG Viewport',
-  'Displays a 12-lead ECG from DICOM Waveform data. Left-drag to pan, right-drag to zoom. Use checkboxes to toggle traces.'
+  'Displays a 12-lead ECG from DICOM Waveform data. Left-click to use annotation tools (select from dropdown). Right-drag to pan, scroll to zoom. Use checkboxes to toggle traces.'
 );
 
 const content = document.getElementById('content');
@@ -62,76 +45,8 @@ element.style.height = '600px';
 
 content.appendChild(element);
 
-// Prevent browser context menu so right-drag can be used for zoom
+// Prevent browser context menu so right-drag can be used for pan
 element.oncontextmenu = (e) => e.preventDefault();
-
-// ======== DICOM JSON helpers ======== //
-
-/**
- * Raw DICOM JSON instance — each tag maps to { vr, Value } or { BulkDataURI }.
- */
-type DicomInstance = Record<string, Record<string, unknown>>;
-
-function getDicomValue(instance: DicomInstance, tag: string): unknown {
-  return (instance[tag]?.Value as unknown[])?.[0];
-}
-
-function getDicomValues(instance: DicomInstance, tag: string): unknown[] {
-  return (instance[tag]?.Value as unknown[]) ?? [];
-}
-
-/**
- * Parses raw DICOM JSON metadata into the shape expected by ECGViewport.setEcg().
- * Returns a WaveformSequenceInput-compatible object.
- */
-function parseWaveformSequence(instance: DicomInstance) {
-  const waveformSeqItems = getDicomValues(instance, TAG.WaveformSequence);
-  if (waveformSeqItems.length === 0) {
-    return null;
-  }
-
-  const waveform = waveformSeqItems[0] as DicomInstance;
-
-  const channelDefs = getDicomValues(waveform, TAG.ChannelDefinitionSequence);
-  const channelDefinitionSequence = channelDefs.map((cd: unknown) => {
-    const channelDef = cd as DicomInstance;
-    const sourceSeqItems = getDicomValues(
-      channelDef,
-      TAG.ChannelSourceSequence
-    );
-    const sourceSeq = (sourceSeqItems[0] as DicomInstance) || {};
-    const codeMeaning = getDicomValue(sourceSeq, TAG.CodeMeaning) as string;
-    return {
-      ChannelSourceSequence: {
-        CodeMeaning: codeMeaning || 'Unknown',
-      },
-    };
-  });
-
-  return {
-    NumberOfWaveformChannels: getDicomValue(
-      waveform,
-      TAG.NumberOfWaveformChannels
-    ) as number,
-    NumberOfWaveformSamples: getDicomValue(
-      waveform,
-      TAG.NumberOfWaveformSamples
-    ) as number,
-    SamplingFrequency: getDicomValue(waveform, TAG.SamplingFrequency) as number,
-    WaveformBitsAllocated: getDicomValue(
-      waveform,
-      TAG.WaveformBitsAllocated
-    ) as number,
-    WaveformSampleInterpretation: getDicomValue(
-      waveform,
-      TAG.WaveformSampleInterpretation
-    ) as string,
-    MultiplexGroupLabel:
-      (getDicomValue(waveform, TAG.MultiplexGroupLabel) as string) || 'ECG',
-    ChannelDefinitionSequence: channelDefinitionSequence,
-    WaveformData: (waveform[TAG.WaveformData] as Record<string, unknown>) || {},
-  };
-}
 
 /**
  * Runs the demo
@@ -148,28 +63,58 @@ async function run() {
 
   // ECG series have a single instance — use the first imageId
   const ecgImageId = imageIds[0];
-  const instanceMetaData =
-    cornerstoneDICOMImageLoader.wadors.metaDataManager.get(ecgImageId);
-
-  if (!instanceMetaData) {
-    console.error('No metadata found for ECG imageId:', ecgImageId);
-    return;
-  }
-
-  const waveformMeta = parseWaveformSequence(
-    instanceMetaData as unknown as DicomInstance
-  );
-
-  if (!waveformMeta) {
-    console.error('No WaveformSequence found in instance');
-    return;
-  }
 
   // ======== Set up tools ======== //
-  // Make UltrasoundDirectionalTool the default active tool for this example
-  annotationTools.get('UltrasoundDirectionalTool').selected = true;
+  const { PanTool, ZoomTool } = cornerstoneTools;
+  const { MouseBindings } = cornerstoneTools.Enums;
+
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+  // LengthTool has no `tool` in annotationTools config (it's registered
+  // by addManipulationBindings in other examples), so register it explicitly.
+  cornerstoneTools.addTool(cornerstoneTools.LengthTool);
+  for (const [, config] of annotationTools) {
+    if (config.tool) {
+      cornerstoneTools.addTool(config.tool);
+    }
+  }
+
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup, { toolMap: annotationTools });
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName, {
+    minZoomScale: 0.001,
+    maxZoomScale: 4000,
+  });
+
+  for (const [toolName, config] of annotationTools) {
+    if (config.baseTool) {
+      if (!toolGroup.hasTool(config.baseTool)) {
+        toolGroup.addTool(
+          config.baseTool,
+          annotationTools.get(config.baseTool)?.configuration
+        );
+      }
+      toolGroup.addToolInstance(
+        toolName,
+        config.baseTool,
+        config.configuration
+      );
+    } else if (!toolGroup.hasTool(toolName)) {
+      toolGroup.addTool(toolName, config.configuration);
+    }
+    if (config.passive) {
+      toolGroup.setToolPassive(toolName);
+    }
+  }
+
+  // Pan: right-drag
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+  // Zoom: scroll wheel (two-finger scroll on trackpad)
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   // ======== Create rendering engine and ECG viewport ======== //
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -193,33 +138,68 @@ async function run() {
   ) as Types.IECGViewport;
 
   // Load ECG data into the viewport
-  await viewport.setEcg(waveformMeta, wadoRsRoot, StudyInstanceUID);
+  await viewport.setEcg(ecgImageId);
+
+  // Register calibration data for measurement tools to show physical units
+  const { width: ecgWidth, height: ecgHeight } =
+    viewport.getContentDimensions();
+  const waveformData = viewport.getWaveformData();
+  const samplingFrequency = waveformData?.samplingFrequency || 500;
+
+  metaData.addProvider((type, imageId) => {
+    if (type !== Enums.MetadataModules.CALIBRATION || imageId !== ecgImageId) {
+      return;
+    }
+    return {
+      sequenceOfUltrasoundRegions: [
+        {
+          regionLocationMinX0: 0,
+          regionLocationMaxX1: ecgWidth,
+          regionLocationMinY0: 0,
+          regionLocationMaxY1: ecgHeight,
+          physicalUnitsXDirection: 4, // seconds
+          physicalUnitsYDirection: 0, // px (mV not in UNIT_MAPPING yet)
+          physicalDeltaX: 1 / samplingFrequency, // seconds per sample
+          physicalDeltaY: 1, // placeholder
+          regionDataType: 1,
+        },
+      ],
+    };
+  }, 100); // high priority override
 
   // Resize element to match ECG content dimensions
-  const { width, height } = viewport.getContentDimensions();
-  element.style.width = `${width}px`;
-  element.style.height = `${height}px`;
+  element.style.width = `${ecgWidth}px`;
+  element.style.height = `${ecgHeight}px`;
   renderingEngine.resize();
 
   // ======== UI Controls ======== //
 
-  // Annotation tool dropdown bound to right click
-  let activeRightClickTool: string | null = null;
+  // Annotation tool dropdown — activates on left-click
+  let activeAnnotationTool: string | null = null;
+
+  function activateAnnotationTool(toolName: string) {
+    const tg = ToolGroupManager.getToolGroup(toolGroupId);
+    if (activeAnnotationTool) {
+      tg.setToolPassive(activeAnnotationTool);
+    }
+    tg.setToolActive(toolName, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+    activeAnnotationTool = toolName;
+  }
+
   addDropdownToToolbar({
     options: { map: annotationTools },
     onSelectedValueChange: (newToolName) => {
-      const tg = ToolGroupManager.getToolGroup(toolGroupId);
-      if (activeRightClickTool) {
-        tg.setToolPassive(activeRightClickTool);
-      }
-      tg.setToolActive(newToolName as string, {
-        bindings: [
-          { mouseButton: cornerstoneTools.Enums.MouseBindings.Secondary },
-        ],
-      });
-      activeRightClickTool = newToolName as string;
+      activateAnnotationTool(newToolName as string);
     },
   });
+
+  // Activate the first annotation tool on load
+  const firstToolName = annotationTools.keys().next().value;
+  if (firstToolName) {
+    activateAnnotationTool(firstToolName);
+  }
 
   // Reset camera button
   addButtonToToolbar({

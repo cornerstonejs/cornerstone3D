@@ -38,34 +38,3 @@ export interface ECGWaveformData {
   sampleInterpretation: string;
   multiplexGroupLabel: string;
 }
-
-/**
- * Data source for waveform binary data.
- * Mirrors the DICOM JSON representation of a data element that may contain
- * InlineBinary, BulkDataURI, or a pre-decoded Value.
- */
-export interface WaveformDataSource {
-  Value?: unknown[];
-  InlineBinary?: string;
-  BulkDataURI?: string;
-  retrieveBulkData?: () => Promise<ArrayBuffer>;
-}
-
-/**
- * Input shape for ECGViewport.setEcg().
- * Represents a parsed DICOM WaveformSequence item with named properties.
- */
-export interface WaveformSequenceInput {
-  NumberOfWaveformChannels: number;
-  NumberOfWaveformSamples: number;
-  SamplingFrequency: number;
-  WaveformBitsAllocated?: number;
-  WaveformSampleInterpretation?: string;
-  MultiplexGroupLabel?: string;
-  ChannelDefinitionSequence?: Array<{
-    ChannelSourceSequence?: {
-      CodeMeaning?: string;
-    };
-  }>;
-  WaveformData: WaveformDataSource;
-}

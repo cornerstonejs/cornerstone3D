@@ -129,8 +129,6 @@ import type {
   ECGViewportInput,
   ECGChannel,
   ECGWaveformData,
-  WaveformDataSource,
-  WaveformSequenceInput,
 } from './ECGViewportTypes';
 import type ECGViewportProperties from './ECGViewportProperties';
 import type { ISurface } from './ISurface';
@@ -291,8 +289,6 @@ export type {
   ECGViewportInput,
   ECGChannel,
   ECGWaveformData,
-  WaveformDataSource,
-  WaveformSequenceInput,
   ECGViewportProperties,
   BoundsIJK,
   BoundsLPS,

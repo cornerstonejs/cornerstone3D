@@ -1,4 +1,3 @@
-import * as dicomParser from 'dicom-parser';
 import {
   Enums,
   utilities,
@@ -21,11 +20,9 @@ import {
 } from './extractPositioningFromMetadata';
 import { getImageTypeSubItemFromMetadata } from './NMHelpers';
 import isNMReconstructable from '../../isNMReconstructable';
-import {
-  getInstanceModule,
-  instanceModuleNames,
-} from '../../getInstanceModule';
+import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import { getECGModule } from './ECGHelpers';
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
@@ -207,6 +204,22 @@ function metaDataProvider(type, imageId) {
 
   if (type === MetadataModules.ULTRASOUND_ENHANCED_REGION) {
     return getUSEnhancedRegions(metaData);
+  }
+
+  if (type === MetadataModules.ECG) {
+    // Extract wadoRsRoot and studyUID from the imageId for BulkDataURI resolution
+    const imageUri = imageId.replace('wadors:', '');
+    const studiesIndex = imageUri.indexOf('/studies/');
+    let wadoRsRoot: string | undefined;
+    let studyUID: string | undefined;
+    if (studiesIndex !== -1) {
+      wadoRsRoot = imageUri.substring(0, studiesIndex);
+      const afterStudies = imageUri.substring(studiesIndex + 9);
+      const nextSlash = afterStudies.indexOf('/');
+      studyUID =
+        nextSlash !== -1 ? afterStudies.substring(0, nextSlash) : afterStudies;
+    }
+    return getECGModule(metaData, wadoRsRoot, studyUID);
   }
 
   if (type === MetadataModules.CALIBRATION) {

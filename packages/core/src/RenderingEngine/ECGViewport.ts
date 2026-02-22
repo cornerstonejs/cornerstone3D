@@ -1,5 +1,5 @@
 import type { mat4 } from 'gl-matrix';
-import { Events as EVENTS } from '../enums';
+import { Events as EVENTS, MetadataModules } from '../enums';
 import type {
   Point3,
   Point2,
@@ -9,13 +9,13 @@ import type {
   ECGChannel,
   ECGWaveformData,
   ECGViewportProperties,
-  WaveformSequenceInput,
-  WaveformDataSource,
+  ViewReferenceSpecifier,
 } from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
+import * as metaData from '../metaData';
 
 // Rendering constants ported from ecg-dicom reference
 const SECONDS_WIDTH = 150; // pixels per second of ECG data
@@ -28,141 +28,6 @@ const COLOR_BASELINE = '#7F4C00'; // brown
 const COLOR_TRACE = '#ffffff'; // white
 const COLOR_LABEL = '#ffff00'; // yellow
 const COLOR_BACKGROUND = '#000000'; // black
-
-/**
- * Decodes a base64 string to a Uint8Array.
- */
-function base64ToUint8Array(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-/**
- * Converts raw waveform buffer to per-channel Int16Array data.
- * Handles interleaved 16-bit signed short format.
- */
-function convertBuffer(
-  dataSrc: ArrayBuffer | Uint8Array,
-  numberOfChannels: number,
-  numberOfSamples: number,
-  bits: number,
-  type: string
-): Int16Array[] {
-  const data = new Uint8Array(dataSrc);
-
-  if (bits === 16 && type === 'SS') {
-    const ret: Int16Array[] = [];
-    const bytesPerSample = 2;
-    const totalBytes = bytesPerSample * numberOfChannels * numberOfSamples;
-    const length = Math.min(data.length, totalBytes);
-
-    for (let channel = 0; channel < numberOfChannels; channel++) {
-      const buffer = new Int16Array(numberOfSamples);
-      ret.push(buffer);
-      let sampleI = 0;
-      for (
-        let sample = 2 * channel;
-        sample < length;
-        sample += 2 * numberOfChannels
-      ) {
-        const highByte = data[sample + 1];
-        const lowByte = data[sample];
-        const sign = highByte & 0x80;
-        buffer[sampleI++] = sign
-          ? 0xffff0000 | (highByte << 8) | lowByte
-          : (highByte << 8) | lowByte;
-      }
-    }
-    return ret;
-  }
-
-  console.warn(
-    `[ECGViewport] Unsupported waveform format: ${bits}-bit ${type}. Only 16-bit SS is supported.`
-  );
-  return [];
-}
-
-/**
- * Decodes multipart/related response to extract binary parts.
- */
-function multipartDecode(response: ArrayBuffer): ArrayBuffer[] {
-  const message = new Uint8Array(response);
-  const separator = new TextEncoder().encode('\r\n\r\n');
-
-  // Find the header separator
-  const headerIndex = findToken(message, separator, 0, 1000);
-  if (headerIndex === -1) {
-    return [response];
-  }
-
-  const headerStr = new TextDecoder().decode(message.slice(0, headerIndex));
-  const boundaryString = identifyBoundary(headerStr);
-  if (!boundaryString) {
-    return [response];
-  }
-
-  const boundary = new TextEncoder().encode(boundaryString);
-  const components: ArrayBuffer[] = [];
-  let offset = headerIndex + separator.length;
-
-  let boundaryIndex = findToken(message, boundary, offset);
-  while (boundaryIndex !== -1) {
-    const contentStart = findToken(message, separator, boundaryIndex, 1000);
-    if (contentStart === -1) {
-      break;
-    }
-    const dataStart = contentStart + separator.length;
-    const nextBoundary = findToken(message, boundary, dataStart);
-    const dataEnd = nextBoundary === -1 ? message.length : nextBoundary - 2;
-    components.push(response.slice(dataStart, dataEnd));
-    if (nextBoundary === -1) {
-      break;
-    }
-    offset = nextBoundary;
-    boundaryIndex = findToken(message, boundary, offset + boundary.length);
-    if (boundaryIndex === -1) {
-      break;
-    }
-  }
-
-  return components.length > 0 ? components : [response];
-}
-
-function findToken(
-  message: Uint8Array,
-  token: Uint8Array,
-  startIndex: number,
-  maxLength?: number
-): number {
-  const end = maxLength
-    ? Math.min(message.length, startIndex + maxLength)
-    : message.length;
-  for (let i = startIndex; i < end - token.length + 1; i++) {
-    let found = true;
-    for (let j = 0; j < token.length; j++) {
-      if (message[i + j] !== token[j]) {
-        found = false;
-        break;
-      }
-    }
-    if (found) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-function identifyBoundary(header: string): string | null {
-  const match = header.match(/boundary=([^\s;]+)/i);
-  if (match) {
-    return `--${match[1].replace(/"/g, '')}`;
-  }
-  return null;
-}
 
 /**
  * Computes min and max values for an Int16Array.
@@ -200,6 +65,7 @@ class ECGViewport extends Viewport {
   readonly renderingEngineId: string;
   readonly canvasContext: CanvasRenderingContext2D;
 
+  private imageId: string | null = null;
   private channels: ECGChannel[] = [];
   private waveformData: ECGWaveformData | null = null;
   private ecgWidth = 0;
@@ -252,45 +118,42 @@ class ECGViewport extends Viewport {
   }
 
   /**
-   * Accepts a parsed DICOM WaveformSequence and loads channel data.
+   * Loads ECG data from a DICOM imageId by retrieving metadata via the
+   * ecgModule metadata provider.
    *
-   * @param waveformSequence - Parsed WaveformSequence with named properties.
-   * @param wadoRsRoot - Optional WADO-RS root URL for BulkDataURI resolution.
-   * @param studyUID - Optional Study Instance UID for BulkDataURI path construction.
+   * @param imageId - A DICOM image ID whose metadata includes waveform data
    */
-  public async setEcg(
-    waveformSequence: WaveformSequenceInput,
-    wadoRsRoot?: string,
-    studyUID?: string
-  ): Promise<void> {
-    const {
-      NumberOfWaveformChannels: numberOfChannels,
-      NumberOfWaveformSamples: numberOfSamples,
-      SamplingFrequency: samplingFrequency,
-      WaveformBitsAllocated: bitsAllocated = 16,
-      WaveformSampleInterpretation: sampleInterpretation = 'SS',
-      MultiplexGroupLabel: multiplexGroupLabel = 'ECG',
-      ChannelDefinitionSequence: channelDefinitions = [],
-      WaveformData: waveformData,
-    } = waveformSequence;
+  public async setEcg(imageId: string): Promise<void> {
+    this.imageId = imageId;
+    const ecgModule = metaData.get(MetadataModules.ECG, imageId);
 
-    // Load channel data from InlineBinary or BulkDataURI
-    const channelArrays = await this.loadChannelData(
-      waveformData,
-      numberOfChannels,
-      numberOfSamples,
-      bitsAllocated,
-      sampleInterpretation,
-      wadoRsRoot,
-      studyUID
-    );
+    if (!ecgModule?.waveformData?.retrieveBulkData) {
+      throw new Error(
+        `[ECGViewport] No ECG waveform data for imageId: ${imageId}`
+      );
+    }
+
+    const {
+      numberOfWaveformChannels: numberOfChannels,
+      numberOfWaveformSamples: numberOfSamples,
+      samplingFrequency,
+      waveformBitsAllocated: bitsAllocated = 16,
+      waveformSampleInterpretation: sampleInterpretation = 'SS',
+      multiplexGroupLabel,
+      channelDefinitionSequence: channelDefinitions = [],
+    } = ecgModule;
+
+    const channelArrays: Int16Array[] =
+      await ecgModule.waveformData.retrieveBulkData();
 
     // Build channel descriptors with cached min/max
     this.channels = [];
     for (let i = 0; i < numberOfChannels; i++) {
       const channelDef = channelDefinitions[i] || {};
       const name =
-        channelDef.ChannelSourceSequence?.CodeMeaning || `Channel ${i + 1}`;
+        channelDef.channelSourceSequence?.codeMeaning ||
+        channelDef.ChannelSourceSequence?.CodeMeaning ||
+        `Channel ${i + 1}`;
       const data = channelArrays[i] || new Int16Array(0);
       const { min, max } = computeMinMax(data);
       this.channels.push({ name, data, visible: true, min, max });
@@ -315,65 +178,6 @@ class ECGViewport extends Viewport {
     this.recalculateHeight();
     this.refreshRenderValues();
     this.renderFrame();
-  }
-
-  private async loadChannelData(
-    waveformData: WaveformDataSource,
-    numberOfChannels: number,
-    numberOfSamples: number,
-    bits: number,
-    type: string,
-    wadoRsRoot?: string,
-    studyUID?: string
-  ): Promise<Int16Array[]> {
-    // Method 1: Already decoded Value
-    if (waveformData.Value) {
-      return waveformData.Value as Int16Array[];
-    }
-
-    // Method 2: InlineBinary (base64)
-    if (waveformData.InlineBinary) {
-      const raw = base64ToUint8Array(waveformData.InlineBinary);
-      return convertBuffer(raw, numberOfChannels, numberOfSamples, bits, type);
-    }
-
-    // Method 3: retrieveBulkData function
-    if (typeof waveformData.retrieveBulkData === 'function') {
-      const bulkdata = await waveformData.retrieveBulkData();
-      return convertBuffer(
-        bulkdata,
-        numberOfChannels,
-        numberOfSamples,
-        bits,
-        type
-      );
-    }
-
-    // Method 4: BulkDataURI
-    if (waveformData.BulkDataURI) {
-      let url = waveformData.BulkDataURI;
-      if (url.indexOf(':') === -1 && wadoRsRoot) {
-        url = studyUID
-          ? `${wadoRsRoot}/studies/${studyUID}/${url}`
-          : `${wadoRsRoot}/${url}`;
-      }
-      const response = await fetch(url);
-      const buffer = await response.arrayBuffer();
-      const contentType = response.headers.get('content-type') || '';
-      const decoded = contentType.includes('multipart')
-        ? multipartDecode(buffer)[0]
-        : buffer;
-      return convertBuffer(
-        decoded,
-        numberOfChannels,
-        numberOfSamples,
-        bits,
-        type
-      );
-    }
-
-    console.warn('[ECGViewport] No data source found in WaveformData');
-    return [];
   }
 
   /**
@@ -598,36 +402,80 @@ class ECGViewport extends Viewport {
     canvasPos: Point2,
     destPos: Point3 = [0, 0, 0]
   ): Point3 => {
+    if (!this.waveformData) {
+      destPos[0] = 0;
+      destPos[1] = 0;
+      destPos[2] = 0;
+      return destPos;
+    }
+
+    const scale = this.getWorldToCanvasRatio();
     const pan: Point2 = this.ecgCamera.panWorld;
-    const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
+    const layouts = this.computeChannelLayouts();
 
-    const panOffsetCanvas: Point2 = [
-      pan[0] * worldToCanvasRatio,
-      pan[1] * worldToCanvasRatio,
-    ];
-
+    // Convert canvas to world coordinates
     const subCanvasPos: Point2 = [
-      canvasPos[0] - panOffsetCanvas[0],
-      canvasPos[1] - panOffsetCanvas[1],
+      canvasPos[0] / scale - pan[0],
+      canvasPos[1] / scale - pan[1],
     ];
 
-    destPos.splice(
+    // Determine which channel the y position falls into
+    let z = 0;
+    for (let i = 0; i < layouts.length; i++) {
+      const layout = layouts[i];
+      if (subCanvasPos[1] <= layout.yOffset) {
+        z = i;
+        break;
+      }
+      if (i === layouts.length - 1) {
+        z = i;
+      }
+    }
+
+    // Compute x (sample index)
+    const x = Math.max(
       0,
-      2,
-      subCanvasPos[0] / worldToCanvasRatio,
-      subCanvasPos[1] / worldToCanvasRatio
+      Math.min(
+        this.waveformData.numberOfSamples - 1,
+        (subCanvasPos[0] * this.waveformData.numberOfSamples) / this.ecgWidth
+      )
     );
+
+    // Compute y (amplitude)
+    const layout = layouts[z];
+    const y = (layout.baseline - subCanvasPos[1]) / this.channelScale;
+
+    destPos[0] = x;
+    destPos[1] = y;
+    destPos[2] = z;
     return destPos;
   };
 
   public worldToCanvas = (worldPos: Point3): Point2 => {
-    const pan: Point2 = this.ecgCamera.panWorld;
-    const worldToCanvasRatio: number = this.getWorldToCanvasRatio();
+    if (!this.waveformData) {
+      return [0, 0];
+    }
 
-    return [
-      (worldPos[0] + pan[0]) * worldToCanvasRatio,
-      (worldPos[1] + pan[1]) * worldToCanvasRatio,
-    ];
+    const scale = this.getWorldToCanvasRatio();
+    const pan: Point2 = this.ecgCamera.panWorld;
+    const layouts = this.computeChannelLayouts();
+    const z = Math.round(worldPos[2]);
+
+    if (z < 0 || z >= layouts.length) {
+      return [0, 0];
+    }
+
+    const layout = layouts[z];
+    const canvasX =
+      (worldPos[0] / this.waveformData.numberOfSamples) *
+        this.ecgWidth *
+        scale +
+      pan[0] * scale;
+    const canvasY =
+      (layout.baseline - worldPos[1] * this.channelScale) * scale +
+      pan[1] * scale;
+
+    return [canvasX, canvasY];
   };
 
   public getPan(): Point2 {
@@ -639,6 +487,52 @@ class ECGViewport extends Viewport {
 
   public getNumberOfSlices = (): number => {
     return 1;
+  };
+
+  public getCurrentImageIdIndex = (): number => {
+    return 0;
+  };
+
+  public getCurrentImageId = (): string | undefined => {
+    return this.imageId;
+  };
+
+  public getViewReferenceId(_specifier?: ViewReferenceSpecifier): string {
+    return `imageId:${this.imageId}`;
+  }
+
+  public hasImageURI(imageURI: string): boolean {
+    return this.imageId?.includes(imageURI) ?? false;
+  }
+
+  /**
+   * All annotations created on this ECG viewport are always viewable.
+   * The base implementation filters by plane distance, but ECG uses the
+   * z coordinate for channel index rather than spatial position, so the
+   * plane check incorrectly rejects annotations on non-zero channels.
+   */
+  public isReferenceViewable(viewRef: {
+    FrameOfReferenceUID?: string;
+  }): boolean {
+    if (
+      viewRef.FrameOfReferenceUID &&
+      viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID()
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  public getSliceIndex = (): number => {
+    return 0;
+  };
+
+  public getImageIds = (): string[] => {
+    return this.imageId ? [this.imageId] : [];
+  };
+
+  public scroll = (): void => {
+    // No-op for ECG viewport - not a stack of images
   };
 
   public customRenderViewportToCanvas = () => {
@@ -883,14 +777,18 @@ class ECGViewport extends Viewport {
 
   /**
    * Returns image data for tool compatibility (e.g. ZoomTool).
-   * ECG world coordinates: x = time (world pixels), y = amplitude (world pixels).
+   * ECG world coordinates: x = sample index, y = amplitude, z = channel number.
    */
   public getImageData() {
     if (!this.waveformData) {
       return null;
     }
 
-    const dimensions = [this.ecgWidth, this.ecgHeight, 1];
+    const dimensions = [
+      this.waveformData.numberOfSamples,
+      1,
+      this.waveformData.numberOfChannels,
+    ];
     const spacing = [1, 1, 1];
     const origin = [0, 0, 0];
     const direction = [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -901,10 +799,10 @@ class ECGViewport extends Viewport {
       getRange: () => [0, 1] as Point2,
       getSpacing: () => spacing,
       worldToIndex: (point: Point3) => {
-        return [point[0], point[1], 0] as Point3;
+        return [point[0], point[1], point[2]] as Point3;
       },
       indexToWorld: (point: Point3) => {
-        return [point[0], point[1], 0] as Point3;
+        return [point[0], point[1], point[2]] as Point3;
       },
     };
 
