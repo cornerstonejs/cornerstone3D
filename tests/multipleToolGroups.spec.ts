@@ -1,6 +1,8 @@
 import { test, expect } from 'playwright-test-coverage';
 import {
   visitExample,
+  checkForScreenshot,
+  screenShotPaths,
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {

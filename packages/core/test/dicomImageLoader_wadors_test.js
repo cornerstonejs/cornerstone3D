@@ -4,7 +4,6 @@ import {
   init as dicomImageLoaderInit,
   wadors,
 } from '@cornerstonejs/dicom-image-loader';
-import { expectObjectEquality } from './expectObjectEquality';
 import { WADO_RS_TEST as CtBigEndian_1_2_840_10008_1_2_2 } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2';
 import { WADO_RS_TEST as JpegBaselineWadoRS } from '../../dicomImageLoader/testImages/TestPattern_JPEG-Baseline_YBR422';
 import { WADO_RS_TEST as JpegBaselineYbrFullTest } from '../../dicomImageLoader/testImages/TestPattern_JPEG-Baseline_YBRFull';
@@ -58,7 +57,8 @@ describe('dicomImageLoader - WADO-RS', () => {
                 metadataModuleName,
                 t.wadorsUrl
               );
-              expectObjectEquality(actualModuleValue, expectedModuleValues);
+
+              expect(actualModuleValue).toEqual(expectedModuleValues);
             });
           }
         }
