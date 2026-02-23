@@ -3008,15 +3008,14 @@ class CrosshairsTool extends AnnotationTool {
       point: Types.Point3;
     }> = [];
 
-    for (let i = 0; i < viewportsInfo.length; i++) {
-      const viewportInfo = viewportsInfo[i];
+    viewportsInfo.forEach((viewportInfo) => {
       const enabledElement = getEnabledElementByIds(
         viewportInfo.viewportId,
         viewportInfo.renderingEngineId
       );
 
       if (!enabledElement) {
-        continue;
+        return;
       }
 
       const camera = enabledElement.viewport.getCamera();
@@ -3025,7 +3024,7 @@ class CrosshairsTool extends AnnotationTool {
       const point = [...camera.focalPoint] as Types.Point3;
 
       if (!this._isFinitePoint3(normal) || !this._isFinitePoint3(point)) {
-        continue;
+        return;
       }
 
       vec3.normalize(normal, normal);
@@ -3039,7 +3038,7 @@ class CrosshairsTool extends AnnotationTool {
       if (!alreadyTracked) {
         uniquePlanes.push({ normal, point });
       }
-    }
+    });
 
     if (uniquePlanes.length < 2) {
       return null;
