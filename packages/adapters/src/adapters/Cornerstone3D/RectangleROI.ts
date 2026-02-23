@@ -45,11 +45,7 @@ export class RectangleROI extends BaseAdapter3D {
     const areaGroup = MeasurementGroup.ContentSequence.find(
       (g) =>
         g.ValueType === 'NUM' &&
-        (() => {
-          const seq = g.ConceptNameCodeSequence;
-          const meaning = Array.isArray(seq) ? seq[0]?.CodeMeaning : seq?.CodeMeaning;
-          return meaning === 'Area';
-        })()
+        g.ConceptNameCodeSequence?.[0]?.CodeMeaning === 'Area'
     );
 
     const referencedSOPInstanceUID = state.sopInstanceUid;
@@ -70,13 +66,12 @@ export class RectangleROI extends BaseAdapter3D {
           },
         }
       : {};
-    const handlesPoints = [points[0], points[1], points[3], points[2]];
+
     state.annotation.data = {
       ...state.annotation.data,
       handles: {
         ...state.annotation.data.handles,
-        points: handlesPoints,
-        points: handlesPoints,
+        points: [points[0], points[1], points[3], points[2]],
       },
       cachedStats,
       frameNumber: ReferencedFrameNumber,
