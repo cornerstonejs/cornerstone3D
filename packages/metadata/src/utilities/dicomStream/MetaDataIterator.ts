@@ -2,7 +2,7 @@
  * Delivers metadata from a standard DICOMweb Metadata instance to a listener
  */
 
-import { SkipListener } from './SkipListener';
+import { dictionaryLookup, mapTagInfo } from '../Tags';
 
 export class MetaDataIterator {
   public metadata;
@@ -26,11 +26,13 @@ export class MetaDataIterator {
         continue;
       }
       const vr = value.vr;
-      const result = listener.addTag(key, { vr });
-      if (result instanceof SkipListener) {
-        listener.pop();
-        continue;
-      }
+      const tagData = mapTagInfo.get(key);
+      const dictEntry = !tagData ? dictionaryLookup(key) : undefined;
+      listener.addTag(key, {
+        vr,
+        name: tagData?.name || dictEntry?.name,
+        vm: tagData?.vm ?? dictEntry?.vm,
+      });
       if (vr === 'SQ') {
         for (const v of value.Value) {
           listener.startObject();
