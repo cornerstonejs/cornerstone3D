@@ -79,6 +79,7 @@
     "prepublishOnly": "yarn run build"
   },
   "dependencies": {
+    "dcmjs": "0.49.4",
     "gl-matrix": "3.4.3"
   },
   "contributors": [

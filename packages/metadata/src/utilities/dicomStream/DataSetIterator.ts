@@ -1,4 +1,4 @@
-import { mapTagInfo } from '../Tags';
+import { dictionaryLookup, mapTagInfo } from '../Tags';
 import toNumber from '../toNumber';
 
 const vrParse = {
@@ -33,7 +33,7 @@ const vrParse = {
   // UV: unsignedVeryLong
 };
 /**
- * Delivers metadata from a standard DICOMweb Metadata instance to a listener
+ * Delivers metadata from a dicom-parser DataSet to a listener
  */
 export class DataSetIterator {
   public dataset;
@@ -45,14 +45,19 @@ export class DataSetIterator {
   public syncIterator(listener, dataset = this.dataset) {
     const { elements } = dataset;
     for (const [key, value] of Object.entries(elements)) {
-      const tagInfo = mapTagInfo.get(key);
-      if (!tagInfo) {
-        // console.warn('Not registered:', key);
+      const tagData = mapTagInfo.get(key);
+      const dictEntry = !tagData ? dictionaryLookup(key) : undefined;
+
+      if (!tagData && !dictEntry) {
         continue;
       }
 
-      const { vr, name, tag, vm } = tagInfo;
-      listener.addTag(tag, { vr, name, vm });
+      const vr = tagData?.vr || dictEntry?.vr;
+      const tagName = tagData?.name || dictEntry?.name || key;
+      const tagHex = tagData?.tag || key.replace('x', '').toUpperCase();
+      const vm = tagData?.vm ?? dictEntry?.vm;
+
+      listener.addTag(tagHex, { vr, name: tagName, vm });
 
       if (vr === 'SQ') {
         const sequence = dataset.elements[key];
@@ -65,10 +70,10 @@ export class DataSetIterator {
         }
         listener.pop();
       } else {
-        const parser = vrParse[tagInfo.vr];
+        const parser = vrParse[vr];
         if (!parser) {
-          console.warn('No parser for', tagInfo.vr);
-          listener.endSection();
+          console.warn('No parser for', vr);
+          listener.pop();
           continue;
         }
         const parsed = parser(key, value, dataset);

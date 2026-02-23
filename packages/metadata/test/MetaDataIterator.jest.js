@@ -7,7 +7,7 @@ import { MetaDataIterator } from '../src/utilities/dicomStream';
 describe('MetaDataIterator', () => {
   it('creates natural CTImage_BigEndianExplicit from metadata', () => {
     const data = new MetaDataIterator(tags);
-    const listener = NaturalTagListener.newNaturalStreamListener();
+    const listener = new NaturalTagListener();
     listener.startObject();
     data.syncIterator(listener);
     const instance = listener.pop();

@@ -15,7 +15,7 @@ export function instanceFromListener(next, query, data, options) {
   if (!data) {
     return next(query, data, options);
   }
-  const listener = NaturalTagListener.newNaturalStreamListener();
+  const listener = new NaturalTagListener();
 
   listener.startObject();
   data.syncIterator(listener);
