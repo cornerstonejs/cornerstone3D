@@ -1,10 +1,7 @@
-import { DicomStreamListener } from '../src/utilities/dicomStream/DicomStreamListener';
 import { NaturalTagListener } from '../src/utilities/dicomStream/NaturalTagListener';
-import { Tags } from '../src/utilities/Tags';
 import { tags } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2.wado-rs-tags';
 
-import { describe, beforeEach, it, test } from '@jest/globals';
-import { instanceFromListener } from '../src/utilities';
+import { describe, it } from '@jest/globals';
 import { MetaDataIterator } from '../src/utilities/dicomStream';
 
 describe('MetaDataIterator', () => {
