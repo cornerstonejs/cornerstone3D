@@ -6,6 +6,7 @@ import {
   MetadataModules,
 } from '../enums';
 import type {
+  IVideoViewport,
   VideoViewportProperties,
   Point3,
   Point2,
