@@ -174,7 +174,6 @@ class WindowLevelTool extends BaseTool {
 
   _getMultiplierFromDynamicRange(viewport, volumeId) {
     let imageDynamicRange;
-    let BitsStored;
 
     if (volumeId) {
       const imageVolume = cache.getVolume(volumeId);
@@ -190,26 +189,28 @@ class WindowLevelTool extends BaseTool {
           [Infinity, -Infinity]
         );
 
+      // Clip min/max to valid pixel range based on BitsStored and signedness
+      // to exclude burned-in pixels that fall outside the valid range.
+      const BitsStored = imageVolume?.metadata?.BitsStored;
+      if (BitsStored) {
+        const isSigned = imageVolume?.metadata?.PixelRepresentation === 1;
+        const validMin = isSigned ? -(2 ** (BitsStored - 1)) : 0;
+        const validMax = isSigned
+          ? 2 ** (BitsStored - 1) - 1
+          : 2 ** BitsStored - 1;
+        calculatedDynamicRange[0] = Math.max(
+          calculatedDynamicRange[0],
+          validMin
+        );
+        calculatedDynamicRange[1] = Math.min(
+          calculatedDynamicRange[1],
+          validMax
+        );
+      }
+
       imageDynamicRange = calculatedDynamicRange[1] - calculatedDynamicRange[0];
-      BitsStored = imageVolume?.metadata?.BitsStored;
     } else {
       imageDynamicRange = this._getImageDynamicRangeFromViewport(viewport);
-      const imageId = viewport.getCurrentImageId?.();
-      if (imageId) {
-        const imagePixelModule = metaData.get('imagePixelModule', imageId);
-        BitsStored = imagePixelModule?.bitsStored;
-      }
-    }
-
-    // Burned in Pixels often use pixel values above the BitsStored.
-    // This results in a multiplier which is way higher than what you would
-    // want in practice. Thus we take the min between the metadata dynamic
-    // range upper value and actual middle slice dynamic range.
-    if (BitsStored) {
-      const metadataDynamicRange = 2 ** BitsStored;
-      imageDynamicRange = !Number.isFinite(imageDynamicRange)
-        ? metadataDynamicRange
-        : Math.min(imageDynamicRange, metadataDynamicRange);
     }
 
     const ratio = imageDynamicRange / DEFAULT_IMAGE_DYNAMIC_RANGE;
@@ -224,40 +225,62 @@ class WindowLevelTool extends BaseTool {
   _getImageDynamicRangeFromViewport(viewport) {
     const { imageData, voxelManager } = viewport.getImageData();
 
+    let dynamicRange;
+
     // this should address the case where the voxelManager is used
     // for the new volume viewport model
     if (voxelManager?.getRange) {
       const range = voxelManager.getRange();
-      return range[1] - range[0];
-    }
-
-    const dimensions = imageData.getDimensions();
-
-    if (imageData.getRange) {
-      const imageDataRange = imageData.getRange();
-      return imageDataRange[1] - imageDataRange[0];
-    }
-    let scalarData;
-    // if getScalarData is a method on imageData
-    if (imageData.getScalarData) {
-      scalarData = imageData.getScalarData();
+      dynamicRange = range[1] - range[0];
     } else {
-      scalarData = imageData.getPointData().getScalars().getData();
+      const dimensions = imageData.getDimensions();
+
+      if (imageData.getRange) {
+        const imageDataRange = imageData.getRange();
+        dynamicRange = imageDataRange[1] - imageDataRange[0];
+      } else {
+        let scalarData;
+        // if getScalarData is a method on imageData
+        if (imageData.getScalarData) {
+          scalarData = imageData.getScalarData();
+        } else {
+          scalarData = imageData.getPointData().getScalars().getData();
+        }
+
+        if (dimensions[2] !== 1) {
+          dynamicRange = this._getImageDynamicRangeFromMiddleSlice(
+            scalarData,
+            dimensions
+          );
+        } else {
+          let range;
+          if (scalarData.getRange) {
+            range = scalarData.getRange();
+          } else {
+            const { min, max } = this._getMinMax(scalarData, scalarData.length);
+            range = [min, max];
+          }
+          dynamicRange = range[1] - range[0];
+        }
+      }
     }
 
-    if (dimensions[2] !== 1) {
-      return this._getImageDynamicRangeFromMiddleSlice(scalarData, dimensions);
+    // Clip dynamic range using BitsStored metadata to exclude burned-in
+    // pixels that fall outside the valid pixel value range.
+    const imageId = viewport.getCurrentImageId?.();
+    if (imageId) {
+      const imagePixelModule = metaData.get('imagePixelModule', imageId);
+      const bitsStored = imagePixelModule?.bitsStored;
+      if (bitsStored) {
+        const isSigned = imagePixelModule?.pixelRepresentation === 1;
+        const maxValidRange = isSigned
+          ? 2 ** (bitsStored - 1)
+          : 2 ** bitsStored;
+        dynamicRange = Math.min(dynamicRange, maxValidRange);
+      }
     }
 
-    let range;
-    if (scalarData.getRange) {
-      range = scalarData.getRange();
-    } else {
-      const { min, max } = this._getMinMax(scalarData, scalarData.length);
-      range = [min, max];
-    }
-
-    return range[1] - range[0];
+    return dynamicRange;
   }
 
   _getImageDynamicRangeFromMiddleSlice = (scalarData, dimensions) => {
