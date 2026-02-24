@@ -31,4 +31,10 @@ export interface LoaderOptions {
   errorInterceptor?: (error: LoaderXhrRequestError) => void;
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
+  /**
+   * When true, skips registering the legacy wadouri/wadors metadata providers.
+   * Use addBinaryDicomInstance and addDicomwebInstance from
+   * @cornerstonejs/metadata to populate the INSTANCE_ORIG cache instead.
+   */
+  useMetadataProvider?: boolean;
 }

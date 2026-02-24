@@ -86,7 +86,7 @@ registered with the metadata library for immediate viewing.
   `getNormalized`, `typedProviderProvider`, `clearQuery`, `clear`,
   `toUpperCamelTag`, `toLowerCamelTag`
 - `Enums.MetadataModules`: Standard module name enum (imagePlaneModule,
-  imagePixelModule, generalSeriesModule, DICOMSource, instanceOrig, etc.)
+  imagePixelModule, generalSeriesModule, instanceOrig, etc.)
 - `Enums.CalibrationTypes`: Calibration type enum (ERMF, Projection, User, etc.)
 - `utilities.DicomStream`: `DataSetIterator`, `MetaDataIterator`,
   `NaturalTagListener`, `DicomStreamListener`, `MetadataTagListener`,

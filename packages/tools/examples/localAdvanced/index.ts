@@ -185,7 +185,7 @@ addDropdownToToolbar({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({ useMetadataProvider: true });
 
   const toolGroup = createToolGroup(toolGroupId);
 

@@ -24,6 +24,9 @@ import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
 import { getECGModule } from './ECGHelpers';
 
+/**
+ * @deprecated Use addDicomwebInstance from @cornerstonejs/metadata instead.
+ */
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
 

@@ -168,21 +168,6 @@ enum MetadataModules {
   SR_ANNOTATION = 'metaSrAnnotation',
 
   /**
-   * A DICOM_SOURCE data is an instance that can send messages to a destination
-   * listener.  These will typically be in a format like:
-   *    - Part 10 Binary DICOM
-   *    - DICOMweb metadata
-   *    - Naturalized metadata
-   *    - DataSet parsed data
-   *
-   * These will then be iterated over to send messages to the listener that then
-   * goes ahead and creates the final object.
-   *
-   * This is basically an automated way of converting different image types to
-   * the shared/standardized format.
-   */
-  DICOM_SOURCE = 'DICOMSource',
-  /**
    * The Instance ORIG is the original version of the instance data
    * This is used as the source for creating other metadata modules from
    * the instance data, as opposed to the instance version, which could be
