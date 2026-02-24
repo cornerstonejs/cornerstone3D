@@ -1,6 +1,8 @@
 import { MetadataModules } from '../enums';
 import * as metaData from '../metaData';
-import { lookupTagHex } from 'dcmjs';
+import dcmjs from 'dcmjs';
+
+const dicomDictionary = dcmjs.data.DicomMetaDictionary.dictionary;
 
 const {
   GENERAL_IMAGE,
@@ -79,7 +81,7 @@ export function parseVm(vm: string | number | undefined): number | null {
 export function dictionaryLookup(
   hexTag: string
 ): { name: string; vr: string; vm: string } | undefined {
-  return lookupTagHex(hexTag.toUpperCase());
+  return dicomDictionary[hexTag.toUpperCase()];
 }
 
 export const CLINICAL_TRIAL = 'clinicalTrialModule';
@@ -274,7 +276,7 @@ export function addTag(name: string, value: TagEntry) {
 
     // Resolve vr/vm from dcmjs dictionary if not already set
     if (!value.vr) {
-      const dictEntry = lookupTagHex(value.tag);
+      const dictEntry = dicomDictionary[value.tag];
       if (dictEntry) {
         value.vr = dictEntry.vr;
         value.vm = parseVm(dictEntry.vm);

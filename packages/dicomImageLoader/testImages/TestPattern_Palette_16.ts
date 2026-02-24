@@ -21,14 +21,14 @@ const EXPECTED_IMAGE: Types.IImage = {
     bitsAllocated: 8,
     bitsStored: 8,
     // @ts-expect-error jasmine matcher
-    bluePaletteColorLookupTableData: jasmine.any(Object),
+    bluePaletteColorLookupTableData: jasmine.any(Array),
     bluePaletteColorLookupTableDescriptor: [256, 0, 16],
     columns: 640,
     decodeLevel: undefined,
     // @ts-expect-error jasmine matcher
     decodeTimeInMS: jasmine.any(Number),
     // @ts-expect-error jasmine matcher
-    greenPaletteColorLookupTableData: jasmine.any(Object),
+    greenPaletteColorLookupTableData: jasmine.any(Array),
     greenPaletteColorLookupTableDescriptor: [256, 0, 16],
     // @ts-expect-error jasmine matcher
     imageData: { data: jasmine.any(Uint8ClampedArray) },
@@ -42,7 +42,7 @@ const EXPECTED_IMAGE: Types.IImage = {
     pixelRepresentation: 0,
     planarConfiguration: undefined,
     // @ts-expect-error jasmine matcher
-    redPaletteColorLookupTableData: jasmine.any(Object),
+    redPaletteColorLookupTableData: jasmine.any(Array),
     redPaletteColorLookupTableDescriptor: [256, 0, 16],
     rows: 400,
     samplesPerPixel: 1,

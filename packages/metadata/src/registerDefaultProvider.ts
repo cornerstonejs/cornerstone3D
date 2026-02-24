@@ -29,7 +29,7 @@ let registered = false;
  * - Transfer syntax provider
  *
  * Call this once at application startup before querying metadata.
- * Data source providers (e.g. registerDcmjsProvider, registerDicomwebProvider)
+ * Data source providers (e.g. registerDicomwebProvider)
  * should be registered separately.
  */
 export function registerDefaultProvider() {

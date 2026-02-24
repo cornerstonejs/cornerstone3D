@@ -2,11 +2,12 @@ export function makeArrayLike(obj) {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  if (typeof obj !== 'object') {
+  if (typeof obj !== 'object' || Array.isArray(obj)) {
     return obj;
   }
   Object.defineProperty(obj, 'length', {
     value: 1,
+    configurable: true,
   });
 
   Object.defineProperty(obj, 0, {
@@ -20,6 +21,7 @@ export function makeArrayLike(obj) {
     value: function* () {
       yield this; // iterator yields only the object
     },
+    configurable: true,
   });
 
   return obj;

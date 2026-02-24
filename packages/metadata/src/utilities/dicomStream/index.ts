@@ -1,4 +1,3 @@
-export * from './DataSetIterator';
 export * from './MetaDataIterator';
 export * from './NaturalTagListener';
 export * from './DicomStreamTypes';
