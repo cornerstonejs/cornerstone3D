@@ -39,6 +39,47 @@ presenting medical imaging data.
   cardiac gating (TriggerTime), and single-frame 4D tags (DiffusionBValue,
   EchoTime, TemporalPositionIdentifier, vendor-private B-value tags).
 
+## Differences to Earlier Metadata Providers
+
+The earlier metadata providers encapsulated the volatility of different types of
+metadata handling at a higher level than the low level parsing.  As well, each
+provider added different higher level support for things like calibrated images.
+As a result, there were numerous bugs in the different uses of these in the examples
+and in OHIF and other viewers.  Using a standardized listener interface at an earlier
+point and then providing standard implementations of code like the calibration
+data on top of that allows for much more consistent behaviour between different uses and parts
+of the system.  It also allows for a single set of test code to cover many more
+types of data.
+
+Additionally, there was quite a bit of data that wasn't accessible via the standard
+get metadata functionality.  Examples of this include display sets (splits of instances
+into sets of images to display together), access to parsed but not split metadata,
+multiframe standardization, sorting and other areas.  Combining these allows a single
+implementation to be created and tested, resulting in much more consistency between
+different applications based on CS3D.
+
+## What belongs in metadata, core, dicom-image-loader and adapters
+
+The metadata package should have the metadata provider and organization/utility
+functions dealing with metadata such as display set and series split.  As well,
+functionality dealing with enhanced metadata such as calibration and ERMF handling
+belong in metadata.
+
+The core package is designed around html viewer ports and rendering for DICOM.  The
+core package should NOT have metadata handling or utilities, and should not have
+image loading/managing utilities except for the front end caching utilities dealing
+with teh direct browser cache for images.
+
+The dicom-image-loader deals with actually retrieving instance data, injecting it into the
+metadata framework and then decompressing images.  It also has image decompression specific
+utilities for dealing with metadata such as pixel range clipping/determination where the
+knowledge about that pixel data is part of the decompression logic.
+
+The adapters deals with converting already parsed metadata into tools and segmentation
+representations, and converting the data back into naturalized formats.  This can then
+be provided to the dicom-image-loader library for transmission back to a DICOM PACS, or
+registered with the metadata library for immediate viewing.
+
 ## Key Exports
 
 - `metaData` namespace: `addProvider`, `addTypedProvider`, `get`, `getMetaData`,

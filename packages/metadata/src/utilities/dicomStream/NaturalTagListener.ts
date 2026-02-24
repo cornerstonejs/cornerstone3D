@@ -40,9 +40,8 @@ function resolveSingleVm(
 /**
  * A standalone DICOM listener that produces naturalized JavaScript objects.
  *
- * Compatible with both AsyncDicomReader and the sync iterators
- * (MetaDataIterator, DataSetIterator). Also provides a filter factory
- * for use with DicomMetadataListener.
+ * Compatible with both AsyncDicomReader and the sync MetaDataIterator.
+ * Also provides a filter factory for use with DicomMetadataListener.
  *
  * Tag names and VR/VM are resolved from:
  * 1. tagInfo (provided by the source, e.g. AsyncDicomReader)
