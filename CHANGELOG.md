@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.4...v4.17.5) (2026-02-24)
+
+### Bug Fixes
+
+- move crosshairs implementation to absolute camera instead of delta ([#2627](https://github.com/cornerstonejs/cornerstone3D/issues/2627)) ([1798953](https://github.com/cornerstonejs/cornerstone3D/commit/1798953dfb8921f3acf73e47976367da22088e63))
+
 ## [4.17.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.3...v4.17.4) (2026-02-23)
 
 **Note:** Version bump only for package root
