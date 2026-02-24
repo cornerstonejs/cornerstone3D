@@ -20,7 +20,7 @@ let registered = false;
  * - Cache providers for instance, image plane, URI, and frame modules
  * - URI module provider (extracts frame info from imageId URIs)
  * - Data lookup providers (bridge between instance data and specific modules)
- * - Instance-from-listener provider (converts DICOM_SOURCE to INSTANCE_ORIG)
+ * - Instance provider (bridges INSTANCE to INSTANCE_ORIG)
  * - Combine frame provider (handles multiframe instances)
  * - Tag modules (converts instance data to module-specific results)
  * - Image plane calibrated provider
@@ -29,8 +29,6 @@ let registered = false;
  * - Transfer syntax provider
  *
  * Call this once at application startup before querying metadata.
- * Data source providers (e.g. registerDicomwebProvider)
- * should be registered separately.
  */
 export function registerDefaultProvider() {
   if (registered) {
@@ -51,7 +49,7 @@ export function registerDefaultProvider() {
   // Register data lookup providers
   registerDataLookup();
 
-  // Register instance from DICOM_SOURCE listener
+  // Register INSTANCE → INSTANCE_ORIG bridge
   registerInstanceFromListener();
 
   // Register combine frame provider

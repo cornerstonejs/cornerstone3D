@@ -47,6 +47,18 @@ export function clearTypedCacheData(type: string, query?: string) {
   }
 }
 
+/**
+ * Directly sets a value in the typed cache for the given type and query key.
+ */
+export function setCacheData(type: string, query: string, value: unknown) {
+  let valueMap = mapCacheData.get(type);
+  if (!valueMap) {
+    valueMap = new Map<string, unknown>();
+    mapCacheData.set(type, valueMap);
+  }
+  valueMap.set(query, value);
+}
+
 export function addCacheForType(type: string, options?) {
   addTypedProvider(type, cacheDataForType(type), {
     priority: 50_000,

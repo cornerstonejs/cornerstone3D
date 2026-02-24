@@ -2,14 +2,15 @@ import wadouriRegister from './wadouri/register';
 import wadorsRegister from './wadors/register';
 
 /**
- * Register the WADO-URI and WADO-RS image loaders and metaData providers
- * with an instance of Cornerstone Core.
+ * Register the WADO-URI and WADO-RS image loaders.
  *
- * @param cornerstone The Cornerstone Core library to register the image loaders with
+ * @param options.useMetadataProvider - When true, skips registering the
+ *   legacy metadata providers. Use addBinaryDicomInstance /
+ *   addDicomwebInstance from @cornerstonejs/metadata instead.
  */
-function registerLoaders(): void {
-  wadorsRegister();
-  wadouriRegister();
+function registerLoaders(options?: { useMetadataProvider?: boolean }): void {
+  wadorsRegister(options);
+  wadouriRegister(options);
 }
 
 export default registerLoaders;
