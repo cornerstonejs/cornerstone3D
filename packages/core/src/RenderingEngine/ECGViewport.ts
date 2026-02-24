@@ -20,6 +20,8 @@ import * as metaData from '../metaData';
 // Rendering constants ported from ecg-dicom reference
 const SECONDS_WIDTH = 150; // pixels per second of ECG data
 const CHANNEL_SPACING = 5; // vertical spacing between channels in world units
+/** Index-space size for amplitude axis so tools (e.g. Probe) use indexWithinDimensions; Int16 range. */
+const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
 // Colors
 const COLOR_GRID_MAJOR = '#7f0000'; // dark red
@@ -168,6 +170,9 @@ class ECGViewport extends Viewport {
       sampleInterpretation,
       multiplexGroupLabel,
     };
+
+    // Set calibration from metadata (e.g. sequenceOfEcgRegions from wadors) for measurement tools
+    this.calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
 
     // Calculate ECG width from sample count and frequency
     this.ecgWidth = Math.ceil(
@@ -776,22 +781,23 @@ class ECGViewport extends Viewport {
   }
 
   /**
-   * Returns image data for tool compatibility (e.g. ZoomTool).
-   * ECG world coordinates: x = sample index, y = amplitude, z = channel number.
+   * Returns image data for tool compatibility (e.g. ZoomTool, ProbeTool).
+   * ECG world coordinates: x = sample index, y = amplitude (raw), z = channel number.
+   * Amplitude is mapped to index [0, ECG_AMPLITUDE_INDEX_SIZE) so indexWithinDimensions works;
+   * drawing across channels remains out of bounds and gets clipped.
    */
   public getImageData() {
     if (!this.waveformData) {
       return null;
     }
 
-    const dimensions = [
-      this.waveformData.numberOfSamples,
-      1,
-      this.waveformData.numberOfChannels,
-    ];
+    const nSamples = this.waveformData.numberOfSamples;
+    const nChannels = this.waveformData.numberOfChannels;
+    const dimensions = [nSamples, ECG_AMPLITUDE_INDEX_SIZE, nChannels];
     const spacing = [1, 1, 1];
     const origin = [0, 0, 0];
     const direction = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    const amplitudeOffset = ECG_AMPLITUDE_INDEX_SIZE / 2;
 
     const imageData = {
       getDirection: () => direction,
@@ -799,10 +805,10 @@ class ECGViewport extends Viewport {
       getRange: () => [0, 1] as Point2,
       getSpacing: () => spacing,
       worldToIndex: (point: Point3) => {
-        return [point[0], point[1], point[2]] as Point3;
+        return [point[0], point[1] + amplitudeOffset, point[2]] as Point3;
       },
       indexToWorld: (point: Point3) => {
-        return [point[0], point[1], point[2]] as Point3;
+        return [point[0], point[1] - amplitudeOffset, point[2]] as Point3;
       },
     };
 

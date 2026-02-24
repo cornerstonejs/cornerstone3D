@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, metaData } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
@@ -86,7 +86,12 @@ async function run() {
     maxZoomScale: 4000,
   });
 
+  const { UltrasoundDirectionalTool } = cornerstoneTools;
   for (const [toolName, config] of annotationTools) {
+    const toolConfig =
+      toolName === UltrasoundDirectionalTool.toolName
+        ? { ...config.configuration, displayBothAxesDistances: true }
+        : config.configuration;
     if (config.baseTool) {
       if (!toolGroup.hasTool(config.baseTool)) {
         toolGroup.addTool(
@@ -94,13 +99,9 @@ async function run() {
           annotationTools.get(config.baseTool)?.configuration
         );
       }
-      toolGroup.addToolInstance(
-        toolName,
-        config.baseTool,
-        config.configuration
-      );
+      toolGroup.addToolInstance(toolName, config.baseTool, toolConfig);
     } else if (!toolGroup.hasTool(toolName)) {
-      toolGroup.addTool(toolName, config.configuration);
+      toolGroup.addTool(toolName, toolConfig);
     }
     if (config.passive) {
       toolGroup.setToolPassive(toolName);
@@ -137,37 +138,12 @@ async function run() {
     viewportId
   ) as Types.IECGViewport;
 
-  // Load ECG data into the viewport
+  // Load ECG data into the viewport (calibration is resolved via metadata provider in ECGViewport)
   await viewport.setEcg(ecgImageId);
 
-  // Register calibration data for measurement tools to show physical units
+  // Resize element to match ECG content dimensions
   const { width: ecgWidth, height: ecgHeight } =
     viewport.getContentDimensions();
-  const waveformData = viewport.getWaveformData();
-  const samplingFrequency = waveformData?.samplingFrequency || 500;
-
-  metaData.addProvider((type, imageId) => {
-    if (type !== Enums.MetadataModules.CALIBRATION || imageId !== ecgImageId) {
-      return;
-    }
-    return {
-      sequenceOfUltrasoundRegions: [
-        {
-          regionLocationMinX0: 0,
-          regionLocationMaxX1: ecgWidth,
-          regionLocationMinY0: 0,
-          regionLocationMaxY1: ecgHeight,
-          physicalUnitsXDirection: 4, // seconds
-          physicalUnitsYDirection: 0, // px (mV not in UNIT_MAPPING yet)
-          physicalDeltaX: 1 / samplingFrequency, // seconds per sample
-          physicalDeltaY: 1, // placeholder
-          regionDataType: 1,
-        },
-      ],
-    };
-  }, 100); // high priority override
-
-  // Resize element to match ECG content dimensions
   element.style.width = `${ecgWidth}px`;
   element.style.height = `${ecgHeight}px`;
   renderingEngine.resize();
