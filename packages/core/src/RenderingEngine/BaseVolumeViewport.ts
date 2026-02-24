@@ -11,10 +11,11 @@ import {
   RENDERING_DEFAULTS,
   VIEWPORT_PRESETS,
 } from '../constants';
-import type { BlendModes, InterpolationType, OrientationAxis } from '../enums';
+import type { BlendModes, InterpolationType } from '../enums';
 import {
   Events,
   MetadataModules,
+  OrientationAxis,
   ViewportStatus,
   VOILUTFunctionType,
 } from '../enums';
@@ -2209,14 +2210,32 @@ abstract class BaseVolumeViewport extends Viewport {
         );
       }
     } else if (typeof orientation === 'string') {
-      if (orientation === 'acquisition') {
+      if (orientation === OrientationAxis.ACQUISITION) {
         return this._getAcquisitionPlaneOrientation();
-      } else if (
-        orientation === 'reformat' ||
-        (orientation as string).includes('_reformat')
-      ) {
+      } else if (orientation === OrientationAxis.REFORMAT) {
+        // Generic reformat - auto-detect closest orientation
         return getCameraVectors(this, {
           useViewportNormal: true,
+        });
+      } else if (
+        orientation === OrientationAxis.AXIAL_REFORMAT ||
+        orientation === OrientationAxis.SAGITTAL_REFORMAT ||
+        orientation === OrientationAxis.CORONAL_REFORMAT
+      ) {
+        // Extract base orientation from reformat type
+        let baseOrientation: OrientationAxis;
+        if (orientation === OrientationAxis.AXIAL_REFORMAT) {
+          baseOrientation = OrientationAxis.AXIAL;
+        } else if (orientation === OrientationAxis.SAGITTAL_REFORMAT) {
+          baseOrientation = OrientationAxis.SAGITTAL;
+        } else {
+          baseOrientation = OrientationAxis.CORONAL;
+        }
+
+        // Use viewport normal (for reformat) but specify base orientation (for reference)
+        return getCameraVectors(this, {
+          useViewportNormal: true,
+          orientation: baseOrientation,
         });
       } else if (MPR_CAMERA_VALUES[orientation]) {
         this.viewportProperties.orientation = orientation;
@@ -2227,7 +2246,9 @@ abstract class BaseVolumeViewport extends Viewport {
     throw new Error(
       `Invalid orientation: ${orientation}. Valid orientations are: ${Object.keys(
         MPR_CAMERA_VALUES
-      ).join(', ')}`
+      ).join(
+        ', '
+      )}, ${OrientationAxis.ACQUISITION}, ${OrientationAxis.REFORMAT}, ${OrientationAxis.AXIAL_REFORMAT}, ${OrientationAxis.SAGITTAL_REFORMAT}, ${OrientationAxis.CORONAL_REFORMAT}`
     );
   }
 
