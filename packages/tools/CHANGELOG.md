@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.4...v4.17.5) (2026-02-24)
+
+### Bug Fixes
+
+- move crosshairs implementation to absolute camera instead of delta ([#2627](https://github.com/cornerstonejs/cornerstone3D/issues/2627)) ([1798953](https://github.com/cornerstonejs/cornerstone3D/commit/1798953dfb8921f3acf73e47976367da22088e63))
+
+## [4.17.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.3...v4.17.4) (2026-02-23)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.17.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.2...v4.17.3) (2026-02-22)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.17.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.1...v4.17.2) (2026-02-20)
+
+### Bug Fixes
+
+- annotations text box limitations ([#2617](https://github.com/cornerstonejs/cornerstone3D/issues/2617)) ([83608ba](https://github.com/cornerstonejs/cornerstone3D/commit/83608ba8c5d48526c3c81b8c791f67b2c883478a))
+
+## [4.17.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.0...v4.17.1) (2026-02-20)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 # [4.17.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.16.4...v4.17.0) (2026-02-18)
 
 ### Features

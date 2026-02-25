@@ -24,6 +24,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
@@ -547,10 +548,11 @@ class ProbeTool extends AnnotationTool {
 
       const textLines = this.configuration.getTextLines(data, targetId);
       if (textLines) {
-        const textCanvasCoordinates = [
-          canvasCoordinates[0] + this.configuration.textCanvasOffset.x,
-          canvasCoordinates[1] + this.configuration.textCanvasOffset.y,
-        ];
+        const textCanvasCoordinates = getTextBoxCoordsCanvas(
+          [canvasCoordinates],
+          element,
+          textLines
+        );
 
         const textUID = '0';
         drawTextBoxSvg(
@@ -558,7 +560,7 @@ class ProbeTool extends AnnotationTool {
           annotationUID,
           textUID,
           textLines,
-          [textCanvasCoordinates[0], textCanvasCoordinates[1]],
+          textCanvasCoordinates,
           options
         );
       }
