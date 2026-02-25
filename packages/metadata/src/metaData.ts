@@ -128,8 +128,7 @@ export function typedProviderProvider(type: string, query: string, options) {
   if (!typedProvider) {
     return;
   }
-  const result = typedProvider(query, null, options);
-  return result;
+  return typedProvider(query, null, options);
 }
 
 /**

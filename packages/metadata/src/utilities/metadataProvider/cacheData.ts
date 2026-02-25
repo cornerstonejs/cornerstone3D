@@ -62,8 +62,8 @@ export function setCacheData(type: string, query: string, value: unknown) {
 export function addCacheForType(type: string, options?) {
   addTypedProvider(type, cacheDataForType(type), {
     priority: 50_000,
-    clear: clearCacheData,
-    clearQuery: clearTypedCacheData.bind(null, MetadataModules.INSTANCE_ORIG),
+    clear: clearTypedCacheData.bind(null, type) as () => void,
+    clearQuery: clearTypedCacheData.bind(null, type),
     ...options,
   });
 }

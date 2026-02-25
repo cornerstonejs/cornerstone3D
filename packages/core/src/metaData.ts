@@ -2,7 +2,9 @@
  * @deprecated Import from `@cornerstonejs/metadata` instead.
  * This module re-exports the metadata provider chain from `@cornerstonejs/metadata`.
  */
-export {
+import { metaData } from '@cornerstonejs/metadata';
+
+export const {
   addProvider,
   removeProvider,
   removeAllProviders,
@@ -11,4 +13,4 @@ export {
   getNormalized,
   toUpperCamelTag,
   toLowerCamelTag,
-} from '@cornerstonejs/metadata/metaData';
+} = metaData;

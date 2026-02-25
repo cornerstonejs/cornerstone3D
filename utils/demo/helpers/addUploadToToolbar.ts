@@ -1,5 +1,6 @@
 import { getRenderingEngine, imageLoader, metaData } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 
 import createElement, { configElement } from './createElement';
 import addButtonToToolbar from './addButtonToToolbar';
@@ -60,10 +61,20 @@ export let loadImageListener = (_viewportInfo) => {
   console.warn('Loaded', imageIds.length, 'images');
 };
 
-export function onUpload(files) {
-  imageIds = [...files].map((file) =>
+export async function onUpload(files) {
+  const filesArray = [...files];
+  imageIds = filesArray.map((file) =>
     dicomImageLoader.wadouri.fileManager.add(file)
   );
+
+  // Parse binary DICOM and cache metadata in INSTANCE_ORIG
+  await Promise.all(
+    filesArray.map(async (file, index) => {
+      const arrayBuffer = await file.arrayBuffer();
+      await metadataUtilities.addBinaryDicomInstance(imageIds[index], arrayBuffer);
+    })
+  );
+
   loadAndViewImages(imageIds);
 }
 
@@ -126,7 +137,7 @@ export function loadAndViewImagesSingle(imageIds, viewportInfo?) {
 }
 
 // this function gets called once the user drops the file onto the div
-export function handleFileSelect(evt) {
+export async function handleFileSelect(evt) {
   evt.stopPropagation();
   evt.preventDefault();
 
@@ -136,6 +147,15 @@ export function handleFileSelect(evt) {
   imageIds = files.map((file) =>
     dicomImageLoader.wadouri.fileManager.add(file)
   );
+
+  // Parse binary DICOM and cache metadata in INSTANCE_ORIG
+  await Promise.all(
+    files.map(async (file, index) => {
+      const arrayBuffer = await file.arrayBuffer();
+      await metadataUtilities.addBinaryDicomInstance(imageIds[index], arrayBuffer);
+    })
+  );
+
   loadAndViewImages(imageIds);
 }
 

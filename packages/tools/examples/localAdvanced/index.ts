@@ -175,7 +175,9 @@ addDropdownToToolbar({
     if (!data?.wadoRsRoot) {
       return;
     }
-    setImageIds(await createImageIdsAndCacheMetaData(data));
+    setImageIds(
+      await createImageIdsAndCacheMetaData({ ...data, useLegacyWadoRs: false })
+    );
     loadAndViewImages(imageIds);
   },
 });
