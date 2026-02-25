@@ -15,6 +15,6 @@ onlyBuiltDependencies:
   - core-js-pure
   - nx
   - protobufjs
-ignoredBuiltDependencies:
   - puppeteer
+ignoredBuiltDependencies:
   - unrs-resolver
