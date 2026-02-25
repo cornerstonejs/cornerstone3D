@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.5...v4.18.0) (2026-02-25)
+
+### Features
+
+- **core:** add ECGViewport for DICOM waveform rendering ([#2621](https://github.com/cornerstonejs/cornerstone3D/issues/2621)) ([7c91439](https://github.com/cornerstonejs/cornerstone3D/commit/7c914397b228b380d0f236f3f940170599fceab3))
+
 ## [4.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.4...v4.17.5) (2026-02-24)
 
 ### Bug Fixes
