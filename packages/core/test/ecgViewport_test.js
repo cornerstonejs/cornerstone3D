@@ -20,7 +20,7 @@ describe('ECGViewport', () => {
     renderingEngine = testEnv.renderingEngine;
     element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      type: ViewportType.ECG,
+      viewportType: ViewportType.ECG,
     });
   });
 
