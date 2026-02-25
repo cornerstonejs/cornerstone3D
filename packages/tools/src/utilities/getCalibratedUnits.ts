@@ -110,24 +110,32 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
           ))
     );
 
-    if (region) {
+    if (
+      region &&
+      region.physicalUnitsXDirection === region.physicalUnitsYDirection
+    ) {
       const physicalDeltaX = Math.abs(region.physicalDeltaX);
       const physicalDeltaY = Math.abs(region.physicalDeltaY);
       scale = 1 / physicalDeltaX;
       scaleY = 1 / physicalDeltaY;
-      if (region.physicalUnitsXDirection === region.physicalUnitsYDirection) {
-        calibrationType = 'US Region';
-        unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
-        areaUnit = unit + SQUARE;
-      } else {
-        calibrationType = 'ECG Region';
-        unit =
-          UNIT_MAPPING[region.physicalUnitsXDirection] ||
-          UNIT_MAPPING[region.physicalUnitsYDirection] ||
-          'unknown';
-        areaUnit =
-          (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
-      }
+
+      // 1 to 1 aspect ratio, we use just one of them
+      calibrationType = 'US Region';
+      unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
+      areaUnit = unit + SQUARE;
+    } else if (region && region.physicalUnitsYDirection === -1) {
+      const physicalDeltaX = Math.abs(region.physicalDeltaX);
+      const physicalDeltaY = Math.abs(region.physicalDeltaY);
+      scale = 1 / physicalDeltaX;
+      scaleY = 1 / physicalDeltaY;
+
+      calibrationType = 'ECG Region';
+      unit =
+        UNIT_MAPPING[region.physicalUnitsXDirection] ||
+        UNIT_MAPPING[region.physicalUnitsYDirection] ||
+        'unknown';
+      areaUnit =
+        (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
     }
   } else if (calibration.scale) {
     scale = calibration.scale;
