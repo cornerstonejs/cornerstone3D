@@ -2,16 +2,19 @@ import MeasurementReport from './MeasurementReport';
 import { utilities } from 'dcmjs';
 import { vec3 } from 'gl-matrix';
 import BaseAdapter3D from './BaseAdapter3D';
-import { toScoords } from '../helpers';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
+import { toScoords, toArray } from '../helpers';
+import ControlPointPolyline from './ControlPointPolyline';
+import { SPLINE_TYPE_CODE } from './constants';
 
-const { Polyline: TID300Polyline } = utilities.TID300;
-
+/** Contour/polyline SR logic is shared by LivewireContour, registered as a subtype. */
 class PlanarFreehandROI extends BaseAdapter3D {
   public static closedContourThreshold = 1e-5;
 
   static {
-    this.init('PlanarFreehandROI', TID300Polyline);
+    this.init('PlanarFreehandROI', ControlPointPolyline);
+    PlanarFreehandROI.registerSubType(PlanarFreehandROI, 'LivewireContour');
+    PlanarFreehandROI.registerSubType(PlanarFreehandROI, 'SplineROI');
   }
 
   static getMeasurementData(
@@ -46,17 +49,29 @@ class PlanarFreehandROI extends BaseAdapter3D {
       isOpenContour = false;
     }
 
-    const points = [];
-
-    if (isOpenContour) {
-      points.push(worldCoords[0], worldCoords[worldCoords.length - 1]);
+    // Use decoded control points when present (CONTROL_POINTS_CODE SCOORD); otherwise fallback for open contours.
+    let points = state.annotation.data.handles?.points ?? [];
+    if (isOpenContour && points.length === 0) {
+      points = [worldCoords[0], worldCoords[worldCoords.length - 1]];
     }
+
     const referencedSOPInstanceUID = state.sopInstanceUid;
     const allNUMGroups = extractAllNUMGroups(
       MeasurementGroup,
       referencedSOPInstanceUID
     );
     const measurementNUMGroups = allNUMGroups[referencedSOPInstanceUID] || {};
+    const SPLINE_TYPE = {
+      CodingSchemeDesignator: SPLINE_TYPE_CODE.schemeDesignator,
+      CodeValue: SPLINE_TYPE_CODE.value,
+    };
+    const numSeq = NUMGroup
+      ? toArray((NUMGroup as Record<string, unknown>).ContentSequence)
+      : [];
+    const splineTypeItem = numSeq.find((item) =>
+      MeasurementReport.codeValueMatch(item, SPLINE_TYPE)
+    );
+
     state.annotation.data = {
       ...state.annotation.data,
       contour: { polyline: worldCoords, closed: !isOpenContour },
@@ -65,6 +80,9 @@ class PlanarFreehandROI extends BaseAdapter3D {
         points,
       },
       frameNumber: ReferencedFrameNumber,
+      ...(splineTypeItem && {
+        spline: { type: splineTypeItem.TextValue },
+      }),
     };
 
     if (referencedImageId) {
@@ -81,6 +99,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
   static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
     const { data, finding, findingSites, metadata } = tool;
 
+    const { handles } = data;
     const { polyline, closed } = data.contour;
     const isOpenContour = closed !== true;
 
@@ -98,6 +117,9 @@ class PlanarFreehandROI extends BaseAdapter3D {
       points.push(firstPoint);
     }
 
+    const controlPoints =
+      handles?.points?.length && toScoords(scoordProps, handles.points);
+
     const {
       area,
       areaUnit,
@@ -112,6 +134,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
     return {
       /** From cachedStats */
       points,
+      controlPoints,
       area,
       areaUnit,
       perimeter: perimeter ?? length,
@@ -120,6 +143,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
       max,
       stdDev,
       /** Other */
+      splineType: data.spline?.type,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,
       findingSites: findingSites || [],
