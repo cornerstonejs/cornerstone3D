@@ -607,7 +607,7 @@ class ProbeTool extends AnnotationTool {
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const modality = metadata.Modality;
+      const modality = metadata?.Modality;
       let ijk = transformWorldToIndex(imageData, worldPos);
 
       ijk = vec3.round(ijk, ijk);
@@ -615,11 +615,9 @@ class ProbeTool extends AnnotationTool {
       if (csUtils.indexWithinDimensions(ijk, dimensions)) {
         this.isHandleOutsideImage = false;
 
-        let value = voxelManager.getAtIJKPoint(ijk);
-
         // Index[2] for stackViewport is always 0, but for visualization
-        // we reset it to be imageId index
-        if (targetId.startsWith('imageId:')) {
+        // we reset it to be imageId index (skip for ECG; channel is already in ijk[2])
+        if (targetId.startsWith('imageId:') && modality !== 'ECG') {
           const imageId = targetId.split('imageId:')[1];
           const imageURI = csUtils.imageIdToURI(imageId);
           const viewports = csUtils.getViewportsWithImageURI(imageURI);
@@ -629,17 +627,23 @@ class ProbeTool extends AnnotationTool {
           ijk[2] = viewport.getCurrentImageIdIndex();
         }
 
-        let modalityUnit;
+        let value: number | number[];
+        let modalityUnit: string | string[];
 
-        if (modality === 'US') {
+        if (modality === 'ECG') {
           const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
             ijk,
           ]);
-
+          value = calibratedResults.values;
+          modalityUnit = calibratedResults.units;
+        } else if (modality === 'US') {
+          value = voxelManager?.getAtIJKPoint(ijk);
+          const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
+            ijk,
+          ]);
           const hasEnhancedRegionValues = calibratedResults.values.every(
-            (value) => value !== null
+            (v) => v !== null
           );
-
           value = (
             hasEnhancedRegionValues ? calibratedResults.values : value
           ) as number;
@@ -647,6 +651,7 @@ class ProbeTool extends AnnotationTool {
             ? calibratedResults.units
             : 'raw';
         } else {
+          value = voxelManager?.getAtIJKPoint(ijk);
           modalityUnit = getPixelValueUnits(
             modality,
             annotation.metadata.referencedImageId,
