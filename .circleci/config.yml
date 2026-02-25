@@ -15,8 +15,10 @@ commands:
       - run:
           name: Install pnpm
           command: |
-            corepack enable
-            corepack prepare pnpm@10 --activate
+            # Use standalone installer to avoid corepack writing to /usr/local/bin (EACCES in CI)
+            curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION=10 sh -
+            echo 'export PNPM_HOME="$HOME/.local/share/pnpm"' >> $BASH_ENV
+            echo 'export PATH="$PNPM_HOME:$PATH"' >> $BASH_ENV
 
 jobs:
   CHECKOUT:

@@ -9,3 +9,12 @@ packages:
   - packages/labelmap-interpolation
   - addOns/externals/*
   - addOns/local/*
+onlyBuiltDependencies:
+  - canvas
+  - core-js
+  - core-js-pure
+  - nx
+  - protobufjs
+ignoredBuiltDependencies:
+  - puppeteer
+  - unrs-resolver

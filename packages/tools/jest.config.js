@@ -5,6 +5,7 @@ const path = require('path');
 module.exports = {
   ...base,
   displayName: 'tools',
+  setupFiles: ['jest-canvas-mock'],
   testMatch: [...base.testMatch, '<rootDir>/src/**/*.spec.ts'],
   moduleNameMapper: {
     '^@cornerstonejs/(.*)$': path.resolve(__dirname, '../$1/src'),
