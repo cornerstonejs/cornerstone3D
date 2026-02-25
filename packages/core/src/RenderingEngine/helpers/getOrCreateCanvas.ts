@@ -85,8 +85,8 @@ export type ViewportCanvasExtent =
  *
  * @param canvas - The on-screen canvas to update.
  * @param extentOrOffscreen - Optional. When an HTMLCanvasElement, use its
- *   width/height as the target extent. When { width, height }, use that
- *   (e.g. viewport sWidth/sHeight when the offscreen canvas is shared).
+ *   width/height as the target extent. When an object with width and height
+ *   (e.g. viewport sWidth/sHeight when the offscreen canvas is shared), use that.
  * @returns undefined when no extent/offscreen (element-rect update);
  *   true when canvas was updated (rendering/redraw needed);
  *   false when canvas already matched the extent.
@@ -95,40 +95,38 @@ export function updateCanvasSizeAndAspectRatio(
   canvas: HTMLCanvasElement,
   extentOrOffscreen?: ViewportCanvasExtent
 ): boolean | undefined {
-  let width: number;
-  let height: number;
-
   if (extentOrOffscreen === undefined) {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    width = Math.round(rect.width * devicePixelRatio);
-    height = Math.round(rect.height * devicePixelRatio);
-    if (width > 0 && height > 0) {
-      canvas.width = width;
-      canvas.height = height;
-      canvas.style.aspectRatio = `${width} / ${height}`;
+    const w = Math.round(rect.width * devicePixelRatio);
+    const h = Math.round(rect.height * devicePixelRatio);
+    if (w > 0 && h > 0) {
+      canvas.width = w;
+      canvas.height = h;
+      canvas.style.aspectRatio = `${w} / ${h}`;
     }
     return undefined;
   }
 
-  if (extentOrOffscreen instanceof HTMLCanvasElement) {
-    width = extentOrOffscreen.width;
-    height = extentOrOffscreen.height;
-  } else {
-    width = extentOrOffscreen.width;
-    height = extentOrOffscreen.height;
-  }
+  const targetW =
+    extentOrOffscreen instanceof HTMLCanvasElement
+      ? extentOrOffscreen.width
+      : extentOrOffscreen.width;
+  const targetH =
+    extentOrOffscreen instanceof HTMLCanvasElement
+      ? extentOrOffscreen.height
+      : extentOrOffscreen.height;
 
-  if (width < 1 || height < 1) {
+  if (targetW < 1 || targetH < 1) {
     return false;
   }
 
-  const needsUpdate = canvas.width !== width || canvas.height !== height;
+  const needsUpdate = canvas.width !== targetW || canvas.height !== targetH;
 
   if (needsUpdate) {
-    canvas.width = width;
-    canvas.height = height;
-    canvas.style.aspectRatio = `${width} / ${height}`;
+    canvas.width = targetW;
+    canvas.height = targetH;
+    canvas.style.aspectRatio = `${targetW} / ${targetH}`;
     return true;
   }
 
