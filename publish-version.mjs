@@ -4,6 +4,18 @@ import { glob } from 'glob';
 import path from 'path';
 import os from 'os';
 
+// Publishable packages (matches pnpm-workspace.yaml minus addOns and docs)
+const PUBLISHABLE_PACKAGES = [
+  'packages/core',
+  'packages/tools',
+  'packages/adapters',
+  'packages/nifti-volume-loader',
+  'packages/dicomImageLoader',
+  'packages/ai',
+  'packages/labelmap-interpolation',
+  'packages/polymorphic-segmentation',
+];
+
 async function run() {
   const { stdout: branchName } = await execa('git', [
     'rev-parse',
@@ -11,20 +23,14 @@ async function run() {
     'HEAD',
   ]);
   console.log('Current branch:', branchName);
-  const lernaJson = JSON.parse(await fs.readFile('lerna.json', 'utf-8'));
 
   // read the current version from ./version.txt
-  const nextVersion = await fs.readFile('./version.txt', 'utf-8');
-  const packages = lernaJson.packages;
-
-  if (!packages) {
-    throw new Error('Could not find packages in lerna.json');
-  }
+  const nextVersion = (await fs.readFile('./version.txt', 'utf-8')).trim();
+  const packages = [...PUBLISHABLE_PACKAGES];
 
   // Get the npm package names for the packages we are publishing
   const npmPackageNames = [];
   for (const packagePathPattern of packages) {
-    // Use glob to find all matching directories
     const matchingDirectories = glob.sync(packagePathPattern);
 
     for (const packageDirectory of matchingDirectories) {
@@ -39,14 +45,17 @@ async function run() {
   // add packages/docs so that we can update the peer dependencies
   packages.push('packages/docs');
 
-  // for each package's package.json file, see if there is a peerdependency,
-  // and for each peer dependency see if it includes a package that
-  // starts with @ohif/, if so update the version to the
-  // next version since lerna will not handle this for us
+  // Update version in root package.json
+  const rootPkgPath = 'package.json';
+  const rootPkg = JSON.parse(await fs.readFile(rootPkgPath, 'utf-8'));
+  rootPkg.version = nextVersion;
+  await fs.writeFile(rootPkgPath, JSON.stringify(rootPkg, null, 2) + '\n');
+  await execa('npx', ['prettier', '--write', rootPkgPath]);
+  console.log(`Updated root package.json version to ${nextVersion}`);
 
-  // Iterate over each package path pattern
+  // For each package's package.json file, update the version and
+  // cross-references to other @cornerstonejs packages
   for (const packagePathPattern of packages) {
-    // Use glob to find all matching directories
     const matchingDirectories = glob.sync(packagePathPattern);
 
     for (const packageDirectory of matchingDirectories) {
@@ -57,7 +66,12 @@ async function run() {
           await fs.readFile(packageJsonPath, 'utf-8')
         );
 
-        // Iterate over peerDependencies, dependencies, and devDependencies
+        // Update the package version itself (for publishable packages)
+        if (PUBLISHABLE_PACKAGES.includes(packagePathPattern)) {
+          packageJson.version = nextVersion;
+        }
+
+        // Update cross-references in peerDependencies, dependencies, and devDependencies
         for (const dependencyType of [
           'peerDependencies',
           'dependencies',
@@ -107,67 +121,50 @@ async function run() {
   await unlinkFile(localNpmrc);
   await unlinkFile(repoNpmrc);
 
-  // Todo: Do we really need to run the build command here?
-  // Maybe we need to hook the netlify deploy preview
-  // await execa('yarn', ['run', 'build']);
-
-  console.log('Setting the version using lerna...');
-
-  // Stage all changes (version.json, peer dependency updates, .npmrc deletion)
-  // before lerna runs so they're included in lerna's commit
-  await execa('git', ['add', '-A']);
-
-  // Run lerna version without pushing
-  // lerna will update package.json files and create a commit
-  await execa('npx', [
-    'lerna',
-    'version',
-    nextVersion,
-    '--yes',
-    '--exact',
-    '--force-publish',
-    '--message',
-    `chore(version): Update package versions to ${nextVersion} [skip ci]`,
-    '--conventional-commits',
-    '--create-release',
-    'github',
-    '--no-push',
-  ]);
+  console.log('Setting the version...');
 
   // Generate version files for each package
   for (const pkg of packages) {
     await execa('node', ['./scripts/generate-version.js', pkg]);
   }
 
-  // Stage any files that need to be included in the amended commit. Lerna commits the package.json
-  // files it modifies, but may not include other files that were staged before it ran (like
-  // version.json or .npmrc deletion) or generated version files. Since we're amending the commit to
-  // combine all version-related changes into a single commit, we need to ensure these files are included.
+  // Stage all changes
   await execa('git', ['add', '-A']);
 
-  // Amend the last commit to include all changes. The commit message is already set by lerna
-  // and is the same, so we use --no-edit to keep the existing message.
-  // This combines the version.json commit and package version updates into one commit
-  await execa('git', ['commit', '--amend', '--no-edit']);
+  // Create the version commit
+  const commitMessage = `chore(version): Update package versions to ${nextVersion} [skip ci]`;
+  await execa('git', ['commit', '-m', commitMessage]);
 
-  // Lerna created a local tag (e.g. v4.16.0) pointing to the pre-amend commit.
-  // Move the tag to the amended commit so the release tag matches what we push.
+  // Create the git tag
   const tagName = `v${nextVersion}`;
-  await execa('git', ['tag', '-f', tagName]);
+  await execa('git', ['tag', tagName]);
 
   console.log('Pushing changes...');
-
-  // Note: Force push is not necessary here because:
-  // 1. Lerna is called with --no-push, so the commit created by lerna is never pushed to remote
-  // 2. We amend the commit locally before pushing, so it's a new commit from the remote's perspective
-  // 3. This script runs on a single branch locally, so there's no history rewrite on the remote
-  // A regular push is sufficient since we're pushing a commit that doesn't exist on the remote yet
   await execa('git', ['push', 'origin', branchName]);
 
   console.log('Pushing tag...');
   await execa('git', ['push', 'origin', tagName]);
 
-  console.log('Version set using lerna');
+  // Create GitHub release
+  console.log('Creating GitHub release...');
+  try {
+    await execa('gh', [
+      'release',
+      'create',
+      tagName,
+      '--generate-notes',
+      '--title',
+      tagName,
+    ]);
+    console.log(`GitHub release ${tagName} created`);
+  } catch (err) {
+    console.log(
+      'Could not create GitHub release (gh CLI may not be available):',
+      err.message
+    );
+  }
+
+  console.log('Version set successfully');
 }
 
 async function unlinkFile(filePath) {

@@ -7,26 +7,13 @@ async function run() {
     'HEAD',
   ]);
 
-  if (branchName === 'main') {
-    await execa('npx', [
-      'lerna',
-      'publish',
-      'from-package',
-      '--no-verify-access',
-      '--yes',
-    ]);
-  } else {
-    // publish beta versions
-    await execa('npx', [
-      'lerna',
-      'publish',
-      'from-package',
-      '--no-verify-access',
-      '--yes',
-      '--dist-tag',
-      'beta',
-    ]);
+  const args = ['publish', '-r', '--no-git-checks', '--access', 'public'];
+
+  if (branchName !== 'main') {
+    args.push('--tag', 'beta');
   }
+
+  await execa('pnpm', args, { stdio: 'inherit' });
 
   console.log('Finished');
 }

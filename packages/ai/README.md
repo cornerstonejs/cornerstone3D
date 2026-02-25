@@ -33,7 +33,7 @@ This will copy all the necessary WASM files from the ONNX Runtime Web package to
 To see the package in action with the Segment Anything Model, use the following command:
 
 ```bash
-yarn run example segmentAnythingClientSide
+pnpm run example segmentAnythingClientSide
 ```
 
 This will load the SAM model in the browser and allow you to perform segmentation tasks on images.

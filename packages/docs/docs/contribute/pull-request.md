@@ -17,7 +17,7 @@ if you could provide an example that demonstrates the bug.
 Fork the repository, make your change and submit a pull request. Before submitting the pull request:
 
 - make sure that your changes are well tested and that you have updated the project's documentation.
-- make sure your tests (`yarn run test`) and build (`yarn run build`) are properly working locally on your machine and make sure they all pass
+- make sure your tests (`pnpm run test`) and build (`pnpm run build`) are properly working locally on your machine and make sure they all pass
 
 ## Any guidance on submitting changes?
 
@@ -32,9 +32,8 @@ While we do appreciate code contributions, triaging and integrating contributed 
 ## My changes require updating dependencies in the package.json files - what is the process for doing this?
 
 In general you will typically not be updating the various `package.json` files.
-But for the case when you do, you will have to also update the various Cornerstone3D lock files
-and as such you will have to do both a `yarn` and `bun` `install` without
-the `--frozen-lockfile` flag.
+But for the case when you do, you will have to also update the `pnpm-lock.yaml` lock file
+by running `pnpm install` without the `--frozen-lockfile` flag.
 
 :::danger
 Updating the `package.json` files must be done with care so as to avoid incorporating
@@ -46,11 +45,9 @@ committing and pushing your code:
 
 1. Do your due diligence researching the added packages and/or versions for vulnerabilities.
 2. Update the `package.json` files.
-3. Execute `yarn run install:update-lockfile`. This updates both the `yarn.lock` and
-   the `bun.lock` files.
-4. Execute `yarn run audit` for a last security check. This runs both `yarn audit` and
-   `bun audit`.
-5. Include both the `yarn.lock` and `bun.lock` files as part of your commit.
+3. Execute `pnpm install` to update the `pnpm-lock.yaml` file.
+4. Execute `pnpm audit` for a last security check.
+5. Include the `pnpm-lock.yaml` file as part of your commit.
 
 If any of your research or auditing for vulnerabilities find HIGH risk vulnerabilities
 do NOT commit or push your changes! Low and moderate risk vulnerabilities are acceptable.

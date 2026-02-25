@@ -22,37 +22,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.18.1'
-          cache: 'npm'
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.23
+          node-version: '24'
+          cache: 'pnpm'
 
       - name: Install root dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: reset nx cache
         run: rm -rf .nx/cache
 
       - name: reset nx cache
-        run: bun nx reset
+        run: pnpm exec nx reset
 
       - name: Build packages in ESM format
-        run: bun run build:esm
+        run: pnpm run build:esm
         env:
           NX_CACHE_DIRECTORY: ${{ runner.temp }}/nx-cache
           NX_DAEMON: false
 
       - name: Install docs dependencies
-        run: cd packages/docs && bun install
+        run: cd packages/docs && pnpm install
 
       - name: Build Docusaurus documentation
-        run: cd packages/docs && bun run build:ci
+        run: cd packages/docs && pnpm run build:ci
         env:
           NODE_OPTIONS: --max_old_space_size=32384
 

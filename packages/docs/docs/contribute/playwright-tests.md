@@ -151,24 +151,24 @@ Our simulate drag utility can simulate a drag on any element, and avoid going ou
 After you have wrote your tests, you can run them by using the following command:
 
 ```bash
-yarn test:e2e:ci
+pnpm run test:e2e:ci
 ```
 
 If you want to use headed mode, you can use the following command:
 
 ```bash
-yarn test:e2e:headed
+pnpm run test:e2e:headed
 ```
 
 You will see the test results in your terminal, if you want an indepth report, you can use the following command:
 
 ```bash
-yarn playwright show-report tests/playwright-report
+pnpm exec playwright show-report tests/playwright-report
 ```
 
 ## Serving the examples manually for development
 
-By default, when you run the tests, it will call the `bun build-and-serve-static-examples` command to serve the examples first, then run the tests, if you would like to serve the examples manually, you can use the same command. The examples will be available at `http://localhost:3000`. This could speed up your development process since playwright will skip the build and serve step and use the existing server on port 3000.
+By default, when you run the tests, it will call the `pnpm run build-and-serve-static-examples` command to serve the examples first, then run the tests, if you would like to serve the examples manually, you can use the same command. The examples will be available at `http://localhost:3000`. This could speed up your development process since playwright will skip the build and serve step and use the existing server on port 3000.
 
 ## Playwright VSCode Extension and Recording Tests
 

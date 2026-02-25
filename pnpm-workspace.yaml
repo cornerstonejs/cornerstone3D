@@ -1,0 +1,11 @@
+packages:
+  - packages/adapters
+  - packages/core
+  - packages/dicomImageLoader
+  - packages/nifti-volume-loader
+  - packages/polymorphic-segmentation
+  - packages/tools
+  - packages/ai
+  - packages/labelmap-interpolation
+  - addOns/externals/*
+  - addOns/local/*

@@ -5,20 +5,18 @@ defaults: &defaults
   working_directory: ~/repo
   # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: cimg/node:20.18.1-browsers
+    - image: cimg/node:24.0-browsers
       environment:
         TERM: xterm # Enable colors in term
 
 commands:
-  install_bun:
+  install_pnpm:
     steps:
       - run:
-          name: Install Bun
+          name: Install pnpm
           command: |
-            curl -fsSL https://bun.sh/install | bash -s "bun-v1.2.23"
-            echo 'export BUN_INSTALL="$HOME/.bun"' >> $BASH_ENV
-            echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $BASH_ENV
-            source $BASH_ENV
+            corepack enable
+            corepack prepare pnpm@10 --activate
 
 jobs:
   CHECKOUT:
@@ -26,8 +24,8 @@ jobs:
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/repo/.npmrc
-      - install_bun
-      # SECURITY AUDIT - only when bun.lock has changed
+      - install_pnpm
+      # SECURITY AUDIT - only when pnpm-lock.yaml has changed
       - run:
           name: 'Security Audit - High Risk Vulnerabilities'
           command: |
@@ -38,27 +36,14 @@ jobs:
               exit 0
             fi
             CHANGED_FILES=$(git diff --name-only origin/main...HEAD 2>/dev/null || echo "")
-            if ! echo "$CHANGED_FILES" | grep -qx 'bun.lock'; then
-              echo "⏭️ bun.lock unchanged - skipping security audit."
+            if ! echo "$CHANGED_FILES" | grep -qx 'pnpm-lock.yaml'; then
+              echo "⏭️ pnpm-lock.yaml unchanged - skipping security audit."
               exit 0
             fi
-            echo "🔍 bun.lock changed - running bun audit for security vulnerabilities..."
+            echo "🔍 pnpm-lock.yaml changed - running pnpm audit for security vulnerabilities..."
             echo "Checking for HIGH-RISK vulnerabilities..."
 
-            # Define ignored vulnerabilities with comments
-            IGNORED_VULNS=(
-              "GHSA-5j98-mcp5-4vw2"  # CVE-2025-64756 - CS3D's use of glob is strictly for building and CI/CD purposes
-              "GHSA-3ppc-4f35-3m26"  # CVE-2026-26996 - CS3D's use of minimatch via glob is safe because it does NOT use the CLI
-                                     # CVE-2026-26996 - CS3D's other uses of minimatch are strictly for building and CI/CD purposes
-            )
-
-            # Build ignore flags
-            IGNORE_FLAGS=""
-            for vuln in "${IGNORED_VULNS[@]}"; do
-              IGNORE_FLAGS="$IGNORE_FLAGS --ignore=$vuln"
-            done
-
-            if bun audit $IGNORE_FLAGS --audit-level high; then
+            if pnpm audit --audit-level high; then
               echo "✅ No high-risk vulnerabilities found"
               echo "🎉 Security audit passed!"
             else
@@ -67,21 +52,21 @@ jobs:
               echo "======================================"
               echo ""
               echo "🔧 To fix these issues:"
-              echo "  1. Run: bun audit"
+              echo "  1. Run: pnpm audit"
               echo "  2. Review the vulnerability details"
               echo "  3. Update affected packages to secure versions"
               echo "  4. Test your changes"
-              echo "  5. Re-run: bun audit --audit-level high"
+              echo "  5. Re-run: pnpm audit --audit-level high"
               echo ""
               echo "📋 Full audit report:"
 
-              bun audit $IGNORE_FLAGS --audit-level low || true
+              pnpm audit || true
 
               echo ""
               echo "❌ This build cannot proceed until high-risk vulnerabilities are resolved."
               exit 1
             fi
-      - run: bun install
+      - run: pnpm install
       - persist_to_workspace:
           root: ~/repo
           paths:
@@ -92,11 +77,11 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
-      - install_bun
+      - install_pnpm
       - run:
           name: 'Perform the versioning before build'
-          command: bun ./version.mjs
-      - run: bun run build
+          command: node ./version.mjs
+      - run: pnpm run build
       - persist_to_workspace:
           root: ~/repo
           paths:
@@ -115,7 +100,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
-      - install_bun
+      - install_pnpm
       - run:
           name: Avoid hosts unknown for github
           command:
@@ -130,14 +115,14 @@ jobs:
       - run:
           name: publish package versions
           command: |
-            bun ./publish-version.mjs
+            node ./publish-version.mjs
       - run:
           name: Again set the NPM registry (was deleted in the version script)
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
       - run:
           name: publish package dist
           command: |
-            bun ./publish-package.mjs
+            node ./publish-package.mjs
 
 workflows:
   version: 2
@@ -171,4 +156,3 @@ workflows:
       - NPM_PUBLISH:
           requires:
             - BUILD
-# VS Code Extension Version: 1.5.1

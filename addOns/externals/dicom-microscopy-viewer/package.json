@@ -5,8 +5,7 @@
   "version": "2.1.10",
   "license": "MIT",
   "engines": {
-    "node": ">=20",
-    "yarn": ">=1.19.1"
+    "node": ">=24"
   },
   "dependencies": {
     "dicom-microscopy-viewer": "0.48.6"

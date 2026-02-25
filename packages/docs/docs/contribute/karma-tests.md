@@ -13,7 +13,7 @@ with the expected output.
 
 ### Running Karma Tests Locally
 
-You can run `yarn run test` to run all tests locally.
+You can run `pnpm run test` to run all tests locally.
 By default, `karma.conf.js` will run the tests in a headless chrome browser to make
 sure our tests can run in any servers. Therefore, you cannot visualize it by default. In order
 to run the tests and visually inspect the results, you can run the tests by changing the

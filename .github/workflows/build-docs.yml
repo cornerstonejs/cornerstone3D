@@ -23,15 +23,16 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: pnpm/action-setup@v4
         with:
-          bun-version: 1.2.23
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20 # Or your desired Node version
+          node-version: '24'
+          cache: 'pnpm'
 
       - name: Install root dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       # Removed Playwright tests and coverage generation steps
 
@@ -83,7 +84,7 @@ jobs:
           echo "Artifact downloaded successfully."
 
       - name: Install docs dependencies
-        run: cd packages/docs && bun install
+        run: cd packages/docs && pnpm install
 
       - name: Copy coverage to docs static directory
         run: |
@@ -100,7 +101,7 @@ jobs:
           cp ./coverage-artifact/sorter.js packages/docs/static/
 
       - name: Build docs
-        run: cd packages/docs && bun run build:docs
+        run: cd packages/docs && pnpm run build:docs
         # This runs
         # 1. prepare-markdown-files.js - which copies markdown files to /docs/llm directory
         #    making them available at cornerstonejs.org/docs/llm/[folder]/[filename.md]
@@ -110,7 +111,7 @@ jobs:
         #    the concatenated content of all documentation files
 
       - name: Install Netlify CLI
-        run: bun add -g netlify-cli
+        run: pnpm add -g netlify-cli
 
       - name: Deploy to Netlify
         run: |

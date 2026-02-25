@@ -10,9 +10,9 @@ async function run() {
   ]);
   console.log('Current branch:', branchName);
 
-  // read the current version from lerna.json
-  const lernaJson = JSON.parse(await fs.readFile('lerna.json', 'utf-8'));
-  const currentVersion = lernaJson.version;
+  // read the current version from root package.json
+  const rootPkg = JSON.parse(await fs.readFile('package.json', 'utf-8'));
+  const currentVersion = rootPkg.version;
 
   console.log('Current version:', currentVersion);
 

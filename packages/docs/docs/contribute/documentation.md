@@ -20,7 +20,7 @@ To run documentation you need to execute
 ```sh
 cd packages/docs/
 
-yarn run start
+pnpm run start
 ```
 
 This will open up port `3000` and start the documentation server. Then you can
@@ -29,8 +29,8 @@ visit `http://localhost:3000` to see the documentation page.
 :::note Important
 Running the documentation server for the first time will probably fail complaining about the `example.md`
 file not being found. This is because the `example.md` file is created at build time
-and is not available in the repository. To fix this, for the first time, you can run `yarn docs:dev` to build and
-to run the documentation server. After the first time, You can just run `yarn docs`
+and is not available in the repository. To fix this, for the first time, you can run `pnpm run docs:dev` to build and
+to run the documentation server. After the first time, You can just run `pnpm run docs`
 to run the documentation server.
 :::
 
