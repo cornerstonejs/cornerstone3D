@@ -651,6 +651,7 @@ class ProbeTool extends AnnotationTool {
             ? calibratedResults.units
             : 'raw';
         } else {
+          value = voxelManager?.getAtIJKPoint(ijk);
           modalityUnit = getPixelValueUnits(
             modality,
             annotation.metadata.referencedImageId,
