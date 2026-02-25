@@ -1,3 +1,4 @@
+import type { WADORSMetaDataElement } from '../../../types';
 import getValue from './getValue';
 import getNumberValue from './getNumberValue';
 import getSequenceItems from './getSequenceItems';
@@ -191,7 +192,7 @@ function makeRetrieveBulkData(
 
     // Method 2: InlineBinary (base64)
     if (waveformData.InlineBinary) {
-      const raw = base64ToUint8Array(waveformData.InlineBinary);
+      const raw = base64ToUint8Array(waveformData.InlineBinary as string);
       return convertBuffer(
         raw,
         numberOfChannels,
@@ -215,7 +216,7 @@ function makeRetrieveBulkData(
 
     // Method 4: BulkDataURI
     if (waveformData.BulkDataURI) {
-      let url = waveformData.BulkDataURI;
+      let url = waveformData.BulkDataURI as string;
       if (url.indexOf(':') === -1 && wadoRsRoot) {
         url = studyUID
           ? `${wadoRsRoot}/studies/${studyUID}/${url}`
@@ -281,12 +282,16 @@ export function getECGModule(
     waveform[TAG.ChannelDefinitionSequence]
   );
   const channelDefinitionSequence = (channelDefItems || []).map(
-    (channelDef: Record<string, unknown>) => {
+    (channelDef) => {
+      const channelDefRecord = channelDef as unknown as Record<string, unknown>;
       const sourceSeqItems = getSequenceItems(
-        channelDef[TAG.ChannelSourceSequence]
+        channelDefRecord[TAG.ChannelSourceSequence]
       );
-      const sourceSeq = (sourceSeqItems?.[0] as Record<string, unknown>) || {};
-      const codeMeaning = getValue(sourceSeq[TAG.CodeMeaning]) as string;
+      const sourceSeq =
+        (sourceSeqItems?.[0] as unknown as Record<string, unknown>) || {};
+      const codeMeaning = getValue(
+        sourceSeq[TAG.CodeMeaning] as WADORSMetaDataElement
+      ) as string;
 
       return {
         channelSourceSequence: {
