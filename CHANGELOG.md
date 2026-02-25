@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.18.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.1...v4.18.2) (2026-02-25)
+
+### Bug Fixes
+
+- Centralize aspect ratio handling for flicker removal ([#2634](https://github.com/cornerstonejs/cornerstone3D/issues/2634)) ([4db0984](https://github.com/cornerstonejs/cornerstone3D/commit/4db0984dfc191d92a227c92c323d89ac47c90c30))
+
 ## [4.18.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.0...v4.18.1) (2026-02-25)
 
 ### Bug Fixes
