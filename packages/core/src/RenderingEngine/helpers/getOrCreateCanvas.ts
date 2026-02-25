@@ -66,6 +66,67 @@ export function setCanvasCreator(canvasCreatorArg) {
 }
 
 /**
+ * Extent to match when updating from a render result (e.g. offscreen canvas or viewport size).
+ */
+export type ViewportCanvasExtent =
+  | HTMLCanvasElement
+  | { width: number; height: number };
+
+/**
+ * Updates an on-screen viewport canvas size and aspect ratio so it fills
+ * correctly and resizes without flicker. Handles two cases:
+ *
+ * 1. No extent/offscreen: size from the canvas's displayed rect (e.g. when
+ *    enabling viewports or after layout change). Returns undefined.
+ *
+ * 2. Extent or offscreen canvas provided: size to match the rendered extent.
+ *    Returns true if the canvas was updated (caller should redraw), false if
+ *    it already matched.
+ *
+ * @param canvas - The on-screen canvas to update.
+ * @param extentOrOffscreen - Optional. When an HTMLCanvasElement, use its
+ *   width/height as the target extent. When an object with width and height
+ *   (e.g. viewport sWidth/sHeight when the offscreen canvas is shared), use that.
+ * @returns undefined when no extent/offscreen (element-rect update);
+ *   true when canvas was updated (rendering/redraw needed);
+ *   false when canvas already matched the extent.
+ */
+export function updateCanvasSizeAndAspectRatio(
+  canvas: HTMLCanvasElement,
+  extentOrOffscreen?: ViewportCanvasExtent
+): boolean | undefined {
+  if (extentOrOffscreen === undefined) {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.round(rect.width * devicePixelRatio);
+    const h = Math.round(rect.height * devicePixelRatio);
+    if (w > 0 && h > 0) {
+      canvas.width = w;
+      canvas.height = h;
+      canvas.style.aspectRatio = `${w} / ${h}`;
+    }
+    return undefined;
+  }
+
+  const { width: targetW, height: targetH } = extentOrOffscreen;
+
+  if (targetW < 1 || targetH < 1) {
+    return false;
+  }
+
+  const needsUpdate = canvas.width !== targetW || canvas.height !== targetH;
+
+  if (needsUpdate) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+    canvas.style.aspectRatio = `${targetW} / ${targetH}`;
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Create a canvas or returns the one that already exists for a given element.
  * It first checks if the element has a canvas, if not it creates one and returns it.
  * The canvas is updated for:
