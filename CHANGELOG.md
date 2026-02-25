@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.18.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.0...v4.18.1) (2026-02-25)
+
+### Bug Fixes
+
+- **tools:** prevent ANNOTATION_COMPLETED re-firing on PlanarFreehandROI text click ([#2631](https://github.com/cornerstonejs/cornerstone3D/issues/2631)) ([d09bce9](https://github.com/cornerstonejs/cornerstone3D/commit/d09bce920c738d72f5a1b06e7dde7b6638d53395))
+
 # [4.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.5...v4.18.0) (2026-02-25)
 
 ### Features

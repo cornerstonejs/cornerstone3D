@@ -353,11 +353,11 @@ importers:
         specifier: 7.26.10
         version: 7.26.10
       '@cornerstonejs/core':
-        specifier: 4.18.0
-        version: 4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
+        specifier: 4.18.1
+        version: 4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       '@cornerstonejs/tools':
-        specifier: 4.18.0
-        version: 4.18.0(@cornerstonejs/core@4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
+        specifier: 4.18.1
+        version: 4.18.1(@cornerstonejs/core@4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
       buffer:
         specifier: 6.0.3
         version: 6.0.3
@@ -377,11 +377,11 @@ importers:
         specifier: 7.26.10
         version: 7.26.10
       '@cornerstonejs/core':
-        specifier: 4.18.0
-        version: 4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
+        specifier: 4.18.1
+        version: 4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       '@cornerstonejs/tools':
-        specifier: 4.18.0
-        version: 4.18.0(@cornerstonejs/core@4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
+        specifier: 4.18.1
+        version: 4.18.1(@cornerstonejs/core@4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
       buffer:
         specifier: 6.0.3
         version: 6.0.3
@@ -434,8 +434,8 @@ importers:
         specifier: 2.4.7
         version: 2.4.7
       '@cornerstonejs/core':
-        specifier: 4.18.0
-        version: 4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
+        specifier: 4.18.1
+        version: 4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       comlink:
         specifier: 4.4.2
         version: 4.4.2
@@ -455,11 +455,11 @@ importers:
   packages/labelmap-interpolation:
     dependencies:
       '@cornerstonejs/core':
-        specifier: 4.18.0
-        version: 4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
+        specifier: 4.18.1
+        version: 4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       '@cornerstonejs/tools':
-        specifier: 4.18.0
-        version: 4.18.0(@cornerstonejs/core@4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
+        specifier: 4.18.1
+        version: 4.18.1(@cornerstonejs/core@4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
       '@itk-wasm/morphological-contour-interpolation':
         specifier: 1.1.0
         version: 1.1.0
@@ -473,8 +473,8 @@ importers:
   packages/nifti-volume-loader:
     dependencies:
       '@cornerstonejs/core':
-        specifier: 4.18.0
-        version: 4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
+        specifier: 4.18.1
+        version: 4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       nifti-reader-js:
         specifier: 0.6.9
         version: 0.6.9
@@ -482,11 +482,11 @@ importers:
   packages/polymorphic-segmentation:
     dependencies:
       '@cornerstonejs/core':
-        specifier: 4.18.0
-        version: 4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
+        specifier: 4.18.1
+        version: 4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       '@cornerstonejs/tools':
-        specifier: 4.18.0
-        version: 4.18.0(@cornerstonejs/core@4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
+        specifier: 4.18.1
+        version: 4.18.1(@cornerstonejs/core@4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)
       '@icr/polyseg-wasm':
         specifier: 0.4.0
         version: 0.4.0
@@ -497,8 +497,8 @@ importers:
   packages/tools:
     dependencies:
       '@cornerstonejs/core':
-        specifier: 4.18.0
-        version: 4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
+        specifier: 4.18.1
+        version: 4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       '@kitware/vtk.js':
         specifier: 34.15.1
         version: 34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
@@ -1225,13 +1225,13 @@ packages:
     resolution: {integrity: sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w==}
     engines: {node: '>=0.14'}
 
-  '@cornerstonejs/core@4.18.0':
-    resolution: {integrity: sha512-inybCXuP/CR80bRVh4hYRtaBjDi/lZk/KhR8/t4FaITnfI5n3i6PcDCbZ3m517joZI5Hte0PDnXmGU/JtQ+g2w==}
+  '@cornerstonejs/core@4.18.1':
+    resolution: {integrity: sha512-QAFNlam6Z/Sv5tZ2rc0CE7y+6f7k8L/VcA18M00XtyGZwtss2tYbvP7uNq/eLkW+2bjAVGppGxwsVkSyz+WEOg==}
 
-  '@cornerstonejs/tools@4.18.0':
-    resolution: {integrity: sha512-N6aA/UH80If6F2cRVCO7WYuQ6mnUgR/GJYA4O1QZo2o1BIzbHze1UT0/BBCmE5Iy6xwGmKARh461O3BilIoVWg==}
+  '@cornerstonejs/tools@4.18.1':
+    resolution: {integrity: sha512-sS+xVL5FpkWTSQmIlNRg1UJJoBF1B0Al1c2O5t35/pEQeUOqOGuiqdiQzOduP+VEWHsW4RwcQwsvalT07jNQVw==}
     peerDependencies:
-      '@cornerstonejs/core': 4.18.0
+      '@cornerstonejs/core': 4.18.1
       '@kitware/vtk.js': 34.15.1
       '@types/d3-array': 3.2.1
       '@types/d3-interpolate': 3.0.4
@@ -9092,7 +9092,7 @@ snapshots:
 
   '@cornerstonejs/codec-openjph@2.4.7': {}
 
-  '@cornerstonejs/core@4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)':
+  '@cornerstonejs/core@4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)':
     dependencies:
       '@kitware/vtk.js': 34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       comlink: 4.4.2
@@ -9104,9 +9104,9 @@ snapshots:
       - webpack
       - wslink
 
-  '@cornerstonejs/tools@4.18.0(@cornerstonejs/core@4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)':
+  '@cornerstonejs/tools@4.18.1(@cornerstonejs/core@4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@kitware/vtk.js@34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0))(@types/d3-array@3.2.1)(@types/d3-interpolate@3.0.4)(d3-array@3.2.4)(d3-interpolate@3.0.1)(gl-matrix@3.4.3)':
     dependencies:
-      '@cornerstonejs/core': 4.18.0(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
+      '@cornerstonejs/core': 4.18.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       '@kitware/vtk.js': 34.15.1(@babel/preset-env@7.26.9(@babel/core@7.29.0))(autoprefixer@10.4.21(postcss@8.5.3))(webpack@5.105.0(webpack-cli@5.1.4))(wslink@2.5.0)
       '@types/d3-array': 3.2.1
       '@types/d3-interpolate': 3.0.4
