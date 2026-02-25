@@ -108,14 +108,7 @@ export function updateCanvasSizeAndAspectRatio(
     return undefined;
   }
 
-  const targetW =
-    extentOrOffscreen instanceof HTMLCanvasElement
-      ? extentOrOffscreen.width
-      : extentOrOffscreen.width;
-  const targetH =
-    extentOrOffscreen instanceof HTMLCanvasElement
-      ? extentOrOffscreen.height
-      : extentOrOffscreen.height;
+  const { width: targetW, height: targetH } = extentOrOffscreen;
 
   if (targetW < 1 || targetH < 1) {
     return false;
