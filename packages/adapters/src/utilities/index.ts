@@ -1,3 +1,9 @@
 export * from './referencedMetadataProvider';
 export * from './createInstance';
-export type * from '@cornerstonejs/core/src/types/InstanceTypes';
+export type {
+  SimpleData,
+  SimpleModule,
+  FunctionalGroups,
+  NormalModule,
+  RtssModule,
+} from '@cornerstonejs/core/types';
