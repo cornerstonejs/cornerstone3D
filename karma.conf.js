@@ -1,8 +1,20 @@
 // @ts-check
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
-process.env.CHROME_BIN = require('puppeteer').executablePath();
+const puppeteerChrome = require('puppeteer').executablePath();
+if (fs.existsSync(puppeteerChrome)) {
+  process.env.CHROME_BIN = puppeteerChrome;
+} else if (process.platform === 'win32') {
+  // Fallback for Windows when Puppeteer's Chromium wasn't downloaded (e.g. postinstall skipped)
+  const winChrome = path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'Application', 'chrome.exe');
+  if (fs.existsSync(winChrome)) {
+    process.env.CHROME_BIN = winChrome;
+  } else if (fs.existsSync('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe')) {
+    process.env.CHROME_BIN = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+  }
+}
 
 /**
  *

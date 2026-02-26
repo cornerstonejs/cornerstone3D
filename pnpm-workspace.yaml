@@ -13,7 +13,6 @@ onlyBuiltDependencies:
   - canvas
   - core-js
   - core-js-pure
-  - nx
   - protobufjs
   - puppeteer
 ignoredBuiltDependencies:
