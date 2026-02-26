@@ -26,6 +26,7 @@ enum MetadataModules {
   PET_SERIES = 'petSeriesModule',
   SOP_COMMON = 'sopCommonModule',
   ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
+  ECG = 'ecgModule',
   VOI_LUT = 'voiLutModule',
   /**
    * The frame module is used to get information on the number of frames
