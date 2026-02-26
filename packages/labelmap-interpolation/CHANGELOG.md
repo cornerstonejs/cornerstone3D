@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.18.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.2...v4.18.3) (2026-02-26)
+
+**Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
+
 ## [4.18.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.1...v4.18.2) (2026-02-25)
 
 **Note:** Version bump only for package @cornerstonejs/labelmap-interpolation
