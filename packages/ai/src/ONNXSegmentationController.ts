@@ -1,3 +1,4 @@
+import './initOrtEnv';
 import type { Types } from '@cornerstonejs/core';
 import {
   utilities,
@@ -18,7 +19,7 @@ import { Events as aiEvents } from './enums';
 const { strategies } = cstSegmentation;
 const { fillInsideCircle } = strategies;
 
-// @ts-ignore
+// @ts-ignore - onnxruntime-web/webgpu has no types
 import ort from 'onnxruntime-web/webgpu';
 import { vec3 } from 'gl-matrix';
 
@@ -1641,9 +1642,15 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
+    // When using WebGPU, ONNX Runtime loads ort-wasm-simd-threaded.jsep.wasm from this path.
     ort.env.wasm.wasmPaths = 'ort/';
-    ort.env.wasm.numThreads = config.threads;
+    // Multi-threaded WASM requires crossOriginIsolated (COOP/COEP headers). Otherwise use 1 thread.
+    ort.env.wasm.numThreads =
+      typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated
+        ? config.threads
+        : 1;
     ort.env.wasm.proxy = config.provider == 'wasm';
+    ort.env.logLevel = 'error';
 
     this.config = config;
     return config;
