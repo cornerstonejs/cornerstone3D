@@ -17,6 +17,7 @@ import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
+import ECGViewport from './RenderingEngine/ECGViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -126,6 +127,7 @@ export {
   StackViewport,
   VideoViewport,
   WSIViewport,
+  ECGViewport,
   RenderingEngine,
   BaseRenderingEngine,
   TiledRenderingEngine,
