@@ -8,7 +8,7 @@
     "build": "echo 'build'",
     "build:esm:watch": "echo 'no-op'",
     "build:docs": "cd ../../ && pnpm install --frozen-lockfile && pnpm run build:esm && cd packages/docs && cross-env NODE_OPTIONS=--max_old_space_size=32384 pnpm run prep-examples && docusaurus build && node ./scripts/prepare-markdown-files.js && node ./scripts/generate-llms-txt.js && node ./scripts/generate-llms-full-txt.js && node ./scripts/generate-redirects.js",
-    "build:ci": "cross-env NODE_OPTIONS=--max_old_space_size=32384 pnpm run prep-examples && docusaurus build && node ./scripts/prepare-markdown-files.js && node ./scripts/generate-llms-txt.js && node ./scripts/generate-llms-full-txt.js && node ./scripts/generate-redirects.js",
+    "build:ci": "cross-env NODE_OPTIONS=--max_old_space_size=32384 pnpm run prep-examples && pnpm exec docusaurus build && node ./scripts/prepare-markdown-files.js && node ./scripts/generate-llms-txt.js && node ./scripts/generate-llms-full-txt.js && node ./scripts/generate-redirects.js",
     "prepare-markdown-files": "node ./scripts/prepare-markdown-files.js",
     "generate-llms-txt": "node ./scripts/generate-llms-txt.js",
     "generate-llms-full-txt": "node ./scripts/generate-llms-full-txt.js",

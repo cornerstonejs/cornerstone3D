@@ -10,11 +10,11 @@
     "pnpm": ">=10"
   },
   "scripts": {
-    "api-check": "pnpm -r run api-check",
-    "format-check": "cross-env NODE_OPTIONS=--max_old_space_size=32896 pnpm -r run format-check",
-    "build": "pnpm -r run build && pnpm --filter @cornerstonejs/dicom-image-loader run build:loader",
-    "build:esm": "pnpm -r run build:esm",
-    "watch": "pnpm -r --parallel run build:esm:watch",
+    "api-check": "pnpm -r --filter '!docs' run api-check",
+    "format-check": "cross-env NODE_OPTIONS=--max_old_space_size=32896 pnpm -r --filter '!docs' run format-check",
+    "build": "pnpm -r --filter '!docs' run build && pnpm --filter @cornerstonejs/dicom-image-loader run build:loader",
+    "build:esm": "pnpm -r --filter '!docs' run build:esm",
+    "watch": "pnpm -r --filter '!docs' --parallel run build:esm:watch",
     "build:update-api": "echo not needed anymore",
     "clean": "pnpm -r run clean",
     "clean:deep": "pnpm -r run clean:deep",
@@ -23,7 +23,7 @@
     "build-all-examples": "cross-env NODE_OPTIONS=--max_old_space_size=32896 node ./utils/ExampleRunner/build-all-examples-cli.js --build --fromRoot || (echo 'Build failed - likely due to memory constraints' && exit 1)",
     "serve-static-examples": "pnpm dlx serve .static-examples --listen 3333",
     "build-and-serve-static-examples": "cross-env NODE_OPTIONS=--max_old_space_size=32896 pnpm run build-all-examples && pnpm run serve-static-examples",
-    "build:all": "pnpm -r run build:all",
+    "build:all": "pnpm -r --filter '!docs' run build:all",
     "dev": "pnpm run all-examples",
     "docs": "pnpm -r run docs",
     "docs:watch": "pnpm -r run docs:watch",
@@ -51,7 +51,7 @@
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
     "lint": "oxlint packages/**/src --quiet",
-    "webpack:watch": "pnpm -r run webpack:watch"
+    "webpack:watch": "pnpm -r --filter '!docs' run webpack:watch"
   },
   "devDependencies": {
     "@babel/core": "7.26.10",

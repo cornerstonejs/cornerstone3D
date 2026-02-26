@@ -2,6 +2,7 @@ packages:
   - packages/adapters
   - packages/core
   - packages/dicomImageLoader
+  - packages/docs
   - packages/nifti-volume-loader
   - packages/polymorphic-segmentation
   - packages/tools

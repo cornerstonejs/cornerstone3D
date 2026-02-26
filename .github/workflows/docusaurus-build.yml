@@ -39,11 +39,8 @@ jobs:
       - name: Build packages in ESM format
         run: pnpm run build:esm
 
-      - name: Install docs dependencies
-        run: cd packages/docs && pnpm install
-
       - name: Build Docusaurus documentation
-        run: cd packages/docs && pnpm run build:ci
+        run: pnpm --filter docs run build:ci
         env:
           NODE_OPTIONS: --max_old_space_size=32384
 
