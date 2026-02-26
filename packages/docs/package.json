@@ -58,7 +58,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-resize-detector": "11.0.1",
-    "react-router-dom": "6.23.1",
+    "react-router-dom": "6.30.2",
     "typedoc-plugin-markdown": "4.2.9",
     "url-loader": "4.1.1"
   },
