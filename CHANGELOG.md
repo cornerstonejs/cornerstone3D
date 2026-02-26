@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.18.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.2...v4.18.3) (2026-02-26)
+
+### Bug Fixes
+
+- **RectangleROI Adapter:** Assume that ConceptNameCodeSequence is a single element array. ([#2636](https://github.com/cornerstonejs/cornerstone3D/issues/2636)) ([dd2e8d3](https://github.com/cornerstonejs/cornerstone3D/commit/dd2e8d32a1da346a3bc3d9adc33d4050be1ea8cb))
+
 ## [4.18.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.1...v4.18.2) (2026-02-25)
 
 ### Bug Fixes
