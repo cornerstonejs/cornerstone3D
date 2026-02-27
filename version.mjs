@@ -34,10 +34,18 @@ async function run() {
   if (branchName === 'beta') {
     console.log('Branch: beta');
     const prereleaseComponents = semver.prerelease(currentVersion);
-    const isBumpBeta = lastCommitMessage.trim().endsWith('[BUMP BETA]');
+    const trimmedLastCommitMessage = lastCommitMessage.trim();
+    const isBumpBeta = trimmedLastCommitMessage.endsWith('[BUMP BETA]');
+    const isBumpBetaMajor = trimmedLastCommitMessage.endsWith(
+      '[BUMP BETA MAJOR]'
+    );
     console.log('isBumpBeta', isBumpBeta);
+    console.log('isBumpBetaMajor', isBumpBetaMajor);
 
-    if (
+    if (isBumpBetaMajor) {
+      console.log('Bumping major version for beta release');
+      nextVersion = `${semver.major(currentVersion) + 1}.0.0-beta.1`;
+    } else if (
       prereleaseComponents &&
       prereleaseComponents.includes('beta') &&
       !isBumpBeta
