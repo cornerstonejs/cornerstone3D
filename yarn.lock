@@ -11171,12 +11171,12 @@ onetime@^7.0.0:
 
 onnxruntime-common@1.18.0:
   version "1.18.0"
-  resolved "https://registry.yarnpkg.com/onnxruntime-common/-/onnxruntime-common-1.18.0.tgz#b904dc6ff134e7f21a3eab702fac17538f59e116"
+  resolved "https://registry.npmjs.org/onnxruntime-common/-/onnxruntime-common-1.18.0.tgz#b904dc6ff134e7f21a3eab702fac17538f59e116"
   integrity sha512-lufrSzX6QdKrktAELG5x5VkBpapbCeS3dQwrXbN0eD9rHvU0yAWl7Ztju9FvgAKWvwd/teEKJNj3OwM6eTZh3Q==
 
 onnxruntime-web@1.18.0:
   version "1.18.0"
-  resolved "https://registry.yarnpkg.com/onnxruntime-web/-/onnxruntime-web-1.18.0.tgz#cd46268d9472f89697da0a3282f13129f0acbfa0"
+  resolved "https://registry.npmjs.org/onnxruntime-web/-/onnxruntime-web-1.18.0.tgz#cd46268d9472f89697da0a3282f13129f0acbfa0"
   integrity sha512-o1UKj4ABIj1gmG7ae0RKJ3/GT+3yoF0RRpfDfeoe0huzRW4FDRLfbkDETmdFAvnJEXuYDE0YT+hhkia0352StQ==
   dependencies:
     flatbuffers "^1.12.0"
