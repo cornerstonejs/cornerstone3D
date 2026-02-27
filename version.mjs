@@ -35,8 +35,8 @@ async function run() {
     console.log('Branch: beta');
     const prereleaseComponents = semver.prerelease(currentVersion);
     const trimmedLastCommitMessage = lastCommitMessage.trim();
-    const isBumpBeta = trimmedLastCommitMessage.endsWith('[BUMP BETA]');
-    const isBumpBetaMajor = trimmedLastCommitMessage.endsWith(
+    const isBumpBeta = trimmedLastCommitMessage.includes('[BUMP BETA]');
+    const isBumpBetaMajor = trimmedLastCommitMessage.includes(
       '[BUMP BETA MAJOR]'
     );
     console.log('isBumpBeta', isBumpBeta);
