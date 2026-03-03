@@ -9,7 +9,9 @@ import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
 import VolumeViewport3D from './VolumeViewport3D';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
-import getOrCreateCanvas from './helpers/getOrCreateCanvas';
+import getOrCreateCanvas, {
+  updateCanvasSizeAndAspectRatio,
+} from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 
@@ -59,6 +61,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const canvasesDrivenByVtkJs = viewportsDrivenByVtkJs.map((vp) => vp.canvas);
 
     const canvas = getOrCreateCanvas(viewportInputEntry.element);
+    updateCanvasSizeAndAspectRatio(canvas);
     canvasesDrivenByVtkJs.push(canvas);
 
     const internalViewportEntry = { ...viewportInputEntry, canvas };
@@ -172,13 +175,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         getOrCreateCanvas(vp.element)
       );
 
-      vtkDrivenCanvases.forEach((canvas) => {
-        const devicePixelRatio = window.devicePixelRatio || 1;
-
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * devicePixelRatio;
-        canvas.height = rect.height * devicePixelRatio;
-      });
+      vtkDrivenCanvases.forEach((canvas) =>
+        updateCanvasSizeAndAspectRatio(canvas)
+      );
 
       for (let i = 0; i < viewportInputEntries.length; i++) {
         const vtkDrivenViewportInputEntry = viewportInputEntries[i];
@@ -532,14 +531,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     // Update on-screen canvas size only when the VTK render result is available,
     // so the displayed size matches the rendered size and aspect ratio without flicker.
-    if (
-      canvas.width !== dWidth ||
-      (canvas.height !== dHeight && dWidth >= 1 && dHeight >= 1)
-    ) {
-      canvas.width = dWidth;
-      canvas.height = dHeight;
-      canvas.style.aspectRatio = `${dWidth} / ${dHeight}`;
-    }
+    updateCanvasSizeAndAspectRatio(canvas, { width: dWidth, height: dHeight });
 
     const onScreenContext = canvas.getContext('2d');
 

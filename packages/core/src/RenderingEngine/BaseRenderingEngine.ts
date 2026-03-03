@@ -27,6 +27,7 @@ import type {
 import { OrientationAxis } from '../enums';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
 import { StatsOverlay } from './helpers/stats';
+import { convertColorArrayToRgbString } from '../utilities/convertColorArrayToRgbString';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 export const VIEWPORT_MIN_SIZE = 2;
@@ -483,15 +484,9 @@ abstract class BaseRenderingEngine {
     backgroundColor: [number, number, number]
   ): void {
     const ctx = canvas.getContext('2d');
-
-    // Default to black if no background color is set
-    let fillStyle: string;
-    if (backgroundColor) {
-      const rgb = backgroundColor.map((f) => Math.floor(255 * f));
-      fillStyle = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-    } else {
-      fillStyle = 'black';
-    }
+    const fillStyle = backgroundColor
+      ? convertColorArrayToRgbString(backgroundColor)
+      : 'black';
 
     // We draw over the previous stack with the background color while we
     // wait for the next stack to load

@@ -27,6 +27,7 @@ enum MetadataModules {
   PET_SERIES = 'petSeriesModule',
   SOP_COMMON = 'sopCommonModule',
   ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
+  ECG = 'ecgModule',
   VOI_LUT = 'voiLutModule',
 
   /** Transfer syntax information*/

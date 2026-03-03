@@ -3,6 +3,7 @@ import {
   getEnabledElement,
   utilities as csUtils,
   StackViewport,
+  ECGViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -116,9 +117,12 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    if (!(viewport instanceof StackViewport)) {
+    if (
+      !(viewport instanceof StackViewport) &&
+      !(viewport instanceof ECGViewport)
+    ) {
       throw new Error(
-        'UltrasoundDirectionalTool can only be used on a StackViewport'
+        'UltrasoundDirectionalTool can only be used on a StackViewport or ECGViewport'
       );
     }
 
