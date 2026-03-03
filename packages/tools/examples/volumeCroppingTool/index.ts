@@ -513,7 +513,19 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       url.searchParams.set('colorScheme', String(selectedValue));
       // Remove legacy parameter if present
       url.searchParams.delete('grayColors');
-      window.location.href = url.toString();
+      window.history.replaceState({}, '', url);
+
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.colorScheme = selectedValue;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
     },
   });
 
@@ -537,7 +549,20 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     onSelectedValueChange: (selectedValue) => {
       const url = new URL(window.location.href);
       url.searchParams.set('letterColorScheme', String(selectedValue));
-      window.location.href = url.toString();
+      window.history.replaceState({}, '', url);
+
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.letterColorScheme =
+          selectedValue;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
     },
   });
 
