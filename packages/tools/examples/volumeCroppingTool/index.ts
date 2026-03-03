@@ -173,7 +173,7 @@ instructions.innerText = `
   - Use the scroll wheel to scroll through the slices in the orthographic viewports.
   - Toggle the clipping planes, handles, and rotate clipping planes on drag.
   - Click on the faces/edges/corners of the beveled cube orientation widget to change the orientation.
-  URL params: numViewports=1|2|3, colorScheme=gray|rgy|marker, letterColorScheme=mixed|white|black, keepOrientationUp=true|false
+  URL params: numViewports=1|2|3
   `;
 
 content.append(instructions);
@@ -263,50 +263,6 @@ function getNumViewportsFromUrl() {
     return num;
   }
   return 3; // default
-}
-
-/**
- * Get the color scheme from the URL (?colorScheme=gray|rgy|marker)
- */
-function getColorSchemeFromUrl(): 'gray' | 'rgy' | 'marker' {
-  const params = new URLSearchParams(window.location.search);
-  const value = params.get('colorScheme');
-  if (value === 'gray' || value === 'rgy' || value === 'marker') {
-    return value;
-  }
-  // Check for legacy grayColors parameter for backward compatibility
-  const grayColors = params.get('grayColors');
-  if (grayColors === 'true') {
-    return 'gray';
-  }
-  return 'rgy'; // default
-}
-
-/**
- * Get the keepOrientationUp value from the URL (?keepOrientationUp=true|false)
- */
-function getKeepOrientationUpFromUrl(): boolean {
-  const params = new URLSearchParams(window.location.search);
-  const value = params.get('keepOrientationUp');
-  if (value === 'true') {
-    return true;
-  }
-  if (value === 'false') {
-    return false;
-  }
-  return true; // default
-}
-
-/**
- * Get the letter color scheme from the URL (?letterColorScheme=mixed|white|black)
- */
-function getLetterColorSchemeFromUrl(): 'mixed' | 'awhite' | 'black' {
-  const params = new URLSearchParams(window.location.search);
-  const value = params.get('letterColorScheme');
-  if (value === 'mixed' || value === 'white' || value === 'black') {
-    return value;
-  }
-  return 'mixed'; // default
 }
 
 /**
@@ -446,10 +402,9 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ],
   });
 
-  // Get color scheme from URL (needed for both orthographic and 3D viewports)
-  const colorScheme = getColorSchemeFromUrl();
-  const keepOrientationUp = getKeepOrientationUpFromUrl();
-  const letterColorScheme = getLetterColorSchemeFromUrl();
+  const colorScheme: 'rgy' | 'gray' | 'marker' = 'rgy';
+  const keepOrientationUp = true;
+  const letterColorScheme: 'mixed' | 'white' | 'black' = 'mixed';
 
   toolGroup.addTool(OrientationControllerTool.toolName, {
     colorScheme,
@@ -492,29 +447,19 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   // Enable OrientationControllerTool after viewport is added and volume is loaded
   toolGroupVRT.setToolEnabled(OrientationControllerTool.toolName);
 
-  // Add dropdown for orientation control colors (reloads page with URL param)
+  // Add dropdown for orientation control colors
   const colorSchemeValues: string[] = ['rgy', 'gray', 'marker'];
   const colorSchemeLabels = ['RGY', 'Gray', 'Marker'];
-  // Ensure colorScheme is valid, default to 'rgy' if not
-  const validColorScheme = colorSchemeValues.includes(colorScheme)
-    ? colorScheme
-    : 'rgy';
 
   addDropdownToToolbar({
     labelText: 'Orientation Control: Colors',
     options: {
       values: colorSchemeValues,
-      defaultValue: validColorScheme,
+      defaultValue: colorScheme,
       labels: colorSchemeLabels,
     },
     container: controlRow,
     onSelectedValueChange: (selectedValue) => {
-      const url = new URL(window.location.href);
-      url.searchParams.set('colorScheme', String(selectedValue));
-      // Remove legacy parameter if present
-      url.searchParams.delete('grayColors');
-      window.history.replaceState({}, '', url);
-
       const toolGroupVRT =
         cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
       const orientationControllerTool = toolGroupVRT.getToolInstance(
@@ -529,28 +474,19 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
   });
 
-  // Add dropdown for letter color scheme (reloads page with URL param)
+  // Add dropdown for letter color scheme
   const letterColorSchemeValues: string[] = ['mixed', 'white', 'black'];
   const letterColorSchemeLabels = ['Mixed', 'White', 'Black'];
-  const validLetterColorScheme = letterColorSchemeValues.includes(
-    letterColorScheme
-  )
-    ? letterColorScheme
-    : 'mixed';
 
   addDropdownToToolbar({
     labelText: 'Letter Colors',
     options: {
       values: letterColorSchemeValues,
-      defaultValue: validLetterColorScheme,
+      defaultValue: letterColorScheme,
       labels: letterColorSchemeLabels,
     },
     container: controlRow,
     onSelectedValueChange: (selectedValue) => {
-      const url = new URL(window.location.href);
-      url.searchParams.set('letterColorScheme', String(selectedValue));
-      window.history.replaceState({}, '', url);
-
       const toolGroupVRT =
         cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
       const orientationControllerTool = toolGroupVRT.getToolInstance(
@@ -580,10 +516,6 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     container: controlRow,
     onSelectedValueChange: (selectedValue) => {
       const newValue = selectedValue === 'true';
-      // Update URL parameter
-      const url = new URL(window.location.href);
-      url.searchParams.set('keepOrientationUp', String(newValue));
-      window.history.replaceState({}, '', url);
 
       // Get the tool group for the 3D viewport
       const toolGroupVRT =
