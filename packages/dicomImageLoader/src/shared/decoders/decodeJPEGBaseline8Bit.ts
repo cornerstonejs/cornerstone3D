@@ -2,14 +2,13 @@ import type {
   LibJpegTurbo8Bit,
   OpenJpegModule,
 } from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
+import * as libJpegTurboWasmJs from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs';
 import type { Types } from '@cornerstonejs/core';
 import { createInitializeDecoder } from '../createInitializeDecoder';
 import type { ByteArray } from 'dicom-parser';
 
 const { initialize, state } = createInitializeDecoder({
-  library: '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs',
-  libraryFallback: () =>
-    import('@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs'),
+  library: libJpegTurboWasmJs,
   wasm: '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',
   wasmDefaultUrl: new URL(
     '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasm',

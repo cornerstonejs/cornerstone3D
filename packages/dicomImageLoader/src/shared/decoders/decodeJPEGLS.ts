@@ -2,13 +2,13 @@ import type {
   CharlsModule,
   JpegLSDecoder,
 } from '@cornerstonejs/codec-charls/dist/charlswasm_decode';
+import * as charlsWasmJs from '@cornerstonejs/codec-charls/decodewasmjs';
 import type { Types } from '@cornerstonejs/core';
 import type { ByteArray } from 'dicom-parser';
 import { createInitializeDecoder } from '../createInitializeDecoder';
 
 const { initialize, state } = createInitializeDecoder({
-  library: '@cornerstonejs/codec-charls/decodewasmjs',
-  libraryFallback: () => import('@cornerstonejs/codec-charls/decodewasmjs'),
+  library: charlsWasmJs,
   wasm: '@cornerstonejs/codec-charls/decodewasm',
   wasmDefaultUrl: new URL(
     '@cornerstonejs/codec-charls/decodewasm',

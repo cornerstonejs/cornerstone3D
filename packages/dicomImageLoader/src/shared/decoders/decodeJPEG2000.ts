@@ -3,12 +3,12 @@ import type {
   J2KDecoder,
   OpenJpegModule,
 } from '@cornerstonejs/codec-openjpeg/dist/openjpegwasm_decode';
+import * as openJpegWasmJs from '@cornerstonejs/codec-openjpeg/decodewasmjs';
 import type { Types } from '@cornerstonejs/core';
 import { createInitializeDecoder } from '../createInitializeDecoder';
 
 const { initialize, state } = createInitializeDecoder({
-  library: '@cornerstonejs/codec-openjpeg/decodewasmjs',
-  libraryFallback: () => import('@cornerstonejs/codec-openjpeg/decodewasmjs'),
+  library: openJpegWasmJs,
   wasm: '@cornerstonejs/codec-openjpeg/decodewasm',
   wasmDefaultUrl: new URL(
     '@cornerstonejs/codec-openjpeg/decodewasm',

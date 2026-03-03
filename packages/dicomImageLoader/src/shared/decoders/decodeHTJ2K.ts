@@ -3,11 +3,11 @@ import type {
   HTJ2KDecoder,
   HTJ2KModule,
 } from '@cornerstonejs/codec-openjph/wasmjs';
+import * as openJphWasmJs from '@cornerstonejs/codec-openjph/wasmjs';
 import { createInitializeDecoder } from '../createInitializeDecoder';
 
 const { initialize, state } = createInitializeDecoder({
-  library: '@cornerstonejs/codec-openjph/wasmjs',
-  libraryFallback: () => import('@cornerstonejs/codec-openjph/wasmjs'),
+  library: openJphWasmJs,
   wasm: '@cornerstonejs/codec-openjph/wasm',
   wasmDefaultUrl: new URL(
     '@cornerstonejs/codec-openjph/wasm',
