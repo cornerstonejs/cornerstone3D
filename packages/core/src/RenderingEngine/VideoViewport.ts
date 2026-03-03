@@ -46,6 +46,10 @@ export type CanvasScalarData = Uint8ClampedArray & {
   getRange?: () => [number, number];
 };
 
+type VideoViewportScrollOptions = {
+  // Reserved for future video-specific scroll behavior.
+};
+
 /**
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
@@ -366,11 +370,12 @@ class VideoViewport extends Viewport {
     }
   }
 
-  public async scroll(delta = 1) {
+  public async scroll(delta = 1, options: VideoViewportScrollOptions = {}) {
     await this.pause();
 
     const videoElement = this.videoElement;
     const renderFrame = this.renderFrame;
+    void options;
 
     const currentTime = videoElement.currentTime;
     const newTime = currentTime + (delta * this.scrollSpeed) / this.fps;

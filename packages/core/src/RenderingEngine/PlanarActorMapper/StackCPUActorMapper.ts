@@ -12,6 +12,9 @@ import type { StackCPUActorMapperContext } from './StackActorMapperContext';
 export default class StackCPUActorMapper implements IStackActorMapper {
   constructor(private context: StackCPUActorMapperContext) {}
 
+  /**
+   * Initializes the CPU fallback enabled element state used by stack rendering.
+   */
   public reset(): void {
     this.context.setCPUFallbackEnabledElement({
       canvas: this.context.getCanvas(),
@@ -21,6 +24,12 @@ export default class StackCPUActorMapper implements IStackActorMapper {
     });
   }
 
+  /**
+   * Returns stack image data in a structure compatible with viewport tools/utilities.
+   * Index/world conversions are routed through the CPU fallback canvas transform.
+   *
+   * @returns CPU image data for stack tools, or `undefined` when metadata is not ready.
+   */
   public getImageData(): CPUIImageData | undefined {
     const cpuFallbackEnabledElement =
       this.context.getCPUFallbackEnabledElement();
@@ -77,6 +86,11 @@ export default class StackCPUActorMapper implements IStackActorMapper {
     };
   }
 
+  /**
+   * Updates CPU fallback metadata, VOI, pixel data, and transform for the displayed image.
+   *
+   * @param image - Cornerstone image to make active for CPU stack rendering.
+   */
   public updateToDisplayImage(image: IImage): void {
     const metadata = this.context.getImageDataMetadata(image);
     const cpuFallbackEnabledElement =
@@ -117,6 +131,12 @@ export default class StackCPUActorMapper implements IStackActorMapper {
     );
   }
 
+  /**
+   * CPU stack rendering only supports a single active image, so adding actor images
+   * is intentionally unsupported.
+   *
+   * @param _stackInputs - Additional stack actor inputs (not supported in CPU mode).
+   */
   public addImages(_stackInputs: IStackInput[]): void {
     throw this.context.getCPUFallbackError('addImages');
   }

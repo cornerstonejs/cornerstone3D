@@ -25,6 +25,9 @@ import type { StackGPUActorMapperContext } from './StackActorMapperContext';
 export default class StackGPUActorMapper implements IStackActorMapper {
   constructor(private context: StackGPUActorMapperContext) {}
 
+  /**
+   * Resets renderer camera state to stack defaults for GPU image rendering.
+   */
   public reset(): void {
     const renderer = this.context.getRenderer();
     const camera = vtkCamera.newInstance();
@@ -45,6 +48,11 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     camera.setFreezeFocalPoint(true);
   }
 
+  /**
+   * Returns image data for the default stack actor in GPU mode.
+   *
+   * @returns GPU-backed stack image data, or `undefined` when there is no valid default image actor.
+   */
   public getImageData(): IImageData | undefined {
     const defaultActor = this.context.getDefaultActor();
 
@@ -82,6 +90,11 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     };
   }
 
+  /**
+   * Creates and registers additional image actors for the provided stack inputs.
+   *
+   * @param stackInputs - Stack actor definitions to append to the viewport actor list.
+   */
   public addImages(stackInputs: IStackInput[]): void {
     const actors = [];
 
@@ -120,6 +133,12 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     this.context.addActors(actors);
   }
 
+  /**
+   * Updates the displayed image for GPU stack rendering.
+   * Reuses existing vtkImageData when compatible; otherwise rebuilds actor/imageData state.
+   *
+   * @param image - Cornerstone image to display in the stack viewport.
+   */
   public updateToDisplayImage(image: IImage): void {
     const sameImageData = this.checkVTKImageDataMatchesCornerstoneImage(
       image,
@@ -205,6 +224,12 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     }
   }
 
+  /**
+   * Creates a vtkImageSlice actor with a vtkImageMapper bound to the input image data.
+   *
+   * @param imageData - vtk image data to bind to the mapper.
+   * @returns A configured image actor ready to be attached to the viewport.
+   */
   private createActorMapper(imageData: vtkImageData) {
     const mapper = vtkImageMapper.newInstance();
     mapper.setInputData(imageData);
@@ -219,6 +244,12 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     return actor;
   }
 
+  /**
+   * Derives stack camera orientation vectors from the image direction matrix.
+   *
+   * @param imageDataDirection - 3x3 direction matrix from image metadata.
+   * @returns Camera orientation vectors for view plane normal and view up.
+   */
   private getCameraOrientation(imageDataDirection: Mat3): {
     viewPlaneNormal: Point3;
     viewUp: Point3;
@@ -236,6 +267,12 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     };
   }
 
+  /**
+   * Creates vtkImageData and scalar buffers matching Cornerstone image metadata.
+   *
+   * @param params - Image metadata and pixel buffer used to create vtkImageData.
+   * @returns A new vtkImageData instance initialized with scalar storage.
+   */
   private createVTKImageData({
     origin,
     direction,
@@ -261,6 +298,11 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     return imageData;
   }
 
+  /**
+   * Builds vtkImageData and stores it in context, logging any construction failures.
+   *
+   * @param params - Image metadata and pixel buffer used to build vtkImageData.
+   */
   private createAndSetVTKImageData(params): void {
     try {
       this.context.setImageDataObject(this.createVTKImageData(params));
@@ -269,6 +311,13 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     }
   }
 
+  /**
+   * Checks whether the current vtkImageData can be reused for the next displayed image.
+   *
+   * @param image - Cornerstone image that is about to be displayed.
+   * @param imageData - Existing vtk image data instance to validate.
+   * @returns `true` when geometry/scalar layout is compatible and can be reused.
+   */
   private checkVTKImageDataMatchesCornerstoneImage(
     image: IImage,
     imageData: vtkImageData
@@ -314,6 +363,11 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     );
   }
 
+  /**
+   * Writes latest Cornerstone pixel/geometry data into the active vtkImageData object.
+   *
+   * @param image - Cornerstone image providing the source pixel and geometry data.
+   */
   private updateVTKImageDataFromCornerstoneImage(image: IImage): void {
     const imagePlaneModule = this.getImagePlaneModule(image.imageId);
     let origin = imagePlaneModule.imagePositionPatient;
@@ -333,10 +387,19 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     updateVTKImageDataWithCornerstoneImage(imageData, image);
   }
 
+  /**
+   * Reads image plane metadata from providers for an imageId.
+   *
+   * @param imageId - Image identifier used to resolve image plane metadata.
+   * @returns Image plane metadata for orientation/origin calculations.
+   */
   private getImagePlaneModule(imageId: string) {
     return this.context.getImagePlaneModule(imageId);
   }
 
+  /**
+   * Applies cached VOI/interpolation/invert properties after image updates.
+   */
   private setPropertiesFromCache(): void {
     const voiRange = this.getVOIFromCache();
     this.context.setVOI(voiRange);
@@ -344,6 +407,11 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     this.context.setInvertColor(this.context.getInvert());
   }
 
+  /**
+   * Resolves the VOI range using setProperties overrides, PT defaults, then image cache.
+   *
+   * @returns The VOI range that should be applied to the current stack image.
+   */
   private getVOIFromCache() {
     if (this.context.getVOIUpdatedWithSetProperties()) {
       return this.context.getVOIRange();
@@ -358,6 +426,12 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     );
   }
 
+  /**
+   * Computes initial VOI for a newly initialized stack actor.
+   *
+   * @param image - Cornerstone image used as the initial source for VOI values.
+   * @returns Initial VOI range for the new actor.
+   */
   private getInitialVOIRange(image: IImage) {
     if (
       this.context.getVOIRange() &&
@@ -377,6 +451,11 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     return voiRange;
   }
 
+  /**
+   * Returns default PT pre-scaled VOI range when current image uses PT pre-scaling.
+   *
+   * @returns PT pre-scaled VOI range when applicable; otherwise `undefined`.
+   */
   private getPTPreScaledRange() {
     if (!this.context.isCurrentImagePTPrescaled()) {
       return undefined;
@@ -385,6 +464,14 @@ export default class StackGPUActorMapper implements IStackActorMapper {
     return this.context.getDefaultPTPrescaledVOIRange();
   }
 
+  /**
+   * Converts DICOM window/level values into low/high VOI range.
+   *
+   * @param windowWidth - DICOM window width value(s).
+   * @param windowCenter - DICOM window center value(s).
+   * @param voiLUTFunction - VOI LUT function used for the conversion.
+   * @returns Low/high VOI range when inputs are valid; otherwise `undefined`.
+   */
   private getVOIRangeFromWindowLevel(
     windowWidth,
     windowCenter,

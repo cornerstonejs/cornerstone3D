@@ -31,6 +31,7 @@ import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirectio
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import triggerEvent from '../utilities/triggerEvent';
+import getTargetVolumeAndSpacingInNormalDir from '../utilities/getTargetVolumeAndSpacingInNormalDir';
 
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
@@ -50,6 +51,11 @@ import {
 } from './PlanarActorMapper';
 import type IVolumeActorMapper from './PlanarActorMapper/IVolumeActorMapper';
 import type { VolumeActorMapperContext } from './PlanarActorMapper/VolumeActorMapperContext';
+
+type VolumeViewportScrollOptions = {
+  volumeId?: string;
+  scrollSlabs?: boolean;
+};
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -160,6 +166,9 @@ class VolumeViewport extends BaseVolumeViewport {
       getActors: () => this.getActors(),
       render: () => this.render(),
       getCamera: () => this.getCamera(),
+      setCamera: (camera) => this.setCamera(camera),
+      getVolumeViewportScrollInfo: (volumeId, useSlabThickness = false) =>
+        getVolumeViewportScrollInfo(this, volumeId, useSlabThickness),
       updateClippingPlanesForActors: (camera) =>
         this.updateClippingPlanesForActors(camera),
       triggerCameraModifiedEventIfNecessary: (previousCamera, updatedCamera) =>
@@ -518,35 +527,88 @@ class VolumeViewport extends BaseVolumeViewport {
     return numberOfSlices;
   };
 
-  public scroll(delta = 1): void {
-    if (!this.useCPURendering) {
-      super.scroll(delta);
-      return;
+  public getSpacingInNormalDirection(
+    volumeId?: string,
+    options: {
+      viewReference?: Pick<ViewReference, 'viewPlaneNormal'>;
+      useSlabThickness?: boolean;
+    } = {}
+  ): number | undefined {
+    const camera = this.getCamera();
+    const viewPlaneNormal =
+      options.viewReference?.viewPlaneNormal ?? camera.viewPlaneNormal;
+    const useSlabThickness = options.useSlabThickness ?? this.useCPURendering;
+
+    if (useSlabThickness) {
+      const slabThickness = this.getProperties()?.slabThickness;
+      if (slabThickness) {
+        return slabThickness;
+      }
     }
 
-    const sliceRangeInfo = this.getCPUSliceRangeInfo(undefined, true);
-    if (!sliceRangeInfo) {
-      return;
+    if (this.useCPURendering) {
+      const volume = this.getCPUPrimaryVolume(volumeId);
+      if (!volume) {
+        return;
+      }
+
+      return getSpacingInNormalDirection(volume, viewPlaneNormal as Point3);
     }
 
-    const { min, max, current, spacingInNormalDirection, camera, normal } =
-      sliceRangeInfo;
-    const { focalPoint, position } = camera;
-
-    const { newFocalPoint, newPosition } = snapFocalPointToSlice(
-      focalPoint as Point3,
-      position as Point3,
-      { min, max, current },
-      normal,
-      spacingInNormalDirection,
-      delta
+    const { spacingInNormalDirection } = getTargetVolumeAndSpacingInNormalDir(
+      this,
+      {
+        ...camera,
+        viewPlaneNormal,
+      },
+      volumeId,
+      useSlabThickness
     );
 
-    this.setCamera({
-      focalPoint: newFocalPoint,
-      position: newPosition,
-    });
-    this.render();
+    return spacingInNormalDirection;
+  }
+
+  public scroll(delta?: number, options?: VolumeViewportScrollOptions): void;
+  /** @deprecated Use `scroll(delta, { volumeId, scrollSlabs })` instead. */
+  public scroll(
+    delta?: number,
+    volumeId?: string,
+    useSlabThickness?: boolean
+  ): void;
+  public scroll(
+    delta = 1,
+    optionsOrVolumeId: VolumeViewportScrollOptions | string = {},
+    legacyUseSlabThickness = false
+  ): void {
+    const options =
+      typeof optionsOrVolumeId === 'string'
+        ? {
+            volumeId: optionsOrVolumeId,
+            scrollSlabs: legacyUseSlabThickness,
+          }
+        : optionsOrVolumeId;
+    const volumeId = options.volumeId ?? this.getVolumeId();
+    const useSlabThickness = options.scrollSlabs ?? false;
+
+    if (!volumeId) {
+      return;
+    }
+
+    this.getActiveVolumeActorMapper().scroll(volumeId, delta, useSlabThickness);
+  }
+
+  public getScrollInfo(
+    volumeId: string = this.getVolumeId(),
+    useSlabThickness = false
+  ) {
+    if (!volumeId) {
+      return;
+    }
+
+    return this.getActiveVolumeActorMapper().getScrollInfo(
+      volumeId,
+      useSlabThickness
+    );
   }
 
   /**

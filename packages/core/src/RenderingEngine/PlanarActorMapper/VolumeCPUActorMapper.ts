@@ -3,6 +3,7 @@ import { BlendModes, InterpolationType, VOILUTFunctionType } from '../../enums';
 import drawImageSync from '../helpers/cpuFallback/drawImageSync';
 import getDefaultViewport from '../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../utilities/getSpacingInNormalDirection';
+import snapFocalPointToSlice from '../../utilities/snapFocalPointToSlice';
 import VoxelManager from '../../utilities/VoxelManager';
 import type {
   CPUFallbackEnabledElement,
@@ -14,7 +15,10 @@ import type {
   PixelDataTypedArrayString,
   Point3,
 } from '../../types';
-import type IVolumeActorMapper from './IVolumeActorMapper';
+import type {
+  VolumeViewportScrollInfo,
+  default as IVolumeActorMapper,
+} from './IVolumeActorMapper';
 import type { VolumeActorMapperContext } from './VolumeActorMapperContext';
 
 type SliceArray = PixelDataTypedArray;
@@ -43,6 +47,15 @@ type OrthogonalSliceSampleResult = {
   maxPixelValue: number;
 };
 
+type CPUSliceRangeInfo = VolumeViewportScrollInfo & {
+  min: number;
+  max: number;
+  current: number;
+  spacingInNormalDirection: number;
+  camera: ICamera;
+  normal: Point3;
+};
+
 export default class VolumeCPUActorMapper implements IVolumeActorMapper {
   private pendingVolumeLoadCallbacks = new Set<string>();
   private cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
@@ -56,6 +69,13 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
 
   constructor(private context: VolumeActorMapperContext) {}
 
+  /**
+   * Replaces viewport volume data for CPU rendering.
+   * @param volumeInputArray - Volumes to set on the viewport.
+   * @param immediate - If true, render immediately after update.
+   * @param suppressEvents - If true, skip event dispatch during setup.
+   * @returns Promise resolved when CPU volumes are set.
+   */
   public setVolumes(
     volumeInputArray: IVolumeInput[],
     immediate = false,
@@ -72,6 +92,13 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
       });
   }
 
+  /**
+   * Appends viewport volume data for CPU rendering.
+   * @param volumeInputArray - Volumes to append on the viewport.
+   * @param immediate - If true, render immediately after update.
+   * @param suppressEvents - If true, skip event dispatch during setup.
+   * @returns Promise resolved when CPU volumes are appended.
+   */
   public addVolumes(
     volumeInputArray: IVolumeInput[],
     immediate = false,
@@ -88,10 +115,22 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
       });
   }
 
+  /**
+   * Returns viewport blend mode state for CPU rendering.
+   * @param _filterActorUIDs - Unused in CPU path.
+   * @returns Current viewport blend mode.
+   */
   public getBlendMode(_filterActorUIDs: string[] = []): BlendModes {
     return this.context.getViewportBlendMode();
   }
 
+  /**
+   * Sets viewport blend mode for CPU rendering.
+   * @param blendMode - Blend mode to apply.
+   * @param _filterActorUIDs - Unused in CPU path.
+   * @param immediate - If true, triggers an immediate render.
+   * @returns void
+   */
   public setBlendMode(
     blendMode: BlendModes,
     _filterActorUIDs: string[] = [],
@@ -104,10 +143,21 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     }
   }
 
+  /**
+   * No clipping planes are required in the CPU path.
+   * @param _camera - Unused camera argument.
+   * @returns void
+   */
   public ensureClippingPlanesForActors(_camera: ICamera): void {
     return;
   }
 
+  /**
+   * Sets slab thickness used by CPU slice sampling.
+   * @param slabThickness - Requested slab thickness in world units.
+   * @param _filterActorUIDs - Unused in CPU path.
+   * @returns void
+   */
   public setSlabThickness(
     slabThickness: number,
     _filterActorUIDs: string[] = []
@@ -116,11 +166,19 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     this.invalidateSampledSlice();
   }
 
+  /**
+   * Resets slab thickness override for CPU sampling.
+   * @returns void
+   */
   public resetSlabThickness(): void {
     this.context.setViewportSlabThickness(undefined);
     this.invalidateSampledSlice();
   }
 
+  /**
+   * CPU rendering does not expose clipping planes.
+   * @returns Empty array.
+   */
   public getSlicesClippingPlanes(): {
     sliceIndex: number;
     planes: {
@@ -131,6 +189,87 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     return [];
   }
 
+  /**
+   * Returns scroll bounds/state for the target CPU volume.
+   * @param volumeId - Target volume id.
+   * @param useSlabThickness - If true, uses slab thickness as step size.
+   * @returns Scroll state or undefined when unavailable.
+   */
+  public getScrollInfo(
+    volumeId: string,
+    useSlabThickness = false
+  ): VolumeViewportScrollInfo | undefined {
+    const sliceRangeInfo = this.getCPUSliceRangeInfo(
+      volumeId,
+      useSlabThickness
+    );
+    if (!sliceRangeInfo) {
+      return;
+    }
+
+    const { numScrollSteps, currentStepIndex } = sliceRangeInfo;
+    return { numScrollSteps, currentStepIndex };
+  }
+
+  /**
+   * Scrolls CPU slice position along view normal.
+   * @param volumeId - Target volume id.
+   * @param delta - Number of scroll steps.
+   * @param useSlabThickness - If true, uses slab thickness as step size.
+   * @returns Scroll state after applying movement.
+   */
+  public scroll(
+    volumeId: string,
+    delta: number,
+    useSlabThickness = false
+  ): VolumeViewportScrollInfo | undefined {
+    const sliceRangeInfo = this.getCPUSliceRangeInfo(
+      volumeId,
+      useSlabThickness
+    );
+    if (!sliceRangeInfo) {
+      return;
+    }
+
+    const {
+      min,
+      max,
+      current,
+      spacingInNormalDirection,
+      camera,
+      normal,
+      numScrollSteps,
+      currentStepIndex,
+    } = sliceRangeInfo;
+
+    if (numScrollSteps === 0) {
+      return { numScrollSteps, currentStepIndex };
+    }
+
+    const { focalPoint, position } = camera;
+    const { newFocalPoint, newPosition } = snapFocalPointToSlice(
+      focalPoint as Point3,
+      position as Point3,
+      { min, max, current },
+      normal,
+      spacingInNormalDirection,
+      delta
+    );
+
+    this.context.setCamera({
+      focalPoint: newFocalPoint,
+      position: newPosition,
+    });
+    this.context.render();
+
+    return { numScrollSteps, currentStepIndex };
+  }
+
+  /**
+   * Samples scalar intensity at world coordinate in CPU volume data.
+   * @param point - World coordinate.
+   * @returns Scalar value if available.
+   */
   public getIntensityFromWorld(point: Point3): number | undefined {
     const volume = this.context.getCPUPrimaryVolume();
     if (!volume) {
@@ -140,6 +279,10 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     return this.sampleVolume(volume, point);
   }
 
+  /**
+   * Renders the current CPU-sampled slice onto the canvas fallback pipeline.
+   * @returns void
+   */
   public renderToCanvas(): void {
     const volume = this.context.getCPUPrimaryVolume();
 
@@ -693,6 +836,83 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
       axis,
       sign: components[axis] >= 0 ? 1 : -1,
     };
+  }
+
+  private getCPUSliceRangeInfo(
+    volumeId: string,
+    useSlabThickness = false
+  ): CPUSliceRangeInfo | undefined {
+    const volume = this.context.getCPUPrimaryVolume(volumeId);
+    if (!volume) {
+      return;
+    }
+
+    const camera = this.context.getCamera();
+    const { normal } = this.context.getCPUCameraBasis(camera);
+    const corners = this.getVolumeCornersWorld(volume);
+
+    let min = Infinity;
+    let max = -Infinity;
+    for (const point of corners) {
+      const projection = this.dot(point as Point3, normal as Point3);
+      min = Math.min(min, projection);
+      max = Math.max(max, projection);
+    }
+
+    const current = this.dot(camera.focalPoint as Point3, normal as Point3);
+    const slabThickness = this.context.getViewportSlabThickness();
+    const spacingInNormalDirection =
+      useSlabThickness && slabThickness
+        ? slabThickness
+        : getSpacingInNormalDirection(volume, normal);
+    const spacing = Math.max(spacingInNormalDirection, EPSILON);
+    const numScrollSteps = Math.max(0, Math.round((max - min) / spacing));
+    const currentStepIndex = Math.max(
+      0,
+      Math.min(numScrollSteps, Math.round((current - min) / spacing))
+    );
+
+    return {
+      min,
+      max,
+      current,
+      spacingInNormalDirection: spacing,
+      numScrollSteps,
+      currentStepIndex,
+      camera,
+      normal,
+    };
+  }
+
+  private getVolumeCornersWorld(volume: IImageVolume): Point3[] {
+    const [dx, dy, dz] = volume.dimensions;
+    const corners: Point3[] = [
+      [0, 0, 0],
+      [dx - 1, 0, 0],
+      [0, dy - 1, 0],
+      [dx - 1, dy - 1, 0],
+      [0, 0, dz - 1],
+      [dx - 1, 0, dz - 1],
+      [0, dy - 1, dz - 1],
+      [dx - 1, dy - 1, dz - 1],
+    ];
+
+    return corners.map((ijk) => this.indexToWorld(volume, ijk));
+  }
+
+  private indexToWorld(volume: IImageVolume, ijk: Point3): Point3 {
+    const [i, j, k] = ijk;
+    const [sx, sy, sz] = volume.spacing;
+    const [ox, oy, oz] = volume.origin;
+    const row = volume.direction.slice(0, 3) as Point3;
+    const col = volume.direction.slice(3, 6) as Point3;
+    const scan = volume.direction.slice(6, 9) as Point3;
+
+    return [
+      ox + row[0] * sx * i + col[0] * sy * j + scan[0] * sz * k,
+      oy + row[1] * sx * i + col[1] * sy * j + scan[1] * sz * k,
+      oz + row[2] * sx * i + col[2] * sy * j + scan[2] * sz * k,
+    ];
   }
 
   private createSliceImage(

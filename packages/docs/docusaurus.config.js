@@ -73,10 +73,15 @@ module.exports = {
           ],
         },
         {
+          to: '/docs/migration-guides/5x',
+          label: '5.0 Migration Guides',
+          position: 'left',
+          className: 'new-badge',
+        },
+        {
           to: '/docs/migration-guides/4x',
           label: '4.0 Migration Guides',
           position: 'left',
-          className: 'new-badge',
         },
         {
           type: 'docsVersionDropdown',

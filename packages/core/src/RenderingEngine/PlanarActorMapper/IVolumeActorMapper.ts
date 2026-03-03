@@ -1,6 +1,11 @@
 import type { ICamera, IVolumeInput, Point3 } from '../../types';
 import type { BlendModes } from '../../enums';
 
+export type VolumeViewportScrollInfo = {
+  numScrollSteps: number;
+  currentStepIndex: number;
+};
+
 export default interface IVolumeActorMapper {
   setVolumes(
     volumeInputArray: IVolumeInput[],
@@ -28,6 +33,15 @@ export default interface IVolumeActorMapper {
       origin: Point3;
     }[];
   }[];
+  getScrollInfo(
+    volumeId: string,
+    useSlabThickness?: boolean
+  ): VolumeViewportScrollInfo | undefined;
+  scroll(
+    volumeId: string,
+    delta: number,
+    useSlabThickness?: boolean
+  ): VolumeViewportScrollInfo | undefined;
   renderToCanvas(): void;
   getIntensityFromWorld(point: Point3): number | undefined;
 }

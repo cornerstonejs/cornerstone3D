@@ -7,8 +7,6 @@ import type {
   IVideoViewport,
   IStackViewport,
 } from '../types';
-import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
-import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getEnabledElement from '../getEnabledElement';
 import triggerEvent from './triggerEvent';
 import eventTarget from '../eventTarget';
@@ -59,11 +57,10 @@ export default function scroll(
       triggerEvent(eventTarget, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
     }
 
-    (viewport as IStackViewport).scroll(
-      delta,
-      options.debounceLoading,
-      options.loop
-    );
+    (viewport as IStackViewport).scroll(delta, {
+      debounceLoading: options.debounceLoading,
+      loop: options.loop,
+    });
   }
 }
 
@@ -79,72 +76,21 @@ export function scrollVolume(
     return;
   }
 
-  if (viewport.useCPURendering) {
-    const currentStepIndex = viewport.getSliceIndex();
-    const numScrollSteps = Math.max(0, viewport.getNumberOfSlices() - 1);
-    const desiredStepIndex = currentStepIndex + delta;
+  const { numScrollSteps, currentStepIndex } =
+    viewport.getScrollInfo(resolvedVolumeId, scrollSlabs) || {};
 
-    viewport.scroll(delta);
-
-    const VolumeScrollEventDetail: EventTypes.VolumeScrollOutOfBoundsEventDetail =
-      {
-        volumeId: resolvedVolumeId,
-        viewport,
-        delta,
-        desiredStepIndex,
-        currentStepIndex,
-        numScrollSteps,
-        currentImageId: viewport.getCurrentImageId(),
-      };
-
-    if (
-      (desiredStepIndex > numScrollSteps || desiredStepIndex < 0) &&
-      viewport.getCurrentImageId()
-    ) {
-      triggerEvent(
-        eventTarget,
-        Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
-        VolumeScrollEventDetail
-      );
-    } else {
-      triggerEvent(
-        eventTarget,
-        Events.VOLUME_VIEWPORT_SCROLL,
-        VolumeScrollEventDetail
-      );
-    }
-
+  if (
+    typeof numScrollSteps !== 'number' ||
+    typeof currentStepIndex !== 'number' ||
+    numScrollSteps === 0
+  ) {
     return;
   }
 
-  const useSlabThickness = scrollSlabs;
-
-  const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
-    getVolumeViewportScrollInfo(viewport, resolvedVolumeId, useSlabThickness);
-
-  if (numScrollSteps === 0) return;
-
-  if (!sliceRangeInfo) {
-    return;
-  }
-
-  const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
-  const { focalPoint, viewPlaneNormal, position } = camera;
-
-  const { newFocalPoint, newPosition } = snapFocalPointToSlice(
-    focalPoint,
-    position,
-    sliceRange,
-    viewPlaneNormal,
-    spacingInNormalDirection,
-    delta
-  );
-
-  viewport.setCamera({
-    focalPoint: newFocalPoint,
-    position: newPosition,
+  viewport.scroll(delta, {
+    volumeId: resolvedVolumeId,
+    scrollSlabs,
   });
-  viewport.render();
 
   const desiredStepIndex = currentStepIndex + delta;
 

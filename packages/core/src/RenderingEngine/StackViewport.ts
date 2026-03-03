@@ -130,6 +130,11 @@ interface SetVOIOptions {
   voiUpdatedWithSetProperties?: boolean;
 }
 
+type StackScrollOptions = {
+  debounceLoading?: boolean;
+  loop?: boolean;
+};
+
 const log = coreLog.getLogger('RenderingEngine', 'StackViewport');
 
 /**
@@ -2255,10 +2260,25 @@ class StackViewport extends Viewport {
    * flag is set, it will only scroll the stack if the delta is greater than the
    * debounceThreshold which is 40 milliseconds by default.
    * @param delta - number of indices to scroll, it can be positive or negative
-   * @param debounce - whether to debounce the scroll event
-   * @param loop - whether to loop the stack
+   * @param options - scroll options
    */
-  public scroll(delta: number, debounce = true, loop = false): void {
+  public scroll(delta: number, options?: StackScrollOptions): void;
+  /** @deprecated Use `scroll(delta, { debounceLoading, loop })` instead. */
+  public scroll(delta: number, debounce?: boolean, loop?: boolean): void;
+  public scroll(
+    delta: number,
+    optionsOrDebounce: StackScrollOptions | boolean = {},
+    legacyLoop = false
+  ): void {
+    const options =
+      typeof optionsOrDebounce === 'boolean'
+        ? {
+            debounceLoading: optionsOrDebounce,
+            loop: legacyLoop,
+          }
+        : optionsOrDebounce;
+    const debounce = options.debounceLoading ?? true;
+    const loop = options.loop ?? false;
     const imageIds = this.imageIds;
 
     if (isNaN(this.targetImageIdIndex)) {

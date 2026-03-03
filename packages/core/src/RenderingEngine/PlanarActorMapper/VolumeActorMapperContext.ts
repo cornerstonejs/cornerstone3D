@@ -1,4 +1,5 @@
 import type {
+  ActorSliceRange,
   ActorEntry,
   ICamera,
   IImageVolume,
@@ -27,6 +28,19 @@ export interface VolumeActorMapperContext {
   getActors(): ActorEntry[];
   render(): void;
   getCamera(): ICamera;
+  setCamera(camera: Partial<ICamera>): void;
+  getVolumeViewportScrollInfo(
+    volumeId: string,
+    useSlabThickness?: boolean
+  ): {
+    numScrollSteps: number;
+    currentStepIndex: number;
+    sliceRangeInfo: {
+      sliceRange: ActorSliceRange;
+      spacingInNormalDirection: number;
+      camera: ICamera;
+    };
+  };
   updateClippingPlanesForActors(camera: ICamera): void;
   triggerCameraModifiedEventIfNecessary(
     previousCamera: ICamera,
