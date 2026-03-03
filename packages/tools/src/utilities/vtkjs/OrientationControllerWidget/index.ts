@@ -1,6 +1,7 @@
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import { Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkAnnotatedRhombicuboctahedronActor from '../AnnotatedRhombicuboctahedronActor';
 
@@ -266,9 +267,12 @@ export class vtkOrientationControllerWidget {
       return null;
     }
 
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const cornerOffset = 35; // pixels from corner (match OrientationControllerTool)
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const canvasWidth = canvas.clientWidth || canvas.width / devicePixelRatio;
+    const canvasHeight =
+      canvas.clientHeight || canvas.height / devicePixelRatio;
+    const cornerOffset =
+      viewport.type === Enums.ViewportType.VOLUME_3D ? 55 : 35;
 
     let canvasX: number;
     let canvasY: number;
@@ -327,11 +331,13 @@ export class vtkOrientationControllerWidget {
 
     // Calculate world units per pixel
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const canvasHeight = canvas.height / devicePixelRatio;
+    const canvasHeight =
+      canvas.clientHeight || canvas.height / devicePixelRatio;
+    const canvasWidth = canvas.clientWidth || canvas.width / devicePixelRatio;
     const worldUnitsPerPixel = worldHeight / canvasHeight;
 
     // Calculate desired screen size in pixels
-    const canvasSize = Math.min(canvas.width, canvas.height) / devicePixelRatio;
+    const canvasSize = Math.min(canvasWidth, canvasHeight);
     const screenSizePixels = canvasSize * config.size;
 
     // Convert to world units
