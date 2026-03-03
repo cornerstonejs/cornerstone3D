@@ -9,6 +9,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -27,6 +28,8 @@ const {
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
+const urlParams = new URLSearchParams(window.location.search);
+const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -36,14 +39,13 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Annotation Tools On Volumes',
-  'Here we demonstrate how annotation tools can be drawn/rendered on any plane.'
+  'Here we demonstrate how annotation tools can be drawn/rendered on any plane. Add ?cpu=true to load using CPU volume rendering.'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
-viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
@@ -79,9 +81,14 @@ content.append(instructions);
  */
 async function run() {
   // Init Cornerstone and related libraries
-  const config = (window as any).IS_TILED
-    ? { core: { renderingEngineMode: 'tiled' } }
-    : {};
+  const config = {
+    core: {
+      ...((window as any).IS_TILED ? { renderingEngineMode: 'tiled' } : {}),
+      rendering: {
+        useCPURendering: useCPURenderingOnLoad,
+      },
+    },
+  };
   await initDemo(config);
 
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
@@ -199,7 +206,19 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+    viewportIds
+  );
+
+  viewportIds.forEach((id) => {
+    const viewport = renderingEngine.getViewport(id) as Types.IVolumeViewport;
+    viewport.setProperties({
+      voiRange: { lower: -160, upper: 240 },
+      VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+    });
+  });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

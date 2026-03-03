@@ -115,9 +115,12 @@ abstract class BaseVolumeViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
 
     if (this.useCPURendering) {
-      throw new Error(
-        'VolumeViewports cannot be used whilst CPU Fallback Rendering is enabled.'
-      );
+      if (this.type !== ViewportType.ORTHOGRAPHIC) {
+        throw new Error(
+          'Only planar volume viewport CPU path is scaffolded. Perspective and volume_3d are not supported in CPU mode.'
+        );
+      }
+      return;
     }
 
     this._configureRenderingPipeline();

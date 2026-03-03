@@ -73,10 +73,54 @@ export function scrollVolume(
   delta: number,
   scrollSlabs = false
 ) {
+  const resolvedVolumeId = volumeId || viewport.getVolumeId();
+
+  if (!resolvedVolumeId) {
+    return;
+  }
+
+  if (viewport.useCPURendering) {
+    const currentStepIndex = viewport.getSliceIndex();
+    const numScrollSteps = Math.max(0, viewport.getNumberOfSlices() - 1);
+    const desiredStepIndex = currentStepIndex + delta;
+
+    viewport.scroll(delta);
+
+    const VolumeScrollEventDetail: EventTypes.VolumeScrollOutOfBoundsEventDetail =
+      {
+        volumeId: resolvedVolumeId,
+        viewport,
+        delta,
+        desiredStepIndex,
+        currentStepIndex,
+        numScrollSteps,
+        currentImageId: viewport.getCurrentImageId(),
+      };
+
+    if (
+      (desiredStepIndex > numScrollSteps || desiredStepIndex < 0) &&
+      viewport.getCurrentImageId()
+    ) {
+      triggerEvent(
+        eventTarget,
+        Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
+        VolumeScrollEventDetail
+      );
+    } else {
+      triggerEvent(
+        eventTarget,
+        Events.VOLUME_VIEWPORT_SCROLL,
+        VolumeScrollEventDetail
+      );
+    }
+
+    return;
+  }
+
   const useSlabThickness = scrollSlabs;
 
   const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
-    getVolumeViewportScrollInfo(viewport, volumeId, useSlabThickness);
+    getVolumeViewportScrollInfo(viewport, resolvedVolumeId, useSlabThickness);
 
   if (numScrollSteps === 0) return;
 
@@ -106,7 +150,7 @@ export function scrollVolume(
 
   const VolumeScrollEventDetail: EventTypes.VolumeScrollOutOfBoundsEventDetail =
     {
-      volumeId,
+      volumeId: resolvedVolumeId,
       viewport,
       delta,
       desiredStepIndex,

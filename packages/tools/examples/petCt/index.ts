@@ -13,6 +13,7 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
   setCtTransferFunctionForVolumeActor,
+  ctVoiRange,
   addDropdownToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
@@ -35,6 +36,8 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType, BlendModes } = Enums;
+const urlParams = new URLSearchParams(window.location.search);
+const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers;
@@ -86,7 +89,7 @@ const viewportIds = {
 // ======== Set up page ======== //
 setTitleAndDescription(
   'PET-CT',
-  'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
+  'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold. Add ?cpu=true to load using CPU volume rendering.'
 );
 
 const optionsValues = [
@@ -713,7 +716,7 @@ async function setUpDisplay() {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   );
 
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
@@ -725,6 +728,49 @@ async function setUpDisplay() {
     ],
     [viewportIds.PETMIP.CORONAL]
   );
+
+  const ctViewportIds = [
+    viewportIds.CT.AXIAL,
+    viewportIds.CT.SAGITTAL,
+    viewportIds.CT.CORONAL,
+    ...(useCPURenderingOnLoad
+      ? [
+          viewportIds.FUSION.AXIAL,
+          viewportIds.FUSION.SAGITTAL,
+          viewportIds.FUSION.CORONAL,
+        ]
+      : []),
+  ];
+
+  const ptViewportIds = [
+    viewportIds.PT.AXIAL,
+    viewportIds.PT.SAGITTAL,
+    viewportIds.PT.CORONAL,
+    viewportIds.PETMIP.CORONAL,
+  ];
+
+  ctViewportIds.forEach((viewportId) => {
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+    viewport.setProperties({
+      voiRange: ctVoiRange,
+      VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+      colormap: { name: 'Grayscale' },
+      invert: false,
+    });
+  });
+
+  ptViewportIds.forEach((viewportId) => {
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+    viewport.setProperties({
+      voiRange: { lower: 0, upper: 5 },
+      VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+      invert: true,
+    });
+  });
 
   initializeCameraSync(renderingEngine);
 
@@ -857,7 +903,13 @@ function initCameraSynchronization(sViewport, tViewport) {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({
+    core: {
+      rendering: {
+        useCPURendering: useCPURenderingOnLoad,
+      },
+    },
+  });
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
