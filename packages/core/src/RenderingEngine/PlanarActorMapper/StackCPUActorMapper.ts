@@ -3,9 +3,17 @@ import getDefaultViewport from '../helpers/cpuFallback/rendering/getDefaultViewp
 import pixelToCanvas from '../helpers/cpuFallback/rendering/pixelToCanvas';
 import calculateTransform from '../helpers/cpuFallback/rendering/calculateTransform';
 import { Transform } from '../helpers/cpuFallback/rendering/transform';
+import cache from '../../cache/cache';
+import uuidv4 from '../../utilities/uuidv4';
 import * as windowLevelUtil from '../../utilities/windowLevel';
 
-import type { CPUIImageData, IImage, Point3, IStackInput } from '../../types';
+import type {
+  CPUIImageData,
+  IImage,
+  ImageActor,
+  Point3,
+  IStackInput,
+} from '../../types';
 import type IStackActorMapper from './IStackActorMapper';
 import type { StackCPUActorMapperContext } from './StackActorMapperContext';
 
@@ -132,12 +140,42 @@ export default class StackCPUActorMapper implements IStackActorMapper {
   }
 
   /**
-   * CPU stack rendering only supports a single active image, so adding actor images
-   * is intentionally unsupported.
+   * Creates and registers canvas actors for stack inputs in CPU mode.
+   * This enables stack overlays such as labelmap segmentations.
    *
-   * @param _stackInputs - Additional stack actor inputs (not supported in CPU mode).
+   * @param stackInputs - Stack actor definitions to append to the CPU actor list.
    */
-  public addImages(_stackInputs: IStackInput[]): void {
-    throw this.context.getCPUFallbackError('addImages');
+  public addImages(stackInputs: IStackInput[]): void {
+    const actors = [...this.context.getCPUActors()];
+
+    stackInputs.forEach((stackInput) => {
+      const { imageId, ...rest } = stackInput;
+      const image = cache.getImage(imageId);
+
+      if (!image) {
+        return;
+      }
+
+      const imageActor = this.context.createActorMapper(image);
+      const visibility = stackInput.visibility ?? true;
+      imageActor.setVisibility?.(visibility);
+
+      actors.push({
+        uid: stackInput.actorUID ?? uuidv4(),
+        actor: imageActor,
+        referencedId: imageId,
+        ...rest,
+      });
+
+      if (stackInput.callback) {
+        stackInput.callback({
+          imageActor: imageActor as unknown as ImageActor,
+          imageId,
+        });
+      }
+    });
+
+    this.context.setCPUActors(actors);
+    this.context.setCPURenderingInvalidated(true);
   }
 }

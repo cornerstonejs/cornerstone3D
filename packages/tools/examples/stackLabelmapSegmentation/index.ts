@@ -38,6 +38,9 @@ const {
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
+const urlParams = new URLSearchParams(window.location.search);
+const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
+const previewEnabled = !useCPURenderingOnLoad;
 
 // Define a unique id for the volume
 let renderingEngine;
@@ -48,7 +51,7 @@ const toolGroupId = 'TOOL_GROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segmentation in StackViewport',
-  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image.'
+  'Here we demonstrate how to render a segmentation in StackViewport with a mammography image. Add ?cpu=true to load using CPU rendering.'
 );
 
 const size = '500px';
@@ -330,7 +333,7 @@ function setupTools(toolGroupId) {
         dynamicRadius: 3,
       },
       preview: {
-        enabled: true,
+        enabled: previewEnabled,
       },
     }
   );
@@ -344,7 +347,7 @@ function setupTools(toolGroupId) {
         dynamicRadius: 3,
       },
       preview: {
-        enabled: true,
+        enabled: previewEnabled,
       },
     }
   );
@@ -354,7 +357,7 @@ function setupTools(toolGroupId) {
     {
       activeStrategy: brushStrategies.CircularBrush,
       preview: {
-        enabled: true,
+        enabled: previewEnabled,
       },
       useCenterSegmentIndex: true,
     }
@@ -441,7 +444,13 @@ function setupTools(toolGroupId) {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({
+    core: {
+      rendering: {
+        useCPURendering: useCPURenderingOnLoad,
+      },
+    },
+  });
 
   const toolGroup = setupTools(toolGroupId);
 

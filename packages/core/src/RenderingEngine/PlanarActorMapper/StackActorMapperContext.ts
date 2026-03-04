@@ -17,6 +17,9 @@ import type { ImageDataMetaData } from '../StackViewport';
 export interface StackCPUActorMapperContext {
   setCPUFallbackEnabledElement(element: CPUFallbackEnabledElement): void;
   getCPUFallbackEnabledElement(): CPUFallbackEnabledElement;
+  getCPUActors(): ActorEntry[];
+  setCPUActors(actors: ActorEntry[]): void;
+  createActorMapper(image: IImage): ActorEntry['actor'];
   getCanvas(): HTMLCanvasElement;
   getModality(): string;
   getFrameOfReferenceUID(): string;

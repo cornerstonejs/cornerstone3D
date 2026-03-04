@@ -25,12 +25,41 @@ export default class CanvasActor {
     this.viewport = viewport;
   }
 
+  private static toValidCanvasSize(value: unknown): number {
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      return 0;
+    }
+
+    return Math.trunc(numeric);
+  }
+
+  private getCanvasSizeForImage(image): { width: number; height: number } {
+    const dimensions =
+      image?.getDimensions?.() ?? this.derivedImage?.getDimensions?.();
+    const width =
+      image?.width ?? image?.columns ?? dimensions?.[0] ?? image?.rows;
+    const height =
+      image?.height ?? image?.rows ?? dimensions?.[1] ?? image?.columns;
+
+    return {
+      width: CanvasActor.toValidCanvasSize(width),
+      height: CanvasActor.toValidCanvasSize(height),
+    };
+  }
+
   /**
    * Renders an RLE representation of the viewport data.  This is optimized to
    * avoid iterating over any data not actually containing data.
    */
   protected renderRLE(viewport, context, voxelManager) {
-    const { width, height } = this.image;
+    const { width, height } = this.getCanvasSizeForImage(this.image);
+
+    if (!width || !height) {
+      return;
+    }
+
     let { canvas } = this;
     if (!canvas || canvas.width !== width || canvas.height !== height) {
       this.canvas = canvas = new window.OffscreenCanvas(width, height);
@@ -113,7 +142,11 @@ export default class CanvasActor {
     }
     const image = this.image || this.getImage();
 
-    const { width, height } = image;
+    const { width, height } = this.getCanvasSizeForImage(image);
+
+    if (!width || !height) {
+      return;
+    }
 
     const data = image.getScalarData();
     if (!data) {
@@ -121,7 +154,7 @@ export default class CanvasActor {
     }
     const { voxelManager } = image;
     if (voxelManager) {
-      if (voxelManager.map.getRun) {
+      if (voxelManager.map?.getRun) {
         this.renderRLE(viewport, context, voxelManager);
         return;
       }
@@ -211,13 +244,37 @@ export default class CanvasActor {
       return this.image;
     }
     this.image = { ...this.derivedImage };
+    const getDerivedScalarData = () => {
+      if (this.derivedImage?.getPixelData) {
+        return this.derivedImage.getPixelData();
+      }
+
+      return this.derivedImage?.getPointData?.()?.getScalars?.()?.getData?.();
+    };
+
     const imageData = this.viewport.getImageData();
+    const derivedDimensions = this.derivedImage?.getDimensions?.();
+    const fallbackDimensions = imageData?.dimensions ?? [0, 0, 1];
+    const dimensions = derivedDimensions ?? fallbackDimensions;
+    const width =
+      this.derivedImage?.width ??
+      this.derivedImage?.columns ??
+      dimensions?.[0] ??
+      fallbackDimensions?.[0];
+    const height =
+      this.derivedImage?.height ??
+      this.derivedImage?.rows ??
+      dimensions?.[1] ??
+      fallbackDimensions?.[1];
+
     Object.assign(this.image, {
+      width: CanvasActor.toValidCanvasSize(width),
+      height: CanvasActor.toValidCanvasSize(height),
       worldToIndex: (worldPos) => imageData.imageData.worldToIndex(worldPos),
       indexToWorld: (index, destPoint) =>
         imageData.imageData.indexToWorld(index, destPoint),
-      getDimensions: () => imageData.dimensions,
-      getScalarData: () => this.derivedImage?.getPixelData(),
+      getDimensions: () => dimensions,
+      getScalarData: () => getDerivedScalarData(),
       getDirection: () => imageData.direction,
       getSpacing: () => imageData.spacing,
       setOrigin: () => null,
@@ -226,12 +283,18 @@ export default class CanvasActor {
        * the image instance (this object) to null so that the next getImage
        * refreshes the display.
        */
-      setDerivedImage: (image) => {
-        this.derivedImage = image;
-        this.image = null;
-      },
+      setDerivedImage: (image: unknown) => this.setDerivedImage(image),
       modified: () => null,
     });
     return this.image;
+  }
+
+  public setDerivedImage(image: unknown) {
+    this.derivedImage = image;
+    this.image = null;
+  }
+
+  public modified() {
+    this.image = null;
   }
 }

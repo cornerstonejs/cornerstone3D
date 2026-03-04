@@ -39,6 +39,10 @@ export default class CanvasProperties {
     // No-op - requires outline to be implemented first
   }
 
+  public modified() {
+    // No-op for API parity with vtk property objects.
+  }
+
   public getColor(index: number) {
     const cfun = this.transferFunction[0];
     const r = cfun.getRedValue(index);

@@ -58,6 +58,7 @@ import imageRetrieveMetadataProvider from '../utilities/imageRetrieveMetadataPro
 import imageIdToURI from '../utilities/imageIdToURI';
 
 import Viewport from './Viewport';
+import CanvasActor from './CanvasActor';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { getImagePlaneModule } from '../utilities/buildMetadata';
 
@@ -76,6 +77,7 @@ import calculateTransform from './helpers/cpuFallback/rendering/calculateTransfo
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import resize from './helpers/cpuFallback/rendering/resize';
+import setToPixelCoordinateSystem from './helpers/cpuFallback/rendering/setToPixelCoordinateSystem';
 
 import cache from '../cache/cache';
 import { getConfiguration, getShouldUseCPURendering } from '../init';
@@ -192,6 +194,7 @@ class StackViewport extends Viewport {
   private _publishCalibratedEvent = false;
   private _calibrationEvent: CalibrationEvent;
   private _cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
+  private _cpuActors = new Map<string, ActorEntry>();
   // CPU fallback
   private useCPURendering: boolean;
   private cpuImagePixelData: PixelDataTypedArray;
@@ -243,6 +246,11 @@ class StackViewport extends Viewport {
         this._cpuFallbackEnabledElement = element;
       },
       getCPUFallbackEnabledElement: () => this._cpuFallbackEnabledElement,
+      getCPUActors: () => this.getActorsCPU(),
+      setCPUActors: (actors) => {
+        this.setCPUActorsCollection(actors);
+      },
+      createActorMapper: (image) => this.createCPUActorMapper(image),
       getCanvas: () => this.canvas,
       getModality: () => this.modality,
       getFrameOfReferenceUID: () => this.getFrameOfReferenceUID(),
@@ -933,7 +941,17 @@ class StackViewport extends Viewport {
     const { metadata, viewport } = this._cpuFallbackEnabledElement;
 
     if (!metadata) {
-      return {};
+      return {
+        parallelProjection: true,
+        focalPoint: [0, 0, 0],
+        position: [0, 0, 0],
+        parallelScale: viewport?.parallelScale ?? 1,
+        scale: viewport?.scale ?? 1,
+        viewPlaneNormal: [0, 0, 1],
+        viewUp: [0, -1, 0],
+        flipHorizontal: this.flipHorizontal,
+        flipVertical: this.flipVertical,
+      };
     }
 
     const { direction } = metadata;
@@ -1735,6 +1753,7 @@ class StackViewport extends Viewport {
     if (this.useCPURendering) {
       this._cpuFallbackEnabledElement.renderingTools = {};
       delete this._cpuFallbackEnabledElement.viewport.colormap;
+      this._cpuActors.clear();
     }
 
     const imageId = await this._setImageIdIndex(currentImageIdIndex);
@@ -2113,6 +2132,71 @@ class StackViewport extends Viewport {
   public addImages(stackInputs: IStackInput[]) {
     this.getActiveActorMapper().addImages(stackInputs);
   }
+
+  public removeActors(actorUIDs: string[]): void {
+    if (!this.useCPURendering) {
+      super.removeActors(actorUIDs);
+      return;
+    }
+
+    actorUIDs.forEach((actorUID) => {
+      if (!actorUID) {
+        return;
+      }
+
+      this._cpuActors.delete(actorUID);
+    });
+
+    this.cpuRenderingInvalidated = true;
+  }
+
+  private createCPUActorMapper(image: IImage): CanvasActor {
+    return new CanvasActor(this, image);
+  }
+
+  private setCPUActorsCollection(actors: ActorEntry[]): void {
+    const actorMap = new Map<string, ActorEntry>();
+
+    actors.forEach((actorEntry) => {
+      actorMap.set(actorEntry.uid, actorEntry);
+    });
+
+    this._cpuActors = actorMap;
+  }
+
+  private getActorsCPU = (): ActorEntry[] => {
+    return Array.from(this._cpuActors.values());
+  };
+
+  private getActorCPU = (actorUID: string): ActorEntry => {
+    return this._cpuActors.get(actorUID);
+  };
+
+  private getDefaultActorCPU = (): ActorEntry => {
+    return this.getActorsCPU()[0];
+  };
+
+  private setActorsCPU = (actors: ActorEntry[]): void => {
+    this.setCPUActorsCollection(actors);
+    this.cpuRenderingInvalidated = true;
+  };
+
+  private addActorsCPU = (actors: ActorEntry[]): void => {
+    actors.forEach((actorEntry) => {
+      this._cpuActors.set(actorEntry.uid, actorEntry);
+    });
+    this.cpuRenderingInvalidated = true;
+  };
+
+  private addActorCPU = (actorEntry: ActorEntry): void => {
+    this._cpuActors.set(actorEntry.uid, actorEntry);
+    this.cpuRenderingInvalidated = true;
+  };
+
+  private removeAllActorsCPU = (): void => {
+    this._cpuActors.clear();
+    this.cpuRenderingInvalidated = true;
+  };
 
   /**
    * It updates the volume actor with the retrieved cornerstone image.
@@ -3014,6 +3098,17 @@ class StackViewport extends Viewport {
         this._cpuFallbackEnabledElement,
         this.cpuRenderingInvalidated
       );
+
+      const context = this.canvas.getContext('2d');
+
+      if (context && this._cpuActors.size) {
+        setToPixelCoordinateSystem(this._cpuFallbackEnabledElement, context);
+        this.getActorsCPU().forEach((actorEntry) => {
+          (actorEntry.actor as CanvasActor).render(this, context);
+        });
+        context.setTransform(1, 0, 0, 1, 0, 0);
+      }
+
       // reset flags
       this.cpuRenderingInvalidated = false;
     } else {
@@ -3205,31 +3300,31 @@ class StackViewport extends Viewport {
       },
     },
     getDefaultActor: {
-      cpu: () => this.getCPUFallbackError('getDefaultActor'),
+      cpu: this.getDefaultActorCPU,
       gpu: super.getDefaultActor,
     },
     getActors: {
-      cpu: () => this.getCPUFallbackError('getActors'),
+      cpu: this.getActorsCPU,
       gpu: super.getActors,
     },
     getActor: {
-      cpu: () => this.getCPUFallbackError('getActor'),
+      cpu: this.getActorCPU,
       gpu: super.getActor,
     },
     setActors: {
-      cpu: () => this.getCPUFallbackError('setActors'),
+      cpu: this.setActorsCPU,
       gpu: super.setActors,
     },
     addActors: {
-      cpu: () => this.getCPUFallbackError('addActors'),
+      cpu: this.addActorsCPU,
       gpu: super.addActors,
     },
     addActor: {
-      cpu: () => this.getCPUFallbackError('addActor'),
+      cpu: this.addActorCPU,
       gpu: super.addActor,
     },
     removeAllActors: {
-      cpu: () => this.getCPUFallbackError('removeAllActors'),
+      cpu: this.removeAllActorsCPU,
       gpu: super.removeAllActors,
     },
     unsetColormap: {

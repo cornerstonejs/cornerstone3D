@@ -22,6 +22,7 @@ import type {
   ViewReference,
   ViewReferenceSpecifier,
   VolumeViewportProperties,
+  VOIRange,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
@@ -72,6 +73,7 @@ class VolumeViewport extends BaseVolumeViewport {
   private readonly cpuActorMapper: IVolumeActorMapper;
   private cpuVolumeIds: string[] = [];
   private readonly cpuVolumes = new Map<string, IImageVolume>();
+  private readonly cpuVolumeVOIRanges = new Map<string, VOIRange>();
   private cpuBlendMode: BlendModes = BlendModes.COMPOSITE;
   private cpuDebug = {
     pipelineSelected: false,
@@ -201,7 +203,9 @@ class VolumeViewport extends BaseVolumeViewport {
       getRenderDefaultSlabThickness: () =>
         RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
       getCanvas: () => this.getCanvas(),
+      getCPUVolumeIds: () => [...this.cpuVolumeIds],
       getCPUPrimaryVolume: (volumeId) => this.getCPUPrimaryVolume(volumeId),
+      getCPUVOIRange: (volumeId) => this.getCPUVOIRange(volumeId),
       getCPUCameraBasis: (camera) => this.getCPUCameraBasis(camera),
       getViewportInterpolationType: () =>
         this.viewportProperties.interpolationType,
@@ -247,6 +251,7 @@ class VolumeViewport extends BaseVolumeViewport {
     if (!append) {
       this.cpuVolumes.clear();
       this.cpuVolumeIds = [];
+      this.cpuVolumeVOIRanges.clear();
     }
 
     for (const volumeInput of volumeInputArray) {
@@ -260,6 +265,27 @@ class VolumeViewport extends BaseVolumeViewport {
       this.cpuVolumes.set(imageVolume.volumeId, imageVolume);
       if (!this.cpuVolumeIds.includes(imageVolume.volumeId)) {
         this.cpuVolumeIds.push(imageVolume.volumeId);
+      }
+
+      if (!this.cpuVolumeVOIRanges.has(imageVolume.volumeId)) {
+        if (this.isCPUVolumePTPrescaled(imageVolume)) {
+          this.cpuVolumeVOIRanges.set(imageVolume.volumeId, {
+            lower: 0,
+            upper: 5,
+          });
+        } else {
+          const [lower, upper] = imageVolume.voxelManager.getRange();
+          if (
+            Number.isFinite(lower) &&
+            Number.isFinite(upper) &&
+            upper > lower
+          ) {
+            this.cpuVolumeVOIRanges.set(imageVolume.volumeId, {
+              lower,
+              upper,
+            });
+          }
+        }
       }
     }
 
@@ -278,14 +304,9 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     if (!this.viewportProperties.voiRange) {
-      if (this.isCPUVolumePTPrescaled(primaryVolume)) {
-        this.viewportProperties.voiRange = { lower: 0, upper: 5 };
-      } else {
-        const [lower, upper] = primaryVolume.voxelManager.getRange();
-        if (Number.isFinite(lower) && Number.isFinite(upper) && upper > lower) {
-          this.viewportProperties.voiRange = { lower, upper };
-        }
-      }
+      this.viewportProperties.voiRange = this.getCPUVOIRange(
+        primaryVolume.volumeId
+      );
     }
 
     if (typeof this.viewportProperties.invert !== 'boolean') {
@@ -304,6 +325,20 @@ class VolumeViewport extends BaseVolumeViewport {
 
   private isCPUVolumePTPrescaled(volume: IImageVolume): boolean {
     return volume.metadata?.Modality === 'PT' && volume.isPreScaled === true;
+  }
+
+  private getCPUVOIRange(volumeId?: string): VOIRange | undefined {
+    const resolvedVolume = this.getCPUPrimaryVolume(volumeId);
+    if (!resolvedVolume) {
+      return this.viewportProperties.voiRange;
+    }
+
+    const perVolumeVOI = this.cpuVolumeVOIRanges.get(resolvedVolume.volumeId);
+    if (perVolumeVOI) {
+      return perVolumeVOI;
+    }
+
+    return this.viewportProperties.voiRange;
   }
 
   private getVolumeCornersWorld(volume: IImageVolume): Point3[] {
@@ -1421,14 +1456,9 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     const volume = this.getCPUPrimaryVolume(_volumeId);
-    const voiRange =
-      this.viewportProperties.voiRange ??
-      (volume
-        ? (() => {
-            const [lower, upper] = volume.voxelManager.getRange();
-            return { lower, upper };
-          })()
-        : undefined);
+    const voiRange = volume
+      ? this.getCPUVOIRange(volume.volumeId)
+      : this.viewportProperties.voiRange;
 
     return {
       ...this.viewportProperties,
@@ -1469,7 +1499,19 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     if (voiRange) {
-      this.viewportProperties.voiRange = voiRange;
+      if (volumeId) {
+        this.cpuVolumeVOIRanges.set(volumeId, { ...voiRange });
+      } else {
+        const primaryVolume = this.getCPUPrimaryVolume();
+        if (primaryVolume) {
+          this.cpuVolumeVOIRanges.set(primaryVolume.volumeId, { ...voiRange });
+        }
+      }
+
+      const primaryVolume = this.getCPUPrimaryVolume();
+      if (!volumeId || primaryVolume?.volumeId === volumeId) {
+        this.viewportProperties.voiRange = { ...voiRange };
+      }
     }
 
     if (VOILUTFunction !== undefined) {
@@ -1494,9 +1536,12 @@ class VolumeViewport extends BaseVolumeViewport {
 
     if (!suppressEvents && (voiRange || typeof invert === 'boolean')) {
       const volume = this.getCPUPrimaryVolume(volumeId);
+      const eventRange =
+        (volume && this.getCPUVOIRange(volume.volumeId)) ??
+        this.viewportProperties.voiRange;
       const eventDetail: EventTypes.VoiModifiedEventDetail = {
         viewportId: this.id,
-        range: this.viewportProperties.voiRange,
+        range: eventRange,
         volumeId: volume?.volumeId,
         VOILUTFunction: this.viewportProperties.VOILUTFunction,
         invert: this.viewportProperties.invert,
@@ -1865,6 +1910,7 @@ class VolumeViewport extends BaseVolumeViewport {
         interpolationType: InterpolationType.LINEAR,
         slabThickness: undefined,
       };
+      this.cpuVolumeVOIRanges.set(imageVolume.volumeId, { lower, upper });
       this.cpuBlendMode = BlendModes.COMPOSITE;
       this.resetCamera();
 

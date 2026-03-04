@@ -47,8 +47,10 @@ export default function voiSyncCallback(
   }
 
   if (tViewport instanceof BaseVolumeViewport) {
-    const isFusion = tViewport._actors && tViewport._actors.size > 1;
-    if (isFusion) {
+    const isFusion =
+      tViewport.getAllVolumeIds?.().length > 1 ||
+      (tViewport._actors && tViewport._actors.size > 1);
+    if (isFusion && volumeId) {
       tViewport.setProperties(tProperties, volumeId);
     } else {
       tViewport.setProperties(tProperties);

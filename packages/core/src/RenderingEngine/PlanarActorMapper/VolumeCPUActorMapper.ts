@@ -1,11 +1,13 @@
 import { EPSILON } from '../../constants';
 import { BlendModes, InterpolationType, VOILUTFunctionType } from '../../enums';
+import { getColormap } from '../helpers/cpuFallback/colors';
 import drawImageSync from '../helpers/cpuFallback/drawImageSync';
 import getDefaultViewport from '../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../utilities/getSpacingInNormalDirection';
 import snapFocalPointToSlice from '../../utilities/snapFocalPointToSlice';
 import VoxelManager from '../../utilities/VoxelManager';
 import type {
+  CPUFallbackColormap,
   CPUFallbackEnabledElement,
   ICamera,
   IImage,
@@ -61,10 +63,26 @@ type CPUSliceRangeInfo = VolumeViewportScrollInfo & {
   normal: Point3;
 };
 
+type CPUVolumeOverlayStyle = {
+  opacity: number;
+  compositeOperation: GlobalCompositeOperation;
+  colormap?: CPUFallbackColormap;
+  invert?: boolean;
+  voiRange?: {
+    lower: number;
+    upper: number;
+  };
+};
+
 export default class VolumeCPUActorMapper implements IVolumeActorMapper {
   private pendingVolumeLoadCallbacks = new Set<string>();
   private cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
-  private sampledSliceState?: SampledSliceState;
+  private readonly sampledSliceStates = new Map<string, SampledSliceState>();
+  private readonly overlayEnabledElements = new Map<
+    string,
+    CPUFallbackEnabledElement
+  >();
+  private petColormap?: CPUFallbackColormap;
   private cpuRenderingInvalidated = true;
   private sampleSequence = 0;
   private debug = {
@@ -289,14 +307,14 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
    * @returns void
    */
   public renderToCanvas(): void {
-    const volume = this.context.getCPUPrimaryVolume();
+    const primaryVolume = this.context.getCPUPrimaryVolume();
 
-    if (!volume) {
+    if (!primaryVolume) {
       this.fillWithBackgroundColor();
       return;
     }
 
-    if (!this.ensureVolumeIsLoaded(volume)) {
+    if (!this.ensureVolumeIsLoaded(primaryVolume)) {
       this.fillWithBackgroundColor();
       return;
     }
@@ -313,50 +331,46 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     const { right, up, normal } = this.context.getCPUCameraBasis(camera);
     const interpolationType =
       this.context.getViewportInterpolationType() ?? InterpolationType.LINEAR;
-    const slabThickness = this.getEffectiveSlabThickness(volume, normal);
+    const sampledSlices = this.sampleAllVisibleVolumes({
+      primaryVolume,
+      width,
+      height,
+      camera,
+      right,
+      up,
+      normal,
+      interpolationType,
+    });
+    const primarySample = sampledSlices.find(
+      (sample) => sample.volume.volumeId === primaryVolume.volumeId
+    );
 
-    if (
-      this.shouldResampleSlice(
-        volume,
-        width,
-        height,
-        camera.focalPoint as Point3,
-        right,
-        up,
-        normal,
-        interpolationType,
-        slabThickness
-      )
-    ) {
-      const sampledSlice = this.sampleSliceImage(
-        volume,
-        width,
-        height,
-        camera,
-        right,
-        up,
-        normal,
-        interpolationType,
-        slabThickness
-      );
-
-      this.sampledSliceState = sampledSlice;
-      this.cpuRenderingInvalidated = true;
-      this.setCPUFallbackImage(sampledSlice.image, volume);
-    }
-
-    if (!this.cpuFallbackEnabledElement?.image || !this.sampledSliceState) {
+    if (!primarySample) {
       this.fillWithBackgroundColor();
       return;
     }
 
-    this.updateCPUFallbackViewport(
-      this.cpuFallbackEnabledElement,
-      this.sampledSliceState,
+    this.updatePrimaryEnabledElement(
+      primaryVolume,
+      primarySample.sampledSliceState,
       camera
     );
 
+    if (!this.cpuFallbackEnabledElement?.image) {
+      this.fillWithBackgroundColor();
+      return;
+    }
+
     drawImageSync(this.cpuFallbackEnabledElement, this.cpuRenderingInvalidated);
+
+    this.renderSecondaryVolumeOverlays(
+      sampledSlices,
+      primaryVolume,
+      camera,
+      width,
+      height
+    );
+
     this.cpuRenderingInvalidated = false;
 
     if (!this.debug.firstFrameRendered) {
@@ -364,9 +378,280 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
       this.context.logCPU('Rendered first CPU frame', {
         width,
         height,
-        volumeId: volume.volumeId,
+        volumeId: primaryVolume.volumeId,
       });
     }
+  }
+
+  private sampleAllVisibleVolumes({
+    primaryVolume,
+    width,
+    height,
+    camera,
+    right,
+    up,
+    normal,
+    interpolationType,
+  }: {
+    primaryVolume: IImageVolume;
+    width: number;
+    height: number;
+    camera: ICamera;
+    right: Point3;
+    up: Point3;
+    normal: Point3;
+    interpolationType: InterpolationType;
+  }): { volume: IImageVolume; sampledSliceState: SampledSliceState }[] {
+    const volumes = this.getCPUVolumesInRenderOrder(primaryVolume);
+    const allowOrthogonalFastPath = volumes.length === 1;
+    const sampledSlices: {
+      volume: IImageVolume;
+      sampledSliceState: SampledSliceState;
+    }[] = [];
+
+    for (const volume of volumes) {
+      if (!this.ensureVolumeIsLoaded(volume)) {
+        continue;
+      }
+
+      const slabThickness = this.getEffectiveSlabThickness(volume, normal);
+      const sampledSliceState = this.sampledSliceStates.get(volume.volumeId);
+
+      if (
+        this.shouldResampleSlice(
+          sampledSliceState,
+          volume,
+          width,
+          height,
+          camera.focalPoint as Point3,
+          right,
+          up,
+          normal,
+          interpolationType,
+          slabThickness
+        )
+      ) {
+        const newSampledSliceState = this.sampleSliceImage(
+          volume,
+          width,
+          height,
+          camera,
+          right,
+          up,
+          normal,
+          interpolationType,
+          slabThickness,
+          allowOrthogonalFastPath
+        );
+
+        this.sampledSliceStates.set(volume.volumeId, newSampledSliceState);
+        this.cpuRenderingInvalidated = true;
+      }
+
+      const nextSampledSliceState = this.sampledSliceStates.get(
+        volume.volumeId
+      );
+      if (!nextSampledSliceState) {
+        continue;
+      }
+
+      sampledSlices.push({ volume, sampledSliceState: nextSampledSliceState });
+    }
+
+    return sampledSlices;
+  }
+
+  private getCPUVolumesInRenderOrder(
+    primaryVolume: IImageVolume
+  ): IImageVolume[] {
+    const volumeIds = this.context.getCPUVolumeIds();
+    const volumes = volumeIds
+      .map((volumeId) => this.context.getCPUPrimaryVolume(volumeId))
+      .filter(Boolean) as IImageVolume[];
+
+    if (!volumes.length) {
+      return [primaryVolume];
+    }
+
+    const primaryIndex = volumes.findIndex(
+      (volume) => volume.volumeId === primaryVolume.volumeId
+    );
+
+    if (primaryIndex > 0) {
+      const [primary] = volumes.splice(primaryIndex, 1);
+      volumes.unshift(primary);
+    } else if (primaryIndex < 0) {
+      volumes.unshift(primaryVolume);
+    }
+
+    return volumes;
+  }
+
+  private updatePrimaryEnabledElement(
+    primaryVolume: IImageVolume,
+    sampledSliceState: SampledSliceState,
+    camera: ICamera
+  ): void {
+    const viewportCanvas = this.context.getCanvas();
+    const needsPrimaryEnabledElement =
+      !this.cpuFallbackEnabledElement ||
+      this.cpuFallbackEnabledElement.canvas !== viewportCanvas ||
+      this.cpuFallbackEnabledElement.image?.imageId !==
+        sampledSliceState.image.imageId;
+
+    if (needsPrimaryEnabledElement) {
+      this.setCPUFallbackImage(sampledSliceState.image, primaryVolume);
+    }
+
+    this.updateCPUFallbackViewport(
+      this.cpuFallbackEnabledElement,
+      sampledSliceState,
+      camera
+    );
+  }
+
+  private renderSecondaryVolumeOverlays(
+    sampledSlices: {
+      volume: IImageVolume;
+      sampledSliceState: SampledSliceState;
+    }[],
+    primaryVolume: IImageVolume,
+    camera: ICamera,
+    width: number,
+    height: number
+  ): void {
+    if (sampledSlices.length <= 1) {
+      return;
+    }
+
+    const context2D = this.context.getCanvas().getContext('2d');
+    if (!context2D) {
+      return;
+    }
+
+    for (const { volume, sampledSliceState } of sampledSlices) {
+      if (volume.volumeId === primaryVolume.volumeId) {
+        continue;
+      }
+
+      const overlayStyle = this.getOverlayStyle(volume, sampledSliceState);
+      if (overlayStyle.opacity <= 0) {
+        continue;
+      }
+
+      const overlayEnabledElement = this.getOverlayEnabledElement(
+        volume,
+        sampledSliceState.image,
+        width,
+        height
+      );
+
+      this.updateCPUFallbackViewport(
+        overlayEnabledElement,
+        sampledSliceState,
+        camera,
+        {
+          colormap: overlayStyle.colormap,
+          invert: overlayStyle.invert,
+          voiRange: overlayStyle.voiRange,
+          modality: volume.metadata?.Modality,
+        }
+      );
+
+      drawImageSync(overlayEnabledElement, this.cpuRenderingInvalidated);
+
+      // drawImageSync leaves canvas transform in pixel-coordinate space;
+      // reset to identity so overlay compositing is in canvas space.
+      context2D.setTransform(1, 0, 0, 1, 0, 0);
+      context2D.save();
+      context2D.globalCompositeOperation = overlayStyle.compositeOperation;
+      context2D.globalAlpha = overlayStyle.opacity;
+      context2D.drawImage(overlayEnabledElement.canvas, 0, 0, width, height);
+      context2D.restore();
+    }
+  }
+
+  private getOverlayEnabledElement(
+    volume: IImageVolume,
+    image: IImage,
+    width: number,
+    height: number
+  ): CPUFallbackEnabledElement {
+    const existingEnabledElement = this.overlayEnabledElements.get(
+      volume.volumeId
+    );
+    if (existingEnabledElement) {
+      if (
+        existingEnabledElement.canvas.width !== width ||
+        existingEnabledElement.canvas.height !== height
+      ) {
+        existingEnabledElement.canvas.width = width;
+        existingEnabledElement.canvas.height = height;
+        existingEnabledElement.renderingTools = {};
+        this.cpuRenderingInvalidated = true;
+      }
+
+      existingEnabledElement.image = image;
+      return existingEnabledElement;
+    }
+
+    const overlayCanvas = document.createElement('canvas');
+    overlayCanvas.width = width;
+    overlayCanvas.height = height;
+    const enabledElement: CPUFallbackEnabledElement = {
+      canvas: overlayCanvas,
+      image,
+      renderingTools: {},
+      viewport: getDefaultViewport(
+        overlayCanvas,
+        image,
+        volume.metadata?.Modality
+      ),
+    };
+
+    this.overlayEnabledElements.set(volume.volumeId, enabledElement);
+
+    return enabledElement;
+  }
+
+  private getOverlayStyle(
+    volume: IImageVolume,
+    sampledSliceState: SampledSliceState
+  ): CPUVolumeOverlayStyle {
+    if (volume.metadata?.Modality === 'PT') {
+      const ptVOIRange = this.context.getCPUVOIRange(volume.volumeId) ?? {
+        lower: 0,
+        upper: 5,
+      };
+      return {
+        opacity: 0.75,
+        compositeOperation: 'screen',
+        colormap: this.getPETColormap(),
+        invert: false,
+        voiRange: ptVOIRange,
+      };
+    }
+
+    const viewportVOIRange = this.getResolvedVOIRange(
+      this.context.getCPUVOIRange(volume.volumeId),
+      sampledSliceState.image.minPixelValue ?? 0,
+      sampledSliceState.image.maxPixelValue ?? 1
+    );
+
+    return {
+      opacity: 0.5,
+      compositeOperation: 'source-over',
+      invert: false,
+      voiRange: viewportVOIRange,
+    };
+  }
+
+  private getPETColormap(): CPUFallbackColormap {
+    if (!this.petColormap) {
+      this.petColormap = getColormap('pet');
+    }
+
+    return this.petColormap;
   }
 
   private ensureVolumeIsLoaded(volume: IImageVolume): boolean {
@@ -419,6 +704,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
   }
 
   private shouldResampleSlice(
+    sampledSliceState: SampledSliceState | undefined,
     volume: IImageVolume,
     canvasWidth: number,
     canvasHeight: number,
@@ -429,8 +715,6 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     interpolationType: InterpolationType,
     slabThickness: number
   ): boolean {
-    const sampledSliceState = this.sampledSliceState;
-
     if (!sampledSliceState) {
       return true;
     }
@@ -458,16 +742,19 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     up: Point3,
     normal: Point3,
     interpolationType: InterpolationType,
-    slabThickness: number
+    slabThickness: number,
+    allowOrthogonalFastPath = true
   ): SampledSliceState {
-    const orthogonalSlice = this.trySampleOrthogonalSliceFromVoxelManager(
-      volume,
-      camera,
-      right,
-      up,
-      normal,
-      slabThickness
-    );
+    const orthogonalSlice = allowOrthogonalFastPath
+      ? this.trySampleOrthogonalSliceFromVoxelManager(
+          volume,
+          camera,
+          right,
+          up,
+          normal,
+          slabThickness
+        )
+      : undefined;
 
     if (orthogonalSlice) {
       const image = this.createSliceImage(
@@ -948,7 +1235,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     maxPixelValue: number
   ): IImage {
     const volumeVOIRange = this.getResolvedVOIRange(
-      this.context.getViewportVOIRange(),
+      this.context.getCPUVOIRange(volume.volumeId),
       minPixelValue,
       maxPixelValue
     );
@@ -1023,15 +1310,27 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
   private updateCPUFallbackViewport(
     enabledElement: CPUFallbackEnabledElement,
     sampledSliceState: SampledSliceState,
-    camera: ICamera
+    camera: ICamera,
+    options: {
+      colormap?: CPUFallbackColormap;
+      invert?: boolean;
+      modality?: string;
+      voiRange?: {
+        lower: number;
+        upper: number;
+      };
+    } = {}
   ): void {
     const viewport = enabledElement.viewport;
     const parallelScale = Math.max(camera.parallelScale ?? 1, EPSILON);
     const rowPixelSpacing = sampledSliceState.image.rowPixelSpacing || 1;
     const columnPixelSpacing = sampledSliceState.image.columnPixelSpacing || 1;
     const clientHeight = Math.max(enabledElement.canvas.height, 1);
+    const resolvedVoiRange =
+      options.voiRange ??
+      this.context.getCPUVOIRange(sampledSliceState.volumeId);
     const viewportVOIRange = this.getResolvedVOIRange(
-      this.context.getViewportVOIRange(),
+      resolvedVoiRange,
       sampledSliceState.image.minPixelValue ?? 0,
       sampledSliceState.image.maxPixelValue ?? 1
     );
@@ -1045,7 +1344,9 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     const basePixelSpacing = Math.min(rowPixelSpacing, columnPixelSpacing);
     viewport.scale = (clientHeight * basePixelSpacing * 0.5) / parallelScale;
     viewport.parallelScale = parallelScale;
-    viewport.invert = this.context.getViewportInvert();
+    viewport.invert = options.invert ?? this.context.getViewportInvert();
+    viewport.modality = options.modality ?? viewport.modality;
+    viewport.colormap = options.colormap;
     viewport.pixelReplication =
       this.context.getViewportInterpolationType() === InterpolationType.NEAREST;
     viewport.hflip = camera.flipHorizontal ?? false;
@@ -1294,7 +1595,9 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
   }
 
   private invalidateSampledSlice(): void {
-    this.sampledSliceState = undefined;
+    this.sampledSliceStates.clear();
+    this.overlayEnabledElements.clear();
+    this.cpuFallbackEnabledElement = undefined;
     this.cpuRenderingInvalidated = true;
   }
 }

@@ -14,4 +14,12 @@ export default class CanvasMapper {
   getInputData() {
     return this.actor.getImage();
   }
+
+  setInputData(inputData: unknown) {
+    this.actor.setDerivedImage(inputData);
+  }
+
+  modified() {
+    this.actor.modified();
+  }
 }
