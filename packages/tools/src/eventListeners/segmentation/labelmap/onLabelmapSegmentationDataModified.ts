@@ -53,6 +53,7 @@ const onLabelmapSegmentationDataModified = function (
         modifiedSlicesToUse: hasBothStackAndVolume ? [] : modifiedSlicesToUse,
         representationData,
         type: SegmentationRepresentations.Labelmap,
+        viewport,
       });
     }
 

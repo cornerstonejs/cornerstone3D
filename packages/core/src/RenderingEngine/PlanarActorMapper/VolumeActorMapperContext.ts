@@ -67,6 +67,7 @@ export interface VolumeActorMapperContext {
   getRenderDefaultSlabThickness(): number;
   getCanvas(): HTMLCanvasElement;
   getCPUVolumeIds(): string[];
+  getCPUVolumeInput(volumeId: string): IVolumeInput | undefined;
   getCPUPrimaryVolume(volumeId?: string): IImageVolume | undefined;
   getCPUVOIRange(volumeId?: string): VOIRange | undefined;
   getCPUCameraBasis(camera: ICamera): {

@@ -73,6 +73,7 @@ class VolumeViewport extends BaseVolumeViewport {
   private readonly cpuActorMapper: IVolumeActorMapper;
   private cpuVolumeIds: string[] = [];
   private readonly cpuVolumes = new Map<string, IImageVolume>();
+  private readonly cpuVolumeInputs = new Map<string, IVolumeInput>();
   private readonly cpuVolumeVOIRanges = new Map<string, VOIRange>();
   private cpuBlendMode: BlendModes = BlendModes.COMPOSITE;
   private cpuDebug = {
@@ -204,6 +205,7 @@ class VolumeViewport extends BaseVolumeViewport {
         RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
       getCanvas: () => this.getCanvas(),
       getCPUVolumeIds: () => [...this.cpuVolumeIds],
+      getCPUVolumeInput: (volumeId) => this.cpuVolumeInputs.get(volumeId),
       getCPUPrimaryVolume: (volumeId) => this.getCPUPrimaryVolume(volumeId),
       getCPUVOIRange: (volumeId) => this.getCPUVOIRange(volumeId),
       getCPUCameraBasis: (camera) => this.getCPUCameraBasis(camera),
@@ -248,9 +250,12 @@ class VolumeViewport extends BaseVolumeViewport {
     append = false,
     _suppressEvents = false
   ): Promise<void> {
+    const hasVolumesBeforeUpdate = this.cpuVolumeIds.length > 0;
+
     if (!append) {
       this.cpuVolumes.clear();
       this.cpuVolumeIds = [];
+      this.cpuVolumeInputs.clear();
       this.cpuVolumeVOIRanges.clear();
     }
 
@@ -263,6 +268,7 @@ class VolumeViewport extends BaseVolumeViewport {
       }
 
       this.cpuVolumes.set(imageVolume.volumeId, imageVolume);
+      this.cpuVolumeInputs.set(imageVolume.volumeId, { ...volumeInput });
       if (!this.cpuVolumeIds.includes(imageVolume.volumeId)) {
         this.cpuVolumeIds.push(imageVolume.volumeId);
       }
@@ -274,6 +280,27 @@ class VolumeViewport extends BaseVolumeViewport {
             upper: 5,
           });
         } else {
+          const voiLut = imageVolume.metadata?.voiLut?.[0] as
+            | { windowWidth?: number; windowCenter?: number }
+            | undefined;
+          const windowWidth = voiLut?.windowWidth;
+          const windowCenter = voiLut?.windowCenter;
+
+          if (
+            Number.isFinite(windowWidth) &&
+            Number.isFinite(windowCenter) &&
+            windowWidth > 0
+          ) {
+            const lower = windowCenter - windowWidth / 2;
+            const upper = windowCenter + windowWidth / 2;
+
+            this.cpuVolumeVOIRanges.set(imageVolume.volumeId, {
+              lower,
+              upper,
+            });
+            continue;
+          }
+
           const [lower, upper] = imageVolume.voxelManager.getRange();
           if (
             Number.isFinite(lower) &&
@@ -320,7 +347,12 @@ class VolumeViewport extends BaseVolumeViewport {
       this.viewportProperties.interpolationType = InterpolationType.LINEAR;
     }
 
-    this.resetCamera({ suppressEvents: true });
+    const shouldResetCamera = !append || !hasVolumesBeforeUpdate;
+    if (shouldResetCamera) {
+      this.resetCamera({ suppressEvents: true });
+    } else {
+      this.getActiveVolumeActorMapper().invalidateSampledSlice();
+    }
   }
 
   private isCPUVolumePTPrescaled(volume: IImageVolume): boolean {
@@ -339,6 +371,91 @@ class VolumeViewport extends BaseVolumeViewport {
     }
 
     return this.viewportProperties.voiRange;
+  }
+
+  public invalidateCPUSampledSlice(volumeId?: string, renderImmediate = false) {
+    if (!this.useCPURendering) {
+      return;
+    }
+
+    this.getActiveVolumeActorMapper().invalidateSampledSlice(volumeId);
+
+    if (renderImmediate) {
+      this.render();
+    }
+  }
+
+  public updateCPUVolumeInput(
+    volumeId: string,
+    updates: Partial<IVolumeInput>,
+    options: {
+      invalidate?: boolean;
+      forceInvalidate?: boolean;
+      renderImmediate?: boolean;
+    } = {}
+  ): boolean {
+    if (!this.useCPURendering) {
+      return false;
+    }
+
+    const currentInput = this.cpuVolumeInputs.get(volumeId);
+    if (!currentInput) {
+      return false;
+    }
+
+    const {
+      invalidate = false,
+      forceInvalidate = false,
+      renderImmediate = false,
+    } = options;
+    const keys = Object.keys(updates) as (keyof IVolumeInput)[];
+    const changed = keys.some((key) => currentInput[key] !== updates[key]);
+
+    if (changed) {
+      this.cpuVolumeInputs.set(volumeId, {
+        ...currentInput,
+        ...updates,
+      });
+    }
+
+    if (invalidate && (changed || forceInvalidate)) {
+      this.getActiveVolumeActorMapper().invalidateSampledSlice(volumeId);
+    }
+
+    const invalidated = invalidate && (changed || forceInvalidate);
+    if (renderImmediate && (changed || invalidated)) {
+      this.render();
+    }
+
+    return changed;
+  }
+
+  public removeCPUVolumes(
+    volumeIds: string[],
+    options: { renderImmediate?: boolean } = {}
+  ): void {
+    if (!this.useCPURendering || !volumeIds.length) {
+      return;
+    }
+
+    let removedAny = false;
+    for (const volumeId of volumeIds) {
+      const hadVolume = this.cpuVolumes.delete(volumeId);
+      const hadInput = this.cpuVolumeInputs.delete(volumeId);
+      const hadVOI = this.cpuVolumeVOIRanges.delete(volumeId);
+      this.cpuVolumeIds = this.cpuVolumeIds.filter((id) => id !== volumeId);
+      removedAny = removedAny || hadVolume || hadInput || hadVOI;
+    }
+
+    if (!removedAny) {
+      return;
+    }
+
+    this.getActiveVolumeActorMapper().invalidateSampledSlice();
+
+    if (options.renderImmediate) {
+      this.render();
+    }
   }
 
   private getVolumeCornersWorld(volume: IImageVolume): Point3[] {

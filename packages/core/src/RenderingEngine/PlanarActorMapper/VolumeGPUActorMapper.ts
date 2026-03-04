@@ -290,6 +290,10 @@ export default class VolumeGPUActorMapper implements IVolumeActorMapper {
     return { numScrollSteps, currentStepIndex };
   }
 
+  public invalidateSampledSlice(_volumeId?: string): void {
+    return;
+  }
+
   /**
    * GPU mapper renders through VTK; no CPU canvas path required.
    * @returns void

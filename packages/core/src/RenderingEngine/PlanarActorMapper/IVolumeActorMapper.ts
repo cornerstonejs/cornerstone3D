@@ -42,6 +42,7 @@ export default interface IVolumeActorMapper {
     delta: number,
     useSlabThickness?: boolean
   ): VolumeViewportScrollInfo | undefined;
+  invalidateSampledSlice(volumeId?: string): void;
   renderToCanvas(): void;
   getIntensityFromWorld(point: Point3): number | undefined;
 }

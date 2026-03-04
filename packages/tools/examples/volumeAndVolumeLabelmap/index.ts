@@ -26,6 +26,8 @@ const {
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
+const urlParams = new URLSearchParams(window.location.search);
+const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
 
 // Define a unique id for the volume
 let renderingEngine;
@@ -37,7 +39,7 @@ const toolGroupId = 'TOOL_GROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segmentation in Multiple Orthographic Viewports',
-  'This example demonstrates how to render and synchronize a segmentation across multiple Orthographic Viewports displaying different volumes. It showcases the ability to interact with the segmentation in one viewport and see the changes reflected in the others.'
+  'This example demonstrates how to render and synchronize a segmentation across multiple Orthographic Viewports displaying different volumes. It showcases the ability to interact with the segmentation in one viewport and see the changes reflected in the others. Add ?cpu=true to load using CPU volume rendering.'
 );
 
 const size = '500px';
@@ -133,7 +135,15 @@ addDropdownToToolbar({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  const config = {
+    core: {
+      ...((window as any).IS_TILED ? { renderingEngineMode: 'tiled' } : {}),
+      rendering: {
+        useCPURendering: useCPURenderingOnLoad,
+      },
+    },
+  };
+  await initDemo(config);
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   addManipulationBindings(toolGroup, { toolMap: labelmapTools.toolMap });

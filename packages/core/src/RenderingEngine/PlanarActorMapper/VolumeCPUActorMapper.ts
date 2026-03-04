@@ -74,6 +74,23 @@ type CPUVolumeOverlayStyle = {
   };
 };
 
+type CPUVolumeLabelmapConfig = {
+  colorLUT?: number[][];
+  opacity?: number;
+  invert?: boolean;
+  voiRange?: {
+    lower: number;
+    upper: number;
+  };
+};
+
+type CPUVolumeInputWithOverlay = IVolumeInput & {
+  isLabelmapSegmentation?: boolean;
+  cpuLabelmapConfig?: CPUVolumeLabelmapConfig;
+};
+
+let mapperInstanceId = 0;
+
 export default class VolumeCPUActorMapper implements IVolumeActorMapper {
   private pendingVolumeLoadCallbacks = new Set<string>();
   private cpuFallbackEnabledElement?: CPUFallbackEnabledElement;
@@ -83,6 +100,8 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     CPUFallbackEnabledElement
   >();
   private petColormap?: CPUFallbackColormap;
+  private readonly labelmapColormaps = new Map<string, CPUFallbackColormap>();
+  private readonly labelmapColormapNamespace = `cpuLabelmap-${++mapperInstanceId}`;
   private cpuRenderingInvalidated = true;
   private sampleSequence = 0;
   private debug = {
@@ -288,6 +307,24 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     return { numScrollSteps, currentStepIndex };
   }
 
+  public invalidateSampledSlice(volumeId?: string): void {
+    if (!volumeId) {
+      this.invalidateSampledSliceInternal();
+      return;
+    }
+
+    this.sampledSliceStates.delete(volumeId);
+    this.overlayEnabledElements.delete(volumeId);
+    this.labelmapColormaps.delete(volumeId);
+
+    const primaryVolume = this.context.getCPUPrimaryVolume();
+    if (primaryVolume?.volumeId === volumeId) {
+      this.cpuFallbackEnabledElement = undefined;
+    }
+
+    this.cpuRenderingInvalidated = true;
+  }
+
   /**
    * Samples scalar intensity at world coordinate in CPU volume data.
    * @param point - World coordinate.
@@ -329,7 +366,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
 
     const camera = this.context.getCamera();
     const { right, up, normal } = this.context.getCPUCameraBasis(camera);
-    const interpolationType =
+    const viewportInterpolationType =
       this.context.getViewportInterpolationType() ?? InterpolationType.LINEAR;
     const sampledSlices = this.sampleAllVisibleVolumes({
       primaryVolume,
@@ -339,7 +376,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
       right,
       up,
       normal,
-      interpolationType,
+      viewportInterpolationType,
     });
     const primarySample = sampledSlices.find(
       (sample) => sample.volume.volumeId === primaryVolume.volumeId
@@ -391,7 +428,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     right,
     up,
     normal,
-    interpolationType,
+    viewportInterpolationType,
   }: {
     primaryVolume: IImageVolume;
     width: number;
@@ -400,7 +437,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     right: Point3;
     up: Point3;
     normal: Point3;
-    interpolationType: InterpolationType;
+    viewportInterpolationType: InterpolationType;
   }): { volume: IImageVolume; sampledSliceState: SampledSliceState }[] {
     const volumes = this.getCPUVolumesInRenderOrder(primaryVolume);
     const allowOrthogonalFastPath = volumes.length === 1;
@@ -414,6 +451,10 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
         continue;
       }
 
+      const interpolationType = this.getInterpolationTypeForVolume(
+        volume,
+        viewportInterpolationType
+      );
       const slabThickness = this.getEffectiveSlabThickness(volume, normal);
       const sampledSliceState = this.sampledSliceStates.get(volume.volumeId);
 
@@ -461,13 +502,37 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     return sampledSlices;
   }
 
+  private getInterpolationTypeForVolume(
+    volume: IImageVolume,
+    viewportInterpolationType: InterpolationType
+  ): InterpolationType {
+    const volumeInput = this.getCPUVolumeInput(volume.volumeId);
+
+    if (volumeInput?.isLabelmapSegmentation) {
+      return InterpolationType.NEAREST;
+    }
+
+    return viewportInterpolationType;
+  }
+
   private getCPUVolumesInRenderOrder(
     primaryVolume: IImageVolume
   ): IImageVolume[] {
     const volumeIds = this.context.getCPUVolumeIds();
     const volumes = volumeIds
       .map((volumeId) => this.context.getCPUPrimaryVolume(volumeId))
-      .filter(Boolean) as IImageVolume[];
+      .filter((volume) => {
+        if (!volume) {
+          return false;
+        }
+
+        if (volume.volumeId === primaryVolume.volumeId) {
+          return true;
+        }
+
+        const volumeInput = this.getCPUVolumeInput(volume.volumeId);
+        return volumeInput?.visibility !== false;
+      }) as IImageVolume[];
 
     if (!volumes.length) {
       return [primaryVolume];
@@ -614,10 +679,79 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     return enabledElement;
   }
 
+  private getCPUVolumeInput(
+    volumeId: string
+  ): CPUVolumeInputWithOverlay | undefined {
+    return this.context.getCPUVolumeInput(volumeId) as
+      | CPUVolumeInputWithOverlay
+      | undefined;
+  }
+
+  private getOrCreateLabelmapColormap(
+    volumeId: string,
+    colorLUT?: number[][]
+  ): CPUFallbackColormap {
+    const colormapId = `${this.labelmapColormapNamespace}:${volumeId}`;
+    const resolvedColorLUT =
+      colorLUT?.length && Array.isArray(colorLUT)
+        ? colorLUT
+        : ([
+            [0, 0, 0, 0],
+            [255, 0, 0, 255],
+          ] as number[][]);
+    const numberOfColors = Math.max(256, resolvedColorLUT.length);
+
+    let colormap = this.labelmapColormaps.get(volumeId);
+    if (!colormap) {
+      colormap = getColormap(colormapId, {
+        name: colormapId,
+        colors: [],
+      });
+      this.labelmapColormaps.set(volumeId, colormap);
+    }
+
+    colormap.setNumberOfColors(numberOfColors);
+    for (let i = 0; i < numberOfColors; i++) {
+      const rgba = resolvedColorLUT[i] || [0, 0, 0, 0];
+      colormap.setColor(i, [
+        Math.round(Math.min(255, Math.max(0, rgba[0] ?? 0))),
+        Math.round(Math.min(255, Math.max(0, rgba[1] ?? 0))),
+        Math.round(Math.min(255, Math.max(0, rgba[2] ?? 0))),
+        Math.round(Math.min(255, Math.max(0, rgba[3] ?? 0))),
+      ]);
+    }
+
+    return colormap;
+  }
+
+  private getLabelmapOverlayStyle(volume: IImageVolume): CPUVolumeOverlayStyle {
+    const volumeInput = this.getCPUVolumeInput(volume.volumeId);
+    const labelmapConfig = volumeInput?.cpuLabelmapConfig;
+
+    return {
+      opacity: labelmapConfig?.opacity ?? 1,
+      // Pseudo-color CPU fallback clears the overlay canvas to opaque black.
+      // "screen" keeps black background neutral while preserving segment colors.
+      compositeOperation: 'screen',
+      colormap: this.getOrCreateLabelmapColormap(
+        volume.volumeId,
+        labelmapConfig?.colorLUT
+      ),
+      invert: labelmapConfig?.invert ?? false,
+      voiRange: this.getResolvedVOIRange(labelmapConfig?.voiRange, 0, 255),
+    };
+  }
+
   private getOverlayStyle(
     volume: IImageVolume,
     sampledSliceState: SampledSliceState
   ): CPUVolumeOverlayStyle {
+    const volumeInput = this.getCPUVolumeInput(volume.volumeId);
+
+    if (volumeInput?.isLabelmapSegmentation) {
+      return this.getLabelmapOverlayStyle(volume);
+    }
+
     if (volume.metadata?.Modality === 'PT') {
       const ptVOIRange = this.context.getCPUVOIRange(volume.volumeId) ?? {
         lower: 0,
@@ -808,20 +942,17 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     const slabHalfThickness = slabThickness / 2;
     const slabStep =
       sampleCount > 1 ? slabThickness / (sampleCount - 1) : slabThickness;
-    const [volumeMin, volumeMax] = volume.voxelManager.getRange();
-    const minPixelValue = Math.floor(
-      Number.isFinite(volumeMin) ? volumeMin : 0
-    );
-    const maxPixelValue = Math.ceil(
-      Number.isFinite(volumeMax) ? volumeMax : minPixelValue + 1
-    );
+    const { min: fallbackMinPixelValue, max: fallbackMaxPixelValue } =
+      this.getFallbackStoredRange(volume);
     const useFloatData = this.isPTPrescaled(volume);
     const SliceArrayConstructor = this.getSliceArrayConstructor(
-      minPixelValue,
-      maxPixelValue,
+      fallbackMinPixelValue,
+      fallbackMaxPixelValue,
       useFloatData
     );
     const sliceScalarData = new SliceArrayConstructor(width * height);
+    let sampledMin = Infinity;
+    let sampledMax = -Infinity;
 
     let pixelIndex = 0;
     for (let y = 0; y < height; y++) {
@@ -858,15 +989,26 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
         }
 
         const intensity =
-          validSamples > 0 ? accumulated / validSamples : minPixelValue;
-        sliceScalarData[pixelIndex++] = this.toStoredIntensity(
+          validSamples > 0 ? accumulated / validSamples : fallbackMinPixelValue;
+        const storedIntensity = this.toStoredIntensity(
           intensity,
-          minPixelValue,
-          maxPixelValue,
+          fallbackMinPixelValue,
+          fallbackMaxPixelValue,
           useFloatData
         );
+        sliceScalarData[pixelIndex++] = storedIntensity;
+        sampledMin = Math.min(sampledMin, storedIntensity);
+        sampledMax = Math.max(sampledMax, storedIntensity);
       }
     }
+
+    const minPixelValue = Number.isFinite(sampledMin)
+      ? Math.floor(sampledMin)
+      : fallbackMinPixelValue;
+    const maxPixelValue =
+      Number.isFinite(sampledMax) && sampledMax > sampledMin
+        ? Math.ceil(sampledMax)
+        : Math.max(minPixelValue + 1, fallbackMaxPixelValue);
 
     const image = this.createSliceImage(
       volume,
@@ -989,13 +1131,8 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
 
     const sourceWidth = volume.dimensions[planeDefinition.colAxis];
     const sourceHeight = volume.dimensions[planeDefinition.rowAxis];
-    const [volumeMin, volumeMax] = volume.voxelManager.getRange();
-    const minPixelValue = Math.floor(
-      Number.isFinite(volumeMin) ? volumeMin : 0
-    );
-    const maxPixelValue = Math.ceil(
-      Number.isFinite(volumeMax) ? volumeMax : minPixelValue + 1
-    );
+    const { min: fallbackMinPixelValue, max: fallbackMaxPixelValue } =
+      this.getFallbackStoredRange(volume);
 
     const createTypedArray = (length: number): SliceArray =>
       new (sourceData.constructor as new (n: number) => SliceArray)(length);
@@ -1013,6 +1150,12 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
         }),
         createTypedArray
       );
+      const { min: minPixelValue, max: maxPixelValue } =
+        this.getScalarDataRange(
+          scalarData,
+          fallbackMinPixelValue,
+          fallbackMaxPixelValue
+        );
 
       return {
         scalarData,
@@ -1039,6 +1182,11 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
         sourceY: rightSign > 0 ? x : sourceHeight - 1 - x,
       }),
       createTypedArray
+    );
+    const { min: minPixelValue, max: maxPixelValue } = this.getScalarDataRange(
+      scalarData,
+      fallbackMinPixelValue,
+      fallbackMaxPixelValue
     );
 
     return {
@@ -1091,6 +1239,38 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     }
 
     return outputData;
+  }
+
+  private getScalarDataRange(
+    scalarData: SliceArray,
+    fallbackMin: number,
+    fallbackMax: number
+  ): { min: number; max: number } {
+    let min = Infinity;
+    let max = -Infinity;
+
+    for (let i = 0; i < scalarData.length; i++) {
+      const value = Number(scalarData[i]);
+      if (!Number.isFinite(value)) {
+        continue;
+      }
+
+      min = Math.min(min, value);
+      max = Math.max(max, value);
+    }
+
+    if (!Number.isFinite(min)) {
+      min = fallbackMin;
+    }
+
+    if (!Number.isFinite(max) || max <= min) {
+      max = Math.max(min + 1, fallbackMax);
+    }
+
+    return {
+      min: Math.floor(min),
+      max: Math.ceil(max),
+    };
   }
 
   private getSlicePlaneDefinition(normalAxis: number): {
@@ -1376,9 +1556,11 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
 
   private sampleVolumeNearest(volume: IImageVolume, worldPos: Point3): number {
     const [iC, jC, kC] = this.worldToIndexContinuous(volume, worldPos);
-    const i = Math.round(iC);
-    const j = Math.round(jC);
-    const k = Math.round(kC);
+    // Bias exact half-indices downward so segmentation edits and rendering
+    // stay aligned on the same voxel plane.
+    const i = Math.floor(iC + 0.5 - 1e-6);
+    const j = Math.floor(jC + 0.5 - 1e-6);
+    const k = Math.floor(kC + 0.5 - 1e-6);
     const [dx, dy, dz] = volume.dimensions;
 
     if (i < 0 || i >= dx || j < 0 || j >= dy || k < 0 || k >= dz) {
@@ -1467,6 +1649,30 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     }
 
     return Int32Array;
+  }
+
+  private getFallbackStoredRange(volume: IImageVolume): {
+    min: number;
+    max: number;
+  } {
+    const [volumeMin, volumeMax] = volume.voxelManager.getRange();
+    const volumeInput = this.getCPUVolumeInput(volume.volumeId);
+    const isLabelmap = volumeInput?.isLabelmapSegmentation === true;
+    let min = Math.floor(Number.isFinite(volumeMin) ? volumeMin : 0);
+    let max = Math.ceil(Number.isFinite(volumeMax) ? volumeMax : min + 1);
+
+    if (isLabelmap) {
+      // Labelmaps are discrete segment indices; keep a stable usable range
+      // even when voxelManager cached range has not been recomputed yet.
+      min = 0;
+      max = Math.max(max, 255);
+    }
+
+    if (max <= min) {
+      max = min + 1;
+    }
+
+    return { min, max };
   }
 
   private toStoredIntensity(
@@ -1594,9 +1800,10 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   }
 
-  private invalidateSampledSlice(): void {
+  private invalidateSampledSliceInternal(): void {
     this.sampledSliceStates.clear();
     this.overlayEnabledElements.clear();
+    this.labelmapColormaps.clear();
     this.cpuFallbackEnabledElement = undefined;
     this.cpuRenderingInvalidated = true;
   }
