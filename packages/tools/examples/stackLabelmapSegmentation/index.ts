@@ -13,6 +13,7 @@ import {
   addButtonToToolbar,
   addBrushSizeSlider,
   addSegmentIndexDropdown,
+  getDemoInitFlagsFromUrl,
 } from '../../../../utils/demo/helpers';
 const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
@@ -38,8 +39,7 @@ const {
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
-const urlParams = new URLSearchParams(window.location.search);
-const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
+const { useCPURendering: useCPURenderingOnLoad } = getDemoInitFlagsFromUrl();
 const previewEnabled = !useCPURenderingOnLoad;
 
 // Define a unique id for the volume

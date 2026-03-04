@@ -9,6 +9,7 @@ import {
   addBrushSizeSlider,
   labelmapTools,
   addManipulationBindings,
+  getDemoInitFlagsFromUrl,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -26,8 +27,7 @@ const {
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 const { segmentation: segmentationUtils } = cstUtils;
-const urlParams = new URLSearchParams(window.location.search);
-const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
+const { useCPURendering: useCPURenderingOnLoad } = getDemoInitFlagsFromUrl();
 
 // Define a unique id for the volume
 let renderingEngine;

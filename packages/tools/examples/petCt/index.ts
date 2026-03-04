@@ -16,6 +16,7 @@ import {
   ctVoiRange,
   addDropdownToToolbar,
   addButtonToToolbar,
+  getDemoInitFlagsFromUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -36,8 +37,7 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType, BlendModes } = Enums;
-const urlParams = new URLSearchParams(window.location.search);
-const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
+const { useCPURendering: useCPURenderingOnLoad } = getDemoInitFlagsFromUrl();
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers;

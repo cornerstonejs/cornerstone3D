@@ -20,28 +20,39 @@ import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
 
+export function getDemoInitFlagsFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  return {
+    debugEnabled: urlParams.get('debug') === 'true',
+    useCPURendering: urlParams.get('cpu') === 'true',
+  };
+}
+
 export default async function initDemo(config: any = {}) {
   initProviders();
   cornerstoneDICOMImageLoader.init();
   initVolumeLoader();
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const debugEnabled = urlParams.get('debug') === 'true';
+  const { debugEnabled, useCPURendering } = getDemoInitFlagsFromUrl();
+  const coreConfig = config?.core ?? {};
+  const resolvedUseCPURendering = useCPURendering
+    ? true
+    : coreConfig.useCPURendering;
+  const renderInitConfig = {
+    ...coreConfig,
+    ...(resolvedUseCPURendering !== undefined
+      ? { useCPURendering: resolvedUseCPURendering }
+      : {}),
+    debug: {
+      ...(coreConfig.debug ?? {}),
+      statsOverlay: debugEnabled,
+    },
+  };
 
   await csRenderInit({
     peerImport,
-    ...(config?.core
-      ? {
-          ...config.core,
-          debug: {
-            statsOverlay: debugEnabled,
-          },
-        }
-      : {
-          debug: {
-            statsOverlay: debugEnabled,
-          },
-        }),
+    ...renderInitConfig,
   });
   await csToolsInit({
     addons: {

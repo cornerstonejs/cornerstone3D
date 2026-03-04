@@ -13,6 +13,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   camera as cameraHelpers,
+  getDemoInitFlagsFromUrl,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
@@ -22,8 +23,7 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
-const urlParams = new URLSearchParams(window.location.search);
-const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
+const { useCPURendering: useCPURenderingOnLoad } = getDemoInitFlagsFromUrl();
 const zoomStepFactor = 1.1;
 const panStep = 30;
 

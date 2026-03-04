@@ -9,6 +9,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  getDemoInitFlagsFromUrl,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -28,8 +29,7 @@ const {
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
-const urlParams = new URLSearchParams(window.location.search);
-const useCPURenderingOnLoad = urlParams.get('cpu') === 'true';
+const { useCPURendering: useCPURenderingOnLoad } = getDemoInitFlagsFromUrl();
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
