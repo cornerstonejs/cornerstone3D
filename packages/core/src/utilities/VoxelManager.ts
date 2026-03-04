@@ -1,6 +1,6 @@
 import cache from '../cache/cache';
 import { InterpolationType } from '../enums';
-import { vec3 } from 'gl-matrix';
+import { mat3, vec3 } from 'gl-matrix';
 import type {
   BoundsIJK,
   Mat3,
@@ -24,11 +24,9 @@ import { iterateOverPointsInShapeVoxelManager } from './pointInShapeCallback';
  * is a first guess.
  */
 const DEFAULT_RLE_SIZE = 5 * 1024;
-const worldToIndexWorldScratch = [0, 0, 0] as vec3;
 const worldToIndexDeltaScratch = [0, 0, 0] as vec3;
-const worldToIndexRowScratch = [0, 0, 0] as vec3;
-const worldToIndexColScratch = [0, 0, 0] as vec3;
-const worldToIndexScanScratch = [0, 0, 0] as vec3;
+const worldToIndexResultScratch = [0, 0, 0] as vec3;
+const worldToIndexTransformCache = new WeakMap<object, mat3>();
 
 type VoxelVolumeGeometry = {
   origin: Point3;
@@ -566,42 +564,54 @@ export default class VoxelManager<T> {
   /**
    * Converts a world-space coordinate to continuous IJK in the volume geometry.
    */
+  private static getWorldToIndexTransform(
+    volumeGeometry: VoxelVolumeGeometry
+  ): mat3 {
+    const cachedTransform = worldToIndexTransformCache.get(
+      volumeGeometry as object
+    );
+
+    if (cachedTransform) {
+      return cachedTransform;
+    }
+
+    const direction = volumeGeometry.direction;
+    const spacing = volumeGeometry.spacing;
+    const transform = mat3.fromValues(
+      direction[0] / spacing[0],
+      direction[3] / spacing[1],
+      direction[6] / spacing[2],
+      direction[1] / spacing[0],
+      direction[4] / spacing[1],
+      direction[7] / spacing[2],
+      direction[2] / spacing[0],
+      direction[5] / spacing[1],
+      direction[8] / spacing[2]
+    );
+
+    worldToIndexTransformCache.set(volumeGeometry as object, transform);
+
+    return transform;
+  }
+
+  /**
+   * Converts a world-space coordinate to continuous IJK in the volume geometry.
+   */
   public static worldToIndexContinuous(
     volumeGeometry: VoxelVolumeGeometry,
     worldPos: Point3
   ): Point3 {
     const origin = volumeGeometry.origin;
-    const spacing = volumeGeometry.spacing;
-    const direction = volumeGeometry.direction;
-    const delta = vec3.sub(
+    worldToIndexDeltaScratch[0] = worldPos[0] - origin[0];
+    worldToIndexDeltaScratch[1] = worldPos[1] - origin[1];
+    worldToIndexDeltaScratch[2] = worldPos[2] - origin[2];
+    const continuousIndex = vec3.transformMat3(
+      worldToIndexResultScratch,
       worldToIndexDeltaScratch,
-      vec3.set(worldToIndexWorldScratch, worldPos[0], worldPos[1], worldPos[2]),
-      origin as unknown as vec3
-    );
-    const row = vec3.set(
-      worldToIndexRowScratch,
-      direction[0],
-      direction[1],
-      direction[2]
-    );
-    const col = vec3.set(
-      worldToIndexColScratch,
-      direction[3],
-      direction[4],
-      direction[5]
-    );
-    const scan = vec3.set(
-      worldToIndexScanScratch,
-      direction[6],
-      direction[7],
-      direction[8]
+      VoxelManager.getWorldToIndexTransform(volumeGeometry)
     );
 
-    return [
-      vec3.dot(delta, row) / spacing[0],
-      vec3.dot(delta, col) / spacing[1],
-      vec3.dot(delta, scan) / spacing[2],
-    ];
+    return [continuousIndex[0], continuousIndex[1], continuousIndex[2]];
   }
 
   /**
@@ -619,34 +629,17 @@ export default class VoxelManager<T> {
     }
 
     const origin = volume.origin;
-    const spacing = volume.spacing;
-    const direction = volume.direction;
-    const delta = vec3.sub(
+    worldToIndexDeltaScratch[0] = worldX - origin[0];
+    worldToIndexDeltaScratch[1] = worldY - origin[1];
+    worldToIndexDeltaScratch[2] = worldZ - origin[2];
+    const continuousIndex = vec3.transformMat3(
+      worldToIndexResultScratch,
       worldToIndexDeltaScratch,
-      vec3.set(worldToIndexWorldScratch, worldX, worldY, worldZ),
-      origin as unknown as vec3
+      VoxelManager.getWorldToIndexTransform(volume)
     );
-    const row = vec3.set(
-      worldToIndexRowScratch,
-      direction[0],
-      direction[1],
-      direction[2]
-    );
-    const col = vec3.set(
-      worldToIndexColScratch,
-      direction[3],
-      direction[4],
-      direction[5]
-    );
-    const scan = vec3.set(
-      worldToIndexScanScratch,
-      direction[6],
-      direction[7],
-      direction[8]
-    );
-    const i = vec3.dot(delta, row) / spacing[0];
-    const j = vec3.dot(delta, col) / spacing[1];
-    const k = vec3.dot(delta, scan) / spacing[2];
+    const i = continuousIndex[0];
+    const j = continuousIndex[1];
+    const k = continuousIndex[2];
 
     return VoxelManager.sampleAtContinuousCoordinates(
       volume.voxelManager,
@@ -719,20 +712,6 @@ export default class VoxelManager<T> {
         );
   }
 
-  private static sampleNearestAtContinuousIndex(
-    voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
-    dimensions: Point3,
-    continuousIndex: Point3
-  ): number {
-    return VoxelManager.sampleNearestAtContinuousCoordinates(
-      voxelManager,
-      dimensions,
-      continuousIndex[0],
-      continuousIndex[1],
-      continuousIndex[2]
-    );
-  }
-
   private static sampleNearestAtContinuousCoordinates(
     voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
     dimensions: Point3,
@@ -753,20 +732,6 @@ export default class VoxelManager<T> {
     }
 
     return Number(voxelManager.getAtIJK(i, j, k));
-  }
-
-  private static sampleLinearAtContinuousIndex(
-    voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
-    dimensions: Point3,
-    continuousIndex: Point3
-  ): number {
-    return VoxelManager.sampleLinearAtContinuousCoordinates(
-      voxelManager,
-      dimensions,
-      continuousIndex[0],
-      continuousIndex[1],
-      continuousIndex[2]
-    );
   }
 
   private static sampleLinearAtContinuousCoordinates(
@@ -1006,6 +971,11 @@ export default class VoxelManager<T> {
     const sliceVoxelManagers = new Array<
       IVoxelManager<number> | IVoxelManager<RGB> | null | undefined
     >(depth);
+    let lastSliceIndex = -1;
+    let lastSliceVoxelManager:
+      | IVoxelManager<number>
+      | IVoxelManager<RGB>
+      | null = null;
     const warnedMissingImageIds = new Set<number>();
     const warnedMissingImages = new Set<string>();
 
@@ -1051,9 +1021,16 @@ export default class VoxelManager<T> {
       if (sliceIndex < 0 || sliceIndex >= depth) {
         return null;
       }
-      const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
+      const imageVoxelManager =
+        sliceIndex === lastSliceIndex
+          ? lastSliceVoxelManager
+          : resolveSliceVoxelManager(sliceIndex);
       if (!imageVoxelManager) {
         return null;
+      }
+      if (sliceIndex !== lastSliceIndex) {
+        lastSliceIndex = sliceIndex;
+        lastSliceVoxelManager = imageVoxelManager;
       }
 
       const pixelIndex = index - sliceIndex * pixelsPerSlice;
@@ -1066,9 +1043,16 @@ export default class VoxelManager<T> {
       if (sliceIndex < 0 || sliceIndex >= depth) {
         return false;
       }
-      const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
+      const imageVoxelManager =
+        sliceIndex === lastSliceIndex
+          ? lastSliceVoxelManager
+          : resolveSliceVoxelManager(sliceIndex);
       if (!imageVoxelManager) {
         return false;
+      }
+      if (sliceIndex !== lastSliceIndex) {
+        lastSliceIndex = sliceIndex;
+        lastSliceVoxelManager = imageVoxelManager;
       }
 
       const pixelIndex = index - sliceIndex * pixelsPerSlice;
@@ -1784,8 +1768,6 @@ export default class VoxelManager<T> {
     // storing an RLE representation, which doesn't have an up front size.
     image.sizeInBytes = DEFAULT_RLE_SIZE;
   }
-
-  public static;
 }
 
 export type { VoxelManager };
