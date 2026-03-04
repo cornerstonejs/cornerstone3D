@@ -33,6 +33,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import CanvasActor from './CanvasActor';
+import CanvasMapper from './CanvasActor/CanvasMapper';
 import cache from '../cache/cache';
 import uuidv4 from '../utilities/uuidv4';
 import FrameRange from '../utilities/FrameRange';
@@ -1158,7 +1159,13 @@ class VideoViewport extends Viewport {
   }
 
   protected createActorMapper(image) {
-    return new CanvasActor(this as unknown as IViewport, image);
+    const mapper = new CanvasMapper();
+    mapper.setInputData(image);
+
+    const actor = new CanvasActor(this as unknown as IViewport);
+    actor.setMapper(mapper);
+
+    return actor;
   }
 
   /**

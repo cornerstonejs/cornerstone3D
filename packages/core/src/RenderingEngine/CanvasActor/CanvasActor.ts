@@ -15,18 +15,28 @@ export default class CanvasActor {
   private derivedImage;
   private canvasProperties = new CanvasProperties(this);
   private visibility = false;
-  private mapper = new CanvasMapper(this);
+  private mapper = new CanvasMapper();
   private viewport;
   protected className = 'CanvasActor';
   protected canvas;
 
-  constructor(viewport: IViewport, derivedImage) {
-    this.derivedImage = derivedImage;
+  constructor(viewport: IViewport) {
     this.viewport = viewport;
+    this.mapper.setBindings({
+      getInputData: () => this.getImage(),
+      setInputData: (inputData: unknown) => this.setDerivedImage(inputData),
+      modified: () => this.modified(),
+    });
   }
 
   public setMapper(mapper: CanvasMapper) {
+    this.mapper?.setBindings(null);
     this.mapper = mapper;
+    this.mapper.setBindings({
+      getInputData: () => this.getImage(),
+      setInputData: (inputData: unknown) => this.setDerivedImage(inputData),
+      modified: () => this.modified(),
+    });
   }
 
   public render(viewport: IViewport, context: CanvasRenderingContext2D): void {

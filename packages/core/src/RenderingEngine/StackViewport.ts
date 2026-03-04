@@ -59,6 +59,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 
 import Viewport from './Viewport';
 import CanvasActor from './CanvasActor';
+import CanvasMapper from './CanvasActor/CanvasMapper';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { getImagePlaneModule } from '../utilities/buildMetadata';
 
@@ -2151,7 +2152,13 @@ class StackViewport extends Viewport {
   }
 
   private createCPUActorMapper(image: IImage): CanvasActor {
-    return new CanvasActor(this, image);
+    const mapper = new CanvasMapper();
+    mapper.setInputData(image);
+
+    const actor = new CanvasActor(this);
+    actor.setMapper(mapper);
+
+    return actor;
   }
 
   private setCPUActorsCollection(actors: ActorEntry[]): void {
