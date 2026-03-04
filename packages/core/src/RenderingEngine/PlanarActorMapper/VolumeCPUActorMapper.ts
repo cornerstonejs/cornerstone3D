@@ -29,7 +29,11 @@ type SampledSliceState = {
   interpolationType: InterpolationType;
   slabThickness: number;
   spacingInNormalDirection: number;
+  // Camera focal point at sample time (used for resample invalidation checks).
   focalPoint: Point3;
+  // Focal reference used to compute CPU fallback translation.
+  // For orthogonal fast-path slices, this is the slice-center focal point.
+  translationReferenceFocalPoint: Point3;
   right: Point3;
   up: Point3;
   normal: Point3;
@@ -45,6 +49,7 @@ type OrthogonalSliceSampleResult = {
   rowPixelSpacing: number;
   minPixelValue: number;
   maxPixelValue: number;
+  translationReferenceFocalPoint: Point3;
 };
 
 type CPUSliceRangeInfo = VolumeViewportScrollInfo & {
@@ -486,6 +491,9 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
           EPSILON
         ),
         focalPoint: this.copyPoint3(camera.focalPoint as Point3),
+        translationReferenceFocalPoint: this.copyPoint3(
+          orthogonalSlice.translationReferenceFocalPoint
+        ),
         right: this.copyPoint3(right),
         up: this.copyPoint3(up),
         normal: this.copyPoint3(normal),
@@ -591,6 +599,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
       slabThickness,
       spacingInNormalDirection,
       focalPoint: this.copyPoint3(focalPoint),
+      translationReferenceFocalPoint: this.copyPoint3(focalPoint),
       right: this.copyPoint3(right),
       up: this.copyPoint3(up),
       normal: this.copyPoint3(normal),
@@ -680,6 +689,17 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
       slicePlane: planeDefinition.slicePlane,
     }) as SliceArray;
 
+    const referenceIndex = [
+      (volume.dimensions[0] - 1) / 2,
+      (volume.dimensions[1] - 1) / 2,
+      (volume.dimensions[2] - 1) / 2,
+    ] as Point3;
+    referenceIndex[normalAxis.axis] = normalIndex;
+    const translationReferenceFocalPoint = this.indexToWorld(
+      volume,
+      referenceIndex
+    );
+
     const sourceWidth = volume.dimensions[planeDefinition.colAxis];
     const sourceHeight = volume.dimensions[planeDefinition.rowAxis];
     const [volumeMin, volumeMax] = volume.voxelManager.getRange();
@@ -715,6 +735,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
         rowPixelSpacing: volume.spacing[downAxis],
         minPixelValue,
         maxPixelValue,
+        translationReferenceFocalPoint,
       };
     }
 
@@ -741,6 +762,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
       rowPixelSpacing: volume.spacing[downAxis],
       minPixelValue,
       maxPixelValue,
+      translationReferenceFocalPoint,
     };
   }
 
@@ -1248,7 +1270,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     const focalPoint = camera.focalPoint as Point3;
     const focalDelta = this.subtractPoints(
       focalPoint,
-      sampledSliceState.focalPoint
+      sampledSliceState.translationReferenceFocalPoint
     );
     const columnPixelSpacing = sampledSliceState.image.columnPixelSpacing || 1;
     const rowPixelSpacing = sampledSliceState.image.rowPixelSpacing || 1;
