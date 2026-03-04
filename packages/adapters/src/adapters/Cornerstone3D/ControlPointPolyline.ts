@@ -3,30 +3,38 @@ import { CONTROL_POINTS_CODE, SPLINE_TYPE_CODE } from './constants';
 const { valueTypes } = sr;
 const { Polyline: TID300Polyline } = utilities.TID300;
 
-export default class ControlPointPolyline extends TID300Polyline {
-  declare props: {
+/** Typed view of the dcmjs TID300Polyline instance (types not shipped by dcmjs). */
+interface TID300PolylineInstance {
+  props: {
     controlPoints?: number[];
     use3DSpatialCoordinates?: boolean;
     ReferencedSOPSequence?: unknown;
     ReferencedFrameOfReferenceUID?: string;
     splineType?: string;
   };
+  flattenPoints: (opts: {
+    points: number[];
+    use3DSpatialCoordinates?: boolean;
+  }) => number[];
+}
 
+export default class ControlPointPolyline extends TID300Polyline {
   contentItem() {
     const contentEntries = super.contentItem();
+    const self = this as unknown as TID300PolylineInstance;
     const {
       controlPoints,
       use3DSpatialCoordinates,
       ReferencedSOPSequence,
       ReferencedFrameOfReferenceUID,
       use3DSpatialCoordinates: is3DMeasurement,
-    } = this.props;
+    } = self.props;
 
     if (!controlPoints?.length) {
       return contentEntries;
     }
 
-    const GraphicData = this.flattenPoints({
+    const GraphicData = self.flattenPoints({
       points: controlPoints,
       use3DSpatialCoordinates,
     });
@@ -80,7 +88,7 @@ export default class ControlPointPolyline extends TID300Polyline {
     // ContentSequence rather than at the top level of the measurement group —
     // OHIF expects exactly [TEXT, UIDREF, NUM] at the top level and blanks the
     // viewport when extra entries are present.
-    const { splineType } = this.props;
+    const { splineType } = self.props;
     const splineItems: Record<string, unknown>[] = splineType
       ? [
           {
