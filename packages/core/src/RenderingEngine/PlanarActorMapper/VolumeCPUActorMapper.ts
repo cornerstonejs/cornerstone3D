@@ -1006,6 +1006,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     const viewport = enabledElement.viewport;
     const parallelScale = Math.max(camera.parallelScale ?? 1, EPSILON);
     const rowPixelSpacing = sampledSliceState.image.rowPixelSpacing || 1;
+    const columnPixelSpacing = sampledSliceState.image.columnPixelSpacing || 1;
     const clientHeight = Math.max(enabledElement.canvas.height, 1);
     const viewportVOIRange = this.getResolvedVOIRange(
       this.context.getViewportVOIRange(),
@@ -1017,7 +1018,10 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
 
     const translation = this.getInPlaneTranslation(sampledSliceState, camera);
     viewport.translation = translation;
-    viewport.scale = (clientHeight * rowPixelSpacing * 0.5) / parallelScale;
+    // CPU fallback transform applies non-square pixel correction separately
+    // (via row/column spacing ratio), so use the base spacing axis here.
+    const basePixelSpacing = Math.min(rowPixelSpacing, columnPixelSpacing);
+    viewport.scale = (clientHeight * basePixelSpacing * 0.5) / parallelScale;
     viewport.parallelScale = parallelScale;
     viewport.invert = this.context.getViewportInvert();
     viewport.pixelReplication =

@@ -214,10 +214,10 @@ async function run() {
 
   viewportIds.forEach((id) => {
     const viewport = renderingEngine.getViewport(id) as Types.IVolumeViewport;
-    viewport.setProperties({
-      voiRange: { lower: -160, upper: 240 },
-      VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
-    });
+    // viewport.setProperties({
+    // voiRange: { lower: -160, upper: 240 },
+    // VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+    // });
   });
 
   // Render the image
