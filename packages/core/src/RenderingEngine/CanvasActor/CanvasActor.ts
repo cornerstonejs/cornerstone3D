@@ -45,7 +45,7 @@ export default class CanvasActor {
     }
     const image = this.image || this.getImage();
 
-    const { width, height } = this.getCanvasSizeForImage(image);
+    const { width, height } = image;
 
     if (!width || !height) {
       return;
@@ -156,23 +156,13 @@ export default class CanvasActor {
     };
 
     const imageData = this.viewport.getImageData();
-    const derivedDimensions = this.derivedImage?.getDimensions?.();
-    const fallbackDimensions = imageData?.dimensions ?? [0, 0, 1];
-    const dimensions = derivedDimensions ?? fallbackDimensions;
-    const width =
-      this.derivedImage?.width ??
-      this.derivedImage?.columns ??
-      dimensions?.[0] ??
-      fallbackDimensions?.[0];
-    const height =
-      this.derivedImage?.height ??
-      this.derivedImage?.rows ??
-      dimensions?.[1] ??
-      fallbackDimensions?.[1];
+    const dimensions = imageData.dimensions;
+    const width = dimensions[0];
+    const height = dimensions[1];
 
     Object.assign(this.image, {
-      width: CanvasActor.toValidCanvasSize(width),
-      height: CanvasActor.toValidCanvasSize(height),
+      width: width,
+      height: height,
       worldToIndex: (worldPos) => imageData.imageData.worldToIndex(worldPos),
       indexToWorld: (index, destPoint) =>
         imageData.imageData.indexToWorld(index, destPoint),
@@ -206,7 +196,7 @@ export default class CanvasActor {
    * avoid iterating over any data not actually containing data.
    */
   protected renderRLE(viewport, context, voxelManager) {
-    const { width, height } = this.getCanvasSizeForImage(this.image);
+    const { width, height } = this.image;
 
     if (!width || !height) {
       return;
@@ -282,29 +272,5 @@ export default class CanvasActor {
       dirtyWidth,
       dirtyHeight
     );
-  }
-
-  private getCanvasSizeForImage(image): { width: number; height: number } {
-    const dimensions =
-      image?.getDimensions?.() ?? this.derivedImage?.getDimensions?.();
-    const width =
-      image?.width ?? image?.columns ?? dimensions?.[0] ?? image?.rows;
-    const height =
-      image?.height ?? image?.rows ?? dimensions?.[1] ?? image?.columns;
-
-    return {
-      width: CanvasActor.toValidCanvasSize(width),
-      height: CanvasActor.toValidCanvasSize(height),
-    };
-  }
-
-  private static toValidCanvasSize(value: unknown): number {
-    const numeric = Number(value);
-
-    if (!Number.isFinite(numeric) || numeric < 0) {
-      return 0;
-    }
-
-    return Math.trunc(numeric);
   }
 }
