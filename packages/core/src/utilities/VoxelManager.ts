@@ -124,8 +124,7 @@ export default class VoxelManager<T> {
    * This method should be used in favor of getAtIJKPoint when performance is a concern.
    */
   public getAtIJK = (i, j, k) => {
-    const index = this.toIndex([i, j, k]);
-    return this._get(index);
+    return this._get(i + j * this.width + k * this.frameSize);
   };
 
   /**
@@ -135,7 +134,7 @@ export default class VoxelManager<T> {
    * This method should be used in favor of setAtIJKPoint when performance is a concern.
    */
   public setAtIJK = (i: number, j: number, k: number, v) => {
-    const index = this.toIndex([i, j, k]);
+    const index = i + j * this.width + k * this.frameSize;
     const changed = this._set(index, v);
     if (changed !== false) {
       this.modifiedSlices.add(k);
@@ -565,24 +564,61 @@ export default class VoxelManager<T> {
     volumeGeometry: VoxelVolumeGeometry,
     worldPos: Point3
   ): Point3 {
-    const delta = [
-      worldPos[0] - volumeGeometry.origin[0],
-      worldPos[1] - volumeGeometry.origin[1],
-      worldPos[2] - volumeGeometry.origin[2],
-    ] as Point3;
-
-    const row = volumeGeometry.direction.slice(0, 3) as Point3;
-    const col = volumeGeometry.direction.slice(3, 6) as Point3;
-    const scan = volumeGeometry.direction.slice(6, 9) as Point3;
+    const origin = volumeGeometry.origin;
+    const spacing = volumeGeometry.spacing;
+    const direction = volumeGeometry.direction;
+    const deltaX = worldPos[0] - origin[0];
+    const deltaY = worldPos[1] - origin[1];
+    const deltaZ = worldPos[2] - origin[2];
 
     return [
-      (delta[0] * row[0] + delta[1] * row[1] + delta[2] * row[2]) /
-        volumeGeometry.spacing[0],
-      (delta[0] * col[0] + delta[1] * col[1] + delta[2] * col[2]) /
-        volumeGeometry.spacing[1],
-      (delta[0] * scan[0] + delta[1] * scan[1] + delta[2] * scan[2]) /
-        volumeGeometry.spacing[2],
+      (deltaX * direction[0] + deltaY * direction[1] + deltaZ * direction[2]) /
+        spacing[0],
+      (deltaX * direction[3] + deltaY * direction[4] + deltaZ * direction[5]) /
+        spacing[1],
+      (deltaX * direction[6] + deltaY * direction[7] + deltaZ * direction[8]) /
+        spacing[2],
     ];
+  }
+
+  /**
+   * Samples a scalar value at world-space coordinates.
+   */
+  public static sampleAtWorldCoordinates(
+    volume: SampleableVoxelVolume,
+    worldX: number,
+    worldY: number,
+    worldZ: number,
+    interpolationType: InterpolationType = InterpolationType.LINEAR
+  ): number {
+    if (!volume.voxelManager) {
+      return NaN;
+    }
+
+    const origin = volume.origin;
+    const spacing = volume.spacing;
+    const direction = volume.direction;
+    const deltaX = worldX - origin[0];
+    const deltaY = worldY - origin[1];
+    const deltaZ = worldZ - origin[2];
+    const i =
+      (deltaX * direction[0] + deltaY * direction[1] + deltaZ * direction[2]) /
+      spacing[0];
+    const j =
+      (deltaX * direction[3] + deltaY * direction[4] + deltaZ * direction[5]) /
+      spacing[1];
+    const k =
+      (deltaX * direction[6] + deltaY * direction[7] + deltaZ * direction[8]) /
+      spacing[2];
+
+    return VoxelManager.sampleAtContinuousCoordinates(
+      volume.voxelManager,
+      volume.dimensions,
+      i,
+      j,
+      k,
+      interpolationType
+    );
   }
 
   /**
@@ -593,19 +629,11 @@ export default class VoxelManager<T> {
     worldPos: Point3,
     interpolationType: InterpolationType = InterpolationType.LINEAR
   ): number {
-    if (!volume.voxelManager) {
-      return NaN;
-    }
-
-    const continuousIndex = VoxelManager.worldToIndexContinuous(
+    return VoxelManager.sampleAtWorldCoordinates(
       volume,
-      worldPos
-    );
-
-    return VoxelManager.sampleAtContinuousIndex(
-      volume.voxelManager,
-      volume.dimensions,
-      continuousIndex,
+      worldPos[0],
+      worldPos[1],
+      worldPos[2],
       interpolationType
     );
   }
@@ -619,16 +647,38 @@ export default class VoxelManager<T> {
     continuousIndex: Point3,
     interpolationType: InterpolationType = InterpolationType.LINEAR
   ): number {
+    return VoxelManager.sampleAtContinuousCoordinates(
+      voxelManager,
+      dimensions,
+      continuousIndex[0],
+      continuousIndex[1],
+      continuousIndex[2],
+      interpolationType
+    );
+  }
+
+  private static sampleAtContinuousCoordinates(
+    voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
+    dimensions: Point3,
+    iC: number,
+    jC: number,
+    kC: number,
+    interpolationType: InterpolationType
+  ): number {
     return interpolationType === InterpolationType.NEAREST
-      ? VoxelManager.sampleNearestAtContinuousIndex(
+      ? VoxelManager.sampleNearestAtContinuousCoordinates(
           voxelManager,
           dimensions,
-          continuousIndex
+          iC,
+          jC,
+          kC
         )
-      : VoxelManager.sampleLinearAtContinuousIndex(
+      : VoxelManager.sampleLinearAtContinuousCoordinates(
           voxelManager,
           dimensions,
-          continuousIndex
+          iC,
+          jC,
+          kC
         );
   }
 
@@ -637,12 +687,29 @@ export default class VoxelManager<T> {
     dimensions: Point3,
     continuousIndex: Point3
   ): number {
-    const [iC, jC, kC] = continuousIndex;
+    return VoxelManager.sampleNearestAtContinuousCoordinates(
+      voxelManager,
+      dimensions,
+      continuousIndex[0],
+      continuousIndex[1],
+      continuousIndex[2]
+    );
+  }
+
+  private static sampleNearestAtContinuousCoordinates(
+    voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
+    dimensions: Point3,
+    iC: number,
+    jC: number,
+    kC: number
+  ): number {
     // Bias exact half-indices downward so editing and display use same voxel.
     const i = Math.floor(iC + 0.5 - 1e-6);
     const j = Math.floor(jC + 0.5 - 1e-6);
     const k = Math.floor(kC + 0.5 - 1e-6);
-    const [dx, dy, dz] = dimensions;
+    const dx = dimensions[0];
+    const dy = dimensions[1];
+    const dz = dimensions[2];
 
     if (i < 0 || i >= dx || j < 0 || j >= dy || k < 0 || k >= dz) {
       return NaN;
@@ -656,8 +723,25 @@ export default class VoxelManager<T> {
     dimensions: Point3,
     continuousIndex: Point3
   ): number {
-    const [i, j, k] = continuousIndex;
-    const [dx, dy, dz] = dimensions;
+    return VoxelManager.sampleLinearAtContinuousCoordinates(
+      voxelManager,
+      dimensions,
+      continuousIndex[0],
+      continuousIndex[1],
+      continuousIndex[2]
+    );
+  }
+
+  private static sampleLinearAtContinuousCoordinates(
+    voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
+    dimensions: Point3,
+    i: number,
+    j: number,
+    k: number
+  ): number {
+    const dx = dimensions[0];
+    const dy = dimensions[1];
+    const dz = dimensions[2];
 
     if (i < 0 || i > dx - 1 || j < 0 || j > dy - 1 || k < 0 || k > dz - 1) {
       return NaN;
@@ -669,10 +753,12 @@ export default class VoxelManager<T> {
     const i1 = Math.min(i0 + 1, dx - 1);
     const j1 = Math.min(j0 + 1, dy - 1);
     const k1 = Math.min(k0 + 1, dz - 1);
-
     const di = i - i0;
     const dj = j - j0;
     const dk = k - k0;
+    const oneMinusDi = 1 - di;
+    const oneMinusDj = 1 - dj;
+    const oneMinusDk = 1 - dk;
 
     const c000 = Number(voxelManager.getAtIJK(i0, j0, k0));
     const c100 = Number(voxelManager.getAtIJK(i1, j0, k0));
@@ -682,15 +768,14 @@ export default class VoxelManager<T> {
     const c101 = Number(voxelManager.getAtIJK(i1, j0, k1));
     const c011 = Number(voxelManager.getAtIJK(i0, j1, k1));
     const c111 = Number(voxelManager.getAtIJK(i1, j1, k1));
+    const c00 = c000 * oneMinusDi + c100 * di;
+    const c10 = c010 * oneMinusDi + c110 * di;
+    const c01 = c001 * oneMinusDi + c101 * di;
+    const c11 = c011 * oneMinusDi + c111 * di;
+    const c0 = c00 * oneMinusDj + c10 * dj;
+    const c1 = c01 * oneMinusDj + c11 * dj;
 
-    const c00 = c000 * (1 - di) + c100 * di;
-    const c10 = c010 * (1 - di) + c110 * di;
-    const c01 = c001 * (1 - di) + c101 * di;
-    const c11 = c011 * (1 - di) + c111 * di;
-    const c0 = c00 * (1 - dj) + c10 * dj;
-    const c1 = c01 * (1 - dj) + c11 * dj;
-
-    return c0 * (1 - dk) + c1 * dk;
+    return c0 * oneMinusDk + c1 * dk;
   }
 
   /**
@@ -880,50 +965,76 @@ export default class VoxelManager<T> {
     id?: string;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
+    const depth = dimensions[2];
+    const sliceVoxelManagers = new Array<
+      IVoxelManager<number> | IVoxelManager<RGB> | null | undefined
+    >(depth);
+    const warnedMissingImageIds = new Set<number>();
+    const warnedMissingImages = new Set<string>();
 
-    function getPixelInfo(index) {
-      const sliceIndex = Math.floor(index / pixelsPerSlice);
-      if (sliceIndex < 0 || sliceIndex >= dimensions[2]) {
-        return {};
+    const resolveSliceVoxelManager = (
+      sliceIndex: number
+    ): IVoxelManager<number> | IVoxelManager<RGB> | null => {
+      if (sliceIndex < 0 || sliceIndex >= depth) {
+        return null;
       }
-      const imageId = imageIds[sliceIndex];
 
+      const cachedVoxelManager = sliceVoxelManagers[sliceIndex];
+      if (cachedVoxelManager !== undefined) {
+        return cachedVoxelManager;
+      }
+
+      const imageId = imageIds[sliceIndex];
       if (!imageId) {
-        console.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
-        return { pixelData: null, pixelIndex: null };
+        if (!warnedMissingImageIds.has(sliceIndex)) {
+          warnedMissingImageIds.add(sliceIndex);
+          console.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
+        }
+        sliceVoxelManagers[sliceIndex] = null;
+        return null;
       }
 
       const image = cache.getImage(imageId);
-
-      if (!image) {
-        console.warn(`Image not found for imageId: ${imageId}`);
-        return { pixelData: null, pixelIndex: null };
-      }
-
-      const voxelManager = image.voxelManager;
-      const pixelIndex = index % pixelsPerSlice;
-
-      return { voxelManager, pixelIndex };
-    }
-
-    function getVoxelValue(index) {
-      const { voxelManager: imageVoxelManager, pixelIndex } =
-        getPixelInfo(index);
-
-      if (!imageVoxelManager || pixelIndex === null) {
+      if (!image?.voxelManager) {
+        if (!warnedMissingImages.has(imageId)) {
+          warnedMissingImages.add(imageId);
+          console.warn(`Image not found for imageId: ${imageId}`);
+        }
         return null;
       }
+
+      const imageVoxelManager = image.voxelManager;
+      sliceVoxelManagers[sliceIndex] = imageVoxelManager;
+
+      return imageVoxelManager;
+    };
+
+    function getVoxelValue(index) {
+      const sliceIndex = Math.floor(index / pixelsPerSlice);
+      if (sliceIndex < 0 || sliceIndex >= depth) {
+        return null;
+      }
+      const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
+      if (!imageVoxelManager) {
+        return null;
+      }
+
+      const pixelIndex = index - sliceIndex * pixelsPerSlice;
 
       return imageVoxelManager.getAtIndex(pixelIndex) as number | RGB;
     }
 
     function setVoxelValue(index, v) {
-      const { voxelManager: imageVoxelManager, pixelIndex } =
-        getPixelInfo(index);
-
-      if (!imageVoxelManager || pixelIndex === null) {
+      const sliceIndex = Math.floor(index / pixelsPerSlice);
+      if (sliceIndex < 0 || sliceIndex >= depth) {
         return false;
       }
+      const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
+      if (!imageVoxelManager) {
+        return false;
+      }
+
+      const pixelIndex = index - sliceIndex * pixelsPerSlice;
 
       const currentValue = imageVoxelManager.getAtIndex(pixelIndex);
       const isChanged = !isEqual(v, currentValue);
@@ -937,8 +1048,8 @@ export default class VoxelManager<T> {
     }
 
     const _getConstructor = () => {
-      const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(0);
-      if (!imageVoxelManager || pixelIndex === null) {
+      const imageVoxelManager = resolveSliceVoxelManager(0);
+      if (!imageVoxelManager) {
         return null;
       }
       return imageVoxelManager.getConstructor();
@@ -999,8 +1110,8 @@ export default class VoxelManager<T> {
     };
 
     voxelManager._getScalarDataLength = () => {
-      const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(0);
-      if (!imageVoxelManager || pixelIndex === null) {
+      const imageVoxelManager = resolveSliceVoxelManager(0);
+      if (!imageVoxelManager) {
         return 0;
       }
       return imageVoxelManager.getScalarDataLength() * dimensions[2];
@@ -1027,11 +1138,9 @@ export default class VoxelManager<T> {
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(
-          (sliceIndex * sliceSize) / numberOfComponents
-        );
+        const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
 
-        if (imageVoxelManager && pixelIndex !== null) {
+        if (imageVoxelManager) {
           const sliceStart = sliceIndex * sliceSize;
           const pixelData = imageVoxelManager.getScalarData();
 
@@ -1060,9 +1169,7 @@ export default class VoxelManager<T> {
       let maxValue = -Infinity;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { voxelManager: imageVoxelManager } = getPixelInfo(
-          (sliceIndex * sliceSize) / numberOfComponents
-        );
+        const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
 
         if (imageVoxelManager && SliceDataConstructor) {
           const sliceStart = sliceIndex * sliceSize;

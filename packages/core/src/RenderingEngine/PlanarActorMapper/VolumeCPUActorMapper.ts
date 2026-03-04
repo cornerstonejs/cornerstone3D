@@ -953,32 +953,42 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     const sliceScalarData = new SliceArrayConstructor(width * height);
     let sampledMin = Infinity;
     let sampledMax = -Infinity;
+    const focalX = focalPoint[0];
+    const focalY = focalPoint[1];
+    const focalZ = focalPoint[2];
+    const rightX = right[0];
+    const rightY = right[1];
+    const rightZ = right[2];
+    const upX = up[0];
+    const upY = up[1];
+    const upZ = up[2];
+    const normalX = normal[0];
+    const normalY = normal[1];
+    const normalZ = normal[2];
 
     let pixelIndex = 0;
     for (let y = 0; y < height; y++) {
       const yOffset = yStart - y * yStep;
+      const rowBaseX = focalX + upX * yOffset;
+      const rowBaseY = focalY + upY * yOffset;
+      const rowBaseZ = focalZ + upZ * yOffset;
 
       for (let x = 0; x < width; x++) {
         const xOffset = xStart + x * xStep;
-        const basePoint = [
-          focalPoint[0] + right[0] * xOffset + up[0] * yOffset,
-          focalPoint[1] + right[1] * xOffset + up[1] * yOffset,
-          focalPoint[2] + right[2] * xOffset + up[2] * yOffset,
-        ] as Point3;
+        const baseX = rowBaseX + rightX * xOffset;
+        const baseY = rowBaseY + rightY * xOffset;
+        const baseZ = rowBaseZ + rightZ * xOffset;
 
         let accumulated = 0;
         let validSamples = 0;
         for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
           const sampleDistance =
             sampleCount === 1 ? 0 : -slabHalfThickness + sampleIndex * slabStep;
-          const samplePoint = [
-            basePoint[0] + normal[0] * sampleDistance,
-            basePoint[1] + normal[1] * sampleDistance,
-            basePoint[2] + normal[2] * sampleDistance,
-          ] as Point3;
-          const sampledValue = this.sampleVolume(
+          const sampledValue = this.sampleVolumeAtCoordinates(
             volume,
-            samplePoint,
+            baseX + normalX * sampleDistance,
+            baseY + normalY * sampleDistance,
+            baseZ + normalZ * sampleDistance,
             interpolationType
           );
 
@@ -1549,7 +1559,30 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     interpolationType = this.context.getViewportInterpolationType() ??
       InterpolationType.LINEAR
   ): number {
-    return VoxelManager.sampleAtWorld(volume, worldPos, interpolationType);
+    return this.sampleVolumeAtCoordinates(
+      volume,
+      worldPos[0],
+      worldPos[1],
+      worldPos[2],
+      interpolationType
+    );
+  }
+
+  private sampleVolumeAtCoordinates(
+    volume: IImageVolume,
+    worldX: number,
+    worldY: number,
+    worldZ: number,
+    interpolationType = this.context.getViewportInterpolationType() ??
+      InterpolationType.LINEAR
+  ): number {
+    return VoxelManager.sampleAtWorldCoordinates(
+      volume,
+      worldX,
+      worldY,
+      worldZ,
+      interpolationType
+    );
   }
 
   private sampleVolumeNearest(volume: IImageVolume, worldPos: Point3): number {
