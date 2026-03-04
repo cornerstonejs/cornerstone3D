@@ -612,11 +612,12 @@ class VolumeViewport extends BaseVolumeViewport {
   ): void;
   public scroll(
     delta = 1,
-    optionsOrVolumeId: VolumeViewportScrollOptions | string = {},
+    optionsOrVolumeId: VolumeViewportScrollOptions | string = undefined,
     legacyUseSlabThickness = false
   ): void {
     const options =
-      typeof optionsOrVolumeId === 'string'
+      typeof optionsOrVolumeId === 'string' ||
+      typeof optionsOrVolumeId === 'undefined'
         ? {
             volumeId: optionsOrVolumeId,
             scrollSlabs: legacyUseSlabThickness,

@@ -18,6 +18,9 @@ export default function filterAnnotationsForDisplay(
   if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();
     const viewReference = viewport.getViewReference();
+    if (!viewReference?.volumeId) {
+      return [];
+    }
     const spacingInNormalDirection = viewport.getSpacingInNormalDirection(
       viewReference.volumeId,
       {

@@ -2351,11 +2351,12 @@ class StackViewport extends Viewport {
   public scroll(delta: number, debounce?: boolean, loop?: boolean): void;
   public scroll(
     delta: number,
-    optionsOrDebounce: StackScrollOptions | boolean = {},
+    optionsOrDebounce: StackScrollOptions | boolean = undefined,
     legacyLoop = false
   ): void {
     const options =
-      typeof optionsOrDebounce === 'boolean'
+      typeof optionsOrDebounce === 'boolean' ||
+      typeof optionsOrDebounce === 'undefined'
         ? {
             debounceLoading: optionsOrDebounce,
             loop: legacyLoop,
