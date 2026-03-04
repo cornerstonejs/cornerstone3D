@@ -3,15 +3,18 @@ import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { actorIsA } from '../../utilities/actorCheck';
 import snapFocalPointToSlice from '../../utilities/snapFocalPointToSlice';
 import type { BlendModes } from '../../enums';
-import type { ActorEntry, ICamera, IVolumeInput, Point3 } from '../../types';
 import type {
+  ActorEntry,
+  ICamera,
+  IVolumeActorMapper,
+  IVolumeActorMapperContext,
+  IVolumeInput,
+  Point3,
   VolumeViewportScrollInfo,
-  default as IVolumeActorMapper,
-} from './IVolumeActorMapper';
-import type { VolumeActorMapperContext } from './VolumeActorMapperContext';
+} from '../../types';
 
 export default class VolumeGPUActorMapper implements IVolumeActorMapper {
-  constructor(private context: VolumeActorMapperContext) {}
+  constructor(private context: IVolumeActorMapperContext) {}
 
   /**
    * Replaces viewport volume actors using the GPU pipeline.

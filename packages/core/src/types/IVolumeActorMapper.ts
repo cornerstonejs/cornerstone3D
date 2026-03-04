@@ -1,5 +1,5 @@
-import type { ICamera, IVolumeInput, Point3 } from '../../types';
-import type { BlendModes } from '../../enums';
+import type { BlendModes } from '../enums';
+import type { ICamera, IVolumeInput, Point3 } from './index';
 
 export type VolumeViewportScrollInfo = {
   numScrollSteps: number;

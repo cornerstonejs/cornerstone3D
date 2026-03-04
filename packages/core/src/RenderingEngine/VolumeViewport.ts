@@ -14,6 +14,8 @@ import type {
   ICamera,
   IImageData,
   IImageVolume,
+  IVolumeActorMapper,
+  IVolumeActorMapperContext,
   IVolumeInput,
   OrientationVectors,
   Point2,
@@ -49,8 +51,6 @@ import {
   VolumeCPUActorMapper,
   VolumeGPUActorMapper,
 } from './PlanarActorMapper';
-import type IVolumeActorMapper from './PlanarActorMapper/IVolumeActorMapper';
-import type { VolumeActorMapperContext } from './PlanarActorMapper/VolumeActorMapperContext';
 
 type VolumeViewportScrollOptions = {
   volumeId?: string;
@@ -159,7 +159,7 @@ class VolumeViewport extends BaseVolumeViewport {
     this._useAcquisitionPlaneForViewPlane = true;
   }
 
-  private createVolumeActorMapperContext(): VolumeActorMapperContext {
+  private createVolumeActorMapperContext(): IVolumeActorMapperContext {
     return {
       setVolumesBase: (volumeInputArray, immediate, suppressEvents) =>
         super.setVolumes(volumeInputArray, immediate, suppressEvents),

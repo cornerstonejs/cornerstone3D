@@ -23,6 +23,9 @@ import type {
   IImageCalibration,
   IImageData,
   IImagesLoader,
+  IStackActorMapper,
+  IStackCPUActorMapperContext,
+  IStackGPUActorMapperContext,
   IStackInput,
   ImageLoadListener,
   Mat3,
@@ -102,11 +105,6 @@ import {
   createSmoothingRenderPass,
 } from './renderPasses';
 import { StackCPUActorMapper, StackGPUActorMapper } from './PlanarActorMapper';
-import type IStackActorMapper from './PlanarActorMapper/IStackActorMapper';
-import type {
-  StackCPUActorMapperContext,
-  StackGPUActorMapperContext,
-} from './PlanarActorMapper/StackActorMapperContext';
 
 export interface ImageDataMetaData {
   bitsAllocated: number;
@@ -241,7 +239,7 @@ class StackViewport extends Viewport {
     this.initializeElementDisabledHandler();
   }
 
-  private createCPUActorMapperContext(): StackCPUActorMapperContext {
+  private createCPUActorMapperContext(): IStackCPUActorMapperContext {
     return {
       setCPUFallbackEnabledElement: (element) => {
         this._cpuFallbackEnabledElement = element;
@@ -281,7 +279,7 @@ class StackViewport extends Viewport {
     };
   }
 
-  private createGPUActorMapperContext(): StackGPUActorMapperContext {
+  private createGPUActorMapperContext(): IStackGPUActorMapperContext {
     return {
       getRenderer: () => this.getRenderer(),
       getDefaultActor: () => this.getDefaultActor(),

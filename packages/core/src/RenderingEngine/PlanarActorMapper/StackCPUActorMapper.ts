@@ -12,13 +12,13 @@ import type {
   IImage,
   ImageActor,
   Point3,
+  IStackActorMapper,
+  IStackCPUActorMapperContext,
   IStackInput,
 } from '../../types';
-import type IStackActorMapper from './IStackActorMapper';
-import type { StackCPUActorMapperContext } from './StackActorMapperContext';
 
 export default class StackCPUActorMapper implements IStackActorMapper {
-  constructor(private context: StackCPUActorMapperContext) {}
+  constructor(private context: IStackCPUActorMapperContext) {}
 
   /**
    * Initializes the CPU fallback enabled element state used by stack rendering.

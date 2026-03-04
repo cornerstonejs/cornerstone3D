@@ -13,17 +13,17 @@ import * as windowLevelUtil from '../../utilities/windowLevel';
 import type {
   IImage,
   IImageData,
+  IStackActorMapper,
+  IStackGPUActorMapperContext,
   IStackInput,
   ImageActor,
   Mat3,
   Point3,
   VOIRange,
 } from '../../types';
-import type IStackActorMapper from './IStackActorMapper';
-import type { StackGPUActorMapperContext } from './StackActorMapperContext';
 
 export default class StackGPUActorMapper implements IStackActorMapper {
-  constructor(private context: StackGPUActorMapperContext) {}
+  constructor(private context: IStackGPUActorMapperContext) {}
 
   /**
    * Resets renderer camera state to stack defaults for GPU image rendering.

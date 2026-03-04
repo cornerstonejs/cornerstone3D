@@ -1,20 +1,34 @@
+import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type {
   ActorEntry,
   CPUFallbackEnabledElement,
   ICamera,
   IImage,
   IImageCalibration,
+  ImagePixelModule,
+  ImagePlaneModule,
+  Mat3,
   Point3,
   Scaling,
   StackViewportProperties,
   VOIRange,
   ViewPresentation,
-} from '../../types';
-import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import type { ImageDataMetaData } from '../StackViewport';
+} from './index';
 
-export interface StackCPUActorMapperContext {
+export interface IStackActorMapperImageDataMetaData {
+  bitsAllocated: number;
+  numberOfComponents: number;
+  origin: Point3;
+  direction: Mat3;
+  dimensions: Point3;
+  spacing: Point3;
+  numVoxels: number;
+  imagePlaneModule: ImagePlaneModule;
+  imagePixelModule: ImagePixelModule;
+}
+
+export interface IStackCPUActorMapperContext {
   setCPUFallbackEnabledElement(element: CPUFallbackEnabledElement): void;
   getCPUFallbackEnabledElement(): CPUFallbackEnabledElement;
   getCPUActors(): ActorEntry[];
@@ -32,14 +46,14 @@ export interface StackCPUActorMapperContext {
   worldToCanvasCPU(point: Point3): [number, number];
   canvasToWorldCPU(canvasPoint: [number, number], destPoint?: Point3): Point3;
   setVOIRange(voiRange: VOIRange): void;
-  getImageDataMetadata(image: IImage): ImageDataMetaData;
+  getImageDataMetadata(image: IImage): IStackActorMapperImageDataMetaData;
   getStackInvalidated(): boolean;
   setStackInvalidated(value: boolean): void;
   setCPURenderingInvalidated(value: boolean): void;
   getCPUFallbackError(method: string): Error;
 }
 
-export interface StackGPUActorMapperContext {
+export interface IStackGPUActorMapperContext {
   getRenderer(): vtkRenderer;
   getDefaultActor(): ActorEntry;
   getFrameOfReferenceUID(): string;
@@ -48,7 +62,7 @@ export interface StackGPUActorMapperContext {
   getHasPixelSpacing(): boolean;
   getCalibration(): IImageCalibration;
   getCSImage(): IImage;
-  getImageDataMetadata(image: IImage): ImageDataMetaData;
+  getImageDataMetadata(image: IImage): IStackActorMapperImageDataMetaData;
   getImageDataObject(): vtkImageDataType;
   setImageDataObject(imageData: vtkImageDataType): void;
   getImagePlaneModule(imageId: string);

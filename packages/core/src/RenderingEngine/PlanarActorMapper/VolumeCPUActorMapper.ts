@@ -13,16 +13,14 @@ import type {
   ICamera,
   IImage,
   IImageVolume,
+  IVolumeActorMapper,
+  IVolumeActorMapperContext,
   IVolumeInput,
   PixelDataTypedArray,
   PixelDataTypedArrayString,
   Point3,
-} from '../../types';
-import type {
   VolumeViewportScrollInfo,
-  default as IVolumeActorMapper,
-} from './IVolumeActorMapper';
-import type { VolumeActorMapperContext } from './VolumeActorMapperContext';
+} from '../../types';
 
 type SliceArray = PixelDataTypedArray;
 
@@ -110,7 +108,7 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     firstFrameRendered: false,
   };
 
-  constructor(private context: VolumeActorMapperContext) {}
+  constructor(private context: IVolumeActorMapperContext) {}
 
   /**
    * Replaces viewport volume data for CPU rendering.

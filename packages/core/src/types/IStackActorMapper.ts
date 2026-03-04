@@ -1,9 +1,4 @@
-import type {
-  CPUIImageData,
-  IImage,
-  IImageData,
-  IStackInput,
-} from '../../types';
+import type { CPUIImageData, IImage, IImageData, IStackInput } from './index';
 
 export default interface IStackActorMapper {
   reset(): void;

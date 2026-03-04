@@ -1,20 +1,20 @@
-import type {
-  ActorSliceRange,
-  ActorEntry,
-  ICamera,
-  IImageVolume,
-  IVolumeInput,
-  Point3,
-  VOIRange,
-} from '../../types';
 import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type {
   BlendModes,
   InterpolationType,
   VOILUTFunctionType,
-} from '../../enums';
+} from '../enums';
+import type {
+  ActorEntry,
+  ActorSliceRange,
+  ICamera,
+  IImageVolume,
+  IVolumeInput,
+  Point3,
+  VOIRange,
+} from './index';
 
-export interface VolumeActorMapperContext {
+export interface IVolumeActorMapperContext {
   setVolumesBase(
     volumeInputArray: IVolumeInput[],
     immediate?: boolean,
