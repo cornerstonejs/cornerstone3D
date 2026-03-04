@@ -1,6 +1,8 @@
 import cache from '../cache/cache';
+import { InterpolationType } from '../enums';
 import type {
   BoundsIJK,
+  Mat3,
   Point3,
   PixelDataTypedArray,
   IImage,
@@ -21,6 +23,17 @@ import { iterateOverPointsInShapeVoxelManager } from './pointInShapeCallback';
  * is a first guess.
  */
 const DEFAULT_RLE_SIZE = 5 * 1024;
+
+type VoxelVolumeGeometry = {
+  origin: Point3;
+  spacing: Point3;
+  direction: Mat3;
+};
+
+type SampleableVoxelVolume = VoxelVolumeGeometry & {
+  dimensions: Point3;
+  voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
+};
 
 /**
  * This is a simple, standard interface to values associated with a voxel.
@@ -543,6 +556,141 @@ export default class VoxelManager<T> {
     bounds[1][1] = Math.max(point[1], bounds[1][1]);
     bounds[2][0] = Math.min(point[2], bounds[2][0]);
     bounds[2][1] = Math.max(point[2], bounds[2][1]);
+  }
+
+  /**
+   * Converts a world-space coordinate to continuous IJK in the volume geometry.
+   */
+  public static worldToIndexContinuous(
+    volumeGeometry: VoxelVolumeGeometry,
+    worldPos: Point3
+  ): Point3 {
+    const delta = [
+      worldPos[0] - volumeGeometry.origin[0],
+      worldPos[1] - volumeGeometry.origin[1],
+      worldPos[2] - volumeGeometry.origin[2],
+    ] as Point3;
+
+    const row = volumeGeometry.direction.slice(0, 3) as Point3;
+    const col = volumeGeometry.direction.slice(3, 6) as Point3;
+    const scan = volumeGeometry.direction.slice(6, 9) as Point3;
+
+    return [
+      (delta[0] * row[0] + delta[1] * row[1] + delta[2] * row[2]) /
+        volumeGeometry.spacing[0],
+      (delta[0] * col[0] + delta[1] * col[1] + delta[2] * col[2]) /
+        volumeGeometry.spacing[1],
+      (delta[0] * scan[0] + delta[1] * scan[1] + delta[2] * scan[2]) /
+        volumeGeometry.spacing[2],
+    ];
+  }
+
+  /**
+   * Samples a scalar value at world-space using nearest or trilinear interpolation.
+   */
+  public static sampleAtWorld(
+    volume: SampleableVoxelVolume,
+    worldPos: Point3,
+    interpolationType: InterpolationType = InterpolationType.LINEAR
+  ): number {
+    if (!volume.voxelManager) {
+      return NaN;
+    }
+
+    const continuousIndex = VoxelManager.worldToIndexContinuous(
+      volume,
+      worldPos
+    );
+
+    return VoxelManager.sampleAtContinuousIndex(
+      volume.voxelManager,
+      volume.dimensions,
+      continuousIndex,
+      interpolationType
+    );
+  }
+
+  /**
+   * Samples a scalar value at continuous IJK coordinates.
+   */
+  public static sampleAtContinuousIndex(
+    voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
+    dimensions: Point3,
+    continuousIndex: Point3,
+    interpolationType: InterpolationType = InterpolationType.LINEAR
+  ): number {
+    return interpolationType === InterpolationType.NEAREST
+      ? VoxelManager.sampleNearestAtContinuousIndex(
+          voxelManager,
+          dimensions,
+          continuousIndex
+        )
+      : VoxelManager.sampleLinearAtContinuousIndex(
+          voxelManager,
+          dimensions,
+          continuousIndex
+        );
+  }
+
+  private static sampleNearestAtContinuousIndex(
+    voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
+    dimensions: Point3,
+    continuousIndex: Point3
+  ): number {
+    const [iC, jC, kC] = continuousIndex;
+    // Bias exact half-indices downward so editing and display use same voxel.
+    const i = Math.floor(iC + 0.5 - 1e-6);
+    const j = Math.floor(jC + 0.5 - 1e-6);
+    const k = Math.floor(kC + 0.5 - 1e-6);
+    const [dx, dy, dz] = dimensions;
+
+    if (i < 0 || i >= dx || j < 0 || j >= dy || k < 0 || k >= dz) {
+      return NaN;
+    }
+
+    return Number(voxelManager.getAtIJK(i, j, k));
+  }
+
+  private static sampleLinearAtContinuousIndex(
+    voxelManager: IVoxelManager<number> | IVoxelManager<RGB>,
+    dimensions: Point3,
+    continuousIndex: Point3
+  ): number {
+    const [i, j, k] = continuousIndex;
+    const [dx, dy, dz] = dimensions;
+
+    if (i < 0 || i > dx - 1 || j < 0 || j > dy - 1 || k < 0 || k > dz - 1) {
+      return NaN;
+    }
+
+    const i0 = Math.floor(i);
+    const j0 = Math.floor(j);
+    const k0 = Math.floor(k);
+    const i1 = Math.min(i0 + 1, dx - 1);
+    const j1 = Math.min(j0 + 1, dy - 1);
+    const k1 = Math.min(k0 + 1, dz - 1);
+
+    const di = i - i0;
+    const dj = j - j0;
+    const dk = k - k0;
+
+    const c000 = Number(voxelManager.getAtIJK(i0, j0, k0));
+    const c100 = Number(voxelManager.getAtIJK(i1, j0, k0));
+    const c010 = Number(voxelManager.getAtIJK(i0, j1, k0));
+    const c110 = Number(voxelManager.getAtIJK(i1, j1, k0));
+    const c001 = Number(voxelManager.getAtIJK(i0, j0, k1));
+    const c101 = Number(voxelManager.getAtIJK(i1, j0, k1));
+    const c011 = Number(voxelManager.getAtIJK(i0, j1, k1));
+    const c111 = Number(voxelManager.getAtIJK(i1, j1, k1));
+
+    const c00 = c000 * (1 - di) + c100 * di;
+    const c10 = c010 * (1 - di) + c110 * di;
+    const c01 = c001 * (1 - di) + c101 * di;
+    const c11 = c011 * (1 - di) + c111 * di;
+    const c0 = c00 * (1 - dj) + c10 * dj;
+    const c1 = c01 * (1 - dj) + c11 * dj;
+
+    return c0 * (1 - dk) + c1 * dk;
   }
 
   /**

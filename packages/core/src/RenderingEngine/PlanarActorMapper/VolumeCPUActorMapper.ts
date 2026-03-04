@@ -1549,86 +1549,30 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
     interpolationType = this.context.getViewportInterpolationType() ??
       InterpolationType.LINEAR
   ): number {
-    return interpolationType === InterpolationType.NEAREST
-      ? this.sampleVolumeNearest(volume, worldPos)
-      : this.sampleVolumeLinear(volume, worldPos);
+    return VoxelManager.sampleAtWorld(volume, worldPos, interpolationType);
   }
 
   private sampleVolumeNearest(volume: IImageVolume, worldPos: Point3): number {
-    const [iC, jC, kC] = this.worldToIndexContinuous(volume, worldPos);
-    // Bias exact half-indices downward so segmentation edits and rendering
-    // stay aligned on the same voxel plane.
-    const i = Math.floor(iC + 0.5 - 1e-6);
-    const j = Math.floor(jC + 0.5 - 1e-6);
-    const k = Math.floor(kC + 0.5 - 1e-6);
-    const [dx, dy, dz] = volume.dimensions;
-
-    if (i < 0 || i >= dx || j < 0 || j >= dy || k < 0 || k >= dz) {
-      return NaN;
-    }
-
-    return Number(volume.voxelManager.getAtIJK(i, j, k));
+    return VoxelManager.sampleAtWorld(
+      volume,
+      worldPos,
+      InterpolationType.NEAREST
+    );
   }
 
   private sampleVolumeLinear(volume: IImageVolume, worldPos: Point3): number {
-    const [i, j, k] = this.worldToIndexContinuous(volume, worldPos);
-    const [dx, dy, dz] = volume.dimensions;
-
-    if (i < 0 || i > dx - 1 || j < 0 || j > dy - 1 || k < 0 || k > dz - 1) {
-      return NaN;
-    }
-
-    const i0 = Math.floor(i);
-    const j0 = Math.floor(j);
-    const k0 = Math.floor(k);
-    const i1 = Math.min(i0 + 1, dx - 1);
-    const j1 = Math.min(j0 + 1, dy - 1);
-    const k1 = Math.min(k0 + 1, dz - 1);
-
-    const di = i - i0;
-    const dj = j - j0;
-    const dk = k - k0;
-
-    const c000 = Number(volume.voxelManager.getAtIJK(i0, j0, k0));
-    const c100 = Number(volume.voxelManager.getAtIJK(i1, j0, k0));
-    const c010 = Number(volume.voxelManager.getAtIJK(i0, j1, k0));
-    const c110 = Number(volume.voxelManager.getAtIJK(i1, j1, k0));
-    const c001 = Number(volume.voxelManager.getAtIJK(i0, j0, k1));
-    const c101 = Number(volume.voxelManager.getAtIJK(i1, j0, k1));
-    const c011 = Number(volume.voxelManager.getAtIJK(i0, j1, k1));
-    const c111 = Number(volume.voxelManager.getAtIJK(i1, j1, k1));
-
-    const c00 = c000 * (1 - di) + c100 * di;
-    const c10 = c010 * (1 - di) + c110 * di;
-    const c01 = c001 * (1 - di) + c101 * di;
-    const c11 = c011 * (1 - di) + c111 * di;
-    const c0 = c00 * (1 - dj) + c10 * dj;
-    const c1 = c01 * (1 - dj) + c11 * dj;
-    return c0 * (1 - dk) + c1 * dk;
+    return VoxelManager.sampleAtWorld(
+      volume,
+      worldPos,
+      InterpolationType.LINEAR
+    );
   }
 
   private worldToIndexContinuous(
     volume: IImageVolume,
     worldPos: Point3
   ): Point3 {
-    const delta = [
-      worldPos[0] - volume.origin[0],
-      worldPos[1] - volume.origin[1],
-      worldPos[2] - volume.origin[2],
-    ] as Point3;
-
-    const row = volume.direction.slice(0, 3) as Point3;
-    const col = volume.direction.slice(3, 6) as Point3;
-    const scan = volume.direction.slice(6, 9) as Point3;
-
-    return [
-      (delta[0] * row[0] + delta[1] * row[1] + delta[2] * row[2]) /
-        volume.spacing[0],
-      (delta[0] * col[0] + delta[1] * col[1] + delta[2] * col[2]) /
-        volume.spacing[1],
-      (delta[0] * scan[0] + delta[1] * scan[1] + delta[2] * scan[2]) /
-        volume.spacing[2],
-    ];
+    return VoxelManager.worldToIndexContinuous(volume, worldPos);
   }
 
   private getSliceArrayConstructor(
