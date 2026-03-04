@@ -11,11 +11,6 @@ export default class ControlPointPolyline extends TID300Polyline {
     ReferencedFrameOfReferenceUID?: string;
     splineType?: string;
   };
-  /** Inherited from TID300Polyline; declared so TS/IDE see it (dcmjs types omit it). */
-  declare flattenPoints: (opts: {
-    points: number[];
-    use3DSpatialCoordinates?: boolean;
-  }) => number[];
 
   contentItem() {
     const contentEntries = super.contentItem();
