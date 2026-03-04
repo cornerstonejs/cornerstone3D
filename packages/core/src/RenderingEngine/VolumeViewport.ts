@@ -1284,6 +1284,10 @@ class VolumeViewport extends BaseVolumeViewport {
       },
     };
 
+    const hasPixelSpacing =
+      volume.hasPixelSpacing ??
+      volume.spacing.every((value) => Number.isFinite(value) && value > 0);
+
     return {
       dimensions: volume.dimensions,
       spacing: volume.spacing,
@@ -1298,7 +1302,7 @@ class VolumeViewport extends BaseVolumeViewport {
         return volume.voxelManager?.getScalarData();
       },
       scaling: volume.scaling,
-      hasPixelSpacing: volume.hasPixelSpacing,
+      hasPixelSpacing,
       voxelManager: volume.voxelManager,
     };
   }
