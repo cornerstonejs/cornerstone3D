@@ -1,5 +1,6 @@
 import { EPSILON } from '../../constants';
 import { BlendModes, InterpolationType, VOILUTFunctionType } from '../../enums';
+import { vec3 } from 'gl-matrix';
 import { getColormap } from '../helpers/cpuFallback/colors';
 import drawImageSync from '../helpers/cpuFallback/drawImageSync';
 import getDefaultViewport from '../helpers/cpuFallback/rendering/getDefaultViewport';
@@ -1402,16 +1403,34 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
   private indexToWorld(volume: IImageVolume, ijk: Point3): Point3 {
     const [i, j, k] = ijk;
     const [sx, sy, sz] = volume.spacing;
-    const [ox, oy, oz] = volume.origin;
     const row = volume.direction.slice(0, 3) as Point3;
     const col = volume.direction.slice(3, 6) as Point3;
     const scan = volume.direction.slice(6, 9) as Point3;
+    const world = vec3.copy(
+      [0, 0, 0] as vec3,
+      volume.origin as unknown as vec3
+    ) as Point3;
 
-    return [
-      ox + row[0] * sx * i + col[0] * sy * j + scan[0] * sz * k,
-      oy + row[1] * sx * i + col[1] * sy * j + scan[1] * sz * k,
-      oz + row[2] * sx * i + col[2] * sy * j + scan[2] * sz * k,
-    ];
+    vec3.scaleAndAdd(
+      world as unknown as vec3,
+      world as unknown as vec3,
+      row as unknown as vec3,
+      sx * i
+    );
+    vec3.scaleAndAdd(
+      world as unknown as vec3,
+      world as unknown as vec3,
+      col as unknown as vec3,
+      sy * j
+    );
+    vec3.scaleAndAdd(
+      world as unknown as vec3,
+      world as unknown as vec3,
+      scan as unknown as vec3,
+      sz * k
+    );
+
+    return world;
   }
 
   private createSliceImage(
@@ -1699,14 +1718,12 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
 
   private arePointsClose(a: Point3, b: Point3, tolerance = 1e-4): boolean {
     return (
-      Math.abs(a[0] - b[0]) <= tolerance &&
-      Math.abs(a[1] - b[1]) <= tolerance &&
-      Math.abs(a[2] - b[2]) <= tolerance
+      vec3.distance(a as unknown as vec3, b as unknown as vec3) <= tolerance
     );
   }
 
   private copyPoint3(point: Point3): Point3 {
-    return [point[0], point[1], point[2]];
+    return vec3.copy([0, 0, 0] as vec3, point as unknown as vec3) as Point3;
   }
 
   private hasOutOfPlaneSliceChange(
@@ -1770,11 +1787,15 @@ export default class VolumeCPUActorMapper implements IVolumeActorMapper {
   }
 
   private subtractPoints(a: Point3, b: Point3): Point3 {
-    return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+    return vec3.subtract(
+      [0, 0, 0] as vec3,
+      a as unknown as vec3,
+      b as unknown as vec3
+    ) as Point3;
   }
 
   private dot(a: Point3, b: Point3): number {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    return vec3.dot(a as unknown as vec3, b as unknown as vec3);
   }
 
   private invalidateSampledSliceInternal(): void {

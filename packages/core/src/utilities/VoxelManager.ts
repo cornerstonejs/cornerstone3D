@@ -1,5 +1,6 @@
 import cache from '../cache/cache';
 import { InterpolationType } from '../enums';
+import { vec3 } from 'gl-matrix';
 import type {
   BoundsIJK,
   Mat3,
@@ -23,6 +24,11 @@ import { iterateOverPointsInShapeVoxelManager } from './pointInShapeCallback';
  * is a first guess.
  */
 const DEFAULT_RLE_SIZE = 5 * 1024;
+const worldToIndexWorldScratch = [0, 0, 0] as vec3;
+const worldToIndexDeltaScratch = [0, 0, 0] as vec3;
+const worldToIndexRowScratch = [0, 0, 0] as vec3;
+const worldToIndexColScratch = [0, 0, 0] as vec3;
+const worldToIndexScanScratch = [0, 0, 0] as vec3;
 
 type VoxelVolumeGeometry = {
   origin: Point3;
@@ -567,17 +573,34 @@ export default class VoxelManager<T> {
     const origin = volumeGeometry.origin;
     const spacing = volumeGeometry.spacing;
     const direction = volumeGeometry.direction;
-    const deltaX = worldPos[0] - origin[0];
-    const deltaY = worldPos[1] - origin[1];
-    const deltaZ = worldPos[2] - origin[2];
+    const delta = vec3.sub(
+      worldToIndexDeltaScratch,
+      vec3.set(worldToIndexWorldScratch, worldPos[0], worldPos[1], worldPos[2]),
+      origin as unknown as vec3
+    );
+    const row = vec3.set(
+      worldToIndexRowScratch,
+      direction[0],
+      direction[1],
+      direction[2]
+    );
+    const col = vec3.set(
+      worldToIndexColScratch,
+      direction[3],
+      direction[4],
+      direction[5]
+    );
+    const scan = vec3.set(
+      worldToIndexScanScratch,
+      direction[6],
+      direction[7],
+      direction[8]
+    );
 
     return [
-      (deltaX * direction[0] + deltaY * direction[1] + deltaZ * direction[2]) /
-        spacing[0],
-      (deltaX * direction[3] + deltaY * direction[4] + deltaZ * direction[5]) /
-        spacing[1],
-      (deltaX * direction[6] + deltaY * direction[7] + deltaZ * direction[8]) /
-        spacing[2],
+      vec3.dot(delta, row) / spacing[0],
+      vec3.dot(delta, col) / spacing[1],
+      vec3.dot(delta, scan) / spacing[2],
     ];
   }
 
@@ -598,18 +621,32 @@ export default class VoxelManager<T> {
     const origin = volume.origin;
     const spacing = volume.spacing;
     const direction = volume.direction;
-    const deltaX = worldX - origin[0];
-    const deltaY = worldY - origin[1];
-    const deltaZ = worldZ - origin[2];
-    const i =
-      (deltaX * direction[0] + deltaY * direction[1] + deltaZ * direction[2]) /
-      spacing[0];
-    const j =
-      (deltaX * direction[3] + deltaY * direction[4] + deltaZ * direction[5]) /
-      spacing[1];
-    const k =
-      (deltaX * direction[6] + deltaY * direction[7] + deltaZ * direction[8]) /
-      spacing[2];
+    const delta = vec3.sub(
+      worldToIndexDeltaScratch,
+      vec3.set(worldToIndexWorldScratch, worldX, worldY, worldZ),
+      origin as unknown as vec3
+    );
+    const row = vec3.set(
+      worldToIndexRowScratch,
+      direction[0],
+      direction[1],
+      direction[2]
+    );
+    const col = vec3.set(
+      worldToIndexColScratch,
+      direction[3],
+      direction[4],
+      direction[5]
+    );
+    const scan = vec3.set(
+      worldToIndexScanScratch,
+      direction[6],
+      direction[7],
+      direction[8]
+    );
+    const i = vec3.dot(delta, row) / spacing[0];
+    const j = vec3.dot(delta, col) / spacing[1];
+    const k = vec3.dot(delta, scan) / spacing[2];
 
     return VoxelManager.sampleAtContinuousCoordinates(
       volume.voxelManager,
