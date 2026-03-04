@@ -206,19 +206,7 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    viewportIds
-  );
-
-  viewportIds.forEach((id) => {
-    const viewport = renderingEngine.getViewport(id) as Types.IVolumeViewport;
-    // viewport.setProperties({
-    // voiRange: { lower: -160, upper: 240 },
-    // VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
-    // });
-  });
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

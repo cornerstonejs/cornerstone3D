@@ -1,5 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
-import { StackViewport, VolumeViewport } from '@cornerstonejs/core';
+import {
+  StackViewport,
+  VolumeViewport,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
 import type { Annotations } from '../../types';
@@ -17,16 +21,10 @@ export default function filterAnnotationsForDisplay(
 ): Annotations {
   if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();
-    const viewReference = viewport.getViewReference();
-    if (!viewReference?.volumeId) {
-      return [];
-    }
-    const spacingInNormalDirection = viewport.getSpacingInNormalDirection(
-      viewReference.volumeId,
-      {
-        viewReference,
-      }
-    );
+    const volumeId = viewport.getVolumeId();
+
+    const { spacingInNormalDirection } =
+      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
 
     if (!spacingInNormalDirection) {
       return [];

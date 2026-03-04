@@ -26,7 +26,7 @@ function getVolumeSliceRangeInfo(
 } {
   const camera = viewport.getCamera();
   const { focalPoint, viewPlaneNormal } = camera;
-  const { spacingInNormalDirection, actorUID } =
+  const { spacingInNormalDirection, actorUID, imageVolume } =
     getTargetVolumeAndSpacingInNormalDir(
       viewport,
       camera,
@@ -40,7 +40,15 @@ function getVolumeSliceRangeInfo(
     );
   }
 
-  const actorEntry = viewport.getActor(actorUID);
+  const actorEntry =
+    viewport.getActor(actorUID) ||
+    viewport
+      .getActors()
+      .find(
+        (actor) =>
+          actor.referencedId === imageVolume?.volumeId ||
+          actor.uid === imageVolume?.volumeId
+      );
 
   if (!actorEntry) {
     console.warn('No actor found for with actorUID of', actorUID);

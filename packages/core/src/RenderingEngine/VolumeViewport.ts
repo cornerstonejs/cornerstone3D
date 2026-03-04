@@ -32,7 +32,6 @@ import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirectio
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import triggerEvent from '../utilities/triggerEvent';
-import getTargetVolumeAndSpacingInNormalDir from '../utilities/getTargetVolumeAndSpacingInNormalDir';
 
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
@@ -678,47 +677,6 @@ class VolumeViewport extends BaseVolumeViewport {
     const { numberOfSlices } = getImageSliceDataForVolumeViewport(this) || {};
     return numberOfSlices;
   };
-
-  public getSpacingInNormalDirection(
-    volumeId?: string,
-    options: {
-      viewReference?: Pick<ViewReference, 'viewPlaneNormal'>;
-      useSlabThickness?: boolean;
-    } = {}
-  ): number | undefined {
-    const camera = this.getCamera();
-    const viewPlaneNormal =
-      options.viewReference?.viewPlaneNormal ?? camera.viewPlaneNormal;
-    const useSlabThickness = options.useSlabThickness ?? this.useCPURendering;
-
-    if (useSlabThickness) {
-      const slabThickness = this.getProperties()?.slabThickness;
-      if (slabThickness) {
-        return slabThickness;
-      }
-    }
-
-    if (this.useCPURendering) {
-      const volume = this.getCPUPrimaryVolume(volumeId);
-      if (!volume) {
-        return;
-      }
-
-      return getSpacingInNormalDirection(volume, viewPlaneNormal as Point3);
-    }
-
-    const { spacingInNormalDirection } = getTargetVolumeAndSpacingInNormalDir(
-      this,
-      {
-        ...camera,
-        viewPlaneNormal,
-      },
-      volumeId,
-      useSlabThickness
-    );
-
-    return spacingInNormalDirection;
-  }
 
   public scroll(delta?: number, options?: VolumeViewportScrollOptions): void;
   /** @deprecated Use `scroll(delta, { volumeId, scrollSlabs })` instead. */

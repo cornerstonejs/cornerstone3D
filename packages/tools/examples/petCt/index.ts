@@ -13,7 +13,6 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
   setCtTransferFunctionForVolumeActor,
-  ctVoiRange,
   addDropdownToToolbar,
   addButtonToToolbar,
   getDemoInitFlagsFromUrl,
@@ -728,49 +727,6 @@ async function setUpDisplay() {
     ],
     [viewportIds.PETMIP.CORONAL]
   );
-
-  const ctViewportIds = [
-    viewportIds.CT.AXIAL,
-    viewportIds.CT.SAGITTAL,
-    viewportIds.CT.CORONAL,
-    ...(useCPURenderingOnLoad
-      ? [
-          viewportIds.FUSION.AXIAL,
-          viewportIds.FUSION.SAGITTAL,
-          viewportIds.FUSION.CORONAL,
-        ]
-      : []),
-  ];
-
-  const ptViewportIds = [
-    viewportIds.PT.AXIAL,
-    viewportIds.PT.SAGITTAL,
-    viewportIds.PT.CORONAL,
-    viewportIds.PETMIP.CORONAL,
-  ];
-
-  ctViewportIds.forEach((viewportId) => {
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
-    viewport.setProperties({
-      voiRange: ctVoiRange,
-      VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
-      colormap: { name: 'Grayscale' },
-      invert: false,
-    });
-  });
-
-  ptViewportIds.forEach((viewportId) => {
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
-    viewport.setProperties({
-      voiRange: { lower: 0, upper: 5 },
-      VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
-      invert: true,
-    });
-  });
 
   initializeCameraSync(renderingEngine);
 

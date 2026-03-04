@@ -18,6 +18,10 @@ const isPrimaryVolume = (volume): boolean =>
   !!getVolumeLoaderSchemes().find((scheme) =>
     startsWith(volume.volumeId, scheme)
   );
+type TargetVolume = {
+  imageVolume: IImageVolume;
+  actorUID: string;
+};
 
 /**
  * Given a volume viewport and camera, find the target volume.
@@ -45,9 +49,15 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   actorUID: string;
 } {
   const { viewPlaneNormal } = camera;
-  const volumeActors = viewport.getActors();
+  const defaultVolumeId = viewport.getVolumeId();
+  const volumeIds = defaultVolumeId
+    ? [
+        defaultVolumeId,
+        ...viewport.getAllVolumeIds().filter((id) => id !== defaultVolumeId),
+      ]
+    : viewport.getAllVolumeIds();
 
-  if (!volumeActors.length) {
+  if (!volumeIds.length) {
     return {
       spacingInNormalDirection: null,
       imageVolume: null,
@@ -55,24 +65,31 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     };
   }
 
-  const imageVolumes = volumeActors
-    .map((va) => {
-      // prefer the referenceUID if it is set, since it can be a derived actor
-      // and the uid does not necessarily match the volumeId
-      const actorUID = va.referencedId ?? va.uid;
-      return cache.getVolume(actorUID);
+  const targetVolumes: TargetVolume[] = volumeIds
+    .map((volumeId) => {
+      const imageVolume = cache.getVolume(volumeId);
+      return imageVolume ? { imageVolume, actorUID: volumeId } : null;
     })
-    .filter((iv) => !!iv);
+    .filter((item): item is TargetVolume => !!item);
 
   // If a volumeId is defined, set that volume as the target
   if (targetId) {
     const targetVolumeId = getVolumeId(targetId);
-    const imageVolumeIndex = imageVolumes.findIndex((iv) =>
-      targetVolumeId.includes(iv.volumeId)
+    const targetVolume = targetVolumes.find(
+      ({ imageVolume }) =>
+        targetVolumeId.includes(imageVolume.volumeId) ||
+        imageVolume.volumeId.includes(targetVolumeId)
     );
 
-    const imageVolume = imageVolumes[imageVolumeIndex];
-    const { uid: actorUID } = volumeActors[imageVolumeIndex];
+    if (!targetVolume) {
+      return {
+        spacingInNormalDirection: null,
+        imageVolume: null,
+        actorUID: null,
+      };
+    }
+
+    const { imageVolume, actorUID } = targetVolume;
 
     const spacingInNormalDirection = getSpacingInNormal(
       imageVolume,
@@ -84,7 +101,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     return { imageVolume, spacingInNormalDirection, actorUID };
   }
 
-  if (!imageVolumes.length) {
+  if (!targetVolumes.length) {
     return {
       spacingInNormalDirection: null,
       imageVolume: null,
@@ -99,11 +116,11 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     actorUID: null,
   };
 
-  const hasPrimaryVolume = imageVolumes.find(isPrimaryVolume);
+  const hasPrimaryVolume = targetVolumes.find(({ imageVolume }) =>
+    isPrimaryVolume(imageVolume)
+  );
 
-  for (let i = 0; i < imageVolumes.length; i++) {
-    const imageVolume = imageVolumes[i];
-
+  for (const { imageVolume, actorUID } of targetVolumes) {
     if (hasPrimaryVolume && !isPrimaryVolume(imageVolume)) {
       // Secondary volumes like segmentation don't count towards spacing
       continue;
@@ -124,7 +141,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
     ) {
       smallest.spacingInNormalDirection = spacingInNormalDirection;
       smallest.imageVolume = imageVolume;
-      smallest.actorUID = volumeActors[i].uid;
+      smallest.actorUID = actorUID;
     }
   }
 
