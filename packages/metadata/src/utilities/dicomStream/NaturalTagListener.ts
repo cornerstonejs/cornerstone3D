@@ -1,6 +1,6 @@
 import { makeArrayLike } from '../metadataProvider/makeArrayLike';
 import { dictionaryLookup, mapTagInfo, parseVm } from '../Tags';
-import type { IListenerInfo, MetadataValueType } from './DicomStreamTypes';
+import type { IListenerInfo, MetadataValueType } from '../../types';
 
 interface NaturalContext {
   parent: NaturalContext | null;

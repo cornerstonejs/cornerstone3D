@@ -12,6 +12,7 @@ import { tags as generalStudyTags } from './generalStudy';
 import { tags as generalSeriesTags } from './generalSeries';
 import { tags as clinicalTrialTags } from './clinicalTrial';
 import { tags as sopCommonTags } from './sopCommon';
+import { tags as ecgTags } from './ecg';
 import { tags as generalImageTags } from './generalImage';
 import { tags as imagePlaneTags } from './imagePlane';
 import { tags as imagePixelTags } from './imagePixel';
@@ -50,6 +51,7 @@ export const moduleDefinitions: [string | null, ModuleTagEntry[]][] = [
   [MetadataModules.GENERAL_SERIES, generalSeriesTags],
   [CLINICAL_TRIAL, clinicalTrialTags],
   [MetadataModules.SOP_COMMON, sopCommonTags],
+  [MetadataModules.ECG, ecgTags],
   [MetadataModules.GENERAL_IMAGE, generalImageTags],
   [MetadataModules.IMAGE_PLANE, imagePlaneTags],
   [MetadataModules.IMAGE_PIXEL, imagePixelTags],

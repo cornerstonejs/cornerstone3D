@@ -9,3 +9,4 @@ export * from './uriModule';
 export * from './pixelDataUpdate';
 export * from './transferSyntaxProvider';
 export * from './addInstance';
+export * from './ecgModule';
