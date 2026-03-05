@@ -1,5 +1,3 @@
 /** @deprecated Import from `@cornerstonejs/metadata` instead. */
-export type {
-  IImageCalibration,
-  default,
-} from '@cornerstonejs/metadata/types/IImageCalibration';
+export type { IImageCalibration } from '@cornerstonejs/metadata';
+export type { IImageCalibration as default } from '@cornerstonejs/metadata';

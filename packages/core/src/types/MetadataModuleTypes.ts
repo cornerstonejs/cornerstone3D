@@ -9,4 +9,4 @@ export type {
   SopCommonModuleMetadata,
   FrameMetadata,
   TransferSyntaxMetadata,
-} from '@cornerstonejs/metadata/types/MetadataModuleTypes';
+} from '@cornerstonejs/metadata';

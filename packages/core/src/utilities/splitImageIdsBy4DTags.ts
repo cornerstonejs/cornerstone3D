@@ -1,6 +1,8 @@
 /** @deprecated Import from `@cornerstonejs/metadata` instead. */
-export {
-  default,
-  handleMultiframe4D,
-  generateFrameImageId,
-} from '@cornerstonejs/metadata/utilities/splitImageIdsBy4DTags';
+import { utilities } from '@cornerstonejs/metadata';
+
+const { splitImageIdsBy4DTags, handleMultiframe4D, generateFrameImageId } =
+  utilities;
+
+export default splitImageIdsBy4DTags;
+export { handleMultiframe4D, generateFrameImageId };
