@@ -2,11 +2,11 @@ import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
 import loadImage from './loadImage';
 import { metaDataProvider } from './metaData';
 
-export default function (options?: { useMetadataProvider?: boolean }) {
+export default function (options?: { useLegacyMetadataProvider?: boolean }) {
   // register wadors scheme image loader
   registerImageLoader('wadors', loadImage as unknown as Types.ImageLoaderFn);
 
-  if (options?.useMetadataProvider) {
+  if (!options?.useLegacyMetadataProvider) {
     return;
   }
 

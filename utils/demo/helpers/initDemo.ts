@@ -23,7 +23,7 @@ window.cornerstoneTools = cornerstoneTools;
 export default async function initDemo(config: any = {}) {
   initProviders();
   cornerstoneDICOMImageLoader.init({
-    useMetadataProvider: config?.useMetadataProvider,
+    useLegacyMetadataProvider: config?.useLegacyMetadataProvider,
   });
   initVolumeLoader();
 

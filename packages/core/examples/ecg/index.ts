@@ -56,7 +56,7 @@ async function run() {
   // Use metadata package only: do not register legacy wadors/wadouri metaDataProvider.
   // Instances are cached via addDicomwebInstance in createImageIdsAndCacheMetaData;
   // ECG is provided by @cornerstonejs/metadata (ecgFromInstance provider).
-  await initDemo({ useMetadataProvider: true });
+  await initDemo();
 
   // Use the standard pipeline to fetch and cache DICOM metadata (addDicomwebInstance)
   const imageIds = await createImageIdsAndCacheMetaData({
