@@ -1,4 +1,8 @@
 export * from './MetaDataIterator';
 export * from './NaturalTagListener';
-export * from './DicomStreamTypes';
+export type {
+  IListenerInfo,
+  MetadataType,
+  MetadataValueType,
+} from '../../types';
 export * from './BulkdataCreator';

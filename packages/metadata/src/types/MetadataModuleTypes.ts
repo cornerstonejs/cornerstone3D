@@ -68,6 +68,19 @@ export interface SopCommonModuleMetadata {
   sopInstanceUID: string;
 }
 
+/** ECG module: instance-derived fields used for ECG display sets (e.g. modality, series/study/sop UIDs). */
+export interface EcgModuleMetadata {
+  modality: string;
+  sopInstanceUID: string;
+  sopClassUID: string;
+  seriesDescription?: string;
+  seriesNumber?: number;
+  seriesDate?: string;
+  seriesTime?: string;
+  seriesInstanceUID: string;
+  studyInstanceUID: string;
+}
+
 export interface FrameMetadata extends SopCommonModuleMetadata {
   // This is a 1 based frame number
   frameNumber: number;

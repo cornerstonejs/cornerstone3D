@@ -1,3 +1,8 @@
+export type {
+  IListenerInfo,
+  MetadataType,
+  MetadataValueType,
+} from './DicomStreamTypes';
 export type { IImageCalibration } from './IImageCalibration';
 export type {
   DicomDateObject,
@@ -7,6 +12,7 @@ export type {
   ImagePlaneModuleMetadata,
   ImagePixelModuleMetadata,
   SopCommonModuleMetadata,
+  EcgModuleMetadata,
   FrameMetadata,
   TransferSyntaxMetadata,
 } from './MetadataModuleTypes';
