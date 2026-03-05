@@ -17,7 +17,7 @@ export default function (options?: {
   /**
    * @deprecated The wadouri metadata provider is deprecated.
    * Use addBinaryDicomInstance from @cornerstonejs/metadata to register
-   * Part 10 binary metadata directly into the INSTANCE_ORIG cache instead.
+   * Part 10 binary metadata directly into the NATURAL cache instead.
    */
   console.warn(
     'wadouri metaDataProvider is deprecated. Use addBinaryDicomInstance from @cornerstonejs/metadata instead.'

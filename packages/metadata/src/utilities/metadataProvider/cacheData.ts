@@ -69,7 +69,7 @@ export function addCacheForType(type: string, options?) {
 }
 
 export function registerCacheProviders() {
-  addCacheForType(MetadataModules.INSTANCE_ORIG);
+  addCacheForType(MetadataModules.NATURAL);
   addCacheForType(MetadataModules.INSTANCE);
   addCacheForType(MetadataModules.URI_MODULE);
   addCacheForType(MetadataModules.IMAGE_PLANE);

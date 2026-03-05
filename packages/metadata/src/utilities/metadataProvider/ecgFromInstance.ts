@@ -1,6 +1,6 @@
 /**
  * Builds the full ECG module (including waveformData.retrieveBulkData) from a
- * naturalized instance in INSTANCE_ORIG cache. Used by the typed provider so
+ * naturalized instance in NATURAL cache. Used by the typed provider so
  * ECGViewport can get data via metaData.get(MetadataModules.ECG, imageId)
  * without the legacy dicomImageLoader ECG provider.
  */

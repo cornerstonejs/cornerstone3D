@@ -80,11 +80,18 @@ enum MetadataModules {
   WADO_WEB_CLIENT = 'wadoWebClient',
 
   /**
-   * Some modules rely on an instance access to the full metadata.
-   * WARNING: This may not be available or may be expensive to create, use
-   * with caution.  If you can use the existing modules, that is recommended
-   * instead.
+   * The instance data is a single per-frame object data that has per-frame
+   * computed data already added and combined into a single object.
+   * This object may NOT be iterable for attributes within it, because it
+   * uses inheritance to combine different levels of the data.
    *
+   * In the legacy metadata modules, this could be a call time generated object
+   * where it combines all the individual modules back into an instance.  However,
+   * in the newer metadata module, this is a base object used to create other modules
+   * assuming this item has already been stored.
+   *
+   * Typically this object will be created from the 'natural' object using the
+   * combineFramesInstance utility function.
    */
   INSTANCE = 'instance',
 
@@ -169,14 +176,26 @@ enum MetadataModules {
   SR_ANNOTATION = 'metaSrAnnotation',
 
   /**
-   * The Instance ORIG is the original version of the instance data
-   * This is used as the source for creating other metadata modules from
-   * the instance data, as opposed to the instance version, which could be
-   * created from the modules.
+   * The natural metadata is the naturalized instance data without any frame
+   * references/per-frame data added.
    *
-   * Every frame of a multiframe should have the same instanceOrig value.
+   * This is an upper camel case DICOM tag name object, where VM=1 attributes or
+   * VM=0-1 attributes are represented by a single object vlaue instead of an array.
+   * All other attribute values are represented as an array.
+   *
+   * For example:
+   *
+   * ```
+   * {
+   *   PatientName: 'Doe^John',
+   *   PatientID: '1234567890',
+   *   ModalitiesInStudy: ['CT', 'MR'],
+   * }
+   * ```
+   * Every frame of a multiframe should have the same natural value.
+   * The per-frame data object is generated from the natural value object - see INSTANCE
    */
-  INSTANCE_ORIG = 'instanceOrig',
+  NATURAL = 'natural',
 }
 
 export default MetadataModules;

@@ -78,7 +78,7 @@ describe('dicomImageLoader - WADO-URI', () => {
     // register the wadouri loader
     wadouri.register();
     // re-initialise the loader before each test to clear any previous config
-    dicomImageLoaderInit();
+    dicomImageLoaderInit({ useLegacyMetadataProvider: true });
   });
 
   afterEach(() => {

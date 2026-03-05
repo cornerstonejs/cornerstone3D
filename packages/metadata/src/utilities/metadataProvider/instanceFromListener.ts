@@ -3,7 +3,7 @@ import { addTypedProvider, typedProviderProvider } from '../../metaData';
 
 export const instanceOrigToInstanceProvider = (next, query, data, options) => {
   return (
-    typedProviderProvider(MetadataModules.INSTANCE_ORIG, query, options) ||
+    typedProviderProvider(MetadataModules.NATURAL, query, options) ||
     next(query, data, options)
   );
 };

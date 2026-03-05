@@ -19,7 +19,7 @@ export const INSTANCE_PRIORITY = { priority: 5000 };
 export function registerDataLookup() {
   addTypedProvider(
     MetadataModules.INSTANCE,
-    dataLookup(MetadataModules.INSTANCE_ORIG),
+    dataLookup(MetadataModules.NATURAL),
     INSTANCE_PRIORITY
   );
 

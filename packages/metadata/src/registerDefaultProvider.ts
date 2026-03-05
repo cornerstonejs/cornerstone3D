@@ -21,7 +21,7 @@ let registered = false;
  * - Cache providers for instance, image plane, URI, and frame modules
  * - URI module provider (extracts frame info from imageId URIs)
  * - Data lookup providers (bridge between instance data and specific modules)
- * - Instance provider (bridges INSTANCE to INSTANCE_ORIG)
+ * - Instance provider (bridges INSTANCE to NATURAL)
  * - Combine frame provider (handles multiframe instances)
  * - Tag modules (converts instance data to module-specific results)
  * - Image plane calibrated provider
@@ -50,7 +50,7 @@ export function registerDefaultProvider() {
   // Register data lookup providers
   registerDataLookup();
 
-  // Register INSTANCE → INSTANCE_ORIG bridge
+  // Register INSTANCE → NATURAL bridge
   registerInstanceFromListener();
 
   // Register combine frame provider
