@@ -90,7 +90,7 @@ registered with the metadata library for immediate viewing.
 - `Enums.CalibrationTypes`: Calibration type enum (ERMF, Projection, User, etc.)
 - `utilities.DicomStream`: `DataSetIterator`, `MetaDataIterator`,
   `NaturalTagListener`, `DicomStreamListener`, `MetadataTagListener`,
-  `SkipListener`, `BulkdataCreator`
+  `SkipListener`,
 - `utilities.Tag`: Tag definitions, `mapTagInfo`/`mapModuleTags` registries,
   `addTag` for extending the registry
 - `utilities.splitImageIdsBy4DTags`: 4D series splitting

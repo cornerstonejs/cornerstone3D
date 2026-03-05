@@ -1,8 +1,5 @@
 /** @deprecated Import from `@cornerstonejs/metadata` instead. */
-export {
-  isEqual,
-  isEqualNegative,
-  isEqualAbs,
-  isNumber,
-  default,
-} from '@cornerstonejs/metadata/utilities/isEqual';
+import { utilities } from '@cornerstonejs/metadata';
+
+export const { isEqual, isEqualNegative, isEqualAbs, isNumber } = utilities;
+export default utilities.isEqual;

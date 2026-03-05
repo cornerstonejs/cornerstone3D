@@ -2,7 +2,7 @@ import {
   handleMultiframe4D,
   generateFrameImageId,
 } from '../../src/utilities/splitImageIdsBy4DTags';
-import * as metaData from '@cornerstonejs/metadata/metaData';
+import { metaData } from '@cornerstonejs/metadata';
 import {
   describe,
   it,
