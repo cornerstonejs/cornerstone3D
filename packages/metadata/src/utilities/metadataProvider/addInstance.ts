@@ -6,11 +6,11 @@ import { setCacheData } from './cacheData';
 const { AsyncDicomReader } = dcmjs.async;
 
 /**
- * Adds a DICOMweb JSON metadata instance to the INSTANCE_ORIG cache.
+ * Adds a DICOMweb JSON metadata instance to the NATURAL cache.
  *
  * Takes hex-tagged DICOMweb JSON (e.g. {"00080060": {vr:"CS", Value:["CT"]}})
  * and converts it to a naturalized instance via MetaDataIterator +
- * NaturalTagListener, then stores it in the INSTANCE_ORIG cache so that
+ * NaturalTagListener, then stores it in the NATURAL cache so that
  * subsequent metadata queries resolve from cache.
  *
  * @param imageId - The imageId to associate with this instance
@@ -26,16 +26,16 @@ export function addDicomwebInstance(
   listener.startObject();
   iterator.syncIterator(listener);
   const instance = listener.pop();
-  setCacheData(MetadataModules.INSTANCE_ORIG, imageId, instance);
+  setCacheData(MetadataModules.NATURAL, imageId, instance);
   return instance;
 }
 
 /**
- * Adds a binary DICOM Part 10 instance to the INSTANCE_ORIG cache.
+ * Adds a binary DICOM Part 10 instance to the NATURAL cache.
  *
  * Parses the ArrayBuffer using dcmjs AsyncDicomReader with
  * NaturalTagListener to produce a naturalized instance, then stores it
- * in the INSTANCE_ORIG cache.
+ * in the NATURAL cache.
  *
  * @param imageId - The imageId to associate with this instance
  * @param arrayBuffer - The DICOM Part 10 binary data
@@ -53,6 +53,6 @@ export async function addBinaryDicomInstance(
   await reader.readFile({ listener });
 
   const instance = reader.dict;
-  setCacheData(MetadataModules.INSTANCE_ORIG, imageId, instance);
+  setCacheData(MetadataModules.NATURAL, imageId, instance);
   return instance;
 }

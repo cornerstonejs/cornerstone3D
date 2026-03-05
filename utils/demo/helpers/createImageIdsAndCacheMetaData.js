@@ -45,7 +45,6 @@ export default async function createImageIdsAndCacheMetaData({
   useMetadata = true,
   useLegacyWadoRs = true,
 }) {
-
   const studySearchOptions = {
     studyInstanceUID: StudyInstanceUID,
     seriesInstanceUID: SeriesInstanceUID,
@@ -100,7 +99,7 @@ export default async function createImageIdsAndCacheMetaData({
     const originalImageIds = [...imageIds];
     imageIds = convertMultiframeImageIds(imageIds);
 
-    // For multiframe expansions, store INSTANCE_ORIG for each frame imageId
+    // For multiframe expansions, store NATURAL for each frame imageId
     if (useMetadata && imageIds.length !== originalImageIds.length) {
       for (const imageId of imageIds) {
         if (metaData.get('instanceOrig', imageId)) {
@@ -111,11 +110,7 @@ export default async function createImageIdsAndCacheMetaData({
           const baseImageId = imageId.substring(0, frameIdx) + '/frames/1';
           const baseInstance = metaData.get('instanceOrig', baseImageId);
           if (baseInstance) {
-            setCacheData(
-              MetadataModules.INSTANCE_ORIG,
-              imageId,
-              baseInstance
-            );
+            setCacheData(MetadataModules.NATURAL, imageId, baseInstance);
           }
         }
       }
