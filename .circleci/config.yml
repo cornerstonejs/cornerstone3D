@@ -27,7 +27,23 @@ jobs:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/repo/.npmrc
       - install_bun
-      # SECURITY AUDIT - only when bun.lock has changed
+      - run: bun install
+      - persist_to_workspace:
+          root: ~/repo
+          paths:
+            - '.'
+
+  BUILD:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - install_bun
+      - run:
+          name: 'Perform the versioning before build'
+          command: bun ./version.mjs
+      - run: bun run build
+      # SECURITY AUDIT - run last so build/test results are visible even when audit fails
       - run:
           name: 'Security Audit - High Risk Vulnerabilities'
           command: |
@@ -83,22 +99,6 @@ jobs:
               echo "❌ This build cannot proceed until high-risk vulnerabilities are resolved."
               exit 1
             fi
-      - run: bun install
-      - persist_to_workspace:
-          root: ~/repo
-          paths:
-            - '.'
-
-  BUILD:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/repo
-      - install_bun
-      - run:
-          name: 'Perform the versioning before build'
-          command: bun ./version.mjs
-      - run: bun run build
       - persist_to_workspace:
           root: ~/repo
           paths:
