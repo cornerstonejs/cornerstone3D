@@ -2,4 +2,3 @@
 import { utilities } from '@cornerstonejs/metadata';
 
 export const { toFiniteNumber } = utilities;
-export { toFiniteNumber };
