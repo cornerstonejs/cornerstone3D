@@ -147,19 +147,15 @@ function toArray<T>(seq: T[] | ArrayLike<T> | undefined): T[] {
 }
 
 /**
- * Build full EcgModule from a naturalized instance (camelCase from NaturalTagListener).
+ * Build full EcgModule from a naturalized instance (UpperCamelCase convention).
  */
 export function buildEcgModuleFromInstance(
   instance: Record<string, unknown>,
   imageId?: string
 ): EcgModuleFull | null {
-  const raw =
-    (instance.WaveformSequence as
-      | ArrayLike<Record<string, unknown>>
-      | undefined) ??
-    (instance.waveformSequence as
-      | ArrayLike<Record<string, unknown>>
-      | undefined);
+  const raw = instance.WaveformSequence as
+    | ArrayLike<Record<string, unknown>>
+    | undefined;
   const groups = toArray(raw);
   if (!groups.length) return null;
 
@@ -173,19 +169,16 @@ export function buildEcgModuleFromInstance(
   const multiplexGroupLabel = (group.MultiplexGroupLabel as string) ?? '';
 
   const channelDefSeq = toArray(
-    (group.ChannelDefinitionSequence ?? group.channelDefinitionSequence) as
+    group.ChannelDefinitionSequence as
       | ArrayLike<Record<string, unknown>>
       | undefined
   );
   const channelDefinitionSequence = channelDefSeq.map((ch) => {
     const srcSeqArr = toArray(
-      (ch.ChannelSourceSequence ?? ch.channelSourceSequence) as
-        | ArrayLike<Record<string, unknown>>
-        | undefined
+      ch.ChannelSourceSequence as ArrayLike<Record<string, unknown>> | undefined
     );
     const srcSeq = srcSeqArr[0];
-    const codeMeaning =
-      (srcSeq?.CodeMeaning as string) ?? (srcSeq?.codeMeaning as string) ?? '';
+    const codeMeaning = (srcSeq?.CodeMeaning as string) ?? '';
     return {
       channelSourceSequence: { codeMeaning },
     };
@@ -210,6 +203,22 @@ export function buildEcgModuleFromInstance(
     : {};
 
   const retrieveBulkData = async (): Promise<Int16Array[]> => {
+    // Binary file upload: AsyncDicomReader stores raw bytes as ArrayBuffer / TypedArray
+    const wd = waveformData as unknown;
+    if (
+      wd instanceof ArrayBuffer ||
+      (typeof ArrayBuffer !== 'undefined' &&
+        ArrayBuffer.isView &&
+        ArrayBuffer.isView(wd))
+    ) {
+      return convertBuffer(
+        wd as ArrayBuffer | Uint8Array,
+        numberOfChannels,
+        numberOfSamples,
+        bitsAllocated,
+        sampleInterpretation
+      );
+    }
     if (waveformData.Value) return waveformData.Value as Int16Array[];
     if (waveformData.InlineBinary) {
       const raw = base64ToUint8Array(waveformData.InlineBinary as string);
@@ -281,8 +290,7 @@ const ECG_FROM_INSTANCE_PRIORITY = 4_000;
  */
 const ecgFromInstanceProvider: TypedProvider = (next, query, data, options) => {
   const instance = data as Record<string, unknown> | undefined;
-  const hasWaveform =
-    instance && (instance.WaveformSequence ?? instance.waveformSequence);
+  const hasWaveform = instance && instance.WaveformSequence;
   if (!hasWaveform) {
     return next(query, data, options);
   }
@@ -302,7 +310,7 @@ const ECG_AMPLITUDE_OFFSET = 32768;
  */
 const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
   const instance = data as Record<string, unknown> | undefined;
-  const raw = instance?.WaveformSequence ?? instance?.waveformSequence;
+  const raw = instance?.WaveformSequence;
   const groups = toArray(raw as ArrayLike<Record<string, unknown>> | undefined);
   if (!groups.length) return next(query, data, options);
   const group = groups[0];
