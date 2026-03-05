@@ -162,7 +162,7 @@
         "loglevel": "1.9.2",
       },
       "peerDependencies": {
-        "@cornerstonejs/metadata": "4.17.0",
+        "@cornerstonejs/metadata": "workspace:*",
       },
     },
     "packages/dicomImageLoader": {
@@ -181,7 +181,7 @@
       },
       "peerDependencies": {
         "@cornerstonejs/core": "4.18.4",
-        "@cornerstonejs/metadata": "4.17.4",
+        "@cornerstonejs/metadata": "workspace:*",
         "dicom-parser": "1.8.21",
       },
     },
@@ -252,7 +252,6 @@
   },
   "overrides": {
     "@babel/helper-create-class-features-plugin": "7.28.3",
-    "@cornerstonejs/metadata": "file:./packages/metadata",
     "axios": "1.13.5",
     "body-parser": "1.20.3",
     "buffer": "6.0.3",
