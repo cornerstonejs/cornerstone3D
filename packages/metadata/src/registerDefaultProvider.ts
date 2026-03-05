@@ -9,6 +9,7 @@ import { registerImagePlaneCalibrated } from './utilities/metadataProvider/image
 import { registerCalibrationModule } from './utilities/metadataProvider/calibrationModule';
 import { registerPixelDataUpdate } from './utilities/metadataProvider/pixelDataUpdate';
 import { registerTransferSyntaxProvider } from './utilities/metadataProvider/transferSyntaxProvider';
+import { registerEcgFromInstanceProvider } from './utilities/metadataProvider/ecgFromInstance';
 
 let registered = false;
 
@@ -57,6 +58,9 @@ export function registerDefaultProvider() {
 
   // Register tag modules for all known metadata modules
   registerTagModules();
+
+  // Full ECG module from instance (waveformData.retrieveBulkData) for ECGViewport
+  registerEcgFromInstanceProvider();
 
   // Register image plane calibrated provider
   registerImagePlaneCalibrated();

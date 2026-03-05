@@ -21,13 +21,16 @@ export class MetaDataIterator {
         listener.pop();
         continue;
       }
-      if (!value.Value) {
-        // TODO - handle bulkdata and null data
-        continue;
-      }
       const vr = value.vr;
       const tagData = mapTagInfo.get(key);
       const dictEntry = !tagData ? dictionaryLookup(key) : undefined;
+      const hasBulk =
+        !value.Value &&
+        ((value as MetadataValue).BulkDataURI ??
+          (value as MetadataValue).InlineBinary);
+      if (!value.Value && !hasBulk) {
+        continue;
+      }
       listener.addTag(key, {
         vr,
         name: tagData?.name || dictEntry?.name,
@@ -40,6 +43,15 @@ export class MetaDataIterator {
           listener.pop();
         }
         listener.pop();
+        continue;
+      }
+      if (hasBulk) {
+        listener.values([
+          {
+            BulkDataURI: (value as MetadataValue).BulkDataURI,
+            InlineBinary: (value as MetadataValue).InlineBinary,
+          },
+        ]);
         continue;
       }
       if (
@@ -58,4 +70,6 @@ export class MetaDataIterator {
 export type MetadataValue = {
   Value?: unknown[];
   vr: string;
+  BulkDataURI?: string;
+  InlineBinary?: string;
 };
