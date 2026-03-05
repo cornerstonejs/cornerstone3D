@@ -32,9 +32,12 @@ export interface LoaderOptions {
   strict?: boolean;
   decodeConfig?: LoaderDecodeOptions;
   /**
-   * When true, skips registering the legacy wadouri/wadors metadata providers.
-   * Use addBinaryDicomInstance and addDicomwebInstance from
+   * When true, registers the legacy wadouri/wadors metadata providers.
+   * Default is false (use the new metadata design). Set to true only for
+   * backward compatibility.
+   * New design: use addBinaryDicomInstance and addDicomwebInstance from
    * @cornerstonejs/metadata to populate the INSTANCE_ORIG cache instead.
+   * @see https://www.cornerstonejs.org/docs/concepts/cornerstone-core/metadataProvider
    */
-  useMetadataProvider?: boolean;
+  useLegacyMetadataProvider?: boolean;
 }
