@@ -1,0 +1,82 @@
+# After merge to main: rebuild packages, publish tarballs to a versioned prerelease,
+# and notify the OHIF repo (merged-refresh mode).
+name: CS3D post-merge integration update
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: cs3d-post-merge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build publishable packages
+        run: bun run build
+
+      - name: Create npm tarballs
+        run: node scripts/create-release-tarballs.js
+        env:
+          RELEASE_TARBALLS_DIR: release-tarballs
+
+      - name: Read version for release tag
+        id: version
+        run: |
+          V=$(node -p "require('./lerna.json').version")
+          echo "version=$V" >> $GITHUB_OUTPUT
+
+      - name: Create or replace prerelease and upload tarballs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: cs3d-merged-v${{ steps.version.outputs.version }}
+        run: |
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          gh release create "$TAG" ./release-tarballs/*.tgz \
+            --prerelease \
+            --title "CS3D merged v${{ steps.version.outputs.version }}" \
+            --target "${{ github.sha }}"
+
+      - name: Dispatch to OHIF repo
+        env:
+          OHIF_REPO: ${{ vars.OHIF_INTEGRATION_REPO || secrets.OHIF_INTEGRATION_REPO }}
+          DISPATCH_TOKEN: ${{ secrets.CS3D_TO_OHIF_APP_TOKEN }}
+        run: |
+          if [ -z "$DISPATCH_TOKEN" ] || [ -z "$OHIF_REPO" ]; then
+            echo "Skipping dispatch: CS3D_TO_OHIF_APP_TOKEN or OHIF repo not set."
+            exit 0
+          fi
+          curl -sS -X POST \
+            -H "Authorization: token $DISPATCH_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$OHIF_REPO/dispatches" \
+            -d '{
+              "event_type": "cs3d-integration",
+              "client_payload": {
+                "mode": "merged-refresh",
+                "cs3d_merged_sha": "${{ github.sha }}",
+                "cs3d_merged_version": "${{ steps.version.outputs.version }}",
+                "release_tag": "cs3d-merged-v${{ steps.version.outputs.version }}",
+                "source_repository": "${{ github.repository }}"
+              }
+            }'
