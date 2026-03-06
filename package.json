@@ -27,7 +27,7 @@
     "build:esm": "npx lerna run build:esm --stream",
     "watch": "npx lerna watch -- lerna run build --scope=$LERNA_PACKAGE_NAME --include-dependents",
     "build:update-api": "echo not needed anymore",
-    "clean": "npx lerna run clean --stream",
+    "clean": "shx rm -rf release-tarballs && npx lerna run clean --stream",
     "clean:deep": "npx lerna run clean:deep --stream",
     "example": "node ./utils/ExampleRunner/example-runner-cli.js",
     "all-examples": "node ./utils/ExampleRunner/build-all-examples-cli.js --fromRoot",
@@ -63,6 +63,7 @@
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
     "lint": "oxlint packages/**/src --quiet",
+    "release:tarballs": "node scripts/create-release-tarballs.js",
     "webpack:watch": "npx lerna run webpack:watch"
   },
   "devDependencies": {
