@@ -44,10 +44,9 @@ jobs:
         run: bun run build
 
       - name: Create npm tarballs
-        run: |
-          yarn release:tarballs
+        run: bun release-tarballs
 
-      - name: Set release tag (deterministic: pr-number + short head SHA)
+      - name: "Set release tag (deterministic: pr-number + short head SHA)"
         id: tag
         run: |
           SHORT_SHA=$(echo "${{ github.event.pull_request.head.sha }}" | cut -c1-7)

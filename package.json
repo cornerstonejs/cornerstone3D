@@ -63,7 +63,7 @@
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
     "lint": "oxlint packages/**/src --quiet",
-    "release:tarballs": "node scripts/create-release-tarballs.js",
+    "release-tarballs": "node scripts/create-release-tarballs.js",
     "webpack:watch": "npx lerna run webpack:watch"
   },
   "devDependencies": {
