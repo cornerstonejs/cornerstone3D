@@ -9,6 +9,22 @@ Cornerstone is a set of JavaScript libraries that can be used to build web-based
 
 [Learn how to use Cornerstone3D in your project](https://www.cornerstonejs.org/docs/getting-started/overview).
 
+## Release tarballs for integration (e.g. OHIF)
+
+Before publishing to npm, this repo can build **npm tarballs** (`.tgz`) of all publishable packages and attach them to **GitHub Releases**. That lets consumers like [OHIF](https://ohif.org/) install and test unreleased builds (e.g. `yarn add https://github.com/cornerstonejs/cornerstone3D/releases/download/cs3d-pr-123-abc1234/cornerstonejs-core-4.18.5.tgz` or via the Releases API).
+
+- **How tarballs are created**  
+  CI runs `bun run build` then `scripts/create-release-tarballs.js`, which runs `npm pack` for each package in `lerna.json` and writes `.tgz` files into a release directory. You can run the same locally: after `bun install` and `bun run build`, run `RELEASE_TARBALLS_DIR=release-tarballs node scripts/create-release-tarballs.js`.
+
+- **When they are published**  
+  - **PR builds:** Add the **`ohif-integration`** label to a PR; the workflow builds at the PR head, creates a prerelease tag `cs3d-pr-<number>-<short-sha>`, uploads the tarballs as release assets, and optionally dispatches to the OHIF repo.  
+  - **Post-merge:** On push to `main`, a prerelease `cs3d-merged-v<version>` is created with the same tarballs and a dispatch to OHIF.
+
+- **How OHIF (or others) use them**  
+  OHIF receives a `repository_dispatch` event (`cs3d-integration`) with `release_tag` and `source_repository`. It can then fetch the release assets from this repo’s Releases (e.g. via GitHub API or `gh release download`) and install the `.tgz` packages for integration tests or a staging build.
+
+For setup, secrets, and step-by-step instructions, see **[RELEASE_INTEGRATION.md](./RELEASE_INTEGRATION.md)**.
+
 ## Documentation
 
 You can find the Cornerstone documentation [on the website](https://cornerstonejs.org/).
