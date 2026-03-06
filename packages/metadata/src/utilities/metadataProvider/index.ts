@@ -1,3 +1,4 @@
+export { dicomSplit } from './dicomSplit';
 export * from './imagePlaneCalibrated';
 export * from './cacheData';
 export * from './dataLookup';

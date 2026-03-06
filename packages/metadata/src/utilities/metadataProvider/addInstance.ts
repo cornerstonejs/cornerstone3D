@@ -41,7 +41,7 @@ export function addDicomwebInstance(
  * @param arrayBuffer - The DICOM Part 10 binary data
  * @returns A promise that resolves to the naturalized instance object
  */
-export async function addBinaryDicomInstance(
+export async function addPart10Instance(
   imageId: string,
   arrayBuffer: ArrayBuffer
 ) {

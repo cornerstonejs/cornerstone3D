@@ -9,7 +9,7 @@ const mapCacheData = new Map<string, Map<string, unknown>>();
  * Options can include: noCache to not cache this value or use the cached value,
  * and reCache to get a new value and add it to the cache.
  */
-export function cacheDataForType(type: string) {
+export function createTypeCacheProvider(type: string) {
   return (next, query: string, data, options) => {
     let valueMap = mapCacheData.get(type);
     if (!valueMap) {
@@ -60,7 +60,7 @@ export function setCacheData(type: string, query: string, value: unknown) {
 }
 
 export function addCacheForType(type: string, options?) {
-  addTypedProvider(type, cacheDataForType(type), {
+  addTypedProvider(type, createTypeCacheProvider(type), {
     priority: 50_000,
     clear: clearTypedCacheData.bind(null, type) as () => void,
     clearQuery: clearTypedCacheData.bind(null, type),
