@@ -185,6 +185,15 @@ class Viewport {
     return false;
   }
 
+  /**
+   * Returns whether the viewport supports changing orientation (e.g. via setCamera
+   * with viewPlaneNormal/viewUp). Used by tools like OrientationControllerTool to
+   * decide where to show interactive orientation markers.
+   */
+  public isOrientationChangeable(): boolean {
+    return false;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private viewportWidgets = new Map() as Map<string, any>;
 
