@@ -1,5 +1,5 @@
 import type { DataSet } from 'dicom-parser';
-import * as dicomParser from 'dicom-parser';
+import { parseDicom } from './parseDicomWithInflater';
 import type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
@@ -37,7 +37,7 @@ function parsePartialByteArray(byteArray: Uint8Array) {
    * partial pixel data in the error object.
    */
 
-  let dataSet = dicomParser.parseDicom(byteArray, {
+  let dataSet = parseDicom(byteArray, {
     untilTag: 'x7fe00010',
   });
 
@@ -55,7 +55,7 @@ function parsePartialByteArray(byteArray: Uint8Array) {
     // incomplete, because dicomParser throws *before* combining the
     // metadata header and regular datasets, so transfer syntax and
     // other metadata headers aren't included.
-    pixelDataSet = dicomParser.parseDicom(byteArray);
+    pixelDataSet = parseDicom(byteArray);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     // Todo: This is probably invalid handling - it expects the only reason to

@@ -152,6 +152,10 @@ async function loadAndViewImage(imageId) {
       viewport.render();
 
       const image = viewport.csImage;
+      if (!image?.data) {
+        console.error('Image failed to load or has no data');
+        return;
+      }
 
       function getTransferSyntax() {
         const value = image.data.string('x00020010');
