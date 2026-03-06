@@ -21,6 +21,8 @@ enum MetadataModules {
   NM_MULTIFRAME_GEOMETRY = 'nmMultiframeGeometryModule',
   OVERLAY_PLANE = 'overlayPlaneModule',
   PATIENT = 'patientModule',
+  /** @deprecated Prefer PATIENT; alias for legacy WADO image loader tag name */
+  PATIENT_DEMOGRAPHIC = 'patientDemographicModule',
   PATIENT_STUDY = 'patientStudyModule',
   PET_IMAGE = 'petImageModule',
   PET_ISOTOPE = 'petIsotopeModule',
