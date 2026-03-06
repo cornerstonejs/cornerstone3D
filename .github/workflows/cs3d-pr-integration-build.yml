@@ -44,7 +44,8 @@ jobs:
         run: bun run build
 
       - name: Create npm tarballs
-        run: "yarn release:tarballs"
+        run: |
+          yarn release:tarballs
 
       - name: Set release tag (deterministic: pr-number + short head SHA)
         id: tag
