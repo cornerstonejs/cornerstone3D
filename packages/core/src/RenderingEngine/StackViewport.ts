@@ -209,6 +209,10 @@ class StackViewport extends Viewport {
    */
   constructor(props: ViewportInput) {
     super(props);
+    // TODO - remove this
+    console.warn(
+      'Creating updated viewport: test warning to verify build is working'
+    );
     this.scaling = {};
     this.modality = null;
     this.useCPURendering = getShouldUseCPURendering();
