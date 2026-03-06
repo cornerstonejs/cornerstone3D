@@ -29,7 +29,7 @@ export interface TagEntry {
  * Creates a tag entry defining module membership only.
  * VR and VM are resolved from the dcmjs dictionary in addTag().
  */
-export function tag(hexTag: string, ...groups: string[]): TagEntry {
+export function createTagEntry(hexTag: string, ...groups: string[]): TagEntry {
   return {
     tag: hexTag,
     groups,
@@ -77,7 +77,7 @@ export function dictionaryLookup(
  * Looks up the hex tag code for a natural tag name (e.g. "SOPInstanceUID" → "00080018").
  * Uses the mapTagInfo registry which is populated from the Tags definitions.
  */
-export function lookupTagHex(name: string): string | undefined {
+export function getTagCodeByName(name: string): string | undefined {
   return mapTagInfo.get(name)?.tag;
 }
 
@@ -178,5 +178,5 @@ for (const [keyword, { hex, groups }] of tagGroups) {
     console.warn(`Tags: keyword "${keyword}" not found in dcmjs nameMap`);
     continue;
   }
-  addTag(keyword, tag(hex, ...groups));
+  addTag(keyword, createTagEntry(hex, ...groups));
 }
