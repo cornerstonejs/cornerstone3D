@@ -46,12 +46,11 @@ export class MetaDataIterator {
         continue;
       }
       if (hasBulk) {
-        listener.values([
-          {
-            BulkDataURI: (value as MetadataValue).BulkDataURI,
-            InlineBinary: (value as MetadataValue).InlineBinary,
-          },
-        ]);
+        listener.value({
+          BulkDataURI: (value as MetadataValue).BulkDataURI,
+          InlineBinary: (value as MetadataValue).InlineBinary,
+        });
+        listener.pop();
         continue;
       }
       if (
@@ -62,7 +61,10 @@ export class MetaDataIterator {
         // Fix static dicomweb CS values not split
         value.Value = String(value.Value[0]).split('\\');
       }
-      listener.values(value.Value);
+      for (const v of value.Value) {
+        listener.value(v);
+      }
+      listener.pop();
     }
   }
 }

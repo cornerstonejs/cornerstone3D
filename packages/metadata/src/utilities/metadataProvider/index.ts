@@ -9,6 +9,7 @@ export * from './combineFrameInstance';
 export * from './uriModule';
 export * from './pixelDataUpdate';
 export * from './transferSyntaxProvider';
-export * from './addInstance';
+export * from './addPart10Instance';
+export * from './compressedFrameData';
 export * from './ecgModule';
 export * from './ecgFromInstance';

@@ -59,6 +59,17 @@ export function setCacheData(type: string, query: string, value: unknown) {
   valueMap.set(query, value);
 }
 
+/**
+ * Reads a value from the typed cache for the given type and query key.
+ */
+export function getCacheData(type: string, query: string): unknown {
+  const valueMap = mapCacheData.get(type);
+  if (!valueMap) {
+    return undefined;
+  }
+  return valueMap.get(query);
+}
+
 export function addCacheForType(type: string, options?) {
   addTypedProvider(type, createTypeCacheProvider(type), {
     priority: 50_000,

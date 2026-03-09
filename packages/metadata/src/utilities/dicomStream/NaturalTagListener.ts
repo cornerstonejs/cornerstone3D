@@ -1,17 +1,6 @@
 import { makeArrayLike } from '../metadataProvider/makeArrayLike';
 import { dictionaryLookup, mapTagInfo, parseVm } from '../Tags';
-import type { IListenerInfo, MetadataValueType } from '../../types';
-
-interface NaturalContext {
-  parent: NaturalContext | null;
-  dest: unknown;
-  type: string;
-  tag?: string;
-  level: number;
-  length?: number;
-  _name?: string;
-  _singleVm?: boolean | null;
-}
+import type { IListenerInfo } from '../../types';
 
 /**
  * Resolves whether a tag is single-valued.
@@ -22,11 +11,9 @@ function resolveSingleVm(
   dictEntry: { vm?: string } | undefined,
   tagInfo: IListenerInfo | undefined
 ): boolean | null {
-  // Prefer mapTagInfo vm (already parsed to number)
   if (tagData && tagData.vm !== undefined && tagData.vm !== null) {
     return tagData.vm === 1;
   }
-  // Use tagInfo vm (from AsyncDicomReader or iterator)
   const vm = tagInfo?.vm ?? dictEntry?.vm;
   if (vm !== undefined && vm !== null) {
     const parsed = parseVm(vm);
@@ -38,250 +25,146 @@ function resolveSingleVm(
 }
 
 /**
- * A standalone DICOM listener that produces naturalized JavaScript objects.
+ * Returns true if the value looks like bulk data (e.g. pixel data):
+ * - array of ArrayBuffer (or TypedArray), or
+ * - array of arrays of ArrayBuffer (frames of fragments).
+ */
+function isBulkDataValue(val: unknown): boolean {
+  if (!Array.isArray(val) || val.length === 0) {
+    return false;
+  }
+  const first = val[0];
+  if (first instanceof ArrayBuffer || ArrayBuffer.isView(first)) {
+    return true;
+  }
+  if (Array.isArray(first)) {
+    return val.every(
+      (item) =>
+        Array.isArray(item) &&
+        item.every(
+          (f: unknown) => f instanceof ArrayBuffer || ArrayBuffer.isView(f)
+        )
+    );
+  }
+  return false;
+}
+
+const DEFAULT_NAME_KEY = 'name';
+
+/**
+ * A filter for DicomMetadataListener that naturalizes tag names and values.
  *
- * Compatible with both AsyncDicomReader and the sync MetaDataIterator.
- * Also provides a filter factory for use with DicomMetadataListener.
+ * Use as: `new DicomMetadataListener({}, new NaturalTagListener())`
  *
- * Tag names and VR/VM are resolved from:
- * 1. tagInfo (provided by the source, e.g. AsyncDicomReader)
- * 2. mapTagInfo (module membership from Tags.ts)
- * 3. dcmjs dictionary (for tags not in Tags.ts)
+ * The base listener handles value/values and stack; this filter converts in pop
+ * so that bulk data (e.g. pixel data: array of frames, each frame array of
+ * ArrayBuffer fragments) and scalar tags are stored under natural names.
+ * The base {vr, Value} entry is removed after copying to the natural name.
+ *
+ * Tag names and VR/VM are resolved from tagInfo, mapTagInfo, and dcmjs dictionary.
  */
 export class NaturalTagListener {
-  public current: NaturalContext | null = null;
-  public information: Record<string, unknown> | null = null;
-
-  private _drain: (() => Promise<void>) | null = null;
-  private _nameKey: string;
-
-  constructor(options?: {
-    nameKey?: string;
-    information?: Record<string, unknown>;
-  }) {
-    this._nameKey = options?.nameKey || 'name';
-    this.information = options?.information || {};
+  constructor(_options?: { nameKey?: string }) {
+    // nameKey could be used if DicomMetadataListener passed filter to _init; for now we use DEFAULT_NAME_KEY
   }
 
-  /**
-   * Pushes a new object context onto the stack.
-   * If called within a tag context, the object is registered as a value first.
-   */
-  public startObject(dest: Record<string, unknown> = {}) {
-    if (this.current) {
-      this.value(dest);
-    }
-    const level = this.current ? (this.current.level ?? 0) + 1 : 0;
-    this.current = {
-      parent: this.current,
-      dest,
-      type: 'object',
-      level,
-    };
+  _init(_options?: { information?: Record<string, unknown> }) {
+    // No state to sync; allows use with DicomMetadataListener.init()
   }
 
-  /**
-   * Pushes a new tag context onto the stack.
-   * Resolves the natural name and VM from tagInfo, mapTagInfo, and dcmjs dictionary.
-   */
-  public addTag(tag: string, tagInfo?: IListenerInfo) {
+  addTag(
+    next: (tag: string, tagInfo?: IListenerInfo) => void,
+    tag: string,
+    tagInfo?: IListenerInfo
+  ) {
     const tagData = mapTagInfo.get(tag);
     const dictEntry = !tagData ? dictionaryLookup(tag) : undefined;
-    const nameKey = this._nameKey;
-    const name = tagInfo?.name || tagData?.[nameKey] || dictEntry?.name || tag;
+    const name =
+      tagInfo?.name || tagData?.[DEFAULT_NAME_KEY] || dictEntry?.name || tag;
     const singleVm = resolveSingleVm(tagData, dictEntry, tagInfo);
-    const level = this.current ? (this.current.level ?? 0) : 0;
 
-    this.current = {
-      parent: this.current,
-      dest: null,
-      type: tag,
+    next(tag, tagInfo);
+
+    (
+      this as unknown as {
+        current: {
+          natural?: { name: string; singleVm: boolean | null; tag: string };
+        };
+      }
+    ).current.natural = {
+      name,
+      singleVm,
       tag,
-      level,
-      length: tagInfo?.length as number,
-      _name: name,
-      _singleVm: singleVm,
     };
   }
 
-  /**
-   * Adds a value to the current context.
-   * For object contexts, pushes into the array/object.
-   * For tag contexts, stores under the natural name on the parent object.
-   */
-  public value(v: unknown) {
-    const cur = this.current;
-    if (!cur) {
-      return;
+  value(next: (v: unknown) => void, v: unknown) {
+    next(v);
+  }
+
+  pop(next: () => unknown): unknown {
+    type ListenerContext = {
+      natural?: { name: string; singleVm: boolean | null; tag: string };
+      parent?: { dest: Record<string, unknown> };
+      dest?: Record<string, unknown>;
+    };
+    const listener = this as unknown as { current: ListenerContext };
+    const nat = listener.current?.natural;
+    const parentContext = listener.current?.parent;
+    if (!nat || !parentContext?.dest) {
+      return next();
     }
 
-    // Object context or array dest — push directly
-    if (cur.type === 'object' || Array.isArray(cur.dest)) {
-      (cur.dest as unknown[]).push(v);
-      return;
+    const result = next();
+
+    // Use the parent we had before next(); after next() the chain may not have updated current yet
+    const parent = parentContext as { dest: Record<string, unknown> };
+    const raw = parent.dest[nat.tag] as { Value?: unknown[] } | undefined;
+    if (raw === undefined) {
+      return result;
     }
 
-    // Tag context — store under natural name on parent
-    const parent = cur.parent;
-    const name = cur._name;
+    let val: unknown = raw.Value ?? raw;
+    if (Array.isArray(val) && val.length === 1 && val[0] === undefined) {
+      val = [];
+    }
 
-    if (!cur.dest) {
-      if (cur._singleVm === true) {
-        cur.dest = makeArrayLike(v);
-        parent.dest[name] = cur.dest;
-        return;
+    if (isBulkDataValue(val)) {
+      parent.dest[nat.name] = val;
+      if (nat.name !== nat.tag) delete parent.dest[nat.tag];
+      return result;
+    }
+    if (nat.singleVm === true && Array.isArray(val) && val.length === 1) {
+      const one = val[0];
+      if (
+        typeof one === 'object' &&
+        one !== null &&
+        !(one instanceof ArrayBuffer) &&
+        !ArrayBuffer.isView(one)
+      ) {
+        parent.dest[nat.name] = makeArrayLike(one);
+      } else {
+        parent.dest[nat.name] = one;
       }
-      cur.dest = [];
-      parent.dest[name] = cur.dest;
+      if (nat.name !== nat.tag) delete parent.dest[nat.tag];
+      return result;
     }
-
-    if (cur._singleVm === true) {
-      // Multiple values for a declared single-VM tag — switch to array
-      console.error('Storing multiple values into', name, cur.dest, v);
-      cur._singleVm = null;
-      cur.dest = [cur.dest as MetadataValueType];
-      parent.dest[name] = cur.dest;
-    }
-
-    (cur.dest as MetadataValueType[]).push(v as MetadataValueType);
-  }
-
-  /**
-   * Convenience method: adds all values and pops the current tag context.
-   */
-  public values(array: unknown[]) {
-    for (const v of array) {
-      this.value(v);
-    }
-    this.pop();
-  }
-
-  /**
-   * Pops the current context off the stack and returns its dest.
-   * For tag contexts with unknown VM and a single object value,
-   * applies makeArrayLike optimization.
-   */
-  public pop(): unknown {
-    const cur = this.current;
-    if (!cur) {
-      return undefined;
-    }
-
-    let result = cur.dest;
-
-    // Single-item array of object with unknown VM → makeArrayLike
     if (
-      Array.isArray(result) &&
-      result.length === 1 &&
-      cur._singleVm === null &&
-      typeof result[0] === 'object'
+      nat.singleVm === null &&
+      Array.isArray(val) &&
+      val.length === 1 &&
+      typeof val[0] === 'object' &&
+      val[0] !== null &&
+      !(val[0] instanceof ArrayBuffer) &&
+      !ArrayBuffer.isView(val[0])
     ) {
-      result = makeArrayLike(result[0]);
-      if (cur.parent && cur._name) {
-        cur.parent.dest[cur._name] = result;
-      }
+      parent.dest[nat.name] = makeArrayLike(val[0]);
+    } else {
+      parent.dest[nat.name] = val;
     }
-
-    this.current = cur.parent;
+    if (nat.name !== nat.tag) {
+      delete parent.dest[nat.tag];
+    }
     return result;
-  }
-
-  /**
-   * Sets the backpressure drain function for streaming use with AsyncDicomReader.
-   */
-  public setDrain(fn: (() => Promise<void>) | null) {
-    this._drain = typeof fn === 'function' ? fn : null;
-  }
-
-  /**
-   * Returns a Promise that resolves when backpressure is cleared.
-   */
-  public awaitDrain(): Promise<void> {
-    return this._drain?.() || Promise.resolve();
-  }
-
-  /**
-   * Creates a filter object for use with DicomMetadataListener.
-   * When passed to `new DicomMetadataListener({}, NaturalTagListener.createFilter())`,
-   * the output will be naturalized instead of the default {vr, Value} format.
-   */
-  public static createFilter(options?: { nameKey?: string }) {
-    const nameKey = options?.nameKey || 'name';
-
-    return {
-      addTag(next, tag: string, tagInfo?: IListenerInfo) {
-        const tagData = mapTagInfo.get(tag);
-        const dictEntry = !tagData ? dictionaryLookup(tag) : undefined;
-        const name =
-          tagInfo?.name || tagData?.[nameKey] || dictEntry?.name || tag;
-        const singleVm = resolveSingleVm(tagData, dictEntry, tagInfo);
-
-        // Call base addTag for stack management
-        next(tag, tagInfo);
-
-        // Annotate current context with naturalization info
-        this.current._natural = { name, singleVm, tag };
-      },
-
-      value(next, v: unknown) {
-        const nat = this.current?._natural;
-        if (nat) {
-          // Store under natural name on parent instead of in {vr, Value}
-          const parent = this.current.parent;
-          if (!parent?.dest) {
-            return next(v);
-          }
-
-          if (nat.singleVm === true && !nat._hasValue) {
-            nat._hasValue = true;
-            parent.dest[nat.name] =
-              typeof v === 'object' && v !== null ? makeArrayLike(v) : v;
-            return;
-          }
-
-          if (!nat._hasValue) {
-            nat._hasValue = true;
-            parent.dest[nat.name] = [v];
-            return;
-          }
-
-          const existing = parent.dest[nat.name];
-          if (nat.singleVm === true) {
-            // Multiple values for single-vm: switch to array
-            nat.singleVm = null;
-            parent.dest[nat.name] = [existing, v];
-            return;
-          }
-
-          if (Array.isArray(existing)) {
-            existing.push(v);
-          }
-          return;
-        }
-
-        next(v);
-      },
-
-      pop(next) {
-        const nat = this.current?._natural;
-        if (nat && this.current.parent?.dest) {
-          // Remove the hex-keyed {vr, Value} entry created by base addTag
-          delete this.current.parent.dest[nat.tag];
-
-          // Handle single-item array optimization for unknown VM
-          const val = this.current.parent.dest[nat.name];
-          if (
-            nat.singleVm === null &&
-            Array.isArray(val) &&
-            val.length === 1 &&
-            typeof val[0] === 'object'
-          ) {
-            this.current.parent.dest[nat.name] = makeArrayLike(val[0]);
-          }
-        }
-
-        return next();
-      },
-    };
   }
 }

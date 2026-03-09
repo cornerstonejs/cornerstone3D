@@ -1,7 +1,10 @@
 import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
 import { registerDefaultProvider } from '@cornerstonejs/metadata';
 
-import { loadImage } from './loadImage';
+import {
+  loadImage as loadImageLegacy,
+  loadImageFromNatural,
+} from './loadImage';
 import { metaDataProvider } from './metaData/index';
 
 /**
@@ -12,22 +15,6 @@ import { metaDataProvider } from './metaData/index';
 export default function (options?: {
   useLegacyMetadataProvider?: boolean;
 }): void {
-  // register dicomweb and wadouri image loader prefixes and bind them
-  // to the loadImage.  Note this registers both legacy and new metadata
-  // loader, but the metadata provider is registered separately.
-  registerImageLoader('dicomweb', loadImage as unknown as Types.ImageLoaderFn);
-  registerImageLoader('wadouri', loadImage as unknown as Types.ImageLoaderFn);
-  registerImageLoader('dicomfile', loadImage as unknown as Types.ImageLoaderFn);
-
-  // Default to true so that wadouri/dicomfile loading works without requiring
-  // the app to pre-register metadata via addBinaryDicomInstance. Set to false
-  // when the app populates the NATURAL cache before loading (e.g. file upload).
-  const useLegacy = options?.useLegacyMetadataProvider !== false;
-
-  if (!useLegacy) {
-    return;
-  }
-
   if (options?.useLegacyMetadataProvider === true) {
     /**
      * @deprecated The wadouri metadata provider is deprecated.
@@ -37,8 +24,41 @@ export default function (options?: {
     console.warn(
       'wadouri metaDataProvider is deprecated. Use registerMetadataProvider module from @cornerstonejs/metadata instead.'
     );
+    // register dicomweb and wadouri image loader prefixes and bind them
+    // to the loadImage.  Note this registers both legacy and new metadata
+    // loader, but the metadata provider is registered separately.
+    registerImageLoader(
+      'dicomweb',
+      loadImageLegacy as unknown as Types.ImageLoaderFn
+    );
+    registerImageLoader(
+      'wadouri',
+      loadImageLegacy as unknown as Types.ImageLoaderFn
+    );
+    registerImageLoader(
+      'dicomfile',
+      loadImageLegacy as unknown as Types.ImageLoaderFn
+    );
     metaData.addProvider(metaDataProvider);
     return;
   }
+
+  // register dicomweb and wadouri image loader prefixes to loadImageFromNatural
+  // (dataSetCacheManager populates NATURAL via addPart10Instance when loading; returns IImage).
+  registerImageLoader(
+    'dicomweb',
+    loadImageFromNatural as unknown as Types.ImageLoaderFn
+  );
+  registerImageLoader(
+    'wadouri',
+    loadImageFromNatural as unknown as Types.ImageLoaderFn
+  );
+  registerImageLoader(
+    'dicomfile',
+    loadImageFromNatural as unknown as Types.ImageLoaderFn
+  );
+
   registerDefaultProvider();
 }
+
+export { loadImageFromNatural as loadImage } from './loadImage';

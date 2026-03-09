@@ -9,8 +9,6 @@ import { addTypedProvider } from '../../metaData';
 import { MetadataModules } from '../../enums';
 import type { TypedProvider } from '../../metaData';
 
-const ECG_LOG = '[ecgFromInstance]';
-
 export interface EcgModuleFull {
   numberOfWaveformChannels: number;
   numberOfWaveformSamples: number;
@@ -295,9 +293,6 @@ const ecgFromInstanceProvider: TypedProvider = (next, query, data, options) => {
     return next(query, data, options);
   }
   const result = buildEcgModuleFromInstance(instance, query);
-  if (result) {
-    console.log(ECG_LOG, 'ECG module built for imageId:', query);
-  }
   return result ?? next(query, data, options);
 };
 
@@ -339,10 +334,6 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
 };
 
 export function registerEcgFromInstanceProvider(): void {
-  console.log(
-    ECG_LOG,
-    'Registering ECG-from-instance provider (ECG + CALIBRATION)'
-  );
   addTypedProvider(MetadataModules.ECG, ecgFromInstanceProvider, {
     priority: ECG_FROM_INSTANCE_PRIORITY,
   });
