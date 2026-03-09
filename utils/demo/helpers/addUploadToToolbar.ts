@@ -71,10 +71,7 @@ export async function onUpload(files) {
   await Promise.all(
     filesArray.map(async (file, index) => {
       const arrayBuffer = await file.arrayBuffer();
-      await metadataUtilities.addBinaryDicomInstance(
-        imageIds[index],
-        arrayBuffer
-      );
+      await metadataUtilities.addPart10Instance(imageIds[index], arrayBuffer);
     })
   );
 
@@ -155,10 +152,7 @@ export async function handleFileSelect(evt) {
   await Promise.all(
     files.map(async (file, index) => {
       const arrayBuffer = await file.arrayBuffer();
-      await metadataUtilities.addBinaryDicomInstance(
-        imageIds[index],
-        arrayBuffer
-      );
+      await metadataUtilities.addPart10Instance(imageIds[index], arrayBuffer);
     })
   );
 

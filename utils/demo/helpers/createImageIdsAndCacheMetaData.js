@@ -14,12 +14,12 @@ import { convertMultiframeImageIds } from './convertMultiframeImageIds';
 const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
   utilities;
 
-const { addDicomwebInstance, setCacheData, Tag } = metadataUtilities;
+const { addDicomwebInstance, setCacheData, Tags } = metadataUtilities;
 const { MetadataModules } = metadataEnums;
 
-const SOP_INSTANCE_UID = Tag.lookupTagHex('SOPInstanceUID');
-const SERIES_INSTANCE_UID = Tag.lookupTagHex('SeriesInstanceUID');
-const MODALITY = Tag.lookupTagHex('Modality');
+const SOP_INSTANCE_UID = Tags.resolveHexFromKeyword('SOPInstanceUID');
+const SERIES_INSTANCE_UID = Tags.resolveHexFromKeyword('SeriesInstanceUID');
+const MODALITY = Tags.resolveHexFromKeyword('Modality');
 
 /**
 /**
