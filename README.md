@@ -23,6 +23,10 @@ The documentation is divided into several sections
 - [FAQ](https://cornerstonejs.org/docs/faq)
 - [How-to Contribute](https://cornerstonejs.org/docs/category/contributing)
 
+## Troubleshooting
+
+If unit tests fail with **"Cannot find module '../build/Release/canvas.node'"**, the native `canvas` addon wasn’t built. Run `yarn rebuild:canvas` (or `npm run rebuild:canvas`); if that doesn’t fix it, see [docs/troubleshooting.md](docs/troubleshooting.md#unit-tests-cannot-find-module-buildreleasecanvasnode).
+
 ## Support
 
 Users can post questions and issues on the [Open Health Imaging Foundation (OHIF) Community Forum](https://community.ohif.org/). Developer issues or bugs can be reported as [Github Issues](https://github.com/cornerstonejs/cornerstone3D/issues).
