@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { addBinaryDicomInstance } from '@cornerstonejs/metadata/utilities/metadataProvider';
+import { addPart10Instance } from '@cornerstonejs/metadata/utilities/metadataProvider';
 import {
   initDemo,
   setTitleAndDescription,
@@ -202,7 +202,7 @@ async function run() {
         try {
           const arrayBuffer = await file.arrayBuffer();
           const imageId = `ecg:upload:${file.name}`;
-          await addBinaryDicomInstance(imageId, arrayBuffer);
+          await addPart10Instance(imageId, arrayBuffer);
           await viewport.setEcg(imageId);
           const { width: ecgWidth, height: ecgHeight } =
             viewport.getContentDimensions();

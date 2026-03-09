@@ -17,7 +17,7 @@ export {
   handleMultiframe4D,
   generateFrameImageId,
 } from './splitImageIdsBy4DTags';
-export * as Tag from './Tags';
+export * as Tags from './Tags';
 export * as DicomStream from './dicomStream';
 export * from './metadataProvider';
 export * as typedMetadataProviders from './metadataProvider';

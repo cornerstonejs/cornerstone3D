@@ -91,7 +91,7 @@ registered with the metadata library for immediate viewing.
 - `utilities.DicomStream`: `DataSetIterator`, `MetaDataIterator`,
   `NaturalTagListener`, `DicomStreamListener`, `MetadataTagListener`,
   `SkipListener`,
-- `utilities.Tag`: Tag definitions, `mapTagInfo`/`mapModuleTags` registries,
+- `utilities.Tags`: Tag definitions, `mapTagInfo`/`mapModuleTags` registries,
   `addTag` for extending the registry
 - `utilities.splitImageIdsBy4DTags`: 4D series splitting
 - `utilities.calibratedPixelSpacingMetadataProvider`: Calibrated pixel spacing

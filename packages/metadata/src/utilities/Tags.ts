@@ -138,7 +138,7 @@ export function addTag(name: string, value: TagEntry) {
  * Resolves a tag keyword to its hex code using dcmjs nameMap.
  * nameMap entries have tag in "(GGGG,EEEE)" format; we unpunctuate to "GGGGEEEE".
  */
-function resolveHexFromKeyword(keyword: string): string | undefined {
+export function resolveHexFromKeyword(keyword: string): string | undefined {
   const entry = nameMap[keyword];
   if (!entry) {
     return undefined;
