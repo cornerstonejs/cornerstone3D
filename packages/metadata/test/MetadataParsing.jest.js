@@ -11,6 +11,7 @@ import * as path from 'path';
 import dcmjs from 'dcmjs';
 
 const { AsyncDicomReader } = dcmjs.async;
+const { DicomMetadataListener } = dcmjs.utilities;
 
 const testImagesDir = path.resolve(
   __dirname,
@@ -22,19 +23,21 @@ const testImagesDir = path.resolve(
  */
 function parseWadoRs(tags) {
   const data = new MetaDataIterator(tags);
-  const listener = new NaturalTagListener();
+  const listener = new DicomMetadataListener({}, new NaturalTagListener());
   listener.startObject();
   data.syncIterator(listener);
   return listener.pop();
 }
 
 /**
- * Parse a binary DICOM file using AsyncDicomReader + NaturalTagListener.
+ * Parse a binary DICOM file using AsyncDicomReader + DicomMetadataListener and
+ * NaturalTagListener filter so that pixel data (and other bulk data) is
+ * naturalized correctly.
  */
 async function parseBinaryDicom(filePath) {
   const buffer = fs.readFileSync(filePath);
   const reader = new AsyncDicomReader();
-  const listener = new NaturalTagListener();
+  const listener = new DicomMetadataListener({}, new NaturalTagListener());
 
   reader.stream.addBuffer(buffer);
   reader.stream.setComplete();

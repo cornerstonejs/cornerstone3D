@@ -1,30 +1,34 @@
+import dcmjs from 'dcmjs';
 import { NaturalTagListener } from '../src/utilities/dicomStream/NaturalTagListener';
 import { Tags } from '../src/utilities/Tags';
 
 import { describe, beforeEach, it } from '@jest/globals';
 
+const { DicomMetadataListener } = dcmjs.utilities;
+
 const abList = ['a', 'b'];
 describe('NaturalTagListener', () => {
   let listener;
 
-  describe('standalone listener', () => {
+  describe('as DicomMetadataListener filter', () => {
     beforeEach(() => {
-      listener = new NaturalTagListener();
+      listener = new DicomMetadataListener({}, new NaturalTagListener());
     });
 
     it('accepts simple values', () => {
       listener.startObject();
 
       listener.addTag('abList1');
-      listener.values(abList);
-      // values internally pops
+      abList.forEach((item) => listener.value(item));
+      listener.pop();
 
       listener.addTag('abList2');
       abList.forEach((item) => listener.value(item));
       listener.pop();
 
       listener.addTag(Tags.SOPClassUID.tag, { vr: 'UI' });
-      listener.values(['1.2.3']);
+      listener.value('1.2.3');
+      listener.pop();
 
       const instance = listener.pop();
 
@@ -34,33 +38,37 @@ describe('NaturalTagListener', () => {
     });
 
     it('accepts sequences', () => {
-      listener.startObject();
+      const root = {};
+      listener.startObject(root);
 
       listener.addTag('sequence', { vr: 'SQ' });
       listener.startObject();
 
       listener.addTag('abList');
-      listener.values(abList);
-      // Ends the start object
-      listener.pop();
+      abList.forEach((item) => listener.value(item));
+      listener.pop(); // pop abList -> at item1
+      listener.pop(); // pop item1 -> at sequence
 
       listener.startObject();
       listener.addTag('abList');
       abList.forEach((item) => listener.value(item));
-      // Ends the value array
       listener.pop();
 
-      // Ends the start object
+      // Ends the second item (startObject) -> back to sequence tag
       listener.pop();
 
-      // Ends the sequence object
+      // Ends the sequence tag -> back to root
       listener.pop();
 
-      // Gets the final result
+      // Gets the root (same object we passed to startObject)
       const instance = listener.pop();
 
-      expect(instance.sequence[0].abList).toEqual(abList);
-      expect(instance.sequence[1].abList).toEqual(abList);
+      expect(instance).toBe(root);
+      expect(root.sequence).toBeDefined();
+      expect(Array.isArray(root.sequence)).toBe(true);
+      expect(root.sequence.length).toBe(2);
+      expect(root.sequence[0].abList).toEqual(abList);
+      expect(root.sequence[1].abList).toEqual(abList);
     });
   });
 });
