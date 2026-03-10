@@ -1,4 +1,4 @@
-import { WSIViewportV2 } from '@cornerstonejs/core';
+import { WSIViewportV2, utilities } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
 import {
@@ -53,9 +53,13 @@ async function run() {
     element,
   });
 
-  await viewport.setDataIds(imageIds, {
-    webClient: client,
+  utilities.viewportV2DataSetMetadataProvider.add('wsi-demo', {
+    imageIds,
+    options: {
+      webClient: client,
+    },
   });
+  await viewport.setDataIds(['wsi-demo']);
 }
 
 run();

@@ -2,6 +2,7 @@ import type {
   DataAttachmentOptions,
   DataId,
   DataProvider,
+  LogicalDataObject,
   RenderingBinding,
   RenderingId,
   RenderPathResolver,
@@ -30,6 +31,14 @@ abstract class ViewportV2<TViewState, TPresentationProps>
     options: DataAttachmentOptions
   ): Promise<RenderingId> {
     const data = await this.dataProvider.load(dataId);
+    return this.attachLoadedData(dataId, data, options);
+  }
+
+  protected async attachLoadedData(
+    dataId: DataId,
+    data: LogicalDataObject,
+    options: DataAttachmentOptions
+  ): Promise<RenderingId> {
     const adapter = this.renderPathResolver.resolve(this.kind, data, options);
     const existing = this.bindings.get(dataId);
 

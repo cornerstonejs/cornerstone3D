@@ -1,4 +1,4 @@
-import { ECGViewportV2 } from '@cornerstonejs/core';
+import { ECGViewportV2, utilities } from '@cornerstonejs/core';
 import {
   createImageIdsAndCacheMetaData,
   getLocalUrl,
@@ -48,7 +48,8 @@ async function run() {
     element,
   });
 
-  await viewport.setSignal(imageIds[0]);
+  utilities.viewportV2DataSetMetadataProvider.add('ecg-demo', imageIds[0]);
+  await viewport.setDataIds(['ecg-demo']);
 }
 
 run();

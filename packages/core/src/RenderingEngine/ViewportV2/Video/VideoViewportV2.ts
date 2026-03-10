@@ -53,39 +53,52 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   async setVideo(dataId: string): Promise<string> {
-    const renderingId = await this.setDataId(dataId, {
-      role: 'video',
-      renderMode: 'video2d',
-    });
-    const binding = this.getBinding(dataId);
-
-    if (!binding) {
-      return renderingId;
-    }
-
-    this.setPresentation(dataId, {
-      visible: true,
-      opacity: 1,
-      loop: true,
-      muted: true,
-      playbackRate: 1,
-      objectFit: 'contain',
-    });
-
-    const payload = (binding.rendering as VideoElementRendering).backendHandle
-      .payload;
-    this.setViewState({
-      zoom: 1,
-      pan: [0, 0],
-      rotation: 0,
-      currentTimeSeconds: 0,
-    });
-
-    if (payload.frameRange[0] > 1) {
-      this.seek(frameNumberToTimeSeconds(payload.frameRange[0], payload.fps));
-    }
+    const [renderingId] = await this.setDataIds([dataId]);
 
     return renderingId;
+  }
+
+  async setDataIds(dataIds: string[]): Promise<string[]> {
+    const renderingIds: string[] = [];
+
+    for (const dataId of dataIds) {
+      const renderingId = await this.setDataId(dataId, {
+        role: 'video',
+        renderMode: 'video2d',
+      });
+      const binding = this.getBinding(dataId);
+
+      if (!binding) {
+        renderingIds.push(renderingId);
+        continue;
+      }
+
+      this.setPresentation(dataId, {
+        visible: true,
+        opacity: 1,
+        loop: true,
+        muted: true,
+        playbackRate: 1,
+        objectFit: 'contain',
+      });
+
+      const payload = (binding.rendering as VideoElementRendering).backendHandle
+        .payload;
+      this.setViewState({
+        zoom: 1,
+        pan: [0, 0],
+        rotation: 0,
+        currentTimeSeconds: 0,
+      });
+
+      if (payload.frameRange[0] > 1) {
+        this.seek(frameNumberToTimeSeconds(payload.frameRange[0], payload.fps));
+      }
+
+      renderingIds.push(renderingId);
+    }
+
+    return renderingIds;
   }
 
   play(): Promise<void> {

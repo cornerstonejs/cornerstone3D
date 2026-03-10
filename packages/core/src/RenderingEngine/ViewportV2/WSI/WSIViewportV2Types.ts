@@ -1,6 +1,7 @@
 import type {
   BasePresentationProps,
   DataProvider,
+  LogicalDataObject,
   MountedRendering,
   RenderPathResolver,
   ViewportBackendContext,
@@ -43,7 +44,7 @@ export interface WSIViewState {
 }
 
 export interface WSIDataProvider extends DataProvider {
-  register(dataId: string, dataSet: WSIRegisteredDataSet): void;
+  load(dataId: string): Promise<LogicalDataObject<WSIPayload>>;
 }
 
 export interface WSIViewportV2Input {

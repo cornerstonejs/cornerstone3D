@@ -19,8 +19,8 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCpuRendering,
+  PlanarPayload,
   PlanarPresentationProps,
-  PlanarStackPayload,
   PlanarViewportBackendContext,
   PlanarViewState,
 } from './PlanarViewportV2Types';
@@ -145,7 +145,13 @@ export class CpuImageCanvasRenderingAdapter {
     options: DataAttachmentOptions
   ): Promise<PlanarCpuRendering> {
     const planarCtx = ctx as PlanarViewportBackendContext;
-    const payload = data.payload as PlanarStackPayload;
+    const payload = data.payload as PlanarPayload;
+
+    if (!payload.initialImage) {
+      throw new Error(
+        '[PlanarViewportV2] CPU rendering requires an initial image'
+      );
+    }
 
     planarCtx.setRenderMode('cpu2d');
 

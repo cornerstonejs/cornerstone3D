@@ -1,43 +1,96 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import { createAndCacheVolumeFromImages } from '../../../loaders/volumeLoader';
+import * as metaData from '../../../metaData';
+import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import type { LogicalDataObject } from '../ViewportArchitectureTypes';
 import type {
   PlanarDataProvider,
+  PlanarDataLoadOptions,
+  PlanarPayload,
   PlanarRegisteredDataSet,
-  PlanarStackPayload,
 } from './PlanarViewportV2Types';
 
 export class DefaultPlanarDataProvider implements PlanarDataProvider {
-  private cache = new Map<string, LogicalDataObject>();
-  private registeredDataSets = new Map<string, PlanarRegisteredDataSet>();
+  private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    );
 
-  register(dataId: string, dataSet: PlanarRegisteredDataSet): void {
-    this.registeredDataSets.set(dataId, dataSet);
-    this.cache.delete(dataId);
-  }
-
-  async load(dataId: string): Promise<LogicalDataObject> {
-    const cached = this.cache.get(dataId);
-
-    if (cached) {
-      return cached;
+    if (Array.isArray(registered)) {
+      return {
+        imageIds: registered,
+      };
     }
 
-    const dataSet = this.registeredDataSets.get(dataId);
+    const candidate = registered as PlanarRegisteredDataSet | undefined;
+
+    if (!candidate?.imageIds) {
+      return;
+    }
+
+    return candidate;
+  }
+
+  async load(
+    dataId: string,
+    options?: PlanarDataLoadOptions
+  ): Promise<LogicalDataObject<PlanarPayload>> {
+    const dataSet = this.getDataSet(dataId);
 
     if (!dataSet) {
       throw new Error(
-        `[PlanarViewportV2] No registered stack dataset for ${dataId}`
+        `[PlanarViewportV2] No registered planar dataset for ${dataId}`
       );
     }
 
+    if (!options) {
+      throw new Error(
+        `[PlanarViewportV2] No load options were provided for ${dataId}`
+      );
+    }
+
+    if (!dataSet.imageIds.length) {
+      throw new Error('[PlanarViewportV2] Cannot load an empty planar dataset');
+    }
+
     const clampedImageIdIndex = Math.min(
-      Math.max(0, dataSet.initialImageIdIndex),
+      Math.max(0, dataSet.initialImageIdIndex ?? 0),
       dataSet.imageIds.length - 1
     );
+
+    if (options.renderMode === 'vtkVolume') {
+      const imageVolume = await createAndCacheVolumeFromImages(
+        options.volumeId,
+        dataSet.imageIds
+      );
+
+      return {
+        id: dataId,
+        role: 'image',
+        kind: 'imageVolume',
+        metadata: {
+          imageIds: imageVolume.imageIds || dataSet.imageIds,
+          initialImageIdIndex: clampedImageIdIndex,
+          acquisitionOrientation: options.acquisitionOrientation,
+          volumeId: options.volumeId,
+        },
+        payload: {
+          imageIds: imageVolume.imageIds || dataSet.imageIds,
+          initialImageIdIndex: clampedImageIdIndex,
+          acquisitionOrientation: options.acquisitionOrientation,
+          imageVolume,
+          renderMode: options.renderMode,
+          volumeId: options.volumeId,
+        },
+      };
+    }
+
     const initialImage = await loadAndCacheImage(
       dataSet.imageIds[clampedImageIdIndex]
     );
-    const logicalDataObject: LogicalDataObject<PlanarStackPayload> = {
+
+    return {
       id: dataId,
       role: 'image',
       kind: 'imageStack',
@@ -45,17 +98,17 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         imageIds: dataSet.imageIds,
         initialImageIdIndex: clampedImageIdIndex,
         imageId: initialImage.imageId,
+        acquisitionOrientation: options.acquisitionOrientation,
+        volumeId: options.volumeId,
       },
       payload: {
         imageIds: dataSet.imageIds,
-        initialImageIdIndex: clampedImageIdIndex,
         initialImage,
-        volumeId:
-          dataSet.volumeId || `cornerstoneStreamingImageVolume:${dataId}`,
+        initialImageIdIndex: clampedImageIdIndex,
+        acquisitionOrientation: options.acquisitionOrientation,
+        renderMode: options.renderMode,
+        volumeId: options.volumeId,
       },
     };
-
-    this.cache.set(dataId, logicalDataObject);
-    return logicalDataObject;
   }
 }

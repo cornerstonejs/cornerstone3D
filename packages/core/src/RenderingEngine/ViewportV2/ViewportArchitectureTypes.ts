@@ -81,7 +81,7 @@ export interface RenderPathResolver {
 }
 
 export interface DataProvider {
-  load(dataId: DataId): Promise<LogicalDataObject>;
+  load(dataId: DataId, options?: unknown): Promise<LogicalDataObject>;
 }
 
 export interface RenderingBinding {

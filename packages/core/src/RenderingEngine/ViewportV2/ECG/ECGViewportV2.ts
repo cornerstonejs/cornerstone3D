@@ -52,35 +52,48 @@ class ECGViewportV2 extends ViewportV2<ECGViewState, ECGPresentationProps> {
   }
 
   async setSignal(dataId: string): Promise<string> {
-    const renderingId = await this.setDataId(dataId, {
-      role: 'signal',
-      renderMode: 'signal2d',
-    });
-    const binding = this.getBinding(dataId);
-
-    if (!binding) {
-      return renderingId;
-    }
-
-    const waveform = (binding.data.payload as ECGWaveformPayload) || null;
-    const durationMs =
-      (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
-
-    this.setPresentation(dataId, {
-      visible: true,
-      opacity: 1,
-      lineWidth: 1,
-      amplitudeScale: 1,
-      showGrid: true,
-      visibleChannels: waveform.channels.map((_channel, index) => index),
-    });
-    this.setViewState({
-      timeRange: [0, durationMs],
-      valueRange: getDefaultECGValueRange(waveform),
-      scrollOffset: 0,
-    });
+    const [renderingId] = await this.setDataIds([dataId]);
 
     return renderingId;
+  }
+
+  async setDataIds(dataIds: string[]): Promise<string[]> {
+    const renderingIds: string[] = [];
+
+    for (const dataId of dataIds) {
+      const renderingId = await this.setDataId(dataId, {
+        role: 'signal',
+        renderMode: 'signal2d',
+      });
+      const binding = this.getBinding(dataId);
+
+      if (!binding) {
+        renderingIds.push(renderingId);
+        continue;
+      }
+
+      const waveform = (binding.data.payload as ECGWaveformPayload) || null;
+      const durationMs =
+        (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
+
+      this.setPresentation(dataId, {
+        visible: true,
+        opacity: 1,
+        lineWidth: 1,
+        amplitudeScale: 1,
+        showGrid: true,
+        visibleChannels: waveform.channels.map((_channel, index) => index),
+      });
+      this.setViewState({
+        timeRange: [0, durationMs],
+        valueRange: getDefaultECGValueRange(waveform),
+        scrollOffset: 0,
+      });
+
+      renderingIds.push(renderingId);
+    }
+
+    return renderingIds;
   }
 
   setChannelVisibility(index: number, visible: boolean): void {

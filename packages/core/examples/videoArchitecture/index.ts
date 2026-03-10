@@ -1,4 +1,4 @@
-import { VideoViewportV2 } from '@cornerstonejs/core';
+import { VideoViewportV2, utilities } from '@cornerstonejs/core';
 import {
   createImageIdsAndCacheMetaData,
   getLocalUrl,
@@ -52,7 +52,8 @@ async function run() {
     element,
   });
 
-  await viewport.setVideo(videoId);
+  utilities.viewportV2DataSetMetadataProvider.add('video-demo', videoId);
+  await viewport.setDataIds(['video-demo']);
   await viewport.play();
 }
 

@@ -7,8 +7,6 @@ import type {
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { DicomMicroscopyPath } from './DicomMicroscopyRenderingAdapter';
 import type {
-  WSIDataProvider,
-  WSIDataSetOptions,
   WSIViewportBackendContext,
   WSIViewportV2Input,
   WSIViewState,
@@ -48,35 +46,30 @@ class WSIViewportV2 extends ViewportV2<WSIViewState, WSIPresentationProps> {
     this.element.setAttribute('data-viewport-uid', this.id);
   }
 
-  async setDataIds(
-    imageIds: string[],
-    options: WSIDataSetOptions
-  ): Promise<string> {
-    const dataId = imageIds[0];
-    const dataProvider = this.dataProvider as WSIDataProvider;
+  async setDataIds(dataIds: string[]): Promise<string[]> {
+    const renderingIds: string[] = [];
 
-    dataProvider.register(dataId, {
-      imageIds,
-      options,
-    });
+    for (const dataId of dataIds) {
+      const renderingId = await this.setDataId(dataId, {
+        role: 'image',
+        renderMode: 'wsi2d',
+      });
 
-    const renderingId = await this.setDataId(dataId, {
-      role: 'image',
-      renderMode: 'wsi2d',
-    });
+      this.setPresentation(dataId, {
+        visible: true,
+        opacity: 1,
+      });
 
-    this.setPresentation(dataId, {
-      visible: true,
-      opacity: 1,
-    });
+      renderingIds.push(renderingId);
+    }
 
-    return renderingId;
+    return renderingIds;
   }
 
-  async setWSI(imageIds: string[], webClient: WSIClientLike): Promise<string> {
-    return this.setDataIds(imageIds, {
-      webClient,
-    });
+  async setWSI(dataId: string, _webClient?: WSIClientLike): Promise<string> {
+    const [renderingId] = await this.setDataIds([dataId]);
+
+    return renderingId;
   }
 
   getZoom(): number {

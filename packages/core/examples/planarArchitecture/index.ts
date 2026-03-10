@@ -1,10 +1,11 @@
-import type { PlanarRenderMode } from '@cornerstonejs/core';
 import {
   Enums,
   PlanarViewportV2,
   RenderingEngineV2,
+  utilities,
 } from '@cornerstonejs/core';
 import {
+  addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
   ctVoiRange,
   initDemo,
@@ -16,25 +17,40 @@ type PlanarOrientation =
   | Enums.OrientationAxis.CORONAL
   | Enums.OrientationAxis.SAGITTAL;
 
+const searchParams = new URLSearchParams(window.location.search);
+
+function getNumberParam(name: string): number | undefined {
+  const value = searchParams.get(name);
+
+  if (value == null) {
+    return;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
 const viewportId = 'planarViewportV2';
+const dataId = searchParams.get('dataId') || 'ct-planar';
 const orientation =
-  (new URLSearchParams(window.location.search).get(
-    'orientation'
-  ) as PlanarOrientation) || Enums.OrientationAxis.AXIAL;
-const renderMode =
-  (new URLSearchParams(window.location.search).get(
-    'renderMode'
-  ) as PlanarRenderMode) || 'cpu2d';
+  (searchParams.get('orientation') as PlanarOrientation) ||
+  Enums.OrientationAxis.AXIAL;
+const cpuVoxelThreshold = getNumberParam('cpuVoxelThreshold');
+const initialImageIdIndex = getNumberParam('initialImageIdIndex') ?? 0;
+const imageLimit = getNumberParam('limit');
+const volumeId = searchParams.get('volumeId') || undefined;
 
 setTitleAndDescription(
   'Planar Viewport Architecture POC',
-  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. Default render path is CPU canvas 2D; use ?renderMode=vtkImage or ?renderMode=vtkVolume to exercise the GPU paths.'
+  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=axial|coronal|sagittal&dataId=ct-planar&initialImageIdIndex=0&cpuVoxelThreshold=100000&limit=32&volumeId=myVolume'
 );
 
+// ======== Set up page ======== //
 const content = document.getElementById('content');
 
 if (!content) {
@@ -42,40 +58,63 @@ if (!content) {
 }
 
 const element = document.createElement('div');
+element.id = 'cornerstone-element';
 element.style.width = '500px';
 element.style.height = '500px';
 element.style.background = '#000';
+
 content.appendChild(element);
 
-function addOrientationSelector(viewport: PlanarViewportV2) {
-  if (renderMode !== 'vtkVolume') {
-    return;
-  }
+const instructions = document.createElement('p');
+instructions.innerText =
+  'Use the toolbar dropdown or URL query parameters to change the planar orientation and loading inputs.';
 
-  const controls = document.createElement('div');
-  controls.style.display = 'flex';
-  controls.style.gap = '8px';
-  controls.style.marginBottom = '12px';
+content.append(instructions);
+// ============================= //
 
-  const label = document.createElement('label');
-  label.textContent = 'Orientation';
-  label.style.color = '#fff';
+let viewport: PlanarViewportV2 | undefined;
 
-  const select = document.createElement('select');
-  select.innerHTML = `
-    <option value="${Enums.OrientationAxis.AXIAL}">Axial</option>
-    <option value="${Enums.OrientationAxis.CORONAL}">Coronal</option>
-    <option value="${Enums.OrientationAxis.SAGITTAL}">Sagittal</option>
-  `;
-  select.value = orientation;
-  select.onchange = () => {
-    viewport.setOrientation(select.value as PlanarOrientation);
-  };
+function syncOrientationInUrl(nextOrientation: PlanarOrientation) {
+  const nextSearchParams = new URLSearchParams(window.location.search);
 
-  controls.appendChild(label);
-  controls.appendChild(select);
-  content.insertBefore(controls, element);
+  nextSearchParams.set('orientation', nextOrientation);
+  window.history.replaceState(
+    {},
+    '',
+    `${window.location.pathname}?${nextSearchParams.toString()}`
+  );
 }
+
+function addToolbar() {
+  addDropdownToToolbar({
+    labelText: 'Orientation',
+    options: {
+      values: [
+        Enums.OrientationAxis.AXIAL,
+        Enums.OrientationAxis.CORONAL,
+        Enums.OrientationAxis.SAGITTAL,
+      ],
+      labels: ['Axial', 'Coronal', 'Sagittal'],
+      defaultValue: orientation,
+    },
+    onSelectedValueChange: (selectedValue) => {
+      const nextOrientation = selectedValue as PlanarOrientation;
+
+      syncOrientationInUrl(nextOrientation);
+
+      if (!viewport) {
+        return;
+      }
+
+      void viewport.setDataIds([dataId], {
+        orientation: nextOrientation,
+        cpuVoxelThreshold,
+      });
+    },
+  });
+}
+
+addToolbar();
 
 async function run() {
   await initDemo();
@@ -96,18 +135,22 @@ async function run() {
       background: [0.2, 0, 0.2],
     },
   });
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewportV2;
-  const stackImageIds =
-    renderMode === 'vtkVolume' ? imageIds : imageIds.slice(0, 3);
+  viewport = renderingEngine.getViewport(viewportId) as PlanarViewportV2;
+  const resolvedImageIds =
+    imageLimit && imageLimit > 0 ? imageIds.slice(0, imageLimit) : imageIds;
 
-  await viewport.setStack(stackImageIds, {
-    renderMode,
+  utilities.viewportV2DataSetMetadataProvider.add(dataId, {
+    imageIds: resolvedImageIds,
+    initialImageIdIndex,
+    volumeId,
   });
-  viewport.setOrientation(orientation);
+  await viewport.setDataIds([dataId], {
+    orientation,
+    cpuVoxelThreshold,
+  });
   viewport.setProperties({
     voiRange: ctVoiRange,
   });
-  addOrientationSelector(viewport);
   viewport.render();
 }
 

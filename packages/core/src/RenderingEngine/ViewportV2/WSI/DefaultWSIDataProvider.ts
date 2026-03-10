@@ -2,6 +2,8 @@ import {
   addWSIMiniNavigationOverlayCss,
   loadWSIData,
 } from '../../../utilities/WSIUtilities';
+import * as metaData from '../../../metaData';
+import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import type { LogicalDataObject } from '../ViewportArchitectureTypes';
 import type {
   WSIDataProvider,
@@ -10,26 +12,25 @@ import type {
 } from './WSIViewportV2Types';
 
 export class DefaultWSIDataProvider implements WSIDataProvider {
-  private cache = new Map<string, LogicalDataObject>();
-  private registeredDataSets = new Map<string, WSIRegisteredDataSet>();
+  private getDataSet(dataId: string): WSIRegisteredDataSet | undefined {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    ) as WSIRegisteredDataSet | undefined;
 
-  register(dataId: string, dataSet: WSIRegisteredDataSet): void {
-    this.registeredDataSets.set(dataId, dataSet);
-    this.cache.delete(dataId);
-  }
-
-  async load(dataId: string): Promise<LogicalDataObject> {
-    const cached = this.cache.get(dataId);
-
-    if (cached) {
-      return cached;
+    if (!registered?.imageIds || !registered?.options?.webClient) {
+      return;
     }
 
-    const dataSet = this.registeredDataSets.get(dataId);
+    return registered;
+  }
+
+  async load(dataId: string): Promise<LogicalDataObject<WSIPayload>> {
+    const dataSet = this.getDataSet(dataId);
 
     if (!dataSet) {
       throw new Error(
-        `[WSIViewportV2] No registered WSI dataset for ${dataId}`
+        `[WSIViewportV2] No registered WSI dataset metadata for ${dataId}`
       );
     }
 
@@ -41,7 +42,7 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
       imageIds: dataSet.imageIds,
       client: dataSet.options.webClient,
     });
-    const logicalDataObject: LogicalDataObject<WSIPayload> = {
+    return {
       id: dataId,
       role: 'image',
       kind: 'wsiData',
@@ -59,8 +60,5 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
         imageURISet: loadedData.imageURISet,
       },
     };
-
-    this.cache.set(dataId, logicalDataObject);
-    return logicalDataObject;
   }
 }

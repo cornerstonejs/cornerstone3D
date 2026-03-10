@@ -4,20 +4,32 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type { ECGWaveformPayload } from './ECGViewportV2Types';
 import { loadECGWaveform } from '../../../utilities/ECGUtilities';
+import * as metaData from '../../../metaData';
+import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 
 export class DefaultECGDataProvider implements DataProvider {
-  private cache = new Map<string, LogicalDataObject>();
+  private getSourceDataId(dataId: string): string {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    );
 
-  async load(dataId: string): Promise<LogicalDataObject> {
-    const cached = this.cache.get(dataId);
-
-    if (cached) {
-      return cached;
+    if (typeof registered === 'string') {
+      return registered;
     }
 
-    const { waveform, calibration } = await loadECGWaveform(dataId);
+    if (Array.isArray(registered) && registered[0]) {
+      return registered[0];
+    }
 
-    const logicalDataObject: LogicalDataObject<ECGWaveformPayload> = {
+    return dataId;
+  }
+
+  async load(dataId: string): Promise<LogicalDataObject> {
+    const sourceDataId = this.getSourceDataId(dataId);
+    const { waveform, calibration } = await loadECGWaveform(sourceDataId);
+
+    return {
       id: dataId,
       role: 'signal',
       kind: 'signal',
@@ -26,8 +38,5 @@ export class DefaultECGDataProvider implements DataProvider {
       },
       payload: waveform as ECGWaveformPayload,
     };
-
-    this.cache.set(dataId, logicalDataObject);
-    return logicalDataObject;
   }
 }

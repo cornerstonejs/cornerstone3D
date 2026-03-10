@@ -1,18 +1,26 @@
-import vtkGenericRenderWindow from '@kitware/vtk.js/Rendering/Misc/GenericRenderWindow';
 import { OrientationAxis } from '../../../enums';
+import type ViewportInputOptions from '../../../types/ViewportInputOptions';
+import * as metaData from '../../../metaData';
+import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
+import renderingEngineCache from '../../renderingEngineCache';
+import type { DataAttachmentOptions } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import { CpuImageCanvasPath } from './CpuImageCanvasRenderingAdapter';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { VtkImageMapperPath } from './VtkImageMapperRenderingAdapter';
 import { VtkVolumeMapperPath } from './VtkVolumeMapperRenderingAdapter';
+import {
+  normalizePlanarOrientation,
+  selectPlanarRenderPath,
+} from './planarRenderPathSelector';
 import type {
-  PlanarDataProvider,
   PlanarPresentationProps,
   PlanarRenderMode,
   PlanarRendering,
-  PlanarStackPayload,
-  PlanarStackSetOptions,
+  PlanarPayload,
+  PlanarRegisteredDataSet,
+  PlanarSetDataOptions,
   PlanarViewportBackendContext,
   PlanarViewportV2Input,
   PlanarViewState,
@@ -29,15 +37,38 @@ class PlanarViewportV2 extends ViewportV2<
   readonly kind = 'planar' as const;
   readonly id: string;
   readonly element: HTMLDivElement;
+  readonly renderingEngineId: string;
+  readonly canvas: HTMLCanvasElement;
+  sWidth: number;
+  sHeight: number;
+  defaultOptions: ViewportInputOptions;
+  suppressEvents = false;
 
   protected backendContext: PlanarViewportBackendContext;
 
   private activeDataId?: string;
 
+  static get useCustomRenderingPipeline(): boolean {
+    return false;
+  }
+
+  getUseCustomRenderingPipeline(): boolean {
+    return false;
+  }
+
+  setRendered(): void {
+    // no-op — rendering engine calls this after completing a frame
+  }
+
   constructor(args: PlanarViewportV2Input) {
     super();
     this.id = args.id;
     this.element = args.element;
+    this.renderingEngineId = args.renderingEngineId;
+    this.canvas = args.canvas;
+    this.sWidth = args.sWidth;
+    this.sHeight = args.sHeight;
+    this.defaultOptions = args.defaultOptions || {};
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
@@ -45,17 +76,16 @@ class PlanarViewportV2 extends ViewportV2<
     this.renderPathResolver =
       args.renderPathResolver || defaultRenderPathResolver;
 
-    const genericRenderWindow = vtkGenericRenderWindow.newInstance({
-      background: args.background || [0, 0, 0],
-    });
-    genericRenderWindow.setContainer(this.element);
-    const renderer = genericRenderWindow.getRenderer();
-    const renderWindow = genericRenderWindow.getRenderWindow();
-    const vtkCanvas = this.element.querySelector('canvas');
+    const renderingEngine = renderingEngineCache.get(this.renderingEngineId);
+    const renderer = renderingEngine?.getRenderer(this.id);
 
-    if (!(vtkCanvas instanceof HTMLCanvasElement)) {
-      throw new Error('[PlanarViewportV2] Failed to initialize VTK canvas');
+    if (!renderer) {
+      throw new Error(
+        '[PlanarViewportV2] No renderer available. Ensure WebGL is supported and the rendering engine has been properly initialized.'
+      );
     }
+
+    const vtkCanvas = args.canvas;
 
     const cpuCanvas = document.createElement('canvas');
     cpuCanvas.style.display = 'none';
@@ -81,12 +111,10 @@ class PlanarViewportV2 extends ViewportV2<
       cpuCanvas,
       cpuCanvasContext,
       element: this.element,
-      genericRenderWindow,
       requestRender: () => {
-        this.render();
+        this.requestRenderingEngineRender();
       },
       renderer,
-      renderWindow,
       setRenderMode: (renderMode: PlanarRenderMode) => {
         const useCPUCanvas = renderMode === 'cpu2d';
         cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
@@ -110,44 +138,105 @@ class PlanarViewportV2 extends ViewportV2<
     this.resize();
   }
 
-  async setStack(
-    imageIds: string[],
-    options: PlanarStackSetOptions = {}
-  ): Promise<string> {
-    const dataId = options.dataId || imageIds[0];
-    const initialImageIdIndex = Math.min(
-      Math.max(0, options.initialImageIdIndex ?? 0),
-      imageIds.length - 1
+  private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
     );
-    const renderMode: PlanarRenderMode = options.renderMode || 'vtkImage';
-    const dataProvider = this.dataProvider as PlanarDataProvider;
 
-    dataProvider.register(dataId, {
-      imageIds,
-      initialImageIdIndex,
-      volumeId: options.volumeId,
+    if (Array.isArray(registered)) {
+      return {
+        imageIds: registered,
+      };
+    }
+
+    const candidate = registered as PlanarRegisteredDataSet | undefined;
+
+    if (!candidate?.imageIds) {
+      return;
+    }
+
+    return candidate;
+  }
+
+  async setDataIds(
+    dataIds: string[],
+    options: PlanarSetDataOptions = {}
+  ): Promise<string[]> {
+    const renderingIds: string[] = [];
+
+    for (const dataId of dataIds) {
+      const renderingId = await this.setDataId(dataId, options);
+      renderingIds.push(renderingId);
+    }
+
+    if (dataIds[0]) {
+      this.activeDataId = dataIds[0];
+    }
+
+    return renderingIds;
+  }
+
+  async setDataId(
+    dataId: string,
+    options: PlanarSetDataOptions | DataAttachmentOptions = {}
+  ): Promise<string> {
+    const planarOptions = options as PlanarSetDataOptions;
+    const dataSet = this.getDataSet(dataId);
+
+    if (!dataSet) {
+      throw new Error(
+        `[PlanarViewportV2] No registered planar dataset metadata for ${dataId}`
+      );
+    }
+
+    const selectedPath = selectPlanarRenderPath(dataSet, planarOptions);
+    const data = await this.dataProvider.load(dataId, {
+      acquisitionOrientation: selectedPath.acquisitionOrientation,
+      orientation: planarOptions.orientation || OrientationAxis.ACQUISITION,
+      renderMode: selectedPath.renderMode,
+      volumeId: selectedPath.volumeId,
     });
+    const payload = data.payload as PlanarPayload;
+    const presentation = this.getPresentation(dataId) || {
+      visible: true,
+      opacity: 1,
+    };
+
     this.activeDataId = dataId;
     this.viewState = {
       ...this.viewState,
-      imageIdIndex: initialImageIdIndex,
+      imageIdIndex: payload.initialImageIdIndex,
+      orientation: normalizePlanarOrientation(
+        planarOptions.orientation,
+        selectedPath.acquisitionOrientation
+      ),
     };
 
-    const renderingId = await this.setDataId(dataId, {
+    const renderingId = await this.attachLoadedData(dataId, data, {
       role: 'image',
-      renderMode,
+      renderMode: selectedPath.renderMode,
     });
 
     this.setPresentation(dataId, {
-      visible: true,
-      opacity: 1,
+      ...presentation,
     });
 
     return renderingId;
   }
 
   getImageIds(): string[] {
-    return this.getPayload()?.imageIds || [];
+    const payload = this.getPayload();
+
+    if (!payload) {
+      return [];
+    }
+
+    return payload.imageVolume?.imageIds || payload.imageIds;
+  }
+
+  getVolumeId(): string | undefined {
+    return this.getPayload()?.volumeId;
   }
 
   getCurrentImageIdIndex(): number {
@@ -212,8 +301,6 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   resize(): void {
-    this.backendContext.genericRenderWindow.resize();
-
     const { clientHeight, clientWidth } = this.element;
     const { cpuCanvas } = this.backendContext;
 
@@ -242,18 +329,27 @@ class PlanarViewportV2 extends ViewportV2<
     }
 
     if (!renderedByAdapter) {
-      this.backendContext.renderWindow.render();
+      this.requestRenderingEngineRender();
     }
   }
 
-  private getPayload(): PlanarStackPayload | undefined {
+  private requestRenderingEngineRender(): void {
+    const renderingEngine = renderingEngineCache.get(this.renderingEngineId);
+
+    if (renderingEngine) {
+      renderingEngine.renderViewport(this.id);
+    }
+  }
+
+  private getPayload(): PlanarPayload | undefined {
     const firstBinding = this.bindings.values().next().value;
 
     if (!firstBinding) {
       return;
     }
 
-    return (firstBinding.rendering as PlanarRendering).backendHandle.payload;
+    return (firstBinding.rendering as PlanarRendering).backendHandle
+      .payload as PlanarPayload;
   }
 }
 

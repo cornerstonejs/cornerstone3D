@@ -4,19 +4,32 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type { VideoStreamPayload } from './VideoViewportV2Types';
 import { loadVideoStreamMetadata } from '../../../utilities/VideoUtilities';
+import * as metaData from '../../../metaData';
+import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 
 export class DefaultVideoDataProvider implements DataProvider {
-  private cache = new Map<string, LogicalDataObject>();
+  private getSourceDataId(dataId: string): string {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    );
 
-  async load(dataId: string): Promise<LogicalDataObject> {
-    const cached = this.cache.get(dataId);
-
-    if (cached) {
-      return cached;
+    if (typeof registered === 'string') {
+      return registered;
     }
 
-    const stream = loadVideoStreamMetadata(dataId);
-    const logicalDataObject: LogicalDataObject<VideoStreamPayload> = {
+    if (Array.isArray(registered) && registered[0]) {
+      return registered[0];
+    }
+
+    return dataId;
+  }
+
+  async load(dataId: string): Promise<LogicalDataObject> {
+    const sourceDataId = this.getSourceDataId(dataId);
+    const stream = loadVideoStreamMetadata(sourceDataId);
+
+    return {
       id: dataId,
       role: 'video',
       kind: 'videoStream',
@@ -33,8 +46,5 @@ export class DefaultVideoDataProvider implements DataProvider {
         metadata: stream.metadata,
       },
     };
-
-    this.cache.set(dataId, logicalDataObject);
-    return logicalDataObject;
   }
 }

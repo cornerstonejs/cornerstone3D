@@ -20,7 +20,7 @@ import type {
 import type {
   PlanarImageRendering,
   PlanarPresentationProps,
-  PlanarStackPayload,
+  PlanarPayload,
   PlanarViewportBackendContext,
   PlanarViewState,
 } from './PlanarViewportV2Types';
@@ -85,7 +85,14 @@ export class VtkImageMapperRenderingAdapter {
     options: DataAttachmentOptions
   ): Promise<PlanarImageRendering> {
     const planarCtx = ctx as PlanarViewportBackendContext;
-    const payload = data.payload as PlanarStackPayload;
+    const payload = data.payload as PlanarPayload;
+
+    if (!payload.initialImage) {
+      throw new Error(
+        '[PlanarViewportV2] VTK image rendering requires an initial image'
+      );
+    }
+
     const mapper = vtkImageMapper.newInstance();
     const actor = vtkImageSlice.newInstance();
     const imageData = createVTKImageDataFromImage(payload.initialImage);
