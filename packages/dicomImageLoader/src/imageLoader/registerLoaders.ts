@@ -1,3 +1,7 @@
+import { cache, metaData } from '@cornerstonejs/core';
+import { Enums, utilities } from '@cornerstonejs/metadata';
+
+import dataSetCacheManager from './wadouri/dataSetCacheManager';
 import wadouriRegister from './wadouri/register';
 import wadorsRegister from './wadors/register';
 
@@ -10,6 +14,11 @@ import wadorsRegister from './wadors/register';
 function registerLoaders(options?: {
   useLegacyMetadataProvider?: boolean;
 }): void {
+  cache.purgeCache();
+  dataSetCacheManager.purge();
+  utilities.clearTypedCacheData(Enums.MetadataModules.NATURAL);
+  metaData.removeAllProviders();
+
   wadorsRegister(options);
   wadouriRegister(options);
 }

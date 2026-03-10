@@ -78,7 +78,6 @@ function loadImageFromPromise(
           (image) => {
             image = image as DICOMLoaderIImage;
             image.data = dataSet;
-            image.sharedCacheKey = sharedCacheKey;
             const end = new Date().getTime();
 
             image.loadTimeInMS = loadEnd - start;
@@ -225,9 +224,21 @@ function loadImageFromNatural(
       : 0;
 
   const promise = (async (): Promise<DICOMLoaderIImage> => {
+    console.log('[dicomImageLoader/wadouri] loadImageFromNatural: start', {
+      imageId,
+      scheme: parsedImageId.scheme,
+      url: parsedImageId.url,
+      frameIndex,
+    });
+
     const NATURAL = MetadataEnums.MetadataModules.NATURAL;
     let natural = metaData.get(NATURAL, imageId);
     if (!natural) {
+      console.log(
+        '[dicomImageLoader/wadouri] loadImageFromNatural: no NATURAL metadata, attempting to fetch and populate',
+        { imageId }
+      );
+
       if (!schemeLoader) {
         throw new Error(
           `loadImageFromNatural: no NATURAL cache and unknown scheme ${parsedImageId.scheme}`
@@ -248,6 +259,11 @@ function loadImageFromNatural(
       { frameIndex }
     );
     if (!frameData) {
+      console.warn(
+        '[dicomImageLoader/wadouri] loadImageFromNatural: no COMPRESSED_FRAME_DATA for imageId',
+        { imageId, frameIndex }
+      );
+
       throw new Error(
         `loadImageFromNatural: no pixel data in NATURAL for imageId ${imageId}`
       );
@@ -271,8 +287,49 @@ function loadImageFromNatural(
   return { promise };
 }
 
-/** Legacy loader: same implementation as loadImageFromDataSet. */
-const loadImage = loadImageFromDataSet;
+/**
+ * Legacy image loader entry point used when `useLegacyMetadataProvider` is true.
+ * This conforms to `Types.ImageLoaderFn` (imageId, options) and internally
+ * uses `dataSetCacheManager.load` plus `loadImageFromPromise`.
+ *
+ * @deprecated This loads images using the legacy URI loader, not the newer @cornerstonejs/metadata framework
+ */
+const loadImage = (
+  imageId: string,
+  options: DICOMLoaderImageOptions = {}
+): Types.IImageLoadObject => {
+  const parsedImageId = parseImageId(imageId);
+
+  const schemeLoader = getLoaderForScheme(parsedImageId.scheme);
+  if (!schemeLoader) {
+    throw new Error(
+      `wadouri loadImage: no loader for scheme '${parsedImageId.scheme}'`
+    );
+  }
+
+  const frameIndex =
+    parsedImageId.pixelDataFrame !== undefined
+      ? parsedImageId.pixelDataFrame
+      : 0;
+
+  // For legacy wadouri, the shared cache key is the underlying URL without
+  // any frame parameter; multiframe helpers handle per-frame metadata.
+  const sharedCacheKey = parsedImageId.url;
+
+  const dataSetPromise = dataSetCacheManager.load(
+    parsedImageId.url,
+    schemeLoader,
+    imageId
+  ) as Promise<DataSet>;
+
+  return loadImageFromPromise(
+    dataSetPromise,
+    imageId,
+    frameIndex,
+    sharedCacheKey,
+    options
+  );
+};
 
 export {
   loadImageFromPromise,
