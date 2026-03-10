@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
 import { OrientationAxis } from '../../../enums';
-import { getShouldUseCPURendering } from '../../../init';
+import { getConfiguration, getShouldUseCPURendering } from '../../../init';
 import * as metaData from '../../../metaData';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import { isValidVolume } from '../../../utilities/isValidVolume';
@@ -14,7 +14,8 @@ import type {
   PlanarSetDataOptions,
 } from './PlanarViewportV2Types';
 
-export const DEFAULT_PLANAR_CPU_VOXEL_THRESHOLD = 64 * 1024 * 1024;
+export const DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD = 64 * 1024 * 1024;
+export const DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD = 64 * 1024 * 1024;
 
 export interface SelectedPlanarRenderPath {
   acquisitionOrientation?: PlanarCamera['orientation'];
@@ -73,7 +74,7 @@ export function getPlanarAcquisitionOrientation(
 
 export function shouldUseCPU(
   imageIds: string[],
-  threshold = DEFAULT_PLANAR_CPU_VOXEL_THRESHOLD
+  threshold = DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD
 ): boolean {
   if (getShouldUseCPURendering()) {
     return true;
@@ -96,6 +97,10 @@ export function shouldUseCPU(
   return rows * columns * imageIds.length >= threshold;
 }
 
+function getConfiguredPlanarCpuThresholds() {
+  return getConfiguration().rendering?.planar?.cpuThresholds;
+}
+
 export function selectPlanarRenderPath(
   dataSet: PlanarRegisteredDataSet,
   options: PlanarSetDataOptions = {}
@@ -115,9 +120,18 @@ export function selectPlanarRenderPath(
     (acquisitionOrientation !== undefined &&
       orientation === acquisitionOrientation);
   const requestedRenderMode = options.renderMode ?? 'auto';
-  const shouldUseCpuPath = shouldUseCPU(
+  const configuredCpuThresholds = getConfiguredPlanarCpuThresholds();
+  const shouldUseCpuImagePath = shouldUseCPU(
     dataSet.imageIds,
-    options.cpuVoxelThreshold
+    options.cpuThresholds?.image ??
+      configuredCpuThresholds?.image ??
+      DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD
+  );
+  const shouldUseCpuVolumePath = shouldUseCPU(
+    dataSet.imageIds,
+    options.cpuThresholds?.volume ??
+      configuredCpuThresholds?.volume ??
+      DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD
   );
 
   if (requestedRenderMode !== 'auto') {
@@ -157,14 +171,14 @@ export function selectPlanarRenderPath(
 
     return {
       acquisitionOrientation,
-      renderMode: shouldUseCpuPath ? 'cpuVolume' : 'vtkVolume',
+      renderMode: shouldUseCpuVolumePath ? 'cpuVolume' : 'vtkVolume',
       volumeId,
     };
   }
 
   return {
     acquisitionOrientation,
-    renderMode: shouldUseCpuPath ? 'cpu2d' : 'vtkImage',
+    renderMode: shouldUseCpuImagePath ? 'cpu2d' : 'vtkImage',
     volumeId,
   };
 }

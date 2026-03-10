@@ -54,17 +54,35 @@ console.warn(
 const viewportId = 'planarViewportV2';
 const dataId = 'ct-planar';
 let currentOrientation = getOrientationParam();
-const cpuVoxelThreshold = getNumberParam('cpuVoxelThreshold');
+const cpuImageThreshold = getNumberParam('cpuImageThreshold');
+const cpuVolumeThreshold = getNumberParam('cpuVolumeThreshold');
+
+function getCpuThresholds() {
+  if (cpuImageThreshold === undefined && cpuVolumeThreshold === undefined) {
+    return;
+  }
+
+  return {
+    ...(cpuImageThreshold !== undefined ? { image: cpuImageThreshold } : {}),
+    ...(cpuVolumeThreshold !== undefined ? { volume: cpuVolumeThreshold } : {}),
+  };
+}
 
 function syncExampleUrl(): void {
   const nextUrl = new URL(window.location.href);
 
   nextUrl.searchParams.set('orientation', currentOrientation);
 
-  if (cpuVoxelThreshold === undefined) {
-    nextUrl.searchParams.delete('cpuVoxelThreshold');
+  if (cpuImageThreshold === undefined) {
+    nextUrl.searchParams.delete('cpuImageThreshold');
   } else {
-    nextUrl.searchParams.set('cpuVoxelThreshold', String(cpuVoxelThreshold));
+    nextUrl.searchParams.set('cpuImageThreshold', String(cpuImageThreshold));
+  }
+
+  if (cpuVolumeThreshold === undefined) {
+    nextUrl.searchParams.delete('cpuVolumeThreshold');
+  } else {
+    nextUrl.searchParams.set('cpuVolumeThreshold', String(cpuVolumeThreshold));
   }
 
   window.history.replaceState({}, '', nextUrl);
@@ -72,7 +90,7 @@ function syncExampleUrl(): void {
 
 setTitleAndDescription(
   'Planar Viewport Architecture POC',
-  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=axial|coronal|sagittal&cpuVoxelThreshold=100000'
+  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=axial|coronal|sagittal&cpuImageThreshold=100000&cpuVolumeThreshold=100000'
 );
 
 // ======== Set up page ======== //
@@ -92,7 +110,7 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Use the toolbar dropdown or URL query parameters to change orientation. You can also set cpuVoxelThreshold in the URL.';
+  'Use the toolbar dropdown or URL query parameters to change orientation. You can also set cpuImageThreshold and cpuVolumeThreshold in the URL.';
 
 content.append(instructions);
 // ============================= //
@@ -119,7 +137,7 @@ function addToolbar() {
 
       void viewport.setDataIds([dataId], {
         orientation: nextOrientation,
-        cpuVoxelThreshold,
+        cpuThresholds: getCpuThresholds(),
       });
     },
   });
@@ -154,7 +172,7 @@ async function run() {
   });
   await viewport.setDataIds([dataId], {
     orientation: currentOrientation,
-    cpuVoxelThreshold,
+    cpuThresholds: getCpuThresholds(),
   });
   viewport.setProperties({
     voiRange: ctVoiRange,

@@ -44,7 +44,10 @@ export interface PlanarRegisteredDataSet {
 
 export interface PlanarSetDataOptions {
   orientation?: PlanarOrientation;
-  cpuVoxelThreshold?: number;
+  cpuThresholds?: {
+    image?: number;
+    volume?: number;
+  };
   renderMode?: PlanarRequestedRenderMode;
 }
 
