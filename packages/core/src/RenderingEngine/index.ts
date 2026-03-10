@@ -19,6 +19,12 @@ import VideoViewportV2, {
   DefaultVideoDataProvider,
   HtmlVideoPath,
 } from './ViewportV2/Video';
+import PlanarViewportV2, {
+  CpuImageCanvasPath,
+  DefaultPlanarDataProvider,
+  VtkImageMapperPath,
+  VtkVolumeMapperPath,
+} from './ViewportV2/Planar';
 import WSIViewportV2, {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
@@ -35,6 +41,11 @@ const renderingEngineExportsV2 = {
   VideoViewportV2,
   HtmlVideoPath,
   DefaultVideoDataProvider,
+  PlanarViewportV2,
+  CpuImageCanvasPath,
+  VtkImageMapperPath,
+  VtkVolumeMapperPath,
+  DefaultPlanarDataProvider,
   WSIViewportV2,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,
@@ -58,6 +69,11 @@ export {
   VideoViewportV2,
   HtmlVideoPath,
   DefaultVideoDataProvider,
+  PlanarViewportV2,
+  CpuImageCanvasPath,
+  VtkImageMapperPath,
+  VtkVolumeMapperPath,
+  DefaultPlanarDataProvider,
   WSIViewportV2,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,

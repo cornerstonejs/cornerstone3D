@@ -362,6 +362,10 @@
         "name": "Video Architecture POC",
         "description": "Proof of concept video viewport using the V2 resolver and viewport architecture."
       },
+      "planarArchitecture": {
+        "name": "Planar Architecture POC",
+        "description": "Proof of concept planar viewport using the V2 resolver and viewport architecture with CPU 2D, VTK image mapper, and VTK volume mapper paths."
+      },
       "wsiArchitecture": {
         "name": "WSI Architecture POC",
         "description": "Proof of concept WSI viewport using the V2 resolver and viewport architecture."

@@ -54,6 +54,10 @@ export interface RenderingAdapter {
     props?: unknown
   ): void;
 
+  render?(ctx: ViewportBackendContext, rendering: MountedRendering): void;
+
+  resize?(ctx: ViewportBackendContext, rendering: MountedRendering): void;
+
   detach(ctx: ViewportBackendContext, rendering: MountedRendering): void;
 }
 

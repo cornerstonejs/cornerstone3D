@@ -49,6 +49,32 @@ export type {
   VideoViewportV2Input,
   VideoViewState,
 } from './Video';
+export { default as PlanarViewportV2 } from './Planar';
+export {
+  CpuImageCanvasPath,
+  CpuImageCanvasRenderingAdapter,
+  DefaultPlanarDataProvider,
+  VtkImageMapperPath,
+  VtkImageMapperRenderingAdapter,
+  VtkVolumeMapperPath,
+  VtkVolumeMapperRenderingAdapter,
+} from './Planar';
+export type {
+  PlanarCameraState,
+  PlanarCpuRendering,
+  PlanarDataProvider,
+  PlanarImageRendering,
+  PlanarPresentationProps,
+  PlanarRegisteredDataSet,
+  PlanarRenderMode,
+  PlanarRendering,
+  PlanarStackPayload,
+  PlanarStackSetOptions,
+  PlanarVolumeRendering,
+  PlanarViewportBackendContext,
+  PlanarViewportV2Input,
+  PlanarViewState,
+} from './Planar';
 export { default as WSIViewportV2 } from './WSI';
 export {
   DefaultWSIDataProvider,
