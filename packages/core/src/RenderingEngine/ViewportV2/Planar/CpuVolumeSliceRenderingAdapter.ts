@@ -2,7 +2,9 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { RENDERING_DEFAULTS } from '../../../constants';
+import Events from '../../../enums/Events';
 import { OrientationAxis } from '../../../enums';
+import eventTarget from '../../../eventTarget';
 import type { ICamera, Point3 } from '../../../types';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
@@ -26,7 +28,6 @@ import type {
 } from './PlanarViewportV2Types';
 import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
 import { getPlanarCameraVectors } from './planarCameraOrientation';
-import { subscribeToVolumeProgress } from './subscribeToVolumeProgress';
 
 export class CpuVolumeSliceRenderingAdapter
   implements RenderingAdapter<PlanarViewportRenderContext>
@@ -74,23 +75,22 @@ export class CpuVolumeSliceRenderingAdapter
         payload,
         currentImageIdIndex: payload.initialImageIdIndex,
         orientation: payload.acquisitionOrientation || OrientationAxis.AXIAL,
-        removeStreamingSubscriptions: subscribeToVolumeProgress(
-          payload.volumeId,
-          () => {
-            rendering.backendHandle.renderingInvalidated = true;
-            ctx.requestRender();
-          }
-        ),
         sliceCamera: getCameraState(ctx),
         renderingInvalidated: true,
+        removeStreamingSubscriptions: subscribeToVolumeLoadCompletion(
+          payload.volumeId,
+          () => {
+            rendering.backendHandle.pendingVolumeLoadCallback = false;
+            rendering.backendHandle.sampledSliceState = undefined;
+            rendering.backendHandle.renderingInvalidated = true;
+            this.render(ctx, rendering);
+          }
+        ),
       },
     };
 
-    payload.imageVolume.load(() => {
-      rendering.backendHandle.pendingVolumeLoadCallback = false;
-      rendering.backendHandle.renderingInvalidated = true;
-      this.render(ctx, rendering);
-    });
+    setSliceIndex(ctx, rendering, payload.initialImageIdIndex);
+    updateClippingPlanes(ctx, rendering);
 
     return rendering;
   }
@@ -169,16 +169,16 @@ export class CpuVolumeSliceRenderingAdapter
       backendHandle.imageVolume as { loadStatus?: { loaded?: boolean } }
     ).loadStatus;
 
-    if (!loadStatus?.loaded && !loadStatus?.loading) {
+    if (!loadStatus?.loaded) {
+      clearToBackground(ctx);
       if (!backendHandle.pendingVolumeLoadCallback) {
         backendHandle.pendingVolumeLoadCallback = true;
-        backendHandle.imageVolume.load(() => {
-          backendHandle.pendingVolumeLoadCallback = false;
-          backendHandle.renderingInvalidated = true;
-          this.render(ctx, planarRendering);
-        });
+        backendHandle.imageVolume.load();
       }
+      return;
     }
+
+    backendHandle.pendingVolumeLoadCallback = false;
 
     if (!ctx.canvas.width || !ctx.canvas.height) {
       return;
@@ -251,6 +251,33 @@ export class CpuVolumeSliceRenderingAdapter
     removeStreamingSubscriptions?.();
     ctx.renderer.removeVolume(actor);
   }
+}
+
+function subscribeToVolumeLoadCompletion(
+  volumeId: string,
+  onComplete: () => void
+): () => void {
+  const handleComplete = (evt: Event) => {
+    const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
+
+    if (detail?.volumeId !== volumeId) {
+      return;
+    }
+
+    onComplete();
+  };
+
+  eventTarget.addEventListener(
+    Events.IMAGE_VOLUME_LOADING_COMPLETED,
+    handleComplete
+  );
+
+  return () => {
+    eventTarget.removeEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      handleComplete
+    );
+  };
 }
 
 export class CpuVolumeSlicePath

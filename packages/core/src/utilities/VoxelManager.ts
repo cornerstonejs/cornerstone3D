@@ -1170,9 +1170,7 @@ export default class VoxelManager<T> {
       let maxValue = -Infinity;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { voxelManager: imageVoxelManager } = getPixelInfo(
-          (sliceIndex * sliceSize) / numberOfComponents
-        );
+        const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
 
         if (imageVoxelManager && SliceDataConstructor) {
           const sliceStart = sliceIndex * sliceSize;

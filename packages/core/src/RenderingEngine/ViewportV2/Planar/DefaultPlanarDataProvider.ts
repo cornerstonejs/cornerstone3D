@@ -67,6 +67,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       const imageVolume = await createAndCacheVolume(volumeId, {
         imageIds: dataSet.imageIds,
       });
+      imageVolume.load();
 
       return {
         id: dataId,
