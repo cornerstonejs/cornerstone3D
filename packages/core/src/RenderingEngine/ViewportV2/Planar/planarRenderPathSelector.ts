@@ -172,7 +172,11 @@ export function normalizePlanarOrientation(
   acquisitionOrientation?: PlanarCamera['orientation']
 ): PlanarCamera['orientation'] {
   if (!orientation || orientation === OrientationAxis.ACQUISITION) {
-    return acquisitionOrientation || OrientationAxis.AXIAL;
+    return OrientationAxis.ACQUISITION;
+  }
+
+  if (acquisitionOrientation && orientation === acquisitionOrientation) {
+    return OrientationAxis.ACQUISITION;
   }
 
   return orientation;

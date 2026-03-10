@@ -26,138 +26,6 @@ import type {
   PlanarProperties,
 } from './PlanarViewportV2Types';
 
-function getDefaultVOIRange(image: IImage): VOIRange | undefined {
-  const windowWidth = Array.isArray(image.windowWidth)
-    ? image.windowWidth[0]
-    : image.windowWidth;
-  const windowCenter = Array.isArray(image.windowCenter)
-    ? image.windowCenter[0]
-    : image.windowCenter;
-
-  if (typeof windowWidth !== 'number' || typeof windowCenter !== 'number') {
-    return;
-  }
-
-  return toLowHighRange(windowWidth, windowCenter, image.voiLUTFunction);
-}
-
-function applyPresentation(
-  rendering: PlanarCpuImageRendering,
-  props?: PlanarPresentationProps
-): void {
-  const { enabledElement, defaultVOIRange } = rendering.backendHandle;
-  const { viewport } = enabledElement;
-  const canvas = enabledElement.canvas as HTMLCanvasElement;
-  const voiRange = props?.voiRange ?? defaultVOIRange;
-
-  canvas.style.display = props?.visible === false ? 'none' : '';
-  canvas.style.opacity = String(props?.opacity ?? 1);
-
-  viewport.invert = props?.invert ?? false;
-
-  if (voiRange) {
-    const { windowCenter, windowWidth } = toWindowLevel(
-      voiRange.lower,
-      voiRange.upper
-    );
-
-    viewport.voi = {
-      windowCenter,
-      windowWidth,
-      voiLUTFunction: enabledElement.image?.voiLUTFunction,
-    };
-  }
-
-  rendering.backendHandle.renderingInvalidated = true;
-}
-
-function applyViewportPresentation(
-  rendering: PlanarCpuImageRendering,
-  presentation?: PlanarProperties
-): void {
-  const { enabledElement } = rendering.backendHandle;
-  const { viewport } = enabledElement;
-
-  if (presentation?.interpolationType !== undefined) {
-    viewport.pixelReplication =
-      presentation.interpolationType !== InterpolationType.LINEAR;
-  }
-}
-
-function applyCameraState(
-  rendering: PlanarCpuImageRendering,
-  camera?: PlanarCamera
-): void {
-  const { enabledElement, fitScale } = rendering.backendHandle;
-  const viewport = enabledElement.viewport;
-  const [panX, panY] = camera?.pan ?? [0, 0];
-  const zoom = Math.max(camera?.zoom ?? 1, 0.001);
-
-  viewport.scale = fitScale * zoom;
-  viewport.translation = {
-    x: panX,
-    y: panY,
-  };
-
-  enabledElement.transform = calculateTransform(enabledElement);
-}
-
-function renderCPUImage(rendering: PlanarCpuImageRendering): void {
-  const { enabledElement, renderingInvalidated } = rendering.backendHandle;
-
-  if (!enabledElement.image) {
-    return;
-  }
-
-  drawImageSync(enabledElement, renderingInvalidated);
-  rendering.backendHandle.renderingInvalidated = false;
-}
-
-async function updateRenderedImage(args: {
-  ctx: PlanarViewportRenderContext;
-  image: IImage;
-  imageIdIndex: number;
-  props?: PlanarPresentationProps;
-  viewportPresentation?: PlanarProperties;
-  rendering: PlanarCpuImageRendering;
-  camera?: PlanarCamera;
-}): Promise<void> {
-  const {
-    ctx,
-    image,
-    imageIdIndex,
-    props,
-    viewportPresentation,
-    rendering,
-    camera,
-  } = args;
-  const enabledElement = rendering.backendHandle.enabledElement;
-  const defaultViewport = getDefaultViewport(ctx.canvas, image);
-  const previousViewport = enabledElement.viewport;
-
-  enabledElement.image = image;
-  enabledElement.viewport = {
-    ...defaultViewport,
-    hflip: previousViewport?.hflip ?? defaultViewport.hflip,
-    invert: defaultViewport.invert,
-    pixelReplication:
-      previousViewport?.pixelReplication ?? defaultViewport.pixelReplication,
-    rotation: previousViewport?.rotation ?? defaultViewport.rotation,
-    translation: previousViewport?.translation ?? defaultViewport.translation,
-    vflip: previousViewport?.vflip ?? defaultViewport.vflip,
-  };
-
-  rendering.backendHandle.currentImageIdIndex = imageIdIndex;
-  rendering.backendHandle.defaultVOIRange = getDefaultVOIRange(image);
-  rendering.backendHandle.fitScale = defaultViewport.scale ?? 1;
-  rendering.backendHandle.renderingInvalidated = true;
-
-  applyPresentation(rendering, props);
-  applyViewportPresentation(rendering, viewportPresentation);
-  applyCameraState(rendering, camera);
-  ctx.requestRender();
-}
-
 export class CpuImageCanvasRenderingAdapter
   implements RenderingAdapter<PlanarViewportRenderContext>
 {
@@ -292,7 +160,7 @@ export class CpuImageCanvasPath
   implements RenderPathDefinition<PlanarViewportRenderContext>
 {
   readonly id = 'planar:cpu-image-canvas';
-  readonly viewportKind = 'planar' as const;
+  readonly type = 'planar' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return (
@@ -305,4 +173,136 @@ export class CpuImageCanvasPath
   createAdapter() {
     return new CpuImageCanvasRenderingAdapter();
   }
+}
+
+function getDefaultVOIRange(image: IImage): VOIRange | undefined {
+  const windowWidth = Array.isArray(image.windowWidth)
+    ? image.windowWidth[0]
+    : image.windowWidth;
+  const windowCenter = Array.isArray(image.windowCenter)
+    ? image.windowCenter[0]
+    : image.windowCenter;
+
+  if (typeof windowWidth !== 'number' || typeof windowCenter !== 'number') {
+    return;
+  }
+
+  return toLowHighRange(windowWidth, windowCenter, image.voiLUTFunction);
+}
+
+function applyPresentation(
+  rendering: PlanarCpuImageRendering,
+  props?: PlanarPresentationProps
+): void {
+  const { enabledElement, defaultVOIRange } = rendering.backendHandle;
+  const { viewport } = enabledElement;
+  const canvas = enabledElement.canvas as HTMLCanvasElement;
+  const voiRange = props?.voiRange ?? defaultVOIRange;
+
+  canvas.style.display = props?.visible === false ? 'none' : '';
+  canvas.style.opacity = String(props?.opacity ?? 1);
+
+  viewport.invert = props?.invert ?? false;
+
+  if (voiRange) {
+    const { windowCenter, windowWidth } = toWindowLevel(
+      voiRange.lower,
+      voiRange.upper
+    );
+
+    viewport.voi = {
+      windowCenter,
+      windowWidth,
+      voiLUTFunction: enabledElement.image?.voiLUTFunction,
+    };
+  }
+
+  rendering.backendHandle.renderingInvalidated = true;
+}
+
+function applyViewportPresentation(
+  rendering: PlanarCpuImageRendering,
+  presentation?: PlanarProperties
+): void {
+  const { enabledElement } = rendering.backendHandle;
+  const { viewport } = enabledElement;
+
+  if (presentation?.interpolationType !== undefined) {
+    viewport.pixelReplication =
+      presentation.interpolationType !== InterpolationType.LINEAR;
+  }
+}
+
+function applyCameraState(
+  rendering: PlanarCpuImageRendering,
+  camera?: PlanarCamera
+): void {
+  const { enabledElement, fitScale } = rendering.backendHandle;
+  const viewport = enabledElement.viewport;
+  const [panX, panY] = camera?.pan ?? [0, 0];
+  const zoom = Math.max(camera?.zoom ?? 1, 0.001);
+
+  viewport.scale = fitScale * zoom;
+  viewport.translation = {
+    x: panX,
+    y: panY,
+  };
+
+  enabledElement.transform = calculateTransform(enabledElement);
+}
+
+function renderCPUImage(rendering: PlanarCpuImageRendering): void {
+  const { enabledElement, renderingInvalidated } = rendering.backendHandle;
+
+  if (!enabledElement.image) {
+    return;
+  }
+
+  drawImageSync(enabledElement, renderingInvalidated);
+  rendering.backendHandle.renderingInvalidated = false;
+}
+
+async function updateRenderedImage(args: {
+  ctx: PlanarViewportRenderContext;
+  image: IImage;
+  imageIdIndex: number;
+  props?: PlanarPresentationProps;
+  viewportPresentation?: PlanarProperties;
+  rendering: PlanarCpuImageRendering;
+  camera?: PlanarCamera;
+}): Promise<void> {
+  const {
+    ctx,
+    image,
+    imageIdIndex,
+    props,
+    viewportPresentation,
+    rendering,
+    camera,
+  } = args;
+  const enabledElement = rendering.backendHandle.enabledElement;
+  const defaultViewport = getDefaultViewport(ctx.canvas, image);
+  const previousViewport = enabledElement.viewport;
+
+  enabledElement.image = image;
+  enabledElement.viewport = {
+    ...defaultViewport,
+    hflip: previousViewport?.hflip ?? defaultViewport.hflip,
+    invert: defaultViewport.invert,
+    pixelReplication:
+      previousViewport?.pixelReplication ?? defaultViewport.pixelReplication,
+    rotation: previousViewport?.rotation ?? defaultViewport.rotation,
+    translation: previousViewport?.translation ?? defaultViewport.translation,
+    vflip: previousViewport?.vflip ?? defaultViewport.vflip,
+  };
+
+  rendering.backendHandle.currentImageIdIndex = imageIdIndex;
+  rendering.backendHandle.defaultVOIRange = getDefaultVOIRange(image);
+  rendering.backendHandle.fitScale = defaultViewport.scale ?? 1;
+  rendering.backendHandle.renderingInvalidated = true;
+
+  applyPresentation(rendering, props);
+  applyViewportPresentation(rendering, viewportPresentation);
+  applyCameraState(rendering, camera);
+  ctx.requestRender();
 }

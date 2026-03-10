@@ -8,6 +8,7 @@ import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { DicomMicroscopyPath } from './DicomMicroscopyRenderingAdapter';
 import type {
   WSICamera,
+  WSIProperties,
   WSIViewportRenderContext,
   WSIViewportPresentation,
   WSIViewportV2Input,
@@ -41,7 +42,7 @@ class WSIViewportV2 extends ViewportV2<
       args.renderPathResolver || defaultRenderPathResolver;
     this.renderContext = {
       viewportId: this.id,
-      viewportKind: 'wsi',
+      type: 'wsi',
       element: this.element,
     };
     this.camera = {

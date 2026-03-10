@@ -250,7 +250,7 @@ class WSIViewport extends Viewport {
       .getViewport()
       .querySelectorAll('.ol-layers canvas');
     olCanvases.forEach((canvas) => {
-      canvas.style.filter = feFilter;
+      (canvas as HTMLCanvasElement).style.filter = feFilter;
     });
   }
 
@@ -368,13 +368,13 @@ class WSIViewport extends Viewport {
       const worldToCanvasRatio = this.element.clientHeight / parallelScale;
       const resolution = 1 / xSpacing / worldToCanvasRatio;
 
-      view.setResolution(resolution);
+      view.setResolution?.(resolution);
     }
 
     if (focalPoint) {
       const newCanvas = this.worldToCanvas(focalPoint);
       const newIndex = this.canvasToIndex(newCanvas);
-      view.setCenter(newIndex);
+      view.setCenter([newIndex[0], newIndex[1]]);
     }
     const updatedCamera = this.getCamera();
     this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);

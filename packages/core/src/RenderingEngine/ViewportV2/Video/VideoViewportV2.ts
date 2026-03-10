@@ -42,7 +42,7 @@ class VideoViewportV2 extends ViewportV2<
       args.renderPathResolver || defaultRenderPathResolver;
     this.renderContext = {
       viewportId: this.id,
-      viewportKind: 'video',
+      type: 'video',
       element: this.element,
     };
     this.camera = {
@@ -51,7 +51,7 @@ class VideoViewportV2 extends ViewportV2<
       rotation: 0,
       currentTimeSeconds: 0,
     };
-    this.viewportPresentation = {
+    this.properties = {
       playbackRate: 1,
       loop: true,
       muted: true,
@@ -144,7 +144,7 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   setPlaybackRate(playbackRate: number): void {
-    this.setViewportPresentation({ playbackRate });
+    this.setProperties({ playbackRate });
   }
 
   getFrameRate(): number {

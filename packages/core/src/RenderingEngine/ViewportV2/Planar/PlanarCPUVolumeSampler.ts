@@ -270,6 +270,7 @@ export default class PlanarCPUVolumeSampler {
     camera: ICamera;
     presentation?: PlanarPresentationProps;
     properties?: PlanarProperties;
+    zoom?: number;
   }): void {
     const {
       enabledElement,
@@ -277,11 +278,10 @@ export default class PlanarCPUVolumeSampler {
       camera,
       presentation,
       properties,
+      zoom,
     } = args;
-    const parallelScale = Math.max(camera.parallelScale ?? 1, EPSILON);
     const rowPixelSpacing = sampledSliceState.image.rowPixelSpacing || 1;
     const columnPixelSpacing = sampledSliceState.image.columnPixelSpacing || 1;
-    const clientHeight = Math.max(enabledElement.canvas.height, 1);
     const focalDelta = subtractPoints(
       camera.focalPoint as Point3,
       sampledSliceState.translationReferenceFocalPoint
@@ -298,9 +298,9 @@ export default class PlanarCPUVolumeSampler {
       y: dot(focalDelta, sampledSliceState.up) / rowPixelSpacing,
     };
     viewport.scale =
-      (clientHeight * Math.min(rowPixelSpacing, columnPixelSpacing) * 0.5) /
-      parallelScale;
-    viewport.parallelScale = parallelScale;
+      (getDefaultViewport(enabledElement.canvas, sampledSliceState.image)
+        .scale ?? 1) * Math.max(zoom ?? 1, 0.001);
+    viewport.parallelScale = camera.parallelScale;
     viewport.invert = presentation?.invert ?? false;
     viewport.pixelReplication =
       properties?.interpolationType === InterpolationType.NEAREST;

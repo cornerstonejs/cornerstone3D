@@ -111,7 +111,7 @@ class PlanarViewportV2 extends ViewportV2<
 
     this.renderContext = {
       viewportId: this.id,
-      viewportKind: 'planar',
+      type: 'planar',
       canvas: cpuCanvas,
       canvasContext: cpuCanvasContext,
       cpuCanvas,
@@ -137,7 +137,7 @@ class PlanarViewportV2 extends ViewportV2<
     };
     this.camera = {
       imageIdIndex: 0,
-      orientation: OrientationAxis.AXIAL,
+      orientation: OrientationAxis.ACQUISITION,
       zoom: 1,
       pan: [0, 0],
     };
@@ -145,27 +145,6 @@ class PlanarViewportV2 extends ViewportV2<
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.resize();
-  }
-
-  private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    );
-
-    if (Array.isArray(registered)) {
-      return {
-        imageIds: registered,
-      };
-    }
-
-    const candidate = registered as PlanarRegisteredDataSet | undefined;
-
-    if (!candidate?.imageIds) {
-      return;
-    }
-
-    return candidate;
   }
 
   async setDataIds(
@@ -367,6 +346,27 @@ class PlanarViewportV2 extends ViewportV2<
 
     return (firstBinding.rendering as PlanarRendering).backendHandle
       .payload as PlanarPayload;
+  }
+
+  private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    );
+
+    if (Array.isArray(registered)) {
+      return {
+        imageIds: registered,
+      };
+    }
+
+    const candidate = registered as PlanarRegisteredDataSet | undefined;
+
+    if (!candidate?.imageIds) {
+      return;
+    }
+
+    return candidate;
   }
 }
 

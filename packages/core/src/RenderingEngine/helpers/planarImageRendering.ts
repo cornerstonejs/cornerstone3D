@@ -31,7 +31,7 @@ export interface PlanarImageViewState {
 
 export function createEmptyVTKImageData(args: {
   dimensions: Point3;
-  direction: number[];
+  direction: number[] | ArrayLike<number>;
   numberOfComponents: number;
   origin: Point3;
   pixelArray: ArrayLike<number>;
@@ -45,11 +45,7 @@ export function createEmptyVTKImageData(args: {
     pixelArray,
     spacing,
   } = args;
-  const values = pixelArray.slice
-    ? pixelArray.slice(0)
-    : new (pixelArray.constructor as new (length: number) => ArrayLike<number>)(
-        pixelArray.length
-      );
+  const values = Array.from(pixelArray);
   const scalarArray = vtkDataArray.newInstance({
     name: 'Pixels',
     numberOfComponents,
@@ -59,7 +55,7 @@ export function createEmptyVTKImageData(args: {
 
   imageData.setDimensions(dimensions);
   imageData.setSpacing(spacing);
-  imageData.setDirection(direction);
+  imageData.setDirection(new Float32Array(Array.from(direction)));
   imageData.setOrigin(origin);
   imageData.getPointData().setScalars(scalarArray);
 
@@ -72,7 +68,7 @@ export function createVTKImageDataFromImage(image: IImage): vtkImageData {
   const pixelArray = image.voxelManager.getScalarData();
   const imageData = createEmptyVTKImageData({
     dimensions,
-    direction,
+    direction: Array.from(direction),
     numberOfComponents,
     origin,
     pixelArray,

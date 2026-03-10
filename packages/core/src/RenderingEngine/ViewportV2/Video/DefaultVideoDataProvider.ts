@@ -2,7 +2,6 @@ import type {
   DataProvider,
   LogicalDataObject,
 } from '../ViewportArchitectureTypes';
-import type { VideoStreamPayload } from './VideoViewportV2Types';
 import { loadVideoStreamMetadata } from '../../../utilities/VideoUtilities';
 import * as metaData from '../../../metaData';
 import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';

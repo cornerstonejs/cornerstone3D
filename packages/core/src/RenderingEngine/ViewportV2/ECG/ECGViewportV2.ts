@@ -42,7 +42,7 @@ class ECGViewportV2 extends ViewportV2<
       args.renderPathResolver || defaultRenderPathResolver;
     this.renderContext = {
       viewportId: this.id,
-      viewportKind: 'ecg',
+      type: 'ecg',
       element: this.element,
       canvas: this.canvas,
       canvasContext: this.canvasContext,

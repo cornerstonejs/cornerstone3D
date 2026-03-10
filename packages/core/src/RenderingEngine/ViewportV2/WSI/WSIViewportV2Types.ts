@@ -63,7 +63,7 @@ export interface WSIViewportV2Input {
 }
 
 export interface WSIViewportRenderContext extends BaseViewportRenderContext {
-  viewportKind: 'wsi';
+  type: 'wsi';
   element: HTMLDivElement;
 }
 

@@ -31,7 +31,7 @@ export interface MountedRendering<TBackendHandle = unknown> {
 
 export interface BaseViewportRenderContext {
   viewportId: ViewportId;
-  viewportKind: ViewportKind;
+  type: ViewportKind;
 }
 
 /** @deprecated Use BaseViewportRenderContext instead. */
@@ -75,7 +75,7 @@ export interface RenderPathDefinition<
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
 > {
   id: string;
-  viewportKind: ViewportKind;
+  type: ViewportKind;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean;
 
@@ -88,7 +88,7 @@ export interface RenderPathResolver {
   ): void;
 
   resolve<TContext extends BaseViewportRenderContext>(
-    viewportKind: ViewportKind,
+    type: ViewportKind,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): RenderingAdapter<TContext>;

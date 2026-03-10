@@ -73,6 +73,7 @@ export interface PlanarPresentationProps extends BasePresentationProps {
 export interface PlanarCamera {
   imageIdIndex?: number;
   orientation?:
+    | OrientationAxis.ACQUISITION
     | OrientationAxis.AXIAL
     | OrientationAxis.CORONAL
     | OrientationAxis.SAGITTAL;
@@ -88,6 +89,9 @@ export interface PlanarProperties {
 /** @deprecated Use PlanarCamera instead */
 export type PlanarViewState = PlanarCamera;
 
+/** @deprecated Use PlanarProperties instead */
+export type PlanarViewportPresentation = PlanarProperties;
+
 export interface PlanarDataProvider extends DataProvider {
   load(
     dataId: string,
@@ -101,7 +105,7 @@ export interface PlanarViewportV2Input extends ViewportInput {
 }
 
 export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
-  viewportKind: 'planar';
+  type: 'planar';
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;
@@ -177,6 +181,7 @@ export interface PlanarCpuVolumeRendering
       interpolationType: InterpolationType;
     };
     pendingVolumeLoadCallback?: boolean;
+    removeStreamingSubscriptions?: () => void;
   }> {
   role: 'image';
   renderMode: 'cpuVolume';
@@ -192,6 +197,7 @@ export interface PlanarVolumeMapperRendering
     defaultVOIRange?: VOIRange;
     orientation?: PlanarCamera['orientation'];
     sliceCamera: PlanarCameraState;
+    removeStreamingSubscriptions?: () => void;
   }> {
   role: 'image';
   renderMode: 'vtkVolume';

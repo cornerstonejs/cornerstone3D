@@ -1,7 +1,7 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../../../constants';
+import { RENDERING_DEFAULTS } from '../../../constants';
 import { OrientationAxis } from '../../../enums';
 import type { ICamera, Point3 } from '../../../types';
 import createVolumeActor from '../../helpers/createVolumeActor';
@@ -25,6 +25,252 @@ import type {
   PlanarViewportRenderContext,
 } from './PlanarViewportV2Types';
 import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
+import { getPlanarCameraVectors } from './planarCameraOrientation';
+import { subscribeToVolumeProgress } from './subscribeToVolumeProgress';
+
+export class CpuVolumeSliceRenderingAdapter
+  implements RenderingAdapter<PlanarViewportRenderContext>
+{
+  private readonly sampler = new PlanarCPUVolumeSampler();
+
+  async attach(
+    ctx: PlanarViewportRenderContext,
+    data: LogicalDataObject,
+    options: DataAttachmentOptions
+  ): Promise<PlanarCpuVolumeRendering> {
+    const payload = data.payload as PlanarPayload;
+
+    if (!payload.imageVolume) {
+      throw new Error(
+        '[PlanarViewportV2] CPU volume rendering requires a prepared image volume'
+      );
+    }
+
+    const actor = await createVolumeActor(
+      {
+        volumeId: payload.volumeId,
+      },
+      ctx.element,
+      ctx.viewportId,
+      true
+    );
+    const mapper = actor.getMapper() as vtkVolumeMapper;
+
+    ctx.renderer.addVolume(actor);
+    ctx.renderer.getActiveCamera().setParallelProjection(true);
+    ctx.renderer.resetCamera();
+    setCameraClippingRange(ctx);
+    ctx.setRenderMode('cpuVolume');
+
+    const rendering: PlanarCpuVolumeRendering = {
+      id: `rendering:${data.id}:${options.renderMode}`,
+      dataId: data.id,
+      role: 'image',
+      renderMode: 'cpuVolume',
+      backendHandle: {
+        actor,
+        mapper,
+        imageVolume: payload.imageVolume,
+        payload,
+        currentImageIdIndex: payload.initialImageIdIndex,
+        orientation: payload.acquisitionOrientation || OrientationAxis.AXIAL,
+        removeStreamingSubscriptions: subscribeToVolumeProgress(
+          payload.volumeId,
+          () => {
+            rendering.backendHandle.renderingInvalidated = true;
+            ctx.requestRender();
+          }
+        ),
+        sliceCamera: getCameraState(ctx),
+        renderingInvalidated: true,
+      },
+    };
+
+    payload.imageVolume.load(() => {
+      rendering.backendHandle.pendingVolumeLoadCallback = false;
+      rendering.backendHandle.renderingInvalidated = true;
+      this.render(ctx, rendering);
+    });
+
+    return rendering;
+  }
+
+  updatePresentation(
+    _ctx: PlanarViewportRenderContext,
+    rendering: MountedRendering,
+    props: unknown
+  ): void {
+    (rendering as PlanarCpuVolumeRendering).backendHandle.presentation =
+      props as PlanarCpuVolumeRendering['backendHandle']['presentation'];
+    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
+      true;
+  }
+
+  updateCamera(
+    ctx: PlanarViewportRenderContext,
+    rendering: MountedRendering,
+    camera: unknown
+  ): void {
+    const planarRendering = rendering as PlanarCpuVolumeRendering;
+    const planarCamera = camera as PlanarCamera | undefined;
+    const nextImageIdIndex =
+      planarCamera?.imageIdIndex ??
+      planarRendering.backendHandle.currentImageIdIndex;
+    const nextOrientation =
+      planarCamera?.orientation ?? planarRendering.backendHandle.orientation;
+
+    ctx.setRenderMode('cpuVolume');
+    planarRendering.backendHandle.currentCamera = planarCamera;
+
+    if (nextOrientation !== planarRendering.backendHandle.orientation) {
+      applyOrientation(ctx, planarRendering, nextOrientation);
+      planarRendering.backendHandle.renderingInvalidated = true;
+    }
+
+    if (
+      nextImageIdIndex !== planarRendering.backendHandle.currentImageIdIndex
+    ) {
+      setSliceIndex(ctx, planarRendering, nextImageIdIndex);
+      planarRendering.backendHandle.renderingInvalidated = true;
+    } else {
+      setCameraState(ctx, planarRendering.backendHandle.sliceCamera);
+    }
+
+    applyCameraToVtk(ctx, planarRendering, planarCamera);
+    updateClippingPlanes(ctx, planarRendering);
+  }
+
+  updateProperties(
+    _ctx: PlanarViewportRenderContext,
+    rendering: MountedRendering,
+    props: unknown
+  ): void {
+    (rendering as PlanarCpuVolumeRendering).backendHandle.properties =
+      props as PlanarCpuVolumeRendering['backendHandle']['properties'];
+    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
+      true;
+  }
+
+  render(ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
+    const planarRendering = rendering as PlanarCpuVolumeRendering;
+    const { backendHandle } = planarRendering;
+
+    ctx.setRenderMode('cpuVolume');
+
+    if (backendHandle.presentation?.visible === false) {
+      ctx.canvas.style.display = 'none';
+      return;
+    }
+
+    ctx.canvas.style.display = '';
+    ctx.canvas.style.opacity = String(backendHandle.presentation?.opacity ?? 1);
+
+    const loadStatus = (
+      backendHandle.imageVolume as { loadStatus?: { loaded?: boolean } }
+    ).loadStatus;
+
+    if (!loadStatus?.loaded && !loadStatus?.loading) {
+      if (!backendHandle.pendingVolumeLoadCallback) {
+        backendHandle.pendingVolumeLoadCallback = true;
+        backendHandle.imageVolume.load(() => {
+          backendHandle.pendingVolumeLoadCallback = false;
+          backendHandle.renderingInvalidated = true;
+          this.render(ctx, planarRendering);
+        });
+      }
+    }
+
+    if (!ctx.canvas.width || !ctx.canvas.height) {
+      return;
+    }
+
+    const camera = getViewportCamera(ctx);
+    const shouldResample =
+      backendHandle.renderingInvalidated ||
+      this.sampler.needsResample({
+        sampledSliceState: backendHandle.sampledSliceState,
+        width: ctx.canvas.width,
+        height: ctx.canvas.height,
+        camera,
+        properties: backendHandle.properties,
+      });
+
+    if (shouldResample) {
+      backendHandle.sampledSliceState = this.sampler.sampleSliceImage({
+        volume: backendHandle.imageVolume,
+        width: ctx.canvas.width,
+        height: ctx.canvas.height,
+        camera,
+        presentation: backendHandle.presentation,
+        properties: backendHandle.properties,
+      });
+      backendHandle.renderingInvalidated = true;
+    }
+
+    if (!backendHandle.sampledSliceState) {
+      clearToBackground(ctx);
+      return;
+    }
+
+    backendHandle.enabledElement = this.sampler.createOrUpdateEnabledElement({
+      enabledElement: backendHandle.enabledElement,
+      canvas: ctx.canvas,
+      image: backendHandle.sampledSliceState.image,
+      modality: backendHandle.imageVolume.metadata?.Modality,
+    });
+    this.sampler.updateCPUFallbackViewport({
+      enabledElement: backendHandle.enabledElement,
+      sampledSliceState: backendHandle.sampledSliceState,
+      camera,
+      presentation: backendHandle.presentation,
+      properties: backendHandle.properties,
+      zoom: backendHandle.currentCamera?.zoom,
+    });
+    backendHandle.defaultVOIRange = this.sampler.getResolvedVOIRange(
+      backendHandle.presentation?.voiRange,
+      backendHandle.sampledSliceState.image.minPixelValue ?? 0,
+      backendHandle.sampledSliceState.image.maxPixelValue ?? 1
+    );
+    drawImageSync(
+      backendHandle.enabledElement,
+      backendHandle.renderingInvalidated
+    );
+    backendHandle.renderingInvalidated = false;
+  }
+
+  resize(_ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
+    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
+      true;
+  }
+
+  detach(ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
+    const { actor, removeStreamingSubscriptions } = (
+      rendering as PlanarCpuVolumeRendering
+    ).backendHandle;
+
+    removeStreamingSubscriptions?.();
+    ctx.renderer.removeVolume(actor);
+  }
+}
+
+export class CpuVolumeSlicePath
+  implements RenderPathDefinition<PlanarViewportRenderContext>
+{
+  readonly id = 'planar:cpu-volume-slice';
+  readonly type = 'planar' as const;
+
+  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+    return (
+      data.kind === 'imageVolume' &&
+      options.role === 'image' &&
+      options.renderMode === 'cpuVolume'
+    );
+  }
+
+  createAdapter() {
+    return new CpuVolumeSliceRenderingAdapter();
+  }
+}
 
 function getCameraState(ctx: PlanarViewportRenderContext): PlanarCameraState {
   const camera = ctx.renderer.getActiveCamera();
@@ -138,7 +384,10 @@ function applyOrientation(
     return;
   }
 
-  const cameraValues = MPR_CAMERA_VALUES[orientation];
+  const cameraValues = getPlanarCameraVectors({
+    imageVolume: rendering.backendHandle.imageVolume,
+    orientation,
+  });
 
   if (!cameraValues) {
     return;
@@ -257,241 +506,4 @@ function clearToBackground(ctx: PlanarViewportRenderContext): void {
   ctx.canvasContext.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.canvasContext.fillStyle = '#000';
   ctx.canvasContext.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-}
-
-export class CpuVolumeSliceRenderingAdapter
-  implements RenderingAdapter<PlanarViewportRenderContext>
-{
-  private readonly sampler = new PlanarCPUVolumeSampler();
-
-  async attach(
-    ctx: PlanarViewportRenderContext,
-    data: LogicalDataObject,
-    options: DataAttachmentOptions
-  ): Promise<PlanarCpuVolumeRendering> {
-    const payload = data.payload as PlanarPayload;
-
-    if (!payload.imageVolume) {
-      throw new Error(
-        '[PlanarViewportV2] CPU volume rendering requires a prepared image volume'
-      );
-    }
-
-    const actor = await createVolumeActor(
-      {
-        volumeId: payload.volumeId,
-      },
-      ctx.element,
-      ctx.viewportId,
-      true
-    );
-    const mapper = actor.getMapper() as vtkVolumeMapper;
-
-    ctx.renderer.addVolume(actor);
-    ctx.renderer.getActiveCamera().setParallelProjection(true);
-    ctx.renderer.resetCamera();
-    setCameraClippingRange(ctx);
-    ctx.setRenderMode('cpuVolume');
-
-    const rendering: PlanarCpuVolumeRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
-      dataId: data.id,
-      role: 'image',
-      renderMode: 'cpuVolume',
-      backendHandle: {
-        actor,
-        mapper,
-        imageVolume: payload.imageVolume,
-        payload,
-        currentImageIdIndex: payload.initialImageIdIndex,
-        orientation: payload.acquisitionOrientation || OrientationAxis.AXIAL,
-        sliceCamera: getCameraState(ctx),
-        renderingInvalidated: true,
-      },
-    };
-
-    payload.imageVolume.load(() => {
-      rendering.backendHandle.pendingVolumeLoadCallback = false;
-      rendering.backendHandle.renderingInvalidated = true;
-      this.render(ctx, rendering);
-    });
-
-    return rendering;
-  }
-
-  updatePresentation(
-    _ctx: PlanarViewportRenderContext,
-    rendering: MountedRendering,
-    props: unknown
-  ): void {
-    (rendering as PlanarCpuVolumeRendering).backendHandle.presentation =
-      props as PlanarCpuVolumeRendering['backendHandle']['presentation'];
-    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
-      true;
-  }
-
-  updateCamera(
-    ctx: PlanarViewportRenderContext,
-    rendering: MountedRendering,
-    camera: unknown
-  ): void {
-    const planarRendering = rendering as PlanarCpuVolumeRendering;
-    const planarCamera = camera as PlanarCamera | undefined;
-    const nextImageIdIndex =
-      planarCamera?.imageIdIndex ??
-      planarRendering.backendHandle.currentImageIdIndex;
-    const nextOrientation =
-      planarCamera?.orientation ?? planarRendering.backendHandle.orientation;
-
-    ctx.setRenderMode('cpuVolume');
-    planarRendering.backendHandle.currentCamera = planarCamera;
-
-    if (nextOrientation !== planarRendering.backendHandle.orientation) {
-      applyOrientation(ctx, planarRendering, nextOrientation);
-      planarRendering.backendHandle.renderingInvalidated = true;
-    }
-
-    if (
-      nextImageIdIndex !== planarRendering.backendHandle.currentImageIdIndex
-    ) {
-      setSliceIndex(ctx, planarRendering, nextImageIdIndex);
-      planarRendering.backendHandle.renderingInvalidated = true;
-    } else {
-      setCameraState(ctx, planarRendering.backendHandle.sliceCamera);
-    }
-
-    applyCameraToVtk(ctx, planarRendering, planarCamera);
-    updateClippingPlanes(ctx, planarRendering);
-  }
-
-  updateProperties(
-    _ctx: PlanarViewportRenderContext,
-    rendering: MountedRendering,
-    props: unknown
-  ): void {
-    (rendering as PlanarCpuVolumeRendering).backendHandle.properties =
-      props as PlanarCpuVolumeRendering['backendHandle']['properties'];
-    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
-      true;
-  }
-
-  render(ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
-    const planarRendering = rendering as PlanarCpuVolumeRendering;
-    const { backendHandle } = planarRendering;
-
-    ctx.setRenderMode('cpuVolume');
-
-    if (backendHandle.presentation?.visible === false) {
-      ctx.canvas.style.display = 'none';
-      return;
-    }
-
-    ctx.canvas.style.display = '';
-    ctx.canvas.style.opacity = String(backendHandle.presentation?.opacity ?? 1);
-
-    const loadStatus = (
-      backendHandle.imageVolume as { loadStatus?: { loaded?: boolean } }
-    ).loadStatus;
-
-    if (!loadStatus?.loaded) {
-      clearToBackground(ctx);
-      if (!backendHandle.pendingVolumeLoadCallback) {
-        backendHandle.pendingVolumeLoadCallback = true;
-        backendHandle.imageVolume.load(() => {
-          backendHandle.pendingVolumeLoadCallback = false;
-          backendHandle.renderingInvalidated = true;
-          this.render(ctx, planarRendering);
-        });
-      }
-      return;
-    }
-
-    backendHandle.pendingVolumeLoadCallback = false;
-
-    if (!ctx.canvas.width || !ctx.canvas.height) {
-      return;
-    }
-
-    const camera = getViewportCamera(ctx);
-    const shouldResample =
-      backendHandle.renderingInvalidated ||
-      this.sampler.needsResample({
-        sampledSliceState: backendHandle.sampledSliceState,
-        width: ctx.canvas.width,
-        height: ctx.canvas.height,
-        camera,
-        properties: backendHandle.properties,
-      });
-
-    if (shouldResample) {
-      backendHandle.sampledSliceState = this.sampler.sampleSliceImage({
-        volume: backendHandle.imageVolume,
-        width: ctx.canvas.width,
-        height: ctx.canvas.height,
-        camera,
-        presentation: backendHandle.presentation,
-        properties: backendHandle.properties,
-      });
-      backendHandle.renderingInvalidated = true;
-    }
-
-    if (!backendHandle.sampledSliceState) {
-      clearToBackground(ctx);
-      return;
-    }
-
-    backendHandle.enabledElement = this.sampler.createOrUpdateEnabledElement({
-      enabledElement: backendHandle.enabledElement,
-      canvas: ctx.canvas,
-      image: backendHandle.sampledSliceState.image,
-      modality: backendHandle.imageVolume.metadata?.Modality,
-    });
-    this.sampler.updateCPUFallbackViewport({
-      enabledElement: backendHandle.enabledElement,
-      sampledSliceState: backendHandle.sampledSliceState,
-      camera,
-      presentation: backendHandle.presentation,
-      properties: backendHandle.properties,
-    });
-    backendHandle.defaultVOIRange = this.sampler.getResolvedVOIRange(
-      backendHandle.presentation?.voiRange,
-      backendHandle.sampledSliceState.image.minPixelValue ?? 0,
-      backendHandle.sampledSliceState.image.maxPixelValue ?? 1
-    );
-    drawImageSync(
-      backendHandle.enabledElement,
-      backendHandle.renderingInvalidated
-    );
-    backendHandle.renderingInvalidated = false;
-  }
-
-  resize(_ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
-    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
-      true;
-  }
-
-  detach(ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
-    ctx.renderer.removeVolume(
-      (rendering as PlanarCpuVolumeRendering).backendHandle.actor
-    );
-  }
-}
-
-export class CpuVolumeSlicePath
-  implements RenderPathDefinition<PlanarViewportRenderContext>
-{
-  readonly id = 'planar:cpu-volume-slice';
-  readonly viewportKind = 'planar' as const;
-
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'imageVolume' &&
-      options.role === 'image' &&
-      options.renderMode === 'cpuVolume'
-    );
-  }
-
-  createAdapter() {
-    return new CpuVolumeSliceRenderingAdapter();
-  }
 }

@@ -947,50 +947,95 @@ export default class VoxelManager<T> {
     id?: string;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
+    const depth = dimensions[2];
+    const sliceVoxelManagers = new Array<
+      IVoxelManager<number> | IVoxelManager<RGB> | null | undefined
+    >(depth);
+    let lastSliceIndex = -1;
+    let lastSliceVoxelManager:
+      | IVoxelManager<number>
+      | IVoxelManager<RGB>
+      | null = null;
+    const warnedMissingImageIds = new Set<number>();
+    const warnedMissingImages = new Set<string>();
 
-    function getPixelInfo(index) {
-      const sliceIndex = Math.floor(index / pixelsPerSlice);
-      if (sliceIndex < 0 || sliceIndex >= dimensions[2]) {
-        return {};
+    const resolveSliceVoxelManager = (
+      sliceIndex: number
+    ): IVoxelManager<number> | IVoxelManager<RGB> | null => {
+      if (sliceIndex < 0 || sliceIndex >= depth) {
+        return null;
       }
-      const imageId = imageIds[sliceIndex];
 
+      const cachedVoxelManager = sliceVoxelManagers[sliceIndex];
+      if (cachedVoxelManager !== undefined) {
+        return cachedVoxelManager;
+      }
+
+      const imageId = imageIds[sliceIndex];
       if (!imageId) {
-        console.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
-        return { pixelData: null, pixelIndex: null };
+        if (!warnedMissingImageIds.has(sliceIndex)) {
+          warnedMissingImageIds.add(sliceIndex);
+          console.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
+        }
+        sliceVoxelManagers[sliceIndex] = null;
+        return null;
       }
 
       const image = cache.getImage(imageId);
-
-      if (!image) {
-        console.warn(`Image not found for imageId: ${imageId}`);
-        return { pixelData: null, pixelIndex: null };
-      }
-
-      const voxelManager = image.voxelManager;
-      const pixelIndex = index % pixelsPerSlice;
-
-      return { voxelManager, pixelIndex };
-    }
-
-    function getVoxelValue(index) {
-      const { voxelManager: imageVoxelManager, pixelIndex } =
-        getPixelInfo(index);
-
-      if (!imageVoxelManager || pixelIndex === null) {
+      if (!image?.voxelManager) {
+        if (!warnedMissingImages.has(imageId)) {
+          warnedMissingImages.add(imageId);
+          console.warn(`Image not found for imageId: ${imageId}`);
+        }
         return null;
       }
+
+      const imageVoxelManager = image.voxelManager;
+      sliceVoxelManagers[sliceIndex] = imageVoxelManager;
+
+      return imageVoxelManager;
+    };
+
+    function getVoxelValue(index) {
+      const sliceIndex = Math.floor(index / pixelsPerSlice);
+      if (sliceIndex < 0 || sliceIndex >= depth) {
+        return null;
+      }
+      const imageVoxelManager =
+        sliceIndex === lastSliceIndex
+          ? lastSliceVoxelManager
+          : resolveSliceVoxelManager(sliceIndex);
+      if (!imageVoxelManager) {
+        return null;
+      }
+      if (sliceIndex !== lastSliceIndex) {
+        lastSliceIndex = sliceIndex;
+        lastSliceVoxelManager = imageVoxelManager;
+      }
+
+      const pixelIndex = index - sliceIndex * pixelsPerSlice;
 
       return imageVoxelManager.getAtIndex(pixelIndex) as number | RGB;
     }
 
     function setVoxelValue(index, v) {
-      const { voxelManager: imageVoxelManager, pixelIndex } =
-        getPixelInfo(index);
-
-      if (!imageVoxelManager || pixelIndex === null) {
+      const sliceIndex = Math.floor(index / pixelsPerSlice);
+      if (sliceIndex < 0 || sliceIndex >= depth) {
         return false;
       }
+      const imageVoxelManager =
+        sliceIndex === lastSliceIndex
+          ? lastSliceVoxelManager
+          : resolveSliceVoxelManager(sliceIndex);
+      if (!imageVoxelManager) {
+        return false;
+      }
+      if (sliceIndex !== lastSliceIndex) {
+        lastSliceIndex = sliceIndex;
+        lastSliceVoxelManager = imageVoxelManager;
+      }
+
+      const pixelIndex = index - sliceIndex * pixelsPerSlice;
 
       const currentValue = imageVoxelManager.getAtIndex(pixelIndex);
       const isChanged = !isEqual(v, currentValue);
@@ -1004,8 +1049,8 @@ export default class VoxelManager<T> {
     }
 
     const _getConstructor = () => {
-      const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(0);
-      if (!imageVoxelManager || pixelIndex === null) {
+      const imageVoxelManager = resolveSliceVoxelManager(0);
+      if (!imageVoxelManager) {
         return null;
       }
       return imageVoxelManager.getConstructor();
@@ -1066,8 +1111,8 @@ export default class VoxelManager<T> {
     };
 
     voxelManager._getScalarDataLength = () => {
-      const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(0);
-      if (!imageVoxelManager || pixelIndex === null) {
+      const imageVoxelManager = resolveSliceVoxelManager(0);
+      if (!imageVoxelManager) {
         return 0;
       }
       return imageVoxelManager.getScalarDataLength() * dimensions[2];
@@ -1094,11 +1139,9 @@ export default class VoxelManager<T> {
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
-        const { voxelManager: imageVoxelManager, pixelIndex } = getPixelInfo(
-          (sliceIndex * sliceSize) / numberOfComponents
-        );
+        const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
 
-        if (imageVoxelManager && pixelIndex !== null) {
+        if (imageVoxelManager) {
           const sliceStart = sliceIndex * sliceSize;
           const pixelData = imageVoxelManager.getScalarData();
 

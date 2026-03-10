@@ -130,7 +130,7 @@ export class HtmlVideoPath
   implements RenderPathDefinition<VideoElementRenderContext>
 {
   readonly id = 'video:html-element';
-  readonly viewportKind = 'video' as const;
+  readonly type = 'video' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return (

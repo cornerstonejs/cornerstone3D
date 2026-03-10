@@ -631,7 +631,7 @@ abstract class BaseRenderingEngine {
     const viewport = new ViewportType(viewportInput);
 
     // 5. Storing the viewports
-    this._viewports.set(viewportId, viewport);
+    this._viewports.set(viewportId, viewport as unknown as IViewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,

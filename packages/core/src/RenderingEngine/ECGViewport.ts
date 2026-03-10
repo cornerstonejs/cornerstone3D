@@ -121,7 +121,7 @@ class ECGViewport extends Viewport {
       channels: this.channels,
       multiplexGroupLabel: waveform.multiplexGroupLabel,
     };
-    this.calibration = calibration;
+    this.calibration = calibration as typeof this.calibration;
 
     // Calculate ECG width from sample count and frequency
     this.ecgWidth = Math.ceil(

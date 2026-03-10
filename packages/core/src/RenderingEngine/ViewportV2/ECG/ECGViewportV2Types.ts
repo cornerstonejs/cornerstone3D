@@ -44,6 +44,9 @@ export interface ECGProperties {
 /** @deprecated Use ECGCamera instead */
 export type ECGViewState = ECGCamera;
 
+/** @deprecated Use ECGProperties instead */
+export type ECGViewportPresentation = ECGProperties;
+
 export interface ECGViewportV2Input {
   id: string;
   element: HTMLDivElement;
@@ -68,7 +71,7 @@ export interface RenderWindowMetrics {
 }
 
 export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
-  viewportKind: 'ecg';
+  type: 'ecg';
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;

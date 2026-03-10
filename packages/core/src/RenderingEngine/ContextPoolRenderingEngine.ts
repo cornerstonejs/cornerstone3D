@@ -19,7 +19,11 @@ import type {
   IViewport,
 } from '../types/IViewport';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import type { VtkOffscreenMultiRenderWindow } from '../types';
+import type {
+  IStackViewport,
+  IVolumeViewport,
+  VtkOffscreenMultiRenderWindow,
+} from '../types';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
 /**
@@ -138,7 +142,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const viewport = new ViewportClass(viewportInput);
 
-    this._viewports.set(viewportId, viewport);
+    this._viewports.set(viewportId, viewport as unknown as IViewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
@@ -219,7 +223,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       ) {
         continue;
       }
-      viewportsNeedingResize.push(vp);
+      viewportsNeedingResize.push(vp as IStackViewport | IVolumeViewport);
     }
 
     if (viewportsNeedingResize.length === 0) {
@@ -244,7 +248,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
 
     if (vtkDrivenViewports.length) {
-      this._resize(vtkDrivenViewports);
+      this._resize(vtkDrivenViewports as (IStackViewport | IVolumeViewport)[]);
     }
 
     vtkDrivenViewports.forEach((vp) => {

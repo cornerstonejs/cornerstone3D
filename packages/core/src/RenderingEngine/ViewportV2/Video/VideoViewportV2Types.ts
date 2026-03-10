@@ -36,6 +36,9 @@ export interface VideoProperties {
 /** @deprecated Use VideoCamera instead */
 export type VideoViewState = VideoCamera;
 
+/** @deprecated Use VideoProperties instead */
+export type VideoViewportPresentation = VideoProperties;
+
 export interface VideoViewportV2Input {
   id: string;
   element: HTMLDivElement;
@@ -44,7 +47,7 @@ export interface VideoViewportV2Input {
 }
 
 export interface VideoElementRenderContext extends BaseViewportRenderContext {
-  viewportKind: 'video';
+  type: 'video';
   element: HTMLDivElement;
 }
 

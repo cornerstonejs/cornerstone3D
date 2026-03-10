@@ -10,7 +10,7 @@ import PlanarViewportV2 from '../ViewportV2/Planar/PlanarViewportV2';
 import type { ViewportInput, IViewport } from '../../types/IViewport';
 
 interface ViewportConstructor {
-  new (viewportInput: ViewportInput): IViewport;
+  new (viewportInput: ViewportInput): IViewport | PlanarViewportV2;
 }
 
 const viewportTypeToViewportClass: {

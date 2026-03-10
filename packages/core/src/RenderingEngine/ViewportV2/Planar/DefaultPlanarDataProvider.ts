@@ -1,5 +1,5 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
-import { createAndCacheVolumeFromImages } from '../../../loaders/volumeLoader';
+import { createAndCacheVolume } from '../../../loaders/volumeLoader';
 import * as metaData from '../../../metaData';
 import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import type { LogicalDataObject } from '../ViewportArchitectureTypes';
@@ -63,10 +63,10 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       options.renderMode === 'vtkVolume' ||
       options.renderMode === 'cpuVolume'
     ) {
-      const imageVolume = await createAndCacheVolumeFromImages(
-        options.volumeId,
-        dataSet.imageIds
-      );
+      const volumeId = getStreamingVolumeId(options.volumeId);
+      const imageVolume = await createAndCacheVolume(volumeId, {
+        imageIds: dataSet.imageIds,
+      });
 
       return {
         id: dataId,
@@ -76,7 +76,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
           imageIds: imageVolume.imageIds || dataSet.imageIds,
           initialImageIdIndex: clampedImageIdIndex,
           acquisitionOrientation: options.acquisitionOrientation,
-          volumeId: options.volumeId,
+          volumeId,
         },
         payload: {
           imageIds: imageVolume.imageIds || dataSet.imageIds,
@@ -84,7 +84,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
           acquisitionOrientation: options.acquisitionOrientation,
           imageVolume,
           renderMode: options.renderMode,
-          volumeId: options.volumeId,
+          volumeId,
         },
       };
     }
@@ -115,3 +115,17 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     };
   }
 }
+
+function getStreamingVolumeId(volumeId: string): string {
+  if (volumeId.startsWith(`${STREAMING_VOLUME_LOADER_SCHEME}:`)) {
+    return volumeId;
+  }
+
+  if (volumeId.includes(':')) {
+    return volumeId;
+  }
+
+  return `${STREAMING_VOLUME_LOADER_SCHEME}:${volumeId}`;
+}
+
+const STREAMING_VOLUME_LOADER_SCHEME = 'cornerstoneStreamingImageVolume';

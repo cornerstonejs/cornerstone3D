@@ -26,6 +26,94 @@ import type {
   RenderWindowMetrics,
 } from './ECGViewportV2Types';
 
+export class CanvasECGRenderingAdapter
+  implements RenderingAdapter<ECGCanvasRenderContext>
+{
+  async attach(
+    ctx: ECGCanvasRenderContext,
+    data: LogicalDataObject,
+    options: DataAttachmentOptions
+  ): Promise<ECGCanvasRendering> {
+    return {
+      id: `rendering:${data.id}:${options.renderMode}`,
+      dataId: data.id,
+      role: 'signal',
+      renderMode: 'signal2d',
+      backendHandle: {
+        canvas: ctx.canvas,
+        canvasContext: ctx.canvasContext,
+        waveform: data.payload as ECGWaveformPayload,
+        metrics: {
+          ecgWidth: 1,
+          ecgHeight: 1,
+          channelScale: 1,
+          worldToCanvasRatio: 1,
+          xOffsetCanvas: 0,
+          yOffsetCanvas: 0,
+        },
+      },
+    };
+  }
+
+  updatePresentation(
+    _ctx: ECGCanvasRenderContext,
+    rendering: MountedRendering,
+    props: unknown
+  ): void {
+    const ecgRendering = rendering as ECGCanvasRendering;
+    ecgRendering.backendHandle.currentPresentation = props as
+      | ECGPresentationProps
+      | undefined;
+  }
+
+  updateCamera(
+    _ctx: ECGCanvasRenderContext,
+    rendering: MountedRendering,
+    camera: unknown
+  ): void {
+    const ecgRendering = rendering as ECGCanvasRendering;
+    ecgRendering.backendHandle.currentCamera = camera as ECGCamera;
+  }
+
+  updateProperties(
+    _ctx: ECGCanvasRenderContext,
+    rendering: MountedRendering,
+    presentation: unknown
+  ): void {
+    const ecgRendering = rendering as ECGCanvasRendering;
+    ecgRendering.backendHandle.currentProperties = presentation as
+      | ECGProperties
+      | undefined;
+  }
+
+  render(ctx: ECGCanvasRenderContext, rendering: MountedRendering): void {
+    drawFrame(ctx, rendering as ECGCanvasRendering);
+  }
+
+  detach(_ctx: ECGCanvasRenderContext, _rendering: MountedRendering): void {
+    // Canvas lifecycle is owned by the viewport element.
+  }
+}
+
+export class CanvasECGPath
+  implements RenderPathDefinition<ECGCanvasRenderContext>
+{
+  readonly id = 'ecg:canvas-signal';
+  readonly type = 'ecg' as const;
+
+  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+    return (
+      data.kind === 'signal' &&
+      options.role === 'signal' &&
+      options.renderMode === 'signal2d'
+    );
+  }
+
+  createAdapter() {
+    return new CanvasECGRenderingAdapter();
+  }
+}
+
 function computeTimeWindow(
   waveform: ECGWaveformPayload,
   camera: ECGCamera
@@ -150,92 +238,4 @@ function drawFrame(
     viewportId: ecgCtx.viewportId,
     rendering: ecgRendering,
   });
-}
-
-export class CanvasECGRenderingAdapter
-  implements RenderingAdapter<ECGCanvasRenderContext>
-{
-  async attach(
-    ctx: ECGCanvasRenderContext,
-    data: LogicalDataObject,
-    options: DataAttachmentOptions
-  ): Promise<ECGCanvasRendering> {
-    return {
-      id: `rendering:${data.id}:${options.renderMode}`,
-      dataId: data.id,
-      role: 'signal',
-      renderMode: 'signal2d',
-      backendHandle: {
-        canvas: ctx.canvas,
-        canvasContext: ctx.canvasContext,
-        waveform: data.payload as ECGWaveformPayload,
-        metrics: {
-          ecgWidth: 1,
-          ecgHeight: 1,
-          channelScale: 1,
-          worldToCanvasRatio: 1,
-          xOffsetCanvas: 0,
-          yOffsetCanvas: 0,
-        },
-      },
-    };
-  }
-
-  updatePresentation(
-    _ctx: ECGCanvasRenderContext,
-    rendering: MountedRendering,
-    props: unknown
-  ): void {
-    const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.backendHandle.currentPresentation = props as
-      | ECGPresentationProps
-      | undefined;
-  }
-
-  updateCamera(
-    _ctx: ECGCanvasRenderContext,
-    rendering: MountedRendering,
-    camera: unknown
-  ): void {
-    const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.backendHandle.currentCamera = camera as ECGCamera;
-  }
-
-  updateProperties(
-    _ctx: ECGCanvasRenderContext,
-    rendering: MountedRendering,
-    presentation: unknown
-  ): void {
-    const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.backendHandle.currentProperties = presentation as
-      | ECGProperties
-      | undefined;
-  }
-
-  render(ctx: ECGCanvasRenderContext, rendering: MountedRendering): void {
-    drawFrame(ctx, rendering as ECGCanvasRendering);
-  }
-
-  detach(_ctx: ECGCanvasRenderContext, _rendering: MountedRendering): void {
-    // Canvas lifecycle is owned by the viewport element.
-  }
-}
-
-export class CanvasECGPath
-  implements RenderPathDefinition<ECGCanvasRenderContext>
-{
-  readonly id = 'ecg:canvas-signal';
-  readonly viewportKind = 'ecg' as const;
-
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'signal' &&
-      options.role === 'signal' &&
-      options.renderMode === 'signal2d'
-    );
-  }
-
-  createAdapter() {
-    return new CanvasECGRenderingAdapter();
-  }
 }

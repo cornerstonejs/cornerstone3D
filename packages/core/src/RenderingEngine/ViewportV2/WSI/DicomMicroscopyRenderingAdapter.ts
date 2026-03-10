@@ -149,7 +149,7 @@ export class DicomMicroscopyPath
   implements RenderPathDefinition<WSIViewportRenderContext>
 {
   readonly id = 'wsi:dicom-microscopy-viewer';
-  readonly viewportKind = 'wsi' as const;
+  readonly type = 'wsi' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return (

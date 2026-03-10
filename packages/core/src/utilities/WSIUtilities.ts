@@ -48,6 +48,7 @@ export interface WSIMapViewLike {
   getRotation(): number;
   getZoom(): number;
   setCenter(center: [number, number]): void;
+  setResolution?(resolution: number): void;
   setRotation(rotation: number): void;
   setZoom(zoom: number): void;
 }

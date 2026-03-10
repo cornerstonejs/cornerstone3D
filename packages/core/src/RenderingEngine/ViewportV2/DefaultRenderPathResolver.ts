@@ -26,19 +26,17 @@ export class DefaultRenderPathResolver implements RenderPathResolver {
   }
 
   resolve<TContext extends BaseViewportRenderContext>(
-    viewportKind: ViewportKind,
+    type: ViewportKind,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): RenderingAdapter<TContext> {
     const path = this.paths.find(
-      (candidate) =>
-        candidate.viewportKind === viewportKind &&
-        candidate.matches(data, options)
+      (candidate) => candidate.type === type && candidate.matches(data, options)
     );
 
     if (!path) {
       throw new Error(
-        `No render path for ${viewportKind}/${data.kind}/${options.role}/${options.renderMode}`
+        `No render path for ${type}/${data.kind}/${options.role}/${options.renderMode}`
       );
     }
 
