@@ -1,16 +1,13 @@
-import dcmjs from 'dcmjs';
 import { NaturalTagListener } from '../src/utilities/dicomStream/NaturalTagListener';
 import { tags } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2.wado-rs-tags';
 
 import { describe, it } from '@jest/globals';
 import { MetaDataIterator } from '../src/utilities/dicomStream';
 
-const { DicomMetadataListener } = dcmjs.utilities;
-
 describe('MetaDataIterator', () => {
   it('creates natural CTImage_BigEndianExplicit from metadata', () => {
     const data = new MetaDataIterator(tags);
-    const listener = new DicomMetadataListener({}, new NaturalTagListener());
+    const listener = NaturalTagListener.createMetadataListener();
     listener.startObject();
     data.syncIterator(listener);
     const instance = listener.pop();

@@ -1,10 +1,7 @@
-import dcmjs from 'dcmjs';
 import { NaturalTagListener } from '../src/utilities/dicomStream/NaturalTagListener';
 import { Tags } from '../src/utilities/Tags';
 
 import { describe, beforeEach, it } from '@jest/globals';
-
-const { DicomMetadataListener } = dcmjs.utilities;
 
 const abList = ['a', 'b'];
 describe('NaturalTagListener', () => {
@@ -12,7 +9,7 @@ describe('NaturalTagListener', () => {
 
   describe('as DicomMetadataListener filter', () => {
     beforeEach(() => {
-      listener = new DicomMetadataListener({}, new NaturalTagListener());
+      listener = NaturalTagListener.createMetadataListener();
     });
 
     it('accepts simple values', () => {

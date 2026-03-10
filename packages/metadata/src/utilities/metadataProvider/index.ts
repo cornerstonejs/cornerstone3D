@@ -10,6 +10,6 @@ export * from './uriModule';
 export * from './pixelDataUpdate';
 export * from './transferSyntaxProvider';
 export * from './addPart10Instance';
-export * from './compressedFrameData';
+export type { CompressedFrameDataMetadata } from '../../types';
 export * from './ecgModule';
 export * from './ecgFromInstance';

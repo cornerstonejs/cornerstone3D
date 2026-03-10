@@ -1,6 +1,8 @@
 // This module defines a way to access various metadata about an imageId.  This layer of abstraction exists
 // So metadata can be provided in different ways (e.g. by parsing DICOM P10 or by a WADO-RS document)
 
+import type { MetadataModuleType } from './types';
+
 const providers = [];
 
 const typedProviderValueMap = new Map<string, TypedProviderValue[]>();
@@ -185,6 +187,30 @@ export function getMetaData(type: string, query: string, options?): any {
       return result;
     }
   }
+}
+
+/**
+ * Gets metadata with the return type inferred from the module type.
+ * Pass a name from MetadataModules (e.g. MetadataModules.COMPRESSED_FRAME_DATA) or the constant
+ * string (e.g. 'compressedFrameData'); T is inferred from MetadataModuleType.
+ * For module types not in that map, the return type is undefined (never in union).
+ *
+ * @param type - The metadata module type (MetadataModules constant or literal string)
+ * @param query - The query (e.g. imageId)
+ * @param options - Optional options (e.g. { frameIndex })
+ * @returns The result, typed per module, or undefined
+ * @category MetaData
+ */
+export function getTyped<K extends keyof MetadataModuleType | string>(
+  type: K,
+  query: string,
+  options?: unknown
+):
+  | (K extends keyof MetadataModuleType ? MetadataModuleType[K] : never)
+  | undefined {
+  return getMetaData(type as string, query, options) as
+    | (K extends keyof MetadataModuleType ? MetadataModuleType[K] : never)
+    | undefined;
 }
 
 /**

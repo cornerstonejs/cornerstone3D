@@ -1,8 +1,7 @@
 import type { ByteArray, DataSet } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
 import { Enums, metaData } from '@cornerstonejs/core';
-import { Enums as MetadataEnums } from '@cornerstonejs/metadata';
-import { addPart10Instance } from '@cornerstonejs/metadata/utilities/metadataProvider';
+import { Enums as MetadataEnums, utilities } from '@cornerstonejs/metadata';
 import createImage from '../createImage';
 import { xhrRequest } from '../internal/index';
 import dataSetCacheManager from './dataSetCacheManager';
@@ -14,9 +13,10 @@ import type {
 import getPixelData from './getPixelData';
 import loadFileRequest from './loadFileRequest';
 import parseImageId from './parseImageId';
-import { getCompressedFrameData } from '@cornerstonejs/metadata/utilities/metadataProvider';
 
 const { ImageQualityStatus } = Enums;
+
+const { addPart10Instance } = utilities;
 
 // add a decache callback function to clear out our dataSetCacheManager
 function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
@@ -173,7 +173,7 @@ function getLoaderForScheme(scheme: string): LoadRequestFunction {
 }
 
 /**
- * Resolves pixel data for a frame from compressedFrameData result.
+ * Resolves pixel data for a frame from getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, { frameIndex }).
  * pixelData may be a single ByteArray or an array of per-frame data.
  */
 function pixelDataForFrame(
@@ -199,7 +199,7 @@ function pixelDataForFrame(
 
 /**
  * Loads an image from the NATURAL path: ensures NATURAL is populated (fetch +
- * addPart10Instance when needed), gets frame pixel data via compressedFrameData,
+ * addPart10Instance when needed), gets frame pixel data via getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, { frameIndex }),
  * then creates IImage. Does not use dataSetCacheManager.
  */
 function loadImageFromNatural(
@@ -230,10 +230,17 @@ function loadImageFromNatural(
         | { arrayBuffer: ArrayBuffer };
       const arrayBuffer =
         result instanceof ArrayBuffer ? result : result.arrayBuffer;
+      console.warn('result=', result, natural);
       await addPart10Instance(imageId, arrayBuffer);
+      natural = metaData.get(NATURAL, imageId);
+      console.warn('natural=', natural);
     }
 
-    const frameData = getCompressedFrameData(imageId, frameIndex);
+    const frameData = metaData.getTyped(
+      MetadataEnums.MetadataModules.COMPRESSED_FRAME_DATA,
+      imageId,
+      { frameIndex }
+    );
     if (!frameData) {
       throw new Error(
         `loadImageFromNatural: no pixel data in NATURAL for imageId ${imageId}`
@@ -258,12 +265,13 @@ function loadImageFromNatural(
   return { promise };
 }
 
-/** Legacy loader: same implementation as loadImageFromNatural. */
-const loadImage = loadImageFromNatural;
+/** Legacy loader: same implementation as loadImageFromDataSet. */
+const loadImage = loadImageFromDataSet;
 
 export {
   loadImageFromPromise,
   getLoaderForScheme,
   loadImage,
   loadImageFromNatural,
+  loadImageFromDataSet,
 };

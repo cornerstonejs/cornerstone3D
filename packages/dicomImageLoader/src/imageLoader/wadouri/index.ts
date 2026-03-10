@@ -20,11 +20,6 @@ import {
   loadImageFromNatural,
 } from './loadImage';
 import parseImageId from './parseImageId';
-import {
-  getCompressedFrameData,
-  compressedFrameData,
-  type CompressedFrameDataValue,
-} from '@cornerstonejs/metadata/utilities/metadataProvider';
 import unpackBinaryFrame from './unpackBinaryFrame';
 import register from './register';
 
@@ -52,8 +47,6 @@ export default {
   parseImageId,
   unpackBinaryFrame,
   register,
-  getCompressedFrameData,
-  compressedFrameData,
 };
 
 export {
@@ -71,7 +64,4 @@ export {
   parseImageId,
   unpackBinaryFrame,
   register,
-  getCompressedFrameData,
-  compressedFrameData,
-  type CompressedFrameDataValue,
 };

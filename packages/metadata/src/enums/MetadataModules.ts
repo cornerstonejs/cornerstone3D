@@ -178,6 +178,12 @@ enum MetadataModules {
   SR_ANNOTATION = 'metaSrAnnotation',
 
   /**
+   * Compressed frame data: transferSyntaxUid, frameOfInterest, frameNumber,
+   * and pixelData (from NATURAL when available). Use getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, { frameIndex }).
+   */
+  COMPRESSED_FRAME_DATA = 'compressedFrameData',
+
+  /**
    * The natural metadata is the naturalized instance data without any frame
    * references/per-frame data added.
    *
