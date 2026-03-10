@@ -1,10 +1,7 @@
 import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
 import { registerDefaultProvider } from '@cornerstonejs/metadata';
 
-import {
-  loadImage as loadImageLegacy,
-  loadImageFromNatural,
-} from './loadImage';
+import { loadImageFromDataSet, loadImageFromNatural } from './loadImage';
 import { metaDataProvider } from './metaData/index';
 
 /**
@@ -29,15 +26,15 @@ export default function (options?: {
     // loader, but the metadata provider is registered separately.
     registerImageLoader(
       'dicomweb',
-      loadImageLegacy as unknown as Types.ImageLoaderFn
+      loadImageFromDataSet as unknown as Types.ImageLoaderFn
     );
     registerImageLoader(
       'wadouri',
-      loadImageLegacy as unknown as Types.ImageLoaderFn
+      loadImageFromDataSet as unknown as Types.ImageLoaderFn
     );
     registerImageLoader(
       'dicomfile',
-      loadImageLegacy as unknown as Types.ImageLoaderFn
+      loadImageFromDataSet as unknown as Types.ImageLoaderFn
     );
     metaData.addProvider(metaDataProvider);
     return;
