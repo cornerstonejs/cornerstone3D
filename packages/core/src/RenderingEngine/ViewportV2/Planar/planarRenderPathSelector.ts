@@ -7,6 +7,7 @@ import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import type {
   PlanarCamera,
+  PlanarEffectiveRenderMode,
   PlanarOrientation,
   PlanarRenderMode,
   PlanarRegisteredDataSet,
@@ -17,7 +18,7 @@ export const DEFAULT_PLANAR_CPU_VOXEL_THRESHOLD = 64 * 1024 * 1024;
 
 export interface SelectedPlanarRenderPath {
   acquisitionOrientation?: PlanarCamera['orientation'];
-  renderMode: PlanarRenderMode;
+  renderMode: PlanarEffectiveRenderMode;
   volumeId: string;
 }
 
@@ -113,6 +114,35 @@ export function selectPlanarRenderPath(
     orientation === OrientationAxis.ACQUISITION ||
     (acquisitionOrientation !== undefined &&
       orientation === acquisitionOrientation);
+  const requestedRenderMode = options.renderMode ?? 'auto';
+
+  if (requestedRenderMode !== 'auto') {
+    if (requestedRenderMode === 'cpu2d' || requestedRenderMode === 'vtkImage') {
+      if (!isAcquisitionPath) {
+        throw new Error(
+          '[PlanarViewportV2] cpu2d and vtkImage render modes require the acquisition plane'
+        );
+      }
+
+      return {
+        acquisitionOrientation,
+        renderMode: requestedRenderMode,
+        volumeId,
+      };
+    }
+
+    if (!isValidVolume(dataSet.imageIds)) {
+      throw new Error(
+        '[PlanarViewportV2] Volume rendering requires a valid volume dataset'
+      );
+    }
+
+    return {
+      acquisitionOrientation,
+      renderMode: requestedRenderMode,
+      volumeId,
+    };
+  }
 
   if (!isAcquisitionPath) {
     if (!isValidVolume(dataSet.imageIds)) {

@@ -4,6 +4,10 @@ export {
   CpuImageCanvasRenderingAdapter,
 } from './CpuImageCanvasRenderingAdapter';
 export {
+  CpuVolumeSlicePath,
+  CpuVolumeSliceRenderingAdapter,
+} from './CpuVolumeSliceRenderingAdapter';
+export {
   VtkImageMapperPath,
   VtkImageMapperRenderingAdapter,
 } from './VtkImageMapperRenderingAdapter';
@@ -16,12 +20,15 @@ export type {
   PlanarCamera,
   PlanarCameraState,
   PlanarCpuImageRendering,
+  PlanarCpuVolumeRendering,
   PlanarDataProvider,
   PlanarImageMapperRendering,
   PlanarDataLoadOptions,
+  PlanarEffectiveRenderMode,
   PlanarOrientation,
   PlanarPayload,
   PlanarPresentationProps,
+  PlanarRequestedRenderMode,
   PlanarRegisteredDataSet,
   PlanarRenderMode,
   PlanarRendering,

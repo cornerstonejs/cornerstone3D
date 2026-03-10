@@ -23,6 +23,13 @@ import type {
 } from '../ViewportArchitectureTypes';
 
 export type PlanarRenderMode = 'cpu2d' | 'webgl2d' | 'vtkImage' | 'vtkVolume';
+export type PlanarRequestedRenderMode = PlanarRenderMode | 'cpuVolume' | 'auto';
+export type PlanarEffectiveRenderMode =
+  | 'cpu2d'
+  | 'webgl2d'
+  | 'vtkImage'
+  | 'vtkVolume'
+  | 'cpuVolume';
 export type PlanarOrientation =
   | OrientationAxis.ACQUISITION
   | OrientationAxis.AXIAL
@@ -38,12 +45,13 @@ export interface PlanarRegisteredDataSet {
 export interface PlanarSetDataOptions {
   orientation?: PlanarOrientation;
   cpuVoxelThreshold?: number;
+  renderMode?: PlanarRequestedRenderMode;
 }
 
 export interface PlanarDataLoadOptions {
   acquisitionOrientation?: PlanarCamera['orientation'];
   orientation: PlanarOrientation;
-  renderMode: PlanarRenderMode;
+  renderMode: PlanarEffectiveRenderMode;
   volumeId: string;
 }
 
@@ -51,7 +59,7 @@ export interface PlanarPayload {
   imageIds: string[];
   initialImageIdIndex: number;
   volumeId: string;
-  renderMode: PlanarRenderMode;
+  renderMode: PlanarEffectiveRenderMode;
   acquisitionOrientation?: PlanarCamera['orientation'];
   imageVolume?: IImageVolume;
   initialImage?: IImage;
@@ -102,8 +110,8 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   renderer: vtkRenderer;
   vtkCanvas?: HTMLCanvasElement;
   requestRender(): void;
-  setRenderMode(renderMode: PlanarRenderMode): void;
-  setRenderModeVisibility?(renderMode: PlanarRenderMode): void;
+  setRenderMode(renderMode: PlanarEffectiveRenderMode): void;
+  setRenderModeVisibility?(renderMode: PlanarEffectiveRenderMode): void;
 }
 
 export interface PlanarCameraState {
@@ -141,6 +149,39 @@ export interface PlanarCpuImageRendering
   renderMode: 'cpu2d';
 }
 
+export interface PlanarCpuVolumeRendering
+  extends MountedRendering<{
+    actor: vtkVolume;
+    mapper: vtkVolumeMapper;
+    enabledElement?: CPUFallbackEnabledElement;
+    payload: PlanarPayload;
+    imageVolume: IImageVolume;
+    currentImageIdIndex: number;
+    defaultVOIRange?: VOIRange;
+    orientation?: PlanarCamera['orientation'];
+    sliceCamera: PlanarCameraState;
+    renderingInvalidated: boolean;
+    currentCamera?: PlanarCamera;
+    presentation?: PlanarPresentationProps;
+    properties?: PlanarProperties;
+    sampledSliceState?: {
+      image: IImage;
+      focalPoint: Point3;
+      translationReferenceFocalPoint: Point3;
+      right: Point3;
+      up: Point3;
+      normal: Point3;
+      spacingInNormalDirection: number;
+      canvasWidth: number;
+      canvasHeight: number;
+      interpolationType: InterpolationType;
+    };
+    pendingVolumeLoadCallback?: boolean;
+  }> {
+  role: 'image';
+  renderMode: 'cpuVolume';
+}
+
 export interface PlanarVolumeMapperRendering
   extends MountedRendering<{
     actor: vtkVolume;
@@ -159,4 +200,5 @@ export interface PlanarVolumeMapperRendering
 export type PlanarRendering =
   | PlanarImageMapperRendering
   | PlanarCpuImageRendering
+  | PlanarCpuVolumeRendering
   | PlanarVolumeMapperRendering;

@@ -7,6 +7,7 @@ import type { DataAttachmentOptions } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import { CpuImageCanvasPath } from './CpuImageCanvasRenderingAdapter';
+import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderingAdapter';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { VtkImageMapperPath } from './VtkImageMapperRenderingAdapter';
 import { VtkVolumeMapperPath } from './VtkVolumeMapperRenderingAdapter';
@@ -16,6 +17,7 @@ import {
 } from './planarRenderPathSelector';
 import type {
   PlanarCamera,
+  PlanarEffectiveRenderMode,
   PlanarPresentationProps,
   PlanarRenderMode,
   PlanarRendering,
@@ -28,6 +30,7 @@ import type {
 } from './PlanarViewportV2Types';
 
 defaultRenderPathResolver.register(new CpuImageCanvasPath());
+defaultRenderPathResolver.register(new CpuVolumeSlicePath());
 defaultRenderPathResolver.register(new VtkImageMapperPath());
 defaultRenderPathResolver.register(new VtkVolumeMapperPath());
 
@@ -118,13 +121,15 @@ class PlanarViewportV2 extends ViewportV2<
         this.requestRenderingEngineRender();
       },
       renderer,
-      setRenderMode: (renderMode: PlanarRenderMode) => {
-        const useCPUCanvas = renderMode === 'cpu2d';
+      setRenderMode: (renderMode: PlanarEffectiveRenderMode) => {
+        const useCPUCanvas =
+          renderMode === 'cpu2d' || renderMode === 'cpuVolume';
         cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
         vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
       },
-      setRenderModeVisibility: (renderMode: PlanarRenderMode) => {
-        const useCPUCanvas = renderMode === 'cpu2d';
+      setRenderModeVisibility: (renderMode: PlanarEffectiveRenderMode) => {
+        const useCPUCanvas =
+          renderMode === 'cpu2d' || renderMode === 'cpuVolume';
         cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
         vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
       },

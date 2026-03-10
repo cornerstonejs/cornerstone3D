@@ -1,9 +1,14 @@
 import {
   Enums,
+  imageLoader,
   PlanarViewportV2,
   RenderingEngineV2,
   utilities,
 } from '@cornerstonejs/core';
+import {
+  cornerstoneNiftiImageLoader,
+  createNiftiImageIdsAndCacheMetadata,
+} from '@cornerstonejs/nifti-volume-loader';
 import {
   addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
@@ -43,11 +48,17 @@ const orientation =
 const cpuVoxelThreshold = getNumberParam('cpuVoxelThreshold');
 const initialImageIdIndex = getNumberParam('initialImageIdIndex') ?? 0;
 const imageLimit = getNumberParam('limit');
-const volumeId = searchParams.get('volumeId') || undefined;
+const niftiUrl = searchParams.get('niftiUrl') || undefined;
+const renderMode =
+  searchParams.get('renderMode') || (niftiUrl ? 'cpuVolume' : undefined);
+const volumeId =
+  searchParams.get('volumeId') ||
+  (niftiUrl ? `nifti:${niftiUrl}` : undefined) ||
+  undefined;
 
 setTitleAndDescription(
   'Planar Viewport Architecture POC',
-  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=axial|coronal|sagittal&dataId=ct-planar&initialImageIdIndex=0&cpuVoxelThreshold=100000&limit=32&volumeId=myVolume'
+  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=axial|coronal|sagittal&renderMode=cpu2d|vtkImage|vtkVolume|cpuVolume&dataId=ct-planar&initialImageIdIndex=0&cpuVoxelThreshold=100000&limit=32&volumeId=myVolume&niftiUrl=https://...nii.gz'
 );
 
 // ======== Set up page ======== //
@@ -67,7 +78,7 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Use the toolbar dropdown or URL query parameters to change the planar orientation and loading inputs.';
+  'Use the toolbar dropdown or URL query parameters to change orientation and render mode. Add niftiUrl=...&renderMode=cpuVolume to load a remote volume URL into the CPU slice path.';
 
 content.append(instructions);
 // ============================= //
@@ -109,6 +120,7 @@ function addToolbar() {
       void viewport.setDataIds([dataId], {
         orientation: nextOrientation,
         cpuVoxelThreshold,
+        renderMode,
       });
     },
   });
@@ -119,13 +131,18 @@ addToolbar();
 async function run() {
   await initDemo();
 
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  });
+  const imageIds = niftiUrl
+    ? await (async () => {
+        imageLoader.registerImageLoader('nifti', cornerstoneNiftiImageLoader);
+        return createNiftiImageIdsAndCacheMetadata({ url: niftiUrl });
+      })()
+    : await createImageIdsAndCacheMetaData({
+        StudyInstanceUID:
+          '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+        SeriesInstanceUID:
+          '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+        wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+      });
   const renderingEngine = new RenderingEngineV2('renderingEngineV2');
   renderingEngine.enableViewport({
     viewportId,
@@ -147,6 +164,7 @@ async function run() {
   await viewport.setDataIds([dataId], {
     orientation,
     cpuVoxelThreshold,
+    renderMode,
   });
   viewport.setProperties({
     voiRange: ctVoiRange,

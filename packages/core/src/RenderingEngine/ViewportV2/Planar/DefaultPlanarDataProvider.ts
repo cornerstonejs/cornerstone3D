@@ -59,7 +59,10 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       dataSet.imageIds.length - 1
     );
 
-    if (options.renderMode === 'vtkVolume') {
+    if (
+      options.renderMode === 'vtkVolume' ||
+      options.renderMode === 'cpuVolume'
+    ) {
       const imageVolume = await createAndCacheVolumeFromImages(
         options.volumeId,
         dataSet.imageIds
