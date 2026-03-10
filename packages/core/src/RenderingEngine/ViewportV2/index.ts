@@ -4,6 +4,7 @@ export {
 } from './DefaultRenderPathResolver';
 export { default as ViewportV2 } from './ViewportV2';
 export type {
+  BaseViewportRenderContext,
   BasePresentationProps,
   DataAttachmentOptions,
   DataId,
@@ -15,7 +16,7 @@ export type {
   RenderingAdapter,
   RenderingBinding,
   RenderingId,
-  ViewportBackendContext,
+  ViewportRenderContext,
   ViewportController,
   ViewportId,
   ViewportKind,
@@ -27,10 +28,12 @@ export {
   DefaultECGDataProvider,
 } from './ECG';
 export type {
-  ECGCanvasBackendContext,
+  ECGCamera,
+  ECGCanvasRenderContext,
   ECGCanvasRendering,
   ECGChannelData,
   ECGPresentationProps,
+  ECGViewportPresentation,
   ECGViewState,
   ECGViewportV2Input,
   ECGWaveformPayload,
@@ -42,10 +45,12 @@ export {
   HtmlVideoRenderingAdapter,
 } from './Video';
 export type {
-  VideoElementBackendContext,
+  VideoCamera,
+  VideoElementRenderContext,
   VideoElementRendering,
   VideoPresentationProps,
   VideoStreamPayload,
+  VideoViewportPresentation,
   VideoViewportV2Input,
   VideoViewState,
 } from './Video';
@@ -60,11 +65,12 @@ export {
   VtkVolumeMapperRenderingAdapter,
 } from './Planar';
 export type {
+  PlanarCamera,
   PlanarCameraState,
-  PlanarCpuRendering,
+  PlanarCpuImageRendering,
   PlanarDataProvider,
   PlanarDataLoadOptions,
-  PlanarImageRendering,
+  PlanarImageMapperRendering,
   PlanarOrientation,
   PlanarPayload,
   PlanarPresentationProps,
@@ -72,8 +78,9 @@ export type {
   PlanarRenderMode,
   PlanarRendering,
   PlanarSetDataOptions,
-  PlanarVolumeRendering,
-  PlanarViewportBackendContext,
+  PlanarViewportPresentation,
+  PlanarVolumeMapperRendering,
+  PlanarViewportRenderContext,
   PlanarViewportV2Input,
   PlanarViewState,
 } from './Planar';
@@ -84,12 +91,14 @@ export {
   DicomMicroscopyRenderingAdapter,
 } from './WSI';
 export type {
+  WSICamera,
   WSIDataProvider,
   WSIDataSetOptions,
   WSIPayload,
   WSIPresentationProps,
   WSIRendering,
-  WSIViewportBackendContext,
+  WSIViewportRenderContext,
+  WSIViewportPresentation,
   WSIViewportV2Input,
   WSIViewState,
 } from './WSI';

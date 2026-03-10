@@ -7,21 +7,27 @@ import type {
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { DicomMicroscopyPath } from './DicomMicroscopyRenderingAdapter';
 import type {
-  WSIViewportBackendContext,
+  WSICamera,
+  WSIViewportRenderContext,
+  WSIViewportPresentation,
   WSIViewportV2Input,
-  WSIViewState,
   WSIPresentationProps,
   WSIRendering,
 } from './WSIViewportV2Types';
 
 defaultRenderPathResolver.register(new DicomMicroscopyPath());
 
-class WSIViewportV2 extends ViewportV2<WSIViewState, WSIPresentationProps> {
+class WSIViewportV2 extends ViewportV2<
+  WSICamera,
+  WSIProperties,
+  WSIPresentationProps,
+  WSIViewportRenderContext
+> {
   readonly kind = 'wsi' as const;
   readonly id: string;
   readonly element: HTMLDivElement;
 
-  protected backendContext: WSIViewportBackendContext;
+  protected renderContext: WSIViewportRenderContext;
 
   constructor(args: WSIViewportV2Input) {
     super();
@@ -33,15 +39,16 @@ class WSIViewportV2 extends ViewportV2<WSIViewState, WSIPresentationProps> {
     this.dataProvider = args.dataProvider || new DefaultWSIDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || defaultRenderPathResolver;
-    this.backendContext = {
+    this.renderContext = {
       viewportId: this.id,
       viewportKind: 'wsi',
       element: this.element,
     };
-    this.viewState = {
+    this.camera = {
       zoom: 1,
       rotation: 0,
     };
+    this.properties = {};
 
     this.element.setAttribute('data-viewport-uid', this.id);
   }
@@ -79,7 +86,7 @@ class WSIViewportV2 extends ViewportV2<WSIViewState, WSIPresentationProps> {
   }
 
   setZoom(zoom: number): void {
-    this.setViewState({ zoom });
+    this.setCamera({ zoom });
   }
 
   render(): void {

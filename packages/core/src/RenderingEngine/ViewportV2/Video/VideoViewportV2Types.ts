@@ -1,9 +1,9 @@
 import type {
+  BaseViewportRenderContext,
   BasePresentationProps,
   DataProvider,
   MountedRendering,
   RenderPathResolver,
-  ViewportBackendContext,
 } from '../ViewportArchitectureTypes';
 import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
 
@@ -17,19 +17,24 @@ export interface VideoStreamPayload {
   metadata: VideoImageMetadata;
 }
 
-export interface VideoPresentationProps extends BasePresentationProps {
+export interface VideoPresentationProps extends BasePresentationProps {}
+
+export interface VideoCamera {
+  zoom?: number;
+  pan?: [number, number];
+  rotation?: number;
+  currentTimeSeconds?: number;
+}
+
+export interface VideoProperties {
   playbackRate?: number;
   loop?: boolean;
   muted?: boolean;
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 }
 
-export interface VideoViewState {
-  zoom?: number;
-  pan?: [number, number];
-  rotation?: number;
-  currentTimeSeconds?: number;
-}
+/** @deprecated Use VideoCamera instead */
+export type VideoViewState = VideoCamera;
 
 export interface VideoViewportV2Input {
   id: string;
@@ -38,7 +43,7 @@ export interface VideoViewportV2Input {
   renderPathResolver?: RenderPathResolver;
 }
 
-export interface VideoElementBackendContext extends ViewportBackendContext {
+export interface VideoElementRenderContext extends BaseViewportRenderContext {
   viewportKind: 'video';
   element: HTMLDivElement;
 }

@@ -6,25 +6,27 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  ViewportBackendContext,
+  RenderingAdapter,
 } from '../ViewportArchitectureTypes';
 import type {
+  WSICamera,
   WSIPresentationProps,
   WSIRendering,
   WSIPayload,
-  WSIViewportBackendContext,
-  WSIViewState,
+  WSIViewportRenderContext,
+  WSIProperties,
 } from './WSIViewportV2Types';
 
 const EVENT_POSTRENDER = 'postrender';
 
-export class DicomMicroscopyRenderingAdapter {
+export class DicomMicroscopyRenderingAdapter
+  implements RenderingAdapter<WSIViewportRenderContext>
+{
   async attach(
-    ctx: ViewportBackendContext,
+    ctx: WSIViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): Promise<WSIRendering> {
-    const wsiCtx = ctx as WSIViewportBackendContext;
     const payload = data.payload as WSIPayload;
     const DicomMicroscopyViewer = await getDicomMicroscopyViewer();
     const microscopyElement = document.createElement('div');
@@ -36,7 +38,7 @@ export class DicomMicroscopyRenderingAdapter {
     microscopyElement.style.position = 'absolute';
     microscopyElement.style.left = '0';
     microscopyElement.style.top = '0';
-    wsiCtx.element.appendChild(microscopyElement);
+    ctx.element.appendChild(microscopyElement);
 
     const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
       client: payload.client,
@@ -52,9 +54,9 @@ export class DicomMicroscopyRenderingAdapter {
     const map = viewer.getMap();
     const renderingId = `rendering:${data.id}:${options.renderMode}`;
     const postrenderHandler = () => {
-      triggerEvent(wsiCtx.element, EVENTS.IMAGE_RENDERED, {
-        element: wsiCtx.element,
-        viewportId: wsiCtx.viewportId,
+      triggerEvent(ctx.element, EVENTS.IMAGE_RENDERED, {
+        element: ctx.element,
+        viewportId: ctx.viewportId,
         rendering: {
           id: renderingId,
           dataId: data.id,
@@ -89,7 +91,7 @@ export class DicomMicroscopyRenderingAdapter {
   }
 
   updatePresentation(
-    _ctx: ViewportBackendContext,
+    _ctx: WSIViewportRenderContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
@@ -100,12 +102,12 @@ export class DicomMicroscopyRenderingAdapter {
     microscopyElement.style.opacity = String(wsiProps?.opacity ?? 1);
   }
 
-  updateViewState(
-    _ctx: ViewportBackendContext,
+  updateCamera(
+    _ctx: WSIViewportRenderContext,
     rendering: MountedRendering,
-    viewState: unknown
+    camera: unknown
   ): void {
-    const wsiViewState = viewState as WSIViewState;
+    const wsiCamera = camera as WSICamera;
     const { map } = (rendering as WSIRendering).backendHandle;
     const view = map?.getView?.();
 
@@ -113,18 +115,26 @@ export class DicomMicroscopyRenderingAdapter {
       return;
     }
 
-    if (typeof wsiViewState.zoom === 'number') {
-      view.setZoom(wsiViewState.zoom);
+    if (typeof wsiCamera.zoom === 'number') {
+      view.setZoom(wsiCamera.zoom);
     }
-    if (wsiViewState.centerIndex) {
-      view.setCenter(wsiViewState.centerIndex);
+    if (wsiCamera.centerIndex) {
+      view.setCenter(wsiCamera.centerIndex);
     }
-    if (typeof wsiViewState.rotation === 'number') {
-      view.setRotation(wsiViewState.rotation);
+    if (typeof wsiCamera.rotation === 'number') {
+      view.setRotation(wsiCamera.rotation);
     }
   }
 
-  detach(_ctx: ViewportBackendContext, rendering: MountedRendering): void {
+  updateProperties(
+    _ctx: WSIViewportRenderContext,
+    _rendering: MountedRendering,
+    _presentation: unknown
+  ): void {
+    // No viewport-level properties for WSI currently.
+  }
+
+  detach(_ctx: WSIViewportRenderContext, rendering: MountedRendering): void {
     const { map, microscopyElement, viewer, postrenderHandler } = (
       rendering as WSIRendering
     ).backendHandle;
@@ -135,7 +145,9 @@ export class DicomMicroscopyRenderingAdapter {
   }
 }
 
-export class DicomMicroscopyPath implements RenderPathDefinition {
+export class DicomMicroscopyPath
+  implements RenderPathDefinition<WSIViewportRenderContext>
+{
   readonly id = 'wsi:dicom-microscopy-viewer';
   readonly viewportKind = 'wsi' as const;
 

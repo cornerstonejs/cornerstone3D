@@ -1,9 +1,9 @@
 import type {
+  BaseViewportRenderContext,
   BasePresentationProps,
   DataProvider,
   MountedRendering,
   RenderPathResolver,
-  ViewportBackendContext,
 } from '../ViewportArchitectureTypes';
 
 export interface ECGChannelData {
@@ -25,18 +25,24 @@ export interface ECGWaveformPayload {
 }
 
 export interface ECGPresentationProps extends BasePresentationProps {
-  lineWidth?: number;
-  sweepSpeed?: number;
-  amplitudeScale?: number;
-  showGrid?: boolean;
   visibleChannels?: number[];
 }
 
-export interface ECGViewState {
+export interface ECGCamera {
   timeRange: [number, number];
   valueRange: [number, number];
   scrollOffset?: number;
 }
+
+export interface ECGProperties {
+  lineWidth?: number;
+  sweepSpeed?: number;
+  amplitudeScale?: number;
+  showGrid?: boolean;
+}
+
+/** @deprecated Use ECGCamera instead */
+export type ECGViewState = ECGCamera;
 
 export interface ECGViewportV2Input {
   id: string;
@@ -61,7 +67,7 @@ export interface RenderWindowMetrics {
   yOffsetCanvas: number;
 }
 
-export interface ECGCanvasBackendContext extends ViewportBackendContext {
+export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
   viewportKind: 'ecg';
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
@@ -74,6 +80,9 @@ export interface ECGCanvasRendering
     canvasContext: CanvasRenderingContext2D;
     waveform: ECGWaveformPayload;
     metrics: RenderWindowMetrics;
+    currentCamera?: ECGCamera;
+    currentProperties?: ECGProperties;
+    currentPresentation?: ECGPresentationProps;
   }> {
   role: 'signal';
   renderMode: 'signal2d';

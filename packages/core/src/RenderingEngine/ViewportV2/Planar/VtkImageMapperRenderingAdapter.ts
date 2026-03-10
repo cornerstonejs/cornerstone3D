@@ -15,24 +15,26 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  ViewportBackendContext,
+  RenderingAdapter,
 } from '../ViewportArchitectureTypes';
 import type {
-  PlanarImageRendering,
+  PlanarCamera,
+  PlanarImageMapperRendering,
   PlanarPresentationProps,
   PlanarPayload,
-  PlanarViewportBackendContext,
-  PlanarViewState,
+  PlanarViewportRenderContext,
+  PlanarProperties,
 } from './PlanarViewportV2Types';
 
 async function updateRenderedImage(args: {
-  ctx: PlanarViewportBackendContext;
+  ctx: PlanarViewportRenderContext;
   image: IImage;
-  rendering: PlanarImageRendering;
+  rendering: PlanarImageMapperRendering;
   imageIdIndex: number;
   props?: PlanarPresentationProps;
+  planarProperties?: PlanarProperties;
   resetCamera?: boolean;
-  viewState?: PlanarViewState;
+  camera?: PlanarCamera;
 }): Promise<void> {
   const {
     ctx,
@@ -40,8 +42,9 @@ async function updateRenderedImage(args: {
     rendering,
     imageIdIndex,
     props,
+    planarProperties,
     resetCamera = false,
-    viewState,
+    camera,
   } = args;
   const { actor, mapper } = rendering.backendHandle;
   const imageData = createVTKImageDataFromImage(image);
@@ -59,7 +62,8 @@ async function updateRenderedImage(args: {
     actor,
     defaultVOIRange: rendering.backendHandle.defaultVOIRange,
     props: {
-      interpolationType: InterpolationType.LINEAR,
+      interpolationType:
+        planarProperties?.interpolationType ?? InterpolationType.LINEAR,
       ...props,
     },
   });
@@ -73,18 +77,19 @@ async function updateRenderedImage(args: {
   applyPlanarCameraViewState({
     initialCamera: rendering.backendHandle.initialCamera,
     renderer: ctx.renderer,
-    viewState,
+    viewState: camera,
   });
   ctx.requestRender();
 }
 
-export class VtkImageMapperRenderingAdapter {
+export class VtkImageMapperRenderingAdapter
+  implements RenderingAdapter<PlanarViewportRenderContext>
+{
   async attach(
-    ctx: ViewportBackendContext,
+    ctx: PlanarViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
-  ): Promise<PlanarImageRendering> {
-    const planarCtx = ctx as PlanarViewportBackendContext;
+  ): Promise<PlanarImageMapperRendering> {
     const payload = data.payload as PlanarPayload;
 
     if (!payload.initialImage) {
@@ -97,12 +102,12 @@ export class VtkImageMapperRenderingAdapter {
     const actor = vtkImageSlice.newInstance();
     const imageData = createVTKImageDataFromImage(payload.initialImage);
 
-    planarCtx.setRenderMode('vtkImage');
+    ctx.setRenderMode('vtkImage');
     mapper.setInputData(imageData);
     actor.setMapper(mapper);
-    planarCtx.renderer.addActor(actor);
-    planarCtx.renderer.getActiveCamera().setParallelProjection(true);
-    planarCtx.renderer.resetCamera();
+    ctx.renderer.addActor(actor);
+    ctx.renderer.getActiveCamera().setParallelProjection(true);
+    ctx.renderer.resetCamera();
 
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
@@ -116,18 +121,18 @@ export class VtkImageMapperRenderingAdapter {
         payload,
         currentImageIdIndex: payload.initialImageIdIndex,
         defaultVOIRange: getDefaultImageVOIRange(payload.initialImage),
-        initialCamera: getPlanarCameraState(planarCtx.renderer),
+        initialCamera: getPlanarCameraState(ctx.renderer),
         loadRequestId: 0,
       },
     };
   }
 
   updatePresentation(
-    _ctx: ViewportBackendContext,
+    _ctx: PlanarViewportRenderContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
-    const planarRendering = rendering as PlanarImageRendering;
+    const planarRendering = rendering as PlanarImageMapperRendering;
 
     applyPlanarImagePresentation({
       actor: planarRendering.backendHandle.actor,
@@ -139,25 +144,22 @@ export class VtkImageMapperRenderingAdapter {
     });
   }
 
-  updateViewState(
-    ctx: ViewportBackendContext,
+  updateCamera(
+    ctx: PlanarViewportRenderContext,
     rendering: MountedRendering,
-    viewState: unknown,
-    props?: unknown
+    camera: unknown
   ): void {
-    const planarCtx = ctx as PlanarViewportBackendContext;
-    const planarRendering = rendering as PlanarImageRendering;
-    const planarViewState = viewState as PlanarViewState | undefined;
-    const planarProps = props as PlanarPresentationProps | undefined;
+    const planarRendering = rendering as PlanarImageMapperRendering;
+    const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
-      planarViewState?.imageIdIndex ??
+      planarCamera?.imageIdIndex ??
       planarRendering.backendHandle.currentImageIdIndex;
 
-    planarCtx.setRenderMode('vtkImage');
+    ctx.setRenderMode('vtkImage');
     applyPlanarCameraViewState({
       initialCamera: planarRendering.backendHandle.initialCamera,
-      renderer: planarCtx.renderer,
-      viewState: planarViewState,
+      renderer: ctx.renderer,
+      viewState: planarCamera,
     });
 
     if (
@@ -180,25 +182,43 @@ export class VtkImageMapperRenderingAdapter {
       }
 
       void updateRenderedImage({
-        ctx: planarCtx,
+        ctx,
         image,
         rendering: planarRendering,
         imageIdIndex: nextImageIdIndex,
-        props: planarProps,
-        viewState: planarViewState,
+        camera: planarCamera,
       });
     });
   }
 
-  detach(ctx: ViewportBackendContext, rendering: MountedRendering): void {
-    const planarCtx = ctx as PlanarViewportBackendContext;
-    const { actor } = (rendering as PlanarImageRendering).backendHandle;
+  updateProperties(
+    _ctx: PlanarViewportRenderContext,
+    rendering: MountedRendering,
+    presentation: unknown
+  ): void {
+    const planarRendering = rendering as PlanarImageMapperRendering;
+    const planarProperties = presentation as PlanarProperties | undefined;
 
-    planarCtx.renderer.removeActor(actor);
+    if (planarProperties?.interpolationType !== undefined) {
+      const property = planarRendering.backendHandle.actor.getProperty();
+      property.setInterpolationType(
+        planarProperties.interpolationType as Parameters<
+          typeof property.setInterpolationType
+        >[0]
+      );
+    }
+  }
+
+  detach(ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
+    const { actor } = (rendering as PlanarImageMapperRendering).backendHandle;
+
+    ctx.renderer.removeActor(actor);
   }
 }
 
-export class VtkImageMapperPath implements RenderPathDefinition {
+export class VtkImageMapperPath
+  implements RenderPathDefinition<PlanarViewportRenderContext>
+{
   readonly id = 'planar:vtk-image-mapper';
   readonly viewportKind = 'planar' as const;
 

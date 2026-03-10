@@ -5,10 +5,12 @@ export {
 export { DefaultECGDataProvider } from './DefaultECGDataProvider';
 export { default } from './ECGViewportV2';
 export type {
-  ECGCanvasBackendContext,
+  ECGCamera,
+  ECGCanvasRenderContext,
   ECGCanvasRendering,
   ECGChannelData,
   ECGPresentationProps,
+  ECGViewportPresentation,
   ECGViewState,
   ECGViewportV2Input,
   ECGWaveformPayload,

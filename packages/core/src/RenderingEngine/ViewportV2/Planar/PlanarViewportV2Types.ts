@@ -14,12 +14,12 @@ import type {
 } from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
 import type {
+  BaseViewportRenderContext,
   BasePresentationProps,
   DataProvider,
   LogicalDataObject,
   MountedRendering,
   RenderPathResolver,
-  ViewportBackendContext,
 } from '../ViewportArchitectureTypes';
 
 export type PlanarRenderMode = 'cpu2d' | 'webgl2d' | 'vtkImage' | 'vtkVolume';
@@ -41,7 +41,7 @@ export interface PlanarSetDataOptions {
 }
 
 export interface PlanarDataLoadOptions {
-  acquisitionOrientation?: PlanarViewState['orientation'];
+  acquisitionOrientation?: PlanarCamera['orientation'];
   orientation: PlanarOrientation;
   renderMode: PlanarRenderMode;
   volumeId: string;
@@ -52,7 +52,7 @@ export interface PlanarPayload {
   initialImageIdIndex: number;
   volumeId: string;
   renderMode: PlanarRenderMode;
-  acquisitionOrientation?: PlanarViewState['orientation'];
+  acquisitionOrientation?: PlanarCamera['orientation'];
   imageVolume?: IImageVolume;
   initialImage?: IImage;
 }
@@ -60,10 +60,9 @@ export interface PlanarPayload {
 export interface PlanarPresentationProps extends BasePresentationProps {
   voiRange?: VOIRange;
   invert?: boolean;
-  interpolationType?: InterpolationType;
 }
 
-export interface PlanarViewState {
+export interface PlanarCamera {
   imageIdIndex?: number;
   orientation?:
     | OrientationAxis.AXIAL
@@ -72,6 +71,14 @@ export interface PlanarViewState {
   zoom?: number;
   pan?: [number, number];
 }
+
+export interface PlanarProperties {
+  interpolationType?: InterpolationType;
+  slabThickness?: number;
+}
+
+/** @deprecated Use PlanarCamera instead */
+export type PlanarViewState = PlanarCamera;
 
 export interface PlanarDataProvider extends DataProvider {
   load(
@@ -85,7 +92,7 @@ export interface PlanarViewportV2Input extends ViewportInput {
   renderPathResolver?: RenderPathResolver;
 }
 
-export interface PlanarViewportBackendContext extends ViewportBackendContext {
+export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   viewportKind: 'planar';
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
@@ -105,7 +112,7 @@ export interface PlanarCameraState {
   position: Point3;
 }
 
-export interface PlanarImageRendering
+export interface PlanarImageMapperRendering
   extends MountedRendering<{
     actor: vtkImageSlice;
     mapper: vtkImageMapper;
@@ -120,7 +127,7 @@ export interface PlanarImageRendering
   renderMode: 'vtkImage';
 }
 
-export interface PlanarCpuRendering
+export interface PlanarCpuImageRendering
   extends MountedRendering<{
     enabledElement: CPUFallbackEnabledElement;
     payload: PlanarPayload;
@@ -134,7 +141,7 @@ export interface PlanarCpuRendering
   renderMode: 'cpu2d';
 }
 
-export interface PlanarVolumeRendering
+export interface PlanarVolumeMapperRendering
   extends MountedRendering<{
     actor: vtkVolume;
     imageVolume: IImageVolume;
@@ -142,7 +149,7 @@ export interface PlanarVolumeRendering
     payload: PlanarPayload;
     currentImageIdIndex: number;
     defaultVOIRange?: VOIRange;
-    orientation?: PlanarViewState['orientation'];
+    orientation?: PlanarCamera['orientation'];
     sliceCamera: PlanarCameraState;
   }> {
   role: 'image';
@@ -150,6 +157,6 @@ export interface PlanarVolumeRendering
 }
 
 export type PlanarRendering =
-  | PlanarImageRendering
-  | PlanarCpuRendering
-  | PlanarVolumeRendering;
+  | PlanarImageMapperRendering
+  | PlanarCpuImageRendering
+  | PlanarVolumeMapperRendering;

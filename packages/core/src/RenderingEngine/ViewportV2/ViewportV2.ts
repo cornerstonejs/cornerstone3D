@@ -1,4 +1,5 @@
 import type {
+  BaseViewportRenderContext,
   DataAttachmentOptions,
   DataId,
   DataProvider,
@@ -6,25 +7,29 @@ import type {
   RenderingBinding,
   RenderingId,
   RenderPathResolver,
-  ViewportBackendContext,
   ViewportController,
   ViewportId,
   ViewportKind,
 } from './ViewportArchitectureTypes';
 
-abstract class ViewportV2<TViewState, TPresentationProps>
-  implements ViewportController<TViewState, TPresentationProps>
+abstract class ViewportV2<
+  TCamera,
+  TProperties,
+  TDataPresentation = unknown,
+  TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+> implements ViewportController<TCamera, TProperties, TDataPresentation>
 {
   abstract readonly id: ViewportId;
   abstract readonly kind: ViewportKind;
 
   protected dataProvider: DataProvider;
   protected renderPathResolver: RenderPathResolver;
-  protected backendContext: ViewportBackendContext;
+  protected renderContext: TContext;
 
-  protected bindings = new Map<DataId, RenderingBinding>();
-  protected presentations = new Map<DataId, TPresentationProps>();
-  protected viewState!: TViewState;
+  protected bindings = new Map<DataId, RenderingBinding<TContext>>();
+  protected presentations = new Map<DataId, TDataPresentation>();
+  protected camera!: TCamera;
+  protected properties!: TProperties;
 
   async setDataId(
     dataId: DataId,
@@ -39,14 +44,18 @@ abstract class ViewportV2<TViewState, TPresentationProps>
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): Promise<RenderingId> {
-    const adapter = this.renderPathResolver.resolve(this.kind, data, options);
+    const adapter = this.renderPathResolver.resolve<TContext>(
+      this.kind,
+      data,
+      options
+    );
     const existing = this.bindings.get(dataId);
 
     if (existing) {
-      existing.adapter.detach(this.backendContext, existing.rendering);
+      existing.adapter.detach(this.renderContext, existing.rendering);
     }
 
-    const rendering = await adapter.attach(this.backendContext, data, options);
+    const rendering = await adapter.attach(this.renderContext, data, options);
 
     this.bindings.set(dataId, {
       data,
@@ -56,20 +65,16 @@ abstract class ViewportV2<TViewState, TPresentationProps>
 
     const props = this.presentations.get(dataId);
     if (props !== undefined) {
-      adapter.updatePresentation(this.backendContext, rendering, props);
+      adapter.updatePresentation(this.renderContext, rendering, props);
     }
 
-    adapter.updateViewState(
-      this.backendContext,
-      rendering,
-      this.viewState,
-      props
-    );
+    adapter.updateCamera(this.renderContext, rendering, this.camera);
+    adapter.updateProperties(this.renderContext, rendering, this.properties);
     this.render();
     return rendering.id;
   }
 
-  setPresentation(dataId: DataId, props: TPresentationProps): void {
+  setPresentation(dataId: DataId, props: TDataPresentation): void {
     this.presentations.set(dataId, props);
     const binding = this.bindings.get(dataId);
 
@@ -78,43 +83,39 @@ abstract class ViewportV2<TViewState, TPresentationProps>
     }
 
     binding.adapter.updatePresentation(
-      this.backendContext,
+      this.renderContext,
       binding.rendering,
-      props
-    );
-    binding.adapter.updateViewState(
-      this.backendContext,
-      binding.rendering,
-      this.viewState,
       props
     );
     this.render();
   }
 
-  getPresentation(dataId: DataId): TPresentationProps | undefined {
+  getPresentation(dataId: DataId): TDataPresentation | undefined {
     return this.presentations.get(dataId);
   }
 
-  setViewState(viewState: Partial<TViewState>): void {
-    this.viewState = {
-      ...this.viewState,
-      ...viewState,
+  setCamera(camera: Partial<TCamera>): void {
+    this.camera = {
+      ...this.camera,
+      ...camera,
     };
-
-    for (const [dataId, binding] of this.bindings.entries()) {
-      binding.adapter.updateViewState(
-        this.backendContext,
-        binding.rendering,
-        this.viewState,
-        this.presentations.get(dataId)
-      );
-    }
-
-    this.render();
+    this.modified();
   }
 
-  getViewState(): TViewState {
-    return this.viewState;
+  getCamera(): TCamera {
+    return this.camera;
+  }
+
+  setProperties(props: Partial<TProperties>): void {
+    this.properties = {
+      ...this.properties,
+      ...props,
+    };
+    this.modified();
+  }
+
+  getProperties(): TProperties {
+    return this.properties;
   }
 
   removeDataId(dataId: DataId): void {
@@ -124,7 +125,7 @@ abstract class ViewportV2<TViewState, TPresentationProps>
       return;
     }
 
-    binding.adapter.detach(this.backendContext, binding.rendering);
+    binding.adapter.detach(this.renderContext, binding.rendering);
     this.bindings.delete(dataId);
     this.presentations.delete(dataId);
     this.render();
@@ -134,15 +135,21 @@ abstract class ViewportV2<TViewState, TPresentationProps>
     return this.bindings.get(dataId);
   }
 
-  protected redrawBindings(): void {
-    for (const [dataId, binding] of this.bindings.entries()) {
-      binding.adapter.updateViewState(
-        this.backendContext,
+  protected modified(): void {
+    for (const binding of this.bindings.values()) {
+      binding.adapter.updateCamera(
+        this.renderContext,
         binding.rendering,
-        this.viewState,
-        this.presentations.get(dataId)
+        this.camera
+      );
+      binding.adapter.updateProperties(
+        this.renderContext,
+        binding.rendering,
+        this.properties
       );
     }
+
+    this.render();
   }
 
   abstract render(): void;

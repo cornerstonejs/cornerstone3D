@@ -5,10 +5,12 @@ export {
 } from './HtmlVideoRenderingAdapter';
 export { default } from './VideoViewportV2';
 export type {
-  VideoElementBackendContext,
+  VideoCamera,
+  VideoElementRenderContext,
   VideoElementRendering,
   VideoPresentationProps,
   VideoStreamPayload,
+  VideoViewportPresentation,
   VideoViewportV2Input,
   VideoViewState,
 } from './VideoViewportV2Types';

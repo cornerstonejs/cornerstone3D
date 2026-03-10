@@ -7,25 +7,28 @@ import {
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 import { HtmlVideoPath } from './HtmlVideoRenderingAdapter';
 import type {
-  VideoElementBackendContext,
+  VideoCamera,
+  VideoElementRenderContext,
   VideoElementRendering,
   VideoPresentationProps,
   VideoStreamPayload,
+  VideoProperties,
   VideoViewportV2Input,
-  VideoViewState,
 } from './VideoViewportV2Types';
 
 defaultRenderPathResolver.register(new HtmlVideoPath());
 
 class VideoViewportV2 extends ViewportV2<
-  VideoViewState,
-  VideoPresentationProps
+  VideoCamera,
+  VideoProperties,
+  VideoPresentationProps,
+  VideoElementRenderContext
 > {
   readonly kind = 'video' as const;
   readonly id: string;
   readonly element: HTMLDivElement;
 
-  protected backendContext: VideoElementBackendContext;
+  protected renderContext: VideoElementRenderContext;
 
   constructor(args: VideoViewportV2Input) {
     super();
@@ -37,16 +40,22 @@ class VideoViewportV2 extends ViewportV2<
     this.dataProvider = args.dataProvider || new DefaultVideoDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || defaultRenderPathResolver;
-    this.backendContext = {
+    this.renderContext = {
       viewportId: this.id,
       viewportKind: 'video',
       element: this.element,
     };
-    this.viewState = {
+    this.camera = {
       zoom: 1,
       pan: [0, 0],
       rotation: 0,
       currentTimeSeconds: 0,
+    };
+    this.viewportPresentation = {
+      playbackRate: 1,
+      loop: true,
+      muted: true,
+      objectFit: 'contain',
     };
 
     this.element.setAttribute('data-viewport-uid', this.id);
@@ -76,25 +85,25 @@ class VideoViewportV2 extends ViewportV2<
       this.setPresentation(dataId, {
         visible: true,
         opacity: 1,
-        loop: true,
-        muted: true,
-        playbackRate: 1,
-        objectFit: 'contain',
       });
 
       const payload = (binding.rendering as VideoElementRendering).backendHandle
         .payload;
-      this.setViewState({
+      this.camera = {
         zoom: 1,
         pan: [0, 0],
         rotation: 0,
         currentTimeSeconds: 0,
-      });
+      };
 
       if (payload.frameRange[0] > 1) {
-        this.seek(frameNumberToTimeSeconds(payload.frameRange[0], payload.fps));
+        this.camera.currentTimeSeconds = frameNumberToTimeSeconds(
+          payload.frameRange[0],
+          payload.fps
+        );
       }
 
+      this.modified();
       renderingIds.push(renderingId);
     }
 
@@ -119,7 +128,7 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   seek(timeSeconds: number): void {
-    this.setViewState({
+    this.setCamera({
       currentTimeSeconds: Math.max(0, timeSeconds),
     });
   }
@@ -135,16 +144,7 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   setPlaybackRate(playbackRate: number): void {
-    const firstBinding = this.bindings.values().next().value;
-
-    if (!firstBinding) {
-      return;
-    }
-
-    this.setPresentation(firstBinding.data.id, {
-      ...(this.getPresentation(firstBinding.data.id) || {}),
-      playbackRate,
-    });
+    this.setViewportPresentation({ playbackRate });
   }
 
   getFrameRate(): number {
@@ -171,7 +171,7 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   render(): void {
-    this.redrawBindings();
+    // DOM updates are applied immediately in updateCamera/updateViewportPresentation
   }
 
   private getVideoElement(): HTMLVideoElement | undefined {

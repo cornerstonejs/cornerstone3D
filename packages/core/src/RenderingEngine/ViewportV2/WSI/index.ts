@@ -5,12 +5,14 @@ export {
 } from './DicomMicroscopyRenderingAdapter';
 export { default } from './WSIViewportV2';
 export type {
+  WSICamera,
   WSIDataProvider,
   WSIDataSetOptions,
   WSIPayload,
   WSIPresentationProps,
   WSIRendering,
-  WSIViewportBackendContext,
+  WSIViewportRenderContext,
+  WSIViewportPresentation,
   WSIViewportV2Input,
   WSIViewState,
 } from './WSIViewportV2Types';

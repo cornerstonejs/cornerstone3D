@@ -14,20 +14,21 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  ViewportBackendContext,
+  RenderingAdapter,
 } from '../ViewportArchitectureTypes';
 import type {
-  ECGCanvasBackendContext,
+  ECGCamera,
+  ECGCanvasRenderContext,
   ECGCanvasRendering,
   ECGPresentationProps,
-  ECGViewState,
+  ECGProperties,
   ECGWaveformPayload,
   RenderWindowMetrics,
 } from './ECGViewportV2Types';
 
 function computeTimeWindow(
   waveform: ECGWaveformPayload,
-  viewState: ECGViewState
+  camera: ECGCamera
 ): {
   startMs: number;
   endMs: number;
@@ -36,8 +37,8 @@ function computeTimeWindow(
 } {
   const durationMs =
     (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
-  const startMs = Math.max(0, Math.min(viewState.timeRange[0], durationMs));
-  const requestedEnd = Math.max(startMs + 1, viewState.timeRange[1]);
+  const startMs = Math.max(0, Math.min(camera.timeRange[0], durationMs));
+  const requestedEnd = Math.max(startMs + 1, camera.timeRange[1]);
   const endMs = Math.max(startMs + 1, Math.min(requestedEnd, durationMs));
   const startIndex = Math.max(
     0,
@@ -62,22 +63,111 @@ function computeTimeWindow(
   };
 }
 
-export class CanvasECGRenderingAdapter {
+function drawFrame(
+  ecgCtx: ECGCanvasRenderContext,
+  ecgRendering: ECGCanvasRendering
+): void {
+  const {
+    canvas,
+    canvasContext,
+    waveform,
+    currentCamera,
+    currentProperties,
+    currentPresentation,
+  } = ecgRendering.backendHandle;
+
+  if (!currentCamera) {
+    return;
+  }
+
+  const ecgProps = {
+    ...currentProperties,
+    ...currentPresentation,
+  };
+  const visibleChannels = getVisibleECGChannels(
+    waveform.channels,
+    currentPresentation?.visibleChannels
+  );
+
+  ensureECGCanvasSize(canvas);
+
+  const metrics = computeECGRenderMetrics({
+    canvas,
+    visibleChannels,
+    windowMs: Math.max(
+      1,
+      currentCamera.timeRange[1] - currentCamera.timeRange[0]
+    ),
+    valueRange: currentCamera.valueRange,
+  }) as RenderWindowMetrics;
+  const layouts = computeECGChannelLayouts({
+    visibleChannels,
+    channelScale: metrics.channelScale,
+  });
+  const timeWindow = computeTimeWindow(waveform, currentCamera);
+  const dpr = window.devicePixelRatio || 1;
+
+  ecgRendering.backendHandle.metrics = metrics;
+
+  canvasContext.resetTransform();
+  canvasContext.fillStyle = '#000000';
+  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (currentPresentation?.visible === false) {
+    return;
+  }
+
+  canvasContext.globalAlpha = currentPresentation?.opacity ?? 1;
+  canvasContext.setTransform(
+    metrics.worldToCanvasRatio * dpr,
+    0,
+    0,
+    metrics.worldToCanvasRatio * dpr,
+    metrics.xOffsetCanvas * dpr,
+    metrics.yOffsetCanvas * dpr
+  );
+
+  drawECGGrid(canvasContext, metrics, {
+    showGrid: ecgProps?.showGrid,
+  });
+  drawECGTraces({
+    ctx: canvasContext,
+    layouts,
+    ecgWidth: metrics.ecgWidth,
+    channelScale: metrics.channelScale,
+    startIndex: timeWindow.startIndex,
+    endIndex: timeWindow.endIndex,
+    lineWidth: ecgProps?.lineWidth,
+    amplitudeScale: ecgProps?.amplitudeScale,
+  });
+  drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio);
+
+  canvasContext.resetTransform();
+  canvasContext.globalAlpha = 1;
+
+  triggerEvent(ecgCtx.element, EVENTS.IMAGE_RENDERED, {
+    element: ecgCtx.element,
+    viewportId: ecgCtx.viewportId,
+    rendering: ecgRendering,
+  });
+}
+
+export class CanvasECGRenderingAdapter
+  implements RenderingAdapter<ECGCanvasRenderContext>
+{
   async attach(
-    ctx: ViewportBackendContext,
+    ctx: ECGCanvasRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): Promise<ECGCanvasRendering> {
-    const ecgCtx = ctx as ECGCanvasBackendContext;
-
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       dataId: data.id,
       role: 'signal',
       renderMode: 'signal2d',
       backendHandle: {
-        canvas: ecgCtx.canvas,
-        canvasContext: ecgCtx.canvasContext,
+        canvas: ctx.canvas,
+        canvasContext: ctx.canvasContext,
         waveform: data.payload as ECGWaveformPayload,
         metrics: {
           ecgWidth: 1,
@@ -92,98 +182,48 @@ export class CanvasECGRenderingAdapter {
   }
 
   updatePresentation(
-    _ctx: ViewportBackendContext,
-    _rendering: MountedRendering,
-    _props: unknown
-  ): void {
-    // Rendering happens in updateViewState for this canvas path.
-  }
-
-  updateViewState(
-    ctx: ViewportBackendContext,
+    _ctx: ECGCanvasRenderContext,
     rendering: MountedRendering,
-    viewState: unknown,
-    props?: unknown
+    props: unknown
   ): void {
-    const ecgCtx = ctx as ECGCanvasBackendContext;
     const ecgRendering = rendering as ECGCanvasRendering;
-    const ecgViewState = viewState as ECGViewState;
-    const ecgProps = props as ECGPresentationProps | undefined;
-    const { canvas, canvasContext, waveform } = ecgRendering.backendHandle;
-    const visibleChannels = getVisibleECGChannels(
-      waveform.channels,
-      ecgProps?.visibleChannels
-    );
-
-    ensureECGCanvasSize(canvas);
-
-    const metrics = computeECGRenderMetrics({
-      canvas,
-      visibleChannels,
-      windowMs: Math.max(
-        1,
-        ecgViewState.timeRange[1] - ecgViewState.timeRange[0]
-      ),
-      valueRange: ecgViewState.valueRange,
-    }) as RenderWindowMetrics;
-    const layouts = computeECGChannelLayouts({
-      visibleChannels,
-      channelScale: metrics.channelScale,
-    });
-    const timeWindow = computeTimeWindow(waveform, ecgViewState);
-    const dpr = window.devicePixelRatio || 1;
-
-    ecgRendering.backendHandle.metrics = metrics;
-
-    canvasContext.resetTransform();
-    canvasContext.fillStyle = '#000000';
-    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
-
-    if (ecgProps?.visible === false) {
-      return;
-    }
-
-    canvasContext.globalAlpha = ecgProps?.opacity ?? 1;
-    canvasContext.setTransform(
-      metrics.worldToCanvasRatio * dpr,
-      0,
-      0,
-      metrics.worldToCanvasRatio * dpr,
-      metrics.xOffsetCanvas * dpr,
-      metrics.yOffsetCanvas * dpr
-    );
-
-    drawECGGrid(canvasContext, metrics, {
-      showGrid: ecgProps?.showGrid,
-    });
-    drawECGTraces({
-      ctx: canvasContext,
-      layouts,
-      ecgWidth: metrics.ecgWidth,
-      channelScale: metrics.channelScale,
-      startIndex: timeWindow.startIndex,
-      endIndex: timeWindow.endIndex,
-      lineWidth: ecgProps?.lineWidth,
-      amplitudeScale: ecgProps?.amplitudeScale,
-    });
-    drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio);
-
-    canvasContext.resetTransform();
-    canvasContext.globalAlpha = 1;
-
-    triggerEvent(ecgCtx.element, EVENTS.IMAGE_RENDERED, {
-      element: ecgCtx.element,
-      viewportId: ecgCtx.viewportId,
-      rendering,
-    });
+    ecgRendering.backendHandle.currentPresentation = props as
+      | ECGPresentationProps
+      | undefined;
   }
 
-  detach(_ctx: ViewportBackendContext, _rendering: MountedRendering): void {
+  updateCamera(
+    _ctx: ECGCanvasRenderContext,
+    rendering: MountedRendering,
+    camera: unknown
+  ): void {
+    const ecgRendering = rendering as ECGCanvasRendering;
+    ecgRendering.backendHandle.currentCamera = camera as ECGCamera;
+  }
+
+  updateProperties(
+    _ctx: ECGCanvasRenderContext,
+    rendering: MountedRendering,
+    presentation: unknown
+  ): void {
+    const ecgRendering = rendering as ECGCanvasRendering;
+    ecgRendering.backendHandle.currentProperties = presentation as
+      | ECGProperties
+      | undefined;
+  }
+
+  render(ctx: ECGCanvasRenderContext, rendering: MountedRendering): void {
+    drawFrame(ctx, rendering as ECGCanvasRendering);
+  }
+
+  detach(_ctx: ECGCanvasRenderContext, _rendering: MountedRendering): void {
     // Canvas lifecycle is owned by the viewport element.
   }
 }
 
-export class CanvasECGPath implements RenderPathDefinition {
+export class CanvasECGPath
+  implements RenderPathDefinition<ECGCanvasRenderContext>
+{
   readonly id = 'ecg:canvas-signal';
   readonly viewportKind = 'ecg' as const;
 

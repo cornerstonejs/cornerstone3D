@@ -1,10 +1,10 @@
 import type {
+  BaseViewportRenderContext,
   BasePresentationProps,
   DataProvider,
   LogicalDataObject,
   MountedRendering,
   RenderPathResolver,
-  ViewportBackendContext,
 } from '../ViewportArchitectureTypes';
 import type {
   WSIClientLike,
@@ -37,11 +37,19 @@ export interface WSIPayload {
 
 export interface WSIPresentationProps extends BasePresentationProps {}
 
-export interface WSIViewState {
+export interface WSICamera {
   zoom?: number;
   centerIndex?: [number, number];
   rotation?: number;
 }
+
+export interface WSIProperties {}
+
+/** @deprecated Use WSIProperties instead */
+export type WSIViewportPresentation = WSIProperties;
+
+/** @deprecated Use WSICamera instead */
+export type WSIViewState = WSICamera;
 
 export interface WSIDataProvider extends DataProvider {
   load(dataId: string): Promise<LogicalDataObject<WSIPayload>>;
@@ -54,7 +62,7 @@ export interface WSIViewportV2Input {
   renderPathResolver?: RenderPathResolver;
 }
 
-export interface WSIViewportBackendContext extends ViewportBackendContext {
+export interface WSIViewportRenderContext extends BaseViewportRenderContext {
   viewportKind: 'wsi';
   element: HTMLDivElement;
 }

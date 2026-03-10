@@ -3,24 +3,26 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  ViewportBackendContext,
+  RenderingAdapter,
 } from '../ViewportArchitectureTypes';
 import type {
-  VideoElementBackendContext,
+  VideoCamera,
+  VideoElementRenderContext,
   VideoElementRendering,
   VideoPresentationProps,
   VideoStreamPayload,
-  VideoViewState,
+  VideoProperties,
 } from './VideoViewportV2Types';
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
 
-export class HtmlVideoRenderingAdapter {
+export class HtmlVideoRenderingAdapter
+  implements RenderingAdapter<VideoElementRenderContext>
+{
   async attach(
-    ctx: ViewportBackendContext,
+    ctx: VideoElementRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): Promise<VideoElementRendering> {
-    const videoCtx = ctx as VideoElementBackendContext;
     const payload = data.payload as VideoStreamPayload;
     const element = document.createElement('video');
 
@@ -42,7 +44,7 @@ export class HtmlVideoRenderingAdapter {
       };
 
       element.addEventListener('loadedmetadata', onLoadedMetadata);
-      videoCtx.element.appendChild(element);
+      ctx.element.appendChild(element);
     });
 
     const playbackInfo = normalizeVideoPlaybackInfo({
@@ -71,7 +73,7 @@ export class HtmlVideoRenderingAdapter {
   }
 
   updatePresentation(
-    _ctx: ViewportBackendContext,
+    _ctx: VideoElementRenderContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
@@ -80,41 +82,53 @@ export class HtmlVideoRenderingAdapter {
 
     element.style.display = videoProps?.visible === false ? 'none' : '';
     element.style.opacity = String(videoProps?.opacity ?? 1);
-    element.loop = videoProps?.loop ?? true;
-    element.muted = videoProps?.muted ?? true;
-    element.playbackRate = videoProps?.playbackRate ?? 1;
-    element.style.objectFit = videoProps?.objectFit ?? 'contain';
   }
 
-  updateViewState(
-    _ctx: ViewportBackendContext,
+  updateCamera(
+    _ctx: VideoElementRenderContext,
     rendering: MountedRendering,
-    viewState: unknown
+    camera: unknown
   ): void {
-    const videoViewState = viewState as VideoViewState;
+    const videoCamera = camera as VideoCamera;
     const { element } = (rendering as VideoElementRendering).backendHandle;
-    const scale = videoViewState.zoom ?? 1;
-    const [panX, panY] = videoViewState.pan ?? [0, 0];
-    const rotation = videoViewState.rotation ?? 0;
+    const scale = videoCamera.zoom ?? 1;
+    const [panX, panY] = videoCamera.pan ?? [0, 0];
+    const rotation = videoCamera.rotation ?? 0;
 
     element.style.transform = `translate(${panX}px, ${panY}px) scale(${scale}) rotate(${rotation}deg)`;
 
     if (
-      typeof videoViewState.currentTimeSeconds === 'number' &&
-      Math.abs(element.currentTime - videoViewState.currentTimeSeconds) > 0.02
+      typeof videoCamera.currentTimeSeconds === 'number' &&
+      Math.abs(element.currentTime - videoCamera.currentTimeSeconds) > 0.02
     ) {
-      element.currentTime = videoViewState.currentTimeSeconds;
+      element.currentTime = videoCamera.currentTimeSeconds;
     }
   }
 
-  detach(_ctx: ViewportBackendContext, rendering: MountedRendering): void {
+  updateProperties(
+    _ctx: VideoElementRenderContext,
+    rendering: MountedRendering,
+    presentation: unknown
+  ): void {
+    const videoPres = presentation as VideoProperties | undefined;
+    const { element } = (rendering as VideoElementRendering).backendHandle;
+
+    element.loop = videoPres?.loop ?? true;
+    element.muted = videoPres?.muted ?? true;
+    element.playbackRate = videoPres?.playbackRate ?? 1;
+    element.style.objectFit = videoPres?.objectFit ?? 'contain';
+  }
+
+  detach(_ctx: VideoElementRenderContext, rendering: MountedRendering): void {
     const { element } = (rendering as VideoElementRendering).backendHandle;
     element.pause();
     element.remove();
   }
 }
 
-export class HtmlVideoPath implements RenderPathDefinition {
+export class HtmlVideoPath
+  implements RenderPathDefinition<VideoElementRenderContext>
+{
   readonly id = 'video:html-element';
   readonly viewportKind = 'video' as const;
 

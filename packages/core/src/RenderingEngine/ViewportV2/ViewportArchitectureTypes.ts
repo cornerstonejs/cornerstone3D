@@ -29,70 +29,87 @@ export interface MountedRendering<TBackendHandle = unknown> {
   backendHandle: TBackendHandle;
 }
 
-export interface ViewportBackendContext {
+export interface BaseViewportRenderContext {
   viewportId: ViewportId;
   viewportKind: ViewportKind;
 }
 
-export interface RenderingAdapter {
+/** @deprecated Use BaseViewportRenderContext instead. */
+export type ViewportRenderContext = BaseViewportRenderContext;
+
+export interface RenderingAdapter<
+  TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+> {
   attach(
-    ctx: ViewportBackendContext,
+    ctx: TContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): Promise<MountedRendering>;
 
   updatePresentation(
-    ctx: ViewportBackendContext,
+    ctx: TContext,
     rendering: MountedRendering,
     props: unknown
   ): void;
 
-  updateViewState(
-    ctx: ViewportBackendContext,
+  updateCamera(
+    ctx: TContext,
     rendering: MountedRendering,
-    viewState: unknown,
-    props?: unknown
+    camera: unknown
   ): void;
 
-  render?(ctx: ViewportBackendContext, rendering: MountedRendering): void;
+  updateProperties(
+    ctx: TContext,
+    rendering: MountedRendering,
+    properties: unknown
+  ): void;
 
-  resize?(ctx: ViewportBackendContext, rendering: MountedRendering): void;
+  render?(ctx: TContext, rendering: MountedRendering): void;
 
-  detach(ctx: ViewportBackendContext, rendering: MountedRendering): void;
+  resize?(ctx: TContext, rendering: MountedRendering): void;
+
+  detach(ctx: TContext, rendering: MountedRendering): void;
 }
 
-export interface RenderPathDefinition {
+export interface RenderPathDefinition<
+  TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+> {
   id: string;
   viewportKind: ViewportKind;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean;
 
-  createAdapter(): RenderingAdapter;
+  createAdapter(): RenderingAdapter<TContext>;
 }
 
 export interface RenderPathResolver {
-  register(path: RenderPathDefinition): void;
+  register<TContext extends BaseViewportRenderContext>(
+    path: RenderPathDefinition<TContext>
+  ): void;
 
-  resolve(
+  resolve<TContext extends BaseViewportRenderContext>(
     viewportKind: ViewportKind,
     data: LogicalDataObject,
     options: DataAttachmentOptions
-  ): RenderingAdapter;
+  ): RenderingAdapter<TContext>;
 }
 
 export interface DataProvider {
   load(dataId: DataId, options?: unknown): Promise<LogicalDataObject>;
 }
 
-export interface RenderingBinding {
+export interface RenderingBinding<
+  TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+> {
   data: LogicalDataObject;
-  adapter: RenderingAdapter;
+  adapter: RenderingAdapter<TContext>;
   rendering: MountedRendering;
 }
 
 export interface ViewportController<
-  TViewState = unknown,
-  TPresentationProps = unknown,
+  TCamera = unknown,
+  TProperties = unknown,
+  TDataPresentation = unknown,
 > {
   readonly id: ViewportId;
   readonly kind: ViewportKind;
@@ -103,11 +120,14 @@ export interface ViewportController<
   ): Promise<RenderingId>;
   removeDataId(dataId: DataId): void;
 
-  setPresentation(dataId: DataId, props: TPresentationProps): void;
-  getPresentation(dataId: DataId): TPresentationProps | undefined;
+  setPresentation(dataId: DataId, props: TDataPresentation): void;
+  getPresentation(dataId: DataId): TDataPresentation | undefined;
 
-  setViewState(viewState: Partial<TViewState>): void;
-  getViewState(): TViewState;
+  setCamera(camera: Partial<TCamera>): void;
+  getCamera(): TCamera;
+
+  setProperties(properties: Partial<TProperties>): void;
+  getProperties(): TProperties;
 
   render(): void;
 }

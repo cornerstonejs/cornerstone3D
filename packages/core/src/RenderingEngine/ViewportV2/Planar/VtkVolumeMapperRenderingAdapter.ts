@@ -17,18 +17,19 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  ViewportBackendContext,
+  RenderingAdapter,
 } from '../ViewportArchitectureTypes';
 import type {
+  PlanarCamera,
   PlanarCameraState,
   PlanarPayload,
   PlanarPresentationProps,
-  PlanarViewportBackendContext,
-  PlanarViewState,
-  PlanarVolumeRendering,
+  PlanarViewportRenderContext,
+  PlanarProperties,
+  PlanarVolumeMapperRendering,
 } from './PlanarViewportV2Types';
 
-function getCameraState(ctx: PlanarViewportBackendContext): PlanarCameraState {
+function getCameraState(ctx: PlanarViewportRenderContext): PlanarCameraState {
   const camera = ctx.renderer.getActiveCamera();
 
   return {
@@ -39,7 +40,7 @@ function getCameraState(ctx: PlanarViewportBackendContext): PlanarCameraState {
 }
 
 function setCameraState(
-  ctx: PlanarViewportBackendContext,
+  ctx: PlanarViewportRenderContext,
   cameraState: PlanarCameraState
 ): void {
   const camera = ctx.renderer.getActiveCamera();
@@ -50,7 +51,7 @@ function setCameraState(
   camera.setPosition(...cameraState.position);
 }
 
-function setCameraClippingRange(ctx: PlanarViewportBackendContext): void {
+function setCameraClippingRange(ctx: PlanarViewportRenderContext): void {
   const camera = ctx.renderer.getActiveCamera();
 
   if (camera.getParallelProjection()) {
@@ -84,8 +85,8 @@ function ensureClippingPlanes(mapper: vtkVolumeMapper) {
 }
 
 function updateClippingPlanes(
-  ctx: PlanarViewportBackendContext,
-  rendering: PlanarVolumeRendering
+  ctx: PlanarViewportRenderContext,
+  rendering: PlanarVolumeMapperRendering
 ): void {
   const camera = ctx.renderer.getActiveCamera();
   const viewPlaneNormal = [...camera.getViewPlaneNormal()] as Point3;
@@ -119,7 +120,7 @@ function updateClippingPlanes(
 }
 
 function applyPresentation(
-  rendering: PlanarVolumeRendering,
+  rendering: PlanarVolumeMapperRendering,
   props?: PlanarPresentationProps
 ): void {
   const { actor, defaultVOIRange } = rendering.backendHandle;
@@ -130,14 +131,6 @@ function applyPresentation(
 
   if (props?.opacity !== undefined) {
     updateVolumeOpacity(actor, props.opacity);
-  }
-
-  if (props?.interpolationType !== undefined) {
-    property.setInterpolationType(
-      props.interpolationType as Parameters<
-        typeof property.setInterpolationType
-      >[0]
-    );
   }
 
   if (!voiRange) {
@@ -153,15 +146,15 @@ function applyPresentation(
   property.setRGBTransferFunction(0, transferFunction);
 }
 
-function applyCameraViewState(
-  ctx: PlanarViewportBackendContext,
-  rendering: PlanarVolumeRendering,
-  viewState?: PlanarViewState
+function applyCameraToVtk(
+  ctx: PlanarViewportRenderContext,
+  rendering: PlanarVolumeMapperRendering,
+  planarCamera?: PlanarCamera
 ): void {
   const camera = ctx.renderer.getActiveCamera();
   const { sliceCamera } = rendering.backendHandle;
-  const zoom = Math.max(viewState?.zoom ?? 1, 0.001);
-  const [panX, panY] = viewState?.pan ?? [0, 0];
+  const zoom = Math.max(planarCamera?.zoom ?? 1, 0.001);
+  const [panX, panY] = planarCamera?.pan ?? [0, 0];
 
   camera.setParallelProjection(true);
   camera.setParallelScale(sliceCamera.parallelScale / zoom);
@@ -178,9 +171,9 @@ function applyCameraViewState(
 }
 
 function applyOrientation(
-  ctx: PlanarViewportBackendContext,
-  rendering: PlanarVolumeRendering,
-  orientation: PlanarViewState['orientation']
+  ctx: PlanarViewportRenderContext,
+  rendering: PlanarVolumeMapperRendering,
+  orientation: PlanarCamera['orientation']
 ): void {
   if (!orientation) {
     return;
@@ -211,8 +204,8 @@ function applyOrientation(
 }
 
 function getCurrentSliceIndex(
-  ctx: PlanarViewportBackendContext,
-  rendering: PlanarVolumeRendering
+  ctx: PlanarViewportRenderContext,
+  rendering: PlanarVolumeMapperRendering
 ): number {
   const camera = ctx.renderer.getActiveCamera();
   const { actor, imageVolume } = rendering.backendHandle;
@@ -229,8 +222,8 @@ function getCurrentSliceIndex(
 }
 
 function setSliceIndex(
-  ctx: PlanarViewportBackendContext,
-  rendering: PlanarVolumeRendering,
+  ctx: PlanarViewportRenderContext,
+  rendering: PlanarVolumeMapperRendering,
   imageIdIndex: number
 ): void {
   setCameraState(ctx, rendering.backendHandle.sliceCamera);
@@ -278,13 +271,14 @@ function setSliceIndex(
   rendering.backendHandle.sliceCamera = getCameraState(ctx);
 }
 
-export class VtkVolumeMapperRenderingAdapter {
+export class VtkVolumeMapperRenderingAdapter
+  implements RenderingAdapter<PlanarViewportRenderContext>
+{
   async attach(
-    ctx: ViewportBackendContext,
+    ctx: PlanarViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
-  ): Promise<PlanarVolumeRendering> {
-    const planarCtx = ctx as PlanarViewportBackendContext;
+  ): Promise<PlanarVolumeMapperRendering> {
     const payload = data.payload as PlanarPayload;
     const imageVolume = payload.imageVolume;
 
@@ -298,24 +292,24 @@ export class VtkVolumeMapperRenderingAdapter {
       {
         volumeId: payload.volumeId,
       },
-      planarCtx.element,
-      planarCtx.viewportId,
+      ctx.element,
+      ctx.viewportId,
       true
     );
     const mapper = actor.getMapper() as vtkVolumeMapper;
 
-    planarCtx.setRenderMode('vtkVolume');
-    planarCtx.renderer.addVolume(actor);
-    planarCtx.renderer.getActiveCamera().setParallelProjection(true);
-    planarCtx.renderer.resetCamera();
-    setCameraClippingRange(planarCtx);
+    ctx.setRenderMode('vtkVolume');
+    ctx.renderer.addVolume(actor);
+    ctx.renderer.getActiveCamera().setParallelProjection(true);
+    ctx.renderer.resetCamera();
+    setCameraClippingRange(ctx);
 
     const defaultRange = actor
       .getProperty()
       .getRGBTransferFunction(0)
       .getRange();
 
-    const rendering: PlanarVolumeRendering = {
+    const rendering: PlanarVolumeMapperRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       dataId: data.id,
       role: 'image',
@@ -330,82 +324,97 @@ export class VtkVolumeMapperRenderingAdapter {
           ? { lower: defaultRange[0], upper: defaultRange[1] }
           : undefined,
         orientation: payload.acquisitionOrientation || OrientationAxis.AXIAL,
-        sliceCamera: getCameraState(planarCtx),
+        sliceCamera: getCameraState(ctx),
       },
     };
 
-    setSliceIndex(planarCtx, rendering, payload.initialImageIdIndex);
-    updateClippingPlanes(planarCtx, rendering);
+    setSliceIndex(ctx, rendering, payload.initialImageIdIndex);
+    updateClippingPlanes(ctx, rendering);
     imageVolume.load(() => {
-      planarCtx.requestRender();
+      ctx.requestRender();
     });
 
     return rendering;
   }
 
   updatePresentation(
-    _ctx: ViewportBackendContext,
+    _ctx: PlanarViewportRenderContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
     applyPresentation(
-      rendering as PlanarVolumeRendering,
+      rendering as PlanarVolumeMapperRendering,
       props as PlanarPresentationProps | undefined
     );
   }
 
-  updateViewState(
-    ctx: ViewportBackendContext,
+  updateCamera(
+    ctx: PlanarViewportRenderContext,
     rendering: MountedRendering,
-    viewState: unknown,
-    props?: unknown
+    camera: unknown
   ): void {
-    const planarCtx = ctx as PlanarViewportBackendContext;
-    const planarRendering = rendering as PlanarVolumeRendering;
-    const planarViewState = viewState as PlanarViewState | undefined;
-    const planarProps = props as PlanarPresentationProps | undefined;
+    const planarRendering = rendering as PlanarVolumeMapperRendering;
+    const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
-      planarViewState?.imageIdIndex ??
+      planarCamera?.imageIdIndex ??
       planarRendering.backendHandle.currentImageIdIndex;
     const nextOrientation =
-      planarViewState?.orientation ?? planarRendering.backendHandle.orientation;
+      planarCamera?.orientation ?? planarRendering.backendHandle.orientation;
 
-    planarCtx.setRenderMode('vtkVolume');
+    ctx.setRenderMode('vtkVolume');
 
     if (nextOrientation !== planarRendering.backendHandle.orientation) {
-      applyOrientation(planarCtx, planarRendering, nextOrientation);
+      applyOrientation(ctx, planarRendering, nextOrientation);
     }
 
     if (
       nextImageIdIndex !== planarRendering.backendHandle.currentImageIdIndex
     ) {
-      setSliceIndex(planarCtx, planarRendering, nextImageIdIndex);
+      setSliceIndex(ctx, planarRendering, nextImageIdIndex);
     } else {
-      setCameraState(planarCtx, planarRendering.backendHandle.sliceCamera);
+      setCameraState(ctx, planarRendering.backendHandle.sliceCamera);
     }
 
-    applyPresentation(planarRendering, planarProps);
-    applyCameraViewState(planarCtx, planarRendering, planarViewState);
-    updateClippingPlanes(planarCtx, planarRendering);
+    applyCameraToVtk(ctx, planarRendering, planarCamera);
+    updateClippingPlanes(ctx, planarRendering);
   }
 
-  render(ctx: ViewportBackendContext): void {
-    (ctx as PlanarViewportBackendContext).requestRender();
+  updateProperties(
+    _ctx: PlanarViewportRenderContext,
+    rendering: MountedRendering,
+    presentation: unknown
+  ): void {
+    const planarRendering = rendering as PlanarVolumeMapperRendering;
+    const planarProperties = presentation as PlanarProperties | undefined;
+
+    if (planarProperties?.interpolationType !== undefined) {
+      const property = planarRendering.backendHandle.actor.getProperty();
+      property.setInterpolationType(
+        planarProperties.interpolationType as Parameters<
+          typeof property.setInterpolationType
+        >[0]
+      );
+    }
   }
 
-  resize(ctx: ViewportBackendContext): void {
-    (ctx as PlanarViewportBackendContext).requestRender();
+  render(ctx: PlanarViewportRenderContext): void {
+    ctx.requestRender();
   }
 
-  detach(ctx: ViewportBackendContext, rendering: MountedRendering): void {
-    const planarCtx = ctx as PlanarViewportBackendContext;
-    const { actor } = (rendering as PlanarVolumeRendering).backendHandle;
+  resize(ctx: PlanarViewportRenderContext): void {
+    ctx.requestRender();
+  }
 
-    planarCtx.renderer.removeVolume(actor);
+  detach(ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
+    const { actor } = (rendering as PlanarVolumeMapperRendering).backendHandle;
+
+    ctx.renderer.removeVolume(actor);
   }
 }
 
-export class VtkVolumeMapperPath implements RenderPathDefinition {
+export class VtkVolumeMapperPath
+  implements RenderPathDefinition<PlanarViewportRenderContext>
+{
   readonly id = 'planar:vtk-volume-mapper';
   readonly viewportKind = 'planar' as const;
 

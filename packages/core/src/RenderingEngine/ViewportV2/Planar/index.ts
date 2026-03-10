@@ -13,10 +13,11 @@ export {
 } from './VtkVolumeMapperRenderingAdapter';
 export { default } from './PlanarViewportV2';
 export type {
+  PlanarCamera,
   PlanarCameraState,
-  PlanarCpuRendering,
+  PlanarCpuImageRendering,
   PlanarDataProvider,
-  PlanarImageRendering,
+  PlanarImageMapperRendering,
   PlanarDataLoadOptions,
   PlanarOrientation,
   PlanarPayload,
@@ -25,8 +26,9 @@ export type {
   PlanarRenderMode,
   PlanarRendering,
   PlanarSetDataOptions,
-  PlanarVolumeRendering,
-  PlanarViewportBackendContext,
+  PlanarViewportPresentation,
+  PlanarVolumeMapperRendering,
+  PlanarViewportRenderContext,
   PlanarViewportV2Input,
   PlanarViewState,
 } from './PlanarViewportV2Types';

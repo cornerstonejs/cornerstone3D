@@ -6,17 +6,17 @@ import * as metaData from '../../../metaData';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import type {
+  PlanarCamera,
   PlanarOrientation,
   PlanarRenderMode,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
-  PlanarViewState,
 } from './PlanarViewportV2Types';
 
 export const DEFAULT_PLANAR_CPU_VOXEL_THRESHOLD = 64 * 1024 * 1024;
 
 export interface SelectedPlanarRenderPath {
-  acquisitionOrientation?: PlanarViewState['orientation'];
+  acquisitionOrientation?: PlanarCamera['orientation'];
   renderMode: PlanarRenderMode;
   volumeId: string;
 }
@@ -27,7 +27,7 @@ function getVolumeId(dataSet: PlanarRegisteredDataSet): string {
 
 export function getPlanarAcquisitionOrientation(
   imageIds: string[]
-): PlanarViewState['orientation'] | undefined {
+): PlanarCamera['orientation'] | undefined {
   const imageId = imageIds[0];
 
   if (!imageId) {
@@ -139,8 +139,8 @@ export function selectPlanarRenderPath(
 
 export function normalizePlanarOrientation(
   orientation: PlanarOrientation | undefined,
-  acquisitionOrientation?: PlanarViewState['orientation']
-): PlanarViewState['orientation'] {
+  acquisitionOrientation?: PlanarCamera['orientation']
+): PlanarCamera['orientation'] {
   if (!orientation || orientation === OrientationAxis.ACQUISITION) {
     return acquisitionOrientation || OrientationAxis.AXIAL;
   }

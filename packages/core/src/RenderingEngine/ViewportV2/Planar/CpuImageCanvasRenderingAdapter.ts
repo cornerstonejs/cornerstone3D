@@ -15,14 +15,15 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  ViewportBackendContext,
+  RenderingAdapter,
 } from '../ViewportArchitectureTypes';
 import type {
-  PlanarCpuRendering,
+  PlanarCamera,
+  PlanarCpuImageRendering,
   PlanarPayload,
   PlanarPresentationProps,
-  PlanarViewportBackendContext,
-  PlanarViewState,
+  PlanarViewportRenderContext,
+  PlanarProperties,
 } from './PlanarViewportV2Types';
 
 function getDefaultVOIRange(image: IImage): VOIRange | undefined {
@@ -41,7 +42,7 @@ function getDefaultVOIRange(image: IImage): VOIRange | undefined {
 }
 
 function applyPresentation(
-  rendering: PlanarCpuRendering,
+  rendering: PlanarCpuImageRendering,
   props?: PlanarPresentationProps
 ): void {
   const { enabledElement, defaultVOIRange } = rendering.backendHandle;
@@ -53,10 +54,6 @@ function applyPresentation(
   canvas.style.opacity = String(props?.opacity ?? 1);
 
   viewport.invert = props?.invert ?? false;
-  viewport.pixelReplication =
-    props?.interpolationType !== undefined
-      ? props.interpolationType !== InterpolationType.LINEAR
-      : false;
 
   if (voiRange) {
     const { windowCenter, windowWidth } = toWindowLevel(
@@ -74,14 +71,27 @@ function applyPresentation(
   rendering.backendHandle.renderingInvalidated = true;
 }
 
-function applyViewState(
-  rendering: PlanarCpuRendering,
-  viewState?: PlanarViewState
+function applyViewportPresentation(
+  rendering: PlanarCpuImageRendering,
+  presentation?: PlanarProperties
+): void {
+  const { enabledElement } = rendering.backendHandle;
+  const { viewport } = enabledElement;
+
+  if (presentation?.interpolationType !== undefined) {
+    viewport.pixelReplication =
+      presentation.interpolationType !== InterpolationType.LINEAR;
+  }
+}
+
+function applyCameraState(
+  rendering: PlanarCpuImageRendering,
+  camera?: PlanarCamera
 ): void {
   const { enabledElement, fitScale } = rendering.backendHandle;
   const viewport = enabledElement.viewport;
-  const [panX, panY] = viewState?.pan ?? [0, 0];
-  const zoom = Math.max(viewState?.zoom ?? 1, 0.001);
+  const [panX, panY] = camera?.pan ?? [0, 0];
+  const zoom = Math.max(camera?.zoom ?? 1, 0.001);
 
   viewport.scale = fitScale * zoom;
   viewport.translation = {
@@ -92,7 +102,7 @@ function applyViewState(
   enabledElement.transform = calculateTransform(enabledElement);
 }
 
-function renderCPUImage(rendering: PlanarCpuRendering): void {
+function renderCPUImage(rendering: PlanarCpuImageRendering): void {
   const { enabledElement, renderingInvalidated } = rendering.backendHandle;
 
   if (!enabledElement.image) {
@@ -104,14 +114,23 @@ function renderCPUImage(rendering: PlanarCpuRendering): void {
 }
 
 async function updateRenderedImage(args: {
-  ctx: PlanarViewportBackendContext;
+  ctx: PlanarViewportRenderContext;
   image: IImage;
   imageIdIndex: number;
   props?: PlanarPresentationProps;
-  rendering: PlanarCpuRendering;
-  viewState?: PlanarViewState;
+  viewportPresentation?: PlanarProperties;
+  rendering: PlanarCpuImageRendering;
+  camera?: PlanarCamera;
 }): Promise<void> {
-  const { ctx, image, imageIdIndex, props, rendering, viewState } = args;
+  const {
+    ctx,
+    image,
+    imageIdIndex,
+    props,
+    viewportPresentation,
+    rendering,
+    camera,
+  } = args;
   const enabledElement = rendering.backendHandle.enabledElement;
   const defaultViewport = getDefaultViewport(ctx.canvas, image);
   const previousViewport = enabledElement.viewport;
@@ -134,17 +153,19 @@ async function updateRenderedImage(args: {
   rendering.backendHandle.renderingInvalidated = true;
 
   applyPresentation(rendering, props);
-  applyViewState(rendering, viewState);
+  applyViewportPresentation(rendering, viewportPresentation);
+  applyCameraState(rendering, camera);
   ctx.requestRender();
 }
 
-export class CpuImageCanvasRenderingAdapter {
+export class CpuImageCanvasRenderingAdapter
+  implements RenderingAdapter<PlanarViewportRenderContext>
+{
   async attach(
-    ctx: ViewportBackendContext,
+    ctx: PlanarViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
-  ): Promise<PlanarCpuRendering> {
-    const planarCtx = ctx as PlanarViewportBackendContext;
+  ): Promise<PlanarCpuImageRendering> {
     const payload = data.payload as PlanarPayload;
 
     if (!payload.initialImage) {
@@ -153,13 +174,13 @@ export class CpuImageCanvasRenderingAdapter {
       );
     }
 
-    planarCtx.setRenderMode('cpu2d');
+    ctx.setRenderMode('cpu2d');
 
     const enabledElement = {
-      canvas: planarCtx.canvas,
+      canvas: ctx.canvas,
       image: payload.initialImage,
       renderingTools: {},
-      viewport: getDefaultViewport(planarCtx.canvas, payload.initialImage),
+      viewport: getDefaultViewport(ctx.canvas, payload.initialImage),
     } as CPUFallbackEnabledElement;
 
     resizeEnabledElement(enabledElement, true);
@@ -183,32 +204,29 @@ export class CpuImageCanvasRenderingAdapter {
   }
 
   updatePresentation(
-    _ctx: ViewportBackendContext,
+    _ctx: PlanarViewportRenderContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
     applyPresentation(
-      rendering as PlanarCpuRendering,
+      rendering as PlanarCpuImageRendering,
       props as PlanarPresentationProps | undefined
     );
   }
 
-  updateViewState(
-    ctx: ViewportBackendContext,
+  updateCamera(
+    ctx: PlanarViewportRenderContext,
     rendering: MountedRendering,
-    viewState: unknown,
-    props?: unknown
+    camera: unknown
   ): void {
-    const planarCtx = ctx as PlanarViewportBackendContext;
-    const planarRendering = rendering as PlanarCpuRendering;
-    const planarViewState = viewState as PlanarViewState | undefined;
-    const planarProps = props as PlanarPresentationProps | undefined;
+    const planarRendering = rendering as PlanarCpuImageRendering;
+    const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
-      planarViewState?.imageIdIndex ??
+      planarCamera?.imageIdIndex ??
       planarRendering.backendHandle.currentImageIdIndex;
 
-    planarCtx.setRenderMode('cpu2d');
-    applyViewState(planarRendering, planarViewState);
+    ctx.setRenderMode('cpu2d');
+    applyCameraState(planarRendering, planarCamera);
 
     if (
       nextImageIdIndex === planarRendering.backendHandle.currentImageIdIndex
@@ -230,42 +248,49 @@ export class CpuImageCanvasRenderingAdapter {
       }
 
       void updateRenderedImage({
-        ctx: planarCtx,
+        ctx,
         image,
         imageIdIndex: nextImageIdIndex,
-        props: planarProps,
         rendering: planarRendering,
-        viewState: planarViewState,
+        camera: planarCamera,
       });
     });
   }
 
-  render(_ctx: ViewportBackendContext, rendering: MountedRendering): void {
-    renderCPUImage(rendering as PlanarCpuRendering);
+  updateProperties(
+    _ctx: PlanarViewportRenderContext,
+    rendering: MountedRendering,
+    presentation: unknown
+  ): void {
+    applyViewportPresentation(
+      rendering as PlanarCpuImageRendering,
+      presentation as PlanarProperties | undefined
+    );
   }
 
-  resize(_ctx: ViewportBackendContext, rendering: MountedRendering): void {
+  render(_ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
+    renderCPUImage(rendering as PlanarCpuImageRendering);
+  }
+
+  resize(_ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
     resizeEnabledElement(
-      (rendering as PlanarCpuRendering).backendHandle.enabledElement
+      (rendering as PlanarCpuImageRendering).backendHandle.enabledElement
     );
   }
 
-  detach(ctx: ViewportBackendContext, rendering: MountedRendering): void {
-    const planarCtx = ctx as PlanarViewportBackendContext;
-    const { enabledElement } = (rendering as PlanarCpuRendering).backendHandle;
+  detach(ctx: PlanarViewportRenderContext, rendering: MountedRendering): void {
+    const { enabledElement } = (rendering as PlanarCpuImageRendering)
+      .backendHandle;
 
-    planarCtx.canvasContext.setTransform(1, 0, 0, 1, 0, 0);
-    planarCtx.canvasContext.clearRect(
-      0,
-      0,
-      planarCtx.canvas.width,
-      planarCtx.canvas.height
-    );
+    ctx.canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.canvasContext.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     enabledElement.image = undefined;
   }
 }
 
-export class CpuImageCanvasPath implements RenderPathDefinition {
+export class CpuImageCanvasPath
+  implements RenderPathDefinition<PlanarViewportRenderContext>
+{
   readonly id = 'planar:cpu-image-canvas';
   readonly viewportKind = 'planar' as const;
 

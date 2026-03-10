@@ -30,7 +30,7 @@ sequenceDiagram
     App->>Viewport: setDataId(dataId, options)
     Viewport->>DataProvider: load(dataId)
     DataProvider-->>Viewport: LogicalDataObject
-    Viewport->>Resolver: resolve(viewportKind, data, options)
+    Viewport->>Resolver: resolve(type, data, options)
     Resolver->>Path: matches(...)
     Path-->>Resolver: true
     Resolver->>Path: createAdapter()
@@ -133,39 +133,39 @@ interface MountedRendering {
   backendHandle: unknown;
 }
 
-interface ViewportBackendContext {
+interface ViewportRenderContext {
   viewportId: ViewportId;
-  viewportKind: ViewportKind;
+  type: ViewportKind;
 }
 
 interface RenderingAdapter {
   mount(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): MountedRendering;
 
   updatePresentation(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     props: PresentationProps
   ): void;
 
   updateViewState(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     viewState: ViewState
   ): void;
 
   unmount(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering
   ): void;
 }
 
 interface RenderPathDefinition {
   id: string;
-  viewportKind: ViewportKind;
+  type: ViewportKind;
 
   matches(
     data: LogicalDataObject,
@@ -179,7 +179,7 @@ interface RenderPathResolver {
   register(path: RenderPathDefinition): void;
 
   resolve(
-    viewportKind: ViewportKind,
+    type: ViewportKind,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): RenderingAdapter;
@@ -219,19 +219,17 @@ class DefaultRenderPathResolver implements RenderPathResolver {
   }
 
   resolve(
-    viewportKind: ViewportKind,
+    type: ViewportKind,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): RenderingAdapter {
     const path = this.paths.find(
-      (candidate) =>
-        candidate.viewportKind === viewportKind &&
-        candidate.matches(data, options)
+      (candidate) => candidate.type === type && candidate.matches(data, options)
     );
 
     if (!path) {
       throw new Error(
-        `No render path for ${viewportKind}/${data.kind}/${options.role}/${options.renderMode}`
+        `No render path for ${type}/${data.kind}/${options.role}/${options.renderMode}`
       );
     }
 
@@ -274,7 +272,7 @@ abstract class BaseViewport<TViewState extends ViewState>
 
   protected dataProvider: DataProvider;
   protected renderPathResolver: RenderPathResolver;
-  protected backendContext: ViewportBackendContext;
+  protected renderContext: ViewportRenderContext;
 
   protected bindings = new Map<DataId, RenderingBinding>();
   protected presentations = new Map<DataId, PresentationProps>();
@@ -286,10 +284,10 @@ abstract class BaseViewport<TViewState extends ViewState>
     const existing = this.bindings.get(dataId);
 
     if (existing) {
-      existing.adapter.unmount(this.backendContext, existing.rendering);
+      existing.adapter.unmount(this.renderContext, existing.rendering);
     }
 
-    const rendering = adapter.mount(this.backendContext, data, options);
+    const rendering = adapter.mount(this.renderContext, data, options);
 
     this.bindings.set(dataId, {
       data,
@@ -299,10 +297,10 @@ abstract class BaseViewport<TViewState extends ViewState>
 
     const props = this.presentations.get(dataId);
     if (props) {
-      adapter.updatePresentation(this.backendContext, rendering, props);
+      adapter.updatePresentation(this.renderContext, rendering, props);
     }
 
-    adapter.updateViewState(this.backendContext, rendering, this.viewState);
+    adapter.updateViewState(this.renderContext, rendering, this.viewState);
     this.render();
     return rendering.id;
   }
@@ -313,7 +311,7 @@ abstract class BaseViewport<TViewState extends ViewState>
     if (!binding) return;
 
     binding.adapter.updatePresentation(
-      this.backendContext,
+      this.renderContext,
       binding.rendering,
       props
     );
@@ -330,7 +328,7 @@ abstract class BaseViewport<TViewState extends ViewState>
 
     for (const binding of this.bindings.values()) {
       binding.adapter.updateViewState(
-        this.backendContext,
+        this.renderContext,
         binding.rendering,
         this.viewState
       );
@@ -347,7 +345,7 @@ abstract class BaseViewport<TViewState extends ViewState>
     const binding = this.bindings.get(dataId);
     if (!binding) return;
 
-    binding.adapter.unmount(this.backendContext, binding.rendering);
+    binding.adapter.unmount(this.renderContext, binding.rendering);
     this.bindings.delete(dataId);
     this.presentations.delete(dataId);
     this.render();
@@ -389,19 +387,19 @@ class PlanarViewportImpl
 {
   readonly kind = 'planar' as const;
   readonly id: ViewportId;
-  protected backendContext: VtkViewportBackendContext;
+  protected renderContext: VtkViewportRenderContext;
 
   constructor(args: {
     id: ViewportId;
     dataProvider: DataProvider;
     renderPathResolver: RenderPathResolver;
-    backendContext: VtkViewportBackendContext;
+    renderContext: VtkViewportRenderContext;
   }) {
     super();
     this.id = args.id;
     this.dataProvider = args.dataProvider;
     this.renderPathResolver = args.renderPathResolver;
-    this.backendContext = args.backendContext;
+    this.renderContext = args.renderContext;
     this.viewState = {
       slicePlane: 'axial',
       sliceIndex: 0,
@@ -434,7 +432,7 @@ class PlanarViewportImpl
   }
 
   render(): void {
-    this.backendContext.renderWindow.render();
+    this.renderContext.renderWindow.render();
   }
 }
 ```
@@ -485,8 +483,8 @@ interface VtkRenderWindowLike {
   render(): void;
 }
 
-interface VtkViewportBackendContext extends ViewportBackendContext {
-  viewportKind: 'planar';
+interface VtkViewportRenderContext extends ViewportRenderContext {
+  type: 'planar';
   renderer: VtkRendererLike;
   renderWindow: VtkRenderWindowLike;
 }
@@ -566,7 +564,7 @@ function createSlicePlaneFromViewState(
 ```ts
 class PlanarImageSlicePath implements RenderPathDefinition {
   readonly id = 'planar:image:slice';
-  readonly viewportKind = 'planar' as const;
+  readonly type = 'planar' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return (
@@ -583,7 +581,7 @@ class PlanarImageSlicePath implements RenderPathDefinition {
 
 class PlanarImageReslicePath implements RenderPathDefinition {
   readonly id = 'planar:image:reslice';
-  readonly viewportKind = 'planar' as const;
+  readonly type = 'planar' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return (
@@ -604,11 +602,11 @@ class PlanarImageReslicePath implements RenderPathDefinition {
 ```ts
 class ImageSliceRenderingAdapter implements RenderingAdapter {
   mount(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): SliceRendering {
-    const vtkCtx = ctx as VtkViewportBackendContext;
+    const vtkCtx = ctx as VtkViewportRenderContext;
     const image = data as ImageVolumeData;
     const mapper = createImageMapper();
     const actor = createImageSliceActor();
@@ -627,7 +625,7 @@ class ImageSliceRenderingAdapter implements RenderingAdapter {
   }
 
   updatePresentation(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     props: PresentationProps
   ): void {
@@ -642,7 +640,7 @@ class ImageSliceRenderingAdapter implements RenderingAdapter {
   }
 
   updateViewState(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     viewState: ViewState
   ): void {
@@ -657,19 +655,19 @@ class ImageSliceRenderingAdapter implements RenderingAdapter {
     }
   }
 
-  unmount(ctx: ViewportBackendContext, rendering: MountedRendering): void {
-    const vtkCtx = ctx as VtkViewportBackendContext;
+  unmount(ctx: ViewportRenderContext, rendering: MountedRendering): void {
+    const vtkCtx = ctx as VtkViewportRenderContext;
     vtkCtx.renderer.removeActor((rendering as SliceRendering).backendHandle.actor);
   }
 }
 
 class ImageResliceRenderingAdapter implements RenderingAdapter {
   mount(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): ResliceRendering {
-    const vtkCtx = ctx as VtkViewportBackendContext;
+    const vtkCtx = ctx as VtkViewportRenderContext;
     const image = data as ImageVolumeData;
     const mapper = createImageResliceMapper();
     const actor = createImageSliceActor();
@@ -688,7 +686,7 @@ class ImageResliceRenderingAdapter implements RenderingAdapter {
   }
 
   updatePresentation(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     props: PresentationProps
   ): void {
@@ -703,7 +701,7 @@ class ImageResliceRenderingAdapter implements RenderingAdapter {
   }
 
   updateViewState(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     viewState: ViewState
   ): void {
@@ -716,8 +714,8 @@ class ImageResliceRenderingAdapter implements RenderingAdapter {
     }
   }
 
-  unmount(ctx: ViewportBackendContext, rendering: MountedRendering): void {
-    const vtkCtx = ctx as VtkViewportBackendContext;
+  unmount(ctx: ViewportRenderContext, rendering: MountedRendering): void {
+    const vtkCtx = ctx as VtkViewportRenderContext;
     vtkCtx.renderer.removeActor((rendering as ResliceRendering).backendHandle.actor);
   }
 }
@@ -776,8 +774,8 @@ interface VideoStreamData extends LogicalDataObject {
   payload: string;
 }
 
-interface VideoViewportBackendContext extends ViewportBackendContext {
-  viewportKind: 'video';
+interface VideoViewportRenderContext extends ViewportRenderContext {
+  type: 'video';
   container: HTMLElement;
 }
 
@@ -790,7 +788,7 @@ interface VideoRendering extends MountedRendering {
 
 class VideoElementPath implements RenderPathDefinition {
   readonly id = 'video:element';
-  readonly viewportKind = 'video' as const;
+  readonly type = 'video' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return (
@@ -811,11 +809,11 @@ class VideoElementPath implements RenderPathDefinition {
 ```ts
 class HtmlVideoAdapter implements RenderingAdapter {
   mount(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): VideoRendering {
-    const videoCtx = ctx as VideoViewportBackendContext;
+    const videoCtx = ctx as VideoViewportRenderContext;
     const video = data as VideoStreamData;
 
     const element = document.createElement('video');
@@ -832,7 +830,7 @@ class HtmlVideoAdapter implements RenderingAdapter {
   }
 
   updatePresentation(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     props: PresentationProps
   ): void {
@@ -857,7 +855,7 @@ class HtmlVideoAdapter implements RenderingAdapter {
   }
 
   updateViewState(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     viewState: ViewState
   ): void {
@@ -871,7 +869,7 @@ class HtmlVideoAdapter implements RenderingAdapter {
       `translate(${panX}px, ${panY}px) scale(${scale}) rotate(${rotation}deg)`;
   }
 
-  unmount(ctx: ViewportBackendContext, rendering: MountedRendering): void {
+  unmount(ctx: ViewportRenderContext, rendering: MountedRendering): void {
     const { element } = (rendering as VideoRendering).backendHandle;
     element.remove();
   }
@@ -902,8 +900,8 @@ interface SignalData extends LogicalDataObject {
   payload: number[];
 }
 
-interface EcgViewportBackendContext extends ViewportBackendContext {
-  viewportKind: 'ecg';
+interface EcgViewportRenderContext extends ViewportRenderContext {
+  type: 'ecg';
   svgRoot: SVGSVGElement;
 }
 
@@ -916,7 +914,7 @@ interface SignalRendering extends MountedRendering {
 
 class SvgSignalPath implements RenderPathDefinition {
   readonly id = 'ecg:svg-signal';
-  readonly viewportKind = 'ecg' as const;
+  readonly type = 'ecg' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return (
@@ -937,11 +935,11 @@ class SvgSignalPath implements RenderPathDefinition {
 ```ts
 class SvgSignalTraceAdapter implements RenderingAdapter {
   mount(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): SignalRendering {
-    const ecgCtx = ctx as EcgViewportBackendContext;
+    const ecgCtx = ctx as EcgViewportRenderContext;
     const signal = data as SignalData;
 
     const path = document.createElementNS(
@@ -960,7 +958,7 @@ class SvgSignalTraceAdapter implements RenderingAdapter {
   }
 
   updatePresentation(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     props: PresentationProps
   ): void {
@@ -979,7 +977,7 @@ class SvgSignalTraceAdapter implements RenderingAdapter {
   }
 
   updateViewState(
-    ctx: ViewportBackendContext,
+    ctx: ViewportRenderContext,
     rendering: MountedRendering,
     viewState: ViewState
   ): void {
@@ -996,7 +994,7 @@ class SvgSignalTraceAdapter implements RenderingAdapter {
     );
   }
 
-  unmount(ctx: ViewportBackendContext, rendering: MountedRendering): void {
+  unmount(ctx: ViewportRenderContext, rendering: MountedRendering): void {
     const { path } = (rendering as SignalRendering).backendHandle;
     path.remove();
   }

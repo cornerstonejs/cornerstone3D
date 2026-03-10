@@ -15,15 +15,16 @@ import {
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
 import type {
+  PlanarCamera,
   PlanarPresentationProps,
   PlanarRenderMode,
   PlanarRendering,
   PlanarPayload,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
-  PlanarViewportBackendContext,
+  PlanarViewportRenderContext,
+  PlanarProperties,
   PlanarViewportV2Input,
-  PlanarViewState,
 } from './PlanarViewportV2Types';
 
 defaultRenderPathResolver.register(new CpuImageCanvasPath());
@@ -31,8 +32,10 @@ defaultRenderPathResolver.register(new VtkImageMapperPath());
 defaultRenderPathResolver.register(new VtkVolumeMapperPath());
 
 class PlanarViewportV2 extends ViewportV2<
-  PlanarViewState,
-  PlanarPresentationProps
+  PlanarCamera,
+  PlanarProperties,
+  PlanarPresentationProps,
+  PlanarViewportRenderContext
 > {
   readonly kind = 'planar' as const;
   readonly id: string;
@@ -44,7 +47,7 @@ class PlanarViewportV2 extends ViewportV2<
   defaultOptions: ViewportInputOptions;
   suppressEvents = false;
 
-  protected backendContext: PlanarViewportBackendContext;
+  protected renderContext: PlanarViewportRenderContext;
 
   private activeDataId?: string;
 
@@ -57,7 +60,7 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   setRendered(): void {
-    // no-op — rendering engine calls this after completing a frame
+    // no-op -- rendering engine calls this after completing a frame
   }
 
   constructor(args: PlanarViewportV2Input) {
@@ -103,7 +106,7 @@ class PlanarViewportV2 extends ViewportV2<
 
     renderer.getActiveCamera().setParallelProjection(true);
 
-    this.backendContext = {
+    this.renderContext = {
       viewportId: this.id,
       viewportKind: 'planar',
       canvas: cpuCanvas,
@@ -127,12 +130,13 @@ class PlanarViewportV2 extends ViewportV2<
       },
       vtkCanvas,
     };
-    this.viewState = {
+    this.camera = {
       imageIdIndex: 0,
       orientation: OrientationAxis.AXIAL,
       zoom: 1,
       pan: [0, 0],
     };
+    this.properties = {};
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.resize();
@@ -204,8 +208,8 @@ class PlanarViewportV2 extends ViewportV2<
     };
 
     this.activeDataId = dataId;
-    this.viewState = {
-      ...this.viewState,
+    this.camera = {
+      ...this.camera,
       imageIdIndex: payload.initialImageIdIndex,
       orientation: normalizePlanarOrientation(
         planarOptions.orientation,
@@ -240,30 +244,38 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   getCurrentImageIdIndex(): number {
-    return this.viewState.imageIdIndex ?? 0;
+    return this.camera.imageIdIndex ?? 0;
   }
 
   getCurrentImageId(): string | undefined {
     return this.getImageIds()[this.getCurrentImageIdIndex()];
   }
 
-  setProperties(props: PlanarPresentationProps): void {
-    if (!this.activeDataId) {
-      return;
+  setProperties(
+    props: Partial<PlanarPresentationProps & PlanarProperties>
+  ): void {
+    const { interpolationType, slabThickness, ...dataProps } = props;
+
+    if (interpolationType !== undefined || slabThickness !== undefined) {
+      super.setProperties({
+        ...(interpolationType !== undefined ? { interpolationType } : {}),
+        ...(slabThickness !== undefined ? { slabThickness } : {}),
+      });
     }
 
-    this.setPresentation(this.activeDataId, {
-      ...(this.getPresentation(this.activeDataId) || {}),
-      ...props,
-    });
+    if (this.activeDataId && Object.keys(dataProps).length > 0) {
+      this.setPresentation(this.activeDataId, {
+        ...(this.getPresentation(this.activeDataId) || {}),
+        ...dataProps,
+      });
+    }
   }
 
-  getProperties(): PlanarPresentationProps | undefined {
-    if (!this.activeDataId) {
-      return;
-    }
-
-    return this.getPresentation(this.activeDataId);
+  getProperties(): PlanarPresentationProps & PlanarProperties {
+    return {
+      ...(this.activeDataId ? this.getPresentation(this.activeDataId) : {}),
+      ...this.properties,
+    };
   }
 
   setImageIdIndex(imageIdIndex: number): Promise<string> {
@@ -280,7 +292,7 @@ class PlanarViewportV2 extends ViewportV2<
       imageIds.length - 1
     );
 
-    this.setViewState({
+    this.setCamera({
       imageIdIndex: clampedImageIdIndex,
     });
 
@@ -297,12 +309,12 @@ class PlanarViewportV2 extends ViewportV2<
       | OrientationAxis.CORONAL
       | OrientationAxis.SAGITTAL
   ): void {
-    this.setViewState({ orientation });
+    this.setCamera({ orientation });
   }
 
   resize(): void {
     const { clientHeight, clientWidth } = this.element;
-    const { cpuCanvas } = this.backendContext;
+    const { cpuCanvas } = this.renderContext;
 
     if (cpuCanvas.width !== clientWidth || cpuCanvas.height !== clientHeight) {
       cpuCanvas.width = clientWidth;
@@ -311,7 +323,7 @@ class PlanarViewportV2 extends ViewportV2<
 
     for (const binding of this.bindings.values()) {
       binding.adapter.resize?.(
-        this.backendContext,
+        this.renderContext,
         binding.rendering as PlanarRendering
       );
     }
@@ -322,7 +334,7 @@ class PlanarViewportV2 extends ViewportV2<
 
     for (const binding of this.bindings.values()) {
       binding.adapter.render?.(
-        this.backendContext,
+        this.renderContext,
         binding.rendering as PlanarRendering
       );
       renderedByAdapter = renderedByAdapter || Boolean(binding.adapter.render);

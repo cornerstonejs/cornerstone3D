@@ -5,17 +5,23 @@ import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
 import { CanvasECGPath } from './CanvasECGRenderingAdapter';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import type {
-  ECGCanvasBackendContext,
+  ECGCamera,
+  ECGCanvasRenderContext,
   ECGCanvasRendering,
   ECGPresentationProps,
-  ECGViewState,
+  ECGProperties,
   ECGViewportV2Input,
   ECGWaveformPayload,
 } from './ECGViewportV2Types';
 
 defaultRenderPathResolver.register(new CanvasECGPath());
 
-class ECGViewportV2 extends ViewportV2<ECGViewState, ECGPresentationProps> {
+class ECGViewportV2 extends ViewportV2<
+  ECGCamera,
+  ECGProperties,
+  ECGPresentationProps,
+  ECGCanvasRenderContext
+> {
   readonly kind = 'ecg' as const;
   readonly id: string;
 
@@ -23,7 +29,7 @@ class ECGViewportV2 extends ViewportV2<ECGViewState, ECGPresentationProps> {
   readonly canvas: HTMLCanvasElement;
   readonly canvasContext: CanvasRenderingContext2D;
 
-  protected backendContext: ECGCanvasBackendContext;
+  protected renderContext: ECGCanvasRenderContext;
 
   constructor(args: ECGViewportV2Input) {
     super();
@@ -34,17 +40,22 @@ class ECGViewportV2 extends ViewportV2<ECGViewState, ECGPresentationProps> {
     this.dataProvider = args.dataProvider || new DefaultECGDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || defaultRenderPathResolver;
-    this.backendContext = {
+    this.renderContext = {
       viewportId: this.id,
       viewportKind: 'ecg',
       element: this.element,
       canvas: this.canvas,
       canvasContext: this.canvasContext,
     };
-    this.viewState = {
+    this.camera = {
       timeRange: [0, 1],
       valueRange: [-1, 1],
       scrollOffset: 0,
+    };
+    this.properties = {
+      lineWidth: 1,
+      amplitudeScale: 1,
+      showGrid: true,
     };
 
     this.element.setAttribute('data-viewport-uid', this.id);
@@ -79,16 +90,14 @@ class ECGViewportV2 extends ViewportV2<ECGViewState, ECGPresentationProps> {
       this.setPresentation(dataId, {
         visible: true,
         opacity: 1,
-        lineWidth: 1,
-        amplitudeScale: 1,
-        showGrid: true,
         visibleChannels: waveform.channels.map((_channel, index) => index),
       });
-      this.setViewState({
+      this.camera = {
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
         scrollOffset: 0,
-      });
+      };
+      this.modified();
 
       renderingIds.push(renderingId);
     }
@@ -172,7 +181,9 @@ class ECGViewportV2 extends ViewportV2<ECGViewState, ECGPresentationProps> {
   }
 
   render(): void {
-    this.redrawBindings();
+    for (const binding of this.bindings.values()) {
+      binding.adapter.render?.(this.renderContext, binding.rendering);
+    }
   }
 }
 
