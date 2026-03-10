@@ -1,7 +1,7 @@
 import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
 import { registerDefaultProvider } from '@cornerstonejs/metadata';
 
-import { loadImageFromDataSet, loadImageFromNatural } from './loadImage';
+import { loadImage, loadImageFromNatural } from './loadImage';
 import { metaDataProvider } from './metaData/index';
 
 /**
@@ -24,36 +24,18 @@ export default function (options?: {
     // register dicomweb and wadouri image loader prefixes and bind them
     // to the loadImage.  Note this registers both legacy and new metadata
     // loader, but the metadata provider is registered separately.
-    registerImageLoader(
-      'dicomweb',
-      loadImageFromDataSet as unknown as Types.ImageLoaderFn
-    );
-    registerImageLoader(
-      'wadouri',
-      loadImageFromDataSet as unknown as Types.ImageLoaderFn
-    );
-    registerImageLoader(
-      'dicomfile',
-      loadImageFromDataSet as unknown as Types.ImageLoaderFn
-    );
+    registerImageLoader('dicomweb', loadImage);
+    registerImageLoader('wadouri', loadImage);
+    registerImageLoader('dicomfile', loadImage);
     metaData.addProvider(metaDataProvider);
     return;
   }
 
   // register dicomweb and wadouri image loader prefixes to loadImageFromNatural
   // (dataSetCacheManager populates NATURAL via addPart10Instance when loading; returns IImage).
-  registerImageLoader(
-    'dicomweb',
-    loadImageFromNatural as unknown as Types.ImageLoaderFn
-  );
-  registerImageLoader(
-    'wadouri',
-    loadImageFromNatural as unknown as Types.ImageLoaderFn
-  );
-  registerImageLoader(
-    'dicomfile',
-    loadImageFromNatural as unknown as Types.ImageLoaderFn
-  );
+  registerImageLoader('dicomweb', loadImageFromNatural);
+  registerImageLoader('wadouri', loadImageFromNatural);
+  registerImageLoader('dicomfile', loadImageFromNatural);
 
   registerDefaultProvider();
 }
