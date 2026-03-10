@@ -27,6 +27,9 @@
     "viewports": {
       "description": "Other Viewports (video,wsi)"
     },
+    "viewports-v2": {
+      "description": "Viewport V2 proof of concepts"
+    },
     "nifti": {
       "description": "Nifti Volume loader"
     }
@@ -348,6 +351,12 @@
       "wsiAnnotationTools": {
         "name": "WSI Annotation Tools",
         "description": "WSI with length and other annotation tools"
+      }
+    },
+    "viewports-v2": {
+      "ecgArchitecture": {
+        "name": "ECG Architecture POC",
+        "description": "Proof of concept ECG viewport using the V2 resolver and viewport architecture."
       }
     },
     "tools-segmentation": {

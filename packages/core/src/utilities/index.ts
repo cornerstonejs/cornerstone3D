@@ -71,6 +71,7 @@ import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { pointInShapeCallback } from './pointInShapeCallback';
+import * as ECGUtilities from './ECGUtilities';
 // name spaces
 export * as planar from './planar';
 import * as windowLevel from './windowLevel';
@@ -202,6 +203,7 @@ export {
   handleMultiframe4D,
   generateFrameImageId,
   pointInShapeCallback,
+  ECGUtilities,
   deepEqual,
   jumpToSlice,
   scroll,

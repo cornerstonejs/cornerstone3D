@@ -18,6 +18,15 @@ import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
 import ECGViewport from './RenderingEngine/ECGViewport';
+import {
+  defaultRenderPathResolver,
+  DefaultRenderPathResolver,
+} from './RenderingEngine/DefaultRenderPathResolver';
+import ViewportV2 from './RenderingEngine/ViewportV2';
+import ECGViewportV2, {
+  CanvasECGPath,
+  DefaultECGDataProvider,
+} from './RenderingEngine/ECGViewportV2';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -93,6 +102,15 @@ import {
 
 export * from './loaders/decimatedVolumeLoader';
 
+const renderingEngineExportsV2 = {
+  ViewportV2,
+  DefaultRenderPathResolver,
+  defaultRenderPathResolver,
+  ECGViewportV2,
+  CanvasECGPath,
+  DefaultECGDataProvider,
+};
+
 // Add new types here so that they can be imported singly as required.
 export type {
   Types,
@@ -129,6 +147,8 @@ export {
   VideoViewport,
   WSIViewport,
   ECGViewport,
+  ECGViewportV2,
+  ViewportV2,
   RenderingEngine,
   BaseRenderingEngine,
   TiledRenderingEngine,
@@ -162,6 +182,11 @@ export {
   setVolumesForViewports,
   addVolumesToViewports,
   addImageSlicesToViewports,
+  DefaultRenderPathResolver,
+  defaultRenderPathResolver,
+  CanvasECGPath,
+  DefaultECGDataProvider,
+  renderingEngineExportsV2,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
