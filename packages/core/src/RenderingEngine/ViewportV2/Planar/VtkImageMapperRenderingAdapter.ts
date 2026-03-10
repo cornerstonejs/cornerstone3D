@@ -2,7 +2,7 @@ import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { InterpolationType } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
-import type { IImage } from '../../../types';
+import type { IImage, Point3 } from '../../../types';
 import {
   applyPlanarCameraViewState,
   applyPlanarImagePresentation,
@@ -50,7 +50,7 @@ export class VtkImageMapperRenderingAdapter
     mapper.setInputData(imageData);
     actor.setMapper(mapper);
     ctx.renderer.addActor(actor);
-    ctx.renderer.getActiveCamera().setParallelProjection(true);
+    applyImageOrientationToCamera(ctx.renderer, imageData);
     ctx.renderer.resetCamera();
 
     return {
@@ -222,7 +222,7 @@ async function updateRenderedImage(args: {
   });
 
   if (resetCamera) {
-    ctx.renderer.getActiveCamera().setParallelProjection(true);
+    applyImageOrientationToCamera(ctx.renderer, imageData);
     ctx.renderer.resetCamera();
     rendering.backendHandle.initialCamera = getPlanarCameraState(ctx.renderer);
   }
@@ -233,4 +233,22 @@ async function updateRenderedImage(args: {
     viewState: camera,
   });
   ctx.requestRender();
+}
+
+function applyImageOrientationToCamera(
+  renderer: PlanarViewportRenderContext['renderer'],
+  imageData: PlanarImageMapperRendering['backendHandle']['imageData']
+): void {
+  const direction = Array.from(imageData.getDirection());
+  const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
+  const viewUp = direction.slice(3, 6).map((x) => -x) as Point3;
+  const camera = renderer.getActiveCamera();
+
+  camera.setParallelProjection(true);
+  camera.setDirectionOfProjection(
+    -viewPlaneNormal[0],
+    -viewPlaneNormal[1],
+    -viewPlaneNormal[2]
+  );
+  camera.setViewUp(viewUp[0], viewUp[1], viewUp[2]);
 }

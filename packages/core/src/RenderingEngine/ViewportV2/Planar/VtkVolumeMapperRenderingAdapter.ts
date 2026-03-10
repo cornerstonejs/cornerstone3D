@@ -2,7 +2,8 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { RENDERING_DEFAULTS } from '../../../constants';
-import { OrientationAxis } from '../../../enums';
+import { Events, OrientationAxis } from '../../../enums';
+import eventTarget from '../../../eventTarget';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import type { Point3, VOIRange } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
@@ -29,7 +30,6 @@ import type {
   PlanarVolumeMapperRendering,
 } from './PlanarViewportV2Types';
 import { getPlanarCameraVectors } from './planarCameraOrientation';
-import { subscribeToVolumeProgress } from './subscribeToVolumeProgress';
 
 export class VtkVolumeMapperRenderingAdapter
   implements RenderingAdapter<PlanarViewportRenderContext>
@@ -84,7 +84,7 @@ export class VtkVolumeMapperRenderingAdapter
           ? { lower: defaultRange[0], upper: defaultRange[1] }
           : undefined,
         orientation: payload.acquisitionOrientation || OrientationAxis.AXIAL,
-        removeStreamingSubscriptions: subscribeToVolumeProgress(
+        removeStreamingSubscriptions: subscribeToVolumeEvents(
           payload.volumeId,
           () => {
             ctx.requestRender();
@@ -198,6 +198,38 @@ export class VtkVolumeMapperPath
   createAdapter() {
     return new VtkVolumeMapperRenderingAdapter();
   }
+}
+
+function subscribeToVolumeEvents(
+  volumeId: string,
+  onProgress: () => void
+): () => void {
+  const handleProgress = (evt: Event) => {
+    const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
+
+    if (detail?.volumeId !== volumeId) {
+      return;
+    }
+
+    onProgress();
+  };
+
+  eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleProgress);
+  eventTarget.addEventListener(
+    Events.IMAGE_VOLUME_LOADING_COMPLETED,
+    handleProgress
+  );
+
+  return () => {
+    eventTarget.removeEventListener(
+      Events.IMAGE_VOLUME_MODIFIED,
+      handleProgress
+    );
+    eventTarget.removeEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      handleProgress
+    );
+  };
 }
 
 function getCameraState(ctx: PlanarViewportRenderContext): PlanarCameraState {

@@ -115,6 +115,10 @@ export function selectPlanarRenderPath(
     (acquisitionOrientation !== undefined &&
       orientation === acquisitionOrientation);
   const requestedRenderMode = options.renderMode ?? 'auto';
+  const shouldUseCpuPath = shouldUseCPU(
+    dataSet.imageIds,
+    options.cpuVoxelThreshold
+  );
 
   if (requestedRenderMode !== 'auto') {
     if (requestedRenderMode === 'cpu2d' || requestedRenderMode === 'vtkImage') {
@@ -153,16 +157,14 @@ export function selectPlanarRenderPath(
 
     return {
       acquisitionOrientation,
-      renderMode: 'vtkVolume',
+      renderMode: shouldUseCpuPath ? 'cpuVolume' : 'vtkVolume',
       volumeId,
     };
   }
 
   return {
     acquisitionOrientation,
-    renderMode: shouldUseCPU(dataSet.imageIds, options.cpuVoxelThreshold)
-      ? 'cpu2d'
-      : 'vtkImage',
+    renderMode: shouldUseCpuPath ? 'cpu2d' : 'vtkImage',
     volumeId,
   };
 }
