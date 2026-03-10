@@ -59,7 +59,7 @@ export class VtkImageMapperRenderingAdapter
       dataId: data.id,
       role: 'image',
       renderMode: 'vtkImage',
-      backendHandle: {
+      runtime: {
         actor,
         mapper,
         imageData,
@@ -80,8 +80,8 @@ export class VtkImageMapperRenderingAdapter
     const planarRendering = rendering as PlanarImageMapperRendering;
 
     applyPlanarImagePresentation({
-      actor: planarRendering.backendHandle.actor,
-      defaultVOIRange: planarRendering.backendHandle.defaultVOIRange,
+      actor: planarRendering.runtime.actor,
+      defaultVOIRange: planarRendering.runtime.defaultVOIRange,
       props: {
         interpolationType: InterpolationType.LINEAR,
         ...(props as PlanarPresentationProps | undefined),
@@ -97,32 +97,29 @@ export class VtkImageMapperRenderingAdapter
     const planarRendering = rendering as PlanarImageMapperRendering;
     const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
-      planarCamera?.imageIdIndex ??
-      planarRendering.backendHandle.currentImageIdIndex;
+      planarCamera?.imageIdIndex ?? planarRendering.runtime.currentImageIdIndex;
 
     ctx.display.activateRenderMode('vtkImage');
     applyPlanarCameraViewState({
-      initialCamera: planarRendering.backendHandle.initialCamera,
+      initialCamera: planarRendering.runtime.initialCamera,
       renderer: ctx.vtk.renderer,
       viewState: planarCamera,
     });
 
-    if (
-      nextImageIdIndex === planarRendering.backendHandle.currentImageIdIndex
-    ) {
+    if (nextImageIdIndex === planarRendering.runtime.currentImageIdIndex) {
       return;
     }
 
-    const { imageIds } = planarRendering.backendHandle.payload;
+    const { imageIds } = planarRendering.runtime.payload;
 
     if (nextImageIdIndex < 0 || nextImageIdIndex >= imageIds.length) {
       return;
     }
 
-    const requestId = ++planarRendering.backendHandle.loadRequestId;
+    const requestId = ++planarRendering.runtime.loadRequestId;
 
     void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {
-      if (requestId !== planarRendering.backendHandle.loadRequestId) {
+      if (requestId !== planarRendering.runtime.loadRequestId) {
         return;
       }
 
@@ -145,7 +142,7 @@ export class VtkImageMapperRenderingAdapter
     const planarProperties = presentation as PlanarProperties | undefined;
 
     if (planarProperties?.interpolationType !== undefined) {
-      const property = planarRendering.backendHandle.actor.getProperty();
+      const property = planarRendering.runtime.actor.getProperty();
       property.setInterpolationType(
         planarProperties.interpolationType as Parameters<
           typeof property.setInterpolationType
@@ -155,7 +152,7 @@ export class VtkImageMapperRenderingAdapter
   }
 
   detach(ctx: PlanarVtkImageAdapterContext, rendering: MountedRendering): void {
-    const { actor } = (rendering as PlanarImageMapperRendering).backendHandle;
+    const { actor } = (rendering as PlanarImageMapperRendering).runtime;
 
     ctx.vtk.renderer.removeActor(actor);
   }
@@ -215,13 +212,13 @@ async function updateRenderedImage(args: {
     resetCamera = false,
     camera,
   } = args;
-  const { actor, mapper } = rendering.backendHandle;
+  const { actor, mapper } = rendering.runtime;
   const imageData = createVTKImageDataFromImage(image);
 
   mapper.setInputData(imageData);
-  rendering.backendHandle.imageData = imageData;
-  rendering.backendHandle.currentImageIdIndex = imageIdIndex;
-  rendering.backendHandle.defaultVOIRange = getDefaultImageVOIRange(image);
+  rendering.runtime.imageData = imageData;
+  rendering.runtime.currentImageIdIndex = imageIdIndex;
+  rendering.runtime.defaultVOIRange = getDefaultImageVOIRange(image);
 
   if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
     actor.getProperty().setIndependentComponents(false);
@@ -229,7 +226,7 @@ async function updateRenderedImage(args: {
 
   applyPlanarImagePresentation({
     actor,
-    defaultVOIRange: rendering.backendHandle.defaultVOIRange,
+    defaultVOIRange: rendering.runtime.defaultVOIRange,
     props: {
       interpolationType:
         planarProperties?.interpolationType ?? InterpolationType.LINEAR,
@@ -240,13 +237,11 @@ async function updateRenderedImage(args: {
   if (resetCamera) {
     applyImageOrientationToCamera(ctx.vtk.renderer, imageData);
     ctx.vtk.renderer.resetCamera();
-    rendering.backendHandle.initialCamera = getPlanarCameraState(
-      ctx.vtk.renderer
-    );
+    rendering.runtime.initialCamera = getPlanarCameraState(ctx.vtk.renderer);
   }
 
   applyPlanarCameraViewState({
-    initialCamera: rendering.backendHandle.initialCamera,
+    initialCamera: rendering.runtime.initialCamera,
     renderer: ctx.vtk.renderer,
     viewState: camera,
   });
@@ -255,7 +250,7 @@ async function updateRenderedImage(args: {
 
 function applyImageOrientationToCamera(
   renderer: PlanarVtkImageAdapterContext['vtk']['renderer'],
-  imageData: PlanarImageMapperRendering['backendHandle']['imageData']
+  imageData: PlanarImageMapperRendering['runtime']['imageData']
 ): void {
   const direction = Array.from(imageData.getDirection());
   const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;

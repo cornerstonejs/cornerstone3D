@@ -69,7 +69,7 @@ export class CpuVolumeSliceRenderingAdapter
       dataId: data.id,
       role: 'image',
       renderMode: 'cpuVolume',
-      backendHandle: {
+      runtime: {
         actor,
         mapper,
         imageVolume: payload.imageVolume,
@@ -82,9 +82,9 @@ export class CpuVolumeSliceRenderingAdapter
           payload.volumeId,
           () => {
             const rerenderLoadedSlice = () => {
-              rendering.backendHandle.pendingVolumeLoadCallback = false;
-              rendering.backendHandle.sampledSliceState = undefined;
-              rendering.backendHandle.renderingInvalidated = true;
+              rendering.runtime.pendingVolumeLoadCallback = false;
+              rendering.runtime.sampledSliceState = undefined;
+              rendering.runtime.renderingInvalidated = true;
               this.render(ctx, rendering);
             };
 
@@ -108,10 +108,9 @@ export class CpuVolumeSliceRenderingAdapter
     rendering: MountedRendering,
     props: unknown
   ): void {
-    (rendering as PlanarCpuVolumeRendering).backendHandle.presentation =
-      props as PlanarCpuVolumeRendering['backendHandle']['presentation'];
-    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
-      true;
+    (rendering as PlanarCpuVolumeRendering).runtime.presentation =
+      props as PlanarCpuVolumeRendering['runtime']['presentation'];
+    (rendering as PlanarCpuVolumeRendering).runtime.renderingInvalidated = true;
   }
 
   updateCamera(
@@ -123,7 +122,7 @@ export class CpuVolumeSliceRenderingAdapter
     const planarCamera = camera as PlanarCamera | undefined;
 
     ctx.display.activateRenderMode('cpuVolume');
-    planarRendering.backendHandle.currentCamera = planarCamera;
+    planarRendering.runtime.currentCamera = planarCamera;
     syncVolumeSliceState(ctx, planarRendering, {
       camera: planarCamera,
     });
@@ -134,10 +133,9 @@ export class CpuVolumeSliceRenderingAdapter
     rendering: MountedRendering,
     props: unknown
   ): void {
-    (rendering as PlanarCpuVolumeRendering).backendHandle.properties =
-      props as PlanarCpuVolumeRendering['backendHandle']['properties'];
-    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
-      true;
+    (rendering as PlanarCpuVolumeRendering).runtime.properties =
+      props as PlanarCpuVolumeRendering['runtime']['properties'];
+    (rendering as PlanarCpuVolumeRendering).runtime.renderingInvalidated = true;
   }
 
   render(
@@ -145,34 +143,32 @@ export class CpuVolumeSliceRenderingAdapter
     rendering: MountedRendering
   ): void {
     const planarRendering = rendering as PlanarCpuVolumeRendering;
-    const { backendHandle } = planarRendering;
+    const { runtime } = planarRendering;
 
     ctx.display.activateRenderMode('cpuVolume');
 
-    if (backendHandle.presentation?.visible === false) {
+    if (runtime.presentation?.visible === false) {
       ctx.cpu.canvas.style.display = 'none';
       return;
     }
 
     ctx.cpu.canvas.style.display = '';
-    ctx.cpu.canvas.style.opacity = String(
-      backendHandle.presentation?.opacity ?? 1
-    );
+    ctx.cpu.canvas.style.opacity = String(runtime.presentation?.opacity ?? 1);
 
     const loadStatus = (
-      backendHandle.imageVolume as { loadStatus?: { loaded?: boolean } }
+      runtime.imageVolume as { loadStatus?: { loaded?: boolean } }
     ).loadStatus;
 
     if (!loadStatus?.loaded) {
       clearToBackground(ctx);
-      if (!backendHandle.pendingVolumeLoadCallback) {
-        backendHandle.pendingVolumeLoadCallback = true;
-        backendHandle.imageVolume.load();
+      if (!runtime.pendingVolumeLoadCallback) {
+        runtime.pendingVolumeLoadCallback = true;
+        runtime.imageVolume.load();
       }
       return;
     }
 
-    backendHandle.pendingVolumeLoadCallback = false;
+    runtime.pendingVolumeLoadCallback = false;
 
     if (!ctx.cpu.canvas.width || !ctx.cpu.canvas.height) {
       return;
@@ -180,64 +176,60 @@ export class CpuVolumeSliceRenderingAdapter
 
     const camera = getViewportCamera(ctx);
     const shouldResample =
-      backendHandle.renderingInvalidated ||
+      runtime.renderingInvalidated ||
       this.sampler.needsResample({
-        sampledSliceState: backendHandle.sampledSliceState,
+        sampledSliceState: runtime.sampledSliceState,
         width: ctx.cpu.canvas.width,
         height: ctx.cpu.canvas.height,
         camera,
-        properties: backendHandle.properties,
+        properties: runtime.properties,
       });
 
     if (shouldResample) {
-      backendHandle.sampledSliceState = this.sampler.sampleSliceImage({
-        volume: backendHandle.imageVolume,
+      runtime.sampledSliceState = this.sampler.sampleSliceImage({
+        volume: runtime.imageVolume,
         width: ctx.cpu.canvas.width,
         height: ctx.cpu.canvas.height,
         camera,
-        presentation: backendHandle.presentation,
-        properties: backendHandle.properties,
+        presentation: runtime.presentation,
+        properties: runtime.properties,
       });
-      backendHandle.renderingInvalidated = true;
+      runtime.renderingInvalidated = true;
     }
 
-    if (!backendHandle.sampledSliceState) {
+    if (!runtime.sampledSliceState) {
       clearToBackground(ctx);
       return;
     }
 
-    backendHandle.enabledElement = this.sampler.createOrUpdateEnabledElement({
-      enabledElement: backendHandle.enabledElement,
+    runtime.enabledElement = this.sampler.createOrUpdateEnabledElement({
+      enabledElement: runtime.enabledElement,
       canvas: ctx.cpu.canvas,
-      image: backendHandle.sampledSliceState.image,
-      modality: backendHandle.imageVolume.metadata?.Modality,
+      image: runtime.sampledSliceState.image,
+      modality: runtime.imageVolume.metadata?.Modality,
     });
     this.sampler.updateCPUFallbackViewport({
-      enabledElement: backendHandle.enabledElement,
-      sampledSliceState: backendHandle.sampledSliceState,
+      enabledElement: runtime.enabledElement,
+      sampledSliceState: runtime.sampledSliceState,
       camera,
-      presentation: backendHandle.presentation,
-      properties: backendHandle.properties,
-      zoom: backendHandle.currentCamera?.zoom,
+      presentation: runtime.presentation,
+      properties: runtime.properties,
+      zoom: runtime.currentCamera?.zoom,
     });
-    backendHandle.defaultVOIRange = this.sampler.getResolvedVOIRange(
-      backendHandle.presentation?.voiRange,
-      backendHandle.sampledSliceState.image.minPixelValue ?? 0,
-      backendHandle.sampledSliceState.image.maxPixelValue ?? 1
+    runtime.defaultVOIRange = this.sampler.getResolvedVOIRange(
+      runtime.presentation?.voiRange,
+      runtime.sampledSliceState.image.minPixelValue ?? 0,
+      runtime.sampledSliceState.image.maxPixelValue ?? 1
     );
-    drawImageSync(
-      backendHandle.enabledElement,
-      backendHandle.renderingInvalidated
-    );
-    backendHandle.renderingInvalidated = false;
+    drawImageSync(runtime.enabledElement, runtime.renderingInvalidated);
+    runtime.renderingInvalidated = false;
   }
 
   resize(
     _ctx: PlanarCpuVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
-    (rendering as PlanarCpuVolumeRendering).backendHandle.renderingInvalidated =
-      true;
+    (rendering as PlanarCpuVolumeRendering).runtime.renderingInvalidated = true;
   }
 
   detach(
@@ -246,7 +238,7 @@ export class CpuVolumeSliceRenderingAdapter
   ): void {
     const { actor, removeStreamingSubscriptions } = (
       rendering as PlanarCpuVolumeRendering
-    ).backendHandle;
+    ).runtime;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);
@@ -391,7 +383,7 @@ function updateClippingPlanes(
   const camera = ctx.vtk.renderer.getActiveCamera();
   const viewPlaneNormal = [...camera.getViewPlaneNormal()] as Point3;
   const focalPoint = [...camera.getFocalPoint()] as Point3;
-  const clippingPlanes = ensureClippingPlanes(rendering.backendHandle.mapper);
+  const clippingPlanes = ensureClippingPlanes(rendering.runtime.mapper);
   const slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
   const scaledDistance = viewPlaneNormal.map(
     (value) => value * slabThickness
@@ -429,7 +421,7 @@ function applyOrientation(
   }
 
   const cameraValues = getPlanarCameraVectors({
-    imageVolume: rendering.backendHandle.imageVolume,
+    imageVolume: rendering.runtime.imageVolume,
     orientation,
   });
 
@@ -450,8 +442,8 @@ function applyOrientation(
     cameraValues.viewUp[2]
   );
   ctx.vtk.renderer.resetCamera();
-  rendering.backendHandle.orientation = orientation;
-  rendering.backendHandle.sliceCamera = getCameraState(ctx);
+  rendering.runtime.orientation = orientation;
+  rendering.runtime.sliceCamera = getCameraState(ctx);
   updateClippingPlanes(ctx, rendering);
 }
 
@@ -462,13 +454,13 @@ function getCurrentSliceIndex(
   const camera = ctx.vtk.renderer.getActiveCamera();
 
   return getPlanarVolumeSliceNavigationState({
-    actor: rendering.backendHandle.actor,
+    actor: rendering.runtime.actor,
     camera: {
       focalPoint: [...camera.getFocalPoint()] as Point3,
       position: [...camera.getPosition()] as Point3,
       viewPlaneNormal: [...camera.getViewPlaneNormal()] as Point3,
     },
-    imageVolume: rendering.backendHandle.imageVolume,
+    imageVolume: rendering.runtime.imageVolume,
   }).currentSliceIndex;
 }
 
@@ -477,7 +469,7 @@ function setSliceIndex(
   rendering: PlanarCpuVolumeRendering,
   imageIdIndex: number
 ): void {
-  setCameraState(ctx, rendering.backendHandle.sliceCamera);
+  setCameraState(ctx, rendering.runtime.sliceCamera);
 
   const camera = ctx.vtk.renderer.getActiveCamera();
   const viewPlaneNormal = [...camera.getViewPlaneNormal()] as Point3;
@@ -485,15 +477,15 @@ function setSliceIndex(
   const position = [...camera.getPosition()] as Point3;
   const { sliceRange, spacingInNormalDirection } =
     getPlanarVolumeSliceNavigationState({
-      actor: rendering.backendHandle.actor,
+      actor: rendering.runtime.actor,
       camera: {
         focalPoint,
         position,
         viewPlaneNormal,
       },
-      imageVolume: rendering.backendHandle.imageVolume,
+      imageVolume: rendering.runtime.imageVolume,
     });
-  const maxImageIdIndex = rendering.backendHandle.payload.imageIds.length - 1;
+  const maxImageIdIndex = rendering.runtime.payload.imageIds.length - 1;
   const currentImageIdIndex = getCurrentSliceIndex(ctx, rendering);
   const clampedImageIdIndex = Math.min(
     Math.max(0, imageIdIndex),
@@ -517,8 +509,8 @@ function setSliceIndex(
     camera.setPosition(...newPosition);
   }
 
-  rendering.backendHandle.currentImageIdIndex = clampedImageIdIndex;
-  rendering.backendHandle.sliceCamera = getCameraState(ctx);
+  rendering.runtime.currentImageIdIndex = clampedImageIdIndex;
+  rendering.runtime.sliceCamera = getCameraState(ctx);
 }
 
 function applyCameraToVtk(
@@ -527,7 +519,7 @@ function applyCameraToVtk(
   planarCamera?: PlanarCamera
 ): void {
   const camera = ctx.vtk.renderer.getActiveCamera();
-  const { sliceCamera } = rendering.backendHandle;
+  const { sliceCamera } = rendering.runtime;
   const zoom = Math.max(planarCamera?.zoom ?? 1, 0.001);
   const [panX, panY] = planarCamera?.pan ?? [0, 0];
 
@@ -555,23 +547,22 @@ function syncVolumeSliceState(
 ): void {
   const { camera, forceSliceResync = false } = options;
   const nextImageIdIndex =
-    camera?.imageIdIndex ?? rendering.backendHandle.currentImageIdIndex;
-  const nextOrientation =
-    camera?.orientation ?? rendering.backendHandle.orientation;
+    camera?.imageIdIndex ?? rendering.runtime.currentImageIdIndex;
+  const nextOrientation = camera?.orientation ?? rendering.runtime.orientation;
 
-  if (nextOrientation !== rendering.backendHandle.orientation) {
+  if (nextOrientation !== rendering.runtime.orientation) {
     applyOrientation(ctx, rendering, nextOrientation);
-    rendering.backendHandle.renderingInvalidated = true;
+    rendering.runtime.renderingInvalidated = true;
   }
 
   if (
     forceSliceResync ||
-    nextImageIdIndex !== rendering.backendHandle.currentImageIdIndex
+    nextImageIdIndex !== rendering.runtime.currentImageIdIndex
   ) {
     setSliceIndex(ctx, rendering, nextImageIdIndex);
-    rendering.backendHandle.renderingInvalidated = true;
+    rendering.runtime.renderingInvalidated = true;
   } else {
-    setCameraState(ctx, rendering.backendHandle.sliceCamera);
+    setCameraState(ctx, rendering.runtime.sliceCamera);
   }
 
   applyCameraToVtk(ctx, rendering, camera);

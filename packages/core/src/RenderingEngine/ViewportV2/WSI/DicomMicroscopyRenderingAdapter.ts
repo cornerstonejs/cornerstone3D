@@ -80,7 +80,7 @@ export class DicomMicroscopyRenderingAdapter
       dataId: data.id,
       role: 'image',
       renderMode: 'wsi2d',
-      backendHandle: {
+      runtime: {
         microscopyElement,
         viewer,
         map,
@@ -96,7 +96,7 @@ export class DicomMicroscopyRenderingAdapter
     props: unknown
   ): void {
     const wsiProps = props as WSIPresentationProps | undefined;
-    const { microscopyElement } = (rendering as WSIRendering).backendHandle;
+    const { microscopyElement } = (rendering as WSIRendering).runtime;
 
     microscopyElement.style.display = wsiProps?.visible === false ? 'none' : '';
     microscopyElement.style.opacity = String(wsiProps?.opacity ?? 1);
@@ -108,7 +108,7 @@ export class DicomMicroscopyRenderingAdapter
     camera: unknown
   ): void {
     const wsiCamera = camera as WSICamera;
-    const { map } = (rendering as WSIRendering).backendHandle;
+    const { map } = (rendering as WSIRendering).runtime;
     const view = map?.getView?.();
 
     if (!view) {
@@ -137,7 +137,7 @@ export class DicomMicroscopyRenderingAdapter
   detach(_ctx: WSIViewportRenderContext, rendering: MountedRendering): void {
     const { map, microscopyElement, viewer, postrenderHandler } = (
       rendering as WSIRendering
-    ).backendHandle;
+    ).runtime;
 
     map?.un?.(EVENT_POSTRENDER, postrenderHandler);
     viewer?.cleanup?.();

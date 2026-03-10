@@ -60,7 +60,7 @@ export class CpuImageCanvasRenderingAdapter
       dataId: data.id,
       role: 'image',
       renderMode: 'cpu2d',
-      backendHandle: {
+      runtime: {
         enabledElement,
         payload,
         currentImageIdIndex: payload.initialImageIdIndex,
@@ -91,28 +91,25 @@ export class CpuImageCanvasRenderingAdapter
     const planarRendering = rendering as PlanarCpuImageRendering;
     const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
-      planarCamera?.imageIdIndex ??
-      planarRendering.backendHandle.currentImageIdIndex;
+      planarCamera?.imageIdIndex ?? planarRendering.runtime.currentImageIdIndex;
 
     ctx.display.activateRenderMode('cpu2d');
     applyCameraState(planarRendering, planarCamera);
 
-    if (
-      nextImageIdIndex === planarRendering.backendHandle.currentImageIdIndex
-    ) {
+    if (nextImageIdIndex === planarRendering.runtime.currentImageIdIndex) {
       return;
     }
 
-    const { imageIds } = planarRendering.backendHandle.payload;
+    const { imageIds } = planarRendering.runtime.payload;
 
     if (nextImageIdIndex < 0 || nextImageIdIndex >= imageIds.length) {
       return;
     }
 
-    const requestId = ++planarRendering.backendHandle.loadRequestId;
+    const requestId = ++planarRendering.runtime.loadRequestId;
 
     void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {
-      if (requestId !== planarRendering.backendHandle.loadRequestId) {
+      if (requestId !== planarRendering.runtime.loadRequestId) {
         return;
       }
 
@@ -149,13 +146,12 @@ export class CpuImageCanvasRenderingAdapter
     rendering: MountedRendering
   ): void {
     resizeEnabledElement(
-      (rendering as PlanarCpuImageRendering).backendHandle.enabledElement
+      (rendering as PlanarCpuImageRendering).runtime.enabledElement
     );
   }
 
   detach(ctx: PlanarCpuImageAdapterContext, rendering: MountedRendering): void {
-    const { enabledElement } = (rendering as PlanarCpuImageRendering)
-      .backendHandle;
+    const { enabledElement } = (rendering as PlanarCpuImageRendering).runtime;
 
     ctx.cpu.context.setTransform(1, 0, 0, 1, 0, 0);
     ctx.cpu.context.clearRect(
@@ -221,7 +217,7 @@ function applyPresentation(
   rendering: PlanarCpuImageRendering,
   props?: PlanarPresentationProps
 ): void {
-  const { enabledElement, defaultVOIRange } = rendering.backendHandle;
+  const { enabledElement, defaultVOIRange } = rendering.runtime;
   const { viewport } = enabledElement;
   const canvas = enabledElement.canvas as HTMLCanvasElement;
   const voiRange = props?.voiRange ?? defaultVOIRange;
@@ -244,14 +240,14 @@ function applyPresentation(
     };
   }
 
-  rendering.backendHandle.renderingInvalidated = true;
+  rendering.runtime.renderingInvalidated = true;
 }
 
 function applyViewportPresentation(
   rendering: PlanarCpuImageRendering,
   presentation?: PlanarProperties
 ): void {
-  const { enabledElement } = rendering.backendHandle;
+  const { enabledElement } = rendering.runtime;
   const { viewport } = enabledElement;
 
   if (presentation?.interpolationType !== undefined) {
@@ -264,7 +260,7 @@ function applyCameraState(
   rendering: PlanarCpuImageRendering,
   camera?: PlanarCamera
 ): void {
-  const { enabledElement, fitScale } = rendering.backendHandle;
+  const { enabledElement, fitScale } = rendering.runtime;
   const viewport = enabledElement.viewport;
   const [panX, panY] = camera?.pan ?? [0, 0];
   const zoom = Math.max(camera?.zoom ?? 1, 0.001);
@@ -279,14 +275,14 @@ function applyCameraState(
 }
 
 function renderCPUImage(rendering: PlanarCpuImageRendering): void {
-  const { enabledElement, renderingInvalidated } = rendering.backendHandle;
+  const { enabledElement, renderingInvalidated } = rendering.runtime;
 
   if (!enabledElement.image) {
     return;
   }
 
   drawImageSync(enabledElement, renderingInvalidated);
-  rendering.backendHandle.renderingInvalidated = false;
+  rendering.runtime.renderingInvalidated = false;
 }
 
 async function updateRenderedImage(args: {
@@ -307,7 +303,7 @@ async function updateRenderedImage(args: {
     rendering,
     camera,
   } = args;
-  const enabledElement = rendering.backendHandle.enabledElement;
+  const enabledElement = rendering.runtime.enabledElement;
   const defaultViewport = getDefaultViewport(ctx.cpu.canvas, image);
   const previousViewport = enabledElement.viewport;
 
@@ -323,10 +319,10 @@ async function updateRenderedImage(args: {
     vflip: previousViewport?.vflip ?? defaultViewport.vflip,
   };
 
-  rendering.backendHandle.currentImageIdIndex = imageIdIndex;
-  rendering.backendHandle.defaultVOIRange = getDefaultVOIRange(image);
-  rendering.backendHandle.fitScale = defaultViewport.scale ?? 1;
-  rendering.backendHandle.renderingInvalidated = true;
+  rendering.runtime.currentImageIdIndex = imageIdIndex;
+  rendering.runtime.defaultVOIRange = getDefaultVOIRange(image);
+  rendering.runtime.fitScale = defaultViewport.scale ?? 1;
+  rendering.runtime.renderingInvalidated = true;
 
   applyPresentation(rendering, props);
   applyViewportPresentation(rendering, viewportPresentation);

@@ -344,7 +344,7 @@ class PlanarViewportV2 extends ViewportV2<
       return;
     }
 
-    return (firstBinding.rendering as PlanarRendering).backendHandle
+    return (firstBinding.rendering as PlanarRendering).runtime
       .payload as PlanarPayload;
   }
 

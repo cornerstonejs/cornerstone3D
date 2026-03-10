@@ -21,12 +21,12 @@ export interface LogicalDataObject<TPayload = unknown> {
   payload: TPayload;
 }
 
-export interface MountedRendering<TBackendHandle = unknown> {
+export interface MountedRendering<TRuntime = unknown> {
   id: RenderingId;
   dataId: DataId;
   role: string;
   renderMode: string;
-  backendHandle: TBackendHandle;
+  runtime: TRuntime;
 }
 
 export interface BaseViewportRenderContext {

@@ -87,7 +87,7 @@ class VideoViewportV2 extends ViewportV2<
         opacity: 1,
       });
 
-      const payload = (binding.rendering as VideoElementRendering).backendHandle
+      const payload = (binding.rendering as VideoElementRendering).runtime
         .payload;
       this.camera = {
         zoom: 1,
@@ -181,8 +181,7 @@ class VideoViewportV2 extends ViewportV2<
       return;
     }
 
-    return (firstBinding.rendering as VideoElementRendering).backendHandle
-      .element;
+    return (firstBinding.rendering as VideoElementRendering).runtime.element;
   }
 
   private getPayload(): VideoStreamPayload | undefined {
@@ -192,8 +191,7 @@ class VideoViewportV2 extends ViewportV2<
       return;
     }
 
-    return (firstBinding.rendering as VideoElementRendering).backendHandle
-      .payload;
+    return (firstBinding.rendering as VideoElementRendering).runtime.payload;
   }
 }
 

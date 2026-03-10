@@ -101,7 +101,7 @@ class WSIViewportV2 extends ViewportV2<
       return;
     }
 
-    return (firstBinding.rendering as WSIRendering).backendHandle.map;
+    return (firstBinding.rendering as WSIRendering).runtime.map;
   }
 }
 

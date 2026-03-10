@@ -65,7 +65,7 @@ export class HtmlVideoRenderingAdapter
       dataId: data.id,
       role: 'video',
       renderMode: 'video2d',
-      backendHandle: {
+      runtime: {
         element,
         payload: normalizedPayload,
       },
@@ -78,7 +78,7 @@ export class HtmlVideoRenderingAdapter
     props: unknown
   ): void {
     const videoProps = props as VideoPresentationProps | undefined;
-    const { element } = (rendering as VideoElementRendering).backendHandle;
+    const { element } = (rendering as VideoElementRendering).runtime;
 
     element.style.display = videoProps?.visible === false ? 'none' : '';
     element.style.opacity = String(videoProps?.opacity ?? 1);
@@ -90,7 +90,7 @@ export class HtmlVideoRenderingAdapter
     camera: unknown
   ): void {
     const videoCamera = camera as VideoCamera;
-    const { element } = (rendering as VideoElementRendering).backendHandle;
+    const { element } = (rendering as VideoElementRendering).runtime;
     const scale = videoCamera.zoom ?? 1;
     const [panX, panY] = videoCamera.pan ?? [0, 0];
     const rotation = videoCamera.rotation ?? 0;
@@ -111,7 +111,7 @@ export class HtmlVideoRenderingAdapter
     presentation: unknown
   ): void {
     const videoPres = presentation as VideoProperties | undefined;
-    const { element } = (rendering as VideoElementRendering).backendHandle;
+    const { element } = (rendering as VideoElementRendering).runtime;
 
     element.loop = videoPres?.loop ?? true;
     element.muted = videoPres?.muted ?? true;
@@ -120,7 +120,7 @@ export class HtmlVideoRenderingAdapter
   }
 
   detach(_ctx: VideoElementRenderContext, rendering: MountedRendering): void {
-    const { element } = (rendering as VideoElementRendering).backendHandle;
+    const { element } = (rendering as VideoElementRendering).runtime;
     element.pause();
     element.remove();
   }

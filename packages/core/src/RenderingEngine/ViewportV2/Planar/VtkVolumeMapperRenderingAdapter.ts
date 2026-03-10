@@ -75,7 +75,7 @@ export class VtkVolumeMapperRenderingAdapter
       dataId: data.id,
       role: 'image',
       renderMode: 'vtkVolume',
-      backendHandle: {
+      runtime: {
         actor,
         imageVolume,
         mapper,
@@ -123,23 +123,20 @@ export class VtkVolumeMapperRenderingAdapter
     const planarRendering = rendering as PlanarVolumeMapperRendering;
     const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
-      planarCamera?.imageIdIndex ??
-      planarRendering.backendHandle.currentImageIdIndex;
+      planarCamera?.imageIdIndex ?? planarRendering.runtime.currentImageIdIndex;
     const nextOrientation =
-      planarCamera?.orientation ?? planarRendering.backendHandle.orientation;
+      planarCamera?.orientation ?? planarRendering.runtime.orientation;
 
     ctx.display.activateRenderMode('vtkVolume');
 
-    if (nextOrientation !== planarRendering.backendHandle.orientation) {
+    if (nextOrientation !== planarRendering.runtime.orientation) {
       applyOrientation(ctx, planarRendering, nextOrientation);
     }
 
-    if (
-      nextImageIdIndex !== planarRendering.backendHandle.currentImageIdIndex
-    ) {
+    if (nextImageIdIndex !== planarRendering.runtime.currentImageIdIndex) {
       setSliceIndex(ctx, planarRendering, nextImageIdIndex);
     } else {
-      setCameraState(ctx, planarRendering.backendHandle.sliceCamera);
+      setCameraState(ctx, planarRendering.runtime.sliceCamera);
     }
 
     applyCameraToVtk(ctx, planarRendering, planarCamera);
@@ -155,7 +152,7 @@ export class VtkVolumeMapperRenderingAdapter
     const planarProperties = presentation as PlanarProperties | undefined;
 
     if (planarProperties?.interpolationType !== undefined) {
-      const property = planarRendering.backendHandle.actor.getProperty();
+      const property = planarRendering.runtime.actor.getProperty();
       property.setInterpolationType(
         planarProperties.interpolationType as Parameters<
           typeof property.setInterpolationType
@@ -178,7 +175,7 @@ export class VtkVolumeMapperRenderingAdapter
   ): void {
     const { actor, removeStreamingSubscriptions } = (
       rendering as PlanarVolumeMapperRendering
-    ).backendHandle;
+    ).runtime;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);
@@ -314,7 +311,7 @@ function updateClippingPlanes(
   const camera = ctx.vtk.renderer.getActiveCamera();
   const viewPlaneNormal = [...camera.getViewPlaneNormal()] as Point3;
   const focalPoint = [...camera.getFocalPoint()] as Point3;
-  const clippingPlanes = ensureClippingPlanes(rendering.backendHandle.mapper);
+  const clippingPlanes = ensureClippingPlanes(rendering.runtime.mapper);
   const slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
   const scaledDistance = viewPlaneNormal.map(
     (value) => value * slabThickness
@@ -346,7 +343,7 @@ function applyPresentation(
   rendering: PlanarVolumeMapperRendering,
   props?: PlanarPresentationProps
 ): void {
-  const { actor, defaultVOIRange } = rendering.backendHandle;
+  const { actor, defaultVOIRange } = rendering.runtime;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
 
@@ -375,7 +372,7 @@ function applyCameraToVtk(
   planarCamera?: PlanarCamera
 ): void {
   const camera = ctx.vtk.renderer.getActiveCamera();
-  const { sliceCamera } = rendering.backendHandle;
+  const { sliceCamera } = rendering.runtime;
   const zoom = Math.max(planarCamera?.zoom ?? 1, 0.001);
   const [panX, panY] = planarCamera?.pan ?? [0, 0];
 
@@ -403,7 +400,7 @@ function applyOrientation(
   }
 
   const cameraValues = getPlanarCameraVectors({
-    imageVolume: rendering.backendHandle.imageVolume,
+    imageVolume: rendering.runtime.imageVolume,
     orientation,
   });
 
@@ -424,8 +421,8 @@ function applyOrientation(
     cameraValues.viewUp[2]
   );
   ctx.vtk.renderer.resetCamera();
-  rendering.backendHandle.orientation = orientation;
-  rendering.backendHandle.sliceCamera = getCameraState(ctx);
+  rendering.runtime.orientation = orientation;
+  rendering.runtime.sliceCamera = getCameraState(ctx);
   updateClippingPlanes(ctx, rendering);
 }
 
@@ -434,7 +431,7 @@ function getCurrentSliceIndex(
   rendering: PlanarVolumeMapperRendering
 ): number {
   const camera = ctx.vtk.renderer.getActiveCamera();
-  const { actor, imageVolume } = rendering.backendHandle;
+  const { actor, imageVolume } = rendering.runtime;
 
   return getPlanarVolumeSliceNavigationState({
     actor,
@@ -452,10 +449,10 @@ function setSliceIndex(
   rendering: PlanarVolumeMapperRendering,
   imageIdIndex: number
 ): void {
-  setCameraState(ctx, rendering.backendHandle.sliceCamera);
+  setCameraState(ctx, rendering.runtime.sliceCamera);
 
   const camera = ctx.vtk.renderer.getActiveCamera();
-  const { actor, imageVolume, payload } = rendering.backendHandle;
+  const { actor, imageVolume, payload } = rendering.runtime;
   const viewPlaneNormal = [...camera.getViewPlaneNormal()] as Point3;
   const focalPoint = [...camera.getFocalPoint()] as Point3;
   const position = [...camera.getPosition()] as Point3;
@@ -493,6 +490,6 @@ function setSliceIndex(
     camera.setPosition(...newPosition);
   }
 
-  rendering.backendHandle.currentImageIdIndex = clampedImageIdIndex;
-  rendering.backendHandle.sliceCamera = getCameraState(ctx);
+  rendering.runtime.currentImageIdIndex = clampedImageIdIndex;
+  rendering.runtime.sliceCamera = getCameraState(ctx);
 }

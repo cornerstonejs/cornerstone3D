@@ -39,7 +39,7 @@ export class CanvasECGRenderingAdapter
       dataId: data.id,
       role: 'signal',
       renderMode: 'signal2d',
-      backendHandle: {
+      runtime: {
         canvas: ctx.canvas,
         canvasContext: ctx.canvasContext,
         waveform: data.payload as ECGWaveformPayload,
@@ -61,7 +61,7 @@ export class CanvasECGRenderingAdapter
     props: unknown
   ): void {
     const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.backendHandle.currentPresentation = props as
+    ecgRendering.runtime.currentPresentation = props as
       | ECGPresentationProps
       | undefined;
   }
@@ -72,7 +72,7 @@ export class CanvasECGRenderingAdapter
     camera: unknown
   ): void {
     const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.backendHandle.currentCamera = camera as ECGCamera;
+    ecgRendering.runtime.currentCamera = camera as ECGCamera;
   }
 
   updateProperties(
@@ -81,7 +81,7 @@ export class CanvasECGRenderingAdapter
     presentation: unknown
   ): void {
     const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.backendHandle.currentProperties = presentation as
+    ecgRendering.runtime.currentProperties = presentation as
       | ECGProperties
       | undefined;
   }
@@ -162,7 +162,7 @@ function drawFrame(
     currentCamera,
     currentProperties,
     currentPresentation,
-  } = ecgRendering.backendHandle;
+  } = ecgRendering.runtime;
 
   if (!currentCamera) {
     return;
@@ -195,7 +195,7 @@ function drawFrame(
   const timeWindow = computeTimeWindow(waveform, currentCamera);
   const dpr = window.devicePixelRatio || 1;
 
-  ecgRendering.backendHandle.metrics = metrics;
+  ecgRendering.runtime.metrics = metrics;
 
   canvasContext.resetTransform();
   canvasContext.fillStyle = '#000000';
