@@ -87,6 +87,5 @@ export interface ECGCanvasRendering
     currentProperties?: ECGProperties;
     currentPresentation?: ECGPresentationProps;
   }> {
-  role: 'signal';
   renderMode: 'signal2d';
 }

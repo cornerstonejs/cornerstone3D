@@ -30,8 +30,7 @@ export class DefaultVideoDataProvider implements DataProvider {
 
     return {
       id: dataId,
-      role: 'video',
-      kind: 'videoStream',
+      type: 'video',
       metadata: {
         modality: stream.modality,
         imageDataMetadata: stream.metadata,

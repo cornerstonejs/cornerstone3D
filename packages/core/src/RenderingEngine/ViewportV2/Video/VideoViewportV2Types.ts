@@ -56,6 +56,5 @@ export interface VideoElementRendering
     element: HTMLVideoElement;
     payload: VideoStreamPayload;
   }> {
-  role: 'video';
   renderMode: 'video2d';
 }

@@ -37,7 +37,6 @@ export class CanvasECGRenderingAdapter
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       dataId: data.id,
-      role: 'signal',
       renderMode: 'signal2d',
       runtime: {
         canvas: ctx.canvas,
@@ -102,11 +101,7 @@ export class CanvasECGPath
   readonly type = 'ecg' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'signal' &&
-      options.role === 'signal' &&
-      options.renderMode === 'signal2d'
-    );
+    return data.type === 'ecg' && options.renderMode === 'signal2d';
   }
 
   createAdapter() {

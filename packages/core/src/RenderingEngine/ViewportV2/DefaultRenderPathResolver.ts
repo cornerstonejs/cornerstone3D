@@ -36,7 +36,7 @@ export class DefaultRenderPathResolver implements RenderPathResolver {
 
     if (!path) {
       throw new Error(
-        `No render path for ${type}/${data.kind}/${options.role}/${options.renderMode}`
+        `No render path for ${type}/${data.type}/${options.renderMode}`
       );
     }
 

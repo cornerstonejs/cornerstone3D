@@ -2,9 +2,9 @@ export type ViewportId = string;
 export type DataId = string;
 export type RenderingId = string;
 export type ViewportKind = 'planar' | 'video' | 'ecg' | string;
+export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi';
 
 export interface DataAttachmentOptions {
-  role: string;
   renderMode: string;
 }
 
@@ -15,8 +15,7 @@ export interface BasePresentationProps {
 
 export interface LogicalDataObject<TPayload = unknown> {
   id: DataId;
-  role: string;
-  kind: string;
+  type: LogicalDataType;
   metadata: Record<string, unknown>;
   payload: TPayload;
 }
@@ -24,7 +23,6 @@ export interface LogicalDataObject<TPayload = unknown> {
 export interface MountedRendering<TRuntime = unknown> {
   id: RenderingId;
   dataId: DataId;
-  role: string;
   renderMode: string;
   runtime: TRuntime;
 }

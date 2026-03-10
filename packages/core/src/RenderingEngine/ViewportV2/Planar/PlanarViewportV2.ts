@@ -198,7 +198,6 @@ class PlanarViewportV2 extends ViewportV2<
     };
 
     const renderingId = await this.attachLoadedData(dataId, data, {
-      role: 'image',
       renderMode: selectedPath.renderMode,
     });
 

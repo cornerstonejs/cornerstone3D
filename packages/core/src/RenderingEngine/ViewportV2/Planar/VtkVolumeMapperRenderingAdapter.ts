@@ -73,7 +73,6 @@ export class VtkVolumeMapperRenderingAdapter
     const rendering: PlanarVolumeMapperRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       dataId: data.id,
-      role: 'image',
       renderMode: 'vtkVolume',
       runtime: {
         actor,
@@ -193,11 +192,7 @@ export class VtkVolumeMapperPath
   readonly type = 'planar' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'imageVolume' &&
-      options.role === 'image' &&
-      options.renderMode === 'vtkVolume'
-    );
+    return data.type === 'image' && options.renderMode === 'vtkVolume';
   }
 
   createAdapter() {

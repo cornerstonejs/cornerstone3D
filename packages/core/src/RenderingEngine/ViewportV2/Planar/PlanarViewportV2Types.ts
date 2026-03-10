@@ -157,7 +157,6 @@ export interface PlanarImageMapperRendering
     initialCamera: PlanarCameraState;
     loadRequestId: number;
   }> {
-  role: 'image';
   renderMode: 'vtkImage';
 }
 
@@ -171,7 +170,6 @@ export interface PlanarCpuImageRendering
     loadRequestId: number;
     renderingInvalidated: boolean;
   }> {
-  role: 'image';
   renderMode: 'cpu2d';
 }
 
@@ -205,7 +203,6 @@ export interface PlanarCpuVolumeRendering
     pendingVolumeLoadCallback?: boolean;
     removeStreamingSubscriptions?: () => void;
   }> {
-  role: 'image';
   renderMode: 'cpuVolume';
 }
 
@@ -221,7 +218,6 @@ export interface PlanarVolumeMapperRendering
     sliceCamera: PlanarCameraState;
     removeStreamingSubscriptions?: () => void;
   }> {
-  role: 'image';
   renderMode: 'vtkVolume';
 }
 

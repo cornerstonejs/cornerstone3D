@@ -71,8 +71,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
 
       return {
         id: dataId,
-        role: 'image',
-        kind: 'imageVolume',
+        type: 'image',
         metadata: {
           imageIds: imageVolume.imageIds || dataSet.imageIds,
           initialImageIdIndex: clampedImageIdIndex,
@@ -96,8 +95,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
 
     return {
       id: dataId,
-      role: 'image',
-      kind: 'imageStack',
+      type: 'image',
       metadata: {
         imageIds: dataSet.imageIds,
         initialImageIdIndex: clampedImageIdIndex,

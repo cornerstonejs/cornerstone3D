@@ -72,7 +72,6 @@ class VideoViewportV2 extends ViewportV2<
 
     for (const dataId of dataIds) {
       const renderingId = await this.setDataId(dataId, {
-        role: 'video',
         renderMode: 'video2d',
       });
       const binding = this.getBinding(dataId);

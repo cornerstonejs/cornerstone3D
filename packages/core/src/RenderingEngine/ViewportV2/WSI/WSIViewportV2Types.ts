@@ -75,6 +75,5 @@ export interface WSIRendering
     payload: WSIPayload;
     postrenderHandler: () => void;
   }> {
-  role: 'image';
   renderMode: 'wsi2d';
 }

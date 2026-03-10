@@ -58,7 +58,6 @@ export class CpuImageCanvasRenderingAdapter
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       dataId: data.id,
-      role: 'image',
       renderMode: 'cpu2d',
       runtime: {
         enabledElement,
@@ -175,11 +174,7 @@ export class CpuImageCanvasPath
   readonly type = 'planar' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'imageStack' &&
-      options.role === 'image' &&
-      options.renderMode === 'cpu2d'
-    );
+    return data.type === 'image' && options.renderMode === 'cpu2d';
   }
 
   createAdapter() {

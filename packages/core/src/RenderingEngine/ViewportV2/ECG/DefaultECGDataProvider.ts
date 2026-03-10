@@ -31,8 +31,7 @@ export class DefaultECGDataProvider implements DataProvider {
 
     return {
       id: dataId,
-      role: 'signal',
-      kind: 'signal',
+      type: 'ecg',
       metadata: {
         calibration,
       },

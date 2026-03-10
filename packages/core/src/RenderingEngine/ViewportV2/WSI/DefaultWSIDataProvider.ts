@@ -44,8 +44,7 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
     });
     return {
       id: dataId,
-      role: 'image',
-      kind: 'wsiData',
+      type: 'wsi',
       metadata: {
         imageDataMetadata: loadedData.metadata,
         frameOfReferenceUID: loadedData.frameOfReferenceUID,

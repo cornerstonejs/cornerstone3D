@@ -60,7 +60,6 @@ export class DicomMicroscopyRenderingAdapter
         rendering: {
           id: renderingId,
           dataId: data.id,
-          role: 'image',
           renderMode: 'wsi2d',
         },
       });
@@ -78,7 +77,6 @@ export class DicomMicroscopyRenderingAdapter
     return {
       id: renderingId,
       dataId: data.id,
-      role: 'image',
       renderMode: 'wsi2d',
       runtime: {
         microscopyElement,
@@ -152,11 +150,7 @@ export class DicomMicroscopyPath
   readonly type = 'wsi' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'wsiData' &&
-      options.role === 'image' &&
-      options.renderMode === 'wsi2d'
-    );
+    return data.type === 'wsi' && options.renderMode === 'wsi2d';
   }
 
   createAdapter() {

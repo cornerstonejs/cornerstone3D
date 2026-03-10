@@ -73,7 +73,6 @@ class ECGViewportV2 extends ViewportV2<
 
     for (const dataId of dataIds) {
       const renderingId = await this.setDataId(dataId, {
-        role: 'signal',
         renderMode: 'signal2d',
       });
       const binding = this.getBinding(dataId);

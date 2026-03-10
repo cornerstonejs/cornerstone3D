@@ -59,7 +59,6 @@ class WSIViewportV2 extends ViewportV2<
 
     for (const dataId of dataIds) {
       const renderingId = await this.setDataId(dataId, {
-        role: 'image',
         renderMode: 'wsi2d',
       });
 

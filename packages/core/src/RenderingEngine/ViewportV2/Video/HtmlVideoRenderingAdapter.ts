@@ -63,7 +63,6 @@ export class HtmlVideoRenderingAdapter
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       dataId: data.id,
-      role: 'video',
       renderMode: 'video2d',
       runtime: {
         element,
@@ -133,11 +132,7 @@ export class HtmlVideoPath
   readonly type = 'video' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'videoStream' &&
-      options.role === 'video' &&
-      options.renderMode === 'video2d'
-    );
+    return data.type === 'video' && options.renderMode === 'video2d';
   }
 
   createAdapter() {

@@ -57,7 +57,6 @@ export class VtkImageMapperRenderingAdapter
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       dataId: data.id,
-      role: 'image',
       renderMode: 'vtkImage',
       runtime: {
         actor,
@@ -169,11 +168,7 @@ export class VtkImageMapperPath
   readonly type = 'planar' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'imageStack' &&
-      options.role === 'image' &&
-      options.renderMode === 'vtkImage'
-    );
+    return data.type === 'image' && options.renderMode === 'vtkImage';
   }
 
   createAdapter() {

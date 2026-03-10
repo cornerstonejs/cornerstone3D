@@ -67,7 +67,6 @@ export class CpuVolumeSliceRenderingAdapter
     const rendering: PlanarCpuVolumeRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       dataId: data.id,
-      role: 'image',
       renderMode: 'cpuVolume',
       runtime: {
         actor,
@@ -283,11 +282,7 @@ export class CpuVolumeSlicePath
   readonly type = 'planar' as const;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
-    return (
-      data.kind === 'imageVolume' &&
-      options.role === 'image' &&
-      options.renderMode === 'cpuVolume'
-    );
+    return data.type === 'image' && options.renderMode === 'cpuVolume';
   }
 
   createAdapter() {
