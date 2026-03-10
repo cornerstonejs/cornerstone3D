@@ -13,25 +13,24 @@ export function dataLookup(dataType: string) {
 
 /** The data lookup for the instance module */
 export const instanceLookup = dataLookup(MetadataModules.INSTANCE);
+export const naturalLookup = dataLookup(MetadataModules.NATURAL);
 
-export const INSTANCE_PRIORITY = { priority: 5000 };
+export const DATA_PRIORITY = { priority: 5000 };
 
 export function registerDataLookup() {
   addTypedProvider(
     MetadataModules.INSTANCE,
     dataLookup(MetadataModules.NATURAL),
-    INSTANCE_PRIORITY
+    DATA_PRIORITY
   );
 
-  addTypedProvider(
-    MetadataModules.IMAGE_PLANE,
-    instanceLookup,
-    INSTANCE_PRIORITY
-  );
+  addTypedProvider(MetadataModules.IMAGE_PLANE, instanceLookup, DATA_PRIORITY);
+
+  addTypedProvider(MetadataModules.CALIBRATION, instanceLookup, DATA_PRIORITY);
 
   addTypedProvider(
-    MetadataModules.CALIBRATION,
-    instanceLookup,
-    INSTANCE_PRIORITY
+    MetadataModules.COMPRESSED_FRAME_DATA,
+    naturalLookup,
+    DATA_PRIORITY
   );
 }

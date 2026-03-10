@@ -53,7 +53,11 @@ export async function addPart10Instance(
   reader.stream.setComplete();
   await reader.readFile({ listener });
 
-  const instance = reader.dict;
-  setCacheData(MetadataModules.NATURAL, imageId, instance);
-  return instance;
+  const natural = reader.dict;
+  const transferSyntaxUid = reader.syntax;
+  if (transferSyntaxUid) {
+    natural.TransferSyntaxUID = transferSyntaxUid;
+  }
+  setCacheData(MetadataModules.NATURAL, imageId, natural);
+  return natural;
 }

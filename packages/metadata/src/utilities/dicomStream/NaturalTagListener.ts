@@ -5,6 +5,12 @@ import type { IListenerInfo } from '../../types';
 
 const { DicomMetadataListener } = dcmjs.utilities;
 
+export type ListenerContext = {
+  natural?: { name: string; singleVm: boolean | null; tag: string };
+  parent?: { dest: Record<string, unknown> };
+  dest?: Record<string, unknown>;
+};
+
 /**
  * Resolves whether a tag is single-valued.
  * Returns true for VM=1, false for multi-valued, null for unknown.
@@ -73,25 +79,11 @@ export class NaturalTagListener {
   }
 
   /**
-   * Returns a filter instance for use with DicomMetadataListener.
-   */
-  static createFilter(options?: { nameKey?: string }): NaturalTagListener {
-    return new NaturalTagListener(options);
-  }
-
-  /**
    * Returns a fully constructed DicomMetadataListener with the natural filter.
    * Single place to know how to build the overall listener for naturalized metadata.
    */
   static createMetadataListener(options?: { nameKey?: string }) {
-    return new DicomMetadataListener(
-      {},
-      NaturalTagListener.createFilter(options)
-    );
-  }
-
-  _init(_options?: { information?: Record<string, unknown> }) {
-    // No state to sync; allows use with DicomMetadataListener.init()
+    return new DicomMetadataListener({}, new NaturalTagListener(options));
   }
 
   addTag(
@@ -120,16 +112,7 @@ export class NaturalTagListener {
     };
   }
 
-  value(next: (v: unknown) => void, v: unknown) {
-    next(v);
-  }
-
   pop(next: () => unknown): unknown {
-    type ListenerContext = {
-      natural?: { name: string; singleVm: boolean | null; tag: string };
-      parent?: { dest: Record<string, unknown> };
-      dest?: Record<string, unknown>;
-    };
     const listener = this as unknown as { current: ListenerContext };
     const nat = listener.current?.natural;
     const parentContext = listener.current?.parent;

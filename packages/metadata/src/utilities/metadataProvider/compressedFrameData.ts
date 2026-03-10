@@ -1,5 +1,5 @@
 import { MetadataModules } from '../../enums';
-import { addTypedProvider, getMetaData } from '../../metaData';
+import { addTypedProvider } from '../../metaData';
 import type { TypedProvider } from '../../metaData';
 import type { CompressedFrameDataMetadata } from '../../types';
 
@@ -8,27 +8,23 @@ import type { CompressedFrameDataMetadata } from '../../types';
  * Returns undefined if natural has no pixel data or transfer syntax.
  */
 function compressedFrameDataFromNatural(
-  natural: Record<string, unknown> | undefined,
+  natural,
   frameIndex: number
 ): CompressedFrameDataMetadata | undefined {
   if (!natural) {
-    return undefined;
+    return;
   }
 
-  const pixelDataTag = (natural.PixelData ?? natural.FramePixelData) as
-    | { Value?: ArrayBufferView | ArrayBufferView[] }
-    | undefined;
-  if (!pixelDataTag?.Value) {
-    return undefined;
+  const pixelDataTag = natural.PixelData ?? natural.FramePixelData;
+  if (!pixelDataTag) {
+    console.warn('compressedFrameDataFromNatural: no pixel data');
+    return;
   }
 
-  const transferSyntaxUid =
-    (natural.TransferSyntaxUID as string) ??
-    ((natural as Record<string, unknown>).TransferSyntaxUID as
-      | string
-      | undefined);
+  const { TransferSyntaxUID: transferSyntaxUid } = natural;
   if (!transferSyntaxUid) {
-    return undefined;
+    console.warn('compressedFrameDataFromNatural: no transfer syntax', natural);
+    return;
   }
 
   const frameOfInterest = frameIndex ?? 0;
@@ -38,7 +34,7 @@ function compressedFrameDataFromNatural(
     transferSyntaxUid,
     frameOfInterest,
     frameNumber,
-    pixelData: pixelDataTag.Value,
+    pixelData: pixelDataTag[frameIndex],
   };
 }
 
@@ -53,21 +49,20 @@ const COMPRESSED_FRAME_DATA_TYPE = MetadataModules.COMPRESSED_FRAME_DATA;
 const compressedFrameDataProvider: TypedProvider = (
   next: (query: string, data: unknown, options?: unknown) => unknown,
   query: string,
-  _data: unknown,
-  options?: unknown
+  natural,
+  options
 ): CompressedFrameDataMetadata | unknown => {
-  const frameIndex =
-    typeof (options as { frameIndex?: number })?.frameIndex === 'number'
-      ? (options as { frameIndex: number }).frameIndex
-      : 0;
-  const natural = getMetaData(MetadataModules.NATURAL, query) as
-    | Record<string, unknown>
-    | undefined;
+  const frameIndex = options?.frameIndex ?? 0;
   const value = compressedFrameDataFromNatural(natural, frameIndex);
   if (value) {
     return value;
   }
-  return next(query, _data, options);
+  return next(
+    query,
+    natural,
+
+    options
+  );
 };
 
 export function registerCompressedFrameDataProvider(): void {
