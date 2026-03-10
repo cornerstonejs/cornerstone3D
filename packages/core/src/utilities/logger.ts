@@ -53,6 +53,13 @@ export function getLogger(...name: string[]): Logger {
 export const cs3dLog = getRootLogger('cs3d');
 
 /**
+ * Worker log category (e.g. registration). Tests can set workerLog.setLevel('error')
+ * to suppress worker messages. Use workerLog.getLogger('registration') in code that
+ * logs worker registration.
+ */
+export const workerLog = cs3dLog.getLogger('worker');
+
+/**
  * The core, tools etc logs are intended to form root categories for the various
  * packages to allow a particular package to be debugged or output redirected.
  *

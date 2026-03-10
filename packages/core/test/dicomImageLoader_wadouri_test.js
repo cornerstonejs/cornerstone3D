@@ -1,6 +1,12 @@
 // @ts-check
 
-import { cache, Enums, imageLoader, metaData } from '@cornerstonejs/core';
+import {
+  cache,
+  Enums,
+  imageLoader,
+  metaData,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   init as dicomImageLoaderInit,
   wadouri,
@@ -60,7 +66,7 @@ const tests = [
 ];
 
 /**
- * These are paramaterized tests for dicomImageLoader.  It allows us to test
+ * These paramaterized tests for dicomImageLoader.  It allows us to test
  * that different images are loaded correctly, and that the metadata returned by
  * the loader is as expected.
  *
@@ -72,13 +78,26 @@ const tests = [
  *    image object.
  * 3. Retrieving metadata modules and comparing them with expected metadata
  *    modules.
+ *
+ * Notes:
+ * - "Worker type 'dicomImageLoader' is already registered" appears because
+ *   beforeEach calls dicomImageLoaderInit() every test; the worker is registered
+ *   once and not unregistered in afterEach, so subsequent tests see the warning.
+ * - The NATURAL path (loadImageFromNatural) uses dcmjs stream + COMPRESSED_FRAME_DATA
+ *   from NATURAL. NATURAL is stored under the base imageId (frame stripped) so registration
+ *   happens once per URL. Pixel data is resolved from PixelData, FloatPixelData, or hex tags
+ *   (7FE0,0010) / (7FE0,0008) so paramap and paramap-float work on the default path.
  */
 describe('dicomImageLoader - WADO-URI', () => {
+  // Tests that require the legacy (dataset) path for pixel hash / image object (none currently).
+  const legacyOnlyTestNames = new Set([]);
+
   beforeEach(() => {
-    // register the wadouri loader
+    // Suppress "Worker type 'dicomImageLoader' is already registered" in tests
+    utilities.logger.workerLog.setLevel('error');
+    // register the wadouri loader and default (NATURAL) path
     wadouri.register();
-    // re-initialise the loader before each test to clear any previous config
-    dicomImageLoaderInit({ useLegacyMetadataProvider: true });
+    dicomImageLoaderInit();
   });
 
   afterEach(() => {
@@ -163,13 +182,93 @@ describe('dicomImageLoader - WADO-URI', () => {
     );
   });
 
+  describe('legacy loader', () => {
+    beforeEach(() => {
+      wadouri.dataSetCacheManager.purge();
+      cache.purgeCache();
+      imageLoader.unregisterAllImageLoaders();
+      wadouri.register();
+      dicomImageLoaderInit({ useLegacyMetadataProvider: true });
+    });
+
+    afterEach(() => {
+      wadouri.dataSetCacheManager.purge();
+      cache.purgeCache();
+      imageLoader.unregisterAllImageLoaders();
+    });
+
+    it('should allow customising the http request with beforeSend', async () => {
+      const test = CtLittleEndian_1_2_840_10008_1_2;
+      const beforeSpy = jasmine.createSpy('beforeHandler').and.resolveTo();
+      dicomImageLoaderInit({
+        useLegacyMetadataProvider: true,
+        beforeSend: beforeSpy,
+      });
+      await imageLoader.loadImage(test.wadouri);
+      const expectedHeaders = {};
+      const expectedImageId = test.wadouri;
+      const expectedUrl = test.wadouri.replace('wadouri:', '');
+      expect(beforeSpy).toHaveBeenCalledWith(
+        jasmine.any(XMLHttpRequest),
+        expectedImageId,
+        expectedHeaders,
+        {
+          url: expectedUrl,
+          deferred: {
+            resolve: jasmine.any(Function),
+            reject: jasmine.any(Function),
+          },
+          imageId: expectedImageId,
+        }
+      );
+    });
+
+    it('should call request lifecycle callbacks', async () => {
+      const test = CtLittleEndian_1_2_840_10008_1_2;
+      const onreadystatechangeSpy = jasmine.createSpy('onreadystatechange');
+      const onprogressSpy = jasmine.createSpy('onprogress');
+      const onloadendSpy = jasmine.createSpy('onloadend');
+      const onloadstartSpy = jasmine.createSpy('onloadstart');
+      dicomImageLoaderInit({
+        useLegacyMetadataProvider: true,
+        onreadystatechange: onreadystatechangeSpy,
+        onprogress: onprogressSpy,
+        onloadend: onloadendSpy,
+        onloadstart: onloadstartSpy,
+      });
+      await imageLoader.loadImage(test.wadouri);
+      const expectedImageId = test.wadouri;
+      const expectedUrl = test.wadouri.replace('wadouri:', '');
+      const expectedLoaderParams = {
+        url: expectedUrl,
+        deferred: {
+          resolve: jasmine.any(Function),
+          reject: jasmine.any(Function),
+        },
+        imageId: expectedImageId,
+      };
+      expect(onloadstartSpy).toHaveBeenCalledOnceWith(
+        jasmine.any(Event),
+        expectedLoaderParams
+      );
+      expect(onprogressSpy).toHaveBeenCalled();
+      expect(onreadystatechangeSpy).toHaveBeenCalledTimes(3);
+      expect(onloadendSpy).toHaveBeenCalledOnceWith(
+        jasmine.any(Event),
+        expectedLoaderParams
+      );
+    });
+  });
+
   for (const t of tests) {
+    const useLegacyForPixelAndImage = legacyOnlyTestNames.has(t.name);
+
     describe(t.name, () => {
       for (const frame of t.frames) {
         // Determine the frame to use (default to 1 if not specified)
         const frameIndex = frame.index || 1;
 
-        if (frame.pixelDataHash) {
+        if (frame.pixelDataHash && !useLegacyForPixelAndImage) {
           it(`decodes the image and the pixel data hash for frame ${frameIndex} of ${t.name} is correct`, async () => {
             // first load the image without the frame so that it is loaded into
             // the cache
@@ -188,7 +287,7 @@ describe('dicomImageLoader - WADO-URI', () => {
           });
         }
 
-        if ('image' in frame && frame.image) {
+        if ('image' in frame && frame.image && !useLegacyForPixelAndImage) {
           it(`returns the correct image object for ${frameIndex} of the ${t.name} image`, async () => {
             // first load the image without the frame so that it is loaded into
             // the cache
@@ -202,31 +301,56 @@ describe('dicomImageLoader - WADO-URI', () => {
             expect(imagObj).toEqual(frame.image);
           });
         }
-
-        // WADO-RS Loader Tests
-        if (frame.metadataModule) {
-          for (const [
-            metadataModuleName,
-            expectedModuleValues,
-          ] of Object.entries(frame.metadataModule)) {
-            it(`returns the correct ${metadataModuleName} metadata for frame ${frameIndex} of ${t.name} image`, async () => {
-              const { imageId } = await imageLoader.loadImage(t.wadouri);
-              const imageIdWithFrameIndex = imageIdWithFrame(
-                imageId,
-                frameIndex
-              );
-              const actualModuleValue = metaData.get(
-                metadataModuleName,
-                imageIdWithFrameIndex
-              );
-
-              expect(actualModuleValue).toEqual(expectedModuleValues);
-            });
-          }
-        }
       }
     });
   }
+
+  // Metadata module tests use the legacy provider (dataset-based metadata).
+  // Specific legacy handling is not being moved forward to the NATURAL path.
+  describe('legacy loader metadata modules', () => {
+    beforeEach(() => {
+      wadouri.dataSetCacheManager.purge();
+      cache.purgeCache();
+      imageLoader.unregisterAllImageLoaders();
+      wadouri.register();
+      dicomImageLoaderInit({ useLegacyMetadataProvider: true });
+    });
+
+    afterEach(() => {
+      wadouri.dataSetCacheManager.purge();
+      cache.purgeCache();
+      imageLoader.unregisterAllImageLoaders();
+    });
+
+    for (const t of tests) {
+      describe(t.name, () => {
+        for (const frame of t.frames) {
+          const frameIndex = frame.index || 1;
+
+          if (frame.metadataModule) {
+            for (const [
+              metadataModuleName,
+              expectedModuleValues,
+            ] of Object.entries(frame.metadataModule)) {
+              it(`returns the correct ${metadataModuleName} metadata for frame ${frameIndex} of ${t.name} image`, async () => {
+                const { imageId } = await imageLoader.loadImage(t.wadouri);
+                const imageIdWithFrameIndex = imageIdWithFrame(
+                  imageId,
+                  frameIndex
+                );
+                const actualModuleValue = metaData.get(
+                  metadataModuleName,
+                  imageIdWithFrameIndex
+                );
+
+                expect(actualModuleValue).toEqual(expectedModuleValues);
+              });
+            }
+          }
+        }
+      });
+    }
+  });
 
   describe('multiframe images', () => {
     it('returns ImagePlaneModule metadata for each frame', async () => {

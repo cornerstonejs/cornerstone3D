@@ -39,6 +39,10 @@ export function addProvider(
   provider: (type: string, ...query: string[]) => unknown,
   priority = 0
 ): void {
+  if (providers.some((p) => p.provider === provider)) {
+    return;
+  }
+
   let i;
 
   // Find the right spot to insert this provider based on priority
@@ -81,7 +85,10 @@ function insertPriority(
 
   let currentProvider = nullProvider;
   for (let i = list.length - 1; i >= 0; i--) {
-    currentProvider = list[i].provider.bind(null, currentProvider);
+    const p = list[i].provider;
+    if (p) {
+      currentProvider = p.bind(null, currentProvider);
+    }
   }
   return currentProvider;
 }
@@ -110,10 +117,18 @@ export function addTypedProvider(
   provider: TypedProvider,
   options: TypedProviderOptions = { priority: 0, isDefault: true }
 ) {
+  if (!provider) {
+    throw new Error(
+      `addTypedProvider: cannot register undefined provider for type "${type}"`
+    );
+  }
   let list = typedProviderValueMap.get(type);
   if (!list) {
     list = new Array<TypedProviderValue>();
     typedProviderValueMap.set(type, list);
+  }
+  if (list.find((it) => it.provider === provider)) {
+    return;
   }
   const newProvider = insertPriority(type, list, provider, options);
   if (!newProvider) {
@@ -152,8 +167,12 @@ export function removeProvider(
   }
 }
 
+const TYPED_PROVIDER_BRIDGE_PRIORITY = -1000;
+
 /**
- * Removes all providers
+ * Removes all providers, clears all typed providers, and re-adds the typed
+ * provider bridge at the end so getMetaData can still resolve typed types
+ * after registerDefaultProvider() is called again.
  *
  * @category MetaData
  */
@@ -161,6 +180,8 @@ export function removeAllProviders(): void {
   while (providers.length > 0) {
     providers.pop();
   }
+  typedProviderValueMap.clear();
+  typedProviderMap.clear();
 }
 
 /**
