@@ -38,6 +38,7 @@ export type Segmentation = {
   segmentationId: string;
   /** segmentation label */
   label: string;
+  fallbackLabel?: string;
   segments: {
     [segmentIndex: number]: Segment;
   };
@@ -127,6 +128,7 @@ export type SegmentationPublicInput = {
       [segmentIndex: number]: Partial<Segment>;
     };
     label?: string;
+    fallbackLabel?: string;
     // segmentation level stats
     cachedStats?: { [key: string]: unknown };
   };
