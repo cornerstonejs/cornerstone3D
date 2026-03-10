@@ -1,6 +1,6 @@
 import { addTypedProvider, type TypedProvider } from '../../metaData';
 import { mapModuleTags } from '../Tags';
-import { dataLookup, INSTANCE_PRIORITY, instanceLookup } from './dataLookup';
+import { dataLookup, DATA_PRIORITY, instanceLookup } from './dataLookup';
 import { makeArrayLike } from './makeArrayLike';
 
 const mapModules = new Map<string, TypedProvider>();
@@ -59,6 +59,6 @@ export const MODULE_PRIORITY = { priority: -1_000 };
 export function registerTagModules() {
   for (const module of mapModuleTags.keys()) {
     addTypedProvider(module, tagModules(module), MODULE_PRIORITY);
-    addTypedProvider(module, instanceLookup, INSTANCE_PRIORITY);
+    addTypedProvider(module, instanceLookup, DATA_PRIORITY);
   }
 }

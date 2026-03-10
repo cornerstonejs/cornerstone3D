@@ -117,7 +117,7 @@ function loadImageFromDataSet(
   dataSet,
   imageId: string,
   frame = 0,
-  sharedCacheKey: string,
+  _sharedCacheKey,
   options
 ): Types.IImageLoadObject {
   const start = new Date().getTime();
@@ -172,29 +172,37 @@ function getLoaderForScheme(scheme: string): LoadRequestFunction {
   }
 }
 
-/**
- * Resolves pixel data for a frame from getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, { frameIndex }).
- * pixelData may be a single ByteArray or an array of per-frame data.
- */
-function pixelDataForFrame(
-  pixelData: ByteArray | ByteArray[],
-  frameIndex: number
-): ByteArray {
-  if (Array.isArray(pixelData)) {
-    const frame = pixelData[frameIndex];
-    if (frame == null) {
-      throw new Error(
-        `loadImageFromNatural: frame index ${frameIndex} out of range (${pixelData.length} frames)`
-      );
-    }
-    return frame;
+const asByteArray = (data) =>
+  data instanceof ArrayBuffer ? new Uint8Array(data) : data;
+
+function concatPixelData(pixelData) {
+  // Single buffer case
+  if (!Array.isArray(pixelData)) {
+    return asByteArray(pixelData);
   }
-  if (frameIndex !== 0) {
-    throw new Error(
-      `loadImageFromNatural: single buffer but frame index ${frameIndex} requested`
-    );
+
+  if (pixelData.length === 0) {
+    return undefined;
   }
-  return pixelData as ByteArray;
+
+  if (pixelData.length === 1) {
+    return asByteArray(pixelData[0]);
+  }
+
+  // Concatenate multiple frames
+  let totalLength = 0;
+  for (const frame of pixelData) {
+    totalLength += asByteArray(frame).length;
+  }
+
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const frame of pixelData) {
+    const view = asByteArray(frame);
+    result.set(view, offset);
+    offset += view.length;
+  }
+  return result;
 }
 
 /**
@@ -230,10 +238,8 @@ function loadImageFromNatural(
         | { arrayBuffer: ArrayBuffer };
       const arrayBuffer =
         result instanceof ArrayBuffer ? result : result.arrayBuffer;
-      console.warn('result=', result, natural);
       await addPart10Instance(imageId, arrayBuffer);
       natural = metaData.get(NATURAL, imageId);
-      console.warn('natural=', natural);
     }
 
     const frameData = metaData.getTyped(
@@ -247,14 +253,14 @@ function loadImageFromNatural(
       );
     }
 
-    const pixelData = pixelDataForFrame(
-      frameData.pixelData as ByteArray | ByteArray[],
-      frameData.frameOfInterest
-    );
+    const { pixelData, transferSyntaxUid } = frameData;
+
+    const concatenatedPixelData = concatPixelData(pixelData);
+
     const image = await createImage(
       imageId,
-      pixelData,
-      frameData.transferSyntaxUid,
+      concatenatedPixelData,
+      transferSyntaxUid,
       options
     );
     const out = image as DICOMLoaderIImage;
