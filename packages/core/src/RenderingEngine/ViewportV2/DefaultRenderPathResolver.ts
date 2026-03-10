@@ -4,16 +4,16 @@ import type {
   LogicalDataObject,
   RenderPathDefinition,
   RenderPathResolver,
-  RenderingAdapter,
   ViewportKind,
 } from './ViewportArchitectureTypes';
 
 export class DefaultRenderPathResolver implements RenderPathResolver {
   private paths: RenderPathDefinition[] = [];
 
-  register<TContext extends BaseViewportRenderContext>(
-    path: RenderPathDefinition<TContext>
-  ): void {
+  register<
+    TRootContext extends BaseViewportRenderContext,
+    TAdapterContext extends BaseViewportRenderContext,
+  >(path: RenderPathDefinition<TRootContext, TAdapterContext>): void {
     const existingPath = this.paths.find(
       (candidate) => candidate.id === path.id
     );
@@ -29,7 +29,7 @@ export class DefaultRenderPathResolver implements RenderPathResolver {
     type: ViewportKind,
     data: LogicalDataObject,
     options: DataAttachmentOptions
-  ): RenderingAdapter<TContext> {
+  ): RenderPathDefinition<TContext, BaseViewportRenderContext> {
     const path = this.paths.find(
       (candidate) => candidate.type === type && candidate.matches(data, options)
     );
@@ -40,7 +40,7 @@ export class DefaultRenderPathResolver implements RenderPathResolver {
       );
     }
 
-    return path.createAdapter() as RenderingAdapter<TContext>;
+    return path as RenderPathDefinition<TContext, BaseViewportRenderContext>;
   }
 }
 

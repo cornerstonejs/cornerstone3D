@@ -72,38 +72,47 @@ export interface RenderingAdapter<
 }
 
 export interface RenderPathDefinition<
-  TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+  TRootContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+  TAdapterContext extends BaseViewportRenderContext = TRootContext,
 > {
   id: string;
   type: ViewportKind;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean;
 
-  createAdapter(): RenderingAdapter<TContext>;
+  createAdapter(): RenderingAdapter<TAdapterContext>;
+
+  selectContext?(rootContext: TRootContext): TAdapterContext;
 }
 
 export interface RenderPathResolver {
-  register<TContext extends BaseViewportRenderContext>(
-    path: RenderPathDefinition<TContext>
+  register<
+    TRootContext extends BaseViewportRenderContext,
+    TAdapterContext extends BaseViewportRenderContext,
+  >(
+    path: RenderPathDefinition<TRootContext, TAdapterContext>
   ): void;
 
   resolve<TContext extends BaseViewportRenderContext>(
     type: ViewportKind,
     data: LogicalDataObject,
     options: DataAttachmentOptions
-  ): RenderingAdapter<TContext>;
+  ): RenderPathDefinition<TContext, BaseViewportRenderContext>;
 }
 
 export interface DataProvider {
   load(dataId: DataId, options?: unknown): Promise<LogicalDataObject>;
 }
 
-export interface RenderingBinding<
-  TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
-> {
+export interface RenderingBinding<TPresentation = unknown> {
   data: LogicalDataObject;
-  adapter: RenderingAdapter<TContext>;
   rendering: MountedRendering;
+  updatePresentation(props: TPresentation): void;
+  updateCamera(camera: unknown): void;
+  updateProperties(properties: unknown): void;
+  render?(): void;
+  resize?(): void;
+  detach(): void;
 }
 
 export interface ViewportController<

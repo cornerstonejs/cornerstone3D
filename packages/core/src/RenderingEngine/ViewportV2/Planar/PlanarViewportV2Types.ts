@@ -106,17 +106,39 @@ export interface PlanarViewportV2Input extends ViewportInput {
 
 export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   type: 'planar';
-  element: HTMLDivElement;
-  canvas: HTMLCanvasElement;
-  canvasContext: CanvasRenderingContext2D;
-  cpuCanvas?: HTMLCanvasElement;
-  cpuCanvasContext?: CanvasRenderingContext2D;
-  renderer: vtkRenderer;
-  vtkCanvas?: HTMLCanvasElement;
-  requestRender(): void;
-  setRenderMode(renderMode: PlanarEffectiveRenderMode): void;
-  setRenderModeVisibility?(renderMode: PlanarEffectiveRenderMode): void;
+  viewport: {
+    element: HTMLDivElement;
+  };
+  display: {
+    requestRender(): void;
+    activateRenderMode(renderMode: PlanarEffectiveRenderMode): void;
+  };
+  cpu: {
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D;
+  };
+  vtk: {
+    renderer: vtkRenderer;
+    canvas: HTMLCanvasElement;
+  };
 }
+
+type PlanarContextBase = Pick<
+  PlanarViewportRenderContext,
+  'viewportId' | 'type'
+>;
+
+export type PlanarCpuImageAdapterContext = PlanarContextBase &
+  Pick<PlanarViewportRenderContext, 'display' | 'cpu'>;
+
+export type PlanarCpuVolumeAdapterContext = PlanarContextBase &
+  Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'cpu' | 'vtk'>;
+
+export type PlanarVtkImageAdapterContext = PlanarContextBase &
+  Pick<PlanarViewportRenderContext, 'display' | 'vtk'>;
+
+export type PlanarVtkVolumeAdapterContext = PlanarContextBase &
+  Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'vtk'>;
 
 export interface PlanarCameraState {
   focalPoint: Point3;

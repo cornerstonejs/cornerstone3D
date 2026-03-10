@@ -19,7 +19,6 @@ import type {
   PlanarCamera,
   PlanarEffectiveRenderMode,
   PlanarPresentationProps,
-  PlanarRenderMode,
   PlanarRendering,
   PlanarPayload,
   PlanarRegisteredDataSet,
@@ -112,28 +111,25 @@ class PlanarViewportV2 extends ViewportV2<
     this.renderContext = {
       viewportId: this.id,
       type: 'planar',
-      canvas: cpuCanvas,
-      canvasContext: cpuCanvasContext,
-      cpuCanvas,
-      cpuCanvasContext,
-      element: this.element,
-      requestRender: () => {
-        this.requestRenderingEngineRender();
+      viewport: {
+        element: this.element,
       },
-      renderer,
-      setRenderMode: (renderMode: PlanarEffectiveRenderMode) => {
-        const useCPUCanvas =
-          renderMode === 'cpu2d' || renderMode === 'cpuVolume';
-        cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
-        vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
+      display: {
+        requestRender: () => {
+          this.requestRenderingEngineRender();
+        },
+        activateRenderMode: (renderMode: PlanarEffectiveRenderMode) => {
+          this.setRenderModeVisibility(renderMode, cpuCanvas, vtkCanvas);
+        },
       },
-      setRenderModeVisibility: (renderMode: PlanarEffectiveRenderMode) => {
-        const useCPUCanvas =
-          renderMode === 'cpu2d' || renderMode === 'cpuVolume';
-        cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
-        vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
+      cpu: {
+        canvas: cpuCanvas,
+        context: cpuCanvasContext,
       },
-      vtkCanvas,
+      vtk: {
+        renderer,
+        canvas: vtkCanvas,
+      },
     };
     this.camera = {
       imageIdIndex: 0,
@@ -298,18 +294,15 @@ class PlanarViewportV2 extends ViewportV2<
 
   resize(): void {
     const { clientHeight, clientWidth } = this.element;
-    const { cpuCanvas } = this.renderContext;
+    const { canvas } = this.renderContext.cpu;
 
-    if (cpuCanvas.width !== clientWidth || cpuCanvas.height !== clientHeight) {
-      cpuCanvas.width = clientWidth;
-      cpuCanvas.height = clientHeight;
+    if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
+      canvas.width = clientWidth;
+      canvas.height = clientHeight;
     }
 
     for (const binding of this.bindings.values()) {
-      binding.adapter.resize?.(
-        this.renderContext,
-        binding.rendering as PlanarRendering
-      );
+      binding.resize?.();
     }
   }
 
@@ -317,11 +310,8 @@ class PlanarViewportV2 extends ViewportV2<
     let renderedByAdapter = false;
 
     for (const binding of this.bindings.values()) {
-      binding.adapter.render?.(
-        this.renderContext,
-        binding.rendering as PlanarRendering
-      );
-      renderedByAdapter = renderedByAdapter || Boolean(binding.adapter.render);
+      binding.render?.();
+      renderedByAdapter = renderedByAdapter || Boolean(binding.render);
     }
 
     if (!renderedByAdapter) {
@@ -335,6 +325,16 @@ class PlanarViewportV2 extends ViewportV2<
     if (renderingEngine) {
       renderingEngine.renderViewport(this.id);
     }
+  }
+
+  private setRenderModeVisibility(
+    renderMode: PlanarEffectiveRenderMode,
+    cpuCanvas: HTMLCanvasElement,
+    vtkCanvas: HTMLCanvasElement
+  ): void {
+    const useCPUCanvas = renderMode === 'cpu2d' || renderMode === 'cpuVolume';
+    cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
+    vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
   }
 
   private getPayload(): PlanarPayload | undefined {

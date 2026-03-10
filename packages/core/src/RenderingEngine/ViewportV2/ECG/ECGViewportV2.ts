@@ -182,7 +182,7 @@ class ECGViewportV2 extends ViewportV2<
 
   render(): void {
     for (const binding of this.bindings.values()) {
-      binding.adapter.render?.(this.renderContext, binding.rendering);
+      binding.render?.();
     }
   }
 }

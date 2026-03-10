@@ -17,8 +17,6 @@ type PlanarOrientation =
   | Enums.OrientationAxis.CORONAL
   | Enums.OrientationAxis.SAGITTAL;
 
-const searchParams = new URLSearchParams(window.location.search);
-
 const orientations = [
   Enums.OrientationAxis.AXIAL,
   Enums.OrientationAxis.CORONAL,
@@ -26,6 +24,7 @@ const orientations = [
 ] as const;
 
 function getOrientationParam(): PlanarOrientation {
+  const searchParams = new URLSearchParams(window.location.search);
   const value = searchParams.get('orientation');
 
   if (value && orientations.includes(value as PlanarOrientation)) {
@@ -36,6 +35,7 @@ function getOrientationParam(): PlanarOrientation {
 }
 
 function getNumberParam(name: string): number | undefined {
+  const searchParams = new URLSearchParams(window.location.search);
   const value = searchParams.get(name);
 
   if (value == null) {
@@ -53,8 +53,22 @@ console.warn(
 
 const viewportId = 'planarViewportV2';
 const dataId = 'ct-planar';
-const orientation = getOrientationParam();
+let currentOrientation = getOrientationParam();
 const cpuVoxelThreshold = getNumberParam('cpuVoxelThreshold');
+
+function syncExampleUrl(): void {
+  const nextUrl = new URL(window.location.href);
+
+  nextUrl.searchParams.set('orientation', currentOrientation);
+
+  if (cpuVoxelThreshold === undefined) {
+    nextUrl.searchParams.delete('cpuVoxelThreshold');
+  } else {
+    nextUrl.searchParams.set('cpuVoxelThreshold', String(cpuVoxelThreshold));
+  }
+
+  window.history.replaceState({}, '', nextUrl);
+}
 
 setTitleAndDescription(
   'Planar Viewport Architecture POC',
@@ -91,7 +105,7 @@ function addToolbar() {
     options: {
       values: [...orientations],
       labels: ['Axial', 'Coronal', 'Sagittal'],
-      defaultValue: orientation,
+      defaultValue: currentOrientation,
     },
     onSelectedValueChange: (selectedValue) => {
       const nextOrientation = selectedValue as PlanarOrientation;
@@ -99,6 +113,9 @@ function addToolbar() {
       if (!viewport) {
         return;
       }
+
+      currentOrientation = nextOrientation;
+      syncExampleUrl();
 
       void viewport.setDataIds([dataId], {
         orientation: nextOrientation,
@@ -111,6 +128,7 @@ function addToolbar() {
 addToolbar();
 
 async function run() {
+  syncExampleUrl();
   await initDemo();
 
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -135,7 +153,7 @@ async function run() {
     imageIds,
   });
   await viewport.setDataIds([dataId], {
-    orientation,
+    orientation: currentOrientation,
     cpuVoxelThreshold,
   });
   viewport.setProperties({

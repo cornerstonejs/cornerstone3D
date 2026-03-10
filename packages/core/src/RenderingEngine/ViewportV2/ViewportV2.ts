@@ -26,7 +26,7 @@ abstract class ViewportV2<
   protected renderPathResolver: RenderPathResolver;
   protected renderContext: TContext;
 
-  protected bindings = new Map<DataId, RenderingBinding<TContext>>();
+  protected bindings = new Map<DataId, RenderingBinding<TDataPresentation>>();
   protected presentations = new Map<DataId, TDataPresentation>();
   protected camera!: TCamera;
   protected properties!: TProperties;
@@ -44,32 +44,62 @@ abstract class ViewportV2<
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): Promise<RenderingId> {
-    const adapter = this.renderPathResolver.resolve<TContext>(
+    const path = this.renderPathResolver.resolve<TContext>(
       this.kind,
       data,
       options
     );
+    const adapter = path.createAdapter();
+    const adapterContext =
+      path.selectContext?.(this.renderContext) ?? this.renderContext;
     const existing = this.bindings.get(dataId);
 
     if (existing) {
-      existing.adapter.detach(this.renderContext, existing.rendering);
+      existing.detach();
     }
 
-    const rendering = await adapter.attach(this.renderContext, data, options);
+    const rendering = await adapter.attach(adapterContext, data, options);
 
     this.bindings.set(dataId, {
       data,
-      adapter,
       rendering,
+      updatePresentation: (props) => {
+        adapter.updatePresentation(adapterContext, rendering, props);
+      },
+      updateCamera: (camera) => {
+        adapter.updateCamera(adapterContext, rendering, camera);
+      },
+      updateProperties: (properties) => {
+        adapter.updateProperties(adapterContext, rendering, properties);
+      },
+      render: adapter.render
+        ? () => {
+            adapter.render?.(adapterContext, rendering);
+          }
+        : undefined,
+      resize: adapter.resize
+        ? () => {
+            adapter.resize?.(adapterContext, rendering);
+          }
+        : undefined,
+      detach: () => {
+        adapter.detach(adapterContext, rendering);
+      },
     });
+
+    const binding = this.bindings.get(dataId);
+
+    if (!binding) {
+      throw new Error(`Failed to bind rendering for ${dataId}`);
+    }
 
     const props = this.presentations.get(dataId);
     if (props !== undefined) {
-      adapter.updatePresentation(this.renderContext, rendering, props);
+      binding.updatePresentation(props);
     }
 
-    adapter.updateCamera(this.renderContext, rendering, this.camera);
-    adapter.updateProperties(this.renderContext, rendering, this.properties);
+    binding.updateCamera(this.camera);
+    binding.updateProperties(this.properties);
     this.render();
     return rendering.id;
   }
@@ -82,11 +112,7 @@ abstract class ViewportV2<
       return;
     }
 
-    binding.adapter.updatePresentation(
-      this.renderContext,
-      binding.rendering,
-      props
-    );
+    binding.updatePresentation(props);
     this.render();
   }
 
@@ -125,7 +151,7 @@ abstract class ViewportV2<
       return;
     }
 
-    binding.adapter.detach(this.renderContext, binding.rendering);
+    binding.detach();
     this.bindings.delete(dataId);
     this.presentations.delete(dataId);
     this.render();
@@ -137,16 +163,8 @@ abstract class ViewportV2<
 
   protected modified(): void {
     for (const binding of this.bindings.values()) {
-      binding.adapter.updateCamera(
-        this.renderContext,
-        binding.rendering,
-        this.camera
-      );
-      binding.adapter.updateProperties(
-        this.renderContext,
-        binding.rendering,
-        this.properties
-      );
+      binding.updateCamera(this.camera);
+      binding.updateProperties(this.properties);
     }
 
     this.render();
