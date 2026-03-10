@@ -10,7 +10,9 @@ export function transferSyntaxProvider(next, query, data, options) {
     const isVideo = isVideoTransferSyntax(transferSyntaxUID);
     return {
       ...fmiBase,
-      transferSyntaxUID,
+      transferSyntaxUID: Array.isArray(transferSyntaxUID)
+        ? transferSyntaxUID[0]
+        : transferSyntaxUID,
       isVideo,
     };
   }

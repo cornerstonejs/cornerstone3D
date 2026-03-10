@@ -56,7 +56,9 @@ export async function addPart10Instance(
   const natural = reader.dict;
   const transferSyntaxUid = reader.syntax;
   if (transferSyntaxUid) {
-    natural.TransferSyntaxUID = transferSyntaxUid;
+    natural.TransferSyntaxUID = Array.isArray(transferSyntaxUid)
+      ? transferSyntaxUid[0]
+      : transferSyntaxUid;
   }
   setCacheData(MetadataModules.NATURAL, imageId, natural);
   return natural;
