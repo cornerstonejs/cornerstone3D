@@ -1,4 +1,3 @@
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
@@ -62,6 +61,7 @@ import imageIdToURI from '../utilities/imageIdToURI';
 import Viewport from './Viewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { getImagePlaneModule } from '../utilities/buildMetadata';
+import { createEmptyVTKImageData } from './helpers/planarImageRendering';
 
 import {
   Events,
@@ -81,7 +81,7 @@ import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import resize from './helpers/cpuFallback/rendering/resize';
 
 import cache from '../cache/cache';
-import { getConfiguration, getShouldUseCPURendering } from '../init';
+import { getShouldUseCPURendering } from '../init';
 import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 import type {
   StackViewportNewStackEventDetail,
@@ -214,9 +214,11 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    const result = this.useCPURendering
-      ? this._resetCPUFallbackElement()
-      : this._resetGPUViewport();
+    if (this.useCPURendering) {
+      this._resetCPUFallbackElement();
+    } else {
+      this._resetGPUViewport();
+    }
 
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
@@ -269,9 +271,11 @@ class StackViewport extends Viewport {
       }
     }
 
-    const result = this.useCPURendering
-      ? this._resetCPUFallbackElement()
-      : this._resetGPUViewport();
+    if (this.useCPURendering) {
+      this._resetCPUFallbackElement();
+    } else {
+      this._resetGPUViewport();
+    }
   }
 
   private _resetCPUFallbackElement() {
@@ -1756,24 +1760,14 @@ class StackViewport extends Viewport {
     numberOfComponents,
     pixelArray,
   }) {
-    const values = new pixelArray.constructor(pixelArray.length);
-
-    // Todo: I guess nothing should be done for use16bit?
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: numberOfComponents,
-      values: values,
+    return createEmptyVTKImageData({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      numberOfComponents,
+      pixelArray: new pixelArray.constructor(pixelArray.length),
     });
-
-    const imageData = vtkImageData.newInstance();
-
-    imageData.setDimensions(dimensions);
-    imageData.setSpacing(spacing);
-    imageData.setDirection(direction);
-    imageData.setOrigin(origin);
-    imageData.getPointData().setScalars(scalarArray);
-
-    return imageData;
   }
   /**
    * Creates vtkImagedata based on the image object, it creates

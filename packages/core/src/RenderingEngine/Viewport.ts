@@ -185,6 +185,10 @@ class Viewport {
     return false;
   }
 
+  public getUseCustomRenderingPipeline(): boolean {
+    return (this.constructor as typeof Viewport).useCustomRenderingPipeline;
+  }
+
   /**
    * Returns whether the viewport supports changing orientation (e.g. via setCamera
    * with viewPlaneNormal/viewUp). Used by tools like OrientationControllerTool to
@@ -2013,7 +2017,7 @@ class Viewport {
   /**
    * Navigates to the image specified by the viewRef.
    */
-  public setViewReference(viewRef: ViewReference) {
+  public setViewReference(_viewRef: ViewReference) {
     // No-op
   }
 

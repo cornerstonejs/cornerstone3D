@@ -6,7 +6,9 @@ import triggerEvent from '../utilities/triggerEvent';
 import ViewportType from '../enums/ViewportType';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import StackViewport from './StackViewport';
-import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
+import viewportTypeUsesCustomRenderingPipeline, {
+  viewportUsesCustomRenderingPipeline,
+} from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import {
   getShouldUseCPURendering,
@@ -297,7 +299,7 @@ abstract class BaseRenderingEngine {
     const customRenderingViewports = [];
 
     viewports.forEach((vpie) => {
-      if (!viewportTypeUsesCustomRenderingPipeline(vpie.type)) {
+      if (!viewportUsesCustomRenderingPipeline(vpie)) {
         vtkDrivenViewports.push(vpie);
       } else {
         customRenderingViewports.push(vpie);
@@ -536,7 +538,7 @@ abstract class BaseRenderingEngine {
   }
 
   private _resizeUsingCustomResizeHandler(
-    customRenderingViewports: StackViewport[],
+    customRenderingViewports: IViewport[],
     keepCamera = true,
     immediate = true
   ) {
@@ -653,7 +655,7 @@ abstract class BaseRenderingEngine {
    * Returns the offscreen multi-render window used for rendering.
    */
   public getOffscreenMultiRenderWindow(
-    viewportId?: string
+    _viewportId?: string
   ): VtkOffscreenMultiRenderWindow {
     if (this.useCPURendering) {
       throw new Error(

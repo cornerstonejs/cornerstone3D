@@ -45,7 +45,8 @@ function applyPresentation(
   props?: PlanarPresentationProps
 ): void {
   const { enabledElement, defaultVOIRange } = rendering.backendHandle;
-  const { canvas, viewport } = enabledElement;
+  const { viewport } = enabledElement;
+  const canvas = enabledElement.canvas as HTMLCanvasElement;
   const voiRange = props?.voiRange ?? defaultVOIRange;
 
   canvas.style.display = props?.visible === false ? 'none' : '';
@@ -112,7 +113,7 @@ async function updateRenderedImage(args: {
 }): Promise<void> {
   const { ctx, image, imageIdIndex, props, rendering, viewState } = args;
   const enabledElement = rendering.backendHandle.enabledElement;
-  const defaultViewport = getDefaultViewport(ctx.cpuCanvas, image);
+  const defaultViewport = getDefaultViewport(ctx.canvas, image);
   const previousViewport = enabledElement.viewport;
 
   enabledElement.image = image;
@@ -134,7 +135,7 @@ async function updateRenderedImage(args: {
 
   applyPresentation(rendering, props);
   applyViewState(rendering, viewState);
-  renderCPUImage(rendering);
+  ctx.requestRender();
 }
 
 export class CpuImageCanvasRenderingAdapter {
@@ -146,13 +147,13 @@ export class CpuImageCanvasRenderingAdapter {
     const planarCtx = ctx as PlanarViewportBackendContext;
     const payload = data.payload as PlanarStackPayload;
 
-    planarCtx.setRenderModeVisibility('cpu2d');
+    planarCtx.setRenderMode('cpu2d');
 
     const enabledElement = {
-      canvas: planarCtx.cpuCanvas,
+      canvas: planarCtx.canvas,
       image: payload.initialImage,
       renderingTools: {},
-      viewport: getDefaultViewport(planarCtx.cpuCanvas, payload.initialImage),
+      viewport: getDefaultViewport(planarCtx.canvas, payload.initialImage),
     } as CPUFallbackEnabledElement;
 
     resizeEnabledElement(enabledElement, true);
@@ -200,7 +201,7 @@ export class CpuImageCanvasRenderingAdapter {
       planarViewState?.imageIdIndex ??
       planarRendering.backendHandle.currentImageIdIndex;
 
-    planarCtx.setRenderModeVisibility('cpu2d');
+    planarCtx.setRenderMode('cpu2d');
     applyViewState(planarRendering, planarViewState);
 
     if (
@@ -247,12 +248,12 @@ export class CpuImageCanvasRenderingAdapter {
     const planarCtx = ctx as PlanarViewportBackendContext;
     const { enabledElement } = (rendering as PlanarCpuRendering).backendHandle;
 
-    planarCtx.cpuCanvasContext.setTransform(1, 0, 0, 1, 0, 0);
-    planarCtx.cpuCanvasContext.clearRect(
+    planarCtx.canvasContext.setTransform(1, 0, 0, 1, 0, 0);
+    planarCtx.canvasContext.clearRect(
       0,
       0,
-      planarCtx.cpuCanvas.width,
-      planarCtx.cpuCanvas.height
+      planarCtx.canvas.width,
+      planarCtx.canvas.height
     );
     enabledElement.image = undefined;
   }

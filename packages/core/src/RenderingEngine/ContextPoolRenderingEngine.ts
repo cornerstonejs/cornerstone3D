@@ -5,16 +5,12 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import ViewportType from '../enums/ViewportType';
-import VolumeViewport from './VolumeViewport';
-import StackViewport from './StackViewport';
-import VolumeViewport3D from './VolumeViewport3D';
-import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
+import viewportTypeUsesCustomRenderingPipeline, {
+  viewportUsesCustomRenderingPipeline,
+} from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas, {
   updateCanvasSizeAndAspectRatio,
 } from './helpers/getOrCreateCanvas';
-import type IStackViewport from '../types/IStackViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
-
 import type * as EventTypes from '../types/EventTypes';
 import type {
   ViewportInput,
@@ -24,6 +20,7 @@ import type {
 } from '../types/IViewport';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
+import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
 /**
  * ContextPoolRenderingEngine extends BaseRenderingEngine to provide parallel rendering
@@ -83,9 +80,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     element.tabIndex = -1;
 
     // Assign viewport to a context
-    // Stack viewports get distributed across contexts, all others use context 0
+    // Stack-like 2D viewports get distributed across contexts, all others use context 0
     let contextIndex = 0;
-    if (type === ViewportType.STACK) {
+    if (type === ViewportType.STACK || type === ViewportType.PLANAR_V2) {
       const contexts = this.contextPool.getAllContexts();
       contextIndex = this._viewports.size % contexts.length;
     }
@@ -133,19 +130,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       defaultOptions: defaultOptions || {},
     } as ViewportInput;
 
-    let viewport: IViewport;
-    if (type === ViewportType.STACK) {
-      viewport = new StackViewport(viewportInput);
-    } else if (
-      type === ViewportType.ORTHOGRAPHIC ||
-      type === ViewportType.PERSPECTIVE
-    ) {
-      viewport = new VolumeViewport(viewportInput);
-    } else if (type === ViewportType.VOLUME_3D) {
-      viewport = new VolumeViewport3D(viewportInput);
-    } else {
+    const ViewportClass = viewportTypeToViewportClass[type];
+
+    if (!ViewportClass) {
       throw new Error(`Viewport Type ${type} is not supported`);
     }
+
+    const viewport = new ViewportClass(viewportInput);
 
     this._viewports.set(viewportId, viewport);
 
@@ -201,7 +192,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * resize() call.
    */
   protected _resizeVTKViewports(
-    vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
+    vtkDrivenViewports: IViewport[],
     keepCamera = true,
     immediate = true
   ) {
@@ -256,11 +247,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       this._resize(vtkDrivenViewports);
     }
 
-    vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
+    vtkDrivenViewports.forEach((vp) => {
+      vp.resize?.();
+
       const prevCamera = vp.getCamera();
-      const rotation = vp.getRotation();
+      const rotation = vp.getRotation?.() ?? 0;
       const { flipHorizontal } = prevCamera;
-      vp.resetCameraForResize();
+      (
+        vp as IViewport & { resetCameraForResize?: () => boolean }
+      ).resetCameraForResize?.();
 
       const displayArea = vp.getDisplayArea();
 
@@ -323,7 +318,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     viewport: IViewport
   ): EventTypes.ImageRenderedEventDetail {
     // Handle custom rendering pipeline viewports
-    if (viewportTypeUsesCustomRenderingPipeline(viewport.type)) {
+    if (viewportUsesCustomRenderingPipeline(viewport)) {
       const eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
       return eventDetail;
@@ -374,7 +369,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
-    if (viewportTypeUsesCustomRenderingPipeline(viewport.type)) {
+    if (viewportUsesCustomRenderingPipeline(viewport)) {
       return viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
     }
 

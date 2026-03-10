@@ -1,4 +1,5 @@
 import vtkGenericRenderWindow from '@kitware/vtk.js/Rendering/Misc/GenericRenderWindow';
+import { OrientationAxis } from '../../../enums';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import { CpuImageCanvasPath } from './CpuImageCanvasRenderingAdapter';
@@ -75,21 +76,32 @@ class PlanarViewportV2 extends ViewportV2<
     this.backendContext = {
       viewportId: this.id,
       viewportKind: 'planar',
+      canvas: cpuCanvas,
+      canvasContext: cpuCanvasContext,
       cpuCanvas,
       cpuCanvasContext,
       element: this.element,
       genericRenderWindow,
+      requestRender: () => {
+        this.render();
+      },
       renderer,
       renderWindow,
-      vtkCanvas,
+      setRenderMode: (renderMode: PlanarRenderMode) => {
+        const useCPUCanvas = renderMode === 'cpu2d';
+        cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
+        vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
+      },
       setRenderModeVisibility: (renderMode: PlanarRenderMode) => {
         const useCPUCanvas = renderMode === 'cpu2d';
         cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
         vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
       },
+      vtkCanvas,
     };
     this.viewState = {
       imageIdIndex: 0,
+      orientation: OrientationAxis.AXIAL,
       zoom: 1,
       pan: [0, 0],
     };
@@ -188,6 +200,15 @@ class PlanarViewportV2 extends ViewportV2<
 
   scroll(delta: number): Promise<string> {
     return this.setImageIdIndex(this.getCurrentImageIdIndex() + delta);
+  }
+
+  setOrientation(
+    orientation:
+      | OrientationAxis.AXIAL
+      | OrientationAxis.CORONAL
+      | OrientationAxis.SAGITTAL
+  ): void {
+    this.setViewState({ orientation });
   }
 
   resize(): void {

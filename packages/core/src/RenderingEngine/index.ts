@@ -2,6 +2,8 @@ import RenderingEngine from './RenderingEngine';
 import BaseRenderingEngine from './BaseRenderingEngine';
 import TiledRenderingEngine from './TiledRenderingEngine';
 import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
+import ContextPoolRenderingEngineV2 from './ContextPoolRenderingEngineV2';
+import RenderingEngineV2 from './RenderingEngineV2';
 import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
@@ -32,6 +34,8 @@ import WSIViewportV2, {
 export * from './helpers';
 
 const renderingEngineExportsV2 = {
+  RenderingEngineV2,
+  ContextPoolRenderingEngineV2,
   ViewportV2,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
@@ -54,9 +58,11 @@ const renderingEngineExportsV2 = {
 export {
   getRenderingEngine,
   RenderingEngine,
+  RenderingEngineV2,
   BaseRenderingEngine,
   TiledRenderingEngine,
   ContextPoolRenderingEngine,
+  ContextPoolRenderingEngineV2,
   VolumeViewport,
   VolumeViewport3D,
   StackViewport,

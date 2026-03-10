@@ -6,6 +6,7 @@ import VolumeViewport3D from '../VolumeViewport3D';
 import VideoViewport from '../VideoViewport';
 import WSIViewport from '../WSIViewport';
 import ECGViewport from '../ECGViewport';
+import PlanarViewportV2 from '../ViewportV2/Planar/PlanarViewportV2';
 import type { ViewportInput, IViewport } from '../../types/IViewport';
 
 interface ViewportConstructor {
@@ -19,6 +20,7 @@ const viewportTypeToViewportClass: {
   [ViewportType.PERSPECTIVE]: VolumeViewport,
   [ViewportType.STACK]: StackViewport,
   [ViewportType.VOLUME_3D]: VolumeViewport3D,
+  [ViewportType.PLANAR_V2]: PlanarViewportV2,
   [ViewportType.VIDEO]: VideoViewport,
   [ViewportType.WHOLE_SLIDE]: WSIViewport,
   [ViewportType.ECG]: ECGViewport,

@@ -1,6 +1,7 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import { MPR_CAMERA_VALUES } from '../../../constants';
 import createVolumeMapper, {
   convertMapperToNotSharedMapper,
 } from '../../helpers/createVolumeMapper';
@@ -9,12 +10,13 @@ import { createAndCacheVolumeFromImages } from '../../../loaders/volumeLoader';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import type { IImage, Point3, VOIRange } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
-import getSliceRange from '../../../utilities/getSliceRange';
-import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
-import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
 import { toLowHighRange } from '../../../utilities/windowLevel';
+import {
+  getPlanarVolumeSliceNavigationState,
+  getPlanarVolumeSlicePoint,
+} from '../../helpers/planarVolumeRendering';
 import type {
   DataAttachmentOptions,
   LogicalDataObject,
@@ -112,7 +114,6 @@ function applyCameraViewState(
   const { sliceCamera } = rendering.backendHandle;
   const zoom = Math.max(viewState?.zoom ?? 1, 0.001);
   const [panX, panY] = viewState?.pan ?? [0, 0];
-  debugger;
 
   camera.setParallelProjection(true);
   camera.setParallelScale(sliceCamera.parallelScale / zoom);
@@ -128,31 +129,50 @@ function applyCameraViewState(
   );
 }
 
+function applyOrientation(
+  ctx: PlanarViewportBackendContext,
+  rendering: PlanarVolumeRendering,
+  orientation: PlanarViewState['orientation']
+): void {
+  if (!orientation) {
+    return;
+  }
+
+  const cameraValues = MPR_CAMERA_VALUES[orientation];
+
+  if (!cameraValues) {
+    return;
+  }
+
+  const camera = ctx.renderer.getActiveCamera();
+
+  camera.setDirectionOfProjection(
+    -cameraValues.viewPlaneNormal[0],
+    -cameraValues.viewPlaneNormal[1],
+    -cameraValues.viewPlaneNormal[2]
+  );
+  camera.setViewUp(...cameraValues.viewUp);
+  ctx.renderer.resetCamera();
+  rendering.backendHandle.orientation = orientation;
+  rendering.backendHandle.sliceCamera = getCameraState(ctx);
+}
+
 function getCurrentSliceIndex(
   ctx: PlanarViewportBackendContext,
   rendering: PlanarVolumeRendering
 ): number {
   const camera = ctx.renderer.getActiveCamera();
   const { actor, imageVolume } = rendering.backendHandle;
-  const viewPlaneNormal = [...camera.getViewPlaneNormal()] as Point3;
-  const focalPoint = [...camera.getFocalPoint()] as Point3;
-  const sliceRange = getSliceRange(actor, viewPlaneNormal, focalPoint);
-  const spacingInNormalDirection = getSpacingInNormalDirection(
+
+  return getPlanarVolumeSliceNavigationState({
+    actor,
+    camera: {
+      focalPoint: [...camera.getFocalPoint()] as Point3,
+      position: [...camera.getPosition()] as Point3,
+      viewPlaneNormal: [...camera.getViewPlaneNormal()] as Point3,
+    },
     imageVolume,
-    viewPlaneNormal
-  );
-  const steps = Math.round(
-    (sliceRange.max - sliceRange.min) / spacingInNormalDirection
-  );
-  const range = sliceRange.max - sliceRange.min;
-
-  if (steps <= 0 || range === 0) {
-    return 0;
-  }
-
-  const fraction = (sliceRange.current - sliceRange.min) / range;
-
-  return Math.round(fraction * steps);
+  }).currentSliceIndex;
 }
 
 function setSliceIndex(
@@ -167,11 +187,16 @@ function setSliceIndex(
   const viewPlaneNormal = [...camera.getViewPlaneNormal()] as Point3;
   const focalPoint = [...camera.getFocalPoint()] as Point3;
   const position = [...camera.getPosition()] as Point3;
-  const sliceRange = getSliceRange(actor, viewPlaneNormal, focalPoint);
-  const spacingInNormalDirection = getSpacingInNormalDirection(
-    imageVolume,
-    viewPlaneNormal
-  );
+  const { sliceRange, spacingInNormalDirection } =
+    getPlanarVolumeSliceNavigationState({
+      actor,
+      camera: {
+        focalPoint,
+        position,
+        viewPlaneNormal,
+      },
+      imageVolume,
+    });
   const maxImageIdIndex = payload.imageIds.length - 1;
   const currentImageIdIndex = getCurrentSliceIndex(ctx, rendering);
   const clampedImageIdIndex = Math.min(
@@ -181,14 +206,16 @@ function setSliceIndex(
   const delta = clampedImageIdIndex - currentImageIdIndex;
 
   if (delta !== 0) {
-    const { newFocalPoint, newPosition } = snapFocalPointToSlice(
-      focalPoint,
-      position,
+    const { newFocalPoint, newPosition } = getPlanarVolumeSlicePoint({
+      camera: {
+        focalPoint,
+        position,
+        viewPlaneNormal,
+      },
+      delta,
       sliceRange,
-      viewPlaneNormal,
       spacingInNormalDirection,
-      delta
-    );
+    });
 
     camera.setFocalPoint(...newFocalPoint);
     camera.setPosition(...newPosition);
@@ -224,7 +251,7 @@ export class VtkVolumeMapperRenderingAdapter {
     ) as vtkVolumeMapper;
     const actor = vtkVolume.newInstance();
 
-    planarCtx.setRenderModeVisibility('vtkVolume');
+    planarCtx.setRenderMode('vtkVolume');
     actor.setMapper(mapper);
     planarCtx.renderer.addVolume(actor);
     planarCtx.renderer.getActiveCamera().setParallelProjection(true);
@@ -251,6 +278,7 @@ export class VtkVolumeMapperRenderingAdapter {
         defaultVOIRange: defaultRange
           ? { lower: defaultRange[0], upper: defaultRange[1] }
           : getDefaultVOIRange(payload.initialImage),
+        orientation: 'axial',
         sliceCamera: getCameraState(planarCtx),
       },
     };
@@ -284,8 +312,14 @@ export class VtkVolumeMapperRenderingAdapter {
     const nextImageIdIndex =
       planarViewState?.imageIdIndex ??
       planarRendering.backendHandle.currentImageIdIndex;
+    const nextOrientation =
+      planarViewState?.orientation ?? planarRendering.backendHandle.orientation;
 
-    planarCtx.setRenderModeVisibility('vtkVolume');
+    planarCtx.setRenderMode('vtkVolume');
+
+    if (nextOrientation !== planarRendering.backendHandle.orientation) {
+      applyOrientation(planarCtx, planarRendering, nextOrientation);
+    }
 
     if (
       nextImageIdIndex !== planarRendering.backendHandle.currentImageIdIndex
@@ -300,11 +334,11 @@ export class VtkVolumeMapperRenderingAdapter {
   }
 
   render(ctx: ViewportBackendContext): void {
-    (ctx as PlanarViewportBackendContext).renderWindow.render();
+    (ctx as PlanarViewportBackendContext).requestRender();
   }
 
   resize(ctx: ViewportBackendContext): void {
-    (ctx as PlanarViewportBackendContext).renderWindow.render();
+    (ctx as PlanarViewportBackendContext).requestRender();
   }
 
   detach(ctx: ViewportBackendContext, rendering: MountedRendering): void {
@@ -312,7 +346,6 @@ export class VtkVolumeMapperRenderingAdapter {
     const { actor } = (rendering as PlanarVolumeRendering).backendHandle;
 
     planarCtx.renderer.removeVolume(actor);
-    planarCtx.renderWindow.render();
   }
 }
 

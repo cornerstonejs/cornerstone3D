@@ -19,9 +19,6 @@ import type {
 import type { ViewportInput } from '../types/IViewport';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import getClosestImageId from '../utilities/getClosestImageId';
-import getSliceRange from '../utilities/getSliceRange';
-import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
-import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import triggerEvent from '../utilities/triggerEvent';
 
 import BaseVolumeViewport from './BaseVolumeViewport';
@@ -37,6 +34,10 @@ import {
   calculateCameraPosition,
   getCameraVectors,
 } from './helpers/getCameraVectors';
+import {
+  getPlanarVolumeSliceNavigationState,
+  getPlanarVolumeSlicePoint,
+} from './helpers/planarVolumeRendering';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -927,15 +928,16 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const camera = this.getCamera();
     const { focalPoint, position, viewPlaneNormal } = camera;
-    const spacingInNormalDirection = getSpacingInNormalDirection(
-      imageVolume,
-      viewPlaneNormal
-    );
-    const sliceRange = getSliceRange(
-      actorEntry.actor as vtkVolume,
-      viewPlaneNormal,
-      focalPoint
-    );
+    const { currentSliceIndex, sliceRange, spacingInNormalDirection } =
+      getPlanarVolumeSliceNavigationState({
+        actor: actorEntry.actor as vtkVolume,
+        camera: {
+          focalPoint,
+          position,
+          viewPlaneNormal,
+        },
+        imageVolume,
+      });
 
     // calculate the number of slices that is possible to visit
     // in the direction of the view back and forward
@@ -947,18 +949,19 @@ class VolumeViewport extends BaseVolumeViewport {
       (sliceRange.max - sliceRange.current) / spacingInNormalDirection
     );
 
-    const currentSliceIndex = this.getSliceIndex();
     const focalPoints = [];
 
     for (let i = -numSlicesBackward; i <= numSlicesForward; i++) {
-      const { newFocalPoint: point } = snapFocalPointToSlice(
-        focalPoint,
-        position,
+      const { newFocalPoint: point } = getPlanarVolumeSlicePoint({
+        camera: {
+          focalPoint,
+          position,
+          viewPlaneNormal,
+        },
+        delta: i,
         sliceRange,
-        viewPlaneNormal,
         spacingInNormalDirection,
-        i
-      );
+      });
 
       focalPoints.push({ sliceIndex: currentSliceIndex + i, point });
     }
