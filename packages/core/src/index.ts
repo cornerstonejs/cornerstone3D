@@ -21,12 +21,20 @@ import ECGViewport from './RenderingEngine/ECGViewport';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
-} from './RenderingEngine/DefaultRenderPathResolver';
-import ViewportV2 from './RenderingEngine/ViewportV2';
+  ViewportV2,
+} from './RenderingEngine/ViewportV2';
 import ECGViewportV2, {
   CanvasECGPath,
   DefaultECGDataProvider,
-} from './RenderingEngine/ECGViewportV2';
+} from './RenderingEngine/ViewportV2/ECG';
+import VideoViewportV2, {
+  DefaultVideoDataProvider,
+  HtmlVideoPath,
+} from './RenderingEngine/ViewportV2/Video';
+import WSIViewportV2, {
+  DefaultWSIDataProvider,
+  DicomMicroscopyPath,
+} from './RenderingEngine/ViewportV2/WSI';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -109,6 +117,12 @@ const renderingEngineExportsV2 = {
   ECGViewportV2,
   CanvasECGPath,
   DefaultECGDataProvider,
+  VideoViewportV2,
+  HtmlVideoPath,
+  DefaultVideoDataProvider,
+  WSIViewportV2,
+  DicomMicroscopyPath,
+  DefaultWSIDataProvider,
 };
 
 // Add new types here so that they can be imported singly as required.
@@ -186,6 +200,12 @@ export {
   defaultRenderPathResolver,
   CanvasECGPath,
   DefaultECGDataProvider,
+  VideoViewportV2,
+  HtmlVideoPath,
+  DefaultVideoDataProvider,
+  WSIViewportV2,
+  DicomMicroscopyPath,
+  DefaultWSIDataProvider,
   renderingEngineExportsV2,
   //
   imageLoadPoolManager as requestPoolManager,

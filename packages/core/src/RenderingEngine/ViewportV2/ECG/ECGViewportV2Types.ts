@@ -4,7 +4,7 @@ import type {
   MountedRendering,
   RenderPathResolver,
   ViewportBackendContext,
-} from './ViewportArchitectureTypes';
+} from '../ViewportArchitectureTypes';
 
 export interface ECGChannelData {
   name: string;

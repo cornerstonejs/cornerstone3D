@@ -2,36 +2,9 @@ import type {
   DataAttachmentOptions,
   DataId,
   DataProvider,
-  LogicalDataObject,
-  MountedRendering,
-  RenderPathDefinition,
-  RenderPathResolver,
-  RenderingAdapter,
   RenderingBinding,
   RenderingId,
-  ViewportBackendContext,
-  ViewportController,
-  ViewportId,
-  ViewportKind,
-} from './ViewportArchitectureTypes';
-
-export {
-  defaultRenderPathResolver,
-  DefaultRenderPathResolver,
-} from './DefaultRenderPathResolver';
-
-export type {
-  BasePresentationProps,
-  DataAttachmentOptions,
-  DataId,
-  DataProvider,
-  LogicalDataObject,
-  MountedRendering,
-  RenderPathDefinition,
   RenderPathResolver,
-  RenderingAdapter,
-  RenderingBinding,
-  RenderingId,
   ViewportBackendContext,
   ViewportController,
   ViewportId,

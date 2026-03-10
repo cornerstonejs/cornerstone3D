@@ -9,12 +9,20 @@ import VolumeViewport3D from './VolumeViewport3D';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
-} from './DefaultRenderPathResolver';
-import ViewportV2 from './ViewportV2';
+  ViewportV2,
+} from './ViewportV2';
 import ECGViewportV2, {
   CanvasECGPath,
   DefaultECGDataProvider,
-} from './ECGViewportV2';
+} from './ViewportV2/ECG';
+import VideoViewportV2, {
+  DefaultVideoDataProvider,
+  HtmlVideoPath,
+} from './ViewportV2/Video';
+import WSIViewportV2, {
+  DefaultWSIDataProvider,
+  DicomMicroscopyPath,
+} from './ViewportV2/WSI';
 export * from './helpers';
 
 const renderingEngineExportsV2 = {
@@ -24,6 +32,12 @@ const renderingEngineExportsV2 = {
   ECGViewportV2,
   CanvasECGPath,
   DefaultECGDataProvider,
+  VideoViewportV2,
+  HtmlVideoPath,
+  DefaultVideoDataProvider,
+  WSIViewportV2,
+  DicomMicroscopyPath,
+  DefaultWSIDataProvider,
 };
 
 export {
@@ -41,6 +55,12 @@ export {
   ECGViewportV2,
   CanvasECGPath,
   DefaultECGDataProvider,
+  VideoViewportV2,
+  HtmlVideoPath,
+  DefaultVideoDataProvider,
+  WSIViewportV2,
+  DicomMicroscopyPath,
+  DefaultWSIDataProvider,
   renderingEngineExportsV2,
 };
 

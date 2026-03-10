@@ -357,6 +357,14 @@
       "ecgArchitecture": {
         "name": "ECG Architecture POC",
         "description": "Proof of concept ECG viewport using the V2 resolver and viewport architecture."
+      },
+      "videoArchitecture": {
+        "name": "Video Architecture POC",
+        "description": "Proof of concept video viewport using the V2 resolver and viewport architecture."
+      },
+      "wsiArchitecture": {
+        "name": "WSI Architecture POC",
+        "description": "Proof of concept WSI viewport using the V2 resolver and viewport architecture."
       }
     },
     "tools-segmentation": {
