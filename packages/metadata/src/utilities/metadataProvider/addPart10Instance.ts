@@ -4,14 +4,13 @@ import { MetaDataIterator, NaturalTagListener } from '../dicomStream';
 import { setCacheData } from './cacheData';
 
 const { AsyncDicomReader } = dcmjs.async;
-const { DicomMetadataListener } = dcmjs.utilities;
 
 /**
  * Adds a DICOMweb JSON metadata instance to the NATURAL cache.
  *
  * Takes hex-tagged DICOMweb JSON (e.g. {"00080060": {vr:"CS", Value:["CT"]}})
  * and converts it to a naturalized instance via MetaDataIterator and
- * DicomMetadataListener with NaturalTagListener filter.
+ * NaturalTagListener.createMetadataListener() (DicomMetadataListener + natural filter).
  *
  * @param imageId - The imageId to associate with this instance
  * @param metadata - DICOMweb JSON metadata object with hex-tagged entries
@@ -22,7 +21,7 @@ export function addDicomwebInstance(
   metadata: Record<string, unknown>
 ) {
   const iterator = new MetaDataIterator(metadata);
-  const listener = new DicomMetadataListener({}, new NaturalTagListener());
+  const listener = NaturalTagListener.createMetadataListener();
   listener.startObject();
   iterator.syncIterator(listener);
   const instance = listener.pop();
@@ -34,8 +33,8 @@ export function addDicomwebInstance(
  * Adds a binary DICOM Part 10 instance to the NATURAL cache.
  *
  * Parses the ArrayBuffer using dcmjs AsyncDicomReader with
- * DicomMetadataListener and NaturalTagListener.createFilter() so that
- * naturalized output (including pixel data as array of frames of
+ * NaturalTagListener.createMetadataListener() so that naturalized output
+ * (including pixel data as array of frames of
  * ArrayBuffer fragments) is produced and listener.information is
  * populated for the reader.
  *
@@ -48,7 +47,7 @@ export async function addPart10Instance(
   arrayBuffer: ArrayBuffer
 ) {
   const reader = new AsyncDicomReader();
-  const listener = new DicomMetadataListener({}, new NaturalTagListener());
+  const listener = NaturalTagListener.createMetadataListener();
 
   reader.stream.addBuffer(arrayBuffer);
   reader.stream.setComplete();

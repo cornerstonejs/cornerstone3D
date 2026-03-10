@@ -10,6 +10,7 @@ import { registerCalibrationModule } from './utilities/metadataProvider/calibrat
 import { registerPixelDataUpdate } from './utilities/metadataProvider/pixelDataUpdate';
 import { registerTransferSyntaxProvider } from './utilities/metadataProvider/transferSyntaxProvider';
 import { registerEcgFromInstanceProvider } from './utilities/metadataProvider/ecgFromInstance';
+import { registerCompressedFrameDataProvider } from './utilities/metadataProvider/compressedFrameData';
 
 let registered = false;
 
@@ -73,4 +74,7 @@ export function registerDefaultProvider() {
 
   // Register transfer syntax provider
   registerTransferSyntaxProvider();
+
+  // Compressed frame data (pixel data from NATURAL) via getMetaData('compressedFrameData', imageId, { frameIndex })
+  registerCompressedFrameDataProvider();
 }

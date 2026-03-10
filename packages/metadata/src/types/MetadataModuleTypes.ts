@@ -90,3 +90,31 @@ export interface FrameMetadata extends SopCommonModuleMetadata {
 export interface TransferSyntaxMetadata {
   transferSyntaxUID: string;
 }
+
+/**
+ * Compressed frame data when NATURAL has pixel data as a Value.
+ * pixelData may be a single buffer or an array of per-frame data.
+ */
+export interface CompressedFrameDataMetadata {
+  transferSyntaxUid: string;
+  frameOfInterest: number;
+  frameNumber: number;
+  pixelData: ArrayBufferView | ArrayBufferView[];
+}
+
+/**
+ * Maps metadata module names (MetadataModules enum values or literal strings) to their
+ * return types. Used by getTyped() to infer the return type from the module type argument.
+ * Names must match MetadataModules enum values (e.g. 'transferSyntax', 'imagePlaneModule').
+ */
+export interface MetadataModuleType {
+  generalSeriesModule: GeneralSeriesModuleMetadata;
+  patientStudyModule: PatientStudyModuleMetadata;
+  imagePlaneModule: ImagePlaneModuleMetadata;
+  imagePixelModule: ImagePixelModuleMetadata;
+  sopCommonModule: SopCommonModuleMetadata;
+  ecgModule: EcgModuleMetadata;
+  frameModule: FrameMetadata;
+  transferSyntax: TransferSyntaxMetadata;
+  compressedFrameData: CompressedFrameDataMetadata;
+}

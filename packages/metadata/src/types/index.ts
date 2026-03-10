@@ -15,4 +15,6 @@ export type {
   EcgModuleMetadata,
   FrameMetadata,
   TransferSyntaxMetadata,
+  CompressedFrameDataMetadata,
+  MetadataModuleType,
 } from './MetadataModuleTypes';

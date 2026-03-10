@@ -9,6 +9,7 @@ export const {
   removeProvider,
   removeAllProviders,
   getMetaData,
+  getTyped,
   get,
   getNormalized,
   toUpperCamelTag,

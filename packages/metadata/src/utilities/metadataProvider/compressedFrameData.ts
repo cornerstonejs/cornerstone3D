@@ -1,30 +1,16 @@
 import { MetadataModules } from '../../enums';
-import { getCacheData } from './cacheData';
+import { addTypedProvider, getMetaData } from '../../metaData';
+import type { TypedProvider } from '../../metaData';
+import type { CompressedFrameDataMetadata } from '../../types';
 
 /**
- * Result when NATURAL has pixel data as a Value.
- * pixelData may be a single buffer or an array of per-frame data.
+ * Builds compressed frame data from a natural instance (pixel data as Value).
+ * Returns undefined if natural has no pixel data or transfer syntax.
  */
-export interface CompressedFrameDataValue {
-  transferSyntaxUid: string;
-  frameOfInterest: number;
-  frameNumber: number;
-  pixelData: ArrayBufferView | ArrayBufferView[];
-}
-
-/**
- * Looks up the frame in the NATURAL pixel data for the given imageId.
- * If the natural instance has PixelData as a Value, returns an object with
- * transferSyntaxUid, frameOfInterest, frameNumber, and pixelData (possibly array).
- * Otherwise returns undefined (caller should "call next" in provider chains).
- */
-export function getCompressedFrameData(
-  imageId: string,
+function compressedFrameDataFromNatural(
+  natural: Record<string, unknown> | undefined,
   frameIndex: number
-): CompressedFrameDataValue | undefined {
-  const natural = getCacheData(MetadataModules.NATURAL, imageId) as
-    | Record<string, unknown>
-    | undefined;
+): CompressedFrameDataMetadata | undefined {
   if (!natural) {
     return undefined;
   }
@@ -56,24 +42,34 @@ export function getCompressedFrameData(
   };
 }
 
+const COMPRESSED_FRAME_DATA_TYPE = MetadataModules.COMPRESSED_FRAME_DATA;
+
 /**
- * Provider-style implementation: if NATURAL has pixel data as a Value for the
- * query (imageId), returns the value including transferSyntaxUid, frame of
- * interest, and frame number. Otherwise calls next.
+ * Typed provider for COMPRESSED_FRAME_DATA. Gets natural metadata via
+ * getMetaData(MetadataModules.NATURAL, query); if it has pixel data as Value,
+ * returns { transferSyntaxUid, frameOfInterest, frameNumber, pixelData }.
+ * Otherwise calls next.
  */
-export function compressedFrameData(
+const compressedFrameDataProvider: TypedProvider = (
   next: (query: string, data: unknown, options?: unknown) => unknown,
   query: string,
-  data: unknown,
+  _data: unknown,
   options?: unknown
-): CompressedFrameDataValue | unknown {
+): CompressedFrameDataMetadata | unknown => {
   const frameIndex =
     typeof (options as { frameIndex?: number })?.frameIndex === 'number'
       ? (options as { frameIndex: number }).frameIndex
       : 0;
-  const value = getCompressedFrameData(query, frameIndex);
+  const natural = getMetaData(MetadataModules.NATURAL, query) as
+    | Record<string, unknown>
+    | undefined;
+  const value = compressedFrameDataFromNatural(natural, frameIndex);
   if (value) {
     return value;
   }
-  return next(query, data, options);
+  return next(query, _data, options);
+};
+
+export function registerCompressedFrameDataProvider(): void {
+  addTypedProvider(COMPRESSED_FRAME_DATA_TYPE, compressedFrameDataProvider);
 }

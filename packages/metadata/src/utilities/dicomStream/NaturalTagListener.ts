@@ -1,6 +1,9 @@
+import dcmjs from 'dcmjs';
 import { makeArrayLike } from '../metadataProvider/makeArrayLike';
 import { dictionaryLookup, mapTagInfo, parseVm } from '../Tags';
 import type { IListenerInfo } from '../../types';
+
+const { DicomMetadataListener } = dcmjs.utilities;
 
 /**
  * Resolves whether a tag is single-valued.
@@ -54,7 +57,8 @@ const DEFAULT_NAME_KEY = 'name';
 /**
  * A filter for DicomMetadataListener that naturalizes tag names and values.
  *
- * Use as: `new DicomMetadataListener({}, new NaturalTagListener())`
+ * Use `NaturalTagListener.createMetadataListener()` for a fully constructed
+ * listener (single place that wires DicomMetadataListener + natural filter).
  *
  * The base listener handles value/values and stack; this filter converts in pop
  * so that bulk data (e.g. pixel data: array of frames, each frame array of
@@ -66,6 +70,24 @@ const DEFAULT_NAME_KEY = 'name';
 export class NaturalTagListener {
   constructor(_options?: { nameKey?: string }) {
     // nameKey could be used if DicomMetadataListener passed filter to _init; for now we use DEFAULT_NAME_KEY
+  }
+
+  /**
+   * Returns a filter instance for use with DicomMetadataListener.
+   */
+  static createFilter(options?: { nameKey?: string }): NaturalTagListener {
+    return new NaturalTagListener(options);
+  }
+
+  /**
+   * Returns a fully constructed DicomMetadataListener with the natural filter.
+   * Single place to know how to build the overall listener for naturalized metadata.
+   */
+  static createMetadataListener(options?: { nameKey?: string }) {
+    return new DicomMetadataListener(
+      {},
+      NaturalTagListener.createFilter(options)
+    );
   }
 
   _init(_options?: { information?: Record<string, unknown> }) {
