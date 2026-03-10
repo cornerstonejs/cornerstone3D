@@ -1,18 +1,23 @@
 import { addProvider, typedProviderProvider } from './metaData';
+import calibratedPixelSpacingMetadataProvider from './utilities/calibratedPixelSpacingMetadataProvider';
 import { registerCacheProviders } from './utilities/metadataProvider/cacheData';
 import { registerUriModule } from './utilities/metadataProvider/uriModule';
 import { registerDataLookup } from './utilities/metadataProvider/dataLookup';
 import { registerInstanceFromListener } from './utilities/metadataProvider/instanceFromListener';
 import { registerCombineFrameProvider } from './utilities/metadataProvider/combineFrameInstance';
-import { registerTagModules } from './utilities/metadataProvider/tagModules';
+import {
+  clearTagModules,
+  registerTagModules,
+} from './utilities/metadataProvider/tagModules';
 import { registerImagePlaneCalibrated } from './utilities/metadataProvider/imagePlaneCalibrated';
 import { registerCalibrationModule } from './utilities/metadataProvider/calibrationModule';
 import { registerPixelDataUpdate } from './utilities/metadataProvider/pixelDataUpdate';
 import { registerTransferSyntaxProvider } from './utilities/metadataProvider/transferSyntaxProvider';
 import { registerEcgFromInstanceProvider } from './utilities/metadataProvider/ecgFromInstance';
 import { registerCompressedFrameDataProvider } from './utilities/metadataProvider/compressedFrameData';
+import { registerNaturalBaseImageIdFallback } from './utilities/metadataProvider/naturalBaseImageIdFallback';
 
-let registered = false;
+const TYPED_PROVIDER_BRIDGE_PRIORITY = -1000;
 
 /**
  * Registers the default/base typed metadata providers.
@@ -30,20 +35,25 @@ let registered = false;
  * - Pixel data update provider (palette color handling)
  * - Transfer syntax provider
  *
- * Call this once at application startup before querying metadata.
+ * Call at start or after removeAllProviders() to re-establish typed providers; duplicates are skipped.
  */
 export function registerDefaultProvider() {
-  if (registered) {
-    return;
-  }
-  registered = true;
-
   // Register the typed provider bridge at low priority so that
   // legacy providers added via addProvider() run first
-  addProvider(typedProviderProvider, -1000);
+  addProvider(typedProviderProvider, TYPED_PROVIDER_BRIDGE_PRIORITY);
+
+  // Register calibrated pixel spacing so metaData.get('calibratedPixelSpacing', imageId) resolves
+  addProvider(calibratedPixelSpacingMetadataProvider.get);
+
+  // Clear tag modules cache so registerTagModules() gets fresh providers
+  // (after removeAllProviders the typed map is cleared but tagModules' map isn't)
+  clearTagModules();
 
   // Register cache providers
   registerCacheProviders();
+
+  // When NATURAL is queried with imageId that has ?frame=, resolve from base imageId
+  registerNaturalBaseImageIdFallback();
 
   // Register URI module provider
   registerUriModule();

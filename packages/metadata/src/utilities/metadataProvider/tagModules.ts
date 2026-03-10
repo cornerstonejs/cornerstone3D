@@ -5,12 +5,21 @@ import { makeArrayLike } from './makeArrayLike';
 
 const mapModules = new Map<string, TypedProvider>();
 
+/**
+ * Clears the tag modules cache. Call after removeAllProviders() so that
+ * registerTagModules() can re-register providers (tagModules(module) will
+ * return a function instead of undefined).
+ */
+export function clearTagModules(): void {
+  mapModules.clear();
+}
+
 export function tagModules(module: string, dataLookupName = 'instance') {
   if (!mapModuleTags.has(module)) {
     throw new Error(`No module found: ${module}`);
   }
   if (mapModules.has(module)) {
-    return;
+    return mapModules.get(module);
   }
 
   if (dataLookupName === 'instance') {
@@ -51,14 +60,17 @@ export function tagModules(module: string, dataLookupName = 'instance') {
 
   mapModules.set(module, moduleProvider);
 
-  return moduleProvider;
+  return moduleProvider as TypedProvider;
 }
 
 export const MODULE_PRIORITY = { priority: -1_000 };
 
 export function registerTagModules() {
   for (const module of mapModuleTags.keys()) {
-    addTypedProvider(module, tagModules(module), MODULE_PRIORITY);
+    const providerFn = tagModules(module);
+    if (providerFn) {
+      addTypedProvider(module, providerFn, MODULE_PRIORITY);
+    }
     addTypedProvider(module, instanceLookup, DATA_PRIORITY);
   }
 }

@@ -224,6 +224,7 @@ function loadImageFromNatural(
       : 0;
 
   const promise = (async (): Promise<DICOMLoaderIImage> => {
+    const start = Date.now();
     console.log('[dicomImageLoader/wadouri] loadImageFromNatural: start', {
       imageId,
       scheme: parsedImageId.scheme,
@@ -249,9 +250,13 @@ function loadImageFromNatural(
         | { arrayBuffer: ArrayBuffer };
       const arrayBuffer =
         result instanceof ArrayBuffer ? result : result.arrayBuffer;
-      await addPart10Instance(imageId, arrayBuffer);
+      // Store NATURAL under base imageId (no ?frame=) so registration happens once per URL
+      const baseImageId = `${parsedImageId.scheme}:${parsedImageId.url}`;
+      await addPart10Instance(baseImageId, arrayBuffer);
       natural = metaData.get(NATURAL, imageId);
     }
+
+    const loadEnd = Date.now();
 
     const frameData = metaData.getTyped(
       MetadataEnums.MetadataModules.COMPRESSED_FRAME_DATA,
@@ -279,8 +284,12 @@ function loadImageFromNatural(
       transferSyntaxUid,
       options
     );
+    const end = Date.now();
     const out = image as DICOMLoaderIImage;
     out.imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION;
+    out.data = natural;
+    out.loadTimeInMS = loadEnd - start;
+    out.totalTimeInMS = end - start;
     return out;
   })();
 
