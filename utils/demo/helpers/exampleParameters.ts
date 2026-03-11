@@ -1,3 +1,5 @@
+import { utilities } from '@cornerstonejs/core';
+
 type DemoConfig = {
   core?: {
     rendering?: {
@@ -25,21 +27,16 @@ export function applyUrlParameterOverridesToDemoConfig(
     return config;
   }
 
-  return {
-    ...config,
+  return utilities.deepMerge(config, {
     core: {
-      ...config.core,
       rendering: {
-        ...config.core?.rendering,
         planar: {
-          ...config.core?.rendering?.planar,
           cpuThresholds: {
-            ...config.core?.rendering?.planar?.cpuThresholds,
             image: 0,
             volume: 0,
           },
         },
       },
     },
-  };
+  });
 }
