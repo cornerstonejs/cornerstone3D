@@ -1,9 +1,8 @@
 import cache from '../../../cache/cache';
 import { loadAndCacheGeometry } from '../../../loaders/geometryLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
-import * as metaData from '../../../metaData';
-import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import type { LogicalDataObject } from '../ViewportArchitectureTypes';
+import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
 import type {
   Volume3DDataProvider,
   Volume3DGeometryPayload,
@@ -81,18 +80,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
   }
 
   private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    );
-
-    if (Array.isArray(registered)) {
-      return {
-        imageIds: registered,
-      };
-    }
-
-    return registered as Volume3DRegisteredDataSet | undefined;
+    return getViewportV2ImageDataSet<Volume3DRegisteredDataSet>(dataId);
   }
 }
 

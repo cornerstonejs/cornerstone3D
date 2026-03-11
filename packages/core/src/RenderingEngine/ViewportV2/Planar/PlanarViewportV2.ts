@@ -10,13 +10,15 @@ import type {
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
-import * as metaData from '../../../metaData';
 import imageIdToURI from '../../../utilities/imageIdToURI';
-import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import renderingEngineCache from '../../renderingEngineCache';
-import type { DataAttachmentOptions } from '../ViewportArchitectureTypes';
+import type {
+  DataAttachmentOptions,
+  LogicalDataObject,
+} from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
+import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
 import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
 import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
@@ -26,6 +28,7 @@ import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
+import type { SelectedPlanarRenderPath } from './planarRenderPathSelector';
 import { normalizePlanarRotation } from './planarCameraPresentation';
 import {
   getPlanarCompatibilityCamera,
@@ -37,14 +40,15 @@ import {
 } from './planarViewportCompatibility';
 import type {
   PlanarCamera,
+  PlanarDataProvider,
   PlanarEffectiveRenderMode,
-  PlanarPresentationProps,
-  PlanarRendering,
   PlanarPayload,
+  PlanarPresentationProps,
   PlanarRegisteredDataSet,
+  PlanarRendering,
   PlanarSetDataOptions,
-  PlanarViewportRenderContext,
   PlanarProperties,
+  PlanarViewportRenderContext,
   PlanarViewportV2Input,
 } from './PlanarViewportV2Types';
 
@@ -202,48 +206,21 @@ class PlanarViewportV2 extends ViewportV2<
     options: PlanarSetDataOptions | DataAttachmentOptions = {}
   ): Promise<string> {
     const planarOptions = options as PlanarSetDataOptions;
-    const dataSet = this.getDataSet(dataId);
-
-    if (!dataSet) {
-      throw new Error(
-        `[PlanarViewportV2] No registered planar dataset metadata for ${dataId}`
-      );
-    }
-
-    const selectedPath = selectPlanarRenderPath(dataSet, planarOptions);
-    const data = await this.dataProvider.load(dataId, {
-      acquisitionOrientation: selectedPath.acquisitionOrientation,
-      orientation: planarOptions.orientation || OrientationAxis.ACQUISITION,
-      renderMode: selectedPath.renderMode,
-      volumeId: selectedPath.volumeId,
-    });
-    const payload = data.payload as PlanarPayload;
-    const presentation = this.getPresentation(dataId) || {
-      visible: true,
-      opacity: 1,
-    };
-    const isVolumeRenderMode =
-      selectedPath.renderMode === 'cpuVolume' ||
-      selectedPath.renderMode === 'vtkVolume';
+    const { data, payload, selectedPath } = await this.loadPlanarData(
+      dataId,
+      planarOptions
+    );
 
     this.activeDataId = dataId;
-    this.camera = {
-      ...this.camera,
-      imageIdIndex: isVolumeRenderMode
-        ? undefined
-        : payload.initialImageIdIndex,
-      orientation: normalizePlanarOrientation(
-        planarOptions.orientation,
-        selectedPath.acquisitionOrientation
-      ),
-    };
+    this.applyLoadedPlanarCamera(planarOptions, payload, selectedPath);
 
     const renderingId = await this.attachLoadedData(dataId, data, {
       renderMode: selectedPath.renderMode,
     });
 
-    this.setPresentation(dataId, {
-      ...presentation,
+    this.setDefaultPresentation(dataId, {
+      visible: true,
+      opacity: 1,
     });
 
     return renderingId;
@@ -270,9 +247,7 @@ class PlanarViewportV2 extends ViewportV2<
   getCurrentImageId(): string | undefined {
     return getPlanarReferencedImageId({
       camera: this.camera,
-      rendering: this.getCurrentBinding()?.rendering as
-        | PlanarRendering
-        | undefined,
+      rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
     });
   }
@@ -407,9 +382,7 @@ class PlanarViewportV2 extends ViewportV2<
     return getPlanarViewReference({
       camera: this.camera,
       frameOfReferenceUID: this.getFrameOfReferenceUID(),
-      rendering: this.getCurrentBinding()?.rendering as
-        | PlanarRendering
-        | undefined,
+      rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
       viewRefSpecifier,
     });
@@ -418,9 +391,7 @@ class PlanarViewportV2 extends ViewportV2<
   getViewReferenceId(viewRefSpecifier: ViewReferenceSpecifier = {}): string {
     return getPlanarViewReferenceId({
       camera: this.camera,
-      rendering: this.getCurrentBinding()?.rendering as
-        | PlanarRendering
-        | undefined,
+      rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
       viewRefSpecifier,
     });
@@ -453,9 +424,7 @@ class PlanarViewportV2 extends ViewportV2<
       frameOfReferenceUID: this.getFrameOfReferenceUID(),
       options,
       planeRestriction,
-      rendering: this.getCurrentBinding()?.rendering as
-        | PlanarRendering
-        | undefined,
+      rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
     });
   }
@@ -469,9 +438,7 @@ class PlanarViewportV2 extends ViewportV2<
       frameOfReferenceUID: this.getFrameOfReferenceUID(),
       imageIds: this.getImageIds(),
       options,
-      rendering: this.getCurrentBinding()?.rendering as
-        | PlanarRendering
-        | undefined,
+      rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
       viewRef,
     });
@@ -490,10 +457,7 @@ class PlanarViewportV2 extends ViewportV2<
     }
 
     if (this.activeDataId && Object.keys(dataProps).length > 0) {
-      this.setPresentation(this.activeDataId, {
-        ...(this.getPresentation(this.activeDataId) || {}),
-        ...dataProps,
-      });
+      this.mergePresentation(this.activeDataId, dataProps);
     }
   }
 
@@ -565,20 +529,11 @@ class PlanarViewportV2 extends ViewportV2<
       canvas.height = clientHeight;
     }
 
-    for (const binding of this.bindings.values()) {
-      binding.resize?.();
-    }
+    this.resizeBindings();
   }
 
   render(): void {
-    let renderedByAdapter = false;
-
-    for (const binding of this.bindings.values()) {
-      binding.render?.();
-      renderedByAdapter = renderedByAdapter || Boolean(binding.render);
-    }
-
-    if (!renderedByAdapter) {
+    if (!this.renderBindings()) {
       this.requestRenderingEngineRender();
     }
   }
@@ -657,55 +612,95 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   private getPayload(): PlanarPayload | undefined {
-    const firstBinding = this.bindings.values().next().value;
-
-    if (!firstBinding) {
-      return;
-    }
-
-    return (firstBinding.rendering as PlanarRendering).runtime
-      .payload as PlanarPayload;
+    return this.getCurrentPayload();
   }
 
   protected getCurrentBinding() {
-    const activeDataId = this.activeDataId ?? this.bindings.keys().next().value;
-
-    if (!activeDataId) {
-      return;
+    if (this.activeDataId) {
+      return this.getBinding(this.activeDataId) ?? this.getFirstBinding();
     }
 
-    return this.getBinding(activeDataId);
+    return this.getFirstBinding();
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    );
+    const dataSet = getViewportV2ImageDataSet<PlanarRegisteredDataSet>(dataId);
 
-    if (Array.isArray(registered)) {
-      return {
-        imageIds: registered,
-      };
-    }
-
-    const candidate = registered as PlanarRegisteredDataSet | undefined;
-
-    if (!candidate?.imageIds) {
+    if (!dataSet?.imageIds) {
       return;
     }
 
-    return candidate;
+    return dataSet;
   }
 
   private getCompatibilityCamera(): PlanarCamera & ICamera {
     return getPlanarCompatibilityCamera({
       camera: this.camera,
-      rendering: this.getCurrentBinding()?.rendering as
-        | PlanarRendering
-        | undefined,
+      rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
     });
+  }
+
+  private async loadPlanarData(
+    dataId: string,
+    options: PlanarSetDataOptions
+  ): Promise<{
+    data: LogicalDataObject<PlanarPayload>;
+    payload: PlanarPayload;
+    selectedPath: SelectedPlanarRenderPath;
+  }> {
+    const dataSet = this.getDataSet(dataId);
+
+    if (!dataSet) {
+      throw new Error(
+        `[PlanarViewportV2] No registered planar dataset metadata for ${dataId}`
+      );
+    }
+
+    const selectedPath = selectPlanarRenderPath(dataSet, options);
+    const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
+      acquisitionOrientation: selectedPath.acquisitionOrientation,
+      orientation: options.orientation || OrientationAxis.ACQUISITION,
+      renderMode: selectedPath.renderMode,
+      volumeId: selectedPath.volumeId,
+    });
+
+    return {
+      data,
+      payload: data.payload as PlanarPayload,
+      selectedPath,
+    };
+  }
+
+  private applyLoadedPlanarCamera(
+    options: PlanarSetDataOptions,
+    payload: PlanarPayload,
+    selectedPath: SelectedPlanarRenderPath
+  ): void {
+    const isVolumeRenderMode =
+      selectedPath.renderMode === 'cpuVolume' ||
+      selectedPath.renderMode === 'vtkVolume';
+
+    this.camera = {
+      ...this.camera,
+      imageIdIndex: isVolumeRenderMode
+        ? undefined
+        : payload.initialImageIdIndex,
+      orientation: normalizePlanarOrientation(
+        options.orientation,
+        selectedPath.acquisitionOrientation
+      ),
+    };
+  }
+
+  private getCurrentPlanarRendering(): PlanarRendering | undefined {
+    return this.getCurrentBinding()?.rendering as PlanarRendering | undefined;
+  }
+
+  private getCurrentPayload(): PlanarPayload | undefined {
+    return this.getCurrentPlanarRendering()?.runtime.payload as
+      | PlanarPayload
+      | undefined;
   }
 }
 

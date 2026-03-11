@@ -77,7 +77,7 @@ class WSIViewportV2 extends ViewportV2<
         renderMode: 'wsi2d',
       });
 
-      this.setPresentation(dataId, {
+      this.setDefaultPresentation(dataId, {
         visible: true,
         opacity: 1,
       });
@@ -99,13 +99,11 @@ class WSIViewportV2 extends ViewportV2<
   }
 
   private getMap(): WSIMapLike | undefined {
-    const firstBinding = this.bindings.values().next().value;
+    return this.getWSIRendering()?.runtime.map;
+  }
 
-    if (!firstBinding) {
-      return;
-    }
-
-    return (firstBinding.rendering as WSIRendering).runtime.map;
+  private getWSIRendering(): WSIRendering | undefined {
+    return this.getFirstBinding()?.rendering as WSIRendering | undefined;
   }
 }
 

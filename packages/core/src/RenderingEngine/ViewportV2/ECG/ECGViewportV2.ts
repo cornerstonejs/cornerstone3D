@@ -101,7 +101,7 @@ class ECGViewportV2 extends ViewportV2<
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
 
-      this.setPresentation(dataId, {
+      this.setDefaultPresentation(dataId, {
         visible: true,
         opacity: 1,
         visibleChannels: waveform.channels.map((_channel, index) => index),
@@ -120,7 +120,7 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   setChannelVisibility(index: number, visible: boolean): void {
-    const firstBinding = this.bindings.values().next().value;
+    const firstBinding = this.getFirstBinding();
 
     if (!firstBinding) {
       return;
@@ -139,14 +139,13 @@ class ECGViewportV2 extends ViewportV2<
       nextVisibleChannels.delete(index);
     }
 
-    this.setPresentation(dataId, {
-      ...current,
+    this.mergePresentation(dataId, {
       visibleChannels: Array.from(nextVisibleChannels).sort((a, b) => a - b),
     });
   }
 
   getVisibleChannels(): { name: string; visible: boolean }[] {
-    const firstBinding = this.bindings.values().next().value;
+    const firstBinding = this.getFirstBinding();
 
     if (!firstBinding) {
       return [];
@@ -166,7 +165,7 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   getContentDimensions(): { width: number; height: number } {
-    const firstBinding = this.bindings.values().next().value;
+    const firstBinding = this.getFirstBinding();
 
     if (!firstBinding) {
       return { width: 0, height: 0 };
@@ -195,9 +194,7 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   render(): void {
-    for (const binding of this.bindings.values()) {
-      binding.render?.();
-    }
+    this.renderBindings();
   }
 }
 

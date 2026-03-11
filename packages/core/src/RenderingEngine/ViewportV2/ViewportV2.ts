@@ -183,6 +183,42 @@ abstract class ViewportV2<
   }
 
   /**
+   * Stores object-like presentation defaults for a dataset without clobbering
+   * any values already tracked for that dataset.
+   */
+  protected setDefaultPresentation(
+    dataId: DataId,
+    defaults: TDataPresentation
+  ): TDataPresentation {
+    const nextPresentation = {
+      ...(defaults as Record<string, unknown>),
+      ...((this.getPresentation(dataId) || {}) as Record<string, unknown>),
+    } as TDataPresentation;
+
+    this.setPresentation(dataId, nextPresentation);
+
+    return nextPresentation;
+  }
+
+  /**
+   * Merges object-like presentation updates into the stored presentation for a
+   * dataset and forwards the result immediately when attached.
+   */
+  protected mergePresentation(
+    dataId: DataId,
+    props: Partial<TDataPresentation>
+  ): TDataPresentation {
+    const nextPresentation = {
+      ...((this.getPresentation(dataId) || {}) as Record<string, unknown>),
+      ...(props as Record<string, unknown>),
+    } as TDataPresentation;
+
+    this.setPresentation(dataId, nextPresentation);
+
+    return nextPresentation;
+  }
+
+  /**
    * Merges partial camera updates into the shared viewport camera state and
    * propagates that state to every active binding.
    */
@@ -299,8 +335,18 @@ abstract class ViewportV2<
   /**
    * Looks up a binding by dataset identifier.
    */
-  protected getBinding(dataId: DataId): RenderingBinding | undefined {
+  protected getBinding(
+    dataId: DataId
+  ): RenderingBinding<TDataPresentation> | undefined {
     return this.bindings.get(dataId);
+  }
+
+  /**
+   * Returns the first attached binding when a viewport family does not have a
+   * stronger notion of "current" selection.
+   */
+  protected getFirstBinding(): RenderingBinding<TDataPresentation> | undefined {
+    return this.bindings.values().next().value;
   }
 
   /**
@@ -310,7 +356,43 @@ abstract class ViewportV2<
   protected getCurrentBinding():
     | RenderingBinding<TDataPresentation>
     | undefined {
-    return this.bindings.values().next().value;
+    return this.getFirstBinding();
+  }
+
+  /**
+   * Iterates attached bindings without exposing the underlying map to
+   * subclasses.
+   */
+  protected forEachBinding(
+    visitor: (binding: RenderingBinding<TDataPresentation>) => void
+  ): void {
+    for (const binding of this.bindings.values()) {
+      visitor(binding);
+    }
+  }
+
+  /**
+   * Invokes render on each binding and reports whether any binding handled the
+   * render request directly.
+   */
+  protected renderBindings(): boolean {
+    let renderedByAdapter = false;
+
+    this.forEachBinding((binding) => {
+      binding.render?.();
+      renderedByAdapter = renderedByAdapter || Boolean(binding.render);
+    });
+
+    return renderedByAdapter;
+  }
+
+  /**
+   * Invokes resize on each attached binding.
+   */
+  protected resizeBindings(): void {
+    this.forEachBinding((binding) => {
+      binding.resize?.();
+    });
   }
 
   /**
@@ -318,10 +400,10 @@ abstract class ViewportV2<
    * schedules a render.
    */
   protected modified(): void {
-    for (const binding of this.bindings.values()) {
+    this.forEachBinding((binding) => {
       binding.updateCamera(this.camera);
       binding.updateProperties(this.properties);
-    }
+    });
 
     this.render();
   }

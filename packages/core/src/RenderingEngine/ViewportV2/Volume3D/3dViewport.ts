@@ -1,12 +1,11 @@
 import { ViewportType } from '../../../enums';
 import type { ActorEntry, ICamera, IImageData } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
-import * as metaData from '../../../metaData';
-import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAttachmentOptions } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
+import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
 import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 import { VtkGeometry3DPath } from './VtkGeometry3DRenderPath';
 import { VtkVolume3DPath } from './VtkVolume3DRenderPath';
@@ -146,10 +145,9 @@ class VolumeViewport3DV2 extends ViewportV2<
       this.primaryDataId = dataId;
     }
 
-    this.setPresentation(dataId, {
+    this.setDefaultPresentation(dataId, {
       visible: true,
       opacity: 1,
-      ...(this.getPresentation(dataId) || {}),
     });
     this.camera = this.getCamera();
 
@@ -257,10 +255,7 @@ class VolumeViewport3DV2 extends ViewportV2<
     }
 
     if (this.primaryDataId && Object.keys(dataProps).length > 0) {
-      this.setPresentation(this.primaryDataId, {
-        ...(this.getPresentation(this.primaryDataId) || {}),
-        ...dataProps,
-      });
+      this.mergePresentation(this.primaryDataId, dataProps);
     }
   }
 
@@ -300,20 +295,11 @@ class VolumeViewport3DV2 extends ViewportV2<
     const actors: ActorEntry[] = [];
 
     for (const binding of this.bindings.values()) {
-      const rendering = binding.rendering as Volume3DRendering;
-
-      if (rendering.renderMode === 'vtkVolume3d') {
-        actors.push({
-          actor: rendering.runtime.actor,
-          referencedId: rendering.runtime.payload.volumeId,
-          uid:
-            rendering.runtime.payload.actorUID ||
-            rendering.runtime.payload.volumeId,
-        });
-        continue;
-      }
-
-      actors.push(...rendering.runtime.actors);
+      actors.push(
+        ...this.getActorEntriesForRendering(
+          binding.rendering as Volume3DRendering
+        )
+      );
     }
 
     return actors;
@@ -328,17 +314,7 @@ class VolumeViewport3DV2 extends ViewportV2<
 
     const rendering = binding.rendering as Volume3DRendering;
 
-    if (rendering.renderMode === 'vtkVolume3d') {
-      return {
-        actor: rendering.runtime.actor,
-        referencedId: rendering.runtime.payload.volumeId,
-        uid:
-          rendering.runtime.payload.actorUID ||
-          rendering.runtime.payload.volumeId,
-      };
-    }
-
-    return rendering.runtime.actors[0];
+    return this.getActorEntriesForRendering(rendering)[0];
   }
 
   resetCamera(): boolean {
@@ -360,32 +336,21 @@ class VolumeViewport3DV2 extends ViewportV2<
     this.sWidth = this.canvas.width;
     this.sHeight = this.canvas.height;
 
-    for (const binding of this.bindings.values()) {
-      binding.resize?.();
-    }
+    this.resizeBindings();
   }
 
   render(): void {
-    let renderedByAdapter = false;
-
-    for (const binding of this.bindings.values()) {
-      binding.render?.();
-      renderedByAdapter = renderedByAdapter || Boolean(binding.render);
-    }
-
-    if (!renderedByAdapter) {
+    if (!this.renderBindings()) {
       this.requestRenderingEngineRender();
     }
   }
 
   protected getCurrentBinding() {
-    const dataId = this.primaryDataId ?? this.bindings.keys().next().value;
-
-    if (!dataId) {
-      return;
+    if (this.primaryDataId) {
+      return this.getBinding(this.primaryDataId) ?? this.getFirstBinding();
     }
 
-    return this.getBinding(dataId);
+    return this.getFirstBinding();
   }
 
   private requestRenderingEngineRender(): void {
@@ -414,18 +379,25 @@ class VolumeViewport3DV2 extends ViewportV2<
   }
 
   private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    );
+    return getViewportV2ImageDataSet<Volume3DRegisteredDataSet>(dataId);
+  }
 
-    if (Array.isArray(registered)) {
-      return {
-        imageIds: registered,
-      };
+  private getActorEntriesForRendering(
+    rendering: Volume3DRendering
+  ): ActorEntry[] {
+    if (rendering.renderMode === 'vtkVolume3d') {
+      return [
+        {
+          actor: rendering.runtime.actor,
+          referencedId: rendering.runtime.payload.volumeId,
+          uid:
+            rendering.runtime.payload.actorUID ||
+            rendering.runtime.payload.volumeId,
+        },
+      ];
     }
 
-    return registered as Volume3DRegisteredDataSet | undefined;
+    return rendering.runtime.actors;
   }
 }
 

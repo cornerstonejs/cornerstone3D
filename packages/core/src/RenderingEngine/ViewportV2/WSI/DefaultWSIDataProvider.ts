@@ -2,9 +2,8 @@ import {
   addWSIMiniNavigationOverlayCss,
   loadWSIData,
 } from '../../../utilities/WSIUtilities';
-import * as metaData from '../../../metaData';
-import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import type { LogicalDataObject } from '../ViewportArchitectureTypes';
+import { getViewportV2RegisteredData } from '../viewportV2DataSetAccess';
 import type {
   WSIDataProvider,
   WSIPayload,
@@ -49,10 +48,8 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
   }
 
   private getDataSet(dataId: string): WSIRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    ) as WSIRegisteredDataSet | undefined;
+    const registered =
+      getViewportV2RegisteredData<WSIRegisteredDataSet>(dataId);
 
     if (!registered?.imageIds || !registered?.options?.webClient) {
       return;

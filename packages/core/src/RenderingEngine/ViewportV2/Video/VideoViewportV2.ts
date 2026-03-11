@@ -97,7 +97,7 @@ class VideoViewportV2 extends ViewportV2<
         continue;
       }
 
-      this.setPresentation(dataId, {
+      this.setDefaultPresentation(dataId, {
         visible: true,
         opacity: 1,
       });
@@ -191,23 +191,11 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   private getVideoElement(): HTMLVideoElement | undefined {
-    const firstBinding = this.bindings.values().next().value;
-
-    if (!firstBinding) {
-      return;
-    }
-
-    return (firstBinding.rendering as VideoElementRendering).runtime.element;
+    return this.getVideoRendering()?.runtime.element;
   }
 
   private getPayload(): VideoStreamPayload | undefined {
-    const firstBinding = this.bindings.values().next().value;
-
-    if (!firstBinding) {
-      return;
-    }
-
-    return (firstBinding.rendering as VideoElementRendering).runtime.payload;
+    return this.getVideoRendering()?.runtime.payload;
   }
 
   private getDisplayMetrics():
@@ -304,6 +292,12 @@ class VideoViewportV2 extends ViewportV2<
       metrics.offsetX / (metrics.scaleX / metrics.zoom),
       metrics.offsetY / (metrics.scaleY / metrics.zoom),
     ];
+  }
+
+  private getVideoRendering(): VideoElementRendering | undefined {
+    return this.getFirstBinding()?.rendering as
+      | VideoElementRendering
+      | undefined;
   }
 }
 

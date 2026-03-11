@@ -1,8 +1,7 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
-import * as metaData from '../../../metaData';
-import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import type { LogicalDataObject } from '../ViewportArchitectureTypes';
+import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
 import type {
   PlanarDataProvider,
   PlanarDataLoadOptions,
@@ -94,24 +93,13 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    );
+    const dataSet = getViewportV2ImageDataSet<PlanarRegisteredDataSet>(dataId);
 
-    if (Array.isArray(registered)) {
-      return {
-        imageIds: registered,
-      };
-    }
-
-    const candidate = registered as PlanarRegisteredDataSet | undefined;
-
-    if (!candidate?.imageIds) {
+    if (!dataSet?.imageIds) {
       return;
     }
 
-    return candidate;
+    return dataSet;
   }
 }
 
