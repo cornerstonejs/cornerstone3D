@@ -29,13 +29,14 @@ export interface LogicalDataObject<TPayload = unknown> {
   payload: TPayload;
 }
 
-// Mounted rendering state is runtime-specific; logical dataset identity lives
-// on the binding key and the loaded LogicalDataObject.
-export interface MountedRendering<TRuntime = unknown> {
+// Mounted rendering state is render-path-specific; logical dataset identity
+// lives on the binding key and the loaded LogicalDataObject. The controller
+// treats this object as opaque even though adapter fields are stored flat.
+export type MountedRendering<
+  TRendering extends { renderMode: string } = { renderMode: string },
+> = {
   id: RenderingId;
-  renderMode: string;
-  runtime: TRuntime;
-}
+} & Omit<TRendering, 'id'>;
 
 export interface BaseViewportRenderContext {
   viewportId: ViewportId;

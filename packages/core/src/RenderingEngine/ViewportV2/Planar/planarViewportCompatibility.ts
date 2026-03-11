@@ -37,10 +37,10 @@ export function getPlanarCompatibilityCamera(args: {
   if (rendering.renderMode === 'cpu2d') {
     return {
       ...camera,
-      ...(rendering.runtime.camera ||
+      ...(rendering.camera ||
         getPlanarCpuImageCompatibilityCamera({
           camera,
-          image: rendering.runtime.enabledElement.image,
+          image: rendering.enabledElement.image,
         })),
     };
   }
@@ -48,8 +48,8 @@ export function getPlanarCompatibilityCamera(args: {
   if (rendering.renderMode === 'vtkImage') {
     return {
       ...camera,
-      ...(rendering.runtime.camera || {
-        ...rendering.runtime.initialCamera,
+      ...(rendering.camera || {
+        ...rendering.initialCamera,
         parallelProjection: true,
       }),
     };
@@ -113,7 +113,7 @@ export function getPlanarReferencedImageId(args: {
   });
 
   return getClosestImageId(
-    rendering.runtime.imageVolume,
+    rendering.imageVolume,
     targetFocalPoint,
     compatibilityCamera.viewPlaneNormal
   );
@@ -174,7 +174,7 @@ export function getPlanarViewReference(args: {
       rendering.renderMode === 'vtkVolume') &&
     viewRefSpecifier?.forFrameOfReference !== false
   ) {
-    viewReference.volumeId = rendering.runtime.payload.volumeId;
+    viewReference.volumeId = rendering.payload.volumeId;
   }
 
   if (referencedImageId) {
@@ -208,7 +208,7 @@ export function getPlanarViewReferenceId(args: {
     const compatibilityCamera = getPlanarCompatibilityCamera(args);
     const sliceIndex =
       viewRefSpecifier?.sliceIndex ?? getCurrentSliceIndex(rendering);
-    const volumeId = rendering.runtime.payload.volumeId;
+    const volumeId = rendering.payload.volumeId;
     return getVolumeViewReferenceId({
       sliceIndex,
       viewPlaneNormal: compatibilityCamera.viewPlaneNormal as Point3,
@@ -383,14 +383,11 @@ export function isPlanarReferenceViewable(args: {
 }
 
 function getCurrentSliceIndex(rendering: PlanarRendering): number {
-  return rendering.runtime.currentImageIdIndex;
+  return rendering.currentImageIdIndex;
 }
 
 function getImageIds(rendering: PlanarRendering): string[] {
-  return (
-    rendering.runtime.payload.imageVolume?.imageIds ||
-    rendering.runtime.payload.imageIds
-  );
+  return rendering.payload.imageVolume?.imageIds || rendering.payload.imageIds;
 }
 
 function getTargetVolumeFocalPoint(args: {
@@ -406,7 +403,7 @@ function getTargetVolumeFocalPoint(args: {
 
   if (
     typeof sliceIndex !== 'number' ||
-    sliceIndex === rendering.runtime.currentImageIdIndex
+    sliceIndex === rendering.currentImageIdIndex
   ) {
     return camera.focalPoint as Point3;
   }
@@ -418,13 +415,13 @@ function getTargetVolumeFocalPoint(args: {
 
   return (
     getPlanarVolumeTargetFocalPoint({
-      baseCamera: rendering.runtime.baseCamera,
+      baseCamera: rendering.baseCamera,
       canvasHeight,
       canvasWidth,
-      imageVolume: rendering.runtime.imageVolume,
-      orientation: rendering.runtime.viewState?.orientation,
+      imageVolume: rendering.imageVolume,
+      orientation: rendering.viewState?.orientation,
       sliceIndex,
-      viewState: rendering.runtime.viewState,
+      viewState: rendering.viewState,
     }) || (camera.focalPoint as Point3)
   );
 }
@@ -438,8 +435,8 @@ function getPlanarVolumeRuntimeCamera(args: {
 }): Partial<ICamera> | undefined {
   const { rendering, renderContext } = args;
 
-  if (rendering.runtime.camera) {
-    return rendering.runtime.camera;
+  if (rendering.camera) {
+    return rendering.camera;
   }
 
   const { canvasHeight, canvasWidth } = getVolumeCanvasDimensions({
@@ -448,10 +445,10 @@ function getPlanarVolumeRuntimeCamera(args: {
   });
 
   return resolvePlanarVolumeCamera({
-    baseCamera: rendering.runtime.baseCamera,
+    baseCamera: rendering.baseCamera,
     canvasHeight,
     canvasWidth,
-    viewState: rendering.runtime.viewState,
+    viewState: rendering.viewState,
   });
 }
 

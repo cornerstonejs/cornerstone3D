@@ -95,7 +95,7 @@ class WSIViewportV2 extends ViewportV2<
   }
 
   private getMap(): WSIMapLike | undefined {
-    return this.getWSIRendering()?.runtime.map;
+    return this.getWSIRendering()?.map;
   }
 
   private getWSIRendering(): WSIRendering | undefined {

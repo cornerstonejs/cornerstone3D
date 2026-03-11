@@ -532,10 +532,8 @@ class PlanarViewportV2 extends ViewportV2<
   private getActiveImageIdIndex(): number {
     const binding = this.getCurrentBinding();
     const currentImageIdIndex = (
-      binding?.rendering as
-        | { runtime?: { currentImageIdIndex?: number } }
-        | undefined
-    )?.runtime?.currentImageIdIndex;
+      binding?.rendering as { currentImageIdIndex?: number } | undefined
+    )?.currentImageIdIndex;
 
     if (typeof currentImageIdIndex === 'number') {
       return currentImageIdIndex;
@@ -547,10 +545,8 @@ class PlanarViewportV2 extends ViewportV2<
   private getMaxImageIdIndex(): number {
     const binding = this.getCurrentBinding();
     const maxImageIdIndex = (
-      binding?.rendering as
-        | { runtime?: { maxImageIdIndex?: number } }
-        | undefined
-    )?.runtime?.maxImageIdIndex;
+      binding?.rendering as { maxImageIdIndex?: number } | undefined
+    )?.maxImageIdIndex;
 
     if (typeof maxImageIdIndex === 'number') {
       return maxImageIdIndex;
@@ -671,7 +667,7 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   private getCurrentPayload(): PlanarPayload | undefined {
-    return this.getCurrentPlanarRendering()?.runtime.payload as
+    return this.getCurrentPlanarRendering()?.payload as
       | PlanarPayload
       | undefined;
   }

@@ -48,11 +48,9 @@ export interface VideoElementRenderContext extends BaseViewportRenderContext {
   element: HTMLDivElement;
 }
 
-export interface VideoElementRendering
-  extends MountedRendering<{
-    element: HTMLVideoElement;
-    payload: VideoStreamPayload;
-    currentCamera?: VideoCamera;
-  }> {
+export type VideoElementRendering = MountedRendering<{
   renderMode: 'video2d';
-}
+  element: HTMLVideoElement;
+  payload: VideoStreamPayload;
+  currentCamera?: VideoCamera;
+}>;

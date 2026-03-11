@@ -35,18 +35,16 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'signal2d',
-      runtime: {
-        canvas: ctx.canvas,
-        canvasContext: ctx.canvasContext,
-        waveform: data.payload as ECGWaveformPayload,
-        metrics: {
-          ecgWidth: 1,
-          ecgHeight: 1,
-          channelScale: 1,
-          worldToCanvasRatio: 1,
-          xOffsetCanvas: 0,
-          yOffsetCanvas: 0,
-        },
+      canvas: ctx.canvas,
+      canvasContext: ctx.canvasContext,
+      waveform: data.payload as ECGWaveformPayload,
+      metrics: {
+        ecgWidth: 1,
+        ecgHeight: 1,
+        channelScale: 1,
+        worldToCanvasRatio: 1,
+        xOffsetCanvas: 0,
+        yOffsetCanvas: 0,
       },
     };
   }
@@ -57,7 +55,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     props: unknown
   ): void {
     const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.runtime.currentDataPresentation = props as
+    ecgRendering.currentDataPresentation = props as
       | ECGDataPresentation
       | undefined;
   }
@@ -68,7 +66,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     camera: unknown
   ): void {
     const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.runtime.currentCamera = camera as ECGCamera;
+    ecgRendering.currentCamera = camera as ECGCamera;
   }
 
   canvasToWorld(
@@ -77,7 +75,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     canvasPos: Point2
   ): Point3 {
     const ecgRendering = rendering as ECGCanvasRendering;
-    const { waveform, metrics } = ecgRendering.runtime;
+    const { waveform, metrics } = ecgRendering;
     const layouts = getChannelLayouts(ecgRendering);
     const scale = metrics.worldToCanvasRatio || 1;
     const subCanvasPos: Point2 = [
@@ -120,7 +118,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     worldPos: Point3
   ): Point2 {
     const ecgRendering = rendering as ECGCanvasRendering;
-    const { waveform, metrics } = ecgRendering.runtime;
+    const { waveform, metrics } = ecgRendering;
     const layouts = getChannelLayouts(ecgRendering);
     const z = Math.round(worldPos[2]);
 
@@ -171,13 +169,13 @@ export class CanvasECGPath
 
 function getChannelLayouts(rendering: ECGCanvasRendering) {
   const visibleChannels = getVisibleECGChannels(
-    rendering.runtime.waveform.channels,
-    rendering.runtime.currentDataPresentation?.visibleChannels
+    rendering.waveform.channels,
+    rendering.currentDataPresentation?.visibleChannels
   );
 
   return computeECGChannelLayouts({
     visibleChannels,
-    channelScale: rendering.runtime.metrics.channelScale,
+    channelScale: rendering.metrics.channelScale,
   });
 }
 
@@ -228,7 +226,7 @@ function drawFrame(
     waveform,
     currentCamera,
     currentDataPresentation,
-  } = ecgRendering.runtime;
+  } = ecgRendering;
 
   if (!currentCamera) {
     return;
@@ -257,7 +255,7 @@ function drawFrame(
   const timeWindow = computeTimeWindow(waveform, currentCamera);
   const dpr = window.devicePixelRatio || 1;
 
-  ecgRendering.runtime.metrics = metrics;
+  ecgRendering.metrics = metrics;
 
   canvasContext.resetTransform();
   canvasContext.fillStyle = '#000000';

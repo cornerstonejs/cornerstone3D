@@ -102,8 +102,7 @@ class VideoViewportV2 extends ViewportV2<
         objectFit: 'contain',
       });
 
-      const payload = (binding.rendering as VideoElementRendering).runtime
-        .payload;
+      const payload = (binding.rendering as VideoElementRendering).payload;
       const pan = this.getDefaultPanWorld();
       this.camera = {
         zoom: 1,
@@ -303,11 +302,11 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   private getVideoElement(): HTMLVideoElement | undefined {
-    return this.getVideoRendering()?.runtime.element;
+    return this.getVideoRendering()?.element;
   }
 
   private getPayload(): VideoStreamPayload | undefined {
-    return this.getVideoRendering()?.runtime.payload;
+    return this.getVideoRendering()?.payload;
   }
 
   private getDisplayMetrics():

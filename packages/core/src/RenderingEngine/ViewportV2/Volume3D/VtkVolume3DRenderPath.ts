@@ -68,21 +68,19 @@ export class VtkVolume3DRenderPath
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkVolume3d',
-      runtime: {
-        actor,
-        defaultVOIRange: defaultRange
-          ? { lower: defaultRange[0], upper: defaultRange[1] }
-          : undefined,
-        imageVolume: payload.imageVolume,
-        mapper,
-        payload,
-        removeStreamingSubscriptions: subscribeToVolumeEvents(
-          payload.volumeId,
-          () => {
-            ctx.display.requestRender();
-          }
-        ),
-      },
+      actor,
+      defaultVOIRange: defaultRange
+        ? { lower: defaultRange[0], upper: defaultRange[1] }
+        : undefined,
+      imageVolume: payload.imageVolume,
+      mapper,
+      payload,
+      removeStreamingSubscriptions: subscribeToVolumeEvents(
+        payload.volumeId,
+        () => {
+          ctx.display.requestRender();
+        }
+      ),
     };
   }
 
@@ -133,7 +131,7 @@ export class VtkVolume3DRenderPath
     _ctx: Volume3DVtkVolumeAdapterContext,
     rendering: MountedRendering
   ): string | undefined {
-    return (rendering as Volume3DVolumeRendering).runtime.imageVolume.metadata
+    return (rendering as Volume3DVolumeRendering).imageVolume.metadata
       ?.FrameOfReferenceUID;
   }
 
@@ -142,7 +140,7 @@ export class VtkVolume3DRenderPath
     rendering: MountedRendering
   ): IImageData | undefined {
     return buildVolumeImageData(
-      (rendering as Volume3DVolumeRendering).runtime.imageVolume
+      (rendering as Volume3DVolumeRendering).imageVolume
     );
   }
 
@@ -158,9 +156,8 @@ export class VtkVolume3DRenderPath
     ctx: Volume3DVtkVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } = (
-      rendering as Volume3DVolumeRendering
-    ).runtime;
+    const { actor, removeStreamingSubscriptions } =
+      rendering as Volume3DVolumeRendering;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);
@@ -220,7 +217,7 @@ function applyDataPresentation(
   rendering: Volume3DVolumeRendering,
   props?: Volume3DDataPresentation
 ): void {
-  const { actor, defaultVOIRange } = rendering.runtime;
+  const { actor, defaultVOIRange } = rendering;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
 
@@ -252,7 +249,7 @@ function applyDataPresentation(
 
   if (props?.sampleDistanceMultiplier !== undefined) {
     applySampleDistanceMultiplier(
-      rendering.runtime.mapper,
+      rendering.mapper,
       props.sampleDistanceMultiplier
     );
   }

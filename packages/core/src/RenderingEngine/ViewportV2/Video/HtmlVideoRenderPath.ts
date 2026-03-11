@@ -63,10 +63,8 @@ export class HtmlVideoRenderPath
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'video2d',
-      runtime: {
-        element,
-        payload: normalizedPayload,
-      },
+      element,
+      payload: normalizedPayload,
     };
   }
 
@@ -76,7 +74,7 @@ export class HtmlVideoRenderPath
     props: unknown
   ): void {
     const videoProps = props as VideoDataPresentation | undefined;
-    const { element } = (rendering as VideoElementRendering).runtime;
+    const { element } = rendering as VideoElementRendering;
 
     element.style.display = videoProps?.visible === false ? 'none' : '';
     element.style.opacity = String(videoProps?.opacity ?? 1);
@@ -93,11 +91,11 @@ export class HtmlVideoRenderPath
   ): void {
     const videoCamera = camera as VideoCamera;
     const videoRendering = rendering as VideoElementRendering;
-    const { element } = videoRendering.runtime;
+    const { element } = videoRendering;
     const rotation = videoCamera.rotation ?? 0;
     const layout = getVideoLayout(element, videoCamera);
 
-    videoRendering.runtime.currentCamera = videoCamera;
+    videoRendering.currentCamera = videoCamera;
 
     if (layout) {
       element.style.width = `${layout.width}px`;
@@ -111,7 +109,7 @@ export class HtmlVideoRenderPath
     if (
       typeof videoCamera.currentTimeSeconds === 'number' &&
       Math.abs(element.currentTime - videoCamera.currentTimeSeconds) >
-        0.5 / Math.max(1, videoRendering.runtime.payload.fps)
+        0.5 / Math.max(1, videoRendering.payload.fps)
     ) {
       element.currentTime = videoCamera.currentTimeSeconds;
     }
@@ -123,8 +121,8 @@ export class HtmlVideoRenderPath
     canvasPos: Point2
   ): Point3 {
     const layout = getVideoLayout(
-      (rendering as VideoElementRendering).runtime.element,
-      (rendering as VideoElementRendering).runtime.currentCamera
+      (rendering as VideoElementRendering).element,
+      (rendering as VideoElementRendering).currentCamera
     );
 
     if (!layout) {
@@ -144,8 +142,8 @@ export class HtmlVideoRenderPath
     worldPos: Point3
   ): Point2 {
     const layout = getVideoLayout(
-      (rendering as VideoElementRendering).runtime.element,
-      (rendering as VideoElementRendering).runtime.currentCamera
+      (rendering as VideoElementRendering).element,
+      (rendering as VideoElementRendering).currentCamera
     );
 
     if (!layout) {
@@ -162,13 +160,13 @@ export class HtmlVideoRenderPath
     _ctx: VideoElementRenderContext,
     rendering: MountedRendering
   ): string | undefined {
-    const element = (rendering as VideoElementRendering).runtime.element;
+    const element = (rendering as VideoElementRendering).element;
 
     return element.currentSrc || element.src;
   }
 
   detach(_ctx: VideoElementRenderContext, rendering: MountedRendering): void {
-    const { element } = (rendering as VideoElementRendering).runtime;
+    const { element } = rendering as VideoElementRendering;
     element.pause();
     element.remove();
   }

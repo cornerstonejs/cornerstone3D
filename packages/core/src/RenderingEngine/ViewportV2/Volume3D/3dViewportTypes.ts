@@ -107,27 +107,23 @@ type Volume3DContextBase = Pick<
 export type Volume3DVtkVolumeAdapterContext = Volume3DContextBase;
 export type Volume3DVtkGeometryAdapterContext = Volume3DContextBase;
 
-export interface Volume3DVolumeRendering
-  extends MountedRendering<{
-    actor: vtkVolume;
-    defaultVOIRange?: VOIRange;
-    imageVolume: IImageVolume;
-    mapper: vtkVolumeMapper;
-    payload: Volume3DVolumePayload;
-    removeStreamingSubscriptions?: () => void;
-  }> {
+export type Volume3DVolumeRendering = MountedRendering<{
   renderMode: 'vtkVolume3d';
-}
+  actor: vtkVolume;
+  defaultVOIRange?: VOIRange;
+  imageVolume: IImageVolume;
+  mapper: vtkVolumeMapper;
+  payload: Volume3DVolumePayload;
+  removeStreamingSubscriptions?: () => void;
+}>;
 
-export interface Volume3DGeometryRendering
-  extends MountedRendering<{
-    actors: ActorEntry[];
-    frameOfReferenceUID?: string;
-    geometry: IGeometry;
-    payload: Volume3DGeometryPayload;
-  }> {
+export type Volume3DGeometryRendering = MountedRendering<{
   renderMode: 'vtkGeometry3d';
-}
+  actors: ActorEntry[];
+  frameOfReferenceUID?: string;
+  geometry: IGeometry;
+  payload: Volume3DGeometryPayload;
+}>;
 
 export type Volume3DRendering =
   | Volume3DVolumeRendering

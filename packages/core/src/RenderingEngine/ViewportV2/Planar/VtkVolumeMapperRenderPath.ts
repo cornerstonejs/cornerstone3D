@@ -72,27 +72,25 @@ export class VtkVolumeMapperRenderPath
     const rendering: PlanarVolumeMapperRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkVolume',
-      runtime: {
-        actor,
-        imageVolume,
-        mapper,
-        payload,
-        currentImageIdIndex: payload.initialImageIdIndex,
-        maxImageIdIndex: payload.imageIds.length - 1,
-        defaultVOIRange: defaultRange
-          ? { lower: defaultRange[0], upper: defaultRange[1] }
-          : undefined,
-        baseCamera: undefined,
-        camera: undefined,
-        viewState: undefined,
-        dataPresentation: undefined,
-        removeStreamingSubscriptions: subscribeToVolumeEvents(
-          payload.volumeId,
-          () => {
-            ctx.display.requestRender();
-          }
-        ),
-      },
+      actor,
+      imageVolume,
+      mapper,
+      payload,
+      currentImageIdIndex: payload.initialImageIdIndex,
+      maxImageIdIndex: payload.imageIds.length - 1,
+      defaultVOIRange: defaultRange
+        ? { lower: defaultRange[0], upper: defaultRange[1] }
+        : undefined,
+      baseCamera: undefined,
+      camera: undefined,
+      viewState: undefined,
+      dataPresentation: undefined,
+      removeStreamingSubscriptions: subscribeToVolumeEvents(
+        payload.volumeId,
+        () => {
+          ctx.display.requestRender();
+        }
+      ),
     };
     imageVolume.load(() => {
       ctx.display.requestRender();
@@ -118,7 +116,7 @@ export class VtkVolumeMapperRenderPath
     rendering: MountedRendering,
     camera: unknown
   ): void {
-    const runtime = (rendering as PlanarVolumeMapperRendering).runtime;
+    const runtime = rendering as PlanarVolumeMapperRendering;
     const viewState = camera as PlanarCamera | undefined;
     const { baseCamera, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeCameraState({
@@ -190,8 +188,8 @@ export class VtkVolumeMapperRenderPath
     _ctx: PlanarVtkVolumeAdapterContext,
     rendering: MountedRendering
   ): string | undefined {
-    return (rendering as PlanarVolumeMapperRendering).runtime.imageVolume
-      .metadata?.FrameOfReferenceUID;
+    return (rendering as PlanarVolumeMapperRendering).imageVolume.metadata
+      ?.FrameOfReferenceUID;
   }
 
   getImageData(
@@ -199,7 +197,7 @@ export class VtkVolumeMapperRenderPath
     rendering: MountedRendering
   ): IImageData | undefined {
     return buildPlanarVolumeImageData(
-      (rendering as PlanarVolumeMapperRendering).runtime.imageVolume
+      (rendering as PlanarVolumeMapperRendering).imageVolume
     );
   }
 
@@ -211,7 +209,7 @@ export class VtkVolumeMapperRenderPath
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
-    const runtime = (rendering as PlanarVolumeMapperRendering).runtime;
+    const runtime = rendering as PlanarVolumeMapperRendering;
 
     runtime.camera = applyPlanarVolumeCameraToRenderer({
       baseCamera: runtime.baseCamera,
@@ -241,9 +239,8 @@ export class VtkVolumeMapperRenderPath
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } = (
-      rendering as PlanarVolumeMapperRendering
-    ).runtime;
+    const { actor, removeStreamingSubscriptions } =
+      rendering as PlanarVolumeMapperRendering;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);
@@ -318,12 +315,12 @@ function applyDataPresentation(
   rendering: PlanarVolumeMapperRendering,
   props?: PlanarDataPresentation
 ): void {
-  const { actor, defaultVOIRange, mapper } = rendering.runtime;
+  const { actor, defaultVOIRange, mapper } = rendering;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
   const slabThickness = resolveSlabThickness(props?.slabThickness);
 
-  rendering.runtime.dataPresentation = props;
+  rendering.dataPresentation = props;
 
   actor.setVisibility(props?.visible === false ? false : true);
 
@@ -357,14 +354,11 @@ function applyDataPresentation(
     mapper.setBlendModeToComposite();
   }
 
-  if (
-    rendering.runtime.camera?.focalPoint &&
-    rendering.runtime.camera.viewPlaneNormal
-  ) {
+  if (rendering.camera?.focalPoint && rendering.camera.viewPlaneNormal) {
     updatePlanarVolumeClippingPlanes({
       camera: {
-        focalPoint: rendering.runtime.camera.focalPoint,
-        viewPlaneNormal: rendering.runtime.camera.viewPlaneNormal,
+        focalPoint: rendering.camera.focalPoint,
+        viewPlaneNormal: rendering.camera.viewPlaneNormal,
       },
       mapper,
       slabThickness,

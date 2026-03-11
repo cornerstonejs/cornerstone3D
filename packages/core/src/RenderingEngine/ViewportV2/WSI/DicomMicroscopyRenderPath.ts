@@ -80,13 +80,11 @@ export class DicomMicroscopyRenderPath
     return {
       id: renderingId,
       renderMode: 'wsi2d',
-      runtime: {
-        microscopyElement,
-        viewer,
-        map,
-        payload,
-        postrenderHandler,
-      },
+      microscopyElement,
+      viewer,
+      map,
+      payload,
+      postrenderHandler,
     };
   }
 
@@ -96,7 +94,7 @@ export class DicomMicroscopyRenderPath
     props: unknown
   ): void {
     const wsiProps = props as WSIDataPresentation | undefined;
-    const { microscopyElement } = (rendering as WSIRendering).runtime;
+    const { microscopyElement } = rendering as WSIRendering;
 
     microscopyElement.style.display = wsiProps?.visible === false ? 'none' : '';
     microscopyElement.style.opacity = String(wsiProps?.opacity ?? 1);
@@ -108,7 +106,7 @@ export class DicomMicroscopyRenderPath
     camera: unknown
   ): void {
     const wsiCamera = camera as WSICamera;
-    const { map } = (rendering as WSIRendering).runtime;
+    const { map } = rendering as WSIRendering;
     const view = map?.getView?.();
 
     if (!view) {
@@ -152,16 +150,12 @@ export class DicomMicroscopyRenderPath
     _ctx: WSIViewportRenderContext,
     rendering: MountedRendering
   ): string | undefined {
-    return (
-      (rendering as WSIRendering).runtime.payload.frameOfReferenceUID ??
-      undefined
-    );
+    return (rendering as WSIRendering).payload.frameOfReferenceUID ?? undefined;
   }
 
   detach(_ctx: WSIViewportRenderContext, rendering: MountedRendering): void {
-    const { map, microscopyElement, viewer, postrenderHandler } = (
-      rendering as WSIRendering
-    ).runtime;
+    const { map, microscopyElement, viewer, postrenderHandler } =
+      rendering as WSIRendering;
 
     map?.un?.(EVENT_POSTRENDER, postrenderHandler);
     viewer?.cleanup?.();
@@ -185,7 +179,7 @@ export class DicomMicroscopyPath
 }
 
 function computeTransforms(rendering: WSIRendering) {
-  const metadata = rendering.runtime.payload.metadata;
+  const metadata = rendering.payload.metadata;
   const indexToWorld = mat4.create();
   const worldToIndexMatrix = mat4.create();
 
@@ -258,7 +252,7 @@ function getTransform(
   ctx: WSIViewportRenderContext,
   rendering: WSIRendering
 ): Transform {
-  const view = rendering.runtime.map.getView();
+  const view = rendering.map.getView();
   const center = view.getCenter();
   const resolution = view.getResolution();
   const rotation = view.getRotation();

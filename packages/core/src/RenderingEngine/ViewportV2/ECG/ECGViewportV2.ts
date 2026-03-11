@@ -169,8 +169,8 @@ class ECGViewportV2 extends ViewportV2<
 
     const rendering = firstBinding.rendering as ECGCanvasRendering;
     return {
-      width: rendering.runtime.metrics.ecgWidth,
-      height: rendering.runtime.metrics.ecgHeight,
+      width: rendering.metrics.ecgWidth,
+      height: rendering.metrics.ecgHeight,
     };
   }
 

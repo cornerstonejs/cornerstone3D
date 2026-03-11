@@ -65,34 +65,32 @@ export class CpuVolumeSliceRenderPath
     const rendering: PlanarCpuVolumeRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'cpuVolume',
-      runtime: {
-        actor,
-        mapper,
-        imageVolume: payload.imageVolume,
-        payload,
-        currentImageIdIndex: payload.initialImageIdIndex,
-        maxImageIdIndex: payload.imageIds.length - 1,
-        baseCamera: undefined,
-        camera: undefined,
-        viewState: undefined,
-        renderingInvalidated: true,
-        removeStreamingSubscriptions: subscribeToVolumeLoadCompletion(
-          payload.volumeId,
-          () => {
-            const rerenderLoadedSlice = () => {
-              rendering.runtime.pendingVolumeLoadCallback = false;
-              rendering.runtime.sampledSliceState = undefined;
-              rendering.runtime.renderingInvalidated = true;
-              this.render(ctx, rendering);
-            };
+      actor,
+      mapper,
+      imageVolume: payload.imageVolume,
+      payload,
+      currentImageIdIndex: payload.initialImageIdIndex,
+      maxImageIdIndex: payload.imageIds.length - 1,
+      baseCamera: undefined,
+      camera: undefined,
+      viewState: undefined,
+      renderingInvalidated: true,
+      removeStreamingSubscriptions: subscribeToVolumeLoadCompletion(
+        payload.volumeId,
+        () => {
+          const rerenderLoadedSlice = () => {
+            rendering.pendingVolumeLoadCallback = false;
+            rendering.sampledSliceState = undefined;
+            rendering.renderingInvalidated = true;
+            this.render(ctx, rendering);
+          };
 
+          rerenderLoadedSlice();
+          window.requestAnimationFrame(() => {
             rerenderLoadedSlice();
-            window.requestAnimationFrame(() => {
-              rerenderLoadedSlice();
-            });
-          }
-        ),
-      },
+          });
+        }
+      ),
     };
 
     return rendering;
@@ -106,10 +104,11 @@ export class CpuVolumeSliceRenderPath
     const { slabThickness: _slabThickness, ...dataPresentation } =
       (props as PlanarDataPresentation | undefined) || {};
 
-    (rendering as PlanarCpuVolumeRendering).runtime.dataPresentation =
-      Object.keys(dataPresentation).length
-        ? (dataPresentation as PlanarCpuVolumeRendering['runtime']['dataPresentation'])
-        : undefined;
+    (rendering as PlanarCpuVolumeRendering).dataPresentation = Object.keys(
+      dataPresentation
+    ).length
+      ? (dataPresentation as PlanarCpuVolumeRendering['dataPresentation'])
+      : undefined;
   }
 
   updateCamera(
@@ -117,7 +116,7 @@ export class CpuVolumeSliceRenderPath
     rendering: MountedRendering,
     camera: unknown
   ): void {
-    const runtime = (rendering as PlanarCpuVolumeRendering).runtime;
+    const runtime = rendering as PlanarCpuVolumeRendering;
     const viewState = camera as PlanarCamera | undefined;
     const { baseCamera, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeCameraState({
@@ -159,7 +158,7 @@ export class CpuVolumeSliceRenderPath
     rendering: MountedRendering,
     canvasPos: Point2
   ): Point3 {
-    const runtime = (rendering as PlanarCpuVolumeRendering).runtime;
+    const runtime = rendering as PlanarCpuVolumeRendering;
     const camera =
       runtime.camera ||
       resolvePlanarVolumeCamera({
@@ -196,7 +195,7 @@ export class CpuVolumeSliceRenderPath
     rendering: MountedRendering,
     worldPos: Point3
   ): Point2 {
-    const runtime = (rendering as PlanarCpuVolumeRendering).runtime;
+    const runtime = rendering as PlanarCpuVolumeRendering;
     const camera =
       runtime.camera ||
       resolvePlanarVolumeCamera({
@@ -232,7 +231,7 @@ export class CpuVolumeSliceRenderPath
     _ctx: PlanarCpuVolumeAdapterContext,
     rendering: MountedRendering
   ): string | undefined {
-    return (rendering as PlanarCpuVolumeRendering).runtime.imageVolume.metadata
+    return (rendering as PlanarCpuVolumeRendering).imageVolume.metadata
       ?.FrameOfReferenceUID;
   }
 
@@ -241,7 +240,7 @@ export class CpuVolumeSliceRenderPath
     rendering: MountedRendering
   ): IImageData | undefined {
     return buildPlanarVolumeImageData(
-      (rendering as PlanarCpuVolumeRendering).runtime.imageVolume
+      (rendering as PlanarCpuVolumeRendering).imageVolume
     );
   }
 
@@ -250,7 +249,7 @@ export class CpuVolumeSliceRenderPath
     rendering: MountedRendering
   ): void {
     const planarRendering = rendering as PlanarCpuVolumeRendering;
-    const { runtime } = planarRendering;
+    const runtime = planarRendering;
 
     ctx.display.activateRenderMode('cpuVolume');
 
@@ -348,7 +347,7 @@ export class CpuVolumeSliceRenderPath
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
-    const runtime = (rendering as PlanarCpuVolumeRendering).runtime;
+    const runtime = rendering as PlanarCpuVolumeRendering;
 
     runtime.camera = resolvePlanarVolumeCamera({
       baseCamera: runtime.baseCamera,
@@ -369,9 +368,8 @@ export class CpuVolumeSliceRenderPath
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } = (
-      rendering as PlanarCpuVolumeRendering
-    ).runtime;
+    const { actor, removeStreamingSubscriptions } =
+      rendering as PlanarCpuVolumeRendering;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);

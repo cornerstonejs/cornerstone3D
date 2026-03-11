@@ -149,86 +149,78 @@ export interface PlanarCameraState {
   viewUp: Point3;
 }
 
-export interface PlanarImageMapperRendering
-  extends MountedRendering<{
-    actor: vtkImageSlice;
-    currentImage: IImage;
-    mapper: vtkImageMapper;
-    imageData: vtkImageData;
-    payload: PlanarPayload;
-    currentImageIdIndex: number;
-    defaultVOIRange?: VOIRange;
-    initialCamera: PlanarCameraState;
-    loadRequestId: number;
-    camera?: ICamera;
-  }> {
+export type PlanarImageMapperRendering = MountedRendering<{
   renderMode: 'vtkImage';
-}
+  actor: vtkImageSlice;
+  currentImage: IImage;
+  mapper: vtkImageMapper;
+  imageData: vtkImageData;
+  payload: PlanarPayload;
+  currentImageIdIndex: number;
+  defaultVOIRange?: VOIRange;
+  initialCamera: PlanarCameraState;
+  loadRequestId: number;
+  camera?: ICamera;
+}>;
 
-export interface PlanarCpuImageRendering
-  extends MountedRendering<{
-    enabledElement: CPUFallbackEnabledElement;
-    payload: PlanarPayload;
-    currentImageIdIndex: number;
-    defaultVOIRange?: VOIRange;
-    fitScale: number;
-    loadRequestId: number;
-    camera?: ICamera;
-    renderingInvalidated: boolean;
-  }> {
+export type PlanarCpuImageRendering = MountedRendering<{
   renderMode: 'cpu2d';
-}
+  enabledElement: CPUFallbackEnabledElement;
+  payload: PlanarPayload;
+  currentImageIdIndex: number;
+  defaultVOIRange?: VOIRange;
+  fitScale: number;
+  loadRequestId: number;
+  camera?: ICamera;
+  renderingInvalidated: boolean;
+}>;
 
-export interface PlanarCpuVolumeRendering
-  extends MountedRendering<{
-    actor: vtkVolume;
-    mapper: vtkVolumeMapper;
-    enabledElement?: CPUFallbackEnabledElement;
-    payload: PlanarPayload;
-    imageVolume: IImageVolume;
-    currentImageIdIndex: number;
-    maxImageIdIndex: number;
-    defaultVOIRange?: VOIRange;
-    baseCamera?: PlanarCameraState;
-    camera?: ICamera;
-    viewState?: PlanarCamera;
-    renderingInvalidated: boolean;
-    dataPresentation?: PlanarDataPresentation;
-    sampledSliceState?: {
-      image: IImage;
-      focalPoint: Point3;
-      translationReferenceFocalPoint: Point3;
-      right: Point3;
-      up: Point3;
-      normal: Point3;
-      spacingInNormalDirection: number;
-      canvasWidth: number;
-      canvasHeight: number;
-      interpolationType: InterpolationType;
-    };
-    pendingVolumeLoadCallback?: boolean;
-    removeStreamingSubscriptions?: () => void;
-  }> {
+export type PlanarCpuVolumeRendering = MountedRendering<{
   renderMode: 'cpuVolume';
-}
+  actor: vtkVolume;
+  mapper: vtkVolumeMapper;
+  enabledElement?: CPUFallbackEnabledElement;
+  payload: PlanarPayload;
+  imageVolume: IImageVolume;
+  currentImageIdIndex: number;
+  maxImageIdIndex: number;
+  defaultVOIRange?: VOIRange;
+  baseCamera?: PlanarCameraState;
+  camera?: ICamera;
+  viewState?: PlanarCamera;
+  renderingInvalidated: boolean;
+  dataPresentation?: PlanarDataPresentation;
+  sampledSliceState?: {
+    image: IImage;
+    focalPoint: Point3;
+    translationReferenceFocalPoint: Point3;
+    right: Point3;
+    up: Point3;
+    normal: Point3;
+    spacingInNormalDirection: number;
+    canvasWidth: number;
+    canvasHeight: number;
+    interpolationType: InterpolationType;
+  };
+  pendingVolumeLoadCallback?: boolean;
+  removeStreamingSubscriptions?: () => void;
+}>;
 
-export interface PlanarVolumeMapperRendering
-  extends MountedRendering<{
-    actor: vtkVolume;
-    imageVolume: IImageVolume;
-    mapper: vtkVolumeMapper;
-    payload: PlanarPayload;
-    currentImageIdIndex: number;
-    maxImageIdIndex: number;
-    defaultVOIRange?: VOIRange;
-    baseCamera?: PlanarCameraState;
-    camera?: ICamera;
-    viewState?: PlanarCamera;
-    dataPresentation?: PlanarDataPresentation;
-    removeStreamingSubscriptions?: () => void;
-  }> {
+export type PlanarVolumeMapperRendering = MountedRendering<{
   renderMode: 'vtkVolume';
-}
+  actor: vtkVolume;
+  imageVolume: IImageVolume;
+  mapper: vtkVolumeMapper;
+  payload: PlanarPayload;
+  currentImageIdIndex: number;
+  maxImageIdIndex: number;
+  defaultVOIRange?: VOIRange;
+  baseCamera?: PlanarCameraState;
+  camera?: ICamera;
+  viewState?: PlanarCamera;
+  dataPresentation?: PlanarDataPresentation;
+  removeStreamingSubscriptions?: () => void;
+}>;
 
 export type PlanarRendering =
   | PlanarImageMapperRendering

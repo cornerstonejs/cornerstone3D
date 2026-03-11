@@ -57,15 +57,13 @@ export class VtkGeometry3DRenderPath
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkGeometry3d',
-      runtime: {
-        actors,
-        frameOfReferenceUID:
-          payload.geometry.type === GeometryType.SURFACE
-            ? (payload.geometry.data as ISurface).frameOfReferenceUID
-            : undefined,
-        geometry: payload.geometry,
-        payload,
-      },
+      actors,
+      frameOfReferenceUID:
+        payload.geometry.type === GeometryType.SURFACE
+          ? (payload.geometry.data as ISurface).frameOfReferenceUID
+          : undefined,
+      geometry: payload.geometry,
+      payload,
     };
   }
 
@@ -118,7 +116,7 @@ export class VtkGeometry3DRenderPath
     _ctx: Volume3DVtkGeometryAdapterContext,
     rendering: MountedRendering
   ): string | undefined {
-    return (rendering as Volume3DGeometryRendering).runtime.frameOfReferenceUID;
+    return (rendering as Volume3DGeometryRendering).frameOfReferenceUID;
   }
 
   render(ctx: Volume3DVtkGeometryAdapterContext): void {
@@ -133,11 +131,9 @@ export class VtkGeometry3DRenderPath
     ctx: Volume3DVtkGeometryAdapterContext,
     rendering: MountedRendering
   ): void {
-    (rendering as Volume3DGeometryRendering).runtime.actors.forEach(
-      (actorEntry) => {
-        ctx.vtk.renderer.removeActor(actorEntry.actor as vtkActor);
-      }
-    );
+    (rendering as Volume3DGeometryRendering).actors.forEach((actorEntry) => {
+      ctx.vtk.renderer.removeActor(actorEntry.actor as vtkActor);
+    });
   }
 }
 
@@ -221,7 +217,7 @@ function applyDataPresentation(
   rendering: Volume3DGeometryRendering,
   props?: Volume3DDataPresentation
 ): void {
-  rendering.runtime.actors.forEach((actorEntry) => {
+  rendering.actors.forEach((actorEntry) => {
     const actor = actorEntry.actor as vtkActor;
 
     actor.setVisibility(props?.visible === false ? false : true);

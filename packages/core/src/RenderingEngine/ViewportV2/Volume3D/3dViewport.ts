@@ -168,7 +168,7 @@ class VolumeViewport3DV2 extends ViewportV2<
       return [];
     }
 
-    return rendering.runtime.payload.imageIds;
+    return rendering.payload.imageIds;
   }
 
   getRenderer() {
@@ -240,7 +240,7 @@ class VolumeViewport3DV2 extends ViewportV2<
       return;
     }
 
-    return rendering.runtime.payload.volumeId;
+    return rendering.payload.volumeId;
   }
 
   hasVolumeId(volumeId: string): boolean {
@@ -356,16 +356,14 @@ class VolumeViewport3DV2 extends ViewportV2<
     if (rendering.renderMode === 'vtkVolume3d') {
       return [
         {
-          actor: rendering.runtime.actor,
-          referencedId: rendering.runtime.payload.volumeId,
-          uid:
-            rendering.runtime.payload.actorUID ||
-            rendering.runtime.payload.volumeId,
+          actor: rendering.actor,
+          referencedId: rendering.payload.volumeId,
+          uid: rendering.payload.actorUID || rendering.payload.volumeId,
         },
       ];
     }
 
-    return rendering.runtime.actors;
+    return rendering.actors;
   }
 }
 

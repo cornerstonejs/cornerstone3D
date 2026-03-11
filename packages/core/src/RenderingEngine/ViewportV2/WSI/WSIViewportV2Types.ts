@@ -64,13 +64,11 @@ export interface WSIViewportRenderContext extends BaseViewportRenderContext {
   element: HTMLDivElement;
 }
 
-export interface WSIRendering
-  extends MountedRendering<{
-    microscopyElement: HTMLDivElement;
-    viewer: WSIViewerLike;
-    map: WSIMapLike;
-    payload: WSIPayload;
-    postrenderHandler: () => void;
-  }> {
+export type WSIRendering = MountedRendering<{
   renderMode: 'wsi2d';
-}
+  microscopyElement: HTMLDivElement;
+  viewer: WSIViewerLike;
+  map: WSIMapLike;
+  payload: WSIPayload;
+  postrenderHandler: () => void;
+}>;
