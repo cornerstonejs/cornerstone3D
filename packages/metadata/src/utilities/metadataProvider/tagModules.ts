@@ -2,6 +2,9 @@ import { addTypedProvider, type TypedProvider } from '../../metaData';
 import { mapModuleTags } from '../Tags';
 import { dataLookup, DATA_PRIORITY, instanceLookup } from './dataLookup';
 import { makeArrayLike } from './makeArrayLike';
+import { metadataLog } from '../logging';
+
+const log = metadataLog.getLogger('tagModules');
 
 const mapModules = new Map<string, TypedProvider>();
 
@@ -40,7 +43,7 @@ export function tagModules(module: string, dataLookupName = 'instance') {
       let value = data[key.name];
       if (value !== undefined) {
         if (mapModules.has(key.name)) {
-          console.warn('Getting nested module', key.name);
+          log.debug('Getting nested module', key.name);
           const newValue = [];
           for (const entry of value) {
             if (!entry) {

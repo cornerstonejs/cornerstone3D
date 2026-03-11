@@ -27,6 +27,8 @@ enum MetadataModules {
   PET_IMAGE = 'petImageModule',
   PET_ISOTOPE = 'petIsotopeModule',
   PET_SERIES = 'petSeriesModule',
+  /** SUV/dose scaling derived from instance (PT: suvbw/suvlbm/suvbsa; RTDOSE: DoseGridScaling etc.) */
+  SCALING = 'scalingModule',
   SOP_COMMON = 'sopCommonModule',
   ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
   ECG = 'ecgModule',

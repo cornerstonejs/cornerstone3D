@@ -12,6 +12,10 @@ export const visitExample = async (
   waitForNetwork = true,
   waitForDom = true
 ) => {
+  // Fixed viewport so layout is deterministic; avoids scroll/layout differences
+  // that can trigger renderingEngine.resize() and move the image on capture.
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   await page.goto('/');
   if (waitForNetwork) {
     await page.waitForLoadState('networkidle');
