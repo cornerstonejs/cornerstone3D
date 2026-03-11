@@ -20,6 +20,10 @@ jest.mock('../src/loaders/volumeLoader', () => ({
   createAndCacheVolume: jest.fn(),
 }));
 
+jest.mock('../src/loaders/geometryLoader', () => ({
+  loadAndCacheGeometry: jest.fn(),
+}));
+
 jest.mock('../src/utilities/VideoUtilities', () => ({
   loadVideoStreamMetadata: jest.fn(),
 }));
@@ -39,6 +43,7 @@ import { getConfiguration, getShouldUseCPURendering } from '../src/init';
 import * as metaData from '../src/metaData';
 import { loadAndCacheImage } from '../src/loaders/imageLoader';
 import { createAndCacheVolume } from '../src/loaders/volumeLoader';
+import { loadAndCacheGeometry } from '../src/loaders/geometryLoader';
 import { loadVideoStreamMetadata } from '../src/utilities/VideoUtilities';
 import { loadECGWaveform } from '../src/utilities/ECGUtilities';
 import {
@@ -51,6 +56,7 @@ import {
   DefaultVideoDataProvider,
   DefaultECGDataProvider,
   DefaultWSIDataProvider,
+  DefaultVolume3DDataProvider,
 } from '../src/RenderingEngine/ViewportV2';
 import { CpuVolumeSliceRenderingAdapter } from '../src/RenderingEngine/ViewportV2/Planar/CpuVolumeSliceRenderingAdapter';
 import {
@@ -334,5 +340,60 @@ describe('Other V2 default data providers', () => {
       client: webClient,
     });
     expect(data.id).toBe('wsi-demo');
+  });
+
+  it('loads registered volume datasets for VolumeViewport3DV2', async () => {
+    const provider = new DefaultVolume3DDataProvider();
+    const volume = {
+      imageIds: ['image-1', 'image-2'],
+      load: jest.fn(),
+    };
+
+    metaData.get.mockImplementation((type, dataId) => {
+      if (type === VIEWPORT_V2_DATA_SET && dataId === 'volume3d-demo') {
+        return {
+          imageIds: ['image-1', 'image-2'],
+          volumeId: 'volume-1',
+        };
+      }
+    });
+    createAndCacheVolume.mockResolvedValue(volume);
+
+    const data = await provider.load('volume3d-demo', {
+      renderMode: 'vtkVolume3d',
+    });
+
+    expect(createAndCacheVolume).toHaveBeenCalledWith(
+      'cornerstoneStreamingImageVolume:volume-1',
+      {
+        imageIds: ['image-1', 'image-2'],
+      }
+    );
+    expect(data.type).toBe('image');
+    expect(data.payload.imageVolume).toBe(volume);
+  });
+
+  it('loads cached or deferred geometry datasets for VolumeViewport3DV2', async () => {
+    const provider = new DefaultVolume3DDataProvider();
+    const geometry = {
+      id: 'geometry-1',
+      type: 'SURFACE',
+      data: {
+        color: [255, 0, 0],
+        frameOfReferenceUID: '1.2.3',
+        points: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+        polys: [3, 0, 1, 2],
+      },
+    };
+
+    loadAndCacheGeometry.mockResolvedValue(geometry);
+
+    const data = await provider.load('geometry-1', {
+      renderMode: 'vtkGeometry3d',
+    });
+
+    expect(loadAndCacheGeometry).toHaveBeenCalledWith('geometry-1', undefined);
+    expect(data.type).toBe('geometry');
+    expect(data.payload.geometry).toBe(geometry);
   });
 });

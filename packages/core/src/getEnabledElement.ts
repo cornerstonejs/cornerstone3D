@@ -2,7 +2,7 @@ import getRenderingEngine, {
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
 import type { IEnabledElement, IStackViewport, IVolumeViewport } from './types';
-import { viewportHasFrameOfReferenceUID } from './RenderingEngine/ViewportV2';
+import { viewportHasFrameOfReferenceUID } from './RenderingEngine/ViewportV2/ViewportArchitectureTypes';
 
 /**
  * A convenience method to find an EnabledElement given a reference to its

@@ -94,6 +94,33 @@ export type {
   PlanarViewportV2Input,
   PlanarViewState,
 } from './Planar';
+export { default as VolumeViewport3DV2 } from './Volume3D';
+export {
+  DefaultVolume3DDataProvider,
+  VtkGeometry3DPath,
+  VtkGeometry3DRenderingAdapter,
+  VtkVolume3DPath,
+  VtkVolume3DRenderingAdapter,
+} from './Volume3D';
+export type {
+  Volume3DCamera,
+  Volume3DDataProvider,
+  Volume3DGeometryPayload,
+  Volume3DGeometryRendering,
+  Volume3DPresentationProps,
+  Volume3DProperties,
+  Volume3DRegisteredDataSet,
+  Volume3DRenderMode,
+  Volume3DRendering,
+  Volume3DRequestedRenderMode,
+  Volume3DSetDataOptions,
+  Volume3DViewportRenderContext,
+  Volume3DVolumePayload,
+  Volume3DVolumeRendering,
+  Volume3DVtkGeometryAdapterContext,
+  Volume3DVtkVolumeAdapterContext,
+  VolumeViewport3DV2Input,
+} from './Volume3D';
 export { default as WSIViewportV2 } from './WSI';
 export {
   DefaultWSIDataProvider,

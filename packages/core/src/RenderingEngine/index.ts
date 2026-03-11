@@ -27,6 +27,11 @@ import PlanarViewportV2, {
   VtkImageMapperPath,
   VtkVolumeMapperPath,
 } from './ViewportV2/Planar';
+import VolumeViewport3DV2, {
+  DefaultVolume3DDataProvider,
+  VtkGeometry3DPath,
+  VtkVolume3DPath,
+} from './ViewportV2/Volume3D';
 import WSIViewportV2, {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
@@ -50,6 +55,10 @@ const renderingEngineExportsV2 = {
   VtkImageMapperPath,
   VtkVolumeMapperPath,
   DefaultPlanarDataProvider,
+  VolumeViewport3DV2,
+  VtkVolume3DPath,
+  VtkGeometry3DPath,
+  DefaultVolume3DDataProvider,
   WSIViewportV2,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,
@@ -80,6 +89,10 @@ export {
   VtkImageMapperPath,
   VtkVolumeMapperPath,
   DefaultPlanarDataProvider,
+  VolumeViewport3DV2,
+  VtkVolume3DPath,
+  VtkGeometry3DPath,
+  DefaultVolume3DDataProvider,
   WSIViewportV2,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,

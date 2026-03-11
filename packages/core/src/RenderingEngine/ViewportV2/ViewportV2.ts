@@ -36,7 +36,7 @@ abstract class ViewportV2<
     dataId: DataId,
     options: DataAttachmentOptions
   ): Promise<RenderingId> {
-    const data = await this.dataProvider.load(dataId);
+    const data = await this.dataProvider.load(dataId, options);
     return this.attachLoadedData(dataId, data, options);
   }
 

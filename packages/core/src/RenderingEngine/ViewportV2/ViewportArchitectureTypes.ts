@@ -3,8 +3,8 @@ import type { Point2, Point3 } from '../../types';
 export type ViewportId = string;
 export type DataId = string;
 export type RenderingId = string;
-export type ViewportKind = 'planar' | 'video' | 'ecg' | string;
-export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi';
+export type ViewportKind = 'planar' | 'video' | 'ecg' | 'wsi' | '3d' | string;
+export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi' | 'geometry';
 
 export interface DataAttachmentOptions {
   renderMode: string;
