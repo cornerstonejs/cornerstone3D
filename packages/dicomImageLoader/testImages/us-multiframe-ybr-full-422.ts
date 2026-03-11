@@ -13,6 +13,7 @@ const CALIBRATION_MODULE = {
       referencePixelY0: null,
       referencePhysicalPixelValueX: undefined,
       referencePhysicalPixelValueY: undefined,
+      transducerFrequency: undefined,
       regionDataType: 1,
       regionFlags: 2,
       regionLocationMaxX1: 788,
