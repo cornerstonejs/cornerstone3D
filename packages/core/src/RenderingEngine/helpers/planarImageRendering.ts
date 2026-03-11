@@ -45,8 +45,16 @@ export function createEmptyVTKImageData(args: {
     pixelArray,
     spacing,
   } = args;
-  const values = Array.from(pixelArray);
+  const values =
+    ArrayBuffer.isView(pixelArray) && !(pixelArray instanceof DataView)
+      ? pixelArray
+      : Array.from(pixelArray);
+  const dataType =
+    ArrayBuffer.isView(values) && !(values instanceof DataView)
+      ? vtkDataArray.getDataType(values as never)
+      : undefined;
   const scalarArray = vtkDataArray.newInstance({
+    ...(dataType ? { dataType } : {}),
     name: 'Pixels',
     numberOfComponents,
     values,

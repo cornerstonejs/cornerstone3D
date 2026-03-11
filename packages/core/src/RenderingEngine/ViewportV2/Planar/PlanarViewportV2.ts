@@ -1,6 +1,14 @@
-import { OrientationAxis } from '../../../enums';
+import { OrientationAxis, ViewportType } from '../../../enums';
+import type {
+  ICamera,
+  ReferenceCompatibleOptions,
+  ViewReference,
+  ViewReferenceSpecifier,
+} from '../../../types';
+import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import * as metaData from '../../../metaData';
+import imageIdToURI from '../../../utilities/imageIdToURI';
 import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAttachmentOptions } from '../ViewportArchitectureTypes';
@@ -15,6 +23,14 @@ import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
+import {
+  getPlanarCompatibilityCamera,
+  getPlanarReferencedImageId,
+  getPlanarViewReference,
+  getPlanarViewReferenceId,
+  isPlanarPlaneViewable,
+  isPlanarReferenceViewable,
+} from './planarViewportCompatibility';
 import type {
   PlanarCamera,
   PlanarEffectiveRenderMode,
@@ -40,6 +56,7 @@ class PlanarViewportV2 extends ViewportV2<
   PlanarViewportRenderContext
 > {
   readonly kind = 'planar' as const;
+  readonly type = ViewportType.PLANAR_V2;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
@@ -91,14 +108,25 @@ class PlanarViewportV2 extends ViewportV2<
     }
 
     const vtkCanvas = args.canvas;
+    const viewportElement = this.element.querySelector(
+      '.viewport-element'
+    ) as HTMLDivElement | null;
 
     const cpuCanvas = document.createElement('canvas');
     cpuCanvas.style.display = 'none';
     cpuCanvas.style.height = '100%';
     cpuCanvas.style.inset = '0';
+    cpuCanvas.style.pointerEvents = 'none';
     cpuCanvas.style.position = 'absolute';
     cpuCanvas.style.width = '100%';
+    cpuCanvas.style.zIndex = '0';
     this.element.appendChild(cpuCanvas);
+
+    if (viewportElement) {
+      viewportElement.style.position =
+        viewportElement.style.position || 'relative';
+      viewportElement.style.zIndex = '1';
+    }
 
     const cpuCanvasContext = cpuCanvas.getContext('2d');
 
@@ -236,11 +264,101 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   getCurrentImageId(): string | undefined {
-    return this.getImageIds()[this.getCurrentImageIdIndex()];
+    return getPlanarReferencedImageId({
+      camera: this.camera,
+      rendering: this.getCurrentBinding()?.rendering as
+        | PlanarRendering
+        | undefined,
+      renderContext: this.renderContext,
+    });
   }
 
   getSliceIndex(): number {
     return this.getCurrentImageIdIndex();
+  }
+
+  getCamera(): PlanarCamera & ICamera {
+    return this.getCompatibilityCamera();
+  }
+
+  getRenderingEngine() {
+    return renderingEngineCache.get(this.renderingEngineId);
+  }
+
+  getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    return getPlanarViewReference({
+      camera: this.camera,
+      frameOfReferenceUID: this.getFrameOfReferenceUID(),
+      rendering: this.getCurrentBinding()?.rendering as
+        | PlanarRendering
+        | undefined,
+      renderContext: this.renderContext,
+      viewRefSpecifier,
+    });
+  }
+
+  getViewReferenceId(viewRefSpecifier: ViewReferenceSpecifier = {}): string {
+    return getPlanarViewReferenceId({
+      camera: this.camera,
+      rendering: this.getCurrentBinding()?.rendering as
+        | PlanarRendering
+        | undefined,
+      renderContext: this.renderContext,
+      viewRefSpecifier,
+    });
+  }
+
+  getImageData() {
+    return this.getCurrentBinding()?.getImageData?.();
+  }
+
+  hasImageId(imageId: string): boolean {
+    return this.getImageIds().includes(imageId);
+  }
+
+  hasImageURI(imageURI: string): boolean {
+    return this.getImageIds().some(
+      (imageId) => imageIdToURI(imageId) === imageURI
+    );
+  }
+
+  hasVolumeId(volumeId: string): boolean {
+    return this.getVolumeId() === volumeId;
+  }
+
+  isPlaneViewable(
+    planeRestriction: PlaneRestriction,
+    options?: ReferenceCompatibleOptions
+  ): boolean {
+    return isPlanarPlaneViewable({
+      camera: this.camera,
+      frameOfReferenceUID: this.getFrameOfReferenceUID(),
+      options,
+      planeRestriction,
+      rendering: this.getCurrentBinding()?.rendering as
+        | PlanarRendering
+        | undefined,
+      renderContext: this.renderContext,
+    });
+  }
+
+  isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    return isPlanarReferenceViewable({
+      camera: this.camera,
+      frameOfReferenceUID: this.getFrameOfReferenceUID(),
+      imageIds: this.getImageIds(),
+      options,
+      rendering: this.getCurrentBinding()?.rendering as
+        | PlanarRendering
+        | undefined,
+      renderContext: this.renderContext,
+      viewRef,
+    });
   }
 
   setProperties(
@@ -421,6 +539,16 @@ class PlanarViewportV2 extends ViewportV2<
     }
 
     return candidate;
+  }
+
+  private getCompatibilityCamera(): PlanarCamera & ICamera {
+    return getPlanarCompatibilityCamera({
+      camera: this.camera,
+      rendering: this.getCurrentBinding()?.rendering as
+        | PlanarRendering
+        | undefined,
+      renderContext: this.renderContext,
+    });
   }
 }
 

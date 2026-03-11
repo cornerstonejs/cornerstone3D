@@ -152,6 +152,7 @@ export interface PlanarCameraState {
 export interface PlanarImageMapperRendering
   extends MountedRendering<{
     actor: vtkImageSlice;
+    currentImage: IImage;
     mapper: vtkImageMapper;
     imageData: vtkImageData;
     payload: PlanarPayload;

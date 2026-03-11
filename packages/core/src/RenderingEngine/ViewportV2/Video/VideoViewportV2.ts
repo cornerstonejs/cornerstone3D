@@ -1,6 +1,7 @@
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import type { Point2 } from '../../../types';
+import { ViewportType } from '../../../enums';
 import {
   frameNumberToTimeSeconds,
   timeSecondsToFrameNumber,
@@ -26,11 +27,20 @@ class VideoViewportV2 extends ViewportV2<
   VideoElementRenderContext
 > {
   readonly kind = 'video' as const;
+  readonly type = ViewportType.VIDEO;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
 
   protected renderContext: VideoElementRenderContext;
+
+  static get useCustomRenderingPipeline(): boolean {
+    return true;
+  }
+
+  getUseCustomRenderingPipeline(): boolean {
+    return true;
+  }
 
   constructor(args: VideoViewportV2Input) {
     super();

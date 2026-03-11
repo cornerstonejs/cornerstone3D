@@ -1,6 +1,7 @@
 import { getOrCreateCanvas } from '../../helpers';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
+import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
 import { CanvasECGPath } from './CanvasECGRenderingAdapter';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
@@ -23,6 +24,7 @@ class ECGViewportV2 extends ViewportV2<
   ECGCanvasRenderContext
 > {
   readonly kind = 'ecg' as const;
+  readonly type = ViewportType.ECG;
   readonly id: string;
 
   readonly element: HTMLDivElement;
@@ -31,6 +33,14 @@ class ECGViewportV2 extends ViewportV2<
   readonly canvasContext: CanvasRenderingContext2D;
 
   protected renderContext: ECGCanvasRenderContext;
+
+  static get useCustomRenderingPipeline(): boolean {
+    return true;
+  }
+
+  getUseCustomRenderingPipeline(): boolean {
+    return true;
+  }
 
   constructor(args: ECGViewportV2Input) {
     super();

@@ -5,7 +5,7 @@ import { RENDERING_DEFAULTS } from '../../../constants';
 import { Events, OrientationAxis } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import createVolumeActor from '../../helpers/createVolumeActor';
-import type { Point2, Point3, VOIRange } from '../../../types';
+import type { IImageData, Point2, Point3, VOIRange } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
 import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
@@ -133,8 +133,7 @@ export class VtkVolumeMapperRenderingAdapter
   ): void {
     const planarRendering = rendering as PlanarVolumeMapperRendering;
     const planarCamera = camera as PlanarCamera | undefined;
-    const nextImageIdIndex =
-      planarCamera?.imageIdIndex ?? planarRendering.runtime.currentImageIdIndex;
+    const nextImageIdIndex = planarCamera?.imageIdIndex;
     const nextOrientation =
       planarCamera?.orientation ?? planarRendering.runtime.orientation;
 
@@ -144,8 +143,15 @@ export class VtkVolumeMapperRenderingAdapter
       applyOrientation(ctx, planarRendering, nextOrientation);
     }
 
-    if (nextImageIdIndex !== planarRendering.runtime.currentImageIdIndex) {
-      setSliceIndex(ctx, planarRendering, nextImageIdIndex);
+    if (
+      (nextImageIdIndex ?? planarRendering.runtime.currentImageIdIndex) !==
+      planarRendering.runtime.currentImageIdIndex
+    ) {
+      setSliceIndex(
+        ctx,
+        planarRendering,
+        nextImageIdIndex ?? planarRendering.runtime.currentImageIdIndex
+      );
     } else {
       setCameraState(ctx, planarRendering.runtime.sliceCamera);
     }
@@ -202,6 +208,15 @@ export class VtkVolumeMapperRenderingAdapter
   ): string | undefined {
     return (rendering as PlanarVolumeMapperRendering).runtime.imageVolume
       .metadata?.FrameOfReferenceUID;
+  }
+
+  getImageData(
+    _ctx: PlanarVtkVolumeAdapterContext,
+    rendering: MountedRendering
+  ): IImageData | undefined {
+    return buildPlanarVolumeImageData(
+      (rendering as PlanarVolumeMapperRendering).runtime.imageVolume
+    );
   }
 
   render(ctx: PlanarVtkVolumeAdapterContext): void {
@@ -561,4 +576,30 @@ function setSliceIndex(
   rendering.runtime.currentImageIdIndex = clampedImageIdIndex;
   rendering.runtime.maxImageIdIndex = maxImageIdIndex;
   rendering.runtime.sliceCamera = getCameraState(ctx);
+}
+
+function buildPlanarVolumeImageData(imageVolume): IImageData | undefined {
+  const vtkImageData = imageVolume.imageData;
+
+  if (!vtkImageData) {
+    return;
+  }
+
+  return {
+    dimensions: vtkImageData.getDimensions(),
+    spacing: vtkImageData.getSpacing(),
+    origin: vtkImageData.getOrigin(),
+    direction: vtkImageData.getDirection(),
+    imageData: vtkImageData,
+    metadata: {
+      Modality: imageVolume.metadata?.Modality,
+      FrameOfReferenceUID: imageVolume.metadata?.FrameOfReferenceUID,
+    },
+    get scalarData() {
+      return imageVolume.voxelManager?.getScalarData();
+    },
+    scaling: imageVolume.scaling,
+    hasPixelSpacing: imageVolume.hasPixelSpacing,
+    voxelManager: imageVolume.voxelManager,
+  };
 }

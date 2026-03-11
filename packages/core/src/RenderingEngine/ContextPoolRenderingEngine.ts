@@ -84,9 +84,11 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     element.tabIndex = -1;
 
     // Assign viewport to a context
-    // Stack-like 2D viewports get distributed across contexts, all others use context 0
+    // Stack viewports can be distributed across contexts. Planar V2 may mount
+    // volume-backed GPU renderings, which cannot safely share volume textures
+    // across WebGL contexts.
     let contextIndex = 0;
-    if (type === ViewportType.STACK || type === ViewportType.PLANAR_V2) {
+    if (type === ViewportType.STACK) {
       const contexts = this.contextPool.getAllContexts();
       contextIndex = this._viewports.size % contexts.length;
     }

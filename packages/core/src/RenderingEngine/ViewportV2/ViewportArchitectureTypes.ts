@@ -81,6 +81,8 @@ export interface RenderingAdapter<
     rendering: MountedRendering
   ): string | undefined;
 
+  getImageData?(ctx: TContext, rendering: MountedRendering): unknown;
+
   render?(ctx: TContext, rendering: MountedRendering): void;
 
   resize?(ctx: TContext, rendering: MountedRendering): void;
@@ -130,6 +132,7 @@ export interface RenderingBinding<TPresentation = unknown> {
   canvasToWorld?(canvasPos: Point2): Point3;
   worldToCanvas?(worldPos: Point3): Point2;
   getFrameOfReferenceUID?(): string | undefined;
+  getImageData?(): unknown;
   render?(): void;
   resize?(): void;
   detach(): void;

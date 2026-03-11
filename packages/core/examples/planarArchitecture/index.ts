@@ -45,19 +45,6 @@ function getOrientationParam(): PlanarOrientation {
   return Enums.OrientationAxis.AXIAL;
 }
 
-function getNumberParam(name: string): number | undefined {
-  const searchParams = new URLSearchParams(window.location.search);
-  const value = searchParams.get(name);
-
-  if (value == null) {
-    return;
-  }
-
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
@@ -66,43 +53,18 @@ const viewportId = 'planarViewportV2';
 const dataId = 'ct-planar';
 const toolGroupId = 'planarViewportV2Tools';
 let currentOrientation = getOrientationParam();
-const cpuImageThreshold = getNumberParam('cpuImageThreshold');
-const cpuVolumeThreshold = getNumberParam('cpuVolumeThreshold');
-
-function getCpuThresholds() {
-  if (cpuImageThreshold === undefined && cpuVolumeThreshold === undefined) {
-    return;
-  }
-
-  return {
-    ...(cpuImageThreshold !== undefined ? { image: cpuImageThreshold } : {}),
-    ...(cpuVolumeThreshold !== undefined ? { volume: cpuVolumeThreshold } : {}),
-  };
-}
 
 function syncExampleUrl(): void {
   const nextUrl = new URL(window.location.href);
 
   nextUrl.searchParams.set('orientation', currentOrientation);
 
-  if (cpuImageThreshold === undefined) {
-    nextUrl.searchParams.delete('cpuImageThreshold');
-  } else {
-    nextUrl.searchParams.set('cpuImageThreshold', String(cpuImageThreshold));
-  }
-
-  if (cpuVolumeThreshold === undefined) {
-    nextUrl.searchParams.delete('cpuVolumeThreshold');
-  } else {
-    nextUrl.searchParams.set('cpuVolumeThreshold', String(cpuVolumeThreshold));
-  }
-
   window.history.replaceState({}, '', nextUrl);
 }
 
 setTitleAndDescription(
   'Planar Viewport Architecture POC',
-  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=acquisition|axial|coronal|sagittal&cpuImageThreshold=100000&cpuVolumeThreshold=100000'
+  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=acquisition|axial|coronal|sagittal&cpu=true'
 );
 
 // ======== Set up page ======== //
@@ -123,7 +85,7 @@ content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Use the toolbar to change orientation. Interaction tools: mouse wheel scrolls slices, middle-drag pans, right-drag zooms. Acquisition uses the image paths, axial/coronal/sagittal use the volume paths. You can also set cpuImageThreshold and cpuVolumeThreshold in the URL.';
+  'Use the toolbar to change orientation. Interaction tools: mouse wheel scrolls slices, middle-drag pans, right-drag zooms. Acquisition uses the image paths, axial/coronal/sagittal use the volume paths. Add cpu=true in the URL to force the CPU paths.';
 
 content.append(instructions);
 // ============================= //
@@ -150,7 +112,6 @@ function addToolbar() {
 
       void viewport.setDataIds([dataId], {
         orientation: nextOrientation,
-        cpuThresholds: getCpuThresholds(),
       });
     },
   });
@@ -197,9 +158,6 @@ async function run() {
     },
   });
   viewport = renderingEngine.getViewport(viewportId) as PlanarViewportV2;
-  (
-    window as Window & { planarViewportV2?: PlanarViewportV2 }
-  ).planarViewportV2 = viewport;
   toolGroup.addViewport(viewportId, renderingEngine.id);
 
   utilities.viewportV2DataSetMetadataProvider.add(dataId, {
@@ -207,7 +165,6 @@ async function run() {
   });
   await viewport.setDataIds([dataId], {
     orientation: currentOrientation,
-    cpuThresholds: getCpuThresholds(),
   });
   viewport.setProperties({
     voiRange: ctVoiRange,

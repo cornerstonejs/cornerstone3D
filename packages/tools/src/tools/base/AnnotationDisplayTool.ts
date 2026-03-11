@@ -189,14 +189,10 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp, position: cameraPosition } = camera;
 
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
     const viewReference = viewport.getViewReference({ points: [worldPos] });
+    const referencedImageId =
+      viewReference.referencedImageId ||
+      this.getReferencedImageId(viewport, worldPos, viewPlaneNormal, viewUp);
 
     const annotation = AnnotationDisplayTool.createAnnotation(
       {

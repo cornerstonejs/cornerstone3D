@@ -1,5 +1,6 @@
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
+import { ViewportType } from '../../../enums';
 import type {
   WSIClientLike,
   WSIMapLike,
@@ -25,11 +26,20 @@ class WSIViewportV2 extends ViewportV2<
   WSIViewportRenderContext
 > {
   readonly kind = 'wsi' as const;
+  readonly type = ViewportType.WHOLE_SLIDE;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
 
   protected renderContext: WSIViewportRenderContext;
+
+  static get useCustomRenderingPipeline(): boolean {
+    return true;
+  }
+
+  getUseCustomRenderingPipeline(): boolean {
+    return true;
+  }
 
   constructor(args: WSIViewportV2Input) {
     super();

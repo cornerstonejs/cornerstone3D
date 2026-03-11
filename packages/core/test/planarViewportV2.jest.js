@@ -1,4 +1,5 @@
 jest.mock('../src/init', () => ({
+  getConfiguration: jest.fn(),
   getShouldUseCPURendering: jest.fn(),
 }));
 
@@ -16,7 +17,7 @@ jest.mock('../src/loaders/imageLoader', () => ({
 }));
 
 jest.mock('../src/loaders/volumeLoader', () => ({
-  createAndCacheVolumeFromImages: jest.fn(),
+  createAndCacheVolume: jest.fn(),
 }));
 
 jest.mock('../src/utilities/VideoUtilities', () => ({
@@ -34,10 +35,10 @@ jest.mock('../src/utilities/WSIUtilities', () => ({
 
 import cache from '../src/cache/cache';
 import { OrientationAxis } from '../src/enums';
-import { getShouldUseCPURendering } from '../src/init';
+import { getConfiguration, getShouldUseCPURendering } from '../src/init';
 import * as metaData from '../src/metaData';
 import { loadAndCacheImage } from '../src/loaders/imageLoader';
-import { createAndCacheVolumeFromImages } from '../src/loaders/volumeLoader';
+import { createAndCacheVolume } from '../src/loaders/volumeLoader';
 import { loadVideoStreamMetadata } from '../src/utilities/VideoUtilities';
 import { loadECGWaveform } from '../src/utilities/ECGUtilities';
 import {
@@ -51,6 +52,7 @@ import {
   DefaultECGDataProvider,
   DefaultWSIDataProvider,
 } from '../src/RenderingEngine/ViewportV2';
+import { CpuVolumeSliceRenderingAdapter } from '../src/RenderingEngine/ViewportV2/Planar/CpuVolumeSliceRenderingAdapter';
 import {
   DEFAULT_PLANAR_CPU_VOXEL_THRESHOLD,
   selectPlanarRenderPath,
@@ -61,6 +63,7 @@ const VIEWPORT_V2_DATA_SET = 'viewportV2DataSet';
 describe('PlanarViewportV2 path selection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getConfiguration.mockReturnValue({});
     getShouldUseCPURendering.mockReturnValue(false);
     isValidVolume.mockReturnValue(true);
     metaData.get.mockImplementation((type) => {
@@ -101,7 +104,9 @@ describe('PlanarViewportV2 path selection', () => {
         }),
       },
       {
-        cpuVoxelThreshold: 100000,
+        cpuThresholds: {
+          image: 100000,
+        },
         orientation: OrientationAxis.AXIAL,
       }
     );
@@ -167,8 +172,8 @@ describe('DefaultPlanarDataProvider', () => {
     });
 
     expect(loadAndCacheImage).toHaveBeenCalledWith('image-2');
-    expect(createAndCacheVolumeFromImages).not.toHaveBeenCalled();
-    expect(data.kind).toBe('imageStack');
+    expect(createAndCacheVolume).not.toHaveBeenCalled();
+    expect(data.type).toBe('image');
     expect(data.payload.initialImage).toBe(image);
   });
 
@@ -186,7 +191,7 @@ describe('DefaultPlanarDataProvider', () => {
         };
       }
     });
-    createAndCacheVolumeFromImages.mockResolvedValue(volume);
+    createAndCacheVolume.mockResolvedValue(volume);
 
     const data = await provider.load('ct-planar', {
       acquisitionOrientation: OrientationAxis.AXIAL,
@@ -195,13 +200,54 @@ describe('DefaultPlanarDataProvider', () => {
       volumeId: 'volume-1',
     });
 
-    expect(createAndCacheVolumeFromImages).toHaveBeenCalledWith('volume-1', [
-      'image-1',
-      'image-2',
-      'image-3',
-    ]);
-    expect(data.kind).toBe('imageVolume');
+    expect(createAndCacheVolume).toHaveBeenCalledWith(
+      'cornerstoneStreamingImageVolume:volume-1',
+      {
+        imageIds: ['image-1', 'image-2', 'image-3'],
+      }
+    );
+    expect(data.type).toBe('image');
     expect(data.payload.imageVolume).toBe(volume);
+  });
+});
+
+describe('CpuVolumeSliceRenderingAdapter', () => {
+  it('does not force slice resampling when properties are replayed unchanged', () => {
+    const adapter = new CpuVolumeSliceRenderingAdapter();
+    const rendering = {
+      runtime: {
+        properties: {
+          interpolationType: 'linear',
+        },
+        renderingInvalidated: false,
+      },
+    };
+
+    adapter.updateProperties(undefined, rendering, {
+      interpolationType: 'linear',
+    });
+
+    expect(rendering.runtime.renderingInvalidated).toBe(false);
+  });
+
+  it('does not force slice resampling when presentation is replayed', () => {
+    const adapter = new CpuVolumeSliceRenderingAdapter();
+    const rendering = {
+      runtime: {
+        presentation: {
+          visible: true,
+          opacity: 1,
+        },
+        renderingInvalidated: false,
+      },
+    };
+
+    adapter.updatePresentation(undefined, rendering, {
+      visible: true,
+      opacity: 1,
+    });
+
+    expect(rendering.runtime.renderingInvalidated).toBe(false);
   });
 });
 

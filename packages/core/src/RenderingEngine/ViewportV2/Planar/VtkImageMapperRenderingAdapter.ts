@@ -3,7 +3,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { InterpolationType, MetadataModules } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
-import type { IImage, Point3 } from '../../../types';
+import type { CPUIImageData, IImage, Point3 } from '../../../types';
 import type { Point2 } from '../../../types';
 import {
   applyPlanarImagePresentation,
@@ -33,6 +33,7 @@ import {
   getCpuEquivalentParallelScale,
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
+import { buildPlanarImageData } from './CpuImageCanvasRenderingAdapter';
 
 export class VtkImageMapperRenderingAdapter
   implements RenderingAdapter<PlanarVtkImageAdapterContext>
@@ -68,6 +69,7 @@ export class VtkImageMapperRenderingAdapter
       renderMode: 'vtkImage',
       runtime: {
         actor,
+        currentImage: payload.initialImage,
         mapper,
         imageData,
         payload,
@@ -203,6 +205,18 @@ export class VtkImageMapperRenderingAdapter
     return imagePlaneModule?.frameOfReferenceUID;
   }
 
+  getImageData(
+    ctx: PlanarVtkImageAdapterContext,
+    rendering: MountedRendering
+  ): CPUIImageData | undefined {
+    const planarRendering = rendering as PlanarImageMapperRendering;
+
+    return buildPlanarImageData(
+      planarRendering.runtime.currentImage,
+      this.getFrameOfReferenceUID(ctx, rendering)
+    );
+  }
+
   detach(ctx: PlanarVtkImageAdapterContext, rendering: MountedRendering): void {
     const { actor } = (rendering as PlanarImageMapperRendering).runtime;
 
@@ -264,6 +278,7 @@ async function updateRenderedImage(args: {
   const imageData = createVTKImageDataFromImage(image);
 
   mapper.setInputData(imageData);
+  rendering.runtime.currentImage = image;
   rendering.runtime.imageData = imageData;
   rendering.runtime.currentImageIdIndex = imageIdIndex;
   rendering.runtime.defaultVOIRange = getDefaultImageVOIRange(image);

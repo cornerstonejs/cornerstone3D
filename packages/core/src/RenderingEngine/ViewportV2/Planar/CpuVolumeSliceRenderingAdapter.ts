@@ -6,7 +6,7 @@ import { RENDERING_DEFAULTS } from '../../../constants';
 import Events from '../../../enums/Events';
 import { OrientationAxis } from '../../../enums';
 import eventTarget from '../../../eventTarget';
-import type { ICamera, Point2, Point3 } from '../../../types';
+import type { ICamera, IImageData, Point2, Point3 } from '../../../types';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import {
@@ -118,7 +118,6 @@ export class CpuVolumeSliceRenderingAdapter
   ): void {
     (rendering as PlanarCpuVolumeRendering).runtime.presentation =
       props as PlanarCpuVolumeRendering['runtime']['presentation'];
-    (rendering as PlanarCpuVolumeRendering).runtime.renderingInvalidated = true;
   }
 
   updateCamera(
@@ -143,7 +142,6 @@ export class CpuVolumeSliceRenderingAdapter
   ): void {
     (rendering as PlanarCpuVolumeRendering).runtime.properties =
       props as PlanarCpuVolumeRendering['runtime']['properties'];
-    (rendering as PlanarCpuVolumeRendering).runtime.renderingInvalidated = true;
   }
 
   canvasToWorld(
@@ -176,6 +174,15 @@ export class CpuVolumeSliceRenderingAdapter
   ): string | undefined {
     return (rendering as PlanarCpuVolumeRendering).runtime.imageVolume.metadata
       ?.FrameOfReferenceUID;
+  }
+
+  getImageData(
+    _ctx: PlanarCpuVolumeAdapterContext,
+    rendering: MountedRendering
+  ): IImageData | undefined {
+    return buildPlanarVolumeImageData(
+      (rendering as PlanarCpuVolumeRendering).runtime.imageVolume
+    );
   }
 
   render(
@@ -214,7 +221,7 @@ export class CpuVolumeSliceRenderingAdapter
       return;
     }
 
-    const camera = getCPUViewportCamera(ctx, planarRendering);
+    const camera = getCpuVolumeCompatibilityCamera(ctx, planarRendering);
     const shouldResample =
       runtime.renderingInvalidated ||
       this.sampler.needsResample({
@@ -367,7 +374,7 @@ function getSliceNavigationCamera(ctx: PlanarCpuVolumeAdapterContext): ICamera {
   };
 }
 
-function getCPUViewportCamera(
+export function getCpuVolumeCompatibilityCamera(
   ctx: PlanarCpuVolumeAdapterContext,
   rendering: PlanarCpuVolumeRendering
 ): ICamera {
@@ -633,8 +640,7 @@ function syncVolumeSliceState(
   } = {}
 ): void {
   const { camera, forceSliceResync = false } = options;
-  const nextImageIdIndex =
-    camera?.imageIdIndex ?? rendering.runtime.currentImageIdIndex;
+  const nextImageIdIndex = camera?.imageIdIndex;
   const nextOrientation = camera?.orientation ?? rendering.runtime.orientation;
 
   if (nextOrientation !== rendering.runtime.orientation) {
@@ -644,9 +650,14 @@ function syncVolumeSliceState(
 
   if (
     forceSliceResync ||
-    nextImageIdIndex !== rendering.runtime.currentImageIdIndex
+    (nextImageIdIndex ?? rendering.runtime.currentImageIdIndex) !==
+      rendering.runtime.currentImageIdIndex
   ) {
-    setSliceIndex(ctx, rendering, nextImageIdIndex);
+    setSliceIndex(
+      ctx,
+      rendering,
+      nextImageIdIndex ?? rendering.runtime.currentImageIdIndex
+    );
     rendering.runtime.renderingInvalidated = true;
   } else {
     setCameraState(ctx, rendering.runtime.sliceCamera);
@@ -661,4 +672,30 @@ function clearToBackground(ctx: PlanarCpuVolumeAdapterContext): void {
   ctx.cpu.context.clearRect(0, 0, ctx.cpu.canvas.width, ctx.cpu.canvas.height);
   ctx.cpu.context.fillStyle = '#000';
   ctx.cpu.context.fillRect(0, 0, ctx.cpu.canvas.width, ctx.cpu.canvas.height);
+}
+
+function buildPlanarVolumeImageData(imageVolume): IImageData | undefined {
+  const vtkImageData = imageVolume.imageData;
+
+  if (!vtkImageData) {
+    return;
+  }
+
+  return {
+    dimensions: vtkImageData.getDimensions(),
+    spacing: vtkImageData.getSpacing(),
+    origin: vtkImageData.getOrigin(),
+    direction: vtkImageData.getDirection(),
+    imageData: vtkImageData,
+    metadata: {
+      Modality: imageVolume.metadata?.Modality,
+      FrameOfReferenceUID: imageVolume.metadata?.FrameOfReferenceUID,
+    },
+    get scalarData() {
+      return imageVolume.voxelManager?.getScalarData();
+    },
+    scaling: imageVolume.scaling,
+    hasPixelSpacing: imageVolume.hasPixelSpacing,
+    voxelManager: imageVolume.voxelManager,
+  };
 }

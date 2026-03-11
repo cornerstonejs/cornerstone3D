@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTransform';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
@@ -5,9 +6,12 @@ import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { InterpolationType, MetadataModules } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
+import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { toLowHighRange, toWindowLevel } from '../../../utilities/windowLevel';
 import type {
+  CPUIImageData,
   CPUFallbackEnabledElement,
+  ICamera,
   IImage,
   Point2,
   Point3,
@@ -193,6 +197,23 @@ export class CpuImageCanvasRenderingAdapter
     return imagePlaneModule?.frameOfReferenceUID;
   }
 
+  getImageData(
+    _ctx: PlanarCpuImageAdapterContext,
+    rendering: MountedRendering
+  ): CPUIImageData | undefined {
+    const planarRendering = rendering as PlanarCpuImageRendering;
+    const image = planarRendering.runtime.enabledElement.image;
+
+    if (!image) {
+      return;
+    }
+
+    return buildPlanarImageData(
+      image,
+      this.getFrameOfReferenceUID(_ctx, rendering)
+    );
+  }
+
   render(
     _ctx: PlanarCpuImageAdapterContext,
     rendering: MountedRendering
@@ -327,6 +348,119 @@ function applyCameraState(
   };
 
   enabledElement.transform = calculateTransform(enabledElement);
+}
+
+export function buildPlanarImageData(
+  image: IImage,
+  frameOfReferenceUID?: string
+): CPUIImageData {
+  const metadata = getImageDataMetadata(image);
+  const { calibration, dimensions, direction, modality, origin, spacing } =
+    metadata;
+  const rowVector = direction.slice(0, 3) as Point3;
+  const columnVector = direction.slice(3, 6) as Point3;
+  const scalarData =
+    image.voxelManager?.getScalarData() || image.getPixelData?.();
+
+  return {
+    dimensions,
+    spacing,
+    origin,
+    direction,
+    metadata: {
+      Modality: modality,
+      FrameOfReferenceUID: frameOfReferenceUID,
+    },
+    imageData: {
+      getDirection: () => direction,
+      getDimensions: () => dimensions,
+      getScalarData: () => scalarData,
+      getSpacing: () => spacing,
+      worldToIndex: (point: Point3) => {
+        const diff = vec3.subtract(
+          vec3.create(),
+          point as unknown as vec3,
+          origin as unknown as vec3
+        );
+
+        return [
+          vec3.dot(diff, rowVector as unknown as vec3) / spacing[0],
+          vec3.dot(diff, columnVector as unknown as vec3) / spacing[1],
+          0,
+        ] as Point3;
+      },
+      indexToWorld: (point: Point3) => {
+        const worldPoint = [...origin] as Point3;
+
+        vec3.scaleAndAdd(
+          worldPoint as unknown as vec3,
+          worldPoint as unknown as vec3,
+          rowVector as unknown as vec3,
+          point[0] * spacing[0]
+        );
+        vec3.scaleAndAdd(
+          worldPoint as unknown as vec3,
+          worldPoint as unknown as vec3,
+          columnVector as unknown as vec3,
+          point[1] * spacing[1]
+        );
+
+        return worldPoint;
+      },
+    },
+    scalarData,
+    scaling: image.scaling,
+    hasPixelSpacing: Boolean(image.rowPixelSpacing || image.columnPixelSpacing),
+    calibration,
+    preScale: image.preScale,
+    voxelManager: image.voxelManager,
+  };
+}
+
+export function getPlanarCpuImageCompatibilityCamera(args: {
+  camera?: PlanarCamera;
+  image?: IImage;
+}): PlanarCamera & ICamera {
+  const { camera, image } = args;
+  const nextCamera = { ...(camera || {}) };
+
+  if (!image) {
+    return nextCamera;
+  }
+
+  const { direction, dimensions, origin, spacing } =
+    getImageDataMetadata(image);
+  const rowVector = direction.slice(0, 3) as Point3;
+  const columnVector = direction.slice(3, 6) as Point3;
+  const viewPlaneNormal = direction.slice(6, 9) as Point3;
+  const viewUp = direction.slice(3, 6) as Point3;
+  const focalPoint = [...origin] as Point3;
+
+  vec3.scaleAndAdd(
+    focalPoint as unknown as vec3,
+    focalPoint as unknown as vec3,
+    rowVector as unknown as vec3,
+    ((dimensions[0] - 1) * spacing[0]) / 2
+  );
+  vec3.scaleAndAdd(
+    focalPoint as unknown as vec3,
+    focalPoint as unknown as vec3,
+    columnVector as unknown as vec3,
+    ((dimensions[1] - 1) * spacing[1]) / 2
+  );
+
+  return {
+    ...nextCamera,
+    focalPoint,
+    position: vec3.subtract(
+      vec3.create(),
+      focalPoint as unknown as vec3,
+      viewPlaneNormal as unknown as vec3
+    ) as Point3,
+    parallelProjection: true,
+    viewPlaneNormal,
+    viewUp,
+  };
 }
 
 function renderCPUImage(rendering: PlanarCpuImageRendering): void {

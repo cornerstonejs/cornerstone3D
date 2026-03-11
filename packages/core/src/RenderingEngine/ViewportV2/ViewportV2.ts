@@ -92,6 +92,11 @@ abstract class ViewportV2<
             return adapter.getFrameOfReferenceUID?.(adapterContext, rendering);
           }
         : undefined,
+      getImageData: adapter.getImageData
+        ? () => {
+            return adapter.getImageData?.(adapterContext, rendering);
+          }
+        : undefined,
       render: adapter.render
         ? () => {
             adapter.render?.(adapterContext, rendering);
