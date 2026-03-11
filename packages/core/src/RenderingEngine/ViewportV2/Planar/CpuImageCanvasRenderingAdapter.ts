@@ -2,12 +2,15 @@ import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTra
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
-import { InterpolationType } from '../../../enums';
+import { InterpolationType, MetadataModules } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import * as metaData from '../../../metaData';
 import { toLowHighRange, toWindowLevel } from '../../../utilities/windowLevel';
 import type {
   CPUFallbackEnabledElement,
   IImage,
+  Point2,
+  Point3,
   VOIRange,
 } from '../../../types';
 import type {
@@ -26,6 +29,10 @@ import type {
   PlanarViewportRenderContext,
   PlanarProperties,
 } from './PlanarViewportV2Types';
+import {
+  canvasToWorldCPUImage,
+  worldToCanvasCPUImage,
+} from './planarAdapterCoordinateTransforms';
 
 export class CpuImageCanvasRenderingAdapter
   implements RenderingAdapter<PlanarCpuImageAdapterContext>
@@ -131,6 +138,59 @@ export class CpuImageCanvasRenderingAdapter
       rendering as PlanarCpuImageRendering,
       presentation as PlanarProperties | undefined
     );
+  }
+
+  canvasToWorld(
+    _ctx: PlanarCpuImageAdapterContext,
+    rendering: MountedRendering,
+    canvasPos: Point2
+  ): Point3 {
+    const planarRendering = rendering as PlanarCpuImageRendering;
+    const image = planarRendering.runtime.enabledElement.image;
+
+    if (!image) {
+      return [0, 0, 0];
+    }
+
+    return canvasToWorldCPUImage(
+      planarRendering.runtime.enabledElement,
+      image,
+      canvasPos
+    );
+  }
+
+  worldToCanvas(
+    _ctx: PlanarCpuImageAdapterContext,
+    rendering: MountedRendering,
+    worldPos: Point3
+  ): Point2 {
+    const planarRendering = rendering as PlanarCpuImageRendering;
+    const image = planarRendering.runtime.enabledElement.image;
+
+    if (!image) {
+      return [0, 0];
+    }
+
+    return worldToCanvasCPUImage(
+      planarRendering.runtime.enabledElement,
+      image,
+      worldPos
+    );
+  }
+
+  getFrameOfReferenceUID(
+    _ctx: PlanarCpuImageAdapterContext,
+    rendering: MountedRendering
+  ): string | undefined {
+    const imageId = (rendering as PlanarCpuImageRendering).runtime
+      .enabledElement.image?.imageId;
+    const imagePlaneModule = imageId
+      ? (metaData.get(MetadataModules.IMAGE_PLANE, imageId) as
+          | { frameOfReferenceUID?: string }
+          | undefined)
+      : undefined;
+
+    return imagePlaneModule?.frameOfReferenceUID;
   }
 
   render(

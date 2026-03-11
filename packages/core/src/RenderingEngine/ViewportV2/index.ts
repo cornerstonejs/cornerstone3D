@@ -9,6 +9,10 @@ export type {
   DataAttachmentOptions,
   DataId,
   DataProvider,
+  ICanvasWorldViewport,
+  IFrameOfReferenceViewport,
+  IPanViewport,
+  IZoomViewport,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -20,6 +24,12 @@ export type {
   ViewportController,
   ViewportId,
   ViewportKind,
+} from './ViewportArchitectureTypes';
+export {
+  viewportHasCanvasWorldTransform,
+  viewportHasFrameOfReferenceUID,
+  viewportHasPan,
+  viewportHasZoom,
 } from './ViewportArchitectureTypes';
 export { default as ECGViewportV2 } from './ECG';
 export {

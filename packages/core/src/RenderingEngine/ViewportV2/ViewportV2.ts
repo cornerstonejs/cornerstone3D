@@ -1,3 +1,4 @@
+import type { Point2, Point3 } from '../../types';
 import type {
   BaseViewportRenderContext,
   DataAttachmentOptions,
@@ -72,6 +73,25 @@ abstract class ViewportV2<
       updateProperties: (properties) => {
         adapter.updateProperties(adapterContext, rendering, properties);
       },
+      canvasToWorld: adapter.canvasToWorld
+        ? (canvasPos) => {
+            return adapter.canvasToWorld?.(
+              adapterContext,
+              rendering,
+              canvasPos
+            );
+          }
+        : undefined,
+      worldToCanvas: adapter.worldToCanvas
+        ? (worldPos) => {
+            return adapter.worldToCanvas?.(adapterContext, rendering, worldPos);
+          }
+        : undefined,
+      getFrameOfReferenceUID: adapter.getFrameOfReferenceUID
+        ? () => {
+            return adapter.getFrameOfReferenceUID?.(adapterContext, rendering);
+          }
+        : undefined,
       render: adapter.render
         ? () => {
             adapter.render?.(adapterContext, rendering);
@@ -132,6 +152,42 @@ abstract class ViewportV2<
     return this.camera;
   }
 
+  getZoom(): number {
+    return (this.camera as { zoom?: number }).zoom ?? 1;
+  }
+
+  setZoom(zoom: number): void {
+    this.setCamera({
+      zoom: Math.max(zoom, 0.001),
+    } as unknown as Partial<TCamera>);
+  }
+
+  getPan(): Point2 {
+    const [x, y] = (this.camera as { pan?: [number, number] }).pan ?? [0, 0];
+    return [x, y];
+  }
+
+  setPan(pan: Point2): void {
+    this.setCamera({
+      pan: [pan[0], pan[1]],
+    } as unknown as Partial<TCamera>);
+  }
+
+  canvasToWorld(canvasPos: Point2): Point3 {
+    return this.getCurrentBinding()?.canvasToWorld?.(canvasPos) ?? [0, 0, 0];
+  }
+
+  worldToCanvas(worldPos: Point3): Point2 {
+    return this.getCurrentBinding()?.worldToCanvas?.(worldPos) ?? [0, 0];
+  }
+
+  getFrameOfReferenceUID(): string {
+    return (
+      this.getCurrentBinding()?.getFrameOfReferenceUID?.() ??
+      `${this.kind}-viewport-${this.id}`
+    );
+  }
+
   setProperties(props: Partial<TProperties>): void {
     this.properties = {
       ...this.properties,
@@ -159,6 +215,12 @@ abstract class ViewportV2<
 
   protected getBinding(dataId: DataId): RenderingBinding | undefined {
     return this.bindings.get(dataId);
+  }
+
+  protected getCurrentBinding():
+    | RenderingBinding<TDataPresentation>
+    | undefined {
+    return this.bindings.values().next().value;
   }
 
   protected modified(): void {

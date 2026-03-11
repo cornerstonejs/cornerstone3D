@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
@@ -5,7 +6,7 @@ import { RENDERING_DEFAULTS } from '../../../constants';
 import Events from '../../../enums/Events';
 import { OrientationAxis } from '../../../enums';
 import eventTarget from '../../../eventTarget';
-import type { ICamera, Point3 } from '../../../types';
+import type { ICamera, Point2, Point3 } from '../../../types';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import {
@@ -29,6 +30,10 @@ import type {
 } from './PlanarViewportV2Types';
 import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
 import { getPlanarCameraVectors } from './planarCameraOrientation';
+import {
+  canvasToWorldContextPool,
+  worldToCanvasContextPool,
+} from './planarAdapterCoordinateTransforms';
 
 export class CpuVolumeSliceRenderingAdapter
   implements RenderingAdapter<PlanarCpuVolumeAdapterContext>
@@ -74,6 +79,7 @@ export class CpuVolumeSliceRenderingAdapter
         imageVolume: payload.imageVolume,
         payload,
         currentImageIdIndex: payload.initialImageIdIndex,
+        maxImageIdIndex: payload.imageIds.length - 1,
         orientation: payload.acquisitionOrientation || OrientationAxis.AXIAL,
         sliceCamera: getCameraState(ctx),
         renderingInvalidated: true,
@@ -96,7 +102,10 @@ export class CpuVolumeSliceRenderingAdapter
       },
     };
 
-    setSliceIndex(ctx, rendering, payload.initialImageIdIndex);
+    rendering.runtime.currentImageIdIndex = getCurrentSliceIndex(
+      ctx,
+      rendering
+    );
     updateClippingPlanes(ctx, rendering);
 
     return rendering;
@@ -137,6 +146,38 @@ export class CpuVolumeSliceRenderingAdapter
     (rendering as PlanarCpuVolumeRendering).runtime.renderingInvalidated = true;
   }
 
+  canvasToWorld(
+    ctx: PlanarCpuVolumeAdapterContext,
+    _rendering: MountedRendering,
+    canvasPos: Point2
+  ): Point3 {
+    return canvasToWorldContextPool({
+      canvas: ctx.vtk.canvas,
+      renderer: ctx.vtk.renderer,
+      canvasPos,
+    });
+  }
+
+  worldToCanvas(
+    ctx: PlanarCpuVolumeAdapterContext,
+    _rendering: MountedRendering,
+    worldPos: Point3
+  ): Point2 {
+    return worldToCanvasContextPool({
+      canvas: ctx.vtk.canvas,
+      renderer: ctx.vtk.renderer,
+      worldPos,
+    });
+  }
+
+  getFrameOfReferenceUID(
+    _ctx: PlanarCpuVolumeAdapterContext,
+    rendering: MountedRendering
+  ): string | undefined {
+    return (rendering as PlanarCpuVolumeRendering).runtime.imageVolume.metadata
+      ?.FrameOfReferenceUID;
+  }
+
   render(
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: MountedRendering
@@ -173,7 +214,7 @@ export class CpuVolumeSliceRenderingAdapter
       return;
     }
 
-    const camera = getViewportCamera(ctx);
+    const camera = getCPUViewportCamera(ctx, planarRendering);
     const shouldResample =
       runtime.renderingInvalidated ||
       this.sampler.needsResample({
@@ -313,7 +354,7 @@ function getCameraState(ctx: PlanarCpuVolumeAdapterContext): PlanarCameraState {
   };
 }
 
-function getViewportCamera(ctx: PlanarCpuVolumeAdapterContext): ICamera {
+function getSliceNavigationCamera(ctx: PlanarCpuVolumeAdapterContext): ICamera {
   const camera = ctx.vtk.renderer.getActiveCamera();
 
   return {
@@ -323,6 +364,71 @@ function getViewportCamera(ctx: PlanarCpuVolumeAdapterContext): ICamera {
     position: [...camera.getPosition()] as Point3,
     parallelProjection: true,
     parallelScale: camera.getParallelScale(),
+  };
+}
+
+function getCPUViewportCamera(
+  ctx: PlanarCpuVolumeAdapterContext,
+  rendering: PlanarCpuVolumeRendering
+): ICamera {
+  setCameraState(ctx, rendering.runtime.sliceCamera);
+
+  const camera = ctx.vtk.renderer.getActiveCamera();
+  const viewUp = vec3.normalize(vec3.create(), [
+    ...camera.getViewUp(),
+  ] as Point3) as Point3;
+  const viewPlaneNormal = vec3.normalize(vec3.create(), [
+    ...camera.getViewPlaneNormal(),
+  ] as Point3) as Point3;
+  let right = vec3.cross(
+    vec3.create(),
+    viewUp as unknown as vec3,
+    viewPlaneNormal as unknown as vec3
+  );
+
+  if (vec3.length(right) === 0) {
+    right = vec3.fromValues(1, 0, 0);
+  }
+
+  right = vec3.normalize(vec3.create(), right);
+
+  const zoom = Math.max(rendering.runtime.currentCamera?.zoom ?? 1, 0.001);
+  const [panX, panY] = rendering.runtime.currentCamera?.pan ?? [0, 0];
+  const parallelScale = rendering.runtime.sliceCamera.parallelScale / zoom;
+  const canvasWidth = Math.max(ctx.cpu.canvas.width, 1);
+  const canvasHeight = Math.max(ctx.cpu.canvas.height, 1);
+  const worldHeight = parallelScale * 2;
+  const worldWidth = worldHeight * (canvasWidth / canvasHeight);
+  const deltaWorld = vec3.create();
+
+  vec3.scaleAndAdd(
+    deltaWorld,
+    deltaWorld,
+    right,
+    (panX * worldWidth) / canvasWidth
+  );
+  vec3.scaleAndAdd(
+    deltaWorld,
+    deltaWorld,
+    viewUp as unknown as vec3,
+    (-panY * worldHeight) / canvasHeight
+  );
+
+  return {
+    viewUp,
+    viewPlaneNormal,
+    focalPoint: vec3.subtract(
+      vec3.create(),
+      rendering.runtime.sliceCamera.focalPoint as unknown as vec3,
+      deltaWorld
+    ) as Point3,
+    position: vec3.subtract(
+      vec3.create(),
+      rendering.runtime.sliceCamera.position as unknown as vec3,
+      deltaWorld
+    ) as Point3,
+    parallelProjection: true,
+    parallelScale,
   };
 }
 
@@ -439,6 +545,7 @@ function applyOrientation(
   ctx.vtk.renderer.resetCamera();
   rendering.runtime.orientation = orientation;
   rendering.runtime.sliceCamera = getCameraState(ctx);
+  rendering.runtime.currentImageIdIndex = getCurrentSliceIndex(ctx, rendering);
   updateClippingPlanes(ctx, rendering);
 }
 
@@ -446,15 +553,9 @@ function getCurrentSliceIndex(
   ctx: PlanarCpuVolumeAdapterContext,
   rendering: PlanarCpuVolumeRendering
 ): number {
-  const camera = ctx.vtk.renderer.getActiveCamera();
-
   return getPlanarVolumeSliceNavigationState({
     actor: rendering.runtime.actor,
-    camera: {
-      focalPoint: [...camera.getFocalPoint()] as Point3,
-      position: [...camera.getPosition()] as Point3,
-      viewPlaneNormal: [...camera.getViewPlaneNormal()] as Point3,
-    },
+    camera: getSliceNavigationCamera(ctx),
     imageVolume: rendering.runtime.imageVolume,
   }).currentSliceIndex;
 }
@@ -480,7 +581,10 @@ function setSliceIndex(
       },
       imageVolume: rendering.runtime.imageVolume,
     });
-  const maxImageIdIndex = rendering.runtime.payload.imageIds.length - 1;
+  const maxImageIdIndex = Math.max(
+    0,
+    Math.round((sliceRange.max - sliceRange.min) / spacingInNormalDirection)
+  );
   const currentImageIdIndex = getCurrentSliceIndex(ctx, rendering);
   const clampedImageIdIndex = Math.min(
     Math.max(0, imageIdIndex),
@@ -505,6 +609,7 @@ function setSliceIndex(
   }
 
   rendering.runtime.currentImageIdIndex = clampedImageIdIndex;
+  rendering.runtime.maxImageIdIndex = maxImageIdIndex;
   rendering.runtime.sliceCamera = getCameraState(ctx);
 }
 
@@ -513,23 +618,10 @@ function applyCameraToVtk(
   rendering: PlanarCpuVolumeRendering,
   planarCamera?: PlanarCamera
 ): void {
-  const camera = ctx.vtk.renderer.getActiveCamera();
-  const { sliceCamera } = rendering.runtime;
-  const zoom = Math.max(planarCamera?.zoom ?? 1, 0.001);
-  const [panX, panY] = planarCamera?.pan ?? [0, 0];
-
-  camera.setParallelProjection(true);
-  camera.setParallelScale(sliceCamera.parallelScale / zoom);
-  camera.setFocalPoint(
-    sliceCamera.focalPoint[0] + panX,
-    sliceCamera.focalPoint[1] + panY,
-    sliceCamera.focalPoint[2]
-  );
-  camera.setPosition(
-    sliceCamera.position[0] + panX,
-    sliceCamera.position[1] + panY,
-    sliceCamera.position[2]
-  );
+  rendering.runtime.currentCamera = {
+    ...rendering.runtime.currentCamera,
+    ...planarCamera,
+  };
 }
 
 function syncVolumeSliceState(

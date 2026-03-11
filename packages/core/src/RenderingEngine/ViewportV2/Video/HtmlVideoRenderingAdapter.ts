@@ -5,6 +5,7 @@ import type {
   RenderPathDefinition,
   RenderingAdapter,
 } from '../ViewportArchitectureTypes';
+import type { Point2, Point3 } from '../../../types';
 import type {
   VideoCamera,
   VideoElementRenderContext,
@@ -31,11 +32,10 @@ export class HtmlVideoRenderingAdapter
     element.crossOrigin = 'anonymous';
     element.playsInline = true;
     element.style.position = 'absolute';
-    element.style.inset = '0';
-    element.style.width = '100%';
-    element.style.height = '100%';
-    element.style.transformOrigin = 'center center';
-    element.style.objectFit = 'contain';
+    element.style.left = '0';
+    element.style.top = '0';
+    element.style.transformOrigin = 'top left';
+    element.style.objectFit = 'fill';
 
     await new Promise<void>((resolve) => {
       const onLoadedMetadata = () => {
@@ -89,12 +89,21 @@ export class HtmlVideoRenderingAdapter
     camera: unknown
   ): void {
     const videoCamera = camera as VideoCamera;
-    const { element } = (rendering as VideoElementRendering).runtime;
-    const scale = videoCamera.zoom ?? 1;
-    const [panX, panY] = videoCamera.pan ?? [0, 0];
+    const videoRendering = rendering as VideoElementRendering;
+    const { element } = videoRendering.runtime;
     const rotation = videoCamera.rotation ?? 0;
+    const layout = getVideoLayout(element, videoCamera);
 
-    element.style.transform = `translate(${panX}px, ${panY}px) scale(${scale}) rotate(${rotation}deg)`;
+    videoRendering.runtime.currentCamera = videoCamera;
+
+    if (layout) {
+      element.style.width = `${layout.width}px`;
+      element.style.height = `${layout.height}px`;
+      element.style.left = `${layout.left}px`;
+      element.style.top = `${layout.top}px`;
+    }
+
+    element.style.transform = `rotate(${rotation}deg)`;
 
     if (
       typeof videoCamera.currentTimeSeconds === 'number' &&
@@ -118,11 +127,111 @@ export class HtmlVideoRenderingAdapter
     element.style.objectFit = videoPres?.objectFit ?? 'contain';
   }
 
+  canvasToWorld(
+    _ctx: VideoElementRenderContext,
+    rendering: MountedRendering,
+    canvasPos: Point2
+  ): Point3 {
+    const layout = getVideoLayout(
+      (rendering as VideoElementRendering).runtime.element,
+      (rendering as VideoElementRendering).runtime.currentCamera
+    );
+
+    if (!layout) {
+      return [0, 0, 0];
+    }
+
+    return [
+      canvasPos[0] / layout.worldToCanvasRatio - layout.panWorld[0],
+      canvasPos[1] / layout.worldToCanvasRatio - layout.panWorld[1],
+      0,
+    ];
+  }
+
+  worldToCanvas(
+    _ctx: VideoElementRenderContext,
+    rendering: MountedRendering,
+    worldPos: Point3
+  ): Point2 {
+    const layout = getVideoLayout(
+      (rendering as VideoElementRendering).runtime.element,
+      (rendering as VideoElementRendering).runtime.currentCamera
+    );
+
+    if (!layout) {
+      return [0, 0];
+    }
+
+    return [
+      (worldPos[0] + layout.panWorld[0]) * layout.worldToCanvasRatio,
+      (worldPos[1] + layout.panWorld[1]) * layout.worldToCanvasRatio,
+    ];
+  }
+
+  getFrameOfReferenceUID(
+    _ctx: VideoElementRenderContext,
+    rendering: MountedRendering
+  ): string | undefined {
+    const element = (rendering as VideoElementRendering).runtime.element;
+
+    return element.currentSrc || element.src;
+  }
+
   detach(_ctx: VideoElementRenderContext, rendering: MountedRendering): void {
     const { element } = (rendering as VideoElementRendering).runtime;
     element.pause();
     element.remove();
   }
+}
+
+function getVideoLayout(
+  element: HTMLVideoElement,
+  camera?: VideoCamera
+):
+  | {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+      panWorld: [number, number];
+      worldToCanvasRatio: number;
+    }
+  | undefined {
+  const container = element.parentElement;
+  const containerWidth = container?.clientWidth ?? 0;
+  const containerHeight = container?.clientHeight ?? 0;
+  const intrinsicWidth = element.videoWidth || containerWidth;
+  const intrinsicHeight = element.videoHeight || containerHeight;
+
+  if (
+    !containerWidth ||
+    !containerHeight ||
+    !intrinsicWidth ||
+    !intrinsicHeight
+  ) {
+    return;
+  }
+
+  const zoom = Math.max(camera.zoom ?? 1, 0.001);
+  const baseScale = Math.min(
+    containerWidth / intrinsicWidth,
+    containerHeight / intrinsicHeight
+  );
+  const xOffsetWorld =
+    (containerWidth - intrinsicWidth * baseScale) / 2 / baseScale;
+  const yOffsetWorld =
+    (containerHeight - intrinsicHeight * baseScale) / 2 / baseScale;
+  const [panX, panY] = camera.pan ?? [xOffsetWorld, yOffsetWorld];
+  const worldToCanvasRatio = baseScale * zoom;
+
+  return {
+    left: panX * worldToCanvasRatio,
+    top: panY * worldToCanvasRatio,
+    width: intrinsicWidth * worldToCanvasRatio,
+    height: intrinsicHeight * worldToCanvasRatio,
+    panWorld: [panX, panY],
+    worldToCanvasRatio,
+  };
 }
 
 export class HtmlVideoPath

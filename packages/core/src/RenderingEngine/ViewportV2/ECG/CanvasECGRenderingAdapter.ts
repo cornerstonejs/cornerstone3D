@@ -9,6 +9,7 @@ import {
   ensureECGCanvasSize,
   getVisibleECGChannels,
 } from '../../../utilities/ECGUtilities';
+import type { Point2, Point3 } from '../../../types';
 import type {
   DataAttachmentOptions,
   LogicalDataObject,
@@ -85,6 +86,80 @@ export class CanvasECGRenderingAdapter
       | undefined;
   }
 
+  canvasToWorld(
+    _ctx: ECGCanvasRenderContext,
+    rendering: MountedRendering,
+    canvasPos: Point2
+  ): Point3 {
+    const ecgRendering = rendering as ECGCanvasRendering;
+    const { waveform, metrics } = ecgRendering.runtime;
+    const layouts = getChannelLayouts(ecgRendering);
+    const scale = metrics.worldToCanvasRatio || 1;
+    const subCanvasPos: Point2 = [
+      (canvasPos[0] - metrics.xOffsetCanvas) / scale,
+      (canvasPos[1] - metrics.yOffsetCanvas) / scale,
+    ];
+    let z = 0;
+
+    for (let i = 0; i < layouts.length; i++) {
+      const layout = layouts[i];
+
+      if (subCanvasPos[1] <= layout.yOffset) {
+        z = i;
+        break;
+      }
+
+      if (i === layouts.length - 1) {
+        z = i;
+      }
+    }
+
+    const layout = layouts[z];
+
+    return [
+      Math.max(
+        0,
+        Math.min(
+          waveform.numberOfSamples - 1,
+          (subCanvasPos[0] * waveform.numberOfSamples) / metrics.ecgWidth
+        )
+      ),
+      (layout.baseline - subCanvasPos[1]) / metrics.channelScale,
+      z,
+    ];
+  }
+
+  worldToCanvas(
+    _ctx: ECGCanvasRenderContext,
+    rendering: MountedRendering,
+    worldPos: Point3
+  ): Point2 {
+    const ecgRendering = rendering as ECGCanvasRendering;
+    const { waveform, metrics } = ecgRendering.runtime;
+    const layouts = getChannelLayouts(ecgRendering);
+    const z = Math.round(worldPos[2]);
+
+    if (z < 0 || z >= layouts.length) {
+      return [0, 0];
+    }
+
+    const layout = layouts[z];
+
+    return [
+      (worldPos[0] / waveform.numberOfSamples) *
+        metrics.ecgWidth *
+        metrics.worldToCanvasRatio +
+        metrics.xOffsetCanvas,
+      (layout.baseline - worldPos[1] * metrics.channelScale) *
+        metrics.worldToCanvasRatio +
+        metrics.yOffsetCanvas,
+    ];
+  }
+
+  getFrameOfReferenceUID(ctx: ECGCanvasRenderContext): string | undefined {
+    return `ecg-viewport-${ctx.viewportId}`;
+  }
+
   render(ctx: ECGCanvasRenderContext, rendering: MountedRendering): void {
     drawFrame(ctx, rendering as ECGCanvasRendering);
   }
@@ -107,6 +182,18 @@ export class CanvasECGPath
   createAdapter() {
     return new CanvasECGRenderingAdapter();
   }
+}
+
+function getChannelLayouts(rendering: ECGCanvasRendering) {
+  const visibleChannels = getVisibleECGChannels(
+    rendering.runtime.waveform.channels,
+    rendering.runtime.currentPresentation?.visibleChannels
+  );
+
+  return computeECGChannelLayouts({
+    visibleChannels,
+    channelScale: rendering.runtime.metrics.channelScale,
+  });
 }
 
 function computeTimeWindow(

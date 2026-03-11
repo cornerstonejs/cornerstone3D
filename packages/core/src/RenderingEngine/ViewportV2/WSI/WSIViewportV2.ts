@@ -27,6 +27,7 @@ class WSIViewportV2 extends ViewportV2<
   readonly kind = 'wsi' as const;
   readonly id: string;
   readonly element: HTMLDivElement;
+  readonly renderingEngineId: string;
 
   protected renderContext: WSIViewportRenderContext;
 
@@ -34,6 +35,7 @@ class WSIViewportV2 extends ViewportV2<
     super();
     this.id = args.id;
     this.element = args.element;
+    this.renderingEngineId = args.renderingEngineId;
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
@@ -52,6 +54,10 @@ class WSIViewportV2 extends ViewportV2<
     this.properties = {};
 
     this.element.setAttribute('data-viewport-uid', this.id);
+    this.element.setAttribute(
+      'data-rendering-engine-uid',
+      this.renderingEngineId
+    );
   }
 
   async setDataIds(dataIds: string[]): Promise<string[]> {
@@ -77,16 +83,6 @@ class WSIViewportV2 extends ViewportV2<
     const [renderingId] = await this.setDataIds([dataId]);
 
     return renderingId;
-  }
-
-  getZoom(): number {
-    const map = this.getMap();
-
-    return map?.getView?.()?.getZoom?.() ?? 1;
-  }
-
-  setZoom(zoom: number): void {
-    this.setCamera({ zoom });
   }
 
   render(): void {

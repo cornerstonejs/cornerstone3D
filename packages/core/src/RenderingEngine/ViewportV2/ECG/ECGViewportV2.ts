@@ -26,6 +26,7 @@ class ECGViewportV2 extends ViewportV2<
   readonly id: string;
 
   readonly element: HTMLDivElement;
+  readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   readonly canvasContext: CanvasRenderingContext2D;
 
@@ -35,6 +36,7 @@ class ECGViewportV2 extends ViewportV2<
     super();
     this.id = args.id;
     this.element = args.element;
+    this.renderingEngineId = args.renderingEngineId;
     this.canvas = getOrCreateCanvas(this.element);
     this.canvasContext = this.canvas.getContext('2d');
     this.dataProvider = args.dataProvider || new DefaultECGDataProvider();
@@ -59,6 +61,10 @@ class ECGViewportV2 extends ViewportV2<
     };
 
     this.element.setAttribute('data-viewport-uid', this.id);
+    this.element.setAttribute(
+      'data-rendering-engine-uid',
+      this.renderingEngineId
+    );
     this.resize();
   }
 

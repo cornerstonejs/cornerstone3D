@@ -42,6 +42,7 @@ export type VideoViewportPresentation = VideoProperties;
 export interface VideoViewportV2Input {
   id: string;
   element: HTMLDivElement;
+  renderingEngineId: string;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }
@@ -55,6 +56,7 @@ export interface VideoElementRendering
   extends MountedRendering<{
     element: HTMLVideoElement;
     payload: VideoStreamPayload;
+    currentCamera?: VideoCamera;
   }> {
   renderMode: 'video2d';
 }

@@ -1,6 +1,8 @@
+import { mat4, vec3 } from 'gl-matrix';
 import { Events as EVENTS } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import { getDicomMicroscopyViewer } from '../../../utilities/WSIUtilities';
+import { Transform } from '../../helpers/cpuFallback/rendering/transform';
 import type {
   DataAttachmentOptions,
   LogicalDataObject,
@@ -8,6 +10,7 @@ import type {
   RenderPathDefinition,
   RenderingAdapter,
 } from '../ViewportArchitectureTypes';
+import type { Point2, Point3 } from '../../../types';
 import type {
   WSICamera,
   WSIPresentationProps,
@@ -132,6 +135,38 @@ export class DicomMicroscopyRenderingAdapter
     // No viewport-level properties for WSI currently.
   }
 
+  canvasToWorld(
+    ctx: WSIViewportRenderContext,
+    rendering: MountedRendering,
+    canvasPos: Point2
+  ): Point3 {
+    const indexPoint = canvasToIndex(ctx, rendering as WSIRendering, canvasPos);
+    indexPoint[1] = -indexPoint[1];
+
+    return indexToWorld(rendering as WSIRendering, indexPoint);
+  }
+
+  worldToCanvas(
+    ctx: WSIViewportRenderContext,
+    rendering: MountedRendering,
+    worldPos: Point3
+  ): Point2 {
+    const indexPoint = worldToIndex(rendering as WSIRendering, worldPos);
+    indexPoint[1] = -indexPoint[1];
+
+    return indexToCanvas(ctx, rendering as WSIRendering, indexPoint);
+  }
+
+  getFrameOfReferenceUID(
+    _ctx: WSIViewportRenderContext,
+    rendering: MountedRendering
+  ): string | undefined {
+    return (
+      (rendering as WSIRendering).runtime.payload.frameOfReferenceUID ??
+      undefined
+    );
+  }
+
   detach(_ctx: WSIViewportRenderContext, rendering: MountedRendering): void {
     const { map, microscopyElement, viewer, postrenderHandler } = (
       rendering as WSIRendering
@@ -156,4 +191,97 @@ export class DicomMicroscopyPath
   createAdapter() {
     return new DicomMicroscopyRenderingAdapter();
   }
+}
+
+function computeTransforms(rendering: WSIRendering) {
+  const metadata = rendering.runtime.payload.metadata;
+  const indexToWorld = mat4.create();
+  const worldToIndexMatrix = mat4.create();
+
+  mat4.fromTranslation(indexToWorld, metadata.origin);
+  indexToWorld[0] = metadata.direction[0];
+  indexToWorld[1] = metadata.direction[1];
+  indexToWorld[2] = metadata.direction[2];
+  indexToWorld[4] = metadata.direction[3];
+  indexToWorld[5] = metadata.direction[4];
+  indexToWorld[6] = metadata.direction[5];
+  indexToWorld[8] = metadata.direction[6];
+  indexToWorld[9] = metadata.direction[7];
+  indexToWorld[10] = metadata.direction[8];
+  mat4.scale(indexToWorld, indexToWorld, metadata.spacing);
+  mat4.invert(worldToIndexMatrix, indexToWorld);
+
+  return {
+    indexToWorld,
+    worldToIndexMatrix,
+  };
+}
+
+function worldToIndex(rendering: WSIRendering, point: Point3): Point3 {
+  const transforms = computeTransforms(rendering);
+  const imageCoord = vec3.create();
+
+  vec3.transformMat4(imageCoord, point, transforms.worldToIndexMatrix);
+
+  return [imageCoord[0], imageCoord[1], imageCoord[2]];
+}
+
+function indexToWorld(rendering: WSIRendering, point: Point3): Point3 {
+  const transforms = computeTransforms(rendering);
+  const worldPos = vec3.create();
+
+  vec3.transformMat4(worldPos, point, transforms.indexToWorld);
+
+  return [worldPos[0], worldPos[1], worldPos[2]];
+}
+
+function canvasToIndex(
+  ctx: WSIViewportRenderContext,
+  rendering: WSIRendering,
+  canvasPos: Point2
+): Point3 {
+  const transform = getTransform(ctx, rendering);
+
+  transform.invert();
+
+  const indexPoint = transform.transformPoint(
+    canvasPos.map((value) => value * (window.devicePixelRatio || 1)) as Point2
+  );
+
+  return [indexPoint[0], indexPoint[1], 0];
+}
+
+function indexToCanvas(
+  ctx: WSIViewportRenderContext,
+  rendering: WSIRendering,
+  indexPos: Point3
+): Point2 {
+  const transform = getTransform(ctx, rendering);
+
+  return transform
+    .transformPoint([indexPos[0], indexPos[1]])
+    .map((value) => value / (window.devicePixelRatio || 1)) as Point2;
+}
+
+function getTransform(
+  ctx: WSIViewportRenderContext,
+  rendering: WSIRendering
+): Transform {
+  const view = rendering.runtime.map.getView();
+  const center = view.getCenter();
+  const resolution = view.getResolution();
+  const rotation = view.getRotation();
+  const canvasWidth =
+    Math.max(ctx.element.clientWidth, 1) * (window.devicePixelRatio || 1);
+  const canvasHeight =
+    Math.max(ctx.element.clientHeight, 1) * (window.devicePixelRatio || 1);
+  const halfCanvas = [canvasWidth / 2, canvasHeight / 2];
+  const transform = new Transform();
+
+  transform.translate(halfCanvas[0], halfCanvas[1]);
+  transform.rotate(rotation);
+  transform.scale(1 / resolution, -1 / resolution);
+  transform.translate(-center[0], -center[1]);
+
+  return transform;
 }

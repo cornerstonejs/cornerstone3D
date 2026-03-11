@@ -140,6 +140,10 @@ class PlanarViewportV2 extends ViewportV2<
     this.properties = {};
 
     this.element.setAttribute('data-viewport-uid', this.id);
+    this.element.setAttribute(
+      'data-rendering-engine-uid',
+      this.renderingEngineId
+    );
     this.resize();
   }
 
@@ -186,11 +190,16 @@ class PlanarViewportV2 extends ViewportV2<
       visible: true,
       opacity: 1,
     };
+    const isVolumeRenderMode =
+      selectedPath.renderMode === 'cpuVolume' ||
+      selectedPath.renderMode === 'vtkVolume';
 
     this.activeDataId = dataId;
     this.camera = {
       ...this.camera,
-      imageIdIndex: payload.initialImageIdIndex,
+      imageIdIndex: isVolumeRenderMode
+        ? undefined
+        : payload.initialImageIdIndex,
       orientation: normalizePlanarOrientation(
         planarOptions.orientation,
         selectedPath.acquisitionOrientation
@@ -223,11 +232,15 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   getCurrentImageIdIndex(): number {
-    return this.camera.imageIdIndex ?? 0;
+    return this.getActiveImageIdIndex();
   }
 
   getCurrentImageId(): string | undefined {
     return this.getImageIds()[this.getCurrentImageIdIndex()];
+  }
+
+  getSliceIndex(): number {
+    return this.getCurrentImageIdIndex();
   }
 
   setProperties(
@@ -268,18 +281,20 @@ class PlanarViewportV2 extends ViewportV2<
 
     const clampedImageIdIndex = Math.min(
       Math.max(0, imageIdIndex),
-      imageIds.length - 1
+      this.getMaxImageIdIndex()
     );
+    const resolvedImageId =
+      imageIds[clampedImageIdIndex] || imageIds[imageIds.length - 1];
 
     this.setCamera({
       imageIdIndex: clampedImageIdIndex,
     });
 
-    return Promise.resolve(imageIds[clampedImageIdIndex]);
+    return Promise.resolve(resolvedImageId);
   }
 
   scroll(delta: number): Promise<string> {
-    return this.setImageIdIndex(this.getCurrentImageIdIndex() + delta);
+    return this.setImageIdIndex(this.getActiveImageIdIndex() + delta);
   }
 
   setOrientation(
@@ -288,7 +303,7 @@ class PlanarViewportV2 extends ViewportV2<
       | OrientationAxis.CORONAL
       | OrientationAxis.SAGITTAL
   ): void {
-    this.setCamera({ orientation });
+    this.setCamera({ imageIdIndex: undefined, orientation });
   }
 
   resize(): void {
@@ -336,6 +351,36 @@ class PlanarViewportV2 extends ViewportV2<
     vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
   }
 
+  private getActiveImageIdIndex(): number {
+    const binding = this.getCurrentBinding();
+    const currentImageIdIndex = (
+      binding?.rendering as
+        | { runtime?: { currentImageIdIndex?: number } }
+        | undefined
+    )?.runtime?.currentImageIdIndex;
+
+    if (typeof currentImageIdIndex === 'number') {
+      return currentImageIdIndex;
+    }
+
+    return this.camera.imageIdIndex ?? 0;
+  }
+
+  private getMaxImageIdIndex(): number {
+    const binding = this.getCurrentBinding();
+    const maxImageIdIndex = (
+      binding?.rendering as
+        | { runtime?: { maxImageIdIndex?: number } }
+        | undefined
+    )?.runtime?.maxImageIdIndex;
+
+    if (typeof maxImageIdIndex === 'number') {
+      return maxImageIdIndex;
+    }
+
+    return Math.max(0, this.getImageIds().length - 1);
+  }
+
   private getPayload(): PlanarPayload | undefined {
     const firstBinding = this.bindings.values().next().value;
 
@@ -345,6 +390,16 @@ class PlanarViewportV2 extends ViewportV2<
 
     return (firstBinding.rendering as PlanarRendering).runtime
       .payload as PlanarPayload;
+  }
+
+  protected getCurrentBinding() {
+    const activeDataId = this.activeDataId ?? this.bindings.keys().next().value;
+
+    if (!activeDataId) {
+      return;
+    }
+
+    return this.getBinding(activeDataId);
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {

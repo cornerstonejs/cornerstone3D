@@ -50,6 +50,7 @@ export type ECGViewportPresentation = ECGProperties;
 export interface ECGViewportV2Input {
   id: string;
   element: HTMLDivElement;
+  renderingEngineId: string;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }

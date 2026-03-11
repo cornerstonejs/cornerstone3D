@@ -1,10 +1,11 @@
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { InterpolationType } from '../../../enums';
+import { InterpolationType, MetadataModules } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import * as metaData from '../../../metaData';
 import type { IImage, Point3 } from '../../../types';
+import type { Point2 } from '../../../types';
 import {
-  applyPlanarCameraViewState,
   applyPlanarImagePresentation,
   createVTKImageDataFromImage,
   getDefaultImageVOIRange,
@@ -26,6 +27,12 @@ import type {
   PlanarProperties,
   PlanarVtkImageAdapterContext,
 } from './PlanarViewportV2Types';
+import {
+  applyPlanarCanvasCameraViewState,
+  canvasToWorldContextPool,
+  getCpuEquivalentParallelScale,
+  worldToCanvasContextPool,
+} from './planarAdapterCoordinateTransforms';
 
 export class VtkImageMapperRenderingAdapter
   implements RenderingAdapter<PlanarVtkImageAdapterContext>
@@ -53,6 +60,7 @@ export class VtkImageMapperRenderingAdapter
     ctx.vtk.renderer.addActor(actor);
     applyImageOrientationToCamera(ctx.vtk.renderer, imageData);
     ctx.vtk.renderer.resetCamera();
+    applyCpuEquivalentInitialScale(ctx, payload.initialImage);
 
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
@@ -99,10 +107,14 @@ export class VtkImageMapperRenderingAdapter
       planarCamera?.imageIdIndex ?? planarRendering.runtime.currentImageIdIndex;
 
     ctx.display.activateRenderMode('vtkImage');
-    applyPlanarCameraViewState({
-      initialCamera: planarRendering.runtime.initialCamera,
+    applyPlanarCanvasCameraViewState({
+      canvas: ctx.vtk.canvas,
+      baseCamera: planarRendering.runtime.initialCamera,
       renderer: ctx.vtk.renderer,
-      viewState: planarCamera,
+      viewState: {
+        pan: planarCamera?.pan,
+        zoom: planarCamera?.zoom,
+      },
     });
 
     if (nextImageIdIndex === planarRendering.runtime.currentImageIdIndex) {
@@ -148,6 +160,47 @@ export class VtkImageMapperRenderingAdapter
         >[0]
       );
     }
+  }
+
+  canvasToWorld(
+    ctx: PlanarVtkImageAdapterContext,
+    _rendering: MountedRendering,
+    canvasPos: Point2
+  ): Point3 {
+    return canvasToWorldContextPool({
+      canvas: ctx.vtk.canvas,
+      renderer: ctx.vtk.renderer,
+      canvasPos,
+    });
+  }
+
+  worldToCanvas(
+    ctx: PlanarVtkImageAdapterContext,
+    _rendering: MountedRendering,
+    worldPos: Point3
+  ): Point2 {
+    return worldToCanvasContextPool({
+      canvas: ctx.vtk.canvas,
+      renderer: ctx.vtk.renderer,
+      worldPos,
+    });
+  }
+
+  getFrameOfReferenceUID(
+    _ctx: PlanarVtkImageAdapterContext,
+    rendering: MountedRendering
+  ): string | undefined {
+    const imageId = (rendering as PlanarImageMapperRendering).runtime.payload
+      .imageIds[
+      (rendering as PlanarImageMapperRendering).runtime.currentImageIdIndex
+    ];
+    const imagePlaneModule = imageId
+      ? (metaData.get(MetadataModules.IMAGE_PLANE, imageId) as
+          | { frameOfReferenceUID?: string }
+          | undefined)
+      : undefined;
+
+    return imagePlaneModule?.frameOfReferenceUID;
   }
 
   detach(ctx: PlanarVtkImageAdapterContext, rendering: MountedRendering): void {
@@ -232,13 +285,18 @@ async function updateRenderedImage(args: {
   if (resetCamera) {
     applyImageOrientationToCamera(ctx.vtk.renderer, imageData);
     ctx.vtk.renderer.resetCamera();
+    applyCpuEquivalentInitialScale(ctx, image);
     rendering.runtime.initialCamera = getPlanarCameraState(ctx.vtk.renderer);
   }
 
-  applyPlanarCameraViewState({
-    initialCamera: rendering.runtime.initialCamera,
+  applyPlanarCanvasCameraViewState({
+    canvas: ctx.vtk.canvas,
+    baseCamera: rendering.runtime.initialCamera,
     renderer: ctx.vtk.renderer,
-    viewState: camera,
+    viewState: {
+      pan: camera?.pan,
+      zoom: camera?.zoom,
+    },
   });
   ctx.display.requestRender();
 }
@@ -259,4 +317,24 @@ function applyImageOrientationToCamera(
     -viewPlaneNormal[2]
   );
   camera.setViewUp(viewUp[0], viewUp[1], viewUp[2]);
+}
+
+function applyCpuEquivalentInitialScale(
+  ctx: PlanarVtkImageAdapterContext,
+  image: IImage
+): void {
+  const camera = ctx.vtk.renderer.getActiveCamera();
+  const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
+  const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
+
+  camera.setParallelScale(
+    getCpuEquivalentParallelScale({
+      canvasHeight,
+      canvasWidth,
+      columnPixelSpacing: image.columnPixelSpacing || 1,
+      columns: image.columns,
+      rowPixelSpacing: image.rowPixelSpacing || 1,
+      rows: image.rows,
+    })
+  );
 }

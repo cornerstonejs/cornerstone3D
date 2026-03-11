@@ -1,5 +1,6 @@
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
+import type { Point2 } from '../../../types';
 import {
   frameNumberToTimeSeconds,
   timeSecondsToFrameNumber,
@@ -27,6 +28,7 @@ class VideoViewportV2 extends ViewportV2<
   readonly kind = 'video' as const;
   readonly id: string;
   readonly element: HTMLDivElement;
+  readonly renderingEngineId: string;
 
   protected renderContext: VideoElementRenderContext;
 
@@ -34,6 +36,7 @@ class VideoViewportV2 extends ViewportV2<
     super();
     this.id = args.id;
     this.element = args.element;
+    this.renderingEngineId = args.renderingEngineId;
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
@@ -59,6 +62,10 @@ class VideoViewportV2 extends ViewportV2<
     };
 
     this.element.setAttribute('data-viewport-uid', this.id);
+    this.element.setAttribute(
+      'data-rendering-engine-uid',
+      this.renderingEngineId
+    );
   }
 
   async setVideo(dataId: string): Promise<string> {
@@ -88,9 +95,10 @@ class VideoViewportV2 extends ViewportV2<
 
       const payload = (binding.rendering as VideoElementRendering).runtime
         .payload;
+      const pan = this.getDefaultPanWorld();
       this.camera = {
         zoom: 1,
-        pan: [0, 0],
+        pan,
         rotation: 0,
         currentTimeSeconds: 0,
       };
@@ -191,6 +199,102 @@ class VideoViewportV2 extends ViewportV2<
     }
 
     return (firstBinding.rendering as VideoElementRendering).runtime.payload;
+  }
+
+  private getDisplayMetrics():
+    | {
+        offsetX: number;
+        offsetY: number;
+        scaleX: number;
+        scaleY: number;
+        zoom: number;
+        panX: number;
+        panY: number;
+      }
+    | undefined {
+    const videoElement = this.getVideoElement();
+
+    if (!videoElement) {
+      return;
+    }
+
+    const containerWidth = this.element.clientWidth;
+    const containerHeight = this.element.clientHeight;
+    const intrinsicWidth = videoElement.videoWidth || containerWidth;
+    const intrinsicHeight = videoElement.videoHeight || containerHeight;
+
+    if (
+      !containerWidth ||
+      !containerHeight ||
+      !intrinsicWidth ||
+      !intrinsicHeight
+    ) {
+      return;
+    }
+
+    const objectFit = this.properties.objectFit ?? 'contain';
+    const containScale = Math.min(
+      containerWidth / intrinsicWidth,
+      containerHeight / intrinsicHeight
+    );
+    const coverScale = Math.max(
+      containerWidth / intrinsicWidth,
+      containerHeight / intrinsicHeight
+    );
+    let scaleX = containScale;
+    let scaleY = containScale;
+
+    switch (objectFit) {
+      case 'cover':
+        scaleX = coverScale;
+        scaleY = coverScale;
+        break;
+      case 'fill':
+        scaleX = containerWidth / intrinsicWidth;
+        scaleY = containerHeight / intrinsicHeight;
+        break;
+      case 'none':
+        scaleX = 1;
+        scaleY = 1;
+        break;
+      case 'scale-down': {
+        const scaleDown = Math.min(1, containScale);
+        scaleX = scaleDown;
+        scaleY = scaleDown;
+        break;
+      }
+      case 'contain':
+      default:
+        break;
+    }
+
+    const displayWidth = intrinsicWidth * scaleX;
+    const displayHeight = intrinsicHeight * scaleY;
+    const [panX, panY] = this.camera.pan ?? [0, 0];
+    const zoom = Math.max(this.camera.zoom ?? 1, 0.001);
+
+    return {
+      offsetX: (containerWidth - displayWidth) / 2,
+      offsetY: (containerHeight - displayHeight) / 2,
+      scaleX: scaleX * zoom,
+      scaleY: scaleY * zoom,
+      zoom,
+      panX,
+      panY,
+    };
+  }
+
+  private getDefaultPanWorld(): Point2 {
+    const metrics = this.getDisplayMetrics();
+
+    if (!metrics || !metrics.zoom) {
+      return [0, 0];
+    }
+
+    return [
+      metrics.offsetX / (metrics.scaleX / metrics.zoom),
+      metrics.offsetY / (metrics.scaleY / metrics.zoom),
+    ];
   }
 }
 

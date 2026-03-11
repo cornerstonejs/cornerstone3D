@@ -1,3 +1,5 @@
+import type { Point2, Point3 } from '../../types';
+
 export type ViewportId = string;
 export type DataId = string;
 export type RenderingId = string;
@@ -62,6 +64,23 @@ export interface RenderingAdapter<
     properties: unknown
   ): void;
 
+  canvasToWorld?(
+    ctx: TContext,
+    rendering: MountedRendering,
+    canvasPos: Point2
+  ): Point3;
+
+  worldToCanvas?(
+    ctx: TContext,
+    rendering: MountedRendering,
+    worldPos: Point3
+  ): Point2;
+
+  getFrameOfReferenceUID?(
+    ctx: TContext,
+    rendering: MountedRendering
+  ): string | undefined;
+
   render?(ctx: TContext, rendering: MountedRendering): void;
 
   resize?(ctx: TContext, rendering: MountedRendering): void;
@@ -108,6 +127,9 @@ export interface RenderingBinding<TPresentation = unknown> {
   updatePresentation(props: TPresentation): void;
   updateCamera(camera: unknown): void;
   updateProperties(properties: unknown): void;
+  canvasToWorld?(canvasPos: Point2): Point3;
+  worldToCanvas?(worldPos: Point3): Point2;
+  getFrameOfReferenceUID?(): string | undefined;
   render?(): void;
   resize?(): void;
   detach(): void;
@@ -137,4 +159,59 @@ export interface ViewportController<
   getProperties(): TProperties;
 
   render(): void;
+}
+
+export interface ICanvasWorldViewport {
+  canvasToWorld(canvasPos: Point2): Point3;
+  worldToCanvas(worldPos: Point3): Point2;
+}
+
+export interface IZoomViewport {
+  getZoom(): number;
+  setZoom(zoom: number): void;
+}
+
+export interface IPanViewport {
+  getPan(): Point2;
+  setPan(pan: Point2): void;
+}
+
+export interface IFrameOfReferenceViewport {
+  getFrameOfReferenceUID(): string;
+}
+
+export function viewportHasCanvasWorldTransform(
+  viewport: unknown
+): viewport is ICanvasWorldViewport {
+  return Boolean(
+    viewport &&
+      typeof (viewport as ICanvasWorldViewport).canvasToWorld === 'function' &&
+      typeof (viewport as ICanvasWorldViewport).worldToCanvas === 'function'
+  );
+}
+
+export function viewportHasZoom(viewport: unknown): viewport is IZoomViewport {
+  return Boolean(
+    viewport &&
+      typeof (viewport as IZoomViewport).getZoom === 'function' &&
+      typeof (viewport as IZoomViewport).setZoom === 'function'
+  );
+}
+
+export function viewportHasPan(viewport: unknown): viewport is IPanViewport {
+  return Boolean(
+    viewport &&
+      typeof (viewport as IPanViewport).getPan === 'function' &&
+      typeof (viewport as IPanViewport).setPan === 'function'
+  );
+}
+
+export function viewportHasFrameOfReferenceUID(
+  viewport: unknown
+): viewport is IFrameOfReferenceViewport {
+  return Boolean(
+    viewport &&
+      typeof (viewport as IFrameOfReferenceViewport).getFrameOfReferenceUID ===
+        'function'
+  );
 }

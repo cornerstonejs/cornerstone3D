@@ -58,6 +58,7 @@ export interface WSIDataProvider extends DataProvider {
 export interface WSIViewportV2Input {
   id: string;
   element: HTMLDivElement;
+  renderingEngineId: string;
   dataProvider?: WSIDataProvider;
   renderPathResolver?: RenderPathResolver;
 }

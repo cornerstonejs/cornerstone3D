@@ -5,6 +5,14 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 import {
+  addTool,
+  Enums as csToolsEnums,
+  PanTool,
+  StackScrollTool,
+  ToolGroupManager,
+  ZoomTool,
+} from '@cornerstonejs/tools';
+import {
   addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
   ctVoiRange,
@@ -13,15 +21,18 @@ import {
 } from '../../../../utils/demo/helpers';
 
 type PlanarOrientation =
+  | Enums.OrientationAxis.ACQUISITION
   | Enums.OrientationAxis.AXIAL
   | Enums.OrientationAxis.CORONAL
   | Enums.OrientationAxis.SAGITTAL;
 
 const orientations = [
+  Enums.OrientationAxis.ACQUISITION,
   Enums.OrientationAxis.AXIAL,
   Enums.OrientationAxis.CORONAL,
   Enums.OrientationAxis.SAGITTAL,
 ] as const;
+const { MouseBindings } = csToolsEnums;
 
 function getOrientationParam(): PlanarOrientation {
   const searchParams = new URLSearchParams(window.location.search);
@@ -53,6 +64,7 @@ console.warn(
 
 const viewportId = 'planarViewportV2';
 const dataId = 'ct-planar';
+const toolGroupId = 'planarViewportV2Tools';
 let currentOrientation = getOrientationParam();
 const cpuImageThreshold = getNumberParam('cpuImageThreshold');
 const cpuVolumeThreshold = getNumberParam('cpuVolumeThreshold');
@@ -90,7 +102,7 @@ function syncExampleUrl(): void {
 
 setTitleAndDescription(
   'Planar Viewport Architecture POC',
-  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=axial|coronal|sagittal&cpuImageThreshold=100000&cpuVolumeThreshold=100000'
+  'Bare-minimum usage of the new ViewportV2 + PlanarViewportV2 proof of concept. URL options: ?orientation=acquisition|axial|coronal|sagittal&cpuImageThreshold=100000&cpuVolumeThreshold=100000'
 );
 
 // ======== Set up page ======== //
@@ -105,12 +117,13 @@ element.id = 'cornerstone-element';
 element.style.width = '500px';
 element.style.height = '500px';
 element.style.background = '#000';
+element.oncontextmenu = () => false;
 
 content.appendChild(element);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Use the toolbar dropdown or URL query parameters to change orientation. You can also set cpuImageThreshold and cpuVolumeThreshold in the URL.';
+  'Use the toolbar to change orientation. Interaction tools: mouse wheel scrolls slices, middle-drag pans, right-drag zooms. Acquisition uses the image paths, axial/coronal/sagittal use the volume paths. You can also set cpuImageThreshold and cpuVolumeThreshold in the URL.';
 
 content.append(instructions);
 // ============================= //
@@ -122,7 +135,7 @@ function addToolbar() {
     labelText: 'Orientation',
     options: {
       values: [...orientations],
-      labels: ['Axial', 'Coronal', 'Sagittal'],
+      labels: ['Acquisition', 'Axial', 'Coronal', 'Sagittal'],
       defaultValue: currentOrientation,
     },
     onSelectedValueChange: (selectedValue) => {
@@ -148,6 +161,24 @@ addToolbar();
 async function run() {
   syncExampleUrl();
   await initDemo();
+  addTool(PanTool);
+  addTool(ZoomTool);
+  addTool(StackScrollTool);
+
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Auxiliary }],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
@@ -166,6 +197,10 @@ async function run() {
     },
   });
   viewport = renderingEngine.getViewport(viewportId) as PlanarViewportV2;
+  (
+    window as Window & { planarViewportV2?: PlanarViewportV2 }
+  ).planarViewportV2 = viewport;
+  toolGroup.addViewport(viewportId, renderingEngine.id);
 
   utilities.viewportV2DataSetMetadataProvider.add(dataId, {
     imageIds,

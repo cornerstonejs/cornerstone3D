@@ -23,6 +23,10 @@ import ECGViewport from './RenderingEngine/ECGViewport';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
+  viewportHasCanvasWorldTransform,
+  viewportHasFrameOfReferenceUID,
+  viewportHasPan,
+  viewportHasZoom,
   ViewportV2,
 } from './RenderingEngine/ViewportV2';
 import ECGViewportV2, {
@@ -178,6 +182,10 @@ export {
   ECGViewport,
   ECGViewportV2,
   ViewportV2,
+  viewportHasCanvasWorldTransform,
+  viewportHasFrameOfReferenceUID,
+  viewportHasPan,
+  viewportHasZoom,
   RenderingEngine,
   RenderingEngineV2,
   BaseRenderingEngine,

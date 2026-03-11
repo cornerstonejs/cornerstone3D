@@ -184,6 +184,7 @@ export interface PlanarCpuVolumeRendering
     payload: PlanarPayload;
     imageVolume: IImageVolume;
     currentImageIdIndex: number;
+    maxImageIdIndex: number;
     defaultVOIRange?: VOIRange;
     orientation?: PlanarCamera['orientation'];
     sliceCamera: PlanarCameraState;
@@ -216,6 +217,7 @@ export interface PlanarVolumeMapperRendering
     mapper: vtkVolumeMapper;
     payload: PlanarPayload;
     currentImageIdIndex: number;
+    maxImageIdIndex: number;
     defaultVOIRange?: VOIRange;
     orientation?: PlanarCamera['orientation'];
     sliceCamera: PlanarCameraState;
