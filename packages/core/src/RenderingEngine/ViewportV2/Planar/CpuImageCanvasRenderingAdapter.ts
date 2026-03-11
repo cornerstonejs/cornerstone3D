@@ -38,6 +38,10 @@ import {
   canvasToWorldCPUImage,
   worldToCanvasCPUImage,
 } from './planarAdapterCoordinateTransforms';
+import {
+  normalizePlanarRotation,
+  rotatePlanarViewUp,
+} from './planarCameraPresentation';
 
 export class CpuImageCanvasRenderingAdapter
   implements RenderingAdapter<PlanarCpuImageAdapterContext>
@@ -76,6 +80,9 @@ export class CpuImageCanvasRenderingAdapter
         payload,
         currentImageIdIndex: payload.initialImageIdIndex,
         defaultVOIRange: getDefaultImageVOIRange(payload.initialImage),
+        camera: getPlanarCpuImageCompatibilityCamera({
+          image: payload.initialImage,
+        }),
         fitScale: enabledElement.viewport.scale ?? 1,
         loadRequestId: 0,
         renderingInvalidated: true,
@@ -106,6 +113,10 @@ export class CpuImageCanvasRenderingAdapter
 
     ctx.display.activateRenderMode('cpu2d');
     applyCameraState(planarRendering, planarCamera);
+    planarRendering.runtime.camera = getPlanarCpuImageCompatibilityCamera({
+      camera: planarCamera,
+      image: planarRendering.runtime.enabledElement.image,
+    });
 
     if (nextImageIdIndex === planarRendering.runtime.currentImageIdIndex) {
       return;
@@ -328,6 +339,7 @@ function applyCameraState(
   const zoom = Math.max(camera?.zoom ?? 1, 0.001);
 
   viewport.scale = fitScale * zoom;
+  viewport.rotation = normalizePlanarRotation(camera?.rotation);
   viewport.translation = {
     x: panX,
     y: panY,
@@ -419,7 +431,11 @@ export function getPlanarCpuImageCompatibilityCamera(args: {
   const rowVector = direction.slice(0, 3) as Point3;
   const columnVector = direction.slice(3, 6) as Point3;
   const viewPlaneNormal = direction.slice(6, 9) as Point3;
-  const viewUp = direction.slice(3, 6) as Point3;
+  const viewUp = rotatePlanarViewUp({
+    rotation: nextCamera.rotation,
+    viewPlaneNormal,
+    viewUp: direction.slice(3, 6) as Point3,
+  });
   const focalPoint = [...origin] as Point3;
 
   vec3.scaleAndAdd(
@@ -438,11 +454,6 @@ export function getPlanarCpuImageCompatibilityCamera(args: {
   return {
     ...nextCamera,
     focalPoint,
-    position: vec3.subtract(
-      vec3.create(),
-      focalPoint as unknown as vec3,
-      viewPlaneNormal as unknown as vec3
-    ) as Point3,
     parallelProjection: true,
     viewPlaneNormal,
     viewUp,
@@ -496,6 +507,10 @@ async function updateRenderedImage(args: {
 
   rendering.runtime.currentImageIdIndex = imageIdIndex;
   rendering.runtime.defaultVOIRange = getDefaultImageVOIRange(image);
+  rendering.runtime.camera = getPlanarCpuImageCompatibilityCamera({
+    camera,
+    image,
+  });
   rendering.runtime.fitScale = defaultViewport.scale ?? 1;
   rendering.runtime.renderingInvalidated = true;
 

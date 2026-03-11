@@ -15,6 +15,7 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const {
   LengthTool,
+  PanTool,
   ToolGroupManager,
   StackScrollTool,
   ZoomTool,
@@ -61,7 +62,7 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Left click to draw length measurements on any viewport. Use the mouse wheel to scroll and right drag to zoom. Add cpu=true in the URL to force CPU rendering.';
+  'Left click to draw length measurements on any viewport. Use the mouse wheel to scroll, middle drag to pan, and right drag to zoom. Add cpu=true in the URL to force CPU rendering.';
 
 content.append(instructions);
 // ============================= //
@@ -80,6 +81,7 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
+  cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
 
@@ -89,6 +91,7 @@ async function run() {
 
   // Add the tools to the tool group
   toolGroup.addTool(LengthTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
@@ -98,6 +101,14 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
+      },
+    ],
+  });
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
     ],
   });

@@ -14,6 +14,8 @@ export interface PlanarCameraState {
   focalPoint: Point3;
   parallelScale: number;
   position: Point3;
+  viewPlaneNormal: Point3;
+  viewUp: Point3;
 }
 
 export interface PlanarImagePresentation {
@@ -103,6 +105,8 @@ export function getPlanarCameraState(renderer: vtkRenderer): PlanarCameraState {
     focalPoint: [...camera.getFocalPoint()] as Point3,
     parallelScale: camera.getParallelScale(),
     position: [...camera.getPosition()] as Point3,
+    viewPlaneNormal: [...camera.getViewPlaneNormal()] as Point3,
+    viewUp: [...camera.getViewUp()] as Point3,
   };
 }
 

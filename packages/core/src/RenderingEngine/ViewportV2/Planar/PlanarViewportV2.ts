@@ -1,7 +1,10 @@
 import { OrientationAxis, ViewportType } from '../../../enums';
 import type {
   ICamera,
+  Point2,
   ReferenceCompatibleOptions,
+  ViewPresentation,
+  ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
@@ -23,6 +26,7 @@ import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
+import { normalizePlanarRotation } from './planarCameraPresentation';
 import {
   getPlanarCompatibilityCamera,
   getPlanarReferencedImageId,
@@ -162,6 +166,7 @@ class PlanarViewportV2 extends ViewportV2<
     this.camera = {
       imageIdIndex: 0,
       orientation: OrientationAxis.ACQUISITION,
+      rotation: 0,
       zoom: 1,
       pan: [0, 0],
     };
@@ -279,6 +284,118 @@ class PlanarViewportV2 extends ViewportV2<
 
   getCamera(): PlanarCamera & ICamera {
     return this.getCompatibilityCamera();
+  }
+
+  setCamera(camera: Partial<PlanarCamera & ICamera>): void {
+    const currentZoom = Math.max(this.camera.zoom ?? 1, 0.001);
+    const compatibilityCamera = this.getCompatibilityCamera();
+    const nextCamera: Partial<PlanarCamera> = {
+      ...(typeof camera.imageIdIndex === 'number'
+        ? { imageIdIndex: camera.imageIdIndex }
+        : {}),
+      ...(camera.orientation !== undefined
+        ? { orientation: camera.orientation }
+        : {}),
+      ...(typeof camera.rotation === 'number'
+        ? { rotation: normalizePlanarRotation(camera.rotation) }
+        : {}),
+      ...(typeof camera.zoom === 'number'
+        ? { zoom: Math.max(camera.zoom, 0.001) }
+        : {}),
+    };
+
+    if (
+      typeof camera.parallelScale === 'number' &&
+      camera.parallelScale > 0 &&
+      typeof compatibilityCamera.parallelScale === 'number' &&
+      compatibilityCamera.parallelScale > 0
+    ) {
+      nextCamera.zoom = Math.max(
+        (currentZoom * compatibilityCamera.parallelScale) /
+          camera.parallelScale,
+        0.001
+      );
+    }
+
+    const panFromFocalPoint = this.getPanFromFocalPoint({
+      currentFocalPoint: compatibilityCamera.focalPoint,
+      currentZoom,
+      nextZoom: nextCamera.zoom ?? currentZoom,
+      targetFocalPoint: camera.focalPoint,
+    });
+
+    if (panFromFocalPoint) {
+      nextCamera.pan = panFromFocalPoint;
+    } else if (camera.pan) {
+      nextCamera.pan = [camera.pan[0], camera.pan[1]];
+    }
+
+    if (!Object.keys(nextCamera).length) {
+      return;
+    }
+
+    super.setCamera(nextCamera);
+  }
+
+  getRotation(): number {
+    return normalizePlanarRotation(this.camera.rotation);
+  }
+
+  getViewPresentation(
+    viewPresSel: ViewPresentationSelector = {
+      rotation: true,
+      displayArea: true,
+      zoom: true,
+      pan: true,
+      flipHorizontal: true,
+      flipVertical: true,
+    }
+  ): ViewPresentation {
+    const target: ViewPresentation = {};
+    const { rotation, displayArea, zoom, pan } = viewPresSel;
+    const currentZoom = this.getZoom();
+
+    if (rotation) {
+      target.rotation = this.getRotation();
+    }
+
+    if (displayArea) {
+      target.displayArea = undefined;
+    }
+
+    if (zoom) {
+      target.zoom = currentZoom;
+    }
+
+    if (pan) {
+      const currentPan = this.getPan();
+
+      target.pan = [currentPan[0] / currentZoom, currentPan[1] / currentZoom];
+    }
+
+    return target;
+  }
+
+  setViewPresentation(viewPres?: ViewPresentation): void {
+    if (!viewPres) {
+      return;
+    }
+
+    const {
+      pan,
+      rotation = this.getRotation(),
+      zoom = this.getZoom(),
+    } = viewPres;
+
+    this.setCamera({
+      rotation,
+      zoom,
+      ...(pan
+        ? {
+            pan: [pan[0] * zoom, pan[1] * zoom] as Point2,
+          }
+        : {}),
+    });
   }
 
   getRenderingEngine() {
@@ -424,6 +541,22 @@ class PlanarViewportV2 extends ViewportV2<
     this.setCamera({ imageIdIndex: undefined, orientation });
   }
 
+  resetCamera(options?: { resetPan?: boolean; resetZoom?: boolean }): boolean {
+    const { resetPan = true, resetZoom = true } = options || {};
+
+    this.setCamera({
+      rotation: 0,
+      ...(resetPan ? { pan: [0, 0] as Point2 } : {}),
+      ...(resetZoom ? { zoom: 1 } : {}),
+    });
+
+    return true;
+  }
+
+  resetCameraForResize(): boolean {
+    return this.resetCamera();
+  }
+
   resize(): void {
     const { clientHeight, clientWidth } = this.element;
     const { canvas } = this.renderContext.cpu;
@@ -497,6 +630,31 @@ class PlanarViewportV2 extends ViewportV2<
     }
 
     return Math.max(0, this.getImageIds().length - 1);
+  }
+
+  private getPanFromFocalPoint(args: {
+    currentFocalPoint?: ICamera['focalPoint'];
+    currentZoom: number;
+    nextZoom: number;
+    targetFocalPoint?: ICamera['focalPoint'];
+  }): Point2 | undefined {
+    const { currentFocalPoint, currentZoom, nextZoom, targetFocalPoint } = args;
+
+    if (!currentFocalPoint || !targetFocalPoint) {
+      return;
+    }
+
+    const currentCanvasFocalPoint = this.worldToCanvas(currentFocalPoint);
+    const targetCanvasFocalPoint = this.worldToCanvas(targetFocalPoint);
+    const zoomRatio = nextZoom / Math.max(currentZoom, 0.001);
+    const currentPan = this.getPan();
+
+    return [
+      currentPan[0] +
+        (currentCanvasFocalPoint[0] - targetCanvasFocalPoint[0]) * zoomRatio,
+      currentPan[1] +
+        (currentCanvasFocalPoint[1] - targetCanvasFocalPoint[1]) * zoomRatio,
+    ];
   }
 
   private getPayload(): PlanarPayload | undefined {

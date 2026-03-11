@@ -7,6 +7,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type { InterpolationType, OrientationAxis } from '../../../enums';
 import type {
   CPUFallbackEnabledElement,
+  ICamera,
   IImage,
   IImageVolume,
   Point3,
@@ -80,6 +81,7 @@ export interface PlanarCamera {
     | OrientationAxis.AXIAL
     | OrientationAxis.CORONAL
     | OrientationAxis.SAGITTAL;
+  rotation?: number;
   zoom?: number;
   pan?: [number, number];
 }
@@ -147,6 +149,8 @@ export interface PlanarCameraState {
   focalPoint: Point3;
   parallelScale: number;
   position: Point3;
+  viewPlaneNormal: Point3;
+  viewUp: Point3;
 }
 
 export interface PlanarImageMapperRendering
@@ -160,6 +164,7 @@ export interface PlanarImageMapperRendering
     defaultVOIRange?: VOIRange;
     initialCamera: PlanarCameraState;
     loadRequestId: number;
+    camera?: ICamera;
   }> {
   renderMode: 'vtkImage';
 }
@@ -172,6 +177,7 @@ export interface PlanarCpuImageRendering
     defaultVOIRange?: VOIRange;
     fitScale: number;
     loadRequestId: number;
+    camera?: ICamera;
     renderingInvalidated: boolean;
   }> {
   renderMode: 'cpu2d';
@@ -187,10 +193,10 @@ export interface PlanarCpuVolumeRendering
     currentImageIdIndex: number;
     maxImageIdIndex: number;
     defaultVOIRange?: VOIRange;
-    orientation?: PlanarCamera['orientation'];
-    sliceCamera: PlanarCameraState;
+    baseCamera?: PlanarCameraState;
+    camera?: ICamera;
+    viewState?: PlanarCamera;
     renderingInvalidated: boolean;
-    currentCamera?: PlanarCamera;
     presentation?: PlanarPresentationProps;
     properties?: PlanarProperties;
     sampledSliceState?: {
@@ -220,8 +226,9 @@ export interface PlanarVolumeMapperRendering
     currentImageIdIndex: number;
     maxImageIdIndex: number;
     defaultVOIRange?: VOIRange;
-    orientation?: PlanarCamera['orientation'];
-    sliceCamera: PlanarCameraState;
+    baseCamera?: PlanarCameraState;
+    camera?: ICamera;
+    viewState?: PlanarCamera;
     removeStreamingSubscriptions?: () => void;
   }> {
   renderMode: 'vtkVolume';

@@ -76,6 +76,7 @@ export class VtkImageMapperRenderingAdapter
         currentImageIdIndex: payload.initialImageIdIndex,
         defaultVOIRange: getDefaultImageVOIRange(payload.initialImage),
         initialCamera: getPlanarCameraState(ctx.vtk.renderer),
+        camera: getVtkImageCompatibilityCamera(ctx.vtk.renderer),
         loadRequestId: 0,
       },
     };
@@ -115,9 +116,13 @@ export class VtkImageMapperRenderingAdapter
       renderer: ctx.vtk.renderer,
       viewState: {
         pan: planarCamera?.pan,
+        rotation: planarCamera?.rotation,
         zoom: planarCamera?.zoom,
       },
     });
+    planarRendering.runtime.camera = getVtkImageCompatibilityCamera(
+      ctx.vtk.renderer
+    );
 
     if (nextImageIdIndex === planarRendering.runtime.currentImageIdIndex) {
       return;
@@ -310,10 +315,21 @@ async function updateRenderedImage(args: {
     renderer: ctx.vtk.renderer,
     viewState: {
       pan: camera?.pan,
+      rotation: camera?.rotation,
       zoom: camera?.zoom,
     },
   });
+  rendering.runtime.camera = getVtkImageCompatibilityCamera(ctx.vtk.renderer);
   ctx.display.requestRender();
+}
+
+function getVtkImageCompatibilityCamera(
+  renderer: PlanarVtkImageAdapterContext['vtk']['renderer']
+) {
+  return {
+    ...getPlanarCameraState(renderer),
+    parallelProjection: true as const,
+  };
 }
 
 function applyImageOrientationToCamera(

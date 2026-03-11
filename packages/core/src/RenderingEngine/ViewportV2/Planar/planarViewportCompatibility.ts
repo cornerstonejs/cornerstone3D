@@ -12,19 +12,16 @@ import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
 import getVolumeViewReferenceId from '../../../utilities/getVolumeViewReferenceId';
 import { updatePlaneRestriction } from '../../../utilities/updatePlaneRestriction';
-import {
-  getPlanarVolumeSliceNavigationState,
-  getPlanarVolumeSlicePoint,
-} from '../../helpers/planarVolumeRendering';
-import { getCpuVolumeCompatibilityCamera } from './CpuVolumeSliceRenderingAdapter';
 import { getPlanarCpuImageCompatibilityCamera } from './CpuImageCanvasRenderingAdapter';
-import { getPlanarCameraVectors } from './planarCameraOrientation';
 import type {
   PlanarCamera,
-  PlanarCpuVolumeAdapterContext,
   PlanarRendering,
   PlanarViewportRenderContext,
 } from './PlanarViewportV2Types';
+import {
+  getPlanarVolumeTargetFocalPoint,
+  resolvePlanarVolumeCamera,
+} from './planarVolumeCameraState';
 
 export function getPlanarCompatibilityCamera(args: {
   camera: PlanarCamera;
@@ -38,41 +35,35 @@ export function getPlanarCompatibilityCamera(args: {
   }
 
   if (rendering.renderMode === 'cpu2d') {
-    return getPlanarCpuImageCompatibilityCamera({
-      camera,
-      image: rendering.runtime.enabledElement.image,
-    });
-  }
-
-  if (rendering.renderMode === 'cpuVolume') {
     return {
       ...camera,
-      ...getCpuVolumeCompatibilityCamera(
-        renderContext as PlanarCpuVolumeAdapterContext,
-        rendering
-      ),
+      ...(rendering.runtime.camera ||
+        getPlanarCpuImageCompatibilityCamera({
+          camera,
+          image: rendering.runtime.enabledElement.image,
+        })),
     };
   }
 
-  const vtkCamera = renderContext.vtk.renderer.getActiveCamera();
-  const cameraVectors =
-    'imageVolume' in rendering.runtime && rendering.runtime.imageVolume
-      ? getPlanarCameraVectors({
-          imageVolume: rendering.runtime.imageVolume,
-          orientation: camera.orientation,
-        })
-      : undefined;
+  if (rendering.renderMode === 'vtkImage') {
+    return {
+      ...camera,
+      ...(rendering.runtime.camera || {
+        ...rendering.runtime.initialCamera,
+        parallelProjection: true,
+      }),
+    };
+  }
 
   return {
     ...camera,
-    focalPoint: [...vtkCamera.getFocalPoint()] as Point3,
-    position: [...vtkCamera.getPosition()] as Point3,
-    parallelProjection: true,
-    parallelScale: vtkCamera.getParallelScale(),
-    viewPlaneNormal:
-      cameraVectors?.viewPlaneNormal ||
-      ([...vtkCamera.getViewPlaneNormal()] as Point3),
-    viewUp: cameraVectors?.viewUp || ([...vtkCamera.getViewUp()] as Point3),
+    ...getPlanarVolumeRuntimeCamera({
+      rendering: rendering as Extract<
+        PlanarRendering,
+        { renderMode: 'cpuVolume' | 'vtkVolume' }
+      >,
+      renderContext,
+    }),
   };
 }
 
@@ -116,6 +107,7 @@ export function getPlanarReferencedImageId(args: {
 
   const targetFocalPoint = getTargetVolumeFocalPoint({
     camera: compatibilityCamera,
+    renderContext: args.renderContext,
     rendering,
     sliceIndex: viewRefSpecifier?.sliceIndex,
   });
@@ -145,6 +137,7 @@ export function getPlanarViewReference(args: {
     compatibilityCamera.viewPlaneNormal
       ? getTargetVolumeFocalPoint({
           camera: compatibilityCamera,
+          renderContext: args.renderContext,
           rendering,
           sliceIndex: viewRefSpecifier?.sliceIndex,
         })
@@ -402,13 +395,14 @@ function getImageIds(rendering: PlanarRendering): string[] {
 
 function getTargetVolumeFocalPoint(args: {
   camera: Pick<ICamera, 'focalPoint' | 'position' | 'viewPlaneNormal'>;
+  renderContext: PlanarViewportRenderContext;
   rendering: Extract<
     PlanarRendering,
     { renderMode: 'cpuVolume' | 'vtkVolume' }
   >;
   sliceIndex?: number;
 }): Point3 {
-  const { camera, rendering, sliceIndex } = args;
+  const { camera, renderContext, rendering, sliceIndex } = args;
 
   if (
     typeof sliceIndex !== 'number' ||
@@ -417,26 +411,80 @@ function getTargetVolumeFocalPoint(args: {
     return camera.focalPoint as Point3;
   }
 
-  const { sliceRange, spacingInNormalDirection } =
-    getPlanarVolumeSliceNavigationState({
-      actor: rendering.runtime.actor,
-      camera: {
-        focalPoint: camera.focalPoint as Point3,
-        position: camera.position as Point3,
-        viewPlaneNormal: camera.viewPlaneNormal as Point3,
-      },
-      imageVolume: rendering.runtime.imageVolume,
-    });
-  const { newFocalPoint } = getPlanarVolumeSlicePoint({
-    camera: {
-      focalPoint: camera.focalPoint as Point3,
-      position: camera.position as Point3,
-      viewPlaneNormal: camera.viewPlaneNormal as Point3,
-    },
-    delta: sliceIndex - rendering.runtime.currentImageIdIndex,
-    sliceRange,
-    spacingInNormalDirection,
+  const { canvasHeight, canvasWidth } = getVolumeCanvasDimensions({
+    rendering,
+    renderContext,
   });
 
-  return newFocalPoint;
+  return (
+    getPlanarVolumeTargetFocalPoint({
+      baseCamera: rendering.runtime.baseCamera,
+      canvasHeight,
+      canvasWidth,
+      imageVolume: rendering.runtime.imageVolume,
+      orientation: rendering.runtime.viewState?.orientation,
+      sliceIndex,
+      viewState: rendering.runtime.viewState,
+    }) || (camera.focalPoint as Point3)
+  );
+}
+
+function getPlanarVolumeRuntimeCamera(args: {
+  rendering: Extract<
+    PlanarRendering,
+    { renderMode: 'cpuVolume' | 'vtkVolume' }
+  >;
+  renderContext: PlanarViewportRenderContext;
+}): Partial<ICamera> | undefined {
+  const { rendering, renderContext } = args;
+
+  if (rendering.runtime.camera) {
+    return rendering.runtime.camera;
+  }
+
+  const { canvasHeight, canvasWidth } = getVolumeCanvasDimensions({
+    rendering,
+    renderContext,
+  });
+
+  return resolvePlanarVolumeCamera({
+    baseCamera: rendering.runtime.baseCamera,
+    canvasHeight,
+    canvasWidth,
+    viewState: rendering.runtime.viewState,
+  });
+}
+
+function getVolumeCanvasDimensions(args: {
+  rendering: Extract<
+    PlanarRendering,
+    { renderMode: 'cpuVolume' | 'vtkVolume' }
+  >;
+  renderContext: PlanarViewportRenderContext;
+}) {
+  const { rendering, renderContext } = args;
+
+  if (rendering.renderMode === 'cpuVolume') {
+    return {
+      canvasWidth:
+        renderContext.cpu.canvas.width ||
+        renderContext.cpu.canvas.clientWidth ||
+        renderContext.viewport.element.clientWidth,
+      canvasHeight:
+        renderContext.cpu.canvas.height ||
+        renderContext.cpu.canvas.clientHeight ||
+        renderContext.viewport.element.clientHeight,
+    };
+  }
+
+  return {
+    canvasWidth:
+      renderContext.vtk.canvas.clientWidth ||
+      renderContext.vtk.canvas.width ||
+      renderContext.viewport.element.clientWidth,
+    canvasHeight:
+      renderContext.vtk.canvas.clientHeight ||
+      renderContext.vtk.canvas.height ||
+      renderContext.viewport.element.clientHeight,
+  };
 }

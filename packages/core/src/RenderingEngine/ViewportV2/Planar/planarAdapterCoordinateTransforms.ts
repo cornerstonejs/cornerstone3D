@@ -13,16 +13,109 @@ export {
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import type {
   CPUFallbackEnabledElement,
+  ICamera,
   IImage,
   Point2,
   Point3,
 } from '../../../types';
 import type { PlanarCamera } from './PlanarViewportV2Types';
+import { rotatePlanarViewUp } from './planarCameraPresentation';
 
 interface PlanarBaseCameraState {
   focalPoint: Point3;
   parallelScale: number;
   position: Point3;
+  viewPlaneNormal: Point3;
+  viewUp: Point3;
+}
+
+type PlanarResolvedCamera = Pick<
+  Required<ICamera>,
+  'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
+>;
+
+function getPlanarCameraBasis(camera: PlanarResolvedCamera) {
+  const viewUp = vec3.normalize(
+    vec3.create(),
+    camera.viewUp as unknown as vec3
+  ) as Point3;
+  const viewPlaneNormal = vec3.normalize(
+    vec3.create(),
+    camera.viewPlaneNormal as unknown as vec3
+  ) as Point3;
+  let right = vec3.cross(
+    vec3.create(),
+    viewUp as unknown as vec3,
+    viewPlaneNormal as unknown as vec3
+  );
+
+  if (!vec3.length(right)) {
+    right = vec3.fromValues(1, 0, 0);
+  }
+
+  return {
+    right: vec3.normalize(vec3.create(), right) as Point3,
+    viewPlaneNormal,
+    viewUp,
+  };
+}
+
+export function canvasToWorldPlanarCamera(args: {
+  camera: PlanarResolvedCamera;
+  canvasWidth: number;
+  canvasHeight: number;
+  canvasPos: Point2;
+}): Point3 {
+  const { camera, canvasWidth, canvasHeight, canvasPos } = args;
+  const safeCanvasWidth = Math.max(canvasWidth, 1);
+  const safeCanvasHeight = Math.max(canvasHeight, 1);
+  const { right, viewUp } = getPlanarCameraBasis(camera);
+  const worldHeight = Math.max(camera.parallelScale, 0.001) * 2;
+  const worldWidth = worldHeight * (safeCanvasWidth / safeCanvasHeight);
+  const xOffset = (canvasPos[0] / safeCanvasWidth - 0.5) * worldWidth;
+  const yOffset = (0.5 - canvasPos[1] / safeCanvasHeight) * worldHeight;
+  const worldPos = [...camera.focalPoint] as Point3;
+
+  vec3.scaleAndAdd(
+    worldPos as unknown as vec3,
+    worldPos as unknown as vec3,
+    right as unknown as vec3,
+    xOffset
+  );
+  vec3.scaleAndAdd(
+    worldPos as unknown as vec3,
+    worldPos as unknown as vec3,
+    viewUp as unknown as vec3,
+    yOffset
+  );
+
+  return worldPos;
+}
+
+export function worldToCanvasPlanarCamera(args: {
+  camera: PlanarResolvedCamera;
+  canvasWidth: number;
+  canvasHeight: number;
+  worldPos: Point3;
+}): Point2 {
+  const { camera, canvasWidth, canvasHeight, worldPos } = args;
+  const safeCanvasWidth = Math.max(canvasWidth, 1);
+  const safeCanvasHeight = Math.max(canvasHeight, 1);
+  const { right, viewUp } = getPlanarCameraBasis(camera);
+  const worldHeight = Math.max(camera.parallelScale, 0.001) * 2;
+  const worldWidth = worldHeight * (safeCanvasWidth / safeCanvasHeight);
+  const delta = vec3.subtract(
+    vec3.create(),
+    worldPos as unknown as vec3,
+    camera.focalPoint as unknown as vec3
+  );
+  const xOffset = vec3.dot(delta, right as unknown as vec3);
+  const yOffset = vec3.dot(delta, viewUp as unknown as vec3);
+
+  return [
+    (xOffset / worldWidth + 0.5) * safeCanvasWidth,
+    (0.5 - yOffset / worldHeight) * safeCanvasHeight,
+  ];
 }
 
 export function canvasToWorldCPUImage(
@@ -63,17 +156,28 @@ export function applyPlanarCanvasCameraViewState(args: {
   canvas: HTMLCanvasElement;
   renderer: vtkRenderer;
   baseCamera: PlanarBaseCameraState;
-  viewState?: Pick<PlanarCamera, 'pan' | 'zoom'>;
+  viewState?: Pick<PlanarCamera, 'pan' | 'rotation' | 'zoom'>;
 }): void {
   const { canvas, renderer, baseCamera, viewState } = args;
   const camera = renderer.getActiveCamera();
   const zoom = Math.max(viewState?.zoom ?? 1, 0.001);
   const [panX, panY] = viewState?.pan ?? [0, 0];
+  const rotatedViewUp = rotatePlanarViewUp({
+    rotation: viewState?.rotation,
+    viewPlaneNormal: baseCamera.viewPlaneNormal,
+    viewUp: baseCamera.viewUp,
+  });
 
   camera.setParallelProjection(true);
+  camera.setDirectionOfProjection(
+    -baseCamera.viewPlaneNormal[0],
+    -baseCamera.viewPlaneNormal[1],
+    -baseCamera.viewPlaneNormal[2]
+  );
   camera.setParallelScale(baseCamera.parallelScale / zoom);
   camera.setFocalPoint(...baseCamera.focalPoint);
   camera.setPosition(...baseCamera.position);
+  camera.setViewUp(...rotatedViewUp);
 
   if (!panX && !panY) {
     return;
