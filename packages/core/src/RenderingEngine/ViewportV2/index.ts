@@ -17,7 +17,7 @@ export type {
   MountedRendering,
   RenderPathDefinition,
   RenderPathResolver,
-  RenderingAdapter,
+  RenderPath,
   RenderingBinding,
   RenderingId,
   ViewportRenderContext,
@@ -34,7 +34,7 @@ export {
 export { default as ECGViewportV2 } from './ECG';
 export {
   CanvasECGPath,
-  CanvasECGRenderingAdapter,
+  CanvasECGRenderPath,
   DefaultECGDataProvider,
 } from './ECG';
 export type {
@@ -52,7 +52,7 @@ export { default as VideoViewportV2 } from './Video';
 export {
   DefaultVideoDataProvider,
   HtmlVideoPath,
-  HtmlVideoRenderingAdapter,
+  HtmlVideoRenderPath,
 } from './Video';
 export type {
   VideoCamera,
@@ -66,13 +66,13 @@ export type {
 } from './Video';
 export { default as PlanarViewportV2 } from './Planar';
 export {
-  CpuImageCanvasPath,
-  CpuImageCanvasRenderingAdapter,
+  CpuImageSlicePath,
+  CpuImageSliceRenderPath,
   DefaultPlanarDataProvider,
   VtkImageMapperPath,
-  VtkImageMapperRenderingAdapter,
+  VtkImageMapperRenderPath,
   VtkVolumeMapperPath,
-  VtkVolumeMapperRenderingAdapter,
+  VtkVolumeMapperRenderPath,
 } from './Planar';
 export type {
   PlanarCamera,
@@ -98,9 +98,9 @@ export { default as VolumeViewport3DV2 } from './Volume3D';
 export {
   DefaultVolume3DDataProvider,
   VtkGeometry3DPath,
-  VtkGeometry3DRenderingAdapter,
+  VtkGeometry3DRenderPath,
   VtkVolume3DPath,
-  VtkVolume3DRenderingAdapter,
+  VtkVolume3DRenderPath,
 } from './Volume3D';
 export type {
   Volume3DCamera,
@@ -125,7 +125,7 @@ export { default as WSIViewportV2 } from './WSI';
 export {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
-  DicomMicroscopyRenderingAdapter,
+  DicomMicroscopyRenderPath,
 } from './WSI';
 export type {
   WSICamera,

@@ -1,20 +1,20 @@
 export { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 export {
-  CpuImageCanvasPath,
-  CpuImageCanvasRenderingAdapter,
-} from './CpuImageCanvasRenderingAdapter';
+  CpuImageSlicePath,
+  CpuImageSliceRenderPath,
+} from './CpuImageSliceRenderPath';
 export {
   CpuVolumeSlicePath,
-  CpuVolumeSliceRenderingAdapter,
-} from './CpuVolumeSliceRenderingAdapter';
+  CpuVolumeSliceRenderPath,
+} from './CpuVolumeSliceRenderPath';
 export {
   VtkImageMapperPath,
-  VtkImageMapperRenderingAdapter,
-} from './VtkImageMapperRenderingAdapter';
+  VtkImageMapperRenderPath,
+} from './VtkImageMapperRenderPath';
 export {
   VtkVolumeMapperPath,
-  VtkVolumeMapperRenderingAdapter,
-} from './VtkVolumeMapperRenderingAdapter';
+  VtkVolumeMapperRenderPath,
+} from './VtkVolumeMapperRenderPath';
 export { default } from './PlanarViewportV2';
 export type {
   PlanarCamera,

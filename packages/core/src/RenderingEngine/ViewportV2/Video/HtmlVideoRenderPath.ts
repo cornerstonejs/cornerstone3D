@@ -3,7 +3,7 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type { Point2, Point3 } from '../../../types';
 import ViewportType from '../../../enums/ViewportType';
@@ -17,8 +17,8 @@ import type {
 } from './VideoViewportV2Types';
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
 
-export class HtmlVideoRenderingAdapter
-  implements RenderingAdapter<VideoElementRenderContext>
+export class HtmlVideoRenderPath
+  implements RenderPath<VideoElementRenderContext>
 {
   async attach(
     ctx: VideoElementRenderContext,
@@ -245,7 +245,7 @@ export class HtmlVideoPath
     return data.type === 'video' && options.renderMode === 'video2d';
   }
 
-  createAdapter() {
-    return new HtmlVideoRenderingAdapter();
+  createRenderPath() {
+    return new HtmlVideoRenderPath();
   }
 }

@@ -44,7 +44,7 @@ export interface BaseViewportRenderContext {
 /** @deprecated Use BaseViewportRenderContext instead. */
 export type ViewportRenderContext = BaseViewportRenderContext;
 
-export interface RenderingAdapter<
+export interface RenderPath<
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
 > {
   attach(
@@ -106,7 +106,7 @@ export interface RenderPathDefinition<
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean;
 
-  createAdapter(): RenderingAdapter<TAdapterContext>;
+  createRenderPath(): RenderPath<TAdapterContext>;
 
   selectContext?(rootContext: TRootContext): TAdapterContext;
 }

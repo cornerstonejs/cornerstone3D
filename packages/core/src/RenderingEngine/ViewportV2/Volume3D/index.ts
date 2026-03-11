@@ -1,12 +1,12 @@
 export { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 export {
   VtkGeometry3DPath,
-  VtkGeometry3DRenderingAdapter,
-} from './VtkGeometry3DRenderingAdapter';
+  VtkGeometry3DRenderPath,
+} from './VtkGeometry3DRenderPath';
 export {
   VtkVolume3DPath,
-  VtkVolume3DRenderingAdapter,
-} from './VtkVolume3DRenderingAdapter';
+  VtkVolume3DRenderPath,
+} from './VtkVolume3DRenderPath';
 export { default } from './3dViewport';
 export type {
   Volume3DCamera,

@@ -11,7 +11,7 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
@@ -30,8 +30,8 @@ import {
   resolvePlanarVolumeCamera,
 } from './planarVolumeCameraState';
 
-export class CpuVolumeSliceRenderingAdapter
-  implements RenderingAdapter<PlanarCpuVolumeAdapterContext>
+export class CpuVolumeSliceRenderPath
+  implements RenderPath<PlanarCpuVolumeAdapterContext>
 {
   private readonly sampler = new PlanarCPUVolumeSampler();
 
@@ -425,8 +425,8 @@ export class CpuVolumeSlicePath
     return data.type === 'image' && options.renderMode === 'cpuVolume';
   }
 
-  createAdapter() {
-    return new CpuVolumeSliceRenderingAdapter();
+  createRenderPath() {
+    return new CpuVolumeSliceRenderPath();
   }
 
   selectContext(

@@ -8,8 +8,8 @@ import type { DataAttachmentOptions } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
-import { VtkGeometry3DPath } from './VtkGeometry3DRenderingAdapter';
-import { VtkVolume3DPath } from './VtkVolume3DRenderingAdapter';
+import { VtkGeometry3DPath } from './VtkGeometry3DRenderPath';
+import { VtkVolume3DPath } from './VtkVolume3DRenderPath';
 import type {
   Volume3DCamera,
   Volume3DPresentationProps,

@@ -12,7 +12,7 @@ import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
 import getVolumeViewReferenceId from '../../../utilities/getVolumeViewReferenceId';
 import { updatePlaneRestriction } from '../../../utilities/updatePlaneRestriction';
-import { getPlanarCpuImageCompatibilityCamera } from './CpuImageCanvasRenderingAdapter';
+import { getPlanarCpuImageCompatibilityCamera } from './CpuImageSliceRenderPath';
 import type {
   PlanarCamera,
   PlanarRendering,

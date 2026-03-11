@@ -17,7 +17,7 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
   Volume3DCamera,
@@ -28,10 +28,11 @@ import type {
   Volume3DVolumeRendering,
   Volume3DVtkVolumeAdapterContext,
 } from './3dViewportTypes';
+import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 
-export class VtkVolume3DRenderingAdapter
-  implements RenderingAdapter<Volume3DVtkVolumeAdapterContext>
+export class VtkVolume3DRenderPath
+  implements RenderPath<Volume3DVtkVolumeAdapterContext>
 {
   async attach(
     ctx: Volume3DVtkVolumeAdapterContext,
@@ -193,8 +194,8 @@ export class VtkVolume3DPath
     return data.type === 'image' && options.renderMode === 'vtkVolume3d';
   }
 
-  createAdapter() {
-    return new VtkVolume3DRenderingAdapter();
+  createRenderPath() {
+    return new VtkVolume3DRenderPath();
   }
 
   selectContext(
@@ -259,47 +260,9 @@ function applyCamera(
   ctx: Volume3DVtkVolumeAdapterContext,
   camera?: Partial<Volume3DCamera>
 ): void {
-  if (!camera) {
-    return;
-  }
+  applyVolume3DCamera(ctx, camera);
 
-  const vtkCamera = ctx.vtk.renderer.getActiveCamera();
-
-  if (camera.parallelProjection !== undefined) {
-    vtkCamera.setParallelProjection(camera.parallelProjection);
-  }
-
-  if (camera.viewUp) {
-    vtkCamera.setViewUp(...camera.viewUp);
-  }
-
-  if (camera.viewPlaneNormal) {
-    vtkCamera.setDirectionOfProjection(
-      -camera.viewPlaneNormal[0],
-      -camera.viewPlaneNormal[1],
-      -camera.viewPlaneNormal[2]
-    );
-  }
-
-  if (camera.position) {
-    vtkCamera.setPosition(...camera.position);
-  }
-
-  if (camera.focalPoint) {
-    vtkCamera.setFocalPoint(...camera.focalPoint);
-  }
-
-  if (camera.parallelScale !== undefined) {
-    vtkCamera.setParallelScale(camera.parallelScale);
-  }
-
-  if (camera.viewAngle !== undefined) {
-    vtkCamera.setViewAngle(camera.viewAngle);
-  }
-
-  if (camera.clippingRange !== undefined) {
-    vtkCamera.setClippingRange(...camera.clippingRange);
-  } else {
+  if (camera && camera.clippingRange === undefined) {
     setCameraClippingRange(ctx);
   }
 }

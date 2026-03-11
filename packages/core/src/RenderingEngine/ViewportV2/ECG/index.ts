@@ -1,7 +1,4 @@
-export {
-  CanvasECGPath,
-  CanvasECGRenderingAdapter,
-} from './CanvasECGRenderingAdapter';
+export { CanvasECGPath, CanvasECGRenderPath } from './CanvasECGRenderPath';
 export { DefaultECGDataProvider } from './DefaultECGDataProvider';
 export { default } from './ECGViewportV2';
 export type {

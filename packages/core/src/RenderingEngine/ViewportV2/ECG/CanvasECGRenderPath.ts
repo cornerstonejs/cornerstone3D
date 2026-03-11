@@ -15,7 +15,7 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
   ECGCamera,
@@ -27,9 +27,7 @@ import type {
   RenderWindowMetrics,
 } from './ECGViewportV2Types';
 
-export class CanvasECGRenderingAdapter
-  implements RenderingAdapter<ECGCanvasRenderContext>
-{
+export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   async attach(
     ctx: ECGCanvasRenderContext,
     data: LogicalDataObject,
@@ -179,8 +177,8 @@ export class CanvasECGPath
     return data.type === 'ecg' && options.renderMode === 'signal2d';
   }
 
-  createAdapter() {
-    return new CanvasECGRenderingAdapter();
+  createRenderPath() {
+    return new CanvasECGRenderPath();
   }
 }
 

@@ -1,8 +1,5 @@
 export { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
-export {
-  HtmlVideoPath,
-  HtmlVideoRenderingAdapter,
-} from './HtmlVideoRenderingAdapter';
+export { HtmlVideoPath, HtmlVideoRenderPath } from './HtmlVideoRenderPath';
 export { default } from './VideoViewportV2';
 export type {
   VideoCamera,

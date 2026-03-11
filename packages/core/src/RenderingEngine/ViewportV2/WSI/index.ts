@@ -1,8 +1,8 @@
 export { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 export {
   DicomMicroscopyPath,
-  DicomMicroscopyRenderingAdapter,
-} from './DicomMicroscopyRenderingAdapter';
+  DicomMicroscopyRenderPath,
+} from './DicomMicroscopyRenderPath';
 export { default } from './WSIViewportV2';
 export type {
   WSICamera,

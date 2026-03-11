@@ -12,7 +12,7 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
@@ -34,8 +34,8 @@ import {
   updatePlanarVolumeClippingPlanes,
 } from './planarVolumeCameraState';
 
-export class VtkVolumeMapperRenderingAdapter
-  implements RenderingAdapter<PlanarVtkVolumeAdapterContext>
+export class VtkVolumeMapperRenderPath
+  implements RenderPath<PlanarVtkVolumeAdapterContext>
 {
   async attach(
     ctx: PlanarVtkVolumeAdapterContext,
@@ -290,8 +290,8 @@ export class VtkVolumeMapperPath
     return data.type === 'image' && options.renderMode === 'vtkVolume';
   }
 
-  createAdapter() {
-    return new VtkVolumeMapperRenderingAdapter();
+  createRenderPath() {
+    return new VtkVolumeMapperRenderPath();
   }
 
   selectContext(

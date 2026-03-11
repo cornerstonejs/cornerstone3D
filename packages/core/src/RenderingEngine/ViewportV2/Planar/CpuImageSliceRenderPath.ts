@@ -27,7 +27,7 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
@@ -47,8 +47,8 @@ import {
   rotatePlanarViewUp,
 } from './planarCameraPresentation';
 
-export class CpuImageCanvasRenderingAdapter
-  implements RenderingAdapter<PlanarCpuImageAdapterContext>
+export class CpuImageSliceRenderPath
+  implements RenderPath<PlanarCpuImageAdapterContext>
 {
   async attach(
     ctx: PlanarCpuImageAdapterContext,
@@ -260,22 +260,22 @@ export class CpuImageCanvasRenderingAdapter
   }
 }
 
-export class CpuImageCanvasPath
+export class CpuImageSlicePath
   implements
     RenderPathDefinition<
       PlanarViewportRenderContext,
       PlanarCpuImageAdapterContext
     >
 {
-  readonly id = 'planar:cpu-image-canvas';
+  readonly id = 'planar:cpu-image-slice';
   readonly type = ViewportType.PLANAR_V2;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'image' && options.renderMode === 'cpu2d';
   }
 
-  createAdapter() {
-    return new CpuImageCanvasRenderingAdapter();
+  createRenderPath() {
+    return new CpuImageSliceRenderPath();
   }
 
   selectContext(

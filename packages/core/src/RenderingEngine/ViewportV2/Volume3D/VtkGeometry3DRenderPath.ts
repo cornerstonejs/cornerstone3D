@@ -20,19 +20,21 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
   Volume3DGeometryPayload,
   Volume3DGeometryRendering,
+  Volume3DCamera,
   Volume3DPresentationProps,
   Volume3DProperties,
   Volume3DViewportRenderContext,
   Volume3DVtkGeometryAdapterContext,
 } from './3dViewportTypes';
+import applyVolume3DCamera from './applyVolume3DCamera';
 
-export class VtkGeometry3DRenderingAdapter
-  implements RenderingAdapter<Volume3DVtkGeometryAdapterContext>
+export class VtkGeometry3DRenderPath
+  implements RenderPath<Volume3DVtkGeometryAdapterContext>
 {
   async attach(
     ctx: Volume3DVtkGeometryAdapterContext,
@@ -80,8 +82,14 @@ export class VtkGeometry3DRenderingAdapter
     );
   }
 
-  updateCamera(): void {
-    // Geometry uses the shared renderer camera state.
+  updateCamera(
+    ctx: Volume3DVtkGeometryAdapterContext,
+    _rendering: MountedRendering,
+    camera: unknown
+  ): void {
+    applyVolume3DCamera(ctx, camera as Partial<Volume3DCamera> | undefined, {
+      resetClippingRange: true,
+    });
   }
 
   updateProperties(
@@ -157,8 +165,8 @@ export class VtkGeometry3DPath
     return data.type === 'geometry' && options.renderMode === 'vtkGeometry3d';
   }
 
-  createAdapter() {
-    return new VtkGeometry3DRenderingAdapter();
+  createRenderPath() {
+    return new VtkGeometry3DRenderPath();
   }
 
   selectContext(
@@ -206,11 +214,8 @@ function createActorEntries(geometry: IGeometry) {
     const mesh = geometry.data as IMesh;
 
     return mesh.actors.map((sourceActor, index) => {
-      const actor = vtkActor.newInstance();
-      actor.shallowCopy(sourceActor);
-
       return {
-        actor,
+        actor: sourceActor,
         referencedId: geometry.id,
         uid: `${geometry.id}:${index}`,
       };

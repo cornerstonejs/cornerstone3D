@@ -8,7 +8,7 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type { Point2, Point3 } from '../../../types';
 import type {
@@ -22,8 +22,8 @@ import type {
 
 const EVENT_POSTRENDER = 'postrender';
 
-export class DicomMicroscopyRenderingAdapter
-  implements RenderingAdapter<WSIViewportRenderContext>
+export class DicomMicroscopyRenderPath
+  implements RenderPath<WSIViewportRenderContext>
 {
   async attach(
     ctx: WSIViewportRenderContext,
@@ -188,8 +188,8 @@ export class DicomMicroscopyPath
     return data.type === 'wsi' && options.renderMode === 'wsi2d';
   }
 
-  createAdapter() {
-    return new DicomMicroscopyRenderingAdapter();
+  createRenderPath() {
+    return new DicomMicroscopyRenderPath();
   }
 }
 

@@ -3,7 +3,7 @@ import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
-import { CanvasECGPath } from './CanvasECGRenderingAdapter';
+import { CanvasECGPath } from './CanvasECGRenderPath';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import type {
   ECGCamera,

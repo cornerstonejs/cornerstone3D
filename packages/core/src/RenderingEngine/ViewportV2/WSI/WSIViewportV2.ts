@@ -6,7 +6,7 @@ import type {
   WSIMapLike,
 } from '../../../utilities/WSIUtilities';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
-import { DicomMicroscopyPath } from './DicomMicroscopyRenderingAdapter';
+import { DicomMicroscopyPath } from './DicomMicroscopyRenderPath';
 import type {
   WSICamera,
   WSIProperties,

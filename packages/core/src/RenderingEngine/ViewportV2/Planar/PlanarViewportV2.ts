@@ -17,11 +17,11 @@ import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAttachmentOptions } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
-import { CpuImageCanvasPath } from './CpuImageCanvasRenderingAdapter';
-import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderingAdapter';
+import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
+import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
-import { VtkImageMapperPath } from './VtkImageMapperRenderingAdapter';
-import { VtkVolumeMapperPath } from './VtkVolumeMapperRenderingAdapter';
+import { VtkImageMapperPath } from './VtkImageMapperRenderPath';
+import { VtkVolumeMapperPath } from './VtkVolumeMapperRenderPath';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -48,7 +48,7 @@ import type {
   PlanarViewportV2Input,
 } from './PlanarViewportV2Types';
 
-defaultRenderPathResolver.register(new CpuImageCanvasPath());
+defaultRenderPathResolver.register(new CpuImageSlicePath());
 defaultRenderPathResolver.register(new CpuVolumeSlicePath());
 defaultRenderPathResolver.register(new VtkImageMapperPath());
 defaultRenderPathResolver.register(new VtkVolumeMapperPath());

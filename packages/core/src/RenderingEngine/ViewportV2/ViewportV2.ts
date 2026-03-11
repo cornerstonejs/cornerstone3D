@@ -13,6 +13,29 @@ import type {
 } from './ViewportArchitectureTypes';
 import type ViewportType from '../../enums/ViewportType';
 
+/**
+ * Generic ViewportV2 controller.
+ *
+ * The base class owns only shared viewport state and binding orchestration:
+ * loaded logical data, mounted renderings, camera state, properties, and
+ * presentation forwarding. It does not know how CPU, VTK, DOM, image, volume,
+ * or media runtimes work internally.
+ *
+ * Concrete viewport families are expected to stay thin and provide:
+ * - a render context for their render paths
+ * - a data provider
+ * - a render path resolver when the default is not enough
+ * - viewport-family-specific public APIs
+ *
+ * Concrete render paths are expected to own:
+ * - runtime attachment and detachment
+ * - camera interpretation for that render path
+ * - presentation and property application
+ * - render-path-specific coordinate transforms
+ *
+ * This split keeps migration from legacy viewports incremental without
+ * centralizing render-mode-specific behavior in the controller.
+ */
 abstract class ViewportV2<
   TCamera,
   TProperties,
@@ -32,6 +55,10 @@ abstract class ViewportV2<
   protected camera!: TCamera;
   protected properties!: TProperties;
 
+  /**
+   * Loads a logical dataset through the viewport data provider and attaches it
+   * through the render-path resolver.
+   */
   async setDataId(
     dataId: DataId,
     options: DataAttachmentOptions
@@ -40,6 +67,13 @@ abstract class ViewportV2<
     return this.attachLoadedData(dataId, data, options);
   }
 
+  /**
+   * Converts loaded logical data into a mounted rendering binding.
+   *
+   * The binding stores render-path callbacks so future presentation, camera,
+   * property, transform, resize, and render requests can be routed back to the
+   * correct render-path runtime.
+   */
   protected async attachLoadedData(
     dataId: DataId,
     data: LogicalDataObject,
@@ -50,8 +84,8 @@ abstract class ViewportV2<
       data,
       options
     );
-    const adapter = path.createAdapter();
-    const adapterContext =
+    const renderPath = path.createRenderPath();
+    const renderPathContext =
       path.selectContext?.(this.renderContext) ?? this.renderContext;
     const existing = this.bindings.get(dataId);
 
@@ -59,56 +93,63 @@ abstract class ViewportV2<
       existing.detach();
     }
 
-    const rendering = await adapter.attach(adapterContext, data, options);
+    const rendering = await renderPath.attach(renderPathContext, data, options);
 
     this.bindings.set(dataId, {
       data,
       rendering,
       updatePresentation: (props) => {
-        adapter.updatePresentation(adapterContext, rendering, props);
+        renderPath.updatePresentation(renderPathContext, rendering, props);
       },
       updateCamera: (camera) => {
-        adapter.updateCamera(adapterContext, rendering, camera);
+        renderPath.updateCamera(renderPathContext, rendering, camera);
       },
       updateProperties: (properties) => {
-        adapter.updateProperties(adapterContext, rendering, properties);
+        renderPath.updateProperties(renderPathContext, rendering, properties);
       },
-      canvasToWorld: adapter.canvasToWorld
+      canvasToWorld: renderPath.canvasToWorld
         ? (canvasPos) => {
-            return adapter.canvasToWorld?.(
-              adapterContext,
+            return renderPath.canvasToWorld?.(
+              renderPathContext,
               rendering,
               canvasPos
             );
           }
         : undefined,
-      worldToCanvas: adapter.worldToCanvas
+      worldToCanvas: renderPath.worldToCanvas
         ? (worldPos) => {
-            return adapter.worldToCanvas?.(adapterContext, rendering, worldPos);
+            return renderPath.worldToCanvas?.(
+              renderPathContext,
+              rendering,
+              worldPos
+            );
           }
         : undefined,
-      getFrameOfReferenceUID: adapter.getFrameOfReferenceUID
+      getFrameOfReferenceUID: renderPath.getFrameOfReferenceUID
         ? () => {
-            return adapter.getFrameOfReferenceUID?.(adapterContext, rendering);
+            return renderPath.getFrameOfReferenceUID?.(
+              renderPathContext,
+              rendering
+            );
           }
         : undefined,
-      getImageData: adapter.getImageData
+      getImageData: renderPath.getImageData
         ? () => {
-            return adapter.getImageData?.(adapterContext, rendering);
+            return renderPath.getImageData?.(renderPathContext, rendering);
           }
         : undefined,
-      render: adapter.render
+      render: renderPath.render
         ? () => {
-            adapter.render?.(adapterContext, rendering);
+            renderPath.render?.(renderPathContext, rendering);
           }
         : undefined,
-      resize: adapter.resize
+      resize: renderPath.resize
         ? () => {
-            adapter.resize?.(adapterContext, rendering);
+            renderPath.resize?.(renderPathContext, rendering);
           }
         : undefined,
       detach: () => {
-        adapter.detach(adapterContext, rendering);
+        renderPath.detach(renderPathContext, rendering);
       },
     });
 
@@ -129,6 +170,10 @@ abstract class ViewportV2<
     return rendering.id;
   }
 
+  /**
+   * Stores presentation state for a dataset and forwards it immediately when
+   * that dataset is already attached.
+   */
   setPresentation(dataId: DataId, props: TDataPresentation): void {
     this.presentations.set(dataId, props);
     const binding = this.bindings.get(dataId);
@@ -141,10 +186,18 @@ abstract class ViewportV2<
     this.render();
   }
 
+  /**
+   * Returns the last presentation state stored for a dataset, even if that
+   * dataset is not currently mounted.
+   */
   getPresentation(dataId: DataId): TDataPresentation | undefined {
     return this.presentations.get(dataId);
   }
 
+  /**
+   * Merges partial camera updates into the shared viewport camera state and
+   * propagates that state to every active binding.
+   */
   setCamera(camera: Partial<TCamera>): void {
     this.camera = {
       ...this.camera,
@@ -153,39 +206,65 @@ abstract class ViewportV2<
     this.modified();
   }
 
+  /**
+   * Returns the controller's current shared camera state.
+   */
   getCamera(): TCamera {
     return this.camera;
   }
 
+  /**
+   * Compatibility helper for tool APIs that operate on scalar zoom state.
+   */
   getZoom(): number {
     return (this.camera as { zoom?: number }).zoom ?? 1;
   }
 
+  /**
+   * Compatibility helper for tool APIs that operate on scalar zoom state.
+   */
   setZoom(zoom: number): void {
     this.setCamera({
       zoom: Math.max(zoom, 0.001),
     } as unknown as Partial<TCamera>);
   }
 
+  /**
+   * Compatibility helper for tool APIs that operate on planar pan state.
+   */
   getPan(): Point2 {
     const [x, y] = (this.camera as { pan?: [number, number] }).pan ?? [0, 0];
     return [x, y];
   }
 
+  /**
+   * Compatibility helper for tool APIs that operate on planar pan state.
+   */
   setPan(pan: Point2): void {
     this.setCamera({
       pan: [pan[0], pan[1]],
     } as unknown as Partial<TCamera>);
   }
 
+  /**
+   * Uses the current binding's render-path transform when available.
+   */
   canvasToWorld(canvasPos: Point2): Point3 {
     return this.getCurrentBinding()?.canvasToWorld?.(canvasPos) ?? [0, 0, 0];
   }
 
+  /**
+   * Uses the current binding's render-path transform when available.
+   */
   worldToCanvas(worldPos: Point3): Point2 {
     return this.getCurrentBinding()?.worldToCanvas?.(worldPos) ?? [0, 0];
   }
 
+  /**
+   * Returns the current binding's frame of reference when one exists.
+   * Falls back to a viewport-local identifier so callers still get a stable
+   * value for non-referenceable viewports.
+   */
   getFrameOfReferenceUID(): string {
     return (
       this.getCurrentBinding()?.getFrameOfReferenceUID?.() ??
@@ -193,6 +272,10 @@ abstract class ViewportV2<
     );
   }
 
+  /**
+   * Merges partial shared property updates and propagates them to every active
+   * binding.
+   */
   setProperties(props: Partial<TProperties>): void {
     this.properties = {
       ...this.properties,
@@ -201,10 +284,17 @@ abstract class ViewportV2<
     this.modified();
   }
 
+  /**
+   * Returns the controller's current shared property state.
+   */
   getProperties(): TProperties {
     return this.properties;
   }
 
+  /**
+   * Detaches one dataset binding and removes any stored presentation state for
+   * that dataset.
+   */
   removeDataId(dataId: DataId): void {
     const binding = this.bindings.get(dataId);
 
@@ -218,16 +308,27 @@ abstract class ViewportV2<
     this.render();
   }
 
+  /**
+   * Looks up a binding by dataset identifier.
+   */
   protected getBinding(dataId: DataId): RenderingBinding | undefined {
     return this.bindings.get(dataId);
   }
 
+  /**
+   * Returns the binding used for generic transform and frame-of-reference
+   * queries when a viewport family does not override the selection logic.
+   */
   protected getCurrentBinding():
     | RenderingBinding<TDataPresentation>
     | undefined {
     return this.bindings.values().next().value;
   }
 
+  /**
+   * Pushes the current shared camera and property state to every binding and
+   * schedules a render.
+   */
   protected modified(): void {
     for (const binding of this.bindings.values()) {
       binding.updateCamera(this.camera);
@@ -237,6 +338,11 @@ abstract class ViewportV2<
     this.render();
   }
 
+  /**
+   * Requests the viewport family to render. Concrete subclasses decide whether
+   * rendering is delegated to render paths, the rendering engine, or another
+   * runtime.
+   */
   abstract render(): void;
 }
 

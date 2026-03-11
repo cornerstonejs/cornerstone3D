@@ -7,7 +7,7 @@ import {
   timeSecondsToFrameNumber,
 } from '../../../utilities/VideoUtilities';
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
-import { HtmlVideoPath } from './HtmlVideoRenderingAdapter';
+import { HtmlVideoPath } from './HtmlVideoRenderPath';
 import type {
   VideoCamera,
   VideoElementRenderContext,

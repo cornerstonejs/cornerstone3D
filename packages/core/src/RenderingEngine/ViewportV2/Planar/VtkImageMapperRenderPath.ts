@@ -20,7 +20,7 @@ import type {
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
-  RenderingAdapter,
+  RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
@@ -37,10 +37,10 @@ import {
   getCpuEquivalentParallelScale,
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
-import { buildPlanarImageData } from './CpuImageCanvasRenderingAdapter';
+import { buildPlanarImageData } from './CpuImageSliceRenderPath';
 
-export class VtkImageMapperRenderingAdapter
-  implements RenderingAdapter<PlanarVtkImageAdapterContext>
+export class VtkImageMapperRenderPath
+  implements RenderPath<PlanarVtkImageAdapterContext>
 {
   async attach(
     ctx: PlanarVtkImageAdapterContext,
@@ -247,8 +247,8 @@ export class VtkImageMapperPath
     return data.type === 'image' && options.renderMode === 'vtkImage';
   }
 
-  createAdapter() {
-    return new VtkImageMapperRenderingAdapter();
+  createRenderPath() {
+    return new VtkImageMapperRenderPath();
   }
 
   selectContext(
