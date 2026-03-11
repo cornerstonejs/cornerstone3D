@@ -153,6 +153,7 @@ export interface ViewportController<
   getCamera(): TCamera;
   setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void;
   getDataPresentation(dataId: DataId): TDataPresentation | undefined;
+  getDataRenderMode(dataId: DataId): string | undefined;
 
   render(): void;
 }

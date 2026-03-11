@@ -66,7 +66,7 @@ export interface PlanarPayload {
   renderMode: PlanarEffectiveRenderMode;
   acquisitionOrientation?: PlanarCamera['orientation'];
   imageVolume?: IImageVolume;
-  initialImage?: IImage;
+  image?: IImage;
 }
 
 export interface PlanarPresentationProps extends BasePresentationProps {

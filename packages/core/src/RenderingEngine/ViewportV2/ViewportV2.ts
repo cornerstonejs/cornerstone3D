@@ -257,6 +257,13 @@ abstract class ViewportV2<
   }
 
   /**
+   * Returns the mounted render mode for a specific dataset when attached.
+   */
+  getDataRenderMode(dataId: DataId): string | undefined {
+    return this.getBinding(dataId)?.rendering.renderMode;
+  }
+
+  /**
    * Compatibility helper for tool APIs that operate on scalar zoom state.
    */
   getZoom(): number {

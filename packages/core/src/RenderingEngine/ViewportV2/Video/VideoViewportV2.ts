@@ -6,8 +6,10 @@ import {
   frameNumberToTimeSeconds,
   timeSecondsToFrameNumber,
 } from '../../../utilities/VideoUtilities';
+import { generateFrameImageId } from '../../../utilities/splitImageIdsBy4DTags';
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 import { HtmlVideoPath } from './HtmlVideoRenderPath';
+import { getViewportV2SourceDataId } from '../viewportV2DataSetAccess';
 import type {
   VideoCamera,
   VideoDataPresentation,
@@ -24,12 +26,14 @@ class VideoViewportV2 extends ViewportV2<
   VideoDataPresentation,
   VideoElementRenderContext
 > {
-  readonly type = ViewportType.VIDEO;
+  readonly type = ViewportType.VIDEO_V2;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
 
   protected renderContext: VideoElementRenderContext;
+  private trackedVideoElement?: HTMLVideoElement;
+  private cleanupTrackedVideoElement?: () => void;
 
   static get useCustomRenderingPipeline(): boolean {
     return true;
@@ -115,6 +119,7 @@ class VideoViewportV2 extends ViewportV2<
         );
       }
 
+      this.trackVideoElement();
       this.modified();
       renderingIds.push(renderingId);
     }
@@ -137,11 +142,17 @@ class VideoViewportV2 extends ViewportV2<
 
   pause(): void {
     this.getVideoElement()?.pause();
+    this.syncCameraCurrentTimeFromElement();
   }
 
   seek(timeSeconds: number): void {
+    const payload = this.getPayload();
+    const maxTimeSeconds = payload?.durationSeconds
+      ? Math.max(payload.durationSeconds, 0)
+      : Number.POSITIVE_INFINITY;
+
     this.setCamera({
-      currentTimeSeconds: Math.max(0, timeSeconds),
+      currentTimeSeconds: Math.max(0, Math.min(timeSeconds, maxTimeSeconds)),
     });
   }
 
@@ -175,19 +186,116 @@ class VideoViewportV2 extends ViewportV2<
     return this.getPayload()?.numberOfFrames ?? 0;
   }
 
+  getNumberOfSlices(): number {
+    return this.getImageIds().length || this.getNumberOfFrames();
+  }
+
   getCurrentTime(): number {
-    return this.getVideoElement()?.currentTime ?? 0;
+    this.syncCameraCurrentTimeFromElement();
+    return this.camera.currentTimeSeconds ?? 0;
   }
 
   getFrameNumber(): number {
     const payload = this.getPayload();
-    const element = this.getVideoElement();
 
-    if (!payload || !element) {
+    if (!payload) {
       return 1;
     }
 
-    return timeSecondsToFrameNumber(element.currentTime, payload.fps);
+    const frameNumber = timeSecondsToFrameNumber(
+      this.getCurrentTime(),
+      payload.fps
+    );
+
+    return Math.max(
+      payload.frameRange[0],
+      Math.min(frameNumber, payload.frameRange[1])
+    );
+  }
+
+  getCurrentImageIdIndex(): number {
+    return Math.max(0, this.getFrameNumber() - 1);
+  }
+
+  getImageIds(): string[] {
+    const dataId = this.getFirstBinding()?.data.id;
+    const payload = this.getPayload();
+
+    if (!dataId || !payload) {
+      return [];
+    }
+
+    const sourceDataId = getViewportV2SourceDataId(dataId);
+    const imageIds = Array<string>(payload.numberOfFrames);
+
+    for (
+      let frameNumber = 1;
+      frameNumber <= payload.numberOfFrames;
+      frameNumber++
+    ) {
+      try {
+        imageIds[frameNumber - 1] = generateFrameImageId(
+          sourceDataId,
+          frameNumber
+        );
+      } catch {
+        return [sourceDataId];
+      }
+    }
+
+    return imageIds;
+  }
+
+  scroll(delta = 1, _debounceLoading = true, loop = false): void {
+    const payload = this.getPayload();
+
+    if (!payload?.fps) {
+      return;
+    }
+
+    this.pause();
+
+    const minTimeSeconds = frameNumberToTimeSeconds(
+      payload.frameRange[0],
+      payload.fps
+    );
+    const maxTimeSeconds =
+      payload.durationSeconds ??
+      frameNumberToTimeSeconds(payload.frameRange[1], payload.fps);
+    let nextTimeSeconds = this.getCurrentTime() + delta / payload.fps;
+
+    if (loop) {
+      const durationSeconds = Math.max(
+        maxTimeSeconds - minTimeSeconds,
+        1 / payload.fps
+      );
+
+      while (nextTimeSeconds < minTimeSeconds) {
+        nextTimeSeconds += durationSeconds;
+      }
+
+      while (nextTimeSeconds > maxTimeSeconds) {
+        nextTimeSeconds -= durationSeconds;
+      }
+    } else {
+      nextTimeSeconds = Math.max(
+        minTimeSeconds,
+        Math.min(nextTimeSeconds, maxTimeSeconds)
+      );
+    }
+
+    this.seek(nextTimeSeconds);
+  }
+
+  removeDataId(dataId: string): void {
+    const firstDataId = this.getFirstBinding()?.data.id;
+
+    super.removeDataId(dataId);
+
+    if (firstDataId === dataId) {
+      this.untrackVideoElement();
+      this.trackVideoElement();
+    }
   }
 
   render(): void {
@@ -305,6 +413,58 @@ class VideoViewportV2 extends ViewportV2<
     return this.getFirstBinding()?.rendering as
       | VideoElementRendering
       | undefined;
+  }
+
+  private syncCameraCurrentTimeFromElement(): void {
+    const element = this.getVideoElement();
+
+    if (!element) {
+      return;
+    }
+
+    const currentTimeSeconds = Math.max(0, element.currentTime || 0);
+
+    if (currentTimeSeconds === (this.camera.currentTimeSeconds ?? 0)) {
+      return;
+    }
+
+    this.camera = {
+      ...this.camera,
+      currentTimeSeconds,
+    };
+  }
+
+  private trackVideoElement(): void {
+    const element = this.getVideoElement();
+
+    if (!element || this.trackedVideoElement === element) {
+      return;
+    }
+
+    this.untrackVideoElement();
+
+    const syncCurrentTime = () => {
+      this.syncCameraCurrentTimeFromElement();
+    };
+
+    element.addEventListener('loadedmetadata', syncCurrentTime);
+    element.addEventListener('seeked', syncCurrentTime);
+    element.addEventListener('timeupdate', syncCurrentTime);
+
+    this.trackedVideoElement = element;
+    this.cleanupTrackedVideoElement = () => {
+      element.removeEventListener('loadedmetadata', syncCurrentTime);
+      element.removeEventListener('seeked', syncCurrentTime);
+      element.removeEventListener('timeupdate', syncCurrentTime);
+    };
+
+    syncCurrentTime();
+  }
+
+  private untrackVideoElement(): void {
+    this.cleanupTrackedVideoElement?.();
+    this.cleanupTrackedVideoElement = undefined;
+    this.trackedVideoElement = undefined;
   }
 }
 

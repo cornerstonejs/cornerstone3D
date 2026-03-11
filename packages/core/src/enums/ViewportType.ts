@@ -19,6 +19,7 @@ enum ViewportType {
   VOLUME_3D_V2 = 'volume3dV2',
   PLANAR_V2 = 'planarV2',
   VIDEO = 'video',
+  VIDEO_V2 = 'videoV2',
   /**
    * Whole slide imaging viewport
    */

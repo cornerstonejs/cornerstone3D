@@ -110,7 +110,8 @@ export class HtmlVideoRenderPath
 
     if (
       typeof videoCamera.currentTimeSeconds === 'number' &&
-      Math.abs(element.currentTime - videoCamera.currentTimeSeconds) > 0.02
+      Math.abs(element.currentTime - videoCamera.currentTimeSeconds) >
+        0.5 / Math.max(1, videoRendering.runtime.payload.fps)
     ) {
       element.currentTime = videoCamera.currentTimeSeconds;
     }
@@ -227,7 +228,7 @@ export class HtmlVideoPath
   implements RenderPathDefinition<VideoElementRenderContext>
 {
   readonly id = 'video:html-element';
-  readonly type = ViewportType.VIDEO;
+  readonly type = ViewportType.VIDEO_V2;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'video' && options.renderMode === 'video2d';

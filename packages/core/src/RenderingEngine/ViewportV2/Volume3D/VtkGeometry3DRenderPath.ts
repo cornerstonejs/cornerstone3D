@@ -74,7 +74,7 @@ export class VtkGeometry3DRenderPath
     rendering: MountedRendering,
     props: unknown
   ): void {
-    applyPresentation(
+    applyDataPresentation(
       rendering as Volume3DGeometryRendering,
       props as Volume3DDataPresentation | undefined
     );
@@ -217,7 +217,7 @@ function createActorEntries(geometry: IGeometry) {
   );
 }
 
-function applyPresentation(
+function applyDataPresentation(
   rendering: Volume3DGeometryRendering,
   props?: Volume3DDataPresentation
 ): void {

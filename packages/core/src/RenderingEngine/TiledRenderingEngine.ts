@@ -210,7 +210,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       renderingEngineId: this.id,
     };
 
-    if (!viewport.suppressEvents) {
+    if (!(viewport as { suppressEvents?: boolean }).suppressEvents) {
       triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail);
     }
   }

@@ -48,15 +48,15 @@ export class VtkImageMapperRenderPath
   ): Promise<PlanarImageMapperRendering> {
     const payload = data.payload as PlanarPayload;
 
-    if (!payload.initialImage) {
+    if (!payload.image) {
       throw new Error(
-        '[PlanarViewportV2] VTK image rendering requires an initial image'
+        '[PlanarViewportV2] VTK image rendering requires an image'
       );
     }
 
     const mapper = vtkImageMapper.newInstance();
     const actor = vtkImageSlice.newInstance();
-    const imageData = createVTKImageDataFromImage(payload.initialImage);
+    const imageData = createVTKImageDataFromImage(payload.image);
 
     ctx.display.activateRenderMode('vtkImage');
     mapper.setInputData(imageData);
@@ -64,19 +64,19 @@ export class VtkImageMapperRenderPath
     ctx.vtk.renderer.addActor(actor);
     applyImageOrientationToCamera(ctx.vtk.renderer, imageData);
     ctx.vtk.renderer.resetCamera();
-    applyCpuEquivalentInitialScale(ctx, payload.initialImage);
+    applyCpuEquivalentInitialScale(ctx, payload.image);
 
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkImage',
       runtime: {
         actor,
-        currentImage: payload.initialImage,
+        currentImage: payload.image,
         mapper,
         imageData,
         payload,
         currentImageIdIndex: payload.initialImageIdIndex,
-        defaultVOIRange: getDefaultImageVOIRange(payload.initialImage),
+        defaultVOIRange: getDefaultImageVOIRange(payload.image),
         initialCamera: getPlanarCameraState(ctx.vtk.renderer),
         camera: getVtkImageCompatibilityCamera(ctx.vtk.renderer),
         loadRequestId: 0,

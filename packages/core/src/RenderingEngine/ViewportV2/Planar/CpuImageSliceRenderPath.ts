@@ -39,6 +39,7 @@ import type {
 } from './PlanarViewportV2Types';
 import {
   canvasToWorldCPUImage,
+  getCpuEquivalentParallelScale,
   worldToCanvasCPUImage,
 } from './planarAdapterCoordinateTransforms';
 import {
@@ -56,19 +57,17 @@ export class CpuImageSliceRenderPath
   ): Promise<PlanarCpuImageRendering> {
     const payload = data.payload as PlanarPayload;
 
-    if (!payload.initialImage) {
-      throw new Error(
-        '[PlanarViewportV2] CPU rendering requires an initial image'
-      );
+    if (!payload.image) {
+      throw new Error('[PlanarViewportV2] CPU rendering requires an image');
     }
 
     ctx.display.activateRenderMode('cpu2d');
 
     const enabledElement = {
       canvas: ctx.cpu.canvas,
-      image: payload.initialImage,
+      image: payload.image,
       renderingTools: {},
-      viewport: getDefaultViewport(ctx.cpu.canvas, payload.initialImage),
+      viewport: getDefaultViewport(ctx.cpu.canvas, payload.image),
     } as CPUFallbackEnabledElement;
 
     resizeEnabledElement(enabledElement, true);
@@ -81,9 +80,10 @@ export class CpuImageSliceRenderPath
         enabledElement,
         payload,
         currentImageIdIndex: payload.initialImageIdIndex,
-        defaultVOIRange: getDefaultImageVOIRange(payload.initialImage),
+        defaultVOIRange: getDefaultImageVOIRange(payload.image),
         camera: getPlanarCpuImageCompatibilityCamera({
-          image: payload.initialImage,
+          enabledElement,
+          image: payload.image,
         }),
         fitScale: enabledElement.viewport.scale ?? 1,
         loadRequestId: 0,
@@ -97,10 +97,6 @@ export class CpuImageSliceRenderPath
     rendering: MountedRendering,
     props: unknown
   ): void {
-    applyPresentation(
-      rendering as PlanarCpuImageRendering,
-      props as PlanarDataPresentation | undefined
-    );
     applyDataPresentation(
       rendering as PlanarCpuImageRendering,
       props as PlanarDataPresentation | undefined
@@ -121,6 +117,7 @@ export class CpuImageSliceRenderPath
     applyCameraState(planarRendering, planarCamera);
     planarRendering.runtime.camera = getPlanarCpuImageCompatibilityCamera({
       camera: planarCamera,
+      enabledElement: planarRendering.runtime.enabledElement,
       image: planarRendering.runtime.enabledElement.image,
     });
 
@@ -281,7 +278,7 @@ export class CpuImageSlicePath
   }
 }
 
-function applyPresentation(
+function applyDataPresentation(
   rendering: PlanarCpuImageRendering,
   props?: PlanarDataPresentation
 ): void {
@@ -309,18 +306,10 @@ function applyPresentation(
   }
 
   rendering.runtime.renderingInvalidated = true;
-}
 
-function applyDataPresentation(
-  rendering: PlanarCpuImageRendering,
-  presentation?: PlanarDataPresentation
-): void {
-  const { enabledElement } = rendering.runtime;
-  const { viewport } = enabledElement;
-
-  if (presentation?.interpolationType !== undefined) {
+  if (props?.interpolationType !== undefined) {
     viewport.pixelReplication =
-      presentation.interpolationType !== InterpolationType.LINEAR;
+      props.interpolationType !== InterpolationType.LINEAR;
   }
 }
 
@@ -412,9 +401,10 @@ export function buildPlanarImageData(
 
 export function getPlanarCpuImageCompatibilityCamera(args: {
   camera?: PlanarCamera;
+  enabledElement?: CPUFallbackEnabledElement;
   image?: IImage;
 }): PlanarCamera & ICamera {
-  const { camera, image } = args;
+  const { camera, enabledElement, image } = args;
   const nextCamera = { ...(camera || {}) };
 
   if (!image) {
@@ -446,10 +436,35 @@ export function getPlanarCpuImageCompatibilityCamera(args: {
     ((dimensions[1] - 1) * spacing[1]) / 2
   );
 
+  const baseParallelScale = enabledElement
+    ? getCpuEquivalentParallelScale({
+        canvasHeight: enabledElement.canvas.height,
+        canvasWidth: enabledElement.canvas.width,
+        columnPixelSpacing: image.columnPixelSpacing || 1,
+        columns: image.columns,
+        rowPixelSpacing: image.rowPixelSpacing || 1,
+        rows: image.rows,
+      })
+    : undefined;
+  const fitScale = enabledElement
+    ? getDefaultViewport(enabledElement.canvas, image).scale || 1
+    : 1;
+  const currentScale = enabledElement?.viewport.scale ?? fitScale;
+  const zoom = Math.max(currentScale / Math.max(fitScale, 0.001), 0.001);
+  const parallelScale =
+    baseParallelScale !== undefined ? baseParallelScale / zoom : undefined;
+  const position = vec3.subtract(
+    vec3.create(),
+    focalPoint as unknown as vec3,
+    viewPlaneNormal as unknown as vec3
+  ) as Point3;
+
   return {
     ...nextCamera,
     focalPoint,
+    ...(parallelScale !== undefined ? { parallelScale } : {}),
     parallelProjection: true,
+    position,
     viewPlaneNormal,
     viewUp,
   };
@@ -495,12 +510,12 @@ async function updateRenderedImage(args: {
   rendering.runtime.defaultVOIRange = getDefaultImageVOIRange(image);
   rendering.runtime.camera = getPlanarCpuImageCompatibilityCamera({
     camera,
+    enabledElement,
     image,
   });
   rendering.runtime.fitScale = defaultViewport.scale ?? 1;
   rendering.runtime.renderingInvalidated = true;
 
-  applyPresentation(rendering, props);
   applyDataPresentation(rendering, props);
   applyCameraState(rendering, camera);
   ctx.display.requestRender();

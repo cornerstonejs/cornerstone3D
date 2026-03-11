@@ -67,7 +67,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       };
     }
 
-    const initialImage = await loadAndCacheImage(
+    const image = await loadAndCacheImage(
       dataSet.imageIds[clampedImageIdIndex]
     );
 
@@ -77,13 +77,13 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       metadata: {
         imageIds: dataSet.imageIds,
         initialImageIdIndex: clampedImageIdIndex,
-        imageId: initialImage.imageId,
+        imageId: image.imageId,
         acquisitionOrientation: options.acquisitionOrientation,
         volumeId: options.volumeId,
       },
       payload: {
         imageIds: dataSet.imageIds,
-        initialImage,
+        image,
         initialImageIdIndex: clampedImageIdIndex,
         acquisitionOrientation: options.acquisitionOrientation,
         renderMode: options.renderMode,
