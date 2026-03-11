@@ -104,7 +104,9 @@ import { jumpToSlice } from './jumpToSlice';
 import scroll from './scroll';
 import clip from './clip';
 import createSubVolume from './createSubVolume';
+import getAcquisitionPlaneOrientation from './getAcquisitionPlaneOrientation';
 import getVolumeDirectionVectors from './getVolumeDirectionVectors';
+import getVolumeViewReferenceId from './getVolumeViewReferenceId';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
@@ -218,7 +220,9 @@ export {
   clip,
   transformWorldToIndexContinuous,
   createSubVolume,
+  getAcquisitionPlaneOrientation,
   getVolumeDirectionVectors,
+  getVolumeViewReferenceId,
   calculateSpacingBetweenImageIds,
   getImageDataMetadata,
   buildMetadata,

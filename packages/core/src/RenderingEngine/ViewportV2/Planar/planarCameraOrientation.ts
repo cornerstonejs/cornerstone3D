@@ -1,6 +1,7 @@
 import { MPR_CAMERA_VALUES } from '../../../constants';
 import { OrientationAxis } from '../../../enums';
 import type { IImageVolume, Point3 } from '../../../types';
+import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
 import type { PlanarCamera } from './PlanarViewportV2Types';
 
 type PlanarCameraVectors = {
@@ -11,11 +12,12 @@ type PlanarCameraVectors = {
 export function getAcquisitionCameraVectors(
   imageVolume: IImageVolume
 ): PlanarCameraVectors {
-  const { direction } = imageVolume;
+  const { viewPlaneNormal, viewUp } =
+    getAcquisitionPlaneOrientation(imageVolume);
 
   return {
-    viewPlaneNormal: direction.slice(6, 9).map((x) => -x) as Point3,
-    viewUp: direction.slice(3, 6).map((x) => -x) as Point3,
+    viewPlaneNormal,
+    viewUp: viewUp as Point3,
   };
 }
 

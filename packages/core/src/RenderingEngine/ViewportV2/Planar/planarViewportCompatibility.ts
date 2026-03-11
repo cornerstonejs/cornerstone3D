@@ -10,6 +10,7 @@ import type { PlaneRestriction } from '../../../types/IViewport';
 import getClosestImageId from '../../../utilities/getClosestImageId';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
+import getVolumeViewReferenceId from '../../../utilities/getVolumeViewReferenceId';
 import { updatePlaneRestriction } from '../../../utilities/updatePlaneRestriction';
 import {
   getPlanarVolumeSliceNavigationState,
@@ -215,12 +216,11 @@ export function getPlanarViewReferenceId(args: {
     const sliceIndex =
       viewRefSpecifier?.sliceIndex ?? getCurrentSliceIndex(rendering);
     const volumeId = rendering.runtime.payload.volumeId;
-    const formattedNormal = (compatibilityCamera.viewPlaneNormal || [])
-      .map((value) => value.toFixed(3))
-      .join(',');
-    const querySeparator = volumeId.includes('?') ? '&' : '?';
-
-    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${formattedNormal}`;
+    return getVolumeViewReferenceId({
+      sliceIndex,
+      viewPlaneNormal: compatibilityCamera.viewPlaneNormal as Point3,
+      volumeId,
+    });
   }
 
   const referencedImageId = getPlanarReferencedImageId(args);
