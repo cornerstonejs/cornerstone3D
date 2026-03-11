@@ -14,8 +14,8 @@ import {
 } from '../../helpers/vtkCanvasCoordinateTransforms';
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -35,10 +35,11 @@ export class VtkVolume3DRenderPath
 {
   async addData(
     ctx: Volume3DVtkVolumeAdapterContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<Volume3DVolumeRendering> {
-    const payload = data.payload as Volume3DVolumePayload;
+  ): Promise<RenderPathAttachment<Volume3DDataPresentation>> {
+    const payload: Volume3DVolumePayload =
+      data as unknown as LoadedData<Volume3DVolumePayload>;
     const hadVolume = ctx.vtk.renderer.getVolumes().length > 0;
     const actor = await createVolumeActor(
       {
@@ -65,7 +66,7 @@ export class VtkVolume3DRenderPath
       .getRGBTransferFunction(0)
       .getRange();
 
-    return {
+    const rendering: Volume3DVolumeRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkVolume3d',
       actor,
@@ -74,7 +75,6 @@ export class VtkVolume3DRenderPath
         : undefined,
       imageVolume: payload.imageVolume,
       mapper,
-      payload,
       removeStreamingSubscriptions: subscribeToVolumeEvents(
         payload.volumeId,
         () => {
@@ -82,30 +82,58 @@ export class VtkVolume3DRenderPath
         }
       ),
     };
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(ctx, camera);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(ctx, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(ctx, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(rendering);
+      },
+      getImageData: () => {
+        return this.getImageData(rendering);
+      },
+      render: () => {
+        this.render(ctx);
+      },
+      resize: () => {
+        this.resize(ctx);
+      },
+      removeData: () => {
+        this.removeData(ctx, rendering);
+      },
+    };
   }
 
-  updateDataPresentation(
-    _ctx: Volume3DVtkVolumeAdapterContext,
-    rendering: MountedRendering,
+  private updateDataPresentation(
+    rendering: Volume3DVolumeRendering,
     props: unknown
   ): void {
     applyDataPresentation(
-      rendering as Volume3DVolumeRendering,
+      rendering,
       props as Volume3DDataPresentation | undefined
     );
   }
 
-  updateCamera(
+  private updateCamera(
     ctx: Volume3DVtkVolumeAdapterContext,
-    _rendering: MountedRendering,
     camera: unknown
   ): void {
     applyCamera(ctx, camera as Partial<Volume3DCamera> | undefined);
   }
 
-  canvasToWorld(
+  private canvasToWorld(
     ctx: Volume3DVtkVolumeAdapterContext,
-    _rendering: MountedRendering,
     canvasPos: Point2
   ): Point3 {
     return canvasToWorldContextPool({
@@ -115,9 +143,8 @@ export class VtkVolume3DRenderPath
     });
   }
 
-  worldToCanvas(
+  private worldToCanvas(
     ctx: Volume3DVtkVolumeAdapterContext,
-    _rendering: MountedRendering,
     worldPos: Point3
   ): Point2 {
     return worldToCanvasContextPool({
@@ -127,37 +154,31 @@ export class VtkVolume3DRenderPath
     });
   }
 
-  getFrameOfReferenceUID(
-    _ctx: Volume3DVtkVolumeAdapterContext,
-    rendering: MountedRendering
+  private getFrameOfReferenceUID(
+    rendering: Volume3DVolumeRendering
   ): string | undefined {
-    return (rendering as Volume3DVolumeRendering).imageVolume.metadata
-      ?.FrameOfReferenceUID;
+    return rendering.imageVolume.metadata?.FrameOfReferenceUID;
   }
 
-  getImageData(
-    _ctx: Volume3DVtkVolumeAdapterContext,
-    rendering: MountedRendering
+  private getImageData(
+    rendering: Volume3DVolumeRendering
   ): IImageData | undefined {
-    return buildVolumeImageData(
-      (rendering as Volume3DVolumeRendering).imageVolume
-    );
+    return buildVolumeImageData(rendering.imageVolume);
   }
 
-  render(ctx: Volume3DVtkVolumeAdapterContext): void {
+  private render(ctx: Volume3DVtkVolumeAdapterContext): void {
     ctx.display.requestRender();
   }
 
-  resize(ctx: Volume3DVtkVolumeAdapterContext): void {
+  private resize(ctx: Volume3DVtkVolumeAdapterContext): void {
     ctx.display.requestRender();
   }
 
-  removeData(
+  private removeData(
     ctx: Volume3DVtkVolumeAdapterContext,
-    rendering: MountedRendering
+    rendering: Volume3DVolumeRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } =
-      rendering as Volume3DVolumeRendering;
+    const { actor, removeStreamingSubscriptions } = rendering;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);
@@ -174,7 +195,7 @@ export class VtkVolume3DPath
   readonly id = 'volume3d:vtk-volume';
   readonly type = ViewportType.VOLUME_3D_V2;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkVolume3d';
   }
 

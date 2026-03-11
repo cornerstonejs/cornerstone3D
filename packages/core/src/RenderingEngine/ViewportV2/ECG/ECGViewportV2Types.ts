@@ -78,7 +78,6 @@ export type ECGCanvasRendering = MountedRendering<{
   renderMode: 'signal2d';
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;
-  waveform: ECGWaveformPayload;
   metrics: RenderWindowMetrics;
   currentCamera?: ECGCamera;
   currentDataPresentation?: ECGDataPresentation;

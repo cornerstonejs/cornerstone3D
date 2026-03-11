@@ -1,6 +1,6 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
-import type { LogicalDataObject } from '../ViewportArchitectureTypes';
+import type { LoadedData } from '../ViewportArchitectureTypes';
 import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
 import type {
   PlanarDataProvider,
@@ -13,7 +13,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
   async load(
     dataId: string,
     options?: PlanarDataLoadOptions
-  ): Promise<LogicalDataObject<PlanarPayload>> {
+  ): Promise<LoadedData<PlanarPayload>> {
     const dataSet = this.getDataSet(dataId);
 
     if (!dataSet) {
@@ -50,14 +50,12 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       return {
         id: dataId,
         type: 'image',
-        payload: {
-          imageIds: imageVolume.imageIds || dataSet.imageIds,
-          initialImageIdIndex: clampedImageIdIndex,
-          acquisitionOrientation: options.acquisitionOrientation,
-          imageVolume,
-          renderMode: options.renderMode,
-          volumeId,
-        },
+        imageIds: imageVolume.imageIds || dataSet.imageIds,
+        initialImageIdIndex: clampedImageIdIndex,
+        acquisitionOrientation: options.acquisitionOrientation,
+        imageVolume,
+        renderMode: options.renderMode,
+        volumeId,
       };
     }
 
@@ -68,14 +66,12 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     return {
       id: dataId,
       type: 'image',
-      payload: {
-        imageIds: dataSet.imageIds,
-        image,
-        initialImageIdIndex: clampedImageIdIndex,
-        acquisitionOrientation: options.acquisitionOrientation,
-        renderMode: options.renderMode,
-        volumeId: options.volumeId,
-      },
+      imageIds: dataSet.imageIds,
+      image,
+      initialImageIdIndex: clampedImageIdIndex,
+      acquisitionOrientation: options.acquisitionOrientation,
+      renderMode: options.renderMode,
+      volumeId: options.volumeId,
     };
   }
 

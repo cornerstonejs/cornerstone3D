@@ -17,8 +17,8 @@ import {
 } from '../../helpers/vtkCanvasCoordinateTransforms';
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -37,10 +37,11 @@ export class VtkGeometry3DRenderPath
 {
   async addData(
     ctx: Volume3DVtkGeometryAdapterContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<Volume3DGeometryRendering> {
-    const payload = data.payload as Volume3DGeometryPayload;
+  ): Promise<RenderPathAttachment<Volume3DDataPresentation>> {
+    const payload: Volume3DGeometryPayload =
+      data as unknown as LoadedData<Volume3DGeometryPayload>;
     const actors = createActorEntries(payload.geometry);
     const hadVisibleProps = hasVisibleProps(ctx);
 
@@ -54,7 +55,7 @@ export class VtkGeometry3DRenderPath
 
     ctx.vtk.renderer.resetCameraClippingRange();
 
-    return {
+    const rendering: Volume3DGeometryRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkGeometry3d',
       actors,
@@ -62,25 +63,49 @@ export class VtkGeometry3DRenderPath
         payload.geometry.type === GeometryType.SURFACE
           ? (payload.geometry.data as ISurface).frameOfReferenceUID
           : undefined,
-      geometry: payload.geometry,
-      payload,
+    };
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(ctx, camera);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(ctx, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(ctx, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(rendering);
+      },
+      render: () => {
+        this.render(ctx);
+      },
+      resize: () => {
+        this.resize(ctx);
+      },
+      removeData: () => {
+        this.removeData(ctx, rendering);
+      },
     };
   }
 
-  updateDataPresentation(
-    _ctx: Volume3DVtkGeometryAdapterContext,
-    rendering: MountedRendering,
+  private updateDataPresentation(
+    rendering: Volume3DGeometryRendering,
     props: unknown
   ): void {
     applyDataPresentation(
-      rendering as Volume3DGeometryRendering,
+      rendering,
       props as Volume3DDataPresentation | undefined
     );
   }
 
-  updateCamera(
+  private updateCamera(
     ctx: Volume3DVtkGeometryAdapterContext,
-    _rendering: MountedRendering,
     camera: unknown
   ): void {
     applyVolume3DCamera(ctx, camera as Partial<Volume3DCamera> | undefined, {
@@ -88,9 +113,8 @@ export class VtkGeometry3DRenderPath
     });
   }
 
-  canvasToWorld(
+  private canvasToWorld(
     ctx: Volume3DVtkGeometryAdapterContext,
-    _rendering: MountedRendering,
     canvasPos: Point2
   ): Point3 {
     return canvasToWorldContextPool({
@@ -100,9 +124,8 @@ export class VtkGeometry3DRenderPath
     });
   }
 
-  worldToCanvas(
+  private worldToCanvas(
     ctx: Volume3DVtkGeometryAdapterContext,
-    _rendering: MountedRendering,
     worldPos: Point3
   ): Point2 {
     return worldToCanvasContextPool({
@@ -112,26 +135,25 @@ export class VtkGeometry3DRenderPath
     });
   }
 
-  getFrameOfReferenceUID(
-    _ctx: Volume3DVtkGeometryAdapterContext,
-    rendering: MountedRendering
+  private getFrameOfReferenceUID(
+    rendering: Volume3DGeometryRendering
   ): string | undefined {
-    return (rendering as Volume3DGeometryRendering).frameOfReferenceUID;
+    return rendering.frameOfReferenceUID;
   }
 
-  render(ctx: Volume3DVtkGeometryAdapterContext): void {
+  private render(ctx: Volume3DVtkGeometryAdapterContext): void {
     ctx.display.requestRender();
   }
 
-  resize(ctx: Volume3DVtkGeometryAdapterContext): void {
+  private resize(ctx: Volume3DVtkGeometryAdapterContext): void {
     ctx.display.requestRender();
   }
 
-  removeData(
+  private removeData(
     ctx: Volume3DVtkGeometryAdapterContext,
-    rendering: MountedRendering
+    rendering: Volume3DGeometryRendering
   ): void {
-    (rendering as Volume3DGeometryRendering).actors.forEach((actorEntry) => {
+    rendering.actors.forEach((actorEntry) => {
       ctx.vtk.renderer.removeActor(actorEntry.actor as vtkActor);
     });
   }
@@ -147,7 +169,7 @@ export class VtkGeometry3DPath
   readonly id = 'volume3d:vtk-geometry';
   readonly type = ViewportType.VOLUME_3D_V2;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'geometry' && options.renderMode === 'vtkGeometry3d';
   }
 

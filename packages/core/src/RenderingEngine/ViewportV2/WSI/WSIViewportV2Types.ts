@@ -2,7 +2,7 @@ import type {
   BaseViewportRenderContext,
   BasePresentationProps,
   DataProvider,
-  LogicalDataObject,
+  LoadedData,
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
@@ -48,7 +48,7 @@ export interface WSIProperties {}
 export type WSIDataPresentation = WSIPresentationProps & WSIProperties;
 
 export interface WSIDataProvider extends DataProvider {
-  load(dataId: string): Promise<LogicalDataObject<WSIPayload>>;
+  load(dataId: string): Promise<LoadedData<WSIPayload>>;
 }
 
 export interface WSIViewportV2Input {
@@ -69,6 +69,5 @@ export type WSIRendering = MountedRendering<{
   microscopyElement: HTMLDivElement;
   viewer: WSIViewerLike;
   map: WSIMapLike;
-  payload: WSIPayload;
   postrenderHandler: () => void;
 }>;

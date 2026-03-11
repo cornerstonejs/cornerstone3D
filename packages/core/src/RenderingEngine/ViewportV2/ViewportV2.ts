@@ -4,7 +4,7 @@ import type {
   DataAddOptions,
   DataId,
   DataProvider,
-  LogicalDataObject,
+  LoadedData,
   RenderingBinding,
   RenderingId,
   RenderPathResolver,
@@ -74,7 +74,7 @@ abstract class ViewportV2<
    */
   protected async addLoadedData(
     dataId: DataId,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
   ): Promise<RenderingId> {
     const path = this.renderPathResolver.resolve<TContext>(
@@ -90,50 +90,11 @@ abstract class ViewportV2<
       existing.removeData();
     }
 
-    const rendering = await renderPath.addData(ctx, data, options);
+    const attachment = await renderPath.addData(ctx, data, options);
 
     this.bindings.set(dataId, {
       data,
-      rendering,
-      updateDataPresentation: (props) => {
-        renderPath.updateDataPresentation(ctx, rendering, props);
-      },
-      updateCamera: (camera) => {
-        renderPath.updateCamera(ctx, rendering, camera);
-      },
-      canvasToWorld: renderPath.canvasToWorld
-        ? (canvasPos) => {
-            return renderPath.canvasToWorld?.(ctx, rendering, canvasPos);
-          }
-        : undefined,
-      worldToCanvas: renderPath.worldToCanvas
-        ? (worldPos) => {
-            return renderPath.worldToCanvas?.(ctx, rendering, worldPos);
-          }
-        : undefined,
-      getFrameOfReferenceUID: renderPath.getFrameOfReferenceUID
-        ? () => {
-            return renderPath.getFrameOfReferenceUID?.(ctx, rendering);
-          }
-        : undefined,
-      getImageData: renderPath.getImageData
-        ? () => {
-            return renderPath.getImageData?.(ctx, rendering);
-          }
-        : undefined,
-      render: renderPath.render
-        ? () => {
-            renderPath.render?.(ctx, rendering);
-          }
-        : undefined,
-      resize: renderPath.resize
-        ? () => {
-            renderPath.resize?.(ctx, rendering);
-          }
-        : undefined,
-      removeData: () => {
-        renderPath.removeData(ctx, rendering);
-      },
+      ...attachment,
     });
 
     const binding = this.bindings.get(dataId);
@@ -149,7 +110,7 @@ abstract class ViewportV2<
 
     binding.updateCamera(this.camera);
     this.render();
-    return rendering.id;
+    return attachment.rendering.id;
   }
 
   /**

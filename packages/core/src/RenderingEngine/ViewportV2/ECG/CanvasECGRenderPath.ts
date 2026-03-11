@@ -12,8 +12,8 @@ import {
 import type { Point2, Point3 } from '../../../types';
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -29,15 +29,16 @@ import type {
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   async addData(
     ctx: ECGCanvasRenderContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<ECGCanvasRendering> {
-    return {
+  ): Promise<RenderPathAttachment<ECGDataPresentation>> {
+    const waveform = data as unknown as LoadedData<ECGWaveformPayload>;
+
+    const rendering: ECGCanvasRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'signal2d',
       canvas: ctx.canvas,
       canvasContext: ctx.canvasContext,
-      waveform: data.payload as ECGWaveformPayload,
       metrics: {
         ecgWidth: 1,
         ecgHeight: 1,
@@ -47,36 +48,53 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
         yOffsetCanvas: 0,
       },
     };
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(rendering, camera);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(rendering, waveform, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(rendering, waveform, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(ctx);
+      },
+      render: () => {
+        this.render(ctx, rendering, waveform);
+      },
+      removeData: () => {
+        this.removeData();
+      },
+    };
   }
 
-  updateDataPresentation(
-    _ctx: ECGCanvasRenderContext,
-    rendering: MountedRendering,
+  private updateDataPresentation(
+    rendering: ECGCanvasRendering,
     props: unknown
   ): void {
-    const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.currentDataPresentation = props as
+    rendering.currentDataPresentation = props as
       | ECGDataPresentation
       | undefined;
   }
 
-  updateCamera(
-    _ctx: ECGCanvasRenderContext,
-    rendering: MountedRendering,
-    camera: unknown
-  ): void {
-    const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.currentCamera = camera as ECGCamera;
+  private updateCamera(rendering: ECGCanvasRendering, camera: unknown): void {
+    rendering.currentCamera = camera as ECGCamera;
   }
 
-  canvasToWorld(
-    _ctx: ECGCanvasRenderContext,
-    rendering: MountedRendering,
+  private canvasToWorld(
+    rendering: ECGCanvasRendering,
+    waveform: ECGWaveformPayload,
     canvasPos: Point2
   ): Point3 {
-    const ecgRendering = rendering as ECGCanvasRendering;
-    const { waveform, metrics } = ecgRendering;
-    const layouts = getChannelLayouts(ecgRendering);
+    const { metrics } = rendering;
+    const layouts = getChannelLayouts(rendering, waveform);
     const scale = metrics.worldToCanvasRatio || 1;
     const subCanvasPos: Point2 = [
       (canvasPos[0] - metrics.xOffsetCanvas) / scale,
@@ -112,14 +130,13 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     ];
   }
 
-  worldToCanvas(
-    _ctx: ECGCanvasRenderContext,
-    rendering: MountedRendering,
+  private worldToCanvas(
+    rendering: ECGCanvasRendering,
+    waveform: ECGWaveformPayload,
     worldPos: Point3
   ): Point2 {
-    const ecgRendering = rendering as ECGCanvasRendering;
-    const { waveform, metrics } = ecgRendering;
-    const layouts = getChannelLayouts(ecgRendering);
+    const { metrics } = rendering;
+    const layouts = getChannelLayouts(rendering, waveform);
     const z = Math.round(worldPos[2]);
 
     if (z < 0 || z >= layouts.length) {
@@ -139,15 +156,21 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     ];
   }
 
-  getFrameOfReferenceUID(ctx: ECGCanvasRenderContext): string | undefined {
+  private getFrameOfReferenceUID(
+    ctx: ECGCanvasRenderContext
+  ): string | undefined {
     return `ecg-viewport-${ctx.viewportId}`;
   }
 
-  render(ctx: ECGCanvasRenderContext, rendering: MountedRendering): void {
-    drawFrame(ctx, rendering as ECGCanvasRendering);
+  private render(
+    ctx: ECGCanvasRenderContext,
+    rendering: ECGCanvasRendering,
+    waveform: ECGWaveformPayload
+  ): void {
+    drawFrame(ctx, rendering, waveform);
   }
 
-  removeData(_ctx: ECGCanvasRenderContext, _rendering: MountedRendering): void {
+  private removeData(): void {
     // Canvas lifecycle is owned by the viewport element.
   }
 }
@@ -158,7 +181,7 @@ export class CanvasECGPath
   readonly id = 'ecg:canvas-signal';
   readonly type = ViewportType.ECG;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'ecg' && options.renderMode === 'signal2d';
   }
 
@@ -167,9 +190,12 @@ export class CanvasECGPath
   }
 }
 
-function getChannelLayouts(rendering: ECGCanvasRendering) {
+function getChannelLayouts(
+  rendering: ECGCanvasRendering,
+  waveform: ECGWaveformPayload
+) {
   const visibleChannels = getVisibleECGChannels(
-    rendering.waveform.channels,
+    waveform.channels,
     rendering.currentDataPresentation?.visibleChannels
   );
 
@@ -218,15 +244,11 @@ function computeTimeWindow(
 
 function drawFrame(
   ecgCtx: ECGCanvasRenderContext,
-  ecgRendering: ECGCanvasRendering
+  ecgRendering: ECGCanvasRendering,
+  waveform: ECGWaveformPayload
 ): void {
-  const {
-    canvas,
-    canvasContext,
-    waveform,
-    currentCamera,
-    currentDataPresentation,
-  } = ecgRendering;
+  const { canvas, canvasContext, currentCamera, currentDataPresentation } =
+    ecgRendering;
 
   if (!currentCamera) {
     return;

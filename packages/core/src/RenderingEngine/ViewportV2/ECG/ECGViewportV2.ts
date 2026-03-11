@@ -1,5 +1,6 @@
 import { getOrCreateCanvas } from '../../helpers';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
+import type { LoadedData } from '../ViewportArchitectureTypes';
 import ViewportV2 from '../ViewportV2';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
@@ -90,7 +91,8 @@ class ECGViewportV2 extends ViewportV2<
         continue;
       }
 
-      const waveform = (binding.data.payload as ECGWaveformPayload) || null;
+      const waveform =
+        (binding.data as unknown as LoadedData<ECGWaveformPayload>) || null;
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
 
@@ -123,7 +125,8 @@ class ECGViewportV2 extends ViewportV2<
     }
 
     const dataId = firstBinding.data.id;
-    const waveform = firstBinding.data.payload as ECGWaveformPayload;
+    const waveform =
+      firstBinding.data as unknown as LoadedData<ECGWaveformPayload>;
     const current = this.getDataPresentation(dataId) || {};
     const nextVisibleChannels = new Set(
       current.visibleChannels || waveform.channels.map((_channel, i) => i)
@@ -148,7 +151,8 @@ class ECGViewportV2 extends ViewportV2<
     }
 
     const dataId = firstBinding.data.id;
-    const waveform = firstBinding.data.payload as ECGWaveformPayload;
+    const waveform =
+      firstBinding.data as unknown as LoadedData<ECGWaveformPayload>;
     const visibleChannels = new Set(
       this.getDataPresentation(dataId)?.visibleChannels ||
         waveform.channels.map((_channel, index) => index)

@@ -4,14 +4,14 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import createVolumeActor from '../../helpers/createVolumeActor';
-import type { IImageData, Point2, Point3, VOIRange } from '../../../types';
+import type { IImageData, Point2, Point3 } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
 import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -39,10 +39,10 @@ export class VtkVolumeMapperRenderPath
 {
   async addData(
     ctx: PlanarVtkVolumeAdapterContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<PlanarVolumeMapperRendering> {
-    const payload = data.payload as PlanarPayload;
+  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+    const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
 
     if (!imageVolume) {
@@ -75,7 +75,6 @@ export class VtkVolumeMapperRenderPath
       actor,
       imageVolume,
       mapper,
-      payload,
       currentImageIdIndex: payload.initialImageIdIndex,
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange: defaultRange
@@ -96,27 +95,55 @@ export class VtkVolumeMapperRenderPath
       ctx.display.requestRender();
     });
 
-    return rendering;
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(ctx, rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(ctx, rendering, camera);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(ctx, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(ctx, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(rendering);
+      },
+      getImageData: () => {
+        return this.getImageData(rendering);
+      },
+      render: () => {
+        this.render(ctx);
+      },
+      resize: () => {
+        this.resize(ctx, rendering);
+      },
+      removeData: () => {
+        this.removeData(ctx, rendering);
+      },
+    };
   }
 
-  updateDataPresentation(
+  private updateDataPresentation(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: MountedRendering,
+    rendering: PlanarVolumeMapperRendering,
     props: unknown
   ): void {
     applyDataPresentation(
       ctx,
-      rendering as PlanarVolumeMapperRendering,
+      rendering,
       props as PlanarDataPresentation | undefined
     );
   }
 
-  updateCamera(
+  private updateCamera(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: MountedRendering,
+    rendering: PlanarVolumeMapperRendering,
     camera: unknown
   ): void {
-    const runtime = rendering as PlanarVolumeMapperRendering;
     const viewState = camera as PlanarCamera | undefined;
     const { baseCamera, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeCameraState({
@@ -129,40 +156,39 @@ export class VtkVolumeMapperRenderPath
           ctx.vtk.canvas.width ||
           ctx.viewport.element.clientWidth,
         imageIdIndex: viewState?.imageIdIndex,
-        imageVolume: runtime.imageVolume,
+        imageVolume: rendering.imageVolume,
         orientation: viewState?.orientation,
       });
 
     ctx.display.activateRenderMode('vtkVolume');
-    runtime.baseCamera = baseCamera;
-    runtime.camera = applyPlanarVolumeCameraToRenderer({
+    rendering.baseCamera = baseCamera;
+    rendering.camera = applyPlanarVolumeCameraToRenderer({
       baseCamera,
       canvas: ctx.vtk.canvas,
       renderer: ctx.vtk.renderer,
       viewState,
     });
-    runtime.currentImageIdIndex = currentImageIdIndex;
-    runtime.maxImageIdIndex = maxImageIdIndex;
-    runtime.viewState = viewState;
+    rendering.currentImageIdIndex = currentImageIdIndex;
+    rendering.maxImageIdIndex = maxImageIdIndex;
+    rendering.viewState = viewState;
 
-    if (runtime.camera?.focalPoint && runtime.camera.viewPlaneNormal) {
+    if (rendering.camera?.focalPoint && rendering.camera.viewPlaneNormal) {
       updatePlanarVolumeClippingPlanes({
         camera: {
-          focalPoint: runtime.camera.focalPoint,
-          viewPlaneNormal: runtime.camera.viewPlaneNormal,
+          focalPoint: rendering.camera.focalPoint,
+          viewPlaneNormal: rendering.camera.viewPlaneNormal,
         },
-        mapper: runtime.mapper,
+        mapper: rendering.mapper,
         slabThickness: resolveSlabThickness(
-          runtime.dataPresentation?.slabThickness
+          rendering.dataPresentation?.slabThickness
         ),
       });
       setPlanarVolumeCameraClippingRange(ctx.vtk.renderer);
     }
   }
 
-  canvasToWorld(
+  private canvasToWorld(
     ctx: PlanarVtkVolumeAdapterContext,
-    _rendering: MountedRendering,
     canvasPos: Point2
   ): Point3 {
     return canvasToWorldContextPool({
@@ -172,9 +198,8 @@ export class VtkVolumeMapperRenderPath
     });
   }
 
-  worldToCanvas(
+  private worldToCanvas(
     ctx: PlanarVtkVolumeAdapterContext,
-    _rendering: MountedRendering,
     worldPos: Point3
   ): Point2 {
     return worldToCanvasContextPool({
@@ -184,49 +209,42 @@ export class VtkVolumeMapperRenderPath
     });
   }
 
-  getFrameOfReferenceUID(
-    _ctx: PlanarVtkVolumeAdapterContext,
-    rendering: MountedRendering
+  private getFrameOfReferenceUID(
+    rendering: PlanarVolumeMapperRendering
   ): string | undefined {
-    return (rendering as PlanarVolumeMapperRendering).imageVolume.metadata
-      ?.FrameOfReferenceUID;
+    return rendering.imageVolume.metadata?.FrameOfReferenceUID;
   }
 
-  getImageData(
-    _ctx: PlanarVtkVolumeAdapterContext,
-    rendering: MountedRendering
+  private getImageData(
+    rendering: PlanarVolumeMapperRendering
   ): IImageData | undefined {
-    return buildPlanarVolumeImageData(
-      (rendering as PlanarVolumeMapperRendering).imageVolume
-    );
+    return buildPlanarVolumeImageData(rendering.imageVolume);
   }
 
-  render(ctx: PlanarVtkVolumeAdapterContext): void {
+  private render(ctx: PlanarVtkVolumeAdapterContext): void {
     ctx.display.requestRender();
   }
 
-  resize(
+  private resize(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: MountedRendering
+    rendering: PlanarVolumeMapperRendering
   ): void {
-    const runtime = rendering as PlanarVolumeMapperRendering;
-
-    runtime.camera = applyPlanarVolumeCameraToRenderer({
-      baseCamera: runtime.baseCamera,
+    rendering.camera = applyPlanarVolumeCameraToRenderer({
+      baseCamera: rendering.baseCamera,
       canvas: ctx.vtk.canvas,
       renderer: ctx.vtk.renderer,
-      viewState: runtime.viewState,
+      viewState: rendering.viewState,
     });
 
-    if (runtime.camera?.focalPoint && runtime.camera.viewPlaneNormal) {
+    if (rendering.camera?.focalPoint && rendering.camera.viewPlaneNormal) {
       updatePlanarVolumeClippingPlanes({
         camera: {
-          focalPoint: runtime.camera.focalPoint,
-          viewPlaneNormal: runtime.camera.viewPlaneNormal,
+          focalPoint: rendering.camera.focalPoint,
+          viewPlaneNormal: rendering.camera.viewPlaneNormal,
         },
-        mapper: runtime.mapper,
+        mapper: rendering.mapper,
         slabThickness: resolveSlabThickness(
-          runtime.dataPresentation?.slabThickness
+          rendering.dataPresentation?.slabThickness
         ),
       });
       setPlanarVolumeCameraClippingRange(ctx.vtk.renderer);
@@ -235,12 +253,11 @@ export class VtkVolumeMapperRenderPath
     ctx.display.requestRender();
   }
 
-  removeData(
+  private removeData(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: MountedRendering
+    rendering: PlanarVolumeMapperRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } =
-      rendering as PlanarVolumeMapperRendering;
+    const { actor, removeStreamingSubscriptions } = rendering;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);
@@ -257,7 +274,7 @@ export class VtkVolumeMapperPath
   readonly id = 'planar:vtk-volume-mapper';
   readonly type = ViewportType.PLANAR_V2;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkVolume';
   }
 

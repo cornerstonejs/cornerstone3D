@@ -17,8 +17,8 @@ import {
 } from '../../helpers/planarImageRendering';
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -43,10 +43,10 @@ export class VtkImageMapperRenderPath
 {
   async addData(
     ctx: PlanarVtkImageAdapterContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<PlanarImageMapperRendering> {
-    const payload = data.payload as PlanarPayload;
+  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+    const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
     if (!payload.image) {
       throw new Error(
@@ -66,33 +66,55 @@ export class VtkImageMapperRenderPath
     ctx.vtk.renderer.resetCamera();
     applyCpuEquivalentInitialScale(ctx, payload.image);
 
-    return {
+    const rendering: PlanarImageMapperRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkImage',
       actor,
       currentImage: payload.image,
       mapper,
       imageData,
-      payload,
       currentImageIdIndex: payload.initialImageIdIndex,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       initialCamera: getPlanarCameraState(ctx.vtk.renderer),
       camera: getVtkImageCompatibilityCamera(ctx.vtk.renderer),
       loadRequestId: 0,
     };
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(ctx, rendering, camera, payload.imageIds);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(ctx, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(ctx, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(rendering);
+      },
+      getImageData: () => {
+        return this.getImageData(rendering);
+      },
+      removeData: () => {
+        this.removeData(ctx, rendering);
+      },
+    };
   }
 
-  updateDataPresentation(
-    _ctx: PlanarVtkImageAdapterContext,
-    rendering: MountedRendering,
+  private updateDataPresentation(
+    rendering: PlanarImageMapperRendering,
     props: unknown
   ): void {
-    const planarRendering = rendering as PlanarImageMapperRendering;
     const dataPresentation = props as PlanarDataPresentation | undefined;
 
     applyPlanarImagePresentation({
-      actor: planarRendering.actor,
-      defaultVOIRange: planarRendering.defaultVOIRange,
+      actor: rendering.actor,
+      defaultVOIRange: rendering.defaultVOIRange,
       props: {
         interpolationType: InterpolationType.LINEAR,
         ...dataPresentation,
@@ -100,20 +122,20 @@ export class VtkImageMapperRenderPath
     });
   }
 
-  updateCamera(
+  private updateCamera(
     ctx: PlanarVtkImageAdapterContext,
-    rendering: MountedRendering,
-    camera: unknown
+    rendering: PlanarImageMapperRendering,
+    camera: unknown,
+    imageIds: string[]
   ): void {
-    const planarRendering = rendering as PlanarImageMapperRendering;
     const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
-      planarCamera?.imageIdIndex ?? planarRendering.currentImageIdIndex;
+      planarCamera?.imageIdIndex ?? rendering.currentImageIdIndex;
 
     ctx.display.activateRenderMode('vtkImage');
     applyPlanarCanvasCameraViewState({
       canvas: ctx.vtk.canvas,
-      baseCamera: planarRendering.initialCamera,
+      baseCamera: rendering.initialCamera,
       renderer: ctx.vtk.renderer,
       viewState: {
         pan: planarCamera?.pan,
@@ -121,38 +143,35 @@ export class VtkImageMapperRenderPath
         zoom: planarCamera?.zoom,
       },
     });
-    planarRendering.camera = getVtkImageCompatibilityCamera(ctx.vtk.renderer);
+    rendering.camera = getVtkImageCompatibilityCamera(ctx.vtk.renderer);
 
-    if (nextImageIdIndex === planarRendering.currentImageIdIndex) {
+    if (nextImageIdIndex === rendering.currentImageIdIndex) {
       return;
     }
-
-    const { imageIds } = planarRendering.payload;
 
     if (nextImageIdIndex < 0 || nextImageIdIndex >= imageIds.length) {
       return;
     }
 
-    const requestId = ++planarRendering.loadRequestId;
+    const requestId = ++rendering.loadRequestId;
 
     void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {
-      if (requestId !== planarRendering.loadRequestId) {
+      if (requestId !== rendering.loadRequestId) {
         return;
       }
 
       void updateRenderedImage({
         ctx,
         image,
-        rendering: planarRendering,
+        rendering,
         imageIdIndex: nextImageIdIndex,
         camera: planarCamera,
       });
     });
   }
 
-  canvasToWorld(
+  private canvasToWorld(
     ctx: PlanarVtkImageAdapterContext,
-    _rendering: MountedRendering,
     canvasPos: Point2
   ): Point3 {
     return canvasToWorldContextPool({
@@ -162,9 +181,8 @@ export class VtkImageMapperRenderPath
     });
   }
 
-  worldToCanvas(
+  private worldToCanvas(
     ctx: PlanarVtkImageAdapterContext,
-    _rendering: MountedRendering,
     worldPos: Point3
   ): Point2 {
     return worldToCanvasContextPool({
@@ -174,13 +192,10 @@ export class VtkImageMapperRenderPath
     });
   }
 
-  getFrameOfReferenceUID(
-    _ctx: PlanarVtkImageAdapterContext,
-    rendering: MountedRendering
+  private getFrameOfReferenceUID(
+    rendering: PlanarImageMapperRendering
   ): string | undefined {
-    const imageId = (rendering as PlanarImageMapperRendering).payload.imageIds[
-      (rendering as PlanarImageMapperRendering).currentImageIdIndex
-    ];
+    const imageId = rendering.currentImage.imageId;
     const imagePlaneModule = imageId
       ? (metaData.get(MetadataModules.IMAGE_PLANE, imageId) as
           | { frameOfReferenceUID?: string }
@@ -190,23 +205,20 @@ export class VtkImageMapperRenderPath
     return imagePlaneModule?.frameOfReferenceUID;
   }
 
-  getImageData(
-    ctx: PlanarVtkImageAdapterContext,
-    rendering: MountedRendering
+  private getImageData(
+    rendering: PlanarImageMapperRendering
   ): CPUIImageData | undefined {
-    const planarRendering = rendering as PlanarImageMapperRendering;
-
     return buildPlanarImageData(
-      planarRendering.currentImage,
-      this.getFrameOfReferenceUID(ctx, rendering)
+      rendering.currentImage,
+      this.getFrameOfReferenceUID(rendering)
     );
   }
 
-  removeData(
+  private removeData(
     ctx: PlanarVtkImageAdapterContext,
-    rendering: MountedRendering
+    rendering: PlanarImageMapperRendering
   ): void {
-    const { actor } = rendering as PlanarImageMapperRendering;
+    const { actor } = rendering;
 
     ctx.vtk.renderer.removeActor(actor);
   }
@@ -222,7 +234,7 @@ export class VtkImageMapperPath
   readonly id = 'planar:vtk-image-mapper';
   readonly type = ViewportType.PLANAR_V2;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkImage';
   }
 

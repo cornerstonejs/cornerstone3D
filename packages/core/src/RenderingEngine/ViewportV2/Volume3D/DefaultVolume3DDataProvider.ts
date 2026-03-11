@@ -1,7 +1,7 @@
 import cache from '../../../cache/cache';
 import { loadAndCacheGeometry } from '../../../loaders/geometryLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
-import type { LogicalDataObject } from '../ViewportArchitectureTypes';
+import type { LoadedData } from '../ViewportArchitectureTypes';
 import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
 import type {
   Volume3DDataProvider,
@@ -18,9 +18,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
     options?: {
       renderMode: 'vtkVolume3d' | 'vtkGeometry3d';
     }
-  ): Promise<
-    LogicalDataObject<Volume3DVolumePayload | Volume3DGeometryPayload>
-  > {
+  ): Promise<LoadedData<Volume3DVolumePayload | Volume3DGeometryPayload>> {
     if (!options) {
       throw new Error(
         `[VolumeViewport3DV2] No load options were provided for ${dataId}`
@@ -45,13 +43,11 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
       return {
         id: dataId,
         type: 'image',
-        payload: {
-          actorUID: dataSet.actorUID,
-          imageIds: imageVolume.imageIds || dataSet.imageIds,
-          imageVolume,
-          renderMode: 'vtkVolume3d',
-          volumeId,
-        },
+        actorUID: dataSet.actorUID,
+        imageIds: imageVolume.imageIds || dataSet.imageIds,
+        imageVolume,
+        renderMode: 'vtkVolume3d',
+        volumeId,
       };
     }
 
@@ -63,11 +59,9 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
     return {
       id: dataId,
       type: 'geometry',
-      payload: {
-        geometry,
-        geometryId,
-        renderMode: 'vtkGeometry3d',
-      },
+      geometry,
+      geometryId,
+      renderMode: 'vtkGeometry3d',
     };
   }
 

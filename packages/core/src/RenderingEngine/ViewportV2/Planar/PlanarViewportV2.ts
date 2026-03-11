@@ -12,10 +12,7 @@ import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import renderingEngineCache from '../../renderingEngineCache';
-import type {
-  DataAddOptions,
-  LogicalDataObject,
-} from '../ViewportArchitectureTypes';
+import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
@@ -203,13 +200,13 @@ class PlanarViewportV2 extends ViewportV2<
     options: PlanarSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
     const planarOptions = options as PlanarSetDataOptions;
-    const { data, payload, selectedPath } = await this.loadPlanarData(
+    const { data, selectedPath } = await this.loadPlanarData(
       dataId,
       planarOptions
     );
 
     this.activeDataId = dataId;
-    this.applyLoadedPlanarCamera(planarOptions, payload, selectedPath);
+    this.applyLoadedPlanarCamera(planarOptions, data, selectedPath);
 
     const renderingId = await this.addLoadedData(dataId, data, {
       renderMode: selectedPath.renderMode,
@@ -224,17 +221,17 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   getImageIds(): string[] {
-    const payload = this.getPayload();
+    const planarData = this.getPlanarData();
 
-    if (!payload) {
+    if (!planarData) {
       return [];
     }
 
-    return payload.imageVolume?.imageIds || payload.imageIds;
+    return planarData.imageVolume?.imageIds || planarData.imageIds;
   }
 
   getVolumeId(): string | undefined {
-    return this.getPayload()?.volumeId;
+    return this.getPlanarData()?.volumeId;
   }
 
   getCurrentImageIdIndex(): number {
@@ -244,6 +241,7 @@ class PlanarViewportV2 extends ViewportV2<
   getCurrentImageId(): string | undefined {
     return getPlanarReferencedImageId({
       camera: this.camera,
+      data: this.getPlanarData(),
       rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
     });
@@ -379,6 +377,7 @@ class PlanarViewportV2 extends ViewportV2<
     return getPlanarViewReference({
       camera: this.camera,
       frameOfReferenceUID: this.getFrameOfReferenceUID(),
+      data: this.getPlanarData(),
       rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
       viewRefSpecifier,
@@ -388,9 +387,48 @@ class PlanarViewportV2 extends ViewportV2<
   getViewReferenceId(viewRefSpecifier: ViewReferenceSpecifier = {}): string {
     return getPlanarViewReferenceId({
       camera: this.camera,
+      data: this.getPlanarData(),
       rendering: this.getCurrentPlanarRendering(),
       renderContext: this.renderContext,
       viewRefSpecifier,
+    });
+  }
+
+  setProperties(
+    props: Partial<PlanarDataPresentation> = {},
+    _volumeId?: string
+  ): void {
+    const dataId = this.getCurrentBinding()?.data.id;
+
+    if (!dataId) {
+      return;
+    }
+
+    this.setDataPresentation(dataId, props);
+  }
+
+  getProperties(_volumeId?: string): PlanarDataPresentation {
+    const dataId = this.getCurrentBinding()?.data.id;
+
+    if (!dataId) {
+      return {};
+    }
+
+    return {
+      ...(this.getDataPresentation(dataId) || {}),
+    };
+  }
+
+  resetProperties(_volumeId?: string): void {
+    const dataId = this.getCurrentBinding()?.data.id;
+
+    if (!dataId) {
+      return;
+    }
+
+    this.setDataPresentationState(dataId, {
+      visible: true,
+      opacity: 1,
     });
   }
 
@@ -580,8 +618,8 @@ class PlanarViewportV2 extends ViewportV2<
     ];
   }
 
-  private getPayload(): PlanarPayload | undefined {
-    return this.getCurrentPayload();
+  private getPlanarData(): LoadedData<PlanarPayload> | undefined {
+    return this.getCurrentPlanarData();
   }
 
   protected getCurrentBinding() {
@@ -614,8 +652,7 @@ class PlanarViewportV2 extends ViewportV2<
     dataId: string,
     options: PlanarSetDataOptions
   ): Promise<{
-    data: LogicalDataObject<PlanarPayload>;
-    payload: PlanarPayload;
+    data: LoadedData<PlanarPayload>;
     selectedPath: SelectedPlanarRenderPath;
   }> {
     const dataSet = this.getDataSet(dataId);
@@ -636,14 +673,13 @@ class PlanarViewportV2 extends ViewportV2<
 
     return {
       data,
-      payload: data.payload as PlanarPayload,
       selectedPath,
     };
   }
 
   private applyLoadedPlanarCamera(
     options: PlanarSetDataOptions,
-    payload: PlanarPayload,
+    planarData: PlanarPayload,
     selectedPath: SelectedPlanarRenderPath
   ): void {
     const isVolumeRenderMode =
@@ -654,7 +690,7 @@ class PlanarViewportV2 extends ViewportV2<
       ...this.camera,
       imageIdIndex: isVolumeRenderMode
         ? undefined
-        : payload.initialImageIdIndex,
+        : planarData.initialImageIdIndex,
       orientation: normalizePlanarOrientation(
         options.orientation,
         selectedPath.acquisitionOrientation
@@ -666,9 +702,9 @@ class PlanarViewportV2 extends ViewportV2<
     return this.getCurrentBinding()?.rendering as PlanarRendering | undefined;
   }
 
-  private getCurrentPayload(): PlanarPayload | undefined {
-    return this.getCurrentPlanarRendering()?.payload as
-      | PlanarPayload
+  private getCurrentPlanarData(): LoadedData<PlanarPayload> | undefined {
+    return this.getCurrentBinding()?.data as
+      | LoadedData<PlanarPayload>
       | undefined;
   }
 }

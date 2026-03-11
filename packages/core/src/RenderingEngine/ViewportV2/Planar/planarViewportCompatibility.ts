@@ -15,6 +15,7 @@ import { updatePlaneRestriction } from '../../../utilities/updatePlaneRestrictio
 import { getPlanarCpuImageCompatibilityCamera } from './CpuImageSliceRenderPath';
 import type {
   PlanarCamera,
+  PlanarPayload,
   PlanarRendering,
   PlanarViewportRenderContext,
 } from './PlanarViewportV2Types';
@@ -69,6 +70,7 @@ export function getPlanarCompatibilityCamera(args: {
 
 export function getPlanarReferencedImageId(args: {
   camera: PlanarCamera;
+  data?: PlanarPayload;
   rendering?: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
   viewRefSpecifier?: ViewReferenceSpecifier;
@@ -79,7 +81,7 @@ export function getPlanarReferencedImageId(args: {
     return;
   }
 
-  const imageIds = getImageIds(rendering);
+  const imageIds = getImageIds(args.data);
 
   if (!imageIds.length) {
     return;
@@ -122,6 +124,7 @@ export function getPlanarReferencedImageId(args: {
 export function getPlanarViewReference(args: {
   camera: PlanarCamera;
   frameOfReferenceUID: string;
+  data?: PlanarPayload;
   rendering?: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
   viewRefSpecifier?: ViewReferenceSpecifier;
@@ -174,7 +177,7 @@ export function getPlanarViewReference(args: {
       rendering.renderMode === 'vtkVolume') &&
     viewRefSpecifier?.forFrameOfReference !== false
   ) {
-    viewReference.volumeId = rendering.payload.volumeId;
+    viewReference.volumeId = args.data?.volumeId;
   }
 
   if (referencedImageId) {
@@ -191,6 +194,7 @@ export function getPlanarViewReference(args: {
 
 export function getPlanarViewReferenceId(args: {
   camera: PlanarCamera;
+  data?: PlanarPayload;
   rendering?: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
   viewRefSpecifier?: ViewReferenceSpecifier;
@@ -208,7 +212,12 @@ export function getPlanarViewReferenceId(args: {
     const compatibilityCamera = getPlanarCompatibilityCamera(args);
     const sliceIndex =
       viewRefSpecifier?.sliceIndex ?? getCurrentSliceIndex(rendering);
-    const volumeId = rendering.payload.volumeId;
+    const volumeId = args.data?.volumeId;
+
+    if (!volumeId) {
+      return null;
+    }
+
     return getVolumeViewReferenceId({
       sliceIndex,
       viewPlaneNormal: compatibilityCamera.viewPlaneNormal as Point3,
@@ -386,8 +395,8 @@ function getCurrentSliceIndex(rendering: PlanarRendering): number {
   return rendering.currentImageIdIndex;
 }
 
-function getImageIds(rendering: PlanarRendering): string[] {
-  return rendering.payload.imageVolume?.imageIds || rendering.payload.imageIds;
+function getImageIds(payload?: PlanarPayload): string[] {
+  return payload?.imageVolume?.imageIds || payload?.imageIds || [];
 }
 
 function getTargetVolumeFocalPoint(args: {

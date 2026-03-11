@@ -2,7 +2,7 @@ import {
   addWSIMiniNavigationOverlayCss,
   loadWSIData,
 } from '../../../utilities/WSIUtilities';
-import type { LogicalDataObject } from '../ViewportArchitectureTypes';
+import type { LoadedData } from '../ViewportArchitectureTypes';
 import { getViewportV2RegisteredData } from '../viewportV2DataSetAccess';
 import type {
   WSIDataProvider,
@@ -11,7 +11,7 @@ import type {
 } from './WSIViewportV2Types';
 
 export class DefaultWSIDataProvider implements WSIDataProvider {
-  async load(dataId: string): Promise<LogicalDataObject<WSIPayload>> {
+  async load(dataId: string): Promise<LoadedData<WSIPayload>> {
     const dataSet = this.getDataSet(dataId);
 
     if (!dataSet) {
@@ -31,15 +31,13 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
     return {
       id: dataId,
       type: 'wsi',
-      payload: {
-        imageIds: dataSet.imageIds,
-        client: dataSet.options.webClient,
-        volumeImages: loadedData.volumeImages,
-        metadataDicomweb: loadedData.metadataDicomweb,
-        metadata: loadedData.metadata,
-        frameOfReferenceUID: loadedData.frameOfReferenceUID,
-        imageURISet: loadedData.imageURISet,
-      },
+      imageIds: dataSet.imageIds,
+      client: dataSet.options.webClient,
+      volumeImages: loadedData.volumeImages,
+      metadataDicomweb: loadedData.metadataDicomweb,
+      metadata: loadedData.metadata,
+      frameOfReferenceUID: loadedData.frameOfReferenceUID,
+      imageURISet: loadedData.imageURISet,
     };
   }
 

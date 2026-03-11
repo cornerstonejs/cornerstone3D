@@ -8,8 +8,8 @@ import createVolumeActor from '../../helpers/createVolumeActor';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -38,10 +38,10 @@ export class CpuVolumeSliceRenderPath
 
   async addData(
     ctx: PlanarCpuVolumeAdapterContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<PlanarCpuVolumeRendering> {
-    const payload = data.payload as PlanarPayload;
+  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+    const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
     if (!payload.imageVolume) {
       throw new Error(
@@ -68,7 +68,6 @@ export class CpuVolumeSliceRenderPath
       actor,
       mapper,
       imageVolume: payload.imageVolume,
-      payload,
       currentImageIdIndex: payload.initialImageIdIndex,
       maxImageIdIndex: payload.imageIds.length - 1,
       baseCamera: undefined,
@@ -93,30 +92,55 @@ export class CpuVolumeSliceRenderPath
       ),
     };
 
-    return rendering;
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(ctx, rendering, camera);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(ctx, rendering, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(ctx, rendering, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(rendering);
+      },
+      getImageData: () => {
+        return this.getImageData(rendering);
+      },
+      render: () => {
+        this.render(ctx, rendering);
+      },
+      resize: () => {
+        this.resize(ctx, rendering);
+      },
+      removeData: () => {
+        this.removeData(ctx, rendering);
+      },
+    };
   }
 
-  updateDataPresentation(
-    _ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering,
+  private updateDataPresentation(
+    rendering: PlanarCpuVolumeRendering,
     props: unknown
   ): void {
     const { slabThickness: _slabThickness, ...dataPresentation } =
       (props as PlanarDataPresentation | undefined) || {};
 
-    (rendering as PlanarCpuVolumeRendering).dataPresentation = Object.keys(
-      dataPresentation
-    ).length
+    rendering.dataPresentation = Object.keys(dataPresentation).length
       ? (dataPresentation as PlanarCpuVolumeRendering['dataPresentation'])
       : undefined;
   }
 
-  updateCamera(
+  private updateCamera(
     ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering,
+    rendering: PlanarCpuVolumeRendering,
     camera: unknown
   ): void {
-    const runtime = rendering as PlanarCpuVolumeRendering;
     const viewState = camera as PlanarCamera | undefined;
     const { baseCamera, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeCameraState({
@@ -129,13 +153,13 @@ export class CpuVolumeSliceRenderPath
           ctx.cpu.canvas.clientWidth ||
           ctx.viewport.element.clientWidth,
         imageIdIndex: viewState?.imageIdIndex,
-        imageVolume: runtime.imageVolume,
+        imageVolume: rendering.imageVolume,
         orientation: viewState?.orientation,
       });
 
     ctx.display.activateRenderMode('cpuVolume');
-    runtime.baseCamera = baseCamera;
-    runtime.camera = resolvePlanarVolumeCamera({
+    rendering.baseCamera = baseCamera;
+    rendering.camera = resolvePlanarVolumeCamera({
       baseCamera,
       canvasWidth:
         ctx.cpu.canvas.width ||
@@ -147,25 +171,24 @@ export class CpuVolumeSliceRenderPath
         ctx.viewport.element.clientHeight,
       viewState,
     });
-    runtime.currentImageIdIndex = currentImageIdIndex;
-    runtime.maxImageIdIndex = maxImageIdIndex;
-    runtime.viewState = viewState;
-    runtime.renderingInvalidated = true;
+    rendering.currentImageIdIndex = currentImageIdIndex;
+    rendering.maxImageIdIndex = maxImageIdIndex;
+    rendering.viewState = viewState;
+    rendering.renderingInvalidated = true;
   }
 
-  canvasToWorld(
+  private canvasToWorld(
     ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering,
+    rendering: PlanarCpuVolumeRendering,
     canvasPos: Point2
   ): Point3 {
-    const runtime = rendering as PlanarCpuVolumeRendering;
     const camera =
-      runtime.camera ||
+      rendering.camera ||
       resolvePlanarVolumeCamera({
-        baseCamera: runtime.baseCamera,
+        baseCamera: rendering.baseCamera,
         canvasWidth: ctx.cpu.canvas.width,
         canvasHeight: ctx.cpu.canvas.height,
-        viewState: runtime.viewState,
+        viewState: rendering.viewState,
       });
 
     if (
@@ -190,19 +213,18 @@ export class CpuVolumeSliceRenderPath
     });
   }
 
-  worldToCanvas(
+  private worldToCanvas(
     ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering,
+    rendering: PlanarCpuVolumeRendering,
     worldPos: Point3
   ): Point2 {
-    const runtime = rendering as PlanarCpuVolumeRendering;
     const camera =
-      runtime.camera ||
+      rendering.camera ||
       resolvePlanarVolumeCamera({
-        baseCamera: runtime.baseCamera,
+        baseCamera: rendering.baseCamera,
         canvasWidth: ctx.cpu.canvas.width,
         canvasHeight: ctx.cpu.canvas.height,
-        viewState: runtime.viewState,
+        viewState: rendering.viewState,
       });
 
     if (
@@ -227,29 +249,23 @@ export class CpuVolumeSliceRenderPath
     });
   }
 
-  getFrameOfReferenceUID(
-    _ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering
+  private getFrameOfReferenceUID(
+    rendering: PlanarCpuVolumeRendering
   ): string | undefined {
-    return (rendering as PlanarCpuVolumeRendering).imageVolume.metadata
-      ?.FrameOfReferenceUID;
+    return rendering.imageVolume.metadata?.FrameOfReferenceUID;
   }
 
-  getImageData(
-    _ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering
+  private getImageData(
+    rendering: PlanarCpuVolumeRendering
   ): IImageData | undefined {
-    return buildPlanarVolumeImageData(
-      (rendering as PlanarCpuVolumeRendering).imageVolume
-    );
+    return buildPlanarVolumeImageData(rendering.imageVolume);
   }
 
-  render(
+  private render(
     ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering
+    rendering: PlanarCpuVolumeRendering
   ): void {
-    const planarRendering = rendering as PlanarCpuVolumeRendering;
-    const runtime = planarRendering;
+    const runtime = rendering;
 
     ctx.display.activateRenderMode('cpuVolume');
 
@@ -343,14 +359,12 @@ export class CpuVolumeSliceRenderPath
     runtime.renderingInvalidated = false;
   }
 
-  resize(
+  private resize(
     ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering
+    rendering: PlanarCpuVolumeRendering
   ): void {
-    const runtime = rendering as PlanarCpuVolumeRendering;
-
-    runtime.camera = resolvePlanarVolumeCamera({
-      baseCamera: runtime.baseCamera,
+    rendering.camera = resolvePlanarVolumeCamera({
+      baseCamera: rendering.baseCamera,
       canvasWidth:
         ctx.cpu.canvas.width ||
         ctx.cpu.canvas.clientWidth ||
@@ -359,17 +373,16 @@ export class CpuVolumeSliceRenderPath
         ctx.cpu.canvas.height ||
         ctx.cpu.canvas.clientHeight ||
         ctx.viewport.element.clientHeight,
-      viewState: runtime.viewState,
+      viewState: rendering.viewState,
     });
-    runtime.renderingInvalidated = true;
+    rendering.renderingInvalidated = true;
   }
 
-  removeData(
+  private removeData(
     ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering
+    rendering: PlanarCpuVolumeRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } =
-      rendering as PlanarCpuVolumeRendering;
+    const { actor, removeStreamingSubscriptions } = rendering;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);
@@ -413,7 +426,7 @@ export class CpuVolumeSlicePath
   readonly id = 'planar:cpu-volume-slice';
   readonly type = ViewportType.PLANAR_V2;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'cpuVolume';
   }
 

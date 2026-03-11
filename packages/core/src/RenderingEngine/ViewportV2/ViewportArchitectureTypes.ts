@@ -22,20 +22,35 @@ export interface BasePresentationProps {
   opacity?: number;
 }
 
-export interface LogicalDataObject<TPayload = unknown> {
+export type LoadedData<TData extends object = Record<string, unknown>> = {
   id: DataId;
   type: LogicalDataType;
-  payload: TPayload;
-}
+} & TData;
+
+export type LogicalDataObject<TData extends object = Record<string, unknown>> =
+  LoadedData<TData>;
 
 // Mounted rendering state is render-path-specific; logical dataset identity
-// lives on the binding key and the loaded LogicalDataObject. The controller
+// lives on the binding key and the loaded dataset. The controller
 // treats this object as opaque even though adapter fields are stored flat.
 export type MountedRendering<
   TRendering extends { renderMode: string } = { renderMode: string },
 > = {
   id: RenderingId;
 } & Omit<TRendering, 'id'>;
+
+export interface RenderPathAttachment<TPresentation = unknown> {
+  rendering: MountedRendering;
+  updateDataPresentation(props: TPresentation): void;
+  updateCamera(camera: unknown): void;
+  canvasToWorld?(canvasPos: Point2): Point3;
+  worldToCanvas?(worldPos: Point3): Point2;
+  getFrameOfReferenceUID?(): string | undefined;
+  getImageData?(): unknown;
+  render?(): void;
+  resize?(): void;
+  removeData(): void;
+}
 
 export interface BaseViewportRenderContext {
   viewportId: ViewportId;
@@ -47,46 +62,9 @@ export interface RenderPath<
 > {
   addData(
     ctx: TContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<MountedRendering>;
-
-  updateDataPresentation(
-    ctx: TContext,
-    rendering: MountedRendering,
-    props: unknown
-  ): void;
-
-  updateCamera(
-    ctx: TContext,
-    rendering: MountedRendering,
-    camera: unknown
-  ): void;
-
-  canvasToWorld?(
-    ctx: TContext,
-    rendering: MountedRendering,
-    canvasPos: Point2
-  ): Point3;
-
-  worldToCanvas?(
-    ctx: TContext,
-    rendering: MountedRendering,
-    worldPos: Point3
-  ): Point2;
-
-  getFrameOfReferenceUID?(
-    ctx: TContext,
-    rendering: MountedRendering
-  ): string | undefined;
-
-  getImageData?(ctx: TContext, rendering: MountedRendering): unknown;
-
-  render?(ctx: TContext, rendering: MountedRendering): void;
-
-  resize?(ctx: TContext, rendering: MountedRendering): void;
-
-  removeData(ctx: TContext, rendering: MountedRendering): void;
+  ): Promise<RenderPathAttachment>;
 }
 
 export interface RenderPathDefinition<
@@ -96,7 +74,7 @@ export interface RenderPathDefinition<
   id: string;
   type: ViewportType;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean;
+  matches(data: LoadedData, options: DataAddOptions): boolean;
 
   createRenderPath(): RenderPath<TAdapterContext>;
 
@@ -113,27 +91,18 @@ export interface RenderPathResolver {
 
   resolve<TContext extends BaseViewportRenderContext>(
     type: ViewportType,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
   ): RenderPathDefinition<TContext, BaseViewportRenderContext>;
 }
 
 export interface DataProvider {
-  load(dataId: DataId, options?: unknown): Promise<LogicalDataObject>;
+  load(dataId: DataId, options?: unknown): Promise<LoadedData>;
 }
 
-export interface RenderingBinding<TPresentation = unknown> {
-  data: LogicalDataObject;
-  rendering: MountedRendering;
-  updateDataPresentation(props: TPresentation): void;
-  updateCamera(camera: unknown): void;
-  canvasToWorld?(canvasPos: Point2): Point3;
-  worldToCanvas?(worldPos: Point3): Point2;
-  getFrameOfReferenceUID?(): string | undefined;
-  getImageData?(): unknown;
-  render?(): void;
-  resize?(): void;
-  removeData(): void;
+export interface RenderingBinding<TPresentation = unknown>
+  extends RenderPathAttachment<TPresentation> {
+  data: LoadedData;
 }
 
 export interface ViewportController<

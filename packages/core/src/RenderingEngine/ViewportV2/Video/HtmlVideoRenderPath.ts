@@ -1,7 +1,7 @@
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -21,10 +21,11 @@ export class HtmlVideoRenderPath
 {
   async addData(
     ctx: VideoElementRenderContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<VideoElementRendering> {
-    const payload = data.payload as VideoStreamPayload;
+  ): Promise<RenderPathAttachment<VideoDataPresentation>> {
+    const videoData = data as unknown as LoadedData<VideoStreamPayload>;
+    const payload: VideoStreamPayload = videoData;
     const element = document.createElement('video');
 
     element.src = payload.renderedUrl;
@@ -59,22 +60,43 @@ export class HtmlVideoRenderPath
       numberOfFrames: playbackInfo.numberOfFrames,
       frameRange: playbackInfo.frameRange,
     };
+    Object.assign(videoData, normalizedPayload);
 
-    return {
+    const rendering: VideoElementRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'video2d',
       element,
-      payload: normalizedPayload,
+    };
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(rendering, camera, videoData);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(rendering, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(rendering, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(rendering);
+      },
+      removeData: () => {
+        this.removeData(rendering);
+      },
     };
   }
 
-  updateDataPresentation(
-    _ctx: VideoElementRenderContext,
-    rendering: MountedRendering,
+  private updateDataPresentation(
+    rendering: VideoElementRendering,
     props: unknown
   ): void {
     const videoProps = props as VideoDataPresentation | undefined;
-    const { element } = rendering as VideoElementRendering;
+    const { element } = rendering;
 
     element.style.display = videoProps?.visible === false ? 'none' : '';
     element.style.opacity = String(videoProps?.opacity ?? 1);
@@ -84,18 +106,17 @@ export class HtmlVideoRenderPath
     element.style.objectFit = videoProps?.objectFit ?? 'contain';
   }
 
-  updateCamera(
-    _ctx: VideoElementRenderContext,
-    rendering: MountedRendering,
-    camera: unknown
+  private updateCamera(
+    rendering: VideoElementRendering,
+    camera: unknown,
+    data: VideoStreamPayload
   ): void {
     const videoCamera = camera as VideoCamera;
-    const videoRendering = rendering as VideoElementRendering;
-    const { element } = videoRendering;
+    const { element } = rendering;
     const rotation = videoCamera.rotation ?? 0;
     const layout = getVideoLayout(element, videoCamera);
 
-    videoRendering.currentCamera = videoCamera;
+    rendering.currentCamera = videoCamera;
 
     if (layout) {
       element.style.width = `${layout.width}px`;
@@ -109,21 +130,17 @@ export class HtmlVideoRenderPath
     if (
       typeof videoCamera.currentTimeSeconds === 'number' &&
       Math.abs(element.currentTime - videoCamera.currentTimeSeconds) >
-        0.5 / Math.max(1, videoRendering.payload.fps)
+        0.5 / Math.max(1, data.fps)
     ) {
       element.currentTime = videoCamera.currentTimeSeconds;
     }
   }
 
-  canvasToWorld(
-    _ctx: VideoElementRenderContext,
-    rendering: MountedRendering,
+  private canvasToWorld(
+    rendering: VideoElementRendering,
     canvasPos: Point2
   ): Point3 {
-    const layout = getVideoLayout(
-      (rendering as VideoElementRendering).element,
-      (rendering as VideoElementRendering).currentCamera
-    );
+    const layout = getVideoLayout(rendering.element, rendering.currentCamera);
 
     if (!layout) {
       return [0, 0, 0];
@@ -136,15 +153,11 @@ export class HtmlVideoRenderPath
     ];
   }
 
-  worldToCanvas(
-    _ctx: VideoElementRenderContext,
-    rendering: MountedRendering,
+  private worldToCanvas(
+    rendering: VideoElementRendering,
     worldPos: Point3
   ): Point2 {
-    const layout = getVideoLayout(
-      (rendering as VideoElementRendering).element,
-      (rendering as VideoElementRendering).currentCamera
-    );
+    const layout = getVideoLayout(rendering.element, rendering.currentCamera);
 
     if (!layout) {
       return [0, 0];
@@ -156,20 +169,16 @@ export class HtmlVideoRenderPath
     ];
   }
 
-  getFrameOfReferenceUID(
-    _ctx: VideoElementRenderContext,
-    rendering: MountedRendering
+  private getFrameOfReferenceUID(
+    rendering: VideoElementRendering
   ): string | undefined {
-    const element = (rendering as VideoElementRendering).element;
+    const { element } = rendering;
 
     return element.currentSrc || element.src;
   }
 
-  removeData(
-    _ctx: VideoElementRenderContext,
-    rendering: MountedRendering
-  ): void {
-    const { element } = rendering as VideoElementRendering;
+  private removeData(rendering: VideoElementRendering): void {
+    const { element } = rendering;
     element.pause();
     element.remove();
   }
@@ -231,7 +240,7 @@ export class HtmlVideoPath
   readonly id = 'video:html-element';
   readonly type = ViewportType.VIDEO_V2;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'video' && options.renderMode === 'video2d';
   }
 

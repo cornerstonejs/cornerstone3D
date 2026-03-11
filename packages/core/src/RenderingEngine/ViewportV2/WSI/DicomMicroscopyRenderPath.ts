@@ -5,8 +5,8 @@ import { getDicomMicroscopyViewer } from '../../../utilities/WSIUtilities';
 import { Transform } from '../../helpers/cpuFallback/rendering/transform';
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -14,7 +14,6 @@ import type { Point2, Point3 } from '../../../types';
 import type {
   WSICamera,
   WSIDataPresentation,
-  WSIPresentationProps,
   WSIRendering,
   WSIPayload,
   WSIViewportRenderContext,
@@ -27,10 +26,10 @@ export class DicomMicroscopyRenderPath
 {
   async addData(
     ctx: WSIViewportRenderContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<WSIRendering> {
-    const payload = data.payload as WSIPayload;
+  ): Promise<RenderPathAttachment<WSIDataPresentation>> {
+    const payload: WSIPayload = data as unknown as LoadedData<WSIPayload>;
     const DicomMicroscopyViewer = await getDicomMicroscopyViewer();
     const microscopyElement = document.createElement('div');
 
@@ -77,36 +76,52 @@ export class DicomMicroscopyRenderPath
       background: 'none',
     });
 
-    return {
+    const rendering: WSIRendering = {
       id: renderingId,
       renderMode: 'wsi2d',
       microscopyElement,
       viewer,
       map,
-      payload,
       postrenderHandler,
+    };
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(rendering, camera);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(ctx, rendering, payload.metadata, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(ctx, rendering, payload.metadata, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(payload);
+      },
+      removeData: () => {
+        this.removeData(rendering);
+      },
     };
   }
 
-  updateDataPresentation(
-    _ctx: WSIViewportRenderContext,
-    rendering: MountedRendering,
+  private updateDataPresentation(
+    rendering: WSIRendering,
     props: unknown
   ): void {
     const wsiProps = props as WSIDataPresentation | undefined;
-    const { microscopyElement } = rendering as WSIRendering;
+    const { microscopyElement } = rendering;
 
     microscopyElement.style.display = wsiProps?.visible === false ? 'none' : '';
     microscopyElement.style.opacity = String(wsiProps?.opacity ?? 1);
   }
 
-  updateCamera(
-    _ctx: WSIViewportRenderContext,
-    rendering: MountedRendering,
-    camera: unknown
-  ): void {
+  private updateCamera(rendering: WSIRendering, camera: unknown): void {
     const wsiCamera = camera as WSICamera;
-    const { map } = rendering as WSIRendering;
+    const { map } = rendering;
     const view = map?.getView?.();
 
     if (!view) {
@@ -124,41 +139,36 @@ export class DicomMicroscopyRenderPath
     }
   }
 
-  canvasToWorld(
+  private canvasToWorld(
     ctx: WSIViewportRenderContext,
-    rendering: MountedRendering,
+    rendering: WSIRendering,
+    metadata: WSIPayload['metadata'],
     canvasPos: Point2
   ): Point3 {
-    const indexPoint = canvasToIndex(ctx, rendering as WSIRendering, canvasPos);
+    const indexPoint = canvasToIndex(ctx, rendering, canvasPos);
     indexPoint[1] = -indexPoint[1];
 
-    return indexToWorld(rendering as WSIRendering, indexPoint);
+    return indexToWorld(metadata, indexPoint);
   }
 
-  worldToCanvas(
+  private worldToCanvas(
     ctx: WSIViewportRenderContext,
-    rendering: MountedRendering,
+    rendering: WSIRendering,
+    metadata: WSIPayload['metadata'],
     worldPos: Point3
   ): Point2 {
-    const indexPoint = worldToIndex(rendering as WSIRendering, worldPos);
+    const indexPoint = worldToIndex(metadata, worldPos);
     indexPoint[1] = -indexPoint[1];
 
-    return indexToCanvas(ctx, rendering as WSIRendering, indexPoint);
+    return indexToCanvas(ctx, rendering, indexPoint);
   }
 
-  getFrameOfReferenceUID(
-    _ctx: WSIViewportRenderContext,
-    rendering: MountedRendering
-  ): string | undefined {
-    return (rendering as WSIRendering).payload.frameOfReferenceUID ?? undefined;
+  private getFrameOfReferenceUID(payload: WSIPayload): string | undefined {
+    return payload.frameOfReferenceUID ?? undefined;
   }
 
-  removeData(
-    _ctx: WSIViewportRenderContext,
-    rendering: MountedRendering
-  ): void {
-    const { map, microscopyElement, viewer, postrenderHandler } =
-      rendering as WSIRendering;
+  private removeData(rendering: WSIRendering): void {
+    const { map, microscopyElement, viewer, postrenderHandler } = rendering;
 
     map?.un?.(EVENT_POSTRENDER, postrenderHandler);
     viewer?.cleanup?.();
@@ -172,7 +182,7 @@ export class DicomMicroscopyPath
   readonly id = 'wsi:dicom-microscopy-viewer';
   readonly type = ViewportType.WHOLE_SLIDE;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'wsi' && options.renderMode === 'wsi2d';
   }
 
@@ -181,8 +191,7 @@ export class DicomMicroscopyPath
   }
 }
 
-function computeTransforms(rendering: WSIRendering) {
-  const metadata = rendering.payload.metadata;
+function computeTransforms(metadata: WSIPayload['metadata']) {
   const indexToWorld = mat4.create();
   const worldToIndexMatrix = mat4.create();
 
@@ -205,8 +214,8 @@ function computeTransforms(rendering: WSIRendering) {
   };
 }
 
-function worldToIndex(rendering: WSIRendering, point: Point3): Point3 {
-  const transforms = computeTransforms(rendering);
+function worldToIndex(metadata: WSIPayload['metadata'], point: Point3): Point3 {
+  const transforms = computeTransforms(metadata);
   const imageCoord = vec3.create();
 
   vec3.transformMat4(imageCoord, point, transforms.worldToIndexMatrix);
@@ -214,8 +223,8 @@ function worldToIndex(rendering: WSIRendering, point: Point3): Point3 {
   return [imageCoord[0], imageCoord[1], imageCoord[2]];
 }
 
-function indexToWorld(rendering: WSIRendering, point: Point3): Point3 {
-  const transforms = computeTransforms(rendering);
+function indexToWorld(metadata: WSIPayload['metadata'], point: Point3): Point3 {
+  const transforms = computeTransforms(metadata);
   const worldPos = vec3.create();
 
   vec3.transformMat4(worldPos, point, transforms.indexToWorld);

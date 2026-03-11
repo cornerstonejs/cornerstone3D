@@ -17,7 +17,7 @@ import type {
   BaseViewportRenderContext,
   BasePresentationProps,
   DataProvider,
-  LogicalDataObject,
+  LoadedData,
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
@@ -75,7 +75,7 @@ export interface Volume3DDataProvider extends DataProvider {
     options?: {
       renderMode: Volume3DRenderMode;
     }
-  ): Promise<LogicalDataObject<Volume3DPayload>>;
+  ): Promise<LoadedData<Volume3DPayload>>;
 }
 
 export interface VolumeViewport3DV2Input extends ViewportInput {
@@ -113,7 +113,6 @@ export type Volume3DVolumeRendering = MountedRendering<{
   defaultVOIRange?: VOIRange;
   imageVolume: IImageVolume;
   mapper: vtkVolumeMapper;
-  payload: Volume3DVolumePayload;
   removeStreamingSubscriptions?: () => void;
 }>;
 
@@ -121,8 +120,6 @@ export type Volume3DGeometryRendering = MountedRendering<{
   renderMode: 'vtkGeometry3d';
   actors: ActorEntry[];
   frameOfReferenceUID?: string;
-  geometry: IGeometry;
-  payload: Volume3DGeometryPayload;
 }>;
 
 export type Volume3DRendering =

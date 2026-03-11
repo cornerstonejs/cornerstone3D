@@ -20,12 +20,11 @@ import type {
   IImage,
   Point2,
   Point3,
-  VOIRange,
 } from '../../../types';
 import type {
   DataAddOptions,
-  LogicalDataObject,
-  MountedRendering,
+  LoadedData,
+  RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
@@ -52,10 +51,10 @@ export class CpuImageSliceRenderPath
 {
   async addData(
     ctx: PlanarCpuImageAdapterContext,
-    data: LogicalDataObject,
+    data: LoadedData,
     options: DataAddOptions
-  ): Promise<PlanarCpuImageRendering> {
-    const payload = data.payload as PlanarPayload;
+  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+    const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
     if (!payload.image) {
       throw new Error('[PlanarViewportV2] CPU rendering requires an image');
@@ -73,11 +72,10 @@ export class CpuImageSliceRenderPath
     resizeEnabledElement(enabledElement, true);
     enabledElement.transform = calculateTransform(enabledElement);
 
-    return {
+    const rendering: PlanarCpuImageRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'cpu2d',
       enabledElement,
-      payload,
       currentImageIdIndex: payload.initialImageIdIndex,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       camera: getPlanarCpuImageCompatibilityCamera({
@@ -88,51 +86,79 @@ export class CpuImageSliceRenderPath
       loadRequestId: 0,
       renderingInvalidated: true,
     };
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(ctx, rendering, camera, payload.imageIds);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(rendering, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(rendering, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(rendering);
+      },
+      getImageData: () => {
+        return this.getImageData(rendering);
+      },
+      render: () => {
+        this.render(rendering);
+      },
+      resize: () => {
+        this.resize(rendering);
+      },
+      removeData: () => {
+        this.removeData(ctx, rendering);
+      },
+    };
   }
 
-  updateDataPresentation(
-    _ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering,
+  private updateDataPresentation(
+    rendering: PlanarCpuImageRendering,
     props: unknown
   ): void {
     applyDataPresentation(
-      rendering as PlanarCpuImageRendering,
+      rendering,
       props as PlanarDataPresentation | undefined
     );
   }
 
-  updateCamera(
+  private updateCamera(
     ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering,
-    camera: unknown
+    rendering: PlanarCpuImageRendering,
+    camera: unknown,
+    imageIds: string[]
   ): void {
-    const planarRendering = rendering as PlanarCpuImageRendering;
     const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
-      planarCamera?.imageIdIndex ?? planarRendering.currentImageIdIndex;
+      planarCamera?.imageIdIndex ?? rendering.currentImageIdIndex;
 
     ctx.display.activateRenderMode('cpu2d');
-    applyCameraState(planarRendering, planarCamera);
-    planarRendering.camera = getPlanarCpuImageCompatibilityCamera({
+    applyCameraState(rendering, planarCamera);
+    rendering.camera = getPlanarCpuImageCompatibilityCamera({
       camera: planarCamera,
-      enabledElement: planarRendering.enabledElement,
-      image: planarRendering.enabledElement.image,
+      enabledElement: rendering.enabledElement,
+      image: rendering.enabledElement.image,
     });
 
-    if (nextImageIdIndex === planarRendering.currentImageIdIndex) {
+    if (nextImageIdIndex === rendering.currentImageIdIndex) {
       return;
     }
-
-    const { imageIds } = planarRendering.payload;
 
     if (nextImageIdIndex < 0 || nextImageIdIndex >= imageIds.length) {
       return;
     }
 
-    const requestId = ++planarRendering.loadRequestId;
+    const requestId = ++rendering.loadRequestId;
 
     void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {
-      if (requestId !== planarRendering.loadRequestId) {
+      if (requestId !== rendering.loadRequestId) {
         return;
       }
 
@@ -140,56 +166,42 @@ export class CpuImageSliceRenderPath
         ctx,
         image,
         imageIdIndex: nextImageIdIndex,
-        rendering: planarRendering,
+        rendering,
         camera: planarCamera,
       });
     });
   }
 
-  canvasToWorld(
-    _ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering,
+  private canvasToWorld(
+    rendering: PlanarCpuImageRendering,
     canvasPos: Point2
   ): Point3 {
-    const planarRendering = rendering as PlanarCpuImageRendering;
-    const image = planarRendering.enabledElement.image;
+    const image = rendering.enabledElement.image;
 
     if (!image) {
       return [0, 0, 0];
     }
 
-    return canvasToWorldCPUImage(
-      planarRendering.enabledElement,
-      image,
-      canvasPos
-    );
+    return canvasToWorldCPUImage(rendering.enabledElement, image, canvasPos);
   }
 
-  worldToCanvas(
-    _ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering,
+  private worldToCanvas(
+    rendering: PlanarCpuImageRendering,
     worldPos: Point3
   ): Point2 {
-    const planarRendering = rendering as PlanarCpuImageRendering;
-    const image = planarRendering.enabledElement.image;
+    const image = rendering.enabledElement.image;
 
     if (!image) {
       return [0, 0];
     }
 
-    return worldToCanvasCPUImage(
-      planarRendering.enabledElement,
-      image,
-      worldPos
-    );
+    return worldToCanvasCPUImage(rendering.enabledElement, image, worldPos);
   }
 
-  getFrameOfReferenceUID(
-    _ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering
+  private getFrameOfReferenceUID(
+    rendering: PlanarCpuImageRendering
   ): string | undefined {
-    const imageId = (rendering as PlanarCpuImageRendering).enabledElement.image
-      ?.imageId;
+    const imageId = rendering.enabledElement.image?.imageId;
     const imagePlaneModule = imageId
       ? (metaData.get(MetadataModules.IMAGE_PLANE, imageId) as
           | { frameOfReferenceUID?: string }
@@ -199,42 +211,31 @@ export class CpuImageSliceRenderPath
     return imagePlaneModule?.frameOfReferenceUID;
   }
 
-  getImageData(
-    _ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering
+  private getImageData(
+    rendering: PlanarCpuImageRendering
   ): CPUIImageData | undefined {
-    const planarRendering = rendering as PlanarCpuImageRendering;
-    const image = planarRendering.enabledElement.image;
+    const image = rendering.enabledElement.image;
 
     if (!image) {
       return;
     }
 
-    return buildPlanarImageData(
-      image,
-      this.getFrameOfReferenceUID(_ctx, rendering)
-    );
+    return buildPlanarImageData(image, this.getFrameOfReferenceUID(rendering));
   }
 
-  render(
-    _ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering
-  ): void {
-    renderCPUImage(rendering as PlanarCpuImageRendering);
+  private render(rendering: PlanarCpuImageRendering): void {
+    renderCPUImage(rendering);
   }
 
-  resize(
-    _ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering
-  ): void {
-    resizeEnabledElement((rendering as PlanarCpuImageRendering).enabledElement);
+  private resize(rendering: PlanarCpuImageRendering): void {
+    resizeEnabledElement(rendering.enabledElement);
   }
 
-  removeData(
+  private removeData(
     ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering
+    rendering: PlanarCpuImageRendering
   ): void {
-    const { enabledElement } = rendering as PlanarCpuImageRendering;
+    const { enabledElement } = rendering;
 
     ctx.cpu.context.setTransform(1, 0, 0, 1, 0, 0);
     ctx.cpu.context.clearRect(
@@ -257,7 +258,7 @@ export class CpuImageSlicePath
   readonly id = 'planar:cpu-image-slice';
   readonly type = ViewportType.PLANAR_V2;
 
-  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
+  matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'cpu2d';
   }
 

@@ -75,7 +75,7 @@ controller. It works with three layers:
 
 - `dataId`
   Stable application-facing identifier passed to the viewport.
-- `LogicalDataObject`
+- `LoadedData`
   Loaded data returned by a data provider. This is the render-path selection input.
 - `MountedRendering`
   Render-path-owned runtime state after attach.

@@ -18,7 +18,7 @@ import type {
   BaseViewportRenderContext,
   BasePresentationProps,
   DataProvider,
-  LogicalDataObject,
+  LoadedData,
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
@@ -97,7 +97,7 @@ export interface PlanarDataProvider extends DataProvider {
   load(
     dataId: string,
     options?: PlanarDataLoadOptions
-  ): Promise<LogicalDataObject<PlanarPayload>>;
+  ): Promise<LoadedData<PlanarPayload>>;
 }
 
 export interface PlanarViewportV2Input extends ViewportInput {
@@ -155,7 +155,6 @@ export type PlanarImageMapperRendering = MountedRendering<{
   currentImage: IImage;
   mapper: vtkImageMapper;
   imageData: vtkImageData;
-  payload: PlanarPayload;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   initialCamera: PlanarCameraState;
@@ -166,7 +165,6 @@ export type PlanarImageMapperRendering = MountedRendering<{
 export type PlanarCpuImageRendering = MountedRendering<{
   renderMode: 'cpu2d';
   enabledElement: CPUFallbackEnabledElement;
-  payload: PlanarPayload;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   fitScale: number;
@@ -180,7 +178,6 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   actor: vtkVolume;
   mapper: vtkVolumeMapper;
   enabledElement?: CPUFallbackEnabledElement;
-  payload: PlanarPayload;
   imageVolume: IImageVolume;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
@@ -211,7 +208,6 @@ export type PlanarVolumeMapperRendering = MountedRendering<{
   actor: vtkVolume;
   imageVolume: IImageVolume;
   mapper: vtkVolumeMapper;
-  payload: PlanarPayload;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;

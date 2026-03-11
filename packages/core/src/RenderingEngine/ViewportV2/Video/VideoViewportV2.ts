@@ -9,6 +9,7 @@ import {
 import { generateFrameImageId } from '../../../utilities/splitImageIdsBy4DTags';
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 import { HtmlVideoPath } from './HtmlVideoRenderPath';
+import type { LoadedData } from '../ViewportArchitectureTypes';
 import { getViewportV2SourceDataId } from '../viewportV2DataSetAccess';
 import type {
   VideoCamera,
@@ -102,7 +103,8 @@ class VideoViewportV2 extends ViewportV2<
         objectFit: 'contain',
       });
 
-      const payload = (binding.rendering as VideoElementRendering).payload;
+      const videoData =
+        binding.data as unknown as LoadedData<VideoStreamPayload>;
       const pan = this.getDefaultPanWorld();
       this.camera = {
         zoom: 1,
@@ -111,10 +113,10 @@ class VideoViewportV2 extends ViewportV2<
         currentTimeSeconds: 0,
       };
 
-      if (payload.frameRange[0] > 1) {
+      if (videoData.frameRange[0] > 1) {
         this.camera.currentTimeSeconds = frameNumberToTimeSeconds(
-          payload.frameRange[0],
-          payload.fps
+          videoData.frameRange[0],
+          videoData.fps
         );
       }
 
@@ -145,9 +147,9 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   seek(timeSeconds: number): void {
-    const payload = this.getPayload();
-    const maxTimeSeconds = payload?.durationSeconds
-      ? Math.max(payload.durationSeconds, 0)
+    const videoData = this.getVideoData();
+    const maxTimeSeconds = videoData?.durationSeconds
+      ? Math.max(videoData.durationSeconds, 0)
       : Number.POSITIVE_INFINITY;
 
     this.setCamera({
@@ -156,13 +158,13 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   setFrameNumber(frameNumber: number): void {
-    const payload = this.getPayload();
+    const videoData = this.getVideoData();
 
-    if (!payload) {
+    if (!videoData) {
       return;
     }
 
-    this.seek(frameNumberToTimeSeconds(frameNumber, payload.fps));
+    this.seek(frameNumberToTimeSeconds(frameNumber, videoData.fps));
   }
 
   setPlaybackRate(playbackRate: number): void {
@@ -178,11 +180,11 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   getFrameRate(): number {
-    return this.getPayload()?.fps ?? 0;
+    return this.getVideoData()?.fps ?? 0;
   }
 
   getNumberOfFrames(): number {
-    return this.getPayload()?.numberOfFrames ?? 0;
+    return this.getVideoData()?.numberOfFrames ?? 0;
   }
 
   getNumberOfSlices(): number {
@@ -195,20 +197,20 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   getFrameNumber(): number {
-    const payload = this.getPayload();
+    const videoData = this.getVideoData();
 
-    if (!payload) {
+    if (!videoData) {
       return 1;
     }
 
     const frameNumber = timeSecondsToFrameNumber(
       this.getCurrentTime(),
-      payload.fps
+      videoData.fps
     );
 
     return Math.max(
-      payload.frameRange[0],
-      Math.min(frameNumber, payload.frameRange[1])
+      videoData.frameRange[0],
+      Math.min(frameNumber, videoData.frameRange[1])
     );
   }
 
@@ -218,18 +220,18 @@ class VideoViewportV2 extends ViewportV2<
 
   getImageIds(): string[] {
     const dataId = this.getFirstBinding()?.data.id;
-    const payload = this.getPayload();
+    const videoData = this.getVideoData();
 
-    if (!dataId || !payload) {
+    if (!dataId || !videoData) {
       return [];
     }
 
     const sourceDataId = getViewportV2SourceDataId(dataId);
-    const imageIds = Array<string>(payload.numberOfFrames);
+    const imageIds = Array<string>(videoData.numberOfFrames);
 
     for (
       let frameNumber = 1;
-      frameNumber <= payload.numberOfFrames;
+      frameNumber <= videoData.numberOfFrames;
       frameNumber++
     ) {
       try {
@@ -246,27 +248,27 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   scroll(delta = 1, _debounceLoading = true, loop = false): void {
-    const payload = this.getPayload();
+    const videoData = this.getVideoData();
 
-    if (!payload?.fps) {
+    if (!videoData?.fps) {
       return;
     }
 
     this.pause();
 
     const minTimeSeconds = frameNumberToTimeSeconds(
-      payload.frameRange[0],
-      payload.fps
+      videoData.frameRange[0],
+      videoData.fps
     );
     const maxTimeSeconds =
-      payload.durationSeconds ??
-      frameNumberToTimeSeconds(payload.frameRange[1], payload.fps);
-    let nextTimeSeconds = this.getCurrentTime() + delta / payload.fps;
+      videoData.durationSeconds ??
+      frameNumberToTimeSeconds(videoData.frameRange[1], videoData.fps);
+    let nextTimeSeconds = this.getCurrentTime() + delta / videoData.fps;
 
     if (loop) {
       const durationSeconds = Math.max(
         maxTimeSeconds - minTimeSeconds,
-        1 / payload.fps
+        1 / videoData.fps
       );
 
       while (nextTimeSeconds < minTimeSeconds) {
@@ -305,8 +307,10 @@ class VideoViewportV2 extends ViewportV2<
     return this.getVideoRendering()?.element;
   }
 
-  private getPayload(): VideoStreamPayload | undefined {
-    return this.getVideoRendering()?.payload;
+  private getVideoData(): LoadedData<VideoStreamPayload> | undefined {
+    return this.getCurrentBinding()?.data as
+      | LoadedData<VideoStreamPayload>
+      | undefined;
   }
 
   private getDisplayMetrics():
