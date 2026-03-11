@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.5...v4.19.0) (2026-03-10)
+
+### Features
+
+- **segmentation:** Added fallbackLabel to various segmentation state types. ([#2652](https://github.com/cornerstonejs/cornerstone3D/issues/2652)) ([e645369](https://github.com/cornerstonejs/cornerstone3D/commit/e6453698737ff9077c1865b90da1797a852ce438))
+
 ## [4.18.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.4...v4.18.5) (2026-03-06)
 
 **Note:** Version bump only for package root
