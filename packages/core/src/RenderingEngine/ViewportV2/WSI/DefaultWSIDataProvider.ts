@@ -29,6 +29,7 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
       client: dataSet.options.webClient,
     });
     return {
+      id: dataId,
       type: 'wsi',
       payload: {
         imageIds: dataSet.imageIds,

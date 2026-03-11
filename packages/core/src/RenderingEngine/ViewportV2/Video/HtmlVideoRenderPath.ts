@@ -21,7 +21,6 @@ export class HtmlVideoRenderPath
 {
   async addData(
     ctx: VideoElementRenderContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<VideoElementRendering> {
@@ -62,7 +61,7 @@ export class HtmlVideoRenderPath
     };
 
     return {
-      id: `rendering:${dataId}:${options.renderMode}`,
+      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'video2d',
       element,
       payload: normalizedPayload,

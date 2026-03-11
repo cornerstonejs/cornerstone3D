@@ -43,7 +43,6 @@ export class VtkImageMapperRenderPath
 {
   async addData(
     ctx: PlanarVtkImageAdapterContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<PlanarImageMapperRendering> {
@@ -68,7 +67,7 @@ export class VtkImageMapperRenderPath
     applyCpuEquivalentInitialScale(ctx, payload.image);
 
     return {
-      id: `rendering:${dataId}:${options.renderMode}`,
+      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkImage',
       actor,
       currentImage: payload.image,

@@ -37,7 +37,6 @@ export class VtkGeometry3DRenderPath
 {
   async addData(
     ctx: Volume3DVtkGeometryAdapterContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<Volume3DGeometryRendering> {
@@ -56,7 +55,7 @@ export class VtkGeometry3DRenderPath
     ctx.vtk.renderer.resetCameraClippingRange();
 
     return {
-      id: `rendering:${dataId}:${options.renderMode}`,
+      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkGeometry3d',
       actors,
       frameOfReferenceUID:

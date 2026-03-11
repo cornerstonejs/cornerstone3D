@@ -23,13 +23,14 @@ export interface BasePresentationProps {
 }
 
 export interface LogicalDataObject<TPayload = unknown> {
+  id: DataId;
   type: LogicalDataType;
   payload: TPayload;
 }
 
 // Mounted rendering state is render-path-specific; logical dataset identity
-// lives on the binding key and explicit dataId argument. The controller treats
-// this object as opaque even though adapter fields are stored flat.
+// lives on the binding key and the loaded LogicalDataObject. The controller
+// treats this object as opaque even though adapter fields are stored flat.
 export type MountedRendering<
   TRendering extends { renderMode: string } = { renderMode: string },
 > = {
@@ -46,7 +47,6 @@ export interface RenderPath<
 > {
   addData(
     ctx: TContext,
-    dataId: DataId,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<MountedRendering>;
@@ -123,7 +123,6 @@ export interface DataProvider {
 }
 
 export interface RenderingBinding<TPresentation = unknown> {
-  dataId: DataId;
   data: LogicalDataObject;
   rendering: MountedRendering;
   updateDataPresentation(props: TPresentation): void;

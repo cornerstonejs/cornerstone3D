@@ -52,7 +52,6 @@ export class CpuImageSliceRenderPath
 {
   async addData(
     ctx: PlanarCpuImageAdapterContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<PlanarCpuImageRendering> {
@@ -75,7 +74,7 @@ export class CpuImageSliceRenderPath
     enabledElement.transform = calculateTransform(enabledElement);
 
     return {
-      id: `rendering:${dataId}:${options.renderMode}`,
+      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'cpu2d',
       enabledElement,
       payload,

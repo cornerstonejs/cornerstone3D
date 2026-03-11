@@ -12,6 +12,7 @@ export class DefaultECGDataProvider implements DataProvider {
     const { waveform } = await loadECGWaveform(sourceDataId);
 
     return {
+      id: dataId,
       type: 'ecg',
       payload: waveform as ECGWaveformPayload,
     };

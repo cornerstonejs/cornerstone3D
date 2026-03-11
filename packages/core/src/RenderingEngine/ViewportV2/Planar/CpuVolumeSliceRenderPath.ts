@@ -38,7 +38,6 @@ export class CpuVolumeSliceRenderPath
 
   async addData(
     ctx: PlanarCpuVolumeAdapterContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<PlanarCpuVolumeRendering> {
@@ -64,7 +63,7 @@ export class CpuVolumeSliceRenderPath
     ctx.display.activateRenderMode('cpuVolume');
 
     const rendering: PlanarCpuVolumeRendering = {
-      id: `rendering:${dataId}:${options.renderMode}`,
+      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'cpuVolume',
       actor,
       mapper,

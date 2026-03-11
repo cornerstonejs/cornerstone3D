@@ -35,7 +35,6 @@ export class VtkVolume3DRenderPath
 {
   async addData(
     ctx: Volume3DVtkVolumeAdapterContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<Volume3DVolumeRendering> {
@@ -67,7 +66,7 @@ export class VtkVolume3DRenderPath
       .getRange();
 
     return {
-      id: `rendering:${dataId}:${options.renderMode}`,
+      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkVolume3d',
       actor,
       defaultVOIRange: defaultRange

@@ -90,10 +90,9 @@ abstract class ViewportV2<
       existing.removeData();
     }
 
-    const rendering = await renderPath.addData(ctx, dataId, data, options);
+    const rendering = await renderPath.addData(ctx, data, options);
 
     this.bindings.set(dataId, {
-      dataId,
       data,
       rendering,
       updateDataPresentation: (props) => {

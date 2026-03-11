@@ -43,6 +43,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
       imageVolume.load();
 
       return {
+        id: dataId,
         type: 'image',
         payload: {
           actorUID: dataSet.actorUID,
@@ -60,6 +61,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
       (await loadAndCacheGeometry(geometryId, dataSet?.geometryLoadOptions));
 
     return {
+      id: dataId,
       type: 'geometry',
       payload: {
         geometry,

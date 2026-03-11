@@ -39,7 +39,6 @@ export class VtkVolumeMapperRenderPath
 {
   async addData(
     ctx: PlanarVtkVolumeAdapterContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<PlanarVolumeMapperRendering> {
@@ -71,7 +70,7 @@ export class VtkVolumeMapperRenderPath
       .getRange();
 
     const rendering: PlanarVolumeMapperRendering = {
-      id: `rendering:${dataId}:${options.renderMode}`,
+      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkVolume',
       actor,
       imageVolume,

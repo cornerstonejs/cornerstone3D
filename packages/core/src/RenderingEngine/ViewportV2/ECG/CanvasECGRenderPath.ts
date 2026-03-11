@@ -29,12 +29,11 @@ import type {
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   async addData(
     ctx: ECGCanvasRenderContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<ECGCanvasRendering> {
     return {
-      id: `rendering:${dataId}:${options.renderMode}`,
+      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'signal2d',
       canvas: ctx.canvas,
       canvasContext: ctx.canvasContext,

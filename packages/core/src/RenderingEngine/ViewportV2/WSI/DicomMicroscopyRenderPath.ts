@@ -27,7 +27,6 @@ export class DicomMicroscopyRenderPath
 {
   async addData(
     ctx: WSIViewportRenderContext,
-    dataId: string,
     data: LogicalDataObject,
     options: DataAddOptions
   ): Promise<WSIRendering> {
@@ -56,14 +55,14 @@ export class DicomMicroscopyRenderPath
     viewer.deactivateDragPanInteraction();
 
     const map = viewer.getMap();
-    const renderingId = `rendering:${dataId}:${options.renderMode}`;
+    const renderingId = `rendering:${data.id}:${options.renderMode}`;
     const postrenderHandler = () => {
       triggerEvent(ctx.element, EVENTS.IMAGE_RENDERED, {
         element: ctx.element,
         viewportId: ctx.viewportId,
         rendering: {
           id: renderingId,
-          dataId,
+          dataId: data.id,
           renderMode: 'wsi2d',
         },
       });
