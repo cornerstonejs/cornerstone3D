@@ -177,6 +177,14 @@ class PlanarViewportV2 extends ViewportV2<
     this.resize();
   }
 
+  /**
+   * Adds one or more logical planar datasets to the viewport.
+   *
+   * @param dataIds - Logical dataset ids to add to the viewport.
+   * @param options - Render-mode and orientation options used while resolving
+   * the effective planar render path.
+   * @returns Rendering ids in the same order as the provided data ids.
+   */
   async setDataIds(
     dataIds: string[],
     options: PlanarSetDataOptions = {}
@@ -195,6 +203,14 @@ class PlanarViewportV2 extends ViewportV2<
     return renderingIds;
   }
 
+  /**
+   * Adds a single logical planar dataset.
+   *
+   * @param dataId - Logical dataset id to add.
+   * @param options - Render-mode and orientation options used while resolving
+   * the effective planar render path.
+   * @returns The rendering id created for the mounted dataset.
+   */
   async setDataId(
     dataId: string,
     options: PlanarSetDataOptions | DataAddOptions = {}
@@ -220,6 +236,11 @@ class PlanarViewportV2 extends ViewportV2<
     return renderingId;
   }
 
+  /**
+   * Returns the current image ids for the active planar dataset.
+   *
+   * @returns The image ids exposed by the active image or volume dataset.
+   */
   getImageIds(): string[] {
     const planarData = this.getPlanarData();
 
@@ -230,14 +251,29 @@ class PlanarViewportV2 extends ViewportV2<
     return planarData.imageVolume?.imageIds || planarData.imageIds;
   }
 
+  /**
+   * Returns the current volume id when the active dataset is volume-backed.
+   *
+   * @returns The volume id for the active dataset, if one exists.
+   */
   getVolumeId(): string | undefined {
     return this.getPlanarData()?.volumeId;
   }
 
+  /**
+   * Returns the current slice index for stack-like and slice-like workflows.
+   *
+   * @returns The current zero-based image index.
+   */
   getCurrentImageIdIndex(): number {
     return this.getActiveImageIdIndex();
   }
 
+  /**
+   * Resolves the currently referenced image id from the active camera state.
+   *
+   * @returns The current image id, if one can be resolved.
+   */
   getCurrentImageId(): string | undefined {
     return getPlanarReferencedImageId({
       camera: this.camera,
@@ -247,14 +283,31 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Alias for `getCurrentImageIdIndex` used by legacy stack-style callers.
+   *
+   * @returns The current zero-based image index.
+   */
   getSliceIndex(): number {
     return this.getCurrentImageIdIndex();
   }
 
+  /**
+   * Returns the current camera plus compatibility fields expected by legacy
+   * camera consumers such as pan/zoom helpers and interaction tools.
+   *
+   * @returns The current planar camera in the compatibility camera shape.
+   */
   getCamera(): PlanarCamera & ICamera {
     return this.getCompatibilityCamera();
   }
 
+  /**
+   * Applies camera updates using the planar compatibility contract.
+   *
+   * @param camera - Partial planar or compatibility camera values to merge into
+   * the current viewport camera state.
+   */
   setCamera(camera: Partial<PlanarCamera & ICamera>): void {
     const currentZoom = Math.max(this.camera.zoom ?? 1, 0.001);
     const compatibilityCamera = this.getCompatibilityCamera();
@@ -306,10 +359,22 @@ class PlanarViewportV2 extends ViewportV2<
     super.setCamera(nextCamera);
   }
 
+  /**
+   * Returns the normalized planar rotation in degrees.
+   *
+   * @returns The normalized rotation angle.
+   */
   getRotation(): number {
     return normalizePlanarRotation(this.camera.rotation);
   }
 
+  /**
+   * Returns the current planar view-presentation snapshot.
+   *
+   * @param viewPresSel - Selector describing which presentation fields to
+   * populate in the returned object.
+   * @returns The selected planar view-presentation fields.
+   */
   getViewPresentation(
     viewPresSel: ViewPresentationSelector = {
       rotation: true,
@@ -345,6 +410,11 @@ class PlanarViewportV2 extends ViewportV2<
     return target;
   }
 
+  /**
+   * Applies view-presentation values such as pan, zoom, and rotation.
+   *
+   * @param viewPres - View-presentation values to apply to the viewport.
+   */
   setViewPresentation(viewPres?: ViewPresentation): void {
     if (!viewPres) {
       return;
@@ -367,10 +437,22 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Returns the rendering engine that owns this viewport.
+   *
+   * @returns The parent rendering engine, if it is still registered.
+   */
   getRenderingEngine() {
     return renderingEngineCache.get(this.renderingEngineId);
   }
 
+  /**
+   * Builds a spatial reference object for cross-viewport synchronization.
+   *
+   * @param viewRefSpecifier - Optional fields that refine the produced
+   * reference object.
+   * @returns A spatial view reference for the current planar state.
+   */
   getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
@@ -384,6 +466,13 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Builds a stable id for the current view reference.
+   *
+   * @param viewRefSpecifier - Optional fields that refine the produced
+   * reference id.
+   * @returns A stable identifier for the current planar reference state.
+   */
   getViewReferenceId(viewRefSpecifier: ViewReferenceSpecifier = {}): string {
     return getPlanarViewReferenceId({
       camera: this.camera,
@@ -394,24 +483,56 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Returns the active image-data object when the current render path exposes
+   * one.
+   *
+   * @returns The active image-data object, if exposed by the render path.
+   */
   getImageData() {
     return this.getCurrentBinding()?.getImageData?.();
   }
 
+  /**
+   * Returns whether the active dataset contains the given image id.
+   *
+   * @param imageId - Image id to look up in the active dataset.
+   * @returns `true` when the image id is present in the active dataset.
+   */
   hasImageId(imageId: string): boolean {
     return this.getImageIds().includes(imageId);
   }
 
+  /**
+   * Returns whether the active dataset contains an image with the given URI.
+   *
+   * @param imageURI - URI form of the image id to look up.
+   * @returns `true` when a matching image URI exists in the active dataset.
+   */
   hasImageURI(imageURI: string): boolean {
     return this.getImageIds().some(
       (imageId) => imageIdToURI(imageId) === imageURI
     );
   }
 
+  /**
+   * Returns whether the active dataset references the given volume id.
+   *
+   * @param volumeId - Volume id to compare against the active dataset.
+   * @returns `true` when the active dataset references the given volume id.
+   */
   hasVolumeId(volumeId: string): boolean {
     return this.getVolumeId() === volumeId;
   }
 
+  /**
+   * Returns whether a spatial plane is viewable in the current planar state.
+   *
+   * @param planeRestriction - Plane description to test against the current
+   * viewport state.
+   * @param options - Optional compatibility flags for the spatial check.
+   * @returns `true` when the plane can be viewed in this viewport state.
+   */
   isPlaneViewable(
     planeRestriction: PlaneRestriction,
     options?: ReferenceCompatibleOptions
@@ -426,6 +547,14 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Returns whether a view reference is spatially compatible with this
+   * viewport.
+   *
+   * @param viewRef - View reference to test.
+   * @param options - Optional compatibility flags for the spatial check.
+   * @returns `true` when the reference can be viewed in this viewport state.
+   */
   isReferenceViewable(
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
@@ -441,6 +570,12 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Sets the active image index and resolves the corresponding image id.
+   *
+   * @param imageIdIndex - Requested zero-based image index.
+   * @returns The resolved image id after clamping.
+   */
   setImageIdIndex(imageIdIndex: number): Promise<string> {
     const imageIds = this.getImageIds();
 
@@ -464,10 +599,21 @@ class PlanarViewportV2 extends ViewportV2<
     return Promise.resolve(resolvedImageId);
   }
 
+  /**
+   * Scrolls by a signed image-index delta.
+   *
+   * @param delta - Signed number of images to move by.
+   * @returns The resolved image id after scrolling.
+   */
   scroll(delta: number): Promise<string> {
     return this.setImageIdIndex(this.getActiveImageIdIndex() + delta);
   }
 
+  /**
+   * Sets the planar orientation for volume-backed render modes.
+   *
+   * @param orientation - Target acquisition-aligned orientation.
+   */
   setOrientation(
     orientation:
       | OrientationAxis.AXIAL
@@ -477,6 +623,12 @@ class PlanarViewportV2 extends ViewportV2<
     this.setCamera({ imageIdIndex: undefined, orientation });
   }
 
+  /**
+   * Resets rotation and optionally resets pan and zoom.
+   *
+   * @param options - Flags controlling whether pan and zoom are reset.
+   * @returns Always `true` for compatibility with legacy viewport contracts.
+   */
   resetCamera(options?: { resetPan?: boolean; resetZoom?: boolean }): boolean {
     const { resetPan = true, resetZoom = true } = options || {};
 
@@ -489,10 +641,19 @@ class PlanarViewportV2 extends ViewportV2<
     return true;
   }
 
+  /**
+   * Resets camera state after a resize using the same behavior as
+   * `resetCamera`.
+   *
+   * @returns Always `true` for compatibility with legacy viewport contracts.
+   */
   resetCameraForResize(): boolean {
     return this.resetCamera();
   }
 
+  /**
+   * Resizes the internal CPU canvas and notifies active render bindings.
+   */
   resize(): void {
     const { clientHeight, clientWidth } = this.element;
     const { canvas } = this.renderContext.cpu;
@@ -505,6 +666,9 @@ class PlanarViewportV2 extends ViewportV2<
     this.resizeBindings();
   }
 
+  /**
+   * Renders the active planar bindings or queues an engine-driven render.
+   */
   render(): void {
     if (!this.renderBindings()) {
       this.requestRenderingEngineRender();

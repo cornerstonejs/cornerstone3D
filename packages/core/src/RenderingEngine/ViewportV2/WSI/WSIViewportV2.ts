@@ -65,6 +65,12 @@ class WSIViewportV2 extends ViewportV2<
     );
   }
 
+  /**
+   * Adds one or more WSI datasets using the microscopy render path.
+   *
+   * @param dataIds - Logical dataset ids to add.
+   * @returns Rendering ids in the same order as the input dataset ids.
+   */
   async setDataIds(dataIds: string[]): Promise<string[]> {
     const renderingIds: string[] = [];
 
@@ -84,12 +90,22 @@ class WSIViewportV2 extends ViewportV2<
     return renderingIds;
   }
 
+  /**
+   * Adds a single WSI dataset and returns its rendering id.
+   *
+   * @param dataId - Logical dataset id to add.
+   * @param _webClient - Reserved compatibility argument for legacy callers.
+   * @returns The rendering id created for the mounted dataset.
+   */
   async setWSI(dataId: string, _webClient?: WSIClientLike): Promise<string> {
     const [renderingId] = await this.setDataIds([dataId]);
 
     return renderingId;
   }
 
+  /**
+   * Requests a render on the active OpenLayers map.
+   */
   render(): void {
     this.getMap()?.render?.();
   }

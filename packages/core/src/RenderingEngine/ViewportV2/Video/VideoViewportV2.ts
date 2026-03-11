@@ -74,12 +74,24 @@ class VideoViewportV2 extends ViewportV2<
     );
   }
 
+  /**
+   * Adds a single video dataset and returns its rendering id.
+   *
+   * @param dataId - Logical dataset id to add.
+   * @returns The rendering id created for the mounted dataset.
+   */
   async setVideo(dataId: string): Promise<string> {
     const [renderingId] = await this.setDataIds([dataId]);
 
     return renderingId;
   }
 
+  /**
+   * Adds one or more video datasets using the HTML video render path.
+   *
+   * @param dataIds - Logical dataset ids to add.
+   * @returns Rendering ids in the same order as the input dataset ids.
+   */
   async setDataIds(dataIds: string[]): Promise<string[]> {
     const renderingIds: string[] = [];
 
@@ -128,6 +140,11 @@ class VideoViewportV2 extends ViewportV2<
     return renderingIds;
   }
 
+  /**
+   * Starts playback on the active video element.
+   *
+   * @returns A promise that resolves after the play request settles.
+   */
   play(): Promise<void> {
     const element = this.getVideoElement();
 
@@ -141,11 +158,19 @@ class VideoViewportV2 extends ViewportV2<
       .catch(() => undefined);
   }
 
+  /**
+   * Pauses playback and synchronizes the cached current time.
+   */
   pause(): void {
     this.getVideoElement()?.pause();
     this.syncCameraCurrentTimeFromElement();
   }
 
+  /**
+   * Seeks the active video to the requested time in seconds.
+   *
+   * @param timeSeconds - Target playback time in seconds.
+   */
   seek(timeSeconds: number): void {
     const videoData = this.getVideoData();
     const maxTimeSeconds = videoData?.durationSeconds
@@ -157,6 +182,11 @@ class VideoViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Seeks to the requested frame number using the dataset frame rate.
+   *
+   * @param frameNumber - Target frame number in dataset coordinates.
+   */
   setFrameNumber(frameNumber: number): void {
     const videoData = this.getVideoData();
 
@@ -167,6 +197,11 @@ class VideoViewportV2 extends ViewportV2<
     this.seek(frameNumberToTimeSeconds(frameNumber, videoData.fps));
   }
 
+  /**
+   * Updates playback rate through per-data presentation state.
+   *
+   * @param playbackRate - Playback rate to apply to the active dataset.
+   */
   setPlaybackRate(playbackRate: number): void {
     const dataId = this.getFirstBinding()?.data.id;
 
@@ -179,23 +214,48 @@ class VideoViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Returns the active dataset frame rate.
+   *
+   * @returns The active video frame rate, or `0` if no video is loaded.
+   */
   getFrameRate(): number {
     return this.getVideoData()?.fps ?? 0;
   }
 
+  /**
+   * Returns the total number of frames in the active dataset.
+   *
+   * @returns The total frame count, or `0` if no video is loaded.
+   */
   getNumberOfFrames(): number {
     return this.getVideoData()?.numberOfFrames ?? 0;
   }
 
+  /**
+   * Returns the stack-like slice count used by tool compatibility layers.
+   *
+   * @returns The total number of generated frame image ids.
+   */
   getNumberOfSlices(): number {
     return this.getImageIds().length || this.getNumberOfFrames();
   }
 
+  /**
+   * Returns the current playback time in seconds.
+   *
+   * @returns The current playback time in seconds.
+   */
   getCurrentTime(): number {
     this.syncCameraCurrentTimeFromElement();
     return this.camera.currentTimeSeconds ?? 0;
   }
 
+  /**
+   * Returns the current frame number derived from playback time.
+   *
+   * @returns The current frame number in dataset coordinates.
+   */
   getFrameNumber(): number {
     const videoData = this.getVideoData();
 
@@ -214,10 +274,20 @@ class VideoViewportV2 extends ViewportV2<
     );
   }
 
+  /**
+   * Returns the current frame index in zero-based stack form.
+   *
+   * @returns The current zero-based frame index.
+   */
   getCurrentImageIdIndex(): number {
     return Math.max(0, this.getFrameNumber() - 1);
   }
 
+  /**
+   * Returns generated frame image ids for the active video dataset.
+   *
+   * @returns Generated frame image ids for the active dataset.
+   */
   getImageIds(): string[] {
     const dataId = this.getFirstBinding()?.data.id;
     const videoData = this.getVideoData();
@@ -247,6 +317,14 @@ class VideoViewportV2 extends ViewportV2<
     return imageIds;
   }
 
+  /**
+   * Scrolls through frames using a signed delta.
+   *
+   * @param delta - Signed number of frames to move by.
+   * @param _debounceLoading - Unused compatibility argument kept for stack-like
+   * callers.
+   * @param loop - Whether to wrap when scrolling past either end.
+   */
   scroll(delta = 1, _debounceLoading = true, loop = false): void {
     const videoData = this.getVideoData();
 
@@ -288,6 +366,11 @@ class VideoViewportV2 extends ViewportV2<
     this.seek(nextTimeSeconds);
   }
 
+  /**
+   * Removes a video dataset and rebinds tracking if the primary video changed.
+   *
+   * @param dataId - Logical dataset id to remove.
+   */
   removeDataId(dataId: string): void {
     const firstDataId = this.getFirstBinding()?.data.id;
 
@@ -299,6 +382,9 @@ class VideoViewportV2 extends ViewportV2<
     }
   }
 
+  /**
+   * No-op render hook because DOM updates happen eagerly in the render path.
+   */
   render(): void {
     // DOM updates are applied immediately in updateCamera/updateDataPresentation
   }

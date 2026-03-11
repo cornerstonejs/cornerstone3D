@@ -71,12 +71,24 @@ class ECGViewportV2 extends ViewportV2<
     this.resize();
   }
 
+  /**
+   * Adds a single waveform dataset and returns its rendering id.
+   *
+   * @param dataId - Logical dataset id to add.
+   * @returns The rendering id created for the mounted waveform.
+   */
   async setSignal(dataId: string): Promise<string> {
     const [renderingId] = await this.setDataIds([dataId]);
 
     return renderingId;
   }
 
+  /**
+   * Adds one or more waveform datasets using the canvas ECG render path.
+   *
+   * @param dataIds - Logical dataset ids to add.
+   * @returns Rendering ids in the same order as the input dataset ids.
+   */
   async setDataIds(dataIds: string[]): Promise<string[]> {
     const renderingIds: string[] = [];
 
@@ -117,6 +129,12 @@ class ECGViewportV2 extends ViewportV2<
     return renderingIds;
   }
 
+  /**
+   * Shows or hides a specific ECG channel in the active dataset.
+   *
+   * @param index - Channel index to update.
+   * @param visible - Whether the channel should be visible.
+   */
   setChannelVisibility(index: number, visible: boolean): void {
     const firstBinding = this.getFirstBinding();
 
@@ -143,6 +161,11 @@ class ECGViewportV2 extends ViewportV2<
     });
   }
 
+  /**
+   * Returns channel visibility state for the active ECG dataset.
+   *
+   * @returns Channel names paired with their current visibility state.
+   */
   getVisibleChannels(): { name: string; visible: boolean }[] {
     const firstBinding = this.getFirstBinding();
 
@@ -164,6 +187,11 @@ class ECGViewportV2 extends ViewportV2<
     }));
   }
 
+  /**
+   * Returns the rendered ECG content dimensions in device pixels.
+   *
+   * @returns The ECG content width and height in device pixels.
+   */
   getContentDimensions(): { width: number; height: number } {
     const firstBinding = this.getFirstBinding();
 
@@ -178,6 +206,9 @@ class ECGViewportV2 extends ViewportV2<
     };
   }
 
+  /**
+   * Resizes the backing canvas to match the displayed viewport size.
+   */
   resize(): void {
     const { clientWidth, clientHeight } = this.canvas;
 
@@ -193,6 +224,9 @@ class ECGViewportV2 extends ViewportV2<
     this.render();
   }
 
+  /**
+   * Renders all active ECG bindings.
+   */
   render(): void {
     this.renderBindings();
   }
