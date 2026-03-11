@@ -14,21 +14,6 @@ import type {
 const STREAMING_VOLUME_LOADER_SCHEME = 'cornerstoneStreamingImageVolume';
 
 export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
-  private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    );
-
-    if (Array.isArray(registered)) {
-      return {
-        imageIds: registered,
-      };
-    }
-
-    return registered as Volume3DRegisteredDataSet | undefined;
-  }
-
   async load(
     dataId: string,
     options?: {
@@ -93,6 +78,21 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
         renderMode: 'vtkGeometry3d',
       },
     };
+  }
+
+  private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    );
+
+    if (Array.isArray(registered)) {
+      return {
+        imageIds: registered,
+      };
+    }
+
+    return registered as Volume3DRegisteredDataSet | undefined;
   }
 }
 

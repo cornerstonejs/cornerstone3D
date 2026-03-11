@@ -8,6 +8,20 @@ import * as metaData from '../../../metaData';
 import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 
 export class DefaultECGDataProvider implements DataProvider {
+  async load(dataId: string): Promise<LogicalDataObject> {
+    const sourceDataId = this.getSourceDataId(dataId);
+    const { waveform, calibration } = await loadECGWaveform(sourceDataId);
+
+    return {
+      id: dataId,
+      type: 'ecg',
+      metadata: {
+        calibration,
+      },
+      payload: waveform as ECGWaveformPayload,
+    };
+  }
+
   private getSourceDataId(dataId: string): string {
     const registered = metaData.get(
       viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
@@ -23,19 +37,5 @@ export class DefaultECGDataProvider implements DataProvider {
     }
 
     return dataId;
-  }
-
-  async load(dataId: string): Promise<LogicalDataObject> {
-    const sourceDataId = this.getSourceDataId(dataId);
-    const { waveform, calibration } = await loadECGWaveform(sourceDataId);
-
-    return {
-      id: dataId,
-      type: 'ecg',
-      metadata: {
-        calibration,
-      },
-      payload: waveform as ECGWaveformPayload,
-    };
   }
 }

@@ -11,27 +11,6 @@ import type {
 } from './PlanarViewportV2Types';
 
 export class DefaultPlanarDataProvider implements PlanarDataProvider {
-  private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    );
-
-    if (Array.isArray(registered)) {
-      return {
-        imageIds: registered,
-      };
-    }
-
-    const candidate = registered as PlanarRegisteredDataSet | undefined;
-
-    if (!candidate?.imageIds) {
-      return;
-    }
-
-    return candidate;
-  }
-
   async load(
     dataId: string,
     options?: PlanarDataLoadOptions
@@ -112,6 +91,27 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         volumeId: options.volumeId,
       },
     };
+  }
+
+  private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    );
+
+    if (Array.isArray(registered)) {
+      return {
+        imageIds: registered,
+      };
+    }
+
+    const candidate = registered as PlanarRegisteredDataSet | undefined;
+
+    if (!candidate?.imageIds) {
+      return;
+    }
+
+    return candidate;
   }
 }
 

@@ -12,19 +12,6 @@ import type {
 } from './WSIViewportV2Types';
 
 export class DefaultWSIDataProvider implements WSIDataProvider {
-  private getDataSet(dataId: string): WSIRegisteredDataSet | undefined {
-    const registered = metaData.get(
-      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
-      dataId
-    ) as WSIRegisteredDataSet | undefined;
-
-    if (!registered?.imageIds || !registered?.options?.webClient) {
-      return;
-    }
-
-    return registered;
-  }
-
   async load(dataId: string): Promise<LogicalDataObject<WSIPayload>> {
     const dataSet = this.getDataSet(dataId);
 
@@ -59,5 +46,18 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
         imageURISet: loadedData.imageURISet,
       },
     };
+  }
+
+  private getDataSet(dataId: string): WSIRegisteredDataSet | undefined {
+    const registered = metaData.get(
+      viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    ) as WSIRegisteredDataSet | undefined;
+
+    if (!registered?.imageIds || !registered?.options?.webClient) {
+      return;
+    }
+
+    return registered;
   }
 }
