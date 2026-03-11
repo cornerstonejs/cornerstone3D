@@ -5,10 +5,9 @@ export type {
   ECGCamera,
   ECGCanvasRenderContext,
   ECGCanvasRendering,
+  ECGDataPresentation,
   ECGChannelData,
   ECGPresentationProps,
-  ECGViewportPresentation,
-  ECGViewState,
   ECGViewportV2Input,
   ECGWaveformPayload,
 } from './ECGViewportV2Types';

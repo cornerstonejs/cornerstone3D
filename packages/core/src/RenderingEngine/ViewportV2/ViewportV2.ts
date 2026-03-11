@@ -17,8 +17,8 @@ import type ViewportType from '../../enums/ViewportType';
  * Generic ViewportV2 controller.
  *
  * The base class owns only shared viewport state and binding orchestration:
- * loaded logical data, mounted renderings, camera state, properties, and
- * presentation forwarding. It does not know how CPU, VTK, DOM, image, volume,
+ * loaded logical data, mounted renderings, camera state, and per-dataset
+ * render-state forwarding. It does not know how CPU, VTK, DOM, image, volume,
  * or media runtimes work internally.
  *
  * Concrete viewport families are expected to stay thin and provide:
@@ -30,7 +30,7 @@ import type ViewportType from '../../enums/ViewportType';
  * Concrete render paths are expected to own:
  * - runtime attachment and detachment
  * - camera interpretation for that render path
- * - presentation and property application
+ * - per-dataset render-state application
  * - render-path-specific coordinate transforms
  *
  * This split keeps migration from legacy viewports incremental without
@@ -38,10 +38,9 @@ import type ViewportType from '../../enums/ViewportType';
  */
 abstract class ViewportV2<
   TCamera,
-  TProperties,
   TDataPresentation = unknown,
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
-> implements ViewportController<TCamera, TProperties, TDataPresentation>
+> implements ViewportController<TCamera, TDataPresentation>
 {
   abstract readonly id: ViewportId;
   abstract readonly type: ViewportType;
@@ -51,9 +50,8 @@ abstract class ViewportV2<
   protected renderContext: TContext;
 
   protected bindings = new Map<DataId, RenderingBinding<TDataPresentation>>();
-  protected presentations = new Map<DataId, TDataPresentation>();
+  protected dataPresentation = new Map<DataId, TDataPresentation>();
   protected camera!: TCamera;
-  protected properties!: TProperties;
 
   /**
    * Loads a logical dataset through the viewport data provider and attaches it
@@ -70,9 +68,9 @@ abstract class ViewportV2<
   /**
    * Converts loaded logical data into a mounted rendering binding.
    *
-   * The binding stores render-path callbacks so future presentation, camera,
-   * property, transform, resize, and render requests can be routed back to the
-   * correct render-path runtime.
+   * The binding stores render-path callbacks so future per-dataset render
+   * state, camera, transform, resize, and render requests can be routed back
+   * to the correct render-path runtime.
    */
   protected async attachLoadedData(
     dataId: DataId,
@@ -97,14 +95,11 @@ abstract class ViewportV2<
     this.bindings.set(dataId, {
       data,
       rendering,
-      updatePresentation: (props) => {
-        renderPath.updatePresentation(ctx, rendering, props);
+      updateDataPresentation: (props) => {
+        renderPath.updateDataPresentation(ctx, rendering, props);
       },
       updateCamera: (camera) => {
         renderPath.updateCamera(ctx, rendering, camera);
-      },
-      updateProperties: (properties) => {
-        renderPath.updateProperties(ctx, rendering, properties);
       },
       canvasToWorld: renderPath.canvasToWorld
         ? (canvasPos) => {
@@ -147,73 +142,83 @@ abstract class ViewportV2<
       throw new Error(`Failed to bind rendering for ${dataId}`);
     }
 
-    const props = this.presentations.get(dataId);
+    const props = this.dataPresentation.get(dataId);
     if (props !== undefined) {
-      binding.updatePresentation(props);
+      binding.updateDataPresentation(props);
     }
 
     binding.updateCamera(this.camera);
-    binding.updateProperties(this.properties);
     this.render();
     return rendering.id;
   }
 
   /**
-   * Stores presentation state for a dataset and forwards it immediately when
+   * Stores per-dataset render state and forwards it immediately when
    * that dataset is already attached.
    */
-  setPresentation(dataId: DataId, props: TDataPresentation): void {
-    this.presentations.set(dataId, props);
+  protected setDataPresentationState(
+    dataId: DataId,
+    props: TDataPresentation
+  ): void {
+    this.dataPresentation.set(dataId, props);
     const binding = this.bindings.get(dataId);
 
     if (!binding) {
       return;
     }
 
-    binding.updatePresentation(props);
+    binding.updateDataPresentation(props);
     this.render();
   }
 
   /**
-   * Returns the last presentation state stored for a dataset, even if that
-   * dataset is not currently mounted.
+   * Returns the last render state stored for a dataset, even if that dataset is
+   * not currently mounted.
    */
-  getPresentation(dataId: DataId): TDataPresentation | undefined {
-    return this.presentations.get(dataId);
+  protected getDataPresentationState(
+    dataId: DataId
+  ): TDataPresentation | undefined {
+    return this.dataPresentation.get(dataId);
   }
 
   /**
-   * Stores object-like presentation defaults for a dataset without clobbering
+   * Stores object-like defaults for a dataset without clobbering
    * any values already tracked for that dataset.
    */
-  protected setDefaultPresentation(
+  protected setDefaultDataPresentation(
     dataId: DataId,
     defaults: TDataPresentation
   ): TDataPresentation {
     const nextPresentation = {
       ...(defaults as Record<string, unknown>),
-      ...((this.getPresentation(dataId) || {}) as Record<string, unknown>),
+      ...((this.getDataPresentationState(dataId) || {}) as Record<
+        string,
+        unknown
+      >),
     } as TDataPresentation;
 
-    this.setPresentation(dataId, nextPresentation);
+    this.setDataPresentationState(dataId, nextPresentation);
 
     return nextPresentation;
   }
 
   /**
-   * Merges object-like presentation updates into the stored presentation for a
-   * dataset and forwards the result immediately when attached.
+   * Merges object-like updates into the stored per-dataset render state and
+   * forwards the result immediately when attached.
    */
-  protected mergePresentation(
+  protected mergeDataPresentation(
     dataId: DataId,
     props: Partial<TDataPresentation>
   ): TDataPresentation {
     const nextPresentation = {
-      ...((this.getPresentation(dataId) || {}) as Record<string, unknown>),
+      ...((this.getDataPresentationState(dataId) || {}) as Record<
+        string,
+        unknown
+      >),
       ...(props as Record<string, unknown>),
     } as TDataPresentation;
 
-    this.setPresentation(dataId, nextPresentation);
+    this.setDataPresentationState(dataId, nextPresentation);
 
     return nextPresentation;
   }
@@ -236,6 +241,21 @@ abstract class ViewportV2<
   getCamera(): TCamera {
     return this.camera;
   }
+
+  /**
+   * Viewport families decide how callers select a target dataset when updating
+   * per-dataset presentation state.
+   */
+  abstract setDataPresentation(
+    dataId: DataId | undefined,
+    props: Partial<TDataPresentation>
+  ): void;
+
+  /**
+   * Viewport families decide which dataset is considered current when callers
+   * omit an explicit dataset identifier.
+   */
+  abstract getDataPresentation(dataId?: DataId): TDataPresentation | undefined;
 
   /**
    * Compatibility helper for tool APIs that operate on scalar zoom state.
@@ -297,27 +317,8 @@ abstract class ViewportV2<
   }
 
   /**
-   * Merges partial shared property updates and propagates them to every active
-   * binding.
-   */
-  setProperties(props: Partial<TProperties>): void {
-    this.properties = {
-      ...this.properties,
-      ...props,
-    };
-    this.modified();
-  }
-
-  /**
-   * Returns the controller's current shared property state.
-   */
-  getProperties(): TProperties {
-    return this.properties;
-  }
-
-  /**
-   * Detaches one dataset binding and removes any stored presentation state for
-   * that dataset.
+   * Detaches one dataset binding and removes any stored per-dataset render
+   * state for that dataset.
    */
   removeDataId(dataId: DataId): void {
     const binding = this.bindings.get(dataId);
@@ -328,7 +329,7 @@ abstract class ViewportV2<
 
     binding.detach();
     this.bindings.delete(dataId);
-    this.presentations.delete(dataId);
+    this.dataPresentation.delete(dataId);
     this.render();
   }
 
@@ -396,13 +397,12 @@ abstract class ViewportV2<
   }
 
   /**
-   * Pushes the current shared camera and property state to every binding and
-   * schedules a render.
+   * Pushes the current shared camera state to every binding and schedules a
+   * render.
    */
   protected modified(): void {
     this.forEachBinding((binding) => {
       binding.updateCamera(this.camera);
-      binding.updateProperties(this.properties);
     });
 
     this.render();

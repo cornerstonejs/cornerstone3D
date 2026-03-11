@@ -40,14 +40,13 @@ import {
 } from './planarViewportCompatibility';
 import type {
   PlanarCamera,
+  PlanarDataPresentation,
   PlanarDataProvider,
   PlanarEffectiveRenderMode,
   PlanarPayload,
-  PlanarPresentationProps,
   PlanarRegisteredDataSet,
   PlanarRendering,
   PlanarSetDataOptions,
-  PlanarProperties,
   PlanarViewportRenderContext,
   PlanarViewportV2Input,
 } from './PlanarViewportV2Types';
@@ -59,8 +58,7 @@ defaultRenderPathResolver.register(new VtkVolumeMapperPath());
 
 class PlanarViewportV2 extends ViewportV2<
   PlanarCamera,
-  PlanarProperties,
-  PlanarPresentationProps,
+  PlanarDataPresentation,
   PlanarViewportRenderContext
 > {
   readonly type = ViewportType.PLANAR_V2;
@@ -173,7 +171,6 @@ class PlanarViewportV2 extends ViewportV2<
       zoom: 1,
       pan: [0, 0],
     };
-    this.properties = {};
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -218,7 +215,7 @@ class PlanarViewportV2 extends ViewportV2<
       renderMode: selectedPath.renderMode,
     });
 
-    this.setDefaultPresentation(dataId, {
+    this.setDefaultDataPresentation(dataId, {
       visible: true,
       opacity: 1,
     });
@@ -444,28 +441,23 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
-  setProperties(
-    props: Partial<PlanarPresentationProps & PlanarProperties>
+  setDataPresentation(
+    dataId: string | undefined,
+    props: Partial<PlanarDataPresentation>
   ): void {
-    const { interpolationType, slabThickness, ...dataProps } = props;
+    dataId ??= this.activeDataId;
 
-    if (interpolationType !== undefined || slabThickness !== undefined) {
-      super.setProperties({
-        ...(interpolationType !== undefined ? { interpolationType } : {}),
-        ...(slabThickness !== undefined ? { slabThickness } : {}),
-      });
+    if (!dataId) {
+      return;
     }
 
-    if (this.activeDataId && Object.keys(dataProps).length > 0) {
-      this.mergePresentation(this.activeDataId, dataProps);
-    }
+    super.mergeDataPresentation(dataId, props);
   }
 
-  getProperties(): PlanarPresentationProps & PlanarProperties {
-    return {
-      ...(this.activeDataId ? this.getPresentation(this.activeDataId) : {}),
-      ...this.properties,
-    };
+  getDataPresentation(
+    dataId = this.activeDataId
+  ): PlanarDataPresentation | undefined {
+    return dataId ? super.getDataPresentationState(dataId) : undefined;
   }
 
   setImageIdIndex(imageIdIndex: number): Promise<string> {

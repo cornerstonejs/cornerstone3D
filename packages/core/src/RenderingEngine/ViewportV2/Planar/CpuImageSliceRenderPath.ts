@@ -31,12 +31,11 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
+  PlanarDataPresentation,
   PlanarCpuImageAdapterContext,
   PlanarCpuImageRendering,
   PlanarPayload,
-  PlanarPresentationProps,
   PlanarViewportRenderContext,
-  PlanarProperties,
 } from './PlanarViewportV2Types';
 import {
   canvasToWorldCPUImage,
@@ -93,14 +92,18 @@ export class CpuImageSliceRenderPath
     };
   }
 
-  updatePresentation(
+  updateDataPresentation(
     _ctx: PlanarCpuImageAdapterContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
     applyPresentation(
       rendering as PlanarCpuImageRendering,
-      props as PlanarPresentationProps | undefined
+      props as PlanarDataPresentation | undefined
+    );
+    applyDataPresentation(
+      rendering as PlanarCpuImageRendering,
+      props as PlanarDataPresentation | undefined
     );
   }
 
@@ -146,17 +149,6 @@ export class CpuImageSliceRenderPath
         camera: planarCamera,
       });
     });
-  }
-
-  updateProperties(
-    _ctx: PlanarCpuImageAdapterContext,
-    rendering: MountedRendering,
-    presentation: unknown
-  ): void {
-    applyViewportPresentation(
-      rendering as PlanarCpuImageRendering,
-      presentation as PlanarProperties | undefined
-    );
   }
 
   canvasToWorld(
@@ -291,7 +283,7 @@ export class CpuImageSlicePath
 
 function applyPresentation(
   rendering: PlanarCpuImageRendering,
-  props?: PlanarPresentationProps
+  props?: PlanarDataPresentation
 ): void {
   const { enabledElement, defaultVOIRange } = rendering.runtime;
   const { viewport } = enabledElement;
@@ -319,9 +311,9 @@ function applyPresentation(
   rendering.runtime.renderingInvalidated = true;
 }
 
-function applyViewportPresentation(
+function applyDataPresentation(
   rendering: PlanarCpuImageRendering,
-  presentation?: PlanarProperties
+  presentation?: PlanarDataPresentation
 ): void {
   const { enabledElement } = rendering.runtime;
   const { viewport } = enabledElement;
@@ -478,20 +470,11 @@ async function updateRenderedImage(args: {
   ctx: PlanarCpuImageAdapterContext;
   image: IImage;
   imageIdIndex: number;
-  props?: PlanarPresentationProps;
-  viewportPresentation?: PlanarProperties;
+  props?: PlanarDataPresentation;
   rendering: PlanarCpuImageRendering;
   camera?: PlanarCamera;
 }): Promise<void> {
-  const {
-    ctx,
-    image,
-    imageIdIndex,
-    props,
-    viewportPresentation,
-    rendering,
-    camera,
-  } = args;
+  const { ctx, image, imageIdIndex, props, rendering, camera } = args;
   const enabledElement = rendering.runtime.enabledElement;
   const defaultViewport = getDefaultViewport(ctx.cpu.canvas, image);
   const previousViewport = enabledElement.viewport;
@@ -518,7 +501,7 @@ async function updateRenderedImage(args: {
   rendering.runtime.renderingInvalidated = true;
 
   applyPresentation(rendering, props);
-  applyViewportPresentation(rendering, viewportPresentation);
+  applyDataPresentation(rendering, props);
   applyCameraState(rendering, camera);
   ctx.display.requestRender();
 }

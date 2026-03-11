@@ -26,8 +26,7 @@ import type {
   Volume3DGeometryPayload,
   Volume3DGeometryRendering,
   Volume3DCamera,
-  Volume3DPresentationProps,
-  Volume3DProperties,
+  Volume3DDataPresentation,
   Volume3DViewportRenderContext,
   Volume3DVtkGeometryAdapterContext,
 } from './3dViewportTypes';
@@ -70,14 +69,14 @@ export class VtkGeometry3DRenderPath
     };
   }
 
-  updatePresentation(
+  updateDataPresentation(
     _ctx: Volume3DVtkGeometryAdapterContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
     applyPresentation(
       rendering as Volume3DGeometryRendering,
-      props as Volume3DPresentationProps | undefined
+      props as Volume3DDataPresentation | undefined
     );
   }
 
@@ -89,14 +88,6 @@ export class VtkGeometry3DRenderPath
     applyVolume3DCamera(ctx, camera as Partial<Volume3DCamera> | undefined, {
       resetClippingRange: true,
     });
-  }
-
-  updateProperties(
-    _ctx: Volume3DVtkGeometryAdapterContext,
-    _rendering: MountedRendering,
-    _properties: unknown
-  ): void {
-    // Geometry does not currently consume shared V2 properties.
   }
 
   canvasToWorld(
@@ -228,7 +219,7 @@ function createActorEntries(geometry: IGeometry) {
 
 function applyPresentation(
   rendering: Volume3DGeometryRendering,
-  props?: Volume3DPresentationProps
+  props?: Volume3DDataPresentation
 ): void {
   rendering.runtime.actors.forEach((actorEntry) => {
     const actor = actorEntry.actor as vtkActor;

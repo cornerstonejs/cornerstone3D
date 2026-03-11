@@ -42,9 +42,6 @@ export interface BaseViewportRenderContext {
   type: ViewportRenderContextType;
 }
 
-/** @deprecated Use BaseViewportRenderContext instead. */
-export type ViewportRenderContext = BaseViewportRenderContext;
-
 export interface RenderPath<
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
 > {
@@ -54,7 +51,7 @@ export interface RenderPath<
     options: DataAttachmentOptions
   ): Promise<MountedRendering>;
 
-  updatePresentation(
+  updateDataPresentation(
     ctx: TContext,
     rendering: MountedRendering,
     props: unknown
@@ -64,12 +61,6 @@ export interface RenderPath<
     ctx: TContext,
     rendering: MountedRendering,
     camera: unknown
-  ): void;
-
-  updateProperties(
-    ctx: TContext,
-    rendering: MountedRendering,
-    properties: unknown
   ): void;
 
   canvasToWorld?(
@@ -134,9 +125,8 @@ export interface DataProvider {
 export interface RenderingBinding<TPresentation = unknown> {
   data: LogicalDataObject;
   rendering: MountedRendering;
-  updatePresentation(props: TPresentation): void;
+  updateDataPresentation(props: TPresentation): void;
   updateCamera(camera: unknown): void;
-  updateProperties(properties: unknown): void;
   canvasToWorld?(canvasPos: Point2): Point3;
   worldToCanvas?(worldPos: Point3): Point2;
   getFrameOfReferenceUID?(): string | undefined;
@@ -148,7 +138,6 @@ export interface RenderingBinding<TPresentation = unknown> {
 
 export interface ViewportController<
   TCamera = unknown,
-  TProperties = unknown,
   TDataPresentation = unknown,
 > {
   readonly id: ViewportId;
@@ -160,14 +149,13 @@ export interface ViewportController<
   ): Promise<RenderingId>;
   removeDataId(dataId: DataId): void;
 
-  setPresentation(dataId: DataId, props: TDataPresentation): void;
-  getPresentation(dataId: DataId): TDataPresentation | undefined;
-
   setCamera(camera: Partial<TCamera>): void;
   getCamera(): TCamera;
-
-  setProperties(properties: Partial<TProperties>): void;
-  getProperties(): TProperties;
+  setDataPresentation(
+    dataId: DataId | undefined,
+    props: Partial<TDataPresentation>
+  ): void;
+  getDataPresentation(dataId?: DataId): TDataPresentation | undefined;
 
   render(): void;
 }

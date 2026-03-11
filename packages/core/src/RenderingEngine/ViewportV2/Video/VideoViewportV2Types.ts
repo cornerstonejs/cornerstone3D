@@ -33,11 +33,7 @@ export interface VideoProperties {
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 }
 
-/** @deprecated Use VideoCamera instead */
-export type VideoViewState = VideoCamera;
-
-/** @deprecated Use VideoProperties instead */
-export type VideoViewportPresentation = VideoProperties;
+export type VideoDataPresentation = VideoPresentationProps & VideoProperties;
 
 export interface VideoViewportV2Input {
   id: string;

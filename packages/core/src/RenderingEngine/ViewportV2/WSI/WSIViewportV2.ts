@@ -9,11 +9,9 @@ import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { DicomMicroscopyPath } from './DicomMicroscopyRenderPath';
 import type {
   WSICamera,
-  WSIProperties,
+  WSIDataPresentation,
   WSIViewportRenderContext,
-  WSIViewportPresentation,
   WSIViewportV2Input,
-  WSIPresentationProps,
   WSIRendering,
 } from './WSIViewportV2Types';
 
@@ -21,8 +19,7 @@ defaultRenderPathResolver.register(new DicomMicroscopyPath());
 
 class WSIViewportV2 extends ViewportV2<
   WSICamera,
-  WSIProperties,
-  WSIPresentationProps,
+  WSIDataPresentation,
   WSIViewportRenderContext
 > {
   readonly type = ViewportType.WHOLE_SLIDE;
@@ -60,7 +57,6 @@ class WSIViewportV2 extends ViewportV2<
       zoom: 1,
       rotation: 0,
     };
-    this.properties = {};
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -77,7 +73,7 @@ class WSIViewportV2 extends ViewportV2<
         renderMode: 'wsi2d',
       });
 
-      this.setDefaultPresentation(dataId, {
+      this.setDefaultDataPresentation(dataId, {
         visible: true,
         opacity: 1,
       });
@@ -96,6 +92,25 @@ class WSIViewportV2 extends ViewportV2<
 
   render(): void {
     this.getMap()?.render?.();
+  }
+
+  setDataPresentation(
+    dataId: string | undefined,
+    props: Partial<WSIDataPresentation>
+  ): void {
+    dataId ??= this.getFirstBinding()?.data.id;
+
+    if (!dataId) {
+      return;
+    }
+
+    super.mergeDataPresentation(dataId, props);
+  }
+
+  getDataPresentation(
+    dataId = this.getFirstBinding()?.data.id
+  ): WSIDataPresentation | undefined {
+    return dataId ? super.getDataPresentationState(dataId) : undefined;
   }
 
   private getMap(): WSIMapLike | undefined {

@@ -15,6 +15,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
+  PlanarDataPresentation,
   PlanarCpuVolumeAdapterContext,
   PlanarCpuVolumeRendering,
   PlanarPayload,
@@ -97,13 +98,13 @@ export class CpuVolumeSliceRenderPath
     return rendering;
   }
 
-  updatePresentation(
+  updateDataPresentation(
     _ctx: PlanarCpuVolumeAdapterContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
-    (rendering as PlanarCpuVolumeRendering).runtime.presentation =
-      props as PlanarCpuVolumeRendering['runtime']['presentation'];
+    (rendering as PlanarCpuVolumeRendering).runtime.dataPresentation =
+      props as PlanarCpuVolumeRendering['runtime']['dataPresentation'];
   }
 
   updateCamera(
@@ -146,17 +147,6 @@ export class CpuVolumeSliceRenderPath
     runtime.maxImageIdIndex = maxImageIdIndex;
     runtime.viewState = viewState;
     runtime.renderingInvalidated = true;
-  }
-
-  updateProperties(
-    _ctx: PlanarCpuVolumeAdapterContext,
-    rendering: MountedRendering,
-    props: unknown
-  ): void {
-    const runtime = (rendering as PlanarCpuVolumeRendering).runtime;
-
-    runtime.properties =
-      props as PlanarCpuVolumeRendering['runtime']['properties'];
   }
 
   canvasToWorld(
@@ -259,13 +249,15 @@ export class CpuVolumeSliceRenderPath
 
     ctx.display.activateRenderMode('cpuVolume');
 
-    if (runtime.presentation?.visible === false) {
+    if (runtime.dataPresentation?.visible === false) {
       ctx.cpu.canvas.style.display = 'none';
       return;
     }
 
     ctx.cpu.canvas.style.display = '';
-    ctx.cpu.canvas.style.opacity = String(runtime.presentation?.opacity ?? 1);
+    ctx.cpu.canvas.style.opacity = String(
+      runtime.dataPresentation?.opacity ?? 1
+    );
 
     const loadStatus = (
       runtime.imageVolume as { loadStatus?: { loaded?: boolean } }
@@ -306,7 +298,7 @@ export class CpuVolumeSliceRenderPath
         width: ctx.cpu.canvas.width,
         height: ctx.cpu.canvas.height,
         camera,
-        properties: runtime.properties,
+        dataPresentation: runtime.dataPresentation,
       });
 
     if (shouldResample) {
@@ -315,8 +307,7 @@ export class CpuVolumeSliceRenderPath
         width: ctx.cpu.canvas.width,
         height: ctx.cpu.canvas.height,
         camera,
-        presentation: runtime.presentation,
-        properties: runtime.properties,
+        dataPresentation: runtime.dataPresentation,
       });
       runtime.renderingInvalidated = true;
     }
@@ -336,12 +327,11 @@ export class CpuVolumeSliceRenderPath
       enabledElement: runtime.enabledElement,
       sampledSliceState: runtime.sampledSliceState,
       camera,
-      presentation: runtime.presentation,
-      properties: runtime.properties,
+      dataPresentation: runtime.dataPresentation,
       zoom: runtime.viewState?.zoom,
     });
     runtime.defaultVOIRange = this.sampler.getResolvedVOIRange(
-      runtime.presentation?.voiRange,
+      runtime.dataPresentation?.voiRange,
       runtime.sampledSliceState.image.minPixelValue ?? 0,
       runtime.sampledSliceState.image.maxPixelValue ?? 1
     );

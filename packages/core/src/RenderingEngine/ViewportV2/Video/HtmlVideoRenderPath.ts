@@ -9,11 +9,10 @@ import type { Point2, Point3 } from '../../../types';
 import ViewportType from '../../../enums/ViewportType';
 import type {
   VideoCamera,
+  VideoDataPresentation,
   VideoElementRenderContext,
   VideoElementRendering,
-  VideoPresentationProps,
   VideoStreamPayload,
-  VideoProperties,
 } from './VideoViewportV2Types';
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
 
@@ -71,16 +70,20 @@ export class HtmlVideoRenderPath
     };
   }
 
-  updatePresentation(
+  updateDataPresentation(
     _ctx: VideoElementRenderContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
-    const videoProps = props as VideoPresentationProps | undefined;
+    const videoProps = props as VideoDataPresentation | undefined;
     const { element } = (rendering as VideoElementRendering).runtime;
 
     element.style.display = videoProps?.visible === false ? 'none' : '';
     element.style.opacity = String(videoProps?.opacity ?? 1);
+    element.loop = videoProps?.loop ?? true;
+    element.muted = videoProps?.muted ?? true;
+    element.playbackRate = videoProps?.playbackRate ?? 1;
+    element.style.objectFit = videoProps?.objectFit ?? 'contain';
   }
 
   updateCamera(
@@ -111,20 +114,6 @@ export class HtmlVideoRenderPath
     ) {
       element.currentTime = videoCamera.currentTimeSeconds;
     }
-  }
-
-  updateProperties(
-    _ctx: VideoElementRenderContext,
-    rendering: MountedRendering,
-    presentation: unknown
-  ): void {
-    const videoPres = presentation as VideoProperties | undefined;
-    const { element } = (rendering as VideoElementRendering).runtime;
-
-    element.loop = videoPres?.loop ?? true;
-    element.muted = videoPres?.muted ?? true;
-    element.playbackRate = videoPres?.playbackRate ?? 1;
-    element.style.objectFit = videoPres?.objectFit ?? 'contain';
   }
 
   canvasToWorld(

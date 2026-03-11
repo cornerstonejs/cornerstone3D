@@ -6,13 +6,12 @@ export {
 export { default } from './WSIViewportV2';
 export type {
   WSICamera,
+  WSIDataPresentation,
   WSIDataProvider,
   WSIDataSetOptions,
   WSIPayload,
   WSIPresentationProps,
   WSIRendering,
   WSIViewportRenderContext,
-  WSIViewportPresentation,
   WSIViewportV2Input,
-  WSIViewState,
 } from './WSIViewportV2Types';

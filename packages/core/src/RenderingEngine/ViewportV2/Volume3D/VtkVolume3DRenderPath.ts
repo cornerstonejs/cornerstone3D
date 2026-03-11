@@ -21,8 +21,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   Volume3DCamera,
-  Volume3DPresentationProps,
-  Volume3DProperties,
+  Volume3DDataPresentation,
   Volume3DViewportRenderContext,
   Volume3DVolumePayload,
   Volume3DVolumeRendering,
@@ -87,14 +86,14 @@ export class VtkVolume3DRenderPath
     };
   }
 
-  updatePresentation(
+  updateDataPresentation(
     _ctx: Volume3DVtkVolumeAdapterContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
-    applyPresentation(
+    applyDataPresentation(
       rendering as Volume3DVolumeRendering,
-      props as Volume3DPresentationProps | undefined
+      props as Volume3DDataPresentation | undefined
     );
   }
 
@@ -104,17 +103,6 @@ export class VtkVolume3DRenderPath
     camera: unknown
   ): void {
     applyCamera(ctx, camera as Partial<Volume3DCamera> | undefined);
-  }
-
-  updateProperties(
-    _ctx: Volume3DVtkVolumeAdapterContext,
-    rendering: MountedRendering,
-    properties: unknown
-  ): void {
-    applyProperties(
-      rendering as Volume3DVolumeRendering,
-      properties as Volume3DProperties | undefined
-    );
   }
 
   canvasToWorld(
@@ -228,9 +216,9 @@ function subscribeToVolumeEvents(
   };
 }
 
-function applyPresentation(
+function applyDataPresentation(
   rendering: Volume3DVolumeRendering,
-  props?: Volume3DPresentationProps
+  props?: Volume3DDataPresentation
 ): void {
   const { actor, defaultVOIRange } = rendering.runtime;
   const property = actor.getProperty();
@@ -253,6 +241,21 @@ function applyPresentation(
   }
 
   property.setRGBTransferFunction(0, transferFunction);
+
+  if (props?.interpolationType !== undefined) {
+    property.setInterpolationType(
+      props.interpolationType as Parameters<
+        typeof property.setInterpolationType
+      >[0]
+    );
+  }
+
+  if (props?.sampleDistanceMultiplier !== undefined) {
+    applySampleDistanceMultiplier(
+      rendering.runtime.mapper,
+      props.sampleDistanceMultiplier
+    );
+  }
 }
 
 function applyCamera(
@@ -263,27 +266,6 @@ function applyCamera(
 
   if (camera && camera.clippingRange === undefined) {
     setCameraClippingRange(ctx);
-  }
-}
-
-function applyProperties(
-  rendering: Volume3DVolumeRendering,
-  properties?: Volume3DProperties
-): void {
-  const { actor, mapper } = rendering.runtime;
-
-  if (properties?.interpolationType !== undefined) {
-    const property = actor.getProperty();
-
-    property.setInterpolationType(
-      properties.interpolationType as Parameters<
-        typeof property.setInterpolationType
-      >[0]
-    );
-  }
-
-  if (properties?.sampleDistanceMultiplier !== undefined) {
-    applySampleDistanceMultiplier(mapper, properties.sampleDistanceMultiplier);
   }
 }
 

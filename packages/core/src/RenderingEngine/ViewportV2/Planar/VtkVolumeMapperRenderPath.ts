@@ -16,10 +16,9 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
+  PlanarDataPresentation,
   PlanarPayload,
-  PlanarPresentationProps,
   PlanarViewportRenderContext,
-  PlanarProperties,
   PlanarVolumeMapperRendering,
   PlanarVtkVolumeAdapterContext,
 } from './PlanarViewportV2Types';
@@ -100,14 +99,15 @@ export class VtkVolumeMapperRenderPath
     return rendering;
   }
 
-  updatePresentation(
-    _ctx: PlanarVtkVolumeAdapterContext,
+  updateDataPresentation(
+    ctx: PlanarVtkVolumeAdapterContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
-    applyPresentation(
+    applyDataPresentation(
+      ctx,
       rendering as PlanarVolumeMapperRendering,
-      props as PlanarPresentationProps | undefined
+      props as PlanarDataPresentation | undefined
     );
   }
 
@@ -152,39 +152,6 @@ export class VtkVolumeMapperRenderPath
           viewPlaneNormal: runtime.camera.viewPlaneNormal,
         },
         mapper: runtime.mapper,
-      });
-      setPlanarVolumeCameraClippingRange(ctx.vtk.renderer);
-    }
-  }
-
-  updateProperties(
-    ctx: PlanarVtkVolumeAdapterContext,
-    rendering: MountedRendering,
-    presentation: unknown
-  ): void {
-    const planarRendering = rendering as PlanarVolumeMapperRendering;
-    const planarProperties = presentation as PlanarProperties | undefined;
-
-    if (planarProperties?.interpolationType !== undefined) {
-      const property = planarRendering.runtime.actor.getProperty();
-      property.setInterpolationType(
-        planarProperties.interpolationType as Parameters<
-          typeof property.setInterpolationType
-        >[0]
-      );
-    }
-
-    if (
-      planarRendering.runtime.camera?.focalPoint &&
-      planarRendering.runtime.camera.viewPlaneNormal
-    ) {
-      updatePlanarVolumeClippingPlanes({
-        camera: {
-          focalPoint: planarRendering.runtime.camera.focalPoint,
-          viewPlaneNormal: planarRendering.runtime.camera.viewPlaneNormal,
-        },
-        mapper: planarRendering.runtime.mapper,
-        slabThickness: planarProperties?.slabThickness,
       });
       setPlanarVolumeCameraClippingRange(ctx.vtk.renderer);
     }
@@ -338,9 +305,10 @@ function subscribeToVolumeEvents(
   };
 }
 
-function applyPresentation(
+function applyDataPresentation(
+  ctx: PlanarVtkVolumeAdapterContext,
   rendering: PlanarVolumeMapperRendering,
-  props?: PlanarPresentationProps
+  props?: PlanarDataPresentation
 ): void {
   const { actor, defaultVOIRange } = rendering.runtime;
   const property = actor.getProperty();
@@ -363,6 +331,29 @@ function applyPresentation(
   }
 
   property.setRGBTransferFunction(0, transferFunction);
+
+  if (props?.interpolationType !== undefined) {
+    property.setInterpolationType(
+      props.interpolationType as Parameters<
+        typeof property.setInterpolationType
+      >[0]
+    );
+  }
+
+  if (
+    rendering.runtime.camera?.focalPoint &&
+    rendering.runtime.camera.viewPlaneNormal
+  ) {
+    updatePlanarVolumeClippingPlanes({
+      camera: {
+        focalPoint: rendering.runtime.camera.focalPoint,
+        viewPlaneNormal: rendering.runtime.camera.viewPlaneNormal,
+      },
+      mapper: rendering.runtime.mapper,
+      slabThickness: props?.slabThickness,
+    });
+    setPlanarVolumeCameraClippingRange(ctx.vtk.renderer);
+  }
 }
 
 function buildPlanarVolumeImageData(imageVolume): IImageData | undefined {

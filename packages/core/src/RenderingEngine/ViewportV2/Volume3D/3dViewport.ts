@@ -11,8 +11,7 @@ import { VtkGeometry3DPath } from './VtkGeometry3DRenderPath';
 import { VtkVolume3DPath } from './VtkVolume3DRenderPath';
 import type {
   Volume3DCamera,
-  Volume3DPresentationProps,
-  Volume3DProperties,
+  Volume3DDataPresentation,
   Volume3DRegisteredDataSet,
   Volume3DRendering,
   Volume3DSetDataOptions,
@@ -25,8 +24,7 @@ defaultRenderPathResolver.register(new VtkGeometry3DPath());
 
 class VolumeViewport3DV2 extends ViewportV2<
   Volume3DCamera,
-  Volume3DProperties,
-  Volume3DPresentationProps,
+  Volume3DDataPresentation,
   Volume3DViewportRenderContext
 > {
   readonly type: ViewportType = ViewportType.VOLUME_3D_V2;
@@ -107,7 +105,6 @@ class VolumeViewport3DV2 extends ViewportV2<
     this.camera = {
       parallelProjection: this.defaultOptions.parallelProjection ?? true,
     } as Volume3DCamera;
-    this.properties = {};
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -145,7 +142,7 @@ class VolumeViewport3DV2 extends ViewportV2<
       this.primaryDataId = dataId;
     }
 
-    this.setDefaultPresentation(dataId, {
+    this.setDefaultDataPresentation(dataId, {
       visible: true,
       opacity: 1,
     });
@@ -230,33 +227,23 @@ class VolumeViewport3DV2 extends ViewportV2<
     this.setCamera(viewPresentation);
   }
 
-  getProperties(): Volume3DPresentationProps & Volume3DProperties {
-    return {
-      ...(this.primaryDataId ? this.getPresentation(this.primaryDataId) : {}),
-      ...this.properties,
-    };
+  setDataPresentation(
+    dataId: string | undefined,
+    props: Partial<Volume3DDataPresentation>
+  ): void {
+    dataId ??= this.primaryDataId;
+
+    if (!dataId) {
+      return;
+    }
+
+    super.mergeDataPresentation(dataId, props);
   }
 
-  setProperties(
-    props: Partial<Volume3DPresentationProps & Volume3DProperties>
-  ): void {
-    const { interpolationType, sampleDistanceMultiplier, ...dataProps } = props;
-
-    if (
-      interpolationType !== undefined ||
-      sampleDistanceMultiplier !== undefined
-    ) {
-      super.setProperties({
-        ...(interpolationType !== undefined ? { interpolationType } : {}),
-        ...(sampleDistanceMultiplier !== undefined
-          ? { sampleDistanceMultiplier }
-          : {}),
-      });
-    }
-
-    if (this.primaryDataId && Object.keys(dataProps).length > 0) {
-      this.mergePresentation(this.primaryDataId, dataProps);
-    }
+  getDataPresentation(
+    dataId = this.primaryDataId
+  ): Volume3DDataPresentation | undefined {
+    return dataId ? super.getDataPresentationState(dataId) : undefined;
   }
 
   getVolumeId(): string | undefined {

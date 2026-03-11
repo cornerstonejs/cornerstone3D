@@ -166,7 +166,7 @@ async function run() {
   await viewport.setDataIds([dataId], {
     orientation: currentOrientation,
   });
-  viewport.setProperties({
+  viewport.setDataPresentation(dataId, {
     voiRange: ctVoiRange,
   });
   viewport.render();

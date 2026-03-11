@@ -98,7 +98,7 @@ addDropdownToToolbar({
     defaultValue: 1,
   },
   onSelectedValueChange: (sampleDistanceMultiplier) => {
-    viewport?.setProperties({
+    viewport?.setDataPresentation(volumeDataId, {
       sampleDistanceMultiplier: Number(sampleDistanceMultiplier),
     });
   },
@@ -176,7 +176,7 @@ async function run() {
   });
 
   await viewport.setDataIds([volumeDataId]);
-  viewport.setProperties({
+  viewport.setDataPresentation(volumeDataId, {
     sampleDistanceMultiplier: 1,
   });
   applyPreset('CT-Bone');

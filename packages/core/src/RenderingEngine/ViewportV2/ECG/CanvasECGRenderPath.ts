@@ -21,8 +21,7 @@ import type {
   ECGCamera,
   ECGCanvasRenderContext,
   ECGCanvasRendering,
-  ECGPresentationProps,
-  ECGProperties,
+  ECGDataPresentation,
   ECGWaveformPayload,
   RenderWindowMetrics,
 } from './ECGViewportV2Types';
@@ -52,14 +51,14 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     };
   }
 
-  updatePresentation(
+  updateDataPresentation(
     _ctx: ECGCanvasRenderContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
     const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.runtime.currentPresentation = props as
-      | ECGPresentationProps
+    ecgRendering.runtime.currentDataPresentation = props as
+      | ECGDataPresentation
       | undefined;
   }
 
@@ -70,17 +69,6 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   ): void {
     const ecgRendering = rendering as ECGCanvasRendering;
     ecgRendering.runtime.currentCamera = camera as ECGCamera;
-  }
-
-  updateProperties(
-    _ctx: ECGCanvasRenderContext,
-    rendering: MountedRendering,
-    presentation: unknown
-  ): void {
-    const ecgRendering = rendering as ECGCanvasRendering;
-    ecgRendering.runtime.currentProperties = presentation as
-      | ECGProperties
-      | undefined;
   }
 
   canvasToWorld(
@@ -184,7 +172,7 @@ export class CanvasECGPath
 function getChannelLayouts(rendering: ECGCanvasRendering) {
   const visibleChannels = getVisibleECGChannels(
     rendering.runtime.waveform.channels,
-    rendering.runtime.currentPresentation?.visibleChannels
+    rendering.runtime.currentDataPresentation?.visibleChannels
   );
 
   return computeECGChannelLayouts({
@@ -239,21 +227,16 @@ function drawFrame(
     canvasContext,
     waveform,
     currentCamera,
-    currentProperties,
-    currentPresentation,
+    currentDataPresentation,
   } = ecgRendering.runtime;
 
   if (!currentCamera) {
     return;
   }
 
-  const ecgProps = {
-    ...currentProperties,
-    ...currentPresentation,
-  };
   const visibleChannels = getVisibleECGChannels(
     waveform.channels,
-    currentPresentation?.visibleChannels
+    currentDataPresentation?.visibleChannels
   );
 
   ensureECGCanvasSize(canvas);
@@ -280,11 +263,11 @@ function drawFrame(
   canvasContext.fillStyle = '#000000';
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (currentPresentation?.visible === false) {
+  if (currentDataPresentation?.visible === false) {
     return;
   }
 
-  canvasContext.globalAlpha = currentPresentation?.opacity ?? 1;
+  canvasContext.globalAlpha = currentDataPresentation?.opacity ?? 1;
   canvasContext.setTransform(
     metrics.worldToCanvasRatio * dpr,
     0,
@@ -295,7 +278,7 @@ function drawFrame(
   );
 
   drawECGGrid(canvasContext, metrics, {
-    showGrid: ecgProps?.showGrid,
+    showGrid: currentDataPresentation?.showGrid,
   });
   drawECGTraces({
     ctx: canvasContext,
@@ -304,8 +287,8 @@ function drawFrame(
     channelScale: metrics.channelScale,
     startIndex: timeWindow.startIndex,
     endIndex: timeWindow.endIndex,
-    lineWidth: ecgProps?.lineWidth,
-    amplitudeScale: ecgProps?.amplitudeScale,
+    lineWidth: currentDataPresentation?.lineWidth,
+    amplitudeScale: currentDataPresentation?.amplitudeScale,
   });
   drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio);
 

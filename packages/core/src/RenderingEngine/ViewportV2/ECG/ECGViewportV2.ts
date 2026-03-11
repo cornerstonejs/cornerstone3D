@@ -9,8 +9,7 @@ import type {
   ECGCamera,
   ECGCanvasRenderContext,
   ECGCanvasRendering,
-  ECGPresentationProps,
-  ECGProperties,
+  ECGDataPresentation,
   ECGViewportV2Input,
   ECGWaveformPayload,
 } from './ECGViewportV2Types';
@@ -19,8 +18,7 @@ defaultRenderPathResolver.register(new CanvasECGPath());
 
 class ECGViewportV2 extends ViewportV2<
   ECGCamera,
-  ECGProperties,
-  ECGPresentationProps,
+  ECGDataPresentation,
   ECGCanvasRenderContext
 > {
   readonly type = ViewportType.ECG;
@@ -63,11 +61,6 @@ class ECGViewportV2 extends ViewportV2<
       valueRange: [-1, 1],
       scrollOffset: 0,
     };
-    this.properties = {
-      lineWidth: 1,
-      amplitudeScale: 1,
-      showGrid: true,
-    };
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -101,10 +94,13 @@ class ECGViewportV2 extends ViewportV2<
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
 
-      this.setDefaultPresentation(dataId, {
+      this.setDefaultDataPresentation(dataId, {
         visible: true,
         opacity: 1,
         visibleChannels: waveform.channels.map((_channel, index) => index),
+        lineWidth: 1,
+        amplitudeScale: 1,
+        showGrid: true,
       });
       this.camera = {
         timeRange: [0, durationMs],
@@ -128,7 +124,7 @@ class ECGViewportV2 extends ViewportV2<
 
     const dataId = firstBinding.data.id;
     const waveform = firstBinding.data.payload as ECGWaveformPayload;
-    const current = this.getPresentation(dataId) || {};
+    const current = this.getDataPresentation(dataId) || {};
     const nextVisibleChannels = new Set(
       current.visibleChannels || waveform.channels.map((_channel, i) => i)
     );
@@ -139,7 +135,7 @@ class ECGViewportV2 extends ViewportV2<
       nextVisibleChannels.delete(index);
     }
 
-    this.mergePresentation(dataId, {
+    this.setDataPresentation(dataId, {
       visibleChannels: Array.from(nextVisibleChannels).sort((a, b) => a - b),
     });
   }
@@ -154,7 +150,7 @@ class ECGViewportV2 extends ViewportV2<
     const dataId = firstBinding.data.id;
     const waveform = firstBinding.data.payload as ECGWaveformPayload;
     const visibleChannels = new Set(
-      this.getPresentation(dataId)?.visibleChannels ||
+      this.getDataPresentation(dataId)?.visibleChannels ||
         waveform.channels.map((_channel, index) => index)
     );
 
@@ -195,6 +191,25 @@ class ECGViewportV2 extends ViewportV2<
 
   render(): void {
     this.renderBindings();
+  }
+
+  setDataPresentation(
+    dataId: string | undefined,
+    props: Partial<ECGDataPresentation>
+  ): void {
+    dataId ??= this.getFirstBinding()?.data.id;
+
+    if (!dataId) {
+      return;
+    }
+
+    super.mergeDataPresentation(dataId, props);
+  }
+
+  getDataPresentation(
+    dataId = this.getFirstBinding()?.data.id
+  ): ECGDataPresentation | undefined {
+    return dataId ? super.getDataPresentationState(dataId) : undefined;
   }
 }
 

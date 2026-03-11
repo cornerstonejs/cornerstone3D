@@ -20,7 +20,6 @@ export type {
   RenderPath,
   RenderingBinding,
   RenderingId,
-  ViewportRenderContext,
   ViewportController,
   ViewportId,
   ViewportRenderContextType,
@@ -41,10 +40,9 @@ export type {
   ECGCamera,
   ECGCanvasRenderContext,
   ECGCanvasRendering,
+  ECGDataPresentation,
   ECGChannelData,
   ECGPresentationProps,
-  ECGViewportPresentation,
-  ECGViewState,
   ECGViewportV2Input,
   ECGWaveformPayload,
 } from './ECG';
@@ -56,13 +54,12 @@ export {
 } from './Video';
 export type {
   VideoCamera,
+  VideoDataPresentation,
   VideoElementRenderContext,
   VideoElementRendering,
   VideoPresentationProps,
   VideoStreamPayload,
-  VideoViewportPresentation,
   VideoViewportV2Input,
-  VideoViewState,
 } from './Video';
 export { default as PlanarViewportV2 } from './Planar';
 export {
@@ -78,6 +75,7 @@ export type {
   PlanarCamera,
   PlanarCameraState,
   PlanarCpuImageRendering,
+  PlanarDataPresentation,
   PlanarDataProvider,
   PlanarDataLoadOptions,
   PlanarImageMapperRendering,
@@ -88,11 +86,9 @@ export type {
   PlanarRenderMode,
   PlanarRendering,
   PlanarSetDataOptions,
-  PlanarViewportPresentation,
   PlanarVolumeMapperRendering,
   PlanarViewportRenderContext,
   PlanarViewportV2Input,
-  PlanarViewState,
 } from './Planar';
 export { default as VolumeViewport3DV2 } from './Volume3D';
 export {
@@ -104,6 +100,7 @@ export {
 } from './Volume3D';
 export type {
   Volume3DCamera,
+  Volume3DDataPresentation,
   Volume3DDataProvider,
   Volume3DGeometryPayload,
   Volume3DGeometryRendering,
@@ -129,13 +126,12 @@ export {
 } from './WSI';
 export type {
   WSICamera,
+  WSIDataPresentation,
   WSIDataProvider,
   WSIDataSetOptions,
   WSIPayload,
   WSIPresentationProps,
   WSIRendering,
   WSIViewportRenderContext,
-  WSIViewportPresentation,
   WSIViewportV2Input,
-  WSIViewState,
 } from './WSI';

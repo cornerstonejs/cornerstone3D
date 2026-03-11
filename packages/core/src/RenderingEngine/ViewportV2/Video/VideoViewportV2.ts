@@ -10,11 +10,10 @@ import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 import { HtmlVideoPath } from './HtmlVideoRenderPath';
 import type {
   VideoCamera,
+  VideoDataPresentation,
   VideoElementRenderContext,
   VideoElementRendering,
-  VideoPresentationProps,
   VideoStreamPayload,
-  VideoProperties,
   VideoViewportV2Input,
 } from './VideoViewportV2Types';
 
@@ -22,8 +21,7 @@ defaultRenderPathResolver.register(new HtmlVideoPath());
 
 class VideoViewportV2 extends ViewportV2<
   VideoCamera,
-  VideoProperties,
-  VideoPresentationProps,
+  VideoDataPresentation,
   VideoElementRenderContext
 > {
   readonly type = ViewportType.VIDEO;
@@ -63,12 +61,6 @@ class VideoViewportV2 extends ViewportV2<
       rotation: 0,
       currentTimeSeconds: 0,
     };
-    this.properties = {
-      playbackRate: 1,
-      loop: true,
-      muted: true,
-      objectFit: 'contain',
-    };
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -97,9 +89,13 @@ class VideoViewportV2 extends ViewportV2<
         continue;
       }
 
-      this.setDefaultPresentation(dataId, {
+      this.setDefaultDataPresentation(dataId, {
         visible: true,
         opacity: 1,
+        playbackRate: 1,
+        loop: true,
+        muted: true,
+        objectFit: 'contain',
       });
 
       const payload = (binding.rendering as VideoElementRendering).runtime
@@ -160,7 +156,9 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   setPlaybackRate(playbackRate: number): void {
-    this.setProperties({ playbackRate });
+    this.setDataPresentation(this.getFirstBinding()?.data.id, {
+      playbackRate,
+    });
   }
 
   getFrameRate(): number {
@@ -187,7 +185,26 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   render(): void {
-    // DOM updates are applied immediately in updateCamera/updateViewportPresentation
+    // DOM updates are applied immediately in updateCamera/updateDataPresentation
+  }
+
+  setDataPresentation(
+    dataId: string | undefined,
+    props: Partial<VideoDataPresentation>
+  ): void {
+    dataId ??= this.getFirstBinding()?.data.id;
+
+    if (!dataId) {
+      return;
+    }
+
+    super.mergeDataPresentation(dataId, props);
+  }
+
+  getDataPresentation(
+    dataId = this.getFirstBinding()?.data.id
+  ): VideoDataPresentation | undefined {
+    return dataId ? super.getDataPresentationState(dataId) : undefined;
   }
 
   private getVideoElement(): HTMLVideoElement | undefined {
@@ -229,7 +246,7 @@ class VideoViewportV2 extends ViewportV2<
       return;
     }
 
-    const objectFit = this.properties.objectFit ?? 'contain';
+    const objectFit = this.getDataPresentation()?.objectFit ?? 'contain';
     const containScale = Math.min(
       containerWidth / intrinsicWidth,
       containerHeight / intrinsicHeight

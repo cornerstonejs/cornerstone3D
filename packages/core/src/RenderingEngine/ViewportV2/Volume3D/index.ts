@@ -10,6 +10,7 @@ export {
 export { default } from './3dViewport';
 export type {
   Volume3DCamera,
+  Volume3DDataPresentation,
   Volume3DDataProvider,
   Volume3DGeometryPayload,
   Volume3DGeometryRendering,

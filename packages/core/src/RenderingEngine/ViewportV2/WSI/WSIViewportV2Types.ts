@@ -45,11 +45,7 @@ export interface WSICamera {
 
 export interface WSIProperties {}
 
-/** @deprecated Use WSIProperties instead */
-export type WSIViewportPresentation = WSIProperties;
-
-/** @deprecated Use WSICamera instead */
-export type WSIViewState = WSICamera;
+export type WSIDataPresentation = WSIPresentationProps & WSIProperties;
 
 export interface WSIDataProvider extends DataProvider {
   load(dataId: string): Promise<LogicalDataObject<WSIPayload>>;

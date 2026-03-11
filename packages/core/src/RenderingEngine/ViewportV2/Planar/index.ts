@@ -26,6 +26,7 @@ export type {
   PlanarDataProvider,
   PlanarImageMapperRendering,
   PlanarDataLoadOptions,
+  PlanarDataPresentation,
   PlanarEffectiveRenderMode,
   PlanarOrientation,
   PlanarPayload,
@@ -37,9 +38,7 @@ export type {
   PlanarSetDataOptions,
   PlanarVtkImageAdapterContext,
   PlanarVtkVolumeAdapterContext,
-  PlanarViewportPresentation,
   PlanarVolumeMapperRendering,
   PlanarViewportRenderContext,
   PlanarViewportV2Input,
-  PlanarViewState,
 } from './PlanarViewportV2Types';

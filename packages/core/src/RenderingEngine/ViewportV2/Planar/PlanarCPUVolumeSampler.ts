@@ -14,10 +14,7 @@ import type {
 import VoxelManager from '../../../utilities/VoxelManager';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
-import type {
-  PlanarPresentationProps,
-  PlanarProperties,
-} from './PlanarViewportV2Types';
+import type { PlanarDataPresentation } from './PlanarViewportV2Types';
 
 type SliceArray = PixelDataTypedArray;
 
@@ -268,16 +265,14 @@ export default class PlanarCPUVolumeSampler {
     enabledElement: CPUFallbackEnabledElement;
     sampledSliceState: PlanarCPUSampledSliceState;
     camera: ICamera;
-    presentation?: PlanarPresentationProps;
-    properties?: PlanarProperties;
+    dataPresentation?: PlanarDataPresentation;
     zoom?: number;
   }): void {
     const {
       enabledElement,
       sampledSliceState,
       camera,
-      presentation,
-      properties,
+      dataPresentation,
       zoom,
     } = args;
     const rowPixelSpacing = sampledSliceState.image.rowPixelSpacing || 1;
@@ -288,7 +283,7 @@ export default class PlanarCPUVolumeSampler {
     );
     const viewport = enabledElement.viewport;
     const resolvedVOI = this.getResolvedVOIRange(
-      presentation?.voiRange,
+      dataPresentation?.voiRange,
       sampledSliceState.image.minPixelValue ?? 0,
       sampledSliceState.image.maxPixelValue ?? 1
     );
@@ -301,9 +296,9 @@ export default class PlanarCPUVolumeSampler {
       (getDefaultViewport(enabledElement.canvas, sampledSliceState.image)
         .scale ?? 1) * Math.max(zoom ?? 1, 0.001);
     viewport.parallelScale = camera.parallelScale;
-    viewport.invert = presentation?.invert ?? false;
+    viewport.invert = dataPresentation?.invert ?? false;
     viewport.pixelReplication =
-      properties?.interpolationType === InterpolationType.NEAREST;
+      dataPresentation?.interpolationType === InterpolationType.NEAREST;
     viewport.voi = {
       windowCenter: (resolvedVOI.lower + resolvedVOI.upper) / 2,
       windowWidth: Math.max(resolvedVOI.upper - resolvedVOI.lower, 1),
@@ -316,9 +311,9 @@ export default class PlanarCPUVolumeSampler {
     width: number;
     height: number;
     camera: ICamera;
-    properties?: PlanarProperties;
+    dataPresentation?: PlanarDataPresentation;
   }): boolean {
-    const { sampledSliceState, width, height, camera, properties } = args;
+    const { sampledSliceState, width, height, camera, dataPresentation } = args;
 
     if (!sampledSliceState) {
       return true;
@@ -327,7 +322,7 @@ export default class PlanarCPUVolumeSampler {
     const { right, up, normal } = this.getCameraBasis(camera);
     const focalPoint = camera.focalPoint as Point3;
     const interpolationType =
-      properties?.interpolationType ?? InterpolationType.LINEAR;
+      dataPresentation?.interpolationType ?? InterpolationType.LINEAR;
     const focalDelta = subtractPoints(focalPoint, sampledSliceState.focalPoint);
     const deltaInNormal = Math.abs(dot(focalDelta, sampledSliceState.normal));
     const columnPixelSpacing = sampledSliceState.image.columnPixelSpacing || 1;
@@ -355,13 +350,12 @@ export default class PlanarCPUVolumeSampler {
     width: number;
     height: number;
     camera: ICamera;
-    presentation?: PlanarPresentationProps;
-    properties?: PlanarProperties;
+    dataPresentation?: PlanarDataPresentation;
   }): PlanarCPUSampledSliceState {
-    const { volume, width, height, camera, presentation, properties } = args;
+    const { volume, width, height, camera, dataPresentation } = args;
     const { right, up, normal } = this.getCameraBasis(camera);
     const interpolationType =
-      properties?.interpolationType ?? InterpolationType.LINEAR;
+      dataPresentation?.interpolationType ?? InterpolationType.LINEAR;
     const orthogonalSlice = this.trySampleOrthogonalSliceFromVoxelManager(
       volume,
       camera,
@@ -371,7 +365,7 @@ export default class PlanarCPUVolumeSampler {
     );
     const fallbackRange = this.getFallbackStoredRange(volume);
     const voiRange = this.getResolvedVOIRange(
-      presentation?.voiRange,
+      dataPresentation?.voiRange,
       fallbackRange.min,
       fallbackRange.max
     );

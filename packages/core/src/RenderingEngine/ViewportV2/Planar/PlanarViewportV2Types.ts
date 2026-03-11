@@ -91,11 +91,7 @@ export interface PlanarProperties {
   slabThickness?: number;
 }
 
-/** @deprecated Use PlanarCamera instead */
-export type PlanarViewState = PlanarCamera;
-
-/** @deprecated Use PlanarProperties instead */
-export type PlanarViewportPresentation = PlanarProperties;
+export type PlanarDataPresentation = PlanarPresentationProps & PlanarProperties;
 
 export interface PlanarDataProvider extends DataProvider {
   load(
@@ -197,8 +193,7 @@ export interface PlanarCpuVolumeRendering
     camera?: ICamera;
     viewState?: PlanarCamera;
     renderingInvalidated: boolean;
-    presentation?: PlanarPresentationProps;
-    properties?: PlanarProperties;
+    dataPresentation?: PlanarDataPresentation;
     sampledSliceState?: {
       image: IImage;
       focalPoint: Point3;

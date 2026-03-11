@@ -41,11 +41,7 @@ export interface ECGProperties {
   showGrid?: boolean;
 }
 
-/** @deprecated Use ECGCamera instead */
-export type ECGViewState = ECGCamera;
-
-/** @deprecated Use ECGProperties instead */
-export type ECGViewportPresentation = ECGProperties;
+export type ECGDataPresentation = ECGPresentationProps & ECGProperties;
 
 export interface ECGViewportV2Input {
   id: string;
@@ -85,8 +81,7 @@ export interface ECGCanvasRendering
     waveform: ECGWaveformPayload;
     metrics: RenderWindowMetrics;
     currentCamera?: ECGCamera;
-    currentProperties?: ECGProperties;
-    currentPresentation?: ECGPresentationProps;
+    currentDataPresentation?: ECGDataPresentation;
   }> {
   renderMode: 'signal2d';
 }

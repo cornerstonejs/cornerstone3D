@@ -13,11 +13,11 @@ import type {
 import type { Point2, Point3 } from '../../../types';
 import type {
   WSICamera,
+  WSIDataPresentation,
   WSIPresentationProps,
   WSIRendering,
   WSIPayload,
   WSIViewportRenderContext,
-  WSIProperties,
 } from './WSIViewportV2Types';
 
 const EVENT_POSTRENDER = 'postrender';
@@ -90,12 +90,12 @@ export class DicomMicroscopyRenderPath
     };
   }
 
-  updatePresentation(
+  updateDataPresentation(
     _ctx: WSIViewportRenderContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
-    const wsiProps = props as WSIPresentationProps | undefined;
+    const wsiProps = props as WSIDataPresentation | undefined;
     const { microscopyElement } = (rendering as WSIRendering).runtime;
 
     microscopyElement.style.display = wsiProps?.visible === false ? 'none' : '';
@@ -124,14 +124,6 @@ export class DicomMicroscopyRenderPath
     if (typeof wsiCamera.rotation === 'number') {
       view.setRotation(wsiCamera.rotation);
     }
-  }
-
-  updateProperties(
-    _ctx: WSIViewportRenderContext,
-    _rendering: MountedRendering,
-    _presentation: unknown
-  ): void {
-    // No viewport-level properties for WSI currently.
   }
 
   canvasToWorld(

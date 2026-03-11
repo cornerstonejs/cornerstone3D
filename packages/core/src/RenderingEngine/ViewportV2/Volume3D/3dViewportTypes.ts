@@ -64,6 +64,9 @@ export interface Volume3DProperties {
   sampleDistanceMultiplier?: number;
 }
 
+export type Volume3DDataPresentation = Volume3DPresentationProps &
+  Volume3DProperties;
+
 export type Volume3DCamera = ICamera;
 
 export interface Volume3DDataProvider extends DataProvider {

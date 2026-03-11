@@ -24,11 +24,10 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
+  PlanarDataPresentation,
   PlanarImageMapperRendering,
-  PlanarPresentationProps,
   PlanarPayload,
   PlanarViewportRenderContext,
-  PlanarProperties,
   PlanarVtkImageAdapterContext,
 } from './PlanarViewportV2Types';
 import {
@@ -85,19 +84,20 @@ export class VtkImageMapperRenderPath
     };
   }
 
-  updatePresentation(
+  updateDataPresentation(
     _ctx: PlanarVtkImageAdapterContext,
     rendering: MountedRendering,
     props: unknown
   ): void {
     const planarRendering = rendering as PlanarImageMapperRendering;
+    const dataPresentation = props as PlanarDataPresentation | undefined;
 
     applyPlanarImagePresentation({
       actor: planarRendering.runtime.actor,
       defaultVOIRange: planarRendering.runtime.defaultVOIRange,
       props: {
         interpolationType: InterpolationType.LINEAR,
-        ...(props as PlanarPresentationProps | undefined),
+        ...dataPresentation,
       },
     });
   }
@@ -152,24 +152,6 @@ export class VtkImageMapperRenderPath
         camera: planarCamera,
       });
     });
-  }
-
-  updateProperties(
-    _ctx: PlanarVtkImageAdapterContext,
-    rendering: MountedRendering,
-    presentation: unknown
-  ): void {
-    const planarRendering = rendering as PlanarImageMapperRendering;
-    const planarProperties = presentation as PlanarProperties | undefined;
-
-    if (planarProperties?.interpolationType !== undefined) {
-      const property = planarRendering.runtime.actor.getProperty();
-      property.setInterpolationType(
-        planarProperties.interpolationType as Parameters<
-          typeof property.setInterpolationType
-        >[0]
-      );
-    }
   }
 
   canvasToWorld(
@@ -267,8 +249,7 @@ async function updateRenderedImage(args: {
   image: IImage;
   rendering: PlanarImageMapperRendering;
   imageIdIndex: number;
-  props?: PlanarPresentationProps;
-  planarProperties?: PlanarProperties;
+  dataPresentation?: PlanarDataPresentation;
   resetCamera?: boolean;
   camera?: PlanarCamera;
 }): Promise<void> {
@@ -277,8 +258,7 @@ async function updateRenderedImage(args: {
     image,
     rendering,
     imageIdIndex,
-    props,
-    planarProperties,
+    dataPresentation,
     resetCamera = false,
     camera,
   } = args;
@@ -300,8 +280,8 @@ async function updateRenderedImage(args: {
     defaultVOIRange: rendering.runtime.defaultVOIRange,
     props: {
       interpolationType:
-        planarProperties?.interpolationType ?? InterpolationType.LINEAR,
-      ...props,
+        dataPresentation?.interpolationType ?? InterpolationType.LINEAR,
+      ...dataPresentation,
     },
   });
 

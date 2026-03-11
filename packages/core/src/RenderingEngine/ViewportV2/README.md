@@ -16,7 +16,7 @@ behavior into dedicated render paths.
 
 - `ViewportV2.ts`
   Generic controller that owns bindings, shared camera state, shared
-  properties, presentations, and render dispatch.
+  per-data presentation state, and render dispatch.
 - `ViewportArchitectureTypes.ts`
   Shared contracts for controllers, data providers, render paths, render-path
   contexts, and compatibility helpers such as pan/zoom capability guards.
@@ -36,8 +36,8 @@ renderMode)` to a concrete render path.
 4. The render path resolver chooses the render path for the viewport `type`,
    logical data, and requested `renderMode`.
 5. The render path attaches runtime rendering state and returns a mounted rendering.
-6. `ViewportV2` stores a binding that can forward presentation, camera,
-   property, resize, and render updates back to that render path.
+6. `ViewportV2` stores a binding that can forward data-presentation, camera,
+   resize, and render updates back to that render path.
 7. Tooling and viewport APIs operate on shared controller state; render paths apply
    that state to the concrete runtime.
 
@@ -47,7 +47,8 @@ renderMode)` to a concrete render path.
 
 - Own shared viewport state.
 - Coordinate data attachment and binding lifecycle.
-- Broadcast camera and property changes to all active bindings.
+- Broadcast shared camera changes to all active bindings.
+- Store per-data presentation state keyed by `dataId`.
 - Expose shared transforms like `canvasToWorld` and `worldToCanvas` through the
   current binding.
 
@@ -57,14 +58,14 @@ renderMode)` to a concrete render path.
 - Create the render context used by render paths.
 - Choose the data provider and render path resolver when defaults are not
   sufficient.
-- Keep modality-specific or presentation-specific orchestration local to that
+- Keep modality-specific or data-presentation-specific orchestration local to that
   viewport family.
 
 ### Render Paths
 
 - Attach and detach runtime objects.
 - Interpret shared camera state for one render path.
-- Apply presentation and property updates for one render path.
+- Apply per-data presentation updates for one render path.
 - Implement render-path-specific coordinate transforms when needed.
 
 ## Data Model
