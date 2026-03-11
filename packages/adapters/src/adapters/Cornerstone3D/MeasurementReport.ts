@@ -164,11 +164,14 @@ export interface MeasurementAdapter {
   ): Record<string, unknown>;
 }
 
-/** Returns true when a SCOORD/SCOORD3D content item is tagged with the
- *  control-points code, distinguishing it from the primary polyline SCOORD.
+/**
+ *  Returns true when a SCOORD/SCOORD3D content item is tagged with a secondary
+ *  (i.e. non-primary) SCOORD code.
+ *  For example, the control-points code is distinguished from the primary polyline
+ *  SCOORD points code.
  *  Handles ConceptNameCodeSequence as either a plain object (parsed DICOM)
  *  or a single-item array (in-memory build). */
-function isControlPointsScoord(group: {
+function isSecondaryScoordGroup(group: {
   ValueType?: string;
   ConceptNameCodeSequence?: unknown;
 }): boolean {
@@ -418,12 +421,13 @@ export default class MeasurementReport {
     const contentSequenceArr = toArray(NUMGroup.ContentSequence);
     const SCOORDGroup =
       contentSequenceArr.find(
-        (group) => group.ValueType === 'SCOORD' && !isControlPointsScoord(group)
+        (group) =>
+          group.ValueType === 'SCOORD' && !isSecondaryScoordGroup(group)
       ) ?? contentSequenceArr.find((group) => group.ValueType === 'SCOORD');
     const SCOORD3DGroup =
       contentSequenceArr.find(
         (group) =>
-          group.ValueType === 'SCOORD3D' && !isControlPointsScoord(group)
+          group.ValueType === 'SCOORD3D' && !isSecondaryScoordGroup(group)
       ) ?? contentSequenceArr.find((group) => group.ValueType === 'SCOORD3D');
 
     const result: SpatialCoordinatesData =
