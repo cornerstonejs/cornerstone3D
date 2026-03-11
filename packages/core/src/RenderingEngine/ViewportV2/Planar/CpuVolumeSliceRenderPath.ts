@@ -103,8 +103,13 @@ export class CpuVolumeSliceRenderPath
     rendering: MountedRendering,
     props: unknown
   ): void {
+    const { slabThickness: _slabThickness, ...dataPresentation } =
+      (props as PlanarDataPresentation | undefined) || {};
+
     (rendering as PlanarCpuVolumeRendering).runtime.dataPresentation =
-      props as PlanarCpuVolumeRendering['runtime']['dataPresentation'];
+      Object.keys(dataPresentation).length
+        ? (dataPresentation as PlanarCpuVolumeRendering['runtime']['dataPresentation'])
+        : undefined;
   }
 
   updateCamera(

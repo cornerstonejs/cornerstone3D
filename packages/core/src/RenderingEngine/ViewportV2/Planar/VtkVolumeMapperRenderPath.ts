@@ -1,4 +1,5 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
+import { RENDERING_DEFAULTS } from '../../../constants';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
@@ -84,6 +85,7 @@ export class VtkVolumeMapperRenderPath
         baseCamera: undefined,
         camera: undefined,
         viewState: undefined,
+        dataPresentation: undefined,
         removeStreamingSubscriptions: subscribeToVolumeEvents(
           payload.volumeId,
           () => {
@@ -152,6 +154,9 @@ export class VtkVolumeMapperRenderPath
           viewPlaneNormal: runtime.camera.viewPlaneNormal,
         },
         mapper: runtime.mapper,
+        slabThickness: resolveSlabThickness(
+          runtime.dataPresentation?.slabThickness
+        ),
       });
       setPlanarVolumeCameraClippingRange(ctx.vtk.renderer);
     }
@@ -222,6 +227,9 @@ export class VtkVolumeMapperRenderPath
           viewPlaneNormal: runtime.camera.viewPlaneNormal,
         },
         mapper: runtime.mapper,
+        slabThickness: resolveSlabThickness(
+          runtime.dataPresentation?.slabThickness
+        ),
       });
       setPlanarVolumeCameraClippingRange(ctx.vtk.renderer);
     }
@@ -310,9 +318,12 @@ function applyDataPresentation(
   rendering: PlanarVolumeMapperRendering,
   props?: PlanarDataPresentation
 ): void {
-  const { actor, defaultVOIRange } = rendering.runtime;
+  const { actor, defaultVOIRange, mapper } = rendering.runtime;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
+  const slabThickness = resolveSlabThickness(props?.slabThickness);
+
+  rendering.runtime.dataPresentation = props;
 
   actor.setVisibility(props?.visible === false ? false : true);
 
@@ -340,6 +351,12 @@ function applyDataPresentation(
     );
   }
 
+  if (slabThickness !== undefined) {
+    mapper.setBlendModeToMaximumIntensity();
+  } else {
+    mapper.setBlendModeToComposite();
+  }
+
   if (
     rendering.runtime.camera?.focalPoint &&
     rendering.runtime.camera.viewPlaneNormal
@@ -349,11 +366,19 @@ function applyDataPresentation(
         focalPoint: rendering.runtime.camera.focalPoint,
         viewPlaneNormal: rendering.runtime.camera.viewPlaneNormal,
       },
-      mapper: rendering.runtime.mapper,
-      slabThickness: props?.slabThickness,
+      mapper,
+      slabThickness,
     });
     setPlanarVolumeCameraClippingRange(ctx.vtk.renderer);
   }
+}
+
+function resolveSlabThickness(slabThickness?: number): number | undefined {
+  if (typeof slabThickness !== 'number' || slabThickness <= 0) {
+    return;
+  }
+
+  return Math.max(slabThickness, RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS);
 }
 
 function buildPlanarVolumeImageData(imageVolume): IImageData | undefined {

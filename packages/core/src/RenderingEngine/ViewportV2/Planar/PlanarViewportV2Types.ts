@@ -224,6 +224,7 @@ export interface PlanarVolumeMapperRendering
     baseCamera?: PlanarCameraState;
     camera?: ICamera;
     viewState?: PlanarCamera;
+    dataPresentation?: PlanarDataPresentation;
     removeStreamingSubscriptions?: () => void;
   }> {
   renderMode: 'vtkVolume';
