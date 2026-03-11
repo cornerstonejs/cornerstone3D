@@ -16,6 +16,7 @@ import { registerTransferSyntaxProvider } from './utilities/metadataProvider/tra
 import { registerEcgFromInstanceProvider } from './utilities/metadataProvider/ecgFromInstance';
 import { registerCompressedFrameDataProvider } from './utilities/metadataProvider/compressedFrameData';
 import { registerNaturalBaseImageIdFallback } from './utilities/metadataProvider/naturalBaseImageIdFallback';
+import { registerScalingFromInstanceProvider } from './utilities/metadataProvider/scalingFromInstance';
 
 const TYPED_PROVIDER_BRIDGE_PRIORITY = -1000;
 
@@ -87,4 +88,7 @@ export function registerDefaultProvider() {
 
   // Compressed frame data (pixel data from NATURAL) via getMetaData('compressedFrameData', imageId, { frameIndex })
   registerCompressedFrameDataProvider();
+
+  // scalingModule from instance (PT: SUV factors; RTDOSE: DoseGridScaling etc.)
+  registerScalingFromInstanceProvider();
 }

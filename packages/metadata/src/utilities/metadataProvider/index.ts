@@ -13,3 +13,4 @@ export * from './addPart10Instance';
 export type { CompressedFrameDataMetadata } from '../../types';
 export * from './ecgModule';
 export * from './ecgFromInstance';
+export * from './scalingFromInstance';

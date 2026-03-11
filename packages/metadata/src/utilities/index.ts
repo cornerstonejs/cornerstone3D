@@ -20,5 +20,6 @@ export {
 } from './splitImageIdsBy4DTags';
 export * as Tags from './Tags';
 export * as DicomStream from './dicomStream';
+export * from './logging';
 export * from './metadataProvider';
 export * as typedMetadataProviders from './metadataProvider';

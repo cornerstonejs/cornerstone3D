@@ -33,4 +33,7 @@ export function registerDataLookup() {
     naturalLookup,
     DATA_PRIORITY
   );
+
+  // Scaling uses NATURAL (multiframe, no per-frame scaling); provider receives data from this lookup
+  addTypedProvider(MetadataModules.SCALING, naturalLookup, DATA_PRIORITY);
 }
