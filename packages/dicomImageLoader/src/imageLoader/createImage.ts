@@ -53,6 +53,15 @@ async function createImage(
   options.allowFloatRendering = canRenderFloatTextures();
 
   let redData, greenData, blueData;
+  // Capture palette descriptors before decode (worker may not return them).
+  const paletteDescriptors =
+    imageFrame.photometricInterpretation === 'PALETTE COLOR'
+      ? {
+          red: imageFrame.redPaletteColorLookupTableDescriptor,
+          green: imageFrame.greenPaletteColorLookupTableDescriptor,
+          blue: imageFrame.bluePaletteColorLookupTableDescriptor,
+        }
+      : null;
   // For PALETTE COLOR images, ensure palette bulkdata is loaded before decoding
   if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
     [redData, greenData, blueData] = await Promise.all([
@@ -71,6 +80,9 @@ async function createImage(
         ...options.preScale,
         scalingParameters: scalingParameters as Types.ScalingParameters,
       };
+    } else {
+      // Identity transform (slope 1, intercept 0) or no LUT: treat as non-prescaled so worker does not use scalingParameters.
+      options.preScale.enabled = false;
     }
   }
 
@@ -176,8 +188,61 @@ async function createImage(
         const { rows, columns } = imageFrame;
 
         // For PALETTE COLOR images, assign palette bulkdata after decoding
-        // to avoid copying unnecessary memory to/from the worker
-        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+        // to avoid copying unnecessary memory to/from the worker.
+        // Defensive normalization: NATURAL has e.g. [ArrayBuffer(512)]; the chain
+        // may pass that through or expose Uint8Array(512). Reinterpret as
+        // Uint16Array(256) when descriptor says 16-bit LUT.
+        if (
+          imageFrame.photometricInterpretation === 'PALETTE COLOR' &&
+          paletteDescriptors
+        ) {
+          const normalizeLutIfBytes = (
+            data:
+              | ArrayBufferView
+              | ArrayBuffer
+              | (ArrayBuffer | ArrayBufferView)[]
+              | null
+              | undefined,
+            descriptor: number[] | undefined
+          ): ArrayBufferView | null | undefined => {
+            if (data == null || !descriptor || descriptor.length < 3)
+              return data as ArrayBufferView | null | undefined;
+            const tableLen = descriptor[0];
+            const bits = descriptor[2];
+            if (bits !== 16 || tableLen <= 0)
+              return data as ArrayBufferView | null | undefined;
+            const expectedBytes = tableLen * 2;
+            let view: ArrayBufferView | null = null;
+            if (Array.isArray(data) && data.length > 0) {
+              const first = data[0];
+              if (first instanceof ArrayBuffer) {
+                view = new Uint8Array(first);
+              } else if (ArrayBuffer.isView(first)) {
+                view = first;
+              }
+            } else if (data instanceof ArrayBuffer) {
+              view = new Uint8Array(data);
+            } else if (ArrayBuffer.isView(data)) {
+              view = data;
+            }
+            if (view && view.byteLength === expectedBytes) {
+              return new Uint16Array(view.buffer, view.byteOffset, tableLen);
+            }
+            return data as ArrayBufferView | null | undefined;
+          };
+          imageFrame.redPaletteColorLookupTableData = normalizeLutIfBytes(
+            redData,
+            paletteDescriptors.red
+          ) as typeof redData;
+          imageFrame.greenPaletteColorLookupTableData = normalizeLutIfBytes(
+            greenData,
+            paletteDescriptors.green
+          ) as typeof greenData;
+          imageFrame.bluePaletteColorLookupTableData = normalizeLutIfBytes(
+            blueData,
+            paletteDescriptors.blue
+          ) as typeof blueData;
+        } else if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
           imageFrame.redPaletteColorLookupTableData = redData;
           imageFrame.greenPaletteColorLookupTableData = greenData;
           imageFrame.bluePaletteColorLookupTableData = blueData;
@@ -201,6 +266,63 @@ async function createImage(
                   3 * imageFrame.columns * imageFrame.rows
                 ),
               };
+            }
+            // Debug PALETTE COLOR: log descriptor, relative lengths, and first LUT entries before conversion
+            if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+              const pd = imageFrame.pixelData;
+              const len = pd?.length ?? 0;
+              const sliceSize = Math.min(40, len);
+              const r = imageFrame.redPaletteColorLookupTableData;
+              const g = imageFrame.greenPaletteColorLookupTableData;
+              const b = imageFrame.bluePaletteColorLookupTableData;
+              const desc = imageFrame.redPaletteColorLookupTableDescriptor;
+              const lutLen = (x: unknown) =>
+                x != null &&
+                typeof (x as { length?: number }).length === 'number'
+                  ? (x as { length: number }).length
+                  : null;
+              const lutByteLen = (x: unknown) => {
+                if (x == null) return null;
+                if (x instanceof ArrayBuffer) return x.byteLength;
+                if (ArrayBuffer.isView(x))
+                  return (x as ArrayBufferView).byteLength;
+                return null;
+              };
+              const first10 = (x: unknown) =>
+                x != null &&
+                typeof (x as { length?: number }).length === 'number'
+                  ? Array.from(x as ArrayLike<number>).slice(0, 10)
+                  : null;
+              console.log(
+                '[createImage] PALETTE COLOR before convertColorSpace',
+                {
+                  imageId,
+                  descriptor: desc,
+                  pixelDataLength: len,
+                  pixelDataSlice:
+                    sliceSize > 0 && pd
+                      ? Array.from(
+                          { length: sliceSize },
+                          (_, i) => (pd as ArrayLike<number>)[i]
+                        )
+                      : [],
+                  redLUT: {
+                    length: lutLen(r),
+                    byteLength: lutByteLen(r),
+                    first10: first10(r),
+                  },
+                  greenLUT: {
+                    length: lutLen(g),
+                    byteLength: lutByteLen(g),
+                    first10: first10(g),
+                  },
+                  blueLUT: {
+                    length: lutLen(b),
+                    byteLength: lutByteLen(b),
+                    first10: first10(b),
+                  },
+                }
+              );
             }
             convertColorSpace(imageFrame, imageData.data, useRGBA);
             imageFrame.imageData = imageData;

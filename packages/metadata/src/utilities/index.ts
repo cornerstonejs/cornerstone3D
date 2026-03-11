@@ -1,3 +1,4 @@
+export { getSingleBufferFromArray } from './bulkDataFromArray';
 export { toNumber, toFiniteNumber } from './toNumber';
 export { default as toNumberDefault } from './toNumber';
 export {
