@@ -205,6 +205,31 @@ class VolumeViewport3DV2 extends ViewportV2<
     } as Volume3DCamera & ICamera;
   }
 
+  // TrackballRotateTool preserves 3D view state across resize by round-tripping
+  // through these view-presentation methods.
+  getViewPresentation(): { camera: Volume3DCamera & ICamera } {
+    return {
+      camera: this.getCamera(),
+    };
+  }
+
+  setViewPresentation(
+    viewPresentation?:
+      | { camera?: Partial<Volume3DCamera> }
+      | Partial<Volume3DCamera>
+  ): void {
+    if (!viewPresentation) {
+      return;
+    }
+
+    if ('camera' in viewPresentation && viewPresentation.camera) {
+      this.setCamera(viewPresentation.camera);
+      return;
+    }
+
+    this.setCamera(viewPresentation);
+  }
+
   getProperties(): Volume3DPresentationProps & Volume3DProperties {
     return {
       ...(this.primaryDataId ? this.getPresentation(this.primaryDataId) : {}),
@@ -314,13 +339,19 @@ class VolumeViewport3DV2 extends ViewportV2<
     return rendering.runtime.actors[0];
   }
 
-  resetCameraForResize(): boolean {
+  resetCamera(): boolean {
     const renderer = this.getRenderer();
 
     renderer.resetCamera();
     renderer.resetCameraClippingRange();
     this.camera = this.getCamera();
+    this.render();
+
     return true;
+  }
+
+  resetCameraForResize(): boolean {
+    return this.resetCamera();
   }
 
   resize(): void {

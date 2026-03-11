@@ -7,6 +7,14 @@ import {
   VolumeViewport3DV2,
 } from '@cornerstonejs/core';
 import {
+  addTool,
+  Enums as csToolsEnums,
+  PanTool,
+  ToolGroupManager,
+  TrackballRotateTool,
+  ZoomTool,
+} from '@cornerstonejs/tools';
+import {
   addButtonToToolbar,
   addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
@@ -24,7 +32,9 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 const volumeDataId = 'ct-volume-3d-v2';
 const renderingEngineId = 'volumeViewport3dV2RenderingEngine';
 const viewportId = '3D_VIEWPORT_V2';
+const toolGroupId = 'VOLUME_3D_V2_TOOL_GROUP';
 const volumeViewportType = Enums.ViewportType?.VOLUME_3D_V2 || 'volume3dV2';
+const { MouseBindings } = csToolsEnums;
 
 let viewport: VolumeViewport3DV2 | undefined;
 
@@ -54,7 +64,7 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Use the toolbar to rotate the volume, change the preset, and adjust sampling distance. This example is wired through the new 3D ViewportV2 pipeline.';
+  'Use the toolbar to change the preset and sampling distance. Interaction tools: left-drag rotates, middle-drag pans, and right-drag or mouse wheel zooms.';
 content.append(instructions);
 
 addButtonToToolbar({
@@ -116,6 +126,27 @@ function applyPreset(presetName: string): void {
 
 async function run() {
   await initDemo();
+  addTool(PanTool);
+  addTool(TrackballRotateTool);
+  addTool(ZoomTool);
+
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(TrackballRotateTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Auxiliary }],
+  });
+  toolGroup.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      { mouseButton: MouseBindings.Secondary },
+      { mouseButton: MouseBindings.Wheel },
+    ],
+  });
 
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
@@ -137,6 +168,7 @@ async function run() {
   });
 
   viewport = renderingEngine.getViewport(viewportId) as VolumeViewport3DV2;
+  toolGroup.addViewport(viewportId, renderingEngine.id);
 
   utilities.viewportV2DataSetMetadataProvider.add(volumeDataId, {
     imageIds,
