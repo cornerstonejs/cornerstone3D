@@ -94,25 +94,6 @@ class WSIViewportV2 extends ViewportV2<
     this.getMap()?.render?.();
   }
 
-  setDataPresentation(
-    dataId: string | undefined,
-    props: Partial<WSIDataPresentation>
-  ): void {
-    dataId ??= this.getFirstBinding()?.data.id;
-
-    if (!dataId) {
-      return;
-    }
-
-    super.mergeDataPresentation(dataId, props);
-  }
-
-  getDataPresentation(
-    dataId = this.getFirstBinding()?.data.id
-  ): WSIDataPresentation | undefined {
-    return dataId ? super.getDataPresentationState(dataId) : undefined;
-  }
-
   private getMap(): WSIMapLike | undefined {
     return this.getWSIRendering()?.runtime.map;
   }

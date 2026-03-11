@@ -441,25 +441,6 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
-  setDataPresentation(
-    dataId: string | undefined,
-    props: Partial<PlanarDataPresentation>
-  ): void {
-    dataId ??= this.activeDataId;
-
-    if (!dataId) {
-      return;
-    }
-
-    super.mergeDataPresentation(dataId, props);
-  }
-
-  getDataPresentation(
-    dataId = this.activeDataId
-  ): PlanarDataPresentation | undefined {
-    return dataId ? super.getDataPresentationState(dataId) : undefined;
-  }
-
   setImageIdIndex(imageIdIndex: number): Promise<string> {
     const imageIds = this.getImageIds();
 

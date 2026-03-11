@@ -227,25 +227,6 @@ class VolumeViewport3DV2 extends ViewportV2<
     this.setCamera(viewPresentation);
   }
 
-  setDataPresentation(
-    dataId: string | undefined,
-    props: Partial<Volume3DDataPresentation>
-  ): void {
-    dataId ??= this.primaryDataId;
-
-    if (!dataId) {
-      return;
-    }
-
-    super.mergeDataPresentation(dataId, props);
-  }
-
-  getDataPresentation(
-    dataId = this.primaryDataId
-  ): Volume3DDataPresentation | undefined {
-    return dataId ? super.getDataPresentationState(dataId) : undefined;
-  }
-
   getVolumeId(): string | undefined {
     const binding = this.getCurrentBinding();
 

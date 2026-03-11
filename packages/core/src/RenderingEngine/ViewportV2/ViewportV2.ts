@@ -243,19 +243,18 @@ abstract class ViewportV2<
   }
 
   /**
-   * Viewport families decide how callers select a target dataset when updating
-   * per-dataset presentation state.
+   * Updates the stored per-dataset presentation state for a specific dataset.
    */
-  abstract setDataPresentation(
-    dataId: DataId | undefined,
-    props: Partial<TDataPresentation>
-  ): void;
+  setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void {
+    this.mergeDataPresentation(dataId, props);
+  }
 
   /**
-   * Viewport families decide which dataset is considered current when callers
-   * omit an explicit dataset identifier.
+   * Returns the stored presentation state for a specific dataset.
    */
-  abstract getDataPresentation(dataId?: DataId): TDataPresentation | undefined;
+  getDataPresentation(dataId: DataId): TDataPresentation | undefined {
+    return this.getDataPresentationState(dataId);
+  }
 
   /**
    * Compatibility helper for tool APIs that operate on scalar zoom state.

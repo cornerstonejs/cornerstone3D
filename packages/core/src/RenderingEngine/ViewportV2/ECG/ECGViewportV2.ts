@@ -192,25 +192,6 @@ class ECGViewportV2 extends ViewportV2<
   render(): void {
     this.renderBindings();
   }
-
-  setDataPresentation(
-    dataId: string | undefined,
-    props: Partial<ECGDataPresentation>
-  ): void {
-    dataId ??= this.getFirstBinding()?.data.id;
-
-    if (!dataId) {
-      return;
-    }
-
-    super.mergeDataPresentation(dataId, props);
-  }
-
-  getDataPresentation(
-    dataId = this.getFirstBinding()?.data.id
-  ): ECGDataPresentation | undefined {
-    return dataId ? super.getDataPresentationState(dataId) : undefined;
-  }
 }
 
 export default ECGViewportV2;
