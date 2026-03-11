@@ -11,12 +11,7 @@ export class DefaultVideoDataProvider implements DataProvider {
     const stream = loadVideoStreamMetadata(sourceDataId);
 
     return {
-      id: dataId,
       type: 'video',
-      metadata: {
-        modality: stream.modality,
-        imageDataMetadata: stream.metadata,
-      },
       payload: {
         renderedUrl: stream.renderedUrl,
         fps: stream.cineRate || 30,

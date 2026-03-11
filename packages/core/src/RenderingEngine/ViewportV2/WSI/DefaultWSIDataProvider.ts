@@ -29,12 +29,7 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
       client: dataSet.options.webClient,
     });
     return {
-      id: dataId,
       type: 'wsi',
-      metadata: {
-        imageDataMetadata: loadedData.metadata,
-        frameOfReferenceUID: loadedData.frameOfReferenceUID,
-      },
       payload: {
         imageIds: dataSet.imageIds,
         client: dataSet.options.webClient,

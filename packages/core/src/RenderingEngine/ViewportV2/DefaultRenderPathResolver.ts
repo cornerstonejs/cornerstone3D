@@ -1,6 +1,6 @@
 import type {
   BaseViewportRenderContext,
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   RenderPathDefinition,
   RenderPathResolver,
@@ -28,7 +28,7 @@ export class DefaultRenderPathResolver implements RenderPathResolver {
   resolve<TContext extends BaseViewportRenderContext>(
     type: ViewportType,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): RenderPathDefinition<TContext, BaseViewportRenderContext> {
     const path = this.paths.find(
       (candidate) => candidate.type === type && candidate.matches(data, options)

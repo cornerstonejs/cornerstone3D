@@ -166,7 +166,7 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   setPlaybackRate(playbackRate: number): void {
-    const dataId = this.getFirstBinding()?.data.id;
+    const dataId = this.getFirstBinding()?.dataId;
 
     if (!dataId) {
       return;
@@ -217,7 +217,7 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   getImageIds(): string[] {
-    const dataId = this.getFirstBinding()?.data.id;
+    const dataId = this.getFirstBinding()?.dataId;
     const payload = this.getPayload();
 
     if (!dataId || !payload) {
@@ -287,7 +287,7 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   removeDataId(dataId: string): void {
-    const firstDataId = this.getFirstBinding()?.data.id;
+    const firstDataId = this.getFirstBinding()?.dataId;
 
     super.removeDataId(dataId);
 
@@ -340,7 +340,7 @@ class VideoViewportV2 extends ViewportV2<
       return;
     }
 
-    const dataId = this.getFirstBinding()?.data.id;
+    const dataId = this.getFirstBinding()?.dataId;
     const objectFit =
       (dataId ? this.getDataPresentation(dataId)?.objectFit : undefined) ??
       'contain';

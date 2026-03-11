@@ -1,5 +1,5 @@
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -19,10 +19,11 @@ import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
 export class HtmlVideoRenderPath
   implements RenderPath<VideoElementRenderContext>
 {
-  async attach(
+  async addData(
     ctx: VideoElementRenderContext,
+    dataId: string,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<VideoElementRendering> {
     const payload = data.payload as VideoStreamPayload;
     const element = document.createElement('video');
@@ -61,7 +62,7 @@ export class HtmlVideoRenderPath
     };
 
     return {
-      id: `rendering:${data.id}:${options.renderMode}`,
+      id: `rendering:${dataId}:${options.renderMode}`,
       renderMode: 'video2d',
       element,
       payload: normalizedPayload,
@@ -165,7 +166,10 @@ export class HtmlVideoRenderPath
     return element.currentSrc || element.src;
   }
 
-  detach(_ctx: VideoElementRenderContext, rendering: MountedRendering): void {
+  removeData(
+    _ctx: VideoElementRenderContext,
+    rendering: MountedRendering
+  ): void {
     const { element } = rendering as VideoElementRendering;
     element.pause();
     element.remove();
@@ -228,7 +232,7 @@ export class HtmlVideoPath
   readonly id = 'video:html-element';
   readonly type = ViewportType.VIDEO_V2;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
     return data.type === 'video' && options.renderMode === 'video2d';
   }
 

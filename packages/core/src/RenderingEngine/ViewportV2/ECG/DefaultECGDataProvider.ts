@@ -9,14 +9,10 @@ import { getViewportV2SourceDataId } from '../viewportV2DataSetAccess';
 export class DefaultECGDataProvider implements DataProvider {
   async load(dataId: string): Promise<LogicalDataObject> {
     const sourceDataId = getViewportV2SourceDataId(dataId);
-    const { waveform, calibration } = await loadECGWaveform(sourceDataId);
+    const { waveform } = await loadECGWaveform(sourceDataId);
 
     return {
-      id: dataId,
       type: 'ecg',
-      metadata: {
-        calibration,
-      },
       payload: waveform as ECGWaveformPayload,
     };
   }

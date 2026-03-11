@@ -9,7 +9,7 @@ import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBT
 import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -37,10 +37,11 @@ import {
 export class VtkVolumeMapperRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
 {
-  async attach(
+  async addData(
     ctx: PlanarVtkVolumeAdapterContext,
+    dataId: string,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<PlanarVolumeMapperRendering> {
     const payload = data.payload as PlanarPayload;
     const imageVolume = payload.imageVolume;
@@ -70,7 +71,7 @@ export class VtkVolumeMapperRenderPath
       .getRange();
 
     const rendering: PlanarVolumeMapperRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
+      id: `rendering:${dataId}:${options.renderMode}`,
       renderMode: 'vtkVolume',
       actor,
       imageVolume,
@@ -235,7 +236,7 @@ export class VtkVolumeMapperRenderPath
     ctx.display.requestRender();
   }
 
-  detach(
+  removeData(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
@@ -257,7 +258,7 @@ export class VtkVolumeMapperPath
   readonly id = 'planar:vtk-volume-mapper';
   readonly type = ViewportType.PLANAR_V2;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkVolume';
   }
 

@@ -106,7 +106,7 @@ export function selectPlanarRenderPath(
   options: PlanarSetDataOptions = {}
 ): SelectedPlanarRenderPath {
   if (!dataSet.imageIds.length) {
-    throw new Error('[PlanarViewportV2] Cannot attach an empty planar dataset');
+    throw new Error('[PlanarViewportV2] Cannot add an empty planar dataset');
   }
 
   const orientation = options.orientation || OrientationAxis.ACQUISITION;

@@ -7,7 +7,7 @@ import type { IImageData, Point2, Point3 } from '../../../types';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -36,10 +36,11 @@ export class CpuVolumeSliceRenderPath
 {
   private readonly sampler = new PlanarCPUVolumeSampler();
 
-  async attach(
+  async addData(
     ctx: PlanarCpuVolumeAdapterContext,
+    dataId: string,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<PlanarCpuVolumeRendering> {
     const payload = data.payload as PlanarPayload;
 
@@ -63,7 +64,7 @@ export class CpuVolumeSliceRenderPath
     ctx.display.activateRenderMode('cpuVolume');
 
     const rendering: PlanarCpuVolumeRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
+      id: `rendering:${dataId}:${options.renderMode}`,
       renderMode: 'cpuVolume',
       actor,
       mapper,
@@ -364,7 +365,7 @@ export class CpuVolumeSliceRenderPath
     runtime.renderingInvalidated = true;
   }
 
-  detach(
+  removeData(
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
@@ -413,7 +414,7 @@ export class CpuVolumeSlicePath
   readonly id = 'planar:cpu-volume-slice';
   readonly type = ViewportType.PLANAR_V2;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'cpuVolume';
   }
 

@@ -13,7 +13,7 @@ import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import renderingEngineCache from '../../renderingEngineCache';
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
 } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
@@ -200,7 +200,7 @@ class PlanarViewportV2 extends ViewportV2<
 
   async setDataId(
     dataId: string,
-    options: PlanarSetDataOptions | DataAttachmentOptions = {}
+    options: PlanarSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
     const planarOptions = options as PlanarSetDataOptions;
     const { data, payload, selectedPath } = await this.loadPlanarData(
@@ -211,7 +211,7 @@ class PlanarViewportV2 extends ViewportV2<
     this.activeDataId = dataId;
     this.applyLoadedPlanarCamera(planarOptions, payload, selectedPath);
 
-    const renderingId = await this.attachLoadedData(dataId, data, {
+    const renderingId = await this.addLoadedData(dataId, data, {
       renderMode: selectedPath.renderMode,
     });
 

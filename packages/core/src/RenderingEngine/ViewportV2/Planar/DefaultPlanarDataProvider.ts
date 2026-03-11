@@ -48,14 +48,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       imageVolume.load();
 
       return {
-        id: dataId,
         type: 'image',
-        metadata: {
-          imageIds: imageVolume.imageIds || dataSet.imageIds,
-          initialImageIdIndex: clampedImageIdIndex,
-          acquisitionOrientation: options.acquisitionOrientation,
-          volumeId,
-        },
         payload: {
           imageIds: imageVolume.imageIds || dataSet.imageIds,
           initialImageIdIndex: clampedImageIdIndex,
@@ -72,15 +65,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     );
 
     return {
-      id: dataId,
       type: 'image',
-      metadata: {
-        imageIds: dataSet.imageIds,
-        initialImageIdIndex: clampedImageIdIndex,
-        imageId: image.imageId,
-        acquisitionOrientation: options.acquisitionOrientation,
-        volumeId: options.volumeId,
-      },
       payload: {
         imageIds: dataSet.imageIds,
         image,

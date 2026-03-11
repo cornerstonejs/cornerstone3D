@@ -4,7 +4,7 @@ import triggerEvent from '../../../utilities/triggerEvent';
 import { getDicomMicroscopyViewer } from '../../../utilities/WSIUtilities';
 import { Transform } from '../../helpers/cpuFallback/rendering/transform';
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -25,10 +25,11 @@ const EVENT_POSTRENDER = 'postrender';
 export class DicomMicroscopyRenderPath
   implements RenderPath<WSIViewportRenderContext>
 {
-  async attach(
+  async addData(
     ctx: WSIViewportRenderContext,
+    dataId: string,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<WSIRendering> {
     const payload = data.payload as WSIPayload;
     const DicomMicroscopyViewer = await getDicomMicroscopyViewer();
@@ -55,14 +56,14 @@ export class DicomMicroscopyRenderPath
     viewer.deactivateDragPanInteraction();
 
     const map = viewer.getMap();
-    const renderingId = `rendering:${data.id}:${options.renderMode}`;
+    const renderingId = `rendering:${dataId}:${options.renderMode}`;
     const postrenderHandler = () => {
       triggerEvent(ctx.element, EVENTS.IMAGE_RENDERED, {
         element: ctx.element,
         viewportId: ctx.viewportId,
         rendering: {
           id: renderingId,
-          dataId: data.id,
+          dataId,
           renderMode: 'wsi2d',
         },
       });
@@ -153,7 +154,10 @@ export class DicomMicroscopyRenderPath
     return (rendering as WSIRendering).payload.frameOfReferenceUID ?? undefined;
   }
 
-  detach(_ctx: WSIViewportRenderContext, rendering: MountedRendering): void {
+  removeData(
+    _ctx: WSIViewportRenderContext,
+    rendering: MountedRendering
+  ): void {
     const { map, microscopyElement, viewer, postrenderHandler } =
       rendering as WSIRendering;
 
@@ -169,7 +173,7 @@ export class DicomMicroscopyPath
   readonly id = 'wsi:dicom-microscopy-viewer';
   readonly type = ViewportType.WHOLE_SLIDE;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
     return data.type === 'wsi' && options.renderMode === 'wsi2d';
   }
 

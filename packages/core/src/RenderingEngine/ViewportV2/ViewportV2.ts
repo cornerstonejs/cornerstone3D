@@ -1,7 +1,7 @@
 import type { Point2, Point3 } from '../../types';
 import type {
   BaseViewportRenderContext,
-  DataAttachmentOptions,
+  DataAddOptions,
   DataId,
   DataProvider,
   LogicalDataObject,
@@ -28,7 +28,7 @@ import type ViewportType from '../../enums/ViewportType';
  * - viewport-family-specific public APIs
  *
  * Concrete render paths are expected to own:
- * - runtime attachment and detachment
+ * - runtime add/remove lifecycle
  * - camera interpretation for that render path
  * - per-dataset render-state application
  * - render-path-specific coordinate transforms
@@ -54,15 +54,15 @@ abstract class ViewportV2<
   protected camera!: TCamera;
 
   /**
-   * Loads a logical dataset through the viewport data provider and attaches it
+   * Loads a logical dataset through the viewport data provider and adds it
    * through the render-path resolver.
    */
   async setDataId(
     dataId: DataId,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<RenderingId> {
     const data = await this.dataProvider.load(dataId, options);
-    return this.attachLoadedData(dataId, data, options);
+    return this.addLoadedData(dataId, data, options);
   }
 
   /**
@@ -72,10 +72,10 @@ abstract class ViewportV2<
    * state, camera, transform, resize, and render requests can be routed back
    * to the correct render-path runtime.
    */
-  protected async attachLoadedData(
+  protected async addLoadedData(
     dataId: DataId,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<RenderingId> {
     const path = this.renderPathResolver.resolve<TContext>(
       this.type,
@@ -87,12 +87,13 @@ abstract class ViewportV2<
     const existing = this.bindings.get(dataId);
 
     if (existing) {
-      existing.detach();
+      existing.removeData();
     }
 
-    const rendering = await renderPath.attach(ctx, data, options);
+    const rendering = await renderPath.addData(ctx, dataId, data, options);
 
     this.bindings.set(dataId, {
+      dataId,
       data,
       rendering,
       updateDataPresentation: (props) => {
@@ -131,8 +132,8 @@ abstract class ViewportV2<
             renderPath.resize?.(ctx, rendering);
           }
         : undefined,
-      detach: () => {
-        renderPath.detach(ctx, rendering);
+      removeData: () => {
+        renderPath.removeData(ctx, rendering);
       },
     });
 
@@ -154,7 +155,7 @@ abstract class ViewportV2<
 
   /**
    * Stores per-dataset render state and forwards it immediately when
-   * that dataset is already attached.
+   * that dataset is already added.
    */
   protected setDataPresentationState(
     dataId: DataId,
@@ -204,7 +205,7 @@ abstract class ViewportV2<
 
   /**
    * Merges object-like updates into the stored per-dataset render state and
-   * forwards the result immediately when attached.
+   * forwards the result immediately when mounted.
    */
   protected mergeDataPresentation(
     dataId: DataId,
@@ -257,7 +258,7 @@ abstract class ViewportV2<
   }
 
   /**
-   * Returns the mounted render mode for a specific dataset when attached.
+   * Returns the mounted render mode for a specific dataset when present.
    */
   getDataRenderMode(dataId: DataId): string | undefined {
     return this.getBinding(dataId)?.rendering.renderMode;
@@ -323,7 +324,7 @@ abstract class ViewportV2<
   }
 
   /**
-   * Detaches one dataset binding and removes any stored per-dataset render
+   * Removes one dataset binding and clears any stored per-dataset render
    * state for that dataset.
    */
   removeDataId(dataId: DataId): void {
@@ -333,7 +334,7 @@ abstract class ViewportV2<
       return;
     }
 
-    binding.detach();
+    binding.removeData();
     this.bindings.delete(dataId);
     this.dataPresentation.delete(dataId);
     this.render();
@@ -349,7 +350,7 @@ abstract class ViewportV2<
   }
 
   /**
-   * Returns the first attached binding when a viewport family does not have a
+   * Returns the first mounted binding when a viewport family does not have a
    * stronger notion of "current" selection.
    */
   protected getFirstBinding(): RenderingBinding<TDataPresentation> | undefined {
@@ -367,7 +368,7 @@ abstract class ViewportV2<
   }
 
   /**
-   * Iterates attached bindings without exposing the underlying map to
+   * Iterates mounted bindings without exposing the underlying map to
    * subclasses.
    */
   protected forEachBinding(
@@ -394,7 +395,7 @@ abstract class ViewportV2<
   }
 
   /**
-   * Invokes resize on each attached binding.
+   * Invokes resize on each mounted binding.
    */
   protected resizeBindings(): void {
     this.forEachBinding((binding) => {

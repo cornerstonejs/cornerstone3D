@@ -122,7 +122,7 @@ class ECGViewportV2 extends ViewportV2<
       return;
     }
 
-    const dataId = firstBinding.data.id;
+    const dataId = firstBinding.dataId;
     const waveform = firstBinding.data.payload as ECGWaveformPayload;
     const current = this.getDataPresentation(dataId) || {};
     const nextVisibleChannels = new Set(
@@ -147,7 +147,7 @@ class ECGViewportV2 extends ViewportV2<
       return [];
     }
 
-    const dataId = firstBinding.data.id;
+    const dataId = firstBinding.dataId;
     const waveform = firstBinding.data.payload as ECGWaveformPayload;
     const visibleChannels = new Set(
       this.getDataPresentation(dataId)?.visibleChannels ||

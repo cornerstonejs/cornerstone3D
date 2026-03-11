@@ -6,7 +6,7 @@ export { default as ViewportV2 } from './ViewportV2';
 export type {
   BaseViewportRenderContext,
   BasePresentationProps,
-  DataAttachmentOptions,
+  DataAddOptions,
   DataId,
   DataProvider,
   ICanvasWorldViewport,

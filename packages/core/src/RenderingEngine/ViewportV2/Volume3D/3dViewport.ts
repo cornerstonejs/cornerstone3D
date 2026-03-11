@@ -2,7 +2,7 @@ import { ViewportType } from '../../../enums';
 import type { ActorEntry, ICamera, IImageData } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import renderingEngineCache from '../../renderingEngineCache';
-import type { DataAttachmentOptions } from '../ViewportArchitectureTypes';
+import type { DataAddOptions } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
@@ -128,7 +128,7 @@ class VolumeViewport3DV2 extends ViewportV2<
 
   async setDataId(
     dataId: string,
-    options: Volume3DSetDataOptions | DataAttachmentOptions = {}
+    options: Volume3DSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
     const renderMode = this.resolveRenderMode(
       dataId,

@@ -16,7 +16,7 @@ import {
   getPlanarCameraState,
 } from '../../helpers/planarImageRendering';
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -41,10 +41,11 @@ import { buildPlanarImageData } from './CpuImageSliceRenderPath';
 export class VtkImageMapperRenderPath
   implements RenderPath<PlanarVtkImageAdapterContext>
 {
-  async attach(
+  async addData(
     ctx: PlanarVtkImageAdapterContext,
+    dataId: string,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<PlanarImageMapperRendering> {
     const payload = data.payload as PlanarPayload;
 
@@ -67,7 +68,7 @@ export class VtkImageMapperRenderPath
     applyCpuEquivalentInitialScale(ctx, payload.image);
 
     return {
-      id: `rendering:${data.id}:${options.renderMode}`,
+      id: `rendering:${dataId}:${options.renderMode}`,
       renderMode: 'vtkImage',
       actor,
       currentImage: payload.image,
@@ -202,7 +203,10 @@ export class VtkImageMapperRenderPath
     );
   }
 
-  detach(ctx: PlanarVtkImageAdapterContext, rendering: MountedRendering): void {
+  removeData(
+    ctx: PlanarVtkImageAdapterContext,
+    rendering: MountedRendering
+  ): void {
     const { actor } = rendering as PlanarImageMapperRendering;
 
     ctx.vtk.renderer.removeActor(actor);
@@ -219,7 +223,7 @@ export class VtkImageMapperPath
   readonly id = 'planar:vtk-image-mapper';
   readonly type = ViewportType.PLANAR_V2;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkImage';
   }
 

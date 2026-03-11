@@ -13,7 +13,7 @@ export type ViewportRenderContextType =
   | string;
 export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi' | 'geometry';
 
-export interface DataAttachmentOptions {
+export interface DataAddOptions {
   renderMode: string;
 }
 
@@ -23,15 +23,13 @@ export interface BasePresentationProps {
 }
 
 export interface LogicalDataObject<TPayload = unknown> {
-  id: DataId;
   type: LogicalDataType;
-  metadata: Record<string, unknown>;
   payload: TPayload;
 }
 
 // Mounted rendering state is render-path-specific; logical dataset identity
-// lives on the binding key and the loaded LogicalDataObject. The controller
-// treats this object as opaque even though adapter fields are stored flat.
+// lives on the binding key and explicit dataId argument. The controller treats
+// this object as opaque even though adapter fields are stored flat.
 export type MountedRendering<
   TRendering extends { renderMode: string } = { renderMode: string },
 > = {
@@ -46,10 +44,11 @@ export interface BaseViewportRenderContext {
 export interface RenderPath<
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
 > {
-  attach(
+  addData(
     ctx: TContext,
+    dataId: DataId,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<MountedRendering>;
 
   updateDataPresentation(
@@ -87,7 +86,7 @@ export interface RenderPath<
 
   resize?(ctx: TContext, rendering: MountedRendering): void;
 
-  detach(ctx: TContext, rendering: MountedRendering): void;
+  removeData(ctx: TContext, rendering: MountedRendering): void;
 }
 
 export interface RenderPathDefinition<
@@ -97,7 +96,7 @@ export interface RenderPathDefinition<
   id: string;
   type: ViewportType;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean;
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean;
 
   createRenderPath(): RenderPath<TAdapterContext>;
 
@@ -115,7 +114,7 @@ export interface RenderPathResolver {
   resolve<TContext extends BaseViewportRenderContext>(
     type: ViewportType,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): RenderPathDefinition<TContext, BaseViewportRenderContext>;
 }
 
@@ -124,6 +123,7 @@ export interface DataProvider {
 }
 
 export interface RenderingBinding<TPresentation = unknown> {
+  dataId: DataId;
   data: LogicalDataObject;
   rendering: MountedRendering;
   updateDataPresentation(props: TPresentation): void;
@@ -134,7 +134,7 @@ export interface RenderingBinding<TPresentation = unknown> {
   getImageData?(): unknown;
   render?(): void;
   resize?(): void;
-  detach(): void;
+  removeData(): void;
 }
 
 export interface ViewportController<
@@ -144,10 +144,7 @@ export interface ViewportController<
   readonly id: ViewportId;
   readonly type: ViewportType;
 
-  setDataId(
-    dataId: DataId,
-    options: DataAttachmentOptions
-  ): Promise<RenderingId>;
+  setDataId(dataId: DataId, options: DataAddOptions): Promise<RenderingId>;
   removeDataId(dataId: DataId): void;
 
   setCamera(camera: Partial<TCamera>): void;

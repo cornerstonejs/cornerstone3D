@@ -23,7 +23,7 @@ import type {
   VOIRange,
 } from '../../../types';
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -50,10 +50,11 @@ import {
 export class CpuImageSliceRenderPath
   implements RenderPath<PlanarCpuImageAdapterContext>
 {
-  async attach(
+  async addData(
     ctx: PlanarCpuImageAdapterContext,
+    dataId: string,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<PlanarCpuImageRendering> {
     const payload = data.payload as PlanarPayload;
 
@@ -74,7 +75,7 @@ export class CpuImageSliceRenderPath
     enabledElement.transform = calculateTransform(enabledElement);
 
     return {
-      id: `rendering:${data.id}:${options.renderMode}`,
+      id: `rendering:${dataId}:${options.renderMode}`,
       renderMode: 'cpu2d',
       enabledElement,
       payload,
@@ -230,7 +231,10 @@ export class CpuImageSliceRenderPath
     resizeEnabledElement((rendering as PlanarCpuImageRendering).enabledElement);
   }
 
-  detach(ctx: PlanarCpuImageAdapterContext, rendering: MountedRendering): void {
+  removeData(
+    ctx: PlanarCpuImageAdapterContext,
+    rendering: MountedRendering
+  ): void {
     const { enabledElement } = rendering as PlanarCpuImageRendering;
 
     ctx.cpu.context.setTransform(1, 0, 0, 1, 0, 0);
@@ -254,7 +258,7 @@ export class CpuImageSlicePath
   readonly id = 'planar:cpu-image-slice';
   readonly type = ViewportType.PLANAR_V2;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'cpu2d';
   }
 

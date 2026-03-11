@@ -11,7 +11,7 @@ import {
 } from '../../../utilities/ECGUtilities';
 import type { Point2, Point3 } from '../../../types';
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -27,13 +27,14 @@ import type {
 } from './ECGViewportV2Types';
 
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
-  async attach(
+  async addData(
     ctx: ECGCanvasRenderContext,
+    dataId: string,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<ECGCanvasRendering> {
     return {
-      id: `rendering:${data.id}:${options.renderMode}`,
+      id: `rendering:${dataId}:${options.renderMode}`,
       renderMode: 'signal2d',
       canvas: ctx.canvas,
       canvasContext: ctx.canvasContext,
@@ -147,7 +148,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     drawFrame(ctx, rendering as ECGCanvasRendering);
   }
 
-  detach(_ctx: ECGCanvasRenderContext, _rendering: MountedRendering): void {
+  removeData(_ctx: ECGCanvasRenderContext, _rendering: MountedRendering): void {
     // Canvas lifecycle is owned by the viewport element.
   }
 }
@@ -158,7 +159,7 @@ export class CanvasECGPath
   readonly id = 'ecg:canvas-signal';
   readonly type = ViewportType.ECG;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
     return data.type === 'ecg' && options.renderMode === 'signal2d';
   }
 

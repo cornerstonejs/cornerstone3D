@@ -13,7 +13,7 @@ import {
   worldToCanvasContextPool,
 } from '../../helpers/vtkCanvasCoordinateTransforms';
 import type {
-  DataAttachmentOptions,
+  DataAddOptions,
   LogicalDataObject,
   MountedRendering,
   RenderPathDefinition,
@@ -33,10 +33,11 @@ import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 export class VtkVolume3DRenderPath
   implements RenderPath<Volume3DVtkVolumeAdapterContext>
 {
-  async attach(
+  async addData(
     ctx: Volume3DVtkVolumeAdapterContext,
+    dataId: string,
     data: LogicalDataObject,
-    options: DataAttachmentOptions
+    options: DataAddOptions
   ): Promise<Volume3DVolumeRendering> {
     const payload = data.payload as Volume3DVolumePayload;
     const hadVolume = ctx.vtk.renderer.getVolumes().length > 0;
@@ -66,7 +67,7 @@ export class VtkVolume3DRenderPath
       .getRange();
 
     return {
-      id: `rendering:${data.id}:${options.renderMode}`,
+      id: `rendering:${dataId}:${options.renderMode}`,
       renderMode: 'vtkVolume3d',
       actor,
       defaultVOIRange: defaultRange
@@ -152,7 +153,7 @@ export class VtkVolume3DRenderPath
     ctx.display.requestRender();
   }
 
-  detach(
+  removeData(
     ctx: Volume3DVtkVolumeAdapterContext,
     rendering: MountedRendering
   ): void {
@@ -174,7 +175,7 @@ export class VtkVolume3DPath
   readonly id = 'volume3d:vtk-volume';
   readonly type = ViewportType.VOLUME_3D_V2;
 
-  matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
+  matches(data: LogicalDataObject, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkVolume3d';
   }
 
