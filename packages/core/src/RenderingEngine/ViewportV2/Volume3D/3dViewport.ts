@@ -222,8 +222,11 @@ class VolumeViewport3DV2 extends ViewportV2<
       return;
     }
 
-    if ('camera' in viewPresentation && viewPresentation.camera) {
-      this.setCamera(viewPresentation.camera);
+    if (isVolume3DViewPresentation(viewPresentation)) {
+      if (viewPresentation.camera) {
+        this.setCamera(viewPresentation.camera);
+      }
+
       return;
     }
 
@@ -428,3 +431,13 @@ class VolumeViewport3DV2 extends ViewportV2<
 }
 
 export default VolumeViewport3DV2;
+
+function isVolume3DViewPresentation(
+  viewPresentation: unknown
+): viewPresentation is { camera?: Partial<Volume3DCamera> } {
+  return (
+    Boolean(viewPresentation) &&
+    typeof viewPresentation === 'object' &&
+    'camera' in viewPresentation
+  );
+}
