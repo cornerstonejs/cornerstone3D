@@ -22,13 +22,10 @@ export interface BasePresentationProps {
   opacity?: number;
 }
 
-export type LoadedData<TData extends object = Record<string, unknown>> = {
+export type LoadedData<TData = unknown> = {
   id: DataId;
   type: LogicalDataType;
 } & TData;
-
-export type LogicalDataObject<TData extends object = Record<string, unknown>> =
-  LoadedData<TData>;
 
 // Mounted rendering state is render-path-specific; logical dataset identity
 // lives on the binding key and the loaded dataset. The controller

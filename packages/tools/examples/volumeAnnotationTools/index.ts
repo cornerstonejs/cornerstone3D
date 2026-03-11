@@ -208,7 +208,7 @@ async function run() {
   );
 
   viewports.forEach((viewport) => {
-    viewport.setProperties({
+    viewport.setDataPresentation(dataId, {
       voiRange: ctVoiRange,
     });
     viewport.render();

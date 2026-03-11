@@ -394,44 +394,6 @@ class PlanarViewportV2 extends ViewportV2<
     });
   }
 
-  setProperties(
-    props: Partial<PlanarDataPresentation> = {},
-    _volumeId?: string
-  ): void {
-    const dataId = this.getCurrentBinding()?.data.id;
-
-    if (!dataId) {
-      return;
-    }
-
-    this.setDataPresentation(dataId, props);
-  }
-
-  getProperties(_volumeId?: string): PlanarDataPresentation {
-    const dataId = this.getCurrentBinding()?.data.id;
-
-    if (!dataId) {
-      return {};
-    }
-
-    return {
-      ...(this.getDataPresentation(dataId) || {}),
-    };
-  }
-
-  resetProperties(_volumeId?: string): void {
-    const dataId = this.getCurrentBinding()?.data.id;
-
-    if (!dataId) {
-      return;
-    }
-
-    this.setDataPresentationState(dataId, {
-      visible: true,
-      opacity: 1,
-    });
-  }
-
   getImageData() {
     return this.getCurrentBinding()?.getImageData?.();
   }
