@@ -69,7 +69,6 @@ export class VtkImageMapperRenderPath
 
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
-      dataId: data.id,
       renderMode: 'vtkImage',
       runtime: {
         actor,

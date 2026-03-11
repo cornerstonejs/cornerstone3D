@@ -71,7 +71,6 @@ export class VtkVolumeMapperRenderPath
 
     const rendering: PlanarVolumeMapperRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
-      dataId: data.id,
       renderMode: 'vtkVolume',
       runtime: {
         actor,

@@ -29,9 +29,10 @@ export interface LogicalDataObject<TPayload = unknown> {
   payload: TPayload;
 }
 
+// Mounted rendering state is runtime-specific; logical dataset identity lives
+// on the binding key and the loaded LogicalDataObject.
 export interface MountedRendering<TRuntime = unknown> {
   id: RenderingId;
-  dataId: DataId;
   renderMode: string;
   runtime: TRuntime;
 }

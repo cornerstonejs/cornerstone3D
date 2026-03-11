@@ -79,7 +79,6 @@ export class DicomMicroscopyRenderPath
 
     return {
       id: renderingId,
-      dataId: data.id,
       renderMode: 'wsi2d',
       runtime: {
         microscopyElement,

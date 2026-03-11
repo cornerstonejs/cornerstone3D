@@ -85,71 +85,59 @@ abstract class ViewportV2<
       options
     );
     const renderPath = path.createRenderPath();
-    const renderPathContext =
-      path.selectContext?.(this.renderContext) ?? this.renderContext;
+    const ctx = path.selectContext?.(this.renderContext) ?? this.renderContext;
     const existing = this.bindings.get(dataId);
 
     if (existing) {
       existing.detach();
     }
 
-    const rendering = await renderPath.attach(renderPathContext, data, options);
+    const rendering = await renderPath.attach(ctx, data, options);
 
     this.bindings.set(dataId, {
       data,
       rendering,
       updatePresentation: (props) => {
-        renderPath.updatePresentation(renderPathContext, rendering, props);
+        renderPath.updatePresentation(ctx, rendering, props);
       },
       updateCamera: (camera) => {
-        renderPath.updateCamera(renderPathContext, rendering, camera);
+        renderPath.updateCamera(ctx, rendering, camera);
       },
       updateProperties: (properties) => {
-        renderPath.updateProperties(renderPathContext, rendering, properties);
+        renderPath.updateProperties(ctx, rendering, properties);
       },
       canvasToWorld: renderPath.canvasToWorld
         ? (canvasPos) => {
-            return renderPath.canvasToWorld?.(
-              renderPathContext,
-              rendering,
-              canvasPos
-            );
+            return renderPath.canvasToWorld?.(ctx, rendering, canvasPos);
           }
         : undefined,
       worldToCanvas: renderPath.worldToCanvas
         ? (worldPos) => {
-            return renderPath.worldToCanvas?.(
-              renderPathContext,
-              rendering,
-              worldPos
-            );
+            return renderPath.worldToCanvas?.(ctx, rendering, worldPos);
           }
         : undefined,
       getFrameOfReferenceUID: renderPath.getFrameOfReferenceUID
         ? () => {
-            return renderPath.getFrameOfReferenceUID?.(
-              renderPathContext,
-              rendering
-            );
+            return renderPath.getFrameOfReferenceUID?.(ctx, rendering);
           }
         : undefined,
       getImageData: renderPath.getImageData
         ? () => {
-            return renderPath.getImageData?.(renderPathContext, rendering);
+            return renderPath.getImageData?.(ctx, rendering);
           }
         : undefined,
       render: renderPath.render
         ? () => {
-            renderPath.render?.(renderPathContext, rendering);
+            renderPath.render?.(ctx, rendering);
           }
         : undefined,
       resize: renderPath.resize
         ? () => {
-            renderPath.resize?.(renderPathContext, rendering);
+            renderPath.resize?.(ctx, rendering);
           }
         : undefined,
       detach: () => {
-        renderPath.detach(renderPathContext, rendering);
+        renderPath.detach(ctx, rendering);
       },
     });
 

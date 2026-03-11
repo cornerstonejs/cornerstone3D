@@ -57,7 +57,6 @@ export class VtkGeometry3DRenderPath
 
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
-      dataId: data.id,
       renderMode: 'vtkGeometry3d',
       runtime: {
         actors,

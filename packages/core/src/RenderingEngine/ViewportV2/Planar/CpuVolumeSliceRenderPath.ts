@@ -63,7 +63,6 @@ export class CpuVolumeSliceRenderPath
 
     const rendering: PlanarCpuVolumeRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
-      dataId: data.id,
       renderMode: 'cpuVolume',
       runtime: {
         actor,

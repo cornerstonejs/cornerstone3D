@@ -35,7 +35,6 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   ): Promise<ECGCanvasRendering> {
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
-      dataId: data.id,
       renderMode: 'signal2d',
       runtime: {
         canvas: ctx.canvas,

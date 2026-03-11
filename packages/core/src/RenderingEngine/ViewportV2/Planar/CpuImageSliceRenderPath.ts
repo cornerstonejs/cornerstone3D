@@ -77,7 +77,6 @@ export class CpuImageSliceRenderPath
 
     return {
       id: `rendering:${data.id}:${options.renderMode}`,
-      dataId: data.id,
       renderMode: 'cpu2d',
       runtime: {
         enabledElement,
