@@ -84,27 +84,9 @@ export default class ControlPointPolyline extends TID300Polyline {
           ],
         };
 
-    // Nest control points (and optional spline metadata) inside the NUM entry's
-    // ContentSequence rather than at the top level of the measurement group —
-    // OHIF expects exactly [TEXT, UIDREF, NUM] at the top level and blanks the
-    // viewport when extra entries are present.
+    // Nest control points inside the NUM entry's ContentSequence.
+    // Spline Type goes as HAS OBS CONTEXT at Measurement Group level (TID 320 does not allow TEXT under NUM).
     const { splineType } = self.props;
-    const splineItems: Record<string, unknown>[] = splineType
-      ? [
-          {
-            RelationshipType: valueTypes.RelationshipTypes.CONTAINS,
-            ValueType: 'TEXT',
-            ConceptNameCodeSequence: [
-              {
-                CodeValue: SPLINE_TYPE_CODE.value,
-                CodingSchemeDesignator: SPLINE_TYPE_CODE.schemeDesignator,
-                CodeMeaning: SPLINE_TYPE_CODE.meaning,
-              },
-            ],
-            TextValue: splineType,
-          },
-        ]
-      : [];
 
     const entries = contentEntries as Array<Record<string, unknown>>;
     const numEntry = entries.find((e) => e.ValueType === 'NUM');
@@ -115,9 +97,31 @@ export default class ControlPointPolyline extends TID300Polyline {
         : inner
           ? [inner]
           : [];
-      numEntry.ContentSequence = [...innerArray, scoordPlain, ...splineItems];
-      return entries;
+      numEntry.ContentSequence = [...innerArray, scoordPlain];
+    } else {
+      entries.push(scoordPlain);
     }
-    return [...entries, scoordPlain, ...splineItems];
+
+    if (splineType) {
+      const splineTypeObsContext = {
+        RelationshipType: valueTypes.RelationshipTypes.HAS_OBS_CONTEXT,
+        ValueType: 'TEXT',
+        ConceptNameCodeSequence: {
+          CodeValue: SPLINE_TYPE_CODE.value,
+          CodingSchemeDesignator: SPLINE_TYPE_CODE.schemeDesignator,
+          CodeMeaning: SPLINE_TYPE_CODE.meaning,
+        },
+        TextValue: splineType,
+      };
+      const hasObsContextIndex = entries.findIndex(
+        (e) =>
+          (e as Record<string, string>).RelationshipType ===
+          valueTypes.RelationshipTypes.HAS_OBS_CONTEXT
+      );
+      const insertIndex = hasObsContextIndex >= 0 ? hasObsContextIndex + 2 : 2;
+      entries.splice(insertIndex, 0, splineTypeObsContext);
+    }
+
+    return entries;
   }
 }

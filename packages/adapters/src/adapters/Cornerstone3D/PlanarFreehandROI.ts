@@ -68,9 +68,16 @@ class PlanarFreehandROI extends BaseAdapter3D {
     const numSeq = NUMGroup
       ? toArray((NUMGroup as Record<string, unknown>).ContentSequence)
       : [];
-    const splineTypeItem = numSeq.find((item) =>
-      MeasurementReport.codeValueMatch(item, SPLINE_TYPE)
+    const mgContentSeq = toArray(
+      (MeasurementGroup as Record<string, unknown>).ContentSequence
     );
+    const splineTypeItem =
+      numSeq.find((item) =>
+        MeasurementReport.codeValueMatch(item, SPLINE_TYPE)
+      ) ??
+      mgContentSeq.find((item) =>
+        MeasurementReport.codeValueMatch(item, SPLINE_TYPE)
+      );
 
     state.annotation.data = {
       ...state.annotation.data,

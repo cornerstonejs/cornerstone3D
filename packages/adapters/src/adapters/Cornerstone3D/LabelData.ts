@@ -33,6 +33,7 @@ export default class LabelData {
    */
   public contentItem() {
     const contentEntries = this.tid300Item.contentItem();
+    this.fixScoordRelationships(contentEntries);
     const { label, handles } = this.annotation.data;
 
     if (label) {
@@ -43,6 +44,37 @@ export default class LabelData {
       contentEntries.push(this.createQualitativeLabelPosition(this.annotation));
     }
     return contentEntries;
+  }
+
+  /**
+   * Ensure SCOORD/SCOORD3D children of NUM use INFERRED FROM (TID 320).
+   * Applied during content generation so output is correct from the start.
+   */
+  protected fixScoordRelationships(contentEntries: unknown[]) {
+    const INFERRED_FROM = valueTypes.RelationshipTypes.INFERRED_FROM;
+    for (const entry of contentEntries) {
+      const item = entry as Record<string, unknown>;
+      const contentSeq = item.ContentSequence;
+      const children = this.normalizeContentSequence(contentSeq);
+      for (const child of children) {
+        if (
+          (child.ValueType === 'SCOORD' || child.ValueType === 'SCOORD3D') &&
+          (child.RelationshipType === 'CONTAINS' ||
+            child.RelationshipType === 'Contains')
+        ) {
+          child.RelationshipType = INFERRED_FROM;
+        }
+      }
+    }
+  }
+
+  protected normalizeContentSequence(
+    contentSeq: unknown
+  ): Array<Record<string, unknown>> {
+    if (!contentSeq) return [];
+    if (Array.isArray(contentSeq))
+      return contentSeq as Array<Record<string, unknown>>;
+    return [contentSeq as Record<string, unknown>];
   }
 
   /**
