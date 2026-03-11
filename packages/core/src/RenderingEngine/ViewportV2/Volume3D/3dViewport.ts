@@ -30,7 +30,6 @@ class VolumeViewport3DV2 extends ViewportV2<
   Volume3DPresentationProps,
   Volume3DViewportRenderContext
 > {
-  readonly kind = '3d' as const;
   readonly type: ViewportType = ViewportType.VOLUME_3D_V2;
   readonly id: string;
   readonly element: HTMLDivElement;

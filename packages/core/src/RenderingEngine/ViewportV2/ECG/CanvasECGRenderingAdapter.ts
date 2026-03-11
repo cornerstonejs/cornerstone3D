@@ -1,4 +1,4 @@
-import { Events as EVENTS } from '../../../enums';
+import { Events as EVENTS, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
   computeECGChannelLayouts,
@@ -173,7 +173,7 @@ export class CanvasECGPath
   implements RenderPathDefinition<ECGCanvasRenderContext>
 {
   readonly id = 'ecg:canvas-signal';
-  readonly type = 'ecg' as const;
+  readonly type = ViewportType.ECG;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'ecg' && options.renderMode === 'signal2d';

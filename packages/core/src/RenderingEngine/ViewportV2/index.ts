@@ -23,7 +23,7 @@ export type {
   ViewportRenderContext,
   ViewportController,
   ViewportId,
-  ViewportKind,
+  ViewportRenderContextType,
 } from './ViewportArchitectureTypes';
 export {
   viewportHasCanvasWorldTransform,

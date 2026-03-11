@@ -1,6 +1,6 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import { Events } from '../../../enums';
+import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import type { IImageData, Point2, Point3, VOIRange } from '../../../types';
@@ -284,7 +284,7 @@ export class VtkVolumeMapperPath
     >
 {
   readonly id = 'planar:vtk-volume-mapper';
-  readonly type = 'planar' as const;
+  readonly type = ViewportType.PLANAR_V2;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkVolume';

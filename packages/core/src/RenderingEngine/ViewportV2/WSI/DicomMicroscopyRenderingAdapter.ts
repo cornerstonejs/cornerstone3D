@@ -1,5 +1,5 @@
 import { mat4, vec3 } from 'gl-matrix';
-import { Events as EVENTS } from '../../../enums';
+import { Events as EVENTS, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import { getDicomMicroscopyViewer } from '../../../utilities/WSIUtilities';
 import { Transform } from '../../helpers/cpuFallback/rendering/transform';
@@ -182,7 +182,7 @@ export class DicomMicroscopyPath
   implements RenderPathDefinition<WSIViewportRenderContext>
 {
   readonly id = 'wsi:dicom-microscopy-viewer';
-  readonly type = 'wsi' as const;
+  readonly type = ViewportType.WHOLE_SLIDE;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'wsi' && options.renderMode === 'wsi2d';

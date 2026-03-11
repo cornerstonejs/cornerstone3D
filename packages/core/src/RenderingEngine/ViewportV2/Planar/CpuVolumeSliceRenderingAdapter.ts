@@ -1,6 +1,7 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import Events from '../../../enums/Events';
+import ViewportType from '../../../enums/ViewportType';
 import eventTarget from '../../../eventTarget';
 import type { IImageData, Point2, Point3 } from '../../../types';
 import createVolumeActor from '../../helpers/createVolumeActor';
@@ -418,7 +419,7 @@ export class CpuVolumeSlicePath
     >
 {
   readonly id = 'planar:cpu-volume-slice';
-  readonly type = 'planar' as const;
+  readonly type = ViewportType.PLANAR_V2;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'image' && options.renderMode === 'cpuVolume';

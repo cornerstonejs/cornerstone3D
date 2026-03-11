@@ -1,9 +1,16 @@
 import type { Point2, Point3 } from '../../types';
+import type ViewportType from '../../enums/ViewportType';
 
 export type ViewportId = string;
 export type DataId = string;
 export type RenderingId = string;
-export type ViewportKind = 'planar' | 'video' | 'ecg' | 'wsi' | '3d' | string;
+export type ViewportRenderContextType =
+  | 'planar'
+  | 'video'
+  | 'ecg'
+  | 'wsi'
+  | '3d'
+  | string;
 export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi' | 'geometry';
 
 export interface DataAttachmentOptions {
@@ -31,7 +38,7 @@ export interface MountedRendering<TRuntime = unknown> {
 
 export interface BaseViewportRenderContext {
   viewportId: ViewportId;
-  type: ViewportKind;
+  type: ViewportRenderContextType;
 }
 
 /** @deprecated Use BaseViewportRenderContext instead. */
@@ -95,7 +102,7 @@ export interface RenderPathDefinition<
   TAdapterContext extends BaseViewportRenderContext = TRootContext,
 > {
   id: string;
-  type: ViewportKind;
+  type: ViewportType;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean;
 
@@ -113,7 +120,7 @@ export interface RenderPathResolver {
   ): void;
 
   resolve<TContext extends BaseViewportRenderContext>(
-    type: ViewportKind,
+    type: ViewportType,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): RenderPathDefinition<TContext, BaseViewportRenderContext>;
@@ -144,7 +151,7 @@ export interface ViewportController<
   TDataPresentation = unknown,
 > {
   readonly id: ViewportId;
-  readonly kind: ViewportKind;
+  readonly type: ViewportType;
 
   setDataId(
     dataId: DataId,

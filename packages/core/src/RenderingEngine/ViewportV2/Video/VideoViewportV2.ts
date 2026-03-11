@@ -26,7 +26,6 @@ class VideoViewportV2 extends ViewportV2<
   VideoPresentationProps,
   VideoElementRenderContext
 > {
-  readonly kind = 'video' as const;
   readonly type = ViewportType.VIDEO;
   readonly id: string;
   readonly element: HTMLDivElement;

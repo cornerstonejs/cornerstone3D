@@ -23,7 +23,6 @@ class ECGViewportV2 extends ViewportV2<
   ECGPresentationProps,
   ECGCanvasRenderContext
 > {
-  readonly kind = 'ecg' as const;
   readonly type = ViewportType.ECG;
   readonly id: string;
 

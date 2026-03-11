@@ -4,8 +4,8 @@ import type {
   LogicalDataObject,
   RenderPathDefinition,
   RenderPathResolver,
-  ViewportKind,
 } from './ViewportArchitectureTypes';
+import type ViewportType from '../../enums/ViewportType';
 
 export class DefaultRenderPathResolver implements RenderPathResolver {
   private paths: RenderPathDefinition[] = [];
@@ -26,7 +26,7 @@ export class DefaultRenderPathResolver implements RenderPathResolver {
   }
 
   resolve<TContext extends BaseViewportRenderContext>(
-    type: ViewportKind,
+    type: ViewportType,
     data: LogicalDataObject,
     options: DataAttachmentOptions
   ): RenderPathDefinition<TContext, BaseViewportRenderContext> {

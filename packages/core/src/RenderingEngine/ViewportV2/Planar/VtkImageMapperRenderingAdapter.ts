@@ -1,6 +1,10 @@
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { InterpolationType, MetadataModules } from '../../../enums';
+import {
+  InterpolationType,
+  MetadataModules,
+  ViewportType,
+} from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
@@ -237,7 +241,7 @@ export class VtkImageMapperPath
     >
 {
   readonly id = 'planar:vtk-image-mapper';
-  readonly type = 'planar' as const;
+  readonly type = ViewportType.PLANAR_V2;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkImage';

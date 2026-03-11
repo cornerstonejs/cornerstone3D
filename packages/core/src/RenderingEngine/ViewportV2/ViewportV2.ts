@@ -10,8 +10,8 @@ import type {
   RenderPathResolver,
   ViewportController,
   ViewportId,
-  ViewportKind,
 } from './ViewportArchitectureTypes';
+import type ViewportType from '../../enums/ViewportType';
 
 abstract class ViewportV2<
   TCamera,
@@ -21,7 +21,7 @@ abstract class ViewportV2<
 > implements ViewportController<TCamera, TProperties, TDataPresentation>
 {
   abstract readonly id: ViewportId;
-  abstract readonly kind: ViewportKind;
+  abstract readonly type: ViewportType;
 
   protected dataProvider: DataProvider;
   protected renderPathResolver: RenderPathResolver;
@@ -46,7 +46,7 @@ abstract class ViewportV2<
     options: DataAttachmentOptions
   ): Promise<RenderingId> {
     const path = this.renderPathResolver.resolve<TContext>(
-      this.kind,
+      this.type,
       data,
       options
     );
@@ -189,7 +189,7 @@ abstract class ViewportV2<
   getFrameOfReferenceUID(): string {
     return (
       this.getCurrentBinding()?.getFrameOfReferenceUID?.() ??
-      `${this.kind}-viewport-${this.id}`
+      `${this.type}-viewport-${this.id}`
     );
   }
 

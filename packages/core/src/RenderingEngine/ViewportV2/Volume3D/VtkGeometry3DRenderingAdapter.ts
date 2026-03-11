@@ -3,7 +3,7 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import { GeometryType } from '../../../enums';
+import { GeometryType, ViewportType } from '../../../enums';
 import type {
   IGeometry,
   IMesh,
@@ -151,7 +151,7 @@ export class VtkGeometry3DPath
     >
 {
   readonly id = 'volume3d:vtk-geometry';
-  readonly type = '3d' as const;
+  readonly type = ViewportType.VOLUME_3D_V2;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'geometry' && options.renderMode === 'vtkGeometry3d';

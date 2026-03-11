@@ -6,6 +6,7 @@ import type {
   RenderingAdapter,
 } from '../ViewportArchitectureTypes';
 import type { Point2, Point3 } from '../../../types';
+import ViewportType from '../../../enums/ViewportType';
 import type {
   VideoCamera,
   VideoElementRenderContext,
@@ -238,7 +239,7 @@ export class HtmlVideoPath
   implements RenderPathDefinition<VideoElementRenderContext>
 {
   readonly id = 'video:html-element';
-  readonly type = 'video' as const;
+  readonly type = ViewportType.VIDEO;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'video' && options.renderMode === 'video2d';

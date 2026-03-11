@@ -25,7 +25,6 @@ class WSIViewportV2 extends ViewportV2<
   WSIPresentationProps,
   WSIViewportRenderContext
 > {
-  readonly kind = 'wsi' as const;
   readonly type = ViewportType.WHOLE_SLIDE;
   readonly id: string;
   readonly element: HTMLDivElement;

@@ -4,7 +4,11 @@ import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultVi
 import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
 import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
-import { InterpolationType, MetadataModules } from '../../../enums';
+import {
+  InterpolationType,
+  MetadataModules,
+  ViewportType,
+} from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
@@ -264,7 +268,7 @@ export class CpuImageCanvasPath
     >
 {
   readonly id = 'planar:cpu-image-canvas';
-  readonly type = 'planar' as const;
+  readonly type = ViewportType.PLANAR_V2;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'image' && options.renderMode === 'cpu2d';

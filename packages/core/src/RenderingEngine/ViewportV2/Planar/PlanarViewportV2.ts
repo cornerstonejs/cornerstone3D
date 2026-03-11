@@ -59,7 +59,6 @@ class PlanarViewportV2 extends ViewportV2<
   PlanarPresentationProps,
   PlanarViewportRenderContext
 > {
-  readonly kind = 'planar' as const;
   readonly type = ViewportType.PLANAR_V2;
   readonly id: string;
   readonly element: HTMLDivElement;

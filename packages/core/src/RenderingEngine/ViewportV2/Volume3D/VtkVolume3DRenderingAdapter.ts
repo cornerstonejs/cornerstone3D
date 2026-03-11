@@ -1,7 +1,7 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { RENDERING_DEFAULTS } from '../../../constants';
-import { Events } from '../../../enums';
+import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import type { IImageData, Point2, Point3 } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
@@ -187,7 +187,7 @@ export class VtkVolume3DPath
     >
 {
   readonly id = 'volume3d:vtk-volume';
-  readonly type = '3d' as const;
+  readonly type = ViewportType.VOLUME_3D_V2;
 
   matches(data: LogicalDataObject, options: DataAttachmentOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkVolume3d';
