@@ -1,13 +1,14 @@
 import { vec3 } from 'gl-matrix';
 import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTransform';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
+import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
 import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { InterpolationType, MetadataModules } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
-import { toLowHighRange, toWindowLevel } from '../../../utilities/windowLevel';
+import { toWindowLevel } from '../../../utilities/windowLevel';
 import type {
   CPUIImageData,
   CPUFallbackEnabledElement,
@@ -74,7 +75,7 @@ export class CpuImageCanvasRenderingAdapter
         enabledElement,
         payload,
         currentImageIdIndex: payload.initialImageIdIndex,
-        defaultVOIRange: getDefaultVOIRange(payload.initialImage),
+        defaultVOIRange: getDefaultImageVOIRange(payload.initialImage),
         fitScale: enabledElement.viewport.scale ?? 1,
         loadRequestId: 0,
         renderingInvalidated: true,
@@ -272,21 +273,6 @@ export class CpuImageCanvasPath
       cpu: rootContext.cpu,
     };
   }
-}
-
-function getDefaultVOIRange(image: IImage): VOIRange | undefined {
-  const windowWidth = Array.isArray(image.windowWidth)
-    ? image.windowWidth[0]
-    : image.windowWidth;
-  const windowCenter = Array.isArray(image.windowCenter)
-    ? image.windowCenter[0]
-    : image.windowCenter;
-
-  if (typeof windowWidth !== 'number' || typeof windowCenter !== 'number') {
-    return;
-  }
-
-  return toLowHighRange(windowWidth, windowCenter, image.voiLUTFunction);
 }
 
 function applyPresentation(
@@ -509,7 +495,7 @@ async function updateRenderedImage(args: {
   };
 
   rendering.runtime.currentImageIdIndex = imageIdIndex;
-  rendering.runtime.defaultVOIRange = getDefaultVOIRange(image);
+  rendering.runtime.defaultVOIRange = getDefaultImageVOIRange(image);
   rendering.runtime.fitScale = defaultViewport.scale ?? 1;
   rendering.runtime.renderingInvalidated = true;
 

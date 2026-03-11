@@ -24,6 +24,14 @@ const { ViewportType, Events } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 
+function syncExampleUrl(): void {
+  const nextUrl = new URL(window.location.href);
+
+  nextUrl.searchParams.set('cpu', 'true');
+
+  window.history.replaceState({}, '', nextUrl);
+}
+
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Stack Viewport API',
@@ -306,6 +314,8 @@ addButtonToToolbar({
  * Runs the demo
  */
 async function run() {
+  syncExampleUrl();
+
   // Init Cornerstone and related libraries
   await initDemo();
 

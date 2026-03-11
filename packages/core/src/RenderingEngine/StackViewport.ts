@@ -57,6 +57,7 @@ import { isEqual } from '../utilities/isEqual';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
 import imageRetrieveMetadataProvider from '../utilities/imageRetrieveMetadataProvider';
 import imageIdToURI from '../utilities/imageIdToURI';
+import getVOIRangeFromWindowLevel from '../utilities/getVOIRangeFromWindowLevel';
 
 import Viewport from './Viewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
@@ -1390,7 +1391,7 @@ class StackViewport extends Viewport {
         voiLUTFunction: image.voiLUTFunction,
       };
 
-      const { lower, upper } = windowLevelUtil.toLowHighRange(
+      const { lower, upper } = getVOIRangeFromWindowLevel(
         wwToUse,
         wcToUse,
         image.voiLUTFunction
@@ -2311,7 +2312,7 @@ class StackViewport extends Viewport {
     );
 
     const { windowCenter, windowWidth, voiLUTFunction } = viewport.voi;
-    this.voiRange = windowLevelUtil.toLowHighRange(
+    this.voiRange = getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
@@ -2549,7 +2550,7 @@ class StackViewport extends Viewport {
     }
     const { windowCenter, windowWidth, voiLUTFunction } = image;
 
-    let voiRange = this._getVOIRangeFromWindowLevel(
+    let voiRange = getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
@@ -2584,27 +2585,6 @@ class StackViewport extends Viewport {
 
   private _getDefaultPTPrescaledVOIRange() {
     return { lower: 0, upper: 5 };
-  }
-
-  private _getVOIRangeFromWindowLevel(
-    windowWidth: number | number[],
-    windowCenter: number | number[],
-    voiLUTFunction: VOILUTFunctionType = VOILUTFunctionType.LINEAR
-  ): { lower: number; upper: number } | undefined {
-    let center, width;
-
-    if (typeof windowCenter === 'number' && typeof windowWidth === 'number') {
-      center = windowCenter;
-      width = windowWidth;
-    } else if (Array.isArray(windowCenter) && Array.isArray(windowWidth)) {
-      center = windowCenter[0];
-      width = windowWidth[0];
-    }
-
-    // If center and width are defined, convert them to low-high range
-    if (center !== undefined && width !== undefined) {
-      return windowLevelUtil.toLowHighRange(width, center, voiLUTFunction);
-    }
   }
 
   /**
@@ -3135,7 +3115,7 @@ class StackViewport extends Viewport {
   private _getVOIRangeForCurrentImage() {
     const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
 
-    return this._getVOIRangeFromWindowLevel(
+    return getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction

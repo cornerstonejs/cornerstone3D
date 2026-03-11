@@ -8,6 +8,7 @@ import triggerEvent from './triggerEvent';
 import uuidv4 from './uuidv4';
 import getMinMax from './getMinMax';
 import getRuntimeId from './getRuntimeId';
+import getVOIRangeFromWindowLevel from './getVOIRangeFromWindowLevel';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
@@ -134,6 +135,7 @@ export {
   uuidv4,
   getMinMax,
   getRuntimeId,
+  getVOIRangeFromWindowLevel,
   isOpposite,
   getViewportModality,
   windowLevel,

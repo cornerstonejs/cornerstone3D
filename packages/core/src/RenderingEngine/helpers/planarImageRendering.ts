@@ -5,10 +5,10 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { InterpolationType } from '../../enums';
 import type { IImage, Point3, VOIRange } from '../../types';
 import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTransferFunction';
+import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
 import { updateVTKImageDataWithCornerstoneImage } from '../../utilities/updateVTKImageDataWithCornerstoneImage';
-import { toLowHighRange } from '../../utilities/windowLevel';
 
 export interface PlanarCameraState {
   focalPoint: Point3;
@@ -89,18 +89,11 @@ export function createVTKImageDataFromImage(image: IImage): vtkImageData {
 }
 
 export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
-  const windowWidth = Array.isArray(image.windowWidth)
-    ? image.windowWidth[0]
-    : image.windowWidth;
-  const windowCenter = Array.isArray(image.windowCenter)
-    ? image.windowCenter[0]
-    : image.windowCenter;
-
-  if (typeof windowWidth !== 'number' || typeof windowCenter !== 'number') {
-    return;
-  }
-
-  return toLowHighRange(windowWidth, windowCenter, image.voiLUTFunction);
+  return getVOIRangeFromWindowLevel(
+    image.windowWidth,
+    image.windowCenter,
+    image.voiLUTFunction
+  );
 }
 
 export function getPlanarCameraState(renderer: vtkRenderer): PlanarCameraState {
