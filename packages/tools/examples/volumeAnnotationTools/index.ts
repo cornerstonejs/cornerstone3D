@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
-  RenderingEngineV2,
+  RenderingEngine,
   PlanarViewportV2,
   utilities,
 } from '@cornerstonejs/core';
@@ -140,7 +140,7 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngineV2(renderingEngineId);
+  const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
   const viewportIds = [
@@ -177,7 +177,7 @@ async function run() {
   ];
 
   viewportInputArray.forEach((viewportInput) =>
-    renderingEngine.enableViewport(viewportInput)
+    renderingEngine.enableElement(viewportInput as Types.PublicViewportInput)
   );
 
   // Set the tool group on the viewports
@@ -188,8 +188,10 @@ async function run() {
   utilities.viewportV2DataSetMetadataProvider.add(dataId, {
     imageIds,
   });
+
   const viewports = viewportIds.map(
-    (viewportId) => renderingEngine.getViewport(viewportId) as PlanarViewportV2
+    (viewportId) =>
+      renderingEngine.getViewport(viewportId) as unknown as PlanarViewportV2
   );
   const orientations = [
     Enums.OrientationAxis.AXIAL,

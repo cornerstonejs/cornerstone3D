@@ -6,8 +6,6 @@ import RenderingEngine, {
   TiledRenderingEngine,
   ContextPoolRenderingEngine,
 } from './RenderingEngine';
-import RenderingEngineV2 from './RenderingEngine/RenderingEngineV2';
-import ContextPoolRenderingEngineV2 from './RenderingEngine/ContextPoolRenderingEngineV2';
 import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
   convertMapperToNotSharedMapper,
@@ -128,8 +126,6 @@ import {
 export * from './loaders/decimatedVolumeLoader';
 
 const renderingEngineExportsV2 = {
-  RenderingEngineV2,
-  ContextPoolRenderingEngineV2,
   ViewportV2,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
@@ -196,11 +192,9 @@ export {
   viewportHasPan,
   viewportHasZoom,
   RenderingEngine,
-  RenderingEngineV2,
   BaseRenderingEngine,
   TiledRenderingEngine,
   ContextPoolRenderingEngine,
-  ContextPoolRenderingEngineV2,
   ImageVolume,
   Surface,
   // Helpers

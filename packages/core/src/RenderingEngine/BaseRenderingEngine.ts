@@ -208,6 +208,10 @@ abstract class BaseRenderingEngine {
     // DOM resize event.
   }
 
+  public disableViewport(viewportId: string): void {
+    this.disableElement(viewportId);
+  }
+
   /**
    * It takes an array of viewport input objects including element, viewportId, type
    * and defaultOptions. It will add the viewport to the rendering engine and enables them.

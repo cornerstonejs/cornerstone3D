@@ -42,6 +42,10 @@ class RenderingEngine {
     return this._implementation.id;
   }
 
+  public disableViewport(viewportId: string): void {
+    return this._implementation.disableElement(viewportId);
+  }
+
   public enableElement(viewportInputEntry: PublicViewportInput): void {
     return this._implementation.enableElement(viewportInputEntry);
   }

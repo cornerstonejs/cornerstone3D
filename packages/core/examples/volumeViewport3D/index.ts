@@ -2,7 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   CONSTANTS,
   Enums,
-  RenderingEngineV2,
+  RenderingEngine,
   utilities,
   VolumeViewport3DV2,
 } from '@cornerstonejs/core';
@@ -156,8 +156,8 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const renderingEngine = new RenderingEngineV2(renderingEngineId);
-  renderingEngine.enableViewport({
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine.enableElement({
     viewportId,
     type: volumeViewportType,
     element,

@@ -1,7 +1,7 @@
 import {
   Enums,
   PlanarViewportV2,
-  RenderingEngineV2,
+  RenderingEngine,
   utilities,
 } from '@cornerstonejs/core';
 import {
@@ -148,8 +148,8 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
-  const renderingEngine = new RenderingEngineV2('renderingEngineV2');
-  renderingEngine.enableViewport({
+  const renderingEngine = new RenderingEngine('renderingEngineV2');
+  renderingEngine.enableElement({
     viewportId,
     type: Enums.ViewportType.PLANAR_V2,
     element,
