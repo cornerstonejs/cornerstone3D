@@ -39,7 +39,7 @@ bun install
 
 echo "Linking local Cornerstone packages into OHIF node_modules"
 cd "$REPO_ROOT"
-node "$REPO_ROOT/scripts/ci/link-ohif-cornerstone-node-modules.mjs" "$OHIF_DIR"
+node "$REPO_ROOT/scripts/link-ohif-cornerstone-node-modules.mjs" "$OHIF_DIR"
 
 cd "$OHIF_DIR"
 

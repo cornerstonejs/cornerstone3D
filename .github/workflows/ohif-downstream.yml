@@ -52,7 +52,7 @@ jobs:
         run: bun install
 
       - name: Link local Cornerstone packages into OHIF node_modules
-        run: node scripts/ci/link-ohif-cornerstone-node-modules.mjs ${{ env.OHIF_DIR }}
+        run: node scripts/link-ohif-cornerstone-node-modules.mjs ${{ env.OHIF_DIR }}
 
       - name: Run OHIF unit tests
         working-directory: ${{ env.OHIF_DIR }}

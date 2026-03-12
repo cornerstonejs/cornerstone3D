@@ -4,7 +4,7 @@
  * Removes symlinked Cornerstone packages from an OHIF project's node_modules
  * and restores them from the registry.
  *
- * Counterpart to scripts/ci/link-ohif-cornerstone-node-modules.mjs
+ * Counterpart to scripts/link-ohif-cornerstone-node-modules.mjs
  *
  * Usage: node scripts/unlink-ohif-cornerstone-node-modules.mjs <ohif-dir>
  */
