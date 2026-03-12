@@ -1,0 +1,59 @@
+name: OHIF Downstream Validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ohif-build:
+    name: OHIF build against this PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      BUN_VERSION: 1.2.23
+      NODE_VERSION: 20
+      OHIF_REF: master
+      OHIF_DIR: ohif
+    steps:
+      - name: Checkout Cornerstone
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Cornerstone dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build local Cornerstone packages for OHIF
+        run: bun run build:esm
+
+      - name: Checkout OHIF
+        uses: actions/checkout@v4
+        with:
+          repository: OHIF/Viewers
+          ref: ${{ env.OHIF_REF }}
+          path: ${{ env.OHIF_DIR }}
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Install OHIF dependencies
+        working-directory: ${{ env.OHIF_DIR }}
+        run: bun install
+
+      - name: Link local Cornerstone packages into OHIF node_modules
+        run: node scripts/ci/link-ohif-cornerstone-node-modules.mjs ${{ env.OHIF_DIR }}
+
+      - name: Build OHIF
+        working-directory: ${{ env.OHIF_DIR }}
+        run: bun run build:ci
