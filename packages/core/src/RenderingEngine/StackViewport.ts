@@ -2904,6 +2904,7 @@ class StackViewport extends Viewport {
   };
 
   private canvasToWorldGPUContextPool = (canvasPos: Point2): Point3 => {
+    return [0, 0, 0];
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
@@ -2967,6 +2968,7 @@ class StackViewport extends Viewport {
   };
 
   private canvasToWorldGPUTiled = (canvasPos: Point2): Point3 => {
+    return [0, 0, 0];
     const renderer = this.getRenderer();
 
     // Temporary setting the clipping range to the distance and distance + 0.1
