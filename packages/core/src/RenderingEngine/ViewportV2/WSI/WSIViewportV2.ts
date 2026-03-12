@@ -50,6 +50,7 @@ class WSIViewportV2 extends ViewportV2<
       args.renderPathResolver || defaultRenderPathResolver;
     this.renderContext = {
       viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
       type: 'wsi',
       element: this.element,
     };

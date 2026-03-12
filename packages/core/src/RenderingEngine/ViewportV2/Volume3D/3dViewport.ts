@@ -85,6 +85,7 @@ class VolumeViewport3DV2 extends ViewportV2<
 
     this.renderContext = {
       viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
       type: '3d',
       viewport: {
         element: this.element,

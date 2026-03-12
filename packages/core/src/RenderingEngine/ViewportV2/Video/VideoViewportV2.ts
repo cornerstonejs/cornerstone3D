@@ -57,6 +57,7 @@ class VideoViewportV2 extends ViewportV2<
       args.renderPathResolver || defaultRenderPathResolver;
     this.renderContext = {
       viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
       type: 'video',
       element: this.element,
     };

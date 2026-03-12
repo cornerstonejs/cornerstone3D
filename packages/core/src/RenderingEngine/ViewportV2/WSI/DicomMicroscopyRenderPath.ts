@@ -59,6 +59,7 @@ export class DicomMicroscopyRenderPath
       triggerEvent(ctx.element, EVENTS.IMAGE_RENDERED, {
         element: ctx.element,
         viewportId: ctx.viewportId,
+        renderingEngineId: ctx.renderingEngineId,
         rendering: {
           id: renderingId,
           dataId: data.id,

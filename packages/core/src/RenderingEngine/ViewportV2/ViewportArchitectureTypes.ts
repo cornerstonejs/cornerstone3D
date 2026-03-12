@@ -51,6 +51,7 @@ export interface RenderPathAttachment<TPresentation = unknown> {
 
 export interface BaseViewportRenderContext {
   viewportId: ViewportId;
+  renderingEngineId?: string;
   type: ViewportRenderContextType;
 }
 

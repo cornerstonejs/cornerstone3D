@@ -140,6 +140,7 @@ class PlanarViewportV2 extends ViewportV2<
 
     this.renderContext = {
       viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
       type: 'planar',
       viewport: {
         element: this.element,

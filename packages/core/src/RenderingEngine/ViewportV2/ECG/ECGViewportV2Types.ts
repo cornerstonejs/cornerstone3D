@@ -71,7 +71,6 @@ export interface RenderWindowMetrics {
 
 export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
   type: 'ecg';
-  renderingEngineId: string;
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;
