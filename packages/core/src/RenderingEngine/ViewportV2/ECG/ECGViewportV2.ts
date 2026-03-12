@@ -22,7 +22,7 @@ class ECGViewportV2 extends ViewportV2<
   ECGDataPresentation,
   ECGCanvasRenderContext
 > {
-  readonly type = ViewportType.ECG;
+  readonly type = ViewportType.ECG_V2;
   readonly id: string;
 
   readonly element: HTMLDivElement;
@@ -53,6 +53,7 @@ class ECGViewportV2 extends ViewportV2<
     this.renderContext = {
       viewportId: this.id,
       type: 'ecg',
+      renderingEngineId: this.renderingEngineId,
       element: this.element,
       canvas: this.canvas,
       canvasContext: this.canvasContext,
@@ -61,6 +62,8 @@ class ECGViewportV2 extends ViewportV2<
       timeRange: [0, 1],
       valueRange: [-1, 1],
       scrollOffset: 0,
+      pan: [0, 0],
+      zoom: 1,
     };
 
     this.element.setAttribute('data-viewport-uid', this.id);
@@ -120,6 +123,8 @@ class ECGViewportV2 extends ViewportV2<
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
         scrollOffset: 0,
+        pan: [0, 0],
+        zoom: 1,
       };
       this.modified();
 

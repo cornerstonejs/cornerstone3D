@@ -93,12 +93,20 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     waveform: ECGWaveformPayload,
     canvasPos: Point2
   ): Point3 {
-    const { metrics } = rendering;
+    const { metrics, currentCamera } = rendering;
     const layouts = getChannelLayouts(rendering, waveform);
-    const scale = metrics.worldToCanvasRatio || 1;
+    const zoom = currentCamera?.zoom ?? 1;
+    const pan = currentCamera?.pan ?? [0, 0];
+    const baseScale = metrics.worldToCanvasRatio || 1;
+    const effectiveScale = baseScale * zoom;
+    const drawWidth = metrics.ecgWidth * effectiveScale;
+    const drawHeight = metrics.ecgHeight * effectiveScale;
+    const canvas = rendering.canvas;
+    const xOffset = (canvas.clientWidth - drawWidth) / 2 + pan[0];
+    const yOffset = (canvas.clientHeight - drawHeight) / 2 + pan[1];
     const subCanvasPos: Point2 = [
-      (canvasPos[0] - metrics.xOffsetCanvas) / scale,
-      (canvasPos[1] - metrics.yOffsetCanvas) / scale,
+      (canvasPos[0] - xOffset) / effectiveScale,
+      (canvasPos[1] - yOffset) / effectiveScale,
     ];
     let z = 0;
 
@@ -135,7 +143,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     waveform: ECGWaveformPayload,
     worldPos: Point3
   ): Point2 {
-    const { metrics } = rendering;
+    const { metrics, currentCamera } = rendering;
     const layouts = getChannelLayouts(rendering, waveform);
     const z = Math.round(worldPos[2]);
 
@@ -143,16 +151,23 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
       return [0, 0];
     }
 
+    const zoom = currentCamera?.zoom ?? 1;
+    const pan = currentCamera?.pan ?? [0, 0];
+    const effectiveScale = metrics.worldToCanvasRatio * zoom;
+    const drawWidth = metrics.ecgWidth * effectiveScale;
+    const drawHeight = metrics.ecgHeight * effectiveScale;
+    const canvas = rendering.canvas;
+    const xOffset = (canvas.clientWidth - drawWidth) / 2 + pan[0];
+    const yOffset = (canvas.clientHeight - drawHeight) / 2 + pan[1];
     const layout = layouts[z];
 
     return [
       (worldPos[0] / waveform.numberOfSamples) *
         metrics.ecgWidth *
-        metrics.worldToCanvasRatio +
-        metrics.xOffsetCanvas,
-      (layout.baseline - worldPos[1] * metrics.channelScale) *
-        metrics.worldToCanvasRatio +
-        metrics.yOffsetCanvas,
+        effectiveScale +
+        xOffset,
+      (layout.baseline - worldPos[1] * metrics.channelScale) * effectiveScale +
+        yOffset,
     ];
   }
 
@@ -179,7 +194,7 @@ export class CanvasECGPath
   implements RenderPathDefinition<ECGCanvasRenderContext>
 {
   readonly id = 'ecg:canvas-signal';
-  readonly type = ViewportType.ECG;
+  readonly type = ViewportType.ECG_V2;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'ecg' && options.renderMode === 'signal2d';
@@ -279,6 +294,14 @@ function drawFrame(
 
   ecgRendering.metrics = metrics;
 
+  const zoom = currentCamera.zoom ?? 1;
+  const pan = currentCamera.pan ?? [0, 0];
+  const effectiveRatio = metrics.worldToCanvasRatio * zoom;
+  const drawWidth = metrics.ecgWidth * effectiveRatio;
+  const drawHeight = metrics.ecgHeight * effectiveRatio;
+  const xOffset = (canvas.clientWidth - drawWidth) / 2 + pan[0];
+  const yOffset = (canvas.clientHeight - drawHeight) / 2 + pan[1];
+
   canvasContext.resetTransform();
   canvasContext.fillStyle = '#000000';
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
@@ -289,12 +312,12 @@ function drawFrame(
 
   canvasContext.globalAlpha = currentDataPresentation?.opacity ?? 1;
   canvasContext.setTransform(
-    metrics.worldToCanvasRatio * dpr,
+    effectiveRatio * dpr,
     0,
     0,
-    metrics.worldToCanvasRatio * dpr,
-    metrics.xOffsetCanvas * dpr,
-    metrics.yOffsetCanvas * dpr
+    effectiveRatio * dpr,
+    xOffset * dpr,
+    yOffset * dpr
   );
 
   drawECGGrid(canvasContext, metrics, {
@@ -318,6 +341,7 @@ function drawFrame(
   triggerEvent(ecgCtx.element, EVENTS.IMAGE_RENDERED, {
     element: ecgCtx.element,
     viewportId: ecgCtx.viewportId,
+    renderingEngineId: ecgCtx.renderingEngineId,
     rendering: ecgRendering,
   });
 }

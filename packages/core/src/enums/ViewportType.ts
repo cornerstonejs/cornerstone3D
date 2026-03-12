@@ -28,6 +28,7 @@ enum ViewportType {
    * ECG waveform viewport for displaying DICOM ECG traces
    */
   ECG = 'ecg',
+  ECG_V2 = 'ecgV2',
 }
 
 export default ViewportType;

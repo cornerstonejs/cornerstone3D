@@ -32,6 +32,8 @@ export interface ECGCamera {
   timeRange: [number, number];
   valueRange: [number, number];
   scrollOffset?: number;
+  pan?: [number, number];
+  zoom?: number;
 }
 
 export interface ECGProperties {
@@ -69,6 +71,7 @@ export interface RenderWindowMetrics {
 
 export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
   type: 'ecg';
+  renderingEngineId: string;
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;
