@@ -183,8 +183,8 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   baseCamera?: PlanarCameraState;
-  camera?: ICamera;
-  viewState?: PlanarCamera;
+  resolvedCamera?: ICamera;
+  camera?: PlanarCamera;
   renderingInvalidated: boolean;
   dataPresentation?: PlanarDataPresentation;
   sampledSliceState?: {
@@ -212,8 +212,8 @@ export type PlanarVolumeMapperRendering = MountedRendering<{
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   baseCamera?: PlanarCameraState;
-  camera?: ICamera;
-  viewState?: PlanarCamera;
+  resolvedCamera?: ICamera;
+  camera?: PlanarCamera;
   dataPresentation?: PlanarDataPresentation;
   removeStreamingSubscriptions?: () => void;
 }>;

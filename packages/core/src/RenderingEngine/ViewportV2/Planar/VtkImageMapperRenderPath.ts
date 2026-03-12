@@ -137,7 +137,7 @@ export class VtkImageMapperRenderPath
       canvas: ctx.vtk.canvas,
       baseCamera: rendering.initialCamera,
       renderer: ctx.vtk.renderer,
-      viewState: {
+      camera: {
         pan: planarCamera?.pan,
         rotation: planarCamera?.rotation,
         zoom: planarCamera?.zoom,
@@ -306,7 +306,7 @@ async function updateRenderedImage(args: {
     canvas: ctx.vtk.canvas,
     baseCamera: rendering.initialCamera,
     renderer: ctx.vtk.renderer,
-    viewState: {
+    camera: {
       pan: camera?.pan,
       rotation: camera?.rotation,
       zoom: camera?.zoom,

@@ -81,8 +81,8 @@ export class VtkVolumeMapperRenderPath
         ? { lower: defaultRange[0], upper: defaultRange[1] }
         : undefined,
       baseCamera: undefined,
+      resolvedCamera: undefined,
       camera: undefined,
-      viewState: undefined,
       dataPresentation: undefined,
       removeStreamingSubscriptions: subscribeToVolumeEvents(
         payload.volumeId,
@@ -142,35 +142,38 @@ export class VtkVolumeMapperRenderPath
   private updateCamera(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeMapperRendering,
-    camera: unknown
+    cameraInput: unknown
   ): void {
-    const viewState = camera as PlanarCamera | undefined;
+    const camera = cameraInput as PlanarCamera | undefined;
     const { baseCamera, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeCameraState({
         canvasHeight: ctx.vtk.canvas.clientHeight,
         canvasWidth: ctx.vtk.canvas.clientWidth,
-        imageIdIndex: viewState?.imageIdIndex,
+        imageIdIndex: camera?.imageIdIndex,
         imageVolume: rendering.imageVolume,
-        orientation: viewState?.orientation,
+        orientation: camera?.orientation,
       });
 
     ctx.display.activateRenderMode('vtkVolume');
     rendering.baseCamera = baseCamera;
-    rendering.camera = applyPlanarVolumeCameraToRenderer({
+    rendering.resolvedCamera = applyPlanarVolumeCameraToRenderer({
       baseCamera,
       canvas: ctx.vtk.canvas,
       renderer: ctx.vtk.renderer,
-      viewState,
+      camera,
     });
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
-    rendering.viewState = viewState;
+    rendering.camera = camera;
 
-    if (rendering.camera?.focalPoint && rendering.camera.viewPlaneNormal) {
+    if (
+      rendering.resolvedCamera?.focalPoint &&
+      rendering.resolvedCamera.viewPlaneNormal
+    ) {
       updatePlanarVolumeClippingPlanes({
         camera: {
-          focalPoint: rendering.camera.focalPoint,
-          viewPlaneNormal: rendering.camera.viewPlaneNormal,
+          focalPoint: rendering.resolvedCamera.focalPoint,
+          viewPlaneNormal: rendering.resolvedCamera.viewPlaneNormal,
         },
         mapper: rendering.mapper,
         slabThickness: resolveSlabThickness(
@@ -223,18 +226,21 @@ export class VtkVolumeMapperRenderPath
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeMapperRendering
   ): void {
-    rendering.camera = applyPlanarVolumeCameraToRenderer({
+    rendering.resolvedCamera = applyPlanarVolumeCameraToRenderer({
       baseCamera: rendering.baseCamera,
       canvas: ctx.vtk.canvas,
       renderer: ctx.vtk.renderer,
-      viewState: rendering.viewState,
+      camera: rendering.camera,
     });
 
-    if (rendering.camera?.focalPoint && rendering.camera.viewPlaneNormal) {
+    if (
+      rendering.resolvedCamera?.focalPoint &&
+      rendering.resolvedCamera.viewPlaneNormal
+    ) {
       updatePlanarVolumeClippingPlanes({
         camera: {
-          focalPoint: rendering.camera.focalPoint,
-          viewPlaneNormal: rendering.camera.viewPlaneNormal,
+          focalPoint: rendering.resolvedCamera.focalPoint,
+          viewPlaneNormal: rendering.resolvedCamera.viewPlaneNormal,
         },
         mapper: rendering.mapper,
         slabThickness: resolveSlabThickness(
@@ -365,11 +371,14 @@ function applyDataPresentation(
     mapper.setBlendModeToComposite();
   }
 
-  if (rendering.camera?.focalPoint && rendering.camera.viewPlaneNormal) {
+  if (
+    rendering.resolvedCamera?.focalPoint &&
+    rendering.resolvedCamera.viewPlaneNormal
+  ) {
     updatePlanarVolumeClippingPlanes({
       camera: {
-        focalPoint: rendering.camera.focalPoint,
-        viewPlaneNormal: rendering.camera.viewPlaneNormal,
+        focalPoint: rendering.resolvedCamera.focalPoint,
+        viewPlaneNormal: rendering.resolvedCamera.viewPlaneNormal,
       },
       mapper,
       slabThickness,

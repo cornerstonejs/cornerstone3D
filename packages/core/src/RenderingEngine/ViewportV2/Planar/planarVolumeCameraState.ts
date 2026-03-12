@@ -16,7 +16,7 @@ import type { PlanarCamera, PlanarCameraState } from './PlanarViewportV2Types';
 
 const MIN_CAMERA_DISTANCE = 1;
 const MIN_SLICE_SPACING = 1e-6;
-type PlanarViewState = Pick<
+type PlanarCameraFields = Pick<
   PlanarCamera,
   'imageIdIndex' | 'orientation' | 'pan' | 'rotation' | 'zoom'
 >;
@@ -312,9 +312,9 @@ export function resolvePlanarVolumeCamera(args: {
   baseCamera?: PlanarCameraState;
   canvasWidth: number;
   canvasHeight: number;
-  viewState?: Pick<PlanarViewState, 'pan' | 'rotation' | 'zoom'>;
+  camera?: Pick<PlanarCameraFields, 'pan' | 'rotation' | 'zoom'>;
 }): ICamera | undefined {
-  const { baseCamera, canvasWidth, canvasHeight, viewState } = args;
+  const { baseCamera, canvasWidth, canvasHeight, camera } = args;
 
   if (!baseCamera) {
     return;
@@ -324,9 +324,9 @@ export function resolvePlanarVolumeCamera(args: {
       baseCamera,
       canvasWidth,
       canvasHeight,
-      pan: viewState?.pan,
-      rotation: viewState?.rotation,
-      zoom: viewState?.zoom,
+      pan: camera?.pan,
+      rotation: camera?.rotation,
+      zoom: camera?.zoom,
     });
 
   return {
@@ -351,14 +351,14 @@ export function applyPlanarVolumeCameraToRenderer(args: {
   baseCamera?: PlanarCameraState;
   canvas: HTMLCanvasElement;
   renderer: vtkRenderer;
-  viewState?: Pick<PlanarViewState, 'pan' | 'rotation' | 'zoom'>;
+  camera?: Pick<PlanarCameraFields, 'pan' | 'rotation' | 'zoom'>;
 }): ICamera | undefined {
-  const { baseCamera, canvas, renderer, viewState } = args;
+  const { baseCamera, canvas, renderer, camera } = args;
   const resolvedCamera = resolvePlanarVolumeCamera({
     baseCamera,
     canvasWidth: canvas.clientWidth,
     canvasHeight: canvas.clientHeight,
-    viewState,
+    camera,
   });
 
   if (!resolvedCamera) {
@@ -454,8 +454,8 @@ export function getPlanarVolumeTargetFocalPoint(args: {
   canvasHeight: number;
   imageVolume: IImageVolume;
   orientation?: PlanarCamera['orientation'];
-  viewState?: Pick<
-    PlanarViewState,
+  camera?: Pick<
+    PlanarCameraFields,
     'imageIdIndex' | 'pan' | 'rotation' | 'zoom'
   >;
   sliceIndex?: number;
@@ -467,19 +467,19 @@ export function getPlanarVolumeTargetFocalPoint(args: {
     imageVolume,
     orientation,
     sliceIndex,
-    viewState,
+    camera,
   } = args;
 
   if (!baseCamera) {
     return;
   }
 
-  if (sliceIndex === undefined || sliceIndex === viewState?.imageIdIndex) {
+  if (sliceIndex === undefined || sliceIndex === camera?.imageIdIndex) {
     return resolvePlanarVolumeCamera({
       baseCamera,
       canvasWidth,
       canvasHeight,
-      viewState,
+      camera,
     })?.focalPoint as Point3 | undefined;
   }
 
@@ -495,6 +495,6 @@ export function getPlanarVolumeTargetFocalPoint(args: {
     baseCamera: nextBaseCamera,
     canvasWidth,
     canvasHeight,
-    viewState,
+    camera,
   })?.focalPoint as Point3 | undefined;
 }

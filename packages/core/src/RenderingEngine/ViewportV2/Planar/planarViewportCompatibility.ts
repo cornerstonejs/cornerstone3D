@@ -428,9 +428,9 @@ function getTargetVolumeFocalPoint(args: {
       canvasHeight,
       canvasWidth,
       imageVolume: rendering.imageVolume,
-      orientation: rendering.viewState?.orientation,
+      orientation: rendering.camera?.orientation,
       sliceIndex,
-      viewState: rendering.viewState,
+      camera: rendering.camera,
     }) || (camera.focalPoint as Point3)
   );
 }
@@ -444,8 +444,8 @@ function getPlanarVolumeRuntimeCamera(args: {
 }): Partial<ICamera> | undefined {
   const { rendering, renderContext } = args;
 
-  if (rendering.camera) {
-    return rendering.camera;
+  if (rendering.resolvedCamera) {
+    return rendering.resolvedCamera;
   }
 
   const { canvasHeight, canvasWidth } = getVolumeCanvasDimensions({
@@ -457,7 +457,7 @@ function getPlanarVolumeRuntimeCamera(args: {
     baseCamera: rendering.baseCamera,
     canvasHeight,
     canvasWidth,
-    viewState: rendering.viewState,
+    camera: rendering.camera,
   });
 }
 

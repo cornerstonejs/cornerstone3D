@@ -156,28 +156,28 @@ export function applyPlanarCanvasCameraViewState(args: {
   canvas: HTMLCanvasElement;
   renderer: vtkRenderer;
   baseCamera: PlanarBaseCameraState;
-  viewState?: Pick<PlanarCamera, 'pan' | 'rotation' | 'zoom'>;
+  camera?: Pick<PlanarCamera, 'pan' | 'rotation' | 'zoom'>;
 }): void {
-  const { canvas, renderer, baseCamera, viewState } = args;
-  const camera = renderer.getActiveCamera();
-  const zoom = Math.max(viewState?.zoom ?? 1, 0.001);
-  const [panX, panY] = viewState?.pan ?? [0, 0];
+  const { canvas, renderer, baseCamera, camera } = args;
+  const vtkCamera = renderer.getActiveCamera();
+  const zoom = Math.max(camera?.zoom ?? 1, 0.001);
+  const [panX, panY] = camera?.pan ?? [0, 0];
   const rotatedViewUp = rotatePlanarViewUp({
-    rotation: viewState?.rotation,
+    rotation: camera?.rotation,
     viewPlaneNormal: baseCamera.viewPlaneNormal,
     viewUp: baseCamera.viewUp,
   });
 
-  camera.setParallelProjection(true);
-  camera.setDirectionOfProjection(
+  vtkCamera.setParallelProjection(true);
+  vtkCamera.setDirectionOfProjection(
     -baseCamera.viewPlaneNormal[0],
     -baseCamera.viewPlaneNormal[1],
     -baseCamera.viewPlaneNormal[2]
   );
-  camera.setParallelScale(baseCamera.parallelScale / zoom);
-  camera.setFocalPoint(...baseCamera.focalPoint);
-  camera.setPosition(...baseCamera.position);
-  camera.setViewUp(...rotatedViewUp);
+  vtkCamera.setParallelScale(baseCamera.parallelScale / zoom);
+  vtkCamera.setFocalPoint(...baseCamera.focalPoint);
+  vtkCamera.setPosition(...baseCamera.position);
+  vtkCamera.setViewUp(...rotatedViewUp);
 
   if (!panX && !panY) {
     return;
@@ -205,8 +205,8 @@ export function applyPlanarCanvasCameraViewState(args: {
     deltaWorld
   ) as Point3;
 
-  camera.setFocalPoint(...focalPoint);
-  camera.setPosition(...position);
+  vtkCamera.setFocalPoint(...focalPoint);
+  vtkCamera.setPosition(...position);
 }
 
 export function getCpuEquivalentParallelScale(args: {
