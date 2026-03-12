@@ -14,7 +14,13 @@ export const visitExample = async (
 ) => {
   // Size to a constant size to prevent scroll into view changes
   // which can trigger renderingEngine.resize() and move the image on capture.
-  await page.setViewportSize({ width: 1280, height: 720 });
+  const currentViewport = page.viewportSize();
+  const isLikelyDesktop =
+    !currentViewport || currentViewport.width >= 800;
+
+  if (isLikelyDesktop) {
+    await page.setViewportSize({ width: 1280, height: 720 });
+  }
 
   await page.goto('/');
   if (waitForNetwork) {
