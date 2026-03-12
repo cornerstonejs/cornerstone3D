@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.0...v4.19.1) (2026-03-12)
+
+### Bug Fixes
+
+- **adapters:** Added adapters as subtypes of PlanarFreehandROI for LivewireContour and SplineROI. ([#2642](https://github.com/cornerstonejs/cornerstone3D/issues/2642)) ([13c6b59](https://github.com/cornerstonejs/cornerstone3D/commit/13c6b599cfeb91e5789e172d4e99aad21fb508a0))
+
 # [4.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.5...v4.19.0) (2026-03-10)
 
 ### Features

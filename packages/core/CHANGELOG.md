@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.0...v4.19.1) (2026-03-12)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 # [4.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.5...v4.19.0) (2026-03-10)
 
 **Note:** Version bump only for package @cornerstonejs/core
