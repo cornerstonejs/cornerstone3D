@@ -260,6 +260,7 @@ module.exports = {
             tsconfig: `../${pkg}/tsconfig.json`,
             exclude: [`../${pkg}/test/**/*`, `../${pkg}/jest.config.js`],
             skipErrorChecking: true,
+            sanitizeComments: true,
           },
         ]);
       }

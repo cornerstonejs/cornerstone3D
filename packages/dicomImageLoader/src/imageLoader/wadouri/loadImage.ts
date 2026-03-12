@@ -206,7 +206,7 @@ function concatPixelData(pixelData) {
 
 /**
  * Loads an image from the NATURAL path: ensures NATURAL is populated (fetch +
- * addPart10Instance when needed), gets frame pixel data via getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, { frameIndex }),
+ * addPart10Instance when needed), gets frame pixel data via getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, `{ frameIndex }`),
  * then creates IImage. Does not use dataSetCacheManager.
  */
 function loadImageFromNatural(
