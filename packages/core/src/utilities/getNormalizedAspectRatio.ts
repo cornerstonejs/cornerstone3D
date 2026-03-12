@@ -1,4 +1,5 @@
 import type { Point2 } from '../types';
+import isEqual from './isEqual';
 
 const EPSILON = 1e10;
 
@@ -9,7 +10,7 @@ const EPSILON = 1e10;
  */
 export const getNormalizedAspectRatio = (aspectRatio: Point2): Point2 => {
   const [width, height] = aspectRatio;
-  if (width === height) {
+  if (isEqual(width, height)) {
     return [1, 1];
   }
 
