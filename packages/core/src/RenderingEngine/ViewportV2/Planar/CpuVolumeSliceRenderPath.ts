@@ -144,14 +144,8 @@ export class CpuVolumeSliceRenderPath
     const viewState = camera as PlanarCamera | undefined;
     const { baseCamera, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeCameraState({
-        canvasHeight:
-          ctx.cpu.canvas.height ||
-          ctx.cpu.canvas.clientHeight ||
-          ctx.viewport.element.clientHeight,
-        canvasWidth:
-          ctx.cpu.canvas.width ||
-          ctx.cpu.canvas.clientWidth ||
-          ctx.viewport.element.clientWidth,
+        canvasHeight: ctx.cpu.canvas.height,
+        canvasWidth: ctx.cpu.canvas.width,
         imageIdIndex: viewState?.imageIdIndex,
         imageVolume: rendering.imageVolume,
         orientation: viewState?.orientation,
@@ -161,14 +155,8 @@ export class CpuVolumeSliceRenderPath
     rendering.baseCamera = baseCamera;
     rendering.camera = resolvePlanarVolumeCamera({
       baseCamera,
-      canvasWidth:
-        ctx.cpu.canvas.width ||
-        ctx.cpu.canvas.clientWidth ||
-        ctx.viewport.element.clientWidth,
-      canvasHeight:
-        ctx.cpu.canvas.height ||
-        ctx.cpu.canvas.clientHeight ||
-        ctx.viewport.element.clientHeight,
+      canvasWidth: ctx.cpu.canvas.width,
+      canvasHeight: ctx.cpu.canvas.height,
       viewState,
     });
     rendering.currentImageIdIndex = currentImageIdIndex;
@@ -365,14 +353,8 @@ export class CpuVolumeSliceRenderPath
   ): void {
     rendering.camera = resolvePlanarVolumeCamera({
       baseCamera: rendering.baseCamera,
-      canvasWidth:
-        ctx.cpu.canvas.width ||
-        ctx.cpu.canvas.clientWidth ||
-        ctx.viewport.element.clientWidth,
-      canvasHeight:
-        ctx.cpu.canvas.height ||
-        ctx.cpu.canvas.clientHeight ||
-        ctx.viewport.element.clientHeight,
+      canvasWidth: ctx.cpu.canvas.width,
+      canvasHeight: ctx.cpu.canvas.height,
       viewState: rendering.viewState,
     });
     rendering.renderingInvalidated = true;

@@ -472,25 +472,13 @@ function getVolumeCanvasDimensions(args: {
 
   if (rendering.renderMode === 'cpuVolume') {
     return {
-      canvasWidth:
-        renderContext.cpu.canvas.width ||
-        renderContext.cpu.canvas.clientWidth ||
-        renderContext.viewport.element.clientWidth,
-      canvasHeight:
-        renderContext.cpu.canvas.height ||
-        renderContext.cpu.canvas.clientHeight ||
-        renderContext.viewport.element.clientHeight,
+      canvasWidth: renderContext.cpu.canvas.width,
+      canvasHeight: renderContext.cpu.canvas.height,
     };
   }
 
   return {
-    canvasWidth:
-      renderContext.vtk.canvas.clientWidth ||
-      renderContext.vtk.canvas.width ||
-      renderContext.viewport.element.clientWidth,
-    canvasHeight:
-      renderContext.vtk.canvas.clientHeight ||
-      renderContext.vtk.canvas.height ||
-      renderContext.viewport.element.clientHeight,
+    canvasWidth: renderContext.vtk.canvas.clientWidth,
+    canvasHeight: renderContext.vtk.canvas.clientHeight,
   };
 }

@@ -147,14 +147,8 @@ export class VtkVolumeMapperRenderPath
     const viewState = camera as PlanarCamera | undefined;
     const { baseCamera, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeCameraState({
-        canvasHeight:
-          ctx.vtk.canvas.clientHeight ||
-          ctx.vtk.canvas.height ||
-          ctx.viewport.element.clientHeight,
-        canvasWidth:
-          ctx.vtk.canvas.clientWidth ||
-          ctx.vtk.canvas.width ||
-          ctx.viewport.element.clientWidth,
+        canvasHeight: ctx.vtk.canvas.clientHeight,
+        canvasWidth: ctx.vtk.canvas.clientWidth,
         imageIdIndex: viewState?.imageIdIndex,
         imageVolume: rendering.imageVolume,
         orientation: viewState?.orientation,

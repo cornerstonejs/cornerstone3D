@@ -348,8 +348,8 @@ function applyCpuEquivalentInitialScale(
   image: IImage
 ): void {
   const camera = ctx.vtk.renderer.getActiveCamera();
-  const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
-  const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
+  const canvasWidth = ctx.vtk.canvas.clientWidth;
+  const canvasHeight = ctx.vtk.canvas.clientHeight;
 
   camera.setParallelScale(
     getCpuEquivalentParallelScale({

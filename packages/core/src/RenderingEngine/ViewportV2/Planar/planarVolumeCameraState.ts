@@ -356,8 +356,8 @@ export function applyPlanarVolumeCameraToRenderer(args: {
   const { baseCamera, canvas, renderer, viewState } = args;
   const resolvedCamera = resolvePlanarVolumeCamera({
     baseCamera,
-    canvasWidth: canvas.clientWidth || canvas.width,
-    canvasHeight: canvas.clientHeight || canvas.height,
+    canvasWidth: canvas.clientWidth,
+    canvasHeight: canvas.clientHeight,
     viewState,
   });
 
