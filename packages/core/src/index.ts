@@ -12,6 +12,7 @@ import createVolumeMapper, {
 } from './RenderingEngine/helpers/createVolumeMapper';
 export * from './RenderingEngine/helpers/getOrCreateCanvas';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
+import VolumeSliceViewport from './RenderingEngine/VolumeSliceViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
@@ -123,6 +124,7 @@ export {
   // Rendering Engine
   BaseVolumeViewport,
   VolumeViewport,
+  VolumeSliceViewport,
   VolumeViewport3D,
   Viewport,
   StackViewport,

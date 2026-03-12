@@ -1,9 +1,11 @@
 import type {
   VolumeActor,
+  ImageActor,
   IImageVolume,
   VOIRange,
   ScalingParameters,
 } from '../../types';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
@@ -23,7 +25,7 @@ const REQUEST_TYPE = RequestType.Prefetch;
  * @param imageVolume - The image volume that we want to set the VOI for.
  */
 async function setDefaultVolumeVOI(
-  volumeActor: VolumeActor,
+  volumeActor: VolumeActor | ImageActor,
   imageVolume: IImageVolume
 ): Promise<void> {
   let voi = getVOIFromMetadata(imageVolume);
@@ -40,11 +42,31 @@ async function setDefaultVolumeVOI(
   ) {
     return;
   }
+  const imageProperty = volumeActor.getProperty();
+  let rgbTransferFunction = imageProperty.getRGBTransferFunction(0);
 
-  volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .setMappingRange(voi.lower, voi.upper);
+  if (!rgbTransferFunction) {
+    rgbTransferFunction = vtkColorTransferFunction.newInstance();
+    imageProperty.setRGBTransferFunction(0, rgbTransferFunction);
+  }
+
+  if (rgbTransferFunction.getSize && rgbTransferFunction.getSize() === 0) {
+    rgbTransferFunction.addRGBPoint(voi.lower, 0, 0, 0);
+    rgbTransferFunction.addRGBPoint(voi.upper, 1, 1, 1);
+  }
+
+  rgbTransferFunction.setMappingRange(voi.lower, voi.upper);
+
+  if (
+    volumeActor.getClassName &&
+    volumeActor.getClassName() === 'vtkImageSlice'
+  ) {
+    const windowWidth = voi.upper - voi.lower;
+    const windowCenter = (voi.upper + voi.lower) / 2;
+    imageProperty.setColorWindow(windowWidth);
+    imageProperty.setColorLevel(windowCenter);
+    imageProperty.setUseLookupTableScalarRange(true);
+  }
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {

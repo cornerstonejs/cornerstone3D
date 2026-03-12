@@ -7,7 +7,6 @@ export default function setPetColorMapTransferFunctionForVolumeActor(
 ) {
   const { volumeActor, preset } = volumeInfo;
   const mapper = volumeActor.getMapper();
-  mapper.setSampleDistance(1.0);
 
   const cfun = vtkColorTransferFunction.newInstance();
   let presetToUse = preset ? preset : vtkColorMaps.getPresetByName('hsv');

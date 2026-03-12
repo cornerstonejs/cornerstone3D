@@ -41,8 +41,8 @@ interface Cornerstone3DConfig {
 
     /**
      * The rendering engine mode to use.
-     * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
-     * 'tiled' is a rendering engine that uses tiled rendering.
+     * 'contextPool' uses sequential rendering with parallelization for multi-monitor/high resolution.
+     * 'tiled' uses tiled offscreen rendering.
      */
     renderingEngineMode?: RenderingEngineModeType;
 

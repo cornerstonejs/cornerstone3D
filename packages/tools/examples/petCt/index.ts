@@ -6,6 +6,7 @@ import {
   volumeLoader,
   getRenderingEngine,
 } from '@cornerstonejs/core';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -15,6 +16,7 @@ import {
   setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   addButtonToToolbar,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -128,6 +130,41 @@ addDropdownToToolbar({
         });
       }
     });
+  },
+});
+
+addSliderToToolbar({
+  title: 'PET Opacity',
+  range: [0, 1],
+  step: 0.05,
+  defaultValue: 1,
+  onSelectedValueChange: (value) => {
+    const opacity = parseFloat(value);
+    const fusionViewportIds = [
+      viewportIds.FUSION.AXIAL,
+      viewportIds.FUSION.SAGITTAL,
+      viewportIds.FUSION.CORONAL,
+    ];
+
+    fusionViewportIds.forEach((viewportId) => {
+      const viewport = renderingEngine?.getViewport(viewportId);
+      if (!viewport) {
+        return;
+      }
+
+      const ptActor = viewport.getImageActor(ptVolumeId);
+      if (ptActor) {
+        const property = ptActor.getProperty();
+
+        const ofun = vtkPiecewiseFunction.newInstance();
+        ofun.addPoint(0, 0.0);
+        ofun.addPoint(0.1, 0.9 * opacity);
+        ofun.addPoint(5, 1.0 * opacity);
+        property.setPiecewiseFunction(ofun);
+      }
+    });
+
+    renderingEngine?.render();
   },
 });
 
@@ -571,7 +608,7 @@ async function setUpDisplay() {
   const viewportInputArray = [
     {
       viewportId: viewportIds.CT.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element1_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -579,7 +616,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.CT.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element1_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -587,7 +624,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.CT.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element1_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -595,7 +632,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element2_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -604,7 +641,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element2_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -613,7 +650,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element2_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -622,7 +659,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element3_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -630,7 +667,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element3_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -638,7 +675,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element3_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -646,7 +683,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PETMIP.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_SLICE,
       element: element_mip,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -726,6 +763,7 @@ async function setUpDisplay() {
     [viewportIds.PETMIP.CORONAL]
   );
 
+  syncFusionSlicePlanes();
   initializeCameraSync(renderingEngine);
 
   // Render the viewports
@@ -804,6 +842,44 @@ function setUpVolume3dToolGroup(toolGroup) {
   });
   toolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
 }
+function syncFusionSlicePlanes() {
+  const fusionViewportIds = [
+    viewportIds.FUSION.AXIAL,
+    viewportIds.FUSION.SAGITTAL,
+    viewportIds.FUSION.CORONAL,
+  ];
+
+  fusionViewportIds.forEach((viewportId) => {
+    const viewport = renderingEngine?.getViewport(viewportId);
+    if (!viewport) {
+      return;
+    }
+
+    const actors = viewport.getActors();
+    if (actors.length < 2) {
+      return;
+    }
+
+    const ctActorEntry = actors.find((a) => a.referencedId === ctVolumeId);
+    const ptActorEntry = actors.find((a) => a.referencedId === ptVolumeId);
+
+    if (!ctActorEntry || !ptActorEntry) {
+      return;
+    }
+
+    const ctSlicePlane = ctActorEntry.slicePlane;
+    if (!ctSlicePlane) {
+      return;
+    }
+
+    const ptMapper = ptActorEntry.actor.getMapper();
+    ptMapper.setSlicePlane(ctSlicePlane);
+    ptActorEntry.slicePlane = ctSlicePlane;
+
+    ptActorEntry.actor.setUseBounds(false);
+  });
+}
+
 function initializeCameraSync(renderingEngine) {
   // The fusion scene is the target as it is scaled to both volumes.
   // TODO -> We should have a more generic way to do this,

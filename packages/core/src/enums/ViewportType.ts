@@ -13,6 +13,10 @@ enum ViewportType {
    * - Having a VolumeViewport enables Multi-planar reformation or reconstruction (MPR) by design, in which you can visualize the volume from various different orientations without addition of performance costs.
    */
   ORTHOGRAPHIC = 'orthographic',
+  /**
+   * - Suitable for rendering a volumetric data as 2D slices using image reslice mapper.
+   */
+  VOLUME_SLICE = 'volumeSlice',
   /** Perspective Viewport: Not Implemented yet */
   PERSPECTIVE = 'perspective',
   VOLUME_3D = 'volume3d',

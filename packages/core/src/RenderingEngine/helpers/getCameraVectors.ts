@@ -252,7 +252,10 @@ export function getCameraVectors(
     return;
   }
 
-  if (viewport.type !== Enums.ViewportType.ORTHOGRAPHIC) {
+  if (
+    viewport.type !== Enums.ViewportType.ORTHOGRAPHIC &&
+    viewport.type !== Enums.ViewportType.VOLUME_SLICE
+  ) {
     console.warn('Viewport should be a volume viewport');
   }
   let imageId = viewport.getCurrentImageId();

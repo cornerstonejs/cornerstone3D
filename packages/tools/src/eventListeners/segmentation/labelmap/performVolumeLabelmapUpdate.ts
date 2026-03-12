@@ -35,6 +35,12 @@ export function performVolumeLabelmapUpdate({
     slicesToUpdate = [...Array(numSlices).keys()];
   }
 
+  const updatedFrames = vtkOpenGLTexture.getUpdatedFrames?.();
+  if (updatedFrames) {
+    updatedFrames.length = imageData.getDimensions()[2];
+    updatedFrames.fill(null);
+  }
+
   slicesToUpdate.forEach((i) => {
     vtkOpenGLTexture.setUpdatedFrame(i);
   });
