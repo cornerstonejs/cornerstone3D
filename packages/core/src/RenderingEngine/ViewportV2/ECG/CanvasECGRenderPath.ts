@@ -95,18 +95,14 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   ): Point3 {
     const { metrics, currentCamera } = rendering;
     const layouts = getChannelLayouts(rendering, waveform);
-    const zoom = currentCamera?.zoom ?? 1;
-    const pan = currentCamera?.pan ?? [0, 0];
-    const baseScale = metrics.worldToCanvasRatio || 1;
-    const effectiveScale = baseScale * zoom;
-    const drawWidth = metrics.ecgWidth * effectiveScale;
-    const drawHeight = metrics.ecgHeight * effectiveScale;
-    const canvas = rendering.canvas;
-    const xOffset = (canvas.clientWidth - drawWidth) / 2 + pan[0];
-    const yOffset = (canvas.clientHeight - drawHeight) / 2 + pan[1];
+    const { effectiveRatio, xOffset, yOffset } = getEffectiveTransform(
+      metrics,
+      currentCamera,
+      rendering.canvas
+    );
     const subCanvasPos: Point2 = [
-      (canvasPos[0] - xOffset) / effectiveScale,
-      (canvasPos[1] - yOffset) / effectiveScale,
+      (canvasPos[0] - xOffset) / effectiveRatio,
+      (canvasPos[1] - yOffset) / effectiveRatio,
     ];
     let z = 0;
 
@@ -151,22 +147,19 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
       return [0, 0];
     }
 
-    const zoom = currentCamera?.zoom ?? 1;
-    const pan = currentCamera?.pan ?? [0, 0];
-    const effectiveScale = metrics.worldToCanvasRatio * zoom;
-    const drawWidth = metrics.ecgWidth * effectiveScale;
-    const drawHeight = metrics.ecgHeight * effectiveScale;
-    const canvas = rendering.canvas;
-    const xOffset = (canvas.clientWidth - drawWidth) / 2 + pan[0];
-    const yOffset = (canvas.clientHeight - drawHeight) / 2 + pan[1];
+    const { effectiveRatio, xOffset, yOffset } = getEffectiveTransform(
+      metrics,
+      currentCamera,
+      rendering.canvas
+    );
     const layout = layouts[z];
 
     return [
       (worldPos[0] / waveform.numberOfSamples) *
         metrics.ecgWidth *
-        effectiveScale +
+        effectiveRatio +
         xOffset,
-      (layout.baseline - worldPos[1] * metrics.channelScale) * effectiveScale +
+      (layout.baseline - worldPos[1] * metrics.channelScale) * effectiveRatio +
         yOffset,
     ];
   }
@@ -203,6 +196,22 @@ export class CanvasECGPath
   createRenderPath() {
     return new CanvasECGRenderPath();
   }
+}
+
+function getEffectiveTransform(
+  metrics: RenderWindowMetrics,
+  camera: ECGCamera | undefined,
+  canvas: HTMLCanvasElement
+): { effectiveRatio: number; xOffset: number; yOffset: number } {
+  const zoom = camera?.zoom ?? 1;
+  const pan = camera?.pan ?? [0, 0];
+  const effectiveRatio = metrics.worldToCanvasRatio * zoom;
+  const drawWidth = metrics.ecgWidth * effectiveRatio;
+  const drawHeight = metrics.ecgHeight * effectiveRatio;
+  const xOffset = (canvas.clientWidth - drawWidth) / 2 + pan[0];
+  const yOffset = (canvas.clientHeight - drawHeight) / 2 + pan[1];
+
+  return { effectiveRatio, xOffset, yOffset };
 }
 
 function getChannelLayouts(
@@ -294,13 +303,11 @@ function drawFrame(
 
   ecgRendering.metrics = metrics;
 
-  const zoom = currentCamera.zoom ?? 1;
-  const pan = currentCamera.pan ?? [0, 0];
-  const effectiveRatio = metrics.worldToCanvasRatio * zoom;
-  const drawWidth = metrics.ecgWidth * effectiveRatio;
-  const drawHeight = metrics.ecgHeight * effectiveRatio;
-  const xOffset = (canvas.clientWidth - drawWidth) / 2 + pan[0];
-  const yOffset = (canvas.clientHeight - drawHeight) / 2 + pan[1];
+  const { effectiveRatio, xOffset, yOffset } = getEffectiveTransform(
+    metrics,
+    currentCamera,
+    canvas
+  );
 
   canvasContext.resetTransform();
   canvasContext.fillStyle = '#000000';

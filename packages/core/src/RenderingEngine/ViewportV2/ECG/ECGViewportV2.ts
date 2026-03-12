@@ -4,6 +4,7 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import ViewportV2 from '../ViewportV2';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
+import type { IImageData, Point2, Point3 } from '../../../types';
 import { CanvasECGPath } from './CanvasECGRenderPath';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import type {
@@ -14,6 +15,8 @@ import type {
   ECGViewportV2Input,
   ECGWaveformPayload,
 } from './ECGViewportV2Types';
+
+const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
 defaultRenderPathResolver.register(new CanvasECGPath());
 
@@ -234,6 +237,112 @@ class ECGViewportV2 extends ViewportV2<
    */
   render(): void {
     this.renderBindings();
+  }
+
+  /**
+   * Called by the rendering engine render loop for custom pipeline viewports.
+   */
+  customRenderViewportToCanvas(): void {
+    this.render();
+  }
+
+  /**
+   * Resets pan and zoom to defaults and re-renders.
+   */
+  resetCamera(): boolean {
+    this.camera = {
+      ...this.camera,
+      pan: [0, 0],
+      zoom: 1,
+    };
+    this.modified();
+
+    return true;
+  }
+
+  /**
+   * ECG viewports have no rotation.
+   */
+  getRotation(): number {
+    return 0;
+  }
+
+  /**
+   * No-op: ECG viewports are not slice stacks.
+   */
+  scroll(): void {
+    // no-op
+  }
+
+  /**
+   * Returns the current ECG image id, if one has been loaded.
+   */
+  getCurrentImageId(): string | undefined {
+    const binding = this.getFirstBinding();
+
+    return binding?.data.id;
+  }
+
+  /**
+   * ECG viewports always display index 0.
+   */
+  getCurrentImageIdIndex(): number {
+    return 0;
+  }
+
+  /**
+   * Returns the image ids for the active ECG dataset.
+   */
+  getImageIds(): string[] {
+    const binding = this.getFirstBinding();
+
+    return binding ? [binding.data.id] : [];
+  }
+
+  /**
+   * Returns image data compatible with the Cornerstone tools annotation system.
+   * Amplitude is mapped to [0, ECG_AMPLITUDE_INDEX_SIZE) so annotation
+   * index bounds checks work correctly across channels.
+   */
+  getImageData(): IImageData | null {
+    const binding = this.getFirstBinding();
+
+    if (!binding) {
+      return null;
+    }
+
+    const waveform = binding.data as unknown as LoadedData<ECGWaveformPayload>;
+    const nSamples = waveform.numberOfSamples;
+    const nChannels = waveform.channels.length;
+    const dimensions = [nSamples, ECG_AMPLITUDE_INDEX_SIZE, nChannels];
+    const spacing = [1, 1, 1];
+    const origin = [0, 0, 0];
+    const direction = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    const amplitudeOffset = ECG_AMPLITUDE_INDEX_SIZE / 2;
+
+    const imageData = {
+      getDirection: () => direction,
+      getDimensions: () => dimensions,
+      getRange: () => [0, 1] as Point2,
+      getSpacing: () => spacing,
+      worldToIndex: (point: Point3) => {
+        return [point[0], point[1] + amplitudeOffset, point[2]] as Point3;
+      },
+      indexToWorld: (point: Point3) => {
+        return [point[0], point[1] - amplitudeOffset, point[2]] as Point3;
+      },
+    };
+
+    return {
+      dimensions,
+      spacing,
+      origin,
+      direction,
+      imageData,
+      hasPixelSpacing: false,
+      preScale: { scaled: false },
+      metadata: { Modality: 'ECG' },
+    } as unknown as IImageData;
   }
 }
 
