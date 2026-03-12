@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { addPart10Instance } from '@cornerstonejs/metadata/utilities/metadataProvider';
 import {
   initDemo,
   setTitleAndDescription,
@@ -52,9 +53,12 @@ element.oncontextmenu = (e) => e.preventDefault();
  * Runs the demo
  */
 async function run() {
+  // Use metadata package only: do not register legacy wadors/wadouri metaDataProvider.
+  // Instances are cached via addDicomwebInstance in createImageIdsAndCacheMetaData;
+  // ECG is provided by @cornerstonejs/metadata (ecgFromInstance provider).
   await initDemo();
 
-  // Use the standard pipeline to fetch and cache DICOM metadata
+  // Use the standard pipeline to fetch and cache DICOM metadata (addDicomwebInstance)
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
     SeriesInstanceUID,
@@ -182,6 +186,37 @@ async function run() {
     title: 'Reset View',
     onClick: () => {
       viewport.resetCamera();
+    },
+  });
+
+  // Upload ECG button — load a DICOM waveform file and display it
+  addButtonToToolbar({
+    title: 'Upload ECG',
+    onClick: () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.dcm,.dicom,application/dicom';
+      input.onchange = async (e: Event) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const imageId = `ecg:upload:${file.name}`;
+          await addPart10Instance(imageId, arrayBuffer);
+          await viewport.setEcg(imageId);
+          const { width: ecgWidth, height: ecgHeight } =
+            viewport.getContentDimensions();
+          element.style.width = `${ecgWidth}px`;
+          element.style.height = `${ecgHeight}px`;
+          renderingEngine.resize();
+        } catch (err) {
+          console.error(err);
+          alert(
+            err instanceof Error ? err.message : 'Failed to load ECG file.'
+          );
+        }
+      };
+      input.click();
     },
   });
 

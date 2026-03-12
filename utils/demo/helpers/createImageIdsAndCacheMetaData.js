@@ -1,17 +1,25 @@
 import { api } from 'dicomweb-client';
-import dcmjs from 'dcmjs';
 import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
-import { utilities } from '@cornerstonejs/core';
+import { utilities, metaData } from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
+import {
+  utilities as metadataUtilities,
+  Enums as metadataEnums,
+} from '@cornerstonejs/metadata';
 
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import { convertMultiframeImageIds } from './convertMultiframeImageIds';
-import removeInvalidTags from './removeInvalidTags';
 
-const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
   utilities;
+
+const { addDicomwebInstance, setCacheData, Tags } = metadataUtilities;
+const { MetadataModules } = metadataEnums;
+
+const SOP_INSTANCE_UID = Tags.resolveHexFromKeyword('SOPInstanceUID');
+const SERIES_INSTANCE_UID = Tags.resolveHexFromKeyword('SeriesInstanceUID');
+const MODALITY = Tags.resolveHexFromKeyword('Modality');
 
 /**
 /**
@@ -21,6 +29,9 @@ const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
  * Uses the app config to choose which study to fetch, and which
  * dicom-web server to fetch it from.
  *
+ * @param {object} options
+ * @param {boolean} [options.useMetadata=true] - Store instances in the new typed metadata framework
+ * @param {boolean} [options.useLegacyWadoRs=true] - Store instances in the legacy wadors metaDataManager
  * @returns {string[]} An array of imageIds for instances in the study.
  */
 
@@ -31,11 +42,9 @@ export default async function createImageIdsAndCacheMetaData({
   wadoRsRoot,
   client = null,
   convertMultiframe = true,
+  useMetadata = true,
+  useLegacyWadoRs = true,
 }) {
-  const SOP_INSTANCE_UID = '00080018';
-  const SERIES_INSTANCE_UID = '0020000E';
-  const MODALITY = '00080060';
-
   const studySearchOptions = {
     studyInstanceUID: StudyInstanceUID,
     seriesInstanceUID: SeriesInstanceUID,
@@ -70,34 +79,54 @@ export default async function createImageIdsAndCacheMetaData({
       SOPInstanceUIDToUse.trim() +
       '/frames/1';
 
-    cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
-      imageId,
-      instanceMetaData
-    );
+    if (useLegacyWadoRs) {
+      cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
+        imageId,
+        instanceMetaData
+      );
+    }
+
+    if (useMetadata) {
+      addDicomwebInstance(imageId, instanceMetaData);
+    }
+
     return imageId;
   });
 
   // if the image ids represent multiframe information, creates a new list with one image id per frame
   // if not multiframe data available, just returns the same list given
   if (convertMultiframe) {
+    const originalImageIds = [...imageIds];
     imageIds = convertMultiframeImageIds(imageIds);
+
+    // For multiframe expansions, store NATURAL for each frame imageId
+    if (useMetadata && imageIds.length !== originalImageIds.length) {
+      for (const imageId of imageIds) {
+        if (metaData.get('instanceOrig', imageId)) {
+          continue;
+        }
+        const frameIdx = imageId.lastIndexOf('/frames/');
+        if (frameIdx >= 0) {
+          const baseImageId = imageId.substring(0, frameIdx) + '/frames/1';
+          const baseInstance = metaData.get('instanceOrig', baseImageId);
+          if (baseInstance) {
+            setCacheData(MetadataModules.NATURAL, imageId, baseInstance);
+          }
+        }
+      }
+    }
   }
 
-  imageIds.forEach((imageId) => {
-    let instanceMetaData =
-      cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
+  if (useMetadata) {
+    imageIds.forEach((imageId) => {
+      const instance = metaData.get('instanceOrig', imageId);
 
-    if (!instanceMetaData) {
-      return;
-    }
+      if (!instance) {
+        return;
+      }
 
-    // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
-    instanceMetaData = removeInvalidTags(instanceMetaData);
-
-    if (instanceMetaData) {
-      // Add calibrated pixel spacing
-      const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
-      const pixelSpacingInformation = getPixelSpacingInformation(metadata);
+      // Add calibrated pixel spacing from the naturalized instance
+      const pixelSpacingInformation = getPixelSpacingInformation(instance);
       const pixelSpacing = pixelSpacingInformation?.PixelSpacing;
 
       if (pixelSpacing) {
@@ -107,8 +136,8 @@ export default async function createImageIdsAndCacheMetaData({
           type: pixelSpacingInformation.type,
         });
       }
-    }
-  });
+    });
+  }
 
   // we don't want to add non-pet
   // Note: for 99% of scanners SUV calculation is consistent bw slices

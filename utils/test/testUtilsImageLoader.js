@@ -96,7 +96,7 @@ const fakeImageLoader = (imageId) => {
  * @returns metadata based on the imageId and type
  */
 function fakeMetaDataProvider(type, imageId) {
-  if (!imageId.startsWith('fakeImageLoader')) {
+  if (!imageId?.startsWith('fakeImageLoader')) {
     return;
   }
 

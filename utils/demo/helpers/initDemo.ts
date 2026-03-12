@@ -22,7 +22,9 @@ window.cornerstoneTools = cornerstoneTools;
 
 export default async function initDemo(config: any = {}) {
   initProviders();
-  cornerstoneDICOMImageLoader.init();
+  cornerstoneDICOMImageLoader.init({
+    useLegacyMetadataProvider: config?.useLegacyMetadataProvider,
+  });
   initVolumeLoader();
 
   const urlParams = new URLSearchParams(window.location.search);

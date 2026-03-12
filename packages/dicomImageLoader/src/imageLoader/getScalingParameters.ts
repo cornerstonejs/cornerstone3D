@@ -15,9 +15,20 @@ export default function getScalingParameters(metaData, imageId: string) {
 
   const { modality } = generalSeriesModule;
 
+  const rescaleSlope = modalityLutModule.rescaleSlope;
+  const rescaleIntercept = modalityLutModule.rescaleIntercept;
+
+  // Identity transform (slope 1, intercept 0) is implicitly non-prescaled; do not set preScale.
+  if (
+    rescaleSlope === 1 &&
+    (rescaleIntercept === 0 || rescaleIntercept == null)
+  ) {
+    return undefined;
+  }
+
   const scalingParameters = {
-    rescaleSlope: modalityLutModule.rescaleSlope,
-    rescaleIntercept: modalityLutModule.rescaleIntercept,
+    rescaleSlope,
+    rescaleIntercept,
     modality,
   };
 
