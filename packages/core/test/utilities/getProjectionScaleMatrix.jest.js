@@ -37,10 +37,11 @@ describe('getProjectionScaleMatrix', () => {
     const vpn = vec3.fromValues(0, 1, 0);
     const matrix = getProjectionScaleMatrix(viewUp, vpn, aspect);
 
-    // 45 deg alignment should interpolate: ~0.707 * 2.0 + 0.293 * 1.0 = 1.707
+    // At 45 degrees, the squared sine/cosine interpolation results in a perfect 50/50 split.
+    // M_1,1 = sx*sin^2(45) + sy*cos^2(45) = 1(0.5) + 2(0.5) = 1.5
     expect(matrix[5]).toBeGreaterThan(1.0);
     expect(matrix[5]).toBeLessThan(2.0);
-    expect(matrix[5]).toBeCloseTo(1.7071, 4);
+    expect(matrix[5]).toBeCloseTo(1.5, 4);
   });
 
   describe('Rotation invariance - stretch follows patient direction', () => {
