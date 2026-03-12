@@ -1,4 +1,5 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getLabelmapActorUID } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 /**
@@ -17,7 +18,27 @@ function removeLabelmapFromElement(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  viewport.removeActors([getLabelmapActorUID(viewport.id, segmentationId)]);
+  if (viewport instanceof VolumeViewport && viewport.useCPURendering) {
+    const segmentation = getSegmentation(segmentationId);
+    const volumeId = (
+      segmentation?.representationData?.Labelmap as { volumeId?: string }
+    )?.volumeId;
+
+    if (volumeId) {
+      (
+        viewport as unknown as {
+          removeCPUVolumes?: (volumeIds: string[]) => void;
+        }
+      ).removeCPUVolumes?.([volumeId]);
+    }
+
+    return;
+  }
+
+  const actorUID = getLabelmapActorUID(viewport.id, segmentationId);
+  if (actorUID) {
+    viewport.removeActors([actorUID]);
+  }
 }
 
 export default removeLabelmapFromElement;

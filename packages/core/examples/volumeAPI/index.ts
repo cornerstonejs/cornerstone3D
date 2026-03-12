@@ -13,6 +13,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   camera as cameraHelpers,
+  getDemoInitFlagsFromUrl,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
@@ -22,6 +23,9 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+const { useCPURendering: useCPURenderingOnLoad } = getDemoInitFlagsFromUrl();
+const zoomStepFactor = 1.1;
+const panStep = 30;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
@@ -34,7 +38,7 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Volume Viewport API',
-  'Demonstrates how to interact with a Volume viewport.'
+  'Demonstrates how to interact with a Volume viewport. Add ?cpu=true to load using CPU volume rendering.'
 );
 
 const content = document.getElementById('content');
@@ -47,6 +51,12 @@ content.appendChild(element);
 // ============================= //
 
 // TODO -> Maybe some of these implementations should be pushed down to some API
+
+function getVolumeViewport() {
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+
+  return renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+}
 
 // Buttons
 addButtonToToolbar({
@@ -119,6 +129,80 @@ addButtonToToolbar({
     viewport.setProperties({ invert: !invert }, volumeId);
 
     viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Zoom In',
+  onClick: () => {
+    const viewport = getVolumeViewport();
+    viewport.setZoom(viewport.getZoom() * zoomStepFactor);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Zoom Out',
+  onClick: () => {
+    const viewport = getVolumeViewport();
+    viewport.setZoom(viewport.getZoom() / zoomStepFactor);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Pan Left',
+  onClick: () => {
+    const viewport = getVolumeViewport();
+    const pan = viewport.getPan();
+    viewport.setPan([pan[0] - panStep, pan[1]]);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Pan Right',
+  onClick: () => {
+    const viewport = getVolumeViewport();
+    const pan = viewport.getPan();
+    viewport.setPan([pan[0] + panStep, pan[1]]);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Pan Up',
+  onClick: () => {
+    const viewport = getVolumeViewport();
+    const pan = viewport.getPan();
+    viewport.setPan([pan[0], pan[1] - panStep]);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Pan Down',
+  onClick: () => {
+    const viewport = getVolumeViewport();
+    const pan = viewport.getPan();
+    viewport.setPan([pan[0], pan[1] + panStep]);
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Scroll +',
+  onClick: () => {
+    const viewport = getVolumeViewport();
+    viewport.scroll(1);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Scroll -',
+  onClick: () => {
+    const viewport = getVolumeViewport();
+    viewport.scroll(-1);
   },
 });
 
@@ -287,7 +371,13 @@ addSliderToToolbar({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({
+    core: {
+      rendering: {
+        useCPURendering: useCPURenderingOnLoad,
+      },
+    },
+  });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
 
@@ -326,22 +416,19 @@ async function run() {
     imageIds,
   });
 
-  // Set the volume to load
   volume.load();
 
-  // Set the volume on the viewport and it's default properties
-  viewport
-    .setVolumes([{ volumeId, callback: setCtTransferFunctionForVolumeActor }])
-    .then(() => {
-      viewport.setProperties({
-        voiRange: { lower: -160, upper: 240 },
-        VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
-        colormap: { name: 'Grayscale' },
-        slabThickness: 0.1,
-      });
-    });
+  await viewport.setVolumes([
+    { volumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
 
-  // Render the image
+  viewport.setProperties({
+    voiRange: { lower: -160, upper: 240 },
+    VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+    colormap: { name: 'Grayscale' },
+    slabThickness: 0.1,
+  });
+
   viewport.render();
 }
 

@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
 import type { ActorSliceRange, Point3 } from '../types';
 
+type SliceRange = Pick<ActorSliceRange, 'min' | 'max' | 'current'>;
+
 /**
  * Given a number of frames, `deltaFrames`,
  * move the `focalPoint` and camera `position` so that it moves forward/backwards
@@ -19,7 +21,7 @@ import type { ActorSliceRange, Point3 } from '../types';
 export default function snapFocalPointToSlice(
   focalPoint: Point3,
   position: Point3,
-  sliceRange: ActorSliceRange,
+  sliceRange: SliceRange,
   viewPlaneNormal: Point3,
   spacingInNormalDirection: number,
   deltaFrames: number

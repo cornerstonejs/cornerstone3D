@@ -82,6 +82,11 @@ import {
   createSharpeningRenderPass,
   createSmoothingRenderPass,
 } from './renderPasses';
+
+type BaseVolumeViewportScrollOptions = {
+  volumeId?: string;
+  scrollSlabs?: boolean;
+};
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -115,9 +120,12 @@ abstract class BaseVolumeViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
 
     if (this.useCPURendering) {
-      throw new Error(
-        'VolumeViewports cannot be used whilst CPU Fallback Rendering is enabled.'
-      );
+      if (this.type !== ViewportType.ORTHOGRAPHIC) {
+        throw new Error(
+          'Only planar volume viewport CPU path is scaffolded. Perspective and volume_3d are not supported in CPU mode.'
+        );
+      }
+      return;
     }
 
     this._configureRenderingPipeline();
@@ -708,12 +716,35 @@ abstract class BaseVolumeViewport extends Viewport {
   /**
    * Scrolls the viewport in the given direction/amount
    */
-  public scroll(delta = 1) {
-    const volumeId = this.getVolumeId();
+  public scroll(
+    delta?: number,
+    options?: BaseVolumeViewportScrollOptions
+  ): void;
+  /** @deprecated Use `scroll(delta, { volumeId, scrollSlabs })` instead. */
+  public scroll(
+    delta?: number,
+    volumeId?: string,
+    useSlabThickness?: boolean
+  ): void;
+  public scroll(
+    delta = 1,
+    optionsOrVolumeId: BaseVolumeViewportScrollOptions | string = {},
+    legacyUseSlabThickness = false
+  ): void {
+    const options =
+      typeof optionsOrVolumeId === 'string'
+        ? {
+            volumeId: optionsOrVolumeId,
+            scrollSlabs: legacyUseSlabThickness,
+          }
+        : optionsOrVolumeId;
+    const volumeId = options.volumeId ?? this.getVolumeId();
+    const useSlabThickness = options.scrollSlabs ?? false;
+
     const { sliceRangeInfo } = getVolumeViewportScrollInfo(
       this as unknown as IVolumeViewport,
       volumeId,
-      true
+      useSlabThickness
     );
 
     if (!sliceRangeInfo) {

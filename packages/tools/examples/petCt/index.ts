@@ -15,6 +15,7 @@ import {
   setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   addButtonToToolbar,
+  getDemoInitFlagsFromUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -35,6 +36,7 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType, BlendModes } = Enums;
+const { useCPURendering: useCPURenderingOnLoad } = getDemoInitFlagsFromUrl();
 
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers;
@@ -86,7 +88,7 @@ const viewportIds = {
 // ======== Set up page ======== //
 setTitleAndDescription(
   'PET-CT',
-  'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
+  'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold. Add ?cpu=true to load using CPU volume rendering.'
 );
 
 const optionsValues = [
@@ -713,7 +715,7 @@ async function setUpDisplay() {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   );
 
-  setVolumesForViewports(
+  await setVolumesForViewports(
     renderingEngine,
     [
       {
@@ -857,7 +859,13 @@ function initCameraSynchronization(sViewport, tViewport) {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({
+    core: {
+      rendering: {
+        useCPURendering: useCPURenderingOnLoad,
+      },
+    },
+  });
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);

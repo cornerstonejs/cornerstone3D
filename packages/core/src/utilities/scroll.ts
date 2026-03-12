@@ -7,8 +7,6 @@ import type {
   IVideoViewport,
   IStackViewport,
 } from '../types';
-import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
-import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getEnabledElement from '../getEnabledElement';
 import triggerEvent from './triggerEvent';
 import eventTarget from '../eventTarget';
@@ -59,11 +57,10 @@ export default function scroll(
       triggerEvent(eventTarget, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
     }
 
-    (viewport as IStackViewport).scroll(
-      delta,
-      options.debounceLoading,
-      options.loop
-    );
+    (viewport as IStackViewport).scroll(delta, {
+      debounceLoading: options.debounceLoading,
+      loop: options.loop,
+    });
   }
 }
 
@@ -73,40 +70,33 @@ export function scrollVolume(
   delta: number,
   scrollSlabs = false
 ) {
-  const useSlabThickness = scrollSlabs;
+  const resolvedVolumeId = volumeId || viewport.getVolumeId();
 
-  const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
-    getVolumeViewportScrollInfo(viewport, volumeId, useSlabThickness);
-
-  if (numScrollSteps === 0) return;
-
-  if (!sliceRangeInfo) {
+  if (!resolvedVolumeId) {
     return;
   }
 
-  const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
-  const { focalPoint, viewPlaneNormal, position } = camera;
+  const { numScrollSteps, currentStepIndex } =
+    viewport.getScrollInfo(resolvedVolumeId, scrollSlabs) || {};
 
-  const { newFocalPoint, newPosition } = snapFocalPointToSlice(
-    focalPoint,
-    position,
-    sliceRange,
-    viewPlaneNormal,
-    spacingInNormalDirection,
-    delta
-  );
+  if (
+    typeof numScrollSteps !== 'number' ||
+    typeof currentStepIndex !== 'number' ||
+    numScrollSteps === 0
+  ) {
+    return;
+  }
 
-  viewport.setCamera({
-    focalPoint: newFocalPoint,
-    position: newPosition,
+  viewport.scroll(delta, {
+    volumeId: resolvedVolumeId,
+    scrollSlabs,
   });
-  viewport.render();
 
   const desiredStepIndex = currentStepIndex + delta;
 
   const VolumeScrollEventDetail: EventTypes.VolumeScrollOutOfBoundsEventDetail =
     {
-      volumeId,
+      volumeId: resolvedVolumeId,
       viewport,
       delta,
       desiredStepIndex,

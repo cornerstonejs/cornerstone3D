@@ -289,10 +289,6 @@ export class BaseStreamingImageVolume
           )(imageRetrieveConfiguration)
         : this;
 
-    if (loadStatus.loading === true) {
-      return; // Already loading, will get callbacks from main load.
-    }
-
     const { loaded } = this.loadStatus;
     const totalNumFrames = imageIds.length;
 
@@ -311,6 +307,10 @@ export class BaseStreamingImageVolume
 
     if (callback) {
       this.loadStatus.callbacks.push(callback);
+    }
+
+    if (loadStatus.loading === true) {
+      return; // Already loading, callback is now queued.
     }
 
     this._prefetchImageIds();

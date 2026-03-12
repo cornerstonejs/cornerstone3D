@@ -97,6 +97,8 @@ async function addLabelmapToElement(
         volumeId,
         visibility,
         representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
+        isLabelmapSegmentation: true,
+        segmentationId,
         useIndependentComponents,
         blendMode,
       },

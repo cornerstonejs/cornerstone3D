@@ -1,17 +1,37 @@
-import type CanvasActor from '.';
+type CanvasMapperBindings = {
+  getInputData: () => unknown;
+  setInputData: (inputData: unknown) => void;
+  modified: () => void;
+};
 
 /**
  * Mimics the VTK mapper functionality, but for non-vtk canvas based rendering
  * classes.
  */
 export default class CanvasMapper {
-  private actor: CanvasActor;
+  private bindings: CanvasMapperBindings | null = null;
+  private inputData: unknown;
+  private hasInputData = false;
 
-  constructor(actor: CanvasActor) {
-    this.actor = actor;
+  public setBindings(bindings: CanvasMapperBindings | null): void {
+    this.bindings = bindings;
+
+    if (bindings && this.hasInputData) {
+      bindings.setInputData(this.inputData);
+    }
   }
 
-  getInputData() {
-    return this.actor.getImage();
+  public getInputData() {
+    return this.bindings ? this.bindings.getInputData() : this.inputData;
+  }
+
+  public setInputData(inputData: unknown): void {
+    this.inputData = inputData;
+    this.hasInputData = true;
+    this.bindings?.setInputData(inputData);
+  }
+
+  public modified(): void {
+    this.bindings?.modified();
   }
 }

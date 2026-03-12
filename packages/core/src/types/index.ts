@@ -66,8 +66,16 @@ import type FlipDirection from './FlipDirection';
 import type ICachedImage from './ICachedImage';
 import type ICachedVolume from './ICachedVolume';
 import type IStackViewport from './IStackViewport';
+import type IStackActorMapper from './IStackActorMapper';
+import type {
+  IStackCPUActorMapperContext,
+  IStackGPUActorMapperContext,
+} from './IStackActorMapperContext';
 import type IWSIViewport from './IWSIViewport';
 import type IVolumeViewport from './IVolumeViewport';
+import type IVolumeActorMapper from './IVolumeActorMapper';
+import type { VolumeViewportScrollInfo } from './IVolumeActorMapper';
+import type { IVolumeActorMapperContext } from './IVolumeActorMapperContext';
 import type ViewportPreset from './ViewportPreset';
 
 // CPU types
@@ -164,6 +172,12 @@ export type {
   //
   IBaseStreamingImageVolume,
   ICamera,
+  IStackActorMapper,
+  IStackCPUActorMapperContext,
+  IStackGPUActorMapperContext,
+  IVolumeActorMapper,
+  IVolumeActorMapperContext,
+  VolumeViewportScrollInfo,
   IStackViewport,
   IVideoViewport,
   IECGViewport,

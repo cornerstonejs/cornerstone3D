@@ -33,6 +33,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import CanvasActor from './CanvasActor';
+import CanvasMapper from './CanvasActor/CanvasMapper';
 import cache from '../cache/cache';
 import uuidv4 from '../utilities/uuidv4';
 import FrameRange from '../utilities/FrameRange';
@@ -44,6 +45,10 @@ import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
 export type CanvasScalarData = Uint8ClampedArray & {
   frameNumber?: number;
   getRange?: () => [number, number];
+};
+
+type VideoViewportScrollOptions = {
+  // Reserved for future video-specific scroll behavior.
 };
 
 /**
@@ -366,11 +371,12 @@ class VideoViewport extends Viewport {
     }
   }
 
-  public async scroll(delta = 1) {
+  public async scroll(delta = 1, options: VideoViewportScrollOptions = {}) {
     await this.pause();
 
     const videoElement = this.videoElement;
     const renderFrame = this.renderFrame;
+    void options;
 
     const currentTime = videoElement.currentTime;
     const newTime = currentTime + (delta * this.scrollSpeed) / this.fps;
@@ -1153,7 +1159,13 @@ class VideoViewport extends Viewport {
   }
 
   protected createActorMapper(image) {
-    return new CanvasActor(this as unknown as IViewport, image);
+    const mapper = new CanvasMapper();
+    mapper.setInputData(image);
+
+    const actor = new CanvasActor(this as unknown as IViewport);
+    actor.setMapper(mapper);
+
+    return actor;
   }
 
   /**

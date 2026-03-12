@@ -733,7 +733,7 @@ class WSIViewport extends Viewport {
    * images are used to represent different zoom levels, although this also
    * allows fractional zoom levels
    */
-  public scroll(delta: number) {
+  public scroll(delta: number, _options: Record<string, never> = {}) {
     const camera = this.getCamera();
     this.setCamera({
       parallelScale: camera.parallelScale * (1 + 0.1 * delta),

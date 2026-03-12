@@ -21,7 +21,7 @@ import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
 import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
-import initDemo from './initDemo';
+import initDemo, { getDemoInitFlagsFromUrl } from './initDemo';
 import initProviders from './initProviders';
 import initVolumeLoader from './initVolumeLoader';
 import labelmapTools from './labelmapTools';
@@ -63,6 +63,7 @@ export {
   createInfoSection,
   ctVoiRange,
   downloadSurfacesData,
+  getDemoInitFlagsFromUrl,
   getLocalUrl,
   initDemo,
   initProviders,

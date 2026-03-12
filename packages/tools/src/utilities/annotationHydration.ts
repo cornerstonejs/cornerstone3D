@@ -93,6 +93,13 @@ function getTargetId(viewport: Types.IViewport): string | undefined {
 }
 
 function getTargetVolumeId(viewport: Types.IViewport): string | undefined {
+  if (viewport instanceof BaseVolumeViewport) {
+    const volumeId = viewport.getVolumeId();
+    if (volumeId) {
+      return volumeId;
+    }
+  }
+
   const actorEntries = viewport.getActors();
 
   if (!actorEntries) {

@@ -6,6 +6,7 @@ import {
 
 import type {
   LabelmapSegmentationData,
+  LabelmapSegmentationDataVolume,
   LabelmapStyle,
 } from '../../../types/LabelmapTypes';
 import type {
@@ -158,6 +159,26 @@ async function render(
   }
 
   if (viewport instanceof VolumeViewport) {
+    const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
+
+    if (viewport.useCPURendering) {
+      if (!volumeId) {
+        return;
+      }
+
+      if (!viewport.hasVolumeId(volumeId)) {
+        await _addLabelmapToViewport(
+          viewport,
+          labelmapData,
+          segmentationId,
+          config
+        );
+      }
+
+      _setCPUVolumeLabelmapColorAndOpacity(viewport, volumeId, representation);
+      return;
+    }
+
     if (!labelmapActorEntries?.length) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(
@@ -207,6 +228,81 @@ async function render(
       representation
     );
   }
+}
+
+function _setCPUVolumeLabelmapColorAndOpacity(
+  viewport: VolumeViewport,
+  volumeId: string,
+  segmentationRepresentation: SegmentationRepresentation
+): void {
+  const { segmentationId, colorLUTIndex } = segmentationRepresentation;
+  const activeSegmentation = getActiveSegmentation(viewport.id);
+  const isActiveLabelmap =
+    activeSegmentation?.segmentationId === segmentationId;
+  const renderInactiveSegmentations =
+    segmentationStyle.getRenderInactiveSegmentations(viewport.id);
+  const labelmapStyle = segmentationStyle.getStyle({
+    viewportId: viewport.id,
+    type: SegmentationRepresentations.Labelmap,
+    segmentationId,
+  }) as LabelmapStyle;
+  const segmentsHidden = internalGetHiddenSegmentIndices(viewport.id, {
+    segmentationId,
+    type: SegmentationRepresentations.Labelmap,
+  });
+  const colorLUT = getColorLUT(colorLUTIndex);
+  const numColors = 256;
+  const cpuColorLUT: number[][] = new Array(numColors);
+
+  cpuColorLUT[0] = [0, 0, 0, 0];
+
+  for (let i = 1; i < numColors; i++) {
+    const segmentColor = colorLUT[i] || [255, 0, 0, 255];
+    const segmentStyle = segmentationStyle.getStyle({
+      viewportId: viewport.id,
+      type: SegmentationRepresentations.Labelmap,
+      segmentationId,
+      segmentIndex: i,
+    });
+    const { fillAlpha, renderFill } = _getLabelmapConfig(
+      labelmapStyle,
+      isActiveLabelmap,
+      segmentStyle as LabelmapStyle
+    );
+    const hidden = segmentsHidden.has(i);
+    const alpha =
+      renderFill && !hidden
+        ? Math.round((segmentColor[3] / 255) * fillAlpha * 255)
+        : 0;
+
+    cpuColorLUT[i] = [segmentColor[0], segmentColor[1], segmentColor[2], alpha];
+  }
+
+  (
+    viewport as unknown as {
+      updateCPUVolumeInput?: (
+        volumeId: string,
+        updates: Record<string, unknown>,
+        options?: { invalidate?: boolean; forceInvalidate?: boolean }
+      ) => boolean;
+    }
+  ).updateCPUVolumeInput?.(
+    volumeId,
+    {
+      visibility: isActiveLabelmap || renderInactiveSegmentations,
+      isLabelmapSegmentation: true,
+      cpuLabelmapConfig: {
+        colorLUT: cpuColorLUT,
+        opacity: 1,
+        invert: false,
+        voiRange: { lower: 0, upper: 255 },
+      },
+    },
+    {
+      invalidate: true,
+      forceInvalidate: true,
+    }
+  );
 }
 
 function _setLabelmapColorAndOpacity(

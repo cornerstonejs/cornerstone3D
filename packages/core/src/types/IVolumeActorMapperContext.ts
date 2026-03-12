@@ -1,0 +1,86 @@
+import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import type {
+  BlendModes,
+  InterpolationType,
+  VOILUTFunctionType,
+} from '../enums';
+import type {
+  ActorEntry,
+  ActorSliceRange,
+  ICamera,
+  IImageVolume,
+  IVolumeInput,
+  Point3,
+  VOIRange,
+} from './index';
+
+export interface IVolumeActorMapperContext {
+  setVolumesBase(
+    volumeInputArray: IVolumeInput[],
+    immediate?: boolean,
+    suppressEvents?: boolean
+  ): Promise<void>;
+  addVolumesBase(
+    volumeInputArray: IVolumeInput[],
+    immediate?: boolean,
+    suppressEvents?: boolean
+  ): Promise<void>;
+  getActors(): ActorEntry[];
+  render(): void;
+  getCamera(): ICamera;
+  setCamera(camera: Partial<ICamera>): void;
+  getVolumeViewportScrollInfo(
+    volumeId: string,
+    useSlabThickness?: boolean
+  ): {
+    numScrollSteps: number;
+    currentStepIndex: number;
+    sliceRangeInfo: {
+      sliceRange: ActorSliceRange;
+      spacingInNormalDirection: number;
+      camera: ICamera;
+    };
+  };
+  updateClippingPlanesForActors(camera: ICamera): void;
+  triggerCameraModifiedEventIfNecessary(
+    previousCamera: ICamera,
+    updatedCamera: ICamera
+  ): void;
+  setOrientationOfClippingPlanes(
+    vtkPlanes: vtkPlane[],
+    slabThickness: number,
+    viewPlaneNormal: Point3,
+    focalPoint: Point3
+  ): void;
+  getSlicePlaneCoordinates(): {
+    sliceIndex: number;
+    point: Point3;
+  }[];
+  setCPUVolumes(
+    volumeInputArray: IVolumeInput[],
+    append?: boolean,
+    suppressEvents?: boolean
+  ): Promise<void>;
+  getViewportBlendMode(): BlendModes;
+  setViewportBlendMode(blendMode: BlendModes): void;
+  setViewportSlabThickness(slabThickness?: number): void;
+  getRenderDefaultSlabThickness(): number;
+  getCanvas(): HTMLCanvasElement;
+  getCPUVolumeIds(): string[];
+  getCPUVolumeInput(volumeId: string): IVolumeInput | undefined;
+  getCPUPrimaryVolume(volumeId?: string): IImageVolume | undefined;
+  getCPUVOIRange(volumeId?: string): VOIRange | undefined;
+  getCPUCameraBasis(camera: ICamera): {
+    right: Point3;
+    up: Point3;
+    normal: Point3;
+  };
+  getViewportInterpolationType(): InterpolationType | undefined;
+  getViewportVOILUTFunction(): VOILUTFunctionType | undefined;
+  getViewportVOIRange(): VOIRange | undefined;
+  getViewportInvert(): boolean;
+  getViewportSlabThickness(): number | undefined;
+  fillCanvasWithBackgroundColor(): void;
+  logCPU(message: string, payload?: unknown): void;
+  getIntensityFromWorldBase(point: Point3): number;
+}

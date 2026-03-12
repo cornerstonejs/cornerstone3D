@@ -1,26 +1,37 @@
-import { mat4, vec3 } from 'gl-matrix';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import { mat4, vec2, vec3 } from 'gl-matrix';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache/cache';
 import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
-import type { BlendModes } from '../enums';
-import { OrientationAxis, Events } from '../enums';
+import {
+  BlendModes,
+  InterpolationType,
+  OrientationAxis,
+  Events,
+} from '../enums';
+import { getShouldUseCPURendering } from '../init';
 import type {
-  ActorEntry,
+  ICamera,
+  IImageData,
   IImageVolume,
+  IVolumeActorMapper,
+  IVolumeActorMapperContext,
   IVolumeInput,
   OrientationVectors,
+  Point2,
   Point3,
   EventTypes,
   ViewReference,
   ViewReferenceSpecifier,
+  VolumeViewportProperties,
+  VOIRange,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import getClosestImageId from '../utilities/getClosestImageId';
 import getSliceRange from '../utilities/getSliceRange';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
+import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import triggerEvent from '../utilities/triggerEvent';
 
@@ -31,12 +42,20 @@ import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
-import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
 import {
   calculateCameraPosition,
   getCameraVectors,
 } from './helpers/getCameraVectors';
+import {
+  VolumeCPUActorMapper,
+  VolumeGPUActorMapper,
+} from './PlanarActorMapper';
+
+type VolumeViewportScrollOptions = {
+  volumeId?: string;
+  scrollSlabs?: boolean;
+};
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -49,8 +68,85 @@ import {
  */
 class VolumeViewport extends BaseVolumeViewport {
   private _useAcquisitionPlaneForViewPlane = false;
+  private readonly gpuActorMapper: IVolumeActorMapper;
+  private readonly cpuActorMapper: IVolumeActorMapper;
+  private cpuVolumeIds: string[] = [];
+  private readonly cpuVolumes = new Map<string, IImageVolume>();
+  private readonly cpuVolumeInputs = new Map<string, IVolumeInput>();
+  private readonly cpuVolumeVOIRanges = new Map<string, VOIRange>();
+  private cpuBlendMode: BlendModes = BlendModes.COMPOSITE;
+  private cpuDebug = {
+    pipelineSelected: false,
+    setVolumes: false,
+    customRenderHit: false,
+  };
+  private cpuCamera: ICamera = {
+    viewUp: [0, -1, 0],
+    viewPlaneNormal: [0, 0, -1],
+    focalPoint: [0, 0, 0],
+    position: [0, 0, 1],
+    parallelProjection: true,
+    parallelScale: 1,
+    viewAngle: 90,
+    flipHorizontal: false,
+    flipVertical: false,
+  };
+  private logCPU(message: string, payload?: unknown): void {
+    if (payload !== undefined) {
+      console.info(`[VolumeViewport:${this.id}] [CPU] ${message}`, payload);
+      return;
+    }
+
+    console.info(`[VolumeViewport:${this.id}] [CPU] ${message}`);
+  }
+
+  public static get useCustomRenderingPipeline(): boolean {
+    return getShouldUseCPURendering();
+  }
+
   constructor(props: ViewportInput) {
     super(props);
+    this.gpuActorMapper = new VolumeGPUActorMapper(
+      this.createVolumeActorMapperContext()
+    );
+    this.cpuActorMapper = new VolumeCPUActorMapper(
+      this.createVolumeActorMapperContext()
+    );
+
+    if (this.useCPURendering) {
+      if (!this.cpuDebug.pipelineSelected) {
+        this.cpuDebug.pipelineSelected = true;
+        this.logCPU('CPU rendering pipeline selected');
+      }
+
+      this.worldToCanvas = this.worldToCanvasCPU;
+      this.canvasToWorld = this.canvasToWorldCPU;
+
+      const { orientation } = this.options;
+      if (orientation && orientation !== OrientationAxis.ACQUISITION) {
+        if (typeof orientation === 'string' && MPR_CAMERA_VALUES[orientation]) {
+          const { viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation];
+          this.cpuCamera = {
+            ...this.cpuCamera,
+            viewPlaneNormal: [...viewPlaneNormal] as Point3,
+            viewUp: [...viewUp] as Point3,
+          };
+        } else if (typeof orientation !== 'string') {
+          this.cpuCamera = {
+            ...this.cpuCamera,
+            viewPlaneNormal: [...orientation.viewPlaneNormal] as Point3,
+            viewUp: [...orientation.viewUp] as Point3,
+          };
+        }
+        if (typeof orientation === 'string') {
+          this.viewportProperties.orientation = orientation;
+        }
+      } else {
+        this._useAcquisitionPlaneForViewPlane = true;
+      }
+
+      return;
+    }
 
     const { orientation } = this.options;
     // if the camera is set to be acquisition axis then we need to skip
@@ -62,6 +158,472 @@ class VolumeViewport extends BaseVolumeViewport {
 
     this._useAcquisitionPlaneForViewPlane = true;
   }
+
+  private createVolumeActorMapperContext(): IVolumeActorMapperContext {
+    return {
+      setVolumesBase: (volumeInputArray, immediate, suppressEvents) =>
+        super.setVolumes(volumeInputArray, immediate, suppressEvents),
+      addVolumesBase: (volumeInputArray, immediate, suppressEvents) =>
+        super.addVolumes(volumeInputArray, immediate, suppressEvents),
+      getActors: () => this.getActors(),
+      render: () => this.render(),
+      getCamera: () => this.getCamera(),
+      setCamera: (camera) => this.setCamera(camera),
+      getVolumeViewportScrollInfo: (volumeId, useSlabThickness = false) =>
+        getVolumeViewportScrollInfo(this, volumeId, useSlabThickness),
+      updateClippingPlanesForActors: (camera) =>
+        this.updateClippingPlanesForActors(camera),
+      triggerCameraModifiedEventIfNecessary: (previousCamera, updatedCamera) =>
+        this.triggerCameraModifiedEventIfNecessary(
+          previousCamera,
+          updatedCamera
+        ),
+      setOrientationOfClippingPlanes: (
+        vtkPlanes,
+        slabThickness,
+        viewPlaneNormal,
+        focalPoint
+      ) =>
+        this.setOrientationOfClippingPlanes(
+          vtkPlanes,
+          slabThickness,
+          viewPlaneNormal,
+          focalPoint
+        ),
+      getSlicePlaneCoordinates: () => this.getSlicePlaneCoordinates(),
+      setCPUVolumes: (volumeInputArray, append, suppressEvents) =>
+        this.setCPUVolumes(volumeInputArray, append, suppressEvents),
+      getViewportBlendMode: () => this.cpuBlendMode,
+      setViewportBlendMode: (blendMode) => {
+        this.cpuBlendMode = blendMode;
+      },
+      setViewportSlabThickness: (slabThickness) => {
+        this.viewportProperties.slabThickness = slabThickness;
+      },
+      getRenderDefaultSlabThickness: () =>
+        RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
+      getCanvas: () => this.getCanvas(),
+      getCPUVolumeIds: () => [...this.cpuVolumeIds],
+      getCPUVolumeInput: (volumeId) => this.cpuVolumeInputs.get(volumeId),
+      getCPUPrimaryVolume: (volumeId) => this.getCPUPrimaryVolume(volumeId),
+      getCPUVOIRange: (volumeId) => this.getCPUVOIRange(volumeId),
+      getCPUCameraBasis: (camera) => this.getCPUCameraBasis(camera),
+      getViewportInterpolationType: () =>
+        this.viewportProperties.interpolationType,
+      getViewportVOILUTFunction: () => this.viewportProperties.VOILUTFunction,
+      getViewportVOIRange: () => this.viewportProperties.voiRange,
+      getViewportInvert: () => this.viewportProperties.invert === true,
+      getViewportSlabThickness: () => this.viewportProperties.slabThickness,
+      fillCanvasWithBackgroundColor: () => {
+        const renderingEngine = this.getRenderingEngine();
+        if (renderingEngine) {
+          renderingEngine.fillCanvasWithBackgroundColor(
+            this.canvas,
+            this.options.background
+          );
+        }
+      },
+      logCPU: (message, payload) => this.logCPU(message, payload),
+      getIntensityFromWorldBase: (point) => super.getIntensityFromWorld(point),
+    };
+  }
+
+  private getActiveVolumeActorMapper(): IVolumeActorMapper {
+    return this.useCPURendering ? this.cpuActorMapper : this.gpuActorMapper;
+  }
+
+  private getCPUPrimaryVolume(volumeId?: string): IImageVolume | undefined {
+    if (volumeId && this.cpuVolumes.has(volumeId)) {
+      return this.cpuVolumes.get(volumeId);
+    }
+
+    if (!this.cpuVolumeIds.length) {
+      return;
+    }
+
+    return this.cpuVolumes.get(this.cpuVolumeIds[0]);
+  }
+
+  private async setCPUVolumes(
+    volumeInputArray: IVolumeInput[],
+    append = false,
+    _suppressEvents = false
+  ): Promise<void> {
+    const hasVolumesBeforeUpdate = this.cpuVolumeIds.length > 0;
+
+    if (!append) {
+      this.cpuVolumes.clear();
+      this.cpuVolumeIds = [];
+      this.cpuVolumeInputs.clear();
+      this.cpuVolumeVOIRanges.clear();
+    }
+
+    for (const volumeInput of volumeInputArray) {
+      const imageVolume = cache.getVolume(volumeInput.volumeId);
+      if (!imageVolume) {
+        throw new Error(
+          `imageVolume with id: ${volumeInput.volumeId} does not exist`
+        );
+      }
+
+      this.cpuVolumes.set(imageVolume.volumeId, imageVolume);
+      this.cpuVolumeInputs.set(imageVolume.volumeId, { ...volumeInput });
+      if (!this.cpuVolumeIds.includes(imageVolume.volumeId)) {
+        this.cpuVolumeIds.push(imageVolume.volumeId);
+      }
+
+      if (!this.cpuVolumeVOIRanges.has(imageVolume.volumeId)) {
+        if (this.isCPUVolumePTPrescaled(imageVolume)) {
+          this.cpuVolumeVOIRanges.set(imageVolume.volumeId, {
+            lower: 0,
+            upper: 5,
+          });
+        } else {
+          const voiLut = imageVolume.metadata?.voiLut?.[0] as
+            | { windowWidth?: number; windowCenter?: number }
+            | undefined;
+          const windowWidth = voiLut?.windowWidth;
+          const windowCenter = voiLut?.windowCenter;
+
+          if (
+            Number.isFinite(windowWidth) &&
+            Number.isFinite(windowCenter) &&
+            windowWidth > 0
+          ) {
+            const lower = windowCenter - windowWidth / 2;
+            const upper = windowCenter + windowWidth / 2;
+
+            this.cpuVolumeVOIRanges.set(imageVolume.volumeId, {
+              lower,
+              upper,
+            });
+            continue;
+          }
+
+          const [lower, upper] = imageVolume.voxelManager.getRange();
+          if (
+            Number.isFinite(lower) &&
+            Number.isFinite(upper) &&
+            upper > lower
+          ) {
+            this.cpuVolumeVOIRanges.set(imageVolume.volumeId, {
+              lower,
+              upper,
+            });
+          }
+        }
+      }
+    }
+
+    const primaryVolume = this.getCPUPrimaryVolume();
+    if (!primaryVolume) {
+      return;
+    }
+
+    if (!this.cpuDebug.setVolumes) {
+      this.cpuDebug.setVolumes = true;
+      this.logCPU('CPU volume set', {
+        volumeId: primaryVolume.volumeId,
+        dimensions: primaryVolume.dimensions,
+        spacing: primaryVolume.spacing,
+      });
+    }
+
+    if (!this.viewportProperties.voiRange) {
+      this.viewportProperties.voiRange = this.getCPUVOIRange(
+        primaryVolume.volumeId
+      );
+    }
+
+    if (typeof this.viewportProperties.invert !== 'boolean') {
+      this.viewportProperties.invert = false;
+    }
+
+    if (
+      typeof this.viewportProperties.interpolationType === 'undefined' ||
+      this.viewportProperties.interpolationType === null
+    ) {
+      this.viewportProperties.interpolationType = InterpolationType.LINEAR;
+    }
+
+    const shouldResetCamera = !append || !hasVolumesBeforeUpdate;
+    if (shouldResetCamera) {
+      this.resetCamera({ suppressEvents: true });
+    } else {
+      this.getActiveVolumeActorMapper().invalidateSampledSlice();
+    }
+  }
+
+  private isCPUVolumePTPrescaled(volume: IImageVolume): boolean {
+    return volume.metadata?.Modality === 'PT' && volume.isPreScaled === true;
+  }
+
+  private getCPUVOIRange(volumeId?: string): VOIRange | undefined {
+    const resolvedVolume = this.getCPUPrimaryVolume(volumeId);
+    if (!resolvedVolume) {
+      return this.viewportProperties.voiRange;
+    }
+
+    const perVolumeVOI = this.cpuVolumeVOIRanges.get(resolvedVolume.volumeId);
+    if (perVolumeVOI) {
+      return perVolumeVOI;
+    }
+
+    return this.viewportProperties.voiRange;
+  }
+
+  public invalidateCPUSampledSlice(volumeId?: string, renderImmediate = false) {
+    if (!this.useCPURendering) {
+      return;
+    }
+
+    this.getActiveVolumeActorMapper().invalidateSampledSlice(volumeId);
+
+    if (renderImmediate) {
+      this.render();
+    }
+  }
+
+  public updateCPUVolumeInput(
+    volumeId: string,
+    updates: Partial<IVolumeInput>,
+    options: {
+      invalidate?: boolean;
+      forceInvalidate?: boolean;
+      renderImmediate?: boolean;
+    } = {}
+  ): boolean {
+    if (!this.useCPURendering) {
+      return false;
+    }
+
+    const currentInput = this.cpuVolumeInputs.get(volumeId);
+    if (!currentInput) {
+      return false;
+    }
+
+    const {
+      invalidate = false,
+      forceInvalidate = false,
+      renderImmediate = false,
+    } = options;
+    const keys = Object.keys(updates) as (keyof IVolumeInput)[];
+    const changed = keys.some((key) => currentInput[key] !== updates[key]);
+
+    if (changed) {
+      this.cpuVolumeInputs.set(volumeId, {
+        ...currentInput,
+        ...updates,
+      });
+    }
+
+    if (invalidate && (changed || forceInvalidate)) {
+      this.getActiveVolumeActorMapper().invalidateSampledSlice(volumeId);
+    }
+
+    const invalidated = invalidate && (changed || forceInvalidate);
+    if (renderImmediate && (changed || invalidated)) {
+      this.render();
+    }
+
+    return changed;
+  }
+
+  public removeCPUVolumes(
+    volumeIds: string[],
+    options: { renderImmediate?: boolean } = {}
+  ): void {
+    if (!this.useCPURendering || !volumeIds.length) {
+      return;
+    }
+
+    let removedAny = false;
+    for (const volumeId of volumeIds) {
+      const hadVolume = this.cpuVolumes.delete(volumeId);
+      const hadInput = this.cpuVolumeInputs.delete(volumeId);
+      const hadVOI = this.cpuVolumeVOIRanges.delete(volumeId);
+      this.cpuVolumeIds = this.cpuVolumeIds.filter((id) => id !== volumeId);
+      removedAny = removedAny || hadVolume || hadInput || hadVOI;
+    }
+
+    if (!removedAny) {
+      return;
+    }
+
+    this.getActiveVolumeActorMapper().invalidateSampledSlice();
+
+    if (options.renderImmediate) {
+      this.render();
+    }
+  }
+
+  private getVolumeCornersWorld(volume: IImageVolume): Point3[] {
+    const [dx, dy, dz] = volume.dimensions;
+    const corners: Point3[] = [
+      [0, 0, 0],
+      [dx - 1, 0, 0],
+      [0, dy - 1, 0],
+      [dx - 1, dy - 1, 0],
+      [0, 0, dz - 1],
+      [dx - 1, 0, dz - 1],
+      [0, dy - 1, dz - 1],
+      [dx - 1, dy - 1, dz - 1],
+    ];
+
+    return corners.map((ijk) => this.cpuIndexToWorld(volume, ijk));
+  }
+
+  private cpuIndexToWorld(volume: IImageVolume, ijk: Point3): Point3 {
+    const [i, j, k] = ijk;
+    const [sx, sy, sz] = volume.spacing;
+    const [ox, oy, oz] = volume.origin;
+    const row = volume.direction.slice(0, 3) as Point3;
+    const col = volume.direction.slice(3, 6) as Point3;
+    const scan = volume.direction.slice(6, 9) as Point3;
+
+    return [
+      ox + row[0] * sx * i + col[0] * sy * j + scan[0] * sz * k,
+      oy + row[1] * sx * i + col[1] * sy * j + scan[1] * sz * k,
+      oz + row[2] * sx * i + col[2] * sy * j + scan[2] * sz * k,
+    ];
+  }
+
+  private cpuWorldToIndexContinuous(
+    volume: IImageVolume,
+    worldPos: Point3
+  ): Point3 {
+    const delta = [
+      worldPos[0] - volume.origin[0],
+      worldPos[1] - volume.origin[1],
+      worldPos[2] - volume.origin[2],
+    ] as Point3;
+
+    const row = volume.direction.slice(0, 3) as Point3;
+    const col = volume.direction.slice(3, 6) as Point3;
+    const scan = volume.direction.slice(6, 9) as Point3;
+
+    return [
+      vec3.dot(delta, row as Point3) / volume.spacing[0],
+      vec3.dot(delta, col as Point3) / volume.spacing[1],
+      vec3.dot(delta, scan as Point3) / volume.spacing[2],
+    ];
+  }
+
+  private getCPUCameraBasis(camera: ICamera): {
+    right: Point3;
+    up: Point3;
+    normal: Point3;
+  } {
+    const normal = vec3.normalize(
+      vec3.create(),
+      camera.viewPlaneNormal as Point3
+    ) as Point3;
+    const rawUp = vec3.normalize(vec3.create(), camera.viewUp as Point3);
+    let right = vec3.cross(vec3.create(), rawUp, normal);
+    if (vec3.length(right) < EPSILON) {
+      right = vec3.cross(vec3.create(), [0, 1, 0], normal);
+    }
+    right = vec3.normalize(vec3.create(), right) as Point3;
+    const up = vec3.normalize(
+      vec3.create(),
+      vec3.cross(vec3.create(), normal, right)
+    ) as Point3;
+
+    if (camera.flipHorizontal) {
+      vec3.scale(right, right, -1);
+    }
+
+    if (camera.flipVertical) {
+      vec3.scale(up, up, -1);
+    }
+
+    return { right, up, normal };
+  }
+
+  private getCPUSliceRangeInfo(volumeId?: string, useSlabThickness = true) {
+    const volume = this.getCPUPrimaryVolume(volumeId);
+    if (!volume) {
+      return;
+    }
+
+    const camera = this.getCamera();
+    const { normal } = this.getCPUCameraBasis(camera);
+    const corners = this.getVolumeCornersWorld(volume);
+
+    let min = Infinity;
+    let max = -Infinity;
+    for (const point of corners) {
+      const projection = vec3.dot(point as Point3, normal as Point3);
+      min = Math.min(min, projection);
+      max = Math.max(max, projection);
+    }
+
+    const current = vec3.dot(camera.focalPoint as Point3, normal as Point3);
+    const slabThickness = this.viewportProperties.slabThickness;
+    const spacingInNormalDirection =
+      useSlabThickness && slabThickness
+        ? slabThickness
+        : getSpacingInNormalDirection(volume, normal);
+    const spacing = Math.max(spacingInNormalDirection, EPSILON);
+    const numScrollSteps = Math.max(0, Math.round((max - min) / spacing));
+    const currentStepIndex = Math.max(
+      0,
+      Math.min(numScrollSteps, Math.round((current - min) / spacing))
+    );
+
+    return {
+      min,
+      max,
+      current,
+      spacingInNormalDirection: spacing,
+      numScrollSteps,
+      numberOfSlices: numScrollSteps + 1,
+      currentStepIndex,
+      camera,
+      normal,
+    };
+  }
+
+  private worldToCanvasCPU = (worldPos: Point3): Point2 => {
+    const { width, height } = this.getCanvas();
+    const camera = this.getCamera();
+    const { right, up } = this.getCPUCameraBasis(camera);
+    const focalPoint = camera.focalPoint as Point3;
+    const parallelScale = Math.max(camera.parallelScale ?? 1, EPSILON);
+    const worldHeight = parallelScale * 2;
+    const worldWidth = worldHeight * (width / Math.max(height, 1));
+    const delta = vec3.subtract(vec3.create(), worldPos, focalPoint);
+
+    const rightProjection = vec3.dot(delta, right as Point3);
+    const upProjection = vec3.dot(delta, up as Point3);
+
+    return [
+      ((rightProjection + worldWidth / 2) / worldWidth) * width,
+      ((worldHeight / 2 - upProjection) / worldHeight) * height,
+    ];
+  };
+
+  private canvasToWorldCPU = (
+    canvasPos: Point2,
+    destPoint?: Point3
+  ): Point3 => {
+    const { width, height } = this.getCanvas();
+    const camera = this.getCamera();
+    const { right, up } = this.getCPUCameraBasis(camera);
+    const focalPoint = camera.focalPoint as Point3;
+    const parallelScale = Math.max(camera.parallelScale ?? 1, EPSILON);
+    const worldHeight = parallelScale * 2;
+    const worldWidth = worldHeight * (width / Math.max(height, 1));
+    const xOffset = (canvasPos[0] / width - 0.5) * worldWidth;
+    const yOffset = (0.5 - canvasPos[1] / height) * worldHeight;
+    const point = destPoint || ([0, 0, 0] as Point3);
+
+    point[0] = focalPoint[0] + right[0] * xOffset + up[0] * yOffset;
+    point[1] = focalPoint[1] + right[1] * xOffset + up[1] * yOffset;
+    point[2] = focalPoint[2] + right[2] * xOffset + up[2] * yOffset;
+
+    return point;
+  };
 
   /**
    * Creates volume actors for all volumes defined in the `volumeInputArray`.
@@ -99,14 +661,66 @@ class VolumeViewport extends BaseVolumeViewport {
       }
     }
 
-    return super.setVolumes(volumeInputArray, immediate, suppressEvents);
+    return this.getActiveVolumeActorMapper().setVolumes(
+      volumeInputArray,
+      immediate,
+      suppressEvents
+    );
   }
 
   /** Gets the number of slices the volume is broken up into in the camera direction */
   public getNumberOfSlices = (): number => {
+    if (this.useCPURendering) {
+      return this.getCPUSliceRangeInfo()?.numberOfSlices ?? 0;
+    }
+
     const { numberOfSlices } = getImageSliceDataForVolumeViewport(this) || {};
     return numberOfSlices;
   };
+
+  public scroll(delta?: number, options?: VolumeViewportScrollOptions): void;
+  /** @deprecated Use `scroll(delta, { volumeId, scrollSlabs })` instead. */
+  public scroll(
+    delta?: number,
+    volumeId?: string,
+    useSlabThickness?: boolean
+  ): void;
+  public scroll(
+    delta = 1,
+    optionsOrVolumeId: VolumeViewportScrollOptions | string = undefined,
+    legacyUseSlabThickness = false
+  ): void {
+    const options =
+      typeof optionsOrVolumeId === 'string' ||
+      typeof optionsOrVolumeId === 'undefined'
+        ? {
+            volumeId: optionsOrVolumeId,
+            scrollSlabs: legacyUseSlabThickness,
+          }
+        : optionsOrVolumeId;
+    const volumeId = options.volumeId ?? this.getVolumeId();
+    const useSlabThickness = options.scrollSlabs ?? false;
+
+    if (!volumeId) {
+      return;
+    }
+
+    this.getActiveVolumeActorMapper().scroll(volumeId, delta, useSlabThickness);
+  }
+
+  public getScrollInfo(
+    volumeId: string = this.getVolumeId(),
+    useSlabThickness = false
+  ) {
+    if (!volumeId) {
+      return;
+    }
+
+    return this.getActiveVolumeActorMapper().getScrollInfo(
+      volumeId,
+      useSlabThickness
+    );
+  }
 
   /**
    * Creates and adds volume actors for all volumes defined in the `volumeInputArray`.
@@ -124,7 +738,7 @@ class VolumeViewport extends BaseVolumeViewport {
 
     if (!firstImageVolume) {
       throw new Error(
-        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
+        `imageVolume with id: ${volumeInputArray[0].volumeId} does not exist`
       );
     }
 
@@ -142,7 +756,11 @@ class VolumeViewport extends BaseVolumeViewport {
         );
       }
     }
-    return super.addVolumes(volumeInputArray, immediate, suppressEvents);
+    return this.getActiveVolumeActorMapper().addVolumes(
+      volumeInputArray,
+      immediate,
+      suppressEvents
+    );
   }
 
   public jumpToWorld(worldPos: Point3): boolean {
@@ -206,6 +824,63 @@ class VolumeViewport extends BaseVolumeViewport {
     immediate = true,
     suppressEvents = false
   ): void {
+    if (this.useCPURendering) {
+      let viewPlaneNormal: Point3;
+      let viewUp: Point3;
+
+      if (typeof orientation === 'string') {
+        if (orientation === OrientationAxis.ACQUISITION) {
+          const imageVolume = this.getCPUPrimaryVolume();
+          if (imageVolume) {
+            viewPlaneNormal = imageVolume.direction
+              .slice(6, 9)
+              .map((x) => -x) as Point3;
+            viewUp = imageVolume.direction.slice(3, 6).map((x) => -x) as Point3;
+          } else {
+            viewPlaneNormal = [0, 0, -1];
+            viewUp = [0, -1, 0];
+          }
+        } else if (
+          orientation === OrientationAxis.AXIAL_REFORMAT ||
+          orientation === OrientationAxis.SAGITTAL_REFORMAT ||
+          orientation === OrientationAxis.CORONAL_REFORMAT
+        ) {
+          const baseOrientation =
+            orientation === OrientationAxis.AXIAL_REFORMAT
+              ? OrientationAxis.AXIAL
+              : orientation === OrientationAxis.SAGITTAL_REFORMAT
+                ? OrientationAxis.SAGITTAL
+                : OrientationAxis.CORONAL;
+          ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[baseOrientation]);
+        } else if (
+          orientation === OrientationAxis.REFORMAT &&
+          this.cpuCamera.viewPlaneNormal &&
+          this.cpuCamera.viewUp
+        ) {
+          viewPlaneNormal = [...this.cpuCamera.viewPlaneNormal] as Point3;
+          viewUp = [...this.cpuCamera.viewUp] as Point3;
+        } else if (MPR_CAMERA_VALUES[orientation]) {
+          ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
+        } else {
+          throw new Error(
+            `Invalid orientation: ${orientation}. Use Enums.OrientationAxis instead.`
+          );
+        }
+
+        this.viewportProperties.orientation = orientation;
+      } else {
+        ({ viewPlaneNormal, viewUp } = orientation);
+      }
+
+      this.setCamera({ viewPlaneNormal, viewUp });
+      this.resetCamera({ suppressEvents: true, resetOrientation: false });
+
+      if (immediate) {
+        this.render();
+      }
+      return;
+    }
+
     let viewPlaneNormal, viewUp;
 
     // check if the orientation is a string or an object
@@ -343,19 +1018,7 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns The blend mode of the matched actor
    */
   public getBlendMode(filterActorUIDs?: string[]): BlendModes {
-    const actorEntries = this.getActors();
-    const actorForBlend =
-      filterActorUIDs?.length > 0
-        ? actorEntries.find((actorEntry) =>
-            filterActorUIDs.includes(actorEntry.uid)
-          )
-        : actorEntries[0];
-
-    return (
-      actorForBlend?.blendMode ||
-      // @ts-ignore vtk incorrect typing
-      actorForBlend?.actor.getMapper().getBlendMode()
-    );
+    return this.getActiveVolumeActorMapper().getBlendMode(filterActorUIDs);
   }
 
   /**
@@ -371,26 +1034,11 @@ class VolumeViewport extends BaseVolumeViewport {
     filterActorUIDs = [],
     immediate = false
   ): void {
-    let actorEntries = this.getActors();
-
-    if (filterActorUIDs?.length > 0) {
-      actorEntries = actorEntries.filter((actorEntry: ActorEntry) => {
-        return filterActorUIDs.includes(actorEntry.uid);
-      });
-    }
-
-    actorEntries.forEach((actorEntry) => {
-      const { actor } = actorEntry;
-
-      const mapper = actor.getMapper();
-      // @ts-ignore vtk incorrect typing
-      mapper.setBlendMode?.(blendMode);
-      actorEntry.blendMode = blendMode;
-    });
-
-    if (immediate) {
-      this.render();
-    }
+    this.getActiveVolumeActorMapper().setBlendMode(
+      blendMode,
+      filterActorUIDs,
+      immediate
+    );
   }
 
   public resetCameraForResize = (): boolean => {
@@ -415,6 +1063,94 @@ class VolumeViewport extends BaseVolumeViewport {
       suppressEvents = false,
       resetOrientation = true,
     } = options || {};
+
+    if (this.useCPURendering) {
+      const primaryVolume = this.getCPUPrimaryVolume();
+      if (!primaryVolume) {
+        return true;
+      }
+
+      const previousCamera = this.getCamera();
+      const camera = { ...this.getCamera() };
+
+      if (
+        resetOrientation &&
+        typeof this.viewportProperties.orientation === 'string' &&
+        MPR_CAMERA_VALUES[this.viewportProperties.orientation]
+      ) {
+        const { viewPlaneNormal, viewUp } =
+          MPR_CAMERA_VALUES[this.viewportProperties.orientation];
+        camera.viewPlaneNormal = [...viewPlaneNormal] as Point3;
+        camera.viewUp = [...viewUp] as Point3;
+      }
+
+      const centerIJK = [
+        (primaryVolume.dimensions[0] - 1) / 2,
+        (primaryVolume.dimensions[1] - 1) / 2,
+        (primaryVolume.dimensions[2] - 1) / 2,
+      ] as Point3;
+      const centerWorld = this.cpuIndexToWorld(primaryVolume, centerIJK);
+
+      if (resetPan || resetToCenter) {
+        camera.focalPoint = centerWorld;
+      }
+
+      const { up, normal } = this.getCPUCameraBasis(camera);
+      const corners = this.getVolumeCornersWorld(primaryVolume);
+      let minUp = Infinity;
+      let maxUp = -Infinity;
+
+      for (const corner of corners) {
+        const projection = vec3.dot(corner as Point3, up as Point3);
+        minUp = Math.min(minUp, projection);
+        maxUp = Math.max(maxUp, projection);
+      }
+
+      if (resetZoom) {
+        const worldHeight = Math.max(maxUp - minUp, EPSILON);
+        camera.parallelScale = (worldHeight / 2) * this.insetImageMultiplier;
+      }
+
+      const distance = Math.max(camera.parallelScale ?? 1, 1);
+      camera.position = [
+        camera.focalPoint[0] + normal[0] * distance,
+        camera.focalPoint[1] + normal[1] * distance,
+        camera.focalPoint[2] + normal[2] * distance,
+      ];
+
+      if (resetRotation) {
+        camera.rotation = 0;
+      }
+
+      this.cpuCamera = {
+        ...this.cpuCamera,
+        ...camera,
+        parallelProjection: true,
+      };
+
+      if (!this.initialCamera || (resetPan && resetZoom && resetToCenter)) {
+        this.setInitialCamera(this.getCamera());
+        this.setFitToCanvasCamera(this.getCamera());
+      }
+
+      if (!suppressEvents) {
+        const eventDetail: EventTypes.CameraResetEventDetail = {
+          viewportId: this.id,
+          camera: this.getCamera(),
+          renderingEngineId: this.renderingEngineId,
+          element: this.element,
+        };
+        triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
+      }
+
+      this.triggerCameraModifiedEventIfNecessary(
+        previousCamera,
+        this.getCamera()
+      );
+
+      return true;
+    }
+
     const { orientation } = this.viewportProperties;
     if (orientation && resetOrientation) {
       this.applyViewOrientation(orientation, false);
@@ -422,41 +1158,12 @@ class VolumeViewport extends BaseVolumeViewport {
     super.resetCamera({ resetPan, resetZoom, resetToCenter });
 
     const activeCamera = this.getVtkActiveCamera();
-    const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
-    const focalPoint = activeCamera.getFocalPoint() as Point3;
 
-    // always add clipping planes for the volume viewport. If a use case
-    // arises where we don't want clipping planes, you should use the volume_3d
-    // viewport instead.
-    const actorEntries = this.getActors();
-    actorEntries.forEach((actorEntry) => {
-      if (!actorEntry.actor) {
-        return;
-      }
-      const mapper = actorEntry.actor.getMapper() as vtkMapper;
-      const vtkPlanes = mapper.getClippingPlanes();
-
-      if (vtkPlanes.length === 0 && !actorEntry?.clippingFilter) {
-        const clipPlane1 = vtkPlane.newInstance();
-        const clipPlane2 = vtkPlane.newInstance();
-        const newVtkPlanes = [clipPlane1, clipPlane2];
-
-        let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-        if (actorEntry.slabThickness) {
-          slabThickness = actorEntry.slabThickness;
-        }
-
-        this.setOrientationOfClippingPlanes(
-          newVtkPlanes,
-          slabThickness,
-          viewPlaneNormal,
-          focalPoint
-        );
-
-        mapper.addClippingPlane(clipPlane1);
-        mapper.addClippingPlane(clipPlane2);
-      }
-    });
+    if (activeCamera) {
+      this.getActiveVolumeActorMapper().ensureClippingPlanesForActors(
+        this.getCamera()
+      );
+    }
 
     //Only reset the rotation of the camera if wanted (so we don't reset every time resetCamera is called) and also verify that the viewport has an orientation that we know (sagittal, coronal, axial)
     if (
@@ -484,6 +1191,471 @@ class VolumeViewport extends BaseVolumeViewport {
     return true;
   }
 
+  public getCamera(): ICamera {
+    if (!this.useCPURendering) {
+      return super.getCamera();
+    }
+
+    return {
+      ...this.cpuCamera,
+      viewUp: [...(this.cpuCamera.viewUp as Point3)] as Point3,
+      viewPlaneNormal: [
+        ...(this.cpuCamera.viewPlaneNormal as Point3),
+      ] as Point3,
+      position: [...(this.cpuCamera.position as Point3)] as Point3,
+      focalPoint: [...(this.cpuCamera.focalPoint as Point3)] as Point3,
+      rotation: 0,
+    };
+  }
+
+  public setCamera(
+    cameraInterface: ICamera,
+    storeAsInitialCamera = false
+  ): void {
+    if (!this.useCPURendering) {
+      super.setCamera(cameraInterface, storeAsInitialCamera);
+      return;
+    }
+
+    const previousCamera = this.getCamera();
+    const mergedCamera = {
+      ...this.cpuCamera,
+      ...cameraInterface,
+      parallelProjection: true,
+    };
+
+    if (cameraInterface.flipHorizontal !== undefined) {
+      mergedCamera.flipHorizontal = cameraInterface.flipHorizontal;
+    }
+    if (cameraInterface.flipVertical !== undefined) {
+      mergedCamera.flipVertical = cameraInterface.flipVertical;
+    }
+
+    if (cameraInterface.viewPlaneNormal) {
+      const normalizedViewPlaneNormal = vec3.normalize(
+        vec3.create(),
+        cameraInterface.viewPlaneNormal as Point3
+      ) as Point3;
+      mergedCamera.viewPlaneNormal = normalizedViewPlaneNormal;
+    }
+
+    if (cameraInterface.viewUp) {
+      const normalizedViewUp = vec3.normalize(
+        vec3.create(),
+        cameraInterface.viewUp as Point3
+      ) as Point3;
+      mergedCamera.viewUp = normalizedViewUp;
+    }
+
+    this.cpuCamera = mergedCamera;
+
+    if (storeAsInitialCamera) {
+      this.setInitialCamera(this.cpuCamera);
+    }
+
+    this.triggerCameraModifiedEventIfNecessary(
+      previousCamera,
+      this.getCamera()
+    );
+  }
+
+  public getPan(initialCamera = this.initialCamera): Point2 {
+    if (!this.useCPURendering) {
+      return super.getPan(initialCamera);
+    }
+
+    if (!initialCamera) {
+      return [0, 0];
+    }
+
+    const zero3 = this.canvasToWorldCPU([0, 0]);
+    const initialCanvasFocal = this.worldToCanvasCPU(
+      vec3.subtract(
+        [0, 0, 0],
+        initialCamera.focalPoint as Point3,
+        zero3
+      ) as Point3
+    );
+    const currentCanvasFocal = this.worldToCanvasCPU(
+      vec3.subtract(
+        [0, 0, 0],
+        this.cpuCamera.focalPoint as Point3,
+        zero3
+      ) as Point3
+    );
+
+    return vec2.subtract(
+      [0, 0],
+      initialCanvasFocal,
+      currentCanvasFocal
+    ) as Point2;
+  }
+
+  public setPan(pan: Point2, storeAsInitialCamera = false): void {
+    if (!this.useCPURendering) {
+      super.setPan(pan, storeAsInitialCamera);
+      return;
+    }
+
+    const previousCamera = this.getCamera();
+    const { focalPoint, position } = previousCamera;
+    const zero3 = this.canvasToWorldCPU([0, 0]);
+    const delta2 = vec2.subtract([0, 0], pan, this.getPan());
+
+    if (
+      Math.abs(delta2[0]) < 1 &&
+      Math.abs(delta2[1]) < 1 &&
+      !storeAsInitialCamera
+    ) {
+      return;
+    }
+
+    const delta = vec3.subtract(
+      vec3.create(),
+      this.canvasToWorldCPU(delta2 as Point2),
+      zero3
+    );
+    const newFocal = vec3.subtract(vec3.create(), focalPoint, delta);
+    const newPosition = vec3.subtract(vec3.create(), position, delta);
+
+    this.setCamera(
+      {
+        ...previousCamera,
+        focalPoint: newFocal as Point3,
+        position: newPosition as Point3,
+      },
+      storeAsInitialCamera
+    );
+  }
+
+  public getZoom(compareCamera = this.initialCamera): number {
+    if (!this.useCPURendering) {
+      return super.getZoom(compareCamera);
+    }
+
+    if (!compareCamera) {
+      return 1;
+    }
+
+    const initialParallelScale = compareCamera.parallelScale ?? 1;
+    const currentParallelScale = this.cpuCamera.parallelScale ?? 1;
+    return initialParallelScale / Math.max(currentParallelScale, EPSILON);
+  }
+
+  public setZoom(value: number, storeAsInitialCamera = false): void {
+    if (!this.useCPURendering) {
+      super.setZoom(value, storeAsInitialCamera);
+      return;
+    }
+
+    const camera = this.getCamera();
+    const initialParallelScale = this.initialCamera?.parallelScale ?? 1;
+    const parallelScale = initialParallelScale / Math.max(value, EPSILON);
+
+    this.setCamera(
+      {
+        ...camera,
+        parallelScale,
+      },
+      storeAsInitialCamera
+    );
+  }
+
+  public getImageData(volumeId?: string): IImageData | undefined {
+    if (!this.useCPURendering) {
+      return super.getImageData(volumeId);
+    }
+
+    const volume = this.getCPUPrimaryVolume(volumeId);
+    if (!volume) {
+      return;
+    }
+
+    const imageData = {
+      getDimensions: () => volume.dimensions,
+      getSpacing: () => volume.spacing,
+      getOrigin: () => volume.origin,
+      getDirection: () => volume.direction,
+      worldToIndex: (worldPos: Point3) =>
+        this.cpuWorldToIndexContinuous(volume, worldPos),
+      indexToWorld: (ijk: Point3) => this.cpuIndexToWorld(volume, ijk),
+      getBounds: () => {
+        const corners = this.getVolumeCornersWorld(volume);
+        const xValues = corners.map((point) => point[0]);
+        const yValues = corners.map((point) => point[1]);
+        const zValues = corners.map((point) => point[2]);
+        return [
+          Math.min(...xValues),
+          Math.max(...xValues),
+          Math.min(...yValues),
+          Math.max(...yValues),
+          Math.min(...zValues),
+          Math.max(...zValues),
+        ];
+      },
+    };
+
+    const hasPixelSpacing =
+      volume.hasPixelSpacing ??
+      volume.spacing.every((value) => Number.isFinite(value) && value > 0);
+
+    return {
+      dimensions: volume.dimensions,
+      spacing: volume.spacing,
+      origin: volume.origin,
+      direction: volume.direction,
+      imageData: imageData as unknown as IImageData['imageData'],
+      metadata: {
+        Modality: volume.metadata?.Modality,
+        FrameOfReferenceUID: volume.metadata?.FrameOfReferenceUID,
+      },
+      get scalarData() {
+        return volume.voxelManager?.getScalarData();
+      },
+      scaling: volume.scaling,
+      hasPixelSpacing,
+      voxelManager: volume.voxelManager,
+    };
+  }
+
+  public getVolumeId(specifier?: ViewReferenceSpecifier): string | undefined {
+    if (!this.useCPURendering) {
+      return super.getVolumeId(specifier);
+    }
+
+    if (!this.cpuVolumeIds.length) {
+      return;
+    }
+
+    if (!specifier?.volumeId) {
+      return this.cpuVolumeIds[0];
+    }
+
+    return this.cpuVolumes.has(specifier.volumeId)
+      ? specifier.volumeId
+      : undefined;
+  }
+
+  public getViewReferenceId(
+    specifier: ViewReferenceSpecifier = {}
+  ): string | undefined {
+    if (!this.useCPURendering) {
+      return super.getViewReferenceId(specifier);
+    }
+
+    let { volumeId, sliceIndex } = specifier;
+    volumeId ||= this.getVolumeId(specifier);
+
+    if (!volumeId) {
+      return;
+    }
+
+    sliceIndex ??= this.getSliceIndex();
+    const { viewPlaneNormal } = this.getCamera();
+    const querySeparator = volumeId.includes('?') ? '&' : '?';
+    const formattedNormal = viewPlaneNormal.map((v) => v.toFixed(3)).join(',');
+
+    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${formattedNormal}`;
+  }
+
+  public hasVolumeId(volumeId: string): boolean {
+    if (!this.useCPURendering) {
+      return super.hasVolumeId(volumeId);
+    }
+
+    return this.cpuVolumes.has(volumeId);
+  }
+
+  public getAllVolumeIds(): string[] {
+    if (!this.useCPURendering) {
+      return super.getAllVolumeIds();
+    }
+
+    return [...this.cpuVolumeIds];
+  }
+
+  public getProperties = (
+    _volumeId?: string
+  ): VolumeViewportProperties | undefined => {
+    if (!this.useCPURendering) {
+      const actorEntries = this.getActors();
+      if (!actorEntries?.length) {
+        return;
+      }
+
+      const volumeId = _volumeId ?? actorEntries[0].referencedId;
+      const volumeActorEntry = actorEntries.find(
+        (actorEntry) => actorEntry.referencedId === volumeId
+      );
+
+      if (!volumeActorEntry) {
+        return;
+      }
+
+      const volume = cache.getVolume(volumeId);
+      if (!volume) {
+        return null;
+      }
+
+      const {
+        colormap: latestColormap,
+        VOILUTFunction,
+        interpolationType,
+        invert,
+        slabThickness,
+        preset,
+      } = this.viewportProperties;
+
+      const volumeActor = volumeActorEntry.actor as vtkVolume;
+      const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
+      const [lower, upper] =
+        this.viewportProperties?.VOILUTFunction === 'SIGMOID'
+          ? getVoiFromSigmoidRGBTransferFunction(cfun)
+          : cfun.getRange();
+      const volumeColormap = (
+        this as unknown as { getColormap?: (volumeId?: string) => unknown }
+      ).getColormap?.(volumeId);
+      const colormap =
+        volumeId && volumeColormap ? volumeColormap : latestColormap;
+
+      return {
+        colormap,
+        voiRange: { lower, upper },
+        VOILUTFunction,
+        interpolationType,
+        invert,
+        slabThickness,
+        preset,
+        sharpening: (this as unknown as { sharpening?: number }).sharpening,
+        smoothing: (this as unknown as { smoothing?: number }).smoothing,
+      };
+    }
+
+    const volume = this.getCPUPrimaryVolume(_volumeId);
+    const voiRange = volume
+      ? this.getCPUVOIRange(volume.volumeId)
+      : this.viewportProperties.voiRange;
+
+    return {
+      ...this.viewportProperties,
+      voiRange,
+      invert: this.viewportProperties.invert ?? false,
+      interpolationType:
+        this.viewportProperties.interpolationType ?? InterpolationType.LINEAR,
+      slabThickness: this.viewportProperties.slabThickness,
+    };
+  };
+
+  public setProperties(
+    {
+      voiRange,
+      VOILUTFunction,
+      invert,
+      interpolationType,
+      slabThickness,
+      orientation,
+    }: VolumeViewportProperties = {},
+    volumeId?: string,
+    suppressEvents = false
+  ): void {
+    if (!this.useCPURendering) {
+      super.setProperties(
+        {
+          voiRange,
+          VOILUTFunction,
+          invert,
+          interpolationType,
+          slabThickness,
+          orientation,
+        },
+        volumeId,
+        suppressEvents
+      );
+      return;
+    }
+
+    if (voiRange) {
+      if (volumeId) {
+        this.cpuVolumeVOIRanges.set(volumeId, { ...voiRange });
+      } else {
+        const primaryVolume = this.getCPUPrimaryVolume();
+        if (primaryVolume) {
+          this.cpuVolumeVOIRanges.set(primaryVolume.volumeId, { ...voiRange });
+        }
+      }
+
+      const primaryVolume = this.getCPUPrimaryVolume();
+      if (!volumeId || primaryVolume?.volumeId === volumeId) {
+        this.viewportProperties.voiRange = { ...voiRange };
+      }
+    }
+
+    if (VOILUTFunction !== undefined) {
+      this.viewportProperties.VOILUTFunction = VOILUTFunction;
+    }
+
+    if (typeof invert === 'boolean') {
+      this.viewportProperties.invert = invert;
+    }
+
+    if (interpolationType !== undefined) {
+      this.viewportProperties.interpolationType = interpolationType;
+    }
+
+    if (typeof slabThickness === 'number') {
+      this.setSlabThickness(slabThickness);
+    }
+
+    if (orientation !== undefined) {
+      this.viewportProperties.orientation = orientation;
+    }
+
+    if (!suppressEvents && (voiRange || typeof invert === 'boolean')) {
+      const volume = this.getCPUPrimaryVolume(volumeId);
+      const eventRange =
+        (volume && this.getCPUVOIRange(volume.volumeId)) ??
+        this.viewportProperties.voiRange;
+      const eventDetail: EventTypes.VoiModifiedEventDetail = {
+        viewportId: this.id,
+        range: eventRange,
+        volumeId: volume?.volumeId,
+        VOILUTFunction: this.viewportProperties.VOILUTFunction,
+        invert: this.viewportProperties.invert,
+      };
+
+      triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
+    }
+
+    this.render();
+  }
+
+  public getIntensityFromWorld(point: Point3): number {
+    return this.getActiveVolumeActorMapper().getIntensityFromWorld(point);
+  }
+
+  public customRenderViewportToCanvas = () => {
+    if (!this.useCPURendering) {
+      throw new Error(
+        'Custom cpu rendering pipeline should only be hit in CPU rendering mode'
+      );
+    }
+
+    if (!this.cpuDebug.customRenderHit) {
+      this.cpuDebug.customRenderHit = true;
+      this.logCPU('Entered customRenderViewportToCanvas CPU route');
+    }
+
+    this.getActiveVolumeActorMapper().renderToCanvas();
+
+    return {
+      canvas: this.canvas,
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      viewportStatus: this.viewportStatus,
+    };
+  };
+
   /**
    * It sets the slabThickness of the actors of the viewport. If filterActorUIDs are
    * provided, only the actors with the given UIDs will be affected. If no
@@ -494,30 +1666,10 @@ class VolumeViewport extends BaseVolumeViewport {
    * the slab thickness to (if not provided, all actors will be affected).
    */
   public setSlabThickness(slabThickness: number, filterActorUIDs = []): void {
-    if (slabThickness < 0.1) {
-      // Cannot render zero thickness
-      slabThickness = 0.1;
-    }
-
-    let actorEntries = this.getActors();
-
-    if (filterActorUIDs?.length > 0) {
-      actorEntries = actorEntries.filter((actorEntry) => {
-        return filterActorUIDs.includes(actorEntry.uid);
-      });
-    }
-
-    actorEntries.forEach((actorEntry) => {
-      if (actorIsA(actorEntry, 'vtkVolume')) {
-        actorEntry.slabThickness = slabThickness;
-      }
-    });
-
-    const currentCamera = this.getCamera();
-    this.updateClippingPlanesForActors(currentCamera);
-    // reset camera clipping range as well
-    this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
-    this.viewportProperties.slabThickness = slabThickness;
+    this.getActiveVolumeActorMapper().setSlabThickness(
+      slabThickness,
+      filterActorUIDs
+    );
   }
 
   /**
@@ -528,18 +1680,7 @@ class VolumeViewport extends BaseVolumeViewport {
    * Resets the slab thickness of the actors of the viewport to the default value.
    */
   public resetSlabThickness(): void {
-    const actorEntries = this.getActors();
-
-    actorEntries.forEach((actorEntry) => {
-      if (actorIsA(actorEntry, 'vtkVolume')) {
-        actorEntry.slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-      }
-    });
-
-    const currentCamera = this.getCamera();
-    this.updateClippingPlanesForActors(currentCamera);
-    this.triggerCameraModifiedEventIfNecessary(currentCamera, currentCamera);
-    this.viewportProperties.slabThickness = undefined;
+    this.getActiveVolumeActorMapper().resetSlabThickness();
   }
 
   public isInAcquisitionPlane(): boolean {
@@ -577,6 +1718,13 @@ class VolumeViewport extends BaseVolumeViewport {
     volumeId: string = this.getVolumeId(),
     useSlabThickness = true
   ): number => {
+    if (this.useCPURendering) {
+      return (
+        this.getCPUSliceRangeInfo(volumeId, useSlabThickness)
+          ?.currentStepIndex ?? 0
+      );
+    }
+
     if (!volumeId) {
       return 0;
     }
@@ -599,6 +1747,10 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns The image index.
    */
   public getSliceIndex = (): number => {
+    if (this.useCPURendering) {
+      return this.getCPUSliceRangeInfo()?.currentStepIndex ?? 0;
+    }
+
     const { imageIndex } = getImageSliceDataForVolumeViewport(this) || {};
     return imageIndex;
   };
@@ -762,6 +1914,16 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns ImageId
    */
   public getCurrentImageId = (): string | undefined => {
+    if (this.useCPURendering) {
+      const volume = this.getCPUPrimaryVolume();
+      if (!volume) {
+        return;
+      }
+
+      const imageIdIndex = this.getCurrentImageIdIndex(volume.volumeId, true);
+      return volume.imageIds[imageIdIndex];
+    }
+
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
@@ -809,6 +1971,35 @@ class VolumeViewport extends BaseVolumeViewport {
    * @returns void
    */
   public resetProperties(volumeId?: string): void {
+    if (this.useCPURendering) {
+      const imageVolume = this.getCPUPrimaryVolume(volumeId);
+      if (!imageVolume) {
+        throw new Error(`No volume found for the given volumeId: ${volumeId}`);
+      }
+
+      const [lower, upper] = imageVolume.voxelManager.getRange();
+      this.viewportProperties = {
+        ...this.viewportProperties,
+        voiRange: { lower, upper },
+        VOILUTFunction: this.viewportProperties.VOILUTFunction,
+        invert: false,
+        interpolationType: InterpolationType.LINEAR,
+        slabThickness: undefined,
+      };
+      this.cpuVolumeVOIRanges.set(imageVolume.volumeId, { lower, upper });
+      this.cpuBlendMode = BlendModes.COMPOSITE;
+      this.resetCamera();
+
+      triggerEvent(this.element, Events.VOI_MODIFIED, {
+        viewportId: this.id,
+        range: { lower, upper },
+        volumeId: imageVolume.volumeId,
+        VOILUTFunction: this.viewportProperties.VOILUTFunction,
+        invert: false,
+      });
+      return;
+    }
+
     this._resetProperties(volumeId);
   }
 
@@ -871,35 +2062,14 @@ class VolumeViewport extends BaseVolumeViewport {
    * Retrieves the clipping planes for the slices in the volume viewport.
    * @returns An array of vtkPlane objects representing the clipping planes, or an array of objects with normal and origin properties if raw is true.
    */
-  getSlicesClippingPlanes(): {
+  public getSlicesClippingPlanes(): {
     sliceIndex: number;
     planes: {
       normal: Point3;
       origin: Point3;
     }[];
   }[] {
-    const focalPoints = this.getSlicePlaneCoordinates();
-    const { viewPlaneNormal } = this.getCamera();
-    const slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-
-    return focalPoints.map(({ point, sliceIndex }) => {
-      const vtkPlanes = [vtkPlane.newInstance(), vtkPlane.newInstance()];
-
-      this.setOrientationOfClippingPlanes(
-        vtkPlanes,
-        slabThickness,
-        viewPlaneNormal,
-        point
-      );
-
-      return {
-        sliceIndex,
-        planes: vtkPlanes.map((plane) => ({
-          normal: plane.getNormal(),
-          origin: plane.getOrigin(),
-        })),
-      };
-    });
+    return this.getActiveVolumeActorMapper().getSlicesClippingPlanes();
   }
 
   /**
@@ -915,6 +2085,33 @@ class VolumeViewport extends BaseVolumeViewport {
     sliceIndex: number;
     point: Point3;
   }[] => {
+    if (this.useCPURendering) {
+      const sliceRangeInfo = this.getCPUSliceRangeInfo();
+      if (!sliceRangeInfo) {
+        return [];
+      }
+
+      const { numScrollSteps, currentStepIndex, spacingInNormalDirection } =
+        sliceRangeInfo;
+      const { focalPoint } = this.getCamera();
+      const { normal } = this.getCPUCameraBasis(this.getCamera());
+      const focalPoints: { sliceIndex: number; point: Point3 }[] = [];
+
+      for (let index = 0; index <= numScrollSteps; index++) {
+        const delta = (index - currentStepIndex) * spacingInNormalDirection;
+        focalPoints.push({
+          sliceIndex: index,
+          point: [
+            focalPoint[0] + normal[0] * delta,
+            focalPoint[1] + normal[1] * delta,
+            focalPoint[2] + normal[2] * delta,
+          ],
+        });
+      }
+
+      return focalPoints;
+    }
+
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry?.actor) {

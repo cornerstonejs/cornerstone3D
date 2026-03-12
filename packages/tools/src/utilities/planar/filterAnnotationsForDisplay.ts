@@ -21,9 +21,14 @@ export default function filterAnnotationsForDisplay(
 ): Annotations {
   if (viewport instanceof VolumeViewport) {
     const camera = viewport.getCamera();
+    const volumeId = viewport.getVolumeId();
 
     const { spacingInNormalDirection } =
-      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera);
+      csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera, volumeId);
+
+    if (!spacingInNormalDirection) {
+      return [];
+    }
 
     // Get data with same normal and within the same slice
     return filterAnnotationsWithinSlice(
