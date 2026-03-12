@@ -9,10 +9,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ohif-build:
-    name: OHIF build against this PR
+  ohif-downstream:
+    name: OHIF downstream tests against this PR
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
     env:
       BUN_VERSION: 1.2.23
       NODE_VERSION: 20
@@ -57,3 +57,28 @@ jobs:
       - name: Build OHIF
         working-directory: ${{ env.OHIF_DIR }}
         run: bun run build:ci
+
+      - name: Run OHIF unit tests
+        working-directory: ${{ env.OHIF_DIR }}
+        run: bun run test:unit:ci
+
+      - name: Install Playwright browsers
+        working-directory: ${{ env.OHIF_DIR }}
+        run: npx playwright install --with-deps chromium
+
+      - name: Run OHIF e2e tests
+        working-directory: ${{ env.OHIF_DIR }}
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+        run: bun run test:e2e:ci
+
+      - name: Upload OHIF Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohif-playwright-artifacts-${{ github.sha }}
+          path: |
+            ${{ env.OHIF_DIR }}/tests/playwright-report.json
+            ${{ env.OHIF_DIR }}/tests/playwright-report/
+            ${{ env.OHIF_DIR }}/tests/test-results/
+          retention-days: 7
