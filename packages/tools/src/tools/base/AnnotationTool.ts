@@ -103,6 +103,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   }
 
   static toolName;
+
   // ===================================================================
   // Abstract Methods - Must be implemented.
   // ===================================================================
@@ -134,11 +135,12 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   /**
    * @abstract cancel Used to cancel the ongoing tool drawing and manipulation
    *
+   * @param element - The HTML element
    */
-  abstract cancel(element: HTMLDivElement);
+  abstract cancel(element: HTMLDivElement): void;
 
   /**
-   * handleSelectedCallback Custom callback for when a handle is selected.
+   * @abstract handleSelectedCallback Custom callback for when a handle is selected.
    *
    * @param evt - The normalized mouse event
    * @param annotation - The annotation selected.
@@ -153,7 +155,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   ): void;
 
   /**
-   * Custom callback for when an annotation is selected
+   * @abstract toolSelectedCallback Custom callback for when an annotation is selected
    *
    * @param evt - The normalized mouse event
    * @param annotation - The `Annotation` to check.
@@ -167,7 +169,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   ): void;
 
   /**
-   * Returns true if the provided canvas coordinate tool is near the annotation
+   * @abstract isPointNearTool Returns true if the provided canvas coordinate tool is near the annotation
    *
    * @param element - The HTML element
    * @param annotation - The annotation to check
@@ -187,7 +189,6 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
   /**
    * @virtual Event handler for Cornerstone MOUSE_MOVE event.
-   *
    *
    * @param evt - The normalized mouse event
    * @param filteredAnnotations - The annotations to check for hover interactions
