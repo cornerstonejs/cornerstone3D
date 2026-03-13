@@ -16,7 +16,7 @@ jobs:
     env:
       BUN_VERSION: 1.2.23
       NODE_VERSION: 20
-      OHIF_REF: master
+      OHIF_REF: feat/link-cs3d-preview-build
       OHIF_DIR: ohif
     steps:
       - name: Checkout Cornerstone
