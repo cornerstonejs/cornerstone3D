@@ -34,6 +34,8 @@ Additionally, the OHIF pipeline can build and deploy a **preview release**
 against a CS3D branch for manual testing. This pipeline does not re-test the
 CS3D side but is intended for manual validation of changes in the full viewer.
 
+Some tests in OHIF may need additional wait time built in to enable them to pass on slower servers
+
 ### How it works
 
 The downstream validation is defined in
