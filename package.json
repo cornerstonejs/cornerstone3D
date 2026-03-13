@@ -63,7 +63,8 @@
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
     "lint-staged": "lint-staged",
     "lint": "oxlint packages/**/src --quiet",
-    "webpack:watch": "npx lerna run webpack:watch"
+    "webpack:watch": "npx lerna run webpack:watch",
+    "link:cs3d": "node scripts/link-cs3d.mjs"
   },
   "devDependencies": {
     "@babel/core": "7.26.10",
