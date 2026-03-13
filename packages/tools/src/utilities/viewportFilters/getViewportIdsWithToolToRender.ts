@@ -33,10 +33,7 @@ export default function getViewportIdsWithToolToRender(
   const viewport = renderingEngine.getViewport(enabledElement.viewportId);
 
   if (requireParallelNormals) {
-    viewports = filterViewportsWithParallelNormals(
-      viewports,
-      viewport.getCamera()
-    );
+    viewports = filterViewportsWithParallelNormals(viewports, viewport);
   }
 
   const viewportIds = viewports.map((vp) => vp.id);

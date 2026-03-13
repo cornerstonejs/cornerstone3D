@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import getViewportSpatialCamera from '../getViewportSpatialCamera';
 
 /**
  * It filters the viewports that are looking in the same view as the camera
@@ -9,15 +10,25 @@ import { vec3 } from 'gl-matrix';
  */
 export function filterViewportsWithParallelNormals(
   viewports,
-  camera,
+  referenceViewport,
   EPS = 0.999
 ) {
+  const referenceCamera = getViewportSpatialCamera(referenceViewport);
+  const referenceNormal = referenceCamera.viewPlaneNormal;
+
+  if (!referenceNormal) {
+    return [];
+  }
+
   return viewports.filter((viewport) => {
-    const vpCamera = viewport.getCamera();
+    const vpCamera = getViewportSpatialCamera(viewport);
+
+    if (!vpCamera.viewPlaneNormal) {
+      return false;
+    }
 
     const isParallel =
-      Math.abs(vec3.dot(vpCamera.viewPlaneNormal, camera.viewPlaneNormal)) >
-      EPS;
+      Math.abs(vec3.dot(vpCamera.viewPlaneNormal, referenceNormal)) > EPS;
 
     return isParallel;
   });
