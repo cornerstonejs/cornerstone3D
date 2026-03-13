@@ -80,6 +80,7 @@ import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent';
+import { convertColorArrayToRgbString } from './utilities/convertColorArrayToRgbString';
 import { cornerstoneStreamingImageVolumeLoader } from './loaders/cornerstoneStreamingImageVolumeLoader';
 import { cornerstoneStreamingDynamicImageVolumeLoader } from './loaders/cornerstoneStreamingDynamicImageVolumeLoader';
 import { cornerstoneMeshLoader } from './loaders/cornerstoneMeshLoader';
@@ -148,6 +149,7 @@ export {
   // event helpers
   eventTarget,
   triggerEvent,
+  convertColorArrayToRgbString,
   // Image Loader
   imageLoader,
   registerImageLoader, // Todo: remove this after CSWIL uses imageLoader now
