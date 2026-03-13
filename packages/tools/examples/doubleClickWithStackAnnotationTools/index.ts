@@ -68,26 +68,26 @@ const handleDoubleClick = (element, viewportIndex) => {
 
   browserDoubleClickEventStatus.innerText =
     "Browser 'dblclick' event detected on a viewport element ancestor.";
-  statusDiv.style.backgroundColor = '#00ff00';
+  statusDiv.className = 'example-status-success';
 };
 
 const handleMouseDown = () => {
   browserDoubleClickEventStatus.style.visibility = 'hidden';
-  statusDiv.style.backgroundColor = null;
+  statusDiv.className = '';
 };
 
 const handleMouseUp = () => {
   browserDoubleClickEventStatus.style.visibility = '';
   browserDoubleClickEventStatus.innerText =
     "Cornerstone 'MOUSE_UP' event detected on the viewport element.";
-  statusDiv.style.backgroundColor = '#00ff00';
+  statusDiv.className = 'example-status-success';
 };
 
 const handleClick = () => {
   browserDoubleClickEventStatus.style.visibility = '';
   browserDoubleClickEventStatus.innerText =
     "Cornerstone 'MOUSE_CLICK' event detected on the viewport element.";
-  statusDiv.style.backgroundColor = '#00ff00';
+  statusDiv.className = 'example-status-success';
 };
 
 function toggleViewportSize(element: HTMLElement, viewportIndex: number) {
