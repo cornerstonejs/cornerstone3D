@@ -345,6 +345,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
   ): boolean => {
     const { instance: spline } = annotation.data.spline;
 
+    if (!spline) {
+      return false;
+    }
+
     return spline.isPointNearCurve(canvasCoords, proximity);
   };
 
@@ -793,6 +797,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     ) as Types.Point2[];
 
     const { drawPreviewEnabled } = this.configuration.spline;
+
+    // Rehydrated annotations restored from SR have type but no instance — create it lazily.
+    if (annotation.data.spline && !annotation.data.spline.instance) {
+      annotation.data.spline.instance = new (this._getSplineConfig(
+        annotation.data.spline.type
+      ).Class)();
+    }
+
     const splineType = annotation.data.spline.type;
     const splineConfig = this._getSplineConfig(splineType);
     const spline = annotation.data.spline.instance;
