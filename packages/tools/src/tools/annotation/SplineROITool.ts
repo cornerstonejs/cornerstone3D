@@ -15,7 +15,6 @@ import {
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import {
@@ -37,7 +36,6 @@ import type {
 import * as math from '../../utilities/math';
 import throttle from '../../utilities/throttle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 
@@ -346,6 +344,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     proximity: number
   ): boolean => {
     const { instance: spline } = annotation.data.spline;
+
+    if (!spline) {
+      return false;
+    }
 
     return spline.isPointNearCurve(canvasCoords, proximity);
   };
@@ -795,6 +797,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     ) as Types.Point2[];
 
     const { drawPreviewEnabled } = this.configuration.spline;
+
+    // Rehydrated annotations restored from SR have type but no instance — create it lazily.
+    if (annotation.data.spline && !annotation.data.spline.instance) {
+      annotation.data.spline.instance = new (this._getSplineConfig(
+        annotation.data.spline.type
+      ).Class)();
+    }
+
     const splineType = annotation.data.spline.type;
     const splineConfig = this._getSplineConfig(splineType);
     const spline = annotation.data.spline.instance;
@@ -939,12 +949,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       );
     }
 
-    this._renderStats(
-      annotation,
-      viewport,
-      svgDrawingHelper,
-      annotationStyle.textbox
-    );
+    this._renderStats(annotation, enabledElement, svgDrawingHelper);
 
     if (this.fireChangeOnUpdate?.annotationUID === annotationUID) {
       this.triggerChangeEvent(
@@ -1036,58 +1041,37 @@ class SplineROITool extends ContourSegmentationBaseTool {
     });
   }
 
-  private _renderStats = (
-    annotation,
-    viewport,
-    svgDrawingHelper,
-    textboxStyle
-  ) => {
+  private _renderStats = (annotation, enabledElement, svgDrawingHelper) => {
     const data = annotation.data;
+    const { viewport } = enabledElement;
     const targetId = this.getTargetId(viewport);
 
-    if (!data.spline.instance.closed || !textboxStyle.visibility) {
+    if (!data.spline.instance.closed) {
       return;
     }
 
+    const styleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+      annotationUID: annotation.annotationUID,
+    };
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;
     }
-
     const canvasCoordinates = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)
     );
-    if (!data.handles.textBox.hasMoved) {
-      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-      data.handles.textBox.worldPosition =
-        viewport.canvasToWorld(canvasTextBoxCoords);
-    }
-
-    const textBoxPosition = viewport.worldToCanvas(
-      data.handles.textBox.worldPosition
-    );
-
-    const textBoxUID = 'textBox';
-    const boundingBox = drawLinkedTextBoxSvg(
+    this.renderLinkedTextBoxAnnotation({
+      enabledElement,
       svgDrawingHelper,
-      annotation.annotationUID ?? '',
-      textBoxUID,
+      annotation,
+      styleSpecifier,
       textLines,
-      textBoxPosition,
       canvasCoordinates,
-      {},
-      textboxStyle
-    );
-
-    const { x: left, y: top, width, height } = boundingBox;
-
-    data.handles.textBox.worldBoundingBox = {
-      topLeft: viewport.canvasToWorld([left, top]),
-      topRight: viewport.canvasToWorld([left + width, top]),
-      bottomLeft: viewport.canvasToWorld([left, top + height]),
-      bottomRight: viewport.canvasToWorld([left + width, top + height]),
-    };
+      textBoxUID: 'textBox',
+    });
   };
 
   addControlPointCallback = (

@@ -94,6 +94,10 @@ async function calculateVolumeStatistics({
   // Get the strategy data
   const strategyData = prepareVolumeStrategyDataForWorker(operationData);
 
+  if (!strategyData) {
+    return;
+  }
+
   const {
     segmentationVoxelManager,
     imageVoxelManager,

@@ -1,4 +1,4 @@
-import { utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils, getEnabledElement } from '@cornerstonejs/core';
 import type { Annotations, Annotation } from '../../types/AnnotationTypes';
 import type { AnnotationGroupSelector, IAnnotationManager } from '../../types';
 import {
@@ -163,7 +163,7 @@ function addAnnotation(
   // annotation added event for that element.
   if (
     annotationGroupSelector instanceof HTMLDivElement &&
-    !annotation.metadata?.FrameOfReferenceUID
+    getEnabledElement(annotationGroupSelector)
   ) {
     const groupKey = manager.getGroupKey(annotationGroupSelector);
     manager.addAnnotation(annotation, groupKey);

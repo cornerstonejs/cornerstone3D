@@ -65,6 +65,7 @@ import VoxelManager from './VoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
+import { convertColorArrayToRgbString } from './convertColorArrayToRgbString';
 import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
@@ -103,6 +104,8 @@ import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 export * from './getPixelSpacingInformation';
+export * from './getPlaneCubeIntersectionDimensions';
+export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
@@ -131,6 +134,7 @@ export {
   getViewportModality,
   windowLevel,
   convertToGrayscale,
+  convertColorArrayToRgbString,
   getClosestImageId,
   getSpacingInNormalDirection,
   getTargetVolumeAndSpacingInNormalDir,
