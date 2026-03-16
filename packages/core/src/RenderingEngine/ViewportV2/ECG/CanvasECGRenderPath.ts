@@ -25,6 +25,7 @@ import type {
   ECGWaveformPayload,
   RenderWindowMetrics,
 } from './ECGViewportV2Types';
+import { getECGCameraLayout } from './ecgViewportCamera';
 
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   async addData(
@@ -203,15 +204,17 @@ function getEffectiveTransform(
   camera: ECGCamera | undefined,
   canvas: HTMLCanvasElement
 ): { effectiveRatio: number; xOffset: number; yOffset: number } {
-  const zoom = camera?.zoom ?? 1;
-  const pan = camera?.pan ?? [0, 0];
-  const effectiveRatio = metrics.worldToCanvasRatio * zoom;
-  const drawWidth = metrics.ecgWidth * effectiveRatio;
-  const drawHeight = metrics.ecgHeight * effectiveRatio;
-  const xOffset = (canvas.clientWidth - drawWidth) / 2 + pan[0];
-  const yOffset = (canvas.clientHeight - drawHeight) / 2 + pan[1];
+  const layout = getECGCameraLayout({
+    metrics,
+    camera,
+    canvas,
+  });
 
-  return { effectiveRatio, xOffset, yOffset };
+  return {
+    effectiveRatio: layout.effectiveRatio,
+    xOffset: layout.xOffset,
+    yOffset: layout.yOffset,
+  };
 }
 
 function getChannelLayouts(

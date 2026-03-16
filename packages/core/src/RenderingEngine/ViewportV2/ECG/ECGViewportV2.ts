@@ -15,6 +15,14 @@ import type {
   ECGViewportV2Input,
   ECGWaveformPayload,
 } from './ECGViewportV2Types';
+import {
+  createDefaultECGCamera,
+  getAnchorPointForCanvasPoint,
+  getAnchorPointForPan,
+  getECGCameraLayout,
+  getPanForECGLayout,
+  normalizeECGCamera,
+} from './ecgViewportCamera';
 
 const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
@@ -61,13 +69,10 @@ class ECGViewportV2 extends ViewportV2<
       canvas: this.canvas,
       canvasContext: this.canvasContext,
     };
-    this.camera = {
+    this.camera = createDefaultECGCamera({
       timeRange: [0, 1],
       valueRange: [-1, 1],
-      scrollOffset: 0,
-      pan: [0, 0],
-      zoom: 1,
-    };
+    });
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -122,13 +127,10 @@ class ECGViewportV2 extends ViewportV2<
         amplitudeScale: 1,
         showGrid: true,
       });
-      this.camera = {
+      this.camera = createDefaultECGCamera({
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
-        scrollOffset: 0,
-        pan: [0, 0],
-        zoom: 1,
-      };
+      });
       this.modified();
 
       renderingIds.push(renderingId);
@@ -138,24 +140,39 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   getZoom(): number {
-    return Math.max(this.camera.zoom ?? 1, 0.001);
+    return this.getScale();
   }
 
-  setZoom(zoom: number): void {
-    this.setCamera({
-      zoom: Math.max(zoom, 0.001),
-    });
+  protected normalizeCamera(camera: ECGCamera): ECGCamera {
+    return normalizeECGCamera(camera);
+  }
+
+  setZoom(zoom: number, canvasPoint?: Point2): void {
+    if (canvasPoint) {
+      this.setScaleAtCanvasPoint(zoom, canvasPoint);
+      return;
+    }
+
+    this.setScale(zoom);
   }
 
   getPan(): Point2 {
-    const [x, y] = this.camera.pan ?? [0, 0];
+    const layout = this.getCurrentCameraLayout();
 
-    return [x, y];
+    return layout ? getPanForECGLayout(layout) : [0, 0];
   }
 
   setPan(pan: Point2): void {
+    const layout = this.getCurrentCameraLayout();
+
+    if (!layout) {
+      return;
+    }
+
     this.setCamera({
-      pan: [pan[0], pan[1]],
+      frame: {
+        anchorPoint: getAnchorPointForPan([pan[0], pan[1]], layout),
+      },
     });
   }
 
@@ -272,11 +289,10 @@ class ECGViewportV2 extends ViewportV2<
    * Resets pan and zoom to defaults and re-renders.
    */
   resetCamera(): boolean {
-    this.camera = {
-      ...this.camera,
-      pan: [0, 0],
-      zoom: 1,
-    };
+    this.camera = createDefaultECGCamera({
+      timeRange: this.camera.timeRange,
+      valueRange: this.camera.valueRange,
+    });
     this.modified();
 
     return true;
@@ -365,6 +381,44 @@ class ECGViewportV2 extends ViewportV2<
       preScale: { scaled: false },
       metadata: { Modality: 'ECG' },
     } as unknown as IImageData;
+  }
+
+  private setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
+    const layout = this.getCurrentCameraLayout();
+
+    if (!layout) {
+      this.setScale(scale);
+      return;
+    }
+
+    this.setCamera({
+      frame: {
+        ...(this.getCamera().frame || {}),
+        anchorPoint: getAnchorPointForCanvasPoint(canvasPoint, layout),
+        anchorView: [
+          canvasPoint[0] / Math.max(this.canvas.clientWidth, 1),
+          canvasPoint[1] / Math.max(this.canvas.clientHeight, 1),
+        ],
+        scale: Math.max(scale, 0.001),
+        scaleMode: 'fit',
+      },
+    });
+  }
+
+  private getCurrentCameraLayout() {
+    const binding = this.getFirstBinding();
+
+    if (!binding) {
+      return;
+    }
+
+    const rendering = binding.rendering as ECGCanvasRendering;
+
+    return getECGCameraLayout({
+      metrics: rendering.metrics,
+      camera: this.camera,
+      canvas: this.canvas,
+    });
   }
 }
 

@@ -33,8 +33,6 @@ export interface ECGCamera extends ViewportCameraBase<[number, number]> {
   timeRange: [number, number];
   valueRange: [number, number];
   scrollOffset?: number;
-  pan?: [number, number];
-  zoom?: number;
 }
 
 export interface ECGProperties {
