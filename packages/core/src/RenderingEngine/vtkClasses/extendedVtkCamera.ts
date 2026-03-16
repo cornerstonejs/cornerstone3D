@@ -70,12 +70,7 @@ function extendedVtkCamera(publicAPI, model) {
     const [sx, sy] = getNormalizedAspectRatio(model.aspectRatio);
 
     if (sx !== 1.0 || sy !== 1.0) {
-      const viewUp = publicAPI.getViewUp();
-      const viewPlaneNormal = publicAPI.getViewPlaneNormal();
-      const scaleMatrix = getProjectionScaleMatrix(viewUp, viewPlaneNormal, [
-        sx,
-        sy,
-      ]);
+      const scaleMatrix = getProjectionScaleMatrix([sx, sy]);
       mat4.multiply(matrix, scaleMatrix, matrix);
     }
 

@@ -8,7 +8,7 @@ describe('getProjectionScaleMatrix', () => {
   it('axial view vpn [0, 0, 1]  stretch in Anterior-Posterior', () => {
     const viewUp = vec3.fromValues(0, -1, 0);
     const vpn = vec3.fromValues(0, 0, 1);
-    const matrix = getProjectionScaleMatrix(viewUp, vpn, aspect);
+    const matrix = getProjectionScaleMatrix(aspect);
 
     expect(matrix[0]).toBeCloseTo(1.0);
     expect(matrix[5]).toBeCloseTo(2.0);
@@ -17,7 +17,7 @@ describe('getProjectionScaleMatrix', () => {
   it('sagittal view vpn [1, 0, 0] Superior-Inferior', () => {
     const viewUp = vec3.fromValues(0, 0, 1);
     const vpn = vec3.fromValues(1, 0, 0);
-    const matrix = getProjectionScaleMatrix(viewUp, vpn, aspect);
+    const matrix = getProjectionScaleMatrix(aspect);
 
     expect(matrix[0]).toBeCloseTo(1.0);
     expect(matrix[5]).toBeCloseTo(2.0);
@@ -26,7 +26,7 @@ describe('getProjectionScaleMatrix', () => {
   it('coronal view vpn [0, 1, 0] Superior-Inferior', () => {
     const viewUp = vec3.fromValues(0, 0, 1);
     const vpn = vec3.fromValues(0, -1, 0);
-    const matrix = getProjectionScaleMatrix(viewUp, vpn, aspect);
+    const matrix = getProjectionScaleMatrix(aspect);
 
     expect(matrix[0]).toBeCloseTo(1.0);
     expect(matrix[5]).toBeCloseTo(2.0);
@@ -35,7 +35,7 @@ describe('getProjectionScaleMatrix', () => {
   it('oblique vpn halfway between axial and sagittal', () => {
     const viewUp = vec3.normalize(vec3.create(), vec3.fromValues(1, 0, 1));
     const vpn = vec3.fromValues(0, 1, 0);
-    const matrix = getProjectionScaleMatrix(viewUp, vpn, aspect);
+    const matrix = getProjectionScaleMatrix(aspect);
 
     // At 45 degrees, the squared sine/cosine interpolation results in a perfect 50/50 split.
     // M_1,1 = sx*sin^2(45) + sy*cos^2(45) = 1(0.5) + 2(0.5) = 1.5
@@ -49,10 +49,10 @@ describe('getProjectionScaleMatrix', () => {
       const vpn = vec3.fromValues(0, 0, 1);
 
       const viewUp1 = vec3.fromValues(0, -1, 0);
-      const matrix1 = getProjectionScaleMatrix(viewUp1, vpn, aspect);
+      const matrix1 = getProjectionScaleMatrix(aspect);
 
       const viewUp2 = vec3.fromValues(-1, 0, 0);
-      const matrix2 = getProjectionScaleMatrix(viewUp2, vpn, aspect);
+      const matrix2 = getProjectionScaleMatrix(aspect);
 
       // Scales swap as screen axes rotate, but stretch stays in AP direction
       expect(matrix1[0]).toBeCloseTo(1.0);
@@ -65,10 +65,10 @@ describe('getProjectionScaleMatrix', () => {
       const vpn = vec3.fromValues(0, 0, 1);
 
       const viewUp1 = vec3.fromValues(0, -1, 0);
-      const matrix1 = getProjectionScaleMatrix(viewUp1, vpn, aspect);
+      const matrix1 = getProjectionScaleMatrix(aspect);
 
       const viewUp2 = vec3.fromValues(1, 0, 0);
-      const matrix2 = getProjectionScaleMatrix(viewUp2, vpn, aspect);
+      const matrix2 = getProjectionScaleMatrix(aspect);
 
       expect(matrix1[0]).toBeCloseTo(1.0);
       expect(matrix1[5]).toBeCloseTo(2.0);
@@ -80,10 +80,10 @@ describe('getProjectionScaleMatrix', () => {
       const vpn = vec3.fromValues(1, 0, 0);
 
       const viewUp1 = vec3.fromValues(0, 0, 1);
-      const matrix1 = getProjectionScaleMatrix(viewUp1, vpn, aspect);
+      const matrix1 = getProjectionScaleMatrix(aspect);
 
       const viewUp2 = vec3.fromValues(0, -1, 0);
-      const matrix2 = getProjectionScaleMatrix(viewUp2, vpn, aspect);
+      const matrix2 = getProjectionScaleMatrix(aspect);
 
       expect(matrix1[0]).toBeCloseTo(1.0);
       expect(matrix1[5]).toBeCloseTo(2.0);
@@ -95,10 +95,10 @@ describe('getProjectionScaleMatrix', () => {
       const vpn = vec3.fromValues(0, -1, 0);
 
       const viewUp1 = vec3.fromValues(0, 0, 1);
-      const matrix1 = getProjectionScaleMatrix(viewUp1, vpn, aspect);
+      const matrix1 = getProjectionScaleMatrix(aspect);
 
       const viewUp2 = vec3.fromValues(1, 0, 0);
-      const matrix2 = getProjectionScaleMatrix(viewUp2, vpn, aspect);
+      const matrix2 = getProjectionScaleMatrix(aspect);
 
       expect(matrix1[0]).toBeCloseTo(1.0);
       expect(matrix1[5]).toBeCloseTo(2.0);
@@ -109,14 +109,14 @@ describe('getProjectionScaleMatrix', () => {
     it('oblique view rotation - stretch follows patient anatomy', () => {
       const vpn = vec3.normalize(vec3.create(), vec3.fromValues(1, 1, 0));
       const viewUp1 = vec3.normalize(vec3.create(), vec3.fromValues(0, 0, 1));
-      const matrix1 = getProjectionScaleMatrix(viewUp1, vpn, aspect);
+      const matrix1 = getProjectionScaleMatrix(aspect);
 
       const oldViewRight = vec3.create();
       vec3.cross(oldViewRight, viewUp1, vpn);
       vec3.normalize(oldViewRight, oldViewRight);
 
       const viewUp2 = vec3.clone(oldViewRight);
-      const matrix2 = getProjectionScaleMatrix(viewUp2, vpn, aspect);
+      const matrix2 = getProjectionScaleMatrix(aspect);
 
       const originalRightScale = matrix1[0];
       const originalUpScale = matrix1[5];
@@ -129,10 +129,10 @@ describe('getProjectionScaleMatrix', () => {
     it('axial view 180 deg rotation - stretch magnitude unchanged', () => {
       const vpn = vec3.fromValues(0, 0, 1);
       const viewUp1 = vec3.fromValues(0, -1, 0);
-      const matrix1 = getProjectionScaleMatrix(viewUp1, vpn, aspect);
+      const matrix1 = getProjectionScaleMatrix(aspect);
 
       const viewUp2 = vec3.fromValues(0, 1, 0);
-      const matrix2 = getProjectionScaleMatrix(viewUp2, vpn, aspect);
+      const matrix2 = getProjectionScaleMatrix(aspect);
 
       expect(Math.abs(matrix1[0])).toBeCloseTo(Math.abs(matrix2[0]), 4);
       expect(Math.abs(matrix1[5])).toBeCloseTo(Math.abs(matrix2[5]), 4);
@@ -153,7 +153,7 @@ describe('getProjectionScaleMatrix', () => {
           -Math.cos(angleRad),
           0
         );
-        return getProjectionScaleMatrix(viewUp, vpn, aspect);
+        return getProjectionScaleMatrix(aspect);
       });
 
       // Verify smooth transitions between adjacent angles
