@@ -1,186 +1,145 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  Enums,
-  getRenderingEngine,
-  PlanarViewportV2,
   RenderingEngine,
-  utilities,
+  Enums,
+  volumeLoader,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
   addSliderToToolbar,
   camera as cameraHelpers,
-  createImageIdsAndCacheMetaData,
-  initDemo,
-  setTitleAndDescription,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
-type PlanarVolumeOrientation =
-  | Enums.OrientationAxis.AXIAL
-  | Enums.OrientationAxis.CORONAL
-  | Enums.OrientationAxis.SAGITTAL;
-
-const orientations = [
-  Enums.OrientationAxis.AXIAL,
-  Enums.OrientationAxis.CORONAL,
-  Enums.OrientationAxis.SAGITTAL,
-] as const;
-const { Events, ViewportType } = Enums;
-
+// This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
+const { ViewportType } = Enums;
+
 const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_SAGITTAL_PLANAR';
-const dataId = 'ct-volume-api';
-const volumeName = 'CT_VOLUME_ID';
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-const volumeId = `${volumeLoaderScheme}:${volumeName}`;
-const defaultVoiRange = { lower: -160, upper: 240 };
-const highlightedBoneVoiRange = { lower: -1500, upper: 2500 };
+const viewportId = 'CT_SAGITTAL_STACK';
 
-function isCpuForced(): boolean {
-  return new URLSearchParams(window.location.search).get('cpu') === 'true';
-}
+// Define a unique id for the volume
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
-function getOrientationParam(): PlanarVolumeOrientation {
-  const value = new URLSearchParams(window.location.search).get('orientation');
-
-  if (value && orientations.includes(value as PlanarVolumeOrientation)) {
-    return value as PlanarVolumeOrientation;
-  }
-
-  return Enums.OrientationAxis.SAGITTAL;
-}
-
-let currentOrientation = getOrientationParam();
-
-function syncExampleUrl(): void {
-  const nextUrl = new URL(window.location.href);
-
-  nextUrl.searchParams.set('orientation', currentOrientation);
-
-  if (isCpuForced()) {
-    nextUrl.searchParams.set('cpu', 'true');
-  } else {
-    nextUrl.searchParams.delete('cpu');
-  }
-
-  window.history.replaceState({}, '', nextUrl);
-}
-
-function getViewport(): PlanarViewportV2 {
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  if (!renderingEngine) {
-    throw new Error('Rendering engine has not been initialized');
-  }
-
-  return renderingEngine.getViewport(viewportId) as PlanarViewportV2;
-}
-
-function getDefaultDataPresentation() {
-  return {
-    invert: false,
-    opacity: 1,
-    visible: true,
-    voiRange: defaultVoiRange,
-  };
-}
-
+// ======== Set up page ======== //
 setTitleAndDescription(
-  'Volume API On PlanarViewportV2',
-  'Demonstrates volume-slice interaction using PlanarViewportV2. URL options: ?orientation=axial|coronal|sagittal&cpu=true'
+  'Volume Viewport API',
+  'Demonstrates how to interact with a Volume viewport.'
 );
 
 const content = document.getElementById('content');
-
-if (!content) {
-  throw new Error('Missing #content container');
-}
-
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
 element.style.width = '500px';
 element.style.height = '500px';
 
 content.appendChild(element);
+// ============================= //
 
-const info = document.createElement('div');
-content.appendChild(info);
+// TODO -> Maybe some of these implementations should be pushed down to some API
 
-const renderModeInfo = document.createElement('div');
-info.appendChild(renderModeInfo);
-
-const orientationInfo = document.createElement('div');
-info.appendChild(orientationInfo);
-
-const rotationInfo = document.createElement('div');
-info.appendChild(rotationInfo);
-
-function updateViewportInfo(): void {
-  const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  if (!renderingEngine) {
-    return;
-  }
-
-  const viewport = renderingEngine.getViewport(viewportId) as
-    | PlanarViewportV2
-    | undefined;
-
-  if (!viewport) {
-    return;
-  }
-
-  renderModeInfo.innerText = `Data ${dataId} Render Mode: ${
-    viewport.getDataRenderMode(dataId) ?? 'unknown'
-  }`;
-  orientationInfo.innerText = `Orientation: ${currentOrientation}`;
-  rotationInfo.innerText = `Rotation: ${Math.round(
-    viewport.getViewPresentation().rotation ?? 0
-  )}`;
-}
-
-element.addEventListener(Events.CAMERA_MODIFIED, updateViewportInfo);
-
+// Buttons
 addButtonToToolbar({
   title: 'Set VOI Range',
   onClick: () => {
-    const viewport = getViewport();
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    viewport.setDataPresentation(dataId, {
-      voiRange: highlightedBoneVoiRange,
-    });
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
     viewport.render();
-    updateViewportInfo();
+  },
+});
+addButtonToToolbar({
+  title: 'Flip H',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    // Flip the viewport horizontally
+    const { flipHorizontal } = viewport.getCamera();
+    viewport.setCamera({ flipHorizontal: !flipHorizontal });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Flip V',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    // Flip the viewport vertically
+    const { flipVertical } = viewport.getCamera();
+
+    viewport.setCamera({ flipVertical: !flipVertical });
+
+    viewport.render();
   },
 });
 
 addButtonToToolbar({
   title: 'Invert',
   onClick: () => {
-    const viewport = getViewport();
-    const currentPresentation = viewport.getDataPresentation(dataId);
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    viewport.setDataPresentation(dataId, {
-      invert: !(currentPresentation?.invert ?? false),
-    });
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    const { invert } = viewport.getProperties();
+
+    viewport.setProperties({ invert: !invert }, volumeId);
+
     viewport.render();
-    updateViewportInfo();
   },
 });
 
 addButtonToToolbar({
   title: 'Apply Random Zoom And Pan',
   onClick: () => {
-    const viewport = getViewport();
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    // Reset the camera so that we can set some pan and zoom relative to the
+    // defaults for this demo. Note that changes could be relative instead.
     viewport.resetCamera();
 
+    // Get the current camera properties
     const camera = viewport.getCamera();
+
     const { parallelScale, position, focalPoint } =
       cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
 
@@ -190,109 +149,199 @@ addButtonToToolbar({
       focalPoint: focalPoint as Types.Point3,
     });
     viewport.render();
-    updateViewportInfo();
   },
 });
 
 addButtonToToolbar({
   title: 'Apply random rotation',
   onClick: () => {
-    const viewport = getViewport();
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    // Apply the rotation to the camera of the viewport
     viewport.setViewPresentation({ rotation: Math.random() * 360 });
     viewport.render();
-    updateViewportInfo();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Apply colormap',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    // Apply the colormap to the viewport
+    viewport.setProperties({ colormap: { name: 'hsv' } });
+
+    viewport.render();
   },
 });
 
 addButtonToToolbar({
   title: 'Reset Viewport',
   onClick: () => {
-    const viewport = getViewport();
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    viewport.resetCamera();
-    viewport.setDataPresentation(dataId, getDefaultDataPresentation());
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    viewport.resetProperties();
     viewport.render();
-    updateViewportInfo();
   },
 });
+
+const orientationOptions = {
+  axial: 'axial',
+  sagittal: 'sagittal',
+  coronal: 'coronal',
+  oblique: 'oblique',
+};
 
 addDropdownToToolbar({
   options: {
-    values: [...orientations],
-    labels: ['Axial', 'Coronal', 'Sagittal'],
-    defaultValue: currentOrientation,
+    values: ['axial', 'sagittal', 'coronal', 'oblique'],
+    defaultValue: 'sagittal',
   },
   onSelectedValueChange: (selectedValue) => {
-    const nextOrientation = selectedValue as PlanarVolumeOrientation;
-    const viewport = getViewport();
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    currentOrientation = nextOrientation;
-    syncExampleUrl();
-    viewport.setOrientation(nextOrientation);
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    let viewUp;
+    let viewPlaneNormal;
+
+    switch (selectedValue) {
+      case orientationOptions.axial:
+        viewport.setOrientation(Enums.OrientationAxis.AXIAL);
+
+        break;
+      case orientationOptions.sagittal:
+        viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
+
+        break;
+      case orientationOptions.coronal:
+        viewport.setOrientation(Enums.OrientationAxis.CORONAL);
+        break;
+      case orientationOptions.oblique:
+        // Some random oblique value for this dataset
+        viewUp = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446];
+        viewPlaneNormal = [
+          -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
+        ];
+
+        viewport.setCamera({ viewUp, viewPlaneNormal });
+        viewport.resetCamera();
+
+        break;
+      default:
+        throw new Error('undefined orientation option');
+    }
+
+    // TODO -> Maybe we should have a helper for this on the viewport
+    // Set the new orientation
+    // Reset the camera after the normal changes
     viewport.render();
-    updateViewportInfo();
   },
 });
 
-if (!isCpuForced()) {
-  addSliderToToolbar({
-    title: 'Slab Thickness',
-    range: [0, 50],
-    step: 0.1,
-    defaultValue: 0,
-    onSelectedValueChange: (value) => {
-      const viewport = getViewport();
-      const slabThickness = Number(value);
+addSliderToToolbar({
+  title: 'Slab Thickness',
+  range: [0, 50],
+  defaultValue: 0,
+  onSelectedValueChange: (value) => {
+    const valueAsNumber = Number(value);
 
-      viewport.setDataPresentation(dataId, {
-        slabThickness: slabThickness > 0 ? slabThickness : undefined,
-      });
-      viewport.render();
-      updateViewportInfo();
-    },
-    updateLabelOnChange: (value, label) => {
-      label.innerText = `Slab Thickness: ${Number(value).toFixed(1)}`;
-    },
-  });
-}
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    viewport.setBlendMode(Enums.BlendModes.MAXIMUM_INTENSITY_BLEND);
+    viewport.setProperties({ slabThickness: valueAsNumber });
+    viewport.render();
+  },
+});
+
+/**
+ * Runs the demo
+ */
 async function run() {
-  syncExampleUrl();
+  // Init Cornerstone and related libraries
   await initDemo();
 
-  const imageIds = await createImageIdsAndCacheMetaData({
+  // Get Cornerstone imageIds and fetch metadata into RAM
+
+  const ctImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
+  const imageIds = ctImageIds;
 
+  // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
-  renderingEngine.enableElement({
+  // Create a stack viewport
+  const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_V2,
+    type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
+      orientation: Enums.OrientationAxis.SAGITTAL,
       background: [0.2, 0, 0.2] as Types.Point3,
     },
-  });
+  };
 
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewportV2;
+  renderingEngine.enableElement(viewportInput);
 
-  utilities.viewportV2DataSetMetadataProvider.add(dataId, {
+  // Get the stack viewport that was created
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IVolumeViewport;
+
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
-    volumeId,
   });
 
-  await viewport.setDataIds([dataId], {
-    orientation: currentOrientation,
-    renderMode: isCpuForced() ? 'cpuVolume' : 'vtkVolume',
-  });
-  viewport.setDataPresentation(dataId, getDefaultDataPresentation());
-  updateViewportInfo();
+  // Set the volume to load
+  volume.load();
+
+  // Set the volume on the viewport and it's default properties
+  viewport
+    .setVolumes([{ volumeId, callback: setCtTransferFunctionForVolumeActor }])
+    .then(() => {
+      viewport.setProperties({
+        voiRange: { lower: -160, upper: 240 },
+        VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+        colormap: { name: 'Grayscale' },
+        slabThickness: 0.1,
+      });
+    });
+
+  // Render the image
   viewport.render();
 }
 

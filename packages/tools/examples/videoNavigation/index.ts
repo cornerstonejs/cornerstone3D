@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, VideoViewportV2 } from '@cornerstonejs/core';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
@@ -31,8 +31,8 @@ const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Video Navigation V2',
-  'Show a VideoViewportV2 with playback controls plus zoom, pan, and frame navigation.'
+  'Video Navigation',
+  'Show a video viewport with controls to allow it to be navigated and zoom/panned'
 );
 
 const content = document.getElementById('content');
@@ -53,20 +53,20 @@ rangeDiv.innerHTML =
 content.appendChild(rangeDiv);
 const rangeElement = document.getElementById('range') as HTMLInputElement;
 rangeElement.onchange = () => {
-  viewport.seek(Number(rangeElement.value));
+  viewport.setTime(Number(rangeElement.value));
 };
 rangeElement.oninput = () => {
-  viewport.seek(Number(rangeElement.value));
+  viewport.setTime(Number(rangeElement.value));
 };
 
 const instructions = document.createElement('p');
 instructions.innerText = `Playback speed to change CINE playback speed
-Scroll Distance to change amount scrolled on next/prev button
+Scroll Distance to change amount scrolled on next/prev button or wheel
 Left Drag: Up/down scroll images
 Middle Click or Ctrl+Left: Pan
 Shift+Left: Zoom
 Right Click: Redaction
-Mouse Wheel: Stack Scroll
+Mouse Wheel: Stack Scroll';
 `;
 
 content.append(instructions);
@@ -74,23 +74,19 @@ content.append(instructions);
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewportId';
-let viewport: VideoViewportV2;
-let scrollFrames = 1;
+let viewport;
 
 addButtonToToolbar({
   id: 'play',
   title: 'pause',
   onClick() {
-    if (!viewport) {
-      return;
-    }
+    viewport.togglePlayPause();
 
+    // toggle the title
     const button = document.getElementById('play');
     if (button.innerText === 'pause') {
-      viewport.pause();
       button.innerText = 'play';
     } else {
-      void viewport.play();
       button.innerText = 'pause';
     }
   },
@@ -100,7 +96,7 @@ addButtonToToolbar({
   id: 'previous',
   title: 'previous',
   onClick() {
-    viewport.scroll(-scrollFrames);
+    viewport.scroll(-1);
   },
 });
 
@@ -108,7 +104,7 @@ addButtonToToolbar({
   id: 'next',
   title: 'next',
   onClick() {
-    viewport.scroll(scrollFrames);
+    viewport.scroll(1);
   },
 });
 
@@ -116,7 +112,7 @@ addButtonToToolbar({
   id: 'jump',
   title: 'jump to 50',
   onClick() {
-    viewport.seek(50);
+    viewport.setTime(50);
   },
 });
 
@@ -157,16 +153,10 @@ toolbar.appendChild(scrollTitle);
 addDropdownToToolbar({
   options: { values: scrollSpeeds, defaultValue: '1 f' },
   onSelectedValueChange: (value) => {
-    const scrollSetting = value.toString();
-    const numericValue = Number.parseFloat(scrollSetting);
-
-    if (scrollSetting.endsWith('s')) {
-      const frameRate = viewport?.getFrameRate() || 1;
-      scrollFrames = Math.max(1, Math.round(numericValue * frameRate));
-      return;
-    }
-
-    scrollFrames = Math.max(1, Math.round(numericValue));
+    value = value.toString();
+    const unit = value[value.length - 1];
+    const newScrollSpeed = Number(value.substring(0, value.length - 2));
+    viewport.setScrollSpeed(newScrollSpeed, unit);
   },
 });
 
@@ -193,10 +183,6 @@ async function run() {
   const videoId = imageIds.find(
     (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
   );
-
-  if (!videoId) {
-    throw new Error('Expected demo video instance was not found');
-  }
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -256,7 +242,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.VIDEO_V2,
+    type: ViewportType.VIDEO,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -266,32 +252,28 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = renderingEngine.getViewport(viewportId) as VideoViewportV2;
+  viewport = <Types.IVideoViewport>renderingEngine.getViewport(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(videoId);
-  viewport.setFrameNumber(25);
+  await viewport.setVideo(videoId, 25);
 
-  scrollFrames = 1;
-  void viewport.play();
+  viewport.play();
 
   const seconds = (time) => `${Math.round(time * 10) / 10} s`;
-  const duration = viewport.getNumberOfFrames() / viewport.getFrameRate();
 
-  rangeElement.max = String(duration);
-
-  window.setInterval(() => {
-    const time = viewport.getCurrentTime();
-    rangeElement.value = String(time);
+  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt: any) => {
+    const { time, duration } = evt.detail;
+    rangeElement.value = time;
+    rangeElement.max = duration;
     const timeElement = document.getElementById('time');
     timeElement.innerText = seconds(time);
     const remainingElement = document.getElementById('remaining');
-    remainingElement.innerText = seconds(Math.max(duration - time, 0));
-  }, 100);
+    remainingElement.innerText = seconds(duration - time);
+  });
 }
 
 run();

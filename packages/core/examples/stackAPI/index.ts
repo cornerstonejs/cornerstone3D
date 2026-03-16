@@ -3,8 +3,6 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  PlanarViewportV2,
-  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -25,29 +23,11 @@ const { ViewportType, Events } = Enums;
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
-const dataId = 'ct-stack-api';
-
-function isCpuForced(): boolean {
-  return new URLSearchParams(window.location.search).get('cpu') === 'true';
-}
-
-function syncExampleUrl(): void {
-  const nextUrl = new URL(window.location.href);
-  const forceCpu = isCpuForced();
-
-  if (forceCpu) {
-    nextUrl.searchParams.set('cpu', 'true');
-  } else {
-    nextUrl.searchParams.delete('cpu');
-  }
-
-  window.history.replaceState({}, '', nextUrl);
-}
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Stack API On PlanarViewportV2',
-  'Demonstrates stack-like interaction using PlanarViewportV2. Add ?cpu=true to force the CPU image path.'
+  'Stack Viewport API',
+  'Demonstrates how to interact with a Stack viewport.'
 );
 
 const content = document.getElementById('content');
@@ -61,35 +41,35 @@ content.appendChild(element);
 const info = document.createElement('div');
 content.appendChild(info);
 
-const renderModeInfo = document.createElement('div');
-info.appendChild(renderModeInfo);
-
 const rotationInfo = document.createElement('div');
 info.appendChild(rotationInfo);
 
-function updateViewportInfo(): void {
+const flipHorizontalInfo = document.createElement('div');
+info.appendChild(flipHorizontalInfo);
+
+const flipVerticalInfo = document.createElement('div');
+info.appendChild(flipVerticalInfo);
+
+element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
+  // Get the rendering engine
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
-  if (!renderingEngine) {
-    return;
-  }
-
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewportV2;
+  // Get the stack viewport
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
   if (!viewport) {
     return;
   }
 
-  renderModeInfo.innerText = `Render Mode: ${
-    viewport.getDataRenderMode(dataId) ?? 'unknown'
-  }`;
-
+  const { flipHorizontal, flipVertical } = viewport.getCamera();
   const { rotation } = viewport.getViewPresentation();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
-}
-
-element.addEventListener(Events.CAMERA_MODIFIED, updateViewportInfo);
+  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
+  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
+});
 
 addButtonToToolbar({
   title: 'Set VOI Range',
@@ -97,15 +77,13 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
+    // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as PlanarViewportV2;
+    ) as Types.IStackViewport;
 
     // Set a range to highlight bones
-    viewport.setDataPresentation(dataId, {
-      voiRange: { upper: 2500, lower: -1500 },
-    });
+    viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
 
     viewport.render();
   },
@@ -117,10 +95,10 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
+    // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as PlanarViewportV2;
+    ) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -142,10 +120,10 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
+    // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as PlanarViewportV2;
+    ) as Types.IStackViewport;
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -161,12 +139,47 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Flip H',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
+
+    const { flipHorizontal } = viewport.getCamera();
+    viewport.setCamera({ flipHorizontal: !flipHorizontal });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Flip V',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    const { flipVertical } = viewport.getCamera();
+
+    viewport.setCamera({ flipVertical: !flipVertical });
+
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
   title: 'Rotate Random',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
+    // Get the stack viewport
     const viewport = renderingEngine.getViewport(viewportId);
 
     const rotation = Math.random() * 360;
@@ -183,7 +196,7 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
+    // Get the stack viewport
     const viewport = renderingEngine.getViewport(viewportId);
 
     viewport.setViewPresentation({ rotation: 150 });
@@ -198,7 +211,7 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
+    // Get the stack viewport
     const viewport = renderingEngine.getViewport(viewportId);
 
     const { rotation } = viewport.getViewPresentation();
@@ -214,16 +227,11 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as PlanarViewportV2;
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(viewportId);
 
-    const currentPresentation = viewport.getDataPresentation(dataId);
-
-    viewport.setDataPresentation(dataId, {
-      invert: !(currentPresentation?.invert ?? false),
-    });
+    const { invert } = viewport.getProperties();
+    viewport.setProperties({ invert: !invert });
 
     viewport.render();
   },
@@ -235,10 +243,10 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
+    // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as PlanarViewportV2;
+    ) as Types.IStackViewport;
 
     // Reset the camera so that we can set some pan and zoom relative to the
     // defaults for this demo. Note that changes could be relative instead.
@@ -262,23 +270,34 @@ addButtonToToolbar({
 });
 
 addButtonToToolbar({
+  title: 'Apply Colormap',
+  onClick: () => {
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    // Get the stack viewport
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    viewport.setProperties({ colormap: { name: 'hsv' } });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
   title: 'Reset Viewport',
   onClick: () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    // Get the planar viewport
+    // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as PlanarViewportV2;
+    ) as Types.IStackViewport;
 
+    // Resets the viewport's camera
     viewport.resetCamera();
-    viewport.setDataPresentation(dataId, {
-      invert: false,
-      opacity: 1,
-      visible: true,
-      voiRange: ctVoiRange,
-    });
+    // Resets the viewport's properties
+    viewport.resetProperties();
     viewport.render();
   },
 });
@@ -287,8 +306,6 @@ addButtonToToolbar({
  * Runs the demo
  */
 async function run() {
-  syncExampleUrl();
-
   // Init Cornerstone and related libraries
   await initDemo();
 
@@ -304,9 +321,11 @@ async function run() {
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
+  // Create a stack viewport
+
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_V2,
+    type: ViewportType.STACK,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -315,21 +334,21 @@ async function run() {
 
   renderingEngine.enableElement(viewportInput);
 
-  // Get the planar viewport that was created
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewportV2;
+  // Get the stack viewport that was created
+  const viewport = renderingEngine.getViewport(
+    viewportId
+  ) as Types.IStackViewport;
 
+  // Define a stack containing a few images
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
-  utilities.viewportV2DataSetMetadataProvider.add(dataId, {
-    imageIds: stack,
-  });
-  await viewport.setDataIds([dataId], {
-    orientation: Enums.OrientationAxis.ACQUISITION,
-    renderMode: isCpuForced() ? 'cpu2d' : 'auto',
-  });
-  viewport.setDataPresentation(dataId, { voiRange: ctVoiRange });
-  updateViewportInfo();
+  // Set the stack on the viewport
+  await viewport.setStack(stack);
 
+  // Set the VOI of the stack
+  viewport.setProperties({ voiRange: ctVoiRange });
+
+  // Render the image
   viewport.render();
 }
 
