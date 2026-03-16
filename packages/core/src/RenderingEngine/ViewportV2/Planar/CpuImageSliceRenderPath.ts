@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { getColormap as getCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTransform';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
@@ -86,6 +87,7 @@ export class CpuImageSliceRenderPath
       enabledElement,
       currentImageIdIndex: payload.initialImageIdIndex,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
+      dataPresentation: undefined,
       fitScale: enabledElement.viewport.scale ?? 1,
       loadRequestId: 0,
       requestedCamera: undefined,
@@ -133,10 +135,8 @@ export class CpuImageSliceRenderPath
     rendering: PlanarCpuImageRendering,
     props: unknown
   ): void {
-    applyDataPresentation(
-      rendering,
-      props as PlanarDataPresentation | undefined
-    );
+    rendering.dataPresentation = props as PlanarDataPresentation | undefined;
+    applyDataPresentation(rendering, rendering.dataPresentation);
   }
 
   private updateCamera(
@@ -193,6 +193,7 @@ export class CpuImageSliceRenderPath
         ctx,
         image,
         imageIdIndex: nextImageIdIndex,
+        props: rendering.dataPresentation,
         rendering,
         camera: planarCamera,
       });
@@ -388,6 +389,10 @@ function applyDataPresentation(
   canvas.style.display = props?.visible === false ? 'none' : '';
   canvas.style.opacity = String(props?.opacity ?? 1);
 
+  viewport.colormap =
+    props?.colormap?.name !== undefined
+      ? getCPUFallbackColormap(props.colormap.name)
+      : enabledElement.image?.colormap;
   viewport.invert = props?.invert ?? false;
 
   if (voiRange) {
@@ -420,6 +425,8 @@ function applyPresentationState(
   const desiredPan = presentation?.pan ?? [0, 0];
   const zoom = Math.max(presentation?.zoom ?? 1, 0.001);
 
+  viewport.hflip = presentation?.flipHorizontal ?? false;
+  viewport.vflip = presentation?.flipVertical ?? false;
   viewport.scale = fitScale * zoom;
   viewport.rotation = presentation?.rotation ?? 0;
   viewport.translation = resolveCPUImageViewportTranslation(

@@ -1,4 +1,5 @@
 import type {
+  ColormapPublic,
   OrientationVectors,
   StackViewportProperties,
   VolumeViewportProperties,
@@ -9,9 +10,10 @@ import type {
 } from './PlanarViewportV2Types';
 
 export type PlanarLegacyViewportProperties = Partial<
-  StackViewportProperties &
-    VolumeViewportProperties &
-    Pick<PlanarDataPresentation, 'opacity' | 'visible'>
+  Omit<StackViewportProperties & VolumeViewportProperties, 'orientation'> &
+    Pick<PlanarDataPresentation, 'opacity' | 'visible'> & {
+      orientation?: PlanarOrientation;
+    }
 >;
 
 export function isPlanarOrientationVectors(
@@ -37,6 +39,31 @@ export function clonePlanarOrientation(
   };
 }
 
+export function clonePlanarColormap(
+  colormap: ColormapPublic | undefined
+): ColormapPublic | undefined {
+  if (!colormap) {
+    return;
+  }
+
+  return {
+    ...colormap,
+    ...(Array.isArray(colormap.opacity)
+      ? {
+          opacity: colormap.opacity.map(({ opacity, value }) => ({
+            opacity,
+            value,
+          })),
+        }
+      : colormap.opacity !== undefined
+        ? { opacity: colormap.opacity }
+        : {}),
+    ...(colormap.threshold !== undefined
+      ? { threshold: colormap.threshold }
+      : {}),
+  };
+}
+
 export function clonePlanarLegacyProperties(
   properties: PlanarLegacyViewportProperties = {}
 ): PlanarLegacyViewportProperties {
@@ -52,21 +79,7 @@ export function clonePlanarLegacyProperties(
       : {}),
     ...(properties.colormap
       ? {
-          colormap: {
-            ...properties.colormap,
-            ...(properties.colormap.opacity?.length
-              ? {
-                  opacity: properties.colormap.opacity.map((point) => [
-                    ...point,
-                  ]),
-                }
-              : {}),
-            ...(properties.colormap.threshold?.length
-              ? {
-                  threshold: [...properties.colormap.threshold],
-                }
-              : {}),
-          },
+          colormap: clonePlanarColormap(properties.colormap),
         }
       : {}),
     ...(properties.orientation
@@ -77,10 +90,39 @@ export function clonePlanarLegacyProperties(
   };
 }
 
+export function mergePlanarLegacyProperties(
+  currentProperties: PlanarLegacyViewportProperties = {},
+  nextProperties: PlanarLegacyViewportProperties = {}
+): PlanarLegacyViewportProperties {
+  const current = clonePlanarLegacyProperties(currentProperties);
+  const next = clonePlanarLegacyProperties(nextProperties);
+
+  return {
+    ...current,
+    ...next,
+    ...(next.colormap
+      ? {
+          colormap:
+            next.colormap.name !== undefined
+              ? clonePlanarColormap(next.colormap)
+              : {
+                  ...(clonePlanarColormap(current.colormap) || {}),
+                  ...(clonePlanarColormap(next.colormap) || {}),
+                },
+        }
+      : {}),
+  };
+}
+
 export function toPlanarDataPresentation(
   properties: PlanarLegacyViewportProperties = {}
 ): PlanarDataPresentation {
   return {
+    ...(properties.colormap
+      ? {
+          colormap: clonePlanarColormap(properties.colormap),
+        }
+      : {}),
     ...(properties.voiRange
       ? {
           voiRange: {

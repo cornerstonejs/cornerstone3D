@@ -29,3 +29,28 @@ export function rotatePlanarViewUp(args: {
     rotationMatrix
   ) as Point3;
 }
+
+export function applyPlanarViewFlip(args: {
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
+  viewPlaneNormal: Point3;
+  viewUp: Point3;
+}): {
+  viewPlaneNormal: Point3;
+  viewUp: Point3;
+} {
+  const { flipHorizontal, flipVertical, viewPlaneNormal, viewUp } = args;
+  const shouldFlipNormal = Boolean(flipHorizontal) !== Boolean(flipVertical);
+
+  return {
+    viewPlaneNormal: shouldFlipNormal
+      ? (vec3.negate(
+          vec3.create(),
+          viewPlaneNormal as unknown as vec3
+        ) as Point3)
+      : ([...viewPlaneNormal] as Point3),
+    viewUp: flipVertical
+      ? (vec3.negate(vec3.create(), viewUp as unknown as vec3) as Point3)
+      : ([...viewUp] as Point3),
+  };
+}

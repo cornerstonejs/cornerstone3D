@@ -8,6 +8,8 @@ export function createDefaultPlanarCamera(): PlanarCamera {
   return {
     imageIdIndex: 0,
     orientation: OrientationAxis.ACQUISITION,
+    flipHorizontal: false,
+    flipVertical: false,
     frame: {
       anchorView: [0.5, 0.5],
       scale: 1,
@@ -24,6 +26,8 @@ export function normalizePlanarCamera(camera: PlanarCamera): PlanarCamera {
       : {}),
     orientation:
       clonePlanarOrientation(camera.orientation) ?? OrientationAxis.ACQUISITION,
+    flipHorizontal: camera.flipHorizontal === true,
+    flipVertical: camera.flipVertical === true,
     frame: {
       anchorView: camera.frame?.anchorView ?? [0.5, 0.5],
       scale: Math.max(camera.frame?.scale ?? 1, 0.001),

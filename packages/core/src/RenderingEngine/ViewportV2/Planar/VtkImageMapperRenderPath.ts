@@ -79,6 +79,7 @@ export class VtkImageMapperRenderPath
       imageData,
       currentImageIdIndex: payload.initialImageIdIndex,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
+      dataPresentation: undefined,
       requestedCamera: undefined,
       renderCamera: resolvePlanarRenderCamera({
         sliceBasis,
@@ -123,6 +124,7 @@ export class VtkImageMapperRenderPath
   ): void {
     const dataPresentation = props as PlanarDataPresentation | undefined;
 
+    rendering.dataPresentation = dataPresentation;
     applyPlanarImagePresentation({
       actor: rendering.actor,
       defaultVOIRange: rendering.defaultVOIRange,
@@ -183,6 +185,7 @@ export class VtkImageMapperRenderPath
         image,
         rendering,
         imageIdIndex: nextImageIdIndex,
+        dataPresentation: rendering.dataPresentation,
         camera: planarCamera,
       });
     });

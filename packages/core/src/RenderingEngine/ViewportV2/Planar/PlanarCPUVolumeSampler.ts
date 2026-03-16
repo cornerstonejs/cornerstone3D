@@ -12,6 +12,7 @@ import type {
   VOIRange,
 } from '../../../types';
 import VoxelManager from '../../../utilities/VoxelManager';
+import { getColormap as getCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import type { PlanarDataPresentation } from './PlanarViewportV2Types';
@@ -294,6 +295,10 @@ export default class PlanarCPUVolumeSampler {
       (getDefaultViewport(enabledElement.canvas, sampledSliceState.image)
         .scale ?? 1) * Math.max(zoom ?? 1, 0.001);
     viewport.parallelScale = camera.parallelScale;
+    viewport.colormap =
+      dataPresentation?.colormap?.name !== undefined
+        ? getCPUFallbackColormap(dataPresentation.colormap.name)
+        : sampledSliceState.image.colormap;
     viewport.invert = dataPresentation?.invert ?? false;
     viewport.pixelReplication =
       dataPresentation?.interpolationType === InterpolationType.NEAREST;

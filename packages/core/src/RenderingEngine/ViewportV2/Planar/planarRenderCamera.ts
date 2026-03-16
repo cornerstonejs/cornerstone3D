@@ -28,6 +28,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { RENDERING_DEFAULTS } from '../../../constants';
 import type { ICamera, Point2, Point3 } from '../../../types';
 import {
+  applyPlanarViewFlip,
   normalizePlanarRotation,
   rotatePlanarViewUp,
 } from './planarViewPresentation';
@@ -44,6 +45,8 @@ export interface DerivedPlanarPresentation {
   pan: Point2;
   zoom: number;
   rotation: number;
+  flipHorizontal: boolean;
+  flipVertical: boolean;
 }
 
 /**
@@ -112,7 +115,7 @@ export function derivePlanarPresentation(args: {
     sliceBasis.viewPlaneNormal,
     [0, 0, 1]
   );
-  const viewUp = normalizePoint3(
+  const rotatedViewUp = normalizePoint3(
     rotatePlanarViewUp({
       rotation,
       viewPlaneNormal,
@@ -120,10 +123,17 @@ export function derivePlanarPresentation(args: {
     }) as Point3,
     [0, -1, 0]
   );
+  const { viewPlaneNormal: flippedViewPlaneNormal, viewUp: flippedViewUp } =
+    applyPlanarViewFlip({
+      flipHorizontal: camera?.flipHorizontal,
+      flipVertical: camera?.flipVertical,
+      viewPlaneNormal,
+      viewUp: rotatedViewUp,
+    });
   let right = vec3.cross(
     vec3.create(),
-    viewUp as unknown as vec3,
-    viewPlaneNormal as unknown as vec3
+    flippedViewUp as unknown as vec3,
+    flippedViewPlaneNormal as unknown as vec3
   ) as Point3;
 
   if (!vec3.length(right as unknown as vec3)) {
@@ -155,7 +165,8 @@ export function derivePlanarPresentation(args: {
   const panFromAnchorPoint: Point2 = [
     (vec3.dot(deltaWorld, right as unknown as vec3) * safeCanvasWidth) /
       worldWidth,
-    (-vec3.dot(deltaWorld, viewUp as unknown as vec3) * safeCanvasHeight) /
+    (-vec3.dot(deltaWorld, flippedViewUp as unknown as vec3) *
+      safeCanvasHeight) /
       worldHeight,
   ];
 
@@ -171,6 +182,8 @@ export function derivePlanarPresentation(args: {
       panFromAnchorPoint[0] + panFromAnchorView[0],
       panFromAnchorPoint[1] + panFromAnchorView[1],
     ],
+    flipHorizontal: camera?.flipHorizontal === true,
+    flipVertical: camera?.flipVertical === true,
     zoom: scale,
     rotation,
   };
@@ -186,6 +199,8 @@ function getResolvedPanOffset(args: {
   sliceBasis: PlanarSliceBasis;
   canvasWidth: number;
   canvasHeight: number;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
   pan?: [number, number];
   rotation?: number;
   zoom?: number;
@@ -194,22 +209,31 @@ function getResolvedPanOffset(args: {
     sliceBasis,
     canvasWidth,
     canvasHeight,
+    flipHorizontal,
+    flipVertical,
     pan = [0, 0],
     rotation,
     zoom = 1,
   } = args;
   const viewPlaneNormal = normalizePoint3(sliceBasis.viewPlaneNormal);
-  const viewUp = normalizePoint3(
+  const rotatedViewUp = normalizePoint3(
     rotatePlanarViewUp({
       rotation,
       viewPlaneNormal,
       viewUp: sliceBasis.viewUp,
     }) as Point3
   );
+  const { viewPlaneNormal: flippedViewPlaneNormal, viewUp: flippedViewUp } =
+    applyPlanarViewFlip({
+      flipHorizontal,
+      flipVertical,
+      viewPlaneNormal,
+      viewUp: rotatedViewUp,
+    });
   let right = vec3.cross(
     vec3.create(),
-    viewUp as unknown as vec3,
-    viewPlaneNormal as unknown as vec3
+    flippedViewUp as unknown as vec3,
+    flippedViewPlaneNormal as unknown as vec3
   );
 
   if (vec3.length(right) === 0) {
@@ -236,15 +260,15 @@ function getResolvedPanOffset(args: {
   vec3.scaleAndAdd(
     deltaWorld,
     deltaWorld,
-    viewUp as unknown as vec3,
+    flippedViewUp as unknown as vec3,
     (-panY * worldHeight) / safeCanvasHeight
   );
 
   return {
     deltaWorld: deltaWorld as Point3,
     parallelScale,
-    viewPlaneNormal,
-    viewUp,
+    viewPlaneNormal: flippedViewPlaneNormal,
+    viewUp: flippedViewUp,
   };
 }
 
@@ -283,6 +307,8 @@ export function resolvePlanarRenderCamera(args: {
       sliceBasis,
       canvasWidth,
       canvasHeight,
+      flipHorizontal: presentation.flipHorizontal,
+      flipVertical: presentation.flipVertical,
       pan: presentation.pan,
       rotation: presentation.rotation,
       zoom: presentation.zoom,
@@ -303,6 +329,8 @@ export function resolvePlanarRenderCamera(args: {
       viewPlaneNormal as unknown as vec3,
       sliceBasis.cameraDistance
     ) as Point3,
+    flipHorizontal: presentation.flipHorizontal,
+    flipVertical: presentation.flipVertical,
     viewPlaneNormal,
     viewUp,
   };

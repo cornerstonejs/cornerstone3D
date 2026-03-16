@@ -495,7 +495,8 @@ class PlanarViewportV2 extends ViewportV2<
     }
   ): ViewPresentation {
     const target: ViewPresentation = {};
-    const { rotation, displayArea, zoom, pan } = viewPresSel;
+    const { rotation, displayArea, zoom, pan, flipHorizontal, flipVertical } =
+      viewPresSel;
     const currentZoom = this.getZoom();
 
     if (rotation) {
@@ -516,6 +517,14 @@ class PlanarViewportV2 extends ViewportV2<
       target.pan = [currentPan[0] / currentZoom, currentPan[1] / currentZoom];
     }
 
+    if (flipHorizontal) {
+      target.flipHorizontal = this.camera.flipHorizontal ?? false;
+    }
+
+    if (flipVertical) {
+      target.flipVertical = this.camera.flipVertical ?? false;
+    }
+
     return target;
   }
 
@@ -533,10 +542,14 @@ class PlanarViewportV2 extends ViewportV2<
       pan,
       rotation = this.getRotation(),
       zoom = this.getZoom(),
+      flipHorizontal = this.camera.flipHorizontal ?? false,
+      flipVertical = this.camera.flipVertical ?? false,
     } = viewPres;
     const nextZoom = Math.max(zoom, 0.001);
 
     this.setCamera({
+      flipHorizontal,
+      flipVertical,
       frame: {
         rotation,
         scale: nextZoom,

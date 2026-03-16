@@ -5,6 +5,7 @@ import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2Data
 import type { PlanarRendering } from './planarRuntimeTypes';
 import {
   clonePlanarLegacyProperties,
+  mergePlanarLegacyProperties,
   clonePlanarOrientation,
   type PlanarLegacyViewportProperties,
   toPlanarDataPresentation,
@@ -133,13 +134,10 @@ class PlanarLegacyCompatibilityController {
       return;
     }
 
-    const currentProperties = clonePlanarLegacyProperties(
-      this.properties.get(targetDataId) || {}
+    const nextProperties = mergePlanarLegacyProperties(
+      this.properties.get(targetDataId) || {},
+      properties
     );
-    const nextProperties = {
-      ...currentProperties,
-      ...clonePlanarLegacyProperties(properties),
-    };
 
     if (!this.defaultProperties.has(targetDataId)) {
       this.defaultProperties.set(

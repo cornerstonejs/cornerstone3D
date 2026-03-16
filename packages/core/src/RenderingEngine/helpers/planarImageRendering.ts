@@ -1,13 +1,16 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { InterpolationType } from '../../enums';
-import type { IImage, Point3, VOIRange } from '../../types';
+import type { ColormapPublic, IImage, Point3, VOIRange } from '../../types';
 import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTransferFunction';
 import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
+import { getColormap } from '../../utilities/colormap';
 import { updateVTKImageDataWithCornerstoneImage } from '../../utilities/updateVTKImageDataWithCornerstoneImage';
 
 export interface PlanarCameraState {
@@ -22,6 +25,7 @@ export interface PlanarImagePresentation {
   visible?: boolean;
   opacity?: number;
   interpolationType?: InterpolationType;
+  colormap?: ColormapPublic;
   voiRange?: VOIRange;
   invert?: boolean;
 }
@@ -139,14 +143,53 @@ export function applyPlanarImagePresentation(args: {
     return;
   }
 
-  const transferFunction = createLinearRGBTransferFunction(voiRange);
-
-  if (props?.invert) {
-    invertRgbTransferFunction(transferFunction);
-  }
+  const transferFunction = createPlanarRGBTransferFunction({
+    colormap: props?.colormap,
+    invert: props?.invert,
+    voiRange,
+  });
 
   property.setUseLookupTableScalarRange(true);
   property.setRGBTransferFunction(0, transferFunction);
+}
+
+export function createPlanarRGBTransferFunction(args: {
+  colormap?: ColormapPublic;
+  invert?: boolean;
+  voiRange: VOIRange;
+}): vtkColorTransferFunction {
+  const { colormap, invert, voiRange } = args;
+  const transferFunction =
+    colormap?.name !== undefined
+      ? createColormapTransferFunction(colormap, voiRange)
+      : createLinearRGBTransferFunction(voiRange);
+
+  if (invert) {
+    invertRgbTransferFunction(transferFunction);
+  }
+
+  return transferFunction;
+}
+
+function createColormapTransferFunction(
+  colormap: ColormapPublic,
+  voiRange: VOIRange
+): vtkColorTransferFunction {
+  const colormapName = colormap.name;
+  const colormapDefinition = colormapName
+    ? getColormap(colormapName) || vtkColorMaps.getPresetByName(colormapName)
+    : undefined;
+
+  if (!colormapDefinition) {
+    throw new Error(`Colormap ${colormapName} not found`);
+  }
+
+  const transferFunction = vtkColorTransferFunction.newInstance();
+
+  transferFunction.applyColorMap(colormapDefinition);
+  transferFunction.setMappingRange(voiRange.lower, voiRange.upper);
+
+  return transferFunction;
 }
 
 export function applyPlanarCameraViewState(args: {

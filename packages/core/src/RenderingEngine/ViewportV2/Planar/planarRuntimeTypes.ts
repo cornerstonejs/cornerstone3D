@@ -52,6 +52,7 @@ export type PlanarImageMapperRendering = MountedRendering<{
   imageData: vtkImageData;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
+  dataPresentation?: PlanarDataPresentation;
   requestedCamera?: PlanarCamera;
   renderCamera?: ICamera;
   loadRequestId: number;
@@ -69,6 +70,7 @@ export type PlanarCpuImageRendering = MountedRendering<{
   enabledElement: CPUFallbackEnabledElement;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
+  dataPresentation?: PlanarDataPresentation;
   fitScale: number;
   loadRequestId: number;
   requestedCamera?: PlanarCamera;

@@ -1,6 +1,7 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type { InterpolationType, OrientationAxis } from '../../../enums';
 import type {
+  ColormapPublic,
   IImage,
   IImageVolume,
   OrientationVectors,
@@ -65,6 +66,7 @@ export interface PlanarPayload {
 }
 
 export interface PlanarPresentationProps extends BasePresentationProps {
+  colormap?: ColormapPublic;
   voiRange?: VOIRange;
   invert?: boolean;
 }
@@ -72,6 +74,8 @@ export interface PlanarPresentationProps extends BasePresentationProps {
 export interface PlanarCamera extends ViewportCameraBase<Point3> {
   imageIdIndex?: number;
   orientation?: PlanarOrientation;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
 }
 
 export interface PlanarProperties {
