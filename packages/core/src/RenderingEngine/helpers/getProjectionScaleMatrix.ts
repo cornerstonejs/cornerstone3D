@@ -1,6 +1,4 @@
-import { mat4, vec3 } from 'gl-matrix';
-
-const EPSILON = 1e-6;
+import { mat4 } from 'gl-matrix';
 
 /**
  * Computes a projection scaling matrix with rotation-invariant scaling in patient
