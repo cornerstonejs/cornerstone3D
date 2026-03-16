@@ -21,9 +21,6 @@ export interface VideoStreamPayload {
 export interface VideoPresentationProps extends BasePresentationProps {}
 
 export interface VideoCamera extends ViewportCameraBase<[number, number]> {
-  zoom?: number;
-  pan?: [number, number];
-  rotation?: number;
   currentTimeSeconds?: number;
 }
 

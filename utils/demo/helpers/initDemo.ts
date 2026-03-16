@@ -16,7 +16,10 @@ import {
 } from '../../test/testUtilsImageLoader';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
-import { applyUrlParameterOverridesToDemoConfig } from './exampleParameters';
+import {
+  applyUrlParameterOverridesToDemoConfig,
+  applyViewportTypeOverride,
+} from './exampleParameters';
 
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
@@ -25,6 +28,8 @@ export default async function initDemo(config: any = {}) {
   initProviders();
   cornerstoneDICOMImageLoader.init();
   initVolumeLoader();
+
+  applyViewportTypeOverride();
 
   const urlParams = new URLSearchParams(window.location.search);
   const debugEnabled = urlParams.get('debug') === 'true';

@@ -12,9 +12,11 @@ import type {
   VideoDataPresentation,
   VideoElementRenderContext,
   VideoElementRendering,
+  VideoProperties,
   VideoStreamPayload,
 } from './VideoViewportV2Types';
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
+import { getVideoLayout } from './videoViewportCamera';
 
 export class HtmlVideoRenderPath
   implements RenderPath<VideoElementRenderContext>
@@ -113,8 +115,8 @@ export class HtmlVideoRenderPath
   ): void {
     const videoCamera = camera as VideoCamera;
     const { element } = rendering;
-    const rotation = videoCamera.rotation ?? 0;
-    const layout = getVideoLayout(element, videoCamera);
+    const rotation = videoCamera.frame?.rotation ?? 0;
+    const layout = this.getLayout(element, videoCamera);
 
     rendering.currentCamera = videoCamera;
 
@@ -140,15 +142,15 @@ export class HtmlVideoRenderPath
     rendering: VideoElementRendering,
     canvasPos: Point2
   ): Point3 {
-    const layout = getVideoLayout(rendering.element, rendering.currentCamera);
+    const layout = this.getLayout(rendering.element, rendering.currentCamera);
 
     if (!layout) {
       return [0, 0, 0];
     }
 
     return [
-      canvasPos[0] / layout.worldToCanvasRatio - layout.panWorld[0],
-      canvasPos[1] / layout.worldToCanvasRatio - layout.panWorld[1],
+      (canvasPos[0] - layout.left) / layout.worldToCanvasRatio,
+      (canvasPos[1] - layout.top) / layout.worldToCanvasRatio,
       0,
     ];
   }
@@ -157,16 +159,29 @@ export class HtmlVideoRenderPath
     rendering: VideoElementRendering,
     worldPos: Point3
   ): Point2 {
-    const layout = getVideoLayout(rendering.element, rendering.currentCamera);
+    const layout = this.getLayout(rendering.element, rendering.currentCamera);
 
     if (!layout) {
       return [0, 0];
     }
 
     return [
-      (worldPos[0] + layout.panWorld[0]) * layout.worldToCanvasRatio,
-      (worldPos[1] + layout.panWorld[1]) * layout.worldToCanvasRatio,
+      layout.left + worldPos[0] * layout.worldToCanvasRatio,
+      layout.top + worldPos[1] * layout.worldToCanvasRatio,
     ];
+  }
+
+  private getLayout(element: HTMLVideoElement, camera?: VideoCamera) {
+    const container = element.parentElement;
+
+    return getVideoLayout({
+      containerWidth: container?.clientWidth ?? 0,
+      containerHeight: container?.clientHeight ?? 0,
+      intrinsicWidth: element.videoWidth || container?.clientWidth || 0,
+      intrinsicHeight: element.videoHeight || container?.clientHeight || 0,
+      objectFit: element.style.objectFit as VideoProperties['objectFit'],
+      camera,
+    });
   }
 
   private getFrameOfReferenceUID(
@@ -182,56 +197,6 @@ export class HtmlVideoRenderPath
     element.pause();
     element.remove();
   }
-}
-
-function getVideoLayout(
-  element: HTMLVideoElement,
-  camera?: VideoCamera
-):
-  | {
-      left: number;
-      top: number;
-      width: number;
-      height: number;
-      panWorld: [number, number];
-      worldToCanvasRatio: number;
-    }
-  | undefined {
-  const container = element.parentElement;
-  const containerWidth = container?.clientWidth ?? 0;
-  const containerHeight = container?.clientHeight ?? 0;
-  const intrinsicWidth = element.videoWidth || containerWidth;
-  const intrinsicHeight = element.videoHeight || containerHeight;
-
-  if (
-    !containerWidth ||
-    !containerHeight ||
-    !intrinsicWidth ||
-    !intrinsicHeight
-  ) {
-    return;
-  }
-
-  const zoom = Math.max(camera.zoom ?? 1, 0.001);
-  const baseScale = Math.min(
-    containerWidth / intrinsicWidth,
-    containerHeight / intrinsicHeight
-  );
-  const xOffsetWorld =
-    (containerWidth - intrinsicWidth * baseScale) / 2 / baseScale;
-  const yOffsetWorld =
-    (containerHeight - intrinsicHeight * baseScale) / 2 / baseScale;
-  const [panX, panY] = camera.pan ?? [xOffsetWorld, yOffsetWorld];
-  const worldToCanvasRatio = baseScale * zoom;
-
-  return {
-    left: panX * worldToCanvasRatio,
-    top: panY * worldToCanvasRatio,
-    width: intrinsicWidth * worldToCanvasRatio,
-    height: intrinsicHeight * worldToCanvasRatio,
-    panWorld: [panX, panY],
-    worldToCanvasRatio,
-  };
 }
 
 export class HtmlVideoPath

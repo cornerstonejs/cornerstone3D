@@ -54,6 +54,10 @@ abstract class ViewportV2<
   protected dataPresentation = new Map<DataId, TDataPresentation>();
   protected camera!: TCamera;
 
+  readonly _debug: { renderModes: Record<string, string> } = {
+    renderModes: {},
+  };
+
   /**
    * Loads a logical dataset through the viewport data provider and adds it
    * through the render-path resolver.
@@ -110,6 +114,7 @@ abstract class ViewportV2<
     }
 
     binding.updateCamera(this.camera);
+    this._debug.renderModes[dataId] = attachment.rendering.renderMode;
     this.render();
     return attachment.rendering.id;
   }
@@ -308,6 +313,7 @@ abstract class ViewportV2<
     binding.removeData();
     this.bindings.delete(dataId);
     this.dataPresentation.delete(dataId);
+    delete this._debug.renderModes[dataId];
     this.render();
   }
 

@@ -16,9 +16,17 @@ import type {
   VideoDataPresentation,
   VideoElementRenderContext,
   VideoElementRendering,
+  VideoProperties,
   VideoStreamPayload,
   VideoViewportV2Input,
 } from './VideoViewportV2Types';
+import {
+  createDefaultVideoCamera,
+  getAnchorPointForPan,
+  getPanForVideoLayout,
+  getVideoLayout,
+  normalizeVideoCamera,
+} from './videoViewportCamera';
 
 defaultRenderPathResolver.register(new HtmlVideoPath());
 
@@ -61,12 +69,7 @@ class VideoViewportV2 extends ViewportV2<
       type: 'video',
       element: this.element,
     };
-    this.camera = {
-      zoom: 1,
-      pan: [0, 0],
-      rotation: 0,
-      currentTimeSeconds: 0,
-    };
+    this.camera = createDefaultVideoCamera();
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -118,13 +121,7 @@ class VideoViewportV2 extends ViewportV2<
 
       const videoData =
         binding.data as unknown as LoadedData<VideoStreamPayload>;
-      const pan = this.getDefaultPanWorld();
-      this.camera = {
-        zoom: 1,
-        pan,
-        rotation: 0,
-        currentTimeSeconds: 0,
-      };
+      this.camera = createDefaultVideoCamera();
 
       if (videoData.frameRange[0] > 1) {
         this.camera.currentTimeSeconds = frameNumberToTimeSeconds(
@@ -141,25 +138,59 @@ class VideoViewportV2 extends ViewportV2<
     return renderingIds;
   }
 
-  getZoom(): number {
-    return Math.max(this.camera.zoom ?? 1, 0.001);
+  protected normalizeCamera(camera: VideoCamera): VideoCamera {
+    return normalizeVideoCamera(camera);
   }
 
-  setZoom(zoom: number): void {
-    this.setCamera({
-      zoom: Math.max(zoom, 0.001),
-    });
+  getZoom(): number {
+    return this.getScale();
+  }
+
+  setZoom(zoom: number, canvasPoint?: Point2): void {
+    if (canvasPoint) {
+      this.setScaleAtCanvasPoint(zoom, canvasPoint);
+      return;
+    }
+
+    this.setScale(zoom);
   }
 
   getPan(): Point2 {
-    const [x, y] = this.camera.pan ?? [0, 0];
+    const layout = this.getCurrentVideoLayout();
 
-    return [x, y];
+    return layout ? getPanForVideoLayout(layout) : [0, 0];
   }
 
   setPan(pan: Point2): void {
+    const layout = this.getCurrentVideoLayout();
+
+    if (!layout) {
+      return;
+    }
+
     this.setCamera({
-      pan: [pan[0], pan[1]],
+      frame: {
+        anchorPoint: getAnchorPointForPan([pan[0], pan[1]], layout),
+      },
+    });
+  }
+
+  private setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
+    const worldPoint = this.canvasToWorld(canvasPoint);
+    const canvasWidth = this.element.clientWidth;
+    const canvasHeight = this.element.clientHeight;
+
+    this.setCamera({
+      frame: {
+        ...(this.getCamera().frame || {}),
+        anchorPoint: [worldPoint[0], worldPoint[1]],
+        anchorView: [
+          canvasPoint[0] / Math.max(canvasWidth, 1),
+          canvasPoint[1] / Math.max(canvasHeight, 1),
+        ],
+        scale: Math.max(scale, 0.001),
+        scaleMode: 'fit',
+      },
     });
   }
 
@@ -422,17 +453,7 @@ class VideoViewportV2 extends ViewportV2<
       | undefined;
   }
 
-  private getDisplayMetrics():
-    | {
-        offsetX: number;
-        offsetY: number;
-        scaleX: number;
-        scaleY: number;
-        zoom: number;
-        panX: number;
-        panY: number;
-      }
-    | undefined {
+  private getCurrentVideoLayout() {
     const videoElement = this.getVideoElement();
 
     if (!videoElement) {
@@ -457,68 +478,15 @@ class VideoViewportV2 extends ViewportV2<
     const objectFit =
       (dataId ? this.getDataPresentation(dataId)?.objectFit : undefined) ??
       'contain';
-    const containScale = Math.min(
-      containerWidth / intrinsicWidth,
-      containerHeight / intrinsicHeight
-    );
-    const coverScale = Math.max(
-      containerWidth / intrinsicWidth,
-      containerHeight / intrinsicHeight
-    );
-    let scaleX = containScale;
-    let scaleY = containScale;
 
-    switch (objectFit) {
-      case 'cover':
-        scaleX = coverScale;
-        scaleY = coverScale;
-        break;
-      case 'fill':
-        scaleX = containerWidth / intrinsicWidth;
-        scaleY = containerHeight / intrinsicHeight;
-        break;
-      case 'none':
-        scaleX = 1;
-        scaleY = 1;
-        break;
-      case 'scale-down': {
-        const scaleDown = Math.min(1, containScale);
-        scaleX = scaleDown;
-        scaleY = scaleDown;
-        break;
-      }
-      case 'contain':
-      default:
-        break;
-    }
-
-    const displayWidth = intrinsicWidth * scaleX;
-    const displayHeight = intrinsicHeight * scaleY;
-    const [panX, panY] = this.camera.pan ?? [0, 0];
-    const zoom = Math.max(this.camera.zoom ?? 1, 0.001);
-
-    return {
-      offsetX: (containerWidth - displayWidth) / 2,
-      offsetY: (containerHeight - displayHeight) / 2,
-      scaleX: scaleX * zoom,
-      scaleY: scaleY * zoom,
-      zoom,
-      panX,
-      panY,
-    };
-  }
-
-  private getDefaultPanWorld(): Point2 {
-    const metrics = this.getDisplayMetrics();
-
-    if (!metrics || !metrics.zoom) {
-      return [0, 0];
-    }
-
-    return [
-      metrics.offsetX / (metrics.scaleX / metrics.zoom),
-      metrics.offsetY / (metrics.scaleY / metrics.zoom),
-    ];
+    return getVideoLayout({
+      containerWidth,
+      containerHeight,
+      intrinsicWidth,
+      intrinsicHeight,
+      objectFit: objectFit as VideoProperties['objectFit'],
+      camera: this.camera,
+    });
   }
 
   private getVideoRendering(): VideoElementRendering | undefined {
