@@ -2,6 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const [ohifDirArg] = process.argv.slice(2);
 
@@ -12,8 +13,8 @@ if (!ohifDirArg) {
   process.exit(1);
 }
 
-const repoRoot = process.cwd();
-const ohifDir = path.resolve(repoRoot, ohifDirArg);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ohifDir = path.resolve(process.cwd(), ohifDirArg);
 const nodeModulesRoot = path.join(ohifDir, 'node_modules', '@cornerstonejs');
 
 if (!fs.existsSync(path.join(ohifDir, 'package.json'))) {

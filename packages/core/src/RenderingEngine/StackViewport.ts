@@ -214,7 +214,7 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    const result = this.useCPURendering
+    this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
@@ -223,6 +223,8 @@ class StackViewport extends Viewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
+
+    console.warn('********* Test change to demo OHIF picks up PR');
   }
 
   public setUseCPURendering(value: boolean) {

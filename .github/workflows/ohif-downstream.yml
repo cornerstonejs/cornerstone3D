@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
-      BUN_VERSION: 1.3.10
-      NODE_VERSION: 24
-      OHIF_REF: cornerstone3d-add-ohif-test
+      BUN_VERSION: 1.2.23
+      NODE_VERSION: 20
+      OHIF_REF: feat/link-cs3d-preview-build
       OHIF_DIR: ohif
     steps:
       - name: Checkout Cornerstone
