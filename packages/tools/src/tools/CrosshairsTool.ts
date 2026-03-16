@@ -112,6 +112,7 @@ class CrosshairsTool extends AnnotationTool {
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   _getReferenceLineDraggableRotatable?: (viewportId: string) => boolean;
   _getReferenceLineSlabThicknessControlsOn?: (viewportId: string) => boolean;
+  _slabThicknessHandlesEnabled = true;
   _volumeViewportNewVolumeListeners = new Map<
     string,
     {
@@ -151,6 +152,8 @@ class CrosshairsTool extends AnnotationTool {
         handleRadius: 3,
         // Enable HDPI rendering for handles using devicePixelRatio
         enableHDPIHandles: false,
+        // Toggle for slab thickness handles
+        slabThicknessHandles: true,
         // radius of the area around the intersection of the planes, in which
         // the reference lines will not be rendered. This is only used when
         // having 3 viewports in the toolGroup.
@@ -193,6 +196,9 @@ class CrosshairsTool extends AnnotationTool {
     this._getReferenceLineDraggableRotatable =
       toolProps.configuration?.getReferenceLineDraggableRotatable ||
       defaultReferenceLineDraggableRotatable;
+    this._slabThicknessHandlesEnabled =
+      this.configuration.slabThicknessHandles ?? true;
+
     this._getReferenceLineSlabThicknessControlsOn =
       toolProps.configuration?.getReferenceLineSlabThicknessControlsOn ||
       defaultReferenceLineSlabThicknessControlsOn;
@@ -1196,6 +1202,8 @@ class CrosshairsTool extends AnnotationTool {
       const viewportSlabThicknessControlsOn =
         this._getReferenceLineSlabThicknessControlsOn(otherViewport.id) ||
         this.configuration.mobile?.enabled;
+      const viewportSlabThicknessHandlesOn =
+        this._slabThicknessHandlesEnabled && viewportSlabThicknessControlsOn;
       const selectedViewportId = data.activeViewportIds.find(
         (id) => id === otherViewport.id
       );
@@ -1326,7 +1334,7 @@ class CrosshairsTool extends AnnotationTool {
           !rotHandlesActive &&
           !slabThicknessHandlesActive &&
           viewportDraggableRotatable &&
-          viewportSlabThicknessControlsOn
+          viewportSlabThicknessHandlesOn
         ) {
           // draw all handles inactive (rotation and slab thickness)
           let handleUID = `${lineIndex}One`;
@@ -1379,7 +1387,7 @@ class CrosshairsTool extends AnnotationTool {
           selectedViewportId &&
           !rotHandlesActive &&
           !slabThicknessHandlesActive &&
-          viewportSlabThicknessControlsOn
+          viewportSlabThicknessHandlesOn
         ) {
           const handleUID = `${lineIndex}`;
           // draw slab thickness handles inactive
@@ -1418,7 +1426,7 @@ class CrosshairsTool extends AnnotationTool {
         } else if (
           slabThicknessHandlesActive &&
           selectedViewportId &&
-          viewportSlabThicknessControlsOn
+          viewportSlabThicknessHandlesOn
         ) {
           const handleRadius =
             this.configuration.handleRadius *
@@ -2279,10 +2287,13 @@ class CrosshairsTool extends AnnotationTool {
           );
           const otherViewportSlabThicknessControlsOn =
             this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
+          const otherViewportSlabThicknessHandlesOn =
+            this._slabThicknessHandlesEnabled &&
+            otherViewportSlabThicknessControlsOn;
 
           return (
             otherViewportControllable === true &&
-            otherViewportSlabThicknessControlsOn === true &&
+            otherViewportSlabThicknessHandlesOn === true &&
             viewportAnnotation.data.activeViewportIds.find(
               (id) => id === otherViewport.id
             )
@@ -2660,7 +2671,9 @@ class CrosshairsTool extends AnnotationTool {
 
       const viewportSlabThicknessControlsOn =
         this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
-      if (!viewportSlabThicknessControlsOn) {
+      const viewportSlabThicknessHandlesOn =
+        this._slabThicknessHandlesEnabled && viewportSlabThicknessControlsOn;
+      if (!viewportSlabThicknessHandlesOn) {
         continue;
       }
 
@@ -2760,8 +2773,10 @@ class CrosshairsTool extends AnnotationTool {
       );
       const viewportSlabThicknessControlsOn =
         this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
+      const viewportSlabThicknessHandlesOn =
+        this._slabThicknessHandlesEnabled && viewportSlabThicknessControlsOn;
 
-      if (!viewportControllable || !viewportSlabThicknessControlsOn) {
+      if (!viewportControllable || !viewportSlabThicknessHandlesOn) {
         continue;
       }
 
