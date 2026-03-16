@@ -16,6 +16,54 @@ export type PlanarLegacyViewportProperties = Partial<
     }
 >;
 
+function cloneVOIRange(
+  voiRange: PlanarLegacyViewportProperties['voiRange']
+): PlanarLegacyViewportProperties['voiRange'] {
+  if (!voiRange) {
+    return;
+  }
+
+  return {
+    lower: voiRange.lower,
+    upper: voiRange.upper,
+  };
+}
+
+function cloneColormapOpacity(
+  opacity: ColormapPublic['opacity']
+): ColormapPublic['opacity'] {
+  if (Array.isArray(opacity)) {
+    return opacity.map(({ opacity, value }) => ({
+      opacity,
+      value,
+    }));
+  }
+
+  return opacity;
+}
+
+function mergePlanarColormap(
+  currentColormap: ColormapPublic | undefined,
+  nextColormap: ColormapPublic | undefined
+): ColormapPublic | undefined {
+  if (!nextColormap) {
+    return clonePlanarColormap(currentColormap);
+  }
+
+  if (nextColormap.name !== undefined) {
+    return clonePlanarColormap(nextColormap);
+  }
+
+  const mergedColormap = clonePlanarColormap(currentColormap) || {};
+  const nextClone = clonePlanarColormap(nextColormap);
+
+  if (nextClone) {
+    Object.assign(mergedColormap, nextClone);
+  }
+
+  return mergedColormap;
+}
+
 export function isPlanarOrientationVectors(
   orientation: PlanarOrientation | undefined
 ): orientation is OrientationVectors {
@@ -33,10 +81,15 @@ export function clonePlanarOrientation(
     return orientation;
   }
 
-  return {
+  const clone: OrientationVectors = {
     viewPlaneNormal: [...orientation.viewPlaneNormal],
-    ...(orientation.viewUp ? { viewUp: [...orientation.viewUp] } : {}),
   };
+
+  if (orientation.viewUp) {
+    clone.viewUp = [...orientation.viewUp];
+  }
+
+  return clone;
 }
 
 export function clonePlanarColormap(
@@ -46,48 +99,43 @@ export function clonePlanarColormap(
     return;
   }
 
-  return {
-    ...colormap,
-    ...(Array.isArray(colormap.opacity)
-      ? {
-          opacity: colormap.opacity.map(({ opacity, value }) => ({
-            opacity,
-            value,
-          })),
-        }
-      : colormap.opacity !== undefined
-        ? { opacity: colormap.opacity }
-        : {}),
-    ...(colormap.threshold !== undefined
-      ? { threshold: colormap.threshold }
-      : {}),
-  };
+  const clone: ColormapPublic = {};
+
+  if (colormap.name !== undefined) {
+    clone.name = colormap.name;
+  }
+
+  const opacity = cloneColormapOpacity(colormap.opacity);
+
+  if (opacity !== undefined) {
+    clone.opacity = opacity;
+  }
+
+  if (colormap.threshold !== undefined) {
+    clone.threshold = colormap.threshold;
+  }
+
+  return clone;
 }
 
 export function clonePlanarLegacyProperties(
   properties: PlanarLegacyViewportProperties = {}
 ): PlanarLegacyViewportProperties {
-  return {
-    ...properties,
-    ...(properties.voiRange
-      ? {
-          voiRange: {
-            lower: properties.voiRange.lower,
-            upper: properties.voiRange.upper,
-          },
-        }
-      : {}),
-    ...(properties.colormap
-      ? {
-          colormap: clonePlanarColormap(properties.colormap),
-        }
-      : {}),
-    ...(properties.orientation
-      ? {
-          orientation: clonePlanarOrientation(properties.orientation),
-        }
-      : {}),
-  };
+  const clone = Object.assign({} as PlanarLegacyViewportProperties, properties);
+
+  if (properties.voiRange) {
+    clone.voiRange = cloneVOIRange(properties.voiRange);
+  }
+
+  if (properties.colormap) {
+    clone.colormap = clonePlanarColormap(properties.colormap);
+  }
+
+  if (properties.orientation !== undefined) {
+    clone.orientation = clonePlanarOrientation(properties.orientation);
+  }
+
+  return clone;
 }
 
 export function mergePlanarLegacyProperties(
@@ -96,53 +144,49 @@ export function mergePlanarLegacyProperties(
 ): PlanarLegacyViewportProperties {
   const current = clonePlanarLegacyProperties(currentProperties);
   const next = clonePlanarLegacyProperties(nextProperties);
+  const merged = Object.assign({} as PlanarLegacyViewportProperties, current);
 
-  return {
-    ...current,
-    ...next,
-    ...(next.colormap
-      ? {
-          colormap:
-            next.colormap.name !== undefined
-              ? clonePlanarColormap(next.colormap)
-              : {
-                  ...(clonePlanarColormap(current.colormap) || {}),
-                  ...(clonePlanarColormap(next.colormap) || {}),
-                },
-        }
-      : {}),
-  };
+  Object.assign(merged, next);
+
+  if (next.colormap) {
+    merged.colormap = mergePlanarColormap(current.colormap, next.colormap);
+  }
+
+  return merged;
 }
 
 export function toPlanarDataPresentation(
   properties: PlanarLegacyViewportProperties = {}
 ): PlanarDataPresentation {
-  return {
-    ...(properties.colormap
-      ? {
-          colormap: clonePlanarColormap(properties.colormap),
-        }
-      : {}),
-    ...(properties.voiRange
-      ? {
-          voiRange: {
-            lower: properties.voiRange.lower,
-            upper: properties.voiRange.upper,
-          },
-        }
-      : {}),
-    ...(properties.invert !== undefined ? { invert: properties.invert } : {}),
-    ...(properties.interpolationType !== undefined
-      ? { interpolationType: properties.interpolationType }
-      : {}),
-    ...(properties.opacity !== undefined
-      ? { opacity: properties.opacity }
-      : {}),
-    ...(properties.slabThickness !== undefined
-      ? { slabThickness: properties.slabThickness }
-      : {}),
-    ...(properties.visible !== undefined
-      ? { visible: properties.visible }
-      : {}),
-  };
+  const presentation: PlanarDataPresentation = {};
+
+  if (properties.colormap) {
+    presentation.colormap = clonePlanarColormap(properties.colormap);
+  }
+
+  if (properties.voiRange) {
+    presentation.voiRange = cloneVOIRange(properties.voiRange);
+  }
+
+  if (properties.invert !== undefined) {
+    presentation.invert = properties.invert;
+  }
+
+  if (properties.interpolationType !== undefined) {
+    presentation.interpolationType = properties.interpolationType;
+  }
+
+  if (properties.opacity !== undefined) {
+    presentation.opacity = properties.opacity;
+  }
+
+  if (properties.slabThickness !== undefined) {
+    presentation.slabThickness = properties.slabThickness;
+  }
+
+  if (properties.visible !== undefined) {
+    presentation.visible = properties.visible;
+  }
+
+  return presentation;
 }
