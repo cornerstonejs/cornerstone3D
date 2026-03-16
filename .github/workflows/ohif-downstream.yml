@@ -1,0 +1,91 @@
+name: OHIF Downstream Validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ohif-downstream:
+    name: OHIF downstream tests against this PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      BUN_VERSION: 1.2.23
+      NODE_VERSION: 20
+      OHIF_REF: master
+      OHIF_DIR: ohif
+    steps:
+      - name: Checkout Cornerstone
+        uses: actions/checkout@v4
+
+      - name: Log build context (OHIF/CS3D branch and version for build diagnosis)
+        run: |
+          echo "::notice::Build type: ohif-downstream | CS3D: ${{ github.repository }}@${{ github.ref }} (${{ github.sha }}) | OHIF ref: ${{ env.OHIF_REF }}"
+          CS3D_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          CS3D_SHA=$(git rev-parse --short HEAD)
+          echo "[build-context] ═══════════════════════════════════════════════════════════════"
+          echo "[build-context] Build type: ohif-downstream (CS3D repo validating against OHIF)"
+          echo "[build-context] CS3D branch: $CS3D_BRANCH | CS3D SHA: $CS3D_SHA"
+          echo "[build-context] OHIF ref: ${{ env.OHIF_REF }}"
+          echo "[build-context] ═══════════════════════════════════════════════════════════════"
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Cornerstone dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build local Cornerstone packages for OHIF
+        run: bun run build:esm
+
+      - name: Checkout OHIF
+        uses: actions/checkout@v4
+        with:
+          repository: OHIF/Viewers
+          ref: ${{ env.OHIF_REF }}
+          path: ${{ env.OHIF_DIR }}
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Install OHIF dependencies
+        working-directory: ${{ env.OHIF_DIR }}
+        run: bun install
+
+      - name: Link local Cornerstone packages into OHIF node_modules
+        run: node scripts/link-ohif-cornerstone-node-modules.mjs ${{ env.OHIF_DIR }}
+
+      - name: Run OHIF unit tests
+        working-directory: ${{ env.OHIF_DIR }}
+        run: bun run test:unit:ci
+
+      - name: Install Playwright browsers
+        working-directory: ${{ env.OHIF_DIR }}
+        run: npx playwright install --with-deps chromium
+
+      - name: Run OHIF e2e tests
+        working-directory: ${{ env.OHIF_DIR }}
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+        run: bun run test:e2e:ci
+
+      - name: Upload OHIF Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohif-playwright-artifacts-${{ github.sha }}
+          path: |
+            ${{ env.OHIF_DIR }}/tests/playwright-report.json
+            ${{ env.OHIF_DIR }}/tests/playwright-report/
+            ${{ env.OHIF_DIR }}/tests/test-results/
+          retention-days: 7
