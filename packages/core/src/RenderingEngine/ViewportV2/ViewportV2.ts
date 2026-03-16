@@ -303,6 +303,10 @@ abstract class ViewportV2<
    * Removes one dataset binding and clears any stored per-dataset render
    * state for that dataset.
    */
+  removeWidgets(): void {
+    // V2 viewports do not use VTK widgets — intentional no-op.
+  }
+
   removeDataId(dataId: DataId): void {
     const binding = this.bindings.get(dataId);
 

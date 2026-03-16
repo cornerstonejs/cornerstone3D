@@ -14,6 +14,7 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { init as csToolsInit } from '@cornerstonejs/tools';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
+import { viewportSupportsStackCompatibility } from '../../src/utilities/viewportCapabilities';
 
 const {
   PanTool,
@@ -255,10 +256,11 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  // Get all stack viewports
-  const stackViewports = renderingEngine.getStackViewports();
+  const stackViewports = viewportIds
+    .map((viewportId) => renderingEngine.getViewport(viewportId))
+    .filter(viewportSupportsStackCompatibility);
 
-  // Set the stack on each viewport
+  // Set the stack on each stack-compatible viewport
   await Promise.all(
     stackViewports.map(async (viewport) => {
       await viewport.setStack(imageIds);

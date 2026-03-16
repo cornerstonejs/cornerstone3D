@@ -114,6 +114,15 @@ export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
+import {
+  viewportSupportsImageSlices,
+  viewportSupportsStackCalibration,
+  viewportSupportsStackCompatibility,
+  viewportSupportsVolumeActors,
+  viewportSupportsVolumeCompatibility,
+  viewportSupportsVolumeId,
+  viewportSupportsVolumeURI,
+} from './viewportCapabilities';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
@@ -228,4 +237,11 @@ export {
   buildMetadata,
   calculateNeighborhoodStats,
   asArray,
+  viewportSupportsImageSlices,
+  viewportSupportsStackCalibration,
+  viewportSupportsStackCompatibility,
+  viewportSupportsVolumeActors,
+  viewportSupportsVolumeCompatibility,
+  viewportSupportsVolumeId,
+  viewportSupportsVolumeURI,
 };

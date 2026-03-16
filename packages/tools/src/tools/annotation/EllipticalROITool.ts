@@ -56,6 +56,7 @@ import type { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotation
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { vec2 } from 'gl-matrix';
@@ -838,7 +839,9 @@ class EllipticalROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+              const viewports = renderingEngine
+                .getViewports()
+                .filter(viewportSupportsImageSlices);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not

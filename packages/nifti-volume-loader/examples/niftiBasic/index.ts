@@ -39,6 +39,15 @@ const viewportId1 = 'CT_NIFTI_AXIAL';
 const niftiURL =
   'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
 
+function viewportSupportsStackCompatibility(viewport: unknown): viewport is {
+  setStack(imageIds: string[], currentImageIdIndex?: number): Promise<string>;
+} {
+  return (
+    typeof (viewport as { setStack?: unknown } | undefined)?.setStack ===
+    'function'
+  );
+}
+
 async function setup() {
   await initDemo();
 
@@ -59,8 +68,11 @@ async function setup() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  const vps = renderingEngine.getStackViewports();
-  const viewport = vps[0];
+  const viewport = renderingEngine.getViewport(viewportId1);
+
+  if (!viewportSupportsStackCompatibility(viewport)) {
+    throw new Error(`Viewport ${viewportId1} does not implement setStack`);
+  }
 
   viewport.setStack(imageIds);
 

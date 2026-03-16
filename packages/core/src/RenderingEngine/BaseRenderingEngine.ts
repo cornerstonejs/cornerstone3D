@@ -4,8 +4,6 @@ import eventTarget from '../eventTarget';
 import uuidv4 from '../utilities/uuidv4';
 import triggerEvent from '../utilities/triggerEvent';
 import ViewportType from '../enums/ViewportType';
-import BaseVolumeViewport from './BaseVolumeViewport';
-import StackViewport from './StackViewport';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
@@ -342,60 +340,6 @@ abstract class BaseRenderingEngine {
     this._throwIfDestroyed();
 
     return this._getViewportsAsArray();
-  }
-
-  /**
-   * Retrieves a stack viewport by its ID. used just for type safety
-   *
-   * @param viewportId - The ID of the viewport to retrieve.
-   * @returns The stack viewport with the specified ID.
-   * @throws Error if the viewport with the given ID does not exist or is not a StackViewport.
-   */
-  public getStackViewport(viewportId: string): IStackViewport {
-    this._throwIfDestroyed();
-
-    const viewport = this.getViewport(viewportId);
-
-    if (!viewport) {
-      throw new Error(`Viewport with Id ${viewportId} does not exist`);
-    }
-
-    if (!(viewport instanceof StackViewport)) {
-      throw new Error(`Viewport with Id ${viewportId} is not a StackViewport.`);
-    }
-
-    return viewport;
-  }
-
-  /**
-   * Filters all the available viewports and return the stack viewports
-   * @returns stack viewports registered on the rendering Engine
-   */
-  public getStackViewports(): IStackViewport[] {
-    this._throwIfDestroyed();
-
-    const viewports = this.getViewports();
-
-    return viewports.filter(
-      (vp) => vp instanceof StackViewport
-    ) as IStackViewport[];
-  }
-  /**
-   * Return all the viewports that are volume viewports
-   * @returns An array of VolumeViewport objects.
-   */
-  public getVolumeViewports(): IVolumeViewport[] {
-    this._throwIfDestroyed();
-
-    const viewports = this.getViewports();
-
-    const isVolumeViewport = (
-      viewport: IViewport
-    ): viewport is BaseVolumeViewport => {
-      return viewport instanceof BaseVolumeViewport;
-    };
-
-    return viewports.filter(isVolumeViewport) as IVolumeViewport[];
   }
 
   /**

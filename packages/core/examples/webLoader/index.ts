@@ -18,6 +18,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import hardcodedMetaDataProvider from './hardcodedMetaDataProvider';
 import registerWebImageLoader from './registerWebImageLoader';
+import { viewportSupportsStackCompatibility } from '../../src/utilities/viewportCapabilities';
 
 // This is for debugging purposes
 console.warn(
@@ -202,8 +203,14 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  // render stack viewport
-  renderingEngine.getStackViewports()[0].setStack(imageIds);
+  const stackViewport = renderingEngine.getViewport('COLOR_STACK');
+
+  if (!viewportSupportsStackCompatibility(stackViewport)) {
+    throw new Error('Viewport COLOR_STACK does not implement setStack');
+  }
+
+  // render stack-compatible viewport
+  stackViewport.setStack(imageIds);
 
   await setVolumesForViewports(
     renderingEngine,

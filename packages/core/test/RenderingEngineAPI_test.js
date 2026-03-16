@@ -138,7 +138,7 @@ describe('RenderingEngineAPI -- ', () => {
       expect(viewport1).toBeUndefined();
     });
 
-    it('should successfully get StackViewports', function () {
+    it('should successfully filter stack-compatible viewports', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
         viewportType: ViewportType.STACK,
@@ -146,7 +146,9 @@ describe('RenderingEngineAPI -- ', () => {
         useEnableElement: true,
       });
 
-      const stackViewports = renderingEngine.getStackViewports();
+      const stackViewports = renderingEngine
+        .getViewports()
+        .filter(cornerstone3D.utilities.viewportSupportsStackCompatibility);
       expect(stackViewports.length).toBe(1);
     });
   });

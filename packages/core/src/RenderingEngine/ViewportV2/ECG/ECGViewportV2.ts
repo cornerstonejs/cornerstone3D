@@ -88,6 +88,14 @@ class ECGViewportV2 extends ViewportV2<
    * @param dataId - Logical dataset id to add.
    * @returns The rendering id created for the mounted waveform.
    */
+  /**
+   * Legacy compat: loads ECG data from an imageId, matching the old
+   * ECGViewport.setEcg signature.
+   */
+  async setEcg(imageId: string): Promise<void> {
+    await this.setSignal(imageId);
+  }
+
   async setSignal(dataId: string): Promise<string> {
     const [renderingId] = await this.setDataIds([dataId]);
 
@@ -104,18 +112,10 @@ class ECGViewportV2 extends ViewportV2<
     const renderingIds: string[] = [];
 
     for (const dataId of dataIds) {
-      const renderingId = await this.setDataId(dataId, {
-        renderMode: 'signal2d',
-      });
-      const binding = this.getBinding(dataId);
-
-      if (!binding) {
-        renderingIds.push(renderingId);
-        continue;
-      }
-
       const waveform =
-        (binding.data as unknown as LoadedData<ECGWaveformPayload>) || null;
+        ((await this.dataProvider.load(
+          dataId
+        )) as LoadedData<ECGWaveformPayload>) || null;
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
 
@@ -131,12 +131,29 @@ class ECGViewportV2 extends ViewportV2<
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
       });
-      this.modified();
+
+      const renderingId = await this.addLoadedData(dataId, waveform, {
+        renderMode: 'signal2d',
+      });
 
       renderingIds.push(renderingId);
     }
 
     return renderingIds;
+  }
+
+  getWaveformData(): ECGWaveformPayload | null {
+    const binding = this.getFirstBinding();
+
+    if (!binding) {
+      return null;
+    }
+
+    return binding.data as unknown as LoadedData<ECGWaveformPayload>;
+  }
+
+  getSliceIndex(): number {
+    return 0;
   }
 
   getZoom(): number {

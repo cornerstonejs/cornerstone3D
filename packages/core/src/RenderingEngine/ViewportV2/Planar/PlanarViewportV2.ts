@@ -638,6 +638,18 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   /**
+   * Returns whether the active dataset references a volume whose id contains
+   * the given URI fragment.
+   *
+   * @param volumeURI - Volume URI substring to compare against the active
+   * dataset volume id.
+   * @returns `true` when the active dataset references the given volume URI.
+   */
+  hasVolumeURI(volumeURI: string): boolean {
+    return String(this.getVolumeId() || '').includes(volumeURI);
+  }
+
+  /**
    * Returns whether a spatial plane is viewable in the current planar state.
    *
    * @param planeRestriction - Plane description to test against the current

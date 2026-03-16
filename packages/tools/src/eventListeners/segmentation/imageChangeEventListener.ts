@@ -72,10 +72,16 @@ const perViewportManualTriggers = new Map();
 function _imageChangeEventListener(evt) {
   const eventData = evt.detail;
   const { viewportId, renderingEngineId } = eventData;
-  const { viewport } = getEnabledElementByIds(
+  const enabledElement = getEnabledElementByIds(
     viewportId,
     renderingEngineId
-  ) as { viewport: Types.IStackViewport };
+  ) as { viewport: Types.IStackViewport } | undefined;
+
+  if (!enabledElement) {
+    return;
+  }
+
+  const { viewport } = enabledElement;
 
   const representations = getSegmentationRepresentations(viewportId);
 
