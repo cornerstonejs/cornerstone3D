@@ -1,3 +1,3 @@
 export interface LoaderDecodeOptions {
-  // whatever
+  // WASM codecs are loaded via peerImport with fallback; no path options.
 }
