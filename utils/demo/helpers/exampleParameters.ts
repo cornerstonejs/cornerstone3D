@@ -4,6 +4,8 @@ import {
   RenderingEngine,
   type Types,
 } from '@cornerstonejs/core';
+import viewportTypeToViewportClass from '../../../packages/core/src/RenderingEngine/helpers/viewportTypeToViewportClass';
+import WSIViewportV2 from '../../../packages/core/src/RenderingEngine/ViewportV2/WSI/WSIViewportV2';
 
 type DemoConfig = {
   core?: {
@@ -38,6 +40,9 @@ const V2_REMAPS: Record<string, Partial<Record<Enums.ViewportType, Enums.Viewpor
   video: {
     [Enums.ViewportType.VIDEO]: Enums.ViewportType.VIDEO_V2,
   },
+  wsi: {
+    [Enums.ViewportType.WHOLE_SLIDE]: Enums.ViewportType.WHOLE_SLIDE,
+  },
   ecg: {
     [Enums.ViewportType.ECG]: Enums.ViewportType.ECG_V2,
   },
@@ -62,7 +67,7 @@ function remapViewportType(
  * `?type=<key>` in the URL rewrites legacy viewport types to their V2
  * equivalents without touching any individual example.
  *
- * Supported values: v2 (all), planar, video, ecg
+ * Supported values: next (all supported), video, wsi, ecg
  */
 export function applyViewportTypeOverride(): void {
   const typeParam = getUrlParam('type');
@@ -84,6 +89,11 @@ export function applyViewportTypeOverride(): void {
     `[exampleParameters] Viewport type override active: ?type=${typeParam}`,
     remap
   );
+
+  if (typeParam === 'next' || typeParam === 'wsi') {
+    viewportTypeToViewportClass[Enums.ViewportType.WHOLE_SLIDE] =
+      WSIViewportV2 as unknown as typeof viewportTypeToViewportClass[Enums.ViewportType.WHOLE_SLIDE];
+  }
 
   const origEnable = RenderingEngine.prototype.enableElement;
   RenderingEngine.prototype.enableElement = function (

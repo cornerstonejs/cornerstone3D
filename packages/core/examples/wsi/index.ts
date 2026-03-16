@@ -3,8 +3,6 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
-  type WSIViewportV2,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
@@ -29,8 +27,6 @@ const { ToolGroupManager } = cornerstoneTools;
 const { wadors } = dicomImageLoader;
 
 const { ViewportType } = Enums;
-const typeParam = new URLSearchParams(window.location.search).get('type');
-const useWSIV2 = typeParam === 'next' || typeParam === 'wsi';
 
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
@@ -128,19 +124,7 @@ async function run() {
   ) as Types.IWSIViewport;
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
-
-  if (useWSIV2) {
-    utilities.viewportV2DataSetMetadataProvider.add('wsi-demo', {
-      imageIds,
-      options: {
-        webClient: client,
-      },
-    });
-    await (viewport as unknown as WSIViewportV2).setDataIds(['wsi-demo']);
-  } else {
-    // Set the stack on the legacy viewport
-    await viewport.setDataIds(imageIds, { webClient: client });
-  }
+  await viewport.setDataIds(imageIds, { webClient: client });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }
